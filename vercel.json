@@ -8,6 +8,10 @@
     {
       "path": "/api/maturation",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/points/expire",
+      "schedule": "0 14 * * *"
     }
   ]
 }
