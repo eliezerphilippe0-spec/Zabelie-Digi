@@ -19,7 +19,7 @@
     },
     {
       "path": "/api/stock/expire",
-      "schedule": "*/10 * * * *"
+      "schedule": "45 13 * * *"
     }
   ]
 }

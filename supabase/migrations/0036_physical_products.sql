@@ -131,6 +131,7 @@ declare
   v_available integer;
   v_ttl       integer;
   v_existing  zabelie_stock_reservations;
+  v_stale     record;
 begin
   if p_quantity is null or p_quantity <= 0 then
     return jsonb_build_object('ok', false, 'reason', 'quantite_invalide');
@@ -138,6 +139,27 @@ begin
 
   select coalesce(max(value), 30) into v_ttl
     from zabelie_stock_limits where key = 'reservation_ttl_minutes';
+
+  -- EXPIRATION PARESSEUSE (contrainte Vercel Hobby : crons quotidiens
+  -- uniquement). Sans elle, un panier abandonné bloquerait l'unité jusqu'au
+  -- prochain passage du cron — jusqu'à 24 h sur du mono-unité, une vente
+  -- perdue à chaque fois. Ici, les réservations échues de CETTE variante sont
+  -- libérées au moment exact où quelqu'un d'autre veut l'unité — le seul
+  -- moment où ça compte. Même ordre de verrouillage que le cron
+  -- (réservation → stock) : pas d'interblocage possible entre les deux.
+  for v_stale in
+    select * from zabelie_stock_reservations
+     where variant_id = p_variant_id and status = 'held' and expires_at < now()
+       and order_id <> p_order_id
+     for update skip locked
+  loop
+    update zabelie_stock
+       set quantity_reserved  = quantity_reserved - v_stale.quantity,
+           quantity_available = quantity_available + v_stale.quantity,
+           updated_at = now()
+     where variant_id = v_stale.variant_id;
+    update zabelie_stock_reservations set status = 'released' where id = v_stale.id;
+  end loop;
 
   -- Réservation déjà existante pour cette (commande, variante).
   select * into v_existing from zabelie_stock_reservations

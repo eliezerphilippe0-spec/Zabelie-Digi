@@ -9,6 +9,8 @@
 --   SL5. Expiration (cron) : réservation échue relibérée.
 --   SL6. Stock insuffisant → refus propre, aucun mouvement.
 --   SL7. L'arbre de catégories refuse un niveau incohérent.
+--   SL8. Expiration PARESSEUSE : une réservation échue est reprise par le
+--        prochain acheteur sans attendre le cron (quotidien sur Vercel Hobby).
 
 begin;
 
@@ -122,7 +124,30 @@ begin
       if sqlerrm like 'SL7:%' then raise; end if;
   end;
 
-  raise notice 'OK — SL1 réservation ; SL2 rejeu idempotent ; SL3 consommation au paiement ; SL4 libération sur annulation ; SL5 expiration cron ; SL6 refus propre ; SL7 arbre cohérent';
+  -- SL8 : EXPIRATION PARESSEUSE (contrainte cron quotidien Vercel Hobby).
+  -- Un panier abandonné détient la dernière unité, TTL échu, le cron n'est pas
+  -- passé. Un NOUVEL acheteur doit pouvoir la prendre immédiatement.
+  update zabelie_stock set quantity_available = 0, quantity_reserved = 1
+   where variant_id = v_variant;
+  delete from zabelie_stock_reservations where variant_id = v_variant;
+  insert into orders (buyer_id, product_id, amount_htg, status)
+  values (v_buyer, v_product, 2500, 'pending') returning id into v_order1;
+  insert into zabelie_stock_reservations (variant_id, order_id, quantity, expires_at)
+  values (v_variant, v_order1, 1, now() - interval '5 minutes'); -- échue, cron absent
+
+  insert into orders (buyer_id, product_id, amount_htg, status)
+  values (v_buyer, v_product, 2500, 'pending') returning id into v_order2;
+  v_res := zabelie_reserve_stock(v_variant, v_order2, 1);
+  assert (v_res->>'ok')::boolean,
+    format('SL8: l''unité détenue par une réservation ÉCHUE devait être reprise sans attendre le cron, obtenu %s', v_res);
+  assert (select status from zabelie_stock_reservations where order_id = v_order1) = 'released',
+    'SL8: la réservation échue devait être libérée au passage';
+  select quantity_available, quantity_reserved into v_avail, v_resv
+    from zabelie_stock where variant_id = v_variant;
+  assert v_avail = 0 and v_resv = 1,
+    format('SL8: attendu 0/1 (unité reprise par le nouvel acheteur), obtenu %s/%s', v_avail, v_resv);
+
+  raise notice 'OK — SL1 réservation ; SL2 rejeu idempotent ; SL3 consommation au paiement ; SL4 libération sur annulation ; SL5 expiration cron ; SL6 refus propre ; SL7 arbre cohérent ; SL8 expiration paresseuse sans cron';
 end $$;
 
 rollback;
