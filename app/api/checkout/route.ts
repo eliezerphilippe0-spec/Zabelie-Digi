@@ -49,8 +49,16 @@ export async function POST(req: Request) {
   let productId: string | undefined;
   let railInput: unknown;
   let couponInput: unknown;
+  let variantInput: unknown;
+  let quantityInput: unknown;
   try {
-    ({ productId, rail: railInput, couponCode: couponInput } = await req.json());
+    ({
+      productId,
+      rail: railInput,
+      couponCode: couponInput,
+      variantId: variantInput,
+      quantity: quantityInput,
+    } = await req.json());
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
@@ -242,6 +250,37 @@ export async function POST(req: Request) {
     );
   }
 
+  // Produit PHYSIQUE : réservation ATOMIQUE du stock (0036). Le stock est pris
+  // ici, à la commande — pas à la livraison : deux acheteurs ne peuvent pas
+  // acheter la même unité. La réservation expire seule (TTL 30 min) si le
+  // paiement n'aboutit pas.
+  const variantId = typeof variantInput === "string" ? variantInput : null;
+  if (variantId) {
+    const qty = Number.isInteger(quantityInput) ? (quantityInput as number) : 1;
+    const { data: reservation, error: resErr } = await admin.rpc(
+      "zabelie_reserve_stock",
+      { p_variant_id: variantId, p_order_id: order.id, p_quantity: qty }
+    );
+    if (resErr || !reservation?.ok) {
+      // Rien n'est vendu : on retire la commande et son paiement, sinon le
+      // réconciliateur traînerait un pending qui ne peut plus aboutir.
+      await admin.from("payments").delete().eq("order_id", order.id);
+      await admin.from("orders").delete().eq("id", order.id);
+      const reason = reservation?.reason as string | undefined;
+      return NextResponse.json(
+        {
+          error:
+            reason === "stock_insuffisant"
+              ? "Stock insuffisant pour cette quantité."
+              : "Article indisponible.",
+          code: reason ?? "stock_indisponible",
+          disponible: reservation?.disponible,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   try {
     if (rail === "stripe") {
       // Session Stripe Checkout ; confirmation via webhook signé uniquement.
@@ -282,6 +321,13 @@ export async function POST(req: Request) {
     // (statut HTTP, corps brut MonCash) reste dans les logs serveur — jamais
     // renvoyé au client (fuite d'infos + intraduisible FR/KR).
     console.error("checkout: échec opérateur", e);
+    // La session de paiement n'a pas pu être créée : on relibère
+    // immédiatement le stock au lieu d'attendre l'expiration du TTL.
+    if (variantId) {
+      await admin
+        .rpc("zabelie_release_stock", { p_order_id: order.id })
+        .then(undefined, () => undefined);
+    }
     return NextResponse.json(
       {
         error: "Paiement momentanément indisponible. Réessayez dans un instant.",

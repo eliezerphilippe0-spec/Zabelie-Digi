@@ -16,6 +16,10 @@
     {
       "path": "/api/admin/coherence",
       "schedule": "30 13 * * *"
+    },
+    {
+      "path": "/api/stock/expire",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
