@@ -3,8 +3,8 @@
 --
 --   IS1. Produit DIGITAL (sans variante) → in_stock reste true.
 --   IS2. Création d'un physique avec stock → true ; avec 0 → false.
---   IS3. La vente qui épuise le stock bascule le flag à false.
---   IS4. La libération d'une réservation le remet à true.
+--   IS3. Une RÉSERVATION ne déliste pas ; seule la VENTE le fait.
+--   IS4. Panier abandonné puis expiré : le produit reste visible en continu.
 --   IS5. Désactiver la dernière variante en stock → false.
 --   IS6. Multi-variantes : une seule en stock suffit à rester listé.
 
@@ -56,32 +56,39 @@ begin
   select in_stock into v_flag from products where id = v_vide;
   assert not v_flag, 'IS2bis: produit sans stock ne doit pas être listé';
 
-  -- IS3 : la vente épuise le stock → bascule.
+  -- IS3 : UNE RÉSERVATION NE DÉLISTE PAS. C'est le point le plus important de
+  -- ce test — le flag suit le stock PHYSIQUE, pas le disponible. Sinon un
+  -- panier abandonné rendrait le produit invisible pendant tout le TTL
+  -- (120 min), pour tous les acheteurs, sur un vendeur qui n'a qu'une unité.
   insert into orders (buyer_id, product_id, amount_htg, status)
   values (v_buyer, v_prod, 1000, 'pending') returning id into v_o;
   insert into payments (order_id, rail, idempotency_key, status)
   values (v_o, 'moncash', v_o::text, 'pending');
-  perform zabelie_reserve_stock(v_v1, v_o, 2);   -- réserve TOUT le stock
+  perform zabelie_reserve_stock(v_v1, v_o, 2);   -- réserve TOUT le disponible
   select in_stock into v_flag from products where id = v_prod;
-  assert not v_flag,
-    'IS3: stock entièrement réservé ⇒ plus rien de disponible, produit délisté';
+  assert v_flag,
+    'IS3: RÉGRESSION — une réservation ne doit PAS délister (stock physique inchangé)';
 
+  -- Seule la VENTE fait sortir les unités du stock physique → délistage.
   perform confirm_payment(v_o::text, 'REF-IS3', null, 1000);
   select in_stock into v_flag from products where id = v_prod;
-  assert not v_flag, 'IS3bis: après vente, toujours délisté';
+  assert not v_flag, 'IS3bis: après vente réelle, le produit est délisté';
 
-  -- IS4 : libération d'une réservation → re-listé.
-  update zabelie_stock set quantity_available = 0, quantity_reserved = 1
+  -- IS4 : panier abandonné puis expiré — le produit reste listé du début à la
+  -- fin. Aucun clignotement dans le catalogue.
+  update zabelie_stock set quantity_available = 1, quantity_reserved = 0
    where variant_id = v_v1;
   insert into orders (buyer_id, product_id, amount_htg, status)
   values (v_buyer, v_prod, 1000, 'pending') returning id into v_o;
   insert into zabelie_stock_reservations (variant_id, order_id, quantity, expires_at)
   values (v_v1, v_o, 1, now() - interval '1 minute');
+  update zabelie_stock set quantity_available = 0, quantity_reserved = 1
+   where variant_id = v_v1;
   select in_stock into v_flag from products where id = v_prod;
-  assert not v_flag, 'IS4: avant libération, délisté';
+  assert v_flag, 'IS4: panier en cours ⇒ le produit reste visible';
   perform zabelie_expire_stock_reservations();
   select in_stock into v_flag from products where id = v_prod;
-  assert v_flag, 'IS4bis: après libération, le produit redevient listé';
+  assert v_flag, 'IS4bis: après expiration, toujours visible';
 
   -- IS5 : désactiver la dernière variante en stock.
   update zabelie_product_variants set active = false where id = v_v1;
@@ -99,7 +106,7 @@ begin
   select in_stock into v_flag from products where id = v_prod;
   assert not v_flag, 'IS6bis: plus aucune variante en stock ⇒ délisté';
 
-  raise notice 'OK — IS1 digital intouché ; IS2 stock/0 ; IS3 vente délistante ; IS4 libération re-listante ; IS5 variante désactivée ; IS6 multi-variantes';
+  raise notice 'OK — IS1 digital intouché ; IS2 stock/0 ; IS3 réservation NE déliste pas, vente oui ; IS4 panier abandonné sans clignotement ; IS5 variante désactivée ; IS6 multi-variantes';
 end $$;
 
 rollback;

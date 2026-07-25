@@ -4944,17 +4944,34 @@ returns void
 language plpgsql
 set search_path = public
 as $$
+declare
+  v_has_stock boolean;
 begin
+  -- STOCK PHYSIQUE (disponible + réservé), PAS le seul disponible.
+  -- Sinon un panier abandonné sur un vendeur qui n'a qu'UNE unité retirerait
+  -- le produit du catalogue pendant toute la durée du TTL (120 min) — pour
+  -- tout le monde. Sur des pièces détachées où l'unité isolée est la norme,
+  -- ça se produirait quotidiennement.
+  -- Un produit invisible ne se vend jamais ; un produit visible et
+  -- temporairement pris se vend deux heures plus tard. C'est la tentative
+  -- d'achat qui échoue proprement si l'unité part entre-temps (0038).
+  select exists (
+      select 1
+        from zabelie_product_variants v
+        join zabelie_stock s on s.variant_id = v.id
+       where v.product_id = p_product_id
+         and v.active
+         and s.quantity_available + s.quantity_reserved > 0
+    ) into v_has_stock;
+
+  -- Écriture SEULEMENT si le booléen change. Sans ce garde, chaque mouvement
+  -- de stock verrouillerait la ligne `products` et en créerait une nouvelle
+  -- version — sur le produit le plus vendu, à chaque réservation. Invisible à
+  -- 300 SKU, mordant à 5 000.
   update products p
-     set in_stock = exists (
-           select 1
-             from zabelie_product_variants v
-             join zabelie_stock s on s.variant_id = v.id
-            where v.product_id = p_product_id
-              and v.active
-              and s.quantity_available > 0
-         )
-   where p.id = p_product_id;
+     set in_stock = v_has_stock
+   where p.id = p_product_id
+     and p.in_stock is distinct from v_has_stock;
 end;
 $$;
 revoke all on function zabelie_refresh_in_stock(uuid) from public, anon, authenticated;
@@ -4987,7 +5004,7 @@ $$;
 revoke all on function zabelie_stock_flag_trigger() from public, anon, authenticated;
 
 create trigger zabelie_stock_flag
-  after insert or update of quantity_available or delete on zabelie_stock
+  after insert or update of quantity_available, quantity_reserved or delete on zabelie_stock
   for each row execute function zabelie_stock_flag_trigger();
 
 -- Une variante désactivée ou supprimée retire aussi son stock du décompte.
@@ -5004,7 +5021,8 @@ update products p
          select 1
            from zabelie_product_variants v
            join zabelie_stock s on s.variant_id = v.id
-          where v.product_id = p.id and v.active and s.quantity_available > 0
+          where v.product_id = p.id and v.active
+            and s.quantity_available + s.quantity_reserved > 0
        )
  where exists (select 1 from zabelie_product_variants v where v.product_id = p.id);
 
