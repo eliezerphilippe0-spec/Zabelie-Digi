@@ -23,11 +23,19 @@
    « en attente » à « disponible ».
 4. **Aucun mécanisme de retrait n'est implémenté.** Le vendeur ne dispose
    aujourd'hui d'**aucun moyen** d'obtenir les fonds portés à son crédit.
-5. Autrement dit : **la plateforme détient des fonds appartenant
-   économiquement à des tiers, pour une durée indéterminée, sans voie de
-   sortie.**
+5. Ces sommes se trouvent sur le **compte marchand unique** de la plateforme,
+   **mêlées** à ses propres revenus : aucun compte de cantonnement n'existe.
+6. Autrement dit : **la plateforme détient, sur son compte propre, des fonds
+   appartenant économiquement à des tiers, pour une durée indéterminée, sans
+   voie de sortie.**
 
-C'est ce point 5 qui motive la présente consultation.
+Ce sont les points 5 et 6 qui motivent la présente consultation.
+
+> **Mesure conservatoire engagée sans attendre l'avis** : l'exploitant procède
+> à l'apurement **manuel** des sommes dues (virement MonCash direct contre
+> reçu). L'absence de route de décaissement dans le logiciel n'est pas une
+> impossibilité de payer — c'est une impossibilité de payer *automatiquement*.
+> L'effet de ces règlements sur la qualification fait l'objet de la question Q7.
 
 ---
 
@@ -83,7 +91,41 @@ Le code lui-même documente ce blocage :
 **Conséquence** : le solde « disponible » ne l'est qu'au sens comptable. En
 pratique, les fonds restent chez la plateforme **sans limite de durée**.
 
-### 2.6 Ce que le mécanisme ne fait pas
+### 2.6 ⚠️ Ségrégation des fonds — il n'y en a aucune
+
+**Point à examiner en priorité, souvent avant la durée de détention.**
+
+La plateforme dispose d'**un seul compte marchand MonCash**, identifié par un
+unique jeu d'identifiants (`lib/moncash.ts:28-30` — `MONCASH_CLIENT_ID` /
+`MONCASH_CLIENT_SECRET`). Il n'existe :
+
+- ❌ **aucun compte de cantonnement** (trust / escrow account) distinct ;
+- ❌ **aucune séparation** entre les sommes dues aux vendeurs et les revenus
+  propres de la plateforme ;
+- ❌ **aucun mouvement de fonds** reflétant la répartition.
+
+Concrètement, sur ce compte unique se trouvent **mêlés** :
+1. la **commission** de la plateforme — enregistrée dans `platform_earnings`
+   (`0005_commission.sql:138`), simple écriture comptable ;
+2. le **net dû aux vendeurs** — enregistré dans `wallets`, simple écriture
+   comptable ;
+3. les éventuels fonds propres de l'exploitant.
+
+La répartition n'existe donc **que dans la base de données**. Aucun compte
+bancaire ne la matérialise.
+
+**Conséquence pratique** : rien n'empêche techniquement l'utilisation des
+sommes dues aux vendeurs pour les dépenses de la plateforme — la limite est
+uniquement une discipline de gestion, non un dispositif.
+
+⚠️ **Écart de réconciliation non mesuré** : aucun endpoint de solde ou de
+relevé n'est implémenté (`lib/moncash.ts` n'expose que création et vérification
+de paiement). **Le solde réel du compte marchand n'a jamais été rapproché du
+total du registre interne.** Un écart entre les deux, s'il existe, est
+aujourd'hui invisible. → Traité en priorité par le chantier 0
+(`docs/19-CHANTIER-0-RETRAIT-VENDEUR.md`).
+
+### 2.7 Ce que le mécanisme ne fait pas
 Éléments pertinents pour écarter certaines qualifications :
 - ❌ Aucun **cash-in** : impossible d'alimenter un solde par un dépôt.
 - ❌ Aucun **cash-out** : aucun retrait implémenté (§2.5).
@@ -161,6 +203,22 @@ l'analyse ?
 **Q6 — Régularisation.** Si le mécanisme actuel est non conforme, quelle est la
 marche à suivre pour la situation **déjà constituée** (fonds encaissés et non
 reversés à ce jour) ?
+
+**Q7 — Effet des règlements manuels.** La plateforme entreprend d'apurer
+**immédiatement et à la main** les sommes dues (virement MonCash direct, un
+vendeur après l'autre, contre reçu), sans attendre l'existence d'une route de
+décaissement automatisée.
+
+- Le fait de démontrer que **les fonds sont disponibles sur demande** modifie-t-il
+  la qualification, par rapport à une rétention subie faute de voie de sortie ?
+- Le maintien du mécanisme est-il admissible **à condition** qu'un règlement
+  manuel documenté soit garanti dans un délai déterminé — et si oui, lequel ?
+- Quelle **trace** faut-il conserver pour que ces règlements soient opposables
+  (reçu MonCash, accusé du vendeur, écriture comptable) ?
+
+**Q8 — Ségrégation.** L'absence de compte de cantonnement (§2.6) est-elle, en
+elle-même, un manquement ? Un compte distinct est-il exigé, recommandé, ou sans
+objet en l'espèce ?
 
 ---
 

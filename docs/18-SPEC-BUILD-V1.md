@@ -8,6 +8,34 @@
 
 ---
 
+## 0-bis. ⚡ CHANTIER 0 — VOIE DE SORTIE VENDEUR (avant tout le reste)
+
+**Le risque réglementaire est réel, mais il n'est pas le plus urgent.** Le plus
+urgent : des vendeurs haïtiens ont de l'argent chez la plateforme et ne peuvent
+pas y toucher. Cela se règle **sans code et sans avocat**, dès aujourd'hui.
+
+**Trois actions, dans l'ordre** (porteur) :
+1. **Les trois requêtes SQL** (`docs/17` §6) — encours, nombre de vendeurs,
+   ancienneté. Tout le reste en dépend.
+2. **Régler les vendeurs à la main** — virement MonCash direct, un par un,
+   contre reçu. L'absence de route de décaissement n'est pas une impossibilité
+   de payer, c'est une impossibilité de payer *automatiquement*.
+3. **Décider si l'accumulation s'arrête** — encours faible et récent : apurer,
+   livrer la sortie, continuer. Significatif ou ancien : suspendre les
+   nouvelles commandes créditrices. **Ne pas laisser le compteur tourner
+   pendant que le dossier circule.**
+
+Enjeu non juridique de même poids : dans un marché où le commerce se fait sur
+WhatsApp, **un seul vendeur qui écrit « Zabelie kenbe lajan m » coûte plus cher
+que n'importe quelle sanction.**
+
+**Le chantier 0 précède le chantier A.** Contenu : route de décaissement,
+interface vendeur, seuil minimum en config, journalisation en ledger, et
+**réconciliation entre le registre interne et le solde réel du compte marchand
+MonCash**. → Plan détaillé : **`docs/19-CHANTIER-0-RETRAIT-VENDEUR.md`**.
+
+---
+
 ## 0. ⛔ PRÉALABLE BLOQUANT — avis juridique
 
 **Aucun chantier ne démarre, y compris le rebrand, avant réception d'un avis
@@ -316,8 +344,9 @@ requête documenté.
 
 ## 11. MÉTHODE
 
-**Ordre** : `A → B → C → D → E → F`, un chantier à la fois — **après levée du
-§0**.
+**Ordre** : `0 → A → B → C → D → E → F`, un chantier à la fois.
+Le **chantier 0** (voie de sortie vendeur, §0-bis) précède tout ; les chantiers
+A→F attendent en outre la levée du §0 (avis juridique).
 
 **Par chantier** : plan → **stop, `go`** → implémentation + tests → migration
 rédigée non appliquée → **stop, `go`** → revue de diff → **stop, `go`** →
