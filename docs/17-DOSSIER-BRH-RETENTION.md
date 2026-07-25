@@ -256,9 +256,11 @@ Requêtes à exécuter dans l'éditeur SQL Supabase :
 
 ```sql
 -- 1. Encours actuellement détenu pour le compte des vendeurs
-select coalesce(sum(pending_htg), 0)   as en_attente_htg,
-       coalesce(sum(available_htg), 0) as disponible_non_retire_htg,
-       count(*) filter (where pending_htg + available_htg > 0) as vendeurs_concernes
+-- (le solde disponible est `balance_htg` ; `pending_htg` = escrow non maturé)
+select coalesce(sum(balance_htg), 0) as disponible_non_retire_htg,
+       coalesce(sum(pending_htg), 0) as en_attente_htg,
+       coalesce(sum(balance_htg + pending_htg), 0) as du_total_htg,
+       count(*) filter (where balance_htg + pending_htg > 0) as vendeurs_concernes
   from wallets;
 
 -- 2. Ancienneté de la rétention la plus ancienne
