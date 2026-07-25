@@ -25,18 +25,32 @@
    locaux (8.3), artisanat pour la diaspora (15).
 5. L'existant à ne pas détruire : produits digitaux et services (16).
 
-### ⚠️ Tension avec la spec §5 — à trancher
-La spec dit : « **pas de catalogue infini** : le seed couvre
-électronique/accessoires et cosmétique/capillaire ». Ta demande d'aujourd'hui
-couvre tout le catalogue. Les deux se concilient ainsi :
+### ✅ Périmètre d'activation — arbitré (2026-07-24)
 
-> **Définir les 16 départements en base, n'en activer qu'une partie au
-> lancement** (colonne `active`). Un département inactif n'apparaît ni à la
-> publication ni dans les filtres. Ouverture progressive sans migration.
+**Principe retenu** : les 16 départements sont **définis en base**, l'activation
+est partielle (colonne `active`). Un département inactif n'apparaît ni à la
+publication ni dans les filtres. Ouverture progressive **sans migration**.
 
-**Proposition d'activation au lancement** : 1 (Auto/Moto), 2 (Électronique),
-6 (Beauté), 16 (Digital, existant). Les 12 autres définis mais inactifs.
-→ **Dis-moi si tu préfères tout activer.**
+**Vague 1 — activée au lancement**, resserrée à l'intérieur des départements :
+
+| Département | Portée activée | Motif |
+|---|---|---|
+| **1. Auto & Moto** | **4 familles seulement** — filtration · freinage · **huiles & liquides (1.4)** · batteries & delcos | **Pièces d'usure et consommables** : achat répété, ambiguïté de compatibilité faible, poids maîtrisé |
+| **2. Électronique** | 2.1 Téléphones & tablettes · 2.2 Accessoires | Seed prioritaire d'origine |
+| **6. Beauté** | 6.1 Capillaire · 6.2 Soins de la peau | Seed prioritaire d'origine |
+| **16. Digital & Services** | Tel quel | Existant, ne pas casser |
+
+> ⚠️ **Explicitement PAS en vague 1** : carrosserie, vitrage, suspension (1.1),
+> pneus (1.3). Ce sont les **pires cas en fitment et en logistique** — forte
+> ambiguïté de référence et encombrement. Ils viennent après.
+
+**Vague 2 — définis maintenant, activés ensuite** :
+- **2.5 Énergie & électricité** (solaire, inverters, delcos) — le **panier
+  moyen le plus élevé** du marché
+- **15. Artisanat & cadeaux** — le **meilleur argument** pour le rail en devise
+  forte (diaspora)
+
+Les 10 autres départements restent définis et inactifs.
 
 ---
 
@@ -439,13 +453,30 @@ par les vendeurs)*
 
 ## Notes techniques (pour le chantier B, après `go`)
 
-1. **Compatibilité véhicule (dép. 1)** — une pièce auto sans filtre
-   marque/modèle/année est invendable. Cela suppose une table
-   `zabelie_vehicle_fitment` (produit ↔ marque/modèle/années) et un sélecteur
-   dédié. **C'est un sous-chantier à part entière** : je propose de l'isoler et
-   de lancer le département 1 d'abord sans fitment (recherche textuelle
-   « plaquettes Toyota Corolla 2010 »), puis d'ajouter le filtre structuré.
-   → **Décision attendue.**
+1. **Compatibilité véhicule (dép. 1) — ✅ arbitré : la voie du milieu.**
+
+   Ni recherche textuelle seule (taux d'erreur de référence élevé — et **sans
+   COD, l'acheteur a déjà payé** : chaque mauvaise pièce devient un litige de
+   remboursement), ni base véhicules type **TecDoc** (inexistante pour le parc
+   haïtien, hors de proportion ici).
+
+   **Retenu** — champ de compatibilité **structuré et obligatoire** sur
+   l'annonce, saisi par le vendeur :
+   ```
+   compatibilite: [{ marque, modele, annee_debut, annee_fin }, …]
+   ```
+   plus un sélecteur **« mon véhicule »** côté acheteur qui filtre dessus.
+
+   - **Aucune base externe.** Liste curée de **30 à 40 combinaisons** couvrant
+     le parc réel haïtien : **Toyota, Nissan, Hyundai, Suzuki** (auto) ·
+     **Haojue, Bajaj, Sanya, TVS** (moto).
+   - Capte l'essentiel de la valeur pour une fraction du coût ; la structure
+     permet d'ajouter un fitment complet plus tard **sans migration
+     destructive**.
+
+   ⚠️ **Corollaire impératif** : la **politique de retour sur pièces** doit être
+   écrite **AVANT** l'ouverture du département — pas après. Prérequis bloquant,
+   pas une finition.
 2. **Variantes** — surtout dép. 3, 4 (taille/couleur), 6 (contenance),
    2 (capacité). Le modèle de variantes de §5 les couvre.
 3. **Produits périssables** (8.1, 9.1) — incompatibles avec un délai de
@@ -465,11 +496,17 @@ par les vendeurs)*
 
 ---
 
-## Ce que j'attends pour transformer ceci en migration
+## Ce qu'il reste à obtenir avant la migration de seed
 
-1. **Validation de la liste** — départements à retirer, à ajouter, à renommer.
-2. **Périmètre d'activation au lancement** (proposition : 1, 2, 6, 16).
-3. **Fitment véhicule** (note 1) : avec ou sans, au lancement ?
-4. **Périssables** (note 3) : dép. 9 activé ou non ?
-5. **Relecture Kreyòl** par un locuteur natif — ou ton accord pour publier avec
-   la mention « traduction à valider », comme le reste de l'i18n.
+| # | Point | État |
+|---|---|---|
+| 1 | Périmètre d'activation | ✅ **Arbitré** — vague 1 / vague 2 ci-dessus |
+| 2 | Fitment véhicule | ✅ **Arbitré** — champ structuré + liste curée |
+| 3 | Validation de la liste des 16 départements | ❓ Retraits / ajouts / renommages éventuels |
+| 4 | **Politique de retour sur pièces** | ⛔ **BLOQUANT** — prérequis à l'ouverture du dép. 1 |
+| 5 | Périssables (dép. 9) | ⏸️ Sans objet en vague 1 (département inactif) |
+| 6 | Relecture Kreyòl par un locuteur natif | ❓ Ou accord pour publier avec la mention « traduction à valider », comme le reste de l'i18n |
+
+⛔ **Rappel de gel** : cette migration de seed ne sera pas écrite avant la levée
+du préalable juridique (`docs/17-DOSSIER-BRH-RETENTION.md`), qui bloque
+l'ensemble des chantiers.
