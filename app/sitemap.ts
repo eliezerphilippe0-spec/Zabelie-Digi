@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getPublishedProducts } from "@/lib/products";
+import { getProductsForSitemap } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Correctif audit : un incident Supabase transitoire ne doit pas faire
   // échouer le sitemap entier (500 sur chaque crawl) — les routes statiques
   // restent utiles même sans les routes produit/créateur ce coup-ci.
-  const products = await getPublishedProducts().catch(() => []);
+  const products = await getProductsForSitemap().catch(() => []);
 
   const productRoutes: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${base}/produit/${p.slug}`,
