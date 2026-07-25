@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { ProfileForm } from "@/components/profile-form";
 import { AccountActions } from "@/components/account-actions";
+import { PayoutRequest } from "@/components/payout-request";
 import {
   ZabelieCouponManager,
   type CouponItem,
@@ -108,6 +109,7 @@ export default async function DashboardPage() {
 
   let balance = 0;
   let pending = 0;
+  let hasPendingPayout = false;
   let netTotal = 0;
   let nextMaturity: string | null = null;
   let products: ProductRow[] = [];
@@ -131,6 +133,19 @@ export default async function DashboardPage() {
       .maybeSingle();
     balance = wallet?.balance_htg ?? 0;
     pending = wallet?.pending_htg ?? 0;
+
+    if (wallet?.id) {
+      // Une demande de retrait ouverte bloque les suivantes (0034) : on le dit
+      // plutôt que de laisser le vendeur se heurter à un refus.
+      const { data: openPayout } = await admin
+        .from("payouts")
+        .select("id")
+        .eq("wallet_id", wallet.id)
+        .in("status", ["requested", "processing"])
+        .limit(1)
+        .maybeSingle();
+      hasPendingPayout = Boolean(openPayout);
+    }
 
     if (wallet?.id) {
       // « Quand est-ce que l'argent arrive ? » vaut plus que la règle J+7.
@@ -235,11 +250,28 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-line bg-surface-brown/50 p-5 text-sm text-mist">
-        Chaque vente confirmée est créditée <strong>en attente</strong> et devient{" "}
-        <strong>disponible 7 jours plus tard</strong> (fenêtre anti-fraude /
-        remboursement). Les retraits du solde disponible arriveront avec la
-        conformité BRH (Vague 2).
+      <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
+        <p className="text-sm text-mist">
+          Chaque vente confirmée est créditée <strong>en attente</strong> et
+          devient <strong>disponible 7 jours plus tard</strong> (fenêtre
+          anti-fraude / remboursement).
+        </p>
+        <PayoutRequest
+          disponibleHtg={balance}
+          hasPending={hasPendingPayout}
+          labels={{
+            open: "Demander un retrait",
+            title: "Demande de retrait",
+            intro: `Disponible : ${formatHTG(balance)}. Le versement est effectué par MonCash après vérification ; vous recevrez la référence du reçu.`,
+            amount: "Montant à retirer (HTG)",
+            submit: "Envoyer la demande",
+            submitting: "Envoi…",
+            cancel: "Annuler",
+            pending: "Une demande de retrait est en cours de traitement. Vous serez réglé par MonCash.",
+            networkError: "Réseau instable — réessayez.",
+            success: "Demande enregistrée. Le montant est réservé en attendant le versement.",
+          }}
+        />
       </div>
 
       {/* Ventes récentes */}

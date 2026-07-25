@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { PayoutForm } from "@/components/payout-form";
+import { PayoutQueue, type PayoutRequestRow } from "@/components/payout-queue";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
@@ -64,18 +65,38 @@ export default async function PaiementsVendeursPage() {
   }
 
   const admin = createAdminClient();
-  const [{ data }, { data: report }] = await Promise.all([
+  const [{ data }, { data: report }, { data: queue }] = await Promise.all([
     admin
       .from("zabelie_seller_balances")
       .select("*")
       .order("du_total_htg", { ascending: false }),
     admin.rpc("zabelie_solvency_report"),
+    // Demandes de retrait ouvertes (lot 0.b) : à traiter en priorité — un
+    // vendeur qui a demandé son argent attend une réponse.
+    admin
+      .from("payouts")
+      .select("id, amount_htg, created_at, wallets(profiles(display_name))")
+      .in("status", ["requested", "processing"])
+      .order("created_at", { ascending: true }),
   ]);
 
   const rows = (data ?? []) as Row[];
   const coherence = report as
     | { ok: boolean; ecarts: number; ecart_total_htg: number }
     | null;
+
+  const requests: PayoutRequestRow[] = (queue ?? []).map((q) => {
+    const w = (q as { wallets?: unknown }).wallets as
+      | { profiles?: { display_name?: string } | { display_name?: string }[] }
+      | null;
+    const prof = Array.isArray(w?.profiles) ? w?.profiles[0] : w?.profiles;
+    return {
+      id: (q as { id: string }).id,
+      amount_htg: Number((q as { amount_htg: number }).amount_htg),
+      created_at: (q as { created_at: string }).created_at,
+      display_name: prof?.display_name ?? null,
+    };
+  });
   const totalDu = rows.reduce((s, r) => s + Number(r.du_total_htg), 0);
   const totalDispo = rows.reduce((s, r) => s + Number(r.disponible_htg), 0);
   const totalAttente = rows.reduce((s, r) => s + Number(r.en_attente_htg), 0);
@@ -103,6 +124,8 @@ export default async function PaiementsVendeursPage() {
           </p>
         </div>
       )}
+
+      <PayoutQueue rows={requests} />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-brand/40 bg-surface/60 p-5">
