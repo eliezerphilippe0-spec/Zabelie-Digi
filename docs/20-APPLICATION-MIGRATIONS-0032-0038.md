@@ -20,11 +20,48 @@
 laisse passer une survente silencieuse quand la réservation expire pendant le
 paiement. Ne jamais appliquer `0037` sans `0038`.
 
-## Ordre d'application
+## ⚠️ Deux actions ne dépendent PAS de ce lot — à faire AVANT, aujourd'hui
 
-1. **Preview** — appliquer les 7 dans l'ordre, puis dérouler la vérification.
-2. Vérifier que **rien n'a bougé côté argent** (requêtes ci-dessous).
-3. **Production** — même séquence, aux heures creuses.
+Elles sont réalisables sur la production **telle qu'elle est** (`0030`), sans
+merge, sans migration :
+
+1. **Les trois requêtes d'encours** (`docs/17` §6). Lecture seule. La prod
+   contient déjà tout ce qu'il faut pour répondre à « combien » et « depuis
+   quand ». C'est la donnée qui gouverne tout le reste : quelques dizaines de
+   milliers de gourdes sur cinq vendeurs → on apure dans la journée et le
+   dossier change de nature ; montant important ou ancien → la décision de
+   suspendre l'accumulation devient urgente et ne peut pas attendre un merge.
+2. **L'apurement manuel.** Payer les vendeurs par virement MonCash contre reçu
+   ne nécessite **aucun code**. La route de retrait sert à ce que la situation
+   ne se reproduise plus ; elle ne conditionne pas le remboursement de ce qui
+   est **déjà dû**.
+
+## Ordre d'application — application par GROUPES, pas d'un bloc
+
+Sept migrations dont plusieurs sur le money-path : c'est beaucoup pour un seul
+rollback. On applique en deux groupes, avec une vérification entre les deux —
+si quelque chose diverge, on sait lequel des deux l'a causé.
+
+| Groupe | Migrations | Objet |
+|---|---|---|
+| **A** | `0032` · `0033` · `0034` | Chantier 0 — voie de sortie vendeur |
+| **B** | `0035` → `0038` | Catalogue et stock |
+
+1. **Relever `zabelie_solvency_report()`** — impossible avant `0033`, donc
+   relever d'abord les trois requêtes brutes de `docs/17` §6 comme référence.
+2. **Preview — groupe A**, puis vérification (§ ci-dessous).
+3. **Preview — groupe B**, puis vérification.
+4. **Production — groupe A**, vérification, **puis groupe B**, aux heures creuses.
+
+## 🔒 Avant tout déploiement Preview
+
+Vérifier que l'environnement Preview est **protégé par mot de passe** (Vercel →
+Deployment Protection) et en **`noindex`**.
+
+Une URL Vercel qui affiche « Zabelie » avec un formulaire d'inscription vendeur
+fonctionnel circule vite dans un groupe WhatsApp — et on se retrouverait avec
+de **vrais vendeurs sur un environnement de test**, donc de vraies commandes et
+de vrais fonds à démêler.
 
 ## Vérification post-migration
 
@@ -74,9 +111,23 @@ Chaque commande physique **crédite le registre vendeur**. Brancher le checkout
 avant que la voie de sortie ne soit livrée augmenterait mécaniquement l'encours
 détenu sans moyen de le rendre.
 
-→ **`0032`/`0034` (règlements et retraits) doivent être en production AVANT
-l'ouverture aux vendeurs physiques**, pas après. Les appliquer dans le même lot
-suffit ; ne pas appliquer `0036`-`0038` seules.
+→ **Groupe A avant groupe B**, et les deux en production avant l'ouverture aux
+vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
+
+### Séquence complète jusqu'à l'ouverture
+
+| # | Étape | Dépend de |
+|---|---|---|
+| 1 | Trois requêtes d'encours sur la prod | **rien — aujourd'hui** |
+| 2 | Apurement manuel + décision « suspendre ou non » | résultat de 1 |
+| 3 | Fusion de la PR #52 | — |
+| 4 | Preview : groupe A puis groupe B | 3 |
+| 5 | Comparaison `zabelie_solvency_report()` avant/après | 4 |
+| 6 | Production (A puis B), puis domaine sur Vercel | 5 |
+| 7 | UI vendeur livrée, onboarding manuel des premiers vendeurs | 6 |
+| 8 | Ouverture | 7 |
+
+**Le code cesse d'être le chemin critique à l'étape 7.**
 
 ## En cas de problème
 
