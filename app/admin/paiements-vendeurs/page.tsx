@@ -64,12 +64,18 @@ export default async function PaiementsVendeursPage() {
   }
 
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("zabelie_seller_balances")
-    .select("*")
-    .order("du_total_htg", { ascending: false });
+  const [{ data }, { data: report }] = await Promise.all([
+    admin
+      .from("zabelie_seller_balances")
+      .select("*")
+      .order("du_total_htg", { ascending: false }),
+    admin.rpc("zabelie_solvency_report"),
+  ]);
 
   const rows = (data ?? []) as Row[];
+  const coherence = report as
+    | { ok: boolean; ecarts: number; ecart_total_htg: number }
+    | null;
   const totalDu = rows.reduce((s, r) => s + Number(r.du_total_htg), 0);
   const totalDispo = rows.reduce((s, r) => s + Number(r.disponible_htg), 0);
   const totalAttente = rows.reduce((s, r) => s + Number(r.en_attente_htg), 0);
@@ -83,6 +89,20 @@ export default async function PaiementsVendeursPage() {
         enregistré ici, sinon le registre continue d&apos;afficher une dette
         déjà payée.
       </p>
+
+      {coherence && !coherence.ok && (
+        <div className="mt-6 rounded-2xl border border-danger/50 bg-danger/10 p-5">
+          <p className="font-bold text-danger-text">
+            ⚠️ Écart de registre détecté — ne réglez rien avant vérification
+          </p>
+          <p className="mt-1 text-sm text-cloud">
+            {coherence.ecarts} portefeuille(s) présentent un solde qui ne
+            correspond pas au grand livre, pour un total de{" "}
+            {formatHTG(Number(coherence.ecart_total_htg))}. Un solde a bougé
+            hors du grand livre : les montants ci-dessous peuvent être faux.
+          </p>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-brand/40 bg-surface/60 p-5">
