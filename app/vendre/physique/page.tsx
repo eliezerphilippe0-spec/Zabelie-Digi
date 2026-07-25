@@ -1,0 +1,67 @@
+import Link from "next/link";
+import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
+import { PhysicalProductForm } from "@/components/physical-product-form";
+import { getCurrentUser } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/products";
+
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Vendre un produit — Zabelie" };
+
+/**
+ * Chantier B — création d'un produit PHYSIQUE.
+ * C'est aussi l'outil d'onboarding : les premières fiches vendeurs seront
+ * saisies ici, à la main, par le porteur lui-même.
+ */
+export default async function VendrePhysiquePage() {
+  if (!isSupabaseConfigured()) {
+    return (
+      <div className="bg-grain min-h-screen">
+        <SiteNav />
+        <main className="mx-auto max-w-xl px-5 py-16">
+          <h1 className="text-3xl font-black tracking-tight">Vendre un produit</h1>
+          <p className="mt-4 text-sm text-mist">Mode démo — Supabase non configuré.</p>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  const user = await getCurrentUser();
+
+  return (
+    <div className="bg-grain min-h-screen">
+      <SiteNav />
+      <main className="mx-auto max-w-xl px-5 py-16">
+        <h1 className="text-3xl font-black tracking-tight">Vendre un produit</h1>
+        <p className="mt-2 text-sm text-cloud">
+          Photo, prix, quantité — votre produit est en ligne en moins d&apos;une
+          minute. Vous vendez un fichier ou un service ?{" "}
+          <Link href="/vendre" className="underline">
+            C&apos;est par ici
+          </Link>
+          .
+        </p>
+
+        {!user ? (
+          <div className="mt-8 rounded-2xl border border-line bg-surface/60 p-6">
+            <p className="text-sm text-cloud">
+              Connectez-vous pour publier un produit.
+            </p>
+            <Link
+              href="/connexion?suivant=/vendre/physique"
+              className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-ink"
+            >
+              Se connecter
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-8">
+            <PhysicalProductForm />
+          </div>
+        )}
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
