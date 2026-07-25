@@ -3,7 +3,8 @@ import Image from "next/image";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { HeroVisual } from "@/components/hero-visual";
+import { TypeWriter } from "@/components/type-writer";
+import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
@@ -134,28 +135,54 @@ export default async function HomePage() {
     <div className="bg-grain">
       <SiteNav />
 
-      {/* HERO */}
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-20">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div className="text-center lg:text-left">
+      {/* BANDEAU CATÉGORIES — barre claire, texte sombre (style Bloop,
+          décision porteur 2026-07-25). Fonctionne sans JS : simples liens GET
+          vers le catalogue filtré. */}
+      <nav
+        aria-label="Catégories"
+        className="overflow-x-auto border-b border-black/10 bg-cloud"
+      >
+        <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2.5">
+          {PRODUCT_CATEGORIES.map((c) => (
+            <Link
+              key={c}
+              href={`/catalogue?categorie=${encodeURIComponent(c)}`}
+              className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-black/5"
+            >
+              {c}
+            </Link>
+          ))}
+          <Link
+            href="/catalogue"
+            className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-black/5"
+          >
+            {t(lang, "home.all")}
+          </Link>
+        </div>
+      </nav>
+
+      {/* HERO — noir, centré, machine à écrire (style Bloop) */}
+      <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-1.5 text-xs text-mist">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               {t(lang, "home.badge")}
             </span>
 
-            <h1 className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-              {t(lang, "home.h1.a")}{" "}
-              <span className="text-gradient">{t(lang, "home.h1.b")}</span>{" "}
-              {t(lang, "home.h1.c")}{" "}
-              <span className="text-gradient">{t(lang, "home.h1.d")}</span>.
+            <h1 className="mt-8 text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
+              {t(lang, "home.h1.discover")}{" "}
+              <TypeWriter
+                words={["Zabelie", t(lang, "home.tw2"), t(lang, "home.tw3")]}
+              />
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-base text-mist sm:text-lg lg:mx-0">
+            <p className="mx-auto mt-6 max-w-xl text-base text-mist sm:text-lg">
               {t(lang, "home.sub")}
             </p>
 
-            {/* Barre de recherche premium (GET, fonctionne sans JS) */}
-            <form action="/catalogue" className="mx-auto mt-8 flex max-w-xl gap-2 lg:mx-0">
+            {/* Barre de recherche (GET, fonctionne sans JS) */}
+            <form action="/catalogue" className="mx-auto mt-9 flex max-w-xl gap-2">
               <input
                 name="q"
                 placeholder={t(lang, "catalog.search.ph")}
@@ -169,7 +196,7 @@ export default async function HomePage() {
               </button>
             </form>
 
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/vendre"
                 className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 sm:w-auto"
@@ -183,10 +210,25 @@ export default async function HomePage() {
                 {t(lang, "home.cta.browse")}
               </Link>
             </div>
-          </div>
 
-          <div className="flex justify-center lg:justify-end">
-            <HeroVisual />
+            {/* Badges de confiance (style Bloop) */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              {[
+                [t(lang, "badge.pay"), "M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z"],
+                [t(lang, "badge.delivery"), "M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.8 1.8 0 100-3.6A1.8 1.8 0 007 18zm11 0a1.8 1.8 0 100-3.6 1.8 1.8 0 000 3.6z"],
+                [t(lang, "badge.quality"), "M12 2a5 5 0 015 5c0 1.7-.8 3.2-2.1 4.1L16 22l-4-2.5L8 22l1.1-10.9A5 5 0 0112 2z"],
+              ].map(([label, d]) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-2 text-sm text-cloud"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-cloud" strokeWidth="1.6">
+                    <path d={d} />
+                  </svg>
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 

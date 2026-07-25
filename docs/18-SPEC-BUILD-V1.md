@@ -106,10 +106,17 @@ Registre comptable, pas instrument de paiement · aucun cash-in, cash-out ou
 P2P · **aucune rétention pour compte de tiers sans validation juridique
 écrite** → **voir §0 : cette règle est actuellement en défaut.**
 
-### 2.5 Design system
-Dégradé `#2b3050` → `#4a2731` → `#17123a` · rampe `#f5934f`/`#f26a21`/`#fdb868`
-· Manrope 800 + Inter · source `app/zabelie-theme.css` · WCAG AA 4.5:1.
-✅ **Déjà conforme — rien à faire.**
+### 2.5 Design system — RÉVISÉ (décision porteur 2026-07-25)
+**Fond noir, écriture blanche** (référence : bloopci.com) : fonds
+`#0a0a0a`/`#060606`/`#000000`, surfaces gris sombre neutres, texte `#ffffff`.
+La rampe orange `#f5934f`/`#f26a21`/`#fdb868` est **conservée** comme accent
+(CTA, highlights). Manrope 800 + Inter inchangés · source unique
+`app/zabelie-theme.css` · WCAG AA 4.5:1 (vérifié `scripts/zabelie-contrast.mjs`
+après bascule : toutes les paires utilisées passent, blanc sur noir à 12-13:1 ;
+les 7 paires latentes documentées restent latentes).
+Accueil : bandeau catégories clair + hero centré à effet de frappe + badges de
+confiance. *Cette décision remplace le dégradé indigo/marron de la spec
+initiale.*
 
 ---
 
