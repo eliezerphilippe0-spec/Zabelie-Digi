@@ -6,6 +6,7 @@ import { formatHTG } from "@/lib/sample-data";
 import { getProductView } from "@/lib/products";
 import { getProductReviews } from "@/lib/reviews";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
+import { getPhysicalView } from "@/lib/products-physical";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
@@ -65,9 +66,10 @@ export default async function ProductPage({
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
   if (!product) notFound();
 
-  const reviews = product.creatorId
-    ? await getProductReviews(product.id)
-    : [];
+  const [reviews, physical] = await Promise.all([
+    product.creatorId ? getProductReviews(product.id) : Promise.resolve([]),
+    getPhysicalView(product.id),
+  ]);
 
   return (
     <div className="bg-grain min-h-screen">
@@ -180,6 +182,14 @@ export default async function ProductPage({
             <div className="mt-5" id="acheter">
               <BuyButton
                 productId={product.id}
+                variants={physical?.variants}
+                stockLabels={{
+                  chooseVariant: "Choisir",
+                  outOfStock: "Rupture de stock",
+                  lastUnits: "Plus que {n} en stock",
+                  inStock: "{n} en stock",
+                  variantOut: "Indisponible",
+                }}
                 options={buildBuyOptions(lang, product.priceHTG)}
                 othersLabel={t(lang, "pay.other")}
                 loadingLabel={t(lang, "pay.redirect")}
@@ -205,7 +215,31 @@ export default async function ProductPage({
           <ul className="mt-6 space-y-2 text-sm text-mist">
             <li>{t(lang, "product.secure")}</li>
             <li>
-              {product.kind === "service"
+              {/* Compatibilité véhicule — décisif sur une pièce détachée :
+              l'acheteur a déjà payé quand il découvre l'erreur de référence. */}
+          {physical && physical.fitment.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
+              <p className="text-sm font-semibold">Compatible avec</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {physical.fitment.map((f, i) => (
+                  <li
+                    key={i}
+                    className="rounded-full border border-line px-3 py-1 text-xs text-cloud"
+                  >
+                    {f.kind === "moto" ? "🏍 " : "🚗 "}
+                    {f.make} {f.model} · {f.yearStart}
+                    {f.yearEnd ? `–${f.yearEnd}` : "+"}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-mist">
+                Vérifiez votre modèle avant d&apos;acheter. En cas de doute,
+                contactez le vendeur.
+              </p>
+            </div>
+          )}
+
+          {product.kind === "service"
                 ? t(lang, "product.service")
                 : t(lang, "product.file")}
             </li>

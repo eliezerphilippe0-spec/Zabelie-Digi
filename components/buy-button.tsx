@@ -14,6 +14,22 @@ export type ErrorLabels = {
   provider: string; // code provider_unavailable renvoyé par l'API (BL-114)
 };
 
+/** Variante d'un produit physique (chantier B). */
+export type VariantChoice = {
+  id: string;
+  label: string | null;
+  priceHTG: number;
+  available: number;
+};
+
+export type StockLabels = {
+  chooseVariant: string;
+  outOfStock: string;
+  lastUnits: string;   // contient {n}
+  inStock: string;     // contient {n}
+  variantOut: string;
+};
+
 export type CouponLabels = {
   have: string;
   placeholder: string;
@@ -34,6 +50,8 @@ const fmtHtg = (n: number) => `${new Intl.NumberFormat("fr-HT").format(n)} HTG`;
 export function BuyButton({
   productId,
   options,
+  variants,
+  stockLabels,
   othersLabel,
   loadingLabel = "Redirection…",
   coupon,
@@ -41,6 +59,9 @@ export function BuyButton({
 }: {
   productId: string;
   options: BuyOption[];
+  /** Variantes physiques. Absent = produit digital, parcours inchangé. */
+  variants?: VariantChoice[];
+  stockLabels?: StockLabels;
   /** Petit titre au-dessus des rails secondaires (ex. « Diaspora ? … »). */
   othersLabel?: string;
   loadingLabel?: string;
@@ -57,6 +78,14 @@ export function BuyButton({
   const [applied, setApplied] = useState<{ percent: number; priceHtg: number } | null>(null);
   const [couponError, setCouponError] = useState(false);
   const [checking, setChecking] = useState(false);
+  // Première variante EN STOCK par défaut : l'acheteur n'a rien à faire si le
+  // produit n'a qu'une déclinaison disponible.
+  const [variantId, setVariantId] = useState<string | null>(
+    () => variants?.find((v) => v.available > 0)?.id ?? variants?.[0]?.id ?? null
+  );
+  const selected = variants?.find((v) => v.id === variantId) ?? null;
+  const soldOut = Boolean(variants && variants.every((v) => v.available <= 0));
+  const selectedOut = Boolean(selected && selected.available <= 0);
 
   async function applyCoupon() {
     if (!code.trim()) return;
@@ -91,6 +120,10 @@ export function BuyButton({
         body: JSON.stringify({
           productId,
           rail,
+          // Produit physique : la variante décide du stock réservé. Le serveur
+          // revérifie tout — c'est lui qui refuse si l'unité est partie.
+          variantId: variantId ?? undefined,
+          quantity: variantId ? 1 : undefined,
           // Le code n'est transmis que s'il a été validé (le serveur revalide
           // et consomme atomiquement — la vérité du prix reste en base).
           couponCode: applied ? code : undefined,
@@ -136,8 +169,73 @@ export function BuyButton({
   const [primary, ...others] = options;
   const busy = loadingRail !== null;
 
+  const stockBadge = (n: number) => {
+    if (!stockLabels) return null;
+    if (n <= 0) return { text: stockLabels.outOfStock, tone: "text-danger-text" };
+    if (n <= 3)
+      return {
+        text: stockLabels.lastUnits.replace("{n}", String(n)),
+        tone: "text-warning-text",
+      };
+    return {
+      text: stockLabels.inStock.replace("{n}", String(n)),
+      tone: "text-success-text",
+    };
+  };
+
   return (
     <div>
+      {/* ── Variantes (produit physique) ───────────────────────────────── */}
+      {variants && variants.length > 0 && (
+        <div className="mb-4">
+          {/* Sélecteur seulement s'il y a un vrai choix : une variante
+              implicite (filtre à huile) n'affiche que l'état du stock. */}
+          {(variants.length > 1 || variants[0].label) && stockLabels && (
+            <>
+              <p className="mb-2 text-sm font-semibold text-cloud">
+                {stockLabels.chooseVariant}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const out = v.available <= 0;
+                  const active = v.id === variantId;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      disabled={out}
+                      onClick={() => setVariantId(v.id)}
+                      className={`rounded-xl border px-3 py-2 text-sm transition ${
+                        active
+                          ? "border-brand bg-brand/10 text-cloud"
+                          : "border-line text-mist hover:border-brand/50"
+                      } ${out ? "cursor-not-allowed line-through opacity-50" : ""}`}
+                    >
+                      {v.label ?? "Standard"}
+                      <span className="ml-2 text-xs opacity-80">
+                        {fmtHtg(v.priceHTG)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* État du stock — toujours visible : un catalogue fantôme détruit
+              la confiance plus vite qu'une rupture annoncée. */}
+          {selected &&
+            (() => {
+              const badge = stockBadge(selected.available);
+              return badge ? (
+                <p className={`mt-2 text-sm font-semibold ${badge.tone}`}>
+                  {badge.text}
+                </p>
+              ) : null;
+            })()}
+        </div>
+      )}
+
       {/* Code promo (V-13) */}
       {coupon && !applied && !showCoupon && (
         <button
@@ -184,10 +282,14 @@ export function BuyButton({
 
       <button
         onClick={() => handleBuy(primary.rail)}
-        disabled={busy}
+        disabled={busy || soldOut || selectedOut}
         className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
       >
-        {loadingRail === primary.rail ? loadingLabel : primary.label}
+        {soldOut || selectedOut
+          ? (stockLabels?.variantOut ?? "Indisponible")
+          : loadingRail === primary.rail
+            ? loadingLabel
+            : primary.label}
       </button>
 
       {others.length > 0 && (
@@ -200,7 +302,7 @@ export function BuyButton({
               <button
                 key={o.rail}
                 onClick={() => handleBuy(o.rail)}
-                disabled={busy}
+                disabled={busy || soldOut || selectedOut}
                 className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
               >
                 {loadingRail === o.rail ? loadingLabel : o.label}
