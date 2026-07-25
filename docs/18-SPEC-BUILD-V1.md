@@ -135,9 +135,9 @@ ledger append-only, RLS, triple vérification des montants, 34 tests et Stripe
 intégré — des mois de travail. Une taxonomie et des fiches produits se refont
 en semaines.
 
-→ **Sauf si le projet « Zabelie 1 » compte des vendeurs réels et des
-transactions**, ce repo devient **Zabelie**.
-⚠️ *Point encore ouvert : le porteur doit confirmer l'état du projet 1.*
+→ **Tranché le 2026-07-24 : ce repo devient Zabelie.** `CLAUDE.md` a été
+réécrit en premier commit du chantier ; sa règle d'indépendance vis-à-vis d'un
+« projet 1 » est caduque.
 
 **Trois noms circulent** : `uniondigitale` (repo), « Zabelie Digi » (code),
 « Zabelie » (cible). **Un seul doit survivre : `Zabelie`.** Le renommage du

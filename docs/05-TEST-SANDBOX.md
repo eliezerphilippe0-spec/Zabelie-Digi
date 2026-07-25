@@ -1,4 +1,4 @@
-# Zabelie Digi — Checklist de test sandbox (chemin de l'argent)
+# Zabelie — Checklist de test sandbox (chemin de l'argent)
 
 But : dérouler un paiement de bout en bout en **sandbox MonCash** et vérifier, à
 chaque étape, l'état réel en base. Toutes les requêtes SQL ci-dessous sont en

@@ -1,4 +1,4 @@
-# Zabelie Digi — Analyse concurrentielle : Chariow
+# Zabelie — Analyse concurrentielle : Chariow
 
 > ⚠️ chariow.com bloque la consultation automatisée (403) : analyse fondée sur
 > le modèle public connu de Chariow, **à valider par navigation manuelle**.
@@ -13,7 +13,7 @@ vendeur **apporte son propre trafic** (WhatsApp, Instagram, TikTok).
 
 ## Forces à absorber
 
-| Force | Réponse Zabelie Digi |
+| Force | Réponse Zabelie |
 |---|---|
 | **Vendre par lien** (boutique partageable) | ✅ **Construit** : boutons « Partager sur WhatsApp » + « Copier le lien » sur chaque produit ET chaque boutique créateur (`/createur/[id]`). WhatsApp = canal n°1 en Haïti. |
 | Checkout simple, livraison auto | ✅ Déjà en place (MonCash → URL signée). |
@@ -44,6 +44,6 @@ vendeur **apporte son propre trafic** (WhatsApp, Instagram, TikTok).
 
 ## Règle de position
 
-Zabelie Digi = **la boutique en un lien de Chariow** + **la découverte d'une
+Zabelie = **la boutique en un lien de Chariow** + **la découverte d'une
 marketplace** + **la confiance instrumentée (avis vérifiés + escrow)** — le tout
 sur les rails de paiement haïtiens.

@@ -1,4 +1,4 @@
-# Zabelie Digi — Politique des secrets (clés API, mots de passe, tokens)
+# Zabelie — Politique des secrets (clés API, mots de passe, tokens)
 
 > Règle d'or, sans exception : **AUCUNE clé API, aucun secret, dans le code,
 > dans le dépôt Git, ni dans une conversation (chat, e-mail, WhatsApp).**

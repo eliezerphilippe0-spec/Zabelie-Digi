@@ -1,4 +1,4 @@
-# Cashback Zabelie Digi — Garde-fous de conception (référence normative)
+# Cashback Zabelie — Garde-fous de conception (référence normative)
 
 > **Statut** : normatif. Toute évolution du programme de points DOIT respecter
 > les quatre règles ci-dessous. Une PR qui en enfreint une est refusée d'office ;
@@ -35,7 +35,7 @@ corriger AVANT le câblage — pas en urgence sur un système vivant.
 
 **Règle.** Les points ne sont jamais retirables, ni virables vers un compte
 bancaire ou mobile money, ni échangeables contre autre chose qu'une **remise en
-pourcentage** appliquée à un achat sur Zabelie Digi.
+pourcentage** appliquée à un achat sur Zabelie.
 
 **Justification réglementaire.** La monnaie électronique (Circ. 121) suppose
 une **valeur monétaire** stockée puis restituable. Un point qui ne peut devenir

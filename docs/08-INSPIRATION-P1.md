@@ -1,4 +1,4 @@
-# Zabelie Digi — Inspiration ciblée P1 : storefront · checkout · dashboard
+# Zabelie — Inspiration ciblée P1 : storefront · checkout · dashboard
 
 Analyse limitée aux **3 zones en construction** (page produit, checkout,
 dashboard vendeur), cible **marché haïtien** (Android entrée de gamme, 3G).
@@ -60,7 +60,7 @@ Le tripartite **Chariow « Revenus totaux / En attente / Payés »** valide
 exactement notre modèle escrow — c'est le standard du comparable le plus
 proche, on s'y aligne pleinement :
 
-- **Les 3 informations en premier** (ordre justifié Zabelie Digi) :
+- **Les 3 informations en premier** (ordre justifié Zabelie) :
   1. **Disponible** (`balance_htg`) — déjà en place ;
   2. **En attente + date de prochaine maturation** — delta concret : on
      affiche « En attente (J+7) » mais pas QUAND l'argent arrive ; ajouter

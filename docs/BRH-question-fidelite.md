@@ -10,7 +10,7 @@
 
 Bonjour,
 
-Je développe **Zabelie Digi**, une plateforme haïtienne de vente de produits
+Je développe **Zabelie**, une plateforme haïtienne de vente de produits
 digitaux et de revente de recharge téléphonique (Digicel / Natcom, via un
 agrégateur international). Notre positionnement réglementaire est assumé et
 constant : **revendeur télécom et commerçant, jamais émetteur de monnaie
@@ -50,7 +50,7 @@ pour notre statut, ou m'indiquer les conditions à respecter le cas échéant ?
 Je vous remercie par avance pour votre éclairage.
 
 Bien cordialement,
-**Éliezer Philippe** — Zabelie Digi
+**Éliezer Philippe** — Zabelie
 
 ---
 
@@ -84,13 +84,13 @@ La monnaie électronique y est définie comme une **valeur monétaire stockée s
 support électronique, émise contre remise de fonds, et acceptée comme moyen
 de paiement** ([synthèse Altema Jean-Marie](https://altemajeanmarie.com/la-banque-centrale-publie-une-circulaire-sur-la-reglementation-des-services-paiements-electroniques/),
 [BRH](https://www.brh.ht/)). Trois conditions cumulatives — le programme de
-fidélité Zabelie Digi n'en remplit **aucune** :
+fidélité Zabelie n'en remplit **aucune** :
 
-| Condition (monnaie électronique) | Points Zabelie Digi |
+| Condition (monnaie électronique) | Points Zabelie |
 |---|---|
 | Émise **contre remise de fonds** | ❌ Jamais achetés ni achetables — attribués gratuitement en récompense (achat, avis, parrainage) |
 | **Valeur monétaire** stockée | ❌ Aucune valeur en gourdes ; convertibles uniquement en remise **en pourcentage**, plafonnée |
-| Acceptée comme **moyen de paiement** (réseau de tiers) | ❌ Circuit fermé : utilisables uniquement sur Zabelie Digi, non transférables, non remboursables, expirent |
+| Acceptée comme **moyen de paiement** (réseau de tiers) | ❌ Circuit fermé : utilisables uniquement sur Zabelie, non transférables, non remboursables, expirent |
 
 ### 2. Corroboration internationale
 
@@ -120,5 +120,5 @@ fidélité par un commerçant/revendeur » est établie sur le marché haïtien.
 Tout ce qui rapprocherait les points de la monnaie électronique reste
 **interdit par construction** (et doit le rester) : achat de points, valeur
 fixe en gourdes, transfert entre comptes, remboursement en espèces,
-utilisation hors Zabelie Digi. Toute évolution touchant à l'un de ces points
+utilisation hors Zabelie. Toute évolution touchant à l'un de ces points
 rouvre la question réglementaire et exige un avis juridique préalable.

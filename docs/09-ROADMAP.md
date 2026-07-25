@@ -1,4 +1,4 @@
-# Zabelie Digi — Feuille de route (7,5 → 9)
+# Zabelie — Feuille de route (7,5 → 9)
 
 > Priorisée par **effet de levier** : chaque effort va au jalon le plus bas non
 > terminé. Les jalons sont **séquentiels**, pas parallèles.

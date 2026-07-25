@@ -1,7 +1,7 @@
-# Zabelie Digi — Recharge téléphonique (Topup) & conformité BRH
+# Zabelie — Recharge téléphonique (Topup) & conformité BRH
 
 Service **first-party** de revente de recharge Digicel/Natcom (V-11).
-**Principe directeur : Zabelie Digi est un REVENDEUR de recharge télécom,
+**Principe directeur : Zabelie est un REVENDEUR de recharge télécom,
 jamais un émetteur de monnaie électronique** (cadre : Circulaire 121 BRH sur
 les fournisseurs de services de paiement électronique).
 

@@ -1,4 +1,4 @@
-# Rapport de revue — Zabelie Digi — 2026-07-22
+# Rapport de revue — Zabelie — 2026-07-22
 
 **Mode** : CIBLÉ · **Périmètre** : surfaces d'intégration paiement (adapters,
 checkout, confirmation, réconciliation, secrets, migrations) en vue d'ajouter
