@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * Logo Zabelie Digi — monogramme "Z" géométrique (chevrons), rampe
+ * Logo Zabelie — monogramme "Z" géométrique (chevrons), rampe
  * or → orange → brand du thème (SVG inline : les variables CSS des tokens
  * résolvent dans le DOM).
  */
@@ -44,7 +44,7 @@ export function BrandLogo({ className = "" }: { className?: string }) {
     <Link href="/" className={`flex items-center gap-2 ${className}`}>
       <BrandMark size={32} />
       <span className="text-sm font-semibold tracking-tight">
-        Zabelie <span className="text-mist">Digi</span>
+        Zabelie
       </span>
     </Link>
   );

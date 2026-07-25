@@ -19,9 +19,9 @@ const manrope = Manrope({
   display: "swap",
 });
 
-const title = "Zabelie Digi — Produits digitaux & talents haïtiens";
+const title = "Zabelie — La marketplace haïtienne";
 const description =
-  "Vendez vos produits digitaux et vos talents. Paiement mobile money, livraison instantanée. La marketplace digitale haïtienne.";
+  "Achetez et vendez en Haïti : produits, talents, recharge téléphonique. Paiement mobile money, pensé pour la 3G.";
 
 export const metadata: Metadata = {
   title: {
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     description,
     type: "website",
     locale: "fr_FR",
-    siteName: "Zabelie Digi",
+    siteName: "Zabelie",
   },
   twitter: {
     card: "summary_large_image",

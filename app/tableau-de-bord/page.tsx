@@ -14,7 +14,7 @@ import {
 } from "@/components/zabelie-coupon-manager";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Tableau de bord — Zabelie Digi" };
+export const metadata = { title: "Tableau de bord — Zabelie" };
 
 function Shell({
   title,
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
             <strong>
               {new Date(suspension.suspendedAt).toLocaleDateString("fr-HT")}
             </strong>{" "}
-            pour non-respect du règlement de Zabelie Digi.
+            pour non-respect du règlement de Zabelie.
           </p>
           {suspension.reason && (
             <p className="mt-3 text-mist">

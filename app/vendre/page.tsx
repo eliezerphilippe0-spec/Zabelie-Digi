@@ -9,7 +9,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Vendre — Zabelie Digi" };
+export const metadata = { title: "Vendre — Zabelie" };
 
 function Shell({
   children,

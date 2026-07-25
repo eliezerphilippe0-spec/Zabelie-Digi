@@ -2,7 +2,7 @@
   "name": "zabelie-digi",
   "version": "0.1.0",
   "private": true,
-  "description": "Zabelie Digi — marketplace de produits digitaux et talents haïtiens",
+  "description": "Zabelie — marketplace de produits digitaux et talents haïtiens",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

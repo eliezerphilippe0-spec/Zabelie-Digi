@@ -18,8 +18,8 @@ export async function generateMetadata({
   const creator = await getCreator(id);
   return {
     title: creator
-      ? `${creator.displayName} — Zabelie Digi`
-      : "Créateur — Zabelie Digi",
+      ? `${creator.displayName} — Zabelie`
+      : "Créateur — Zabelie",
   };
 }
 

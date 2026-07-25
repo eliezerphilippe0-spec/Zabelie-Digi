@@ -9,7 +9,7 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Règlements vendeurs — Zabelie Digi" };
+export const metadata = { title: "Règlements vendeurs — Zabelie" };
 
 /**
  * Chantier 0, lot 0.a (docs/19) — écran d'APUREMENT.

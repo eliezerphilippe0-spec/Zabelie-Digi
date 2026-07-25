@@ -14,7 +14,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Recharge téléphone — Zabelie Digi" };
+export const metadata = { title: "Recharge téléphone — Zabelie" };
 
 /**
  * Recharge téléphonique Digicel/Natcom (V-11) — service first-party.

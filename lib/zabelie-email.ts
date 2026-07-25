@@ -15,7 +15,7 @@ export async function sendEmail(input: {
 }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
-  const from = process.env.EMAIL_FROM ?? "Zabelie Digi <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM ?? "Zabelie <onboarding@resend.dev>";
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -36,10 +36,10 @@ const wrap = (body: string) => `
 <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
             max-width:520px;margin:0 auto;padding:24px;color:#26141f">
   <p style="font-weight:800;font-size:18px;margin:0 0 16px">
-    <span style="color:#d96a16">Z</span> Zabelie Digi</p>
+    <span style="color:#d96a16">Z</span> Zabelie</p>
   ${body}
   <p style="margin-top:24px;font-size:12px;color:#77636b">
-    Zabelie Digi — makètplas pwodwi dijital ayisyen an.<br>
+    Zabelie — makètplas ayisyen an.<br>
     Ne répondez pas à cet e-mail automatique.</p>
 </div>`;
 

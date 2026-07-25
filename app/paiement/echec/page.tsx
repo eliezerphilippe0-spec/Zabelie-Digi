@@ -3,7 +3,7 @@ import { SiteNav } from "@/components/site-nav";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-export const metadata = { title: "Paiement échoué — Zabelie Digi" };
+export const metadata = { title: "Paiement échoué — Zabelie" };
 
 export default async function EchecPage({
   searchParams,

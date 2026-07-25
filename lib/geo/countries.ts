@@ -1,4 +1,4 @@
-// Zabelie Digi — Référentiel pays (ISO-3166-1 alpha-2 → nom FR).
+// Zabelie — Référentiel pays (ISO-3166-1 alpha-2 → nom FR).
 // Marché ciblé : Haïti. Le sélecteur de profil est centré sur Haïti + la
 // diaspora haïtienne principale. Tout autre code pays reste géré par le
 // dashboard (repli sur le nom du fond de carte mondial, cf. lib/geo/world).

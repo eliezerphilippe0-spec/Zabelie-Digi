@@ -1,4 +1,4 @@
-// Zabelie Digi — Backfill best-effort du pays d'un profil (dashboard /admin/geo).
+// Zabelie — Backfill best-effort du pays d'un profil (dashboard /admin/geo).
 // Server-only : utilise le client service role. Ne JAMAIS exposer au navigateur.
 import type { SupabaseClient } from "@supabase/supabase-js";
 

@@ -63,7 +63,7 @@ export async function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-line py-5 text-center text-xs text-mist">
-        © {new Date().getFullYear()} Zabelie Digi. {t(lang, "footer.rights")}
+        © {new Date().getFullYear()} Zabelie. {t(lang, "footer.rights")}
       </div>
     </footer>
   );

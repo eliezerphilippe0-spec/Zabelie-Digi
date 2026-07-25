@@ -1,4 +1,4 @@
-// Zabelie Digi — Accès partagé au fond de carte monde (Natural Earth 110m,
+// Zabelie — Accès partagé au fond de carte monde (Natural Earth 110m,
 // dégraissé : géométrie arrondie + code ISO-A2 + centroïde précalculé).
 import world from "./world-110m.geo.json";
 

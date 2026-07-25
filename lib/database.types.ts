@@ -1,4 +1,4 @@
-// Types du schéma Zabelie Digi (Vague 1).
+// Types du schéma Zabelie (Vague 1).
 // Reflètent supabase/migrations/0001_schema.sql.
 // À terme, générables via `supabase gen types typescript`.
 

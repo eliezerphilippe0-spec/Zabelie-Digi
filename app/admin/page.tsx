@@ -18,7 +18,7 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Administration — Zabelie Digi" };
+export const metadata = { title: "Administration — Zabelie" };
 
 function Shell({
   title,

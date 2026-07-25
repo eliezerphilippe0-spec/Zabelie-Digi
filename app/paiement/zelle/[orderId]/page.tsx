@@ -11,7 +11,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Paiement Zelle — Zabelie Digi" };
+export const metadata = { title: "Paiement Zelle — Zabelie" };
 
 /**
  * Instructions de paiement Zelle (rail diaspora, semi-manuel — V-10).

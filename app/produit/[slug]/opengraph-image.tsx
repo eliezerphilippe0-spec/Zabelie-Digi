@@ -8,7 +8,7 @@ import { formatHTG } from "@/lib/sample-data";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const alt = "Zabelie Digi — produit";
+export const alt = "Zabelie — produit";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -41,7 +41,7 @@ function Logo() {
         Z
       </div>
       <div style={{ display: "flex", fontSize: 30, fontWeight: 700, color: TEXT }}>
-        Zabelie <span style={{ color: MUTED, marginLeft: 8 }}>Digi</span>
+        Zabelie
       </div>
     </div>
   );
@@ -56,7 +56,7 @@ export default async function Image({
   const product = await getProductView(slug).catch(() => undefined);
 
   // Repli : produit introuvable → carte de marque générique (jamais d'image cassée).
-  const title = product?.title ?? "Zabelie Digi";
+  const title = product?.title ?? "Zabelie";
   const creator = product?.creator ?? "Marketplace digitale haïtienne";
   const price = product ? formatHTG(product.priceHTG) : null;
   const kind =
