@@ -179,7 +179,7 @@ export default async function ProductPage({
                 )}
               </p>
             )}
-            <div className="mt-5" id="acheter">
+            <div className="mt-5">
               <BuyButton
                 productId={product.id}
                 variants={physical?.variants}
