@@ -161,11 +161,28 @@ L'`insert` entier est annulé. Le danger n'est donc pas la duplication — c'est
 que **la réparation est bloquée** : la base reste incomplète, silencieusement,
 pendant que le volet 1 affiche « `0035` présente ».
 
-Les trois `insert` de `0035` portent désormais `on conflict (slug) do nothing`,
-ceux de `0036` `on conflict (key)` et `on conflict (kind, make, model)`.
-Vérifié dans les deux sens : depuis la même base amputée, la reprise ramène
-exactement 16/74/33 avec 4/10/33 actifs, et une troisième application ne change
-plus rien.
+Deuxième correction, car `do nothing` laissait un trou que le comptage ne voit
+pas : une ligne au bon slug mais au contenu divergent (libellé retouché, parent
+changé) était conservée telle quelle — bon NOMBRE de lignes, taxonomie fausse.
+Reproduit : un `label_fr` corrompu survivait au rejeu, et la sonde validait.
+
+Décision (2026-07-26, motivée en tête de `0035`) : les trois `insert` de
+`0035` portent `on conflict (slug) do update` sur **libellés, parent, niveau,
+position** — le seed est la source de vérité de la taxonomie, la réapplication
+converge quel que soit le point de départ. **`active` est préservé** : c'est
+une décision d'exploitation (activation par vagues), un département ouvert à la
+main ne doit pas se refermer parce qu'on a rejoué une migration. Vérifié dans
+les deux sens : le libellé corrompu est réparé, l'activation manuelle survit.
+⚠️ Condition de revue écrite dans le fichier : le jour où une interface admin
+permet de renommer une catégorie, ce `do update` devient destructeur et devra
+céder la place à un contrôle d'empreinte.
+
+`0036` garde `do nothing`, et ce n'est pas une incohérence :
+`zabelie_stock_limits.value` est une **configuration** — `0038` la monte à 120
+par `update`, un `do update` du seed la réinitialiserait à 30 à chaque rejeu.
+Pour les modèles véhicule, la clé de conflit `(kind, make, model)` EST le
+contenu. Vérifié : depuis une base amputée, la reprise ramène exactement
+16/74/33 et 38 modèles, et une application de plus ne change rien.
 
 Relever aussi, dans le même passage, le nombre de lignes des tables du
 money-path (`orders`, `payments`, `wallet_transactions`) : c'est la référence

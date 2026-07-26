@@ -112,6 +112,10 @@ create table zabelie_stock_limits (
 insert into zabelie_stock_limits (key, value, comment) values
   ('reservation_ttl_minutes', 30,
    'Durée de vie d''une réservation non payée. Au-delà, le stock est relibéré. 30 min couvre un paiement MonCash sur 3G lente.')
+-- `do nothing` DÉLIBÉRÉ — ne pas « harmoniser » avec le `do update` de 0035.
+-- La valeur est une CONFIGURATION d'exploitation : 0038 la monte à 120, et un
+-- admin peut l'ajuster. Un `do update` ici réinitialiserait 120 → 30 à chaque
+-- rejeu du seed — exactement le genre d'écrasement silencieux qu'on chasse.
 on conflict (key) do nothing;
 alter table zabelie_stock_limits enable row level security;
 revoke all on zabelie_stock_limits from anon, authenticated;
@@ -377,4 +381,7 @@ insert into zabelie_vehicle_models (kind, make, model, position) values
   ('moto','TVS','Star City',370),   ('moto','TVS','Apache',380),
   ('moto','Honda','CG125',390),     ('moto','Yamaha','YBR125',400),
   ('moto','Suzuki','GN125',410)
+-- `do nothing` suffit ici : la clé de conflit (kind, make, model) EST le
+-- contenu — il ne reste que `position` (cosmétique) et `active` (décision
+-- d'exploitation, comme 0035) à pouvoir diverger.
 on conflict (kind, make, model) do nothing;

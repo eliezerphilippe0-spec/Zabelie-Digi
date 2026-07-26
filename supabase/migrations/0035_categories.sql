@@ -1,9 +1,34 @@
 -- ============================================================================
--- SEED IDEMPOTENT : les trois `insert` portent `on conflict (slug) do nothing`.
+-- SEED IDEMPOTENT ET CONVERGENT — décision 2026-07-26, à relire avant de la
+-- changer.
+--
 -- Les migrations sont appliquées À LA MAIN dans l'éditeur SQL : un script
--- interrompu à mi-course laisse la table créée et le seed incomplet. Sans cette
--- clause, la reprise dupliquerait la taxonomie — et une sonde qui ne teste que
--- l'existence des OBJETS verrait « 0035 présente » sans rien remarquer.
+-- interrompu laisse la table créée et le seed incomplet. Sans clause de
+-- conflit, la reprise échouait sur `duplicate key ... (slug)` et ANNULAIT
+-- l'insert entier — la base restait incomplète en silence.
+--
+-- `do nothing` réparait ce cas mais en laissait un autre ouvert : une ligne
+-- présente avec le bon slug mais un contenu divergent (libellé retouché,
+-- parent changé) était conservée telle quelle. On obtenait le bon NOMBRE de
+-- lignes avec une taxonomie fausse — et compter des lignes ne vérifie pas
+-- leur contenu.
+--
+-- Retenu : `do update`, mais PAS sur toutes les colonnes.
+--
+--   • Libellés, parent, niveau, position → ÉCRASÉS. Le seed est la source de
+--     vérité de la taxonomie : la réapplication converge vers l'état voulu
+--     quel que soit le point de départ.
+--   • `active` → PRÉSERVÉ. L'activation se fait par vagues et c'est une
+--     décision d'EXPLOITATION, pas de schéma. Un département ouvert à la main
+--     ne doit pas se refermer parce qu'on a rejoué une migration. Les lignes
+--     nouvellement insérées prennent bien la valeur du seed.
+--
+-- ⚠️ CONDITION DE REVUE : le jour où une interface admin permet de renommer
+-- une catégorie, `do update` sur les libellés devient destructeur — il
+-- écraserait la retouche. Il faudra alors basculer sur un contrôle de contenu
+-- (empreinte sur slug‖libellés‖parent comparée à une valeur attendue) plutôt
+-- que sur une écriture. Tant qu'aucune interface ne permet cette édition, la
+-- convergence est sans risque et plus simple.
 -- ============================================================================
 -- 0035 — Chantier B : taxonomie catalogue (arbre 3 niveaux, KR/FR/EN)
 -- ============================================================================
@@ -103,7 +128,14 @@ insert into zabelie_categories (slug, level, label_kr, label_fr, label_en, activ
   ('timoun-bebe',     1, 'Timoun & Bebe',      'Bébé & enfants',         'Baby & kids',           false, 140),
   ('atizana-kado',    1, 'Atizana & Kado',     'Artisanat & cadeaux',    'Crafts & gifts',        false, 150),
   ('dijital-sevis',   1, 'Dijital & Sèvis',    'Digital & services',     'Digital & services',    true,  160)
-on conflict (slug) do nothing;
+on conflict (slug) do update
+   set label_kr  = excluded.label_kr,
+       label_fr  = excluded.label_fr,
+       label_en  = excluded.label_en,
+       parent_id = excluded.parent_id,
+       level     = excluded.level,
+       position  = excluded.position;
+       -- `active` volontairement absent : décision d'exploitation, cf. en-tête.
 
 -- Catégories (niveau 2) — complet pour les 16 départements.
 insert into zabelie_categories (parent_id, slug, level, label_kr, label_fr, label_en, active, position)
@@ -201,7 +233,14 @@ from (values
   ('dijital-sevis','rechaj-telefon','Rechaj telefòn','Recharge téléphone','Mobile top-up',true,30)
 ) as v(parent_slug, slug, kr, fr, en, active, pos)
 join zabelie_categories p on p.slug = v.parent_slug and p.level = 1
-on conflict (slug) do nothing;
+on conflict (slug) do update
+   set label_kr  = excluded.label_kr,
+       label_fr  = excluded.label_fr,
+       label_en  = excluded.label_en,
+       parent_id = excluded.parent_id,
+       level     = excluded.level,
+       position  = excluded.position;
+       -- `active` volontairement absent : décision d'exploitation, cf. en-tête.
 
 -- ═══════════ SEED — niveau 3, branches ACTIVES en vague 1 uniquement ═══════
 
@@ -248,4 +287,11 @@ from (values
   ('swen-po','bè-luil-natirèl','Bè & luil natirèl','Beurres et huiles naturelles (karité, coco, ricin)','Natural butters & oils',50)
 ) as v(parent_slug, slug, kr, fr, en, pos)
 join zabelie_categories p on p.slug = v.parent_slug and p.level = 2
-on conflict (slug) do nothing;
+on conflict (slug) do update
+   set label_kr  = excluded.label_kr,
+       label_fr  = excluded.label_fr,
+       label_en  = excluded.label_en,
+       parent_id = excluded.parent_id,
+       level     = excluded.level,
+       position  = excluded.position;
+       -- `active` volontairement absent : décision d'exploitation, cf. en-tête.
