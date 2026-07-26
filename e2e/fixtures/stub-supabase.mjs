@@ -74,6 +74,12 @@ const server = createServer((req, res) => {
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
 
+  // RPC : expiration des réservations. Renvoie 0 — le cas « rien à libérer »,
+  // celui où le journal d'exécution est justement indispensable.
+  if (url.pathname === "/rest/v1/rpc/zabelie_expire_stock_reservations") {
+    return send(200, 0);
+  }
+
   if (url.pathname === "/__ecritures") return send(200, ecritures);
   if (url.pathname === "/__sante") return send(200, { ok: true });
 

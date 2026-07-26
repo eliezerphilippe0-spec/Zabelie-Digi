@@ -110,15 +110,82 @@ order by m.num, m.objet;
 **Comment lire le résultat.** Les lignes `└` d'une même migration doivent être
 **toutes présentes ou toutes absentes** : un mélange signale une migration
 passée à moitié — le cas typique d'un script interrompu dans l'éditeur SQL — et
-il faut le comprendre avant d'empiler quoi que ce soit. `0035` et `0036`
-doivent être **absentes** : si l'une apparaît, B1 est déjà là, en tout ou
-partie, et la réappliquer n'est pas anodin (`alter type … add value` est
-idempotent grâce à `if not exists`, mais les `insert` de seed ne le sont pas et
-dupliqueraient la taxonomie).
+il faut le comprendre avant d'empiler quoi que ce soit.
+
+### Volet 2 — les LIGNES, si les tables existent
+
+Le volet 1 interroge des **objets** : types, tables, fonctions. Le seed insère
+des **lignes**. Une base où `zabelie_categories` existe avec un seed interrompu
+à mi-course passe le volet 1 comme « `0035` présente » sans que rien ne le
+signale. **Si le volet 1 dit qu'une table de B1 existe, exécuter aussi :**
+
+```sql
+with attendu(quoi, n) as (
+  values ('zabelie_categories niveau 1', 16),
+         ('zabelie_categories niveau 2', 74),
+         ('zabelie_categories niveau 3', 33),
+         ('zabelie_vehicle_models',      38),
+         ('zabelie_stock_limits',         1)
+), reel(quoi, n) as (
+  select 'zabelie_categories niveau '||level, count(*)::int
+    from zabelie_categories group by level
+  union all select 'zabelie_vehicle_models', count(*)::int from zabelie_vehicle_models
+  union all select 'zabelie_stock_limits',   count(*)::int from zabelie_stock_limits
+)
+select a.quoi, coalesce(r.n, 0) as lignes, a.n as attendu,
+       case when coalesce(r.n, 0) = a.n then 'ok'
+            when coalesce(r.n, 0) = 0   then '⚠ ABSENT'
+            when coalesce(r.n, 0) < a.n then '⚠ SEED INCOMPLET'
+            else '⚠ EXCÉDENT — seed appliqué deux fois ?' end as verdict
+  from attendu a left join reel r on r.quoi = a.quoi
+ order by a.quoi;
+```
+
+La requête part de la **liste des attendus**, pas des données : un niveau
+entièrement absent produit `0 / ⚠ ABSENT` au lieu de disparaître du résultat.
+Un simple `group by` sur la table l'aurait fait disparaître — première version
+écrite, défaut trouvé en la passant sur ce cas précis.
+
+### Ce qu'une réapplication fait vraiment — vérifié, et ce n'est pas ce qu'on croyait
+
+On a d'abord écrit qu'une réapplication « dupliquerait la taxonomie ». **C'est
+faux** : `zabelie_categories.slug` est `unique`. Reproduit sur une base amputée
+de la moitié de son seed, la reprise avec la version d'origine donne :
+
+```
+ERROR: duplicate key value violates unique constraint "zabelie_categories_slug_key"
+DETAIL: Key (slug)=(otomobil-moto) already exists.
+```
+
+L'`insert` entier est annulé. Le danger n'est donc pas la duplication — c'est
+que **la réparation est bloquée** : la base reste incomplète, silencieusement,
+pendant que le volet 1 affiche « `0035` présente ».
+
+Les trois `insert` de `0035` portent désormais `on conflict (slug) do nothing`,
+ceux de `0036` `on conflict (key)` et `on conflict (kind, make, model)`.
+Vérifié dans les deux sens : depuis la même base amputée, la reprise ramène
+exactement 16/74/33 avec 4/10/33 actifs, et une troisième application ne change
+plus rien.
 
 Relever aussi, dans le même passage, le nombre de lignes des tables du
 money-path (`orders`, `payments`, `wallet_transactions`) : c'est la référence
 des contrôles 7 à 9.
+
+### Trace à conserver — elle doit survivre à la session
+
+```bash
+# Référence d'AVANT, dans un fichier horodaté, pas à l'écran.
+psql "$DATABASE_URL" -At \
+  -c "select now(), zabelie_solvency_report();" \
+  | tee "ops/solvabilite-avant-B1-$(date -u +%Y%m%dT%H%M%SZ).txt"
+
+# Après application, même commande avec le suffixe -apres-B1.
+```
+
+Noter l'**heure exacte** (UTC) du début et de la fin de l'application dans
+`OPS_TODO.md`. Si quelque chose bouge dans les jours qui suivent, c'est ce qui
+permet de corréler avec les journaux Vercel et Supabase — sans cette heure, on
+compare des impressions.
 
 ### Ce que B1 contient exactement — inventaire des instructions
 
@@ -309,11 +376,21 @@ dans l'autre sens, et **aucun trigger** n'existe sur `zabelie_stock` ni sur
    sérialise la boucle et garde la transaction ouverte. Sans conséquence à
    l'échelle prévue ; à revoir si la file grossit.
 2. **La route exige un secret** (`CRON_SECRET`, ou `RECONCILE_SECRET` pour un
-   appel manuel). Si aucune de ces variables n'est définie sur
-   l'environnement, `authorize()` renvoie faux et la route répond 401 : le
-   cron ne fera rien du tout. À vérifier en même temps que le reste — « il ne
-   tourne pas » et « il tourne et ne trouve rien » se ressemblent dans les
-   journaux.
+   appel manuel). Sans variable définie, `authorize()` renvoie faux et la
+   route répond 401 : le cron ne ferait rien du tout.
+
+   Vérifier la variable une fois à la main ne protège pas dans six semaines.
+   La route journalise donc **chaque passage**, y compris celui qui ne libère
+   rien :
+
+   ```
+   [stock/expire] {"at":"…","issue":"termine","liberees":0,"dureeMs":20}
+   [stock/expire] {"at":"…","issue":"non_autorise","secretConfigure":true}
+   ```
+
+   « N'a pas tourné » et « a tourné, rien à libérer » cessent de se
+   ressembler. Même principe que le défaut observable de
+   `lib/product-kind.ts` : **l'absence de signal doit être un signal.**
 
 ### Pourquoi B est coupé en deux (décision porteur, 2026-07-26)
 

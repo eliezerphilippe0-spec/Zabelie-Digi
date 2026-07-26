@@ -119,6 +119,25 @@ une branche de travail n'engage rien — la revue se fait sur la PR, et une
 correction se fait par un commit de plus, pas par un retour arrière. Marquer
 en tête de message les commits qui attendent un arbitrage.
 
+### Un instrument non éprouvé ne prouve rien
+Quatre fois dans le chantier B, l'outil de vérification a menti : des fixtures
+SQL qui encodaient le bug (suite verte confirmant le mensonge), un serveur
+recyclé qui a fait passer une vérification par mutation, un `union all` dont
+toutes les branches partagent l'instantané — « après » relisait l'état d'avant.
+Le motif est constant : **le code de vérification est écrit une fois, sous
+pression, et n'est jamais vérifié lui-même.**
+
+Règle : **toute sonde, tout harnais, tout test de garde doit être passé sur un
+cas connu-positif ET un cas connu-négatif avant qu'on lui fasse confiance.**
+Concrètement — retirer le garde et voir le test échouer ; amputer les données
+et voir la sonde le dire. Un instrument qui n'a jamais échoué n'a pas encore
+démontré qu'il pouvait.
+
+Corollaire d'observabilité : **l'absence de signal doit être un signal.** Une
+branche par défaut journalise ce qu'elle a reçu (`lib/product-kind.ts`) ; un
+cron journalise chaque passage, y compris à zéro (`app/api/stock/expire`).
+Sinon « n'a pas tourné » et « a tourné, rien trouvé » produisent le même vide.
+
 ### `product_kind` — le module est obligatoire
 Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
 vérifié par `tests/product-kind-discipline.test.ts`. Raison : ajouter une

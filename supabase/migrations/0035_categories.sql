@@ -1,4 +1,10 @@
 -- ============================================================================
+-- SEED IDEMPOTENT : les trois `insert` portent `on conflict (slug) do nothing`.
+-- Les migrations sont appliquées À LA MAIN dans l'éditeur SQL : un script
+-- interrompu à mi-course laisse la table créée et le seed incomplet. Sans cette
+-- clause, la reprise dupliquerait la taxonomie — et une sonde qui ne teste que
+-- l'existence des OBJETS verrait « 0035 présente » sans rien remarquer.
+-- ============================================================================
 -- 0035 — Chantier B : taxonomie catalogue (arbre 3 niveaux, KR/FR/EN)
 -- ============================================================================
 -- Référence : docs/16-TAXONOMIE-CATALOGUE.md (16 départements).
@@ -96,7 +102,8 @@ insert into zabelie_categories (slug, level, label_kr, label_fr, label_en, activ
   ('liv-papet',       1, 'Liv & Papèt',        'Livres & papeterie',     'Books & stationery',    false, 130),
   ('timoun-bebe',     1, 'Timoun & Bebe',      'Bébé & enfants',         'Baby & kids',           false, 140),
   ('atizana-kado',    1, 'Atizana & Kado',     'Artisanat & cadeaux',    'Crafts & gifts',        false, 150),
-  ('dijital-sevis',   1, 'Dijital & Sèvis',    'Digital & services',     'Digital & services',    true,  160);
+  ('dijital-sevis',   1, 'Dijital & Sèvis',    'Digital & services',     'Digital & services',    true,  160)
+on conflict (slug) do nothing;
 
 -- Catégories (niveau 2) — complet pour les 16 départements.
 insert into zabelie_categories (parent_id, slug, level, label_kr, label_fr, label_en, active, position)
@@ -193,7 +200,8 @@ from (values
   ('dijital-sevis','sevis-pwofesyonel','Sèvis pwofesyonèl','Services professionnels','Professional services',true,20),
   ('dijital-sevis','rechaj-telefon','Rechaj telefòn','Recharge téléphone','Mobile top-up',true,30)
 ) as v(parent_slug, slug, kr, fr, en, active, pos)
-join zabelie_categories p on p.slug = v.parent_slug and p.level = 1;
+join zabelie_categories p on p.slug = v.parent_slug and p.level = 1
+on conflict (slug) do nothing;
 
 -- ═══════════ SEED — niveau 3, branches ACTIVES en vague 1 uniquement ═══════
 
@@ -239,4 +247,5 @@ from (values
   ('swen-po','pwoteksyon-solè','Pwoteksyon solè','Protections solaires','Sun protection',40),
   ('swen-po','bè-luil-natirèl','Bè & luil natirèl','Beurres et huiles naturelles (karité, coco, ricin)','Natural butters & oils',50)
 ) as v(parent_slug, slug, kr, fr, en, pos)
-join zabelie_categories p on p.slug = v.parent_slug and p.level = 2;
+join zabelie_categories p on p.slug = v.parent_slug and p.level = 2
+on conflict (slug) do nothing;
