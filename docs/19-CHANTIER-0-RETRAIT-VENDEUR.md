@@ -156,8 +156,14 @@ d'ajouter une action vendeur :
   promesse.)
 - **Palliatif : le bouton de retrait** (lot 0.b) — utile immédiatement,
   insuffisant seul.
-- Dépendance du correctif : une API de VERSEMENT MonCash (à confirmer auprès
-  de Digicel — le code actuel ne sait qu'encaisser et vérifier).
+- ⚠️ **La dépendance API ne conditionne PAS la faisabilité.** Le versement
+  sans demande est tenable dès cette semaine, à la main, depuis le compte
+  marchand — il ne tient qu'à la discipline de l'exécuter. L'API de VERSEMENT
+  MonCash (à confirmer auprès de Digicel — le code actuel ne sait qu'encaisser
+  et vérifier) change le **coût et l'échelle**, pas la possibilité. Corollaire
+  pour la communication : la promesse « lajan w ap vin jwenn ou san ou pa
+  bezwen mande » n'attend aucune API — mais ne la prononcer que si la
+  discipline hebdomadaire est réellement engagée.
 
 ## 3 ter. Protocole d'apurement manuel (avant application de 0032)
 
@@ -193,14 +199,19 @@ Puis seulement : chantier A (rebrand), puis B→F.
 
 ---
 
-## 5. Décision attendue du porteur — arrêter ou non l'accumulation
+## 5. Décision — continuer ou suspendre l'accumulation
 
-À trancher **au vu des trois requêtes SQL** du dossier juridique (§6) :
+**Le critère n'est pas la taille de l'écart.** Tant qu'aucune sortie ne
+fonctionne, chaque vente aggrave l'exposition — c'est **l'existence de la
+sortie** qui décide, pas son montant. Les trois requêtes SQL (§6 du dossier)
+disent l'**urgence du décaissement** (qui payer d'abord, en combien de temps),
+pas s'il faut continuer d'encaisser.
 
-| Situation constatée | Conduite proposée |
+| Une sortie fonctionne-t-elle dès aujourd'hui ? (l'apurement manuel discipliné
+du §3 ter compte comme sortie) | Conduite |
 |---|---|
-| Encours **faible et récent** | Apurer · livrer 0.a puis 0.b · **continuer** |
-| Encours **significatif ou ancien** | **Suspendre les nouvelles commandes** qui créditent le registre jusqu'à ce que la voie de sortie existe |
+| **Oui** — les vendeurs sont payés sans demande, à cadence tenue | Continuer d'encaisser |
+| **Non** | **Suspendre les nouvelles commandes** qui créditent le registre, quelle que soit la taille de l'encours |
 
 > **Ne pas laisser le compteur tourner pendant que le dossier circule.**
 

@@ -27,10 +27,10 @@ merge, sans migration :
 
 1. **Les trois requêtes d'encours** (`docs/17` §6). Lecture seule. La prod
    contient déjà tout ce qu'il faut pour répondre à « combien » et « depuis
-   quand ». C'est la donnée qui gouverne tout le reste : quelques dizaines de
-   milliers de gourdes sur cinq vendeurs → on apure dans la journée et le
-   dossier change de nature ; montant important ou ancien → la décision de
-   suspendre l'accumulation devient urgente et ne peut pas attendre un merge.
+   quand ». Ces chiffres disent l'**urgence du décaissement** (qui payer
+   d'abord, en combien de temps) — pas s'il faut continuer d'encaisser :
+   ce second arbitrage dépend de l'**existence d'une sortie qui fonctionne**,
+   pas de la taille de l'écart (`docs/19` §5).
 2. **L'apurement manuel.** Payer les vendeurs par virement MonCash contre reçu
    ne nécessite **aucun code**. La route de retrait sert à ce que la situation
    ne se reproduise plus ; elle ne conditionne pas le remboursement de ce qui
