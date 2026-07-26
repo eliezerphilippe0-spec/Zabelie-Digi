@@ -137,6 +137,49 @@ compte) relève d'une investigation manuelle.
 
 ---
 
+## 3 bis. Le point de fond — le bouton est un palliatif, pas le correctif
+
+L'exposition n'est pas « un bouton manquant » : la plateforme **détient des
+fonds de tiers sans mécanisme de sortie** — exactement le risque Circulaire 121
+que l'architecture évite partout ailleurs (Business sans rétention, wallet en
+registre comptable). Ce module est le seul endroit où le risque a été
+reconstitué, par accident.
+
+La bonne réponse est donc de **réduire la durée de détention**, pas seulement
+d'ajouter une action vendeur :
+
+- **Correctif cible : versement AUTOMATIQUE à maturité** — dès que l'escrow
+  J+7 mature, le net part vers le numéro MonCash du vendeur, sans qu'il ait
+  rien à demander. (« Automatique » peut être un humain chaque lundi au début —
+  l'essentiel est que ça arrive sans demande du vendeur. Ne promettre ce
+  comportement aux vendeurs que s'il est tenable dès la semaine de la
+  promesse.)
+- **Palliatif : le bouton de retrait** (lot 0.b) — utile immédiatement,
+  insuffisant seul.
+- Dépendance du correctif : une API de VERSEMENT MonCash (à confirmer auprès
+  de Digicel — le code actuel ne sait qu'encaisser et vérifier).
+
+## 3 ter. Protocole d'apurement manuel (avant application de 0032)
+
+1. **Payer d'abord, écrire ensuite.** « M sot voye w lajan an, referans X »
+   est incontestable ; « m ap voye w » est une promesse de plus à quelqu'un qui
+   attend déjà. N'écrire qu'aux vendeurs payables le jour même — écrire à
+   douze et en payer trois transforme un problème silencieux en neuf témoins
+   actifs.
+2. **Décomposer le montant** dans chaque message : brut vendu, commission au
+   taux réellement appliqué à chaque vente, net versé — et distinguer la part
+   encore en maturation J+7 s'il y en a une. Un net sans détail se lit comme
+   une retenue supplémentaire.
+3. **Vérifier le numéro MonCash** s'il arrive par le fil de discussion :
+   comparer à celui du dossier, sinon la porte à l'usurpation est ouverte.
+4. **Journal durable dès le premier virement**, une ligne par règlement :
+   `identifiant vendeur · brut · commission · net · horodatage · référence
+   MonCash`. Quand `0032` sera appliquée, la régularisation s'écrit comme des
+   **entrées nouvelles** (`zabelie_record_manual_payout`, une par ligne du
+   journal) — **jamais** comme une correction de soldes : contourner
+   l'append-only pour rattraper l'historique ferait perdre au registre la
+   propriété pour laquelle il existe.
+
 ## 4. Ordre d'exécution proposé
 
 | # | Lot | Effort | Bloquant pour |
