@@ -145,7 +145,11 @@ export default async function HomePage() {
           {PRODUCT_CATEGORIES.map((c) => (
             <Link
               key={c}
-              href={`/catalogue?categorie=${encodeURIComponent(c)}`}
+              // `cat` — c'est le paramètre que /catalogue lit (app/catalogue
+              // /page.tsx). `categorie` était ignoré en silence : le clic
+              // ouvrait le catalogue ENTIER sans jamais dire que le filtre
+              // n'avait pas pris.
+              href={`/catalogue?cat=${encodeURIComponent(c)}`}
               className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-black/5"
             >
               {c}
