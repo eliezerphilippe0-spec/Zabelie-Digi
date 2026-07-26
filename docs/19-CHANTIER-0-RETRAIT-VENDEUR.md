@@ -213,6 +213,23 @@ du §3 ter compte comme sortie) | Conduite |
 | **Oui** — les vendeurs sont payés sans demande, à cadence tenue | Continuer d'encaisser |
 | **Non** | **Suspendre les nouvelles commandes** qui créditent le registre, quelle que soit la taille de l'encours |
 
+**Une intention n'est pas une sortie.** Le projet en a déjà porté une —
+« les retraits arriveront avec la suite » — restée fausse sans que personne
+s'en aperçoive. La sortie existe **à partir du premier versement effectivement
+exécuté, référence à l'appui** ; tant qu'il n'a pas eu lieu, l'état honnête
+est « suspendu ». Le critère ne change pas — c'est le moment où l'on a le
+droit de répondre « oui » qui est fixé.
+
+**Seuil de péremption du manuel — à poser MAINTENANT, pas quand il sera
+atteint.** Le porteur fixe un nombre de vendeurs ou un encours au-delà duquel
+la cadence manuelle n'est plus tenable ; franchi, le versement automatisé
+(§3 bis) cesse d'être une cible et devient un bloquant. Sans ce seuil, le
+palliatif se périme en silence : il ne casse pas d'un coup — on saute une
+semaine chargée, puis deux. C'est exactement ainsi que le premier écart s'est
+installé. *(Valeurs à fixer par le porteur — ordre de grandeur raisonnable :
+au-delà de ~15 vendeurs à payer par semaine ou ~200 000 HTG d'encours, le
+lundi manuel ne tiendra pas.)*
+
 > **Ne pas laisser le compteur tourner pendant que le dossier circule.**
 
 Techniquement, la suspension est simple : la plateforme dispose déjà d'un
