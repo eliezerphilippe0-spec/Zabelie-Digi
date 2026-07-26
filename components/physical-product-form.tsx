@@ -149,7 +149,10 @@ export function PhysicalProductForm() {
           () => undefined
         );
       }
-      router.push(`/produit/${data.slug}`);
+      // La fiche naît en BROUILLON : `/produit/[slug]` ne sert que les
+      // produits publiés et renverrait le vendeur sur un 404 juste après sa
+      // saisie. Le tableau de bord vendeur, lui, liste les brouillons.
+      router.push("/vendre");
     } catch {
       setError("Connexion impossible. Réessayez.");
     } finally {

@@ -227,7 +227,14 @@ export async function POST(req: Request) {
       description,
       price_htg: price,
       kind: "physical",
-      status: "published",
+      // BROUILLON, jamais publié à la création (décision porteur 2026-07-26).
+      // B1 (`0035`/`0036`) sert à SAISIR des fiches, pas à ouvrir la vente :
+      // le stock n'est ni décrémenté ni protégé contre la survente avant B2,
+      // et le flux de commande traite encore un `physical` comme un fichier
+      // (téléchargement proposé, commande jamais marquée livrée). Une fiche
+      // publiée à la saisie serait achetable dans cet état.
+      // La publication redeviendra un geste explicite du porteur.
+      status: "draft",
       category: departmentLabel,
     })
     .select("id, slug")
