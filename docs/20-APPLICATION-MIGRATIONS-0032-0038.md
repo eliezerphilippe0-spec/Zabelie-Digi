@@ -54,6 +54,72 @@ si quelque chose diverge, on sait lequel des deux l'a causé.
 > migrations. Une checklist écrite après coup décrit ce qu'on a observé, pas ce
 > qu'on attendait — elle ne peut plus rien infirmer.
 
+### Étape 0 — relever l'état RÉEL de Preview avant d'appliquer
+
+La répétition locale (Postgres neuf, `0001` → `0036` dans l'ordre) prouve que
+la **séquence est cohérente**. Elle ne prouve rien sur Preview, qui n'est pas
+une base neuve : les migrations y sont appliquées **à la main**, dans l'éditeur
+SQL. Une peut avoir été passée en double, à moitié, hors ordre, ou un objet
+créé directement. Sans point de départ connu, la checklist ci-dessous compare
+des valeurs attendues à une base dont on ignore l'état — elle ne conclut rien.
+
+Il n'existe pas de table de suivi des migrations : on sonde donc les **objets**
+qu'elles créent. À exécuter sur Preview, **avant `0035`** :
+
+```sql
+select m.num, m.objet,
+       case when m.present then 'PRÉSENTE' else 'absente' end as etat
+from (
+  values
+    ('0031', 'table points_limits',
+      to_regclass('public.points_limits') is not null),
+    ('0032', 'colonne payouts.method',
+      exists (select 1 from information_schema.columns
+               where table_name='payouts' and column_name='method')),
+    ('0032', '  └ fonction zabelie_record_manual_payout',
+      exists (select 1 from pg_proc where proname='zabelie_record_manual_payout')),
+    ('0033', 'fonction zabelie_solvency_report',
+      exists (select 1 from pg_proc where proname='zabelie_solvency_report')),
+    ('0034', 'table zabelie_payout_limits',
+      to_regclass('public.zabelie_payout_limits') is not null),
+    ('0034', '  └ fonction zabelie_request_payout',
+      exists (select 1 from pg_proc where proname='zabelie_request_payout')),
+    ('0034', '  └ fonction zabelie_settle_payout',
+      exists (select 1 from pg_proc where proname='zabelie_settle_payout')),
+    ('0034', '  └ fonction zabelie_reject_payout',
+      exists (select 1 from pg_proc where proname='zabelie_reject_payout')),
+    ('0035', 'table zabelie_categories',
+      to_regclass('public.zabelie_categories') is not null),
+    ('0036', 'table zabelie_physical_products',
+      to_regclass('public.zabelie_physical_products') is not null),
+    ('0036', '  └ valeur product_kind = physical',
+      exists (select 1 from pg_enum e join pg_type t on t.oid=e.enumtypid
+               where t.typname='product_kind' and e.enumlabel='physical')),
+    ('0037', 'confirm_payment branché sur le stock',
+      exists (select 1 from pg_proc where proname='confirm_payment'
+                and pg_get_functiondef(oid) like '%zabelie_consume_stock%')),
+    ('0038', 'fonction zabelie_consume_stock_strict',
+      exists (select 1 from pg_proc where proname='zabelie_consume_stock_strict')),
+    ('0040', 'colonne products.in_stock',
+      exists (select 1 from information_schema.columns
+               where table_name='products' and column_name='in_stock'))
+) as m(num, objet, present)
+order by m.num, m.objet;
+```
+
+**Comment lire le résultat.** Les lignes `└` d'une même migration doivent être
+**toutes présentes ou toutes absentes** : un mélange signale une migration
+passée à moitié — le cas typique d'un script interrompu dans l'éditeur SQL — et
+il faut le comprendre avant d'empiler quoi que ce soit. `0035` et `0036`
+doivent être **absentes** : si l'une apparaît, B1 est déjà là, en tout ou
+partie, et la réappliquer n'est pas anodin (`alter type … add value` est
+idempotent grâce à `if not exists`, mais les `insert` de seed ne le sont pas et
+dupliqueraient la taxonomie).
+
+Relever aussi, dans le même passage, le nombre de lignes des tables du
+money-path (`orders`, `payments`, `wallet_transactions`) : c'est la référence
+des contrôles 7 à 9.
+
 ### Ce que B1 contient exactement — inventaire des instructions
 
 `0035` : la table `zabelie_categories`, deux index, une fonction de garde de
@@ -181,12 +247,73 @@ couvre :
 
 - `/api/stock/expire` (cron) appelle `zabelie_expire_stock_reservations`, qui
   n'existe pas aujourd'hui : la route échoue actuellement et se mettra à
-  fonctionner.
+  fonctionner. **Lue et exécutée avant, pas après** — voir §B1-cron.
 - `/api/checkout` appelle `zabelie_reserve_stock` **uniquement si le client
   envoie un `variantId`**. Le checkout digital n'est pas concerné. Aujourd'hui,
   un client qui enverrait un `variantId` fait échouer sa propre commande (la
   fonction n'existe pas) ; après B1 l'appel se résout normalement. B1 referme
   donc ce cas plutôt qu'elle ne l'ouvre.
+
+## §B1-cron — `/api/stock/expire`, examiné avant de le laisser tourner
+
+Cette route est déclarée dans `vercel.json` (`45 13 * * *`). Elle échoue
+aujourd'hui — la fonction n'existe pas — et se mettra à s'exécuter **le
+lendemain de B1**, sans que personne ne l'ait décidé pour elle. Une route qui
+passe de « ne fait rien » à « agit sur le stock » sans avoir jamais tourné se
+regarde pendant que le catalogue est vide, pas après.
+
+### Qu'écrit-elle exactement ?
+
+`zabelie_expire_stock_reservations()` parcourt les réservations `held` dont
+`expires_at` est dépassé et, pour chacune, écrit dans **deux tables et deux
+seulement** :
+
+```sql
+update zabelie_stock  set quantity_reserved  = quantity_reserved  - q,
+                          quantity_available = quantity_available + q  -- total inchangé
+update zabelie_stock_reservations set status = 'released'
+```
+
+**Aucun `delete`.** La formulation « supprime des lignes selon un TTL » est
+inexacte : rien n'est supprimé, un statut est basculé et une quantité est
+déplacée d'une colonne à l'autre. L'invariant de stock est préservé par
+construction — le total ne change pas.
+
+Exécuté sur la répétition B1 : réservation de 2 sur 3 unités → `1 dispo / 2
+réservé / total 3` ; après passage du cron → `3 dispo / 0 réservé / total 3`,
+réservation à `released`, **commande inchangée (`pending`)**, aucune ligne
+créée ni supprimée nulle part.
+
+### Peut-elle atteindre `orders` par la cascade ?
+
+Non, pour une raison structurelle et non par chance :
+
+```
+zabelie_stock_reservations.order_id → orders(id)   ON DELETE CASCADE
+```
+
+La cascade va de la table **référencée** (`orders`) vers la table
+**référençante** (`zabelie_stock_reservations`) : supprimer une commande
+supprime ses réservations. **Jamais l'inverse** — supprimer une réservation
+n'a aucun effet sur `orders`. Et de toute façon le cron ne supprime rien.
+
+Vérifié en base : aucune clé étrangère `zabelie_*` ne pointe vers `orders`
+dans l'autre sens, et **aucun trigger** n'existe sur `zabelie_stock` ni sur
+`zabelie_stock_reservations` après B1. Après B2, un trigger apparaît sur
+`zabelie_stock` (`zabelie_stock_flag`, migration `0040`) — il écrit sur
+`products`, toujours pas sur `orders`.
+
+### Deux réserves, mineures mais à connaître
+
+1. **Le `for update` n'a ni `skip locked` ni `limit`.** Un arriéré important
+   sérialise la boucle et garde la transaction ouverte. Sans conséquence à
+   l'échelle prévue ; à revoir si la file grossit.
+2. **La route exige un secret** (`CRON_SECRET`, ou `RECONCILE_SECRET` pour un
+   appel manuel). Si aucune de ces variables n'est définie sur
+   l'environnement, `authorize()` renvoie faux et la route répond 401 : le
+   cron ne fera rien du tout. À vérifier en même temps que le reste — « il ne
+   tourne pas » et « il tourne et ne trouve rien » se ressemblent dans les
+   journaux.
 
 ### Pourquoi B est coupé en deux (décision porteur, 2026-07-26)
 
