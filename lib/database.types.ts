@@ -3,13 +3,10 @@
 // À terme, générables via `supabase gen types typescript`.
 
 export type UserRole = "buyer" | "creator" | "admin";
-// `physical` est accepté en base depuis `0036` (`alter type product_kind add
-// value 'physical'`). L'union le connaît désormais : c'est ce qui force les
-// rendus à traiter le cas au lieu de le laisser tomber dans un `else` écrit
-// pour un fichier. Toute valeur ajoutée à l'énumération SQL doit être ajoutée
-// ICI et dans `lib/sample-data.ts` — les `switch` exhaustifs cesseront alors
-// de compiler tant que le nouveau cas n'est pas traité.
-export type ProductKind = "fichier" | "service" | "physical";
+// Source unique : `lib/product-kind.ts`. Toute valeur ajoutée à l'énumération
+// SQL s'ajoute LÀ, et nulle part ailleurs.
+import type { ProductKind } from "@/lib/product-kind";
+export type { ProductKind };
 export type ProductStatus = "draft" | "published" | "archived";
 export type OrderStatus =
   | "pending"

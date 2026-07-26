@@ -1,5 +1,30 @@
-import type { ProductKind } from "@/lib/sample-data";
 import type { I18nKey } from "@/lib/i18n";
+
+/**
+ * Déclaration CANONIQUE du type de produit — miroir de l'énumération SQL
+ * `product_kind` (`0001` puis `0036`). Elle vivait en double dans
+ * `lib/sample-data.ts` et `lib/database.types.ts` ; ces deux fichiers la
+ * réexportent désormais, il n'y a plus qu'une source.
+ *
+ * Les littéraux `"fichier"`, `"service"`, `"physical"` sont interdits partout
+ * ailleurs (`tests/product-kind-discipline.test.ts`). Interdire la seule
+ * comparaison `kind ===` laissait passer `kind !==`, `[...].includes(kind)` ou
+ * un test sur une variable renommée : la règle porte donc sur les littéraux
+ * eux-mêmes, qui n'ont pas de contournement syntaxique.
+ */
+export const KIND_FILE = "fichier";
+export const KIND_SERVICE = "service";
+export const KIND_PHYSICAL = "physical";
+
+export const PRODUCT_KINDS = [KIND_FILE, KIND_SERVICE, KIND_PHYSICAL] as const;
+
+export type ProductKind = (typeof PRODUCT_KINDS)[number];
+
+/**
+ * Types créés par le formulaire digital (`/vendre`). Un produit physique a sa
+ * propre route et n'entre jamais par là.
+ */
+export type DigitalKind = typeof KIND_FILE | typeof KIND_SERVICE;
 
 /**
  * Traitement exhaustif du type de produit.

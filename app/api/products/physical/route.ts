@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/payment-utils";
+import { KIND_PHYSICAL } from "@/lib/product-kind";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -226,7 +227,7 @@ export async function POST(req: Request) {
       title,
       description,
       price_htg: price,
-      kind: "physical",
+      kind: KIND_PHYSICAL,
       // BROUILLON, jamais publié à la création (décision porteur 2026-07-26).
       // B1 (`0035`/`0036`) sert à SAISIR des fiches, pas à ouvrir la vente :
       // le stock n'est ni décrémenté ni protégé contre la survente avant B2,

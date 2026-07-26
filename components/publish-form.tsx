@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { isService } from "@/lib/product-kind";
-import type { ProductKind } from "@/lib/sample-data";
+import {
+  isService,
+  KIND_FILE,
+  KIND_SERVICE,
+  type DigitalKind,
+} from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 
@@ -35,7 +39,7 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
     // Le formulaire ne publie que des produits digitaux : `physical` a sa
     // propre route (`/vendre/physique`). Le type reste néanmoins celui de
     // l'énumération, pour que `isService` s'applique sans conversion.
-    kind: "fichier" as ProductKind,
+    kind: KIND_FILE as DigitalKind,
     category: "",
     priceHTG: "",
     description: "",
@@ -106,8 +110,8 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
           value={form.kind}
           onChange={(e) => set("kind", e.target.value)}
         >
-          <option value="fichier">{labels.kindFile}</option>
-          <option value="service">{labels.kindService}</option>
+          <option value={KIND_FILE}>{labels.kindFile}</option>
+          <option value={KIND_SERVICE}>{labels.kindService}</option>
         </select>
         {/* BL-105 : liste fermée partagée avec le catalogue — un produit est
             toujours atteignable via une puce (fini le texte libre invisible). */}

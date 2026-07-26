@@ -26,7 +26,12 @@ import { join } from "node:path";
  * configuration et ce fichier peut disparaître.
  */
 
-const AUTHORIZED = "lib/product-kind.ts";
+/**
+ * Seuls fichiers autorisés à écrire un littéral de type de produit :
+ *   - le module lui-même, qui les déclare ;
+ *   - les dictionnaires i18n, dont les clés contiennent ces mots.
+ */
+const AUTHORIZED = ["lib/product-kind.ts", "lib/i18n.ts", "lib/i18n-server.ts"];
 const ROOTS = ["app", "components", "lib"];
 
 /** Valeurs de l'énumération `product_kind` (migrations 0001 et 0036). */
@@ -42,30 +47,53 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const files = ROOTS.flatMap((r) => walk(r)).filter((f) => f !== AUTHORIZED);
+const files = ROOTS.flatMap((r) => walk(r)).filter((f) => !AUTHORIZED.includes(f));
 
-test("aucune comparaison de type de produit hors lib/product-kind.ts", () => {
-  // `kind` comparé à l'une des valeurs de l'énumération. Les guillemets des
-  // deux styles, avec ou sans espaces, et `===` comme `!==`.
-  const compare = new RegExp(
-    String.raw`\bkind\s*[=!]==?\s*["'](${KINDS.join("|")})["']`
-  );
+test("aucun littéral de type de produit hors lib/product-kind.ts", () => {
+  // La règle porte sur les LITTÉRAUX, pas sur la comparaison `kind ===`.
+  // Interdire la seule comparaison laissait trois contournements syntaxiques
+  // ouverts, tous parfaitement innocents à écrire :
+  //     kind !== "fichier"
+  //     ["fichier", "service"].includes(kind)
+  //     const t = product.kind; if (t === "fichier") …
+  // Un littéral n'a pas de variante d'écriture : on le voit ou il n'est pas là.
+  const literal = new RegExp(String.raw`["'](${KINDS.join("|")})["']`);
 
   const offenders: string[] = [];
   for (const f of files) {
-    readFileSync(f, "utf8")
-      .split("\n")
-      .forEach((line, i) => {
-        if (compare.test(line)) offenders.push(`${f}:${i + 1} → ${line.trim()}`);
-      });
+    const lines = readFileSync(f, "utf8").split("\n");
+    let inBlockComment = false;
+    lines.forEach((line, i) => {
+      // La règle porte sur le CODE. Un commentaire qui cite « 'service' » pour
+      // expliquer un champ n'ouvre aucun contournement — l'interdire ne ferait
+      // qu'inciter à écrire des commentaires plus vagues.
+      let code = line;
+      if (inBlockComment) {
+        const end = code.indexOf("*/");
+        if (end === -1) return;
+        code = code.slice(end + 2);
+        inBlockComment = false;
+      }
+      const open = code.indexOf("/*");
+      if (open !== -1 && code.indexOf("*/", open) === -1) {
+        inBlockComment = true;
+        code = code.slice(0, open);
+      }
+      // `//` de commentaire, jamais celui d'une URL (`https://`).
+      const slashes = code.replace(/[a-z]+:\/\//gi, "");
+      const lineComment = slashes.indexOf("//");
+      if (lineComment !== -1) code = slashes.slice(0, lineComment);
+
+      if (literal.test(code)) offenders.push(`${f}:${i + 1} → ${line.trim()}`);
+    });
   }
 
   assert.deepEqual(
     offenders,
     [],
-    "Comparer un type de produit hors de lib/product-kind.ts rouvre le trou :\n" +
-      "un `else` écrit pour un fichier attrape toute valeur non prévue.\n" +
-      "Utilisez isDownloadable / kindLabelKey / pickByKind / deliveryNoticeKey.\n" +
+    "Un type de produit ne s'écrit qu'une fois, dans lib/product-kind.ts :\n" +
+      "importez KIND_FILE / KIND_SERVICE / KIND_PHYSICAL pour construire,\n" +
+      "isDownloadable / isService / pickByKind / kindLabelKey pour décider.\n" +
       offenders.join("\n")
   );
 });

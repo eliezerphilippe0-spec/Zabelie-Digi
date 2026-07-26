@@ -18,6 +18,17 @@ import { defineConfig, devices } from "@playwright/test";
 const executablePath = process.env.PW_CHROMIUM_PATH;
 const launchOptions = executablePath ? { executablePath } : undefined;
 
+/**
+ * Serveurs JAMAIS recyclés, en local comme en CI.
+ *
+ * `reuseExistingServer: !CI` a produit un faux vert : une vérification par
+ * mutation est passée alors que le garde avait été retiré, parce que le
+ * serveur de la série précédente — construit AVANT la modification — avait
+ * été réutilisé. Une vérification qui tourne dans des conditions différentes
+ * de la CI ne vérifie rien de ce que la CI verra.
+ */
+const RECYCLER = false;
+
 const STUB_URL = "http://127.0.0.1:54321";
 const STUB_ENV = {
   NEXT_PUBLIC_SUPABASE_URL: STUB_URL,
@@ -37,20 +48,20 @@ export default defineConfig({
     {
       command: "npm run start",
       url: "http://localhost:3000",
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: RECYCLER,
       timeout: 120_000,
     },
     {
       command: "node e2e/fixtures/stub-supabase.mjs",
       url: `${STUB_URL}/__sante`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: RECYCLER,
       timeout: 30_000,
     },
     {
       command: "npm run start",
       url: "http://127.0.0.1:3001",
       env: STUB_ENV,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: RECYCLER,
       timeout: 120_000,
     },
   ],

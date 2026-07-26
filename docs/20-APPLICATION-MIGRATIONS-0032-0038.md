@@ -45,8 +45,148 @@ si quelque chose diverge, on sait lequel des deux l'a causé.
 | Groupe | Migrations | Objet | Touche le money-path |
 |---|---|---|---|
 | **A** | `0032` · `0033` · `0034` | Chantier 0 — voie de sortie vendeur | oui (par construction) |
-| **B1** | `0035` · `0036` | Taxonomie, produits physiques, stock | non |
+| **B1** | `0035` · `0036` | Taxonomie, produits physiques, stock | non — **vérifié**, cf. §B1 |
 | **B2** | `0037` · `0038` · `0040` | Branchement stock ↔ money-path | **oui** |
+
+## §B1 — checklist, écrite AVANT application
+
+> Rédigée le 2026-07-26 **avant** toute application, à partir du texte des
+> migrations. Une checklist écrite après coup décrit ce qu'on a observé, pas ce
+> qu'on attendait — elle ne peut plus rien infirmer.
+
+### Ce que B1 contient exactement — inventaire des instructions
+
+`0035` : la table `zabelie_categories`, deux index, une fonction de garde de
+profondeur et son trigger **sur cette seule table**, RLS activée, `insert`/
+`update`/`delete` révoqués pour `anon` et `authenticated`, trois `insert` de
+seed. **Aucune autre table n'est nommée dans le fichier.**
+
+`0036` : `alter type product_kind add value 'physical'` ; six tables `zabelie_*`
+(produits physiques, variantes, stock, réservations, limites, modèles véhicule,
+compatibilité) ; deux types énumérés ; quatre fonctions de stock
+(`reserve` / `consume` / `release` / `expire`) ; RLS activée partout et écritures
+révoquées ; deux `insert` de seed.
+
+### Contact avec le money-path — vérifié, pas déduit
+
+Recherche de `orders`, `payments`, `wallets`, `wallet_transactions`,
+`escrow_entries`, `payouts`, `confirm_payment`, `refund_order`, `commission`,
+maturation, dans les deux fichiers :
+
+- `0035` : **zéro occurrence**.
+- `0036` : **deux occurrences**, une en commentaire et **une seule réelle** —
+  ```sql
+  order_id uuid not null references orders (id) on delete cascade
+  ```
+  dans `zabelie_stock_reservations`.
+
+Ce qu'il faut en retenir, et ce n'est pas rien :
+
+1. **Aucune fonction du money-path n'est remplacée.** Pas de `create or replace`
+   de `confirm_payment` ni de `refund_order` — ils sont dans `0037`/`0038`,
+   donc en B2. Aucun trigger n'est créé sur `orders`, `wallets` ou le ledger.
+2. **Mais `0036` n'est pas totalement inerte vis-à-vis d'`orders`** : créer
+   cette clé étrangère prend un verrou sur `orders` le temps de la migration.
+   Bref, mais réel → **appliquer aux heures creuses**, comme le reste.
+3. Le `on delete cascade` fait disparaître les réservations d'une commande
+   supprimée. Sans effet pratique — le registre est append-only et les
+   commandes ne se suppriment pas — mais c'est le seul lien, autant le nommer.
+
+### ⚠️ Porte à sens unique
+
+`alter type product_kind add value 'physical'` **ne se défait pas** : PostgreSQL
+ne sait pas retirer une valeur d'une énumération. Le retour arrière consisterait
+à recréer le type et à réécrire toutes les colonnes qui l'utilisent. À savoir
+avant, pas pendant. Les tables ajoutées, elles, se suppriment sans douleur.
+
+### État attendu APRÈS B1 — valeurs dérivées du texte des migrations
+
+```sql
+-- 1. Taxonomie : 16 départements (4 actifs), 74 catégories (10 actives),
+--    33 sous-catégories (toutes actives — le seed niveau 3 n'a pas de colonne
+--    `active`, elles héritent du défaut).
+select level, count(*) as total, count(*) filter (where active) as actifs
+  from zabelie_categories group by level order by level;
+-- Attendu : 1|16|4 · 2|74|10 · 3|33|33
+
+-- 2. Modèles véhicule curés : 38 au total.
+select kind, count(*) from zabelie_vehicle_models group by kind order by 1;
+-- Attendu : auto|26 · moto|12
+
+-- 3. TTL de réservation — 30 min en B1. Ce n'est PAS 120 : la montée à 120
+--    vient de `0038`, donc de B2. Voir 120 ici = B2 a été appliquée par erreur.
+select key, value from zabelie_stock_limits;
+-- Attendu : reservation_ttl_minutes | 30
+
+-- 4. Les quatre fonctions de stock existent, et AUCUNE fonction de B2.
+select count(*) filter (where proname = 'zabelie_reserve_stock')          as reserve,
+       count(*) filter (where proname = 'zabelie_expire_stock_reservations') as expire,
+       count(*) filter (where proname = 'zabelie_consume_stock_strict')    as b2_strict,
+       count(*) filter (where proname = 'zabelie_refresh_in_stock')        as b2_flag
+  from pg_proc;
+-- Attendu : 1 · 1 · 0 · 0
+
+-- 5. La colonne `products.in_stock` doit être ABSENTE (elle vient de `0040`).
+select count(*) from information_schema.columns
+ where table_name = 'products' and column_name = 'in_stock';
+-- Attendu : 0. Le catalogue sait fonctionner sans (repli sur 42703).
+
+-- 6. RLS active sur toutes les tables ajoutées.
+select relname, relrowsecurity from pg_class
+ where relname like 'zabelie_%'
+   and relname in ('zabelie_categories','zabelie_physical_products',
+                   'zabelie_product_variants','zabelie_stock',
+                   'zabelie_stock_reservations','zabelie_stock_limits',
+                   'zabelie_vehicle_models','zabelie_product_fitment')
+ order by 1;
+-- Attendu : `t` partout.
+```
+
+### Ce qui doit être INCHANGÉ — c'est le contrôle qui compte
+
+```sql
+-- 7. Le registre n'a pas bougé d'une gourde.
+select zabelie_solvency_report();      -- identique au relevé d'AVANT B1
+-- (avant le groupe A, utiliser les trois requêtes brutes de `docs/17` §6)
+
+-- 8. Aucune commande n'a changé d'état.
+select status, count(*) from orders group by status order by 1;
+
+-- 9. Aucun produit physique n'est en vente. La saisie crée un BROUILLON ;
+--    voir une ligne ici signifie qu'une fiche a été publiée à la main.
+select count(*) from products where kind = 'physical' and status = 'published';
+-- Attendu : 0
+```
+
+### Ordre et garde-fous
+
+- **Preview d'abord, jamais la production directement.** Vérifier au passage
+  que le Preview est protégé par mot de passe et en `noindex` (§ dédié).
+- Relever `zabelie_solvency_report()` **avant** — sans référence, le contrôle 7
+  ne prouve rien.
+- B1 **n'ouvre pas la vente** : le statut à la création est `draft`, le checkout
+  n'est pas atteignable, et l'état par défaut « suspendu » côté encaissement
+  n'est pas remis en cause. On peut saisir des fiches sans rouvrir le sujet de
+  la rétention.
+
+### Ce que les tests ne couvrent PAS, et que B1 active
+
+Le parcours physique e2e tourne contre un Supabase **simulé** : il ne rejoue ni
+RLS, ni contraintes, ni triggers. Or `0035`/`0036` créent exactement ça. La
+partie que la migration active est donc la partie non testée — d'où la
+vérification manuelle ci-dessus, sur Preview, avant la production.
+
+Deux comportements changent côté application dès B1, sans qu'aucun test ne les
+couvre :
+
+- `/api/stock/expire` (cron) appelle `zabelie_expire_stock_reservations`, qui
+  n'existe pas aujourd'hui : la route échoue actuellement et se mettra à
+  fonctionner.
+- `/api/checkout` appelle `zabelie_reserve_stock` **uniquement si le client
+  envoie un `variantId`**. Le checkout digital n'est pas concerné. Aujourd'hui,
+  un client qui enverrait un `variantId` fait échouer sa propre commande (la
+  fonction n'existe pas) ; après B1 l'appel se résout normalement. B1 referme
+  donc ce cas plutôt qu'elle ne l'ouvre.
 
 ### Pourquoi B est coupé en deux (décision porteur, 2026-07-26)
 
@@ -152,6 +292,18 @@ vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
 | 7 | Comparaison `zabelie_solvency_report()` avant/après | 6 |
 | 8 | Revue séparée puis application de **B2** | 2 et 7 |
 | 9 | Domaine sur Vercel, publication des fiches, ouverture | 8 |
+
+⚠️ **Avant l'étape 9, une impasse reste ouverte** : l'acheteur d'un produit
+physique voit dans `/mes-achats` une commande figée sur `paid`, sans action ni
+information — le bouton de téléchargement mensonger a été retiré, rien ne l'a
+remplacé. `delivered` n'est atteignable que par la route de téléchargement : il
+n'existe **aucun état d'expédition**. Ce n'est pas un défaut d'affichage, c'est
+une machine à états sans sortie pour cette catégorie — et c'est une page que
+voit quelqu'un **qui a déjà payé**. Elle passe donc avant tout travail de
+confort (état vide de recherche compris), et elle se traite avec la question de
+la maturation liée à la remise : un escrow qui mûrit au chronomètre paie le
+vendeur d'une pièce détachée sept jours après le paiement, qu'elle ait changé
+de mains ou non.
 
 **Le code cesse d'être le chemin critique à l'étape 7.**
 

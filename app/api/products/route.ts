@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeCategory } from "@/lib/product-categories";
-import { isService, pickByKind } from "@/lib/product-kind";
+import { isService, pickByKind, type DigitalKind } from "@/lib/product-kind";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   let body: {
     title?: string;
     description?: string;
-    kind?: "fichier" | "service";
+    kind?: DigitalKind;
     category?: string;
     priceHTG?: number;
     deliveryDays?: number | null;
