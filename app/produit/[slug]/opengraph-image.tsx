@@ -50,6 +50,23 @@ function Logo() {
 }
 
 
+/**
+ * Délai sur la RECHERCHE PRODUIT — même règle que la photo, un cran plus haut.
+ * Le crawler de WhatsApp a son propre délai : s'il abandonne avant que la
+ * carte arrive, il met en cache un lien NU, durablement. « La carte rend
+ * quand même » n'est vrai que si quelqu'un attend encore. Base muette en 2 s
+ * → carte générique immédiate : une carte générique vaut mieux qu'un lien nu,
+ * et infiniment mieux qu'un lien nu figé.
+ */
+const PRODUCT_TIMEOUT_MS = 2000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 /** Délai au-delà duquel on renonce à la photo plutôt que retarder la carte. */
 const COVER_TIMEOUT_MS = 2000;
 /** Au-delà, l'encodage en data URI coûte plus qu'il ne rapporte. */
@@ -78,9 +95,14 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductView(slug).catch(() => undefined);
+  const product = await withTimeout(
+    getProductView(slug).catch(() => undefined),
+    PRODUCT_TIMEOUT_MS,
+    undefined
+  );
 
-  // Repli : produit introuvable → carte de marque générique (jamais d'image cassée).
+  // Repli : produit introuvable OU base muette → carte de marque générique
+  // (jamais d'image cassée, jamais de crawler qui abandonne).
   const title = product?.title ?? "Zabelie";
   const creator = product?.creator ?? "Marketplace digitale haïtienne";
   const price = product ? formatHTG(product.priceHTG) : null;
