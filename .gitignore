@@ -37,3 +37,8 @@ yarn-error.log*
 
 # Scripts d'outillage de session (audits Playwright jetables)
 .zabelie-*.tmp.mjs
+
+# ops/ : seuls les agrégats entrent dans git — le journal d'apurement
+# (identifiants, numéros MonCash, références de virement) reste HORS dépôt.
+ops/apurement*
+ops/**/apurement*

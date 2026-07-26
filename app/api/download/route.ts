@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isDownloadable } from "@/lib/product-kind";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,26 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Paiement non confirmé" }, { status: 403 });
   }
 
+  // Le produit se livre-t-il par téléchargement ? Cette route marque la
+  // commande `delivered` : l'appeler pour un produit qui ne se télécharge pas
+  // écrirait une livraison qui n'a pas eu lieu. Le contrôle passe donc AVANT
+  // toute recherche de livrable.
+  const { data: product } = await admin
+    .from("products")
+    .select("kind")
+    .eq("id", order.product_id)
+    .single();
+
+  if (!product || !isDownloadable(product.kind, order.product_id)) {
+    return NextResponse.json(
+      {
+        error: "Ce produit ne se livre pas par téléchargement.",
+        code: "non_telechargeable",
+      },
+      { status: 409 }
+    );
+  }
+
   // Livrable du produit.
   const { data: asset } = await admin
     .from("product_assets")
@@ -52,7 +73,7 @@ export async function GET(req: Request) {
 
   if (!asset) {
     return NextResponse.json(
-      { error: "Aucun fichier livrable (produit de type service ?)" },
+      { error: "Aucun fichier livrable pour ce produit." },
       { status: 404 }
     );
   }

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
+import { siteUrl } from "@/lib/site-url";
 
 // Polices AUTO-HÉBERGÉES par Next (sous-ensemble latin, servies depuis notre
 // domaine) — supprime la requête tierce bloquante vers Google Fonts, gain net
@@ -29,9 +30,10 @@ export const metadata: Metadata = {
     template: "%s",
   },
   description,
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
+  // Rend `og:image` absolue. Sans repli sur l'URL du déploiement, un Preview
+  // sans NEXT_PUBLIC_SITE_URL pointait ses aperçus vers localhost → lien nu
+  // sur WhatsApp. Voir lib/site-url.ts.
+  metadataBase: new URL(siteUrl()),
   openGraph: {
     title,
     description,

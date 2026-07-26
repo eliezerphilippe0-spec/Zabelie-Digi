@@ -26,22 +26,42 @@ function authorize(req: Request): boolean {
   return false;
 }
 
+/**
+ * Journal d'exécution — émis à CHAQUE passage, y compris quand il n'y a rien
+ * à libérer.
+ *
+ * Sans ligne systématique, « le cron n'a pas tourné » (secret absent, cron non
+ * déclaré, déploiement cassé) et « il a tourné, rien à libérer » produisent le
+ * même journal : rien. Vérifier `CRON_SECRET` une fois à la main ne protège
+ * pas dans six semaines ; un signal régulier, si. Même principe que le défaut
+ * observable de `lib/product-kind.ts` : l'absence de signal doit être un
+ * signal.
+ */
+function journal(champs: Record<string, unknown>) {
+  console.log("[stock/expire]", JSON.stringify({ at: new Date().toISOString(), ...champs }));
+}
+
 async function handle(req: Request) {
+  const debut = Date.now();
   if (!authorize(req)) {
+    // Journalisé aussi : un cron mal configuré se voit ici, pas dans le silence.
+    journal({ issue: "non_autorise", secretConfigure: Boolean(process.env.CRON_SECRET) });
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   try {
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("zabelie_expire_stock_reservations");
     if (error) {
+      journal({ issue: "echec", message: error.message, dureeMs: Date.now() - debut });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ released: data ?? 0 });
+    const released = data ?? 0;
+    journal({ issue: "termine", liberees: released, dureeMs: Date.now() - debut });
+    return NextResponse.json({ released });
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Erreur" },
-      { status: 500 }
-    );
+    const message = e instanceof Error ? e.message : "Erreur";
+    journal({ issue: "exception", message, dureeMs: Date.now() - debut });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

@@ -23,7 +23,7 @@ insert into products (id, seller_id, slug, title, description, price_htg, kind, 
 values ('00000000-0000-0000-0000-0000000e0002'::uuid,
         '00000000-0000-0000-0000-0000000e0001'::uuid,
         'plaquettes-frein-test', 'Plaquettes de frein', 'Test', 2500,
-        'fichier', 'published', 'Design');
+        'physical', 'published', 'Design');
 
 insert into zabelie_product_variants (id, product_id, sku, price_htg)
 values ('00000000-0000-0000-0000-0000000e0003'::uuid,

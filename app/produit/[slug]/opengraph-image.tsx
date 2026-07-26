@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getProductView } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
+import { pickByKind } from "@/lib/product-kind";
 
 // Aperçu de partage (WhatsApp / Facebook / X) généré à la volée par produit.
 // Objectif marché : un lien produit partagé sur WhatsApp affiche une mini-affiche
@@ -59,8 +60,23 @@ export default async function Image({
   const title = product?.title ?? "Zabelie";
   const creator = product?.creator ?? "Marketplace digitale haïtienne";
   const price = product ? formatHTG(product.priceHTG) : null;
-  const kind =
-    product?.kind === "service" ? "Service" : product ? "Produit digital" : null;
+  // Le badge annonçait « Produit digital » pour tout ce qui n'était pas un
+  // service — donc pour une pièce détachée, sur la carte que reçoit l'acheteur.
+  const kind = product
+    ? pickByKind(product.kind, {
+        file: "Produit digital",
+        service: "Service",
+        physical: "Produit physique",
+      })
+    : null;
+  // Zabelie ne livre pas : aucune promesse de délai sur un produit physique.
+  const reassurance = product
+    ? pickByKind(product.kind, {
+        file: "Paiement MonCash · Livraison instantanée",
+        service: "Paiement MonCash · Mise en relation",
+        physical: "Paiement MonCash",
+      })
+    : "Paiement MonCash";
   const safeTitle = title.length > 90 ? title.slice(0, 88) + "…" : title;
 
   return new ImageResponse(
@@ -138,9 +154,11 @@ export default async function Image({
               Produits digitaux &amp; talents haïtiens
             </div>
           )}
-          <div style={{ display: "flex", fontSize: 24, color: MUTED }}>
-            Paiement MonCash · Livraison instantanée
-          </div>
+          {reassurance && (
+            <div style={{ display: "flex", fontSize: 24, color: MUTED }}>
+              {reassurance}
+            </div>
+          )}
         </div>
       </div>
     ),

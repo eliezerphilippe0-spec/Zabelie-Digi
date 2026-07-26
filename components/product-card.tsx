@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { formatHTG } from "@/lib/sample-data";
 import type { ProductView } from "@/lib/products";
+import { pickByKind } from "@/lib/product-kind";
 
 export type ProductCardLabels = {
   kindFile: string;
   kindService: string;
+  kindPhysical: string;
   by: string;
   sales: string;
 };
@@ -12,6 +14,7 @@ export type ProductCardLabels = {
 const FALLBACK_LABELS: ProductCardLabels = {
   kindFile: "Fichier",
   kindService: "Service",
+  kindPhysical: "Physique",
   by: "par",
   sales: "ventes",
 };
@@ -23,6 +26,18 @@ export function ProductCard({
   product: ProductView;
   labels?: ProductCardLabels;
 }) {
+  // Type inconnu : aucun badge, plutôt qu'un badge « Fichier » sur une pièce
+  // détachée (l'ancien `else` promettait un téléchargement).
+  const kindLabel = pickByKind(
+    product.kind,
+    {
+      file: labels.kindFile,
+      service: labels.kindService,
+      physical: labels.kindPhysical,
+    },
+    product.id
+  );
+
   return (
     <Link
       href={`/produit/${product.slug}`}
@@ -51,9 +66,11 @@ export function ProductCard({
           </pattern>
           <rect width="100%" height="100%" fill={`url(#chev-${product.slug})`} />
         </svg>
-        <span className="absolute left-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
-          {product.kind === "service" ? labels.kindService : labels.kindFile}
-        </span>
+        {kindLabel && (
+          <span className="absolute left-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
+            {kindLabel}
+          </span>
+        )}
         {(product.ratingAvg !== null || product.sales > 0) && (
           <span className="absolute right-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
             {product.ratingAvg !== null

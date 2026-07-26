@@ -22,9 +22,9 @@ values
   ('00000000-0000-0000-0000-0000000aa003'::uuid, '00000000-0000-0000-0000-0000000aa001'::uuid,
    'ebook-is', 'E-book', 'digital', 1000, 'fichier', 'published', 'Design'),
   ('00000000-0000-0000-0000-0000000aa004'::uuid, '00000000-0000-0000-0000-0000000aa001'::uuid,
-   'filtre-is', 'Filtre', 'physique', 1000, 'fichier', 'published', 'Design'),
+   'filtre-is', 'Filtre', 'physique', 1000, 'physical', 'published', 'Design'),
   ('00000000-0000-0000-0000-0000000aa005'::uuid, '00000000-0000-0000-0000-0000000aa001'::uuid,
-   'vide-is', 'Produit vide', 'physique', 1000, 'fichier', 'published', 'Design');
+   'vide-is', 'Produit vide', 'physique', 1000, 'physical', 'published', 'Design');
 
 do $$
 declare

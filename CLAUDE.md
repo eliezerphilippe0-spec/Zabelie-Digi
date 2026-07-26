@@ -49,7 +49,8 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0034`**).
+   (dernière écrite : **`0041`** — registre des migrations ; production
+   appliquée jusqu'à `0030`, groupes A/B1/B2 en attente, `docs/20`).
 
 ## Registre vendeur — invariant comptable (0033)
 ```
@@ -111,3 +112,39 @@ Un chantier à la fois, dans l'ordre de `docs/18` §11. Tests écrits avec le
 code. Migration rédigée **non appliquée** tant que le porteur ne l'a pas
 exécutée. Signaler toute contradiction plutôt que trancher seul ; demander
 plutôt qu'inventer une règle métier, **surtout financière**.
+
+**Le point de contrôle humain est la PR, jamais le commit.** Un hook `Stop`
+du dépôt exige de commiter et pousser tout travail en cours : « montre-moi
+avant de commiter » n'est donc pas un contrôle disponible ici. Un commit sur
+une branche de travail n'engage rien — la revue se fait sur la PR, et une
+correction se fait par un commit de plus, pas par un retour arrière. Marquer
+en tête de message les commits qui attendent un arbitrage.
+
+### Un instrument non éprouvé ne prouve rien
+Quatre fois dans le chantier B, l'outil de vérification a menti : des fixtures
+SQL qui encodaient le bug (suite verte confirmant le mensonge), un serveur
+recyclé qui a fait passer une vérification par mutation, un `union all` dont
+toutes les branches partagent l'instantané — « après » relisait l'état d'avant.
+Le motif est constant : **le code de vérification est écrit une fois, sous
+pression, et n'est jamais vérifié lui-même.**
+
+Règle : **toute sonde, tout harnais, tout test de garde doit être passé sur un
+cas connu-positif ET un cas connu-négatif avant qu'on lui fasse confiance.**
+Concrètement — retirer le garde et voir le test échouer ; amputer les données
+et voir la sonde le dire. Un instrument qui n'a jamais échoué n'a pas encore
+démontré qu'il pouvait.
+
+Corollaire d'observabilité : **l'absence de signal doit être un signal.** Une
+branche par défaut journalise ce qu'elle a reçu (`lib/product-kind.ts`) ; un
+cron journalise chaque passage, y compris à zéro (`app/api/stock/expire`).
+Sinon « n'a pas tourné » et « a tourné, rien trouvé » produisent le même vide.
+
+### `product_kind` — le module est obligatoire
+Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
+vérifié par `tests/product-kind-discipline.test.ts`. Raison : ajouter une
+valeur à l'union ne casse **aucune** compilation — un ternaire avec `else`
+reste typé. Le compilateur n'énumère donc pas les sites, et un `grep` ne
+prouve rien sur ce qu'il n'a pas trouvé. La garantie vient des `switch`
+exhaustifs du module, pas du type. Toute valeur ajoutée à l'énumération SQL
+doit l'être aussi dans `lib/sample-data.ts`, `lib/database.types.ts` et la
+liste `KINDS` du test.

@@ -6,7 +6,21 @@ import { ReviewForm } from "@/components/review-form";
 import { getReviewedOrderIds } from "@/lib/reviews";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
-import { formatHTG } from "@/lib/sample-data";
+import { formatHTG, type ProductKind } from "@/lib/sample-data";
+import { isDownloadable, pickByKind } from "@/lib/product-kind";
+
+/**
+ * Où en est la remise, pour un produit qui ne se télécharge PAS.
+ * Rien n'est promis au nom de Zabelie : la plateforme ne livre pas.
+ */
+function remiseLabel(kind: ProductKind | undefined): string | null {
+  if (!kind) return null;
+  return pickByKind(kind, {
+    file: null,
+    service: "Service · mise en relation",
+    physical: "Remise à convenir avec le vendeur",
+  });
+}
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes achats — Zabelie" };
@@ -16,7 +30,7 @@ type OrderRow = {
   status: string;
   amount_htg: number;
   created_at: string;
-  product: { title: string; slug: string; kind: string } | null;
+  product: { title: string; slug: string; kind: ProductKind } | null;
 };
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -102,12 +116,19 @@ export default async function MesAchatsPage() {
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
-                {o.product?.kind === "service" ? (
-                  <span className="text-xs text-mist">
-                    Service · mise en relation
-                  </span>
-                ) : (
+                {/* Un bouton « Télécharger » s'affichait pour tout produit
+                    non-service — donc aussi pour une pièce détachée, et il
+                    menait à une erreur après paiement. Seul un `fichier` se
+                    télécharge ; les autres types disent où en est la remise,
+                    sans rien promettre au nom de Zabelie. */}
+                {o.product && isDownloadable(o.product.kind) ? (
                   <DownloadButton orderId={o.id} />
+                ) : (
+                  remiseLabel(o.product?.kind) && (
+                    <span className="text-xs text-mist">
+                      {remiseLabel(o.product?.kind)}
+                    </span>
+                  )
                 )}
                 {reviewed.has(o.id) ? (
                   <span className="text-xs text-success-text">Avis déposé ✓</span>

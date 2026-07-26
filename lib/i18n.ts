@@ -41,18 +41,14 @@ const fr = {
 
   // Accueil
   "home.badge": "La marketplace haïtienne",
-  "home.h1.discover": "Découvrez",
-  "home.tw2": "vos produits",
-  "home.tw3": "vos talents",
-  "badge.pay": "Paiement sécurisé",
-  "badge.delivery": "Livraison rapide",
-  "badge.quality": "Qualité garantie",
+  "home.h1": "Pièces auto et moto, livrées en Haïti",
+  "badge.pay": "Paiement sécurisé avec MonCash",
   "home.h1.a": "Vendez vos",
   "home.h1.b": "produits digitaux",
   "home.h1.c": "et vos",
   "home.h1.d": "talents",
   "home.sub":
-    "Templates, formations, beats, mentorat… Publiez, encaissez via mobile money et livrez instantanément. Pensé pour le contexte haïtien.",
+    "Filtres, freins, huiles, batteries. Vous payez avec MonCash, le vendeur vous livre.",
   "home.cta.sell": "Commencer à vendre",
   "home.cta.browse": "Explorer le catalogue",
   "home.stat1": "digital & talents",
@@ -92,6 +88,7 @@ const fr = {
   "product.back": "← Retour au catalogue",
   "product.kind.file": "Fichier digital",
   "product.kind.service": "Service",
+  "product.kind.physical": "Produit physique",
   "product.by": "par",
   "product.sales": "ventes",
   "product.reviews.badge": "avis vérifié(s)",
@@ -110,6 +107,13 @@ const fr = {
   "common.copied": "Copié ✓",
   "pay.other": "Diaspora ? Payez en USD :",
   "product.delivery": "Livraison instantanée après confirmation du paiement.",
+  // Produit PHYSIQUE : Zabelie ne livre pas (ni flotte, ni entrepôt, ni
+  // contrat transporteur). Ce qui s'affiche est ce que le vendeur DÉCLARE,
+  // attribué à lui — jamais une promesse de la plateforme. Aucune mention de
+  // protection de paiement ni de garantie tant que l'escrow est dormant.
+  "product.delivery.declared":
+    "Livraison : {zone}, sous {days} jours — indiqué par le vendeur",
+  "product.delivery.toAgree": "Livraison à convenir avec le vendeur",
   "product.secure": "✓ Paiement sécurisé, confirmé serveur-à-serveur",
   "product.file": "✓ Téléchargement immédiat du fichier",
   "product.service": "✓ Mise en relation après paiement",
@@ -301,6 +305,7 @@ const fr = {
 
   "card.kind.file": "Fichier",
   "card.kind.service": "Service",
+  "card.kind.physical": "Physique",
 
   "status.draft": "Brouillon",
   "status.published": "Publié",
@@ -347,12 +352,8 @@ const ht: Record<I18nKey, string> = {
   "footer.rights": "Tout dwa rezève.",
 
   "home.badge": "Makètplas ayisyen an",
-  "home.h1.discover": "Dekouvri",
-  "home.tw2": "pwodwi ou yo",
-  "home.tw3": "talan ou yo",
-  "badge.pay": "Peman an sekirite",
-  "badge.delivery": "Livrezon rapid",
-  "badge.quality": "Kalite garanti",
+  "home.h1": "Pyès oto ak moto, livre an Ayiti",
+  "badge.pay": "Peman sekirize ak MonCash",
   "home.h1.a": "Vann",
   "home.h1.b": "pwodwi dijital ou yo",
   "home.h1.c": "ak",
@@ -394,6 +395,7 @@ const ht: Record<I18nKey, string> = {
   "product.back": "← Tounen nan katalòg la",
   "product.kind.file": "Fichye dijital",
   "product.kind.service": "Sèvis",
+  "product.kind.physical": "Pwodwi fizik",
   "product.by": "pa",
   "product.sales": "vant",
   "product.reviews.badge": "avi verifye",
@@ -412,6 +414,9 @@ const ht: Record<I18nKey, string> = {
   "common.copied": "Kopye ✓",
   "pay.other": "Dyaspora ? Peye an USD :",
   "product.delivery": "Livrezon nan menm moman apre peman an konfime.",
+  "product.delivery.declared":
+    "Livrezon : {zone}, nan {days} jou — se vandè a ki bay enfòmasyon sa a.",
+  "product.delivery.toAgree": "Livrezon : n ap antann ou ak vandè a.",
   "product.secure": "✓ Peman sekirize, konfime sèvè-a-sèvè",
   "product.file": "✓ Telechaje fichye a nan menm moman",
   "product.service": "✓ Kontak ak kreyatè a apre peman",
@@ -595,6 +600,7 @@ const ht: Record<I18nKey, string> = {
 
   "card.kind.file": "Fichye",
   "card.kind.service": "Sèvis",
+  "card.kind.physical": "Fizik",
 
   "status.draft": "Poko pibliye",
   "status.published": "Pibliye",

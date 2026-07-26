@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeCategory } from "@/lib/product-categories";
+import { isService, pickByKind, type DigitalKind } from "@/lib/product-kind";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   let body: {
     title?: string;
     description?: string;
-    kind?: "fichier" | "service";
+    kind?: DigitalKind;
     category?: string;
     priceHTG?: number;
     deliveryDays?: number | null;
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
   // silencieusement pour un produit 'fichier' (n'a pas de sens hors service).
   let deliveryDays: number | null = null;
   let serviceIncludes: string[] = [];
-  if (kind === "service") {
+  if (isService(kind)) {
     if (body.deliveryDays !== undefined && body.deliveryDays !== null) {
       const d = Number(body.deliveryDays);
       if (!Number.isInteger(d) || d < 1 || d > 365) {
@@ -138,7 +139,16 @@ export async function POST(req: Request) {
       // produit « fichier » naît en BROUILLON, invisible au public, et sera
       // publié automatiquement au premier upload du livrable (asset route).
       // Un service (pas de fichier à livrer) se publie immédiatement.
-      status: kind === "service" ? "published" : "draft",
+      // Un `fichier` naît en BROUILLON et sera publié au premier upload du
+      // livrable ; un service se publie tout de suite. Le défaut reste
+      // « brouillon » : une valeur inconnue ne doit jamais partir en vente
+      // sans que personne l'ait décidé.
+      status:
+        pickByKind(kind, {
+          file: "draft",
+          service: "published",
+          physical: "draft",
+        }) ?? "draft",
     })
     .select("slug, status")
     .single();

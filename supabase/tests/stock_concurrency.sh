@@ -27,7 +27,7 @@ insert into profiles (id, display_name, role) values ('$SELLER', 'Vendeur Stock'
   on conflict do nothing;
 insert into products (id, seller_id, slug, title, description, price_htg, kind, status, category)
 values ('$PRODUCT', '$SELLER', 'piece-test-concurrence', 'Plaquettes de frein',
-        'Test de concurrence', 2500, 'fichier', 'published', 'Design')
+        'Test de concurrence', 2500, 'physical', 'published', 'Design')
   on conflict do nothing;
 insert into zabelie_product_variants (id, product_id, sku, price_htg)
 values ('$VARIANT', '$PRODUCT', 'SKU-CONC-1', 2500) on conflict do nothing;

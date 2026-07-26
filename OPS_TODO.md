@@ -80,6 +80,22 @@ BL-136 (achat invité) reste explicitement en attente d'une décision produit.
       dès que les clés Reloadly sont posées, donc pas de clés en Production
       avant la fin de cette liste.
 
+## Application des migrations — journal
+
+> Une ligne par groupe appliqué. L'**heure UTC** compte autant que la date :
+> si quelque chose bouge dans les jours qui suivent, c'est ce qui permet de
+> corréler avec les journaux Vercel et Supabase. Sans elle, on compare des
+> impressions.
+
+| Groupe | Environnement | Début (UTC) | Fin (UTC) | `zabelie_solvency_report()` avant / après | Par |
+|---|---|---|---|---|---|
+| _(à compléter)_ | | | | | |
+
+Procédure : `docs/20-APPLICATION-MIGRATIONS-0032-0038.md` §B1.
+La sortie de `zabelie_solvency_report()` va dans un **fichier horodaté**
+(`ops/solvabilite-<phase>-<horodatage>.txt`), jamais seulement à l'écran :
+c'est la référence de comparaison, elle doit survivre à la session.
+
 ## Paiements (rappels)
 
 - [x] Migrations `0001` → `0019` appliquées sur Supabase (dont `0009`/`0010`

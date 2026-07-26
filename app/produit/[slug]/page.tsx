@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
@@ -13,8 +14,55 @@ import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import {
+  kindLabelKey,
+  deliveryBulletKey as bulletKey,
+  deliveryNoticeKey,
+  isService,
+} from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Aperçu de partage — la fiche produit est diffusée par lien WhatsApp, donc
+ * cette carte EST la page d'accueil de la plupart des acheteurs.
+ *
+ * L'image (1200×630) était déjà générée par produit (opengraph-image.tsx),
+ * mais rien ne définissait le titre ni la description : ils retombaient sur
+ * ceux du layout racine, identiques pour toutes les fiches. Un lien partagé
+ * s'annonçait « Zabelie — La marketplace haïtienne » au lieu du produit et de
+ * son prix — et l'onglet du navigateur affichait la même chose partout.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductView(slug).catch(() => undefined);
+  if (!product) return { title: "Produit introuvable — Zabelie" };
+
+  const price = formatHTG(product.priceHTG);
+  const title = `${product.title} — ${price}`;
+  // Le prix et le vendeur AVANT le descriptif : c'est ce qui décide le clic
+  // dans un fil de discussion, et WhatsApp tronque tôt.
+  const blurb = product.blurb.replace(/\s+/g, " ").trim();
+  const description = `${price} · par ${product.creator}${blurb ? ` — ${blurb}` : ""}`;
+
+  return {
+    title,
+    description: description.length > 200 ? description.slice(0, 197) + "…" : description,
+    alternates: { canonical: `/produit/${product.slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `/produit/${product.slug}`,
+      siteName: "Zabelie",
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 /**
  * Rails proposés, construits côté serveur : MonCash toujours, puis les rails
@@ -71,6 +119,16 @@ export default async function ProductPage({
     getPhysicalView(product.id),
   ]);
 
+  const kindKey = kindLabelKey(product.kind, product.id);
+  const deliveryBulletKey = bulletKey(product.kind, product.id);
+  // La zone de livraison n'a pas encore de colonne : seul le repli « à
+  // convenir » est atteignable aujourd'hui pour un produit physique.
+  const delivery = deliveryNoticeKey(
+    product.kind,
+    { zone: null, days: product.deliveryDays },
+    product.id
+  );
+
   return (
     <div className="bg-grain min-h-screen">
       <SiteNav />
@@ -95,13 +153,15 @@ export default async function ProductPage({
           </Link>
 
           <div className="mt-4 flex items-center gap-2">
-            <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
-              {product.kind === "service" ? t(lang, "product.kind.service") : t(lang, "product.kind.file")}
-            </span>
+            {kindKey && (
+              <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
+                {t(lang, kindKey)}
+              </span>
+            )}
             <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
               {product.category}
             </span>
-            {product.kind === "service" && product.deliveryDays && (
+            {isService(product.kind, product.id) && product.deliveryDays && (
               <span className="rounded-full border border-line px-3 py-1 text-xs text-accent">
                 ⏱ {t(lang, "product.delivery.days", { days: String(product.deliveryDays) })}
               </span>
@@ -113,7 +173,7 @@ export default async function ProductPage({
           </h1>
           <p className="mt-3 text-mist">{product.blurb}</p>
 
-          {product.kind === "service" && product.serviceIncludes.length > 0 && (
+          {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
             <div className="mt-4 rounded-2xl border border-line bg-surface/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-mist">
                 {t(lang, "product.includes")}
@@ -207,16 +267,25 @@ export default async function ProductPage({
                 }}
               />
             </div>
-            <p className="mt-3 text-center text-xs text-mist">
-              {t(lang, "product.delivery")}
-            </p>
+            {/* Mention de livraison — dépend du type. Elle était affichée
+                inconditionnellement (« Livraison instantanée après
+                confirmation du paiement »), y compris sur un produit
+                physique. Sur un produit physique, elle attribue explicitement
+                l'information au vendeur : Zabelie ne livre pas. */}
+            {delivery && (
+              <p className="mt-3 text-center text-xs text-mist">
+                {t(lang, delivery.key, delivery.params)}
+              </p>
+            )}
           </div>
 
-          <ul className="mt-6 space-y-2 text-sm text-mist">
-            <li>{t(lang, "product.secure")}</li>
-            <li>
-              {/* Compatibilité véhicule — décisif sur une pièce détachée :
-              l'acheteur a déjà payé quand il découvre l'erreur de référence. */}
+          {/* Compatibilité véhicule — décisif sur une pièce détachée :
+              l'acheteur a déjà payé quand il découvre l'erreur de référence.
+              Bloc À PART, juste sous le prix : ce n'est pas une ligne de
+              réassurance, c'est un fait qui décide l'achat. Il était imbriqué
+              dans un <li> de la liste ci-dessous, avec le texte de livraison
+              coupé en deux autour — balisage invalide (un <ul> dans un <li>
+              d'une autre liste) et ordre de lecture faux. */}
           {physical && physical.fitment.length > 0 && (
             <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
               <p className="text-sm font-semibold">Compatible avec</p>
@@ -239,10 +308,13 @@ export default async function ProductPage({
             </div>
           )}
 
-          {product.kind === "service"
-                ? t(lang, "product.service")
-                : t(lang, "product.file")}
-            </li>
+          <ul className="mt-6 space-y-2 text-sm text-mist">
+            <li>{t(lang, "product.secure")}</li>
+            {/* Ligne de mode de remise. Absente sur un produit physique : la
+                mention de livraison sous le prix dit déjà ce que le vendeur
+                déclare, et rien d'autre n'est vrai — Zabelie ne livre pas.
+                Aucune seconde formulation inventée ici. */}
+            {deliveryBulletKey && <li>{t(lang, deliveryBulletKey)}</li>}
             <li>{t(lang, "product.verifiedOnly")}</li>
           </ul>
 

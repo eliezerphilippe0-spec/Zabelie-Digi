@@ -137,6 +137,55 @@ compte) relève d'une investigation manuelle.
 
 ---
 
+## 3 bis. Le point de fond — le bouton est un palliatif, pas le correctif
+
+L'exposition n'est pas « un bouton manquant » : la plateforme **détient des
+fonds de tiers sans mécanisme de sortie** — exactement le risque Circulaire 121
+que l'architecture évite partout ailleurs (Business sans rétention, wallet en
+registre comptable). Ce module est le seul endroit où le risque a été
+reconstitué, par accident.
+
+La bonne réponse est donc de **réduire la durée de détention**, pas seulement
+d'ajouter une action vendeur :
+
+- **Correctif cible : versement AUTOMATIQUE à maturité** — dès que l'escrow
+  J+7 mature, le net part vers le numéro MonCash du vendeur, sans qu'il ait
+  rien à demander. (« Automatique » peut être un humain chaque lundi au début —
+  l'essentiel est que ça arrive sans demande du vendeur. Ne promettre ce
+  comportement aux vendeurs que s'il est tenable dès la semaine de la
+  promesse.)
+- **Palliatif : le bouton de retrait** (lot 0.b) — utile immédiatement,
+  insuffisant seul.
+- ⚠️ **La dépendance API ne conditionne PAS la faisabilité.** Le versement
+  sans demande est tenable dès cette semaine, à la main, depuis le compte
+  marchand — il ne tient qu'à la discipline de l'exécuter. L'API de VERSEMENT
+  MonCash (à confirmer auprès de Digicel — le code actuel ne sait qu'encaisser
+  et vérifier) change le **coût et l'échelle**, pas la possibilité. Corollaire
+  pour la communication : la promesse « lajan w ap vin jwenn ou san ou pa
+  bezwen mande » n'attend aucune API — mais ne la prononcer que si la
+  discipline hebdomadaire est réellement engagée.
+
+## 3 ter. Protocole d'apurement manuel (avant application de 0032)
+
+1. **Payer d'abord, écrire ensuite.** « M sot voye w lajan an, referans X »
+   est incontestable ; « m ap voye w » est une promesse de plus à quelqu'un qui
+   attend déjà. N'écrire qu'aux vendeurs payables le jour même — écrire à
+   douze et en payer trois transforme un problème silencieux en neuf témoins
+   actifs.
+2. **Décomposer le montant** dans chaque message : brut vendu, commission au
+   taux réellement appliqué à chaque vente, net versé — et distinguer la part
+   encore en maturation J+7 s'il y en a une. Un net sans détail se lit comme
+   une retenue supplémentaire.
+3. **Vérifier le numéro MonCash** s'il arrive par le fil de discussion :
+   comparer à celui du dossier, sinon la porte à l'usurpation est ouverte.
+4. **Journal durable dès le premier virement**, une ligne par règlement :
+   `identifiant vendeur · brut · commission · net · horodatage · référence
+   MonCash`. Quand `0032` sera appliquée, la régularisation s'écrit comme des
+   **entrées nouvelles** (`zabelie_record_manual_payout`, une par ligne du
+   journal) — **jamais** comme une correction de soldes : contourner
+   l'append-only pour rattraper l'historique ferait perdre au registre la
+   propriété pour laquelle il existe.
+
 ## 4. Ordre d'exécution proposé
 
 | # | Lot | Effort | Bloquant pour |
@@ -150,14 +199,36 @@ Puis seulement : chantier A (rebrand), puis B→F.
 
 ---
 
-## 5. Décision attendue du porteur — arrêter ou non l'accumulation
+## 5. Décision — continuer ou suspendre l'accumulation
 
-À trancher **au vu des trois requêtes SQL** du dossier juridique (§6) :
+**Le critère n'est pas la taille de l'écart.** Tant qu'aucune sortie ne
+fonctionne, chaque vente aggrave l'exposition — c'est **l'existence de la
+sortie** qui décide, pas son montant. Les trois requêtes SQL (§6 du dossier)
+disent l'**urgence du décaissement** (qui payer d'abord, en combien de temps),
+pas s'il faut continuer d'encaisser.
 
-| Situation constatée | Conduite proposée |
+| Une sortie fonctionne-t-elle dès aujourd'hui ? (l'apurement manuel discipliné
+du §3 ter compte comme sortie) | Conduite |
 |---|---|
-| Encours **faible et récent** | Apurer · livrer 0.a puis 0.b · **continuer** |
-| Encours **significatif ou ancien** | **Suspendre les nouvelles commandes** qui créditent le registre jusqu'à ce que la voie de sortie existe |
+| **Oui** — les vendeurs sont payés sans demande, à cadence tenue | Continuer d'encaisser |
+| **Non** | **Suspendre les nouvelles commandes** qui créditent le registre, quelle que soit la taille de l'encours |
+
+**Une intention n'est pas une sortie.** Le projet en a déjà porté une —
+« les retraits arriveront avec la suite » — restée fausse sans que personne
+s'en aperçoive. La sortie existe **à partir du premier versement effectivement
+exécuté, référence à l'appui** ; tant qu'il n'a pas eu lieu, l'état honnête
+est « suspendu ». Le critère ne change pas — c'est le moment où l'on a le
+droit de répondre « oui » qui est fixé.
+
+**Seuil de péremption du manuel — à poser MAINTENANT, pas quand il sera
+atteint.** Le porteur fixe un nombre de vendeurs ou un encours au-delà duquel
+la cadence manuelle n'est plus tenable ; franchi, le versement automatisé
+(§3 bis) cesse d'être une cible et devient un bloquant. Sans ce seuil, le
+palliatif se périme en silence : il ne casse pas d'un coup — on saute une
+semaine chargée, puis deux. C'est exactement ainsi que le premier écart s'est
+installé. *(Valeurs à fixer par le porteur — ordre de grandeur raisonnable :
+au-delà de ~15 vendeurs à payer par semaine ou ~200 000 HTG d'encours, le
+lundi manuel ne tiendra pas.)*
 
 > **Ne pas laisser le compteur tourner pendant que le dossier circule.**
 

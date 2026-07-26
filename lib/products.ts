@@ -123,6 +123,36 @@ export type ProductPage = {
   hasMore: boolean;
 };
 
+/**
+ * Le code se déploie tout seul (Vercel, à la fusion) ; les migrations sont
+ * appliquées à la main par le porteur. Il existe donc TOUJOURS une fenêtre où
+ * le code est en avance sur le schéma. Une requête qui s'appuie sur une colonne
+ * pas encore migrée doit se dégrader, pas tomber : un catalogue sans filtre de
+ * stock reste un catalogue, un 500 n'est plus rien.
+ *
+ * `42703` = undefined_column côté Postgres (remonté tel quel par PostgREST).
+ */
+export function isMissingColumn(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "42703" || /column .*in_stock.* does not exist/i.test(error.message ?? "");
+}
+
+/**
+ * Exécute une requête catalogue avec le filtre `in_stock`, et la rejoue sans
+ * lui si la colonne n'existe pas encore (migration `0040` non appliquée).
+ *
+ * Le repli est réservé à CETTE cause. Toute autre erreur (droits, RLS, panne)
+ * remonte telle quelle : masquer une panne derrière un catalogue partiel serait
+ * pire que l'afficher.
+ */
+export async function runTolerantOfMissingStock<T>(
+  build: (withStockFilter: boolean) => PromiseLike<{ data: T | null; error: { code?: string; message?: string } | null }>
+): Promise<{ data: T | null; error: { code?: string; message?: string } | null }> {
+  const first = await build(true);
+  if (!isMissingColumn(first.error)) return first;
+  return build(false);
+}
+
 function filterSample(
   items: ProductView[],
   filters?: ProductFilters
@@ -151,29 +181,30 @@ export async function getPublishedProducts(
   if (!isSupabaseConfigured()) return filterSample(sampleAsView(), filters);
 
   const supabase = await createClient();
-  let query = supabase
-    .from("products")
-    .select(SELECT)
-    .eq("status", "published")
+  const q = filters?.q?.trim().replace(/[%,()]/g, " ");
+
+  const { data, error } = await runTolerantOfMissingStock<Row[]>((withStockFilter) => {
+    let query = supabase.from("products").select(SELECT).eq("status", "published");
     // Spec §9 : un produit en rupture n'apparaît pas dans les résultats — un
     // catalogue fantôme détruit la confiance plus vite qu'une offre courte.
     // Sa FICHE reste accessible (lien WhatsApp partagé) et affiche la rupture.
     // Les produits digitaux ont in_stock = true à vie (0040).
-    .eq("in_stock", true);
+    if (withStockFilter) query = query.eq("in_stock", true);
 
-  if (filters?.category && filters.category !== "Tout") {
-    query = query.eq("category", filters.category);
-  }
-  const q = filters?.q?.trim().replace(/[%,()]/g, " ");
-  if (q) {
-    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
-  }
+    if (filters?.category && filters.category !== "Tout") {
+      query = query.eq("category", filters.category);
+    }
+    if (q) {
+      query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+    }
 
-  // BL-116 (C-6, pattern Amazon — liste toujours bornée) : sans LIMIT, le HTML
-  // du catalogue croissait linéairement avec l'offre (3G). 60 = ~2 écrans.
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(60);
+    // BL-116 (C-6, pattern Amazon — liste toujours bornée) : sans LIMIT, le HTML
+    // du catalogue croissait linéairement avec l'offre (3G). 60 = ~2 écrans.
+    return query.order("created_at", { ascending: false }).limit(60) as unknown as PromiseLike<{
+      data: Row[] | null;
+      error: { code?: string; message?: string } | null;
+    }>;
+  });
 
   if (error || !data) {
     // BL-116 : le repli « produits de démo » est réservé au mode NON configuré
@@ -210,39 +241,48 @@ export async function getPublishedProductsPage(
   }
 
   const supabase = await createClient();
-  let query = supabase
-    .from("products")
-    .select(SELECT)
-    .eq("status", "published")
-    // Spec §9 : un produit en rupture n'apparaît pas dans les résultats — un
-    // catalogue fantôme détruit la confiance plus vite qu'une offre courte.
-    // Sa FICHE reste accessible (lien WhatsApp partagé) et affiche la rupture.
-    // Les produits digitaux ont in_stock = true à vie (0040).
-    .eq("in_stock", true);
-
-  if (filters.category && filters.category !== "Tout") {
-    query = query.eq("category", filters.category);
-  }
 
   const q = filters.q?.trim().replace(/[%,()]/g, " ");
+  // BL-134 (C-7b) : la recherche couvre aussi le nom du créateur. Résolu une
+  // seule fois, hors de la requête catalogue — un éventuel rejeu du filtre de
+  // stock ne doit pas relancer cette lecture.
+  let sellerIds: string[] = [];
   if (q) {
-    // BL-134 (C-7b) : la recherche couvre aussi le nom du créateur.
     const { data: matchingSellers } = await supabase
       .from("profiles")
       .select("id")
       .ilike("display_name", `%${q}%`)
       .limit(50);
-    const sellerIds = (matchingSellers ?? []).map((s) => s.id);
-    const clauses = [`title.ilike.%${q}%`, `description.ilike.%${q}%`];
-    if (sellerIds.length > 0) clauses.push(`seller_id.in.(${sellerIds.join(",")})`);
-    query = query.or(clauses.join(","));
+    sellerIds = (matchingSellers ?? []).map((s) => s.id);
   }
 
-  // Une ligne de plus que la page demandée : sait s'il y a une suite sans
-  // requête COUNT séparée (range() est inclusif aux deux bornes).
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .range(offset, offset + CATALOGUE_PAGE_SIZE);
+  const { data, error } = await runTolerantOfMissingStock<Row[]>((withStockFilter) => {
+    let query = supabase.from("products").select(SELECT).eq("status", "published");
+    // Spec §9 : un produit en rupture n'apparaît pas dans les résultats — un
+    // catalogue fantôme détruit la confiance plus vite qu'une offre courte.
+    // Sa FICHE reste accessible (lien WhatsApp partagé) et affiche la rupture.
+    // Les produits digitaux ont in_stock = true à vie (0040).
+    if (withStockFilter) query = query.eq("in_stock", true);
+
+    if (filters.category && filters.category !== "Tout") {
+      query = query.eq("category", filters.category);
+    }
+
+    if (q) {
+      const clauses = [`title.ilike.%${q}%`, `description.ilike.%${q}%`];
+      if (sellerIds.length > 0) clauses.push(`seller_id.in.(${sellerIds.join(",")})`);
+      query = query.or(clauses.join(","));
+    }
+
+    // Une ligne de plus que la page demandée : sait s'il y a une suite sans
+    // requête COUNT séparée (range() est inclusif aux deux bornes).
+    return query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + CATALOGUE_PAGE_SIZE) as unknown as PromiseLike<{
+      data: Row[] | null;
+      error: { code?: string; message?: string } | null;
+    }>;
+  });
 
   if (error || !data) {
     throw new Error(`catalogue indisponible: ${error?.message ?? "réponse vide"}`);

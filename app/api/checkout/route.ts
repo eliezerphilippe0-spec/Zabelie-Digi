@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isDownloadable } from "@/lib/product-kind";
 import { createPayment } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
@@ -123,7 +124,11 @@ export async function POST(req: Request) {
   // nouveaux « fichier » naissent en brouillon jusqu'à l'upload, mais les
   // produits publiés avant ce garde peuvent exister sans asset → refus clair
   // plutôt qu'un acheteur MonCash floué (confiance = tout, sur ce marché).
-  if (product.kind === "fichier") {
+  // Formulé en positif dès l'origine : un `physical` échappait donc au garde,
+  // ce qui est le bon résultat mais par accident. `isDownloadable` le rend
+  // délibéré — et le contrôle d'exhaustivité alertera à la prochaine valeur
+  // ajoutée à l'énumération.
+  if (isDownloadable(product.kind, product.id)) {
     const assets = product.product_assets as unknown as
       | { count: number }[]
       | null;

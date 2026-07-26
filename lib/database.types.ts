@@ -3,7 +3,10 @@
 // À terme, générables via `supabase gen types typescript`.
 
 export type UserRole = "buyer" | "creator" | "admin";
-export type ProductKind = "fichier" | "service";
+// Source unique : `lib/product-kind.ts`. Toute valeur ajoutée à l'énumération
+// SQL s'ajoute LÀ, et nulle part ailleurs.
+import type { ProductKind } from "@/lib/product-kind";
+export type { ProductKind };
 export type ProductStatus = "draft" | "published" | "archived";
 export type OrderStatus =
   | "pending"

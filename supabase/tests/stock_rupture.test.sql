@@ -24,7 +24,7 @@ insert into profiles (id, display_name, role, tier) values
 insert into products (id, seller_id, slug, title, description, price_htg, kind, status, category)
 values ('00000000-0000-0000-0000-00000000cc03'::uuid,
         '00000000-0000-0000-0000-00000000cc01'::uuid,
-        'filtre-sr', 'Filtre', 'Test', 1000, 'fichier', 'published', 'Design');
+        'filtre-sr', 'Filtre', 'Test', 1000, 'physical', 'published', 'Design');
 insert into zabelie_product_variants (id, product_id, sku, price_htg) values
   ('00000000-0000-0000-0000-00000000cc04'::uuid, '00000000-0000-0000-0000-00000000cc03'::uuid, 'SKU-SR-A', 1000),
   ('00000000-0000-0000-0000-00000000cc05'::uuid, '00000000-0000-0000-0000-00000000cc03'::uuid, 'SKU-SR-B', 1000);

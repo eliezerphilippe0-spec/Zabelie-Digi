@@ -14,6 +14,23 @@ Une migration = un fichier `supabase/migrations/00XX_*.sql`. Ces fichiers sont
 chacun**. Les migrations Zabelie sont **additives** (elles ajoutent des
 colonnes/tables) : elles ne suppriment ni ne modifient les données existantes.
 
+## Invariant de rejeu — pour qui ÉCRIT une migration
+
+**Une donnée mutée par une migration ultérieure ne se réaffirme jamais au
+rejeu.** Si `00YY` fait un `update` sur une ligne seedée par `00XX`, alors le
+seed de `00XX` doit porter `on conflict … do nothing` sur cette ligne — jamais
+`do update` : sinon chaque rejeu de `00XX` défait silencieusement `00YY`.
+
+Cas réel qui a fondé la règle : `0038` monte `reservation_ttl_minutes` de 30 à
+120 ; un `do update` dans le seed de `0036` aurait réinitialisé la valeur à 30
+à chaque rejeu. Même famille : les colonnes d'**exploitation** (`active`,
+`position` de `zabelie_categories`), mutées à la main et non par migration,
+sont pareillement exclues du `do update` de leur seed (`0035`, en-tête).
+
+Le réflexe au moment d'écrire : pour chaque colonne d'un seed, se demander
+« qui d'autre écrira ici ? ». Personne → `do update` (le seed converge). Une
+migration ou l'exploitation → cette colonne n'entre pas dans le `do update`.
+
 ---
 
 ## 0. Le bon projet — le point le plus important

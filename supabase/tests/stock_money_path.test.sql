@@ -23,7 +23,7 @@ insert into products (id, seller_id, slug, title, description, price_htg, kind, 
 values
   ('00000000-0000-0000-0000-0000000f0003'::uuid,
    '00000000-0000-0000-0000-0000000f0001'::uuid,
-   'filtre-huile-sm', 'Filtre à huile', 'Test', 1000, 'fichier', 'published', 'Design'),
+   'filtre-huile-sm', 'Filtre à huile', 'Test', 1000, 'physical', 'published', 'Design'),
   ('00000000-0000-0000-0000-0000000f0009'::uuid,
    '00000000-0000-0000-0000-0000000f0001'::uuid,
    'ebook-sm', 'E-book', 'Digital', 1000, 'fichier', 'published', 'Design');

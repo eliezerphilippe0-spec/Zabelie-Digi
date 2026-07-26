@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
+import type { ProductKind } from "@/lib/sample-data";
+import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -77,7 +79,7 @@ export default async function VendrePage() {
     slug: string;
     title: string;
     status: string;
-    kind: string;
+    kind: ProductKind;
     product_assets: { id: string }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
@@ -146,16 +148,22 @@ export default async function VendrePage() {
                   )}
                   <span className="text-xs text-mist">{statusLabel(p.status)}</span>
                 </div>
-                {p.kind === "fichier" ? (
+                {/* L'upload de livrable n'a de sens que pour un fichier. Le
+                    `else` étiquetait « Service » tout le reste — un produit
+                    physique s'affichait donc comme un service dans le
+                    tableau de bord de son propre vendeur. */}
+                {isDownloadable(p.kind, p.id) ? (
                   <UploadAsset
                     productId={p.id}
                     hasAsset={p.product_assets.length > 0}
                     labels={uploadLabels}
                   />
                 ) : (
-                  <span className="shrink-0 text-xs text-mist">
-                    {t(lang, "product.kind.service")}
-                  </span>
+                  kindLabelKey(p.kind, p.id) && (
+                    <span className="shrink-0 text-xs text-mist">
+                      {t(lang, kindLabelKey(p.kind, p.id)!)}
+                    </span>
+                  )
                 )}
               </li>
             ))}
