@@ -88,6 +88,7 @@ const fr = {
   "product.back": "← Retour au catalogue",
   "product.kind.file": "Fichier digital",
   "product.kind.service": "Service",
+  "product.kind.physical": "Produit physique",
   "product.by": "par",
   "product.sales": "ventes",
   "product.reviews.badge": "avis vérifié(s)",
@@ -106,6 +107,13 @@ const fr = {
   "common.copied": "Copié ✓",
   "pay.other": "Diaspora ? Payez en USD :",
   "product.delivery": "Livraison instantanée après confirmation du paiement.",
+  // Produit PHYSIQUE : Zabelie ne livre pas (ni flotte, ni entrepôt, ni
+  // contrat transporteur). Ce qui s'affiche est ce que le vendeur DÉCLARE,
+  // attribué à lui — jamais une promesse de la plateforme. Aucune mention de
+  // protection de paiement ni de garantie tant que l'escrow est dormant.
+  "product.delivery.declared":
+    "Livraison : {zone}, sous {days} jours — indiqué par le vendeur",
+  "product.delivery.toAgree": "Livraison à convenir avec le vendeur",
   "product.secure": "✓ Paiement sécurisé, confirmé serveur-à-serveur",
   "product.file": "✓ Téléchargement immédiat du fichier",
   "product.service": "✓ Mise en relation après paiement",
@@ -297,6 +305,7 @@ const fr = {
 
   "card.kind.file": "Fichier",
   "card.kind.service": "Service",
+  "card.kind.physical": "Physique",
 
   "status.draft": "Brouillon",
   "status.published": "Publié",
@@ -386,6 +395,7 @@ const ht: Record<I18nKey, string> = {
   "product.back": "← Tounen nan katalòg la",
   "product.kind.file": "Fichye dijital",
   "product.kind.service": "Sèvis",
+  "product.kind.physical": "Pwodwi fizik",
   "product.by": "pa",
   "product.sales": "vant",
   "product.reviews.badge": "avi verifye",
@@ -404,6 +414,9 @@ const ht: Record<I18nKey, string> = {
   "common.copied": "Kopye ✓",
   "pay.other": "Dyaspora ? Peye an USD :",
   "product.delivery": "Livrezon nan menm moman apre peman an konfime.",
+  "product.delivery.declared":
+    "Livrezon : {zone}, nan {days} jou — se vandè a ki bay enfòmasyon sa a.",
+  "product.delivery.toAgree": "Livrezon : n ap antann ou ak vandè a.",
   "product.secure": "✓ Peman sekirize, konfime sèvè-a-sèvè",
   "product.file": "✓ Telechaje fichye a nan menm moman",
   "product.service": "✓ Kontak ak kreyatè a apre peman",
@@ -587,6 +600,7 @@ const ht: Record<I18nKey, string> = {
 
   "card.kind.file": "Fichye",
   "card.kind.service": "Sèvis",
+  "card.kind.physical": "Fizik",
 
   "status.draft": "Poko pibliye",
   "status.published": "Pibliye",

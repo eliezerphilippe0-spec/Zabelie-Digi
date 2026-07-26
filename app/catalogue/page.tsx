@@ -111,6 +111,7 @@ export default async function CataloguePage({
                   labels={{
                     kindFile: t(lang, "card.kind.file"),
                     kindService: t(lang, "card.kind.service"),
+                    kindPhysical: t(lang, "card.kind.physical"),
                     by: t(lang, "product.by"),
                     sales: t(lang, "product.sales"),
                   }}

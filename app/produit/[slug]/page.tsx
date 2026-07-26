@@ -14,6 +14,11 @@ import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import {
+  kindLabelKey,
+  deliveryBulletKey as bulletKey,
+  deliveryNoticeKey,
+} from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +118,15 @@ export default async function ProductPage({
     getPhysicalView(product.id),
   ]);
 
+  const kindKey = kindLabelKey(product.kind);
+  const deliveryBulletKey = bulletKey(product.kind);
+  // La zone de livraison n'a pas encore de colonne : seul le repli « à
+  // convenir » est atteignable aujourd'hui pour un produit physique.
+  const delivery = deliveryNoticeKey(product.kind, {
+    zone: null,
+    days: product.deliveryDays,
+  });
+
   return (
     <div className="bg-grain min-h-screen">
       <SiteNav />
@@ -137,9 +151,11 @@ export default async function ProductPage({
           </Link>
 
           <div className="mt-4 flex items-center gap-2">
-            <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
-              {product.kind === "service" ? t(lang, "product.kind.service") : t(lang, "product.kind.file")}
-            </span>
+            {kindKey && (
+              <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
+                {t(lang, kindKey)}
+              </span>
+            )}
             <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
               {product.category}
             </span>
@@ -249,9 +265,16 @@ export default async function ProductPage({
                 }}
               />
             </div>
-            <p className="mt-3 text-center text-xs text-mist">
-              {t(lang, "product.delivery")}
-            </p>
+            {/* Mention de livraison — dépend du type. Elle était affichée
+                inconditionnellement (« Livraison instantanée après
+                confirmation du paiement »), y compris sur un produit
+                physique. Sur un produit physique, elle attribue explicitement
+                l'information au vendeur : Zabelie ne livre pas. */}
+            {delivery && (
+              <p className="mt-3 text-center text-xs text-mist">
+                {t(lang, delivery.key, delivery.params)}
+              </p>
+            )}
           </div>
 
           {/* Compatibilité véhicule — décisif sur une pièce détachée :
@@ -285,11 +308,11 @@ export default async function ProductPage({
 
           <ul className="mt-6 space-y-2 text-sm text-mist">
             <li>{t(lang, "product.secure")}</li>
-            <li>
-              {product.kind === "service"
-                ? t(lang, "product.service")
-                : t(lang, "product.file")}
-            </li>
+            {/* Ligne de mode de remise. Absente sur un produit physique : la
+                mention de livraison sous le prix dit déjà ce que le vendeur
+                déclare, et rien d'autre n'est vrai — Zabelie ne livre pas.
+                Aucune seconde formulation inventée ici. */}
+            {deliveryBulletKey && <li>{t(lang, deliveryBulletKey)}</li>}
             <li>{t(lang, "product.verifiedOnly")}</li>
           </ul>
 

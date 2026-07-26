@@ -1,7 +1,10 @@
 // Données d'exemple pour le scaffold UI (Vague 1).
 // À remplacer par des requêtes Supabase une fois le schéma figé (cf. D-3).
 
-export type ProductKind = "fichier" | "service";
+// Doit rester identique à `ProductKind` de `lib/database.types.ts` — deux
+// déclarations du même type, aucune des deux ne connaissait `physical`, ce qui
+// faisait croire au compilateur que tout `else` était exhaustif.
+export type ProductKind = "fichier" | "service" | "physical";
 
 export type Product = {
   slug: string;
