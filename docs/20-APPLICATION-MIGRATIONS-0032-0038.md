@@ -112,6 +112,25 @@ order by m.num, m.objet;
 passée à moitié — le cas typique d'un script interrompu dans l'éditeur SQL — et
 il faut le comprendre avant d'empiler quoi que ce soit.
 
+**Regarder `0031` explicitement, pas dans le flot.** On dit la production « à
+`0030` », et le groupe A commence à `0032` : `0031` est donc soit appliquée
+sans qu'on le sache, soit **sautée**. Ce qu'on sait de source sûre, en lisant
+les fichiers :
+
+- `0031_points_caps_expiry.sql` **existe bien** dans le dépôt. Elle crée
+  `points_limits` et remplace `award_points` — plafonds et expiration des
+  points de fidélité.
+- **Le groupe A n'en dépend pas** : `0032`, `0033` et `0034` ne contiennent
+  aucune référence aux points. Vérifié par recherche dans les trois fichiers.
+- **Rien ne casse si elle manque** : le cron `/api/points/expire` appelle
+  `expire_points_batch_job`, définie par `0021` et non par `0031`. Et le
+  système de fidélité est débranché — aucun point n'a jamais été émis.
+
+Donc : si le volet 1 dit `0031` absente, **ce n'est pas un obstacle au groupe
+A** — on le note, on continue, et on l'applique plus tard avec le lot fidélité
+si ce chantier reprend. Mais on le **note** : une migration sautée en silence
+est exactement ce que le registre `0041` existe pour empêcher.
+
 ### Volet 2 — les LIGNES, si les tables existent
 
 Le volet 1 interroge des **objets** : types, tables, fonctions. Le seed insère
@@ -291,6 +310,20 @@ select relname, relrowsecurity from pg_class
  order by 1;
 -- Attendu : `t` partout.
 ```
+
+### Contrôle croisé après le groupe A — coût nul, enjeu maximal
+
+**Rejouer les trois requêtes d'encours (`docs/17` §6) après le groupe A. Elles
+doivent rendre EXACTEMENT les mêmes montants qu'avant.**
+
+C'est le test direct de l'hypothèse sur laquelle repose tout le découpage :
+`0032` ajoute de quoi *enregistrer* des règlements, `0033` ouvre un rapport en
+*lecture*, `0034` crée des tables et des fonctions **non appelées** — aucune ne
+doit déplacer un solde existant.
+
+Si un chiffre bouge entre avant et après, **on s'arrête là**. La référence
+d'apurement vient d'être invalidée par la migration elle-même, et on ne paie
+pas des vendeurs sur des montants dont on ne sait plus lesquels font foi.
 
 ### Ce qui doit être INCHANGÉ — c'est le contrôle qui compte
 
@@ -513,6 +546,23 @@ vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
 | 7 | Comparaison `zabelie_solvency_report()` avant/après | 6 |
 | 8 | Revue séparée puis application de **B2** | 2 et 7 |
 | 9 | Domaine sur Vercel, publication des fiches, ouverture | 8 |
+
+### Vérification à faire une fois, sur la PRODUCTION, dès le déploiement
+
+**S'envoyer un lien de fiche produit sur WhatsApp.** C'est la seule surface de
+ce chantier qui n'a jamais été éprouvée ailleurs qu'en local et en CI : les
+tests vérifient que les balises sont correctes et que l'image se génère, pas
+que le robot de WhatsApp les lit comme prévu depuis Internet.
+
+Attendu : vignette 1200×630 avec le titre et le prix, ligne de titre portant le
+nom du produit et son prix, description avec le vendeur.
+
+⚠️ **Le cache d'aperçu de WhatsApp est persistant** — un lien dont l'aperçu
+s'est affiché nu reste nu pour tout le monde, longtemps. À vérifier **avant**
+que des liens ne circulent, pas après. Si l'aperçu est mauvais, le premier
+suspect est `NEXT_PUBLIC_SITE_URL` sur l'environnement de production :
+`lib/site-url.ts` retombe sinon sur l'URL du déploiement Vercel, ce qui
+fonctionne mais donne un domaine `*.vercel.app` dans l'aperçu.
 
 ⚠️ **Avant l'étape 9, une impasse reste ouverte** : l'acheteur d'un produit
 physique voit dans `/mes-achats` une commande figée sur `paid`, sans action ni
