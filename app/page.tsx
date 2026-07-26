@@ -3,7 +3,6 @@ import Image from "next/image";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { TypeWriter } from "@/components/type-writer";
 import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -161,32 +160,29 @@ export default async function HomePage() {
         </div>
       </nav>
 
-      {/* HERO — noir, centré, machine à écrire (style Bloop) */}
-      <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
+      {/* HERO — court (≤ 40 % du viewport mobile). Chaque pixel au-dessus de
+          la ligne de flottaison qui n'est ni un produit ni une recherche est
+          perdu sur Android d'entrée de gamme. Promesse concrète : ce qu'on
+          achète, où c'est livré, comment on paie. Pas d'animation. */}
+      <section className="mx-auto max-w-6xl px-5 pb-10 pt-10 sm:pt-14">
         <div className="mx-auto max-w-3xl text-center">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-1.5 text-xs text-mist">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              {t(lang, "home.badge")}
-            </span>
-
-            <h1 className="mt-8 text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
-              {t(lang, "home.h1.discover")}{" "}
-              <TypeWriter
-                words={["Zabelie", t(lang, "home.tw2"), t(lang, "home.tw3")]}
-              />
+            <h1 className="text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl">
+              {t(lang, "home.h1")}
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-base text-mist sm:text-lg">
+            <p className="mx-auto mt-3 max-w-xl text-sm text-mist sm:text-base">
               {t(lang, "home.sub")}
             </p>
 
-            {/* Barre de recherche (GET, fonctionne sans JS) */}
-            <form action="/catalogue" className="mx-auto mt-9 flex max-w-xl gap-2">
+            {/* RECHERCHE — premier bloc utile, au-dessus de la ligne de
+                flottaison : une marketplace physique se cherche, elle ne se
+                butine pas. GET, fonctionne sans JS. */}
+            <form action="/catalogue" className="mx-auto mt-6 flex max-w-xl gap-2">
               <input
                 name="q"
                 placeholder={t(lang, "catalog.search.ph")}
-                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-violet"
               />
               <button
                 type="submit"
@@ -196,39 +192,17 @@ export default async function HomePage() {
               </button>
             </form>
 
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/vendre"
-                className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 sm:w-auto"
-              >
-                {t(lang, "home.cta.sell")}
-              </Link>
-              <Link
-                href="/catalogue"
-                className="w-full rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-semibold text-cloud transition hover:border-violet/50 sm:w-auto"
-              >
-                {t(lang, "home.cta.browse")}
-              </Link>
-            </div>
-
-            {/* Badges de confiance (style Bloop) */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-              {[
-                [t(lang, "badge.pay"), "M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z"],
-                [t(lang, "badge.delivery"), "M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.8 1.8 0 100-3.6A1.8 1.8 0 007 18zm11 0a1.8 1.8 0 100-3.6 1.8 1.8 0 000 3.6z"],
-                [t(lang, "badge.quality"), "M12 2a5 5 0 015 5c0 1.7-.8 3.2-2.1 4.1L16 22l-4-2.5L8 22l1.1-10.9A5 5 0 0112 2z"],
-              ].map(([label, d]) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-2 text-sm text-cloud"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-cloud" strokeWidth="1.6">
-                    <path d={d} />
-                  </svg>
-                  {label}
-                </span>
-              ))}
-            </div>
+            {/* Un SEUL argument de confiance — le seul vérifiable aujourd'hui.
+                « Livraison rapide » et « Qualité garantie » ont été retirés :
+                la livraison est assurée par les vendeurs et la plateforme ne
+                détient aucun stock. « Kòd konfimasyon » et « Machann verifye »
+                ne sont pas ajoutés — ni l'un ni l'autre n'existe encore. */}
+            <p className="mt-5 inline-flex items-center gap-2 text-sm text-mist">
+              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-cloud" strokeWidth="1.6">
+                <path d="M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z" />
+              </svg>
+              {t(lang, "badge.pay")}
+            </p>
           </div>
         </div>
 
