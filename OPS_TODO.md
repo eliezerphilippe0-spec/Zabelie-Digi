@@ -89,7 +89,10 @@ BL-136 (achat invité) reste explicitement en attente d'une décision produit.
 
 | Groupe | Environnement | Début (UTC) | Fin (UTC) | `zabelie_solvency_report()` avant / après | Par |
 |---|---|---|---|---|---|
-| _(à compléter)_ | | | | | |
+| A (0032-0034) | prod zabelie-digi | 2026-07-26T21:06Z | 21:12Z | zéros / zéros identiques (ok=true) | connecteur (session Claude, go porteur) |
+| B1 (0035-0036) + 0039 | prod zabelie-digi | 21:14Z | 21:17Z | inchangé (ok=true) | idem |
+| 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
+| _restent : 0031 (fidélité) · 0037/0038/0040 (B2, revue séparée)_ | | | | | |
 
 Procédure : `docs/20-APPLICATION-MIGRATIONS-0032-0038.md` §B1.
 La sortie de `zabelie_solvency_report()` va dans un **fichier horodaté**

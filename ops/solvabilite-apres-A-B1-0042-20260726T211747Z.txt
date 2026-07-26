@@ -1,0 +1,8 @@
+# APRÈS application (A · B1 · 0039 · 0042 · 0041) — projet zabelie-digi
+# Début 2026-07-26T21:06:27Z · fin 2026-07-26T21:17:47Z · via connecteur Supabase (apply_migration)
+zabelie_solvency_report() : ok=true · ecarts=0 · du_total=0 · disponible=0 · en_attente=0 · vendeurs_crediteurs=0
+IDENTIQUE à la référence d'avant (zéros partout) — aucun solde touché.
+taxonomie : 16/74/33 (actifs 4/10/33) · vehicules 26 auto + 12 moto · ttl=30
+0042 : 4 fonctions · 2 triggers · order_ref NOT NULL · backfill 0 ligne
+registre 0041 : 12 lignes (8 appliquées + 4 non-appliquées documentées)
+NON appliquées : 0031 (fidélité débranchée) · 0037/0038/0040 (B2, revue séparée)

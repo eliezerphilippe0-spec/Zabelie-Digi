@@ -49,8 +49,11 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0041`** — registre des migrations ; production
-   appliquée jusqu'à `0030`, groupes A/B1/B2 en attente, `docs/20`).
+   (dernière écrite : **`0042`**. Production 2026-07-26 : `0030` + groupe A +
+   B1 + `0039` + `0041` + `0042` appliqués ; **restent `0031`** (fidélité,
+   volontairement sautée) **et B2** `0037`/`0038`/`0040` — revue séparée,
+   prérequis à l'ouverture de la vente physique. Registre :
+   `zabelie_schema_migrations`).
 
 ## Registre vendeur — invariant comptable (0033)
 ```
