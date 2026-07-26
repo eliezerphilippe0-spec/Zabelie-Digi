@@ -19,6 +19,10 @@ export type ProductView = {
   ratingAvg: number | null; // null si aucun avis
   ratingCount: number;
   accent: string;
+  /** Photo produit (bucket public 0039). null = repli dégradé — la colonne
+      existe depuis 0001 mais n'était LUE par aucune surface : les vendeurs
+      téléversaient une photo qu'aucun acheteur ne voyait. */
+  coverUrl: string | null;
   blurb: string;
   deliveryDays: number | null;    // 'service' uniquement — page Fiverr
   serviceIncludes: string[];      // 'service' uniquement — checklist « inclus »
@@ -61,6 +65,7 @@ const sampleAsView = (): ProductView[] =>
     ratingAvg: null,
     ratingCount: 0,
     accent: p.accent,
+    coverUrl: null,
     blurb: p.blurb,
     deliveryDays: null,
     serviceIncludes: [],
@@ -78,6 +83,7 @@ type Row = {
   rating_count: number;
   rating_sum: number;
   seller_id: string;
+  cover_url: string | null;
   seller: { display_name: string } | { display_name: string }[] | null;
   delivery_days: number | null;
   service_includes: string[] | null;
@@ -101,6 +107,7 @@ function rowAsView(r: Row): ProductView {
         : null,
     ratingCount: r.rating_count ?? 0,
     accent: accentFor(r.slug),
+    coverUrl: r.cover_url,
     blurb: r.description ?? "",
     deliveryDays: r.delivery_days,
     serviceIncludes: r.service_includes ?? [],
@@ -108,7 +115,7 @@ function rowAsView(r: Row): ProductView {
 }
 
 const SELECT =
-  "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name)";
+  "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name)";
 
 export type ProductFilters = {
   q?: string;

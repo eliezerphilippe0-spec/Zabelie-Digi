@@ -15,6 +15,7 @@
  * `delivered`. Les relire via GET /__ecritures.
  */
 import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.STUB_PORT ?? 54321);
 
@@ -38,6 +39,7 @@ const PRODUCT = {
   seller_id: SELLER_ID,
   delivery_days: null,
   service_includes: null,
+  cover_url: "http://127.0.0.1:54321/cover.png",
   status: "published",
   in_stock: true,
   seller: { display_name: "Garaj Petyonvil" },
@@ -78,6 +80,12 @@ const server = createServer((req, res) => {
   // celui où le journal d'exécution est justement indispensable.
   if (url.pathname === "/rest/v1/rpc/zabelie_expire_stock_reservations") {
     return send(200, 0);
+  }
+
+  if (url.pathname === "/cover.png") {
+    const png = readFileSync(new URL("./cover.png", import.meta.url));
+    res.writeHead(200, { "content-type": "image/png" });
+    return res.end(png);
   }
 
   if (url.pathname === "/__ecritures") return send(200, ecritures);

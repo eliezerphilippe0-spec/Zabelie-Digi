@@ -78,6 +78,13 @@ export default async function Image({
       })
     : "Paiement MonCash";
   const safeTitle = title.length > 90 ? title.slice(0, 88) + "…" : title;
+  // Photo produit : uniquement une URL http(s) absolue — satori la télécharge
+  // au rendu. Absente ou invalide → mise en page texte inchangée (jamais de
+  // carte cassée : cette image EST la première impression sur WhatsApp).
+  const cover =
+    product?.coverUrl && /^https?:\/\//.test(product.coverUrl)
+      ? product.coverUrl
+      : null;
 
   return new ImageResponse(
     (
@@ -86,11 +93,17 @@ export default async function Image({
           width: "100%",
           height: "100%",
           display: "flex",
+          background: BG,
+          fontFamily: "sans-serif",
+        }}
+      >
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: BG,
           padding: 70,
-          fontFamily: "sans-serif",
         }}
       >
         {/* En-tête : logo + badge type */}
@@ -123,7 +136,10 @@ export default async function Image({
           <div
             style={{
               display: "flex",
-              fontSize: safeTitle.length > 45 ? 64 : 78,
+              // Colonne rétrécie quand la photo occupe la droite.
+              fontSize: cover
+                ? safeTitle.length > 45 ? 48 : 58
+                : safeTitle.length > 45 ? 64 : 78,
               fontWeight: 800,
               color: TEXT,
               lineHeight: 1.05,
@@ -160,6 +176,17 @@ export default async function Image({
             </div>
           )}
         </div>
+      </div>
+      {cover && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={cover}
+          alt=""
+          width={430}
+          height={630}
+          style={{ width: 430, height: 630, objectFit: "cover" }}
+        />
+      )}
       </div>
     ),
     { ...size }

@@ -134,11 +134,25 @@ export default async function ProductPage({
       <SiteNav />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-2">
-        {/* Visuel */}
+        {/* Visuel — la photo du vendeur si elle existe, sinon le dégradé.
+            `cover_url` existait depuis 0001 et l'upload depuis 0039, mais
+            aucune surface ne la lisait : le vendeur téléversait une photo
+            qu'aucun acheteur ne voyait. Sur une marketplace, la photo EST le
+            produit. <img> simple (pas next/image) : hôte non proxifié, pas de
+            quota d'optimisation, taille d'upload déjà bornée à 5 Mo. */}
         <div>
-          <div
-            className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
-          />
+          {product.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.coverUrl}
+              alt={product.title}
+              className="aspect-[4/3] w-full rounded-3xl border border-line object-cover"
+            />
+          ) : (
+            <div
+              className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
+            />
+          )}
           {/* BL-119 (Gumroad — pas de galerie factice) : les 3 vignettes
               décoratives qui mimaient une galerie inexistante ont été retirées. */}
         </div>

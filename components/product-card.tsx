@@ -46,6 +46,21 @@ export function ProductCard({
       <div
         className={`relative h-40 bg-gradient-to-br ${product.accent} opacity-90`}
       >
+        {/* La photo du vendeur d'abord — le dégradé n'est que le repli.
+            <img> simple, pas next/image : le proxy d'optimisation restreint
+            l'hôte (remotePatterns) et consomme le quota Vercel ; l'upload est
+            déjà borné à 5 Mo côté route. lazy = hors écran, rien ne charge. */}
+        {product.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.coverUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        {!product.coverUrl && (
         <svg
           className="absolute inset-0 h-full w-full opacity-20"
           aria-hidden="true"
@@ -66,6 +81,7 @@ export function ProductCard({
           </pattern>
           <rect width="100%" height="100%" fill={`url(#chev-${product.slug})`} />
         </svg>
+        )}
         {kindLabel && (
           <span className="absolute left-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
             {kindLabel}
