@@ -12,6 +12,16 @@
 -- du fichier l'a créée. Une empreinte qui ne correspond plus le dit,
 -- définitivement et sans y penser.
 --
+-- ⚠️ CE REGISTRE EST DÉCLARATIF, PAS UNE PREUVE. Les migrations passent à la
+-- main dans l'éditeur SQL ; rien n'oblige l'opérateur à insérer la ligne
+-- après. Il enregistre donc ce que l'opérateur DÉCLARE avoir appliqué, pas ce
+-- qui l'a été. Une empreinte présente et concordante dit « le fichier du dépôt
+-- est celui que l'opérateur dit avoir appliqué » — elle ne prouve ni que
+-- l'application a réellement eu lieu, ni qu'elle a été complète. Ce que la
+-- base CONTIENT se vérifie avec la sonde d'objets et de lignes (`docs/20`
+-- §B1, étape 0) ; ce registre dit seulement quelle VERSION était censée y
+-- entrer. Les deux se complètent, aucun ne remplace l'autre.
+--
 -- Ce registre est un OUTIL D'EXPLOITATION, pas une table applicative : aucune
 -- route ne le lit, aucune RLS côté client n'est nécessaire — il est
 -- simplement invisible et inaccessible à `anon`/`authenticated`.

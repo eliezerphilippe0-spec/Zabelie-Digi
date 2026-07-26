@@ -15,13 +15,15 @@
 --
 -- Retenu : `do update`, mais PAS sur toutes les colonnes.
 --
---   • Libellés, parent, niveau, position → ÉCRASÉS. Le seed est la source de
---     vérité de la taxonomie : la réapplication converge vers l'état voulu
+--   • Libellés, parent, niveau → ÉCRASÉS. Le seed est la source de vérité de
+--     l'IDENTITÉ des catégories : la réapplication converge vers l'état voulu
 --     quel que soit le point de départ.
---   • `active` → PRÉSERVÉ. L'activation se fait par vagues et c'est une
---     décision d'EXPLOITATION, pas de schéma. Un département ouvert à la main
---     ne doit pas se refermer parce qu'on a rejoué une migration. Les lignes
---     nouvellement insérées prennent bien la valeur du seed.
+--   • `active` et `position` → PRÉSERVÉS, même raison pour les deux : ce sont
+--     des décisions d'EXPLOITATION, pas de schéma. L'activation se fait par
+--     vagues ; l'ordre d'affichage est un levier de merchandising (remonter
+--     Auto & Moto parce que c'est ce qui se vend). Ni l'une ni l'autre ne doit
+--     être défaite parce qu'on a rejoué une migration. Les lignes NOUVELLES
+--     prennent bien les valeurs du seed.
 --
 -- ⚠️ CONDITION DE REVUE : le jour où une interface admin permet de renommer
 -- une catégorie, `do update` sur les libellés devient destructeur — il
@@ -133,9 +135,9 @@ on conflict (slug) do update
        label_fr  = excluded.label_fr,
        label_en  = excluded.label_en,
        parent_id = excluded.parent_id,
-       level     = excluded.level,
-       position  = excluded.position;
-       -- `active` volontairement absent : décision d'exploitation, cf. en-tête.
+       level     = excluded.level;
+       -- `active` ET `position` volontairement absents : décisions
+       -- d'exploitation, cf. en-tête.
 
 -- Catégories (niveau 2) — complet pour les 16 départements.
 insert into zabelie_categories (parent_id, slug, level, label_kr, label_fr, label_en, active, position)
@@ -238,9 +240,9 @@ on conflict (slug) do update
        label_fr  = excluded.label_fr,
        label_en  = excluded.label_en,
        parent_id = excluded.parent_id,
-       level     = excluded.level,
-       position  = excluded.position;
-       -- `active` volontairement absent : décision d'exploitation, cf. en-tête.
+       level     = excluded.level;
+       -- `active` ET `position` volontairement absents : décisions
+       -- d'exploitation, cf. en-tête.
 
 -- ═══════════ SEED — niveau 3, branches ACTIVES en vague 1 uniquement ═══════
 
@@ -292,6 +294,6 @@ on conflict (slug) do update
        label_fr  = excluded.label_fr,
        label_en  = excluded.label_en,
        parent_id = excluded.parent_id,
-       level     = excluded.level,
-       position  = excluded.position;
-       -- `active` volontairement absent : décision d'exploitation, cf. en-tête.
+       level     = excluded.level;
+       -- `active` ET `position` volontairement absents : décisions
+       -- d'exploitation, cf. en-tête.
