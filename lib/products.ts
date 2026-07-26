@@ -154,7 +154,12 @@ export async function getPublishedProducts(
   let query = supabase
     .from("products")
     .select(SELECT)
-    .eq("status", "published");
+    .eq("status", "published")
+    // Spec §9 : un produit en rupture n'apparaît pas dans les résultats — un
+    // catalogue fantôme détruit la confiance plus vite qu'une offre courte.
+    // Sa FICHE reste accessible (lien WhatsApp partagé) et affiche la rupture.
+    // Les produits digitaux ont in_stock = true à vie (0040).
+    .eq("in_stock", true);
 
   if (filters?.category && filters.category !== "Tout") {
     query = query.eq("category", filters.category);
@@ -208,7 +213,12 @@ export async function getPublishedProductsPage(
   let query = supabase
     .from("products")
     .select(SELECT)
-    .eq("status", "published");
+    .eq("status", "published")
+    // Spec §9 : un produit en rupture n'apparaît pas dans les résultats — un
+    // catalogue fantôme détruit la confiance plus vite qu'une offre courte.
+    // Sa FICHE reste accessible (lien WhatsApp partagé) et affiche la rupture.
+    // Les produits digitaux ont in_stock = true à vie (0040).
+    .eq("in_stock", true);
 
   if (filters.category && filters.category !== "Tout") {
     query = query.eq("category", filters.category);
@@ -278,6 +288,27 @@ export async function getProductsBySeller(
     .eq("seller_id", sellerId)
     .eq("status", "published")
     .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return (data as unknown as Row[]).map(rowAsView);
+}
+
+/**
+ * Toutes les fiches publiées, RUPTURE COMPRISE — réservé au sitemap.
+ * Une fiche en rupture reste une URL valide qui répond 200 : la retirer du
+ * sitemap puis l'y remettre au réapprovisionnement ferait battre le fichier et
+ * gaspillerait le référencement accumulé. Le catalogue, lui, l'exclut bien.
+ */
+export async function getProductsForSitemap(): Promise<ProductView[]> {
+  if (!isSupabaseConfigured()) return sampleAsView();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(SELECT)
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(5000);
 
   if (error || !data) return [];
   return (data as unknown as Row[]).map(rowAsView);

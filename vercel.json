@@ -12,6 +12,14 @@
     {
       "path": "/api/points/expire",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/admin/coherence",
+      "schedule": "30 13 * * *"
+    },
+    {
+      "path": "/api/stock/expire",
+      "schedule": "45 13 * * *"
     }
   ]
 }

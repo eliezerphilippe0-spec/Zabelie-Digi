@@ -1,4 +1,4 @@
--- Zabelie Digi — schéma complet (concaténation 0001→0031).
+-- Zabelie Digi — schéma complet (concaténation 0001→0040).
 -- Généré pour un copier-coller unique dans le SQL Editor Supabase.
 -- Source de vérité = supabase/migrations/*.sql. Régénéré par
 -- scripts/build-schema.mjs (ne pas éditer ce fichier à la main).
@@ -3259,4 +3259,1792 @@ end;
 $$;
 revoke all on function award_points(uuid, integer, points_reason, uuid, integer, jsonb)
   from public, anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0032_manual_payouts.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0032 — Chantier 0, lot 0.a : enregistrement des RÈGLEMENTS MANUELS vendeurs
+-- ============================================================================
+-- Contexte (docs/19-CHANTIER-0-RETRAIT-VENDEUR.md) : aucune route de
+-- décaissement n'existe ; les vendeurs sont réglés À LA MAIN (virement MonCash
+-- direct contre reçu). Sans enregistrement, le registre continuerait d'afficher
+-- une dette DÉJÀ PAYÉE : solde créditeur fantôme, double réclamation possible,
+-- et toute réconciliation ultérieure partirait d'une base fausse.
+--
+-- Ce lot ne crée PAS de retrait self-service (lot 0.b) : il inscrit un
+-- paiement qui a déjà eu lieu hors plateforme.
+--
+-- Opposabilité (question Q7 du dossier BRH) : la table `payouts` d'origine ne
+-- portait ni référence de reçu, ni date de règlement, ni trace de l'auteur de
+-- l'enregistrement. Sans ces éléments, un règlement n'est pas démontrable.
+-- ============================================================================
+
+-- ───────────────────────── 1. Enrichissement de payouts ─────────────────────
+
+create type payout_method as enum ('moncash', 'especes', 'virement', 'autre');
+
+alter table payouts
+  add column method      payout_method,
+  add column reference   text,        -- n° de reçu MonCash / preuve du virement
+  add column paid_at     timestamptz, -- date du règlement RÉEL (≠ enregistrement)
+  add column recorded_by uuid references profiles (id),
+  add column note        text;
+
+-- La référence du reçu est la clé naturelle d'un règlement : deux
+-- enregistrements ne peuvent pas se réclamer du même justificatif.
+create unique index payouts_reference_uniq
+  on payouts (reference) where reference is not null;
+
+create index payouts_paid_at_idx on payouts (paid_at desc) where status = 'paid';
+
+-- ───────────────────── 2. RPC — zabelie_record_manual_payout ────────────────
+-- Débit ATOMIQUE sous verrou du portefeuille + trace opposable + écriture au
+-- grand livre (append-only depuis 0025). Idempotent sur la référence du reçu :
+-- ressaisir le même justificatif ne débite pas deux fois.
+
+create function zabelie_record_manual_payout(
+  p_wallet_id   uuid,
+  p_amount_htg  bigint,
+  p_method      payout_method,
+  p_reference   text,
+  p_recorded_by uuid,
+  p_note        text        default null,
+  p_paid_at     timestamptz default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_ref       text;
+  v_key       text;
+  v_balance   bigint;
+  v_payout_id uuid;
+begin
+  if p_amount_htg is null or p_amount_htg <= 0 then
+    raise exception 'record_manual_payout: montant strictement positif requis';
+  end if;
+
+  -- Référence OBLIGATOIRE : c'est ce qui rend le règlement démontrable.
+  v_ref := nullif(btrim(coalesce(p_reference, '')), '');
+  if v_ref is null then
+    raise exception
+      'record_manual_payout: référence du reçu obligatoire (opposabilité du règlement)';
+  end if;
+  v_key := 'payout:' || v_ref;
+
+  -- Idempotence AVANT le verrou : rejeu du même reçu = no-op, jamais d'erreur
+  -- (l'admin qui resoumet un formulaire ne doit pas payer deux fois).
+  if exists (select 1 from wallet_transactions where idempotency_key = v_key) then
+    select id into v_payout_id from payouts where reference = v_ref;
+    select balance_htg into v_balance from wallets where id = p_wallet_id;
+    return jsonb_build_object(
+      'ok', true, 'duplicate', true,
+      'payout_id', v_payout_id, 'balance_htg', v_balance
+    );
+  end if;
+
+  -- Verrou du portefeuille : sérialise les enregistrements concurrents.
+  select balance_htg into v_balance
+    from wallets where id = p_wallet_id for update;
+  if v_balance is null then
+    raise exception 'record_manual_payout: portefeuille introuvable';
+  end if;
+
+  -- On ne décaisse que le solde DISPONIBLE. Le solde en attente (escrow non
+  -- maturé) n'est pas encore acquis au vendeur : le régler serait une avance.
+  if v_balance < p_amount_htg then
+    raise exception
+      'record_manual_payout: solde disponible insuffisant (% demandés, % disponibles) — le solde en attente n''est pas décaissable',
+      p_amount_htg, v_balance;
+  end if;
+
+  insert into payouts
+    (wallet_id, amount_htg, status, method, reference, paid_at, recorded_by, note)
+  values
+    (p_wallet_id, p_amount_htg, 'paid', p_method, v_ref,
+     coalesce(p_paid_at, now()), p_recorded_by, p_note)
+  returning id into v_payout_id;
+
+  update wallets set balance_htg = balance_htg - p_amount_htg
+   where id = p_wallet_id;
+
+  -- Grand livre : débit NÉGATIF (convention 0006), immuable (trigger 0025).
+  insert into wallet_transactions
+    (wallet_id, type, amount_htg, idempotency_key, reference)
+  values
+    (p_wallet_id, 'payout', -p_amount_htg, v_key, 'Règlement manuel ' || v_ref);
+
+  return jsonb_build_object(
+    'ok', true, 'duplicate', false,
+    'payout_id', v_payout_id, 'balance_htg', v_balance - p_amount_htg
+  );
+end;
+$$;
+revoke all on function zabelie_record_manual_payout(
+  uuid, bigint, payout_method, text, uuid, text, timestamptz
+) from public, anon, authenticated;
+
+-- ─────────────── 3. Vue de contrôle — encours dû aux vendeurs ───────────────
+-- Lecture seule, service_role uniquement (aucune policy → invisible au client).
+-- Sert l'écran d'apurement ET le contrôle de solvabilité (docs/19 §3.2) :
+-- le total `du_total_htg` doit être COUVERT par le solde réel du compte
+-- marchand MonCash. Ce rapprochement reste manuel tant que Digicel n'expose
+-- pas d'endpoint de solde.
+
+create view zabelie_seller_balances as
+select w.id                as wallet_id,
+       w.owner_id,
+       p.display_name,
+       w.balance_htg       as disponible_htg,
+       w.pending_htg       as en_attente_htg,
+       w.balance_htg + w.pending_htg as du_total_htg,
+       (select coalesce(sum(po.amount_htg), 0)
+          from payouts po
+         where po.wallet_id = w.id and po.status = 'paid') as deja_regle_htg
+  from wallets w
+  join profiles p on p.id = w.owner_id
+ where w.balance_htg + w.pending_htg > 0;
+
+revoke all on zabelie_seller_balances from anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0033_wallet_coherence.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0033 — Chantier 0, lot 0.c.1 : contrôle de cohérence du registre
+-- ============================================================================
+-- On ne peut pas apurer une dette contre un registre dont on ignore s'il dit
+-- vrai. Ce lot vérifie une identité comptable EXACTE, vraie après chaque
+-- opération d'argent du système :
+--
+--     Σ(wallet_transactions.amount_htg)  =  balance_htg + pending_htg
+--
+-- Démonstration (tous les flux existants) :
+--   • vente confirmée      (0005/0006) : ledger +net   · pending +net
+--   • maturation J+7       (0006)      : pending −x    · balance +x  (pas de
+--                                        ledger — la somme des deux est stable)
+--   • remboursement avant  (0006)      : ledger −x     · pending −x
+--   • remboursement après  (0006)      : ledger −x     · balance −x
+--   • facture Business     (0022)      : ledger +net   · balance +net
+--   • règlement manuel     (0032)      : ledger −x     · balance −x
+--
+-- Un écart signifie qu'un solde a bougé hors du grand livre : soit un bug,
+-- soit une écriture directe en base. Il faut le savoir AVANT de payer, pas
+-- après. Ce contrôle est purement interne — il ne dit rien du solde réel du
+-- compte marchand MonCash (contrôle de solvabilité, docs/19 §3.2, manuel).
+-- ============================================================================
+
+-- ─────────────────── 1. Vue de cohérence, portefeuille par portefeuille ─────
+
+create view zabelie_wallet_coherence as
+select w.id                                   as wallet_id,
+       w.owner_id,
+       p.display_name,
+       w.balance_htg,
+       w.pending_htg,
+       w.balance_htg + w.pending_htg          as solde_registre_htg,
+       coalesce(l.somme, 0)                   as somme_ledger_htg,
+       (w.balance_htg + w.pending_htg) - coalesce(l.somme, 0) as ecart_htg
+  from wallets w
+  join profiles p on p.id = w.owner_id
+  left join (
+    select wallet_id, sum(amount_htg) as somme
+      from wallet_transactions
+     group by wallet_id
+  ) l on l.wallet_id = w.id;
+
+revoke all on zabelie_wallet_coherence from anon, authenticated;
+
+-- ─────────────────── 2. Rapport global (cron + écran admin) ─────────────────
+-- Renvoie l'état du registre en un objet. `ok` = false dès qu'un écart existe.
+
+create function zabelie_solvency_report()
+returns jsonb
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select jsonb_build_object(
+    'genere_a',            now(),
+    -- Ce que la plateforme doit, au total : le nombre à couvrir par le solde
+    -- réel du compte marchand MonCash.
+    'du_total_htg',        coalesce(sum(solde_registre_htg), 0),
+    'disponible_htg',      coalesce(sum(balance_htg), 0),
+    'en_attente_htg',      coalesce(sum(pending_htg), 0),
+    'vendeurs_crediteurs', count(*) filter (where solde_registre_htg > 0),
+    -- Cohérence interne : tout écart est anormal.
+    'ecarts',              count(*) filter (where ecart_htg <> 0),
+    'ecart_total_htg',     coalesce(sum(ecart_htg), 0),
+    'ok',                  count(*) filter (where ecart_htg <> 0) = 0
+  )
+  from zabelie_wallet_coherence;
+$$;
+revoke all on function zabelie_solvency_report() from public, anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0034_payout_requests.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0034 — Chantier 0, lot 0.b : RETRAIT SELF-SERVICE (la voie de sortie)
+-- ============================================================================
+-- Le lot 0.a inscrit un règlement déjà versé. Celui-ci donne au vendeur le
+-- moyen de DEMANDER son argent — c'est la voie de sortie dont l'absence est au
+-- cœur du dossier BRH (docs/17 §2.5).
+--
+-- Flux :  requested → paid        (l'admin a viré, il inscrit le reçu)
+--                  ↘ rejected     (le solde est restitué)
+--
+-- INVARIANT PRÉSERVÉ (0033) : Σ(wallet_transactions) = balance_htg + pending_htg
+--   • demande  : balance −x · ledger 'payout' −x        → identité tenue
+--   • paiement : aucun mouvement (déjà débité)          → identité tenue
+--   • rejet    : balance +x · ledger 'credit' +x        → identité tenue
+-- Le rejet passe par une ÉCRITURE COMPENSATOIRE, jamais par une correction du
+-- grand livre (règle 0025 : l'historique d'argent ne se réécrit pas).
+--
+-- Le débit a lieu DÈS LA DEMANDE : les fonds sont immobilisés, ce qui empêche
+-- de demander deux fois le même argent.
+-- ============================================================================
+
+-- ─────────────────── 1. Paramètres (table de config, jamais en dur) ─────────
+
+create table zabelie_payout_limits (
+  key        text primary key,
+  value      integer not null,
+  comment    text,
+  updated_at timestamptz not null default now()
+);
+insert into zabelie_payout_limits (key, value, comment) values
+  ('min_payout_htg', 500,
+   'Montant minimum d''une demande de retrait (HTG). Évite les micro-virements dont les frais dépassent l''intérêt.'),
+  ('max_per_request_htg', 100000,
+   'Plafond par demande (HTG). Garde-fou anti-erreur de saisie, pas une limite de droit.'),
+  ('cooldown_hours', 24,
+   'Délai minimum entre deux demandes d''un même vendeur.');
+
+alter table zabelie_payout_limits enable row level security;
+revoke all on zabelie_payout_limits from anon, authenticated;
+
+-- Motif de rejet, tracé sur la demande.
+alter table payouts add column rejected_reason text;
+
+create index payouts_pending_idx on payouts (status, created_at)
+  where status in ('requested', 'processing');
+
+-- ─────────────────── 2. RPC — zabelie_request_payout (vendeur) ──────────────
+-- Prend l'UTILISATEUR, jamais un wallet_id fourni par le client.
+
+create function zabelie_request_payout(
+  p_user_id    uuid,
+  p_amount_htg bigint
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_wallet    uuid;
+  v_balance   bigint;
+  v_min       integer;
+  v_max       integer;
+  v_cooldown  integer;
+  v_last      timestamptz;
+  v_suspended timestamptz;
+  v_payout_id uuid;
+begin
+  select coalesce(max(value) filter (where key = 'min_payout_htg'), 500),
+         coalesce(max(value) filter (where key = 'max_per_request_htg'), 100000),
+         coalesce(max(value) filter (where key = 'cooldown_hours'), 24)
+    into v_min, v_max, v_cooldown
+    from zabelie_payout_limits;
+
+  if p_amount_htg is null or p_amount_htg <= 0 then
+    return jsonb_build_object('ok', false, 'reason', 'montant_invalide');
+  end if;
+  if p_amount_htg < v_min then
+    return jsonb_build_object('ok', false, 'reason', 'sous_minimum', 'min_htg', v_min);
+  end if;
+  if p_amount_htg > v_max then
+    return jsonb_build_object('ok', false, 'reason', 'au_dessus_plafond', 'max_htg', v_max);
+  end if;
+
+  -- Compte suspendu (modération) : décaissement bloqué — prévu dès 0017.
+  select suspended_at into v_suspended from profiles where id = p_user_id;
+  if v_suspended is not null then
+    return jsonb_build_object('ok', false, 'reason', 'compte_suspendu');
+  end if;
+
+  select id into v_wallet from wallets where owner_id = p_user_id;
+  if v_wallet is null then
+    return jsonb_build_object('ok', false, 'reason', 'portefeuille_absent');
+  end if;
+
+  -- Sérialise les demandes concurrentes du même vendeur.
+  select balance_htg into v_balance from wallets where id = v_wallet for update;
+
+  -- Une seule demande ouverte à la fois : sinon l'admin traite des montants
+  -- qui se chevauchent.
+  if exists (select 1 from payouts
+              where wallet_id = v_wallet and status in ('requested', 'processing')) then
+    return jsonb_build_object('ok', false, 'reason', 'demande_en_cours');
+  end if;
+
+  select max(created_at) into v_last from payouts where wallet_id = v_wallet;
+  if v_last is not null and v_last > now() - make_interval(hours => v_cooldown) then
+    return jsonb_build_object('ok', false, 'reason', 'delai_non_ecoule',
+                              'cooldown_hours', v_cooldown);
+  end if;
+
+  -- Seul le solde DISPONIBLE est retirable (l'escrow non maturé ne l'est pas).
+  if v_balance < p_amount_htg then
+    return jsonb_build_object('ok', false, 'reason', 'solde_insuffisant',
+                              'disponible_htg', v_balance);
+  end if;
+
+  insert into payouts (wallet_id, amount_htg, status)
+  values (v_wallet, p_amount_htg, 'requested')
+  returning id into v_payout_id;
+
+  -- Immobilisation immédiate + écriture au grand livre (identité 0033).
+  update wallets set balance_htg = balance_htg - p_amount_htg where id = v_wallet;
+  insert into wallet_transactions
+    (wallet_id, type, amount_htg, idempotency_key, reference)
+  values
+    (v_wallet, 'payout', -p_amount_htg, 'payout_req:' || v_payout_id,
+     'Demande de retrait ' || left(v_payout_id::text, 8));
+
+  return jsonb_build_object('ok', true, 'payout_id', v_payout_id,
+                            'balance_htg', v_balance - p_amount_htg);
+end;
+$$;
+revoke all on function zabelie_request_payout(uuid, bigint)
+  from public, anon, authenticated;
+
+-- ─────────────── 3. RPC — zabelie_settle_payout (admin, après virement) ─────
+-- Aucun mouvement d'argent ici : le débit a eu lieu à la demande. On inscrit
+-- la PREUVE (reçu, moyen, date, auteur) — opposabilité, cf. Q7 du dossier.
+
+create function zabelie_settle_payout(
+  p_payout_id   uuid,
+  p_method      payout_method,
+  p_reference   text,
+  p_recorded_by uuid,
+  p_note        text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payout payouts;
+  v_ref    text;
+begin
+  v_ref := nullif(btrim(coalesce(p_reference, '')), '');
+  if v_ref is null then
+    raise exception 'settle_payout: référence du reçu obligatoire (opposabilité)';
+  end if;
+
+  select * into v_payout from payouts where id = p_payout_id for update;
+  if not found then
+    raise exception 'settle_payout: demande introuvable';
+  end if;
+  if v_payout.status = 'paid' then
+    -- Rejeu : no-op (l'admin qui resoumet ne doit pas déclencher d'erreur).
+    return jsonb_build_object('ok', true, 'duplicate', true);
+  end if;
+  if v_payout.status <> 'requested' and v_payout.status <> 'processing' then
+    raise exception 'settle_payout: demande déjà close (%)', v_payout.status;
+  end if;
+
+  update payouts
+     set status = 'paid', method = p_method, reference = v_ref,
+         paid_at = now(), recorded_by = p_recorded_by, note = p_note
+   where id = p_payout_id;
+
+  return jsonb_build_object('ok', true, 'duplicate', false);
+end;
+$$;
+revoke all on function zabelie_settle_payout(uuid, payout_method, text, uuid, text)
+  from public, anon, authenticated;
+
+-- ─────────────── 4. RPC — zabelie_reject_payout (admin) ─────────────────────
+-- Restitue le solde par ÉCRITURE COMPENSATOIRE (le grand livre ne se corrige
+-- jamais par modification — règle 0025).
+
+create function zabelie_reject_payout(
+  p_payout_id   uuid,
+  p_reason      text,
+  p_recorded_by uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payout payouts;
+begin
+  select * into v_payout from payouts where id = p_payout_id for update;
+  if not found then
+    raise exception 'reject_payout: demande introuvable';
+  end if;
+  if v_payout.status = 'rejected' then
+    return jsonb_build_object('ok', true, 'duplicate', true);
+  end if;
+  if v_payout.status = 'paid' then
+    raise exception 'reject_payout: demande déjà réglée — corriger par un nouveau mouvement';
+  end if;
+
+  update payouts
+     set status = 'rejected',
+         rejected_reason = nullif(btrim(coalesce(p_reason, '')), ''),
+         recorded_by = p_recorded_by
+   where id = p_payout_id;
+
+  update wallets set balance_htg = balance_htg + v_payout.amount_htg
+   where id = v_payout.wallet_id;
+
+  insert into wallet_transactions
+    (wallet_id, type, amount_htg, idempotency_key, reference)
+  values
+    (v_payout.wallet_id, 'credit', v_payout.amount_htg,
+     'payout_rej:' || p_payout_id,
+     'Annulation demande ' || left(p_payout_id::text, 8));
+
+  return jsonb_build_object('ok', true, 'duplicate', false);
+end;
+$$;
+revoke all on function zabelie_reject_payout(uuid, text, uuid)
+  from public, anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0035_categories.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0035 — Chantier B : taxonomie catalogue (arbre 3 niveaux, KR/FR/EN)
+-- ============================================================================
+-- Référence : docs/16-TAXONOMIE-CATALOGUE.md (16 départements).
+--
+-- Principe d'activation (arbitré) : TOUT est défini en base, seule une partie
+-- est ACTIVE au lancement. Un nœud inactif n'apparaît ni à la publication ni
+-- dans les filtres. Ouvrir un département = un UPDATE, jamais une migration.
+--
+-- Périmètre du seed :
+--   • les 16 départements (niveau 1) et leurs catégories (niveau 2) : COMPLET ;
+--   • les sous-catégories (niveau 3) : uniquement pour les branches ACTIVES en
+--     vague 1. Seeder 330 feuilles pour des départements fermés serait du
+--     poids mort — elles arriveront avec l'ouverture de chaque département,
+--     accompagnées de leurs traductions relues.
+--
+-- ⚠️ Le Kreyòl est à faire relire par un locuteur natif avant ouverture
+-- publique (même règle que lib/i18n.ts).
+-- ============================================================================
+
+create table zabelie_categories (
+  id         uuid primary key default gen_random_uuid(),
+  parent_id  uuid references zabelie_categories (id) on delete restrict,
+  level      smallint not null check (level between 1 and 3),
+  slug       text not null unique,
+  label_kr   text not null,
+  label_fr   text not null,
+  label_en   text not null,
+  active     boolean not null default false,
+  position   smallint not null default 0,
+  created_at timestamptz not null default now(),
+  -- Un niveau 1 n'a pas de parent ; un niveau 2 ou 3 en a forcément un.
+  constraint level_parent_coherent check (
+    (level = 1 and parent_id is null) or (level > 1 and parent_id is not null)
+  )
+);
+
+create index zabelie_categories_parent_idx on zabelie_categories (parent_id, position);
+create index zabelie_categories_active_idx on zabelie_categories (level, position)
+  where active;
+
+-- Un enfant doit être exactement un niveau sous son parent : sans ce contrôle,
+-- l'arbre peut se retrouver avec un niveau 3 accroché à un niveau 1.
+create function zabelie_categories_depth_guard()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_parent_level smallint;
+begin
+  if new.parent_id is null then return new; end if;
+  select level into v_parent_level from zabelie_categories where id = new.parent_id;
+  if v_parent_level is null then
+    raise exception 'catégorie parente introuvable';
+  end if;
+  if new.level <> v_parent_level + 1 then
+    raise exception 'niveau incohérent : parent au niveau %, enfant au niveau %',
+      v_parent_level, new.level;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function zabelie_categories_depth_guard() from public, anon, authenticated;
+
+create trigger zabelie_categories_depth
+  before insert or update on zabelie_categories
+  for each row execute function zabelie_categories_depth_guard();
+
+-- ───────────────────────────── RLS ─────────────────────────────
+alter table zabelie_categories enable row level security;
+
+-- Lecture publique des seules catégories ACTIVES : un département fermé
+-- n'existe pas pour le client (ni filtre, ni publication).
+create policy zabelie_categories_read_active on zabelie_categories
+  for select using (active);
+
+revoke insert, update, delete on zabelie_categories from anon, authenticated;
+
+-- ═══════════════════════ SEED — niveaux 1 et 2 ═══════════════════════
+
+-- Départements (niveau 1). `active` suit l'arbitrage vague 1.
+insert into zabelie_categories (slug, level, label_kr, label_fr, label_en, active, position) values
+  ('otomobil-moto',   1, 'Otomobil & Moto',    'Auto & Moto',            'Automotive',            true,  10),
+  ('elektwonik',      1, 'Elektwonik',         'Électronique',           'Electronics',           true,  20),
+  ('mod-akseswa',     1, 'Mòd & Akseswa',      'Mode & accessoires',     'Fashion',               false, 30),
+  ('soulye',          1, 'Soulye',             'Chaussures',             'Shoes',                 false, 40),
+  ('sak-bagay',       1, 'Sak & Bagay',        'Sacs & bagagerie',       'Bags & luggage',        false, 50),
+  ('bote-swen',       1, 'Bote & Swen',        'Beauté & soins',         'Beauty & care',         true,  60),
+  ('savon-netwayaj',  1, 'Savon & Netwayaj',   'Savon & entretien',      'Soap & cleaning',       false, 70),
+  ('manje-machandiz', 1, 'Manje & Machandiz',  'Alimentation & épicerie','Food & grocery',        false, 80),
+  ('mache-agrikol',   1, 'Mache Agrikòl',      'Marché agricole',        'Agriculture',           false, 90),
+  ('kay-kizin',       1, 'Kay & Kizin',        'Maison & cuisine',       'Home & kitchen',        false, 100),
+  ('sante-byennet',   1, 'Sante & Byennèt',    'Santé & bien-être',      'Health & wellness',     false, 110),
+  ('espo-lwazi',      1, 'Espò & Lwazi',       'Sport & loisirs',        'Sports & leisure',      false, 120),
+  ('liv-papet',       1, 'Liv & Papèt',        'Livres & papeterie',     'Books & stationery',    false, 130),
+  ('timoun-bebe',     1, 'Timoun & Bebe',      'Bébé & enfants',         'Baby & kids',           false, 140),
+  ('atizana-kado',    1, 'Atizana & Kado',     'Artisanat & cadeaux',    'Crafts & gifts',        false, 150),
+  ('dijital-sevis',   1, 'Dijital & Sèvis',    'Digital & services',     'Digital & services',    true,  160);
+
+-- Catégories (niveau 2) — complet pour les 16 départements.
+insert into zabelie_categories (parent_id, slug, level, label_kr, label_fr, label_en, active, position)
+select p.id, v.slug, 2, v.kr, v.fr, v.en, v.active, v.pos
+from (values
+  -- 1. Auto & Moto : seules les pièces d'usure et consommables en vague 1.
+  ('otomobil-moto','pyes-detache-oto','Pyès detache oto','Pièces détachées auto','Car parts',true,10),
+  ('otomobil-moto','pyes-detache-moto','Pyès detache moto','Pièces détachées moto','Motorcycle parts',true,20),
+  ('otomobil-moto','kawotchou-jant','Kawotchou & jant','Pneus & jantes','Tires & rims',false,30),
+  ('otomobil-moto','luil-likid','Luil & likid','Huiles & liquides','Oils & fluids',true,40),
+  ('otomobil-moto','akseswa-oto','Akseswa oto','Accessoires auto','Car accessories',false,50),
+  ('otomobil-moto','ekipman-motosiklis','Ekipman motosiklis','Équipement motard','Rider gear',false,60),
+  ('otomobil-moto','zouti-garaj','Zouti & garaj','Outillage & garage','Tools & garage',false,70),
+  ('otomobil-moto','veyikil-2-wou','Veyikil 2 wou','Véhicules 2 roues','Two-wheelers',false,80),
+  -- 2. Électronique
+  ('elektwonik','telefon-tablet','Telefòn & tablèt','Téléphones & tablettes','Phones & tablets',true,10),
+  ('elektwonik','akseswa-telefon','Akseswa telefòn','Accessoires téléphone','Phone accessories',true,20),
+  ('elektwonik','enfomatik','Enfòmatik','Informatique','Computing',false,30),
+  ('elektwonik','odyo-imaj','Odyo & imaj','Audio & vidéo','Audio & video',false,40),
+  ('elektwonik','eneji-kouran','Enèji & kouran','Énergie & électricité','Power & energy',false,50),
+  ('elektwonik','kamera-sekirite','Kamera & sekirite','Caméras & sécurité','Cameras & security',false,60),
+  -- 3. Mode
+  ('mod-akseswa','rad-fanm','Rad fanm','Vêtements femme','Women''s clothing',false,10),
+  ('mod-akseswa','rad-gason','Rad gason','Vêtements homme','Men''s clothing',false,20),
+  ('mod-akseswa','rad-timoun','Rad timoun','Vêtements enfant','Kids'' clothing',false,30),
+  ('mod-akseswa','bijou-mont','Bijou & mont','Bijoux & montres','Jewelry & watches',false,40),
+  ('mod-akseswa','akseswa-mod','Akseswa mòd','Accessoires de mode','Fashion accessories',false,50),
+  -- 4. Chaussures
+  ('soulye','soulye-fanm','Soulye fanm','Chaussures femme','Women''s shoes',false,10),
+  ('soulye','soulye-gason','Soulye gason','Chaussures homme','Men''s shoes',false,20),
+  ('soulye','soulye-timoun','Soulye timoun','Chaussures enfant','Kids'' shoes',false,30),
+  ('soulye','antretyen-soulye','Antretyen soulye','Entretien chaussures','Shoe care',false,40),
+  -- 5. Sacs
+  ('sak-bagay','sak-fanm','Sak fanm','Sacs femme','Women''s bags',false,10),
+  ('sak-bagay','sak-vwayaj','Sak vwayaj','Bagagerie','Luggage',false,20),
+  ('sak-bagay','sak-lekol','Sak lekòl','Sacs scolaires','School bags',false,30),
+  ('sak-bagay','sak-travay','Sak travay','Sacs professionnels','Work bags',false,40),
+  -- 6. Beauté
+  ('bote-swen','swen-cheve','Swen cheve','Soins capillaires','Hair care',true,10),
+  ('bote-swen','swen-po','Swen po','Soins de la peau','Skin care',true,20),
+  ('bote-swen','makiyaj','Makiyaj','Maquillage','Makeup',false,30),
+  ('bote-swen','pafen','Pafen','Parfums','Fragrances',false,40),
+  ('bote-swen','ijyen-pesonel','Ijyèn pèsonèl','Hygiène personnelle','Personal hygiene',false,50),
+  ('bote-swen','apare-bote','Aparèy bote','Appareils de beauté','Beauty devices',false,60),
+  -- 7. Savon & entretien
+  ('savon-netwayaj','savon','Savon','Savons','Soaps',false,10),
+  ('savon-netwayaj','lesiv','Lesiv','Lessive','Laundry',false,20),
+  ('savon-netwayaj','netwayaj-kay','Netwayaj kay','Entretien maison','Home cleaning',false,30),
+  ('savon-netwayaj','materyel-netwayaj','Materyèl netwayaj','Matériel de nettoyage','Cleaning tools',false,40),
+  -- 8. Alimentation
+  ('manje-machandiz','pwodwi-sek','Pwodwi sèk','Épicerie sèche','Dry goods',false,10),
+  ('manje-machandiz','bwason','Bwason','Boissons','Beverages',false,20),
+  ('manje-machandiz','pwodwi-lokal','Pwodwi lokal','Produits locaux','Local products',false,30),
+  ('manje-machandiz','konsev-sos','Konsèv & sòs','Conserves & condiments','Canned & condiments',false,40),
+  ('manje-machandiz','goute-bonbon','Goute & bonbon','Snacks & confiserie','Snacks & sweets',false,50),
+  -- 9. Agricole
+  ('mache-agrikol','legim-fwi','Legim & fwi','Fruits & légumes','Fresh produce',false,10),
+  ('mache-agrikol','grenn-semans','Grenn & semans','Graines & semences','Seeds',false,20),
+  ('mache-agrikol','zouti-agrikol','Zouti agrikòl','Outils agricoles','Farm tools',false,30),
+  ('mache-agrikol','angre-tretman','Angrè & tretman','Engrais & traitements','Fertilizers',false,40),
+  ('mache-agrikol','bet-pwovann','Bèt & pwovann','Élevage & aliments','Livestock & feed',false,50),
+  -- 10. Maison
+  ('kay-kizin','meb','Mèb','Mobilier','Furniture',false,10),
+  ('kay-kizin','kizin','Kizin','Cuisine','Kitchenware',false,20),
+  ('kay-kizin','elektwomenaje','Elektwomenaje','Électroménager','Appliances',false,30),
+  ('kay-kizin','dekorasyon','Dekorasyon','Décoration','Home decor',false,40),
+  ('kay-kizin','kabann-twal','Kabann & twal','Literie & linge','Bedding & linen',false,50),
+  ('kay-kizin','konstriksyon','Konstriksyon','Bricolage & construction','Hardware & DIY',false,60),
+  -- 11. Santé
+  ('sante-byennet','parafamasi','Parafamasi','Parapharmacie','Healthcare',false,10),
+  ('sante-byennet','pwodwi-natirel','Pwodwi natirèl','Produits naturels','Natural remedies',false,20),
+  ('sante-byennet','materyel-medikal','Materyèl medikal','Matériel médical','Medical supplies',false,30),
+  -- 12. Sport
+  ('espo-lwazi','ekipman-espo','Ekipman espò','Équipement sportif','Sports equipment',false,10),
+  ('espo-lwazi','rad-espo','Rad espò','Vêtements de sport','Sportswear',false,20),
+  ('espo-lwazi','aktivite-deyo','Aktivite deyò','Plein air','Outdoor',false,30),
+  ('espo-lwazi','jwet-lwazi','Jwèt & lwazi','Jeux & loisirs','Games & hobbies',false,40),
+  -- 13. Livres
+  ('liv-papet','liv','Liv','Livres','Books',false,10),
+  ('liv-papet','founiti-lekol','Founiti lekòl','Fournitures scolaires','School supplies',false,20),
+  ('liv-papet','founiti-biwo','Founiti biwo','Fournitures de bureau','Office supplies',false,30),
+  ('liv-papet','atizay-kreyasyon','Atizay & kreyasyon','Arts créatifs','Arts & crafts',false,40),
+  -- 14. Bébé
+  ('timoun-bebe','swen-bebe','Swen bebe','Soins bébé','Baby care',false,10),
+  ('timoun-bebe','materyel-bebe','Materyèl bebe','Équipement bébé','Baby gear',false,20),
+  ('timoun-bebe','jwet','Jwèt','Jouets','Toys',false,30),
+  -- 15. Artisanat
+  ('atizana-kado','atizana-ayisyen','Atizana ayisyen','Artisanat haïtien','Haitian crafts',false,10),
+  ('atizana-kado','tablo-atizay','Tablo & atizay','Art & tableaux','Art & paintings',false,20),
+  ('atizana-kado','kado-fet','Kado & fèt','Cadeaux & fêtes','Gifts & party',false,30),
+  ('atizana-kado','enstriman-mizik','Enstriman mizik','Instruments de musique','Musical instruments',false,40),
+  -- 16. Digital & services (existant — reste ouvert)
+  ('dijital-sevis','pwodwi-dijital','Pwodwi dijital','Produits digitaux','Digital products',true,10),
+  ('dijital-sevis','sevis-pwofesyonel','Sèvis pwofesyonèl','Services professionnels','Professional services',true,20),
+  ('dijital-sevis','rechaj-telefon','Rechaj telefòn','Recharge téléphone','Mobile top-up',true,30)
+) as v(parent_slug, slug, kr, fr, en, active, pos)
+join zabelie_categories p on p.slug = v.parent_slug and p.level = 1;
+
+-- ═══════════ SEED — niveau 3, branches ACTIVES en vague 1 uniquement ═══════
+
+insert into zabelie_categories (parent_id, slug, level, label_kr, label_fr, label_en, active, position)
+select p.id, v.slug, 3, v.kr, v.fr, v.en, true, v.pos
+from (values
+  -- Auto : pièces d'usure et consommables.
+  ('pyes-detache-oto','filtrasyon-oto','Filtrasyon','Filtration (huile, air, carburant, habitacle)','Filters',10),
+  ('pyes-detache-oto','fren-oto','Fren','Freinage (plaquettes, disques, étriers)','Brakes',20),
+  ('pyes-detache-oto','batri-demaraj-oto','Batri & demaraj','Batteries, alternateurs, démarreurs, bougies','Battery & starting',30),
+  ('pyes-detache-oto','kouwa-oto','Kouwa & chèn','Courroies et chaînes de distribution','Belts & chains',40),
+  -- Moto : mêmes familles.
+  ('pyes-detache-moto','filtrasyon-moto','Filtrasyon moto','Filtration moto','Motorcycle filters',10),
+  ('pyes-detache-moto','fren-moto','Fren moto','Freinage moto','Motorcycle brakes',20),
+  ('pyes-detache-moto','batri-moto','Batri moto','Batteries et allumage moto','Motorcycle battery',30),
+  ('pyes-detache-moto','chen-pinyon','Chèn & pinyon','Chaînes, pignons et couronnes','Chains & sprockets',40),
+  -- Huiles & liquides.
+  ('luil-likid','luil-motè','Luil motè','Huile moteur','Engine oil',10),
+  ('luil-likid','luil-bwat','Luil bwat','Huile de boîte et de pont','Gear oil',20),
+  ('luil-likid','likid-fren','Likid fren','Liquide de frein','Brake fluid',30),
+  ('luil-likid','likid-refwadisman','Likid refwadisman','Liquide de refroidissement','Coolant',40),
+  ('luil-likid','aditif','Aditif','Additifs et traitements','Additives',50),
+  -- Électronique vague 1.
+  ('telefon-tablet','smartphone','Smartphone','Smartphones','Smartphones',10),
+  ('telefon-tablet','telefon-senp','Telefòn senp','Téléphones simples','Feature phones',20),
+  ('telefon-tablet','tablet','Tablèt','Tablettes','Tablets',30),
+  ('telefon-tablet','pyes-telefon','Pyès telefòn','Pièces détachées téléphone (écrans, batteries)','Phone parts',40),
+  ('akseswa-telefon','kes-pwoteksyon','Kès & pwoteksyon','Coques et protections d''écran','Cases & screen protection',10),
+  ('akseswa-telefon','chaje-kab','Chajè & kab','Chargeurs et câbles','Chargers & cables',20),
+  ('akseswa-telefon','powerbank','Powerbank','Batteries externes','Power banks',30),
+  ('akseswa-telefon','ekoutè','Ekoutè','Écouteurs et oreillettes','Headphones',40),
+  ('akseswa-telefon','kat-memwa','Kat memwa','Cartes mémoire','Memory cards',50),
+  -- Beauté vague 1.
+  ('swen-cheve','chanpou','Chanpou','Shampoings','Shampoos',10),
+  ('swen-cheve','swen-mask','Swen & mask','Après-shampoings et masques','Conditioners & masks',20),
+  ('swen-cheve','luil-cheve','Luil cheve','Huiles et sérums capillaires','Hair oils & serums',30),
+  ('swen-cheve','mech-pewik','Mèch & pèwik','Mèches, extensions et perruques','Extensions & wigs',40),
+  ('swen-cheve','très-kwochè','Très & kwochè','Tresses et crochets','Braids & crochet',50),
+  ('swen-cheve','akseswa-kwafi','Akseswa kwafi','Accessoires coiffure','Hair accessories',60),
+  ('swen-po','krem-figi','Krèm figi','Crèmes visage','Face creams',10),
+  ('swen-po','krem-kò','Krèm kò','Laits et crèmes corps','Body lotions',20),
+  ('swen-po','sewòm','Sewòm','Sérums','Serums',30),
+  ('swen-po','pwoteksyon-solè','Pwoteksyon solè','Protections solaires','Sun protection',40),
+  ('swen-po','bè-luil-natirèl','Bè & luil natirèl','Beurres et huiles naturelles (karité, coco, ricin)','Natural butters & oils',50)
+) as v(parent_slug, slug, kr, fr, en, pos)
+join zabelie_categories p on p.slug = v.parent_slug and p.level = 2;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0036_physical_products.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0036 — Chantier B : produits physiques, variantes, stock, compatibilité
+-- ============================================================================
+-- UNITÉ MONÉTAIRE — écart assumé avec la spec, motivé :
+-- la spec demande des prix « en centimes entiers ». Tout le money-path existant
+-- (orders.amount_htg, commission, escrow, wallet_transactions, ledger topup)
+-- est en GOURDES ENTIÈRES. Introduire des centimes au niveau variante
+-- imposerait une conversion à chaque étape — division, arrondi, et une classe
+-- entière de bugs de rapprochement sur un système où les montants doivent
+-- concorder à l'unité près. On conserve donc l'entier en gourdes : l'intention
+-- de la spec (« entiers, jamais de flottant ») est respectée, la cohérence
+-- d'unité aussi.
+--
+-- STOCK — invariant :
+--     stock physique en main  =  quantity_available + quantity_reserved
+--   réserver  : available −q · reserved +q   (total inchangé)
+--   consommer : reserved −q                  (total baisse — vendu)
+--   libérer   : reserved −q · available +q   (total inchangé)
+-- Le stock est décrémenté À LA RÉSERVATION (commande), jamais à la livraison :
+-- deux acheteurs ne peuvent pas acheter la même unité.
+-- ============================================================================
+
+alter type product_kind add value if not exists 'physical';
+
+-- ───────────────────── 1. Extension « produit physique » ────────────────────
+
+create table zabelie_physical_products (
+  product_id   uuid primary key references products (id) on delete cascade,
+  category_id  uuid not null references zabelie_categories (id),
+  weight_grams integer not null check (weight_grams > 0 and weight_grams <= 200000),
+  length_mm    integer check (length_mm > 0),
+  width_mm     integer check (width_mm > 0),
+  height_mm    integer check (height_mm > 0),
+  fragile      boolean not null default false,
+  -- Hors grille de port standard (mobilier, électroménager, pièces lourdes) :
+  -- docs/16 note 5. Le calcul des frais s'y réfère au chantier D.
+  bulky        boolean not null default false,
+  created_at   timestamptz not null default now()
+);
+create index zabelie_physical_category_idx on zabelie_physical_products (category_id);
+
+alter table zabelie_physical_products enable row level security;
+-- Lecture publique : la fiche produit est publique, la RLS de `products`
+-- gouverne déjà ce qui est visible.
+create policy zabelie_physical_read on zabelie_physical_products
+  for select using (true);
+revoke insert, update, delete on zabelie_physical_products from anon, authenticated;
+
+-- ───────────────────────────── 2. Variantes ─────────────────────────────────
+
+create table zabelie_product_variants (
+  id         uuid primary key default gen_random_uuid(),
+  product_id uuid not null references products (id) on delete cascade,
+  sku        text not null unique,
+  -- {"couleur": "noir", "taille": "M"} — libre, mais validé à la publication.
+  options    jsonb not null default '{}'::jsonb,
+  price_htg  integer not null check (price_htg > 0),
+  active     boolean not null default true,
+  position   smallint not null default 0,
+  created_at timestamptz not null default now()
+);
+create index zabelie_variants_product_idx on zabelie_product_variants (product_id, position);
+
+alter table zabelie_product_variants enable row level security;
+create policy zabelie_variants_read on zabelie_product_variants
+  for select using (active);
+revoke insert, update, delete on zabelie_product_variants from anon, authenticated;
+
+-- ─────────────────────────────── 3. Stock ───────────────────────────────────
+
+create table zabelie_stock (
+  variant_id         uuid primary key references zabelie_product_variants (id) on delete cascade,
+  quantity_available integer not null default 0 check (quantity_available >= 0),
+  quantity_reserved  integer not null default 0 check (quantity_reserved >= 0),
+  alert_threshold    integer not null default 0 check (alert_threshold >= 0),
+  updated_at         timestamptz not null default now()
+);
+
+alter table zabelie_stock enable row level security;
+create policy zabelie_stock_read on zabelie_stock for select using (true);
+revoke insert, update, delete on zabelie_stock from anon, authenticated;
+
+-- ──────────────────────────── 4. Réservations ───────────────────────────────
+
+create type stock_reservation_status as enum ('held', 'consumed', 'released');
+
+create table zabelie_stock_reservations (
+  id         uuid primary key default gen_random_uuid(),
+  variant_id uuid not null references zabelie_product_variants (id) on delete restrict,
+  order_id   uuid not null references orders (id) on delete cascade,
+  quantity   integer not null check (quantity > 0),
+  status     stock_reservation_status not null default 'held',
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  -- Une seule réservation par (commande, variante) : rend la réservation
+  -- idempotente sans logique applicative.
+  constraint stock_reservation_unique unique (order_id, variant_id)
+);
+create index zabelie_reservations_due_idx on zabelie_stock_reservations (expires_at)
+  where status = 'held';
+
+alter table zabelie_stock_reservations enable row level security;
+revoke insert, update, delete on zabelie_stock_reservations from anon, authenticated;
+
+-- Délai de validité d'une réservation non payée — en config, jamais en dur.
+create table zabelie_stock_limits (
+  key text primary key,
+  value integer not null,
+  comment text,
+  updated_at timestamptz not null default now()
+);
+insert into zabelie_stock_limits (key, value, comment) values
+  ('reservation_ttl_minutes', 30,
+   'Durée de vie d''une réservation non payée. Au-delà, le stock est relibéré. 30 min couvre un paiement MonCash sur 3G lente.');
+alter table zabelie_stock_limits enable row level security;
+revoke all on zabelie_stock_limits from anon, authenticated;
+
+-- ───────────────── 5. RPC — réservation ATOMIQUE (anti-survente) ────────────
+
+create function zabelie_reserve_stock(
+  p_variant_id uuid,
+  p_order_id   uuid,
+  p_quantity   integer
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_available integer;
+  v_ttl       integer;
+  v_existing  zabelie_stock_reservations;
+  v_stale     record;
+begin
+  if p_quantity is null or p_quantity <= 0 then
+    return jsonb_build_object('ok', false, 'reason', 'quantite_invalide');
+  end if;
+
+  select coalesce(max(value), 30) into v_ttl
+    from zabelie_stock_limits where key = 'reservation_ttl_minutes';
+
+  -- EXPIRATION PARESSEUSE (contrainte Vercel Hobby : crons quotidiens
+  -- uniquement). Sans elle, un panier abandonné bloquerait l'unité jusqu'au
+  -- prochain passage du cron — jusqu'à 24 h sur du mono-unité, une vente
+  -- perdue à chaque fois. Ici, les réservations échues de CETTE variante sont
+  -- libérées au moment exact où quelqu'un d'autre veut l'unité — le seul
+  -- moment où ça compte. Même ordre de verrouillage que le cron
+  -- (réservation → stock) : pas d'interblocage possible entre les deux.
+  for v_stale in
+    select * from zabelie_stock_reservations
+     where variant_id = p_variant_id and status = 'held' and expires_at < now()
+       and order_id <> p_order_id
+     for update skip locked
+  loop
+    update zabelie_stock
+       set quantity_reserved  = quantity_reserved - v_stale.quantity,
+           quantity_available = quantity_available + v_stale.quantity,
+           updated_at = now()
+     where variant_id = v_stale.variant_id;
+    update zabelie_stock_reservations set status = 'released' where id = v_stale.id;
+  end loop;
+
+  -- Réservation déjà existante pour cette (commande, variante).
+  select * into v_existing from zabelie_stock_reservations
+   where order_id = p_order_id and variant_id = p_variant_id;
+  if found then
+    -- Encore tenue : rejeu (double-clic, retry réseau) → no-op.
+    if v_existing.status = 'held' then
+      return jsonb_build_object('ok', true, 'duplicate', true,
+                                'reservation_id', v_existing.id);
+    end if;
+    -- Déjà payée : rien à re-réserver.
+    if v_existing.status = 'consumed' then
+      return jsonb_build_object('ok', false, 'reason', 'deja_consomme');
+    end if;
+    -- LIBÉRÉE (session de paiement expirée, très fréquent sur 3G) : l'acheteur
+    -- doit pouvoir reprendre sa commande. On RÉ-ACQUIERT le stock si toujours
+    -- disponible — sans ce cas, la contrainte d'unicité rendrait la commande
+    -- définitivement impayable.
+    select quantity_available into v_available
+      from zabelie_stock where variant_id = p_variant_id for update;
+    if coalesce(v_available, 0) < p_quantity then
+      return jsonb_build_object('ok', false, 'reason', 'stock_insuffisant',
+                                'disponible', coalesce(v_available, 0));
+    end if;
+    update zabelie_stock
+       set quantity_available = quantity_available - p_quantity,
+           quantity_reserved  = quantity_reserved + p_quantity,
+           updated_at = now()
+     where variant_id = p_variant_id;
+    update zabelie_stock_reservations
+       set status = 'held', quantity = p_quantity,
+           expires_at = now() + make_interval(mins => v_ttl)
+     where id = v_existing.id;
+    return jsonb_build_object('ok', true, 'duplicate', false, 'renewed', true,
+                              'reservation_id', v_existing.id);
+  end if;
+
+  -- LE verrou : sérialise toutes les tentatives sur cette variante. C'est ici
+  -- que se joue l'absence de survente.
+  select quantity_available into v_available
+    from zabelie_stock where variant_id = p_variant_id for update;
+  if v_available is null then
+    return jsonb_build_object('ok', false, 'reason', 'variante_sans_stock');
+  end if;
+  if v_available < p_quantity then
+    return jsonb_build_object('ok', false, 'reason', 'stock_insuffisant',
+                              'disponible', v_available);
+  end if;
+
+  update zabelie_stock
+     set quantity_available = quantity_available - p_quantity,
+         quantity_reserved  = quantity_reserved + p_quantity,
+         updated_at = now()
+   where variant_id = p_variant_id;
+
+  insert into zabelie_stock_reservations (variant_id, order_id, quantity, expires_at)
+  values (p_variant_id, p_order_id, p_quantity,
+          now() + make_interval(mins => v_ttl))
+  returning * into v_existing;
+
+  return jsonb_build_object('ok', true, 'duplicate', false,
+                            'reservation_id', v_existing.id,
+                            'expires_at', v_existing.expires_at);
+end;
+$$;
+revoke all on function zabelie_reserve_stock(uuid, uuid, integer)
+  from public, anon, authenticated;
+
+-- ───────────── 6. RPC — consommation (paiement confirmé) ────────────────────
+
+create function zabelie_consume_stock(p_order_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_r     record;
+  v_count integer := 0;
+begin
+  for v_r in
+    select * from zabelie_stock_reservations
+     where order_id = p_order_id and status = 'held'
+     for update
+  loop
+    update zabelie_stock
+       set quantity_reserved = quantity_reserved - v_r.quantity,
+           updated_at = now()
+     where variant_id = v_r.variant_id;
+    update zabelie_stock_reservations set status = 'consumed' where id = v_r.id;
+    v_count := v_count + 1;
+  end loop;
+  return v_count; -- 0 = déjà consommé (idempotent)
+end;
+$$;
+revoke all on function zabelie_consume_stock(uuid) from public, anon, authenticated;
+
+-- ───────────── 7. RPC — libération (annulation / expiration) ────────────────
+
+create function zabelie_release_stock(p_order_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_r     record;
+  v_count integer := 0;
+begin
+  for v_r in
+    select * from zabelie_stock_reservations
+     where order_id = p_order_id and status = 'held'
+     for update
+  loop
+    update zabelie_stock
+       set quantity_reserved  = quantity_reserved - v_r.quantity,
+           quantity_available = quantity_available + v_r.quantity,
+           updated_at = now()
+     where variant_id = v_r.variant_id;
+    update zabelie_stock_reservations set status = 'released' where id = v_r.id;
+    v_count := v_count + 1;
+  end loop;
+  return v_count;
+end;
+$$;
+revoke all on function zabelie_release_stock(uuid) from public, anon, authenticated;
+
+-- Cron : relibère les réservations échues (paiement jamais abouti).
+create function zabelie_expire_stock_reservations()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_r     record;
+  v_count integer := 0;
+begin
+  for v_r in
+    select * from zabelie_stock_reservations
+     where status = 'held' and expires_at < now()
+     for update
+  loop
+    update zabelie_stock
+       set quantity_reserved  = quantity_reserved - v_r.quantity,
+           quantity_available = quantity_available + v_r.quantity,
+           updated_at = now()
+     where variant_id = v_r.variant_id;
+    update zabelie_stock_reservations set status = 'released' where id = v_r.id;
+    v_count := v_count + 1;
+  end loop;
+  return v_count;
+end;
+$$;
+revoke all on function zabelie_expire_stock_reservations()
+  from public, anon, authenticated;
+
+-- ─────────── 8. Compatibilité véhicule (pièces auto/moto) ───────────────────
+-- Voie retenue (docs/16 note 1) : champ structuré saisi par le vendeur +
+-- liste CURÉE du parc haïtien. Aucune base externe type TecDoc.
+
+create type vehicle_kind as enum ('auto', 'moto');
+
+create table zabelie_vehicle_models (
+  id       uuid primary key default gen_random_uuid(),
+  kind     vehicle_kind not null,
+  make     text not null,
+  model    text not null,
+  active   boolean not null default true,
+  position smallint not null default 0,
+  constraint vehicle_make_model_unique unique (kind, make, model)
+);
+alter table zabelie_vehicle_models enable row level security;
+create policy zabelie_vehicle_models_read on zabelie_vehicle_models
+  for select using (active);
+revoke insert, update, delete on zabelie_vehicle_models from anon, authenticated;
+
+create table zabelie_product_fitment (
+  id               uuid primary key default gen_random_uuid(),
+  product_id       uuid not null references products (id) on delete cascade,
+  vehicle_model_id uuid not null references zabelie_vehicle_models (id) on delete restrict,
+  year_start       smallint not null check (year_start between 1950 and 2100),
+  year_end         smallint check (year_end between 1950 and 2100),
+  constraint fitment_years_ordered check (year_end is null or year_end >= year_start),
+  constraint fitment_unique unique (product_id, vehicle_model_id, year_start)
+);
+create index zabelie_fitment_model_idx on zabelie_product_fitment (vehicle_model_id);
+
+alter table zabelie_product_fitment enable row level security;
+create policy zabelie_fitment_read on zabelie_product_fitment for select using (true);
+revoke insert, update, delete on zabelie_product_fitment from anon, authenticated;
+
+-- Parc haïtien réel — liste de départ, ajustable sans migration.
+insert into zabelie_vehicle_models (kind, make, model, position) values
+  ('auto','Toyota','Corolla',10),   ('auto','Toyota','Camry',20),
+  ('auto','Toyota','RAV4',30),      ('auto','Toyota','Hilux',40),
+  ('auto','Toyota','Land Cruiser',50), ('auto','Toyota','Yaris',60),
+  ('auto','Toyota','Prado',70),
+  ('auto','Nissan','Sentra',80),    ('auto','Nissan','Altima',90),
+  ('auto','Nissan','X-Trail',100),  ('auto','Nissan','Frontier',110),
+  ('auto','Nissan','Patrol',120),
+  ('auto','Hyundai','Accent',130),  ('auto','Hyundai','Elantra',140),
+  ('auto','Hyundai','Tucson',150),  ('auto','Hyundai','Santa Fe',160),
+  ('auto','Hyundai','H-1',170),
+  ('auto','Suzuki','Swift',180),    ('auto','Suzuki','Vitara',190),
+  ('auto','Suzuki','Alto',200),
+  ('auto','Kia','Rio',210),         ('auto','Kia','Sportage',220),
+  ('auto','Honda','Civic',230),     ('auto','Honda','CR-V',240),
+  ('auto','Mitsubishi','L200',250), ('auto','Isuzu','D-Max',260),
+  ('moto','Haojue','HJ125',300),    ('moto','Haojue','HJ150',310),
+  ('moto','Bajaj','Boxer',320),     ('moto','Bajaj','Pulsar',330),
+  ('moto','Bajaj','CT100',340),
+  ('moto','Sanya','SY125',350),     ('moto','Sanya','SY150',360),
+  ('moto','TVS','Star City',370),   ('moto','TVS','Apache',380),
+  ('moto','Honda','CG125',390),     ('moto','Yamaha','YBR125',400),
+  ('moto','Suzuki','GN125',410);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0037_stock_money_path.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0037 — Chantier B : branchement du STOCK sur le money-path
+-- ============================================================================
+-- Sans ce branchement, le modèle de stock de 0036 est du code mort : il ne
+-- protège de rien tant qu'aucune commande ne le sollicite.
+--
+-- Règle : le mouvement de stock est ATOMIQUE avec le mouvement d'argent.
+--   • paiement confirmé  → les unités réservées quittent le stock (vendues)
+--   • remboursement      → les unités reviennent en vente
+--   • paiement abandonné → idem (via l'expiration à 48 h)
+--   • réservation échue  → relibérée par le cron (0036), TTL 30 min
+--
+-- Pourquoi en base et non dans l'application : si la consommation était faite
+-- après coup côté serveur Next, un crash entre les deux laisserait la
+-- réservation « held » — puis le cron la relibérerait, remettant en vente une
+-- unité DÉJÀ VENDUE ET PAYÉE. Le seul endroit sûr est la transaction qui
+-- confirme le paiement.
+--
+-- Les trois fonctions ci-dessous sont reprises À L'IDENTIQUE de leur dernière
+-- version (0027, 0006, 0024) ; seul l'appel de stock est ajouté, signalé par
+-- un commentaire « 0037 ».
+-- ============================================================================
+
+-- ─────────── 1. confirm_payment : consommation du stock à la vente ──────────
+
+create or replace function confirm_payment(
+  p_idempotency_key text,
+  p_provider_ref    text default null,
+  p_raw             jsonb default null,
+  p_amount          integer default null,
+  p_usd_cents       integer default null
+)
+returns payments
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payment    payments;
+  v_order      orders;
+  v_seller_id  uuid;
+  v_wallet_id  uuid;
+  v_credited   integer;
+  v_tier       creator_tier;
+  v_rate_bps   integer;
+  v_commission bigint;
+  v_net        bigint;
+begin
+  select * into v_payment
+    from payments
+   where idempotency_key = p_idempotency_key
+   for update;
+
+  if not found then
+    raise exception 'confirm_payment: aucun paiement pour idempotency_key %',
+      p_idempotency_key;
+  end if;
+
+  if v_payment.status = 'confirmed' then
+    return v_payment; -- rejeu : no-op
+  end if;
+
+  select * into v_order from orders where id = v_payment.order_id;
+
+  -- Garde-fou HTG (MonCash) : opérateur ≠ commande → REJET.
+  if p_amount is not null and p_amount <> v_order.amount_htg then
+    update payments
+       set status = 'failed',
+           provider_ref = coalesce(p_provider_ref, provider_ref),
+           raw = coalesce(p_raw, raw)
+     where id = v_payment.id
+     returning * into v_payment;
+    update orders set status = 'disputed' where id = v_payment.order_id;
+    -- 0037 : montant incohérent = pas de vente → le stock retourne en rayon.
+    perform zabelie_release_stock(v_order.id);
+    return v_payment;
+  end if;
+
+  -- Garde-fou USD (Stripe/Zelle) : montant reçu ≠ montant figé → REJET.
+  if p_usd_cents is not null
+     and (v_payment.expected_usd_cents is null
+          or p_usd_cents <> v_payment.expected_usd_cents) then
+    update payments
+       set status = 'failed',
+           provider_ref = coalesce(p_provider_ref, provider_ref),
+           raw = coalesce(p_raw, raw)
+     where id = v_payment.id
+     returning * into v_payment;
+    update orders set status = 'disputed' where id = v_payment.order_id;
+    -- 0037 : idem côté rails USD.
+    perform zabelie_release_stock(v_order.id);
+    return v_payment;
+  end if;
+
+  update payments
+     set status = 'confirmed',
+         provider_ref = coalesce(p_provider_ref, provider_ref),
+         raw = coalesce(p_raw, raw),
+         confirmed_at = now()
+   where id = v_payment.id
+   returning * into v_payment;
+
+  update orders set status = 'paid'
+   where id = v_payment.order_id
+   returning * into v_order;
+
+  -- 0037 : la vente est faite — les unités réservées quittent définitivement
+  -- le stock, dans LA MÊME transaction que le paiement. Idempotent (0 si déjà
+  -- consommé) ; sans effet pour un produit digital, qui n'a pas de réservation.
+  perform zabelie_consume_stock(v_order.id);
+
+  -- BL-133 : consommation du coupon ICI, au paiement confirmé — jamais au
+  -- checkout. Best-effort : si le quota a basculé entre-temps (course sur le
+  -- tout dernier usage), la fonction renvoie FALSE sans lever d'exception —
+  -- le paiement, déjà facturé au prix remisé, reste confirmé quoi qu'il arrive.
+  if v_order.coupon_id is not null then
+    perform zabelie_coupon_consume(v_order.coupon_id);
+  end if;
+
+  -- Vendeur + tier → commission/net (LEDGER HTG, identique pour tous les rails).
+  select p.seller_id into v_seller_id
+    from products p join orders o on o.product_id = p.id
+   where o.id = v_order.id;
+
+  select tier into v_tier from profiles where id = v_seller_id;
+  v_rate_bps   := commission_rate_bps(v_tier);
+  v_commission := round(v_order.amount_htg::numeric * v_rate_bps / 10000);
+  v_net        := v_order.amount_htg - v_commission;
+
+  insert into wallets (owner_id) values (v_seller_id)
+  on conflict (owner_id) do nothing;
+  select id into v_wallet_id from wallets where owner_id = v_seller_id;
+
+  with ins as (
+    insert into escrow_entries (order_id, wallet_id, amount_htg, matures_at, status)
+    values (v_order.id, v_wallet_id, v_net, now() + interval '7 days', 'maturing')
+    on conflict (order_id) do nothing
+    returning amount_htg
+  )
+  update wallets w
+     set pending_htg = w.pending_htg + (select amount_htg from ins)
+   where w.id = v_wallet_id
+     and exists (select 1 from ins);
+
+  get diagnostics v_credited = row_count;
+
+  if v_credited > 0 then
+    insert into wallet_transactions
+      (wallet_id, type, amount_htg, order_id, idempotency_key, reference)
+    values
+      (v_wallet_id, 'credit', v_net, v_order.id, 'order_credit:' || v_order.id,
+       'Vente nette en attente #' || left(v_order.id::text, 8))
+    on conflict (idempotency_key) do nothing;
+
+    insert into platform_earnings (order_id, gross_htg, commission_htg, rate_bps)
+    values (v_order.id, v_order.amount_htg, v_commission, v_rate_bps)
+    on conflict (order_id) do nothing;
+
+    update products p set sales_count = p.sales_count + 1
+     where p.id = v_order.product_id;
+  end if;
+
+  return v_payment;
+end;
+$$;
+revoke all on function confirm_payment(text, text, jsonb, integer, integer)
+  from public, anon, authenticated;
+
+-- ─────────── 2. refund_order : le stock revient en vente ────────────────────
+
+create or replace function refund_order(p_order_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_esc escrow_entries;
+begin
+  select * into v_esc from escrow_entries where order_id = p_order_id for update;
+  if not found then
+    raise exception 'refund_order: aucun escrow pour order %', p_order_id;
+  end if;
+
+  if v_esc.status = 'reversed' then
+    return 'already_reversed'; -- idempotent
+  end if;
+
+  if v_esc.status = 'maturing' then
+    update wallets set pending_htg = pending_htg - v_esc.amount_htg
+     where id = v_esc.wallet_id;
+  else -- 'matured' : fonds déjà disponibles
+    update wallets set balance_htg = balance_htg - v_esc.amount_htg
+     where id = v_esc.wallet_id;
+  end if;
+
+  update escrow_entries set status = 'reversed' where id = v_esc.id;
+  update orders set status = 'refunded' where id = p_order_id;
+
+  insert into wallet_transactions
+    (wallet_id, type, amount_htg, order_id, idempotency_key, reference)
+  values
+    (v_esc.wallet_id, 'debit', -v_esc.amount_htg, p_order_id,
+     'order_refund:' || p_order_id, 'Remboursement #' || left(p_order_id::text, 8))
+  on conflict (idempotency_key) do nothing;
+
+  -- 0037 : la vente est annulée — les unités reviennent en vente. Sans effet
+  -- si elles ont déjà été consommées puis restituées (statut non 'held').
+  perform zabelie_release_stock(p_order_id);
+
+  return 'reversed';
+end;
+$$;
+revoke all on function refund_order(uuid) from public, anon, authenticated;
+
+-- ─────────── 3. Expiration d'un paiement abandonné (48 h) ───────────────────
+
+create or replace function zabelie_expire_stale_payment(
+  p_idempotency_key text,
+  p_reason          text default 'abandoned'
+) returns payments
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payment payments;
+begin
+  select * into v_payment
+    from payments
+   where idempotency_key = p_idempotency_key
+   for update;
+
+  if not found then
+    raise exception 'zabelie_expire_stale_payment: aucun paiement pour %',
+      p_idempotency_key;
+  end if;
+
+  -- Jamais toucher un paiement déjà terminal (confirmé/échoué) : no-op rejouable.
+  if v_payment.status <> 'pending' then
+    return v_payment;
+  end if;
+
+  -- Trop récent : une confirmation tardive reste possible → no-op.
+  if v_payment.created_at > now() - interval '48 hours' then
+    return v_payment;
+  end if;
+
+  update payments
+     set status = 'failed',
+         raw = coalesce(raw, '{}'::jsonb)
+               || jsonb_build_object('expired_reason', p_reason,
+                                     'expired_at', now())
+   where id = v_payment.id
+   returning * into v_payment;
+
+  -- La commande est libérée uniquement si rien ne l'a fait avancer entre-temps.
+  update orders
+     set status = 'cancelled'
+   where id = v_payment.order_id
+     and status = 'pending';
+
+  -- 0037 : filet de sécurité. Le TTL de réservation (30 min) aura normalement
+  -- déjà relibéré le stock bien avant ces 48 h — cet appel garantit qu'aucune
+  -- unité ne reste immobilisée si le cron d'expiration a été interrompu.
+  perform zabelie_release_stock(v_payment.order_id);
+
+  return v_payment;
+end;
+$$;
+revoke all on function zabelie_expire_stale_payment(text, text)
+  from public, anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0038_stock_rupture_guard.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0038 — CORRECTIF : survente quand la réservation expire pendant le paiement
+-- ============================================================================
+-- BUG REPRODUIT sur 0037 : TTL de réservation dépassé pendant que l'acheteur
+-- est encore sur la page de l'opérateur (réseau instable). Le cron libère,
+-- un autre acheteur prend l'unité, puis le premier paiement confirme.
+-- `zabelie_consume_stock` ne trouvait plus de réservation « held », renvoyait
+-- 0 sans rien dire, et confirm_payment poursuivait : commande `paid`, vendeur
+-- crédité, acheteur débité — pour une unité qui n'existe plus.
+-- → SURVENTE SILENCIEUSE. Sur un catalogue où le vendeur a une ou deux unités,
+--   c'est un incident du premier jour de mauvais réseau, pas un cas d'école.
+--
+-- Trois issues possibles ; on retient la seule correcte :
+--   ✗ survente silencieuse   (l'ancienne)
+--   ✗ stock négatif          (visible mais faux)
+--   ✓ RÉ-ACQUISITION si le stock est encore là, sinon RUPTURE explicite :
+--     paiement encaissé mais NON honoré → commande `disputed`, vendeur NON
+--     crédité, aucune livraison, motif inscrit pour remboursement.
+--
+-- On tente d'abord de reprendre l'unité : si personne ne l'a prise entre-temps,
+-- la vente doit aboutir normalement. La rupture est le dernier recours.
+-- ============================================================================
+
+-- ─────────── 1. TTL : doit couvrir la durée de vie d'une session opérateur ──
+-- 30 min était en dessous d'un paiement MonCash sur connexion instable — le
+-- TTL doit être SUPÉRIEUR à la fenêtre de session de l'opérateur, jamais
+-- l'inverse.
+-- ⚠️ À VÉRIFIER contre le timeout réel de MonCash (non documenté publiquement,
+--    à confirmer auprès de Digicel). 120 min est une borne prudente en
+--    attendant, pas une valeur mesurée.
+update zabelie_stock_limits
+   set value = 120,
+       comment = 'Durée de vie d''une réservation non payée (minutes). DOIT rester supérieure à la fenêtre de session de l''opérateur. ⚠️ Valeur prudente — à confirmer contre le timeout réel MonCash.',
+       updated_at = now()
+ where key = 'reservation_ttl_minutes';
+
+-- ─────────── 2. Consommation STRICTE : ne ment jamais sur le stock ──────────
+
+create function zabelie_consume_stock_strict(p_order_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_r     record;
+  v_avail integer;
+  v_any   boolean := false;
+begin
+  -- PASSE 1 — vérifier que TOUTES les lignes peuvent être honorées avant d'en
+  -- consommer une seule. Sans cela, une commande à plusieurs articles pourrait
+  -- être partiellement consommée puis déclarée en rupture.
+  for v_r in
+    select * from zabelie_stock_reservations
+     where order_id = p_order_id
+     order by variant_id
+     for update
+  loop
+    v_any := true;
+    if v_r.status = 'released' then
+      -- Le TTL a expiré pendant le paiement : l'unité est-elle encore là ?
+      select quantity_available into v_avail
+        from zabelie_stock where variant_id = v_r.variant_id for update;
+      if coalesce(v_avail, 0) < v_r.quantity then
+        return 'rupture';
+      end if;
+    end if;
+  end loop;
+
+  if not v_any then
+    return 'aucune'; -- produit digital / sans stock : rien à faire
+  end if;
+
+  -- PASSE 2 — application.
+  for v_r in
+    select * from zabelie_stock_reservations
+     where order_id = p_order_id
+     order by variant_id
+     for update
+  loop
+    if v_r.status = 'consumed' then
+      continue; -- rejeu de confirm_payment
+    elsif v_r.status = 'held' then
+      update zabelie_stock
+         set quantity_reserved = quantity_reserved - v_r.quantity,
+             updated_at = now()
+       where variant_id = v_r.variant_id;
+    else -- 'released' : ré-acquisition, vérifiée en passe 1
+      update zabelie_stock
+         set quantity_available = quantity_available - v_r.quantity,
+             updated_at = now()
+       where variant_id = v_r.variant_id;
+    end if;
+    update zabelie_stock_reservations set status = 'consumed' where id = v_r.id;
+  end loop;
+
+  return 'ok';
+end;
+$$;
+revoke all on function zabelie_consume_stock_strict(uuid)
+  from public, anon, authenticated;
+
+-- ─────────── 3. confirm_payment : la rupture bloque la vente ────────────────
+
+create or replace function confirm_payment(
+  p_idempotency_key text,
+  p_provider_ref    text default null,
+  p_raw             jsonb default null,
+  p_amount          integer default null,
+  p_usd_cents       integer default null
+)
+returns payments
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payment    payments;
+  v_order      orders;
+  v_seller_id  uuid;
+  v_wallet_id  uuid;
+  v_credited   integer;
+  v_tier       creator_tier;
+  v_rate_bps   integer;
+  v_commission bigint;
+  v_net        bigint;
+  v_stock      text;
+begin
+  select * into v_payment
+    from payments where idempotency_key = p_idempotency_key for update;
+  if not found then
+    raise exception 'confirm_payment: aucun paiement pour idempotency_key %',
+      p_idempotency_key;
+  end if;
+  if v_payment.status = 'confirmed' then
+    return v_payment; -- rejeu : no-op
+  end if;
+
+  select * into v_order from orders where id = v_payment.order_id;
+
+  -- Garde-fou HTG (MonCash) : opérateur ≠ commande → REJET.
+  if p_amount is not null and p_amount <> v_order.amount_htg then
+    update payments
+       set status = 'failed',
+           provider_ref = coalesce(p_provider_ref, provider_ref),
+           raw = coalesce(p_raw, raw)
+     where id = v_payment.id returning * into v_payment;
+    update orders set status = 'disputed' where id = v_payment.order_id;
+    perform zabelie_release_stock(v_order.id);
+    return v_payment;
+  end if;
+
+  -- Garde-fou USD (Stripe/Zelle).
+  if p_usd_cents is not null
+     and (v_payment.expected_usd_cents is null
+          or p_usd_cents <> v_payment.expected_usd_cents) then
+    update payments
+       set status = 'failed',
+           provider_ref = coalesce(p_provider_ref, provider_ref),
+           raw = coalesce(p_raw, raw)
+     where id = v_payment.id returning * into v_payment;
+    update orders set status = 'disputed' where id = v_payment.order_id;
+    perform zabelie_release_stock(v_order.id);
+    return v_payment;
+  end if;
+
+  -- 0038 : STOCK AVANT ARGENT. On ne crédite personne si la marchandise ne
+  -- peut pas être livrée.
+  v_stock := zabelie_consume_stock_strict(v_order.id);
+
+  if v_stock = 'rupture' then
+    -- Le paiement est RÉEL (montant correct, encaissé chez l'opérateur) : on
+    -- ne peut pas le faire disparaître. Mais la vente ne peut pas aboutir.
+    -- → paiement confirmé, commande en litige, AUCUN crédit vendeur, AUCUNE
+    --   livraison. Le motif est inscrit pour que l'admin rembourse.
+    update payments
+       set status = 'confirmed',
+           provider_ref = coalesce(p_provider_ref, provider_ref),
+           raw = coalesce(p_raw, raw, '{}'::jsonb)
+                 || jsonb_build_object('stock_rupture', true,
+                                       'refund_required', true,
+                                       'detected_at', now()),
+           confirmed_at = now()
+     where id = v_payment.id returning * into v_payment;
+    update orders set status = 'disputed' where id = v_payment.order_id;
+    return v_payment;
+  end if;
+
+  update payments
+     set status = 'confirmed',
+         provider_ref = coalesce(p_provider_ref, provider_ref),
+         raw = coalesce(p_raw, raw),
+         confirmed_at = now()
+   where id = v_payment.id returning * into v_payment;
+
+  update orders set status = 'paid'
+   where id = v_payment.order_id returning * into v_order;
+
+  if v_order.coupon_id is not null then
+    perform zabelie_coupon_consume(v_order.coupon_id);
+  end if;
+
+  select p.seller_id into v_seller_id
+    from products p join orders o on o.product_id = p.id where o.id = v_order.id;
+  select tier into v_tier from profiles where id = v_seller_id;
+  v_rate_bps   := commission_rate_bps(v_tier);
+  v_commission := round(v_order.amount_htg::numeric * v_rate_bps / 10000);
+  v_net        := v_order.amount_htg - v_commission;
+
+  insert into wallets (owner_id) values (v_seller_id) on conflict (owner_id) do nothing;
+  select id into v_wallet_id from wallets where owner_id = v_seller_id;
+
+  with ins as (
+    insert into escrow_entries (order_id, wallet_id, amount_htg, matures_at, status)
+    values (v_order.id, v_wallet_id, v_net, now() + interval '7 days', 'maturing')
+    on conflict (order_id) do nothing
+    returning amount_htg
+  )
+  update wallets w
+     set pending_htg = w.pending_htg + (select amount_htg from ins)
+   where w.id = v_wallet_id and exists (select 1 from ins);
+
+  get diagnostics v_credited = row_count;
+
+  if v_credited > 0 then
+    insert into wallet_transactions
+      (wallet_id, type, amount_htg, order_id, idempotency_key, reference)
+    values
+      (v_wallet_id, 'credit', v_net, v_order.id, 'order_credit:' || v_order.id,
+       'Vente nette en attente #' || left(v_order.id::text, 8))
+    on conflict (idempotency_key) do nothing;
+
+    insert into platform_earnings (order_id, gross_htg, commission_htg, rate_bps)
+    values (v_order.id, v_order.amount_htg, v_commission, v_rate_bps)
+    on conflict (order_id) do nothing;
+
+    update products p set sales_count = p.sales_count + 1 where p.id = v_order.product_id;
+  end if;
+
+  return v_payment;
+end;
+$$;
+revoke all on function confirm_payment(text, text, jsonb, integer, integer)
+  from public, anon, authenticated;
+
+-- ─────────── 4. Remboursement : JAMAIS de restock après expédition ──────────
+-- Garantie explicite : `zabelie_release_stock` ne touche que les réservations
+-- encore « held ». Après une vente, elles sont « consumed » — la marchandise
+-- est partie. Un remboursement post-livraison ne remet donc RIEN en vente :
+-- l'article est chez l'acheteur, peut-être abîmé, peut-être jamais rendu.
+-- Le ré-approvisionnement après retour est une DÉCISION VENDEUR, saisie à la
+-- main, jamais un effet de bord du remboursement.
+comment on function zabelie_release_stock(uuid) is
+  'Libère les réservations ENCORE HELD d''une commande. Sans effet sur les unités déjà vendues (consumed) : pas de restock automatique après livraison — c''est une décision vendeur.';
+
+-- Vue de suivi : commandes payées mais non honorables (à rembourser).
+create view zabelie_stock_ruptures as
+select o.id            as order_id,
+       o.buyer_id,
+       o.amount_htg,
+       p.confirmed_at,
+       p.provider_ref,
+       p.raw->>'detected_at' as detected_at
+  from orders o
+  join payments p on p.order_id = o.id
+ where o.status = 'disputed'
+   and p.status = 'confirmed'
+   and coalesce((p.raw->>'stock_rupture')::boolean, false);
+revoke all on zabelie_stock_ruptures from anon, authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0039_product_covers_bucket.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0039 — Bucket PUBLIC pour les photos produits (chantier B, UI vendeur)
+-- ============================================================================
+-- « Photo, prix, quantité, publier » : la photo est le premier champ du chemin
+-- nominal vendeur. cover_url existait depuis 0001 mais AUCUNE route ne
+-- l'écrivait — les produits n'ont jamais eu d'image uploadée.
+--
+-- Contrairement à product-files (privé, livrables payants), les photos de
+-- produits sont PUBLIQUES par nature : elles s'affichent sur le catalogue, les
+-- boutiques et les cartes WhatsApp. Upload via service role uniquement
+-- (app/api/products/cover), avec liste blanche d'images et taille bornée —
+-- aucune policy storage.objects côté client.
+
+insert into storage.buckets (id, name, public)
+values ('product-covers', 'product-covers', true)
+on conflict (id) do nothing;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 0040_product_in_stock_flag.sql
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ============================================================================
+-- 0040 — Exclusion des produits en rupture du catalogue (spec §9)
+-- ============================================================================
+-- « Les produits hors stock sont exclus par défaut des résultats — un catalogue
+-- fantôme détruit la confiance. » Jusqu'ici la fiche produit affichait bien la
+-- rupture et bloquait l'achat, mais le produit restait LISTÉ.
+--
+-- Pourquoi un booléen dénormalisé plutôt qu'un filtre dans la requête :
+-- le catalogue est paginé et filtré côté PostgREST, qui ne sait pas exprimer
+-- « existe une variante active avec du stock » sans sous-requête. Un flag
+-- indexé garde le catalogue rapide sur 3G, ce qui est le vrai contrainte ici.
+--
+-- Cohérence garantie par TRIGGER, jamais par l'application : un stock modifié
+-- par n'importe quel chemin (vente, réservation, expiration, correction admin)
+-- met le flag à jour dans la même transaction.
+--
+-- Produits DIGITAUX : jamais touchés par ces triggers (ils n'ont pas de
+-- variantes), donc in_stock reste `true` à vie. Aucun impact sur l'existant.
+-- ============================================================================
+
+alter table products
+  add column in_stock boolean not null default true;
+
+-- Le catalogue filtre systématiquement sur (status, in_stock).
+create index products_catalogue_stock_idx
+  on products (status, in_stock, created_at desc)
+  where status = 'published';
+
+-- ─────────────────── Recalcul du flag pour UN produit ───────────────────────
+
+create function zabelie_refresh_in_stock(p_product_id uuid)
+returns void
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_has_stock boolean;
+begin
+  -- STOCK PHYSIQUE (disponible + réservé), PAS le seul disponible.
+  -- Sinon un panier abandonné sur un vendeur qui n'a qu'UNE unité retirerait
+  -- le produit du catalogue pendant toute la durée du TTL (120 min) — pour
+  -- tout le monde. Sur des pièces détachées où l'unité isolée est la norme,
+  -- ça se produirait quotidiennement.
+  -- Un produit invisible ne se vend jamais ; un produit visible et
+  -- temporairement pris se vend deux heures plus tard. C'est la tentative
+  -- d'achat qui échoue proprement si l'unité part entre-temps (0038).
+  select exists (
+      select 1
+        from zabelie_product_variants v
+        join zabelie_stock s on s.variant_id = v.id
+       where v.product_id = p_product_id
+         and v.active
+         and s.quantity_available + s.quantity_reserved > 0
+    ) into v_has_stock;
+
+  -- Écriture SEULEMENT si le booléen change. Sans ce garde, chaque mouvement
+  -- de stock verrouillerait la ligne `products` et en créerait une nouvelle
+  -- version — sur le produit le plus vendu, à chaque réservation. Invisible à
+  -- 300 SKU, mordant à 5 000.
+  update products p
+     set in_stock = v_has_stock
+   where p.id = p_product_id
+     and p.in_stock is distinct from v_has_stock;
+end;
+$$;
+revoke all on function zabelie_refresh_in_stock(uuid) from public, anon, authenticated;
+
+-- ─────────────────── Déclencheurs ───────────────────────────────────────────
+
+create function zabelie_stock_flag_trigger()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_product uuid;
+begin
+  -- La table `zabelie_stock` porte variant_id ; `zabelie_product_variants`
+  -- porte product_id. On remonte au produit dans les deux cas.
+  if tg_table_name = 'zabelie_stock' then
+    select product_id into v_product from zabelie_product_variants
+     where id = coalesce(new.variant_id, old.variant_id);
+  else
+    v_product := coalesce(new.product_id, old.product_id);
+  end if;
+
+  if v_product is not null then
+    perform zabelie_refresh_in_stock(v_product);
+  end if;
+  return coalesce(new, old);
+end;
+$$;
+revoke all on function zabelie_stock_flag_trigger() from public, anon, authenticated;
+
+create trigger zabelie_stock_flag
+  after insert or update of quantity_available, quantity_reserved or delete on zabelie_stock
+  for each row execute function zabelie_stock_flag_trigger();
+
+-- Une variante désactivée ou supprimée retire aussi son stock du décompte.
+create trigger zabelie_variant_flag
+  after insert or update of active or delete on zabelie_product_variants
+  for each row execute function zabelie_stock_flag_trigger();
+
+-- ─────────────────── Backfill des produits existants ────────────────────────
+-- Seuls les produits qui ONT des variantes sont concernés ; les digitaux
+-- gardent `true` (valeur par défaut de la colonne).
+
+update products p
+   set in_stock = exists (
+         select 1
+           from zabelie_product_variants v
+           join zabelie_stock s on s.variant_id = v.id
+          where v.product_id = p.id and v.active
+            and s.quantity_available + s.quantity_reserved > 0
+       )
+ where exists (select 1 from zabelie_product_variants v where v.product_id = p.id);
 

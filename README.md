@@ -1,4 +1,4 @@
-# Zabelie Digi
+# Zabelie
 
 Marketplace de **produits digitaux et talents haïtiens** (inspirée de Chariow et
 Talent gn). Paiement mobile money haïtien (MonCash), livraison digitale instantanée,

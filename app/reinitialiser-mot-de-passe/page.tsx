@@ -2,7 +2,7 @@ import { ResetPasswordForm } from "@/components/reset-password-form";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-export const metadata = { title: "Nouveau mot de passe — Zabelie Digi" };
+export const metadata = { title: "Nouveau mot de passe — Zabelie" };
 
 export default async function ResetPasswordPage() {
   const lang = await getLang();

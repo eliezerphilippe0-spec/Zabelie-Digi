@@ -6,7 +6,7 @@ import { getCreator } from "@/lib/creators";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const alt = "Boutique créateur — Zabelie Digi";
+export const alt = "Boutique créateur — Zabelie";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -26,7 +26,7 @@ export default async function Image({
   const { id } = await params;
   const creator = await getCreator(id).catch(() => null);
 
-  const name = creator?.displayName ?? "Zabelie Digi";
+  const name = creator?.displayName ?? "Zabelie";
   const count = creator?.products.length ?? 0;
   const bio = creator?.bio?.trim() || null;
   const safeName = name.length > 40 ? name.slice(0, 38) + "…" : name;
@@ -65,7 +65,7 @@ export default async function Image({
             Z
           </div>
           <div style={{ display: "flex", fontSize: 28, fontWeight: 700, color: TEXT }}>
-            Zabelie <span style={{ color: MUTED, marginLeft: 8 }}>Digi</span>
+            Zabelie
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export default async function Image({
             <div style={{ display: "flex", fontSize: 30, color: ACCENT }}>
               {count > 0
                 ? `${count} produit${count > 1 ? "s" : ""} en ligne`
-                : "Boutique sur Zabelie Digi"}
+                : "Boutique sur Zabelie"}
             </div>
           </div>
         </div>

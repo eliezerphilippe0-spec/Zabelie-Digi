@@ -3,7 +3,7 @@
 > **📋 DOCUMENT DE DESIGN — AUCUN CODE.** À lire et amender avant toute
 > implémentation. Même traitement que `docs/10-MISSIONS-PAIEMENT.md`.
 >
-> **Contexte** : module professionnel greffé sur Zabelie Digi.
+> **Contexte** : module professionnel greffé sur Zabelie.
 > **Stack cible** : Next.js (routes API) + Supabase/Postgres + crons Vercel.
 > **Principe directeur** : *capacity-first* — Business n'est pas une app, c'est
 > une capacité de plus sur l'infrastructure existante.

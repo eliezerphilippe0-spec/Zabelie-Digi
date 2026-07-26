@@ -1,4 +1,4 @@
-# OPS_TODO — Zabelie Digi
+# OPS_TODO — Zabelie
 
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.

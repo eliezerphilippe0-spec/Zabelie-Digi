@@ -10,7 +10,7 @@ import { t } from "@/lib/i18n";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Catalogue — Zabelie Digi",
+  title: "Catalogue — Zabelie",
 };
 
 // BL-105 : mêmes libellés que la publication (source unique, lib/product-categories).

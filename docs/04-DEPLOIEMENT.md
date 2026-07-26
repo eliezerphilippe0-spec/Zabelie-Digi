@@ -1,4 +1,4 @@
-# Zabelie Digi — Guide de déploiement
+# Zabelie — Guide de déploiement
 
 Mise en production de la Vague 1 : **Supabase** (base + storage) → **MonCash**
 (rail de paiement) → **Vercel** (hébergement + cron réconciliateur).

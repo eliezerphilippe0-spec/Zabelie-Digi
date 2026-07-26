@@ -2,7 +2,7 @@ import { ForgotPasswordForm } from "@/components/forgot-password-form";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-export const metadata = { title: "Mot de passe oublié — Zabelie Digi" };
+export const metadata = { title: "Mot de passe oublié — Zabelie" };
 
 export default async function ForgotPasswordPage() {
   const lang = await getLang();

@@ -13,7 +13,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t, type I18nKey } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Recharge — Zabelie Digi" };
+export const metadata = { title: "Recharge — Zabelie" };
 
 const STATUSES = [
   "payment_pending",

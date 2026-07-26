@@ -1,4 +1,4 @@
-// Zabelie Digi — Référentiel départements d'Haïti (ISO-3166-2:HT).
+// Zabelie — Référentiel départements d'Haïti (ISO-3166-2:HT).
 // Fond de carte : Natural Earth admin-1 dégraissé (géométrie arrondie + code +
 // nom FR + centroïde précalculé).
 import ht from "./haiti-departments.geo.json";

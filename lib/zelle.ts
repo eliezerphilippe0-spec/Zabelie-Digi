@@ -23,5 +23,5 @@ export function isZelleEnabled(): boolean {
 export function zelleRecipient(): ZelleRecipient {
   const handle = process.env.ZELLE_RECIPIENT;
   if (!handle) throw new Error("Zelle: ZELLE_RECIPIENT manquant.");
-  return { handle, name: process.env.ZELLE_RECIPIENT_NAME ?? "Zabelie Digi" };
+  return { handle, name: process.env.ZELLE_RECIPIENT_NAME ?? "Zabelie" };
 }

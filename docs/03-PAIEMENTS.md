@@ -1,4 +1,4 @@
-# Zabelie Digi — Architecture de paiement (EPIC 4)
+# Zabelie — Architecture de paiement (EPIC 4)
 
 > Détail technique du module le plus critique. Découle de `00-CONTEXTE.md §8–§11`.
 > Les **trois invariants** sont des contraintes dures, non négociables.

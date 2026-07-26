@@ -7,7 +7,7 @@ import { formatHTG } from "@/lib/sample-data";
 import { PayInvoiceButton } from "@/components/business/pay-invoice-button";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Facture — Zabelie Digi" };
+export const metadata = { title: "Facture — Zabelie" };
 
 type PortalItem = {
   label: string;
@@ -65,7 +65,7 @@ export default async function FacturePortal({
             Z
           </div>
           <span className="text-lg font-bold">
-            Zabelie <span className="text-mist">Digi</span>
+            Zabelie
           </span>
         </div>
 
@@ -148,7 +148,7 @@ export default async function FacturePortal({
         </div>
 
         <p className="mt-6 text-center text-xs text-mist">
-          Paiement sécurisé via MonCash · <Link href="/" className="underline">Zabelie Digi</Link>
+          Paiement sécurisé via MonCash · <Link href="/" className="underline">Zabelie</Link>
         </p>
       </main>
       <SiteFooter />

@@ -11,7 +11,7 @@
 
 Une migration = un fichier `supabase/migrations/00XX_*.sql`. Ces fichiers sont
 **numérotés** et doivent être appliqués **dans l'ordre**, **une seule fois
-chacun**. Les migrations Zabelie Digi sont **additives** (elles ajoutent des
+chacun**. Les migrations Zabelie sont **additives** (elles ajoutent des
 colonnes/tables) : elles ne suppriment ni ne modifient les données existantes.
 
 ---
@@ -22,10 +22,10 @@ Il existe **deux** projets Supabase distincts. **Ne jamais les confondre.**
 
 | Projet | Référence (dans l'URL) | À toucher ? |
 |---|---|---|
-| **Zabelie Digi** (produits digitaux — CE projet) | `ddditxykopuxxqzgkqwy` | ✅ OUI |
+| **Zabelie** (produits digitaux — CE projet) | `ddditxykopuxxqzgkqwy` | ✅ OUI |
 | Zabelie 1 (produits physiques, projet séparé) | `oqntexkpecuqgvbeqaiq` | ⛔ **JAMAIS** |
 
-Ouvre [app.supabase.com](https://app.supabase.com) → **sélectionne Zabelie Digi**
+Ouvre [app.supabase.com](https://app.supabase.com) → **sélectionne Zabelie**
 → vérifie la référence dans l'URL avant toute action.
 
 > 💾 Recommandé avant une migration : `Database → Backups` (regarde/déclenche une

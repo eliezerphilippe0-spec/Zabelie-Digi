@@ -1,5 +1,5 @@
 /**
- * i18n Zabelie Digi — FR (défaut) + Kreyòl ayisyen (ht).
+ * i18n Zabelie — FR (défaut) + Kreyòl ayisyen (ht).
  * Dictionnaire maison, zéro dépendance (pages légères pour la 3G).
  * ⚠️ Kreyòl à faire relire par un locuteur natif avant le lancement public.
  * Parité des clés garantie par tests/i18n.test.ts.
@@ -31,7 +31,7 @@ const fr = {
   "nav.pro": "Facturation",
   "nav.logout": "Déconnexion",
   "footer.tagline":
-    "La marketplace des produits digitaux et talents haïtiens. Paiement mobile money, livraison instantanée.",
+    "La marketplace haïtienne. Paiement mobile money, pensé pour le contexte local.",
   "footer.explore": "Explorer",
   "footer.sell": "Vendre",
   "footer.become": "Devenir créateur",
@@ -40,7 +40,7 @@ const fr = {
   "footer.rights": "Tous droits réservés.",
 
   // Accueil
-  "home.badge": "La marketplace digitale haïtienne",
+  "home.badge": "La marketplace haïtienne",
   "home.h1.a": "Vendez vos",
   "home.h1.b": "produits digitaux",
   "home.h1.c": "et vos",
@@ -69,7 +69,7 @@ const fr = {
   "home.final.a": "Votre talent mérite d'être",
   "home.final.b": "payé",
   "home.final.sub":
-    "Rejoignez les créateurs qui monétisent leur savoir-faire sur Zabelie Digi.",
+    "Rejoignez les créateurs qui monétisent leur savoir-faire sur Zabelie.",
   "home.final.cta": "Créer ma boutique",
 
   // Catalogue
@@ -113,7 +113,7 @@ const fr = {
   "product.reviews": "Avis vérifiés",
   "product.reviews.note": "Seuls les acheteurs ayant payé peuvent laisser un avis.",
   "product.verified": "Achat vérifié ✓",
-  "product.share": "sur Zabelie Digi :",
+  "product.share": "sur Zabelie :",
   "product.cta.bottom": "Acheter maintenant — {price} ↑",
   "coupon.have": "J'ai un code promo",
   "coupon.ph": "Ex. PROMO50",
@@ -185,7 +185,7 @@ const fr = {
   "topup.disabled":
     "Le service de recharge arrive bientôt. Revenez très vite !",
   "topup.legal":
-    "Zabelie Digi est revendeur de recharge télécom : paiement puis livraison immédiate — aucun solde n'est stocké sur votre compte.",
+    "Zabelie est revendeur de recharge télécom : paiement puis livraison immédiate — aucun solde n'est stocké sur votre compte.",
 
   // Accueil V2 (12 sections — maquette porteur)
   "sec.featured": "Produit de la semaine",
@@ -206,7 +206,7 @@ const fr = {
   "sec.promo.sub": "Ces vendeurs ont un code promo actif — demandez-le sur leur WhatsApp.",
   "sec.reviews": "Avis clients",
   "sec.reviews.sub": "Ce que disent les acheteurs — avis vérifiés uniquement.",
-  "sec.why": "Pourquoi choisir Zabelie Digi",
+  "sec.why": "Pourquoi choisir Zabelie",
   "why.1.t": "Argent protégé",
   "why.1.b": "Chaque paiement reste en escrow jusqu'à la livraison. Montant vérifié en base, jamais sur parole.",
   "why.2.t": "Avis 100 % vérifiés",
@@ -220,7 +220,7 @@ const fr = {
   "faq.a1": "Choisissez un produit, cliquez « Payer avec MonCash » et confirmez sur votre téléphone. La diaspora peut payer en USD via Zelle.",
   "faq.q2": "Quand est-ce que je reçois mon achat ?",
   "faq.a2": "Immédiatement après la confirmation du paiement : téléchargement dans « Mes achats » + e-mail avec le lien.",
-  "faq.q3": "Comment vendre sur Zabelie Digi ?",
+  "faq.q3": "Comment vendre sur Zabelie ?",
   "faq.a3": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente (6 % pour les vendeurs Elite).",
   "faq.q4": "Quand le vendeur reçoit-il son argent ?",
   "faq.a4": "Le net est crédité immédiatement « en attente », puis devient disponible 7 jours après la vente (protection anti-fraude).",
@@ -239,7 +239,7 @@ const fr = {
   "founder.quote":
     "Les opportunités ne se trouvent pas, elles se créent. Oser Agir.",
   "founder.name": "Éliezer Philippe",
-  "founder.role": "Fondateur, Zabelie Digi",
+  "founder.role": "Fondateur, Zabelie",
 
   // BL-130 (revue P2) — parité i18n : connexion, vendre, publish-form,
   // upload-asset, créateur, product-card.
@@ -258,7 +258,7 @@ const fr = {
     "Ce lien de confirmation a expiré ou a déjà été utilisé. Connectez-vous, ou créez à nouveau votre compte pour recevoir un nouveau lien.",
   "auth.back.home": "← Retour à l'accueil",
 
-  "sell.title": "Vendre sur Zabelie Digi",
+  "sell.title": "Vendre sur Zabelie",
   "sell.demo.subtitle": "Mode démo — connecte Supabase pour publier de vrais produits.",
   "sell.demo.body.pre": "La publication nécessite une base Supabase configurée (voir",
   "sell.demo.body.post": ").",
@@ -290,7 +290,7 @@ const fr = {
   "upload.error": "Envoi échoué.",
 
   "creator.products.label": "produit(s) en ligne",
-  "creator.share.text": "Découvre la boutique de {name} sur Zabelie Digi :",
+  "creator.share.text": "Découvre la boutique de {name} sur Zabelie :",
   "creator.empty": "Aucun produit publié pour l'instant.",
 
   "card.kind.file": "Fichier",
@@ -332,7 +332,7 @@ const ht: Record<I18nKey, string> = {
   "nav.pro": "Fè m peye",
   "nav.logout": "Dekonekte",
   "footer.tagline":
-    "Makètplas pwodwi dijital ak talan ayisyen yo. Peman mobile money, livrezon nan menm moman.",
+    "Makètplas ayisyen an. Peman mobile money, panse pou reyalite lokal la.",
   "footer.explore": "Eksplore",
   "footer.sell": "Vann",
   "footer.become": "Vin kreyatè",
@@ -340,7 +340,7 @@ const ht: Record<I18nKey, string> = {
   "footer.natcash": "NatCash — talè konsa",
   "footer.rights": "Tout dwa rezève.",
 
-  "home.badge": "Makètplas dijital ayisyen an",
+  "home.badge": "Makètplas ayisyen an",
   "home.h1.a": "Vann",
   "home.h1.b": "pwodwi dijital ou yo",
   "home.h1.c": "ak",
@@ -367,7 +367,7 @@ const ht: Record<I18nKey, string> = {
   "home.final.a": "Talan ou merite",
   "home.final.b": "peye",
   "home.final.sub":
-    "Vin jwenn kreyatè k ap fè lajan ak konesans yo sou Zabelie Digi.",
+    "Vin jwenn kreyatè k ap fè lajan ak konesans yo sou Zabelie.",
   "home.final.cta": "Kreye boutik mwen",
 
   "catalog.title": "Katalòg",
@@ -409,7 +409,7 @@ const ht: Record<I18nKey, string> = {
   "product.reviews": "Avi verifye",
   "product.reviews.note": "Se sèlman achtè ki peye ki ka bay avi.",
   "product.verified": "Acha verifye ✓",
-  "product.share": "sou Zabelie Digi :",
+  "product.share": "sou Zabelie :",
   "product.cta.bottom": "Achte kounye a — {price} ↑",
   "coupon.have": "Mwen gen yon kòd pwomo",
   "coupon.ph": "Egz. PROMO50",
@@ -476,7 +476,7 @@ const ht: Record<I18nKey, string> = {
     "Ranbouse sou menm mwayen peman ou te itilize a.",
   "topup.disabled": "Sèvis rechaj la ap vini talè konsa. Tounen vit !",
   "topup.legal":
-    "Zabelie Digi se revandè rechaj telekòm : ou peye, rechaj la pati nan menm moman — nou pa janm kenbe okenn balans sou kont ou.",
+    "Zabelie se revandè rechaj telekòm : ou peye, rechaj la pati nan menm moman — nou pa janm kenbe okenn balans sou kont ou.",
 
   "sec.featured": "Pwodui semèn nan",
   "featured.cta": "Wè pwodui a →",
@@ -496,7 +496,7 @@ const ht: Record<I18nKey, string> = {
   "sec.promo.sub": "Vandè sa yo gen yon kòd pwomo aktif — mande yo li sou WhatsApp.",
   "sec.reviews": "Avi kliyan yo",
   "sec.reviews.sub": "Sa achtè yo di — avi verifye sèlman.",
-  "sec.why": "Poukisa chwazi Zabelie Digi",
+  "sec.why": "Poukisa chwazi Zabelie",
   "why.1.t": "Lajan ou pwoteje",
   "why.1.b": "Chak peman rete an escrow jiska livrezon. Montan an verifye nan baz done a, pa sou pawòl.",
   "why.2.t": "Avi 100 % verifye",
@@ -510,7 +510,7 @@ const ht: Record<I18nKey, string> = {
   "faq.a1": "Chwazi yon pwodui, klike « Peye ak MonCash » epi konfime sou telefòn ou. Dyaspora a ka peye an USD ak Zelle.",
   "faq.q2": "Kilè m ap resevwa acha m ?",
   "faq.a2": "Touswit apre peman an konfime : telechajman nan « Acha mwen yo » + yon imèl ak lyen an.",
-  "faq.q3": "Kijan pou m vann sou Zabelie Digi ?",
+  "faq.q3": "Kijan pou m vann sou Zabelie ?",
   "faq.a3": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant (6 % pou vandè Elite).",
   "faq.q4": "Kilè vandè a resevwa lajan li ?",
   "faq.a4": "Nèt la antre touswit « an atant », epi li vin disponib 7 jou apre vant lan (pwoteksyon kont fwod).",
@@ -528,7 +528,7 @@ const ht: Record<I18nKey, string> = {
   "founder.quote":
     "Opòtinite yo pa jwenn, se kreye yo kreye. Oze Aji.",
   "founder.name": "Éliezer Philippe",
-  "founder.role": "Fondatè, Zabelie Digi",
+  "founder.role": "Fondatè, Zabelie",
 
   // ⚠️ Kreyòl à faire relire par un locuteur natif (règle du fichier).
   "auth.tab.signin": "Konekte",
@@ -546,7 +546,7 @@ const ht: Record<I18nKey, string> = {
     "Lyen konfimasyon sa a ekspire oswa li deja itilize. Konekte, oswa kreye kont ou ankò pou resevwa yon nouvo lyen.",
   "auth.back.home": "← Tounen sou paj akèy la",
 
-  "sell.title": "Vann sou Zabelie Digi",
+  "sell.title": "Vann sou Zabelie",
   "sell.demo.subtitle": "Mòd demo — konekte Supabase pou pibliye vrè pwodui.",
   "sell.demo.body.pre": "Pou pibliye, ou bezwen yon baz Supabase konfigire (gade",
   "sell.demo.body.post": ").",
@@ -578,7 +578,7 @@ const ht: Record<I18nKey, string> = {
   "upload.error": "Anvwa a echwe.",
 
   "creator.products.label": "pwodui an liy",
-  "creator.share.text": "Dekouvri boutik {name} sou Zabelie Digi :",
+  "creator.share.text": "Dekouvri boutik {name} sou Zabelie :",
   "creator.empty": "Poko gen pwodui pibliye.",
 
   "card.kind.file": "Fichye",
