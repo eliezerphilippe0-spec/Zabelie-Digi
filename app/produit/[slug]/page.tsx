@@ -18,6 +18,7 @@ import {
   kindLabelKey,
   deliveryBulletKey as bulletKey,
   deliveryNoticeKey,
+  isService,
 } from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
@@ -118,14 +119,15 @@ export default async function ProductPage({
     getPhysicalView(product.id),
   ]);
 
-  const kindKey = kindLabelKey(product.kind);
-  const deliveryBulletKey = bulletKey(product.kind);
+  const kindKey = kindLabelKey(product.kind, product.id);
+  const deliveryBulletKey = bulletKey(product.kind, product.id);
   // La zone de livraison n'a pas encore de colonne : seul le repli « à
   // convenir » est atteignable aujourd'hui pour un produit physique.
-  const delivery = deliveryNoticeKey(product.kind, {
-    zone: null,
-    days: product.deliveryDays,
-  });
+  const delivery = deliveryNoticeKey(
+    product.kind,
+    { zone: null, days: product.deliveryDays },
+    product.id
+  );
 
   return (
     <div className="bg-grain min-h-screen">
@@ -159,7 +161,7 @@ export default async function ProductPage({
             <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
               {product.category}
             </span>
-            {product.kind === "service" && product.deliveryDays && (
+            {isService(product.kind, product.id) && product.deliveryDays && (
               <span className="rounded-full border border-line px-3 py-1 text-xs text-accent">
                 ⏱ {t(lang, "product.delivery.days", { days: String(product.deliveryDays) })}
               </span>
@@ -171,7 +173,7 @@ export default async function ProductPage({
           </h1>
           <p className="mt-3 text-mist">{product.blurb}</p>
 
-          {product.kind === "service" && product.serviceIncludes.length > 0 && (
+          {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
             <div className="mt-4 rounded-2xl border border-line bg-surface/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-mist">
                 {t(lang, "product.includes")}

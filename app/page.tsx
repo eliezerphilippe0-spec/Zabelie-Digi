@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 
 export const dynamic = "force-dynamic";
@@ -96,7 +97,7 @@ export default async function HomePage() {
   const featured = bySales[0] ?? null; // « Pwodui semèn nan »
   const trending = bySales.slice(0, 6);
   const newest = products.slice(0, 3); // requête déjà triée par date desc
-  const services = bySales.filter((p) => p.kind === "service").slice(0, 3);
+  const services = bySales.filter((p) => isService(p.kind, p.id)).slice(0, 3);
   const free = products.filter((p) => p.priceHTG === 0).slice(0, 3);
   const promo = bySales
     .filter((p) => p.creatorId && promoSellers.has(p.creatorId))

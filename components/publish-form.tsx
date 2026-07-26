@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { isService } from "@/lib/product-kind";
+import type { ProductKind } from "@/lib/sample-data";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 
@@ -30,7 +32,10 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
-    kind: "fichier",
+    // Le formulaire ne publie que des produits digitaux : `physical` a sa
+    // propre route (`/vendre/physique`). Le type reste néanmoins celui de
+    // l'énumération, pour que `isService` s'applique sans conversion.
+    kind: "fichier" as ProductKind,
     category: "",
     priceHTG: "",
     description: "",
@@ -139,7 +144,7 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
         value={form.description}
         onChange={(e) => set("description", e.target.value)}
       />
-      {form.kind === "service" && (
+      {isService(form.kind) && (
         <div className="space-y-3 rounded-xl border border-line/60 p-4">
           <p className="text-xs text-mist">{labels.serviceHint}</p>
           <input

@@ -128,7 +128,7 @@ export async function POST(req: Request) {
   // ce qui est le bon résultat mais par accident. `isDownloadable` le rend
   // délibéré — et le contrôle d'exhaustivité alertera à la prochaine valeur
   // ajoutée à l'énumération.
-  if (isDownloadable(product.kind)) {
+  if (isDownloadable(product.kind, product.id)) {
     const assets = product.product_assets as unknown as
       | { count: number }[]
       | null;

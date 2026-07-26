@@ -28,11 +28,15 @@ export function ProductCard({
 }) {
   // Type inconnu : aucun badge, plutôt qu'un badge « Fichier » sur une pièce
   // détachée (l'ancien `else` promettait un téléchargement).
-  const kindLabel = pickByKind(product.kind, {
-    file: labels.kindFile,
-    service: labels.kindService,
-    physical: labels.kindPhysical,
-  });
+  const kindLabel = pickByKind(
+    product.kind,
+    {
+      file: labels.kindFile,
+      service: labels.kindService,
+      physical: labels.kindPhysical,
+    },
+    product.id
+  );
 
   return (
     <Link

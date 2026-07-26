@@ -111,3 +111,20 @@ Un chantier à la fois, dans l'ordre de `docs/18` §11. Tests écrits avec le
 code. Migration rédigée **non appliquée** tant que le porteur ne l'a pas
 exécutée. Signaler toute contradiction plutôt que trancher seul ; demander
 plutôt qu'inventer une règle métier, **surtout financière**.
+
+**Le point de contrôle humain est la PR, jamais le commit.** Un hook `Stop`
+du dépôt exige de commiter et pousser tout travail en cours : « montre-moi
+avant de commiter » n'est donc pas un contrôle disponible ici. Un commit sur
+une branche de travail n'engage rien — la revue se fait sur la PR, et une
+correction se fait par un commit de plus, pas par un retour arrière. Marquer
+en tête de message les commits qui attendent un arbitrage.
+
+### `product_kind` — le module est obligatoire
+Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
+vérifié par `tests/product-kind-discipline.test.ts`. Raison : ajouter une
+valeur à l'union ne casse **aucune** compilation — un ternaire avec `else`
+reste typé. Le compilateur n'énumère donc pas les sites, et un `grep` ne
+prouve rien sur ce qu'il n'a pas trouvé. La garantie vient des `switch`
+exhaustifs du module, pas du type. Toute valeur ajoutée à l'énumération SQL
+doit l'être aussi dans `lib/sample-data.ts`, `lib/database.types.ts` et la
+liste `KINDS` du test.

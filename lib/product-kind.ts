@@ -19,9 +19,26 @@ import type { I18nKey } from "@/lib/i18n";
  *     libellé neutre.
  */
 
-/** Contrôle d'exhaustivité — sans effet à l'exécution. */
-function exhaustive(_kind: never): void {
-  /* Le compilateur seul lit cette ligne. */
+/**
+ * Contrôle d'exhaustivité — et journalisation du cas où il a été pris en
+ * défaut.
+ *
+ * Le `never` protège à la COMPILATION. Mais les valeurs viennent de la base,
+ * et l'énumération Postgres a déjà accepté une valeur que le code ignorait :
+ * c'est toute l'histoire de ce bug. Si cette branche est atteinte en
+ * production, se taire remplacerait un mensonge bruyant (« Téléchargement
+ * immédiat » sur une pièce détachée) par un échec silencieux — pas mieux,
+ * juste plus discret.
+ *
+ * On journalise donc la valeur reçue, le site appelant et la référence
+ * produit quand elle est connue. Le rendu, lui, ne promet toujours rien.
+ */
+function exhaustive(kind: never, site: string, ref?: string): void {
+  console.error("[product-kind] valeur inconnue de product_kind", {
+    kind,
+    site,
+    productId: ref ?? null,
+  });
 }
 
 /**
@@ -31,7 +48,7 @@ function exhaustive(_kind: never): void {
  * « Télécharger », d'exiger un livrable avant la vente, et de marquer la
  * commande livrée. Un `physical` répondait « oui » par défaut.
  */
-export function isDownloadable(kind: ProductKind): boolean {
+export function isDownloadable(kind: ProductKind, ref?: string): boolean {
   switch (kind) {
     case "fichier":
       return true;
@@ -39,7 +56,7 @@ export function isDownloadable(kind: ProductKind): boolean {
     case "physical":
       return false;
     default:
-      exhaustive(kind);
+      exhaustive(kind, "isDownloadable", ref);
       // Type inconnu : on ne propose pas un téléchargement qu'on ne peut pas
       // honorer. Un faux négatif se voit et se corrige ; un faux positif
       // envoie l'acheteur sur une erreur après paiement.
@@ -47,8 +64,30 @@ export function isDownloadable(kind: ProductKind): boolean {
   }
 }
 
+/**
+ * Le produit est-il une prestation (mise en relation) ?
+ *
+ * Existe pour que `lib/product-kind.ts` soit le seul endroit du dépôt où un
+ * type de produit se compare — y compris pour les conditions POSITIVES, sans
+ * `else`, qui sont sûres à la lecture. Une règle qui tolère des exceptions
+ * « évidentes » cesse d'être un contrôle : elle redevient de la vigilance.
+ * Garde de test : `tests/product-kind-discipline.test.ts`.
+ */
+export function isService(kind: ProductKind, ref?: string): boolean {
+  switch (kind) {
+    case "service":
+      return true;
+    case "fichier":
+    case "physical":
+      return false;
+    default:
+      exhaustive(kind, "isService", ref);
+      return false;
+  }
+}
+
 /** Clé i18n du badge de type (fiche produit). */
-export function kindLabelKey(kind: ProductKind): I18nKey | null {
+export function kindLabelKey(kind: ProductKind, ref?: string): I18nKey | null {
   switch (kind) {
     case "fichier":
       return "product.kind.file";
@@ -57,13 +96,13 @@ export function kindLabelKey(kind: ProductKind): I18nKey | null {
     case "physical":
       return "product.kind.physical";
     default:
-      exhaustive(kind);
+      exhaustive(kind, "kindLabelKey", ref);
       return null; // Aucun badge plutôt qu'un badge faux.
   }
 }
 
 /** Clé i18n du badge de type (carte de catalogue, libellés courts). */
-export function cardKindLabelKey(kind: ProductKind): I18nKey | null {
+export function cardKindLabelKey(kind: ProductKind, ref?: string): I18nKey | null {
   switch (kind) {
     case "fichier":
       return "card.kind.file";
@@ -72,7 +111,7 @@ export function cardKindLabelKey(kind: ProductKind): I18nKey | null {
     case "physical":
       return "card.kind.physical";
     default:
-      exhaustive(kind);
+      exhaustive(kind, "cardKindLabelKey", ref);
       return null;
   }
 }
@@ -83,7 +122,7 @@ export function cardKindLabelKey(kind: ProductKind): I18nKey | null {
  * vendeur, affichée sous le prix, est la seule chose vraie — on ne double pas
  * d'une seconde formulation.
  */
-export function deliveryBulletKey(kind: ProductKind): I18nKey | null {
+export function deliveryBulletKey(kind: ProductKind, ref?: string): I18nKey | null {
   switch (kind) {
     case "fichier":
       return "product.file";
@@ -92,7 +131,7 @@ export function deliveryBulletKey(kind: ProductKind): I18nKey | null {
     case "physical":
       return null;
     default:
-      exhaustive(kind);
+      exhaustive(kind, "deliveryBulletKey", ref);
       return null;
   }
 }
@@ -104,7 +143,8 @@ export function deliveryBulletKey(kind: ProductKind): I18nKey | null {
  */
 export function pickByKind<T>(
   kind: ProductKind,
-  choices: { file: T; service: T; physical: T }
+  choices: { file: T; service: T; physical: T },
+  ref?: string
 ): T | null {
   switch (kind) {
     case "fichier":
@@ -114,7 +154,7 @@ export function pickByKind<T>(
     case "physical":
       return choices.physical;
     default:
-      exhaustive(kind);
+      exhaustive(kind, "pickByKind", ref);
       return null;
   }
 }
@@ -140,7 +180,8 @@ export type DeliveryDeclaration = {
  */
 export function deliveryNoticeKey(
   kind: ProductKind,
-  declared?: DeliveryDeclaration
+  declared?: DeliveryDeclaration,
+  ref?: string
 ): { key: I18nKey; params?: Record<string, string> } | null {
   switch (kind) {
     case "fichier":
@@ -162,7 +203,7 @@ export function deliveryNoticeKey(
       return { key: "product.delivery.toAgree" };
     }
     default:
-      exhaustive(kind);
+      exhaustive(kind, "deliveryNoticeKey", ref);
       return null; // Aucune mention plutôt qu'une promesse.
   }
 }

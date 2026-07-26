@@ -53,7 +53,7 @@ export async function GET(req: Request) {
     .eq("id", order.product_id)
     .single();
 
-  if (!product || !isDownloadable(product.kind)) {
+  if (!product || !isDownloadable(product.kind, order.product_id)) {
     return NextResponse.json(
       {
         error: "Ce produit ne se livre pas par téléchargement.",

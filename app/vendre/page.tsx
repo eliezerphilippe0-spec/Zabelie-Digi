@@ -152,16 +152,16 @@ export default async function VendrePage() {
                     `else` étiquetait « Service » tout le reste — un produit
                     physique s'affichait donc comme un service dans le
                     tableau de bord de son propre vendeur. */}
-                {isDownloadable(p.kind) ? (
+                {isDownloadable(p.kind, p.id) ? (
                   <UploadAsset
                     productId={p.id}
                     hasAsset={p.product_assets.length > 0}
                     labels={uploadLabels}
                   />
                 ) : (
-                  kindLabelKey(p.kind) && (
+                  kindLabelKey(p.kind, p.id) && (
                     <span className="shrink-0 text-xs text-mist">
-                      {t(lang, kindLabelKey(p.kind)!)}
+                      {t(lang, kindLabelKey(p.kind, p.id)!)}
                     </span>
                   )
                 )}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeCategory } from "@/lib/product-categories";
-import { pickByKind } from "@/lib/product-kind";
+import { isService, pickByKind } from "@/lib/product-kind";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   // silencieusement pour un produit 'fichier' (n'a pas de sens hors service).
   let deliveryDays: number | null = null;
   let serviceIncludes: string[] = [];
-  if (kind === "service") {
+  if (isService(kind)) {
     if (body.deliveryDays !== undefined && body.deliveryDays !== null) {
       const d = Number(body.deliveryDays);
       if (!Number.isInteger(d) || d < 1 || d > 365) {
