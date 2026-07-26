@@ -82,10 +82,22 @@ const server = createServer((req, res) => {
     return send(200, 0);
   }
 
+  // Photo produit. `STUB_COVER` permet d'éprouver les cas de DÉFAILLANCE de la
+  // carte de partage — la surface où un échec coûte le plus cher, puisque
+  // WhatsApp fige l'aperçu obtenu :
+  //   STUB_COVER=404   → stockage qui répond en erreur
+  //   STUB_COVER=lent  → stockage qui traîne (8 s), au-delà du délai interne
   if (url.pathname === "/cover.png") {
-    const png = readFileSync(new URL("./cover.png", import.meta.url));
-    res.writeHead(200, { "content-type": "image/png" });
-    return res.end(png);
+    const servir = () => {
+      res.writeHead(200, { "content-type": "image/png" });
+      res.end(readFileSync(new URL("./cover.png", import.meta.url)));
+    };
+    if (process.env.STUB_COVER === "404") {
+      res.writeHead(404);
+      return res.end();
+    }
+    if (process.env.STUB_COVER === "lent") return setTimeout(servir, 8000);
+    return servir();
   }
 
   if (url.pathname === "/__ecritures") return send(200, ecritures);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatHTG } from "@/lib/sample-data";
 import type { ProductView } from "@/lib/products";
 import { pickByKind } from "@/lib/product-kind";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 
 export type ProductCardLabels = {
   kindFile: string;
@@ -28,6 +29,8 @@ export function ProductCard({
 }) {
   // Type inconnu : aucun badge, plutôt qu'un badge « Fichier » sur une pièce
   // détachée (l'ancien `else` promettait un téléchargement).
+  const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
+
   const kindLabel = pickByKind(
     product.kind,
     {
@@ -47,20 +50,23 @@ export function ProductCard({
         className={`relative h-40 bg-gradient-to-br ${product.accent} opacity-90`}
       >
         {/* La photo du vendeur d'abord — le dégradé n'est que le repli.
-            <img> simple, pas next/image : le proxy d'optimisation restreint
-            l'hôte (remotePatterns) et consomme le quota Vercel ; l'upload est
-            déjà borné à 5 Mo côté route. lazy = hors écran, rien ne charge. */}
-        {product.coverUrl && (
+            Dimensionnée au CDN (lib/product-image) : `lazy` diffère, il ne
+            réduit aucun octet. `width`/`height` explicites = pas de saut de
+            mise en page pendant le chargement. `alt` porte le titre : c'est
+            ce que lit quelqu'un dont l'image ne charge pas — fréquent ici. */}
+        {cover && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={product.coverUrl}
-            alt=""
+            src={cover}
+            alt={product.title}
+            width={COVER_WIDTHS.card}
+            height={Math.round(COVER_WIDTHS.card * 0.625)}
             loading="lazy"
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
-        {!product.coverUrl && (
+        {!cover && (
         <svg
           className="absolute inset-0 h-full w-full opacity-20"
           aria-hidden="true"

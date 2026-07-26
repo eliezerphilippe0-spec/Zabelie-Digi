@@ -110,6 +110,14 @@ c'est la référence de comparaison, elle doit survivre à la session.
       variable, redéploiement, puis UN lien envoyé. L'ordre est imposé par le
       cache d'aperçu persistant de WhatsApp (`docs/20`, § vérification
       production) : tester avant de la poser fige un aperçu `*.vercel.app`.
+- [ ] **Transformations d'image Supabase** — vérifier qu'elles sont incluses
+      dans le plan (Storage → Image Transformations). Si oui, poser
+      `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM=1` : les photos produits passent
+      d'une taille brute (jusqu'à 5 Mo) à ~40 Ko servis par le CDN, sans quota
+      Vercel. Sans la variable, l'URL d'origine est servie telle quelle — plus
+      lourd, jamais cassé. **Ne pas activer sans vérifier le plan** :
+      l'endpoint `render/image` répond en erreur s'il n'est pas inclus, et les
+      photos disparaîtraient.
 - [ ] Zelle : `USD_HTG_RATE`, `ZELLE_RECIPIENT`, `ZELLE_RECIPIENT_NAME`.
 - [ ] Stripe (optionnel) : nécessite une entité US — voir `docs/04 §2 bis`.
 

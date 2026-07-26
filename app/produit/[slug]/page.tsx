@@ -12,6 +12,7 @@ import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import {
@@ -138,14 +139,17 @@ export default async function ProductPage({
             `cover_url` existait depuis 0001 et l'upload depuis 0039, mais
             aucune surface ne la lisait : le vendeur téléversait une photo
             qu'aucun acheteur ne voyait. Sur une marketplace, la photo EST le
-            produit. <img> simple (pas next/image) : hôte non proxifié, pas de
-            quota d'optimisation, taille d'upload déjà bornée à 5 Mo. */}
+            produit. Redimensionnée au CDN Supabase (lib/product-image), pas
+            au rendu : aucun quota Vercel, ~40 Ko au lieu de 5 Mo. */}
         <div>
-          {product.coverUrl ? (
+          {coverUrlAt(product.coverUrl, COVER_WIDTHS.detail) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={product.coverUrl}
+              src={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)!}
               alt={product.title}
+              width={COVER_WIDTHS.detail}
+              height={Math.round((COVER_WIDTHS.detail * 3) / 4)}
+              decoding="async"
               className="aspect-[4/3] w-full rounded-3xl border border-line object-cover"
             />
           ) : (

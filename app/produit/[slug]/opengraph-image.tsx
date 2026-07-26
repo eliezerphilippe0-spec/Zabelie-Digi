@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { getProductView } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { pickByKind } from "@/lib/product-kind";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 
 // Aperçu de partage (WhatsApp / Facebook / X) généré à la volée par produit.
 // Objectif marché : un lien produit partagé sur WhatsApp affiche une mini-affiche
@@ -48,6 +49,29 @@ function Logo() {
   );
 }
 
+
+/** Délai au-delà duquel on renonce à la photo plutôt que retarder la carte. */
+const COVER_TIMEOUT_MS = 2000;
+/** Au-delà, l'encodage en data URI coûte plus qu'il ne rapporte. */
+const COVER_MAX_BYTES = 2 * 1024 * 1024;
+
+async function fetchCover(url: string | null): Promise<string | null> {
+  const sized = coverUrlAt(url, COVER_WIDTHS.share);
+  if (!sized || !/^https?:\/\//.test(sized)) return null;
+  try {
+    const res = await fetch(sized, { signal: AbortSignal.timeout(COVER_TIMEOUT_MS) });
+    if (!res.ok) return null;
+    const type = res.headers.get("content-type") ?? "";
+    if (!type.startsWith("image/")) return null;
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength === 0 || buf.byteLength > COVER_MAX_BYTES) return null;
+    return `data:${type};base64,${Buffer.from(buf).toString("base64")}`;
+  } catch {
+    // Délai dépassé, hôte injoignable, réponse illisible : on rend sans photo.
+    return null;
+  }
+}
+
 export default async function Image({
   params,
 }: {
@@ -78,13 +102,15 @@ export default async function Image({
       })
     : "Paiement MonCash";
   const safeTitle = title.length > 90 ? title.slice(0, 88) + "…" : title;
-  // Photo produit : uniquement une URL http(s) absolue — satori la télécharge
-  // au rendu. Absente ou invalide → mise en page texte inchangée (jamais de
-  // carte cassée : cette image EST la première impression sur WhatsApp).
-  const cover =
-    product?.coverUrl && /^https?:\/\//.test(product.coverUrl)
-      ? product.coverUrl
-      : null;
+  // Photo produit — récupérée ICI, avec un délai borné, et intégrée en data
+  // URI plutôt que confiée au rendu.
+  //
+  // Pourquoi ne pas passer l'URL à satori : il la téléchargerait lui-même,
+  // sans délai maîtrisé. Un stockage lent ou injoignable ferait alors traîner
+  // ou échouer la génération de la carte — la surface où un échec coûte le
+  // plus cher, puisque WhatsApp fige l'aperçu obtenu. Ici, si l'image n'est
+  // pas là en 2 s, on rend la carte SANS elle : dégradée, jamais cassée.
+  const cover = await fetchCover(product?.coverUrl ?? null);
 
   return new ImageResponse(
     (
