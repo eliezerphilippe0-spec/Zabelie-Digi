@@ -41,6 +41,12 @@ const fr = {
 
   // Accueil
   "home.badge": "La marketplace haïtienne",
+  "home.h1.discover": "Découvrez",
+  "home.tw2": "vos produits",
+  "home.tw3": "vos talents",
+  "badge.pay": "Paiement sécurisé",
+  "badge.delivery": "Livraison rapide",
+  "badge.quality": "Qualité garantie",
   "home.h1.a": "Vendez vos",
   "home.h1.b": "produits digitaux",
   "home.h1.c": "et vos",
@@ -341,6 +347,12 @@ const ht: Record<I18nKey, string> = {
   "footer.rights": "Tout dwa rezève.",
 
   "home.badge": "Makètplas ayisyen an",
+  "home.h1.discover": "Dekouvri",
+  "home.tw2": "pwodwi ou yo",
+  "home.tw3": "talan ou yo",
+  "badge.pay": "Peman an sekirite",
+  "badge.delivery": "Livrezon rapid",
+  "badge.quality": "Kalite garanti",
   "home.h1.a": "Vann",
   "home.h1.b": "pwodwi dijital ou yo",
   "home.h1.c": "ak",

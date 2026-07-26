@@ -9,14 +9,14 @@
 
 @theme {
   /* ── Fond — dégradé sombre chaud (haut → milieu → bas) ── */
-  --color-bg-1: #2b3050; /* indigo-navy */
-  --color-bg-2: #4a2731; /* wine / maroon */
-  --color-bg-3: #17123a; /* indigo profond */
+  --color-bg-1: #0a0a0a; /* noir (décision porteur 2026-07-25 — style Bloop) */
+  --color-bg-2: #060606; /* noir profond */
+  --color-bg-3: #000000; /* noir pur */
 
   /* ── Surfaces / cartes ── */
-  --color-surface-maroon: #3e262b;  /* cartes mises en avant */
-  --color-surface-neutral: #2e2126; /* cartes standard */
-  --color-surface-brown: #4a322f;   /* grands panneaux */
+  --color-surface-maroon: #181818;  /* cartes mises en avant */
+  --color-surface-neutral: #121212; /* cartes standard */
+  --color-surface-brown: #1c1c1c;   /* grands panneaux */
 
   /* ── Accents — rampe orange → ambre ── */
   --color-accent: #f5934f;        /* ⚠️ orange primaire (vérifié au rendu) */
@@ -50,12 +50,12 @@
      Les usages existants correspondent 1:1 à la nouvelle sémantique :
      teal = confirmations → success ; magenta = erreurs → danger ;
      gold/amber = CTA/accents → rampe orange ; violet = focus/hover → accent. */
-  --color-ink: #17123a;      /* fond profond + texte sombre sur CTA orange */
-  --color-ink-soft: #2b3050;
-  --color-surface: #2e2126;  /* = surface-neutral */
-  --color-line: rgba(255, 255, 255, 0.06); /* = surface-border */
-  --color-mist: #b3a39b;     /* = text-muted (taupe chaud) */
-  --color-cloud: #f4eee8;    /* = text (blanc chaud) */
+  --color-ink: #0a0a0a;      /* fond profond + texte sombre sur CTA orange */
+  --color-ink-soft: #161616;
+  --color-surface: #121212;  /* = surface-neutral */
+  --color-line: rgba(255, 255, 255, 0.12); /* = surface-border (renforcé sur noir pur) */
+  --color-mist: #a6a6a6;     /* = text-muted (gris neutre sur noir) */
+  --color-cloud: #ffffff;    /* = text (blanc) */
   --color-gold: #feb56c;     /* = accent-gold */
   --color-amber: #f5934f;    /* = accent */
   --color-magenta: #e0645c;  /* = danger */

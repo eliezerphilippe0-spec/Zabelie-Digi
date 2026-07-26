@@ -10,7 +10,7 @@ export async function SiteFooter() {
     <footer className="mt-24 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:justify-between">
         <div className="max-w-xs">
-          <BrandLogo />
+          <BrandLogo gradId="zt-grad-footer" />
           <p className="mt-3 text-sm text-mist">{t(lang, "footer.tagline")}</p>
         </div>
 

@@ -85,7 +85,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
   return (
     <div className="w-full max-w-sm">
       <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-        <BrandMark size={36} />
+        <BrandMark size={36} gradId="zt-grad-login" />
         <span className="text-lg font-semibold">
           Zabelie
         </span>
