@@ -106,6 +106,10 @@ c'est la référence de comparaison, elle doit survivre à la session.
       fidélité) — via le SQL Editor (`docs/14-MIGRATIONS-SUPABASE.md`). Scan
       sécurité Supabase (`get_advisors`) : **propre** (alertes restantes = par
       conception, cf. session).
+- [ ] **`NEXT_PUBLIC_SITE_URL` en Production AVANT tout test WhatsApp** —
+      variable, redéploiement, puis UN lien envoyé. L'ordre est imposé par le
+      cache d'aperçu persistant de WhatsApp (`docs/20`, § vérification
+      production) : tester avant de la poser fige un aperçu `*.vercel.app`.
 - [ ] Zelle : `USD_HTG_RATE`, `ZELLE_RECIPIENT`, `ZELLE_RECIPIENT_NAME`.
 - [ ] Stripe (optionnel) : nécessite une entité US — voir `docs/04 §2 bis`.
 

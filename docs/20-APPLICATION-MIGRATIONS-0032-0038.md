@@ -549,20 +549,25 @@ vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
 
 ### Vérification à faire une fois, sur la PRODUCTION, dès le déploiement
 
-**S'envoyer un lien de fiche produit sur WhatsApp.** C'est la seule surface de
-ce chantier qui n'a jamais été éprouvée ailleurs qu'en local et en CI : les
-tests vérifient que les balises sont correctes et que l'image se génère, pas
-que le robot de WhatsApp les lit comme prévu depuis Internet.
+**Ordre imposé par le cache — la variable AVANT le test, jamais l'inverse.**
+Le cache d'aperçu de WhatsApp est persistant : tester d'abord et corriger
+ensuite fige la mauvaise vignette pour ce lien, et il faudrait une autre fiche
+pour savoir si le correctif a pris. Donc :
+
+1. **Renseigner `NEXT_PUBLIC_SITE_URL`** dans Vercel (Settings → Environment
+   Variables, environnement **Production**) avec le domaine public définitif.
+   Sans elle, `lib/site-url.ts` retombe sur l'URL du déploiement — ça
+   fonctionne, mais l'aperçu affiche un domaine `*.vercel.app`.
+2. **Redéployer** (la variable est lue au build).
+3. **Alors seulement**, s'envoyer UN lien de fiche produit sur WhatsApp.
+
+C'est la seule surface de ce chantier qui n'a jamais été éprouvée ailleurs
+qu'en local et en CI : les tests vérifient que les balises sont correctes et
+que l'image se génère, pas que le robot de WhatsApp les lit comme prévu depuis
+Internet.
 
 Attendu : vignette 1200×630 avec le titre et le prix, ligne de titre portant le
 nom du produit et son prix, description avec le vendeur.
-
-⚠️ **Le cache d'aperçu de WhatsApp est persistant** — un lien dont l'aperçu
-s'est affiché nu reste nu pour tout le monde, longtemps. À vérifier **avant**
-que des liens ne circulent, pas après. Si l'aperçu est mauvais, le premier
-suspect est `NEXT_PUBLIC_SITE_URL` sur l'environnement de production :
-`lib/site-url.ts` retombe sinon sur l'URL du déploiement Vercel, ce qui
-fonctionne mais donne un domaine `*.vercel.app` dans l'aperçu.
 
 ⚠️ **Avant l'étape 9, une impasse reste ouverte** : l'acheteur d'un produit
 physique voit dans `/mes-achats` une commande figée sur `paid`, sans action ni
