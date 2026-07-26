@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG, type ProductKind } from "@/lib/sample-data";
 import { isDownloadable, pickByKind } from "@/lib/product-kind";
+import { isMissingColumn } from "@/lib/products";
 
 /**
  * Où en est la remise, pour un produit qui ne se télécharge PAS.
@@ -27,6 +28,8 @@ export const metadata = { title: "Mes achats — Zabelie" };
 
 type OrderRow = {
   id: string;
+  /** null tant que la migration 0042 n'est pas appliquée (code avant schéma). */
+  order_ref: string | null;
   status: string;
   amount_htg: number;
   created_at: string;
@@ -78,16 +81,31 @@ export default async function MesAchatsPage() {
     );
   }
 
-  const { data } = await supabase
+  // 0042 pas encore appliquée → la colonne manque : on redemande sans elle.
+  // Règle du dépôt : le code devance le schéma, une requête se dégrade,
+  // elle ne tombe pas (même motif que le filtre de stock du catalogue).
+  const first = await supabase
     .from("orders")
     .select(
-      "id, status, amount_htg, created_at, product:products(title, slug, kind)"
+      "id, order_ref, status, amount_htg, created_at, product:products(title, slug, kind)"
     )
     .eq("buyer_id", user.id)
     .in("status", ["paid", "delivered"])
     .order("created_at", { ascending: false });
+  let rows = first.data;
+  if (isMissingColumn(first.error)) {
+    const retry = await supabase
+      .from("orders")
+      .select(
+        "id, status, amount_htg, created_at, product:products(title, slug, kind)"
+      )
+      .eq("buyer_id", user.id)
+      .in("status", ["paid", "delivered"])
+      .order("created_at", { ascending: false });
+    rows = (retry.data ?? []).map((o) => ({ ...o, order_ref: null }));
+  }
 
-  const orders = (data ?? []) as unknown as OrderRow[];
+  const orders = (rows ?? []) as unknown as OrderRow[];
   const reviewed = await getReviewedOrderIds(orders.map((o) => o.id));
 
   return (
@@ -113,6 +131,13 @@ export default async function MesAchatsPage() {
                 <p className="text-xs text-mist">
                   {formatHTG(o.amount_htg)} ·{" "}
                   {new Date(o.created_at).toLocaleDateString("fr-HT")}
+                  {/* Le numéro que l'acheteur lit au vendeur au téléphone. */}
+                  {o.order_ref && (
+                    <>
+                      {" · "}
+                      <span className="numeric select-all">{o.order_ref}</span>
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">

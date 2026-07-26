@@ -69,12 +69,15 @@ export function sellerSaleEmail(input: {
   productTitle: string;
   netLabel: string;
   dashboardUrl: string;
+  /** Numéro lisible (0042) — null tant que la migration n'est pas appliquée. */
+  orderRef?: string | null;
 }): { subject: string; html: string } {
   return {
     subject: `🎉 Ou fè yon vant ! — ${input.productTitle}`,
     html: wrap(`
       <p><strong>🎉 Félicitations — nouvelle vente !</strong></p>
       <p style="font-size:15px">${input.productTitle}</p>
+      ${input.orderRef ? `<p>Nimewo kòmand / N° de commande : <strong>${input.orderRef}</strong></p>` : ""}
       <p>Net vendeur crédité (en attente J+7) : <strong>${input.netLabel}</strong></p>
       <p><a href="${input.dashboardUrl}"
             style="display:inline-block;background:#5c2340;color:#fff;

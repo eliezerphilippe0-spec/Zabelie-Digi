@@ -47,6 +47,7 @@ const PRODUCT = {
 
 const ORDER = {
   id: ORDER_ID,
+  order_ref: "ZB-260720-TESTX",
   buyer_id: BUYER_ID,
   product_id: PRODUCT_ID,
   status: "paid",
@@ -119,6 +120,21 @@ const server = createServer((req, res) => {
 
   // ── PostgREST ───────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/rest/v1/orders")) {
+    // STUB_DRIFT=0030 : rejoue le schéma de production AVANT 0042 — toute
+    // sélection de `order_ref` répond 42703, comme le vrai PostgREST. C'est ce
+    // qui permet d'ÉPROUVER la tolérance de dérive des surfaces (règle 3),
+    // pas de la raisonner.
+    if (
+      process.env.STUB_DRIFT === "0030" &&
+      (url.searchParams.get("select") ?? "").includes("order_ref")
+    ) {
+      return send(400, {
+        code: "42703",
+        details: null,
+        hint: null,
+        message: "column orders.order_ref does not exist",
+      });
+    }
     if (req.method !== "GET") {
       let body = "";
       req.on("data", (c) => (body += c));

@@ -146,6 +146,7 @@ const fr = {
     "Le paiement n'a pas pu être validé. Aucun produit n'a été livré. Vous pouvez réessayer en toute sécurité.",
   "pay.fail.code": "Code :",
   "pay.order": "Commande",
+  "order.ref": "N° de commande",
 
   // Zelle (diaspora — flux semi-manuel)
   "zelle.title": "Paiement Zelle",
@@ -448,6 +449,7 @@ const ht: Record<I18nKey, string> = {
     "Peman an pa t ka valide. Nou pa livre okenn pwodwi. Ou ka eseye ankò san pwoblèm.",
   "pay.fail.code": "Kòd :",
   "pay.order": "Kòmand",
+  "order.ref": "Nimewo kòmand",
 
   "zelle.title": "Peman Zelle",
   "zelle.sub":

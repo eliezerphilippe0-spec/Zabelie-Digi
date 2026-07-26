@@ -16,6 +16,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
+import { isMissingColumn } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Administration — Zabelie" };
@@ -83,6 +84,7 @@ type ZellePendingRow = {
 
 type OrderRow = {
   id: string;
+  order_ref: string | null; // null avant 0042 (code avant schéma)
   status: string;
   amount_htg: number;
   created_at: string;
@@ -93,7 +95,15 @@ function one<T>(v: T | T[] | null): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ ref?: string }>;
+}) {
+  // Recherche par numéro de commande (0042). Normalisation en MAJUSCULES :
+  // l'écriture est toujours en majuscules, la recherche accepte les deux
+  // casses — un numéro dicté au téléphone se retape n'importe comment.
+  const refQuery = (await searchParams)?.ref?.trim().toUpperCase() ?? "";
   if (!isSupabaseConfigured()) {
     return (
       <Shell title="Administration">
@@ -154,12 +164,33 @@ export default async function AdminPage() {
         .from("payments")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending"),
-      admin
-        .from("orders")
-        .select("id, status, amount_htg, created_at, product:products(title)")
-        .in("status", ["paid", "delivered", "disputed", "refunded"])
-        .order("created_at", { ascending: false })
-        .limit(15),
+      (async () => {
+        // Sélection tolérante à la dérive (0042 pas encore appliquée) + filtre
+        // par numéro si demandé. Sur colonne absente, la recherche par numéro
+        // est simplement sans résultat — l'admin voit la liste habituelle.
+        const build = (withRef: boolean) => {
+          let q = admin
+            .from("orders")
+            .select(
+              withRef
+                ? "id, order_ref, status, amount_htg, created_at, product:products(title)"
+                : "id, status, amount_htg, created_at, product:products(title)"
+            )
+            .in("status", ["paid", "delivered", "disputed", "refunded"]);
+          if (withRef && refQuery) q = q.eq("order_ref", refQuery);
+          return q.order("created_at", { ascending: false }).limit(15);
+        };
+        const first = await build(true);
+        if (!isMissingColumn(first.error)) return first;
+        const retry = await build(false);
+        return {
+          error: retry.error,
+          data: (retry.data ?? []).map((o) => ({
+            ...(o as unknown as Record<string, unknown>),
+            order_ref: null,
+          })),
+        };
+      })(),
       admin
         .from("payments")
         .select("order_id, expected_usd_cents, created_at, raw, order:orders(amount_htg)")
@@ -281,6 +312,17 @@ export default async function AdminPage() {
           <p className="mt-3 text-sm text-mist">Aucune commande payée.</p>
         ) : (
           <ul className="mt-4 space-y-2">
+            <form action="/admin" className="mb-3 flex gap-2">
+              <input
+                name="ref"
+                defaultValue={refQuery}
+                placeholder="ZB-260726-XXXXX"
+                className="numeric min-w-0 flex-1 rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none"
+              />
+              <button className="rounded-lg border border-line px-3 py-2 text-xs text-mist hover:text-cloud">
+                Chercher
+              </button>
+            </form>
             {orders.map((o) => {
               const product = Array.isArray(o.product) ? o.product[0] : o.product;
               return (
@@ -293,6 +335,12 @@ export default async function AdminPage() {
                       {product?.title ?? "Produit"}
                     </p>
                     <p className="text-xs text-mist">
+                      {o.order_ref && (
+                        <>
+                          <span className="numeric select-all">{o.order_ref}</span>
+                          {" · "}
+                        </>
+                      )}
                       {formatHTG(o.amount_htg)} ·{" "}
                       {new Date(o.created_at).toLocaleDateString("fr-HT")} ·{" "}
                       <span
