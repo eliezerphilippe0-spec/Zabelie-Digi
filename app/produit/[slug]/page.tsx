@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
@@ -15,6 +16,47 @@ import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Aperçu de partage — la fiche produit est diffusée par lien WhatsApp, donc
+ * cette carte EST la page d'accueil de la plupart des acheteurs.
+ *
+ * L'image (1200×630) était déjà générée par produit (opengraph-image.tsx),
+ * mais rien ne définissait le titre ni la description : ils retombaient sur
+ * ceux du layout racine, identiques pour toutes les fiches. Un lien partagé
+ * s'annonçait « Zabelie — La marketplace haïtienne » au lieu du produit et de
+ * son prix — et l'onglet du navigateur affichait la même chose partout.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductView(slug).catch(() => undefined);
+  if (!product) return { title: "Produit introuvable — Zabelie" };
+
+  const price = formatHTG(product.priceHTG);
+  const title = `${product.title} — ${price}`;
+  // Le prix et le vendeur AVANT le descriptif : c'est ce qui décide le clic
+  // dans un fil de discussion, et WhatsApp tronque tôt.
+  const blurb = product.blurb.replace(/\s+/g, " ").trim();
+  const description = `${price} · par ${product.creator}${blurb ? ` — ${blurb}` : ""}`;
+
+  return {
+    title,
+    description: description.length > 200 ? description.slice(0, 197) + "…" : description,
+    alternates: { canonical: `/produit/${product.slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `/produit/${product.slug}`,
+      siteName: "Zabelie",
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 /**
  * Rails proposés, construits côté serveur : MonCash toujours, puis les rails
@@ -212,11 +254,13 @@ export default async function ProductPage({
             </p>
           </div>
 
-          <ul className="mt-6 space-y-2 text-sm text-mist">
-            <li>{t(lang, "product.secure")}</li>
-            <li>
-              {/* Compatibilité véhicule — décisif sur une pièce détachée :
-              l'acheteur a déjà payé quand il découvre l'erreur de référence. */}
+          {/* Compatibilité véhicule — décisif sur une pièce détachée :
+              l'acheteur a déjà payé quand il découvre l'erreur de référence.
+              Bloc À PART, juste sous le prix : ce n'est pas une ligne de
+              réassurance, c'est un fait qui décide l'achat. Il était imbriqué
+              dans un <li> de la liste ci-dessous, avec le texte de livraison
+              coupé en deux autour — balisage invalide (un <ul> dans un <li>
+              d'une autre liste) et ordre de lecture faux. */}
           {physical && physical.fitment.length > 0 && (
             <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
               <p className="text-sm font-semibold">Compatible avec</p>
@@ -239,7 +283,10 @@ export default async function ProductPage({
             </div>
           )}
 
-          {product.kind === "service"
+          <ul className="mt-6 space-y-2 text-sm text-mist">
+            <li>{t(lang, "product.secure")}</li>
+            <li>
+              {product.kind === "service"
                 ? t(lang, "product.service")
                 : t(lang, "product.file")}
             </li>

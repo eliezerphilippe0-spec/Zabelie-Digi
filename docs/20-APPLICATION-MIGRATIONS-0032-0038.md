@@ -42,16 +42,41 @@ Sept migrations dont plusieurs sur le money-path : c'est beaucoup pour un seul
 rollback. On applique en deux groupes, avec une vérification entre les deux —
 si quelque chose diverge, on sait lequel des deux l'a causé.
 
-| Groupe | Migrations | Objet |
-|---|---|---|
-| **A** | `0032` · `0033` · `0034` | Chantier 0 — voie de sortie vendeur |
-| **B** | `0035` → `0038` | Catalogue et stock |
+| Groupe | Migrations | Objet | Touche le money-path |
+|---|---|---|---|
+| **A** | `0032` · `0033` · `0034` | Chantier 0 — voie de sortie vendeur | oui (par construction) |
+| **B1** | `0035` · `0036` | Taxonomie, produits physiques, stock | non |
+| **B2** | `0037` · `0038` · `0040` | Branchement stock ↔ money-path | **oui** |
+
+### Pourquoi B est coupé en deux (décision porteur, 2026-07-26)
+
+`0037` et `0038` remplacent `confirm_payment` et `refund_order`. Les faire
+passer dans le même lot que le catalogue n'est pas dangereux en soi — c'est
+qu'on perd la capacité de **dire précisément ce qui a changé sur les flux
+financiers** le jour où un vendeur conteste un montant. Catalogue d'un côté,
+money-path de l'autre, **revue séparée**.
+
+**B1 seul débloque ce qui est utile aujourd'hui.** Le formulaire vendeur
+(`/vendre/physique` → `app/api/products/physical/route.ts`) interroge
+`zabelie_categories` : sans la table, aucune fiche ne peut être saisie. C'est
+ça, l'argument pour appliquer B1 — **débloquer la saisie, pas la vitrine**.
+
+**B2 attend que les versements manuels soient exécutés.** Tant que l'apurement
+n'est pas fait, on ne superpose pas un changement de `confirm_payment` à un
+encours contesté.
+
+⚠️ B1 sans B2 signifie : le stock existe, mais il n'est **ni décrémenté à la
+vente ni protégé contre la survente**. Donc B1 sert à **saisir** des fiches,
+jamais à **ouvrir** la vente physique. Ne pas mettre de produit physique en
+`published` avant B2.
 
 1. **Relever `zabelie_solvency_report()`** — impossible avant `0033`, donc
    relever d'abord les trois requêtes brutes de `docs/17` §6 comme référence.
 2. **Preview — groupe A**, puis vérification (§ ci-dessous).
-3. **Preview — groupe B**, puis vérification.
-4. **Production — groupe A**, vérification, **puis groupe B**, aux heures creuses.
+3. **Preview — groupe B1**, puis vérification.
+4. **Preview — groupe B2**, revue séparée, puis vérification.
+5. **Production — A**, vérification, **puis B1**, vérification, **puis B2**,
+   aux heures creuses. Jamais deux groupes dans la même fenêtre.
 
 ## 🔒 Avant tout déploiement Preview
 
@@ -111,7 +136,7 @@ Chaque commande physique **crédite le registre vendeur**. Brancher le checkout
 avant que la voie de sortie ne soit livrée augmenterait mécaniquement l'encours
 détenu sans moyen de le rendre.
 
-→ **Groupe A avant groupe B**, et les deux en production avant l'ouverture aux
+→ **Groupe A avant B2**, et les deux en production avant l'ouverture aux
 vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
 
 ### Séquence complète jusqu'à l'ouverture
@@ -121,11 +146,12 @@ vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
 | 1 | Trois requêtes d'encours sur la prod | **rien — aujourd'hui** |
 | 2 | Apurement manuel + décision « suspendre ou non » | résultat de 1 |
 | 3 | Fusion de la PR #52 | — |
-| 4 | Preview : groupe A puis groupe B | 3 |
-| 5 | Comparaison `zabelie_solvency_report()` avant/après | 4 |
-| 6 | Production (A puis B), puis domaine sur Vercel | 5 |
-| 7 | UI vendeur livrée, onboarding manuel des premiers vendeurs | 6 |
-| 8 | Ouverture | 7 |
+| 4 | Preview puis production : **B1** — débloque la saisie des fiches | 3 |
+| 5 | Saisie manuelle des premières fiches vendeurs (non publiées) | 4 |
+| 6 | Preview puis production : **groupe A** | 3 |
+| 7 | Comparaison `zabelie_solvency_report()` avant/après | 6 |
+| 8 | Revue séparée puis application de **B2** | 2 et 7 |
+| 9 | Domaine sur Vercel, publication des fiches, ouverture | 8 |
 
 **Le code cesse d'être le chemin critique à l'étape 7.**
 
