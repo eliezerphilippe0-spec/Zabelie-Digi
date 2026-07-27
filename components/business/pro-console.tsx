@@ -72,7 +72,8 @@ export function ProConsole({
         <h2 className="text-lg font-bold">Ouvre ton espace pro</h2>
         <p className="mt-1 text-sm text-mist">
           Facture tes clients hors marketplace et encaisse en MonCash. Commission
-          Zabelie&nbsp;: 10&nbsp;% sur chaque paiement, versé aussitôt sur ton solde.
+          Zabelie&nbsp;: 10&nbsp;% sur chaque paiement — l&apos;arrondi est toujours
+          en ta faveur — versé aussitôt sur ton solde.
         </p>
         <form onSubmit={register} className="mt-4 space-y-3">
           <input

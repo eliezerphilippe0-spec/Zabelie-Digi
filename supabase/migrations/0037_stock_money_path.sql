@@ -124,7 +124,8 @@ begin
 
   select tier into v_tier from profiles where id = v_seller_id;
   v_rate_bps   := commission_rate_bps(v_tier);
-  v_commission := round(v_order.amount_htg::numeric * v_rate_bps / 10000);
+  -- D-4 : règle unique, `floor` (l'arrondi va au vendeur). Suppose 0044.
+  v_commission := zabelie_commission_htg(v_order.amount_htg, v_rate_bps);
   v_net        := v_order.amount_htg - v_commission;
 
   insert into wallets (owner_id) values (v_seller_id)

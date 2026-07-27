@@ -24,14 +24,32 @@ test("commission Elite 6 %", () => {
   assert.equal(netHTG(1000, "elite"), 940);
 });
 
-test("arrondis : commission = round(gross * bps / 10000)", () => {
-  // 2599 * 10 % = 259.9 → 260
-  assert.equal(commissionHTG(2599, "standard"), 260);
-  assert.equal(netHTG(2599, "standard"), 2339);
-  // 2599 * 6 % = 155.94 → 156
-  assert.equal(commissionHTG(2599, "elite"), 156);
+test("arrondi : commission = floor(gross * bps / 10000) — D-4, en faveur du vendeur", () => {
+  // 2599 × 10 % = 259,9 → 259 (et non 260 : la fraction reste au vendeur).
+  assert.equal(commissionHTG(2599, "standard"), 259);
+  assert.equal(netHTG(2599, "standard"), 2340);
+  // 2599 × 6 % = 155,94 → 155
+  assert.equal(commissionHTG(2599, "elite"), 155);
+  // Le cas qui a motivé la décision : 25 × 10 % = 2,5.
+  // `round` donnait 3 (12 % réels) ; `floor` donne 2 (8 %).
+  assert.equal(commissionHTG(25, "standard"), 2);
+  assert.equal(netHTG(25, "standard"), 23);
   // gross 0 → 0
   assert.equal(commissionHTG(0, "standard"), 0);
+});
+
+test("D-4 : l'arrondi ne penche JAMAIS vers la plateforme", () => {
+  // La propriété qui définit la décision, sur toute la plage utile :
+  // la commission ne dépasse jamais la part exacte due.
+  for (const tier of ["standard", "elite"] as CreatorTier[]) {
+    const bps = tier === "standard" ? 1000 : 600;
+    for (let gross = 0; gross <= 5000; gross++) {
+      const exact = (gross * bps) / 10000;
+      const c = commissionHTG(gross, tier);
+      assert.ok(c <= exact, `${tier}@${gross}: commission ${c} > part exacte ${exact}`);
+      assert.ok(exact - c < 1, `${tier}@${gross}: plus d'une gourde cédée`);
+    }
+  }
 });
 
 test("invariant : net + commission = brut", () => {

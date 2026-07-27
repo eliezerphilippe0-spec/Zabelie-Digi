@@ -22,6 +22,7 @@
 | V-11 | **Recharge téléphonique (topup first-party)** | Demande porteur (2026-07). Zabelie = **revendeur** de recharge Digicel/Natcom, **jamais émetteur de monnaie électronique** (BRH Circ. 121). Décisions : Reloadly sandbox (P1, adapter pattern), rails HTG MonCash + USD Zelle (NatCash ⛔ inchangé), plafonds 5 000 HTG/tx · 25 000 HTG/j · 5 bénéf./h, marge ~5 %. Pipeline séparé du money-path marketplace ; ledger append-only ; remboursement moyen d'origine + checkpoint humain. Voir `07-TOPUP.md` + migration `0010_topup.sql`. |
 | V-13 | **Barre de catégories de l'accueil — suppression, pas réparation** | Décision porteur (2026-07-26). Elle affiche six libellés **digitaux en dur** (Photo, Business, Musique, Design, Carrière, Marketing) sur une marketplace qui bascule vers le physique : elle n'annonce pas seulement des pages vides, elle annonce **le mauvais commerce**. La brancher sur `zabelie_categories` la ferait passer de six catégories fausses à seize catégories vides — donc la migration `0035` **ne débloque pas** cette barre. Ne pas rouvrir le sujet « barre alimentée par la taxonomie » avant qu'il existe une offre réelle à ranger dedans. Condition posée par le porteur : livrer d'abord un **état vide de recherche** utilisable. |
 | V-14 | **Application des migrations — catalogue et money-path jamais dans le même lot** | Décision porteur (2026-07-26). `0037`/`0038`/`0040` remplacent `confirm_payment` et `refund_order` : les mêler au catalogue fait perdre la capacité de **dire ce qui a changé sur les flux financiers** le jour où un vendeur conteste un montant. Le groupe B est coupé en **B1** (`0035`·`0036`, aucun effet money-path — sert à **débloquer la saisie** des fiches, le formulaire vendeur lisant `zabelie_categories`) et **B2** (money-path, **revue séparée**, après exécution des versements manuels). Voir `20-APPLICATION-MIGRATIONS-0032-0038.md`. |
+| V-15 | **Arrondi de la commission — `floor`, en faveur du vendeur** | Arbitrage porteur (2026-07-26), ex-D-4. `round()` (défaut PostgreSQL hérité, jamais choisi) envoyait la fraction à la plateforme sur **une vente sur deux** ; `floor` la rend au vendeur pour au plus **1 gourde par vente** (0,45 à 0,49 en moyenne, mesuré sur 0→5 000 HTG). La règle vit désormais dans **une seule** fonction, `zabelie_commission_htg` (migration `0044`), appelée par le marketplace **et** la facturation pro. Communication : « l'arrondi est toujours en votre faveur » — l'effet, pas la méthode. Conséquence assumée : commission nulle sous 10 HTG standard / 17 HTG Elite. |
 | V-12 | **Tiers de commission — statu quo** | Décision porteur (2026-07) : **2 tiers** (standard 10 %, elite 6 %) avec **maturation J+7 uniforme** restent la référence. Le schéma « 4 tiers Starter/Standard/Pro/Elite (J+14/J+7/J+5/J+3) » évoqué en brief n'est PAS retenu ; y revenir serait une nouvelle décision + chantier financier dédié (PR à relecture humaine). |
 
 ---
@@ -33,9 +34,9 @@
 | **D-1** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | **D-2** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | ~~**D-3**~~ | ~~Lien auth/wallet avec Zabelie 1~~ | **VERROUILLÉE → V-9.** Séparé, fusion possible plus tard. | ✅ Tranchée |
-| **D-4** | **Sens de l'arrondi de la commission** — `round` (actuel, hérité du défaut PostgreSQL) ou `floor` ? | Voir ci-dessous. Le changement tient en **un mot** dans `0005`. | 🔴 **Ouverte — arbitrage porteur** |
+| ~~**D-4**~~ | ~~Sens de l'arrondi de la commission~~ | **TRANCHÉE → V-15** : `floor`, l'arrondi va au vendeur. | ✅ Tranchée |
 
-### D-4 — l'arrondi penche systématiquement du côté de la plateforme
+### D-4 (tranchée) — l'arrondi penchait systématiquement du côté de la plateforme
 
 `commission = round(brut × bps / 10000)` : PostgreSQL arrondit le demi **vers
 le haut**, donc 2,5 → 3. **La fraction va toujours à la plateforme, jamais au
@@ -65,11 +66,22 @@ commission` par soustraction, donc l'identité de `0033` tient quel que soit
 l'arrondi. C'est bien une décision **commerciale**, pas technique — d'où
 l'arbitrage plutôt qu'un correctif.
 
-**Le changement** : `round(...)` → `floor(...)` dans `confirm_payment`
-(`0005_commission.sql:110`), plus la même bascule dans l'oracle
-`lib/commission.ts` et le libellé `faq.a3`. À faire **avant la première
-commande** si possible — après, chaque vente écrite au grand livre l'aura été
-sous l'ancienne règle, et le registre est append-only.
+**Arbitrage porteur (2026-07-26) : `floor`.** « Un demi-gourde par vente en
+moyenne est un coût dérisoire, et la règle *l'arrondi va au vendeur* est celle
+qu'on peut répéter sans jamais avoir à la justifier. » → migration `0044`,
+**non appliquée**, à passer **avant la première vente** (registre append-only).
+
+**Le changement était plus large qu'annoncé** : la règle était recopiée à
+**deux** endroits — `confirm_payment` (marketplace) et
+`zabelie_biz_confirm_invoice_payment` (facturation pro, `0022`). Deux copies
+d'une règle commerciale finissent toujours par diverger ; elles appellent
+désormais une fonction unique, `zabelie_commission_htg`.
+
+**Conséquence assumée** : sous `floor`, la commission est **nulle** en dessous
+de 10 HTG (standard) et de 17 HTG (Elite) — la plateforme ne prélève rien
+quand sa part n'atteint pas une gourde entière. C'est la traduction exacte de
+la règle, pas une anomalie ; un test l'avait figée en sens inverse
+(`commission ≥ 1`), il a été corrigé.
 
 > ⚠️ D-1 et D-2 étaient marquées `[À CONFIRMER]` dans la synthèse mais leur libellé
 > exact n'a pas été fourni. À renseigner par le porteur du projet.

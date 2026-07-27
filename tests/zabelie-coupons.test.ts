@@ -32,24 +32,37 @@ test("discountedPriceHtg : arrondi entier, plancher 10 HTG, bornes", () => {
   assert.throws(() => discountedPriceHtg(1000, 12.5));
 });
 
-test("plancher 10 HTG : le ledger reste sain (net > 0, commission ≥ 1 entière)", () => {
+test("plancher 10 HTG : le ledger reste sain (net > 0, entiers, somme exacte)", () => {
   // Les arrondis sur petits montants sont là où les ledgers se désalignent :
   // on fige le comportement au plancher, via l'oracle de la formule SQL.
+  //
+  // ⚠️ « commission ≥ 1 » a été RETIRÉ — c'était une conséquence de `round`,
+  // pas une règle. Depuis D-4 (`floor`, l'arrondi va au vendeur), la
+  // commission est NULLE sous 10 HTG en standard et sous 17 HTG en Elite.
+  // C'est la conséquence assumée de la décision, pas une anomalie : la
+  // plateforme ne prélève rien sur une vente où sa part n'atteint pas une
+  // gourde entière. Ce qui doit rester vrai, c'est le reste.
   for (const tier of ["standard", "elite"] as const) {
     for (let gross = 10; gross <= 100; gross++) {
       const c = commissionHTG(gross, tier);
       const n = netHTG(gross, tier);
       assert.ok(Number.isInteger(c) && Number.isInteger(n), `${tier}@${gross}: entiers`);
-      assert.ok(c >= 1, `${tier}@${gross}: commission ≥ 1 HTG (obtenu ${c})`);
+      assert.ok(c >= 0, `${tier}@${gross}: commission jamais négative (obtenu ${c})`);
       assert.ok(n > 0, `${tier}@${gross}: net vendeur > 0 (obtenu ${n})`);
+      assert.ok(n <= gross, `${tier}@${gross}: net jamais supérieur au brut`);
       assert.equal(c + n, gross, `${tier}@${gross}: commission + net = brut`);
     }
   }
-  // Cas exacts au plancher : standard 1/9, elite 1/9 (0,6 s'arrondit à 1).
+  // Cas exacts au plancher de coupon (10 HTG), sous D-4 (`floor`) :
+  //   standard 10 % → 1,0 exactement → commission 1, net 9 ;
+  //   elite     6 % → 0,6           → commission 0, net 10.
+  // La seconde ligne est la conséquence directe de « l'arrondi va au
+  // vendeur » : sur une vente de 10 gourdes, la part Elite de la plateforme
+  // n'atteint pas une gourde entière, donc elle ne prélève rien.
   assert.equal(commissionHTG(10, "standard"), 1);
   assert.equal(netHTG(10, "standard"), 9);
-  assert.equal(commissionHTG(10, "elite"), 1);
-  assert.equal(netHTG(10, "elite"), 9);
+  assert.equal(commissionHTG(10, "elite"), 0);
+  assert.equal(netHTG(10, "elite"), 10);
 });
 
 test("couponApplies : vendeur, produit, expiration, plafond, actif", () => {
