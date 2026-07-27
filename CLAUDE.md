@@ -49,7 +49,7 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0042`**. Production 2026-07-26 : `0030` + groupe A +
+   (dernière écrite : **`0043`** — état d'expédition, non appliquée, trois valeurs à arbitrer (`docs/21`). Production 2026-07-26 : `0030` + groupe A +
    B1 + `0039` + `0041` + `0042` appliqués ; **restent `0031`** (fidélité,
    volontairement sautée) **et B2** `0037`/`0038`/`0040` — revue séparée,
    prérequis à l'ouverture de la vente physique. Registre :

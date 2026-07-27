@@ -47,6 +47,13 @@ si quelque chose diverge, on sait lequel des deux l'a causé.
 | **A** | `0032` · `0033` · `0034` | Chantier 0 — voie de sortie vendeur | oui (par construction) |
 | **B1** | `0035` · `0036` | Taxonomie, produits physiques, stock | non — **vérifié**, cf. §B1 |
 | **B2** | `0037` · `0038` · `0040` | Branchement stock ↔ money-path | **oui** |
+| **B3** | `0043` | État d'expédition + maturation liée à la remise | **oui** — remplace `confirm_payment` |
+
+**B2 et B3 ouvrent ensemble, jamais séparément.** B2 fait décrémenter le stock
+et interdit la survente ; B3 dit ce qui a été remis et cesse de payer le
+vendeur au chronomètre. Appliquer B2 seule rendrait la vente physique
+techniquement possible tout en laissant `/mes-achats` en impasse et l'escrow
+au minuteur — c'est-à-dire en ouvrant la vente sans la sortie. Voir `docs/21`.
 
 ## §B1 — checklist, écrite AVANT application
 
