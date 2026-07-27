@@ -10,6 +10,7 @@ import {
   backfillCountry,
   countryFromRequest,
 } from "@/lib/geo/country-backfill";
+import { POLICY_VERSION } from "@/lib/policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
     priceHTG?: number;
     deliveryDays?: number | null;
     serviceIncludes?: string[];
+    policyAccepted?: boolean;
   };
   try {
     body = await req.json();
@@ -65,6 +67,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
 
   // Champs page service (Fiverr) — affichage seulement, pas de prix. Ignorés
   // silencieusement pour un produit 'fichier' (n'a pas de sens hors service).
@@ -91,6 +94,31 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+
+  // ── Attestation (R3) ──────────────────────────────────────────────────────
+  // La politique produits interdits est plus stricte que la loi : ce qui la
+  // rend opposable, c'est que le vendeur l'a acceptée dans une version connue.
+  // La VERSION ne vient jamais du client — il choisirait celle qu'il a
+  // « acceptée ». Elle vient de `lib/policy.ts`.
+  if (body.policyAccepted !== true) {
+    return NextResponse.json(
+      { error: "Vous devez accepter les règles de vente.", code: "policy_required" },
+      { status: 400 }
+    );
+  }
+  // Enregistrée AVANT le produit : une attestation sans fiche est sans
+  // conséquence, une fiche sans attestation est exactement le trou visé.
+  const { error: policyErr } = await admin.rpc("zabelie_record_policy_acceptance", {
+    p_user_id: user.id,
+    p_version: POLICY_VERSION,
+  });
+  if (policyErr) {
+    console.error("[products] attestation non enregistrée", policyErr);
+    return NextResponse.json(
+      { error: "Enregistrement de l'attestation impossible." },
+      { status: 500 }
+    );
+  }
 
   // BL-117 : cadence bornée comme checkout/topup (10 créations/min).
   if (!(await rateLimit(admin, `products:${user.id}`, 10))) {

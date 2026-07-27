@@ -118,6 +118,15 @@ La sortie de `zabelie_solvency_report()` va dans un **fichier horodaté**
 (`ops/solvabilite-<phase>-<horodatage>.txt`), jamais seulement à l'écran :
 c'est la référence de comparaison, elle doit survivre à la session.
 
+- [ ] **`0046_policy_acceptance.sql` — attestation vendeur (R3).** Écrite,
+      éprouvée sur Postgres jetable, **non appliquée**. Sans elle, les deux
+      routes de création répondent 500 « Enregistrement de l'attestation
+      impossible » : la case est déjà exigée côté serveur, mais la fonction
+      `zabelie_record_policy_acceptance` n'existe pas encore en base.
+      **Donc : appliquer 0046 AVANT de déployer, ou déployer et appliquer dans
+      le même geste.** C'est le seul endroit de ce chantier où le code est en
+      avance sur le schéma d'une façon qui BLOQUE, au lieu de dégrader.
+
 ## Les trois boucles manuelles — et leur somme
 
 > Elles arrivent au même moment, sur la même personne. Le plafond de Zabelie

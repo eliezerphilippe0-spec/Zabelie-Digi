@@ -41,6 +41,9 @@ const fr = {
 
   // ── Politique produits interdits (v1) ────────────────────────────────────
   "policy.link": "Ce qui ne peut pas être vendu",
+  "policy.accept": "Je confirme que ce produit respecte les règles de vente de Zabelie.",
+  "policy.accept.read": "Lire les règles",
+  "policy.accept.required": "Vous devez accepter les règles de vente.",
   "policy.title": "Ce qui ne peut pas être vendu sur Zabelie",
   "policy.date": "27 juillet 2026",
   "policy.why.h": "Pourquoi ces règles",
@@ -420,6 +423,9 @@ const ht: Record<I18nKey, string> = {
 
   // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
   "policy.link": "Sa ou pa gen dwa vann",
+  "policy.accept": "Mwen konfime pwodui sa a respekte règ vant Zabelie yo.",
+  "policy.accept.read": "Li règ yo",
+  "policy.accept.required": "Ou dwe aksepte règ vant yo.",
   "policy.title": "Sa ou pa gen dwa vann sou Zabelie",
   "policy.date": "27 jiyè 2026",
   "policy.why.h": "Poukisa règ sa yo",

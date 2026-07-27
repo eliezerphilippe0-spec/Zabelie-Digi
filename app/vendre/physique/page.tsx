@@ -75,7 +75,8 @@ export default async function VendrePhysiquePage() {
             <PhysicalProductForm
               tier={user.tier}
               netLabels={netLabels}
-              policyLink={t(lang, "policy.link")}
+              policyAccept={t(lang, "policy.accept")}
+              policyRead={t(lang, "policy.accept.read")}
             />
           </div>
         )}

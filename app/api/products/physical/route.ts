@@ -5,6 +5,7 @@ import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/payment-utils";
 import { KIND_PHYSICAL } from "@/lib/product-kind";
+import { POLICY_VERSION } from "@/lib/policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
     fragile?: unknown;
     variants?: VariantInput[];
     fitment?: FitmentInput[];
+    policyAccepted?: unknown;
   };
   try {
     body = await req.json();
@@ -95,6 +97,27 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "Quantité en stock requise (0 à 100 000)." },
       { status: 400 }
+    );
+  }
+
+  // ── Attestation (R3) ──────────────────────────────────────────────────────
+  // Même règle que la route digitale : la version vient du serveur, jamais du
+  // client, et l'enregistrement précède la création de la fiche.
+  if (body.policyAccepted !== true) {
+    return NextResponse.json(
+      { error: "Vous devez accepter les règles de vente.", code: "policy_required" },
+      { status: 400 }
+    );
+  }
+  const { error: policyErr } = await admin.rpc("zabelie_record_policy_acceptance", {
+    p_user_id: user.id,
+    p_version: POLICY_VERSION,
+  });
+  if (policyErr) {
+    console.error("[products/physical] attestation non enregistrée", policyErr);
+    return NextResponse.json(
+      { error: "Enregistrement de l'attestation impossible." },
+      { status: 500 }
     );
   }
 

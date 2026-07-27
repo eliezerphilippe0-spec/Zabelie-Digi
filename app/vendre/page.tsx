@@ -157,7 +157,9 @@ export default async function VendrePage() {
               ),
               caveat: t(lang, "publish.net.caveat"),
             },
-            policyLink: t(lang, "policy.link"),
+            policyAccept: t(lang, "policy.accept"),
+            policyRead: t(lang, "policy.accept.read"),
+            policyRequired: t(lang, "policy.accept.required"),
           }}
         />
       </div>

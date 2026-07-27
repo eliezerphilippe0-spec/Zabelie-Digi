@@ -33,7 +33,9 @@ export type PublishFormLabels = {
   errorNetwork: string;
   footerHint: string;
   net: NetEstimateLabels;
-  policyLink: string;
+  policyAccept: string;
+  policyRead: string;
+  policyRequired: string;
 };
 
 export function PublishForm({
@@ -47,6 +49,7 @@ export function PublishForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [policyOk, setPolicyOk] = useState(false);
   const [form, setForm] = useState({
     title: "",
     // Le formulaire ne publie que des produits digitaux : `physical` a sa
@@ -78,6 +81,7 @@ export function PublishForm({
           category: form.category,
           description: form.description,
           priceHTG: Number(form.priceHTG),
+          policyAccepted: policyOk,
           deliveryDays: form.deliveryDays ? Number(form.deliveryDays) : null,
           // Un élément par ligne — le serveur reborne (10 max, 140 car.).
           serviceIncludes: form.serviceIncludes
@@ -195,14 +199,25 @@ export function PublishForm({
         {loading ? labels.submitting : labels.submit}
       </button>
       {error && <p className="text-center text-xs text-danger-text">{error}</p>}
+      {/* Attestation : obligatoire, jamais pré-cochée. Le serveur refuse de
+          toute façon sans elle — cette case explique, elle ne garde pas. */}
+      <label className="flex items-start gap-3 rounded-xl border border-line bg-surface/40 p-4 text-xs text-mist">
+        <input
+          type="checkbox"
+          required
+          checked={policyOk}
+          onChange={(e) => setPolicyOk(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>
+          {labels.policyAccept}{" "}
+          <Link href={POLICY_PATH} className="underline hover:text-cloud">
+            {labels.policyRead}
+          </Link>
+        </span>
+      </label>
+
       <p className="text-center text-xs text-mist">{labels.footerHint}</p>
-      {/* La politique est atteignable depuis le formulaire lui-même : c'est le
-          dernier moment où le vendeur peut se raviser avant de soumettre. */}
-      <p className="text-center text-xs">
-        <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
-          {labels.policyLink}
-        </Link>
-      </p>
     </form>
   );
 }

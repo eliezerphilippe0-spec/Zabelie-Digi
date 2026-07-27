@@ -38,7 +38,8 @@ const CURRENT_YEAR = new Date().getFullYear();
 export function PhysicalProductForm({
   tier = "standard",
   netLabels,
-  policyLink,
+  policyAccept,
+  policyRead,
 }: {
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
@@ -49,8 +50,9 @@ export function PhysicalProductForm({
    * moins sur un montant.
    */
   netLabels: NetEstimateLabels;
-  /** Libellé du lien vers la politique, traduit côté serveur. */
-  policyLink: string;
+  /** Libellés de l'attestation, traduits côté serveur. */
+  policyAccept: string;
+  policyRead: string;
 }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -69,6 +71,7 @@ export function PhysicalProductForm({
   const [variants, setVariants] = useState<Variant[]>([]);
   const [fitment, setFitment] = useState<Fitment[]>([]);
 
+  const [policyOk, setPolicyOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,6 +136,7 @@ export function PhysicalProductForm({
           priceHTG: Number(price),
           quantity: Number(quantity),
           categorySlug,
+          policyAccepted: policyOk,
           variants: showVariants
             ? variants
                 .filter((v) => v.label.trim())
@@ -378,6 +382,24 @@ export function PhysicalProductForm({
 
       {error && <p className="text-sm text-danger-text">{error}</p>}
 
+      {/* Attestation : obligatoire, jamais pré-cochée. Placée APRÈS le bouton
+          serait invisible sur un écran de 360 px — elle vient donc avant. */}
+      <label className="flex items-start gap-3 rounded-xl border border-line bg-surface/40 p-4 text-xs text-mist">
+        <input
+          type="checkbox"
+          required
+          checked={policyOk}
+          onChange={(e) => setPolicyOk(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>
+          {policyAccept}{" "}
+          <Link href={POLICY_PATH} className="underline hover:text-cloud">
+            {policyRead}
+          </Link>
+        </span>
+      </label>
+
       {/* ── 4. PUBLIER ───────────────────────────────────────────────── */}
       <button
         type="submit"
@@ -387,12 +409,6 @@ export function PhysicalProductForm({
         {busy ? "Publication…" : "Publier le produit"}
       </button>
 
-      {/* Dernier moment où le vendeur peut se raviser avant de soumettre. */}
-      <p className="text-center text-xs">
-        <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
-          {policyLink}
-        </Link>
-      </p>
     </form>
   );
 }
