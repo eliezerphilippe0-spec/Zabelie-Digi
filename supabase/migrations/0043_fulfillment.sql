@@ -32,9 +32,23 @@
 --     le dossier BRH décrit (docs/17). Un état d'expédition qui n'a pas de
 --     sortie côté vendeur ne fait que déplacer le problème.
 --
+-- L'AUTO-RÉCEPTION EST UN TRANSFERT DE PROPRIÉTÉ DÉCLENCHÉ PAR LE SILENCE.
+-- Un silence ne vaut consentement que si la personne a su que l'horloge
+-- tournait. Sans avis à l'acheteur au moment de la déclaration, PUIS rappel
+-- avant l'échéance, on ne facture pas un silence : on exproprie quelqu'un qui
+-- n'a jamais su. La notification acheteur est donc une DÉPENDANCE de cette
+-- migration, pas une suite — d'où la file d'avis du §5.
+--
+-- BIAIS ASSUMÉ. L'acheteur type arrive par un lien WhatsApp, n'a pas
+-- l'habitude du site et n'y reviendra pas ; le vendeur, lui, a un tableau de
+-- bord. Le silence est donc structurellement plus probable côté acheteur :
+-- le réglage par défaut, c'est « le vendeur est payé ». C'est défendable —
+-- une marketplace qui ne paie jamais le vendeur n'a pas de vendeurs — mais
+-- c'est un CHOIX, et la relance est ce qui le rend acceptable.
+--
 -- CE QU'ELLE NE FAIT PAS : aucun litige automatisé, aucune preuve de remise,
--- aucun arbitrage. Un désaccord va en `disputed` et se règle à la main —
--- c'est le checkpoint humain, pas un défaut de conception.
+-- aucun arbitrage. Un désaccord attend une main humaine — c'est le
+-- checkpoint, pas un défaut de conception.
 -- ============================================================================
 
 -- ── 0. Paramètres — EN ATTENTE D'ARBITRAGE PORTEUR ──────────────────────────
@@ -51,11 +65,13 @@ create table zabelie_fulfillment_limits (
 
 insert into zabelie_fulfillment_limits (key, value, comment) values
   ('shipment_deadline_days', 5,
-   'Délai laissé au vendeur pour DÉCLARER la remise après paiement. Passé ce délai, la commande devient remboursable — c''est la sortie côté acheteur. 5 jours : de quoi couvrir un week-end et un déplacement en province sans immobiliser l''argent une semaine entière. À ARBITRER.'),
+   'ANCRE : confirmation du paiement. Délai laissé au vendeur pour DÉCLARER la remise (pas pour que le colis arrive — Zabelie ne suit rien). Passé ce délai, la commande demande une action humaine. 5 jours couvrent un week-end et un déplacement.'),
   ('auto_receive_days', 7,
-   'Délai après déclaration de remise au terme duquel la commande est réputée reçue faute de réponse de l''acheteur. Protège le vendeur d''un acheteur silencieux. 7 jours : au-delà, on retient l''argent d''une vente probablement honorée. À ARBITRER.'),
+   'ANCRE : déclaration de remise par le vendeur — JAMAIS le paiement. Les deux délais se CHAÎNENT : si celui-ci partait du paiement, un acheteur dont le vendeur déclare au 5e jour n''aurait que 2 jours pour réagir, et le chiffre ne voudrait rien dire. Passé ce délai sans réponse, la commande est réputée reçue.'),
   ('post_receipt_maturation_days', 0,
-   'Délai supplémentaire entre la réception confirmée et la disponibilité des fonds. 0 = le J+7 d''escrow a déjà couru pendant l''expédition, inutile d''en ajouter. Mettre > 0 seulement si l''on veut une fenêtre de réclamation APRÈS réception. À ARBITRER.')
+   'ANCRE : confirmation de réception. 0 — et l''argument est plus fort que la commodité : MonCash n''a PAS de rétrofacturation. Le J+7 digital protège d''une contestation bancaire qui n''existe pas sur ce rail. Retenir l''argent après une confirmation EXPLICITE de l''acheteur ne protège de rien : ça reconstitue la rétention (docs/17).'),
+  ('dispute_weekly_ceiling', 5,
+   'SEUIL POSÉ D''AVANCE, avant que la question soit chargée : au-delà de N litiges par semaine, le traitement manuel cesse d''être tenable. Tout litige atterrit chez le porteur, à la main, sans rétrofacturation pour aider. Franchi durablement → suspendre l''ouverture physique ou financer un vrai processus, pas serrer les dents.')
 on conflict (key) do nothing;  -- config d'exploitation : jamais réécrite au rejeu
 
 alter table zabelie_fulfillment_limits enable row level security;
@@ -71,7 +87,15 @@ create type fulfillment_status as enum (
   'awaiting_shipment',  -- payé, le vendeur n'a rien déclaré
   'shipped',            -- le vendeur déclare avoir remis / expédié
   'received',           -- l'acheteur confirme (ou délai d'auto-réception)
-  'refund_required'     -- le vendeur n'a rien déclaré à temps
+  -- « Aksyon obligatwa » : une main humaine doit trancher. VOLONTAIREMENT
+  -- NEUTRE — `refund_required` présupposait l'issue. Le vendeur muet a très
+  -- souvent remis de la main à la main sans rien cliquer : c'est le cas le
+  -- plus fréquent sur ce marché. Nommer l'état « à rembourser » reviendrait à
+  -- institutionnaliser le remboursement d'une commande honorée.
+  'action_required',
+  -- L'acheteur dit ne pas avoir reçu, avant l'échéance. Même traitement
+  -- humain ; l'état distingue seulement QUI a levé la main.
+  'disputed_by_buyer'
 );
 
 create table zabelie_fulfillment (
@@ -206,6 +230,7 @@ as $$
 declare
   v_seller uuid;
   v_status fulfillment_status;
+  v_recv   integer;
 begin
   select p.seller_id into v_seller
     from orders o join products p on p.id = o.product_id
@@ -236,6 +261,23 @@ begin
          shipment_note = nullif(btrim(coalesce(p_note, '')), ''),
          updated_at = now()
    where order_id = p_order_id;
+
+  -- Les deux avis à l'acheteur, dans CETTE transaction : l'avis immédiat et
+  -- le rappel programmé à mi-parcours. Sans eux, l'auto-réception qui suivra
+  -- serait un transfert de propriété sur un silence non informé.
+  select coalesce(max(value), 7) into v_recv
+    from zabelie_fulfillment_limits where key = 'auto_receive_days';
+
+  insert into zabelie_fulfillment_notices (order_id, kind, due_at)
+  values (p_order_id, 'shipped_buyer', now())
+  on conflict (order_id, kind) do nothing;
+
+  -- Rappel à mi-délai : assez tôt pour laisser le temps de réagir, assez tard
+  -- pour ne pas se confondre avec le premier avis.
+  insert into zabelie_fulfillment_notices (order_id, kind, due_at)
+  values (p_order_id, 'reminder_buyer',
+          now() + make_interval(days => greatest(v_recv / 2, 1)))
+  on conflict (order_id, kind) do nothing;
 
   return jsonb_build_object('ok', true, 'duplicate', false);
 end;
@@ -302,13 +344,108 @@ begin
          matures_at = greatest(matures_at, now() + make_interval(days => v_delay))
    where order_id = p_order_id and status = 'maturing';
 
+  -- Avis final : l'acheteur doit apprendre que le délai a tranché pour lui.
+  if p_auto then
+    insert into zabelie_fulfillment_notices (order_id, kind, due_at)
+    values (p_order_id, 'auto_received', now())
+    on conflict (order_id, kind) do nothing;
+  end if;
+
   return jsonb_build_object('ok', true, 'duplicate', false, 'auto', p_auto);
 end;
 $$;
 revoke all on function zabelie_mark_received(uuid, uuid, boolean)
   from public, anon, authenticated;
 
--- ── 5. Le cron des deux silences ────────────────────────────────────────────
+-- ── 4 bis. Le chemin « je n'ai pas reçu », AVANT l'échéance ─────────────────
+-- Sans lui, la seule protection de l'acheteur serait de ne rien faire — or ne
+-- rien faire est précisément le geste qui paie le vendeur. Il lui faut un
+-- bouton, et il doit exister avant que l'horloge n'expire.
+
+create function zabelie_report_not_received(
+  p_order_id uuid,
+  p_user_id  uuid,
+  p_reason   text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_buyer  uuid;
+  v_status fulfillment_status;
+begin
+  select o.buyer_id into v_buyer from orders o where o.id = p_order_id;
+  if v_buyer is null then
+    return jsonb_build_object('ok', false, 'reason', 'commande_introuvable');
+  end if;
+  if p_user_id is distinct from v_buyer then
+    return jsonb_build_object('ok', false, 'reason', 'non_autorise');
+  end if;
+
+  select status into v_status from zabelie_fulfillment
+   where order_id = p_order_id for update;
+  if v_status is null then
+    return jsonb_build_object('ok', false, 'reason', 'suivi_absent');
+  end if;
+  if v_status = 'disputed_by_buyer' then
+    return jsonb_build_object('ok', true, 'duplicate', true);
+  end if;
+  -- Une fois la réception actée (par lui ou par délai), le litige sort de ce
+  -- mécanisme : il se règle hors flux, à la main.
+  if v_status = 'received' then
+    return jsonb_build_object('ok', false, 'reason', 'deja_receptionne');
+  end if;
+
+  update zabelie_fulfillment
+     set status = 'disputed_by_buyer',
+         shipment_note = coalesce(shipment_note, '') ||
+           case when nullif(btrim(coalesce(p_reason, '')), '') is null then ''
+                else ' | acheteur : ' || btrim(p_reason) end,
+         updated_at = now()
+   where order_id = p_order_id;
+
+  -- L'escrow RESTE verrouillé : c'est tout l'intérêt d'avoir levé la main
+  -- avant l'échéance.
+  update orders set status = 'disputed'
+   where id = p_order_id and status = 'paid';
+
+  return jsonb_build_object('ok', true, 'duplicate', false);
+end;
+$$;
+revoke all on function zabelie_report_not_received(uuid, uuid, text)
+  from public, anon, authenticated;
+
+-- ── 5. File d'AVIS — la condition de légitimité de l'auto-réception ─────────
+-- Écrite DANS la transaction qui change l'état ; l'envoi est asynchrone et
+-- rejouable. Idempotence par (order_id, kind) : un rejeu ne prévient pas deux
+-- fois. Append-only sur le contenu — seul le statut d'envoi évolue.
+
+create type fulfillment_notice_kind as enum (
+  'shipped_buyer',    -- « le vendeur déclare avoir remis » + l'horloge tourne
+  'reminder_buyer',   -- rappel AVANT l'échéance d'auto-réception
+  'auto_received'     -- « faute de réponse, la commande est réputée reçue »
+);
+
+create table zabelie_fulfillment_notices (
+  id         uuid primary key default gen_random_uuid(),
+  order_id   uuid not null references orders (id) on delete cascade,
+  kind       fulfillment_notice_kind not null,
+  due_at     timestamptz not null default now(),
+  sent_at    timestamptz,
+  attempts   integer not null default 0,
+  last_error text,
+  created_at timestamptz not null default now(),
+  constraint fulfillment_notice_unique unique (order_id, kind)
+);
+create index zabelie_notices_due_idx on zabelie_fulfillment_notices (due_at)
+  where sent_at is null;
+
+alter table zabelie_fulfillment_notices enable row level security;
+revoke all on zabelie_fulfillment_notices from anon, authenticated;
+
+-- ── 6. Le cron des deux silences ────────────────────────────────────────────
 -- Un seul passage traite les deux côtés. Journalise ses compteurs même à
 -- zéro (règle d'observabilité, CLAUDE.md) : c'est la route qui le fait.
 
@@ -321,6 +458,7 @@ as $$
 declare
   v_auto     integer := 0;
   v_overdue  integer := 0;
+  v_rappels  integer := 0;
   v_recv     integer;
   v_ship     integer;
   r          record;
@@ -331,20 +469,35 @@ begin
     from zabelie_fulfillment_limits where key = 'shipment_deadline_days';
 
   -- (a) Acheteur silencieux après remise → réception prononcée.
+  -- CONDITION DE LÉGITIMITÉ : les deux avis doivent être PARTIS. Un acheteur
+  -- qu'on n'a pas pu joindre n'a pas gardé le silence — on ne sait rien de
+  -- lui. Tant qu'un avis est en attente ou en échec, la commande reste
+  -- `shipped` et l'escrow verrouillé : le vendeur attend, mais personne n'est
+  -- exproprié.
   for r in
-    select order_id from zabelie_fulfillment
-     where status = 'shipped'
-       and shipped_at < now() - make_interval(days => v_recv)
+    select f.order_id from zabelie_fulfillment f
+     where f.status = 'shipped'
+       and f.shipped_at < now() - make_interval(days => v_recv)
+       and not exists (
+         select 1 from zabelie_fulfillment_notices n
+          where n.order_id = f.order_id
+            and n.kind in ('shipped_buyer', 'reminder_buyer')
+            and n.sent_at is null)
      for update skip locked
   loop
     perform zabelie_mark_received(r.order_id, null, true);
     v_auto := v_auto + 1;
   end loop;
 
-  -- (b) Vendeur silencieux → la commande devient remboursable. On NE
-  -- rembourse pas ici : `refund_order` touche le grand livre et la décision
-  -- de rendre l'argent mérite un passage humain (même principe que la vue
-  -- des ruptures, 0038). On marque, l'admin exécute.
+  -- Avis en attente d'envoi (le compteur sert au journal du cron : un envoi
+  -- qui ne part jamais doit se voir).
+  select count(*) into v_rappels from zabelie_fulfillment_notices
+   where sent_at is null and due_at <= now();
+
+  -- (b) Vendeur silencieux → ACTION REQUISE, pas remboursement. On ne
+  -- présuppose rien : sur ce marché, une remise en main propre sans clic est
+  -- le cas courant. On marque, un humain tranche entre « relancer le
+  -- vendeur », « confirmer la remise » et « rembourser ».
   for r in
     select order_id from zabelie_fulfillment
      where status = 'awaiting_shipment'
@@ -352,14 +505,15 @@ begin
      for update skip locked
   loop
     update zabelie_fulfillment
-       set status = 'refund_required', updated_at = now()
+       set status = 'action_required', updated_at = now()
      where order_id = r.order_id;
     update orders set status = 'disputed'
      where id = r.order_id and status = 'paid';
     v_overdue := v_overdue + 1;
   end loop;
 
-  return jsonb_build_object('auto_recus', v_auto, 'a_rembourser', v_overdue);
+  return jsonb_build_object('auto_recus', v_auto, 'action_requise', v_overdue,
+                            'rappels_dus', v_rappels);
 end;
 $$;
 revoke all on function zabelie_fulfillment_sweep() from public, anon, authenticated;
@@ -367,6 +521,8 @@ revoke all on function zabelie_fulfillment_sweep() from public, anon, authentica
 -- File d'attente de l'admin : commandes payées que le vendeur n'a jamais
 -- honorées. Même rôle que `zabelie_stock_ruptures` — rendre visible ce qui
 -- exige une main humaine.
+-- File d'attente humaine — les deux causes réunies : vendeur muet ET acheteur
+-- qui signale une non-réception. Le nom ne présume d'aucune issue.
 create view zabelie_fulfillment_overdue as
 select f.order_id,
        o.order_ref,
@@ -374,12 +530,13 @@ select f.order_id,
        o.buyer_id,
        p.seller_id,
        p.title as product_title,
+       f.status,
        f.created_at as paid_at,
        now() - f.created_at as attente
   from zabelie_fulfillment f
   join orders o   on o.id = f.order_id
   join products p on p.id = o.product_id
- where f.status = 'refund_required';
+ where f.status in ('action_required', 'disputed_by_buyer');
 
 revoke all on zabelie_fulfillment_overdue from anon, authenticated;
 

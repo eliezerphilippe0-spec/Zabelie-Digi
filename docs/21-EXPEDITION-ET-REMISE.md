@@ -1,7 +1,8 @@
 # État d'expédition et maturation liée à la remise
 
 > Migration `0043_fulfillment.sql` — **rédigée, non appliquée.**
-> Trois valeurs commerciales attendent l'arbitrage du porteur (§2).
+> Quatre valeurs commerciales attendent l'arbitrage du porteur (§2) —
+> et surtout leur **ancre**, sans laquelle un délai ne veut rien dire.
 
 ## 1. Le trou, tel qu'il est en production aujourd'hui
 
@@ -27,16 +28,37 @@ remise — elle ne peut qu'enregistrer ce que les deux parties **déclarent**.
 Toute la conception découle de cette contrainte : deux déclarations, un délai
 qui tranche en cas de silence, et une sortie dans les deux sens.
 
-### Trois valeurs à arbitrer — proposées, pas décidées
+### Les valeurs à arbitrer — et surtout LEUR ANCRE
 
-| Paramètre | Proposition | Ce qui se passe si on le change |
+**Un délai sans point de départ ne veut rien dire.** Si les 5 jours vendeur et
+les 7 jours d'auto-réception partaient tous deux du paiement, un acheteur dont
+le vendeur déclare au 5ᵉ jour n'aurait que **2 jours** pour réagir — et le
+« 7 » serait un mensonge. Les délais se **chaînent** :
+
+| Paramètre | Ancre — à partir de quoi il compte | Proposition |
 |---|---|---|
-| `shipment_deadline_days` | **5** | Délai laissé au vendeur pour déclarer la remise. Plus court : l'argent revient vite à l'acheteur, mais un vendeur en province est pénalisé. Plus long : l'acheteur attend son remboursement d'autant. |
-| `auto_receive_days` | **7** | Délai après lequel une commande remise est réputée reçue faute de réponse. Plus court : le vendeur est payé vite, l'acheteur a moins de temps pour réclamer. Plus long : on retient l'argent d'une vente probablement honorée. |
-| `post_receipt_maturation_days` | **0** | Fenêtre de réclamation *après* réception. `0` parce que le J+7 d'escrow a déjà couru pendant l'expédition. Mettre `> 0` ajoute une seconde attente au vendeur. |
+| `shipment_deadline_days` | **confirmation du paiement** | **5** — délai pour *déclarer* la remise, pas pour que le colis arrive. Port-au-Prince → Jérémie dépasse 5 jours ; le vendeur déclare qu'il a remis, pas que c'est arrivé. |
+| `auto_receive_days` | **déclaration de remise par le vendeur** — jamais le paiement | **7** |
+| `post_receipt_maturation_days` | **confirmation de réception** | **0** |
+| `dispute_weekly_ceiling` | — (seuil, pas un délai) | **5** litiges/semaine |
 
-Elles vivent en table de config (`zabelie_fulfillment_limits`) : se changent
-par `UPDATE`, jamais par migration.
+**Pourquoi 0 après réception, et l'argument est plus fort que la commodité :**
+MonCash n'a **pas de rétrofacturation**. Le J+7 digital protège d'une
+contestation bancaire qui n'existe pas sur ce rail. Retenir l'argent après une
+confirmation *explicite* de l'acheteur ne protège de rien — ça reconstitue la
+rétention de `docs/17`.
+
+Toutes en table de config (`zabelie_fulfillment_limits`) : se changent par
+`UPDATE`, jamais par migration — et ce sont exactement les valeurs qu'on
+voudra ajuster après les premières commandes.
+
+### Le seuil de litiges, posé pendant que la question est théorique
+
+Tout litige atterrit chez le porteur, **à la main**, sans rétrofacturation pour
+aider. À zéro commande, c'est gratuit. Au-delà de **5 litiges par semaine** de
+façon durable, le traitement manuel cesse d'être tenable : il faut alors
+suspendre l'ouverture physique ou financer un vrai processus — pas serrer les
+dents. Écrit maintenant pour ne pas être renégocié sous pression.
 
 ## 3. La machine à états
 
@@ -49,13 +71,19 @@ par `UPDATE`, jamais par migration.
    vendeur déclare ─────┘              └───── silence > shipment_deadline_days
                         │                              │
                         ▼                              ▼
-                     shipped                    refund_required
-                    │        │                  (commande → disputed,
-   acheteur confirme┘        └ silence >         file admin, remboursement
-                    │          auto_receive_days  exécuté à la main)
-                    ▼        │
-                 received ◄──┘
-        (commande → delivered, escrow déverrouillé)
+                     shipped                     action_required
+      ┌──────────────┼────────────┐             (commande → disputed,
+      │              │            │              file admin, un humain
+ acheteur       « pa resevwa »  silence >        tranche — l'état ne
+ confirme        (avant échéance) auto_receive_   présume PAS l'issue)
+      │              │            days
+      │              ▼            │  ⚠ seulement si les AVIS sont partis
+      │      disputed_by_buyer    │
+      │      (escrow VERROUILLÉ,  │
+      │       file admin)         │
+      ▼                           │
+   received ◄────────────────────┘
+   (commande → delivered, escrow déverrouillé, avis final si automatique)
 ```
 
 **`order_status` n'est pas étendue.** Ajouter une valeur à une énumération est
@@ -70,16 +98,56 @@ problème au lieu de le résoudre :
 
 - **L'acheteur se tait** → auto-réception. Sans ça, un acheteur distrait
   bloquerait le vendeur indéfiniment.
-- **Le vendeur se tait** → `refund_required`. Sans ça, une commande jamais
+- **Le vendeur se tait** → `action_required`. Sans ça, une commande jamais
   honorée garderait l'argent de l'acheteur sur le compte marchand **sans
   limite de durée** — exactement la rétention que décrit `docs/17`.
+
+  L'état est **volontairement neutre**, pas « à rembourser » : sur ce marché,
+  le vendeur qui a remis de la main à la main sans rien cliquer est le cas le
+  plus fréquent. Nommer l'état par son issue reviendrait à institutionnaliser
+  le remboursement d'une commande honorée. Un humain tranche entre relancer,
+  confirmer la remise, et rembourser.
 
 C'est la moitié qu'on oublie systématiquement, et c'est celle qui a une
 conséquence réglementaire.
 
+## 3 bis. La notification acheteur est une DÉPENDANCE, pas une suite
+
+L'auto-réception est un **transfert de propriété déclenché par le silence**.
+Un silence ne vaut consentement que si la personne a su que l'horloge
+tournait. Sans avis au moment de la déclaration, puis rappel avant l'échéance,
+on ne facture pas un silence : **on exproprie quelqu'un qui n'a jamais su.**
+
+Concrètement, dans la migration :
+
+- la déclaration de remise crée **deux avis dans sa propre transaction** —
+  immédiat (`shipped_buyer`) et rappel programmé à mi-délai
+  (`reminder_buyer`) ;
+- l'auto-réception ne se prononce **que si ces avis sont partis**. Tant qu'un
+  avis est en attente ou en échec, la commande reste `shipped` et l'escrow
+  verrouillé : le vendeur attend, mais personne n'est exproprié ;
+- l'auto-réception émet un avis final (`auto_received`) : l'acheteur apprend
+  que le délai a tranché pour lui.
+
+### Le chemin « je n'ai pas reçu », avant l'échéance
+
+Sans lui, la seule protection de l'acheteur serait de **ne rien faire** — or
+ne rien faire est précisément le geste qui paie le vendeur.
+`zabelie_report_not_received` fait passer la commande en `disputed_by_buyer`,
+**laisse l'escrow verrouillé**, et l'auto-réception ne peut plus l'emporter.
+
+### Le biais par défaut, assumé
+
+L'acheteur type arrive par un lien WhatsApp, n'a pas l'habitude du site et n'y
+reviendra pas ; le vendeur, lui, a un tableau de bord. Le silence est donc
+structurellement **plus probable côté acheteur** — autrement dit, le réglage
+par défaut est **« le vendeur est payé »**. C'est défendable (une marketplace
+qui ne paie jamais le vendeur n'a pas de vendeurs), mais c'est un **choix**,
+et la relance est ce qui le rend acceptable.
+
 ## 4. Ce qui est vérifié, et comment
 
-`supabase/tests/fulfillment.test.sql` — dix contrôles, dont le central :
+`supabase/tests/fulfillment.test.sql` — treize contrôles, dont deux centraux :
 
 | # | Contrôle |
 |---|---|
@@ -89,13 +157,19 @@ conséquence réglementaire.
 | F4 · F5 | Ni un tiers ni l'acheteur ne déclarent la remise ; l'acheteur ne confirme pas une remise non déclarée |
 | F6 | Réception → `delivered`, déverrouillage, **puis** maturation effective |
 | F7 | Acheteur muet → auto-réception, `auto_received` marqué, aucun auteur attribué |
-| F8 | Vendeur absent → `refund_required` + commande `disputed` + file admin |
+| F8 | Vendeur absent → `action_required` + commande `disputed` + file admin |
 | F9 | Idempotence des deux déclarations |
 | F10 | L'identité comptable de `0033` tient après tout le parcours |
+| F11 | Déclaration → **deux** avis créés, l'un immédiat, l'autre programmé |
+| **F12** | **Aucun avis parti → PAS d'auto-réception** ; avis partis → elle a lieu |
+| F13 | « Je n'ai pas reçu » avant l'échéance → litige, escrow toujours verrouillé, auto-réception impuissante |
 
-**F3 est éprouvé par mutation** (règle du dépôt) : garde retiré de
-`mature_wallets()` → `ERROR: F3: 2 entrée(s) mûrie(s), 1 attendue`. Le test
-échoue quand le bug revient.
+**Deux gardes éprouvés par mutation** (règle du dépôt) — retirés, les tests
+échouent :
+
+- `mature_wallets()` sans le verrou → `F3: 2 entrée(s) mûrie(s), 1 attendue` ;
+- le balayage sans la condition de légitimité → `F12: auto-réception prononcée
+  alors qu'AUCUN avis n'est parti — expropriation sur un silence non informé`.
 
 ## 5. Ce qui reste à faire avant application
 
@@ -107,9 +181,15 @@ conséquence réglementaire.
    ce qu'on cherche à éviter.
 3. **Les surfaces** — aucune n'existe encore :
    - vendeur : bouton « Mwen remèt li / J'ai remis » + note de remise ;
-   - acheteur (`/mes-achats`) : « Mwen resevwa l / J'ai reçu », et l'état
-     courant à la place de l'impasse actuelle ;
+   - acheteur (`/mes-achats`) : « Mwen resevwa l / J'ai reçu » **et
+     « Mwen pa resevwa l / Je n'ai pas reçu »**, plus l'état courant et
+     l'échéance à la place de l'impasse actuelle ;
    - admin : la file `zabelie_fulfillment_overdue`.
+4. **L'envoi des avis** — la file existe en base, l'expéditeur non : une route
+   qui dépile `zabelie_fulfillment_notices` par e-mail (Resend, déjà intégré —
+   aucune dépendance nouvelle) et journalise ses compteurs **même à zéro**.
+   C'est la pièce sans laquelle l'auto-réception ne se déclenchera jamais,
+   par construction.
 4. **Le cron** `zabelie_fulfillment_sweep()` — une route qui journalise ses
    compteurs **même à zéro** (règle d'observabilité), et une entrée dans
    `vercel.json`.

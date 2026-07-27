@@ -12,6 +12,12 @@
 --   F8. Silence du VENDEUR → `refund_required` + commande `disputed`.
 --   F9. Idempotence : déclarer/confirmer deux fois ne double rien.
 --   F10. L'identité comptable de 0033 tient à chaque étape.
+--   F11. Déclaration de remise → DEUX avis acheteur créés dans la même
+--        transaction (immédiat + rappel à mi-délai).
+--   F12. LÉGITIMITÉ : tant qu'un avis n'est pas parti, PAS d'auto-réception.
+--        Un acheteur qu'on n'a pas pu joindre n'a pas gardé le silence.
+--   F13. « Je n'ai pas reçu » avant l'échéance → litige, escrow TOUJOURS
+--        verrouillé, et l'auto-réception ne peut plus l'emporter.
 
 begin;
 
@@ -203,6 +209,8 @@ begin
   v_res := zabelie_declare_shipment(v_o_mut, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
   update zabelie_fulfillment set shipped_at = now() - interval '30 days'
    where order_id = v_o_mut;
+  -- Les avis sont partis : l'acheteur a bien été prévenu, son silence compte.
+  update zabelie_fulfillment_notices set sent_at = now() where order_id = v_o_mut;
   -- Vendeur qui n'a jamais rien déclaré, commande ancienne.
   update zabelie_fulfillment set created_at = now() - interval '30 days'
    where order_id = v_o_abs;
@@ -224,10 +232,10 @@ begin
   end if;
 
   -- F8 — la moitié qu'on oublie : la sortie côté acheteur.
-  if (v_sweep->>'a_rembourser')::integer <> 1 then
-    raise exception 'F8: % commande(s) à rembourser, 1 attendue', v_sweep->>'a_rembourser';
+  if (v_sweep->>'action_requise')::integer <> 1 then
+    raise exception 'F8: % commande(s) en action requise, 1 attendue', v_sweep->>'action_requise';
   end if;
-  if (select status::text from zabelie_fulfillment where order_id = v_o_abs) <> 'refund_required' then
+  if (select status::text from zabelie_fulfillment where order_id = v_o_abs) <> 'action_required' then
     raise exception 'F8: le silence du VENDEUR ne débouche sur aucune sortie';
   end if;
   if (select status::text from orders where id = v_o_abs) <> 'disputed' then
@@ -237,7 +245,96 @@ begin
     raise exception 'F8: absente de la file admin — personne ne la verra';
   end if;
 
-  raise notice 'OK — F7 acheteur muet → auto-réception · F8 vendeur absent → remboursement requis + file admin';
+  raise notice 'OK — F7 acheteur muet → auto-réception · F8 vendeur absent → action requise + file admin';
+end;
+$$;
+
+-- ── F11 / F12 / F13 — avis, légitimité, et le chemin « pa resevwa » ─────────
+do $$
+declare
+  v_o_avis uuid := '00000000-0000-0000-0000-0000000f0040';
+  v_o_muet uuid := '00000000-0000-0000-0000-0000000f0041';
+  v_o_lit  uuid := '00000000-0000-0000-0000-0000000f0042';
+  v_res    jsonb;
+  v_sweep  jsonb;
+  v_n      integer;
+  v_due    timestamptz;
+begin
+  insert into orders (id, buyer_id, product_id, amount_htg, status) values
+    (v_o_avis, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o_muet, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o_lit,  '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid');
+  perform zabelie_open_fulfillment(v_o_avis);
+  perform zabelie_open_fulfillment(v_o_muet);
+  perform zabelie_open_fulfillment(v_o_lit);
+
+  -- ── F11 — deux avis créés à la déclaration ────────────────────────────────
+  perform zabelie_declare_shipment(v_o_avis, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
+  select count(*) into v_n from zabelie_fulfillment_notices where order_id = v_o_avis;
+  if v_n <> 2 then
+    raise exception 'F11: % avis créé(s), 2 attendus (immédiat + rappel)', v_n;
+  end if;
+  if not exists (select 1 from zabelie_fulfillment_notices
+                  where order_id = v_o_avis and kind = 'shipped_buyer' and due_at <= now()) then
+    raise exception 'F11: avis immédiat absent ou différé';
+  end if;
+  select due_at into v_due from zabelie_fulfillment_notices
+   where order_id = v_o_avis and kind = 'reminder_buyer';
+  if v_due <= now() then
+    raise exception 'F11: le rappel doit être PROGRAMMÉ, pas immédiat (%)', v_due;
+  end if;
+
+  -- ── F12 — avis non parti → pas d'auto-réception ───────────────────────────
+  perform zabelie_declare_shipment(v_o_muet, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
+  update zabelie_fulfillment set shipped_at = now() - interval '30 days'
+   where order_id = v_o_muet;
+  -- On NE marque PAS les avis envoyés : l'acheteur n'a jamais été joint.
+  v_sweep := zabelie_fulfillment_sweep();
+  if (select status::text from zabelie_fulfillment where order_id = v_o_muet) = 'received' then
+    raise exception 'F12: auto-réception prononcée alors qu''AUCUN avis n''est parti — expropriation sur un silence non informé';
+  end if;
+  if (select gated_on_delivery from escrow_entries where order_id = v_o_muet) is false then
+    raise exception 'F12: escrow déverrouillé sans réception';
+  end if;
+  -- Sens inverse : une fois les avis partis, l'auto-réception a lieu.
+  update zabelie_fulfillment_notices set sent_at = now() where order_id = v_o_muet;
+  v_sweep := zabelie_fulfillment_sweep();
+  if (select status::text from zabelie_fulfillment where order_id = v_o_muet) <> 'received' then
+    raise exception 'F12: avis partis, l''auto-réception aurait dû avoir lieu';
+  end if;
+  if not exists (select 1 from zabelie_fulfillment_notices
+                  where order_id = v_o_muet and kind = 'auto_received') then
+    raise exception 'F12: aucun avis final — l''acheteur ne saura pas que le délai a tranché';
+  end if;
+
+  -- ── F13 — « je n'ai pas reçu », avant l'échéance ──────────────────────────
+  perform zabelie_declare_shipment(v_o_lit, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
+  v_res := zabelie_report_not_received(v_o_lit, '00000000-0000-0000-0000-0000000f0003', 'test');
+  if (v_res->>'ok')::boolean then
+    raise exception 'F13: un TIERS a pu déclarer une non-réception';
+  end if;
+  v_res := zabelie_report_not_received(v_o_lit, '00000000-0000-0000-0000-0000000f0002', 'rien reçu');
+  if not (v_res->>'ok')::boolean then
+    raise exception 'F13: l''acheteur n''a pas pu signaler (%)', v_res->>'reason';
+  end if;
+  if (select status::text from zabelie_fulfillment where order_id = v_o_lit) <> 'disputed_by_buyer' then
+    raise exception 'F13: état de litige non atteint';
+  end if;
+  if (select gated_on_delivery from escrow_entries where order_id = v_o_lit) is false then
+    raise exception 'F13: escrow déverrouillé malgré le litige — le vendeur serait payé';
+  end if;
+  -- Et l'auto-réception ne peut plus l'emporter, même délai dépassé.
+  update zabelie_fulfillment set shipped_at = now() - interval '30 days' where order_id = v_o_lit;
+  update zabelie_fulfillment_notices set sent_at = now() where order_id = v_o_lit;
+  v_sweep := zabelie_fulfillment_sweep();
+  if (select status::text from zabelie_fulfillment where order_id = v_o_lit) = 'received' then
+    raise exception 'F13: l''auto-réception a écrasé un litige déclaré';
+  end if;
+  if not exists (select 1 from zabelie_fulfillment_overdue where order_id = v_o_lit) then
+    raise exception 'F13: litige absent de la file admin';
+  end if;
+
+  raise notice 'OK — F11 deux avis · F12 pas d''auto-réception sans avis parti (et l''inverse) · F13 « pa resevwa » avant échéance, escrow verrouillé';
 end;
 $$;
 
