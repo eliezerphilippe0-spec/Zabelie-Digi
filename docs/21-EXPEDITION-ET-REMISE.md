@@ -133,10 +133,25 @@ Concrètement, dans la migration :
   l'escrow indéfiniment — l'argent d'une commande honorée resterait sur le
   compte marchand sans limite de durée, soit la rétention de `docs/17` sous sa
   **troisième forme** (après le portefeuille sans retrait et le vendeur muet).
-  Au bout de `notice_max_attempts` (5), la commande sort du limbe vers la file
-  admin (`action_required`) : l'escrow reste verrouillé, mais **visible**, et
-  un humain tranche — il a le numéro de commande et le tableau de bord vendeur
-  pour joindre les parties autrement.
+  **Deux déclencheurs, le premier atteint l'emporte :**
+
+  | Déclencheur | Rôle | Délai réel |
+  |---|---|---|
+  | `notice_max_attempts` (5) | escalade **anticipée** — une adresse qui rebondit dès le 2ᵉ jour n'attend pas la fenêtre entière | dépend du recul : avec un cron quotidien et un recul exponentiel, **5 tentatives ≈ 8 à 15 jours** — au-delà de la fenêtre |
+  | **échéance d'auto-réception atteinte** avec avis en attente | la borne **dure** | **`auto_receive_days` (7 j)**, jamais plus |
+
+  Le nombre qui compte n'est pas « 5 essais » mais **7 jours** : c'est le
+  maximum qu'un vendeur d'une commande honorée attend avant qu'un humain voie
+  le dossier — exactement le même délai que le silence normal. Compter sur les
+  tentatives seules aurait laissé attendre deux semaines.
+
+  Et la borne dure ne coûte **aucune constante nouvelle** : elle réutilise la
+  date à laquelle l'auto-réception aurait tranché. Au moment précis où le
+  garde de légitimité l'empêche encore, l'escalade prend le relais.
+
+  Dans les deux cas : `action_required`, escrow toujours verrouillé mais
+  **visible**, un humain tranche — il a le numéro de commande et le tableau de
+  bord vendeur pour joindre les parties autrement.
 
 ### Le chemin « je n'ai pas reçu », avant l'échéance
 
@@ -153,16 +168,34 @@ celui que l'acheteur regarde.
 
 État vérifié (2026-07-26) : le checkout **exige un compte**
 (`app/api/checkout/route.ts:86`) et l'inscription se fait par e-mail — tout
-acheteur a donc une adresse, par construction : la branche « pas d'adresse →
-verrouillé à vie » n'existe pas. Mais une adresse créée pour acheter n'est pas
-une adresse **lue** : l'acheteur type vit sur WhatsApp, pas dans sa boîte
-mail. L'e-mail est le canal de lancement parce qu'il existe déjà (Resend,
-aucune dépendance nouvelle) ; le canal réel est probablement SMS ou WhatsApp,
-et c'est **la décision fournisseur du lot 3** — interdite sans validation
-(règle du dépôt). **Échéance posée : cette décision doit être tranchée avant
-l'ouverture de la vente physique (B3).** Un mécanisme d'auto-réception dont
-les avis partent vers un canal mort serait conforme à la lettre du garde et
-contraire à sa raison d'être.
+acheteur a donc une adresse, par construction.
+
+⚠️ **Cette garantie est le symptôme d'un problème plus grave qu'elle ne
+résout.** Un acheteur qui arrive par un lien WhatsApp, sur un Android d'entrée
+de gamme, doit **créer un compte e-mail avant de payer**. C'est probablement le
+premier obstacle à ce qu'une commande existe un jour — bien avant le stock,
+l'expédition ou les avis. « Zéro commande en base » n'a pas qu'une explication
+« pas encore lancé » : **il y a un mur à l'entrée.**
+
+Et une adresse créée pour acheter n'est pas une adresse **lue** : l'acheteur
+type vit sur WhatsApp, pas dans sa boîte mail. Le garde vérifie « l'avis est
+parti », pas « la personne a su ».
+
+### Une seule décision, pas deux
+
+Checkout invité et canal de notification sont **couplés**, et c'est ce qui
+rend l'arbitrage délicat :
+
+- lever le mur (**checkout invité**) fait réapparaître immédiatement la
+  branche « pas d'adresse → escrow verrouillé à vie » — que seul le compte
+  obligatoire écarte aujourd'hui ;
+- garder le mur préserve la garantie technique, au prix du mur lui-même.
+
+Donc : **si le checkout invité s'ouvre, le canal réel (SMS/WhatsApp) doit
+s'ouvrir en même temps** — sinon on troque un obstacle contre une rétention.
+Les deux se tranchent **ensemble et avant B3**, jamais l'un sans l'autre.
+Le fournisseur SMS/WhatsApp reste interdit sans validation (règle du dépôt) :
+c'est précisément la décision qui est ici mise à l'échéance.
 
 ### Le biais par défaut, assumé
 
@@ -175,7 +208,7 @@ et la relance est ce qui le rend acceptable.
 
 ## 4. Ce qui est vérifié, et comment
 
-`supabase/tests/fulfillment.test.sql` — quatorze contrôles, dont deux centraux :
+`supabase/tests/fulfillment.test.sql` — quinze contrôles, dont deux centraux :
 
 | # | Contrôle |
 |---|---|
@@ -191,14 +224,18 @@ et la relance est ce qui le rend acceptable.
 | F11 | Déclaration → **deux** avis créés, l'un immédiat, l'autre programmé |
 | **F12** | **Aucun avis parti → PAS d'auto-réception** ; avis partis → elle a lieu |
 | F13 | « Je n'ai pas reçu » avant l'échéance → litige, escrow toujours verrouillé, auto-réception impuissante |
-| F14 | Avis en échec **permanent** → file admin — et pas avant l'épuisement des tentatives |
+| F14 | Avis en échec, **tentatives épuisées** → file admin — et pas avant |
+| **F15** | **Borne temporelle** : escalade à l'échéance d'auto-réception, tentatives loin du plafond |
 
 **Deux gardes éprouvés par mutation** (règle du dépôt) — retirés, les tests
 échouent :
 
 - `mature_wallets()` sans le verrou → `F3: 2 entrée(s) mûrie(s), 1 attendue` ;
 - le balayage sans la condition de légitimité → `F12: auto-réception prononcée
-  alors qu'AUCUN avis n'est parti — expropriation sur un silence non informé`.
+  alors qu'AUCUN avis n'est parti — expropriation sur un silence non informé` ;
+- le balayage sans le déclencheur temporel → `F15: avis bloqué au-delà de
+  l'échéance et AUCUNE escalade — le vendeur attend sans que personne voie le
+  dossier`.
 
 ## 5. Ce qui reste à faire avant application
 

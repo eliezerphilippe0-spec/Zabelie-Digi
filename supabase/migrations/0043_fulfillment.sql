@@ -71,7 +71,7 @@ insert into zabelie_fulfillment_limits (key, value, comment) values
   ('post_receipt_maturation_days', 0,
    'ANCRE : confirmation de réception. 0 — et l''argument est plus fort que la commodité : MonCash n''a PAS de rétrofacturation. Le J+7 digital protège d''une contestation bancaire qui n''existe pas sur ce rail. Retenir l''argent après une confirmation EXPLICITE de l''acheteur ne protège de rien : ça reconstitue la rétention (docs/17).'),
   ('notice_max_attempts', 5,
-   'Tentatives d''envoi d''un avis avant de déclarer l''échec PERMANENT. Au-delà, la commande remonte en file admin (aksyon obligatwa) au lieu de rester en limbe : un escrow verrouillé par un avis qui ne part jamais serait la rétention de docs/17, troisième version — après le portefeuille sans retrait et le vendeur muet.'),
+   'Tentatives d''envoi d''un avis avant escalade ANTICIPÉE en file admin — pour une adresse qui rebondit dès le 2e jour, inutile d''attendre la fenêtre entière. La borne DURE, elle, est temporelle et ne coûte aucune constante : à shipped_at + auto_receive_days, une commande dont les avis ne sont pas partis escalade au lieu de rester en limbe. Le vendeur d''une commande honorée attend donc AU PLUS auto_receive_days avant qu''un humain voie le dossier — le même délai que le silence normal, jamais plus.'),
   ('dispute_weekly_ceiling', 5,
    'SEUIL POSÉ D''AVANCE, avant que la question soit chargée : au-delà de N litiges par semaine, le traitement manuel cesse d''être tenable. Tout litige atterrit chez le porteur, à la main, sans rétrofacturation pour aider. Franchi durablement → suspendre l''ouverture physique ou financer un vrai processus, pas serrer les dents.')
 on conflict (key) do nothing;  -- config d'exploitation : jamais réécrite au rejeu
@@ -498,15 +498,18 @@ begin
   select count(*) into v_rappels from zabelie_fulfillment_notices
    where sent_at is null and due_at <= now();
 
-  -- (c) Avis en ÉCHEC PERMANENT → la commande sort du limbe, direction la
-  -- file admin. Sans cette borne, le garde de légitimité — qui retient
-  -- l'auto-réception tant qu'un avis n'est pas parti — verrouillerait
-  -- l'escrow SANS LIMITE DE DURÉE quand l'envoi ne réussit jamais : l'argent
-  -- d'une commande honorée resterait sur le compte marchand indéfiniment.
-  -- C'est la rétention de docs/17 sous sa troisième forme ; le mécanisme
-  -- échouait « du bon côté » à l'échelle courte et du mauvais à l'échelle
-  -- longue. Un humain tranche — il a le numéro de commande et le tableau de
-  -- bord vendeur pour joindre les parties autrement.
+  -- (c) Avis en échec → la commande sort du limbe, direction la file admin.
+  -- Sans cette borne, le garde de légitimité — qui retient l'auto-réception
+  -- tant qu'un avis n'est pas parti — verrouillerait l'escrow SANS LIMITE DE
+  -- DURÉE quand l'envoi ne réussit jamais : la rétention de docs/17 sous sa
+  -- troisième forme. DEUX déclencheurs, le premier atteint l'emporte :
+  --   • tentatives épuisées (notice_max_attempts) — escalade ANTICIPÉE, une
+  --     adresse qui rebondit dès le 2e jour n'attend pas la fenêtre entière ;
+  --   • ÉCHÉANCE D'AUTO-RÉCEPTION ATTEINTE avec des avis toujours en attente —
+  --     la borne DURE, sans constante nouvelle : au moment exact où
+  --     l'auto-réception aurait tranché, si le garde la bloque encore, un
+  --     humain prend le dossier. Le vendeur d'une commande honorée attend
+  --     donc AU PLUS auto_receive_days — le même délai que le silence normal.
   select coalesce(max(value), 5) into v_maxtry
     from zabelie_fulfillment_limits where key = 'notice_max_attempts';
   for r in
@@ -515,7 +518,8 @@ begin
        and exists (select 1 from zabelie_fulfillment_notices n
                     where n.order_id = f.order_id
                       and n.sent_at is null
-                      and n.attempts >= v_maxtry)
+                      and (n.attempts >= v_maxtry
+                           or f.shipped_at < now() - make_interval(days => v_recv)))
      for update skip locked
   loop
     update zabelie_fulfillment

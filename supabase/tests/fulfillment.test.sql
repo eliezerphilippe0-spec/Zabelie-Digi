@@ -18,8 +18,9 @@
 --        Un acheteur qu'on n'a pas pu joindre n'a pas gardé le silence.
 --   F13. « Je n'ai pas reçu » avant l'échéance → litige, escrow TOUJOURS
 --        verrouillé, et l'auto-réception ne peut plus l'emporter.
---   F14. Avis en échec PERMANENT (tentatives épuisées) → la commande sort du
---        limbe vers la file admin — et PAS avant l'épuisement des tentatives.
+--   F14. Avis en échec → escalade en file admin, par l'UN OU L'AUTRE des deux
+--        déclencheurs : tentatives épuisées, ou échéance d'auto-réception
+--        atteinte avec avis en attente. Et pas avant l'un des deux.
 
 begin;
 
@@ -286,7 +287,11 @@ begin
     raise exception 'F11: le rappel doit être PROGRAMMÉ, pas immédiat (%)', v_due;
   end if;
 
-  -- ── F12 — avis non parti → pas d'auto-réception ───────────────────────────
+  -- ── F12 — avis non parti → JAMAIS d'auto-réception ────────────────────────
+  -- Note : depuis la borne temporelle (F15), une commande dont les avis
+  -- traînent au-delà de l'échéance escalade en file admin. Le point de F12
+  -- reste entier et se formule en négatif : quoi qu'il arrive, elle
+  -- n'atteint PAS `received`.
   perform zabelie_declare_shipment(v_o_muet, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
   update zabelie_fulfillment set shipped_at = now() - interval '30 days'
    where order_id = v_o_muet;
@@ -298,14 +303,29 @@ begin
   if (select gated_on_delivery from escrow_entries where order_id = v_o_muet) is false then
     raise exception 'F12: escrow déverrouillé sans réception';
   end if;
-  -- Sens inverse : une fois les avis partis, l'auto-réception a lieu.
-  update zabelie_fulfillment_notices set sent_at = now() where order_id = v_o_muet;
+
+  -- SENS INVERSE, sur une commande propre : avis partis AVANT l'échéance,
+  -- puis échéance atteinte → l'auto-réception a bien lieu. C'est le chemin
+  -- nominal, celui qui doit rester possible.
+  insert into orders (id, buyer_id, product_id, amount_htg, status)
+  values ('00000000-0000-0000-0000-0000000f0043',
+          '00000000-0000-0000-0000-0000000f0002',
+          '00000000-0000-0000-0000-0000000f0011', 2000, 'paid');
+  perform zabelie_open_fulfillment('00000000-0000-0000-0000-0000000f0043');
+  perform zabelie_declare_shipment('00000000-0000-0000-0000-0000000f0043',
+                                   '00000000-0000-0000-0000-0000000f0001', 'envoyé');
+  update zabelie_fulfillment_notices set sent_at = now()
+   where order_id = '00000000-0000-0000-0000-0000000f0043';
+  update zabelie_fulfillment set shipped_at = now() - interval '30 days'
+   where order_id = '00000000-0000-0000-0000-0000000f0043';
   v_sweep := zabelie_fulfillment_sweep();
-  if (select status::text from zabelie_fulfillment where order_id = v_o_muet) <> 'received' then
+  if (select status::text from zabelie_fulfillment
+       where order_id = '00000000-0000-0000-0000-0000000f0043') <> 'received' then
     raise exception 'F12: avis partis, l''auto-réception aurait dû avoir lieu';
   end if;
   if not exists (select 1 from zabelie_fulfillment_notices
-                  where order_id = v_o_muet and kind = 'auto_received') then
+                  where order_id = '00000000-0000-0000-0000-0000000f0043'
+                    and kind = 'auto_received') then
     raise exception 'F12: aucun avis final — l''acheteur ne saura pas que le délai a tranché';
   end if;
 
@@ -352,12 +372,12 @@ begin
   perform zabelie_open_fulfillment(v_o);
   perform zabelie_declare_shipment(v_o, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
 
-  -- Cas NÉGATIF d'abord : tentatives NON épuisées → rien ne bouge, même si
-  -- l'avis traîne. Escalader trop tôt serait crier au loup.
+  -- Cas NÉGATIF d'abord : ni tentatives épuisées, ni échéance atteinte →
+  -- rien ne bouge. Escalader trop tôt serait crier au loup.
   update zabelie_fulfillment_notices set attempts = 4 where order_id = v_o;
   v_sweep := zabelie_fulfillment_sweep();
   if (select status::text from zabelie_fulfillment where order_id = v_o) <> 'shipped' then
-    raise exception 'F14: escaladé AVANT l''épuisement des tentatives';
+    raise exception 'F14: escaladé alors qu''AUCUN des deux déclencheurs n''est atteint';
   end if;
 
   -- Cas POSITIF : tentatives épuisées → file admin, commande disputed,
@@ -380,7 +400,53 @@ begin
     raise exception 'F14: escrow déverrouillé — l''échec d''envoi aurait payé le vendeur';
   end if;
 
-  raise notice 'OK — F14 échec permanent d''avis → file admin (et pas avant l''épuisement)';
+  raise notice 'OK — F14a tentatives épuisées → file admin (et pas avant)';
+end;
+$$;
+
+-- ── F15 — la borne TEMPORELLE, indépendante du nombre de tentatives ─────────
+-- Avec un recul exponentiel et un cron quotidien, 5 tentatives peuvent
+-- dépasser la fenêtre d'auto-réception : le vendeur d'une commande honorée
+-- attendrait deux semaines avant qu'un humain voie seulement le dossier.
+do $$
+declare
+  v_o uuid := '00000000-0000-0000-0000-0000000f0051';
+  v_sweep jsonb;
+begin
+  insert into orders (id, buyer_id, product_id, amount_htg, status) values
+    (v_o, '00000000-0000-0000-0000-0000000f0002',
+     '00000000-0000-0000-0000-0000000f0011', 2000, 'paid');
+  perform zabelie_open_fulfillment(v_o);
+  perform zabelie_declare_shipment(v_o, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
+
+  -- UNE SEULE tentative — très loin du plafond de 5. Sans borne temporelle,
+  -- cette commande resterait `shipped` indéfiniment.
+  update zabelie_fulfillment_notices set attempts = 1 where order_id = v_o;
+
+  -- Échéance PAS encore atteinte : rien ne bouge.
+  update zabelie_fulfillment set shipped_at = now() - interval '2 days' where order_id = v_o;
+  v_sweep := zabelie_fulfillment_sweep();
+  if (select status::text from zabelie_fulfillment where order_id = v_o) <> 'shipped' then
+    raise exception 'F15: escaladé avant l''échéance d''auto-réception';
+  end if;
+
+  -- Échéance dépassée, avis toujours en attente → escalade, sans que le
+  -- plafond de tentatives soit approché.
+  update zabelie_fulfillment set shipped_at = now() - interval '30 days' where order_id = v_o;
+  v_sweep := zabelie_fulfillment_sweep();
+  if (select status::text from zabelie_fulfillment where order_id = v_o) <> 'action_required' then
+    raise exception 'F15: avis bloqué au-delà de l''échéance et AUCUNE escalade — le vendeur attend sans que personne voie le dossier';
+  end if;
+  if (select attempts from zabelie_fulfillment_notices
+       where order_id = v_o and kind = 'shipped_buyer') >= 5 then
+    raise exception 'F15: le test s''appuie sur le plafond de tentatives, pas sur le temps';
+  end if;
+  -- Et l'auto-réception n'a PAS eu lieu : l'acheteur n'a toujours pas été joint.
+  if (select gated_on_delivery from escrow_entries where order_id = v_o) is false then
+    raise exception 'F15: escrow déverrouillé — un échec d''envoi aurait payé le vendeur';
+  end if;
+
+  raise notice 'OK — F15 borne temporelle : escalade à l''échéance, tentatives loin du plafond';
 end;
 $$;
 

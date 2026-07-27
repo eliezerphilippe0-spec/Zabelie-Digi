@@ -140,12 +140,16 @@ c'est la référence de comparaison, elle doit survivre à la session.
       lourd, jamais cassé. **Ne pas activer sans vérifier le plan** :
       l'endpoint `render/image` répond en erreur s'il n'est pas inclus, et les
       photos disparaîtraient.
-- [ ] **Canal des avis acheteur — décision à trancher AVANT l'ouverture B3.**
-      L'auto-réception (0043) repose sur des avis que l'acheteur regarde.
-      L'e-mail existe (compte obligatoire au checkout) mais l'acheteur type
-      vit sur WhatsApp : e-mail = canal de lancement, SMS/WhatsApp = décision
-      fournisseur (interdite sans validation — règle du dépôt). Voir
-      `docs/21` §3 bis.
+- [ ] **⚠️ LE MUR À L'ENTRÉE — checkout invité + canal des avis, UNE SEULE
+      décision, à trancher AVANT l'ouverture B3.** Le checkout exige
+      aujourd'hui la création d'un compte e-mail avant de payer, pour un
+      acheteur qui arrive par WhatsApp sur un Android d'entrée de gamme :
+      c'est probablement le premier obstacle à ce qu'une commande existe, bien
+      avant le stock ou l'expédition. Mais lever le mur fait réapparaître
+      « pas d'adresse → escrow verrouillé à vie » (0043) : si le checkout
+      invité s'ouvre, le canal réel (SMS/WhatsApp, fournisseur interdit sans
+      validation) doit s'ouvrir EN MÊME TEMPS. Jamais l'un sans l'autre.
+      Voir `docs/21` §3 bis.
 - [ ] Zelle : `USD_HTG_RATE`, `ZELLE_RECIPIENT`, `ZELLE_RECIPIENT_NAME`.
 - [ ] Stripe (optionnel) : nécessite une entité US — voir `docs/04 §2 bis`.
 
