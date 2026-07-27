@@ -41,6 +41,11 @@ const fr = {
 
   // ── Politique produits interdits (v1) ────────────────────────────────────
   "policy.link": "Ce qui ne peut pas être vendu",
+  "catalog.empty.title": "Le catalogue est encore vide.",
+  "catalog.empty.body": "Les premières boutiques arrivent. Vous vendez ? Publiez votre produit en quelques minutes.",
+  "catalog.empty.cta": "Vendre sur Zabelie",
+  "sell.physical.q": "Vous vendez un produit physique — pièces, vêtements, alimentation ?",
+  "sell.physical.cta": "Publier un produit physique",
   "policy.accept": "Je confirme que ce produit respecte les règles de vente de Zabelie.",
   "policy.accept.read": "Lire les règles",
   "policy.accept.required": "Vous devez accepter les règles de vente.",
@@ -423,6 +428,11 @@ const ht: Record<I18nKey, string> = {
 
   // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
   "policy.link": "Sa ou pa gen dwa vann",
+  "catalog.empty.title": "Katalòg la vid toujou.",
+  "catalog.empty.body": "Premye boutik yo ap vini. Se ou k ap vann ? Pibliye pwodui ou an kèk minit.",
+  "catalog.empty.cta": "Vann sou Zabelie",
+  "sell.physical.q": "Ou gen yon pwodui fizik pou vann — pyès, rad, manje ?",
+  "sell.physical.cta": "Pibliye yon pwodui fizik",
   "policy.accept": "Mwen konfime pwodui sa a respekte règ vant Zabelie yo.",
   "policy.accept.read": "Li règ yo",
   "policy.accept.required": "Ou dwe aksepte règ vant yo.",

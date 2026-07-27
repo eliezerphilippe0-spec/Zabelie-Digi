@@ -233,6 +233,51 @@ export async function getPublishedProducts(
  * pagination réelle + recherche qui couvre aussi le nom du créateur (un
  * acheteur qui a suivi un talent sur WhatsApp tape son nom, pas un titre).
  */
+/**
+ * Catégories RÉELLEMENT présentes au catalogue.
+ *
+ * Remplace la liste en dur pour la NAVIGATION (les puces d'accueil et de
+ * catalogue). Raison : `lib/product-categories.ts` ne connaît que les six
+ * libellés digitaux historiques, alors qu'un produit physique enregistre le
+ * libellé de son DÉPARTEMENT (« Auto & Moto », `api/products/physical` §142).
+ * Aucune puce ne pouvait donc l'atteindre — il n'était visible que sous
+ * « Tout », et disparaissait dès qu'on filtrait.
+ *
+ * Dérivée des données, elle règle aussi la réserve de V-13 : elle n'affiche
+ * jamais une catégorie vide, puisqu'une catégorie n'existe que si un produit
+ * publié s'y trouve. À catalogue vide, elle rend une liste vide et l'appelant
+ * n'affiche aucune barre — plutôt que seize rayons déserts.
+ *
+ * ⚠️ La liste en dur reste la source unique pour la PUBLICATION d'un produit
+ * digital (BL-105, taxonomie fermée) : on ne dérive pas ce qu'un vendeur peut
+ * choisir de ce qui existe déjà, sinon la première faute d'orthographe
+ * devient une catégorie.
+ */
+export async function getCatalogueCategories(): Promise<string[]> {
+  if (!isSupabaseConfigured()) {
+    return [...new Set(sampleAsView().map((p) => p.category).filter(Boolean))].sort();
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("category")
+    .eq("status", "published")
+    .not("category", "is", null)
+    // Borne : la barre n'a pas vocation à refléter un catalogue immense, et
+    // une requête non bornée sur une page servie à chaque visite se paie.
+    .limit(2000);
+
+  if (error || !data) {
+    // Dégrader, jamais casser : sans barre, le catalogue reste consultable.
+    console.error("[catalogue] catégories indisponibles", error?.message ?? "réponse vide");
+    return [];
+  }
+  const uniques = [
+    ...new Set((data as { category: string | null }[]).map((r) => r.category ?? "")),
+  ].filter((c) => c.length > 0);
+  return uniques.sort((a, b) => a.localeCompare(b, "fr"));
+}
+
 export async function getPublishedProductsPage(
   filters: ProductFilters & { page?: number }
 ): Promise<ProductPage> {

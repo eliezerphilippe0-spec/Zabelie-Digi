@@ -30,13 +30,25 @@ function Shell({
       <main className="mx-auto max-w-lg px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sell.title")}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
-        {/* Le lien vit dans le Shell : il est donc présent AUSSI sur l'écran de
-            connexion vendeur, qui est le premier écran du parcours. */}
+        {/* Ces deux liens vivent dans le Shell : ils sont donc présents AUSSI
+            sur l'écran de connexion vendeur et en mode démo — c'est-à-dire aux
+            deux endroits où un vendeur arrive avant d'avoir un compte. Placés
+            plus bas, dans la branche authentifiée, ils manquaient exactement
+            là où on cherche à s'orienter. */}
         <p className="mt-2 text-xs">
           <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
             {t(lang, "policy.link")}
           </Link>
         </p>
+        <div className="mt-5 rounded-2xl border border-line bg-surface/40 p-5">
+          <p className="text-sm text-cloud">{t(lang, "sell.physical.q")}</p>
+          <Link
+            href="/vendre/physique"
+            className="mt-3 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
+          >
+            {t(lang, "sell.physical.cta")}
+          </Link>
+        </div>
         <div className="mt-8">{children}</div>
       </main>
       <SiteFooter />
@@ -125,6 +137,7 @@ export default async function VendrePage() {
 
   return (
     <Shell lang={lang} subtitle={t(lang, "sell.subtitle")}>
+
       <div className="glass rounded-2xl p-6">
         <PublishForm
           tier={tier}

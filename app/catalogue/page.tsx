@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
-import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { getPublishedProductsPage } from "@/lib/products";
+import { getCatalogueCategories, getPublishedProductsPage } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -13,8 +12,10 @@ export const metadata = {
   title: "Catalogue — Zabelie",
 };
 
-// BL-105 : mêmes libellés que la publication (source unique, lib/product-categories).
-const CATEGORIES = ["Tout", ...PRODUCT_CATEGORIES];
+// Les puces viennent des produits RÉELLEMENT publiés, plus d'une liste en dur :
+// celle-ci ne connaissait que les six libellés digitaux, donc aucune ne pouvait
+// atteindre un produit physique — rangé sous son département (« Auto & Moto »).
+// Il n'apparaissait que sous « Tout » et disparaissait dès qu'on filtrait.
 
 export default async function CataloguePage({
   searchParams,
@@ -24,10 +25,16 @@ export default async function CataloguePage({
   const { q, cat, page: pageRaw } = await searchParams;
   const activeCat = cat ?? "Tout";
   const page = Math.max(1, Number.parseInt(pageRaw ?? "1", 10) || 1);
-  const [{ items: products, hasMore }, lang] = await Promise.all([
+  const [{ items: products, hasMore }, lang, categories] = await Promise.all([
     getPublishedProductsPage({ q, category: activeCat, page }),
     getLang(),
+    getCatalogueCategories(),
   ]);
+  const CATEGORIES = ["Tout", ...categories];
+  // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
+  // correspond » de « le catalogue est vide », qui appellent des réponses
+  // opposées : reformuler d'un côté, publier de l'autre.
+  const filtre = Boolean(q) || activeCat !== "Tout";
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
   const hrefFor = (opts: { cat?: string; page?: number }) => {
@@ -75,7 +82,9 @@ export default async function CataloguePage({
           </button>
         </form>
 
-        {/* Filtres catégories */}
+        {/* Filtres catégories — masqués tant qu'il n'y a rien à filtrer :
+            une seule puce « Tout » n'est pas un filtre, c'est du décor. */}
+        {categories.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {CATEGORIES.map((c) => (
             <Link
@@ -91,16 +100,38 @@ export default async function CataloguePage({
             </Link>
           ))}
         </div>
+        )}
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
         {products.length === 0 ? (
-          <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
-            {t(lang, "catalog.none")}{" "}
-            <Link href="/catalogue" className="text-cloud underline">
-              {t(lang, "catalog.reset")}
-            </Link>
-          </div>
+          filtre ? (
+            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
+              {t(lang, "catalog.none")}{" "}
+              <Link href="/catalogue" className="text-cloud underline">
+                {t(lang, "catalog.reset")}
+              </Link>
+            </div>
+          ) : (
+            /* Catalogue vide — V-13 : l'état vide devait être utilisable avant
+               qu'on touche à la barre de catégories. Un « aucun résultat »
+               suivi d'un lien « réinitialiser » n'a aucun sens ici : il n'y a
+               rien à réinitialiser, et la seule action utile est de publier. */
+            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+              <p className="text-base font-semibold text-cloud">
+                {t(lang, "catalog.empty.title")}
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
+                {t(lang, "catalog.empty.body")}
+              </p>
+              <Link
+                href="/vendre"
+                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+              >
+                {t(lang, "catalog.empty.cta")}
+              </Link>
+            </div>
+          )
         ) : (
           <>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -3,8 +3,12 @@ import Image from "next/image";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
-import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
+import {
+  getCatalogueCategories,
+  getPublishedProducts,
+  isSupabaseConfigured,
+  type ProductView,
+} from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
@@ -73,7 +77,7 @@ async function promoSellerIds(): Promise<Set<string>> {
 }
 
 export default async function HomePage() {
-  const [products, lang, promoSellers] = await Promise.all([
+  const [products, lang, promoSellers, catalogueCategories] = await Promise.all([
     // Correctif audit : getPublishedProducts lève désormais en cas d'erreur
     // Supabase (BL-116, pour empêcher un repli silencieux sur le catalogue
     // vers des produits de démo inachetables) — mais l'accueil n'a pas cette
@@ -83,6 +87,10 @@ export default async function HomePage() {
     getPublishedProducts().catch(() => []),
     getLang(),
     promoSellerIds(),
+    // Requête séparée plutôt que dérivée de `products` : celle-ci est bornée à
+    // 60 lignes, et une catégorie qui n'existerait qu'au-delà disparaîtrait de
+    // la barre sans que personne ne le voie.
+    getCatalogueCategories(),
   ]);
 
   const cardLabels: ProductCardLabels = {
@@ -139,13 +147,23 @@ export default async function HomePage() {
 
       {/* BANDEAU CATÉGORIES — barre claire, texte sombre (style Bloop,
           décision porteur 2026-07-25). Fonctionne sans JS : simples liens GET
-          vers le catalogue filtré. */}
+          vers le catalogue filtré.
+
+          V-13 : la barre affichait SIX LIBELLÉS DIGITAUX EN DUR (Photo,
+          Business, Musique…) sous un titre qui promet des pièces auto. Elle
+          n'annonçait pas seulement des pages vides, elle annonçait le mauvais
+          commerce. La brancher telle quelle sur la taxonomie l'aurait fait
+          passer de six catégories fausses à seize catégories vides.
+          Elle est donc DÉRIVÉE DU CATALOGUE : une catégorie n'apparaît que si
+          un produit publié s'y trouve. À catalogue vide — l'état actuel — la
+          barre ne s'affiche pas du tout. */}
+      {catalogueCategories.length > 0 && (
       <nav
         aria-label="Catégories"
         className="overflow-x-auto border-b border-black/10 bg-cloud"
       >
         <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2.5">
-          {PRODUCT_CATEGORIES.map((c) => (
+          {catalogueCategories.map((c) => (
             <Link
               key={c}
               // `cat` — c'est le paramètre que /catalogue lit (app/catalogue
@@ -166,6 +184,7 @@ export default async function HomePage() {
           </Link>
         </div>
       </nav>
+      )}
 
       {/* HERO — court (≤ 40 % du viewport mobile). Chaque pixel au-dessus de
           la ligne de flottaison qui n'est ni un produit ni une recherche est
