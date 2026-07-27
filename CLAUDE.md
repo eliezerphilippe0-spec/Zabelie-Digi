@@ -108,6 +108,8 @@ décision explicite.
 - `docs/18-SPEC-BUILD-V1.md` — **spécification autoritaire du chantier en cours**
 - `docs/19-CHANTIER-0-RETRAIT-VENDEUR.md` — voie de sortie vendeur
 - `docs/CASHBACK-GARDE-FOUS.md` · `REVUE-2026-07-22-rails-paiement.md`
+- `docs/21-EXPEDITION-ET-REMISE.md` — état d'expédition (`0043`, non appliquée)
+- `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
 - `OPS_TODO.md` — actions opérationnelles porteur + écarts de réconciliation
 
 ## Méthode

@@ -140,16 +140,28 @@ c'est la référence de comparaison, elle doit survivre à la session.
       lourd, jamais cassé. **Ne pas activer sans vérifier le plan** :
       l'endpoint `render/image` répond en erreur s'il n'est pas inclus, et les
       photos disparaîtraient.
-- [ ] **⚠️ LE MUR À L'ENTRÉE — checkout invité + canal des avis, UNE SEULE
-      décision, à trancher AVANT l'ouverture B3.** Le checkout exige
-      aujourd'hui la création d'un compte e-mail avant de payer, pour un
-      acheteur qui arrive par WhatsApp sur un Android d'entrée de gamme :
-      c'est probablement le premier obstacle à ce qu'une commande existe, bien
-      avant le stock ou l'expédition. Mais lever le mur fait réapparaître
-      « pas d'adresse → escrow verrouillé à vie » (0043) : si le checkout
-      invité s'ouvre, le canal réel (SMS/WhatsApp, fournisseur interdit sans
-      validation) doit s'ouvrir EN MÊME TEMPS. Jamais l'un sans l'autre.
-      Voir `docs/21` §3 bis.
+- [ ] **⭐ LA PREMIÈRE COMMANDE RÉELLE — priorité n°1, ne dépend de rien.**
+      Publier un produit digital à 25 HTG et l'acheter soi-même en MonCash
+      réel. Éprouve d'un coup les SEPT choses qui n'ont jamais traversé la
+      production : `order_ref` sur une vraie ligne, `zabelie_solvency_report()`
+      sur des données non nulles, l'identité de `0033`, la maturation d'escrow,
+      le webhook MonCash réel, `/mes-achats` et les e-mails, la carte de
+      partage WhatsApp. Aucun prérequis — ni B2 ni B3. Mode d'emploi complet :
+      `docs/22-PREMIERE-COMMANDE-REELLE.md`. **À faire avant tout nouveau
+      développement.**
+- [ ] **Checkout invité — décision autonome.** Le checkout exige aujourd'hui
+      une inscription. Ce que `0043` exige réellement n'est pas un COMPTE mais
+      **un contact joignable enregistré à la commande** — ce qu'un checkout
+      invité standard collecte. La décision peut donc se prendre **sans
+      attendre** celle du canal, à la condition unique que le champ contact
+      reste **obligatoire**. ⚠️ Non démontré comme contrainte active : il n'y
+      a aujourd'hui aucun produit publié et **un seul compte** (le porteur) —
+      personne n'a atteint le formulaire. Le chiffre à surveiller quand des
+      liens circuleront : comptes créés **sans commande aboutie**.
+- [ ] **Canal des avis acheteur — décision distincte, avant B3.** L'e-mail
+      existe mais une adresse créée pour acheter n'est pas une adresse lue :
+      l'acheteur type vit sur WhatsApp. SMS/WhatsApp = fournisseur, interdit
+      sans validation (règle du dépôt). Voir `docs/21` §3 bis.
 - [ ] Zelle : `USD_HTG_RATE`, `ZELLE_RECIPIENT`, `ZELLE_RECIPIENT_NAME`.
 - [ ] Stripe (optionnel) : nécessite une entité US — voir `docs/04 §2 bis`.
 

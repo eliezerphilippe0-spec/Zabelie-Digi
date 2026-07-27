@@ -170,32 +170,46 @@ celui que l'acheteur regarde.
 (`app/api/checkout/route.ts:86`) et l'inscription se fait par e-mail — tout
 acheteur a donc une adresse, par construction.
 
-⚠️ **Cette garantie est le symptôme d'un problème plus grave qu'elle ne
-résout.** Un acheteur qui arrive par un lien WhatsApp, sur un Android d'entrée
-de gamme, doit **créer un compte e-mail avant de payer**. C'est probablement le
-premier obstacle à ce qu'une commande existe un jour — bien avant le stock,
-l'expédition ou les avis. « Zéro commande en base » n'a pas qu'une explication
-« pas encore lancé » : **il y a un mur à l'entrée.**
+⚠️ **Cette garantie a un coût dont il faut nommer la nature exacte.** Le
+checkout exige aujourd'hui une **inscription** : un acheteur venu d'un lien
+WhatsApp, sur un Android d'entrée de gamme, doit créer un compte avant de
+payer. C'est un obstacle réel, et il vaudra d'être levé.
 
-Et une adresse créée pour acheter n'est pas une adresse **lue** : l'acheteur
-type vit sur WhatsApp, pas dans sa boîte mail. Le garde vérifie « l'avis est
-parti », pas « la personne a su ».
+**Ce qui n'est PAS démontré.** On serait tenté d'expliquer « zéro commande »
+par ce mur. C'est une conclusion tirée d'un zéro — l'erreur exacte commise
+plus tôt dans ce chantier avec « les vendeurs attendent ». Les faits mesurés
+le 2026-07-26 disent autre chose :
 
-### Une seule décision, pas deux
+| Mesure | Valeur |
+|---|---|
+| `products` publiés | **0** |
+| Comptes (`auth.users`) | **1** — le porteur lui-même |
+| Commandes | **0** |
 
-Checkout invité et canal de notification sont **couplés**, et c'est ce qui
-rend l'arbitrage délicat :
+Aucun produit, donc aucun lien en circulation, donc **personne n'a même
+atteint le formulaire d'inscription**. Le mur n'a jamais été mis à l'épreuve :
+il n'est pas la contrainte active, il est une contrainte *future*. Le chiffre
+à surveiller le jour où des liens circulent : **comptes créés sans commande
+aboutie** — c'est lui qui mesurera le mur, pas le total des commandes.
 
-- lever le mur (**checkout invité**) fait réapparaître immédiatement la
-  branche « pas d'adresse → escrow verrouillé à vie » — que seul le compte
-  obligatoire écarte aujourd'hui ;
-- garder le mur préserve la garantie technique, au prix du mur lui-même.
+### Ce que le mécanisme exige vraiment : un contact, pas un compte
 
-Donc : **si le checkout invité s'ouvre, le canal réel (SMS/WhatsApp) doit
-s'ouvrir en même temps** — sinon on troque un obstacle contre une rétention.
-Les deux se tranchent **ensemble et avant B3**, jamais l'un sans l'autre.
-Le fournisseur SMS/WhatsApp reste interdit sans validation (règle du dépôt) :
-c'est précisément la décision qui est ici mise à l'échéance.
+Formulation corrigée — le couplage est plus **lâche** qu'annoncé au tour
+précédent. `0043` n'a jamais eu besoin d'un *compte* : il a besoin d'**un
+contact joignable au moment de la commande**. Or la pratique standard du
+checkout invité collecte un contact **sans** créer de compte.
+
+Conséquence pratique, et elle débloque une décision :
+
+- **le checkout invité peut s'ouvrir sans attendre** la décision SMS/WhatsApp
+  — à la seule condition que le **champ contact reste obligatoire** ;
+- la décision de canal (SMS/WhatsApp, fournisseur interdit sans validation)
+  garde sa propre échéance : avant B3, parce qu'une adresse *créée pour
+  acheter* n'est pas une adresse *lue*.
+
+Souder les deux les maintenait bloquées l'une par l'autre plus longtemps que
+nécessaire. La condition qui compte tient en une ligne : **jamais de commande
+sans contact joignable enregistré.**
 
 ### Le biais par défaut, assumé
 
