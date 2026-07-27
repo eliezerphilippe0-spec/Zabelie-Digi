@@ -72,7 +72,11 @@ export default async function VendrePhysiquePage() {
           </div>
         ) : (
           <div className="mt-8">
-            <PhysicalProductForm tier={user.tier} netLabels={netLabels} />
+            <PhysicalProductForm
+              tier={user.tier}
+              netLabels={netLabels}
+              policyLink={t(lang, "policy.link")}
+            />
           </div>
         )}
       </main>

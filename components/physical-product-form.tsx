@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import type { CreatorTier } from "@/lib/commission";
+import { POLICY_PATH } from "@/lib/policy";
+import Link from "next/link";
 
 /**
  * Création d'un produit physique (chantier B — UI vendeur).
@@ -36,6 +38,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 export function PhysicalProductForm({
   tier = "standard",
   netLabels,
+  policyLink,
 }: {
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
@@ -46,6 +49,8 @@ export function PhysicalProductForm({
    * moins sur un montant.
    */
   netLabels: NetEstimateLabels;
+  /** Libellé du lien vers la politique, traduit côté serveur. */
+  policyLink: string;
 }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -381,6 +386,13 @@ export function PhysicalProductForm({
       >
         {busy ? "Publication…" : "Publier le produit"}
       </button>
+
+      {/* Dernier moment où le vendeur peut se raviser avant de soumettre. */}
+      <p className="text-center text-xs">
+        <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
+          {policyLink}
+        </Link>
+      </p>
     </form>
   );
 }

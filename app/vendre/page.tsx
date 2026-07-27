@@ -10,6 +10,7 @@ import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
 import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
+import { POLICY_PATH } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -29,6 +30,13 @@ function Shell({
       <main className="mx-auto max-w-lg px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sell.title")}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
+        {/* Le lien vit dans le Shell : il est donc présent AUSSI sur l'écran de
+            connexion vendeur, qui est le premier écran du parcours. */}
+        <p className="mt-2 text-xs">
+          <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
+            {t(lang, "policy.link")}
+          </Link>
+        </p>
         <div className="mt-8">{children}</div>
       </main>
       <SiteFooter />
@@ -144,6 +152,7 @@ export default async function VendrePage() {
               ),
               caveat: t(lang, "publish.net.caveat"),
             },
+            policyLink: t(lang, "policy.link"),
           }}
         />
       </div>

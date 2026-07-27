@@ -39,6 +39,62 @@ const fr = {
   "footer.natcash": "NatCash — bientôt",
   "footer.rights": "Tous droits réservés.",
 
+  // ── Politique produits interdits (v1) ────────────────────────────────────
+  "policy.link": "Ce qui ne peut pas être vendu",
+  "policy.title": "Ce qui ne peut pas être vendu sur Zabelie",
+  "policy.date": "27 juillet 2026",
+  "policy.why.h": "Pourquoi ces règles",
+  "policy.why.p":
+    "Ce sont les règles de Zabelie. Elles sont plus strictes que la loi, et c'est volontaire : une règle large se comprend et s'applique sans discussion. En publiant une fiche, vous les acceptez.",
+  "policy.objects.h": "1. Objets interdits — aucun cas particulier",
+  "policy.objects.items":
+    "Armes à feu, ainsi que leurs composants et accessoires : canon, carcasse, culasse, détente, chargeur, silencieux, kit de conversion. Munitions, poudre, amorces. Répliques réalistes et armes à air comprimé.\nExplosifs, feux d'artifice, artifices de signalisation.\nStupéfiants, précurseurs, matériel de consommation.\nMédicaments sous ordonnance, médicaments non enregistrés, et tout produit présenté comme thérapeutique.\nÉquipement militaire, gilets pare-balles, vision nocturne.\nUniformes, insignes, plaques et documents de la PNH ou de toute autre autorité publique.\nFaux papiers, fausse monnaie, et matériel servant à en fabriquer.\nBrouilleurs, matériel d'interception, skimmers.\nEspèces protégées, artefacts et biens du patrimoine.\nContenu pornographique.\nArmes dont la seule fonction est offensive : cran d'arrêt, poing américain, matraque.",
+  "policy.counterfeit.h": "2. Contrefaçon — interdiction absolue",
+  "policy.counterfeit.p1":
+    "Vêtements, chaussures, sacs, montres, appareils ou accessoires portant une marque non authentique : interdits. Même si vous écrivez que c'est une copie. Même si le prix le rend évident. Même en « qualité A ».",
+  "policy.counterfeit.p2":
+    "La contrefaçon met en danger toute la plateforme, pas seulement votre fiche. C'est un risque collectif : la réputation d'une plateforme se paie par tous ses vendeurs, pas par le fautif.",
+  "policy.confusion.h": "3. Ne pas confondre",
+  "policy.confusion.banned":
+    "INTERDIT : armes à feu, leurs composants et accessoires, munitions.",
+  "policy.confusion.allowed":
+    "AUTORISÉ : pièces détachées pour véhicules, motos, machines et appareils.",
+  "policy.confusion.p":
+    "Le rayon automobile-moto est l'un des principaux rayons de Zabelie. Il reste entièrement ouvert.",
+  "policy.tools.h": "4. Outils tranchants : c'est la présentation qui décide",
+  "policy.tools.p1":
+    "Machettes, couteaux de cuisine, ciseaux, outils de travail : autorisés. La machette est un outil agricole, vendu partout dans le pays.",
+  "policy.tools.p2":
+    "Ce qui est interdit, c'est de présenter l'outil comme une arme. Sont refusés :",
+  "policy.tools.items":
+    "les mots « otodefans », « tactique », « self-defense », « combat » dans le titre, la description ou sur la photo ;\ntoute image ou tout texte montrant l'outil employé contre une personne.",
+  "policy.tools.p3":
+    "Le même objet : présenté comme outil, il passe ; présenté comme arme, il ne passe pas.",
+  "policy.services.h": "5. Services interdits",
+  "policy.services.p1":
+    "Zabelie n'est pas une institution financière et ne servira pas de chemin vers une. Sont interdits :",
+  "policy.services.items":
+    "transfert d'argent : envoyer, recevoir ou détenir de l'argent pour autrui ;\nchange : dollars contre gourdes, ou toute autre opération de change ;\nprêt et détention de fonds : crédit, avance sur salaire ;\njeux d'argent : borlette, loterie, paris, tirages.",
+  "policy.services.p2":
+    "Le sòl et la tontine ne peuvent pas passer par Zabelie non plus. Ce n'est pas un jugement sur la pratique — elle fait partie de la vie de tout le monde. C'est que Zabelie ne peut pas détenir d'argent pour autrui, et un sòl demande exactement cela.",
+  "policy.services.p3":
+    "Cette règle ne dépend pas de ce que vous vendez : un vendeur de vêtements n'a pas le droit de proposer « je change vos dollars » dans sa fiche non plus.",
+  "policy.digital.h": "6. Fichiers et contenus numériques",
+  "policy.digital.items":
+    "logiciels piratés, activateurs, clés de licence non authentiques ;\nmusique, films, livres, cours ou tout contenu que vous n'avez pas le droit de vendre ;\ncomptes revendus : streaming, réseaux sociaux, jeux ;\nlistes de données personnelles : numéros de téléphone, adresses e-mail, contacts.",
+  "policy.sanctions.h": "7. Sanctions",
+  "policy.sanctions.p1":
+    "En cas de violation : retrait immédiat de la fiche, suspension du compte, conservation des éléments.",
+  "policy.sanctions.p2":
+    "Pour les armes, la drogue et la contrefaçon : pas d'avertissement, pas de seconde chance.",
+  "policy.sanctions.p3":
+    "Il n'existe aucun palier « autorisé sur justificatif ». Zabelie n'a aucun moyen de vérifier un permis — nous n'en demandons donc aucun, et n'en acceptons aucun.",
+  "policy.review.h": "8. Chaque fiche passe devant quelqu'un",
+  "policy.review.p":
+    "Nous examinons chaque fiche — produit physique, service, fichier — avant qu'elle apparaisse sur le site. En cas de doute, soumettez quand même : c'est nous qui décidons, et cela ne vous coûte rien.",
+  "policy.version.note":
+    "Ces règles peuvent changer. Chaque nouvelle version porte son propre numéro, et c'est la version que vous avez acceptée qui reste enregistrée.",
+
   // Accueil
   "home.badge": "La marketplace haïtienne",
   "home.h1": "Pièces auto et moto, livrées en Haïti",
@@ -359,6 +415,61 @@ const ht: Record<I18nKey, string> = {
   "footer.payment": "Peman",
   "footer.natcash": "NatCash — talè konsa",
   "footer.rights": "Tout dwa rezève.",
+
+  // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
+  "policy.link": "Sa ou pa gen dwa vann",
+  "policy.title": "Sa ou pa gen dwa vann sou Zabelie",
+  "policy.date": "27 jiyè 2026",
+  "policy.why.h": "Poukisa règ sa yo",
+  "policy.why.p":
+    "Règ sa yo se règ Zabelie. Yo pi sevè pase lalwa, e se espre : yon règ ki laj se yon règ tout moun konprann, e nou ka aplike l san diskisyon. Lè ou pibliye yon fich, ou aksepte yo.",
+  "policy.objects.h": "1. Objè entèdi nèt — pa gen okenn ka espesyal",
+  "policy.objects.items":
+    "Zam afe, ansanm ak pyès ak akseswa yo : kanon, kò zam (carcasse), kilas, gachèt, chajè, silansye, kit konvèsyon. Bal, poud, amòs. Fo zam ki sanble ak vre, ak zam a lè konprime.\nEksplozif, fedatifis, fize siyalizasyon.\nDwòg, pwodui ki sèvi pou fabrike dwòg, materyèl pou konsome dwòg.\nMedikaman ki mande òdonans doktè, medikaman ki pa anrejistre, ak tout pwodui yo prezante kòm remèd.\nEkipman militè, jilè pare bal, aparèy vizyon lannuit.\nInifòm, ensiy, plak ak dokiman PNH oswa nenpòt lòt otorite piblik.\nFo papye, fo lajan, ak materyèl pou fabrike yo.\nBwouyè siyal, materyèl pou entèsepte kominikasyon, skimè (aparèy pou vòlè done kat bankè).\nEspès pwoteje, objè achewolojik ak byen patrimwàn.\nKontni pònografik.\nZam ki fèt sèlman pou atake : kouto otomatik (cran d'arrêt), pwen ameriken, matrak.",
+  "policy.counterfeit.h": "2. Kopi mak — entèdi nèt",
+  "policy.counterfeit.p1":
+    "Rad, soulye, sak, mont, aparèy oswa akseswa ki pote yon mak ki pa otantik : entèdi. Menm si ou ekri se yon kopi. Menm si pri a fè sa klè. Menm si se « kalite A ».",
+  "policy.counterfeit.p2":
+    "Kontrefason mete tout Zabelie an danje, pa sèlman fich ou a. Se yon risk kolektif : repitasyon yon platfòm, se tout vandè yo ki peye l — pa sèlman moun ki fè fot la.",
+  "policy.confusion.h": "3. Pa konfonn de bagay sa yo",
+  "policy.confusion.banned": "ENTÈDI : zam afe, pyès ak akseswa zam, bal.",
+  "policy.confusion.allowed":
+    "OTORIZE : pyès detache pou machin, moto, machin travay ak aparèy.",
+  "policy.confusion.p":
+    "Rayon otomobil-moto a se youn nan pi gwo rayon Zabelie. Li rete louvri nèt.",
+  "policy.tools.h": "4. Zouti file : se jan ou prezante l ki konte",
+  "policy.tools.p1":
+    "Manchèt, kouto kizin, sizo, zouti travay : yo otorize. Manchèt se yon zouti travay tè, li vann toupatou nan peyi a.",
+  "policy.tools.p2":
+    "Sa ki entèdi, se prezante zouti a kòm yon zam. Nou refize :",
+  "policy.tools.items":
+    "mo tankou « otodefans », « taktik », « self-defense », « konba » nan tit la, nan deskripsyon an oswa sou foto a ;\ntout imaj oswa tèks ki montre zouti a ap sèvi kont yon moun.",
+  "policy.tools.p3":
+    "Menm objè a : prezante kòm zouti, li pase ; prezante kòm zam, li pa pase.",
+  "policy.services.h": "5. Sèvis ou pa gen dwa ofri",
+  "policy.services.p1":
+    "Zabelie pa yon enstitisyon finansye, e li p ap sèvi kòm chemen pou youn. Entèdi :",
+  "policy.services.items":
+    "transfè lajan : voye, resevwa oswa kenbe lajan pou lòt moun ;\nchanje lajan : dola kont goud, oswa nenpòt lòt chanj ;\nprete lajan ak kenbe lajan : prè, avans sou salè ;\njwèt aza : borlèt, lotri, pari, tiraj.",
+  "policy.services.p2":
+    "Sòl ak tontin pa ka pase sou Zabelie non plis. Se pa yon jijman sou pratik la — se yon bagay ki fè pati lavi tout moun. Se paske Zabelie pa ka kenbe lajan pou moun, e yon sòl mande egzakteman sa.",
+  "policy.services.p3":
+    "Règ sa a pa gen rapò ak sa ou vann : yon vandè ki vann rad pa gen dwa ofri « m ap chanje dola pou ou » nan fich li non plis.",
+  "policy.digital.h": "6. Fichye ak kontni dijital",
+  "policy.digital.items":
+    "lojisyèl pirat, aktivatè, kle lisans ki pa otantik ;\nmizik, fim, liv, kou oswa nenpòt kontni ou pa gen dwa vann ;\nkont ou revann : streaming, rezo sosyal, jwèt ;\nlis done pèsonèl : nimewo telefòn, adrès imel, kontak moun.",
+  "policy.sanctions.h": "7. Sanksyon",
+  "policy.sanctions.p1":
+    "Si yon fich vyole règ sa yo : nou retire fich la lapoula, nou sispann kont lan, e nou konsève eleman yo.",
+  "policy.sanctions.p2":
+    "Pou zam, dwòg ak kontrefason : pa gen avètisman, pa gen dezyèm chans.",
+  "policy.sanctions.p3":
+    "Pa gen « otorize si ou gen papye ». Zabelie pa gen mwayen verifye okenn pèmi — kidonk nou pa mande okenn, e nou pa aksepte okenn.",
+  "policy.review.h": "8. Chak fich pase devan yon moun",
+  "policy.review.p":
+    "Nou gade chak fich — pwodui fizik, sèvis, fichye — anvan li parèt sou sit la. Si ou pa sèten yon bagay pase, soumèt li kanmenm : se nou k ap deside, e sa pa koute ou anyen.",
+  "policy.version.note":
+    "Règ sa yo ka chanje. Chak nouvo vèsyon gen nimewo pa l, e se vèsyon ou te aksepte a ki rete make.",
 
   "home.badge": "Makètplas ayisyen an",
   "home.h1": "Pyès oto ak moto, livre an Ayiti",

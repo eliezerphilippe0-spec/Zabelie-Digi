@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { POLICY_PATH } from "@/lib/policy";
 
 export async function SiteFooter() {
   const lang = await getLang();
@@ -58,6 +59,9 @@ export async function SiteFooter() {
               className="text-mist hover:text-cloud"
             >
               Confidentialité
+            </Link>
+            <Link href={POLICY_PATH} className="text-mist hover:text-cloud">
+              {t(lang, "policy.link")}
             </Link>
           </div>
         </div>

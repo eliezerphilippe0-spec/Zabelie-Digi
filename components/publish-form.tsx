@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import type { CreatorTier } from "@/lib/commission";
+import { POLICY_PATH } from "@/lib/policy";
+import Link from "next/link";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -31,6 +33,7 @@ export type PublishFormLabels = {
   errorNetwork: string;
   footerHint: string;
   net: NetEstimateLabels;
+  policyLink: string;
 };
 
 export function PublishForm({
@@ -193,6 +196,13 @@ export function PublishForm({
       </button>
       {error && <p className="text-center text-xs text-danger-text">{error}</p>}
       <p className="text-center text-xs text-mist">{labels.footerHint}</p>
+      {/* La politique est atteignable depuis le formulaire lui-même : c'est le
+          dernier moment où le vendeur peut se raviser avant de soumettre. */}
+      <p className="text-center text-xs">
+        <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
+          {labels.policyLink}
+        </Link>
+      </p>
     </form>
   );
 }
