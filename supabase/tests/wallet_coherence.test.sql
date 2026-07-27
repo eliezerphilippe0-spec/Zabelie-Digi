@@ -13,6 +13,13 @@ begin;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000bc01'::uuid, 'coherence@test.local'),
   ('00000000-0000-0000-0000-00000000bc02'::uuid, 'coherence.admin@test.local');
+
+-- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
+-- veulent piloter la ligne eux-mêmes (rôle, tier) et éprouver le chemin
+-- INSERT de `protect_profile_privileges` — on retire donc la ligne
+-- auto-créée plutôt que de basculer en UPDATE, qui ne teste pas la même
+-- chose.
+delete from profiles where id in (select id from auth.users);
 insert into profiles (id, display_name, role) values
   ('00000000-0000-0000-0000-00000000bc01'::uuid, 'Vendeur Cohérence', 'creator'),
   ('00000000-0000-0000-0000-00000000bc02'::uuid, 'Admin Cohérence', 'admin');

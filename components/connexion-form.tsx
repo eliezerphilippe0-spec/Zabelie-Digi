@@ -51,15 +51,30 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
       // lève — l'utilisateur doit voir un message, pas un bouton figé.
       const supabase = createClient();
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // Le nom passe par les MÉTADONNÉES du compte, pas seulement par
+        // l'insert ci-dessous : c'est la seule voie qui survit à une
+        // confirmation par e-mail (aucune session au retour) et c'est ce que
+        // lit le déclencheur `zabelie_handle_new_user` (migration 0045).
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: name || email.split("@")[0] } },
+        });
         if (error) throw error;
-        // Crée le profil (RLS : self insert autorisé) si session active.
+        // Insert de repli, volontairement conservé : tant que 0045 n'est pas
+        // appliquée, c'est le SEUL chemin qui crée le profil. Une fois
+        // appliquée, la ligne existe déjà et `upsert`+`ignoreDuplicates` en
+        // fait un no-op. Le code doit être juste dans les deux états — il est
+        // déployé bien avant que la migration ne soit passée à la main.
         if (data.user && data.session) {
-          await supabase.from("profiles").insert({
-            id: data.user.id,
-            display_name: name || email.split("@")[0],
-            role: "buyer",
-          });
+          await supabase.from("profiles").upsert(
+            {
+              id: data.user.id,
+              display_name: name || email.split("@")[0],
+              role: "buyer",
+            },
+            { onConflict: "id", ignoreDuplicates: true },
+          );
           router.push(nextPath);
           router.refresh();
           return;

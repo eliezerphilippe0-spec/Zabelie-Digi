@@ -16,6 +16,10 @@ create table if not exists auth.users (
   id    uuid primary key,
   email text
 );
+-- Métadonnées d'inscription : lues par le déclencheur de profil (0045). La
+-- vraie table Supabase les porte ; le stub doit les porter aussi, sinon le
+-- déclencheur passerait les tests sans jamais exercer son chemin nominal.
+alter table auth.users add column if not exists raw_user_meta_data jsonb;
 create or replace function auth.uid() returns uuid
   language sql stable as $$ select null::uuid $$;
 

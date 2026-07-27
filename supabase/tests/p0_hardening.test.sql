@@ -14,6 +14,13 @@ begin;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1'::uuid, 'seller@p0.test'),
   ('00000000-0000-0000-0000-0000000000a2'::uuid, 'buyer@p0.test');
+
+-- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
+-- veulent piloter la ligne eux-mêmes (rôle, tier) et éprouver le chemin
+-- INSERT de `protect_profile_privileges` — on retire donc la ligne
+-- auto-créée plutôt que de basculer en UPDATE, qui ne teste pas la même
+-- chose.
+delete from profiles where id in (select id from auth.users);
 insert into profiles (id, role, display_name) values
   ('00000000-0000-0000-0000-0000000000a1'::uuid, 'creator', 'Vendeur P0'),
   ('00000000-0000-0000-0000-0000000000a2'::uuid, 'buyer', 'Acheteur P0');

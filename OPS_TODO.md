@@ -135,6 +135,29 @@ c'est la référence de comparaison, elle doit survivre à la session.
 > été produite sous `round`**. Ce qu'il ne faut pas faire, c'est changer la
 > règle sans que personne ne sache laquelle s'appliquait à quoi.
 
+- [ ] **🔴 `0045_profile_on_signup.sql` — À APPLIQUER, et à vérifier AVANT la
+      première commande.** Le profil n'était créé qu'à un seul endroit :
+      l'insert côté client de `connexion-form.tsx`, et **uniquement** dans la
+      branche où `signUp` renvoie une session — donc uniquement si la
+      confirmation par e-mail est **désactivée**. Aucun déclencheur en base ne
+      prenait le relais.
+      **Si la confirmation est active : aucun acheteur n'obtient jamais de
+      profil.** Ce n'est pas un cas de test, c'est le parcours d'inscription
+      entier. Le réglage se lit en un clic dans les paramètres Auth de
+      Supabase — commence par là.
+      **Forme de l'échec, vérifiée** : `orders.buyer_id` référence
+      `profiles(id)`, donc l'achat échoue en violation de clé étrangère et
+      `/api/checkout` renvoie « Création commande échouée » (500). **Rien
+      n'est écrit** — pas de commande orpheline, pas de ligne de grand livre.
+      Bénin pour le registre, bloquant pour l'acheteur, et illisible pour lui.
+      **⚠️ Ne PAS désactiver la confirmation e-mail pour débloquer** : toute
+      la légitimité de l'auto-réception de `0043` repose sur un avis envoyé à
+      une adresse joignable. Le contournement le plus tentant casse le
+      mécanisme d'expédition.
+      Contrôle à passer une fois appliquée :
+      `select u.email, u.email_confirmed_at, p.id as profil from auth.users u
+       left join profiles p on p.id = u.id order by u.created_at desc limit 5;`
+      — aucun `profil` à `null`.
 - [ ] **⚖️ D-4 — TRANCHER LE SENS DE L'ARRONDI (décision porteur).** `round`
       (état actuel, la fraction va à la plateforme) ou `floor` (elle va au
       vendeur, ≤ 1 HTG par vente). Personne n'a tranché : le porteur a donné

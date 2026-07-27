@@ -13,6 +13,13 @@ begin;
 insert into auth.users (id, email)
   values ('00000000-0000-0000-0000-0000000000f1', 'client@test.local');
 
+-- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
+-- veulent piloter la ligne eux-mêmes (rôle, tier) et éprouver le chemin
+-- INSERT de `protect_profile_privileges` — on retire donc la ligne
+-- auto-créée plutôt que de basculer en UPDATE, qui ne teste pas la même
+-- chose.
+delete from profiles where id in (select id from auth.users);
+
 -- Rôle client éphémère, NON exempté par le trigger. bypassrls : on isole le
 -- trigger (on ne teste pas la RLS ici, seulement la protection des colonnes).
 create role test_client bypassrls;
