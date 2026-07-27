@@ -1,13 +1,11 @@
 /**
- * Commission par tier — ORACLE.
+ * Commission par tier — ORACLE + estimation d'affichage.
  *
  * ⚠️ Ce module NE calcule PAS l'argent réellement crédité. La SEULE source de
- * vérité qui écrit de l'argent est la fonction SQL `zabelie_commission_htg`
- * (supabase/migrations/0044_commission_floor.sql), appelée par
- * `confirm_payment` et par `zabelie_biz_confirm_invoice_payment`.
+ * vérité qui écrit de l'argent est la SQL, au moment du paiement.
  *
  * Ce miroir TS a deux usages, et un seul consommateur applicatif :
- *   - oracle de test (`tests/commission.test.ts`, accordé avec la SQL) ;
+ *   - oracle de test (`tests/commission.test.ts`) ;
  *   - **estimation** affichée au vendeur sous le champ prix
  *     (`components/net-estimate.tsx`).
  *
@@ -17,12 +15,12 @@
  * avec la SQL devient visible par un vendeur. `tests/commission-consumer.test.ts`
  * empêche le retour à l'état « oracle sans consommateur ».
  *
- * Le montant réellement crédité reste calculé par la SQL au moment du
- * paiement, et le net affiché APRÈS la vente (`lib/zabelie-notify.ts`) est
- * relu du grand livre, jamais recalculé.
+ * Corollaire, appris en le cassant : dès lors que ce module alimente un
+ * chiffre montré à un vendeur, il doit refléter la règle **déployée**, pas la
+ * règle souhaitée. Voir `ROUNDING_IN_FORCE`.
  *
- * La formule DOIT rester identique à celle du SQL : commission =
- * floor(gross * rate_bps / 10000), net = gross - commission.
+ * Le net affiché APRÈS la vente (`lib/zabelie-notify.ts`) est relu du grand
+ * livre, jamais recalculé ici.
  */
 
 export type CreatorTier = "standard" | "elite";
@@ -37,24 +35,47 @@ export function rateBps(tier: CreatorTier): number {
   return RATE_BPS[tier] ?? RATE_BPS.standard;
 }
 
+export type RoundingRule = "round" | "floor";
+
+/**
+ * Sens de l'arrondi **RÉELLEMENT EN VIGUEUR EN PRODUCTION**.
+ *
+ * `round` aujourd'hui : c'est ce que fait `confirm_payment` en base. La
+ * migration `0044` (arrondi au vendeur, `floor`) est **écrite et non
+ * appliquée**, et la décision commerciale elle-même attend l'arbitrage du
+ * porteur (`docs/02`, D-4).
+ *
+ * ⚠️ Cette constante et l'état de la base ne font qu'un. Basculer sur
+ * `"floor"` fait partie du **même geste** que l'application de `0044` — pas
+ * avant. Sinon l'estimation promet au vendeur une gourde de plus que ce que
+ * la base lui crédite : une estimation fausse dans un sens connu est pire
+ * qu'une absence d'estimation, parce qu'elle a l'air d'un engagement.
+ */
+export const ROUNDING_IN_FORCE: RoundingRule = "round";
+
 /**
  * Commission prélevée par la plateforme (HTG entiers).
  *
- * `floor` et non `round` — décision D-4 : l'arrondi va au VENDEUR. `round`
- * envoyait systématiquement la fraction à la plateforme (25 HTG → 3 au lieu
- * de 2,5), ce qui n'avait jamais été décidé : c'était le défaut hérité de
- * PostgreSQL. Coût maximal 1 gourde par vente.
+ * Le paramètre `rule` existe pour que les tests exercent RÉELLEMENT les deux
+ * règles — sans lui, la branche non déployée ne serait jamais parcourue et on
+ * découvrirait ses écarts le jour de la bascule.
  *
- * ⚠️ ORACLE, jamais une seconde source de vérité : la SQL calcule
- * (`zabelie_commission_htg`, migration 0044), ceci sert aux tests et à
- * l'affichage. Les deux doivent rester d'accord — c'est ce que vérifie
- * `tests/commission.test.ts`.
+ * ⚠️ ORACLE et ESTIMATION, jamais une seconde source de vérité.
  */
-export function commissionHTG(grossHTG: number, tier: CreatorTier): number {
-  return Math.floor((grossHTG * rateBps(tier)) / 10000);
+export function commissionHTG(
+  grossHTG: number,
+  tier: CreatorTier,
+  rule: RoundingRule = ROUNDING_IN_FORCE,
+): number {
+  const exact = (grossHTG * rateBps(tier)) / 10000;
+  return rule === "floor" ? Math.floor(exact) : Math.round(exact);
 }
 
 /** Montant net crédité au vendeur (HTG). */
-export function netHTG(grossHTG: number, tier: CreatorTier): number {
-  return grossHTG - commissionHTG(grossHTG, tier);
+export function netHTG(
+  grossHTG: number,
+  tier: CreatorTier,
+  rule: RoundingRule = ROUNDING_IN_FORCE,
+): number {
+  return grossHTG - commissionHTG(grossHTG, tier, rule);
 }

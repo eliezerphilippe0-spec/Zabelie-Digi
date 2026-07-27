@@ -9,7 +9,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
-import type { CreatorTier } from "@/lib/commission";
+import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -136,8 +136,13 @@ export default async function VendrePage() {
             net: {
               youReceive: t(lang, "publish.net.youReceive"),
               fee: t(lang, "publish.net.fee"),
-              noFee: t(lang, "publish.net.noFee"),
-              favor: t(lang, "publish.net.favor"),
+              rounding: t(
+                lang,
+                ROUNDING_IN_FORCE === "floor"
+                  ? "publish.net.rounding.floor"
+                  : "publish.net.rounding",
+              ),
+              caveat: t(lang, "publish.net.caveat"),
             },
           }}
         />

@@ -37,15 +37,14 @@ test("plancher 10 HTG : le ledger reste sain (net > 0, entiers, somme exacte)", 
   // on fige le comportement au plancher, via l'oracle de la formule SQL.
   //
   // ⚠️ « commission ≥ 1 » a été RETIRÉ — c'était une conséquence de `round`,
-  // pas une règle. Depuis D-4 (`floor`, l'arrondi va au vendeur), la
-  // commission est NULLE sous 10 HTG en standard et sous 17 HTG en Elite.
-  // C'est la conséquence assumée de la décision, pas une anomalie : la
-  // plateforme ne prélève rien sur une vente où sa part n'atteint pas une
-  // gourde entière. Ce qui doit rester vrai, c'est le reste.
+  // pas une règle, et D-4 n'est pas tranchée. Les propriétés ci-dessous sont
+  // vraies sous LES DEUX règles ; les valeurs exactes, elles, dépendent de
+  // celle qui est déployée et sont vérifiées dans `commission.test.ts`.
+  for (const rule of ["round", "floor"] as const) {
   for (const tier of ["standard", "elite"] as const) {
     for (let gross = 10; gross <= 100; gross++) {
-      const c = commissionHTG(gross, tier);
-      const n = netHTG(gross, tier);
+      const c = commissionHTG(gross, tier, rule);
+      const n = netHTG(gross, tier, rule);
       assert.ok(Number.isInteger(c) && Number.isInteger(n), `${tier}@${gross}: entiers`);
       assert.ok(c >= 0, `${tier}@${gross}: commission jamais négative (obtenu ${c})`);
       assert.ok(n > 0, `${tier}@${gross}: net vendeur > 0 (obtenu ${n})`);
@@ -53,16 +52,16 @@ test("plancher 10 HTG : le ledger reste sain (net > 0, entiers, somme exacte)", 
       assert.equal(c + n, gross, `${tier}@${gross}: commission + net = brut`);
     }
   }
-  // Cas exacts au plancher de coupon (10 HTG), sous D-4 (`floor`) :
-  //   standard 10 % → 1,0 exactement → commission 1, net 9 ;
-  //   elite     6 % → 0,6           → commission 0, net 10.
-  // La seconde ligne est la conséquence directe de « l'arrondi va au
-  // vendeur » : sur une vente de 10 gourdes, la part Elite de la plateforme
-  // n'atteint pas une gourde entière, donc elle ne prélève rien.
-  assert.equal(commissionHTG(10, "standard"), 1);
-  assert.equal(netHTG(10, "standard"), 9);
-  assert.equal(commissionHTG(10, "elite"), 0);
-  assert.equal(netHTG(10, "elite"), 10);
+  }
+  // Au plancher de coupon (10 HTG), la part standard vaut 1,0 gourde exacte :
+  // c'est le seul point où les deux règles ne peuvent pas diverger.
+  assert.equal(commissionHTG(10, "standard", "round"), 1);
+  assert.equal(commissionHTG(10, "standard", "floor"), 1);
+  assert.equal(netHTG(10, "standard", "round"), 9);
+  // La part Elite (0,6) est justement là où elles divergent — et c'est le
+  // seuil zéro discuté en D-5 : sous `floor`, la plateforme ne prélève rien.
+  assert.equal(commissionHTG(10, "elite", "round"), 1);
+  assert.equal(commissionHTG(10, "elite", "floor"), 0);
 });
 
 test("couponApplies : vendeur, produit, expiration, plafond, actif", () => {

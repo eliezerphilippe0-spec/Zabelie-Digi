@@ -120,13 +120,38 @@ c'est la référence de comparaison, elle doit survivre à la session.
 
 ## Paiements (rappels)
 
-- [ ] **`0044_commission_floor.sql` — À APPLIQUER AVANT LA PREMIÈRE VENTE.**
-      V-15 : l'arrondi de la commission va au vendeur (`floor`). Ce n'est pas
-      un correctif qu'on peut passer après coup — le grand livre est
-      append-only, donc toute ligne écrite avant porte l'ancienne règle pour
-      toujours, et le premier taux de commission observé en production serait
-      celui qu'on ne veut plus. Ordre complet : `docs/22` §Ordre, étape 0.
-      Après application, inscrire l'empreinte au registre `0041`.
+- [ ] **⚖️ D-4 — TRANCHER LE SENS DE L'ARRONDI (décision porteur).** `round`
+      (état actuel, la fraction va à la plateforme) ou `floor` (elle va au
+      vendeur, ≤ 1 HTG par vente). Personne n'a tranché : le porteur a donné
+      un avis (`floor`) sans « go », l'agent recommande `floor`. À décider
+      **avant la première vente** — le registre est append-only, chaque ligne
+      écrite avant porte l'ancienne règle pour toujours. Analyse chiffrée :
+      `docs/02` §D-4.
+      **Si `floor` : trois gestes indissociables**, dans cet ordre —
+      (1) appliquer `0044_commission_floor.sql` ; (2) passer
+      `ROUNDING_IN_FORCE` à `"floor"` dans `lib/commission.ts` ;
+      (3) redéployer. Les séparer fait promettre au vendeur une gourde de plus
+      que ce que la base lui crédite. Puis inscrire l'empreinte au registre
+      `0041`. Les annonces (FAQ, estimation vendeur, FR + KR) suivent
+      automatiquement la constante — rien à réécrire à la main.
+      **Si `round` : rien à faire**, `0044` reste au dépôt.
+- [ ] **⚖️ D-5 — Commission minimale de 1 gourde ? (décision porteur).** Une
+      vente assez petite ne rapporte rien à la plateforme : moins de 5 HTG
+      sous `round`, moins de 10 (17 en Elite) sous `floor`. Sur un marché où
+      des recharges à 25 gourdes existent, découper une vente en petites
+      unités devient une stratégie. Deux sorties : **prix plancher** ou
+      **commission minimale de 1 HTG dès qu'il y a vente** — la seconde ferme
+      le seuil sans abîmer l'argument « l'arrondi va au vendeur ». Aucune
+      n'est codée : c'est une règle commerciale. L'interface, elle, n'annonce
+      plus « aucune commission à ce prix » — ne pas enseigner le
+      contournement n'est pas le fermer.
+- [ ] **Formulaire `/vendre/physique` — français en dur, sur une plateforme
+      Kreyòl-first.** Tout le formulaire (libellés, aides, messages d'erreur)
+      est écrit en FR dans `components/physical-product-form.tsx`, sans passer
+      par `lib/i18n.ts`. C'est la surface vendeur du chantier physique. La
+      ligne financière ajoutée le 2026-07-27 (estimation du net) passe, elle,
+      par i18n — mais le reste reste à traduire, et c'est un chantier à part
+      entière, à faire avant l'ouverture de la vente physique.
 - [ ] **Palier Elite — décision porteur en attente (V-16).** Le taux 6 % n'est
       plus annoncé nulle part : `tier` est gelé côté client (`0015`/`0017`) et
       **aucun chemin n'attribue `elite`** — ni code, ni écran d'admin — et
@@ -161,15 +186,15 @@ c'est la référence de comparaison, elle doit survivre à la session.
       production : `order_ref` sur une vraie ligne, `zabelie_solvency_report()`
       sur des données non nulles, l'identité de `0033`, la maturation d'escrow,
       le webhook MonCash réel, `/mes-achats` et les e-mails, la carte de
-      partage WhatsApp. Aucun prérequis — ni B2 ni B3. Mode d'emploi complet :
+      partage WhatsApp. Un seul préalable, D-4 (l'arrondi), et il est
+      décisionnel, pas technique — ni B2 ni B3. Mode d'emploi complet :
       `docs/22-PREMIERE-COMMANDE-REELLE.md`. **À faire avant tout nouveau
       développement.**
-- [ ] **⚠️ Appliquer `0044` AVANT la première vente** — arrondi `floor`
-      (V-15, tranché). Le registre est append-only : chaque ligne portera la
-      règle en vigueur au moment où elle est écrite. La migration est écrite
-      et éprouvée, **non appliquée**. Elle est sûre dans les deux ordres : son
+- [ ] **⚠️ D-4 avant la première vente** — voir §Paiements. `0044` est écrite,
+      éprouvée et **non appliquée** ; elle est sûre dans les deux ordres (son
       remplacement de `confirm_payment` est conditionnel et s'abstient si une
-      version B2/B3 (stock) est déjà en place.
+      version B2/B3 avec stock est déjà en place). Ce qui manque n'est pas le
+      code, c'est l'arbitrage.
 - [ ] **Garde anti-auto-achat — avant toute mise en avant par le volume.**
       Vérifié : `app/api/checkout/route.ts` ne compare jamais
       `product.seller_id` à `user.id`. Un vendeur peut acheter son propre

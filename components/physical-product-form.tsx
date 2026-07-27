@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { NetEstimate } from "@/components/net-estimate";
+import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import type { CreatorTier } from "@/lib/commission";
 
 /**
@@ -35,9 +35,17 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export function PhysicalProductForm({
   tier = "standard",
+  netLabels,
 }: {
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
+  /**
+   * Libellés de l'estimation, traduits côté serveur. Le reste de ce
+   * formulaire est encore en français en dur (dette connue, OPS_TODO) — ce
+   * n'est pas une raison pour y ajouter du français non traduit, encore
+   * moins sur un montant.
+   */
+  netLabels: NetEstimateLabels;
 }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -233,16 +241,7 @@ export function PhysicalProductForm({
           />
           {!showVariants && (
             <div className="mt-1.5">
-              <NetEstimate
-                priceHTG={price}
-                tier={tier}
-                labels={{
-                  youReceive: "Vous recevez",
-                  fee: "commission",
-                  noFee: "aucune commission à ce prix",
-                  favor: "L'arrondi est toujours en votre faveur.",
-                }}
-              />
+              <NetEstimate priceHTG={price} tier={tier} labels={netLabels} />
             </div>
           )}
         </label>

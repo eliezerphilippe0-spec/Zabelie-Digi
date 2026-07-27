@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatHTG } from "@/lib/sample-data";
+import { ROUNDING_IN_FORCE } from "@/lib/commission";
 
 type Client = { id: string; name: string; phone: string | null; email: string | null };
 type Invoice = {
@@ -72,8 +73,11 @@ export function ProConsole({
         <h2 className="text-lg font-bold">Ouvre ton espace pro</h2>
         <p className="mt-1 text-sm text-mist">
           Facture tes clients hors marketplace et encaisse en MonCash. Commission
-          Zabelie&nbsp;: 10&nbsp;% sur chaque paiement — l&apos;arrondi est toujours
-          en ta faveur — versé aussitôt sur ton solde.
+          Zabelie&nbsp;: 10&nbsp;% sur chaque paiement —{" "}
+          {ROUNDING_IN_FORCE === "floor"
+            ? "l'arrondi est toujours en ta faveur"
+            : "arrondie à la gourde la plus proche"}{" "}
+          — versé aussitôt sur ton solde.
         </p>
         <form onSubmit={register} className="mt-4 space-y-3">
           <input

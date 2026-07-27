@@ -6,9 +6,10 @@
 
 ## Pourquoi maintenant, et pourquoi ça ne dépend de rien
 
-Un seul prérequis, `0044` (voir l'ordre ci-dessous) — et il tient au fait que
-le registre est append-only, pas à une dépendance technique. **Ni B2, ni B3,
-ni le reste des migrations en attente.** Un produit
+Un seul préalable, et il est **décisionnel, pas technique** : D-4, le sens de
+l'arrondi de la commission (voir l'ordre ci-dessous). Il tient au fait que le
+registre est append-only. **Ni B2, ni B3, ni le reste des migrations en
+attente.** Un produit
 **digital ou service** suffit : ce flux est complet en production depuis
 longtemps, et il emprunte exactement les mêmes rails que le physique jusqu'au
 crédit du vendeur.
@@ -27,10 +28,14 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
 
 ## Ordre — les variables d'abord, sinon le cache fige le mauvais aperçu
 
-0. **Appliquer `0044_commission_floor.sql`** (V-15, l'arrondi au vendeur). Le
-   seul prérequis, et il est irréversible dans les faits : le grand livre est
-   append-only, donc toute ligne écrite avant porte l'ancienne règle pour
-   toujours. Puis inscrire son empreinte au registre `0041`.
+0. **Trancher D-4** — le sens de l'arrondi (`docs/02`). Irréversible dans les
+   faits : le grand livre est append-only, donc toute ligne écrite avant porte
+   l'ancienne règle pour toujours. Si la réponse est `floor` : appliquer
+   `0044_commission_floor.sql`, passer `ROUNDING_IN_FORCE` à `"floor"` dans
+   `lib/commission.ts`, redéployer — **les trois ensemble**, sinon
+   l'estimation affichée au vendeur promet une gourde de plus que ce que la
+   base crédite. Puis inscrire l'empreinte au registre `0041`. Si la réponse
+   est `round` : rien à faire.
 1. **`NEXT_PUBLIC_SITE_URL`** dans Vercel (Production), puis **redéployer**.
    Sans elle, `lib/site-url.ts` retombe sur le domaine `*.vercel.app` et
    l'aperçu WhatsApp le fige. Facultatif mais souhaitable au même moment :
@@ -78,63 +83,59 @@ Bénéfice second, réel mais second : le parcours d'inscription se **chronomèt
 au passage — la mesure du mur d'entrée qu'on n'a jamais pu prendre
 (`docs/21` §3 bis).
 
-### 2. L'arrondi de la commission — les chiffres attendus dépendent de `0044`
+### 2. L'arrondi de la commission — les chiffres attendus dépendent de D-4
 
-⚠️ **`0044_commission_floor.sql` est écrite et NON APPLIQUÉE.** C'est le seul
-prérequis technique de cette commande, et il est là pour une raison de
-calendrier, pas de correction : le grand livre est **append-only**. Chaque
-ligne écrite avant l'application de `0044` l'aura été sous l'ancienne règle,
-pour toujours. → **appliquer `0044` avant la première vente**, sinon la toute
-première ligne du registre contredit la règle annoncée aux vendeurs.
+⚠️ **`0044_commission_floor.sql` est écrite et NON APPLIQUÉE, et la décision
+elle-même n'est pas prise** (`docs/02`, D-4). Ce n'est pas un oubli
+d'exécution : c'est une règle commerciale qui attend l'arbitrage du porteur.
 
-`commission = floor(brut × bps / 10000)`, `net = brut − commission`
-(V-15, `docs/02`). **Le registre ne peut pas diverger** dans les deux cas :
-`net` est défini par soustraction, donc `commission + net = brut` par
-construction, quel que soit l'arrondi.
+`commission = arrondi(brut × bps / 10000)`, `net = brut − commission`.
+**Le registre ne peut pas diverger** dans les deux cas : `net` est défini par
+soustraction, donc `commission + net = brut` par construction, quel que soit
+l'arrondi. Vérifié sur `0..5000` HTG, aux deux taux : **aucune divergence
+entre le calcul SQL et l'oracle TypeScript**.
 
-Vérifié sur `0..5000` HTG, aux deux taux (10 % et 6 % Elite) : **aucune
-divergence entre le calcul SQL et l'oracle TypeScript**.
+**Ce qu'il faut attendre sur 25 HTG :**
 
-**Ce qu'il faut attendre sur 25 HTG — et c'est le point du piège :**
-
-| | `0044` appliquée (`floor`) | `0044` non appliquée (`round`) |
+| | `round` — état actuel de la base | `floor` — si D-4 bascule et `0044` est appliquée |
 |---|---|---|
-| Commission | **2** | 3 |
-| Net vendeur | **23** | 22 |
-| Taux réel | 8 % | 12 % |
+| Commission | **3** | 2 |
+| Net vendeur | **22** | 23 |
+| Taux réel | 12 % | 8 % |
 
-Relever 22 après avoir appliqué `0044`, ou 23 sans l'avoir appliquée, est un
+Relever 23 sans avoir appliqué `0044`, ou 22 après l'avoir appliquée, est un
 **vrai signal** : la fonction en base n'est pas celle qu'on croit. C'est le
 seul endroit de ce document où deux résultats sont acceptables — vérifier
-d'abord lequel des deux mondes on est en train de tester.
+d'abord dans lequel des deux mondes on teste.
 
-Le taux effectif reste au-dessus de 10 % nulle part, mais en dessous sur les
-petits montants :
+Le taux effectif sur les petits montants, sous la règle **actuelle** :
 
-| Brut | Commission (`floor`) | Net | Taux réel |
+| Brut | Commission (`round`) | Net | Taux réel |
 |---|---|---|---|
-| 5 HTG | 0 | 5 | **0 %** |
-| 15 HTG | 1 | 14 | 6,7 % |
-| **25 HTG** | **2** | **23** | **8 %** |
-| 105 HTG | 10 | 95 | 9,5 % |
+| 5 HTG | 1 | 4 | **20 %** |
+| 15 HTG | 2 | 13 | 13,3 % |
+| **25 HTG** | **3** | **22** | **12 %** |
+| 105 HTG | 11 | 94 | 10,5 % |
 | 1 500 HTG | 150 | 1 350 | 10,0 % |
 
-Conséquence assumée : **commission nulle en dessous de 10 HTG** (17 HTG en
-Elite). La plateforme ne prélève rien quand sa part n'atteint pas une gourde
-entière ; ce n'est pas une anomalie mais la traduction exacte de la règle.
+**L'annonce suit automatiquement la règle déployée.** La FAQ (`faq.a3`) et
+l'estimation vendeur dérivent de `ROUNDING_IN_FORCE` (`lib/commission.ts`),
+dans les deux langues : elles disent aujourd'hui « arrondis à la gourde la
+plus proche », et basculeront sur « l'arrondi est toujours en votre faveur »
+le jour où la constante change. Personne n'a à penser à réécrire un texte.
 
-**L'annonce est alignée sur l'effet, pas sur la méthode** : `faq.a3` (FR et
-KR) et la console pro disent « l'arrondi est toujours en votre faveur ».
-Depuis le 2026-07-27, le vendeur voit aussi son net **pendant qu'il saisit son
+Depuis le 2026-07-27, le vendeur voit son net **pendant qu'il saisit son
 prix** (`components/net-estimate.tsx`, sur les deux formulaires) : « Vous
-recevez 23 HTG · commission 2 HTG ». Sous 10 HTG il lit « aucune commission à
-ce prix » — la règle se démontre au lieu de s'annoncer. Le 6 % Elite, lui, **a
-été retiré de la FAQ** (V-16) : aucun chemin n'attribue ce palier.
+recevez 22 HTG · commission 3 HTG », suivi de la mention que c'est une
+**estimation au prix plein** — un code promo réduit le montant payé, donc
+aussi le net. Vérifié dans `0027` : la commission se calcule sur
+`orders.amount_htg`, qui est le **prix remisé** figé au checkout. Le 6 %
+Elite, lui, a été retiré de la FAQ (V-16) : aucun chemin n'attribue ce palier.
 
 À regarder le jour de l'essai : si l'estimation affichée à la publication ne
-correspond pas au net relevé en base après la vente, c'est que l'oracle TS et
-la fonction SQL ont divergé — c'est précisément ce que ce branchement rend
-visible.
+correspond pas au net relevé en base après la vente (à remise près), c'est que
+l'oracle TS et la fonction SQL ont divergé — c'est précisément ce que ce
+branchement rend visible.
 
 ## Ce qu'il faut relever, tout de suite après
 
@@ -160,8 +161,8 @@ select o.order_ref, o.amount_htg as brut,
        e.matures_at, e.status
   from orders o left join escrow_entries e on e.order_id = o.id
  order by o.created_at desc limit 5;
--- Attendu sur 25 HTG avec 0044 appliquée : net = 23 (commission 2). Sans 0044 :
--- net = 22 (commission 3) — et c'est alors 0044 qui manque, cf. §« deux pièges ».
+-- Attendu sur 25 HTG sous la règle actuelle (`round`) : net = 22, commission 3.
+-- Si 0044 a été appliquée (D-4 → `floor`) : net = 23, commission 2.
 -- matures_at = paiement + 7 jours, status 'maturing'.
 
 -- 5. Aucun paiement orphelin (invariant de réconciliation).

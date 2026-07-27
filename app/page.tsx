@@ -11,6 +11,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
+import { ROUNDING_IN_FORCE } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 
@@ -439,7 +440,17 @@ export default async function HomePage() {
                 {t(lang, `faq.q${i}` as Parameters<typeof t>[1])}
               </summary>
               <p className="mt-3 text-sm leading-relaxed text-mist">
-                {t(lang, `faq.a${i}` as Parameters<typeof t>[1])}
+                {/* La réponse 3 annonce le taux ET l'arrondi. Elle suit donc
+                    la règle DÉPLOYÉE (`ROUNDING_IN_FORCE`) au lieu d'attendre
+                    qu'on pense à la réécrire le jour où `0044` est appliquée :
+                    une annonce commerciale qu'il faut penser à mettre à jour
+                    finit toujours par décrire l'état d'avant. */}
+                {t(
+                  lang,
+                  i === 3 && ROUNDING_IN_FORCE === "floor"
+                    ? "faq.a3.floor"
+                    : (`faq.a${i}` as Parameters<typeof t>[1]),
+                )}
               </p>
             </details>
           ))}

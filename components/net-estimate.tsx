@@ -36,10 +36,10 @@ export type NetEstimateLabels = {
   youReceive: string;
   /** « commission » / « komisyon » */
   fee: string;
-  /** « aucune commission à ce prix » / « pa gen komisyon sou pri sa a » */
-  noFee: string;
-  /** « L'arrondi est toujours en votre faveur. » */
-  favor: string;
+  /** Phrase d'arrondi correspondant à la règle DÉPLOYÉE (`ROUNDING_IN_FORCE`). */
+  rounding: string;
+  /** « Estimation au prix plein — un code promo réduit… » */
+  caveat: string;
 };
 
 export function NetEstimate({
@@ -62,24 +62,26 @@ export function NetEstimate({
   const fee = commissionHTG(gross, tier);
   const net = netHTG(gross, tier);
 
+  // Une commission nulle (petits montants) n'est PAS annoncée comme telle.
+  // L'écrire — « aucune commission à ce prix » — reviendrait à enseigner le
+  // découpage d'une vente en petites unités au moment exact où le vendeur
+  // choisit son prix. Le montant net reste affiché ; c'est le mode d'emploi
+  // qu'on ne fournit pas. Fermer vraiment le seuil est une décision
+  // commerciale ouverte (`docs/02`, D-5).
+
   return (
     <p className="text-xs text-mist" aria-live="polite">
       <span className="font-semibold text-cloud">
         {labels.youReceive} {htg(net)}
       </span>
-      {fee > 0 ? (
+      {fee > 0 && (
         <>
           {" · "}
           {labels.fee} {htg(fee)}
         </>
-      ) : (
-        <>
-          {" — "}
-          {labels.noFee}
-        </>
       )}
       <br />
-      {labels.favor}
+      {labels.rounding} {labels.caveat}
     </p>
   );
 }
