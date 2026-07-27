@@ -152,10 +152,26 @@ language plpgsql
 set search_path = public, pg_temp
 as $$
 begin
-  -- Aucune exemption de rôle, `service_role` compris. Il n'existe pas de
-  -- besoin légitime d'un `display_name` non nettoyé : un compte officiel se
-  -- signale par un marqueur, jamais par son nom. Une exemption serait une
-  -- porte dérobée pour toute route qui écrit avec la clé de service.
+  -- Aucune exemption de rôle, `service_role` compris. Une exemption serait
+  -- une porte dérobée pour toute route qui écrit avec la clé de service.
+  --
+  -- ⚠️ CONSÉQUENCE ASSUMÉE, ET ELLE VISE AUSSI LA PLATEFORME : plus personne
+  -- ne peut créer un compte affiché « Zabelie » ou « Support Zabelie » — pas
+  -- même le porteur, pas même en back-office. Ce n'est pas un effet de bord,
+  -- c'est la position : **un compte officiel se signale par un marqueur, pas
+  -- par son nom**. Un nom peut se copier ; une colonne vérifiée, non.
+  --
+  -- Le jour où un compte support est réellement nécessaire, la voie N'EST PAS
+  -- de retirer ce filtre ni d'exempter un rôle. C'est d'ajouter la colonne de
+  -- marquage (`is_official` ou équivalent), de l'afficher partout où le nom
+  -- l'est, puis d'autoriser le nom réservé UNIQUEMENT aux lignes marquées.
+  -- Faire l'inverse — le nom d'abord, le marqueur plus tard — laisse une
+  -- fenêtre pendant laquelle « Support Zabelie » n'est vérifiable par
+  -- personne. → OPS_TODO.
+  --
+  -- Le repli ne peut produire ni NULL ni chaîne vide sur une colonne NOT NULL
+  -- (PS11) : sinon ce filtre recréerait, sur le renommage cette fois, l'échec
+  -- total que la note « totalité » ci-dessus cherche à éviter.
   new.display_name := coalesce(
     zabelie_clean_display_name(new.display_name),
     -- Un nom refusé ne bloque JAMAIS l'écriture : on garde le précédent, ou

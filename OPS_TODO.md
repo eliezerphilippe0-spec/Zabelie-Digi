@@ -163,6 +163,15 @@ c'est la référence de comparaison, elle doit survivre à la session.
       — et c'est aussi pourquoi allonger la liste (« MonCash », « Digicel »)
       serait du théâtre : `Zabelye`, un « I » à la place du « l » ou une
       lettre cyrillique passent tous.
+      **Conséquence assumée, à ne pas découvrir plus tard** : le filtre est
+      sans exemption de rôle, donc **la plateforme elle-même** ne peut plus
+      créer de compte affiché « Zabelie » ou « Support Zabelie » — ni depuis
+      l'app, ni en back-office avec la clé de service. C'est voulu. Si un
+      compte support devient nécessaire, la voie n'est PAS de retirer le
+      filtre : c'est d'ajouter une colonne de marquage officiel, de l'afficher
+      partout où le nom l'est, puis de n'autoriser le nom réservé qu'aux
+      lignes marquées. Le nom d'abord et le marqueur ensuite laisserait une
+      fenêtre où « Support Zabelie » n'est vérifiable par personne.
       **⚖️ La vraie décision arrive avec la première exposition** : le jour où
       `display_name` s'affiche sur une fiche boutique, dans un avis ou dans un
       message reçu par un vendeur, aucune liste ne suffira — il faudra un

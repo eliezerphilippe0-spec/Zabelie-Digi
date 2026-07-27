@@ -13,6 +13,9 @@
 --   PS9. Le déclencheur reste TOTAL sur ces entrées : l'inscription aboutit.
 --
 --   PS10. LE CHEMIN QUI MANQUAIT : renommage après inscription (`update`).
+--   PS11. Le repli ne peut JAMAIS produire NULL ni chaîne vide sur une
+--         colonne NOT NULL — sinon le filtre recrée l'échec total qu'il
+--         devait éviter, cette fois sur le renommage aussi.
 --
 -- PS7 retire le déclencheur DANS sa transaction : règle du dépôt, un garde se
 -- prouve sur un cas où il doit manquer, pas en raisonnant.
@@ -283,6 +286,63 @@ begin
     raise exception 'PS9 : nom de % caractères écrit en base', length(v_nom);
   end if;
   raise notice 'OK — PS9 entrée hostile absorbée, inscription aboutie (nom « % »)', v_nom;
+end $$;
+
+rollback;
+
+-- ── PS11 : un refus ne doit jamais violer NOT NULL, sur aucune voie ─────────
+-- Le déclencheur `profiles` REMPLACE une valeur refusée. Si ce remplacement
+-- pouvait rendre NULL ou '', on aurait déplacé l'échec total du point 3 de
+-- l'inscription vers le renommage — c'est-à-dire partout.
+begin;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000a0050', 'ps11@test.local');
+
+do $$
+declare
+  v_nom  text;
+  v_cas  text;
+begin
+  -- (a) INSERT direct portant un nom refusé (pas via auth.users).
+  insert into auth.users (id, email) values
+    ('00000000-0000-0000-0000-0000000a0051', null);
+  update profiles set display_name = 'Zabelie'
+   where id = '00000000-0000-0000-0000-0000000a0051';
+
+  -- (b) Toutes les entrées que le filtre refuse, sur les DEUX voies.
+  foreach v_cas in array array['Zabelie', '', '   ', E'\t\n', 'zabely'] loop
+    -- update
+    update profiles set display_name = v_cas
+     where id = '00000000-0000-0000-0000-0000000a0050';
+    select display_name into v_nom
+      from profiles where id = '00000000-0000-0000-0000-0000000a0050';
+    if v_nom is null or btrim(v_nom) = '' then
+      raise exception 'PS11 update « % » : nom vide ou NULL écrit', v_cas;
+    end if;
+
+    -- insert (ligne neuve, donc repli « Kont » et non l'ancien nom)
+    delete from profiles where id = '00000000-0000-0000-0000-0000000a0051';
+    insert into profiles (id, display_name)
+    values ('00000000-0000-0000-0000-0000000a0051', v_cas);
+    select display_name into v_nom
+      from profiles where id = '00000000-0000-0000-0000-0000000a0051';
+    if v_nom is null or btrim(v_nom) = '' then
+      raise exception 'PS11 insert « % » : nom vide ou NULL écrit', v_cas;
+    end if;
+    if v_nom <> 'Kont' then
+      raise exception 'PS11 insert « % » : repli attendu « Kont », obtenu « % »',
+        v_cas, v_nom;
+    end if;
+  end loop;
+
+  -- (c) Le repli lui-même ne doit pas être refusé par le filtre : sinon la
+  --     boucle serait sans fin logique (« Kont » réécrit en « Kont »).
+  if zabelie_clean_display_name('Kont') is distinct from 'Kont' then
+    raise exception 'PS11 : le repli « Kont » est lui-même refusé par le filtre';
+  end if;
+
+  raise notice 'OK — PS11 aucun refus ne produit NULL ni chaîne vide '
+               '(update garde l''ancien nom, insert retombe sur « Kont »)';
 end $$;
 
 rollback;
