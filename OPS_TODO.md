@@ -149,6 +149,13 @@ c'est la référence de comparaison, elle doit survivre à la session.
       partage WhatsApp. Aucun prérequis — ni B2 ni B3. Mode d'emploi complet :
       `docs/22-PREMIERE-COMMANDE-REELLE.md`. **À faire avant tout nouveau
       développement.**
+- [ ] **Garde anti-auto-achat — avant toute mise en avant par le volume.**
+      Vérifié : `app/api/checkout/route.ts` ne compare jamais
+      `product.seller_id` à `user.id`. Un vendeur peut acheter son propre
+      produit et gonfler ventes et avis. Sans conséquence aujourd'hui (aucun
+      classement ne s'appuie sur le volume) — c'est précisément pourquoi
+      « meilleures ventes / meilleurs vendeurs » doit rester hors périmètre
+      tant que la garde n'existe pas.
 - [ ] **Checkout invité — décision autonome.** Le checkout exige aujourd'hui
       une inscription. Ce que `0043` exige réellement n'est pas un COMPTE mais
       **un contact joignable enregistré à la commande** — ce qu'un checkout

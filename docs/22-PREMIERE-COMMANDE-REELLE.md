@@ -36,10 +36,60 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
 3. **Ouvrir la fiche et relever son `og:image`** avant tout partage.
 4. **S'envoyer le lien sur WhatsApp** — un seul. Attendu : vignette 1200×630
    avec titre et prix, titre portant le nom du produit et son prix.
-5. **Acheter depuis un autre compte**, avec un vrai paiement MonCash.
-   Un second compte est nécessaire : le parcours acheteur passe par
-   l'inscription, et c'est précisément ce qu'on veut voir.
+5. **Acheter depuis un SECOND compte**, avec un vrai paiement MonCash.
+   Voir §« Deux pièges connus » ci-dessous — ce point n'est pas neutre.
 6. **Relever immédiatement** les contrôles ci-dessous.
+
+## Deux pièges connus — vérifiés dans le code avant l'essai
+
+### 1. Acheter son propre produit : rien ne l'empêche
+
+Avec un seul compte en base, on serait acheteur **et** vendeur. Vérifié :
+`app/api/checkout/route.ts` **ne comporte aucune garde** comparant
+`product.seller_id` à `user.id`.
+
+Deux conséquences, à ne pas confondre le jour de l'essai :
+
+- **le parcours ne sera pas bloqué** — donc un blocage éventuel serait un
+  *vrai* bug, pas la garde attendue ;
+- c'est un **vecteur de wash trading confirmé** : un vendeur peut gonfler ses
+  propres ventes et ses avis. Sans conséquence tant qu'aucun classement ni
+  aucune mise en avant ne s'appuie sur le volume de ventes — raison de plus
+  pour que « meilleures ventes / meilleurs vendeurs » reste hors périmètre
+  jusqu'à ce que cette garde existe. **À traiter avant toute mise en avant
+  fondée sur le volume.**
+
+→ **Créer un second compte acheteur.** L'essai est plus propre, et il
+**chronomètre l'inscription** au passage — la mesure du mur d'entrée qu'on
+n'a jamais pu prendre (`docs/21` §3 bis).
+
+### 2. L'arrondi de la commission — visible seulement sur les petits montants
+
+`commission = round(brut × bps / 10000)`, `net = brut − commission`.
+
+Vérifié sur `1..2000` HTG, aux deux taux (10 % et 6 % Elite) : **aucune
+divergence entre le calcul SQL et l'oracle TypeScript**. `round()` sur
+`numeric` en PostgreSQL et `Math.round` en JS s'accordent sur les positifs —
+le piège classique de l'arrondi bancaire n'existe pas ici (il n'apparaîtrait
+qu'avec `double precision`).
+
+Et **le registre ne peut pas diverger** : `net` est défini par soustraction,
+donc `commission + net = brut` par construction, quel que soit l'arrondi.
+
+Ce qui *est* réel, c'est le **taux effectif** sur les petits montants :
+
+| Brut | Commission | Net | Taux réel |
+|---|---|---|---|
+| 5 HTG | 1 | 4 | **20 %** |
+| 15 HTG | 2 | 13 | 13,3 % |
+| **25 HTG** | **3** | **22** | **12 %** |
+| 105 HTG | 11 | 94 | 10,5 % |
+| 1 500 HTG | 150 | 1 350 | 10,0 % |
+
+Donc pour l'essai : attendre **commission 3, net 22** sur 25 HTG — pas 2,5.
+Ce n'est pas un bug, c'est l'arrondi entier ; mais c'est à savoir avant de
+lire le relevé, et à garder en tête si un plancher de prix est fixé un jour
+(en dessous de ~50 HTG, l'écart au taux affiché devient sensible).
 
 ## Ce qu'il faut relever, tout de suite après
 
@@ -65,7 +115,8 @@ select o.order_ref, o.amount_htg as brut,
        e.matures_at, e.status
   from orders o left join escrow_entries e on e.order_id = o.id
  order by o.created_at desc limit 5;
--- Attendu : net = brut − 10 %, matures_at = paiement + 7 jours, status 'maturing'.
+-- Attendu sur 25 HTG : net = 22 (commission 3, cf. arrondi ci-dessus),
+-- matures_at = paiement + 7 jours, status 'maturing'.
 
 -- 5. Aucun paiement orphelin (invariant de réconciliation).
 select p.status, count(*) from payments p group by p.status;
