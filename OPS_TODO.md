@@ -149,6 +149,12 @@ c'est la référence de comparaison, elle doit survivre à la session.
       partage WhatsApp. Aucun prérequis — ni B2 ni B3. Mode d'emploi complet :
       `docs/22-PREMIERE-COMMANDE-REELLE.md`. **À faire avant tout nouveau
       développement.**
+- [ ] **⚠️ D-4 — sens de l'arrondi de la commission, À TRANCHER AVANT LA
+      PREMIÈRE VENTE.** `round` (actuel) envoie systématiquement la fraction à
+      la plateforme ; `floor` la rend au vendeur pour au maximum 1 gourde par
+      vente. Le registre est append-only : après la première vente, chaque
+      ligne aura été écrite sous la règle en vigueur. Chiffres et arbitrage :
+      `docs/02-DECISIONS.md` D-4.
 - [ ] **Garde anti-auto-achat — avant toute mise en avant par le volume.**
       Vérifié : `app/api/checkout/route.ts` ne compare jamais
       `product.seller_id` à `user.id`. Un vendeur peut acheter son propre

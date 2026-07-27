@@ -59,9 +59,18 @@ Deux conséquences, à ne pas confondre le jour de l'essai :
   jusqu'à ce que cette garde existe. **À traiter avant toute mise en avant
   fondée sur le volume.**
 
-→ **Créer un second compte acheteur.** L'essai est plus propre, et il
-**chronomètre l'inscription** au passage — la mesure du mur d'entrée qu'on
-n'a jamais pu prendre (`docs/21` §3 bis).
+→ **PRÉREQUIS, pas confort : créer un second compte acheteur.** Ce n'est pas
+une commodité de test. Sans lui, **la toute première ligne du grand livre est
+une vente de soi à soi-même** — et le registre est **append-only** : elle y
+reste pour toujours, elle fausse le premier `zabelie_solvency_report()` non
+nul, le premier taux de commission observé, la première maturation, et tout
+ce qu'on regardera ensuite en pensant regarder une vraie vente. Il n'existe
+pas de « on corrigera après » : la correction elle-même serait une écriture de
+plus, pas un effacement.
+
+Bénéfice second, réel mais second : le parcours d'inscription se **chronomètre**
+au passage — la mesure du mur d'entrée qu'on n'a jamais pu prendre
+(`docs/21` §3 bis).
 
 ### 2. L'arrondi de la commission — visible seulement sur les petits montants
 
@@ -87,9 +96,21 @@ Ce qui *est* réel, c'est le **taux effectif** sur les petits montants :
 | 1 500 HTG | 150 | 1 350 | 10,0 % |
 
 Donc pour l'essai : attendre **commission 3, net 22** sur 25 HTG — pas 2,5.
-Ce n'est pas un bug, c'est l'arrondi entier ; mais c'est à savoir avant de
-lire le relevé, et à garder en tête si un plancher de prix est fixé un jour
-(en dessous de ~50 HTG, l'écart au taux affiché devient sensible).
+
+⚠️ **Deux suites, dont une à trancher AVANT cette commande** (`docs/02` D-4) :
+
+1. **Le sens de l'arrondi penche toujours du même côté.** `round` envoie la
+   fraction à la plateforme, jamais au vendeur — hérité du défaut PostgreSQL,
+   pas choisi. `floor` (« l'arrondi vous revient ») coûte au maximum **une
+   gourde par vente** et s'explique en cinq mots. **Décision commerciale
+   ouverte**, à prendre de préférence avant la première vente : après, chaque
+   ligne du grand livre aura été écrite sous l'ancienne règle, et le registre
+   est append-only.
+2. **L'annonce est corrigée**, sous la règle actuelle : `faq.a3` dit désormais
+   « 10 % par vente (6 % Elite), **arrondis à la gourde la plus proche** »
+   (FR et KR). Un vendeur qui divise 3 par 25 comprend d'où vient l'écart au
+   lieu de conclure qu'on l'a floué. Si D-4 bascule sur `floor`, la
+   formulation devient encore plus simple à défendre.
 
 ## Ce qu'il faut relever, tout de suite après
 

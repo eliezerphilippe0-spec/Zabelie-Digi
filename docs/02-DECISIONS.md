@@ -33,6 +33,43 @@
 | **D-1** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | **D-2** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | ~~**D-3**~~ | ~~Lien auth/wallet avec Zabelie 1~~ | **VERROUILLÉE → V-9.** Séparé, fusion possible plus tard. | ✅ Tranchée |
+| **D-4** | **Sens de l'arrondi de la commission** — `round` (actuel, hérité du défaut PostgreSQL) ou `floor` ? | Voir ci-dessous. Le changement tient en **un mot** dans `0005`. | 🔴 **Ouverte — arbitrage porteur** |
+
+### D-4 — l'arrondi penche systématiquement du côté de la plateforme
+
+`commission = round(brut × bps / 10000)` : PostgreSQL arrondit le demi **vers
+le haut**, donc 2,5 → 3. **La fraction va toujours à la plateforme, jamais au
+vendeur.** Ce n'est pas un choix qui a été fait — c'est le défaut de `round()`
+dont on a hérité, et c'est une règle qu'il faudra défendre une fois écrite.
+
+Mesuré sur 1 → 5 000 HTG :
+
+| | `round` (actuel) | `floor` (proposé) |
+|---|---|---|
+| Ventes où les deux diffèrent | **2 500 sur 5 000** (une sur deux) | — |
+| Écart maximum par vente | **1 gourde** | — |
+| Total sur ces 5 000 ventes | — | la plateforme cède **2 500 HTG**, soit 0,5 en moyenne par vente |
+| 25 HTG | commission 3 → **12 %** | commission 2 → **8 %** |
+| 5 HTG | commission 1 → **20 %** | commission 0 → **0 %** |
+| 50 HTG et au-delà (multiples de 10) | identiques | identiques |
+
+**Argument pour `floor`** : « l'arrondi vous revient » s'explique en cinq mots
+à un vendeur ; « on arrondit au plus proche, donc parfois en notre faveur » se
+défend moins bien. Le coût maximal est d'**une gourde par vente**.
+
+**Argument pour `round`** : c'est l'état actuel, et le taux affiché est plus
+proche du taux réel en moyenne.
+
+**Aucune conséquence sur le registre** dans les deux cas : `net = brut −
+commission` par soustraction, donc l'identité de `0033` tient quel que soit
+l'arrondi. C'est bien une décision **commerciale**, pas technique — d'où
+l'arbitrage plutôt qu'un correctif.
+
+**Le changement** : `round(...)` → `floor(...)` dans `confirm_payment`
+(`0005_commission.sql:110`), plus la même bascule dans l'oracle
+`lib/commission.ts` et le libellé `faq.a3`. À faire **avant la première
+commande** si possible — après, chaque vente écrite au grand livre l'aura été
+sous l'ancienne règle, et le registre est append-only.
 
 > ⚠️ D-1 et D-2 étaient marquées `[À CONFIRMER]` dans la synthèse mais leur libellé
 > exact n'a pas été fourni. À renseigner par le porteur du projet.
