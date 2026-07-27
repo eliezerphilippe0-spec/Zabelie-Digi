@@ -118,6 +118,43 @@ La sortie de `zabelie_solvency_report()` va dans un **fichier horodaté**
 (`ops/solvabilite-<phase>-<horodatage>.txt`), jamais seulement à l'écran :
 c'est la référence de comparaison, elle doit survivre à la session.
 
+## Les trois boucles manuelles — et leur somme
+
+> Elles arrivent au même moment, sur la même personne. Le plafond de Zabelie
+> n'est aucun des trois seuils pris isolément : **c'est leur somme.**
+
+| Boucle | Coût unitaire | À 100 vendeurs actifs | À 300 |
+|---|---|---|---|
+| **Versements** MonCash (virement + consignation) | ~3 min | ~5 h/sem | ~25 h/sem |
+| **Revue des fiches** (photo, prix, catégorie, politique) | ~3 min | ~2 h/sem | ~7 h/sem |
+| **Litiges / `action_required`** (`0043`) | ~10 min | ~1 h/sem | ~3 h/sem |
+| **Total** | — | **~8 h/sem** | **~35 h/sem** |
+
+⚠️ **Ce tableau est de l'arithmétique, pas une mesure.** Les coûts unitaires
+sont estimés ; 4 fiches/vendeur/mois et 1 retrait/vendeur/semaine sont des
+hypothèses. La première commande réelle donnera le premier chiffre vrai.
+
+**Conclusion opérationnelle** : le plafond d'une personne seule est autour de
+**150 à 200 vendeurs actifs**, pas les 300 que le seul versement laissait
+espérer.
+
+### Seuil de la revue systématique — posé maintenant
+
+**Au-delà de ~60 fiches par semaine**, la revue de chaque fiche cesse d'être
+tenable en même temps que les deux autres boucles. À ce seuil, deux sorties,
+et **une seule est honnête** :
+
+- **un second relecteur** — la revue reste systématique, la promesse tient ;
+- **une revue par échantillon** (priorité aux nouveaux vendeurs et aux
+  catégories à risque) — mais alors **`/produits-interdits` §8 devient faux**.
+  Ce paragraphe promet publiquement que chaque fiche est examinée avant sa
+  mise en ligne. Le relâcher exige de **publier une v2 de la politique**, pas
+  de changer discrètement de pratique : c'est précisément ce que la version
+  sert à empêcher.
+
+C'est la même mécanique que l'apurement manuel : une boucle qui ne casse
+jamais franchement, qu'on saute une semaine chargée, puis deux.
+
 ## Paiements (rappels)
 
 > **Une seule de ces décisions bloque la première commande : D-4.** Un produit

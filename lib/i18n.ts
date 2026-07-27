@@ -373,6 +373,8 @@ const fr = {
   "card.kind.physical": "Physique",
 
   "status.draft": "Brouillon",
+  "status.review": "En attente de revue",
+  "status.review.hint": "Nous regardons chaque fiche avant sa mise en ligne. Inutile de la soumettre à nouveau.",
   "status.published": "Publié",
 
   // BL-131 (revue P2) — mot de passe oublié.
@@ -732,6 +734,8 @@ const ht: Record<I18nKey, string> = {
   "card.kind.physical": "Fizik",
 
   "status.draft": "Poko pibliye",
+  "status.review": "N ap tann revizyon",
+  "status.review.hint": "Nou gade chak fich anvan li parèt. Ou pa bezwen voye l ankò.",
   "status.published": "Pibliye",
 
   "auth.forgot": "Modpas bliye ?",

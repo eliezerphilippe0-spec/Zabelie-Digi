@@ -85,13 +85,21 @@ export default async function ProduitsInterditsPage() {
 
         {/* Les deux phrases DOIVENT rester côte à côte : sans la seconde, la
             règle se lit comme une interdiction du rayon otomobil-moto, qui est
-            le rayon principal de la plateforme. */}
+            le rayon principal de la plateforme.
+            Constaté à 360 px (capture, 2026-07-27) : les encadrés s'empilent,
+            l'INTERDIT reste au-dessus — l'ordre de lecture tient. Mais un
+            second encadré NEUTRE se lisait comme une note plutôt que comme le
+            contraire du premier : l'opposition tenait à la mise côte à côte,
+            donc elle disparaissait sur le seul écran qui compte ici. D'où la
+            couleur sémantique des deux côtés, qui survit à l'empilement.
+            Variantes `*-text` obligatoires sur fond teinté (zabelie-theme.css
+            §États sémantiques) — vérifié par `npm run check:contrast`. */}
         <Section title={t(lang, "policy.confusion.h")}>
           <div className="grid gap-3 sm:grid-cols-2">
             <p className="rounded-xl border border-danger/50 bg-surface/60 p-4 font-semibold text-danger-text">
               {t(lang, "policy.confusion.banned")}
             </p>
-            <p className="rounded-xl border border-line bg-surface/60 p-4 font-semibold text-cloud">
+            <p className="rounded-xl border border-success/50 bg-surface/60 p-4 font-semibold text-success-text">
               {t(lang, "policy.confusion.allowed")}
             </p>
           </div>

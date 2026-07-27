@@ -107,8 +107,13 @@ export default async function VendrePage() {
   const mine = (mineRaw ?? []) as unknown as MineRow[];
   // BL-130 (FRONT-14) : `status` est un mot-clé technique brut ("published")
   // — jamais affiché tel quel, toujours mappé sur un libellé FR/KR.
+  //
+  // « Brouillon » était exact et inutile : depuis que les trois types naissent
+  // en brouillon et attendent une revue humaine, le vendeur qui ne voit rien
+  // conclut que sa soumission a échoué — et resoumet. On récolterait des
+  // doublons avant la première vente. Le libellé dit donc ce qui se passe.
   const statusLabel = (s: string) =>
-    s === "published" ? t(lang, "status.published") : t(lang, "status.draft");
+    s === "published" ? t(lang, "status.published") : t(lang, "status.review");
   const uploadLabels = {
     sending: t(lang, "upload.sending"),
     replace: t(lang, "upload.replace"),
@@ -160,6 +165,9 @@ export default async function VendrePage() {
       {mine.length > 0 && (
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-cloud">{t(lang, "sell.mine.title")}</h2>
+          {mine.some((p) => p.status !== "published") && (
+            <p className="mt-2 text-xs text-mist">{t(lang, "status.review.hint")}</p>
+          )}
           <ul className="mt-3 space-y-2">
             {mine.map((p) => (
               <li
@@ -181,7 +189,15 @@ export default async function VendrePage() {
                   ) : (
                     <span className="block truncate">{p.title}</span>
                   )}
-                  <span className="text-xs text-mist">{statusLabel(p.status)}</span>
+                  <span
+                    className={
+                      p.status === "published"
+                        ? "text-xs text-mist"
+                        : "text-xs font-semibold text-warning-text"
+                    }
+                  >
+                    {statusLabel(p.status)}
+                  </span>
                 </div>
                 {/* L'upload de livrable n'a de sens que pour un fichier. Le
                     `else` étiquetait « Service » tout le reste — un produit
