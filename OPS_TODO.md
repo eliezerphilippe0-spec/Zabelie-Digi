@@ -154,7 +154,20 @@ c'est la référence de comparaison, elle doit survivre à la session.
       la légitimité de l'auto-réception de `0043` repose sur un avis envoyé à
       une adresse joignable. Le contournement le plus tentant casse le
       mécanisme d'expédition.
-      **⚖️ Décision attendue au passage — réservation du nom de la marque.**
+      **Exposition de `display_name` — mesurée le 2026-07-27, avant d'allonger
+      quoi que ce soit.** Le nom n'apparaît sur **aucune page publique** (ni
+      fiche produit, ni avis) ; les e-mails vendeur ne portent **pas** le nom
+      de l'acheteur ; il n'existe **aucune messagerie**. Donc aujourd'hui
+      **aucun chemin ne mène d'un compte renommé à un autre utilisateur**, et
+      l'usurpation a peu de portée. C'est pour ça que le filtre actuel suffit
+      — et c'est aussi pourquoi allonger la liste (« MonCash », « Digicel »)
+      serait du théâtre : `Zabelye`, un « I » à la place du « l » ou une
+      lettre cyrillique passent tous.
+      **⚖️ La vraie décision arrive avec la première exposition** : le jour où
+      `display_name` s'affiche sur une fiche boutique, dans un avis ou dans un
+      message reçu par un vendeur, aucune liste ne suffira — il faudra un
+      **marqueur visuel de compte officiel**. À trancher AVANT d'exposer le
+      nom, pas après.
       Le nom affiché vient du navigateur, sans validation serveur : un compte
       « Support Zabelie » qui écrit à des vendeurs est le scénario le plus
       coûteux sur un marché où la confiance passe par WhatsApp. `0045` refuse

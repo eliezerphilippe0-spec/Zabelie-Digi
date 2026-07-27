@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BrandMark } from "@/components/brand-logo";
 import { safeNext } from "@/lib/safe-next";
+import { checkDisplayName } from "@/lib/display-name";
 
 type Mode = "signin" | "signup";
 
@@ -23,6 +24,8 @@ export type ConnexionLabels = {
   backHome: string;
   errorGeneric: string;
   forgot: string;
+  nameRequired: string;
+  nameReserved: string;
 };
 
 function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
@@ -51,6 +54,15 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
       // lève — l'utilisateur doit voir un message, pas un bouton figé.
       const supabase = createClient();
       if (mode === "signup") {
+        // Le nom part dans les métadonnées, donc il doit être jugé ICI : la
+        // base le remplacerait sans rien dire (0045).
+        const verdict = checkDisplayName(name || email.split("@")[0]);
+        if (!verdict.ok) {
+          setMsg(
+            verdict.reason === "brand" ? labels.nameReserved : labels.nameRequired,
+          );
+          return;
+        }
         // Le nom passe par les MÉTADONNÉES du compte, pas seulement par
         // l'insert ci-dessous : c'est la seule voie qui survit à une
         // confirmation par e-mail (aucune session au retour) et c'est ce que
@@ -58,7 +70,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { display_name: name || email.split("@")[0] } },
+          options: { data: { display_name: verdict.value } },
         });
         if (error) throw error;
         // Insert de repli, volontairement conservé : tant que 0045 n'est pas
@@ -70,7 +82,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
           await supabase.from("profiles").upsert(
             {
               id: data.user.id,
-              display_name: name || email.split("@")[0],
+              display_name: verdict.value,
               role: "buyer",
             },
             { onConflict: "id", ignoreDuplicates: true },

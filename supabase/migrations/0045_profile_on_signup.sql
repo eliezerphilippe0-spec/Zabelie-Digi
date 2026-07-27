@@ -67,11 +67,20 @@
 --      accepte des mégaoctets dans une colonne indexée (trigram, `0013`).
 --   3. **Caractères de contrôle**, qui cassent l'affichage et les e-mails.
 --
--- Fonction PURE et `immutable` : testable directement, sans créer de compte.
-create or replace function zabelie_safe_display_name(
-  p_raw   text,
-  p_email text
-)
+-- ⚠️ CE FILTRE NE PEUT PAS VIVRE AU SEUL MOMENT DE L'INSCRIPTION.
+-- `profiles_self_update` (0015) autorise chaque utilisateur à écrire sa propre
+-- ligne, et `POST /api/profile` l'expose avec un simple `trim()`. Un compte
+-- s'inscrirait donc sous n'importe quel nom, puis se renommerait d'un `update`
+-- que le déclencheur sur `auth.users` ne voit jamais. Le nettoyage vit donc
+-- sur `profiles`, en `before insert or update` — toutes les voies d'écriture,
+-- présentes et futures.
+--
+-- Fonctions PURES et `immutable` : testables directement, sans créer de compte.
+
+-- Rend NULL si rien d'acceptable ne subsiste. C'est l'appelant qui décide du
+-- repli — un `update` doit garder l'ancien nom, une insertion n'a rien à
+-- garder.
+create or replace function zabelie_clean_display_name(p_raw text)
 returns text
 language plpgsql
 immutable
@@ -80,37 +89,55 @@ as $$
 declare
   v_nom text;
 begin
-  -- (a) Nom proposé : contrôles retirés, espaces réduits, coupé à 60.
   v_nom := regexp_replace(coalesce(p_raw, ''), '[[:cntrl:]]', '', 'g');
   v_nom := btrim(regexp_replace(v_nom, '\s+', ' ', 'g'));
   v_nom := nullif(left(v_nom, 60), '');
 
-  -- (b) Usurpation de marque. La comparaison se fait sur une forme normalisée
-  --     (minuscules, tout ce qui n'est pas alphanumérique retiré) pour que
-  --     « Z-a-b-e-l-i-e », « ZABELIE  SUPPORT » et « zabely » tombent dans le
-  --     même filet. ⚠️ La LISTE et la sanction (repli ici, ou refus à
-  --     l'inscription) sont une décision porteur — cf. OPS_TODO.
+  -- Usurpation de la plateforme, sur forme normalisée (minuscules, non
+  -- alphanumériques retirés) : « Z-a-b-e-l-i-e » tombe dans le même filet.
+  --
+  -- ⚠️ CE QUE CE FILTRE EST, ET CE QU'IL N'EST PAS. C'est un ralentisseur, pas
+  -- une serrure : `Zabelye`, un « I » majuscule à la place du « l », une
+  -- lettre cyrillique — tout passe. Allonger la liste ne changerait pas sa
+  -- nature. La mesure d'exposition (2026-07-27) dit pourquoi ça suffit
+  -- aujourd'hui : `display_name` n'apparaît sur AUCUNE page publique, les
+  -- e-mails vendeur ne portent pas le nom de l'acheteur, et il n'existe
+  -- aucune messagerie — donc aucun chemin par lequel un compte renommé
+  -- atteint un autre utilisateur. Le jour où ce nom s'affiche sur une fiche
+  -- boutique ou dans un message, il faudra un MARQUEUR de compte officiel,
+  -- pas une liste plus longue. → OPS_TODO.
   if v_nom is not null
      and regexp_replace(lower(v_nom), '[^a-z0-9]', '', 'g') ~ '(zabelie|zabely)'
   then
-    v_nom := null;
+    return null;
   end if;
 
-  -- (c) Repli sur l'e-mail — soumis au MÊME filtre : « zabelie@… » donnerait
-  --     sinon exactement le nom qu'on vient de refuser.
-  if v_nom is null then
-    v_nom := nullif(left(split_part(coalesce(p_email, ''), '@', 1), 60), '');
-    if v_nom is not null
-       and regexp_replace(lower(v_nom), '[^a-z0-9]', '', 'g') ~ '(zabelie|zabely)'
-    then
-      v_nom := null;
-    end if;
-  end if;
-
-  -- (d) Dernier recours : `display_name` est NOT NULL. Kreyòl, comme tout ce
-  --     qu'un utilisateur peut lire.
-  return coalesce(v_nom, 'Kont');
+  return v_nom;
 end;
+$$;
+
+comment on function zabelie_clean_display_name(text) is
+  'Nom affiché nettoyé, ou NULL si rien d''acceptable ne subsiste (vide, '
+  'usurpation de marque). Le repli appartient à l''appelant. Voir 0045.';
+
+-- Enrobage pour l'INSCRIPTION : repli sur l'e-mail, puis sur « Kont ».
+create or replace function zabelie_safe_display_name(
+  p_raw   text,
+  p_email text
+)
+returns text
+language sql
+immutable
+set search_path = public, pg_temp
+as $$
+  -- Le repli e-mail subit le MÊME filtre, sinon « zabelie@… » rouvrirait la
+  -- porte qu'on vient de fermer.
+  select coalesce(
+    zabelie_clean_display_name(p_raw),
+    zabelie_clean_display_name(split_part(coalesce(p_email, ''), '@', 1)),
+    -- `display_name` est NOT NULL. Kreyòl, comme tout ce qu'un utilisateur lit.
+    'Kont'
+  );
 $$;
 
 comment on function zabelie_safe_display_name(text, text) is
@@ -118,7 +145,39 @@ comment on function zabelie_safe_display_name(text, text) is
   'à 60, retire les caractères de contrôle, refuse les variantes du nom de la '
   'marque (repli e-mail puis « Kont »). Voir 0045.';
 
--- ─────────────────────────── 2. Le déclencheur ──────────────────────────────
+-- ───────────── 2. Le filtre, sur TOUTES les voies d'écriture ────────────────
+create or replace function zabelie_sanitize_profile_name()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  -- Aucune exemption de rôle, `service_role` compris. Il n'existe pas de
+  -- besoin légitime d'un `display_name` non nettoyé : un compte officiel se
+  -- signale par un marqueur, jamais par son nom. Une exemption serait une
+  -- porte dérobée pour toute route qui écrit avec la clé de service.
+  new.display_name := coalesce(
+    zabelie_clean_display_name(new.display_name),
+    -- Un nom refusé ne bloque JAMAIS l'écriture : on garde le précédent, ou
+    -- « Kont » à la création. Le refus explicite, lui, est du ressort du
+    -- formulaire, qui peut expliquer ; la base, elle, garantit.
+    case when tg_op = 'UPDATE' then old.display_name else 'Kont' end
+  );
+  return new;
+end;
+$$;
+
+comment on function zabelie_sanitize_profile_name() is
+  'Nettoie display_name sur toute écriture de profiles (insert et update). '
+  'Le déclencheur sur auth.users ne couvre que la création : la RLS '
+  'profiles_self_update laisse chacun se renommer ensuite. Voir 0045.';
+
+drop trigger if exists trg_zabelie_sanitize_profile_name on profiles;
+create trigger trg_zabelie_sanitize_profile_name
+  before insert or update on profiles
+  for each row execute function zabelie_sanitize_profile_name();
+
+-- ─────────────────────────── 3. Le déclencheur d'inscription ────────────────
 -- `security definer` : le déclencheur s'exécute dans le contexte de
 -- `supabase_auth_admin`, qui n'écrit pas dans `public` par défaut.
 create or replace function zabelie_handle_new_user()
@@ -159,7 +218,7 @@ create trigger trg_zabelie_profile_on_signup
   after insert on auth.users
   for each row execute function zabelie_handle_new_user();
 
--- ─────────────────────── 3. Rattrapage des comptes existants ────────────────
+-- ─────────────────────── 4. Rattrapage des comptes existants ────────────────
 -- Idempotent : les comptes déjà pourvus ne sont pas touchés. Sur la production
 -- du 2026-07-27 (1 compte, avec profil), attendu : 0 ligne.
 insert into profiles (id, display_name)

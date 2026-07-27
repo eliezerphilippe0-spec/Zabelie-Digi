@@ -18,6 +18,8 @@ export default async function ConnexionPage() {
           tabSignin: t(lang, "auth.tab.signin"),
           tabSignup: t(lang, "auth.tab.signup"),
           namePh: t(lang, "auth.name.ph"),
+          nameRequired: t(lang, "auth.name.required"),
+          nameReserved: t(lang, "auth.name.reserved"),
           emailPh: t(lang, "auth.email.ph"),
           passwordPh: t(lang, "auth.password.ph"),
           signinCta: t(lang, "auth.signin.cta"),

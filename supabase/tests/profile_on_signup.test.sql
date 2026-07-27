@@ -12,8 +12,16 @@
 --   PS8. Nom hostile : longueur, caractères de contrôle, usurpation de marque.
 --   PS9. Le déclencheur reste TOTAL sur ces entrées : l'inscription aboutit.
 --
--- PS7 retire le déclencheur DANS la transaction (annulée ensuite) : règle du
--- dépôt, un garde se prouve sur un cas où il doit manquer, pas en raisonnant.
+--   PS10. LE CHEMIN QUI MANQUAIT : renommage après inscription (`update`).
+--
+-- PS7 retire le déclencheur DANS sa transaction : règle du dépôt, un garde se
+-- prouve sur un cas où il doit manquer, pas en raisonnant.
+--
+-- ⚠️ CHAQUE CAS A SA PROPRE TRANSACTION, annulée à la fin. La première version
+-- de ce fichier n'en avait qu'une : PS7 y retirait le déclencheur et PS9
+-- échouait ensuite pour une raison qui n'était pas la sienne. Le correctif
+-- durable n'est pas de penser à reposer ce qu'on a retiré — c'est que le
+-- geste soit impossible à oublier. Un cas ne peut plus polluer le suivant.
 
 begin;
 
@@ -65,7 +73,57 @@ begin
   raise notice 'OK — PS1 profil créé ; PS2 nom du formulaire ; PS3 repli e-mail ; PS4 repli Kont';
 end $$;
 
+rollback;
+
+-- ───────── PS10 : le renommage après coup — le chemin que je manquais ───────
+-- `profiles_self_update` autorise chacun à écrire sa propre ligne, et
+-- `POST /api/profile` l'expose. Un filtre posé au seul moment de
+-- l'inscription ne voit jamais cette voie.
+begin;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000a0040', 'renommage@test.local');
+
+do $$
+declare v_nom text;
+begin
+  -- (a) Usurpation par `update` — refusée, l'ancien nom est conservé.
+  update profiles set display_name = 'Support Zabelie'
+   where id = '00000000-0000-0000-0000-0000000a0040';
+  select display_name into v_nom
+    from profiles where id = '00000000-0000-0000-0000-0000000a0040';
+  if v_nom <> 'renommage' then
+    raise exception 'PS10a : renommage en « % » accepté', v_nom;
+  end if;
+
+  -- (b) Longueur bornée aussi sur cette voie.
+  update profiles set display_name = repeat('b', 500)
+   where id = '00000000-0000-0000-0000-0000000a0040';
+  select display_name into v_nom
+    from profiles where id = '00000000-0000-0000-0000-0000000a0040';
+  if length(v_nom) <> 60 then
+    raise exception 'PS10b : nom de % caractères écrit par update', length(v_nom);
+  end if;
+
+  -- (c) Un renommage légitime passe — le garde n'est pas un mur.
+  update profiles set display_name = 'Boutique Marie'
+   where id = '00000000-0000-0000-0000-0000000a0040';
+  select display_name into v_nom
+    from profiles where id = '00000000-0000-0000-0000-0000000a0040';
+  if v_nom <> 'Boutique Marie' then
+    raise exception 'PS10c : renommage légitime refusé (« % »)', v_nom;
+  end if;
+
+  raise notice 'OK — PS10 renommage : usurpation refusée, longueur bornée, '
+               'renommage légitime accepté';
+end $$;
+
+rollback;
+
 -- ─────────────────────────── PS5 : pas de course perdue ─────────────────────
+begin;
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000a0002', 'jean@test.local',
+     '{"display_name": "Jean Boutique"}'::jsonb);
 -- Le client insère encore le profil tant que 0045 n'est pas appliquée en
 -- production. Les deux chemins doivent coexister : celui qui arrive second ne
 -- doit rien casser ni rien écraser.
@@ -87,8 +145,12 @@ begin
   raise notice 'OK — PS5 profil existant intact';
 end $$;
 
+rollback;
+
 -- ─────────────── PS6 : le parcours d'achat, sans écriture cliente ───────────
+begin;
 insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000a0001', 'marie.dupont@test.local'),
   ('00000000-0000-0000-0000-0000000a0010', 'vendeur.ps@test.local');
 update profiles set role = 'creator'
  where id = '00000000-0000-0000-0000-0000000a0010';
@@ -114,7 +176,18 @@ begin
   raise notice 'OK — PS6 un compte peut acheter sans écriture du navigateur';
 end $$;
 
+rollback;
+
 -- ─────────── PS7 : cas connu-négatif — sans le déclencheur, ça casse ────────
+begin;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000a0010', 'vendeur.ps@test.local');
+update profiles set role = 'creator'
+ where id = '00000000-0000-0000-0000-0000000a0010';
+insert into products (id, seller_id, slug, title, price_htg, kind, status)
+values ('00000000-0000-0000-0000-0000000a0011',
+        '00000000-0000-0000-0000-0000000a0010',
+        'produit-ps7', 'Produit PS7', 2500, 'fichier', 'published');
 do $$
 declare v_code text;
 begin
@@ -137,18 +210,16 @@ begin
     raise exception 'PS7 : violation de clé étrangère attendue, obtenu %', v_code;
   end if;
 
-  -- Le déclencheur est REPOSÉ : un test qui mute l'état partagé et ne le rend
-  -- pas fait passer les suivants dans un monde qu'ils ne décrivent pas. PS9
-  -- l'a démontré en échouant pour la mauvaise raison.
-  create trigger trg_zabelie_profile_on_signup
-    after insert on auth.users
-    for each row execute function zabelie_handle_new_user();
-
+  -- Rien à reposer : la transaction de CE cas est annulée, donc le
+  -- déclencheur revient sans que personne n'ait à y penser.
   raise notice 'OK — PS7 sans le déclencheur, l''achat échoue en violation de FK '
                '(c''est la panne que 0045 ferme : blocage total, rien d''écrit)';
 end $$;
 
+rollback;
+
 -- ───────────── PS8 : le nom vient du navigateur, donc il est hostile ────────
+begin;
 -- Testé sur la fonction pure : chaque cas est lisible, aucun compte à créer.
 do $$
 declare
@@ -192,7 +263,10 @@ begin
                'repli filtré, nom légitime intact';
 end $$;
 
+rollback;
+
 -- ───────── PS9 : totalité — une entrée hostile ne ferme pas l'inscription ───
+begin;
 do $$
 declare v_nom text;
 begin
