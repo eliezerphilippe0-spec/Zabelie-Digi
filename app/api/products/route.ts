@@ -137,16 +137,19 @@ export async function POST(req: Request) {
       service_includes: serviceIncludes.length > 0 ? serviceIncludes : null,
       // BL-103 (Gumroad — le fichier est exigé avant la mise en vente) : un
       // produit « fichier » naît en BROUILLON, invisible au public, et sera
-      // publié automatiquement au premier upload du livrable (asset route).
-      // Un service (pas de fichier à livrer) se publie immédiatement.
-      // Un `fichier` naît en BROUILLON et sera publié au premier upload du
-      // livrable ; un service se publie tout de suite. Le défaut reste
-      // « brouillon » : une valeur inconnue ne doit jamais partir en vente
-      // sans que personne l'ait décidé.
+      // TOUTE fiche naît en BROUILLON, quel que soit son type, et attend une
+      // publication humaine (`/api/admin/product-status`).
+      //
+      // Le service se publiait immédiatement et le fichier se publiait tout
+      // seul au premier upload : ces deux chemins mettaient en ligne sans que
+      // personne ne regarde — et ce sont précisément ceux où atterrissent un
+      // « sèvis transfè lajan » ou un logiciel piraté. La règle de plateforme
+      // (`/produits-interdits`) promet une revue ; elle ne peut la promettre
+      // que si elle a lieu pour les trois types.
       status:
         pickByKind(kind, {
           file: "draft",
-          service: "published",
+          service: "draft",
           physical: "draft",
         }) ?? "draft",
     })

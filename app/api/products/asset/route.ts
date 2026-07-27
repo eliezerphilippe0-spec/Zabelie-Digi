@@ -139,15 +139,14 @@ export async function POST(req: Request) {
     await admin.storage.from(BUCKET).remove([oldAsset.storage_path]).catch(() => undefined);
   }
 
-  // BL-103 : le livrable est là → le brouillon devient publiable. On ne touche
-  // qu'aux brouillons (jamais un produit archivé par la modération).
-  if (product.status === "draft") {
-    await admin
-      .from("products")
-      .update({ status: "published" })
-      .eq("id", product.id)
-      .eq("status", "draft");
-  }
+  // BL-103 disait : le livrable est là → le brouillon devient publiable. Il
+  // se publiait en fait TOUT SEUL, sans qu'aucun humain ne voie la fiche —
+  // le même trou que `service: "published"`, en plus discret. « Publiable »
+  // et « publié » ne sont pas le même mot : la fiche reste en brouillon et
+  // attend `/api/admin/product-status`.
+  //
+  // L'invariant BL-103 (pas de vente d'un fichier sans livrable) est préservé
+  // par le brouillon lui-même : `/produit/[slug]` ne sert que `published`.
 
   return NextResponse.json({ ok: true, file_name: safeName });
 }
