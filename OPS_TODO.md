@@ -140,6 +140,12 @@ c'est la référence de comparaison, elle doit survivre à la session.
       lourd, jamais cassé. **Ne pas activer sans vérifier le plan** :
       l'endpoint `render/image` répond en erreur s'il n'est pas inclus, et les
       photos disparaîtraient.
+- [ ] **Canal des avis acheteur — décision à trancher AVANT l'ouverture B3.**
+      L'auto-réception (0043) repose sur des avis que l'acheteur regarde.
+      L'e-mail existe (compte obligatoire au checkout) mais l'acheteur type
+      vit sur WhatsApp : e-mail = canal de lancement, SMS/WhatsApp = décision
+      fournisseur (interdite sans validation — règle du dépôt). Voir
+      `docs/21` §3 bis.
 - [ ] Zelle : `USD_HTG_RATE`, `ZELLE_RECIPIENT`, `ZELLE_RECIPIENT_NAME`.
 - [ ] Stripe (optionnel) : nécessite une entité US — voir `docs/04 §2 bis`.
 

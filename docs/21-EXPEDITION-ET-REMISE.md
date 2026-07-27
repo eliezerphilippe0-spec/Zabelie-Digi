@@ -127,7 +127,16 @@ Concrètement, dans la migration :
   avis est en attente ou en échec, la commande reste `shipped` et l'escrow
   verrouillé : le vendeur attend, mais personne n'est exproprié ;
 - l'auto-réception émet un avis final (`auto_received`) : l'acheteur apprend
-  que le délai a tranché pour lui.
+  que le délai a tranché pour lui ;
+- **et l'échec d'envoi a une borne.** Sans elle, le garde de légitimité aurait
+  une échelle longue perverse : un avis qui ne part jamais verrouillerait
+  l'escrow indéfiniment — l'argent d'une commande honorée resterait sur le
+  compte marchand sans limite de durée, soit la rétention de `docs/17` sous sa
+  **troisième forme** (après le portefeuille sans retrait et le vendeur muet).
+  Au bout de `notice_max_attempts` (5), la commande sort du limbe vers la file
+  admin (`action_required`) : l'escrow reste verrouillé, mais **visible**, et
+  un humain tranche — il a le numéro de commande et le tableau de bord vendeur
+  pour joindre les parties autrement.
 
 ### Le chemin « je n'ai pas reçu », avant l'échéance
 
@@ -135,6 +144,25 @@ Sans lui, la seule protection de l'acheteur serait de **ne rien faire** — or
 ne rien faire est précisément le geste qui paie le vendeur.
 `zabelie_report_not_received` fait passer la commande en `disputed_by_buyer`,
 **laisse l'escrow verrouillé**, et l'auto-réception ne peut plus l'emporter.
+
+### Le canal — la limite honnête du garde, et son échéance
+
+Le garde vérifie « l'avis est **parti** », pas « la personne a **su** ». C'est
+la meilleure approximation disponible, et elle ne vaut que si le canal est
+celui que l'acheteur regarde.
+
+État vérifié (2026-07-26) : le checkout **exige un compte**
+(`app/api/checkout/route.ts:86`) et l'inscription se fait par e-mail — tout
+acheteur a donc une adresse, par construction : la branche « pas d'adresse →
+verrouillé à vie » n'existe pas. Mais une adresse créée pour acheter n'est pas
+une adresse **lue** : l'acheteur type vit sur WhatsApp, pas dans sa boîte
+mail. L'e-mail est le canal de lancement parce qu'il existe déjà (Resend,
+aucune dépendance nouvelle) ; le canal réel est probablement SMS ou WhatsApp,
+et c'est **la décision fournisseur du lot 3** — interdite sans validation
+(règle du dépôt). **Échéance posée : cette décision doit être tranchée avant
+l'ouverture de la vente physique (B3).** Un mécanisme d'auto-réception dont
+les avis partent vers un canal mort serait conforme à la lettre du garde et
+contraire à sa raison d'être.
 
 ### Le biais par défaut, assumé
 
@@ -147,7 +175,7 @@ et la relance est ce qui le rend acceptable.
 
 ## 4. Ce qui est vérifié, et comment
 
-`supabase/tests/fulfillment.test.sql` — treize contrôles, dont deux centraux :
+`supabase/tests/fulfillment.test.sql` — quatorze contrôles, dont deux centraux :
 
 | # | Contrôle |
 |---|---|
@@ -163,6 +191,7 @@ et la relance est ce qui le rend acceptable.
 | F11 | Déclaration → **deux** avis créés, l'un immédiat, l'autre programmé |
 | **F12** | **Aucun avis parti → PAS d'auto-réception** ; avis partis → elle a lieu |
 | F13 | « Je n'ai pas reçu » avant l'échéance → litige, escrow toujours verrouillé, auto-réception impuissante |
+| F14 | Avis en échec **permanent** → file admin — et pas avant l'épuisement des tentatives |
 
 **Deux gardes éprouvés par mutation** (règle du dépôt) — retirés, les tests
 échouent :
@@ -185,11 +214,15 @@ et la relance est ce qui le rend acceptable.
      « Mwen pa resevwa l / Je n'ai pas reçu »**, plus l'état courant et
      l'échéance à la place de l'impasse actuelle ;
    - admin : la file `zabelie_fulfillment_overdue`.
-4. **L'envoi des avis** — la file existe en base, l'expéditeur non : une route
-   qui dépile `zabelie_fulfillment_notices` par e-mail (Resend, déjà intégré —
-   aucune dépendance nouvelle) et journalise ses compteurs **même à zéro**.
-   C'est la pièce sans laquelle l'auto-réception ne se déclenchera jamais,
-   par construction.
+4. **L'envoi des avis** — la file existe en base, l'expéditeur non. Contrat de
+   la route : ne prendre que les avis **échus** (`due_at <= now()` — le rappel
+   est programmé à mi-délai, le dépiler à l'aveugle enverrait deux messages
+   identiques d'affilée puis plus rien pendant sept jours) ; idempotence par
+   avis ; tentatives bornées avec recul exponentiel jusqu'à
+   `notice_max_attempts` ; journalisation des compteurs **même à zéro** ; les
+   échecs consultables. Sans cette route, l'auto-réception ne se déclenche
+   jamais (côté court) et F14 remonte les commandes en file admin (côté
+   long).
 4. **Le cron** `zabelie_fulfillment_sweep()` — une route qui journalise ses
    compteurs **même à zéro** (règle d'observabilité), et une entrée dans
    `vercel.json`.

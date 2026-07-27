@@ -70,6 +70,8 @@ insert into zabelie_fulfillment_limits (key, value, comment) values
    'ANCRE : déclaration de remise par le vendeur — JAMAIS le paiement. Les deux délais se CHAÎNENT : si celui-ci partait du paiement, un acheteur dont le vendeur déclare au 5e jour n''aurait que 2 jours pour réagir, et le chiffre ne voudrait rien dire. Passé ce délai sans réponse, la commande est réputée reçue.'),
   ('post_receipt_maturation_days', 0,
    'ANCRE : confirmation de réception. 0 — et l''argument est plus fort que la commodité : MonCash n''a PAS de rétrofacturation. Le J+7 digital protège d''une contestation bancaire qui n''existe pas sur ce rail. Retenir l''argent après une confirmation EXPLICITE de l''acheteur ne protège de rien : ça reconstitue la rétention (docs/17).'),
+  ('notice_max_attempts', 5,
+   'Tentatives d''envoi d''un avis avant de déclarer l''échec PERMANENT. Au-delà, la commande remonte en file admin (aksyon obligatwa) au lieu de rester en limbe : un escrow verrouillé par un avis qui ne part jamais serait la rétention de docs/17, troisième version — après le portefeuille sans retrait et le vendeur muet.'),
   ('dispute_weekly_ceiling', 5,
    'SEUIL POSÉ D''AVANCE, avant que la question soit chargée : au-delà de N litiges par semaine, le traitement manuel cesse d''être tenable. Tout litige atterrit chez le porteur, à la main, sans rétrofacturation pour aider. Franchi durablement → suspendre l''ouverture physique ou financer un vrai processus, pas serrer les dents.')
 on conflict (key) do nothing;  -- config d'exploitation : jamais réécrite au rejeu
@@ -459,6 +461,8 @@ declare
   v_auto     integer := 0;
   v_overdue  integer := 0;
   v_rappels  integer := 0;
+  v_echecs   integer := 0;
+  v_maxtry   integer;
   v_recv     integer;
   v_ship     integer;
   r          record;
@@ -494,6 +498,34 @@ begin
   select count(*) into v_rappels from zabelie_fulfillment_notices
    where sent_at is null and due_at <= now();
 
+  -- (c) Avis en ÉCHEC PERMANENT → la commande sort du limbe, direction la
+  -- file admin. Sans cette borne, le garde de légitimité — qui retient
+  -- l'auto-réception tant qu'un avis n'est pas parti — verrouillerait
+  -- l'escrow SANS LIMITE DE DURÉE quand l'envoi ne réussit jamais : l'argent
+  -- d'une commande honorée resterait sur le compte marchand indéfiniment.
+  -- C'est la rétention de docs/17 sous sa troisième forme ; le mécanisme
+  -- échouait « du bon côté » à l'échelle courte et du mauvais à l'échelle
+  -- longue. Un humain tranche — il a le numéro de commande et le tableau de
+  -- bord vendeur pour joindre les parties autrement.
+  select coalesce(max(value), 5) into v_maxtry
+    from zabelie_fulfillment_limits where key = 'notice_max_attempts';
+  for r in
+    select f.order_id from zabelie_fulfillment f
+     where f.status = 'shipped'
+       and exists (select 1 from zabelie_fulfillment_notices n
+                    where n.order_id = f.order_id
+                      and n.sent_at is null
+                      and n.attempts >= v_maxtry)
+     for update skip locked
+  loop
+    update zabelie_fulfillment
+       set status = 'action_required', updated_at = now()
+     where order_id = r.order_id;
+    update orders set status = 'disputed'
+     where id = r.order_id and status = 'paid';
+    v_echecs := v_echecs + 1;
+  end loop;
+
   -- (b) Vendeur silencieux → ACTION REQUISE, pas remboursement. On ne
   -- présuppose rien : sur ce marché, une remise en main propre sans clic est
   -- le cas courant. On marque, un humain tranche entre « relancer le
@@ -513,7 +545,7 @@ begin
   end loop;
 
   return jsonb_build_object('auto_recus', v_auto, 'action_requise', v_overdue,
-                            'rappels_dus', v_rappels);
+                            'rappels_dus', v_rappels, 'avis_en_echec', v_echecs);
 end;
 $$;
 revoke all on function zabelie_fulfillment_sweep() from public, anon, authenticated;

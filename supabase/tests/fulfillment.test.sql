@@ -18,6 +18,8 @@
 --        Un acheteur qu'on n'a pas pu joindre n'a pas gardé le silence.
 --   F13. « Je n'ai pas reçu » avant l'échéance → litige, escrow TOUJOURS
 --        verrouillé, et l'auto-réception ne peut plus l'emporter.
+--   F14. Avis en échec PERMANENT (tentatives épuisées) → la commande sort du
+--        limbe vers la file admin — et PAS avant l'épuisement des tentatives.
 
 begin;
 
@@ -335,6 +337,50 @@ begin
   end if;
 
   raise notice 'OK — F11 deux avis · F12 pas d''auto-réception sans avis parti (et l''inverse) · F13 « pa resevwa » avant échéance, escrow verrouillé';
+end;
+$$;
+
+-- ── F14 — l'échec permanent d'envoi ne laisse pas la commande en limbe ──────
+do $$
+declare
+  v_o uuid := '00000000-0000-0000-0000-0000000f0050';
+  v_sweep jsonb;
+begin
+  insert into orders (id, buyer_id, product_id, amount_htg, status) values
+    (v_o, '00000000-0000-0000-0000-0000000f0002',
+     '00000000-0000-0000-0000-0000000f0011', 2000, 'paid');
+  perform zabelie_open_fulfillment(v_o);
+  perform zabelie_declare_shipment(v_o, '00000000-0000-0000-0000-0000000f0001', 'envoyé');
+
+  -- Cas NÉGATIF d'abord : tentatives NON épuisées → rien ne bouge, même si
+  -- l'avis traîne. Escalader trop tôt serait crier au loup.
+  update zabelie_fulfillment_notices set attempts = 4 where order_id = v_o;
+  v_sweep := zabelie_fulfillment_sweep();
+  if (select status::text from zabelie_fulfillment where order_id = v_o) <> 'shipped' then
+    raise exception 'F14: escaladé AVANT l''épuisement des tentatives';
+  end if;
+
+  -- Cas POSITIF : tentatives épuisées → file admin, commande disputed,
+  -- escrow toujours verrouillé mais VISIBLE.
+  update zabelie_fulfillment_notices set attempts = 5 where order_id = v_o;
+  v_sweep := zabelie_fulfillment_sweep();
+  if (v_sweep->>'avis_en_echec')::integer <> 1 then
+    raise exception 'F14: % commande(s) escaladée(s), 1 attendue', v_sweep->>'avis_en_echec';
+  end if;
+  if (select status::text from zabelie_fulfillment where order_id = v_o) <> 'action_required' then
+    raise exception 'F14: la commande reste en limbe malgré l''échec permanent — rétention n°3';
+  end if;
+  if (select status::text from orders where id = v_o) <> 'disputed' then
+    raise exception 'F14: la commande n''est pas signalée côté orders';
+  end if;
+  if not exists (select 1 from zabelie_fulfillment_overdue where order_id = v_o) then
+    raise exception 'F14: absente de la file admin — un limbe VISIBLE reste un limbe';
+  end if;
+  if (select gated_on_delivery from escrow_entries where order_id = v_o) is false then
+    raise exception 'F14: escrow déverrouillé — l''échec d''envoi aurait payé le vendeur';
+  end if;
+
+  raise notice 'OK — F14 échec permanent d''avis → file admin (et pas avant l''épuisement)';
 end;
 $$;
 
