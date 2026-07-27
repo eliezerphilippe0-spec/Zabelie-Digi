@@ -6,7 +6,9 @@
 
 ## Pourquoi maintenant, et pourquoi ça ne dépend de rien
 
-Aucun prérequis. **Ni B2, ni B3, ni les migrations en attente.** Un produit
+Un seul prérequis, `0044` (voir l'ordre ci-dessous) — et il tient au fait que
+le registre est append-only, pas à une dépendance technique. **Ni B2, ni B3,
+ni le reste des migrations en attente.** Un produit
 **digital ou service** suffit : ce flux est complet en production depuis
 longtemps, et il emprunte exactement les mêmes rails que le physique jusqu'au
 crédit du vendeur.
@@ -25,6 +27,10 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
 
 ## Ordre — les variables d'abord, sinon le cache fige le mauvais aperçu
 
+0. **Appliquer `0044_commission_floor.sql`** (V-15, l'arrondi au vendeur). Le
+   seul prérequis, et il est irréversible dans les faits : le grand livre est
+   append-only, donc toute ligne écrite avant porte l'ancienne règle pour
+   toujours. Puis inscrire son empreinte au registre `0041`.
 1. **`NEXT_PUBLIC_SITE_URL`** dans Vercel (Production), puis **redéployer**.
    Sans elle, `lib/site-url.ts` retombe sur le domaine `*.vercel.app` et
    l'aperçu WhatsApp le fige. Facultatif mais souhaitable au même moment :
@@ -72,45 +78,56 @@ Bénéfice second, réel mais second : le parcours d'inscription se **chronomèt
 au passage — la mesure du mur d'entrée qu'on n'a jamais pu prendre
 (`docs/21` §3 bis).
 
-### 2. L'arrondi de la commission — visible seulement sur les petits montants
+### 2. L'arrondi de la commission — les chiffres attendus dépendent de `0044`
 
-`commission = round(brut × bps / 10000)`, `net = brut − commission`.
+⚠️ **`0044_commission_floor.sql` est écrite et NON APPLIQUÉE.** C'est le seul
+prérequis technique de cette commande, et il est là pour une raison de
+calendrier, pas de correction : le grand livre est **append-only**. Chaque
+ligne écrite avant l'application de `0044` l'aura été sous l'ancienne règle,
+pour toujours. → **appliquer `0044` avant la première vente**, sinon la toute
+première ligne du registre contredit la règle annoncée aux vendeurs.
 
-Vérifié sur `1..2000` HTG, aux deux taux (10 % et 6 % Elite) : **aucune
-divergence entre le calcul SQL et l'oracle TypeScript**. `round()` sur
-`numeric` en PostgreSQL et `Math.round` en JS s'accordent sur les positifs —
-le piège classique de l'arrondi bancaire n'existe pas ici (il n'apparaîtrait
-qu'avec `double precision`).
+`commission = floor(brut × bps / 10000)`, `net = brut − commission`
+(V-15, `docs/02`). **Le registre ne peut pas diverger** dans les deux cas :
+`net` est défini par soustraction, donc `commission + net = brut` par
+construction, quel que soit l'arrondi.
 
-Et **le registre ne peut pas diverger** : `net` est défini par soustraction,
-donc `commission + net = brut` par construction, quel que soit l'arrondi.
+Vérifié sur `0..5000` HTG, aux deux taux (10 % et 6 % Elite) : **aucune
+divergence entre le calcul SQL et l'oracle TypeScript**.
 
-Ce qui *est* réel, c'est le **taux effectif** sur les petits montants :
+**Ce qu'il faut attendre sur 25 HTG — et c'est le point du piège :**
 
-| Brut | Commission | Net | Taux réel |
+| | `0044` appliquée (`floor`) | `0044` non appliquée (`round`) |
+|---|---|---|
+| Commission | **2** | 3 |
+| Net vendeur | **23** | 22 |
+| Taux réel | 8 % | 12 % |
+
+Relever 22 après avoir appliqué `0044`, ou 23 sans l'avoir appliquée, est un
+**vrai signal** : la fonction en base n'est pas celle qu'on croit. C'est le
+seul endroit de ce document où deux résultats sont acceptables — vérifier
+d'abord lequel des deux mondes on est en train de tester.
+
+Le taux effectif reste au-dessus de 10 % nulle part, mais en dessous sur les
+petits montants :
+
+| Brut | Commission (`floor`) | Net | Taux réel |
 |---|---|---|---|
-| 5 HTG | 1 | 4 | **20 %** |
-| 15 HTG | 2 | 13 | 13,3 % |
-| **25 HTG** | **3** | **22** | **12 %** |
-| 105 HTG | 11 | 94 | 10,5 % |
+| 5 HTG | 0 | 5 | **0 %** |
+| 15 HTG | 1 | 14 | 6,7 % |
+| **25 HTG** | **2** | **23** | **8 %** |
+| 105 HTG | 10 | 95 | 9,5 % |
 | 1 500 HTG | 150 | 1 350 | 10,0 % |
 
-Donc pour l'essai : attendre **commission 3, net 22** sur 25 HTG — pas 2,5.
+Conséquence assumée : **commission nulle en dessous de 10 HTG** (17 HTG en
+Elite). La plateforme ne prélève rien quand sa part n'atteint pas une gourde
+entière ; ce n'est pas une anomalie mais la traduction exacte de la règle.
 
-⚠️ **Deux suites, dont une à trancher AVANT cette commande** (`docs/02` D-4) :
-
-1. **Le sens de l'arrondi penche toujours du même côté.** `round` envoie la
-   fraction à la plateforme, jamais au vendeur — hérité du défaut PostgreSQL,
-   pas choisi. `floor` (« l'arrondi vous revient ») coûte au maximum **une
-   gourde par vente** et s'explique en cinq mots. **Décision commerciale
-   ouverte**, à prendre de préférence avant la première vente : après, chaque
-   ligne du grand livre aura été écrite sous l'ancienne règle, et le registre
-   est append-only.
-2. **L'annonce est corrigée**, sous la règle actuelle : `faq.a3` dit désormais
-   « 10 % par vente (6 % Elite), **arrondis à la gourde la plus proche** »
-   (FR et KR). Un vendeur qui divise 3 par 25 comprend d'où vient l'écart au
-   lieu de conclure qu'on l'a floué. Si D-4 bascule sur `floor`, la
-   formulation devient encore plus simple à défendre.
+**L'annonce est alignée sur l'effet, pas sur la méthode** : `faq.a3` (FR et
+KR) et la console pro disent « l'arrondi est toujours en votre faveur ».
+Vérifié le 2026-07-27 — ce sont les **deux seuls** endroits où un taux est
+annoncé à un vendeur ; aucun composant n'affiche d'estimation de net avant la
+vente, et le net affiché après (e-mail vendeur) est relu du grand livre.
 
 ## Ce qu'il faut relever, tout de suite après
 
@@ -136,7 +153,8 @@ select o.order_ref, o.amount_htg as brut,
        e.matures_at, e.status
   from orders o left join escrow_entries e on e.order_id = o.id
  order by o.created_at desc limit 5;
--- Attendu sur 25 HTG : net = 22 (commission 3, cf. arrondi ci-dessus),
+-- Attendu sur 25 HTG avec 0044 appliquée : net = 23 (commission 2). Sans 0044 :
+-- net = 22 (commission 3) — et c'est alors 0044 qui manque, cf. §« deux pièges ».
 -- matures_at = paiement + 7 jours, status 'maturing'.
 
 -- 5. Aucun paiement orphelin (invariant de réconciliation).

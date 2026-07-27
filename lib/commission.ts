@@ -2,12 +2,18 @@
  * Commission par tier — ORACLE.
  *
  * ⚠️ Ce module NE calcule PAS l'argent réellement crédité. La SEULE source de
- * vérité qui écrit de l'argent est la fonction SQL `confirm_payment`
- * (supabase/migrations/0005_commission.sql). Ce miroir TS sert uniquement :
- *   - d'oracle de test (vérifier que la formule SQL est correcte),
- *   - d'affichage (estimer net/commission dans l'UI).
+ * vérité qui écrit de l'argent est la fonction SQL `zabelie_commission_htg`
+ * (supabase/migrations/0044_commission_floor.sql), appelée par
+ * `confirm_payment` et par `zabelie_biz_confirm_invoice_payment`.
+ *
+ * Ce miroir TS sert **uniquement d'oracle de test**. Vérifié le 2026-07-27 :
+ * aucun composant ne l'importe — rien dans l'UI n'estime un net avant la
+ * vente, et le net affiché après la vente (`lib/zabelie-notify.ts`) est relu
+ * du grand livre, jamais recalculé. Si un jour l'UI estime un montant, elle
+ * devra l'annoncer comme une estimation.
+ *
  * La formule DOIT rester identique à celle du SQL : commission =
- * round(gross * rate_bps / 10000), net = gross - commission.
+ * floor(gross * rate_bps / 10000), net = gross - commission.
  */
 
 export type CreatorTier = "standard" | "elite";
