@@ -120,7 +120,16 @@ const SELECT =
 export type ProductFilters = {
   q?: string;
   category?: string;
+  /**
+   * Restriction au second niveau de rayon (`lib/taxonomy.ts`). `undefined` =
+   * pas de filtre. Une liste VIDE veut dire « rayon sans produit » et doit
+   * rendre zéro résultat.
+   */
+  productIds?: string[];
 };
+
+/** Sentinelle : `in ()` est un rejet côté PostgREST, `in (uuid nul)` non. */
+const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
 
 // BL-134 (FRONT-19) : taille de page — « Voir plus » en GET, 0 JS.
 const CATALOGUE_PAGE_SIZE = 24;
@@ -318,6 +327,14 @@ export async function getPublishedProductsPage(
 
     if (filters.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
+    }
+
+    // Second niveau de rayon (catégorie fine). `null` = pas de restriction —
+    // la liste vide, elle, veut dire « aucun produit dans ce rayon » et doit
+    // rendre zéro résultat : confondre les deux afficherait le catalogue
+    // entier sous un rayon vide, sans jamais dire que le filtre n'a pas pris.
+    if (filters.productIds) {
+      query = query.in("id", filters.productIds.length > 0 ? filters.productIds : [ZERO_UUID]);
     }
 
     if (q) {

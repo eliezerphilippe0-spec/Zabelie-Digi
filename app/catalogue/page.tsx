@@ -3,6 +3,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { getCatalogueCategories, getPublishedProductsPage } from "@/lib/products";
+import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -20,16 +21,27 @@ export const metadata = {
 export default async function CataloguePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; cat?: string; sous?: string; page?: string }>;
 }) {
-  const { q, cat, page: pageRaw } = await searchParams;
+  const { q, cat, sous, page: pageRaw } = await searchParams;
   const activeCat = cat ?? "Tout";
   const page = Math.max(1, Number.parseInt(pageRaw ?? "1", 10) || 1);
+  // Le second niveau se résout AVANT la requête catalogue : il la restreint.
+  const productIds = sous ? await productIdsInCategory(sous) : null;
   const [{ items: products, hasMore }, lang, categories] = await Promise.all([
-    getPublishedProductsPage({ q, category: activeCat, page }),
+    getPublishedProductsPage({
+      q,
+      category: activeCat,
+      page,
+      productIds: productIds ?? undefined,
+    }),
     getLang(),
     getCatalogueCategories(),
   ]);
+  // Rayons fins du département actif. Vide hors département, et vide tant
+  // qu'aucun produit publié n'y est rangé (V-13 : jamais un rayon désert).
+  const facettes =
+    activeCat !== "Tout" ? await getCategoryFacets(activeCat, lang) : [];
   const CATEGORIES = ["Tout", ...categories];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
@@ -37,17 +49,22 @@ export default async function CataloguePage({
   const filtre = Boolean(q) || activeCat !== "Tout";
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
-  const hrefFor = (opts: { cat?: string; page?: number }) => {
+  const hrefFor = (opts: { cat?: string; sous?: string | null; page?: number }) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     const c = opts.cat ?? activeCat;
     if (c !== "Tout") params.set("cat", c);
+    // Changer de département invalide le rayon fin : `sous` appartient au
+    // département courant, le garder afficherait un filtre impossible.
+    const s2 = opts.sous === null ? undefined : (opts.sous ?? (opts.cat ? undefined : sous));
+    if (s2) params.set("sous", s2);
     const p = opts.page ?? 1;
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
     return qs ? `/catalogue?${qs}` : "/catalogue";
   };
-  const catHref = (c: string) => hrefFor({ cat: c, page: 1 });
+  const catHref = (c: string) => hrefFor({ cat: c, sous: null, page: 1 });
+  const sousHref = (slug: string | null) => hrefFor({ sous: slug ?? undefined, page: 1 });
 
   return (
     <div className="bg-grain min-h-screen">
@@ -60,7 +77,8 @@ export default async function CataloguePage({
         <p className="mt-2 text-sm text-mist">
           {products.length} {t(lang, "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
-          {activeCat !== "Tout" ? ` · ${activeCat}` : ""}.
+          {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
+          {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}.
         </p>
 
         {/* Recherche (GET, fonctionne sans JS) */}
@@ -100,6 +118,36 @@ export default async function CataloguePage({
             </Link>
           ))}
         </div>
+        )}
+
+        {/* Second niveau : les rayons du département actif. N'apparaît que
+            s'il y a de quoi choisir — un seul rayon n'est pas une navigation,
+            et zéro rayon ne doit rien afficher du tout (V-13). */}
+        {facettes.length > 1 && (
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+            <Link
+              href={sousHref(null)}
+              className={`rounded-full px-3 py-1 text-xs transition ${
+                !sous ? "bg-cloud text-ink" : "text-mist hover:text-cloud"
+              }`}
+            >
+              {t(lang, "catalog.allShelves")}
+            </Link>
+            {facettes.map((f) => (
+              <Link
+                key={f.slug}
+                href={sousHref(f.slug)}
+                className={`rounded-full px-3 py-1 text-xs transition ${
+                  f.slug === sous ? "bg-cloud text-ink" : "text-mist hover:text-cloud"
+                }`}
+              >
+                {f.label}{" "}
+                <span className={f.slug === sous ? "text-ink/60" : "text-mist/60"}>
+                  {f.count}
+                </span>
+              </Link>
+            ))}
+          </div>
         )}
       </section>
 

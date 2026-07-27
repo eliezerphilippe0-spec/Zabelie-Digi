@@ -41,6 +41,7 @@ const fr = {
 
   // ── Politique produits interdits (v1) ────────────────────────────────────
   "policy.link": "Ce qui ne peut pas être vendu",
+  "catalog.allShelves": "Tous les rayons",
   "catalog.empty.title": "Le catalogue est encore vide.",
   "catalog.empty.body": "Les premières boutiques arrivent. Vous vendez ? Publiez votre produit en quelques minutes.",
   "catalog.empty.cta": "Vendre sur Zabelie",
@@ -428,6 +429,7 @@ const ht: Record<I18nKey, string> = {
 
   // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
   "policy.link": "Sa ou pa gen dwa vann",
+  "catalog.allShelves": "Tout rayon yo",
   "catalog.empty.title": "Katalòg la vid toujou.",
   "catalog.empty.body": "Premye boutik yo ap vini. Se ou k ap vann ? Pibliye pwodui ou an kèk minit.",
   "catalog.empty.cta": "Vann sou Zabelie",
