@@ -30,12 +30,22 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
 
 0. **Trancher D-4** — le sens de l'arrondi (`docs/02`). Irréversible dans les
    faits : le grand livre est append-only, donc toute ligne écrite avant porte
-   l'ancienne règle pour toujours. Si la réponse est `floor` : appliquer
-   `0044_commission_floor.sql`, passer `ROUNDING_IN_FORCE` à `"floor"` dans
-   `lib/commission.ts`, redéployer — **les trois ensemble**, sinon
-   l'estimation affichée au vendeur promet une gourde de plus que ce que la
-   base crédite. Puis inscrire l'empreinte au registre `0041`. Si la réponse
-   est `round` : rien à faire.
+   l'ancienne règle pour toujours.
+   Si la réponse est `round` : **rien à faire**, `0044` reste au dépôt.
+   Si la réponse est `floor`, **l'ordre des trois gestes n'est pas neutre** :
+
+   | | Geste | Ce qu'il se passe entre ce geste et le suivant |
+   |---|---|---|
+   | 1 | Appliquer `0044` en base | La base donne 23, l'app annonce 22. Le vendeur **touche plus** que promis. Sens sûr. |
+   | 2 | `ROUNDING_IN_FORCE = "floor"` | — |
+   | 3 | Redéployer | Annonce et base s'accordent à nouveau. |
+
+   Dans l'autre ordre, l'intervalle promet 23 et verse 22 : une gourde
+   annoncée et non versée, sur chaque vente concernée. C'est la seule
+   différence entre les deux ordres, et elle ne coûte rien à respecter.
+   Puis inscrire l'empreinte au registre `0041` — c'est aussi ce que lit la
+   sonde d'arrondi (`/api/admin/coherence`) pour contredire la constante si
+   les deux se désaccordent.
 1. **`NEXT_PUBLIC_SITE_URL`** dans Vercel (Production), puis **redéployer**.
    Sans elle, `lib/site-url.ts` retombe sur le domaine `*.vercel.app` et
    l'aperçu WhatsApp le fige. Facultatif mais souhaitable au même moment :
@@ -132,10 +142,24 @@ aussi le net. Vérifié dans `0027` : la commission se calcule sur
 `orders.amount_htg`, qui est le **prix remisé** figé au checkout. Le 6 %
 Elite, lui, a été retiré de la FAQ (V-16) : aucun chemin n'attribue ce palier.
 
-À regarder le jour de l'essai : si l'estimation affichée à la publication ne
-correspond pas au net relevé en base après la vente (à remise près), c'est que
-l'oracle TS et la fonction SQL ont divergé — c'est précisément ce que ce
-branchement rend visible.
+**C'est ce relevé qui vérifie vraiment la constante.** `ROUNDING_IN_FORCE` est
+un miroir réglé à la main ; la sonde de `/api/admin/coherence` le confronte au
+journal des migrations, mais ce journal est lui aussi tenu à la main. La seule
+boucle qui se ferme est celle-ci : **noter le net affiché à la publication,
+puis le comparer au net crédité au grand livre après la vente**. Ce sont deux
+chemins indépendants — TypeScript à l'écran, SQL dans la transaction — et
+c'est la première fois qu'ils peuvent se contredire sur de l'argent réel.
+
+À noter au moment de publier, avant d'oublier :
+
+```
+prix saisi : ......... HTG     net affiché : ......... HTG
+```
+
+et à comparer, après la vente, au `net_vendeur` de la requête 4 ci-dessous.
+Un écart de 1 HTG = la constante et la base ne disent pas la même chose.
+Un écart plus grand = un code promo est passé par là (la commission porte sur
+le prix **remisé**), ou autre chose, et là il faut chercher.
 
 ## Ce qu'il faut relever, tout de suite après
 

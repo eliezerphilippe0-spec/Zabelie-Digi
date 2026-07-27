@@ -35,6 +35,7 @@
 | **D-2** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | ~~**D-3**~~ | ~~Lien auth/wallet avec Zabelie 1~~ | **VERROUILLÉE → V-9.** Séparé, fusion possible plus tard. | ✅ Tranchée |
 | **D-4** | **Sens de l'arrondi de la commission** — `round` (état actuel) ou `floor` (l'arrondi va au vendeur) | Commercial. Migration `0044` **écrite, non appliquée** ; constante `ROUNDING_IN_FORCE` en TS. Coût de `floor` : ≤ 1 HTG par vente. | **Ouverte — en attente d'arbitrage porteur** |
+| **D-6** | **Qui paie la remise de fidélité ?** | Commercial + comptable. La commission porte sur `orders.amount_htg`, le prix **remisé**. Une remise de points y entrerait comme une autre : le **vendeur** financerait la rétention de la plateforme, sans l'avoir choisie ni le savoir. Sorties : commission sur le **prix affiché**, remise **supportée par Zabelie**, ou **participation choisie** par le vendeur. Aucun point n'a jamais été émis — la décision est encore gratuite. Garde : `tests/fidelite-discipline.test.ts`. | **Ouverte — en attente d'arbitrage porteur** |
 | **D-5** | **Seuil zéro : faut-il une commission minimale de 1 gourde ?** | Commercial. Sous `round`, une vente < 5 HTG ne rapporte rien ; sous `floor`, une vente < 10 HTG (17 en Elite) non plus. Découper une vente en petites unités devient donc une stratégie. Deux sorties : **prix plancher** ou **commission minimale de 1 HTG dès qu'il y a vente** — la seconde ferme le seuil sans abîmer l'argument « l'arrondi va au vendeur ». | **Ouverte — en attente d'arbitrage porteur** |
 
 ### D-4 (OUVERTE) — l'arrondi penche systématiquement du côté de la plateforme
@@ -115,6 +116,47 @@ l'annonce pas (`components/net-estimate.tsx` n'écrit jamais « aucune
 commission à ce prix » : ce serait enseigner le contournement au moment exact
 où le vendeur choisit son prix), mais ne pas l'annoncer n'est pas le fermer.
 → **D-5**.
+
+### D-6 (OUVERTE) — la remise de fidélité serait payée par le vendeur
+
+**Constat, vérifié le 2026-07-27.** `app/api/checkout/route.ts` fige
+`orders.amount_htg` au prix **remisé**, et `confirm_payment` calcule la
+commission sur ce montant. Le net vendeur suit. C'est correct pour les
+coupons **vendeur** (`zabelie_coupons`, `0012`) : ils portent un `seller_id`,
+le vendeur les crée lui-même sous sa propre RLS, il finance sa propre
+promotion — c'est un choix commercial qu'il a fait.
+
+Ça cesse de l'être pour la table `coupons` de `0021` : elle **n'a pas de
+vendeur**. Un coupon y naît de la conversion de points, c'est-à-dire d'un
+engagement pris par la **plateforme** envers un acheteur. Câblé au checkout de
+la même manière, il réduirait `amount_htg` — donc le net du vendeur. Le
+vendeur financerait un dispositif de rétention qui ne lui appartient pas, sans
+l'avoir choisi ni même pouvoir le constater : rien, sur sa fiche de vente, ne
+distinguerait une remise de fidélité d'une baisse de prix.
+
+**Ce n'est pas encore arrivé.** Vérifié : aucune ligne de `app/` ni de `lib/`
+n'appelle `apply_coupon_to_order`, `redeem_points_for_coupon` ni `award_points`
+— seule l'expiration (`app/api/points/expire`) tourne. Le checkout ne lit que
+`zabelie_coupons`. Aucun point n'a jamais été émis. **La décision est donc
+encore gratuite** ; après une seule ligne au grand livre, elle ne l'est plus,
+le registre étant append-only.
+
+**Les trois sorties, sans recommandation** — c'est une règle commerciale :
+
+1. **Commission sur le prix affiché** plutôt que sur le prix payé. La
+   plateforme absorbe la remise sur sa propre part. Conséquence à regarder :
+   si la remise dépasse la commission, la plateforme doit **compléter** le net
+   du vendeur — donc une écriture au grand livre, donc un chantier financier,
+   pas un correctif.
+2. **Remise supportée par Zabelie** comme une dépense identifiée : le vendeur
+   est crédité sur le prix plein, la plateforme inscrit le manque à gagner en
+   face. Le plus lisible comptablement, le plus coûteux.
+3. **Participation choisie par le vendeur** (opt-in par produit ou par
+   catégorie). Le vendeur finance, mais il a dit oui.
+
+Tant que rien n'est tranché, `tests/fidelite-discipline.test.ts` empêche le
+câblage **par inadvertance** — il n'interdit pas le programme, il interdit de
+le brancher en silence.
 
 > ⚠️ D-1 et D-2 étaient marquées `[À CONFIRMER]` dans la synthèse mais leur libellé
 > exact n'a pas été fourni. À renseigner par le porteur du projet.

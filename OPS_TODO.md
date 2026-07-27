@@ -127,14 +127,28 @@ c'est la référence de comparaison, elle doit survivre à la session.
       **avant la première vente** — le registre est append-only, chaque ligne
       écrite avant porte l'ancienne règle pour toujours. Analyse chiffrée :
       `docs/02` §D-4.
-      **Si `floor` : trois gestes indissociables**, dans cet ordre —
+      **Si `floor` : trois gestes, et l'ORDRE est la sécurité** —
       (1) appliquer `0044_commission_floor.sql` ; (2) passer
       `ROUNDING_IN_FORCE` à `"floor"` dans `lib/commission.ts` ;
-      (3) redéployer. Les séparer fait promettre au vendeur une gourde de plus
-      que ce que la base lui crédite. Puis inscrire l'empreinte au registre
-      `0041`. Les annonces (FAQ, estimation vendeur, FR + KR) suivent
-      automatiquement la constante — rien à réécrire à la main.
+      (3) redéployer. Dans cet ordre, l'intervalle donne au vendeur **plus**
+      que ce qui lui est annoncé. Dans l'autre, il lui promet une gourde qu'on
+      ne verse pas. Puis inscrire l'empreinte au registre `0041` — c'est ce
+      que lit la sonde d'arrondi de `/api/admin/coherence`, qui signale un
+      désaccord entre la constante et le journal. Les annonces (FAQ,
+      estimation vendeur, console pro, FR + KR) suivent automatiquement la
+      constante — rien à réécrire à la main.
       **Si `round` : rien à faire**, `0044` reste au dépôt.
+- [ ] **⚖️ D-6 — Qui paie la remise de fidélité ? (décision porteur).** La
+      commission porte sur `orders.amount_htg`, le prix **remisé**. Pour un
+      coupon vendeur (`zabelie_coupons`) c'est juste : il l'a créé lui-même.
+      Pour un coupon de fidélité (`coupons`, `0021`) il n'y a **pas de
+      vendeur** — c'est un engagement de la plateforme, et le vendeur en
+      paierait la note sans l'avoir choisi ni pouvoir le distinguer d'une
+      baisse de prix. Rien n'est câblé aujourd'hui (vérifié) et aucun point
+      n'a jamais été émis : la décision est encore **gratuite**, elle ne le
+      sera plus après une ligne de grand livre. Trois sorties dans `docs/02`
+      §D-6. Garde en place : `tests/fidelite-discipline.test.ts` empêche le
+      câblage par inadvertance, pas le programme.
 - [ ] **⚖️ D-5 — Commission minimale de 1 gourde ? (décision porteur).** Une
       vente assez petite ne rapporte rien à la plateforme : moins de 5 HTG
       sous `round`, moins de 10 (17 en Elite) sous `floor`. Sur un marché où

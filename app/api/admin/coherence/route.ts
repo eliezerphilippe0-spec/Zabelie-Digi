@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { evaluerArrondi } from "@/lib/rounding-probe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,7 +54,26 @@ async function handle(req: Request) {
       );
     }
 
-    return NextResponse.json(data);
+    // Sonde d'arrondi : la constante `ROUNDING_IN_FORCE` s'accorde-t-elle avec
+    // ce que le journal des migrations dit avoir été appliqué ? Elle ne touche
+    // pas au verdict du registre — un désaccord d'annonce n'est pas un écart
+    // comptable — mais elle ne doit pas non plus passer sous silence.
+    const { data: journal, error: erreurJournal } = await admin
+      .from("zabelie_schema_migrations")
+      .select("filename");
+    const arrondi = evaluerArrondi({
+      lignes: (journal as { filename: string }[] | null) ?? null,
+      erreur: erreurJournal,
+    });
+    if (arrondi.statut === "desaccord") {
+      console.error("[coherence] ARRONDI — annonce et base divergent", arrondi.message);
+    } else if (arrondi.statut === "indetermine") {
+      // Journalisé même quand il n'y a rien à dire : sinon « la sonde n'a pas
+      // tourné » et « la sonde n'a rien trouvé » produisent le même vide.
+      console.warn("[coherence] ARRONDI — indéterminé :", arrondi.raison);
+    }
+
+    return NextResponse.json({ ...data, arrondi });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Erreur" },

@@ -45,11 +45,20 @@ export type RoundingRule = "round" | "floor";
  * appliquée**, et la décision commerciale elle-même attend l'arbitrage du
  * porteur (`docs/02`, D-4).
  *
- * ⚠️ Cette constante et l'état de la base ne font qu'un. Basculer sur
- * `"floor"` fait partie du **même geste** que l'application de `0044` — pas
- * avant. Sinon l'estimation promet au vendeur une gourde de plus que ce que
- * la base lui crédite : une estimation fausse dans un sens connu est pire
- * qu'une absence d'estimation, parce qu'elle a l'air d'un engagement.
+ * ⚠️ Cette constante et l'état de la base ne font qu'un, et **l'ordre de la
+ * bascule n'est pas neutre** :
+ *   1. appliquer `0044` en base ;
+ *   2. passer cette constante à `"floor"` ;
+ *   3. redéployer.
+ * Dans cet ordre, l'intervalle donne au vendeur PLUS que ce qui lui est
+ * annoncé — sens sûr. Dans l'autre, il lui promet une gourde qu'on ne verse
+ * pas : une estimation fausse dans un sens connu est pire qu'une absence
+ * d'estimation, parce qu'elle a l'air d'un engagement.
+ *
+ * ⚠️ Miroir réglé à la MAIN : il dit vrai tant que quelqu'un y pense.
+ * `lib/rounding-probe.ts` le confronte au journal des migrations à chaque
+ * contrôle de cohérence, et le relevé de la première commande (`docs/22`)
+ * ferme la boucle en comparant l'affiché au crédité.
  */
 export const ROUNDING_IN_FORCE: RoundingRule = "round";
 
