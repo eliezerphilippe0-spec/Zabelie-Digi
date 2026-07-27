@@ -154,6 +154,17 @@ c'est la référence de comparaison, elle doit survivre à la session.
       la légitimité de l'auto-réception de `0043` repose sur un avis envoyé à
       une adresse joignable. Le contournement le plus tentant casse le
       mécanisme d'expédition.
+      **⚖️ Décision attendue au passage — réservation du nom de la marque.**
+      Le nom affiché vient du navigateur, sans validation serveur : un compte
+      « Support Zabelie » qui écrit à des vendeurs est le scénario le plus
+      coûteux sur un marché où la confiance passe par WhatsApp. `0045` refuse
+      les variantes de `zabelie`/`zabely` (comparaison sur une forme
+      normalisée, donc « Z-a-b-e-l-i-e » aussi) et **replie** sur l'e-mail
+      plutôt que de rejeter — un rejet fermerait l'inscription, ce qu'un
+      déclencheur ne doit jamais faire. Restent deux choix qui te
+      reviennent : **la liste** (faut-il y ajouter « MonCash », « Digicel »,
+      des noms d'employés ?) et **la sanction** (repli silencieux, ou refus
+      explicite en amont, côté formulaire, où l'on peut expliquer).
       Contrôle à passer une fois appliquée :
       `select u.email, u.email_confirmed_at, p.id as profil from auth.users u
        left join profiles p on p.id = u.id order by u.created_at desc limit 5;`
