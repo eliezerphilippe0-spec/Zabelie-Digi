@@ -172,6 +172,12 @@ c'est la référence de comparaison, elle doit survivre à la session.
       partout où le nom l'est, puis de n'autoriser le nom réservé qu'aux
       lignes marquées. Le nom d'abord et le marqueur ensuite laisserait une
       fenêtre où « Support Zabelie » n'est vérifiable par personne.
+      **À traiter DANS le même geste que le marqueur** : le repli d'inscription
+      est « Kont » pour tout le monde. Invisible aujourd'hui, puisque le nom
+      n'est exposé nulle part — mais le jour où il s'affiche, plusieurs
+      comptes « Kont » indistinguables apparaîtront ensemble. La réponse
+      (suffixe, nom déduit autrement, invitation à se nommer) se décide avec
+      l'exposition, pas avant : c'est le même chantier.
       **⚖️ La vraie décision arrive avec la première exposition** : le jour où
       `display_name` s'affiche sur une fiche boutique, dans un avis ou dans un
       message reçu par un vendeur, aucune liste ne suffira — il faudra un
