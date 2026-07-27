@@ -57,7 +57,7 @@ export default async function VendrePhysiquePage() {
           </div>
         ) : (
           <div className="mt-8">
-            <PhysicalProductForm />
+            <PhysicalProductForm tier={user.tier} />
           </div>
         )}
       </main>

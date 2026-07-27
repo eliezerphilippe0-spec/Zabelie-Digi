@@ -9,6 +9,8 @@ import {
 } from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
+import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
+import type { CreatorTier } from "@/lib/commission";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -28,9 +30,17 @@ export type PublishFormLabels = {
   errorGeneric: string;
   errorNetwork: string;
   footerHint: string;
+  net: NetEstimateLabels;
 };
 
-export function PublishForm({ labels }: { labels: PublishFormLabels }) {
+export function PublishForm({
+  labels,
+  tier = "standard",
+}: {
+  labels: PublishFormLabels;
+  /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
+  tier?: CreatorTier;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,16 +140,19 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
           ))}
         </select>
       </div>
-      <input
-        className={input}
-        type="number"
-        min={0}
-        placeholder={labels.pricePh}
-        aria-label={labels.pricePh}
-        value={form.priceHTG}
-        onChange={(e) => set("priceHTG", e.target.value)}
-        required
-      />
+      <div className="space-y-1.5">
+        <input
+          className={input}
+          type="number"
+          min={0}
+          placeholder={labels.pricePh}
+          aria-label={labels.pricePh}
+          value={form.priceHTG}
+          onChange={(e) => set("priceHTG", e.target.value)}
+          required
+        />
+        <NetEstimate priceHTG={form.priceHTG} tier={tier} labels={labels.net} />
+      </div>
       <textarea
         className={input}
         rows={4}

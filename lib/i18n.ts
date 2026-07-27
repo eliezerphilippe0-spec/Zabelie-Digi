@@ -232,7 +232,7 @@ const fr = {
   "faq.q2": "Quand est-ce que je reçois mon achat ?",
   "faq.a2": "Immédiatement après la confirmation du paiement : téléchargement dans « Mes achats » + e-mail avec le lien.",
   "faq.q3": "Comment vendre sur Zabelie ?",
-  "faq.a3": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente (6 % pour les vendeurs Elite). L'arrondi est toujours en votre faveur.",
+  "faq.a3": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente. L'arrondi est toujours en votre faveur.",
   "faq.q4": "Quand le vendeur reçoit-il son argent ?",
   "faq.a4": "Le net est crédité immédiatement « en attente », puis devient disponible 7 jours après la vente (protection anti-fraude).",
   "faq.q5": "Et si quelque chose se passe mal ?",
@@ -293,6 +293,10 @@ const fr = {
   "publish.error.generic": "Publication échouée.",
   "publish.footer.hint":
     "L'envoi du fichier livrable se fera depuis la fiche produit (étape suivante).",
+  "publish.net.youReceive": "Vous recevez",
+  "publish.net.fee": "commission",
+  "publish.net.noFee": "aucune commission à ce prix",
+  "publish.net.favor": "L'arrondi est toujours en votre faveur.",
 
   "upload.sending": "Envoi…",
   "upload.replace": "Remplacer le fichier",
@@ -530,7 +534,7 @@ const ht: Record<I18nKey, string> = {
   "faq.q2": "Kilè m ap resevwa acha m ?",
   "faq.a2": "Touswit apre peman an konfime : telechajman nan « Acha mwen yo » + yon imèl ak lyen an.",
   "faq.q3": "Kijan pou m vann sou Zabelie ?",
-  "faq.a3": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant (6 % pou vandè Elite). Awondi a toujou an favè w.",
+  "faq.a3": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant. Awondi a toujou an favè w.",
   "faq.q4": "Kilè vandè a resevwa lajan li ?",
   "faq.a4": "Nèt la antre touswit « an atant », epi li vin disponib 7 jou apre vant lan (pwoteksyon kont fwod).",
   "faq.q5": "E si yon bagay pase mal ?",
@@ -589,6 +593,10 @@ const ht: Record<I18nKey, string> = {
   "publish.error.generic": "Pibliyasyon an echwe.",
   "publish.footer.hint":
     "Ou va voye fichye a apati paj pwodui a (pwochèn etap la).",
+  "publish.net.youReceive": "Ou resevwa",
+  "publish.net.fee": "komisyon",
+  "publish.net.noFee": "pa gen komisyon sou pri sa a",
+  "publish.net.favor": "Awondi a toujou an favè w.",
 
   "upload.sending": "N ap voye…",
   "upload.replace": "Ranplase fichye a",

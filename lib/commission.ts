@@ -6,11 +6,20 @@
  * (supabase/migrations/0044_commission_floor.sql), appelée par
  * `confirm_payment` et par `zabelie_biz_confirm_invoice_payment`.
  *
- * Ce miroir TS sert **uniquement d'oracle de test**. Vérifié le 2026-07-27 :
- * aucun composant ne l'importe — rien dans l'UI n'estime un net avant la
- * vente, et le net affiché après la vente (`lib/zabelie-notify.ts`) est relu
- * du grand livre, jamais recalculé. Si un jour l'UI estime un montant, elle
- * devra l'annoncer comme une estimation.
+ * Ce miroir TS a deux usages, et un seul consommateur applicatif :
+ *   - oracle de test (`tests/commission.test.ts`, accordé avec la SQL) ;
+ *   - **estimation** affichée au vendeur sous le champ prix
+ *     (`components/net-estimate.tsx`).
+ *
+ * Ce consommateur est délibéré : un oracle dont le seul importateur est sa
+ * propre suite de tests diverge en SILENCE — il se vérifie contre lui-même et
+ * rien à l'écran ne le contredit jamais. Branché sur un chemin réel, un écart
+ * avec la SQL devient visible par un vendeur. `tests/commission-consumer.test.ts`
+ * empêche le retour à l'état « oracle sans consommateur ».
+ *
+ * Le montant réellement crédité reste calculé par la SQL au moment du
+ * paiement, et le net affiché APRÈS la vente (`lib/zabelie-notify.ts`) est
+ * relu du grand livre, jamais recalculé.
  *
  * La formule DOIT rester identique à celle du SQL : commission =
  * floor(gross * rate_bps / 10000), net = gross - commission.

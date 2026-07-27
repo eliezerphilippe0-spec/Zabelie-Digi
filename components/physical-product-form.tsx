@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { NetEstimate } from "@/components/net-estimate";
+import type { CreatorTier } from "@/lib/commission";
 
 /**
  * Création d'un produit physique (chantier B — UI vendeur).
@@ -31,7 +33,12 @@ type Fitment = { modelId: string; yearStart: string; yearEnd: string };
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-export function PhysicalProductForm() {
+export function PhysicalProductForm({
+  tier = "standard",
+}: {
+  /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
+  tier?: CreatorTier;
+}) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [models, setModels] = useState<VehicleModel[]>([]);
@@ -224,6 +231,20 @@ export function PhysicalProductForm() {
             placeholder="2500"
             className="mt-1 w-full rounded-xl border border-line bg-ink px-4 py-3 disabled:opacity-50"
           />
+          {!showVariants && (
+            <div className="mt-1.5">
+              <NetEstimate
+                priceHTG={price}
+                tier={tier}
+                labels={{
+                  youReceive: "Vous recevez",
+                  fee: "commission",
+                  noFee: "aucune commission à ce prix",
+                  favor: "L'arrondi est toujours en votre faveur.",
+                }}
+              />
+            </div>
+          )}
         </label>
         <label className="block">
           <span className="text-sm font-semibold">Quantité en stock</span>

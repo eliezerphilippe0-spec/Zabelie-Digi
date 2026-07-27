@@ -125,9 +125,16 @@ entière ; ce n'est pas une anomalie mais la traduction exacte de la règle.
 
 **L'annonce est alignée sur l'effet, pas sur la méthode** : `faq.a3` (FR et
 KR) et la console pro disent « l'arrondi est toujours en votre faveur ».
-Vérifié le 2026-07-27 — ce sont les **deux seuls** endroits où un taux est
-annoncé à un vendeur ; aucun composant n'affiche d'estimation de net avant la
-vente, et le net affiché après (e-mail vendeur) est relu du grand livre.
+Depuis le 2026-07-27, le vendeur voit aussi son net **pendant qu'il saisit son
+prix** (`components/net-estimate.tsx`, sur les deux formulaires) : « Vous
+recevez 23 HTG · commission 2 HTG ». Sous 10 HTG il lit « aucune commission à
+ce prix » — la règle se démontre au lieu de s'annoncer. Le 6 % Elite, lui, **a
+été retiré de la FAQ** (V-16) : aucun chemin n'attribue ce palier.
+
+À regarder le jour de l'essai : si l'estimation affichée à la publication ne
+correspond pas au net relevé en base après la vente, c'est que l'oracle TS et
+la fonction SQL ont divergé — c'est précisément ce que ce branchement rend
+visible.
 
 ## Ce qu'il faut relever, tout de suite après
 

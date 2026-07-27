@@ -120,6 +120,21 @@ c'est la référence de comparaison, elle doit survivre à la session.
 
 ## Paiements (rappels)
 
+- [ ] **`0044_commission_floor.sql` — À APPLIQUER AVANT LA PREMIÈRE VENTE.**
+      V-15 : l'arrondi de la commission va au vendeur (`floor`). Ce n'est pas
+      un correctif qu'on peut passer après coup — le grand livre est
+      append-only, donc toute ligne écrite avant porte l'ancienne règle pour
+      toujours, et le premier taux de commission observé en production serait
+      celui qu'on ne veut plus. Ordre complet : `docs/22` §Ordre, étape 0.
+      Après application, inscrire l'empreinte au registre `0041`.
+- [ ] **Palier Elite — décision porteur en attente (V-16).** Le taux 6 % n'est
+      plus annoncé nulle part : `tier` est gelé côté client (`0015`/`0017`) et
+      **aucun chemin n'attribue `elite`** — ni code, ni écran d'admin — et
+      aucun document ne dit ce qui y donne droit. Pour le réannoncer il faut
+      d'abord **écrire le critère** (ancienneté ? volume ? sélection à la
+      main ?), puis la porte qui l'applique. Règle commerciale : c'est ta
+      décision, pas la mienne. Sans urgence — aucun vendeur n'est concerné.
+
 - [x] Migrations `0001` → `0019` appliquées sur Supabase (dont `0009`/`0010`
       topup) — `supabase/schema.sql` reste la concaténation à jour si besoin
       de rejouer sur un nouvel environnement.

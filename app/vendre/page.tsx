@@ -9,6 +9,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
+import type { CreatorTier } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -68,6 +69,19 @@ export default async function VendrePage() {
     );
   }
 
+  // Palier du vendeur : il détermine le taux annoncé sous le champ prix.
+  // Lu en base et jamais deviné — mais la colonne peut manquer sur une base
+  // en retard de migration, et une estimation d'affichage ne doit pas faire
+  // tomber la page de publication. Repli sur le palier standard, qui est
+  // aujourd'hui celui de TOUS les vendeurs (aucun chemin n'attribue elite).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("tier")
+    .eq("id", user.id)
+    .maybeSingle();
+  const tier: CreatorTier =
+    (profile as { tier?: string } | null)?.tier === "elite" ? "elite" : "standard";
+
   const { data: mineRaw } = await supabase
     .from("products")
     .select("id, slug, title, status, kind, product_assets(id)")
@@ -100,6 +114,7 @@ export default async function VendrePage() {
     <Shell lang={lang} subtitle={t(lang, "sell.subtitle")}>
       <div className="glass rounded-2xl p-6">
         <PublishForm
+          tier={tier}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
             kindAria: t(lang, "publish.kind.aria"),
@@ -118,6 +133,12 @@ export default async function VendrePage() {
             errorGeneric: t(lang, "publish.error.generic"),
             errorNetwork: t(lang, "error.network"),
             footerHint: t(lang, "publish.footer.hint"),
+            net: {
+              youReceive: t(lang, "publish.net.youReceive"),
+              fee: t(lang, "publish.net.fee"),
+              noFee: t(lang, "publish.net.noFee"),
+              favor: t(lang, "publish.net.favor"),
+            },
           }}
         />
       </div>

@@ -22,7 +22,8 @@
 | V-11 | **Recharge téléphonique (topup first-party)** | Demande porteur (2026-07). Zabelie = **revendeur** de recharge Digicel/Natcom, **jamais émetteur de monnaie électronique** (BRH Circ. 121). Décisions : Reloadly sandbox (P1, adapter pattern), rails HTG MonCash + USD Zelle (NatCash ⛔ inchangé), plafonds 5 000 HTG/tx · 25 000 HTG/j · 5 bénéf./h, marge ~5 %. Pipeline séparé du money-path marketplace ; ledger append-only ; remboursement moyen d'origine + checkpoint humain. Voir `07-TOPUP.md` + migration `0010_topup.sql`. |
 | V-13 | **Barre de catégories de l'accueil — suppression, pas réparation** | Décision porteur (2026-07-26). Elle affiche six libellés **digitaux en dur** (Photo, Business, Musique, Design, Carrière, Marketing) sur une marketplace qui bascule vers le physique : elle n'annonce pas seulement des pages vides, elle annonce **le mauvais commerce**. La brancher sur `zabelie_categories` la ferait passer de six catégories fausses à seize catégories vides — donc la migration `0035` **ne débloque pas** cette barre. Ne pas rouvrir le sujet « barre alimentée par la taxonomie » avant qu'il existe une offre réelle à ranger dedans. Condition posée par le porteur : livrer d'abord un **état vide de recherche** utilisable. |
 | V-14 | **Application des migrations — catalogue et money-path jamais dans le même lot** | Décision porteur (2026-07-26). `0037`/`0038`/`0040` remplacent `confirm_payment` et `refund_order` : les mêler au catalogue fait perdre la capacité de **dire ce qui a changé sur les flux financiers** le jour où un vendeur conteste un montant. Le groupe B est coupé en **B1** (`0035`·`0036`, aucun effet money-path — sert à **débloquer la saisie** des fiches, le formulaire vendeur lisant `zabelie_categories`) et **B2** (money-path, **revue séparée**, après exécution des versements manuels). Voir `20-APPLICATION-MIGRATIONS-0032-0038.md`. |
-| V-15 | **Arrondi de la commission — `floor`, en faveur du vendeur** | Arbitrage porteur (2026-07-26), ex-D-4. `round()` (défaut PostgreSQL hérité, jamais choisi) envoyait la fraction à la plateforme sur **une vente sur deux** ; `floor` la rend au vendeur pour au plus **1 gourde par vente** (0,45 à 0,49 en moyenne, mesuré sur 0→5 000 HTG). La règle vit désormais dans **une seule** fonction, `zabelie_commission_htg` (migration `0044`), appelée par le marketplace **et** la facturation pro. Communication : « l'arrondi est toujours en votre faveur » — l'effet, pas la méthode. Conséquence assumée : commission nulle sous 10 HTG standard / 17 HTG Elite. |
+| V-15 | **Arrondi de la commission — `floor`, en faveur du vendeur** | Tranchée par l'agent le 2026-07-27, ex-D-4 — le porteur a explicitement rendu la décision **et** donné son avis (`floor`) sans « go ». `round()` (défaut PostgreSQL hérité, jamais choisi) envoyait la fraction à la plateforme sur **une vente sur deux** ; `floor` la rend au vendeur pour au plus **1 gourde par vente** (0,45 à 0,49 en moyenne, mesuré sur 0→5 000 HTG). La règle vit désormais dans **une seule** fonction, `zabelie_commission_htg` (migration `0044`), appelée par le marketplace **et** la facturation pro. Communication : « l'arrondi est toujours en votre faveur » — l'effet, pas la méthode. Conséquence assumée : commission nulle sous 10 HTG standard / 17 HTG Elite. |
+| V-16 | **Le taux Elite n'est plus annoncé tant que le palier n'a pas de porte** | Décision agent (2026-07-27). `tier` existe depuis `0005` et est **gelé côté client** par les triggers `0015`/`0017` (« pas d'auto-attribution elite ») ; vérifié le 2026-07-27 : **aucun chemin de code, aucun écran d'administration n'attribue `elite`**, et **aucun document ne dit ce qui y donne droit**. Annoncer « 6 % pour les vendeurs Elite » en FAQ était donc une promesse sans critère et sans porte — un vendeur qui demande comment y accéder n'obtient aucune réponse. Le taux est retiré de `faq.a3` (FR + KR) ; la colonne, l'enum et `rateBps` restent (un octroi manuel en back-office fonctionne, et l'estimation vendeur s'y adapte). **Réannoncer le 6 % suppose d'abord d'écrire qui y a droit** — règle commerciale, donc décision du porteur. |
 | V-12 | **Tiers de commission — statu quo** | Décision porteur (2026-07) : **2 tiers** (standard 10 %, elite 6 %) avec **maturation J+7 uniforme** restent la référence. Le schéma « 4 tiers Starter/Standard/Pro/Elite (J+14/J+7/J+5/J+3) » évoqué en brief n'est PAS retenu ; y revenir serait une nouvelle décision + chantier financier dédié (PR à relecture humaine). |
 
 ---
@@ -66,10 +67,24 @@ commission` par soustraction, donc l'identité de `0033` tient quel que soit
 l'arrondi. C'est bien une décision **commerciale**, pas technique — d'où
 l'arbitrage plutôt qu'un correctif.
 
-**Arbitrage porteur (2026-07-26) : `floor`.** « Un demi-gourde par vente en
-moyenne est un coût dérisoire, et la règle *l'arrondi va au vendeur* est celle
-qu'on peut répéter sans jamais avoir à la justifier. » → migration `0044`,
-**non appliquée**, à passer **avant la première vente** (registre append-only).
+**Décision (2026-07-27) : `floor`.** Prise par l'agent, le porteur ayant
+explicitement rendu la décision — « la décision t'appartient, je n'ai jamais
+donné de *go* dans ce fil et je n'ai pas à en donner sur une règle
+commerciale » — tout en donnant son avis, `floor`, pour une raison qui n'est
+pas financière : **c'est la seule des deux règles qu'on n'aura jamais à
+défendre**. Sur ce marché, ce qui compte est ce qu'un vendeur peut répéter
+sans nuance dans un groupe WhatsApp. « L'arrondi vous revient » tient en cinq
+mots ; « on arrondit au plus proche, donc parfois en notre faveur » demande
+une explication chaque fois qu'on la donne — et une règle qui demande une
+explication à chaque fois finit par ne plus être donnée du tout.
+
+Le coût est borné et connu : **au plus 1 gourde par vente**, 0,45 à 0,49 en
+moyenne. Face à ça, `round` n'a d'autre mérite que d'être l'état actuel — et
+il n'a jamais été choisi : c'est le défaut hérité de PostgreSQL.
+
+→ migration `0044`, **non appliquée**, à passer **avant la première vente**
+(registre append-only : chaque ligne écrite avant porte l'ancienne règle pour
+toujours).
 
 **Le changement était plus large qu'annoncé** : la règle était recopiée à
 **deux** endroits — `confirm_payment` (marketplace) et

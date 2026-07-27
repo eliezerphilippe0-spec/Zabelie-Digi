@@ -7,6 +7,8 @@ export type CurrentUser = {
   email: string | null;
   displayName: string;
   role: string;
+  /** Palier de commission (0005). Sert à l'affichage, jamais au calcul. */
+  tier: "standard" | "elite";
 };
 
 /**
@@ -24,7 +26,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, role")
+    .select("display_name, role, tier")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -33,6 +35,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     email: user.email ?? null,
     displayName: profile?.display_name ?? user.email?.split("@")[0] ?? "Compte",
     role: profile?.role ?? "buyer",
+    tier: profile?.tier === "elite" ? "elite" : "standard",
   };
 }
 
