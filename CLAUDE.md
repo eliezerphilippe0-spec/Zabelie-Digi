@@ -95,8 +95,12 @@ aucune UI, **aucun point jamais émis**. Non convertibles en valeur : seule
 sortie = remise **en pourcentage** (`coupon_type` mono-valeur), non
 achetables, non transférables, non remboursables, expirants (90 j, plafond
 180), solde plafonné. **4 garde-fous normatifs** →
-`docs/CASHBACK-GARDE-FOUS.md`. Ne pas câbler l'attribution ni l'UI sans
-décision explicite.
+`docs/CASHBACK-GARDE-FOUS.md`. ⛔ **Bloqué par D-6** : les garde-fous disent ce
+qu'un point *est*, aucun ne dit ce qu'une remise *coûte ni à qui*. En l'état,
+une remise de points réduirait `orders.amount_htg`, donc le net du **vendeur**
+— il financerait la rétention de la plateforme sans l'avoir choisie. Ne pas
+câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
+`tests/fidelite-discipline.test.ts`.
 
 ## Documents
 - `docs/00-CONTEXTE.md` · `01-PRD.md` · `02-DECISIONS.md`

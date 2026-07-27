@@ -120,6 +120,13 @@ c'est la référence de comparaison, elle doit survivre à la session.
 
 ## Paiements (rappels)
 
+> **Une seule de ces décisions bloque la première commande : D-4.** Un produit
+> à 25 gourdes, sans coupon, sous la règle actuelle, traverse tout le parcours
+> — D-5 (seuil zéro), D-6 (qui paie la remise de fidélité) et le palier Elite
+> ne s'y opposent pas. Elles gagnent même à être tranchées **après**, avec ce
+> que la vente aura appris. D-4 fait exception parce que le grand livre est
+> append-only : la première ligne fige la règle d'arrondi qui l'a produite.
+
 - [ ] **⚖️ D-4 — TRANCHER LE SENS DE L'ARRONDI (décision porteur).** `round`
       (état actuel, la fraction va à la plateforme) ou `floor` (elle va au
       vendeur, ≤ 1 HTG par vente). Personne n'a tranché : le porteur a donné

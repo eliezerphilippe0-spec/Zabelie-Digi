@@ -1,5 +1,14 @@
 # Cashback Zabelie — Garde-fous de conception (référence normative)
 
+> ⛔ **PRÉALABLE BLOQUANT — D-6, non tranchée.** Ce programme ne peut pas être
+> câblé, même partiellement, tant que la question « **qui paie la remise ?** »
+> n'a pas d'arbitrage porteur. En l'état, une remise de points réduirait
+> `orders.amount_htg` : le **vendeur** financerait la rétention de la
+> plateforme, sans l'avoir choisie et sans pouvoir la distinguer d'une baisse
+> de prix. Voir `docs/02` §D-6 et le §« Qui paie la remise » ci-dessous.
+> Le garde `tests/fidelite-discipline.test.ts` rend le câblage impossible à
+> faire en silence.
+>
 > **Statut** : normatif. Toute évolution du programme de points DOIT respecter
 > les quatre règles ci-dessous. Une PR qui en enfreint une est refusée d'office ;
 > une évolution qui exige d'en assouplir une passe d'abord par un avis juridique
@@ -28,6 +37,37 @@ corriger AVANT le câblage — pas en urgence sur un système vivant.
 ⚠️ Ne pas confondre les deux systèmes de coupons : `zabelie_coupons`
 (coupons **vendeur**, branchés au checkout, BL-133) et `coupons` (récompenses
 **points**, non branchés). Ce document ne concerne que le second.
+
+---
+
+## Qui paie la remise ? — question ouverte, et bloquante (D-6)
+
+Les quatre règles ci-dessous portent sur ce qu'un point **est** pour son
+détenteur : non convertible, non transférable, plafonné, expirant. Aucune ne
+dit ce qu'une remise **coûte**, ni à qui. C'est l'angle mort, et il n'apparaît
+qu'au moment du câblage.
+
+Le mécanisme, vérifié le 2026-07-27 : `app/api/checkout/route.ts` fige
+`orders.amount_htg` au prix **remisé**, et la commission se calcule sur ce
+montant. Le net vendeur suit. Pour `zabelie_coupons` (0012) c'est légitime —
+la table porte un `seller_id`, le vendeur crée ses coupons lui-même, il
+finance sa propre promotion. Pour `coupons` (0021) il n'y a **pas de colonne
+vendeur** : le coupon naît de points, donc d'un engagement pris par la
+plateforme envers un acheteur. Câblé de la même manière, il ferait payer au
+vendeur un dispositif qui ne lui appartient pas.
+
+**Trois sorties, aucune évidente** (détail et arbitrage : `docs/02` §D-6) :
+
+| Sortie | Ce qu'elle implique |
+|---|---|
+| Commission sur le **prix affiché** | La plateforme absorbe la remise sur sa part. ⚠️ Si la remise dépasse la commission, il faut **compléter** le net du vendeur : ce n'est plus un calcul mais un **décaissement** — donc registre, donc BRH, donc chantier financier à part entière. |
+| Remise **supportée par Zabelie** | Le vendeur est crédité au prix plein, le manque à gagner s'inscrit en face. Le plus lisible comptablement, le plus coûteux. |
+| **Participation choisie** par le vendeur | Opt-in par produit ou catégorie. Le vendeur finance, mais il a dit oui. |
+
+**Pourquoi c'est le bon moment et pas un autre** : aucun point n'a jamais été
+émis, donc aucune ligne de grand livre n'entérine encore de réponse. Le
+registre est append-only — après la première, le choix est fait qu'on l'ait
+pris ou non.
 
 ---
 
@@ -183,6 +223,7 @@ définitivement acquis.
 | 2 | Intransférabilité | ✅ respecté | Règle « points au payeur » à graver au câblage |
 | 3 | Plafond de solde | ❌ absent | **Écart n°1** — migration config + écrêtage dans `award_points` |
 | 4 | Expiration ≤ 180 j FIFO | ✅ durée (90 j) / ❌ exécution | Job d'expiration jamais planifié ; borner `p_expires_in_days` |
+| — | **Qui paie la remise (D-6)** | ⛔ **non tranchée** | **Bloquant** : le câblage ferait financer la remise par le vendeur. Décision porteur requise avant toute attribution ou UI. |
 
 **Ordre proposé pour la suite (chaque étape = une PR, après « go ») :**
 1. **Plafond de solde** (Règle 3) + borne 180 j sur `p_expires_in_days`
