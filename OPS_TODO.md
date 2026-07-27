@@ -94,6 +94,25 @@ BL-136 (achat invité) reste explicitement en attente d'une décision produit.
 | 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
 | _restent : 0031 (fidélité) · 0037/0038/0040 (B2, revue séparée)_ | | | | | |
 
+⚠️ **Trois contrôles restent NON ÉPROUVÉS** — la base était vide le jour de
+l'application : le rapport de solvabilité à `ok=true` sur zéro ligne, le
+contrôle croisé avant/après (zéro comparé à zéro), et le backfill de
+`order_ref` (0 ligne touchée). Ils prouvent que le code s'exécute, pas qu'il
+calcule juste. **Leur premier vrai test aura lieu à la première commande** —
+relire les trois à ce moment-là, pas avant.
+
+- [ ] **Corriger les empreintes du registre** — exécuter
+      `ops/registre-empreintes-canoniques.sql` (8 lignes). Les empreintes
+      enregistrées sont celles des fichiers alors que la chaîne appliquée
+      avait des en-têtes abrégés : un signal de dérive qui se déclenche dès
+      le premier jour est un signal qu'on apprend à ignorer.
+- [ ] **Trancher l'accès en écriture de l'agent à la base de production.**
+      Le connecteur Supabase a permis d'appliquer les migrations du 2026-07-26
+      directement. Le « go » du porteur couvrait CES migrations ; il ne vaut
+      pas autorisation permanente. À décider : on retire l'accès, on le garde
+      en lecture seule, ou on le garde en écriture avec go explicite par lot.
+      Tant que ce n'est pas tranché, aucune écriture supplémentaire.
+
 Procédure : `docs/20-APPLICATION-MIGRATIONS-0032-0038.md` §B1.
 La sortie de `zabelie_solvency_report()` va dans un **fichier horodaté**
 (`ops/solvabilite-<phase>-<horodatage>.txt`), jamais seulement à l'écran :

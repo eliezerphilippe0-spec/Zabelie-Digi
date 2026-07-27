@@ -28,7 +28,10 @@
 
 create table zabelie_schema_migrations (
   filename    text primary key,           -- ex. « 0035_categories.sql »
-  sha256      text not null,              -- empreinte hex du fichier appliqué
+  -- Empreinte CANONIQUE (commentaires retirés, espaces réduits) produite par
+  -- `node scripts/zabelie-migration-hash.mjs` — jamais un sha256 brut du
+  -- fichier : la mise en forme ne doit pas déclencher de faux signal.
+  sha256      text not null,
   applied_at  timestamptz not null default now(),
   applied_by  text not null default current_user,
   note        text                        -- libre : « Preview », « prod, heures creuses »…

@@ -6,3 +6,13 @@ taxonomie : 16/74/33 (actifs 4/10/33) · vehicules 26 auto + 12 moto · ttl=30
 0042 : 4 fonctions · 2 triggers · order_ref NOT NULL · backfill 0 ligne
 registre 0041 : 12 lignes (8 appliquées + 4 non-appliquées documentées)
 NON appliquées : 0031 (fidélité débranchée) · 0037/0038/0040 (B2, revue séparée)
+
+# ⚠️ TROIS CONTRÔLES NON ÉPROUVÉS — à ne pas lire comme validés
+# Le jeu de données est VIDE. Par conséquent :
+#   1. zabelie_solvency_report() → ok=true sur ZÉRO ligne prouve que la
+#      fonction s'exécute, pas que la comptabilité est juste.
+#   2. Le contrôle croisé avant/après comparait zéro à zéro : il ne pouvait
+#      rien attraper.
+#   3. Le backfill de order_ref a touché 0 ligne : aucun cas réel testé
+#      (le cas réel l'a été en local, sur 3 commandes à 3 dates).
+# Le premier vrai test de ces trois contrôles aura lieu à la PREMIÈRE commande.
