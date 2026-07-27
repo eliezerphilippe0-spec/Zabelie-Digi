@@ -28,9 +28,12 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
 
 ## Ordre — les variables d'abord, sinon le cache fige le mauvais aperçu
 
-0. **Trancher D-4** — le sens de l'arrondi (`docs/02`). Irréversible dans les
-   faits : le grand livre est append-only, donc toute ligne écrite avant porte
-   l'ancienne règle pour toujours.
+0. **Trancher D-4** — le sens de l'arrondi (`docs/02`). *Facultatif si tu
+   préfères vendre d'abord* : un registre append-only accueille un changement
+   de règle dans le temps, à condition que chaque ligne dise laquelle l'a
+   produite. Rien ne l'enregistre aujourd'hui, donc si tu achètes avant de
+   trancher, **note à la main que la ligne n°1 a été produite sous `round`**.
+   Trancher avant reste le chemin le plus simple, pas le seul.
    Si la réponse est `round` : **rien à faire**, `0044` reste au dépôt.
    Si la réponse est `floor`, **l'ordre des trois gestes n'est pas neutre** :
 

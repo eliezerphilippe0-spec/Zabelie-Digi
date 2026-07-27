@@ -124,8 +124,16 @@ c'est la référence de comparaison, elle doit survivre à la session.
 > à 25 gourdes, sans coupon, sous la règle actuelle, traverse tout le parcours
 > — D-5 (seuil zéro), D-6 (qui paie la remise de fidélité) et le palier Elite
 > ne s'y opposent pas. Elles gagnent même à être tranchées **après**, avec ce
-> que la vente aura appris. D-4 fait exception parce que le grand livre est
-> append-only : la première ligne fige la règle d'arrondi qui l'a produite.
+> que la vente aura appris.
+>
+> D-4 n'est pas plus bloquante — elle est seulement plus simple à prendre
+> avant. Un registre append-only accueille très bien un changement de règle
+> dans le temps : c'est même sa raison d'être. Ce qu'il exige, c'est que
+> chaque ligne dise **sous quelle règle** elle a été produite — et ça, rien ne
+> l'enregistre aujourd'hui. Donc deux chemins valables : trancher D-4 avant
+> (le plus simple), ou **acheter d'abord et noter à la main que la ligne n°1 a
+> été produite sous `round`**. Ce qu'il ne faut pas faire, c'est changer la
+> règle sans que personne ne sache laquelle s'appliquait à quoi.
 
 - [ ] **⚖️ D-4 — TRANCHER LE SENS DE L'ARRONDI (décision porteur).** `round`
       (état actuel, la fraction va à la plateforme) ou `floor` (elle va au
