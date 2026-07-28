@@ -9,6 +9,9 @@
 --        apparaît. Le filtre est donc bien le seuil, pas un autre effet.
 --   SD7. Purge : borne respectée, compteur rendu même à zéro.
 --   SD8. Recherche floue : « batery » trouve « batri », un mot sans rapport non.
+--   SD9. Molette d'ouverture : `p_min_sessions` surcharge le seuil, et
+--        l'ABSENCE de surcharge laisse bien celui de la config (piège
+--        `GREATEST` qui ignore les NULL).
 --
 -- Usage : psql "$DATABASE_URL" -f supabase/tests/search_demand.test.sql
 
@@ -173,5 +176,37 @@ begin
   end if;
 
   raise notice 'OK — SD8 « batery » trouve « Batri », « zoranj » ne trouve rien';
+end $$;
+rollback;
+
+-- ─────────────────────────── SD9 ────────────────────────────────────────────
+-- À faible trafic, presque aucun terme n'atteint 3 sessions en 7 jours : sans
+-- molette, l'export renverrait du vide pendant des mois et on croirait le
+-- capteur muet. Le seuil vit à la lecture, l'ouvrir ne réécrit rien.
+begin;
+do $$
+declare v_n integer;
+begin
+  perform zabelie_record_search_miss('onduleur', null, 'sess-x');
+
+  -- Défaut (3) : invisible.
+  select count(*) into v_n from zabelie_search_demand(7) where term = 'onduleur';
+  if v_n <> 0 then
+    raise exception 'SD9 : sans surcharge, le seuil de la config n''est pas appliqué';
+  end if;
+
+  -- Surcharge à 1 : visible.
+  select count(*) into v_n from zabelie_search_demand(7, 1) where term = 'onduleur';
+  if v_n <> 1 then
+    raise exception 'SD9 : la surcharge à 1 ne montre pas le terme';
+  end if;
+
+  -- Surcharge à 5 : de nouveau invisible — la molette va dans les deux sens.
+  select count(*) into v_n from zabelie_search_demand(7, 5) where term = 'onduleur';
+  if v_n <> 0 then
+    raise exception 'SD9 : la surcharge à 5 ne filtre pas';
+  end if;
+
+  raise notice 'OK — SD9 molette dans les deux sens, défaut préservé sans surcharge';
 end $$;
 rollback;

@@ -66,13 +66,19 @@ export default async function CataloguePage({
     }
     if (approchants.length === 0) {
       manque = true;
-      // Best-effort et non attendu bloquant : le capteur ne doit jamais faire
-      // échouer la page qu'il observe.
-      await recordSearchMiss({
-        q,
-        department: activeCat !== "Tout" ? activeCat : null,
-        sessionHash: sessionFingerprint(await headers()),
-      });
+      // Sans poivre serveur, `sessionFingerprint` rend `null` et on
+      // N'ENREGISTRE PAS : un journal ré-identifiable serait pire que pas de
+      // journal du tout. L'écran zéro-résultat, lui, s'affiche quand même.
+      const empreinte = sessionFingerprint(await headers());
+      if (empreinte) {
+        // Best-effort et non bloquant : le capteur ne doit jamais faire
+        // échouer la page qu'il observe.
+        await recordSearchMiss({
+          q,
+          department: activeCat !== "Tout" ? activeCat : null,
+          sessionHash: empreinte,
+        });
+      }
     }
   }
   const CATEGORIES = ["Tout", ...categories];

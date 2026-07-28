@@ -148,7 +148,17 @@ revoke all on function zabelie_record_search_miss(text, text, text)
 -- Ce que le porteur regarde. Le seuil de sessions distinctes est appliqué ICI
 -- et pas à l'écriture : on garde la trace brute, on ne montre que ce qui est
 -- crédible. Changer le seuil ne demande donc pas de réécrire l'histoire.
-create or replace function zabelie_search_demand(p_days integer default 7)
+create or replace function zabelie_search_demand(
+  p_days         integer default 7,
+  -- Surcharge du seuil. `null` = celui de la config.
+  --
+  -- ⚠️ Indispensable au démarrage, et pas un confort : à faible trafic,
+  -- presque aucun terme n'atteindra 3 sessions distinctes en 7 jours. La
+  -- sortie serait vide pendant des mois et on conclurait que le capteur ne
+  -- capte rien, alors qu'il aurait seulement filtré. Le seuil vivant à la
+  -- LECTURE, l'ouvrir ne coûte rien et ne réécrit aucune donnée.
+  p_min_sessions integer default null
+)
 returns table (
   term        text,
   department  text,
@@ -166,13 +176,21 @@ as $$
     from zabelie_search_misses m
    where m.created_at >= now() - make_interval(days => greatest(p_days, 1))
    group by m.term
+  -- ⚠️ Pas de `coalesce(greatest(p_min_sessions, 1), …)` : en PostgreSQL
+  -- `GREATEST` IGNORE les NULL, donc `greatest(null, 1)` rend 1 et le seuil
+  -- retomberait à 1 même sans surcharge. Écrit ainsi, le test SD4 est passé
+  -- au rouge et l'a montré.
   having count(distinct m.session_hash)
-         >= (select min_sessions from zabelie_search_config where id)
+         >= case
+              when p_min_sessions is null
+                then (select min_sessions from zabelie_search_config where id)
+              else greatest(p_min_sessions, 1)
+            end
    order by count(distinct m.session_hash) desc, max(m.created_at) desc
    limit 100;
 $$;
 
-revoke all on function zabelie_search_demand(integer) from public, anon, authenticated;
+revoke all on function zabelie_search_demand(integer, integer) from public, anon, authenticated;
 
 -- ─────────────────────────── 6. Purge ───────────────────────────────────────
 create or replace function zabelie_purge_search_misses()

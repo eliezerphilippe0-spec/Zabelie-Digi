@@ -134,6 +134,15 @@ c'est la référence de comparaison, elle doit survivre à la session.
       **À planifier au cron** une fois appliquée : `zabelie_purge_search_misses()`
       (rétention 180 j, en table de config).
       **La sortie à lire chaque semaine** : `GET /api/admin/search-demand?jours=7`
+      — et **au démarrage, `?jours=30&min_sessions=1`** : à faible trafic
+      presque aucun terme n'atteint 3 sessions distinctes en 7 jours, la
+      sortie par défaut resterait vide des mois durant et on croirait le
+      capteur muet. Le mode ouvert est étiqueté `fiable: false` dans la
+      réponse — il mélange demande réelle, robots et vendeurs qui testent
+      leur fiche.
+      ⚠️ **`SEARCH_FINGERPRINT_SALT` (facultative)** : sans elle le poivre est
+      dérivé de `SUPABASE_SERVICE_ROLE_KEY`. Si aucune des deux n'existe, rien
+      n'est enregistré — c'est voulu.
       — chaque terme vient avec un message Kreyòl prêt à coller dans WhatsApp.
       C'est le livrable, pas la recherche.
       ⚠️ **Ce capteur ne vaut rien à catalogue vide** : il mesurera que le

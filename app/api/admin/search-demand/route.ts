@@ -40,9 +40,19 @@ export async function GET(req: Request) {
   const jours = Math.min(90, Math.max(1, Number(url.searchParams.get("jours") ?? 7)));
   const lang = url.searchParams.get("lang") === "fr" ? "fr" : "ht";
 
+  // Les deux molettes. Au démarrage, presque aucun terme n'atteint 3 sessions
+  // distinctes en 7 jours : sans elles, la sortie serait vide pendant des mois
+  // et on croirait le capteur muet alors qu'il n'aurait fait que filtrer.
+  // `?jours=30&min_sessions=1` est le mode d'observation des premiers temps.
+  const brut = url.searchParams.get("min_sessions");
+  const minSessions = brut === null ? null : Math.max(1, Number(brut) || 1);
+
   try {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("zabelie_search_demand", { p_days: jours });
+    const { data, error } = await admin.rpc("zabelie_search_demand", {
+      p_days: jours,
+      p_min_sessions: minSessions,
+    });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -52,19 +62,26 @@ export async function GET(req: Request) {
     // Journalisé même à zéro : sinon « le capteur n'a pas tourné » et « il a
     // tourné, personne n'a rien cherché » produisent le même vide.
     console.info(
-      `[sourcing] ${termes.length} terme(s) non satisfait(s) sur ${jours} jour(s)`
+      `[sourcing] ${termes.length} terme(s) non satisfait(s) sur ${jours} jour(s)` +
+        (minSessions === null ? "" : ` — seuil forcé à ${minSessions}`)
     );
 
     return NextResponse.json({
       jours,
       total: termes.length,
-      // Rappel de lecture pour qui ouvre cette sortie sans contexte : un
-      // terme absent n'est pas forcément inexistant — il peut être sous le
-      // seuil de sessions distinctes, qui écarte les robots et les vendeurs
-      // qui testent leur propre fiche.
+      // Le mode est ÉTIQUETÉ : une liste ouverte à 1 session mélange la
+      // demande réelle avec les robots et le vendeur qui teste sa fiche.
+      // Lire l'une pour l'autre, c'est aller démarcher un commerçant sur un
+      // fantôme.
+      filtre: minSessions === null ? "seuil de config" : `seuil forcé à ${minSessions}`,
+      fiable: minSessions === null || minSessions >= 3,
       note:
-        "Seuls les termes atteignant le seuil de sessions distinctes " +
-        "(zabelie_search_config.min_sessions) apparaissent.",
+        minSessions === null
+          ? "Seuls les termes atteignant le seuil de sessions distinctes " +
+            "(zabelie_search_config.min_sessions) apparaissent."
+          : "MODE OUVERT — seuil abaissé : cette liste contient probablement " +
+            "des robots et des vendeurs testant leur propre fiche. À lire " +
+            "comme un signal faible, pas comme de la demande confirmée.",
       termes: termes.map((t) => ({
         ...t,
         message: messageSourcing(t, { jours, lang }),
