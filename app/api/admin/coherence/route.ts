@@ -73,7 +73,42 @@ async function handle(req: Request) {
       console.warn("[coherence] ARRONDI — indéterminé :", arrondi.raison);
     }
 
-    return NextResponse.json({ ...data, arrondi });
+    // Intégrité des index d'expression du capteur de demande (0047).
+    //
+    // Ce contrôle ne peut PAS être utile en CI : la base de test a un index
+    // fraîchement construit et une fonction fraîchement définie, ils
+    // s'accorderont toujours. La dérive qu'il existe pour attraper ne naît
+    // qu'ici — quand une migration remplace `zabelie_search_normalize` sans
+    // réindexer. Non branché sur la vraie base, il ne serait qu'un détecteur
+    // de fumée posé dans un tiroir, dont la seule fonction serait de rassurer.
+    let indexRecherche: { ok: boolean; detail: string } | { statut: string } = {
+      statut: "indéterminé",
+    };
+    const { data: integrite, error: erreurIntegrite } = await admin.rpc(
+      "zabelie_search_index_integrity"
+    );
+    if (erreurIntegrite) {
+      // `0047` pas encore appliquée : la fonction n'existe pas. Ce n'est pas
+      // une panne, mais ça ne doit pas passer pour un contrôle réussi.
+      indexRecherche = { statut: `indéterminé — ${erreurIntegrite.message}` };
+      console.warn("[coherence] INDEX RECHERCHE — indéterminé :", erreurIntegrite.message);
+    } else {
+      const ligne = (Array.isArray(integrite) ? integrite[0] : integrite) as
+        | { ok: boolean; detail: string }
+        | undefined;
+      if (ligne) {
+        indexRecherche = ligne;
+        if (!ligne.ok) {
+          console.error("[coherence] INDEX RECHERCHE PÉRIMÉ —", ligne.detail);
+        } else {
+          // Journalisé même quand tout va bien : sinon « le contrôle n'a pas
+          // tourné » et « il a tourné, rien à signaler » se ressemblent.
+          console.info("[coherence] index recherche alignés sur la fonction");
+        }
+      }
+    }
+
+    return NextResponse.json({ ...data, arrondi, indexRecherche });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Erreur" },

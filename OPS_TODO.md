@@ -162,6 +162,11 @@ c'est la référence de comparaison, elle doit survivre à la session.
       les valeurs de l'ancienne définition et le rattrapage écarte des
       produits **en silence** — PostgreSQL exige `IMMUTABLE` mais ne vérifie
       pas la promesse. Contrôle : `select * from zabelie_search_index_integrity();`
+      **Il tourne déjà tous les jours** dans `/api/admin/coherence` (champ
+      `indexRecherche`) : c'est le seul endroit où la dérive peut naître, la
+      CI ne la verra jamais — sa base a toujours un index et une fonction
+      fraîchement créés, donc toujours d'accord. **À relire juste après avoir
+      appliqué une migration qui touche la fonction**, sans attendre le cron.
       — chaque terme vient avec un message Kreyòl prêt à coller dans WhatsApp.
       C'est le livrable, pas la recherche.
       ⚠️ **Ce capteur ne vaut rien à catalogue vide** : il mesurera que le
