@@ -12,29 +12,16 @@ import { createHash } from "node:crypto";
  */
 
 /**
- * Empreinte de session — sert à ne pas compter dix fois la même personne.
- *
- * ⚠️ Ce qui SORT d'ici est stocké ; ce qui ENTRE ne l'est jamais. L'adresse IP
- * et l'agent utilisateur servent à calculer un condensé et sont aussitôt
- * oubliés : la table ne contient que le condensé.
- *
- * Le jour entre dans le calcul, donc l'empreinte CHANGE chaque jour. C'est
- * délibéré et ça coûte un peu de précision : on ne peut pas suivre quelqu'un
- * d'un jour sur l'autre, même en le voulant. Une suite de recherches en dit
- * plus long sur une personne qu'un profil — « klinik avòtman », « tès VIH » —
- * et ce module est écrit en partant de là.
- *
- * `SEARCH_FINGERPRINT_SALT` est facultatif : sans lui, l'empreinte reste
- * calculable par quelqu'un qui connaîtrait déjà l'IP et l'agent — c'est-à-dire
- * qui aurait déjà l'information. La poser resserre, son absence ne casse rien.
- */
-/**
  * Le jour, tel qu'il bascule EN HAÏTI.
  *
  * `toISOString()` donne la date UTC : la rotation tomberait vers 20 h locales,
  * en plein pic d'usage, et couperait une même soirée en deux empreintes — donc
  * une personne comptée deux fois. La colonne `day` de `0047` bascule déjà sur
  * `America/Port-au-Prince` ; les deux doivent parler du même jour.
+ *
+ * Fuseau NOMMÉ et non décalage figé : Haïti observe l'heure d'été (vérifié en
+ * base — juillet à UTC−4, janvier à UTC−5). Un `-05:00` en dur dériverait
+ * d'une heure pendant huit mois de l'année.
  */
 export function jourHaiti(now: Date = new Date()): string {
   // `en-CA` rend AAAA-MM-JJ, seul format ISO parmi les locales courantes.
@@ -53,23 +40,44 @@ export function jourHaiti(now: Date = new Date()): string {
  * chaînes d'agent utilisateur courantes, sur un jour connu. Quelques millions
  * de condensés suffisent à répondre à « telle adresse a-t-elle cherché tel
  * terme ». La rotation quotidienne empêche le SUIVI dans le temps, pas la
- * ré-identification ponctuelle : ce sont deux propriétés différentes, et il
- * faut les deux.
+ * ré-identification ponctuelle : deux propriétés distinctes, il faut les deux.
  *
- * Rend `null` si aucun secret n'est disponible — l'appelant cesse alors
- * d'enregistrer. Mieux vaut pas de capteur qu'un journal ré-identifiable.
+ * ⚠️ AUCUN REPLI SUR UN AUTRE SECRET DU SERVEUR, et surtout pas sur la clé de
+ * service. Ce serait coupler deux cycles de vie qui doivent rester séparés :
+ * une rotation de clé — routine, ou obligatoire après incident — changerait
+ * TOUTES les empreintes en milieu de fenêtre et casserait le comptage de
+ * sessions distinctes sans rien signaler. Pire, une fuite de cette clé
+ * donnerait de quoi reconstruire rétroactivement l'espace des empreintes de
+ * tous les jours passés : la propriété qu'on vient d'acheter disparaîtrait au
+ * moment précis où elle servirait.
  */
 function poivre(): string | null {
   const explicite = process.env.SEARCH_FINGERPRINT_SALT;
-  if (explicite && explicite.length >= 16) return explicite;
-  // Repli : dérivé d'un secret serveur qui existe déjà, jamais la clé
-  // elle-même. Évite une variable d'environnement de plus à poser et à
-  // oublier — c'est le mode nominal en pratique.
-  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (cle && cle.length >= 16) {
-    return createHash("sha256").update(`zabelie/search-fingerprint/v1|${cle}`).digest("hex");
-  }
-  return null;
+  return explicite && explicite.length >= 16 ? explicite : null;
+}
+
+/**
+ * La collecte est-elle possible ? Exposé pour que l'écran d'administration
+ * puisse le DIRE, au lieu de laisser croire que personne ne cherche.
+ *
+ * C'est la règle du dépôt appliquée à ce lot : l'absence de signal doit être
+ * un signal. Un journal vide parce que le poivre manque et un journal vide
+ * parce que personne n'a cherché se ressemblent trait pour trait.
+ */
+export function captureActive(): boolean {
+  return poivre() !== null;
+}
+
+/** Une seule fois par processus : un avertissement répété devient du bruit. */
+let avertie = false;
+function avertirUneFois(): void {
+  if (avertie) return;
+  avertie = true;
+  console.warn(
+    "[recherche] SEARCH_FINGERPRINT_SALT absente — le capteur de demande est " +
+      "DÉSACTIVÉ. Le journal restera vide : ce n'est pas l'absence de " +
+      "recherches, c'est l'absence de collecte."
+  );
 }
 
 /**
@@ -84,15 +92,18 @@ function poivre(): string | null {
  *   - un POIVRE serveur entre dans le calcul → pas de ré-identification par
  *     force brute sur un jour donné.
  *
- * Rend `null` quand aucun poivre n'est disponible : on préfère perdre la
- * mesure plutôt que produire un journal ré-identifiable.
+ * Rend `null` si le poivre est absent : on préfère perdre la mesure plutôt que
+ * produire un journal ré-identifiable.
  */
 export function sessionFingerprint(
   headers: { get(name: string): string | null },
   now: Date = new Date()
 ): string | null {
   const sel = poivre();
-  if (!sel) return null;
+  if (!sel) {
+    avertirUneFois();
+    return null;
+  }
 
   const ip = (headers.get("x-forwarded-for") ?? "").split(",")[0]?.trim() ?? "";
   const ua = headers.get("user-agent") ?? "";
@@ -123,7 +134,8 @@ export function messageSourcing(
   const rayon = t.department ? ` (${t.department})` : "";
 
   if ((opts.lang ?? "ht") === "fr") {
-    const personnes = t.sessions === 1 ? "1 personne a cherché" : `${t.sessions} personnes ont cherché`;
+    const personnes =
+      t.sessions === 1 ? "1 personne a cherché" : `${t.sessions} personnes ont cherché`;
     return (
       `Bonjour. Sur Zabelie, ${personnes} « ${t.term} »${rayon} ces ${jours} derniers jours ` +
       `et nous n'en avons aucun. Si vous en vendez, je peux vous mettre en ligne aujourd'hui.`

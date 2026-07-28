@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { jourHaiti, messageSourcing, sessionFingerprint } from "../lib/search-demand";
+import {
+  captureActive,
+  jourHaiti,
+  messageSourcing,
+  sessionFingerprint,
+} from "../lib/search-demand";
 
 function entetes(map: Record<string, string>) {
   return { get: (n: string) => map[n.toLowerCase()] ?? null };
@@ -99,22 +104,29 @@ test("sans poivre serveur, pas d'empreinte — donc pas de journal", () => {
   }
 });
 
-test("le poivre se dérive de la clé de service si la variante dédiée manque", () => {
+test("aucun repli sur la clé de service — les cycles de vie restent séparés", () => {
   const salt = process.env.SEARCH_FINGERPRINT_SALT;
+  const cle = process.env.SUPABASE_SERVICE_ROLE_KEY;
   delete process.env.SEARCH_FINGERPRINT_SALT;
   process.env.SUPABASE_SERVICE_ROLE_KEY = "cle-de-service-de-test-assez-longue";
   try {
-    const e = sessionFingerprint(entetes({ "x-forwarded-for": "196.1.2.3" }));
-    assert.ok(e, "aucune empreinte alors qu'une clé de service existe");
     assert.equal(
-      e.includes("cle-de-service"),
-      false,
-      "la clé de service ne doit jamais transparaître",
+      sessionFingerprint(entetes({ "x-forwarded-for": "196.1.2.3" })),
+      null,
+      "une empreinte a été dérivée de la clé de service : une rotation de clé " +
+        "casserait le comptage en silence, et une fuite reconstituerait tout " +
+        "l'historique des empreintes",
     );
+    assert.equal(captureActive(), false, "la capture doit se déclarer inactive");
   } finally {
-    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (cle === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = cle;
     if (salt !== undefined) process.env.SEARCH_FINGERPRINT_SALT = salt;
   }
+});
+
+test("capture active quand le poivre est posé", () => {
+  assert.equal(captureActive(), true);
 });
 
 /**

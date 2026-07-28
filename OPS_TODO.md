@@ -140,9 +140,16 @@ c'est la référence de comparaison, elle doit survivre à la session.
       capteur muet. Le mode ouvert est étiqueté `fiable: false` dans la
       réponse — il mélange demande réelle, robots et vendeurs qui testent
       leur fiche.
-      ⚠️ **`SEARCH_FINGERPRINT_SALT` (facultative)** : sans elle le poivre est
-      dérivé de `SUPABASE_SERVICE_ROLE_KEY`. Si aucune des deux n'existe, rien
-      n'est enregistré — c'est voulu.
+      ⚠️ **`SEARCH_FINGERPRINT_SALT` — REQUISE (≥ 16 caractères), sans repli.**
+      Sans elle, **rien n'est enregistré** et le journal reste vide : c'est
+      voulu, mais ça se confond avec « personne ne cherche ». Le serveur
+      journalise un avertissement au premier appel, et la réponse admin porte
+      `collecte: "désactivée"` — regarde ce champ AVANT de conclure quoi que
+      ce soit d'une liste vide.
+      Aucun repli sur `SUPABASE_SERVICE_ROLE_KEY` : une rotation de clé
+      casserait le comptage de sessions en milieu de fenêtre sans rien
+      signaler, et une fuite reconstruirait rétroactivement les empreintes de
+      tous les jours passés.
       — chaque terme vient avec un message Kreyòl prêt à coller dans WhatsApp.
       C'est le livrable, pas la recherche.
       ⚠️ **Ce capteur ne vaut rien à catalogue vide** : il mesurera que le

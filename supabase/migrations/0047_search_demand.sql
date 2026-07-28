@@ -174,7 +174,10 @@ as $$
          count(distinct m.session_hash)              as sessions,
          max(m.created_at)                           as derniere
     from zabelie_search_misses m
-   where m.created_at >= now() - make_interval(days => greatest(p_days, 1))
+   -- Même piège que `p_min_sessions` : `greatest(null, 1)` rend 1, donc un
+   -- appel avec `p_days` explicitement nul donnerait une fenêtre d'UN jour au
+   -- lieu de sept, en silence.
+   where m.created_at >= now() - make_interval(days => greatest(coalesce(p_days, 7), 1))
    group by m.term
   -- ⚠️ Pas de `coalesce(greatest(p_min_sessions, 1), …)` : en PostgreSQL
   -- `GREATEST` IGNORE les NULL, donc `greatest(null, 1)` rend 1 et le seuil
@@ -219,6 +222,18 @@ revoke all on function zabelie_purge_search_misses() from public, anon, authenti
 -- SIMILARITÉ. `ilike '%batri%'` exige la sous-chaîne exacte et ne trouve donc
 -- jamais « batery » — c'est le cas courant d'un Kreyòl écrit à l'oreille.
 --
+-- ─────────── 7bis. Index sur la forme NORMALISÉE (pas le brut) ─────────────
+-- Les index de `0028` portent sur `title`/`description` BRUTS. Le pré-filtre
+-- `<%` doit s'appliquer à la MÊME expression que la comparaison qui décide,
+-- sinon il peut écarter une ligne que la décision aurait acceptée : « Batrî »
+-- et « batri » n'ont pas les mêmes trigrammes, et le rattrapage manquerait
+-- silencieusement des produits accentués. Deux index de plus, et les deux
+-- opérations parlent enfin de la même chaîne.
+create index if not exists zabelie_products_title_norm_trgm_idx
+  on products using gin (zabelie_search_normalize(title) gin_trgm_ops);
+create index if not exists zabelie_products_desc_norm_trgm_idx
+  on products using gin (zabelie_search_normalize(coalesce(description, '')) gin_trgm_ops);
+
 -- Appelée seulement quand la recherche littérale ne rend RIEN : la couche 1
 -- reste prioritaire, la couche 2 rattrape.
 --
@@ -227,42 +242,73 @@ revoke all on function zabelie_purge_search_misses() from public, anon, authenti
 -- n'importe quel seuil utile — parce qu'elle compare la requête au titre
 -- ENTIER, si bien qu'un titre long dilue le score et qu'un vendeur est puni
 -- d'avoir été précis. `word_similarity` rend 0,429 : elle cherche le meilleur
--- fragment du titre. Le bruit ne remonte pas pour autant — « zoranj » rend
--- 0,000 contre les deux titres du test.
+-- fragment du titre. L'ORDRE DES ARGUMENTS COMPTE — requête d'abord, titre
+-- ensuite : inversé, le même cas rend 0,143 et ne rattrape plus rien.
 --
--- Note de performance assumée : la comparaison explicite au seuil de la table
--- de config n'utilise pas l'index GIN (celui-ci répond à l'opérateur `<%`,
--- dont le seuil vit dans un paramètre de session, pas dans notre config). À
--- l'échelle de Zabelie — centaines de fiches — un parcours est le bon
--- compromis, et il garde le seuil là où le porteur peut le changer.
+-- ⚠️⚠️ NE JAMAIS REMPLACER LA PAIRE `<%` + COMPARAISON PAR L'UN DES DEUX SEUL.
+-- Les deux font des choses différentes et il faut les deux :
+--
+--   * `<%` SEUL serait faux. L'opérateur lit `pg_trgm.word_similarity_threshold`,
+--     un GUC distinct de `pg_trgm.similarity_threshold`, dont le défaut est
+--     0,6 — mesuré sur cette base. Au-dessus des 0,429 du cas « batery », il
+--     ne rattraperait donc RIEN en production, pendant que les tests
+--     resteraient verts s'ils appelaient la fonction directement.
+--   * La COMPARAISON SEULE serait lente. Un index GIN trigramme ne répond
+--     qu'à l'opérateur : `word_similarity(a,b) >= seuil` force un balayage
+--     complet du catalogue. Invisible à 100 fiches, douloureux à 10 000.
+--
+-- D'où la forme retenue : le GUC est posé À LA VOLÉE (transaction courante
+-- seulement) SOUS le seuil de configuration, ce qui fait de `<%` un
+-- PRÉ-FILTRE LARGE que l'index sait servir ; la comparaison explicite tranche
+-- ensuite avec le seuil que le porteur contrôle. L'index filtre, la config
+-- décide.
 create or replace function zabelie_search_fuzzy(
   p_raw   text,
   p_limit integer default 24
 )
 returns table (product_id uuid, score real)
-language sql
+language plpgsql
 stable
 set search_path = public, pg_temp
 as $$
-  select p.id,
-         greatest(
-           word_similarity(zabelie_search_normalize(p_raw),
-                           zabelie_search_normalize(p.title)),
-           word_similarity(zabelie_search_normalize(p_raw),
-                           zabelie_search_normalize(coalesce(p.description, '')))
-         ) as score
-    from products p
-   where p.status = 'published'
-     and greatest(
-           word_similarity(zabelie_search_normalize(p_raw),
-                           zabelie_search_normalize(p.title)),
-           word_similarity(zabelie_search_normalize(p_raw),
-                           zabelie_search_normalize(coalesce(p.description, '')))
-         ) >= (select similarity_threshold from zabelie_search_config where id)
-   order by score desc
-   limit greatest(p_limit, 1);
+declare
+  v_seuil real;
+  v_norm  text;
+begin
+  select similarity_threshold into v_seuil from zabelie_search_config where id;
+  v_norm := zabelie_search_normalize(p_raw);
+  if v_norm is null then
+    return;
+  end if;
+
+  -- Marge sous le seuil : le pré-filtre doit être un SUR-ensemble strict de
+  -- ce que la comparaison acceptera, jamais l'inverse. `true` = local à la
+  -- transaction, donc aucune fuite de réglage vers le reste de la session.
+  perform set_config('pg_trgm.word_similarity_threshold',
+                     greatest(v_seuil - 0.05, 0.01)::text, true);
+
+  return query
+    select p.id,
+           greatest(
+             word_similarity(v_norm, zabelie_search_normalize(p.title)),
+             word_similarity(v_norm, zabelie_search_normalize(coalesce(p.description, '')))
+           ) as score
+      from products p
+     where p.status = 'published'
+       -- Pré-filtre servi par l'index GIN de `0028`.
+       and (v_norm <% zabelie_search_normalize(p.title)
+            or v_norm <% zabelie_search_normalize(coalesce(p.description, '')))
+       -- Décision, au seuil de la table de config.
+       and greatest(
+             word_similarity(v_norm, zabelie_search_normalize(p.title)),
+             word_similarity(v_norm, zabelie_search_normalize(coalesce(p.description, '')))
+           ) >= v_seuil
+     order by score desc
+     limit greatest(coalesce(p_limit, 24), 1);
+end;
 $$;
 
 comment on function zabelie_search_fuzzy(text, integer) is
   'Rattrapage par similarité trigramme (word_similarity) quand la recherche '
-  'littérale ne rend rien. Seuil en table de config, jamais en dur. Voir 0047.';
+  'littérale ne rend rien. `<%` sert de pré-filtre indexé, le seuil de '
+  'zabelie_search_config tranche. Ne jamais garder l''un sans l''autre. Voir 0047.';

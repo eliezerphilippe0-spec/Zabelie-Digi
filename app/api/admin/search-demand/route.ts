@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { messageSourcing, type TermeDemande } from "@/lib/search-demand";
+import { captureActive, messageSourcing, type TermeDemande } from "@/lib/search-demand";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,9 +66,21 @@ export async function GET(req: Request) {
         (minSessions === null ? "" : ` — seuil forcé à ${minSessions}`)
     );
 
+    const collecte = captureActive();
+    if (!collecte) {
+      console.warn(
+        "[sourcing] collecte DÉSACTIVÉE (poivre absent) — une liste vide ne " +
+          "veut donc rien dire sur la demande réelle"
+      );
+    }
+
     return NextResponse.json({
       jours,
       total: termes.length,
+      // Sans ce champ, un journal vide se lit comme « personne ne cherche »
+      // alors qu'il peut vouloir dire « on n'enregistre rien ». Les deux se
+      // ressemblent trait pour trait, et un seul appelle une action.
+      collecte: collecte ? "active" : "désactivée (SEARCH_FINGERPRINT_SALT absente)",
       // Le mode est ÉTIQUETÉ : une liste ouverte à 1 session mélange la
       // demande réelle avec les robots et le vendeur qui teste sa fiche.
       // Lire l'une pour l'autre, c'est aller démarcher un commerçant sur un
