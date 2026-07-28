@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { MIGRATIONS_REQUISES, verifierSchemaRequis } from "../lib/schema-requis";
+import {
+  MIGRATIONS_REQUISES,
+  verdictObjets,
+  verifierSchemaRequis,
+} from "../lib/schema-requis";
 import { isMissingFunction } from "../lib/pg-errors";
 
 const AUTRES = [
@@ -89,4 +93,62 @@ test("fonction absente reconnue par ses deux codes, jamais par le message", () =
     false,
     "un code vide ne doit pas passer pour une fonction absente",
   );
+});
+
+/**
+ * Le registre DÉCLARE, `zabelie_objets_requis()` CONSTATE. La distinction
+ * n'est pas théorique : seule `0041` s'inscrit au registre, les autres
+ * migrations y sont ajoutées à la main. Une restauration partielle ou un
+ * retour arrière produit donc « ligne présente, fonction absente ».
+ */
+test("le CONSTAT prime sur la DÉCLARATION", () => {
+  const v = verdictObjets({
+    objets: [
+      {
+        objet: "zabelie_record_policy_acceptance(uuid, text)",
+        present: false,
+        pourquoi: "toute création de fiche échoue",
+      },
+    ],
+    // Le registre, lui, affirme que tout est appliqué. C'est le cas
+    // vert-mais-cassé qu'on ferme.
+    lignesRegistre: [{ filename: "0046_policy_acceptance.sql" }],
+  });
+  assert.equal(v.source, "présence");
+  assert.equal(v.statut, "manquant");
+  assert.match(v.message, /création de fiche/);
+});
+
+test("tous les objets présents → ok, par constat", () => {
+  const v = verdictObjets({
+    objets: [{ objet: "f(x)", present: true, pourquoi: "peu importe" }],
+    lignesRegistre: [],
+  });
+  assert.equal(v.source, "présence");
+  assert.equal(v.statut, "ok");
+});
+
+test("0048 non appliquée → repli sur le registre, ÉTIQUETÉ comme tel", () => {
+  const v = verdictObjets({
+    objets: null,
+    erreurObjets: { message: "function does not exist" },
+    lignesRegistre: [{ filename: "0046_policy_acceptance.sql" }],
+  });
+  assert.equal(v.source, "registre", "le repli doit se déclarer");
+  assert.equal(v.statut, "ok");
+  assert.match(
+    v.message,
+    /repli sur le registre/,
+    "un contrôle qui ne dit pas à quelle question il a répondu rassure sans informer",
+  );
+});
+
+test("ni constat ni registre → indéterminé, jamais ok", () => {
+  const v = verdictObjets({
+    objets: null,
+    erreurObjets: { message: "absent" },
+    lignesRegistre: null,
+    erreurRegistre: { message: "permission denied" },
+  });
+  assert.equal(v.statut, "indetermine");
 });

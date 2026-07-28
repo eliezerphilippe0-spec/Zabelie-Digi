@@ -183,6 +183,25 @@ c'est la référence de comparaison, elle doit survivre à la session.
       catalogue est vide. Il devient utile entre 20 et 200 fiches — la fenêtre
       où une marketplace meurt d'habitude.
 
+- [ ] **🔴 Protéger `main` — la CI existe et ne bloque rien.** Vérifié le
+      2026-07-27 : `.github/workflows/ci.yml` exécute typecheck, tests, build,
+      e2e et SQL ; et `main` est **`protected: false`**. Rien n'empêche donc
+      de fusionner au rouge. C'est le détecteur non branché, une couche
+      au-dessus du code — et le point de contrôle humain du dépôt est
+      justement la PR.
+      À faire dans les réglages GitHub : exiger les vérifications de statut
+      avant fusion sur `main`.
+- [ ] **⚠️ La branche par défaut du dépôt est `claude/install-skills-eGRxy`,
+      pas `main`.** Conséquence : une PR ouverte sans base explicite vise
+      cette branche, et tout outil qui parle de « la branche par défaut »
+      désigne autre chose que ce qu'on croit. À remettre sur `main` avant de
+      protéger quoi que ce soit — protéger `main` pendant que le défaut est
+      ailleurs ne protège rien.
+- [ ] **`0048_objets_requis.sql`** — écrite, **non appliquée**. Fait passer le
+      contrôle de schéma de la DÉCLARATION au CONSTAT. Tant qu'elle n'est pas
+      appliquée, `/api/admin/coherence` retombe sur le registre et l'étiquette
+      `source: "registre"` — lis ce champ avant de conclure.
+
 ## Les trois boucles manuelles — et leur somme
 
 > Elles arrivent au même moment, sur la même personne. Le plafond de Zabelie

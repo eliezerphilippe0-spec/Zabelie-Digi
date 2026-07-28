@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
-import { verifierSchemaRequis } from "@/lib/schema-requis";
+import { verdictObjets, type ObjetRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,23 +69,32 @@ async function handle(req: Request) {
     // Le contrôle à plus fort levier du lot : il attrape l'absence de `0046`
     // AVANT qu'un vendeur soit dans la pièce. Le message d'erreur de la route
     // de création reste utile en second rideau, pour le cas où personne n'a
-    // regardé ceci. Même journal (`0041`) que la sonde d'arrondi — une seule
-    // lecture sert les deux.
-    const schemaRequis = verifierSchemaRequis({
-      lignes: (journal as { filename: string }[] | null) ?? null,
-      erreur: erreurJournal,
+    // regardé ceci.
+    //
+    // Deux sources, et l'ordre compte : `zabelie_objets_requis()` (0048)
+    // CONSTATE la présence dans le catalogue ; le registre `0041`, lui, ne
+    // fait que DÉCLARER — seule `0041` s'y inscrit, les autres migrations
+    // sont enregistrées à la main. Un registre qui affirme une fonction
+    // absente est le seul cas vert-mais-cassé, et c'est celui qu'on ferme.
+    const { data: objets, error: erreurObjets } = await admin.rpc("zabelie_objets_requis");
+    const schemaRequis = verdictObjets({
+      objets: (objets as ObjetRequis[] | null) ?? null,
+      erreurObjets,
+      lignesRegistre: (journal as { filename: string }[] | null) ?? null,
+      erreurRegistre: erreurJournal,
     });
+
     if (schemaRequis.statut === "manquant") {
       console.error(
-        "[coherence] MIGRATION REQUISE MANQUANTE —",
+        `[coherence] OBJET REQUIS MANQUANT (${schemaRequis.source}) —`,
         schemaRequis.message
       );
     } else if (schemaRequis.statut === "indetermine") {
-      console.warn("[coherence] SCHÉMA REQUIS — indéterminé :", schemaRequis.raison);
+      console.warn("[coherence] SCHÉMA REQUIS — indéterminé :", schemaRequis.message);
     } else {
-      // Journalisé même quand tout va bien : sinon « n'a pas tourné » et
-      // « rien à signaler » se ressemblent.
-      console.info("[coherence] schéma requis complet");
+      // Journalisé même quand tout va bien, ET avec la source : « vert par
+      // constat » et « vert par déclaration » ne valent pas la même chose.
+      console.info(`[coherence] schéma requis complet (${schemaRequis.source})`);
     }
 
     if (arrondi.statut === "desaccord") {

@@ -69,3 +69,59 @@ export function verifierSchemaRequis(input: {
       .join(" ; "),
   };
 }
+
+/** Ce que rend `zabelie_objets_requis()` (0048). */
+export type ObjetRequis = { objet: string; present: boolean; pourquoi: string };
+
+export type VerdictObjets =
+  | { source: "présence"; statut: "ok" | "manquant"; message: string }
+  | { source: "registre"; statut: VerdictSchema["statut"]; message: string };
+
+/**
+ * Combine les deux sources, et **dit laquelle a répondu**.
+ *
+ * Le registre `0041` déclare, `zabelie_objets_requis()` (0048) constate. Tant
+ * que `0048` n'est pas appliquée, on retombe sur la déclaration — mais on
+ * l'étiquette, parce qu'un contrôle qui ne dit pas à quelle question il a
+ * répondu rassure sans informer.
+ *
+ * Ordre voulu : la présence d'abord. Un registre qui affirme une fonction
+ * absente est le seul cas VERT-mais-cassé, et c'est celui qu'on veut fermer.
+ */
+export function verdictObjets(input: {
+  objets: ObjetRequis[] | null;
+  erreurObjets?: { message?: string } | null;
+  lignesRegistre: { filename: string }[] | null;
+  erreurRegistre?: { message?: string } | null;
+}): VerdictObjets {
+  if (input.objets && input.objets.length > 0) {
+    const absents = input.objets.filter((o) => !o.present);
+    return absents.length === 0
+      ? {
+          source: "présence",
+          statut: "ok",
+          message: "tous les objets requis existent en base",
+        }
+      : {
+          source: "présence",
+          statut: "manquant",
+          message: absents.map((o) => `${o.objet} — ${o.pourquoi}`).join(" ; "),
+        };
+  }
+
+  // `0048` pas encore appliquée, ou lecture en échec : on retombe sur la
+  // DÉCLARATION, en le disant.
+  const registre = verifierSchemaRequis({
+    lignes: input.lignesRegistre,
+    erreur: input.erreurRegistre,
+  });
+  const prefixe =
+    "présence non vérifiable (0048 non appliquée ?) — repli sur le registre : ";
+  return {
+    source: "registre",
+    statut: registre.statut,
+    message:
+      prefixe +
+      (registre.statut === "indetermine" ? registre.raison : registre.message),
+  };
+}
