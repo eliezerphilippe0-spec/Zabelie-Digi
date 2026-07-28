@@ -2,7 +2,14 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { getCatalogueCategories, getPublishedProductsPage } from "@/lib/products";
+import {
+  getCatalogueCategories,
+  getPublishedProductsPage,
+  recordSearchMiss,
+  searchFuzzyProductIds,
+} from "@/lib/products";
+import { sessionFingerprint } from "@/lib/search-demand";
+import { headers } from "next/headers";
 import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -42,6 +49,32 @@ export default async function CataloguePage({
   // qu'aucun produit publié n'y est rangé (V-13 : jamais un rayon désert).
   const facettes =
     activeCat !== "Tout" ? await getCategoryFacets(activeCat, lang) : [];
+
+  // ── Couches 2 et 3 du capteur de demande (lot S) ─────────────────────────
+  // Ordre voulu : la recherche littérale d'abord, le rattrapage ensuite, le
+  // journal en dernier. Un terme n'est consigné comme MANQUANT que si les
+  // deux couches ont échoué — sinon on irait recruter un vendeur pour un
+  // produit qu'on a déjà, mal orthographié.
+  let approchants: typeof products = [];
+  let manque = false;
+  if (q && products.length === 0) {
+    const ids = await searchFuzzyProductIds(q);
+    if (ids.length > 0) {
+      approchants = (
+        await getPublishedProductsPage({ productIds: ids, page: 1 })
+      ).items;
+    }
+    if (approchants.length === 0) {
+      manque = true;
+      // Best-effort et non attendu bloquant : le capteur ne doit jamais faire
+      // échouer la page qu'il observe.
+      await recordSearchMiss({
+        q,
+        department: activeCat !== "Tout" ? activeCat : null,
+        sessionHash: sessionFingerprint(await headers()),
+      });
+    }
+  }
   const CATEGORIES = ["Tout", ...categories];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
@@ -62,6 +95,13 @@ export default async function CataloguePage({
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
     return qs ? `/catalogue?${qs}` : "/catalogue";
+  };
+  const cardLabels = {
+    kindFile: t(lang, "card.kind.file"),
+    kindService: t(lang, "card.kind.service"),
+    kindPhysical: t(lang, "card.kind.physical"),
+    by: t(lang, "product.by"),
+    sales: t(lang, "product.sales"),
   };
   const catHref = (c: string) => hrefFor({ cat: c, sous: null, page: 1 });
   const sousHref = (slug: string | null) => hrefFor({ sous: slug ?? undefined, page: 1 });
@@ -152,8 +192,66 @@ export default async function CataloguePage({
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        {products.length === 0 ? (
-          filtre ? (
+        {products.length === 0 && approchants.length > 0 ? (
+          /* Couche 2 : rien d'exact, mais la similarité a rattrapé. On le DIT
+             — présenter un approchant comme un résultat exact fait douter de
+             tout le catalogue. */
+          <>
+            <p className="mb-4 rounded-xl border border-line bg-surface/40 px-4 py-3 text-sm text-mist">
+              {t(lang, "catalog.fuzzy")}
+            </p>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {approchants.map((p) => (
+                <ProductCard key={p.slug} product={p} labels={cardLabels} />
+              ))}
+            </div>
+          </>
+        ) : products.length === 0 ? (
+          manque ? (
+            /* L'écran qui EST le produit du lot S. Trois éléments, dans cet
+               ordre : ce qui a été cherché, où regarder à côté, et le seul
+               geste qui change quelque chose — dire qu'on connaît un vendeur.
+               L'acheteur déçu devient le canal de recrutement. */
+            <div className="rounded-2xl border border-line bg-surface/40 p-8 text-center">
+              <p className="text-base font-semibold text-cloud">
+                {t(lang, "catalog.miss.title")} « {q} »
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
+                {t(lang, "catalog.miss.body")}
+              </p>
+
+              {facettes.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-xs uppercase tracking-wide text-mist">
+                    {t(lang, "catalog.miss.shelves")}
+                  </p>
+                  <div className="mt-2 flex flex-wrap justify-center gap-2">
+                    {facettes.slice(0, 6).map((f) => (
+                      <Link
+                        key={f.slug}
+                        href={`/catalogue?cat=${encodeURIComponent(activeCat)}&sous=${f.slug}`}
+                        className="rounded-full border border-line px-3 py-1 text-xs text-mist hover:text-cloud"
+                      >
+                        {f.label} {f.count}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="mt-6 text-sm text-cloud">{t(lang, "catalog.miss.know")}</p>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(
+                  `Zabelie: ${q}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+              >
+                {t(lang, "catalog.miss.share")}
+              </a>
+            </div>
+          ) : filtre ? (
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
               {t(lang, "catalog.none")}{" "}
               <Link href="/catalogue" className="text-cloud underline">

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PRODUCTS as SAMPLE, type ProductKind } from "@/lib/sample-data";
 
 /**
@@ -285,6 +286,55 @@ export async function getCatalogueCategories(): Promise<string[]> {
     ...new Set((data as { category: string | null }[]).map((r) => r.category ?? "")),
   ].filter((c) => c.length > 0);
   return uniques.sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/**
+ * Couche 2 — rattrapage par similarité, appelé UNIQUEMENT quand la recherche
+ * littérale ne rend rien.
+ *
+ * `ilike '%batri%'` exige la sous-chaîne exacte : « batery » ne trouve jamais
+ * « Batri ». C'est le cas courant d'un Kreyòl écrit à l'oreille, et c'est ce
+ * que la similarité trigramme rattrape (`zabelie_search_fuzzy`, 0047).
+ *
+ * Rend une liste VIDE si la fonction n'existe pas encore en base : le
+ * catalogue continue de servir la couche 1, personne ne voit d'erreur.
+ */
+export async function searchFuzzyProductIds(q: string): Promise<string[]> {
+  if (!isSupabaseConfigured() || q.trim().length < 3) return [];
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("zabelie_search_fuzzy", {
+    p_raw: q,
+    p_limit: 24,
+  });
+  if (error || !data) {
+    console.warn("[recherche] rattrapage indisponible", error?.message ?? "réponse vide");
+    return [];
+  }
+  return (data as { product_id: string }[]).map((r) => r.product_id);
+}
+
+/**
+ * Consigne une recherche restée sans résultat. Best-effort, TOUJOURS : un
+ * capteur qui ferait échouer la page qu'il observe serait un mauvais échange.
+ * Journalisé en cas d'échec — l'absence de signal doit rester un signal.
+ */
+export async function recordSearchMiss(input: {
+  q: string;
+  department: string | null;
+  sessionHash: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin.rpc("zabelie_record_search_miss", {
+      p_raw: input.q,
+      p_department: input.department,
+      p_session_hash: input.sessionHash,
+    });
+    if (error) console.warn("[recherche] manque non consigné", error.message);
+  } catch (e) {
+    console.warn("[recherche] manque non consigné", e instanceof Error ? e.message : e);
+  }
 }
 
 export async function getPublishedProductsPage(

@@ -127,6 +127,19 @@ c'est la référence de comparaison, elle doit survivre à la session.
       le même geste.** C'est le seul endroit de ce chantier où le code est en
       avance sur le schéma d'une façon qui BLOQUE, au lieu de dégrader.
 
+- [ ] **`0047_search_demand.sql` — capteur de demande (lot S).** Écrite,
+      éprouvée, **non appliquée**. Sans elle, la recherche fonctionne
+      exactement comme avant : le rattrapage flou et le journal dégradent en
+      silence (aucune erreur visible). Rien ne bloque.
+      **À planifier au cron** une fois appliquée : `zabelie_purge_search_misses()`
+      (rétention 180 j, en table de config).
+      **La sortie à lire chaque semaine** : `GET /api/admin/search-demand?jours=7`
+      — chaque terme vient avec un message Kreyòl prêt à coller dans WhatsApp.
+      C'est le livrable, pas la recherche.
+      ⚠️ **Ce capteur ne vaut rien à catalogue vide** : il mesurera que le
+      catalogue est vide. Il devient utile entre 20 et 200 fiches — la fenêtre
+      où une marketplace meurt d'habitude.
+
 ## Les trois boucles manuelles — et leur somme
 
 > Elles arrivent au même moment, sur la même personne. Le plafond de Zabelie
