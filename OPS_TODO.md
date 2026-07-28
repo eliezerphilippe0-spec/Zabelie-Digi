@@ -126,6 +126,16 @@ c'est la référence de comparaison, elle doit survivre à la session.
       **Donc : appliquer 0046 AVANT de déployer, ou déployer et appliquer dans
       le même geste.** C'est le seul endroit de ce chantier où le code est en
       avance sur le schéma d'une façon qui BLOQUE, au lieu de dégrader.
+      ⚠️ **Le coût d'une erreur d'ordre n'est pas une fiche, c'est une
+      personne.** Les fiches qui échoueraient sont celles des vingt premiers
+      vendeurs, recrutés un par un : un 500 à la publication devant l'un
+      d'eux ne se répare pas par un correctif le lendemain.
+      **Deux ceintures, qui ne remplacent pas l'ordre de déploiement :**
+      `/api/admin/coherence` porte désormais `schemaRequis` — il crie si
+      `0046` manque au journal, AVANT qu'un vendeur soit dans la pièce ; et
+      si personne n'a regardé, la route de création journalise l'identifiant
+      `0046` côté serveur pendant que le vendeur, lui, ne lit qu'une phrase
+      courte (503, rien d'enregistré, réessayer).
 
 - [ ] **`0047_search_demand.sql` — capteur de demande (lot S).** Écrite,
       éprouvée, **non appliquée**. Sans elle, la recherche fonctionne

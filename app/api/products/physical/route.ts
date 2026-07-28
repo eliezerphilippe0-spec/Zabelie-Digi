@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/payment-utils";
 import { KIND_PHYSICAL } from "@/lib/product-kind";
 import { POLICY_VERSION } from "@/lib/policy";
+import { isMissingFunction } from "@/lib/pg-errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -114,10 +115,29 @@ export async function POST(req: Request) {
     p_version: POLICY_VERSION,
   });
   if (policyErr) {
-    console.error("[products/physical] attestation non enregistrée", policyErr);
+    // Deux destinataires, deux messages. Le VENDEUR lit une phrase courte et
+    // honnête : rien n'a été enregistré, il peut réessayer. Il n'a pas à lire
+    // un identifiant de migration, et une page publique qui nomme l'état
+    // interne du schéma est une fuite gratuite.
+    // TOI, tu lis l'identifiant — ici et dans /api/admin/coherence — pendant
+    // que tu es debout à côté du vendeur en train de publier.
+    if (isMissingFunction(policyErr)) {
+      console.error(
+        "[products/physical] MIGRATION 0046 NON APPLIQUÉE — zabelie_record_policy_acceptance " +
+          "introuvable : AUCUNE fiche ne peut être créée tant qu'elle manque.",
+        policyErr.code
+      );
+    } else {
+      console.error("[products/physical] attestation non enregistrée", policyErr);
+    }
     return NextResponse.json(
-      { error: "Enregistrement de l'attestation impossible." },
-      { status: 500 }
+      {
+        error:
+          "La publication n'a pas abouti. Rien n'a été enregistré — " +
+          "réessayez dans un instant.",
+        code: "policy_unavailable",
+      },
+      { status: 503 }
     );
   }
 

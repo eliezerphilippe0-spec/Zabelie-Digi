@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
+import { verifierSchemaRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,6 +66,28 @@ async function handle(req: Request) {
       lignes: (journal as { filename: string }[] | null) ?? null,
       erreur: erreurJournal,
     });
+    // Le contrôle à plus fort levier du lot : il attrape l'absence de `0046`
+    // AVANT qu'un vendeur soit dans la pièce. Le message d'erreur de la route
+    // de création reste utile en second rideau, pour le cas où personne n'a
+    // regardé ceci. Même journal (`0041`) que la sonde d'arrondi — une seule
+    // lecture sert les deux.
+    const schemaRequis = verifierSchemaRequis({
+      lignes: (journal as { filename: string }[] | null) ?? null,
+      erreur: erreurJournal,
+    });
+    if (schemaRequis.statut === "manquant") {
+      console.error(
+        "[coherence] MIGRATION REQUISE MANQUANTE —",
+        schemaRequis.message
+      );
+    } else if (schemaRequis.statut === "indetermine") {
+      console.warn("[coherence] SCHÉMA REQUIS — indéterminé :", schemaRequis.raison);
+    } else {
+      // Journalisé même quand tout va bien : sinon « n'a pas tourné » et
+      // « rien à signaler » se ressemblent.
+      console.info("[coherence] schéma requis complet");
+    }
+
     if (arrondi.statut === "desaccord") {
       console.error("[coherence] ARRONDI — annonce et base divergent", arrondi.message);
     } else if (arrondi.statut === "indetermine") {
@@ -108,7 +131,7 @@ async function handle(req: Request) {
       }
     }
 
-    return NextResponse.json({ ...data, arrondi, indexRecherche });
+    return NextResponse.json({ ...data, arrondi, schemaRequis, indexRecherche });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Erreur" },
