@@ -64,7 +64,10 @@ test("journal vide mais lisible → manquant, pas indéterminé", () => {
 test("la liste des requises ne contient que du bloquant", () => {
   // `0045` et `0047` dégradent en silence : les y mettre ferait crier le
   // contrôle pour des cas où rien ne casse, et on cesserait de le lire.
-  const fichiers = MIGRATIONS_REQUISES.map((m) => m.fichier);
+  // Élargi en `string[]` : `as const` donne un type littéral, et `.includes`
+  // d'une valeur absente de l'union devient une ERREUR DE COMPILATION au lieu
+  // d'un test. C'est précisément ce qu'on veut vérifier à l'exécution.
+  const fichiers: string[] = MIGRATIONS_REQUISES.map((m) => m.fichier);
   assert.equal(fichiers.includes("0045_profile_on_signup.sql"), false);
   assert.equal(fichiers.includes("0047_search_demand.sql"), false);
   assert.ok(fichiers.includes("0046_policy_acceptance.sql"));
