@@ -9,6 +9,12 @@
 --        apparaît. Le filtre est donc bien le seuil, pas un autre effet.
 --   SD7. Purge : borne respectée, compteur rendu même à zéro.
 --   SD8. Recherche floue : « batery » trouve « batri », un mot sans rapport non.
+--   SD10. Garde d'intégrité : l'index d'expression suit-il la fonction ?
+--         CAS CONNU-NÉGATIF inclus — on redéfinit la fonction sans réindexer
+--         et le contrôle doit crier.
+--   SD11. Le réglage `pg_trgm.word_similarity_threshold` est RENDU tel quel :
+--         la fonction ne laisse pas de trace dans la transaction appelante.
+--   SD12. L'invariant pré-filtre < décision est gardé en exécutable.
 --   SD9. Molette d'ouverture : `p_min_sessions` surcharge le seuil, et
 --        l'ABSENCE de surcharge laisse bien celui de la config (piège
 --        `GREATEST` qui ignore les NULL).
@@ -208,5 +214,87 @@ begin
   end if;
 
   raise notice 'OK — SD9 molette dans les deux sens, défaut préservé sans surcharge';
+end $$;
+rollback;
+
+-- ────────────────────────── SD10 ────────────────────────────────────────────
+begin;
+do $$
+declare v_ok boolean; v_detail text;
+begin
+  select ok, detail into v_ok, v_detail from zabelie_search_index_integrity();
+  if not v_ok then
+    raise exception 'SD10 : contrôle en échec sur une base saine (%)', v_detail;
+  end if;
+
+  -- CAS CONNU-NÉGATIF : on modifie la normalisation sans réindexer, ce qui
+  -- est exactement le geste qu'un ajout de règle Kreyòl produirait.
+  create or replace function zabelie_search_normalize(p_raw text)
+  returns text language sql immutable set search_path = public, pg_temp as
+  $f$ select lower(coalesce(p_raw, '')) $f$;
+
+  select ok, detail into v_ok, v_detail from zabelie_search_index_integrity();
+  if v_ok then
+    raise exception 'SD10 : la fonction a changé et le contrôle reste vert — '
+                    'les index seraient périmés sans que personne le sache';
+  end if;
+  if v_detail not like '%REINDEX%' then
+    raise exception 'SD10 : le message ne dit pas quoi faire (%)', v_detail;
+  end if;
+
+  raise notice 'OK — SD10 index d''expression alignés, et la dérive est criée';
+end $$;
+rollback;
+
+-- ────────────────────────── SD11 ────────────────────────────────────────────
+begin;
+do $$
+declare v_avant text; v_apres text;
+begin
+  set local pg_trgm.word_similarity_threshold = 0.55;
+  v_avant := current_setting('pg_trgm.word_similarity_threshold');
+  perform * from zabelie_search_fuzzy('batery');
+  v_apres := current_setting('pg_trgm.word_similarity_threshold');
+
+  if v_apres is distinct from v_avant then
+    raise exception 'SD11 : réglage laissé à % au lieu de % — toute requête '
+                    'suivante utilisant <%% hériterait du seuil abaissé',
+                    v_apres, v_avant;
+  end if;
+  raise notice 'OK — SD11 le réglage de session est rendu tel qu''il était';
+end $$;
+rollback;
+
+-- ────────────────────────── SD12 ────────────────────────────────────────────
+begin;
+do $$
+declare v_code text;
+begin
+  -- On force l'invariant à se rompre : pré-filtre >= décision.
+  create or replace function zabelie_search_fuzzy(p_raw text, p_limit integer default 24)
+  returns table (product_id uuid, score real) language plpgsql stable
+  set search_path = public, pg_temp as $f$
+  declare v_seuil real; v_guc real;
+  begin
+    select similarity_threshold into v_seuil from zabelie_search_config where id;
+    v_guc := v_seuil;            -- rupture volontaire
+    if v_guc >= v_seuil then
+      raise exception 'pre-filtre >= decision' using errcode = 'ZB047';
+    end if;
+    return;
+  end $f$;
+
+  begin
+    perform * from zabelie_search_fuzzy('batery');
+    raise exception 'SD12 : invariant rompu et aucune erreur levée';
+  exception
+    when sqlstate 'ZB047' then v_code := 'ok';
+  end;
+
+  if v_code is distinct from 'ok' then
+    raise exception 'SD12 : erreur inattendue';
+  end if;
+  raise notice 'OK — SD12 l''invariant pré-filtre < décision est exécutable, '
+               'pas seulement commenté';
 end $$;
 rollback;

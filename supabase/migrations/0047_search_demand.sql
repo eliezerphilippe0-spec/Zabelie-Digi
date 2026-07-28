@@ -52,8 +52,36 @@ as $$
 $$;
 
 comment on function zabelie_search_normalize(text) is
-  'Forme normalisée d''une recherche : minuscules, accents repliés, espaces '
-  'réduits. SOURCE UNIQUE — aucun miroir applicatif. Voir 0047.';
+  'Forme normalisée d''une recherche. SOURCE UNIQUE — aucun miroir applicatif. '
+  '⚠️ INDEXÉE PAR EXPRESSION : tout CREATE OR REPLACE de cette fonction EXIGE '
+  'un REINDEX dans la même migration, sinon l''index garde les valeurs '
+  'calculées sous l''ancienne définition. Voir 0047 §7bis et '
+  'zabelie_search_index_integrity().';
+
+-- ⚠️⚠️ LIRE AVANT DE MODIFIER LA FONCTION CI-DESSUS.
+--
+-- Elle est utilisée dans des INDEX D'EXPRESSION (§7bis). PostgreSQL exige
+-- qu'elle soit `immutable` pour l'accepter, mais **il ne vérifie pas la
+-- promesse — il te croit**. Deux conséquences, et le lexique Kreyòl est
+-- précisément fait pour évoluer :
+--
+--   1. Ajouter une règle (`ò`→`o`, élision, tirets) ne reconstruit RIEN.
+--      L'index continue de contenir les valeurs de l'ancienne définition, le
+--      pré-filtre `<%` écarte alors des lignes que la décision aurait
+--      acceptées, et personne n'est averti. C'est exactement le bug des
+--      accents corrigé en §7bis, ressuscité par une modification anodine.
+--      → tout `create or replace` de cette fonction embarque un
+--        `reindex index zabelie_products_title_norm_trgm_idx` et son jumeau
+--        `..._desc_norm_trgm_idx` DANS LA MÊME MIGRATION.
+--      → et met à jour l'empreinte de `zabelie_search_index_guard`, sinon le
+--        contrôle ci-dessous criera à raison.
+--
+--   2. NE JAMAIS y introduire `unaccent()`. Elle est `STABLE`, pas
+--      `IMMUTABLE`, parce qu'elle dépend d'un dictionnaire modifiable.
+--      L'envelopper dans une fonction déclarée `immutable` compile, puis
+--      transforme le moindre changement de dictionnaire en corruption
+--      silencieuse de l'index. `translate()` couvre le français et le Kreyòl
+--      écrit à l'oreille sans rien promettre qu'on ne tienne pas.
 
 -- ───────────────────────── 2. Réglages ──────────────────────────────────────
 -- Paramètres commerciaux déguisés en constantes techniques : ils vivent en
@@ -234,6 +262,59 @@ create index if not exists zabelie_products_title_norm_trgm_idx
 create index if not exists zabelie_products_desc_norm_trgm_idx
   on products using gin (zabelie_search_normalize(coalesce(description, '')) gin_trgm_ops);
 
+-- ───── 7ter. Le contrôle qui rend la promesse VÉRIFIABLE ───────────────────
+-- Un commentaire n'empêche personne de modifier la fonction sans réindexer.
+-- On fige donc son empreinte au moment où les index sont construits : si la
+-- définition change sans que l'empreinte suive, le contrôle le dit. Même
+-- idée que le registre de migrations (`0041`) — une affirmation qui peut
+-- être contredite vaut mieux qu'une consigne qu'on peut oublier.
+create table zabelie_search_index_guard (
+  id      boolean primary key default true check (id),
+  fn_hash text not null
+);
+
+insert into zabelie_search_index_guard (id, fn_hash)
+select true, md5(pg_get_functiondef(p.oid))
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+ where p.proname = 'zabelie_search_normalize' and n.nspname = 'public';
+
+alter table zabelie_search_index_guard enable row level security;
+revoke all on zabelie_search_index_guard from anon, authenticated;
+
+create or replace function zabelie_search_index_integrity()
+returns table (ok boolean, detail text)
+language plpgsql
+stable
+set search_path = public, pg_temp
+as $$
+declare
+  v_actuel text;
+  v_fige   text;
+begin
+  select md5(pg_get_functiondef(p.oid)) into v_actuel
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+   where p.proname = 'zabelie_search_normalize' and n.nspname = 'public';
+
+  select fn_hash into v_fige from zabelie_search_index_guard where id;
+
+  if v_actuel is null then
+    return query select false, 'zabelie_search_normalize introuvable'::text;
+  elsif v_actuel is distinct from v_fige then
+    return query select false,
+      ('zabelie_search_normalize a changé sans REINDEX : les index '
+       || 'd''expression contiennent encore les valeurs de l''ancienne '
+       || 'définition, donc le pré-filtre écarte des produits en silence. '
+       || 'Réindexer, puis mettre à jour zabelie_search_index_guard.')::text;
+  else
+    return query select true, 'index d''expression alignés sur la fonction'::text;
+  end if;
+end;
+$$;
+
+revoke all on function zabelie_search_index_integrity() from public, anon, authenticated;
+
 -- Appelée seulement quand la recherche littérale ne rend RIEN : la couche 1
 -- reste prioritaire, la couche 2 rattrape.
 --
@@ -272,8 +353,10 @@ stable
 set search_path = public, pg_temp
 as $$
 declare
-  v_seuil real;
-  v_norm  text;
+  v_seuil  real;
+  v_guc    real;
+  v_norm   text;
+  v_ancien text;
 begin
   select similarity_threshold into v_seuil from zabelie_search_config where id;
   v_norm := zabelie_search_normalize(p_raw);
@@ -282,10 +365,28 @@ begin
   end if;
 
   -- Marge sous le seuil : le pré-filtre doit être un SUR-ensemble strict de
-  -- ce que la comparaison acceptera, jamais l'inverse. `true` = local à la
-  -- transaction, donc aucune fuite de réglage vers le reste de la session.
-  perform set_config('pg_trgm.word_similarity_threshold',
-                     greatest(v_seuil - 0.05, 0.01)::text, true);
+  -- ce que la comparaison acceptera, jamais l'inverse.
+  v_guc := greatest(v_seuil - 0.05, 0.01);
+
+  -- L'INVARIANT, écrit en exécutable plutôt qu'en commentaire. Si le GUC
+  -- devenait supérieur ou égal au seuil de décision, le pré-filtre serait
+  -- plus strict que la décision et jetterait des lignes valides — sans
+  -- qu'aucun test ne rougisse, puisque les cas nominaux passeraient encore.
+  -- La relation entre les deux EST la propriété ; elle se garde ici.
+  if v_guc >= v_seuil then
+    raise exception
+      'seuil de pré-filtre (%) >= seuil de décision (%) : le pré-filtre '
+      'écarterait des produits que la recherche devrait rendre',
+      v_guc, v_seuil
+      using errcode = 'ZB047';
+  end if;
+
+  -- ⚠️ `true` = local à la TRANSACTION, pas à la fonction. En appel RPC isolé
+  -- c'est sans conséquence, mais appelée dans une transaction plus large,
+  -- toute requête suivante utilisant `<%` hériterait du seuil abaissé. D'où
+  -- la restauration explicite en fin de fonction.
+  v_ancien := current_setting('pg_trgm.word_similarity_threshold', true);
+  perform set_config('pg_trgm.word_similarity_threshold', v_guc::text, true);
 
   return query
     select p.id,
@@ -305,6 +406,13 @@ begin
            ) >= v_seuil
      order by score desc
      limit greatest(coalesce(p_limit, 24), 1);
+
+  -- Le réglage est rendu tel qu'il était : la fonction ne laisse pas de trace
+  -- dans la transaction de son appelant.
+  if v_ancien is not null then
+    perform set_config('pg_trgm.word_similarity_threshold', v_ancien, true);
+  end if;
+  return;
 end;
 $$;
 

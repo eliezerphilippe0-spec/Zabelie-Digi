@@ -150,6 +150,18 @@ c'est la référence de comparaison, elle doit survivre à la session.
       casserait le comptage de sessions en milieu de fenêtre sans rien
       signaler, et une fuite reconstruirait rétroactivement les empreintes de
       tous les jours passés.
+      **Rotation du poivre — au basculement de journée en Haïti, jamais en
+      milieu d'après-midi.** Changer ce secret coupe le comptage de sessions
+      distinctes des 7 jours suivants : une même personne compte deux fois de
+      part et d'autre. En le faisant tourner à minuit America/Port-au-Prince,
+      la discontinuité coïncide avec celle de l'empreinte quotidienne au lieu
+      de s'y ajouter.
+- [ ] **Après TOUTE modification de `zabelie_search_normalize`** : réindexer
+      `zabelie_products_title_norm_trgm_idx` et `..._desc_norm_trgm_idx`, puis
+      mettre à jour `zabelie_search_index_guard`. Sans ça les index gardent
+      les valeurs de l'ancienne définition et le rattrapage écarte des
+      produits **en silence** — PostgreSQL exige `IMMUTABLE` mais ne vérifie
+      pas la promesse. Contrôle : `select * from zabelie_search_index_integrity();`
       — chaque terme vient avec un message Kreyòl prêt à coller dans WhatsApp.
       C'est le livrable, pas la recherche.
       ⚠️ **Ce capteur ne vaut rien à catalogue vide** : il mesurera que le

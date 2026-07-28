@@ -50,6 +50,14 @@ export function jourHaiti(now: Date = new Date()): string {
  * donnerait de quoi reconstruire rétroactivement l'espace des empreintes de
  * tous les jours passés : la propriété qu'on vient d'acheter disparaîtrait au
  * moment précis où elle servirait.
+ *
+ * ROTATION — une politique, pas seulement une existence. Changer ce secret un
+ * mardi après-midi scinde le comptage de sessions distinctes des sept jours
+ * suivants : une même personne compte deux fois de part et d'autre de la
+ * bascule, et le seuil de crédibilité mesure alors du vent. S'il doit tourner,
+ * que ce soit **au basculement de journée en Haïti** (minuit
+ * America/Port-au-Prince) — le même instant que la rotation d'empreinte, pour
+ * que les deux discontinuités coïncident au lieu de s'ajouter. → OPS_TODO.
  */
 function poivre(): string | null {
   const explicite = process.env.SEARCH_FINGERPRINT_SALT;
