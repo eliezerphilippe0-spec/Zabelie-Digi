@@ -192,11 +192,19 @@ c'est la référence de comparaison, elle doit survivre à la session.
       À faire dans les réglages GitHub : exiger les vérifications de statut
       avant fusion sur `main`.
 - [ ] **⚠️ La branche par défaut du dépôt est `claude/install-skills-eGRxy`,
-      pas `main`.** Conséquence : une PR ouverte sans base explicite vise
-      cette branche, et tout outil qui parle de « la branche par défaut »
-      désigne autre chose que ce qu'on croit. À remettre sur `main` avant de
-      protéger quoi que ce soit — protéger `main` pendant que le défaut est
-      ailleurs ne protège rien.
+      pas `main` — et c'est un réglage égaré, pas une seconde ligne.**
+      Mesuré le 2026-07-27 : `main` porte le dernier travail fusionné
+      (« Merge pull request #54 », 2026-07-26) ; la branche marquée par défaut
+      date du **2026-06-22** et ne contient même pas `lib/product-kind.ts`.
+      **`main` est donc bien la ligne de production**, et le défaut pointe sur
+      une branche abandonnée depuis un mois.
+      Conséquence immédiate : une PR ouverte sans base explicite vise la
+      mauvaise branche. **Remettre le défaut sur `main` AVANT de protéger quoi
+      que ce soit** — protéger `main` pendant que le défaut est ailleurs ne
+      protège rien.
+      Bonne nouvelle pour l'ordre des gestes : la branche de travail est
+      **42 commits en avance sur `main`, avec zéro divergence**. Protéger
+      `main` maintenant ne bloque donc aucun travail en cours.
 - [ ] **`0048_objets_requis.sql`** — écrite, **non appliquée**. Fait passer le
       contrôle de schéma de la DÉCLARATION au CONSTAT. Tant qu'elle n'est pas
       appliquée, `/api/admin/coherence` retombe sur le registre et l'étiquette
