@@ -259,7 +259,14 @@ export default async function HomePage() {
           <span className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-sm font-bold text-cloud">
             Zelle&nbsp;$
           </span>
-          <span className="rounded-full border border-line px-4 py-1.5 text-sm text-mist/60">
+          {/* `text-mist/60` mesurait 3,56:1 sur ce fond (mist #a6a6a6 à 60 %
+              donne rgb(103,103,103) sur rgb(7,7,7)) — sous le seuil WCAG AA de
+              4,5:1. L'opacité servait à dire « pas encore disponible », mais la
+              couleur ne doit jamais porter seule une information : le libellé
+              « — bientôt » l'énonce déjà, et le rail reste visuellement second
+              par sa bordure là où MonCash et Zelle sont pleins. Sans opacité :
+              8,28:1 (mesuré sur la page rendue, pas déduit du token). */}
+          <span className="rounded-full border border-line px-4 py-1.5 text-sm text-mist">
             {t(lang, "footer.natcash")}
           </span>
         </div>
