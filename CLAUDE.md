@@ -49,11 +49,16 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0043`** — état d'expédition, non appliquée, trois valeurs à arbitrer (`docs/21`). Production 2026-07-26 : `0030` + groupe A +
-   B1 + `0039` + `0041` + `0042` appliqués ; **restent `0031`** (fidélité,
-   volontairement sautée) **et B2** `0037`/`0038`/`0040` — revue séparée,
-   prérequis à l'ouverture de la vente physique. Registre :
-   `zabelie_schema_migrations`).
+   (dernière écrite : **`0050`**. Production **2026-07-31** : `0030` + groupe A
+   + B1 + `0039` + `0041` + `0042`, puis **`0045`→`0050` appliquées et
+   vérifiées** (cas connu-positif ET connu-négatif à chaque fois). **Restent
+   non appliquées** : `0031` (fidélité, volontairement sautée), **B2**
+   `0037`/`0038`/`0040` — prérequis à l'ouverture de la vente physique, et
+   `0043` (état d'expédition, trois valeurs à arbitrer, `docs/21`).
+   ⚠️ Le repli de `lib/products.ts` sur `in_stock` est **actif en production**,
+   observé dans les journaux d'API : chaque page catalogue fait un 400 puis
+   rejoue sans le filtre. C'est la dégradation prévue, pas une panne — elle
+   cessera avec B2. Registre : `zabelie_schema_migrations`.)
 
 ## Registre vendeur — invariant comptable (0033)
 ```
