@@ -5,7 +5,7 @@
  * -----------------------------------
  * Zabelie est une marketplace pure : un INTERMÉDIAIRE entre vendeurs vérifiés
  * et acheteurs. Elle ne détient aucun stock et ne vend rien en son nom propre.
- * La recharte téléphonique first-party (`/rechaj`, rail Reloadly) était la
+ * La recharge téléphonique first-party (`/rechaj`, rail Reloadly) était la
  * SEULE activité où Zabelie était marchand plutôt qu'intermédiaire. Elle
  * contredit le modèle, donc elle ferme. → `docs/02-DECISIONS.md`.
  *
