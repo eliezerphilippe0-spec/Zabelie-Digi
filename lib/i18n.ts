@@ -293,7 +293,8 @@ const fr = {
   "faq.q1": "Comment acheter un produit ?",
   "faq.a1": "Choisissez un produit, cliquez « Payer avec MonCash » et confirmez sur votre téléphone. La diaspora peut payer en USD via Zelle.",
   "faq.q2": "Quand est-ce que je reçois mon achat ?",
-  "faq.a2": "Immédiatement après la confirmation du paiement : téléchargement dans « Mes achats » + e-mail avec le lien.",
+  "faq.a2":
+    "Cela dépend du produit. Un fichier est disponible immédiatement dans « Mes achats », avec un e-mail contenant le lien. Pour une prestation, le vendeur vous contacte après paiement. Un produit physique est expédié par le vendeur.",
   "faq.q3": "Comment vendre sur Zabelie ?",
   "faq.a3": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente, arrondis à la gourde la plus proche.",
   "faq.a3.floor": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente. L'arrondi est toujours en votre faveur.",
@@ -657,7 +658,8 @@ const ht: Record<I18nKey, string> = {
   "faq.q1": "Kijan pou m achte yon pwodui ?",
   "faq.a1": "Chwazi yon pwodui, klike « Peye ak MonCash » epi konfime sou telefòn ou. Dyaspora a ka peye an USD ak Zelle.",
   "faq.q2": "Kilè m ap resevwa acha m ?",
-  "faq.a2": "Touswit apre peman an konfime : telechajman nan « Acha mwen yo » + yon imèl ak lyen an.",
+  "faq.a2":
+    "Sa depann de pwodui a. Yon fichye disponib touswit nan « Acha mwen yo », ak yon imèl ki gen lyen an. Pou yon sèvis, vandè a kontakte w apre peman an. Yon pwodui fizik, se vandè a k ap voye l apre peman an konfime.",
   "faq.q3": "Kijan pou m vann sou Zabelie ?",
   "faq.a3": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant, awondi nan goud ki pi pre a.",
   "faq.a3.floor": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant. Awondi a toujou an favè w.",
