@@ -337,6 +337,15 @@ const fr = {
     "Ce lien de confirmation a expiré ou a déjà été utilisé. Connectez-vous, ou créez à nouveau votre compte pour recevoir un nouveau lien.",
   "auth.back.home": "← Retour à l'accueil",
 
+  // Écrans d'erreur globaux (app/not-found.tsx). `app/error.tsx` ne peut PAS
+  // les lire : c'est un composant client, et t() est serveur uniquement (règle
+  // en tête de ce fichier). Ses libellés vivent dans lib/i18n-erreur.ts.
+  "err.404.title": "Cette page n'existe pas",
+  "err.404.body":
+    "Le lien est peut-être ancien, ou l'adresse comporte une faute. Rien n'est perdu : vos achats et vos commandes restent accessibles depuis votre compte.",
+  "err.404.home": "Aller à l'accueil",
+  "err.404.catalog": "Voir le catalogue",
+
   "sell.title": "Vendre sur Zabelie",
   "sell.demo.subtitle": "Mode démo — connecte Supabase pour publier de vrais produits.",
   "sell.demo.body.pre": "La publication nécessite une base Supabase configurée (voir",
@@ -580,6 +589,12 @@ const ht: Record<I18nKey, string> = {
     "Mèsi! Acha ou valide. Fichye ou disponib nan telechajman ou yo.",
   "pay.ok.cta": "Wè acha mwen yo",
   "pay.back": "Tounen nan katalòg la",
+
+  "err.404.title": "Paj sa a pa egziste",
+  "err.404.body":
+    "Petèt lyen an fin vye, oswa gen yon fot nan adrès la. Anyen pa pèdi : acha ou yo ak kòmann ou yo toujou la nan kont ou.",
+  "err.404.home": "Ale nan akèy la",
+  "err.404.catalog": "Wè katalòg la",
   "pay.wait.title": "N ap verifye peman an",
   "pay.wait.body":
     "N ap konfime peman ou an ak MonCash. Si kòb la te soti, acha ou ap valide otomatikman nan kèk moman — menm si paj sa a te koupe.",
