@@ -22,9 +22,6 @@ export async function SiteNav() {
           <Link href="/#talents" className="transition hover:text-cloud">
             {t(lang, "nav.talents")}
           </Link>
-          <Link href="/rechaj" className="transition hover:text-cloud">
-            {t(lang, "nav.topup")}
-          </Link>
           <Link href="/#comment" className="transition hover:text-cloud">
             {t(lang, "nav.how")}
           </Link>
@@ -89,9 +86,6 @@ export async function SiteNav() {
         <nav className="mt-3 flex items-center justify-center gap-6 border-t border-line pt-3 text-sm text-mist md:hidden">
           <Link href="/catalogue" className="py-1 transition hover:text-cloud">
             {t(lang, "nav.catalog")}
-          </Link>
-          <Link href="/rechaj" className="py-1 transition hover:text-cloud">
-            {t(lang, "nav.topup")}
           </Link>
           <Link href="/#talents" className="py-1 transition hover:text-cloud">
             {t(lang, "nav.talents")}

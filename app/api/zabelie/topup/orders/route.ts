@@ -7,6 +7,11 @@ import { usdCentsFromHtg } from "@/lib/payment-utils";
 import { normalizeHaitiPhone } from "@/lib/zabelie-topup/phone";
 import { isTopupEnabled } from "@/lib/zabelie-topup/fulfill";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import {
+  isTopupFirstPartyEnabled,
+  TOPUP_CLOSED_BODY,
+  TOPUP_CLOSED_STATUS,
+} from "@/lib/topup-flag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +25,12 @@ export const dynamic = "force-dynamic";
  * Aucune livraison ici — fulfillment uniquement après confirmation du paiement.
  */
 export async function POST(req: Request) {
+  // Creation de commande = VENTE. Fermee AVANT tout le reste, avant meme la
+  // lecture du corps : rien ne doit etre ecrit ni facture. 410 et non 503 —
+  // la ressource a existe et ne reviendra pas. Voir lib/topup-flag.ts.
+  if (!isTopupFirstPartyEnabled()) {
+    return NextResponse.json(TOPUP_CLOSED_BODY, { status: TOPUP_CLOSED_STATUS });
+  }
   if (!isTopupEnabled()) {
     return NextResponse.json(
       { error: "Service de recharge non configuré." },

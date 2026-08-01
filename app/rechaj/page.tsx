@@ -10,6 +10,8 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { isTopupEnabled } from "@/lib/zabelie-topup/fulfill";
 import { isZelleEnabled } from "@/lib/zelle";
 import { formatHTG } from "@/lib/sample-data";
+import { redirect } from "next/navigation";
+import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -21,6 +23,13 @@ export const metadata = { title: "Recharge téléphone — Zabelie" };
  * BRH : revendeur télécom, paiement → livraison immédiate, aucun solde stocké.
  */
 export default async function RechajPage() {
+  // Vente first-party close par decision du porteur (2026-08-01). Redirection
+  // plutot que 404 : la page a ete annoncee, un lien externe peut exister, et
+  // /catalogue est ce que le visiteur cherchait — des produits a acheter.
+  // `/rechaj/[orderId]` reste OUVERT : une commande deja payee doit rester
+  // consultable et remboursable. Voir lib/topup-flag.ts.
+  if (!isTopupFirstPartyEnabled()) redirect("/catalogue");
+
   const lang = await getLang();
 
   const enabled = isSupabaseConfigured() && isTopupEnabled();

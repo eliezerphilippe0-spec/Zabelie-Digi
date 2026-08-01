@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  isTopupFirstPartyEnabled,
+  TOPUP_CLOSED_BODY,
+  TOPUP_CLOSED_STATUS,
+} from "@/lib/topup-flag";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { reloadlyProvider, isReloadlyEnabled } from "@/lib/zabelie-topup/reloadly";
@@ -25,6 +30,13 @@ function priceFrom(costHtg: number): number {
 }
 
 export async function POST() {
+  // Synchronise le CATALOGUE de vente : sans vente, sans objet. Fermee avec
+  // elle. Les routes de confirmation Zelle et de remboursement restent
+  // OUVERTES — elles servent des commandes deja passees.
+  if (!isTopupFirstPartyEnabled()) {
+    return NextResponse.json(TOPUP_CLOSED_BODY, { status: TOPUP_CLOSED_STATUS });
+  }
+
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "Accès refusé" }, { status: 403 });

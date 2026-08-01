@@ -45,9 +45,6 @@ export async function SiteFooter() {
             <Link href="/#faq" className="text-mist hover:text-cloud">
               {t(lang, "sec.faq")}
             </Link>
-            <Link href="/rechaj" className="text-mist hover:text-cloud">
-              {t(lang, "nav.topup")}
-            </Link>
             <Link href="/mes-achats" className="text-mist hover:text-cloud">
               {t(lang, "pay.ok.cta")}
             </Link>

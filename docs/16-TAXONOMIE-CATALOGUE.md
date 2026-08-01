@@ -54,6 +54,28 @@ Les 10 autres départements restent définis et inactifs.
 
 ---
 
+## ⛔ Ce qu'aucun département n'autorisera jamais — services financiers
+
+Aucune vague, aucun arbitrage commercial ne peut ouvrir ces rayons. La règle ne
+dépend ni du département ni du vendeur.
+
+**Revente de solde MonCash ou NatCash — interdite.** « M ap vann balans », agent
+de dépôt, agent de retrait. Ce n'est pas une marchandise : c'est de la **monnaie
+électronique**, et en revendre fait du vendeur un agent de cash-in/cash-out.
+→ `docs/07-TOPUP.md` §3 et `docs/17-DOSSIER-BRH-RETENTION.md`.
+
+Même traitement que les composants d'armes : **aucun cas particulier, aucun
+palier « autorisé sur justificatif »**. La règle est publiée côté acheteur et
+vendeur sur `/produits-interdits` §5.
+
+⚠️ **Ne pas confondre avec V-17.** La décision du 2026-08-01 ferme la vente de
+recharge *par Zabelie elle-même*. Elle ne dit **rien** sur ce qu'un vendeur peut
+vendre. La question « un vendeur vérifié peut-il vendre du crédit
+Digicel/Natcom — un bien, pas de la monnaie électronique ? » est **ouverte et
+non tranchée** : `docs/02-DECISIONS.md` D-7. Ne pas l'ouvrir par effet de bord.
+
+---
+
 ## 1. Otomobil & Moto — Auto & Moto — *Automotive*
 
 > Département demandé explicitement. Le plus exigeant du catalogue : une pièce

@@ -24,7 +24,6 @@ const fr = {
   "nav.catalog": "Catalogue",
   "nav.talents": "Talents",
   "nav.how": "Comment ça marche",
-  "nav.topup": "Recharge",
   "nav.login": "Connexion",
   "nav.sell": "Vendre",
   "nav.dashboard": "Tableau de bord",
@@ -89,7 +88,7 @@ const fr = {
   "policy.services.p1":
     "Zabelie n'est pas une institution financière et ne servira pas de chemin vers une. Sont interdits :",
   "policy.services.items":
-    "transfert d'argent : envoyer, recevoir ou détenir de l'argent pour autrui ;\nchange : dollars contre gourdes, ou toute autre opération de change ;\nprêt et détention de fonds : crédit, avance sur salaire ;\njeux d'argent : borlette, loterie, paris, tirages.",
+    "transfert d'argent : envoyer, recevoir ou détenir de l'argent pour autrui ;\nchange : dollars contre gourdes, ou toute autre opération de change ;\nprêt et détention de fonds : crédit, avance sur salaire ;\njeux d'argent : borlette, loterie, paris, tirages ;\nrevente de solde MonCash ou NatCash : « m ap vann balans », agent de dépôt ou de retrait. C'est de la monnaie électronique, pas un bien — au même titre que les composants d'armes, il n'existe aucun cas particulier.",
   "policy.services.p2":
     "Le sòl et la tontine ne peuvent pas passer par Zabelie non plus. Ce n'est pas un jugement sur la pratique — elle fait partie de la vie de tout le monde. C'est que Zabelie ne peut pas détenir d'argent pour autrui, et un sòl demande exactement cela.",
   "policy.services.p3":
@@ -413,7 +412,6 @@ const ht: Record<I18nKey, string> = {
   "nav.catalog": "Katalòg",
   "nav.talents": "Talan",
   "nav.how": "Kijan sa mache",
-  "nav.topup": "Rechaj",
   "nav.login": "Konekte",
   "nav.sell": "Vann",
   "nav.dashboard": "Tablo bò",
@@ -477,7 +475,7 @@ const ht: Record<I18nKey, string> = {
   "policy.services.p1":
     "Zabelie pa yon enstitisyon finansye, e li p ap sèvi kòm chemen pou youn. Entèdi :",
   "policy.services.items":
-    "transfè lajan : voye, resevwa oswa kenbe lajan pou lòt moun ;\nchanje lajan : dola kont goud, oswa nenpòt lòt chanj ;\nprete lajan ak kenbe lajan : prè, avans sou salè ;\njwèt aza : borlèt, lotri, pari, tiraj.",
+    "transfè lajan : voye, resevwa oswa kenbe lajan pou lòt moun ;\nchanje lajan : dola kont goud, oswa nenpòt lòt chanj ;\nprete lajan ak kenbe lajan : prè, avans sou salè ;\njwèt aza : borlèt, lotri, pari, tiraj ;\nrevann balans MonCash oswa NatCash : « m ap vann balans », ajan depo oswa retrè. Se lajan elektwonik, se pa yon machandiz — menm jan ak pyès zam, pa gen okenn ka espesyal.",
   "policy.services.p2":
     "Sòl ak tontin pa ka pase sou Zabelie non plis. Se pa yon jijman sou pratik la — se yon bagay ki fè pati lavi tout moun. Se paske Zabelie pa ka kenbe lajan pou moun, e yon sòl mande egzakteman sa.",
   "policy.services.p3":
