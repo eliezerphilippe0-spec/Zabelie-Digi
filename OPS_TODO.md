@@ -3,6 +3,45 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 🔴 EN TÊTE — la panne d'inscription : deux écrans, pas un formulaire
+
+**Statut au 2026-08-01 : NON RÉSOLUE.** C'est la seule chose de ce fichier qui
+casse un parcours utilisateur aujourd'hui.
+
+**Constat, pas déduction :** `auth.users` ne contient qu'une ligne, du
+2026-07-09. Aucun trafic d'authentification n'atteint Supabase.
+
+**Hypothèse principale :** `NEXT_PUBLIC_SUPABASE_URL` et
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` absentes **au moment du build**. Next.js les
+inline à la compilation : absentes, le client lève avant tout appel réseau, et
+la page affiche « Mode démo ».
+
+### Le geste : ouvrir DEUX pages de connexion, ne rien remplir
+
+1. la préversion de la PR #55 ;
+2. la production.
+
+La comparaison tranche plus vite que n'importe quelle inscription. Pas de
+saisie, pas de console, pas de compte créé — ce qui élimine du même coup les
+deux faux positifs qui traînaient : « l'adresse était déjà inscrite » et
+« erreur de manipulation ».
+
+### Lire le résultat — Preview et Production sont DEUX environnements Vercel
+
+Chacun a ses propres variables. Être réglé en Production ne met rien en Preview,
+et l'inverse est vrai aussi. D'où quatre lectures, pas deux :
+
+| Préversion | Production | Ce qu'on en conclut |
+|---|---|---|
+| « Mode démo » | « Mode démo » | mécanisme confirmé, variables manquantes des deux côtés |
+| « Mode démo » | formulaire normal | mécanisme confirmé sur Preview ; **rend l'hypothèse très probable en production sans la prouver** |
+| formulaire normal | « Mode démo » | même mécanisme, variables présentes en Preview et absentes en **Production** — c'est le scénario le plus cohérent avec « aucune requête depuis le 9 juillet » |
+| formulaire normal | formulaire normal, et l'inscription échoue **avec une requête visible vers Supabase** dans l'onglet réseau | **seul cas qui fait tomber l'hypothèse.** C'est autre chose ; le F12 redevient nécessaire |
+
+⚠️ **Un formulaire normal sur la préversion ne réfute rien à lui seul.**
+L'hypothèse ne tombe pas, elle se **déplace** vers Production. Seule la
+quatrième ligne la réfute, et elle exige de voir une requête partir.
+
 ## Backlog revue Team Agents (BL-xxx) — 2026-07-15
 
 Source unique : `docs/REVUE-2026-07-15-team-agents.md` §4 (plan priorisé
