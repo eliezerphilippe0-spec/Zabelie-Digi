@@ -15,9 +15,9 @@
  * s'importer côté client (lang-toggle) — zéro poids au bundle.
  */
 
-export type Lang = "fr" | "ht";
+export type Lang = "fr" | "ht" | "en";
 export const LANG_COOKIE = "zabelie_lang";
-export const LANGS: Lang[] = ["fr", "ht"];
+export const LANGS: Lang[] = ["fr", "ht", "en"];
 
 const fr = {
   // Nav / footer
@@ -287,7 +287,7 @@ const fr = {
   "why.3.t": "Paiement lakay",
   "why.3.b": "MonCash en gourdes, Zelle en dollars pour la diaspora. Pensé pour Haïti d'abord.",
   "why.4.t": "Kreyòl + léger",
-  "why.4.b": "Interface en kreyòl et en français, pages ultra-légères pour la 3G et les petits téléphones.",
+  "why.4.b": "Interface en kreyòl, en français et en anglais, pages ultra-légères pour la 3G et les petits téléphones.",
   "sec.faq": "Questions fréquentes",
   "faq.q1": "Comment acheter un produit ?",
   "faq.a1": "Choisissez un produit, cliquez « Payer avec MonCash » et confirmez sur votre téléphone. La diaspora peut payer en USD via Zelle.",
@@ -674,7 +674,7 @@ const ht: Record<I18nKey, string> = {
   "why.3.t": "Peman lakay",
   "why.3.b": "MonCash an goud, Zelle an dola pou dyaspora a. Fèt pou Ayiti anvan tout bagay.",
   "why.4.t": "Kreyòl + leje",
-  "why.4.b": "Entèfas an kreyòl ak franse, paj yo leje anpil pou 3G ak ti telefòn yo.",
+  "why.4.b": "Entèfas an kreyòl, franse ak anglè, paj yo leje anpil pou 3G ak ti telefòn yo.",
   "sec.faq": "Kesyon moun poze souvan",
   "faq.q1": "Kijan pou m achte yon pwodui ?",
   "faq.a1": "Chwazi yon pwodui, klike « Peye ak MonCash » epi konfime sou telefòn ou. Dyaspora a ka peye an USD ak Zelle.",
@@ -790,7 +790,396 @@ const ht: Record<I18nKey, string> = {
   "reset.invalid": "Lyen sa a pa bon ankò. Mande yon nouvo lyen.",
 };
 
-export const DICT: Record<Lang, Record<I18nKey, string>> = { fr, ht };
+const en = {
+  // Nav / footer
+  "nav.catalog": "Catalog",
+  "nav.talents": "Talent",
+  "nav.how": "How it works",
+  "nav.login": "Sign in",
+  "nav.sell": "Sell",
+  "nav.dashboard": "Dashboard",
+  "nav.pro": "Invoicing",
+  "nav.logout": "Sign out",
+  "footer.tagline":
+    "The Haitian marketplace. Mobile money payments, built for local conditions.",
+  "footer.explore": "Explore",
+  "footer.sell": "Sell",
+  "footer.become": "Become a seller",
+  "footer.payment": "Payment",
+  "footer.natcash": "NatCash — coming soon",
+  "footer.rights": "All rights reserved.",
+
+  // ── Prohibited items policy (v1) ─────────────────────────────────────────
+  "policy.link": "What cannot be sold",
+  "catalog.allShelves": "All departments",
+  "catalog.miss.title": "We don't have this yet",
+  "catalog.miss.body": "Nobody is selling this on Zabelie right now. We're recording your search: that is how we decide which sellers to go find.",
+  "catalog.miss.shelves": "Related departments",
+  "catalog.miss.know": "Know someone who sells this?",
+  "catalog.miss.share": "Share on WhatsApp",
+  "catalog.fuzzy": "No exact match. Closest results:",
+  "catalog.empty.title": "The catalog is still empty.",
+  "catalog.empty.body": "The first shops are on their way. Do you sell? Publish your product in minutes.",
+  "catalog.empty.cta": "Sell on Zabelie",
+  "sell.physical.q": "Selling a physical product — parts, clothing, food?",
+  "sell.physical.cta": "Publish a physical product",
+  "policy.accept": "I confirm this product complies with Zabelie's selling rules.",
+  "policy.accept.read": "Read the rules",
+  "policy.accept.required": "You must accept the selling rules.",
+  "policy.title": "What cannot be sold on Zabelie",
+  "policy.date": "July 27, 2026",
+  "policy.why.h": "Why these rules",
+  "policy.why.p":
+    "These are Zabelie's rules. They are stricter than the law, and that is deliberate: a broad rule is understood and applied without argument. By publishing a listing, you accept them.",
+  "policy.objects.h": "1. Prohibited items — no exceptions",
+  "policy.objects.items":
+    "Firearms, along with their components and accessories: barrel, frame, bolt, trigger, magazine, suppressor, conversion kit. Ammunition, powder, primers. Realistic replicas and air guns.\nExplosives, fireworks, signal flares.\nNarcotics, precursors, drug paraphernalia.\nPrescription medication, unregistered medication, and any product presented as therapeutic.\nMilitary equipment, body armor, night vision.\nUniforms, insignia, badges and documents of the PNH or any other public authority.\nForged documents, counterfeit currency, and equipment used to produce them.\nJammers, interception equipment, skimmers.\nProtected species, artifacts and heritage property.\nPornographic content.\nWeapons whose only function is offensive: switchblade, brass knuckles, baton.",
+  "policy.counterfeit.h": "2. Counterfeits — absolute ban",
+  "policy.counterfeit.p1":
+    "Clothing, shoes, bags, watches, devices or accessories carrying a brand that is not authentic: prohibited. Even if you write that it is a copy. Even if the price makes it obvious. Even in « A quality ».",
+  "policy.counterfeit.p2":
+    "Counterfeits put the whole platform at risk, not just your listing. It is a shared risk: a platform's reputation is paid for by every seller, not by the one at fault.",
+  "policy.confusion.h": "3. Do not confuse the two",
+  "policy.confusion.banned":
+    "PROHIBITED: firearms, their components and accessories, ammunition.",
+  "policy.confusion.allowed":
+    "ALLOWED: spare parts for vehicles, motorcycles, machines and appliances.",
+  "policy.confusion.p":
+    "The auto and motorcycle department is one of Zabelie's main departments. It stays fully open.",
+  "policy.tools.h": "4. Sharp tools: presentation decides",
+  "policy.tools.p1":
+    "Machetes, kitchen knives, scissors, work tools: allowed. The machete is a farming tool, sold everywhere in the country.",
+  "policy.tools.p2":
+    "What is prohibited is presenting the tool as a weapon. These are refused:",
+  "policy.tools.items":
+    "the words « otodefans », « tactical », « self-defense », « combat » in the title, the description or on the photo;\nany image or text showing the tool used against a person.",
+  "policy.tools.p3":
+    "The same object: presented as a tool, it passes; presented as a weapon, it does not.",
+  "policy.services.h": "5. Prohibited services",
+  "policy.services.p1":
+    "Zabelie is not a financial institution and will not serve as a path to one. These are prohibited:",
+  "policy.services.items":
+    "money transfer: sending, receiving or holding money for someone else;\ncurrency exchange: dollars for gourdes, or any other exchange operation;\nlending and holding funds: credit, salary advances;\ngambling: borlette, lottery, betting, draws;\nreselling MonCash or NatCash balance: « m ap vann balans », deposit or withdrawal agent. That is electronic money, not goods — just like weapon components, there is no special case.",
+  "policy.services.p2":
+    "Sòl and tontine cannot go through Zabelie either. This is not a judgment on the practice — it is part of everyone's life. It is that Zabelie cannot hold money for others, and a sòl requires exactly that.",
+  "policy.services.p3":
+    "This rule does not depend on what you sell: a clothing seller may not offer « I'll exchange your dollars » in their listing either.",
+  "policy.digital.h": "6. Files and digital content",
+  "policy.digital.items":
+    "pirated software, activators, non-authentic license keys;\nmusic, films, books, courses or any content you do not have the right to sell;\nresold accounts: streaming, social media, games;\npersonal data lists: phone numbers, email addresses, contacts.",
+  "policy.sanctions.h": "7. Enforcement",
+  "policy.sanctions.p1":
+    "In case of violation: immediate removal of the listing, account suspension, retention of the evidence.",
+  "policy.sanctions.p2":
+    "For weapons, drugs and counterfeits: no warning, no second chance.",
+  "policy.sanctions.p3":
+    "There is no « allowed with documentation » tier. Zabelie has no way to verify a permit — so we ask for none, and accept none.",
+  "policy.review.h": "8. Every listing is reviewed by a person",
+  "policy.review.p":
+    "We review every listing — physical product, service, file — before it appears on the site. When in doubt, submit anyway: the decision is ours, and it costs you nothing.",
+  "policy.version.note":
+    "These rules may change. Each new version carries its own number, and the version you accepted is the one kept on record.",
+
+  // Home
+  "home.badge": "The Haitian marketplace",
+  "home.h1": "Buy in Haiti, pay with MonCash",
+  "badge.pay": "Secure payment with MonCash",
+  "home.sub":
+    "Verified sellers near you. You pay with MonCash, the seller delivers.",
+  "home.cta.sell": "Start selling",
+  "home.cta.browse": "Browse the catalog",
+  "home.stat1": "Haitian",
+  "home.stat2": "mobile payment",
+  "home.stat3": "after payment",
+  "home.stat3.v": "Delivery",
+  "home.trends": "Trending now",
+  "home.trends.sub": "The most requested products.",
+  "home.all": "See all →",
+  "home.how": "How it works",
+  "home.s1.t": "Publish",
+  "home.s1.b":
+    "Put your product online in a few minutes.",
+  "home.s2.t": "Get paid",
+  "home.s2.b":
+    "The buyer pays via MonCash. Payment is confirmed server-to-server.",
+  "home.s3.t": "Deliver & withdraw",
+  "home.s3.b":
+    "You deliver to the buyer, your balance is credited, you withdraw your earnings.",
+  "home.final.a": "What you sell deserves to be",
+  "home.final.b": "paid for",
+  "home.final.sub":
+    "Join the sellers getting paid with MonCash on Zabelie.",
+  "home.final.cta": "Create my shop",
+
+  // Catalog
+  "catalog.title": "Catalog",
+  "catalog.results": "result(s)",
+  "catalog.for": "for",
+  "catalog.search.ph": "Search for a product…",
+  "catalog.search.btn": "Search",
+  "catalog.none": "No results.",
+  "catalog.reset": "Reset",
+  "catalog.more": "See more",
+
+  // Product
+  "product.back": "← Back to catalog",
+  "product.kind.file": "Digital file",
+  "product.kind.service": "Service",
+  "product.kind.physical": "Physical product",
+  "product.by": "by",
+  "product.sales": "sales",
+  "product.reviews.badge": "verified review(s)",
+  "product.pay": "Pay {price} with MonCash",
+  "product.pay.loading": "Redirecting to MonCash…",
+  "product.pay.stripe": "Pay {usd} by card",
+  "product.pay.zelle": "Pay {usd} with Zelle",
+  "pay.redirect": "Redirecting…",
+  "error.network": "Cannot connect. Try again.",
+  "error.generic": "Something went wrong. Try again.",
+  "error.provider": "Payment temporarily unavailable. Try again in a moment.",
+  "pay.retry": "Retry payment",
+  "pay.checkBalance": "Check your MonCash balance, then try again.",
+  "common.copy": "Copy",
+  "common.copied": "Copied ✓",
+  "pay.other": "In the diaspora? Pay in USD:",
+  "product.delivery": "Instant delivery once payment is confirmed.",
+  "product.delivery.declared":
+    "Delivery: {zone}, within {days} days — stated by the seller",
+  "product.delivery.toAgree": "Delivery to be arranged with the seller",
+  "product.secure": "✓ Secure payment, confirmed server-to-server",
+  "product.file": "✓ Immediate file download",
+  "product.service": "✓ Introduction after payment",
+  "product.verifiedOnly": "✓ Reviews limited to verified buyers",
+  "product.delivery.days": "Delivery in {days} day(s)",
+  "product.includes": "What's included",
+  "product.reviews": "Verified reviews",
+  "product.reviews.note": "Only buyers who have paid can leave a review.",
+  "product.verified": "Verified purchase ✓",
+  "product.share": "on Zabelie:",
+  "product.cta.bottom": "Buy now — {price} ↑",
+  "coupon.have": "I have a promo code",
+  "coupon.ph": "e.g. PROMO50",
+  "coupon.apply": "Apply",
+  "coupon.applied": "✓ −{percent}% — you pay {price}",
+  "coupon.invalid": "Invalid or expired code.",
+
+  // Payment
+  "pay.ok.title": "Payment confirmed",
+  "pay.ok.body":
+    "Thank you! Your purchase is confirmed. Your file is available in your downloads.",
+  "pay.ok.cta": "View my purchases",
+  "pay.back": "Back to catalog",
+  "pay.wait.title": "Payment being verified",
+  "pay.wait.body":
+    "We are confirming your payment with MonCash. If the amount was debited, your purchase will be confirmed automatically in a few moments — even if this page was interrupted.",
+  "pay.wait.cta": "Check my purchases",
+  "pay.fail.title": "Payment not confirmed",
+  "pay.fail.body":
+    "The payment could not be confirmed. No product was delivered. You can safely try again.",
+  "pay.fail.code": "Code:",
+  "pay.order": "Order",
+  "order.ref": "Order number",
+
+  // Zelle (diaspora — semi-manual flow)
+  "zelle.title": "Zelle payment",
+  "zelle.sub":
+    "Send the exact amount from your banking app (Zelle), with the memo below. Your purchase will be confirmed once the transfer is verified — usually within 24 hours.",
+  "zelle.amount": "Exact amount to send",
+  "zelle.to": "Zelle recipient",
+  "zelle.name": "Account name",
+  "zelle.memo": "Memo to include (important)",
+  "zelle.memo.why":
+    "This code lets us find your transfer and confirm your purchase quickly.",
+  "zelle.ref.label": "Have you sent the payment?",
+  "zelle.ref.ph": "Zelle confirmation reference (optional)",
+  "zelle.sent": "I have sent the payment",
+  "zelle.done":
+    "Thank you! We are verifying your transfer. Your file will appear under « My purchases » as soon as it is confirmed.",
+
+  // Sharing
+  "share.wa": "Share on WhatsApp",
+  "share.copy": "Copy link",
+  "share.copied": "Link copied ✓",
+
+  // Phone top-up (V-11)
+  "topup.title": "Phone top-up",
+  "topup.sub":
+    "Top up any Digicel or Natcom phone in seconds. Pay with MonCash — or by Zelle from the diaspora.",
+  "topup.operator": "Carrier",
+  "topup.phone.label": "Number to top up",
+  "topup.phone.ph": "e.g. 37 12 34 56",
+  "topup.phone2.label": "Confirm the number (type it again)",
+  "topup.phone2.why":
+    "A wrong number means the top-up is lost. Check every digit.",
+  "topup.mismatch": "The two numbers do not match.",
+  "topup.invalid": "Invalid Haitian number (8 digits, mobile 3X/4X).",
+  "topup.detected": "Carrier detected",
+  "topup.amount.label": "Top-up amount",
+  "topup.receives": "The number receives {face} HTG",
+  "topup.status.payment_pending": "Waiting for payment…",
+  "topup.status.paid": "Payment received — sending the top-up…",
+  "topup.status.fulfillment_pending": "Sending the top-up…",
+  "topup.status.delivered": "Top-up delivered ✓",
+  "topup.status.failed": "The top-up failed.",
+  "topup.status.refund_pending":
+    "The top-up failed after payment: a refund is being prepared to your original payment method.",
+  "topup.status.refunded":
+    "Refunded to your original payment method.",
+  "topup.disabled":
+    "The top-up service is coming soon. Check back shortly!",
+  "topup.legal":
+    "Zabelie is a telecom top-up reseller: payment then immediate delivery — no balance is stored on your account.",
+
+  // Home V2 (12 sections)
+  "sec.featured": "Product of the week",
+  "featured.cta": "View the product →",
+  "home.pay": "Pay easily with",
+  "sec.cats": "Main categories",
+  "sec.new": "New arrivals",
+  "sec.new.sub": "The latest products published by our sellers.",
+  "sec.services": "Popular services",
+  "sec.services.sub": "Mentoring, design, consulting — book a service.",
+  "sec.sellers": "Top sellers",
+  "sec.sellers.sub": "The community's most appreciated sellers.",
+  "sec.sellers.sales": "sales",
+  "sec.free": "Free products",
+  "sec.free.sub": "Try for free, come back for the rest.",
+  "sec.free.badge": "FREE",
+  "sec.promo": "On promotion",
+  "sec.promo.sub": "These sellers have an active promo code — ask for it on their WhatsApp.",
+  "sec.why": "Why choose Zabelie",
+  "why.1.t": "Money protected",
+  "why.1.b": "Every payment stays in escrow until delivery. Amounts verified in the database, never taken on trust.",
+  "why.3.t": "Payment lakay",
+  "why.3.b": "MonCash in gourdes, Zelle in dollars for the diaspora. Built for Haiti first.",
+  "why.4.t": "Kreyòl + lightweight",
+  "why.4.b": "Interface in Kreyòl, French and English, ultra-light pages for 3G and small phones.",
+  "sec.faq": "Frequently asked questions",
+  "faq.q1": "How do I buy a product?",
+  "faq.a1": "Pick a product, tap « Pay with MonCash » and confirm on your phone. The diaspora can pay in USD via Zelle.",
+  "faq.q2": "When do I receive my purchase?",
+  "faq.a2":
+    "It depends on the product. A file is available immediately under « My purchases », with an email containing the link. For a service, the seller contacts you after payment. A physical product is shipped by the seller.",
+  "faq.q3": "How do I sell on Zabelie?",
+  "faq.a3": "Create an account, publish your product in a few minutes. It's free — the platform takes 10% per sale, rounded to the nearest gourde.",
+  "faq.a3.floor": "Create an account, publish your product in a few minutes. It's free — the platform takes 10% per sale. Rounding is always in your favor.",
+  "faq.q4": "When does the seller get their money?",
+  "faq.a4": "The net amount is credited immediately as « pending », then becomes available 7 days after the sale (fraud protection).",
+  "faq.q5": "What if something goes wrong?",
+  "faq.a5": "Every order is traceable and refundable to your original payment method. Disputes are reviewed one by one.",
+  "footer.help": "Help",
+
+  // Founder
+  "founder.title": "A word from the founder",
+  "founder.quote":
+    "Opportunities are not found, they are created. Dare to act.",
+  "founder.name": "Éliezer Philippe",
+  "founder.role": "Founder, Zabelie",
+
+  // Auth / sell / publish / upload / creator / card
+  "auth.tab.signin": "Sign in",
+  "auth.tab.signup": "Sign up",
+  "auth.name.ph": "Display name",
+  "auth.name.required": "A name is required.",
+  "auth.name.reserved": "This name is reserved: it could be mistaken for an official Zabelie account. Please choose another.",
+  "auth.err.exists": "This address already has an account. Sign in.",
+  "auth.err.credentials": "Incorrect email or password.",
+  "auth.err.password": "Password too short — 6 characters minimum.",
+  "auth.err.notconfirmed": "Account not confirmed yet. Open the link sent by email.",
+  "auth.err.rate": "Too many attempts. Wait a few minutes and try again.",
+  "auth.err.disabled": "Sign-ups are closed at the moment.",
+  "auth.err.email": "This email address is not valid.",
+  "auth.err.network": "The connection was lost. Check your network and try again.",
+  "auth.email.ph": "Email",
+  "auth.password.ph": "Password",
+  "auth.signin.cta": "Sign in",
+  "auth.signup.cta": "Create my account",
+  "auth.signup.success":
+    "Account created. Check your email to confirm, then sign in.",
+  "auth.demo.mode":
+    "Demo mode: connect the Supabase project to enable accounts.",
+  "auth.link.expired":
+    "This confirmation link has expired or has already been used. Sign in, or create your account again to receive a new link.",
+  "auth.back.home": "← Back to home",
+
+  // Global error screens (app/not-found.tsx). `app/error.tsx` cannot read
+  // these: it is a client component, and t() is server-only.
+  "err.404.title": "This page does not exist",
+  "err.404.body":
+    "The link may be old, or the address may have a typo. Nothing is lost: your purchases and orders are still available from your account.",
+  "err.404.home": "Go to home",
+  "err.404.catalog": "View the catalog",
+
+  "sell.title": "Sell on Zabelie",
+  "sell.demo.subtitle": "Demo mode — connect Supabase to publish real products.",
+  "sell.demo.body.pre": "Publishing requires a configured Supabase database (see",
+  "sell.demo.body.post": ").",
+  "sell.login.subtitle": "Sign in to publish a product.",
+  "sell.subtitle": "Publish your product or your service.",
+  "sell.mine.title": "My products",
+
+  "publish.title.ph": "Product title",
+  "publish.kind.aria": "Product type",
+  "publish.category.aria": "Category",
+  "publish.category.empty": "— Category —",
+  "publish.price.ph": "Price (HTG)",
+  "publish.description.ph": "Description",
+  "publish.service.hint":
+    "Service page (Fiverr style) — optional, but reassures the buyer.",
+  "publish.deliveryDays.ph": "Delivery time (in days)",
+  "publish.includes.ph":
+    "What's included — one item per line\ne.g. 3 revisions\nSource file delivered",
+  "publish.submit": "Publish the product",
+  "publish.submitting": "Publishing…",
+  "publish.error.generic": "Publishing failed.",
+  "publish.footer.hint":
+    "Uploading the deliverable file happens from the product page (next step).",
+  "publish.net.youReceive": "You receive",
+  "publish.net.fee": "commission",
+  "publish.net.rounding": "Commission rounded to the nearest gourde.",
+  "publish.net.rounding.floor": "Rounding is always in your favor.",
+  "publish.net.caveat": "Estimate at full price — a promo code lowers the amount paid, so it lowers what you receive too.",
+
+  "upload.sending": "Uploading…",
+  "upload.replace": "Replace the file",
+  "upload.add": "Add the file",
+  "upload.saved": "File saved.",
+  "upload.error": "Upload failed.",
+
+  "creator.products.label": "product(s) online",
+  "creator.share.text": "Check out {name}'s shop on Zabelie:",
+  "creator.empty": "No products published yet.",
+
+  "card.kind.file": "File",
+  "card.kind.service": "Service",
+  "card.kind.physical": "Physical",
+
+  "status.draft": "Draft",
+  "status.review": "Awaiting review",
+  "status.review.hint": "We look at every listing before it goes live. No need to submit it again.",
+  "status.published": "Published",
+
+  // Forgot / reset password
+  "auth.forgot": "Forgot your password?",
+  "forgot.title": "Forgot password",
+  "forgot.subtitle":
+    "Enter your email and we will send you a link to create a new password.",
+  "forgot.submit": "Send the link",
+  "forgot.sending": "Sending…",
+  "forgot.success":
+    "If an account exists with this email, a reset link has just been sent. Check your inbox (and your spam folder).",
+  "forgot.back": "← Back to sign in",
+  "reset.title": "New password",
+  "reset.subtitle": "Choose a new password for your account.",
+  "reset.confirm.ph": "Confirm the password",
+  "reset.mismatch": "The passwords do not match.",
+  "reset.submit": "Update the password",
+  "reset.submitting": "Updating…",
+  "reset.success": "Password updated. You can now sign in.",
+  "reset.invalid": "This link is no longer valid. Request a new one.",
+} satisfies Record<I18nKey, string>;
+
+export const DICT: Record<Lang, Record<I18nKey, string>> = { fr, ht, en };
 
 /** Traduit une clé ; {vars} interpolées ; repli FR si clé absente. */
 export function t(

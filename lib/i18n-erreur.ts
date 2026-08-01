@@ -44,6 +44,12 @@ export const ERR: Record<Lang, ErrLabels> = {
     retry: "Eseye ankò",
     home: "Ale nan akèy la",
   },
+  en: {
+    title: "Something went wrong",
+    body: "An error occurred on our side. Your purchases and payments are unaffected — nothing was lost.",
+    retry: "Try again",
+    home: "Go to home",
+  },
 };
 
 /** Langue lue côté client depuis le cookie. Repli FR, jamais d'exception. */

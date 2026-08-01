@@ -35,13 +35,33 @@ type CategoryRow = {
   slug: string;
   label_fr: string;
   label_kr: string;
+  label_en: string;
   level: number;
   parent_id: string | null;
 };
 
+/**
+ * Libellé d'un rayon dans la langue courante.
+ *
+ * Les libellés de catégories ne vivent PAS dans `lib/i18n.ts` : ils sont en
+ * base, une colonne par langue (`0035_categories.sql`). L'anglais y était déjà
+ * — `label_en not null` depuis la création de la table, peuplé pour les 123
+ * lignes. Seul le `select` ne le demandait pas et le type ne le déclarait pas :
+ * l'ajout de la troisième langue n'a donc coûté aucune migration ici.
+ *
+ * `|| label_fr` sur chaque branche : la colonne est `not null` mais rien
+ * n'interdit une chaîne vide, et un rayon sans nom est pire qu'un rayon nommé
+ * dans la mauvaise langue.
+ */
 function labelFor(row: CategoryRow, lang: Lang): string {
-  // Kreyòl-first : le libellé créole existe en base pour chaque rayon.
-  return lang === "ht" ? row.label_kr || row.label_fr : row.label_fr;
+  switch (lang) {
+    case "ht":
+      return row.label_kr || row.label_fr;
+    case "en":
+      return row.label_en || row.label_fr;
+    case "fr":
+      return row.label_fr;
+  }
 }
 
 /**
@@ -76,7 +96,7 @@ export async function getCategoryFacets(
 
   const { data: cats } = await supabase
     .from("zabelie_categories")
-    .select("id, slug, label_fr, label_kr, level, parent_id")
+    .select("id, slug, label_fr, label_kr, label_en, level, parent_id")
     .in("id", [...new Set((liens as unknown as { category_id: string }[]).map((l) => l.category_id))]);
 
   return agregerFacettes(

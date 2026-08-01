@@ -13,10 +13,10 @@ import { agregerFacettes } from "../lib/taxonomy";
  */
 
 const CATS = [
-  { id: "d1", slug: "fren-oto", label_fr: "Freinage", label_kr: "Fren", level: 3, parent_id: "p1" },
-  { id: "d2", slug: "filtrasyon-oto", label_fr: "Filtration", label_kr: "Filtrasyon", level: 3, parent_id: "p1" },
-  { id: "p1", slug: "pyes-detache-oto", label_fr: "Pièces détachées auto", label_kr: "Pyès detache oto", level: 2, parent_id: "r" },
-  { id: "p2", slug: "kawotchou-jant", label_fr: "Pneus & jantes", label_kr: "Kawotchou", level: 2, parent_id: "r" },
+  { id: "d1", slug: "fren-oto", label_fr: "Freinage", label_kr: "Fren", label_en: "Brakes", level: 3, parent_id: "p1" },
+  { id: "d2", slug: "filtrasyon-oto", label_fr: "Filtration", label_kr: "Filtrasyon", label_en: "Filtration", level: 3, parent_id: "p1" },
+  { id: "p1", slug: "pyes-detache-oto", label_fr: "Pièces détachées auto", label_kr: "Pyès detache oto", label_en: "Auto parts", level: 2, parent_id: "r" },
+  { id: "p2", slug: "kawotchou-jant", label_fr: "Pneus & jantes", label_kr: "Kawotchou", label_en: "Tires & rims", level: 2, parent_id: "r" },
 ];
 
 test("les niveaux 3 remontent sur leur parent, et les comptes s'additionnent", () => {
@@ -65,6 +65,19 @@ test("Kreyòl-first : le libellé suit la langue", () => {
 test("libellé créole manquant → repli sur le français, jamais du vide", () => {
   const sansKr = [{ ...CATS[3], label_kr: "" }];
   const f = agregerFacettes([{ category_id: "p2" }], sansKr, "ht");
+  assert.equal(f[0].label, "Pneus & jantes");
+});
+
+test("anglais : le libellé suit la langue", () => {
+  const f = agregerFacettes([{ category_id: "p2" }], CATS, "en");
+  assert.equal(f[0].label, "Tires & rims");
+});
+
+test("libellé anglais manquant → repli sur le français, jamais du vide", () => {
+  // `label_en` est `not null` en base (0035) mais rien n'interdit une chaîne
+  // vide : un rayon sans nom est pire qu'un rayon nommé en français.
+  const sansEn = [{ ...CATS[3], label_en: "" }];
+  const f = agregerFacettes([{ category_id: "p2" }], sansEn, "en");
   assert.equal(f[0].label, "Pneus & jantes");
 });
 

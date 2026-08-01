@@ -16,8 +16,18 @@ import { ROUNDING_IN_FORCE } from "../lib/commission";
  * écrite ailleurs en dur. Il couvre les clés existantes, pas l'invention.
  */
 
-/** Marqueurs de la promesse « l'arrondi va au vendeur », FR et Kreyòl. */
-const PROMESSE = /en (votre|ta) faveur|an favè w/i;
+/**
+ * Marqueurs de la promesse « l'arrondi va au vendeur », dans les trois langues.
+ *
+ * ⚠️ Cette liste est le point faible du test et doit grandir avec le
+ * dictionnaire : ajouter une langue sans ajouter son marqueur ici rendrait le
+ * premier contrôle FAUX-NÉGATIF (aucune promesse trouvée → échec bruyant, cas
+ * favorable) mais surtout le DEUXIÈME faux-positif — une clé par défaut
+ * promettant l'arrondi au vendeur en anglais passerait inaperçue. L'anglais a
+ * été ajouté ici le 2026-08-01, à l'occasion de la troisième langue, et c'est
+ * ce test qui l'a réclamé de lui-même en échouant.
+ */
+const PROMESSE = /en (votre|ta) faveur|an favè w|in your favou?r/i;
 
 const CLES = [
   { enVigueur: "faq.a3", floor: "faq.a3.floor" },

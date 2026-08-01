@@ -133,6 +133,13 @@ export type TermeDemande = {
  *
  * Kreyòl par défaut — c'est la langue dans laquelle on recrute un commerçant
  * à Port-au-Prince ou au Cap.
+ *
+ * ⚠️ `"ht" | "fr"` ici, et NON `Lang` : ce n'est pas un oubli au moment où
+ * l'anglais est devenu la troisième langue de l'interface (2026-08-01). Ce
+ * message part vers un commerçant en Haïti, pas vers un visiteur du site. Le
+ * jour où l'on démarchera un fournisseur de la diaspora, ce sera une décision
+ * commerciale — et il faudra une VRAIE traduction, pas l'élargissement
+ * mécanique d'un type.
  */
 export function messageSourcing(
   t: TermeDemande,

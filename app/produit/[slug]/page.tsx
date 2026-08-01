@@ -14,7 +14,7 @@ import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
-import { t } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
 import {
   kindLabelKey,
   deliveryBulletKey as bulletKey,
@@ -70,7 +70,11 @@ export async function generateMetadata({
  * diaspora USD si configurés (Stripe/Zelle + USD_HTG_RATE). Le prix USD affiché
  * est indicatif — la vérité reste figée au checkout puis vérifiée en base.
  */
-function buildBuyOptions(lang: "fr" | "ht", priceHTG: number): BuyOption[] {
+// `Lang`, jamais l'union recopiée à la main : c'est cette recopie qui a fait
+// échouer la compilation à l'ajout de l'anglais. Ici le compilateur a bien
+// énuméré le site — parce que la valeur qui entre EST un `Lang`. Un
+// `lang as "fr" | "ht"` serait passé en silence.
+function buildBuyOptions(lang: Lang, priceHTG: number): BuyOption[] {
   const options: BuyOption[] = [
     { rail: "moncash", label: t(lang, "product.pay", { price: formatHTG(priceHTG) }) },
   ];

@@ -1,9 +1,32 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LANG_COOKIE, type Lang } from "@/lib/i18n";
+import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 
-/** Bascule FR / Kreyòl — cookie 1 an, puis re-rendu serveur. */
+/**
+ * Libellés du sélecteur. Ils ne passent PAS par `t()` : le nom d'une langue
+ * s'écrit dans cette langue, pas dans celle de l'interface — quelqu'un qui ne
+ * lit pas le français doit reconnaître « Kreyòl ». Et `t()` est de toute façon
+ * interdit côté client (règle en tête de `lib/i18n.ts`).
+ *
+ * `Record<Lang, …>` : ajouter une langue sans son libellé ne compile pas.
+ */
+const ABBR: Record<Lang, string> = { fr: "FR", ht: "KR", en: "EN" };
+const NOM: Record<Lang, string> = {
+  fr: "Français",
+  ht: "Kreyòl ayisyen",
+  en: "English",
+};
+
+/**
+ * Sélecteur FR / Kreyòl / EN — cookie 1 an, puis re-rendu serveur.
+ *
+ * Trois boutons plutôt qu'une bascule : à deux langues, alterner suffisait ;
+ * à trois, « basculer » n'a plus de sens et l'utilisateur doit voir où il va.
+ * La liste vient de `LANGS`, pas d'une énumération recopiée — une quatrième
+ * langue apparaîtra ici sans qu'on y touche, et si son libellé manque le
+ * compilateur le dira (`Record<Lang, …>`).
+ */
 export function LangToggle({ current }: { current: Lang }) {
   const router = useRouter();
 
@@ -27,11 +50,12 @@ export function LangToggle({ current }: { current: Lang }) {
   );
 
   // BL-124 : zones tactiles élargies (~40 px) — c'était ~22×18 px sur LE
-  // bouton de bascule de langue, sur Android bas de gamme.
+  // bouton de bascule de langue, sur Android bas de gamme. Le passage à trois
+  // boutons ne doit pas reprendre ce qui a été gagné là : `px-3 py-2` est
+  // conservé tel quel, c'est la largeur du conteneur qui grandit.
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-line p-0.5 text-xs">
-      {btn("fr", "FR", "Français")}
-      {btn("ht", "KR", "Kreyòl ayisyen")}
+      {LANGS.map((l) => btn(l, ABBR[l], NOM[l]))}
     </div>
   );
 }
