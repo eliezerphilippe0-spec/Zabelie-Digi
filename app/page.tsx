@@ -413,39 +413,39 @@ export default async function HomePage() {
         cardLabels={cardLabels}
       />
 
-      {/* 9. AVIS CLIENTS */}
-      <section className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {t(lang, "sec.reviews")}
-        </h2>
-        <p className="mt-2 text-sm text-mist">{t(lang, "sec.reviews.sub")}</p>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {([1, 2, 3] as const).map((i) => (
-            <figure
-              key={i}
-              className="rounded-2xl border border-line bg-surface/60 p-5"
-            >
-              <p className="text-accent">★★★★★</p>
-              <blockquote className="mt-3 text-sm leading-relaxed text-cloud">
-                « {t(lang, `testi.${i}.b` as Parameters<typeof t>[1])} »
-              </blockquote>
-              <figcaption className="mt-4 text-xs font-semibold text-mist">
-                {t(lang, `testi.${i}.n` as Parameters<typeof t>[1])}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </section>
+      {/* 9. AVIS CLIENTS — SECTION RETIRÉE (2026-08-01)
+          Elle bouclait sur [1, 2, 3] en dur, imprimait ★★★★★ en dur, et tirait
+          « Woodley P. », « Fabiola M. », « Ricardo S. » de chaînes i18n. Aucune
+          garde : elle se rendait TOUJOURS, y compris avec zéro commande en base
+          — l'état actuel de la production.
 
-      {/* 10. POURQUOI CHOISIR ZABELIE DIGI */}
+          Ce n'était pas un résidu de vocabulaire comme les autres. Les autres
+          annonçaient le mauvais commerce ; celui-ci affirmait un fait faux sur
+          des personnes nommées, sous deux garanties de vérification :
+          « avis vérifiés uniquement » (sec.reviews.sub) et « seuls les
+          acheteurs ayant réellement payé peuvent noter — garanti par la base
+          de données » (why.2.b). Le texte invoquait la base comme preuve alors
+          que rien de ce bloc n'en venait.
+
+          Retirée plutôt que reformulée : tant qu'aucune commande n'existe, il
+          n'y a rien de vrai à afficher. `why.2` tombe avec elle — une garantie
+          de vérification sans avis à vérifier n'a pas d'objet.
+
+          Elle revient le jour où elle lit `reviews` en base, avec une garde de
+          vacuité comme toutes les autres sections (V-13). Les clés supprimées
+          sont dans l'historique git. */}
+
+      {/* 10. POURQUOI CHOISIR ZABELIE */}
       <section className="mx-auto max-w-6xl px-5 py-12">
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
           {t(lang, "sec.why")}
         </h2>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* `why.2` — « Avis 100 % vérifiés … garanti par la base de données »
+            — retiré avec la section Avis clients : la garantie n'avait plus
+            rien à garantir. Trois colonnes au lieu de quatre. */}
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {([
             ["🛡️", "why.1.t", "why.1.b"],
-            ["✅", "why.2.t", "why.2.b"],
             ["🇭🇹", "why.3.t", "why.3.b"],
             ["⚡", "why.4.t", "why.4.b"],
           ] as const).map(([icon, tt, bb]) => (
