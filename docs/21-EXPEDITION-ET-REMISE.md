@@ -279,6 +279,28 @@ et la relance est ce qui le rend acceptable.
    `vercel.json`.
 5. **B2 avant** : `0037`/`0038`/`0040` doivent être appliquées d'abord —
    `0043` §6 remplace la version `0038` de `confirm_payment`.
+6. **Les textes de façade qui attendent cette migration.** Aujourd'hui ils ne
+   promettent AUCUN délai sur le physique, faute de borne exécutable. Le jour
+   où `0043` est appliquée, la borne existe et le silence devient une
+   sous-information. À reprendre alors :
+   - `home.stat3.v` / `home.stat3` — « Livraison / après paiement ». Peut
+     devenir « 5 jours / délai vendeur » (`5edd90b`).
+   - `faq.a2`, branche **physique** — « expédié par le vendeur après
+     confirmation du paiement ». Seule des trois branches sans repère de
+     temps, les deux autres en portant un implicitement (`8683806`).
+
+   ⚠️ Nuance à ne pas perdre en route : `shipment_deadline_days = 5` est un
+   **plafond côté vendeur**, pas une promesse de livraison à l'acheteur.
+   L'écrire « livré en 5 jours » recréerait, avec un chiffre, la promesse
+   intenable qu'on vient de retirer deux fois.
+
+   ⚠️ Pourquoi cette entrée existe : `faq.a3` suit `ROUNDING_IN_FORCE` **tout
+   seul** (`app/page.tsx:483`) — l'annonce ne peut pas prendre de retard sur
+   le code. Ces deux textes-ci n'ont aucun mécanisme équivalent : ils
+   dépendent de quelqu'un qui s'en souvient. C'est exactement la forme de
+   dette que la sélection automatique de `faq.a3` avait été écrite pour
+   éviter, et elle est ici assumée faute de pouvoir brancher un texte sur une
+   migration non appliquée.
 
 ## 6. Ce que cette migration ne fait pas
 
