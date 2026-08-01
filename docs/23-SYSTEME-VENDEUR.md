@@ -75,7 +75,7 @@ champ « nom légal » ou « catégories de la boutique ». Mettre ces colonnes 
 lecture à savoir lesquelles ignorer.
 
 **Argument secondaire — le cycle de vie diffère.** Un compte acheteur n'a qu'un
-état (actif / suspendu). Un compte vendeur en a six (§3). Loger deux machines à
+état (actif / suspendu). Un compte vendeur en a sept (§3). Loger deux machines à
 états dans une table dont `role` est déjà gelé par trigger (`0015:18`) revient à
 faire porter à une colonne trois significations.
 
@@ -100,53 +100,129 @@ zabelie_sellers
   shop_slug         text unique            -- URL de boutique
   account_status    enum (§3)
   payout_status     enum (§3)
-  contact_phone     text not null          -- §2bis
-  payout_phone      text                   -- MonCash de versement, ≠ contact
+  contact_phone     text not null          -- §2bis — AUCUNE unicité
+  payout_phone      text                   -- MonCash de versement — unique (§2bis)
+  payout_phone_set_at timestamptz          -- §2bis, délai de refroidissement
   address_*         …
   categories        text[]                 -- rayons déclarés (docs/16)
   created_at, status_changed_at, status_reason
 ```
 
-> **⚠️ OUVERT** — `payout_phone` distinct de `contact_phone` : c'est un choix de
-> sécurité (un numéro de contact qui change ne redirige pas l'argent) contre un
-> choix de simplicité (un numéro de moins à saisir). Décision porteur.
+> **TRANCHÉ (2026-08-01)** — `payout_phone` est **distinct** de `contact_phone`.
+> Ce n'est pas seulement « un numéro de moins à saisir » contre « un peu plus de
+> sécurité » : les deux champs ne portent pas le même risque et ne peuvent donc
+> pas porter la même règle. Voir §2bis.
 
 ---
 
-## 2 bis. Le téléphone — obligatoire, et unique
+## 2 bis. Le téléphone — obligatoire ; l'unicité, sur le seul numéro de versement
 
 **Exigence du porteur (2026-08-01) : demander toujours le numéro de téléphone,
 et éviter les doublons.**
 
-**Constat :** `profiles` n'a aucune colonne téléphone (`0001:25-33`). Le numéro
-n'existe aujourd'hui nulle part pour un acheteur ni pour un vendeur.
+**Constat :** `profiles` n'a aucune colonne téléphone (`0001:25-33`), et
+`payout_phone` **n'existe dans aucune migration à ce jour** — vérifié par
+recherche sur `supabase/`, `lib/`, `app/`, `components/` : zéro occurrence. Les
+deux champs sont à créer. C'est une chance : la règle d'unicité peut être posée
+dès la première migration, au lieu d'être ajoutée sur des données déjà sales.
 
 **Pourquoi c'est structurant ici et pas ailleurs.** En Haïti, le numéro est
 l'identifiant réel : c'est le compte MonCash, c'est WhatsApp, c'est ce qu'on
-dicte. L'e-mail est souvent créé pour l'occasion et jamais relu — le constat est
-déjà écrit dans `OPS_TODO.md` à propos du canal des avis acheteur.
+dicte. L'e-mail est souvent créé pour l'occasion et jamais relu.
 
-**Règles :**
+### La question « le téléphone doit-il être unique » est mal posée
 
-1. **Obligatoire à l'inscription**, acheteur comme vendeur.
+Elle suppose qu'il y a **un** téléphone. Il y en a deux, et ils ne portent pas
+le même risque :
+
+| | `contact_phone` | `payout_phone` |
+|---|---|---|
+| Sert à | identifier, OTP, notifications | **recevoir l'argent** |
+| Partagé dans un foyer | courant | ne devrait pas l'être |
+| Ce qu'une unicité empêcherait | des gens réels de s'inscrire | qu'un versement parte au mauvais endroit |
+| Ce qu'elle coûterait à un fraudeur | 100 gourdes de puce | un compte MonCash enregistré à une autre identité |
+
+**Décision : aucune contrainte d'unicité sur `contact_phone`. Unicité stricte
+sur `payout_phone`.** Une unicité sur le contact exclut le foyer qui partage un
+appareil sans rien coûter à l'abuseur — elle paie le prix de l'exclusion sans
+acheter la protection.
+
+### Ce que l'unicité sur `payout_phone` achète vraiment
+
+Avec le versement automatique de §8, l'argent part **sans intervention**. Deux
+conséquences :
+
+1. **Un vendeur suspendu pour fraude ne peut pas se réinscrire et continuer à
+   encaisser sur le même MonCash.** Il lui faut un autre compte MonCash, donc
+   une autre puce enregistrée à une identité. Ce n'est pas infranchissable, et
+   c'est le but : une friction qui coûte à l'abuseur et rien au vendeur honnête.
+2. **Elle rattrape la faute de frappe.** Deux vendeurs saisissent le même numéro,
+   l'un reçoit les versements de l'autre. Sans demande de retrait, **personne ne
+   s'en aperçoit** : celui qui reçoit trop ne se plaint pas, et celui qui ne
+   reçoit rien met des semaines à comprendre que l'écran affiche « versé » alors
+   que l'argent est ailleurs.
+
+### Règles
+
+1. **Obligatoire à l'inscription** (`contact_phone`), acheteur comme vendeur.
+   `payout_phone` est exigé pour `PAYOUT_ELIGIBLE`, pas pour s'inscrire (§4).
 2. **Normalisé avant stockage** — `lib/zabelie-topup/phone.ts` contient déjà
    `normalizeHaitiPhone` (8 chiffres, mobile 3X/4X). Le réutiliser plutôt que
    d'en écrire un second : deux normalisations divergentes produisent deux
    numéros « différents » pour la même personne, et le contrôle d'unicité
    devient une passoire.
-3. **Unique en base**, sur la **forme normalisée** — contrainte `unique`, pas un
-   contrôle applicatif. Un contrôle applicatif perd la course entre deux
-   inscriptions simultanées.
-4. **Vérifié par OTP** avant l'activation vendeur (§4).
+3. **Unicité en base sur la forme normalisée**, jamais un contrôle applicatif —
+   celui-ci perd la course entre deux inscriptions simultanées.
+4. **Double saisie de `payout_phone`**, comparée sur la forme **normalisée**.
+   Le motif existe déjà et fonctionne : `components/zabelie-topup-form.tsx:144`
+   (« Numéro — double saisie »), comparaison normalisée à `:70-71`, libellés par
+   i18n (`topup.phone2.label`, `app/rechaj/page.tsx:85`). La logique est
+   identique, l'enjeu est d'un autre ordre : sur une recharge un chiffre faux
+   coûte 100 gourdes, sur un versement il coûte le chiffre d'affaires d'un
+   vendeur.
+5. **Tout changement de `payout_phone` suspend les versements N jours**
+   (`payout_phone_set_at`, N en table de config). C'est le vecteur classique de
+   prise de contrôle : entrer dans le compte, changer le numéro, attendre
+   l'échéance. Sans ce délai, le versement automatique livre l'argent au
+   voleur **plus vite** qu'un retrait sur demande ne l'aurait fait — le confort
+   du vendeur devient l'outil de l'attaquant.
+6. **Vérifié par OTP** avant l'activation vendeur (§4) — sous réserve du canal,
+   voir plus bas.
 
-> **⚠️ OUVERT — et c'est la question la plus lourde de cette section.** Un
-> numéro unique par compte **empêche un foyer de partager un téléphone**. Sur ce
-> marché, plusieurs personnes utilisent le même appareil, et parfois le même
-> numéro MonCash. Trois sorties : unicité stricte (simple, exclut) ; unicité sur
-> le seul `payout_phone` (l'argent ne peut aller qu'à un compte, le contact est
-> partageable) ; unicité assouplie avec plafond de N comptes par numéro.
-> **Décision porteur** — c'est un arbitrage entre fraude et inclusion, pas un
-> choix technique.
+### L'unicité doit être un index PARTIEL, pas un `unique` nu
+
+Un `unique` simple fait l'inverse de ce qu'on veut, dans les deux sens :
+
+- **Un compte fermé volontairement doit libérer le numéro.** Sinon un vendeur
+  qui arrête bloque son propre MonCash pour toujours, y compris pour un futur
+  compte à lui.
+- **Un compte suspendu ne doit pas le libérer.** C'est exactement le cas que
+  l'unicité existe pour couvrir.
+
+Le dépôt a déjà le motif : `payouts_reference_uniq` (`0032:31-32`) est un index
+unique partiel — `where reference is not null`. Ici le prédicat porte sur le
+statut de compte, pas sur la nullité.
+
+> **⚠️ Cette règle révèle un manque dans §3.** « Fermé volontairement » et
+> « suspendu » doivent être **deux états distincts**, or la chaîne compte de §3
+> n'en avait qu'un côté sortie (`RESTRICTED` → `SUSPENDED`). Un état terminal
+> `CLOSED` est ajouté en §3, atteignable **uniquement** depuis `RESTRICTED` et
+> **uniquement** une fois `payout_status = PAID` — on ne ferme pas un compte à
+> qui l'on doit de l'argent.
+
+> **⚠️ Conséquence à ne pas découvrir en production.** Le prédicat porte sur une
+> colonne **mutable**. Réactiver un compte `CLOSED` dont le numéro a été repris
+> entre-temps échouera à l'`UPDATE` de statut, pas à la saisie — une erreur qui
+> tombe loin de sa cause. À traiter explicitement à l'implémentation :
+> vérifier la disponibilité du numéro **au moment de la réactivation** et le
+> dire clairement, plutôt que de laisser remonter une violation d'index.
+
+> **⚠️ OUVERT — plafond de comptes vendeur par `contact_phone`.** Pas d'unicité,
+> mais pas illimité non plus. Trois comptes vendeur sur un même téléphone, c'est
+> plausible pour une famille et plausible pour une fraude. Aucune donnée de ce
+> marché ne permet de trancher aujourd'hui — et c'est un **réglage, pas une
+> architecture** : plafond en table de config, ajustable quand il y aura du
+> volume. Poser la colonne et l'index sans plafond ne ferme aucune porte.
 
 > **⚠️ OUVERT** — pas de fournisseur SMS validé (`CLAUDE.md` : « aucun service
 > externe non listé sans validation — notamment **pas de fournisseur SMS** »).
@@ -164,16 +240,25 @@ déjà écrit dans `OPS_TODO.md` à propos du canal des avis acheteur.
 REGISTERED → KYC_PENDING → KYC_VERIFIED → SELLER_ACTIVE
                                               ↓
                                           RESTRICTED → SUSPENDED
+                                              ↓
+                                           CLOSED        (terminal)
 ```
 
-| Statut | Peut publier | Vend | Reçoit ses versements |
-|---|---|---|---|
-| `REGISTERED` | non | non | — |
-| `KYC_PENDING` | brouillon | non | — |
-| `KYC_VERIFIED` | oui | non | — |
-| `SELLER_ACTIVE` | oui | oui | oui |
-| `RESTRICTED` | non | non | **oui** |
-| `SUSPENDED` | non | non | selon `payout_status` |
+| Statut | Peut publier | Vend | Reçoit ses versements | Libère `payout_phone` |
+|---|---|---|---|---|
+| `REGISTERED` | non | non | — | — |
+| `KYC_PENDING` | brouillon | non | — | — |
+| `KYC_VERIFIED` | oui | non | — | non |
+| `SELLER_ACTIVE` | oui | oui | oui | non |
+| `RESTRICTED` | non | non | **oui** | non |
+| `SUSPENDED` | non | non | selon `payout_status` | **non** |
+| `CLOSED` | non | non | plus rien dû | **oui** |
+
+`CLOSED` est **terminal et volontaire**. Il n'est atteignable que depuis
+`RESTRICTED`, et **seulement** quand `payout_status = PAID` : on ne ferme pas un
+compte à qui l'on doit encore de l'argent — ce serait transformer une sortie en
+rétention. `SUSPENDED` ne libère jamais le numéro de versement (§2bis) : c'est
+précisément le cas contre lequel l'unicité existe.
 
 ### Chaîne versement
 
@@ -194,7 +279,8 @@ fermer la boutique sans arrêter les versements.**
   boutique d'abord créerait des acheteurs lésés pour une suspicion non établie.
 - Vendeur qui arrête → `RESTRICTED` **et** `PAYOUT_ELIGIBLE`. Il ne vend plus,
   **et il est payé**. C'est l'inverse exact du risque `docs/17` : un compte fermé
-  dont l'argent reste sur le compte marchand est de la rétention.
+  dont l'argent reste sur le compte marchand est de la rétention. `CLOSED` ne
+  vient qu'**après** le dernier versement — l'ordre des deux n'est pas un détail.
 
 > **Règle dure : aucun statut de compte ne doit, à lui seul, empêcher
 > définitivement un versement dû.** Un vendeur suspendu pour contrefaçon doit
@@ -367,6 +453,11 @@ versement le 8 août ».
 > de détention. Il faut une **borne** : au bout de N échecs, escalade humaine.
 > Sans borne, l'échec technique recrée la rétention par la porte de service —
 > exactement le motif de `docs/21` §3 bis sur les avis acheteur.
+>
+> Deux garde-fous de §2bis réduisent la fréquence de ce cas sans le supprimer :
+> la double saisie attrape la faute de frappe **avant** le premier versement, et
+> le délai de refroidissement après changement de numéro évite d'envoyer vers
+> une destination fraîchement modifiée. La borne reste nécessaire.
 
 ---
 
@@ -413,13 +504,25 @@ existe déjà et donne le modèle.
 
 Aucune migration, aucun code, aucune valeur commerciale posée.
 
-**Questions ouvertes récapitulées** — toutes pour le porteur, sauf indication :
+### Tranché depuis la première rédaction (2026-08-01)
+
+| Question | Réponse | Où |
+|---|---|---|
+| Unicité du téléphone | **Aucune sur le contact, stricte sur `payout_phone`**, par index **partiel** : `CLOSED` libère le numéro, `SUSPENDED` non | §2bis |
+| `payout_phone` distinct de `contact_phone` | **Oui** — deux risques différents ne peuvent pas porter la même règle | §2, §2bis |
+| Conséquence non prévue | Un état `CLOSED` terminal devient nécessaire, atteignable seulement après `PAID` | §3 |
+
+Ajoutés au passage, sans arbitrage requis : double saisie de `payout_phone`
+(motif déjà éprouvé, `zabelie-topup-form.tsx:144`) et délai de refroidissement
+après changement de numéro de versement.
+
+### Questions ouvertes — toutes pour le porteur, sauf indication
 
 | # | Question | Nature |
 |---|---|---|
-| 1 | Unicité du téléphone : stricte, sur `payout_phone` seul, ou plafonnée ? | inclusion vs fraude |
+| 1 | Plafond de comptes vendeur par `contact_phone` (pas d'unicité, pas illimité) | réglage, pas architecture |
 | 2 | Canal de vérification du numéro (pas de fournisseur SMS validé) | dépendance |
-| 3 | `payout_phone` distinct de `contact_phone` ? | sécurité vs simplicité |
+| 3 | Durée du refroidissement après changement de `payout_phone` | réglage |
 | 4 | Conservation des pièces d'identité et du liveness (4 sous-questions §4bis) | **conseil juridique** |
 | 5 | Téléphone acheteur en clair au vendeur, ou relais ? | vie privée |
 | 6 | Quand retirer `zabelie_request_payout` de la surface vendeur ? | séquencement |
@@ -427,4 +530,6 @@ Aucune migration, aucun code, aucune valeur commerciale posée.
 | 8 | Seuil d'affichage du trust score, pondérations | commercial |
 | 9 | Seuils des niveaux, critères de passage | commercial |
 
-**La question 4 bloque l'étape KYC.** Les autres n'empêchent pas de commencer.
+**La question 4 bloque l'étape KYC.** Les questions 1 et 3 sont des valeurs de
+table de config : elles n'empêchent pas d'écrire la migration, seulement de
+choisir le nombre. Les autres n'empêchent pas de commencer.
