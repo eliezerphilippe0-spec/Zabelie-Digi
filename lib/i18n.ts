@@ -1194,6 +1194,23 @@ export function t(
   return s;
 }
 
+/**
+ * Portier de la langue : tout ce qui vient du cookie passe ici.
+ *
+ * ⚠️ DÉRIVÉ DE `LANGS`, jamais réécrit à la main. La version précédente
+ * testait `v === "fr" || v === "ht"`. Ajouter `"en"` à `Lang` n'a cassé
+ * AUCUNE compilation — un prédicat de type est un booléen quelconque, et
+ * TypeScript ne vérifie pas qu'il décide vraiment l'union qu'il annonce.
+ *
+ * Effet constaté sur le serveur de développement, `4b6ab06` : le cookie
+ * `zabelie_lang=en` était rejeté, `getLang()` repliait sur `fr`, et la page
+ * sortait en `<html lang="fr">` intégralement en français. Les 151 tests
+ * étaient verts — ils lisent tous le DICTIONNAIRE, aucun ne traverse le
+ * chemin cookie → langue. La traduction était complète et inatteignable.
+ *
+ * Verrouillé par `tests/i18n.test.ts` : `isLang` doit accepter chaque membre
+ * de `LANGS`.
+ */
 export function isLang(v: unknown): v is Lang {
-  return v === "fr" || v === "ht";
+  return typeof v === "string" && (LANGS as readonly string[]).includes(v);
 }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DICT, LANGS, t, type I18nKey } from "../lib/i18n";
+import { DICT, LANGS, isLang, t, type I18nKey } from "../lib/i18n";
 import { ERR, errLabels } from "../lib/i18n-erreur";
 
 test("parité FR/HT : chaque clé existe et est non vide dans les deux langues", () => {
@@ -65,4 +65,23 @@ test("errLabels replie sur FR plutôt que de lever", () => {
   // cookie trafiqué qui aurait échappé à isLang.
   assert.equal(errLabels("xx"), ERR.fr);
   assert.equal(errLabels("ht"), ERR.ht);
+});
+
+// ─── Le portier doit connaître toutes les langues ───────────────────────────
+// La faute réelle du 2026-08-01, trouvée en ouvrant le site et non en lisant
+// le code : `isLang` testait `v === "fr" || v === "ht"`. Élargir `Lang` à
+// `"en"` n'a cassé aucune compilation — un prédicat de type est un booléen
+// quelconque, TypeScript ne vérifie pas son exhaustivité. Résultat : 301 clés
+// anglaises traduites, la parité verte, et le cookie `en` rejeté au portier.
+// Le dictionnaire n'était pas le maillon faible, l'ENTRÉE l'était.
+test("isLang accepte chaque membre de LANGS", () => {
+  for (const lang of LANGS) {
+    assert.ok(isLang(lang), `isLang rejette "${lang}", pourtant dans LANGS`);
+  }
+});
+
+test("isLang refuse ce qui n'est pas une langue", () => {
+  for (const v of ["", "es", "FR", "en-US", null, undefined, 42, {}]) {
+    assert.equal(isLang(v), false, `isLang accepte ${JSON.stringify(v)}`);
+  }
 });
