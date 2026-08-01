@@ -36,8 +36,13 @@ export function LangToggle({ current }: { current: Lang }) {
     router.refresh();
   }
 
+  // `key` : avec deux boutons écrits à la main il n'en fallait pas ; dès qu'on
+  // rend une LISTE, React en exige une. L'oubli ne casse rien à l'affichage —
+  // il ne produit qu'un avertissement dans le journal du serveur, du genre que
+  // personne ne lit. Vu le 2026-08-01 dans la sortie de `npm run dev`.
   const btn = (lang: Lang, label: string, title: string) => (
     <button
+      key={lang}
       onClick={() => set(lang)}
       title={title}
       aria-pressed={current === lang}
