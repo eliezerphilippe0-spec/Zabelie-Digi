@@ -59,8 +59,30 @@ jobs:
       - name: Install
         run: npm ci
 
+      # `--with-deps` retiré après mesure, pas par principe. Sur le run
+      # bed4fe0, il n'a installé QUE des polices — « 0 upgraded, 9 newly
+      # installed », les neuf étant fonts-ipafont-gothic, fonts-freefont-ttf,
+      # fonts-unifont, fonts-wqy-zenhei, xfonts-cyrillic… Toutes les vraies
+      # bibliothèques du navigateur (libnss3, libgbm1, libdrm2, libatk,
+      # libxkbcommon0…) étaient déjà là : le journal répète `already the
+      # newest version` pour chacune. L'image ubuntu-24.04 les embarque.
+      #
+      # Ces polices couvrent le japonais, le thaï, le chinois et le
+      # cyrillique. La suite e2e lit du texte latin et vérifie des
+      # redirections — vérifié : aucun `toHaveScreenshot`, aucun
+      # `toMatchSnapshot`, aucune comparaison visuelle dans `e2e/`.
+      #
+      # Ce que ça coûtait : 21,1 Mo tirés à 59 ko/s depuis le miroir Azure,
+      # soit 5 min 58 s — 358 des 425 secondes du job. Tout le reste était
+      # sain (npm ci 10 s, Chromium 177 Mo en 5 s depuis le CDN Playwright,
+      # next build 17 s, tests 8,2 s).
+      #
+      # Mode d'échec si une image d'exécuteur cessait un jour d'embarquer une
+      # bibliothèque : Chromium refuse de démarrer avec un message qui la
+      # NOMME. Bruyant et immédiat — l'inverse des défauts silencieux qu'on
+      # traque ailleurs dans ce dépôt. On remettrait `--with-deps` ce jour-là.
       - name: Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Build
         run: npm run build
