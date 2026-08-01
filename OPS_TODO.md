@@ -441,3 +441,36 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
 ## Écarts de réconciliation topup
 
 _(à compléter au fil de l'eau — date, order_id, nature de l'écart, résolution)_
+
+## Dossiers juridiques — REPORTÉS par le porteur (2026-08-01)
+
+Les deux existaient en prose (`docs/17`, `docs/03`) mais dans **aucune liste
+d'action**. C'est la façon la plus sûre d'oublier quelque chose : le texte
+reste juste, et personne ne le rouvre. Ils sont donc inscrits ici, au statut
+que le porteur leur a donné — **reportés, pas clos**.
+
+- [ ] **Encaissement USD par Zelle** — `ZELLE_RECIPIENT` est un e-mail ou
+      téléphone **US** enrôlé Zelle, adossé à un compte bancaire américain.
+      Les fonds diaspora atterrissent donc aux États-Unis, ce qui appelle le
+      même *merchant of record* que Stripe. La différence entre les deux rails
+      est **opérationnelle** (API contre confirmation manuelle), pas juridique
+      — ouvrir Zelle ne contourne pas le blocage Stripe. → `docs/03` §1 et
+      « Rails diaspora USD ».
+      ⚠️ **À instruire en premier des deux** : c'est le seul des deux flux qui
+      dépend d'un tiers — la banque — **qui n'a jamais été consulté**. Un flux
+      dont une partie ignore qu'elle y participe n'a pas d'accord à révoquer,
+      donc rien ne l'a jamais validé. La rétention, elle, est mal cadrée mais
+      interne : on sait qui décide.
+- [ ] **Rétention des fonds vendeurs (escrow, maturation J+7)** — compte
+      marchand unique, fonds vendeurs et revenus plateforme mêlés, aucun
+      cantonnement. → `docs/17`.
+
+**Ce que ces deux dossiers ont en commun, et qui interdit de les « corriger »
+côté texte** : les phrases de façade qui les décrivent sont **vraies**.
+`why.1.b` (escrow), `why.3.b` (Zelle), `faq.a1` (Zelle), `faq.a4` (J+7) —
+dans les deux langues — décrivent fidèlement ce que le code fait. Les
+réécrire sans changer le flux ne réduirait pas le risque : ça le déplacerait
+vers l'écart entre la page et la réalité, qui est le pire endroit où le
+loger, parce que plus personne ne l'y voit.
+
+Ne rien construire qui **aggrave** l'un ou l'autre sans avis écrit.
