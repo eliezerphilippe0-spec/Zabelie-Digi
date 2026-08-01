@@ -1,9 +1,27 @@
 name: CI
 
+# Chaque commit d'une branche portant une PR ouverte satisfaisait LES DEUX
+# déclencheurs : `push` puis `pull_request`/`synchronize`. Deux exécutions
+# complètes du même SHA, `e2e` compris. Sur 388 runs, la moitié était du
+# doublon — et un échec réel se cherchait au milieu.
+#
+# `synchronize` est donc retiré : le push couvre chaque commit, la PR couvre
+# son ouverture. AUCUNE couverture n'est perdue, y compris pour la protection
+# de branche à venir : un check est attaché au SHA, pas à l'événement qui l'a
+# produit. Constaté pendant cette session, pas supposé — l'API des check runs
+# de la PR #55 rendait bien les runs déclenchés par `push`.
 on:
   push:
     branches: ["**"]
   pull_request:
+    types: [opened, reopened, ready_for_review]
+
+# Quand plusieurs commits s'enchaînent, le run devenu obsolète est annulé au
+# lieu d'occuper la file jusqu'au bout. Le SHA de tête — le seul que la
+# protection de branche regarde — est toujours celui qui va au bout.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
