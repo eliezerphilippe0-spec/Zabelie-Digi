@@ -189,6 +189,14 @@ conséquences :
 6. **Vérifié par OTP** avant l'activation vendeur (§4) — sous réserve du canal,
    voir plus bas.
 
+> **Le coût caché de la conformité, à écrire plutôt qu'à découvrir.** Supprimer
+> l'étape « le vendeur demande son argent » est ce qu'exige la conformité BRH
+> (§8) — mais c'était aussi le seul moment où le vendeur regardait où va
+> l'argent. En la supprimant, on supprime le contrôle humain qui venait avec.
+> **La conformité et la sécurité du compte tirent ici en sens inverse**, et le
+> délai de refroidissement est ce qui rachète le contrôle perdu. Ce n'est pas
+> une précaution parmi d'autres : c'est la contrepartie directe de §8.
+
 ### L'unicité doit être un index PARTIEL, pas un `unique` nu
 
 Un `unique` simple fait l'inverse de ce qu'on veut, dans les deux sens :
@@ -213,9 +221,27 @@ statut de compte, pas sur la nullité.
 > **⚠️ Conséquence à ne pas découvrir en production.** Le prédicat porte sur une
 > colonne **mutable**. Réactiver un compte `CLOSED` dont le numéro a été repris
 > entre-temps échouera à l'`UPDATE` de statut, pas à la saisie — une erreur qui
-> tombe loin de sa cause. À traiter explicitement à l'implémentation :
-> vérifier la disponibilité du numéro **au moment de la réactivation** et le
-> dire clairement, plutôt que de laisser remonter une violation d'index.
+> tombe loin de sa cause, la classe de défaut qui casse ailleurs qu'où elle a
+> été causée.
+>
+> Trois exigences à l'implémentation, pas une :
+>
+> 1. **Vérifier la disponibilité au moment de la réactivation**, avant l'`UPDATE`,
+>    plutôt que de laisser remonter la violation d'index.
+> 2. **Le message doit nommer le numéro et dire qu'il est repris.** « Violation
+>    de contrainte d'unicité » laisse l'opérateur devant un échec sans action
+>    possible ; « le 3X XX XX XX est rattaché à un autre compte vendeur actif »
+>    lui dit quoi faire — demander l'autre numéro, ou traiter le doublon.
+> 3. **Code d'erreur nommé, pas `23505`.** Le dépôt détecte les erreurs par code
+>    et jamais par texte (`lib/pg-errors.ts`, `lib/auth-erreurs.ts`) ; un
+>    `errcode` propre, sur le modèle de `ZB046` (`0046:62`), distingue « numéro
+>    repris » de n'importe quelle autre violation d'unicité de la même table.
+>
+> Nuance sur le point 2, pour rester cohérent avec la règle du dépôt sur les
+> identifiants de personne : le numéro est affiché **à l'opérateur qui est déjà
+> habilité à le voir**, il n'a pas à être recopié dans un journal d'erreurs
+> conservé largement. Même discipline que `0046`, qui enregistre l'acceptation
+> d'une politique sans IP ni agent utilisateur.
 
 > **⚠️ OUVERT — plafond de comptes vendeur par `contact_phone`.** Pas d'unicité,
 > mais pas illimité non plus. Trois comptes vendeur sur un même téléphone, c'est
