@@ -333,7 +333,6 @@ export default async function HomePage() {
 
       {/* 3. PRODUITS TENDANCE */}
       <HomeRow
-        id="talents"
         title={t(lang, "home.trends")}
         sub={t(lang, "home.trends.sub")}
         more={t(lang, "home.all")}
@@ -349,6 +348,15 @@ export default async function HomePage() {
         items={newest}
         cardLabels={cardLabels}
       />
+
+      {/* Cible de « Talents » (nav ×2 + pied de page). Posée sur une balise du
+          FLUX, jamais en prop de HomeRow : `HomeRow` s'efface à vide (V-13,
+          ligne 38) et emportait l'ancre avec elle — les trois liens ne
+          faisaient alors rien. Elle était en outre posée sur la rangée
+          TENDANCES, pas sur les services qu'elle prétend désigner.
+          `scroll-mt-24` compense le bandeau collant.
+          Verrouillé par tests/ancres-navigation.test.ts. */}
+      <div id="talents" className="scroll-mt-24" aria-hidden="true" />
 
       {/* 5. SERVICES POPULAIRES */}
       <HomeRow
