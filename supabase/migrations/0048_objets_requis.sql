@@ -1,7 +1,27 @@
 -- ============================================================================
 -- 0048 — Présence des objets dont le code déployé dépend
 -- ============================================================================
--- ⚠️ NON APPLIQUÉE. À exécuter par le porteur (docs/14).
+-- ⚠️ ÉTAT : appliquée le 2026-07-31 D'APRÈS LE JOURNAL DE SESSION.
+-- **NON CONFIRMÉ CONTRE LA BASE** — la session qui écrit cette ligne n'a aucun
+-- accès Postgres. Ce commentaire n'est donc PAS une source de vérité : il dit
+-- ce qu'on croit savoir, et d'où on le tient.
+--
+-- Pourquoi il ne peut pas en être une : un en-tête est écrit une fois et jamais
+-- revérifié. Il portait « NON APPLIQUÉE » alors que `0049` disait, deux fichiers
+-- plus loin, « appliquée le 2026-07-31, juste après `0045` ». Le dépôt s'est
+-- contredit pendant deux jours sans que rien ne le signale.
+--
+-- LA SOURCE DE VÉRITÉ EST LE REGISTRE (`0041`) — et le registre lui-même peut
+-- diverger du réel, c'est tout l'objet de `0048`. VÉRIFIER LES DEUX avant
+-- d'exécuter quoi que ce soit :
+--
+--   select * from zabelie_schema_migrations
+--    where filename = '0048_objets_requis.sql';       -- ce qui est DÉCLARÉ
+--   select to_regprocedure('public.zabelie_objets_requis()');  -- ce qui EXISTE
+--
+-- SI ELLE EST DÉJÀ APPLIQUÉE ET QU'ON LA REJOUE : sans dommage.
+-- Un seul `create or replace function`, aucun objet créé. Rejouer la
+-- redéfinit à l'identique.
 --
 -- POURQUOI, ALORS QUE LE REGISTRE `0041` EXISTE DÉJÀ
 -- --------------------------------------------------

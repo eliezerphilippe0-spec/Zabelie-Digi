@@ -1,7 +1,29 @@
 -- ============================================================================
 -- 0046 — Attestation vendeur : acceptation de la politique produits interdits
 -- ============================================================================
--- ⚠️ NON APPLIQUÉE. À exécuter par le porteur (docs/14).
+-- ⚠️ ÉTAT : appliquée le 2026-07-31 D'APRÈS LE JOURNAL DE SESSION.
+-- **NON CONFIRMÉ CONTRE LA BASE** — la session qui écrit cette ligne n'a aucun
+-- accès Postgres. Ce commentaire n'est donc PAS une source de vérité : il dit
+-- ce qu'on croit savoir, et d'où on le tient.
+--
+-- Pourquoi il ne peut pas en être une : un en-tête est écrit une fois et jamais
+-- revérifié. Il portait « NON APPLIQUÉE » alors que `0049` disait, deux fichiers
+-- plus loin, « appliquée le 2026-07-31, juste après `0045` ». Le dépôt s'est
+-- contredit pendant deux jours sans que rien ne le signale.
+--
+-- LA SOURCE DE VÉRITÉ EST LE REGISTRE (`0041`) — et le registre lui-même peut
+-- diverger du réel, c'est tout l'objet de `0048`. VÉRIFIER LES DEUX avant
+-- d'exécuter quoi que ce soit :
+--
+--   select * from zabelie_schema_migrations
+--    where filename = '0046_policy_acceptance.sql';   -- ce qui est DÉCLARÉ
+--   select to_regclass('public.zabelie_policy_acceptances');  -- ce qui EXISTE
+--
+-- SI ELLE EST DÉJÀ APPLIQUÉE ET QU'ON LA REJOUE : ⛔ LE SCRIPT ÉCHOUE.
+-- `create table zabelie_policy_acceptances` n'a pas d'`if not exists`.
+-- Rien n'est détruit — la transaction s'arrête — mais l'échec ressemble à
+-- une panne alors que c'est une double exécution. C'est précisément le piège
+-- que l'ancien en-tête « NON APPLIQUÉE » tendait au porteur.
 --
 -- POURQUOI CETTE TABLE
 -- --------------------

@@ -1,7 +1,31 @@
 -- ============================================================================
 -- 0047 — Capteur de demande : les recherches sans résultat
 -- ============================================================================
--- ⚠️ NON APPLIQUÉE. À exécuter par le porteur (docs/14).
+-- ⚠️ ÉTAT : appliquée le 2026-07-31 D'APRÈS LE JOURNAL DE SESSION.
+-- **NON CONFIRMÉ CONTRE LA BASE** — la session qui écrit cette ligne n'a aucun
+-- accès Postgres. Ce commentaire n'est donc PAS une source de vérité : il dit
+-- ce qu'on croit savoir, et d'où on le tient.
+--
+-- Pourquoi il ne peut pas en être une : un en-tête est écrit une fois et jamais
+-- revérifié. Il portait « NON APPLIQUÉE » alors que `0049` disait, deux fichiers
+-- plus loin, « appliquée le 2026-07-31, juste après `0045` ». Le dépôt s'est
+-- contredit pendant deux jours sans que rien ne le signale.
+--
+-- LA SOURCE DE VÉRITÉ EST LE REGISTRE (`0041`) — et le registre lui-même peut
+-- diverger du réel, c'est tout l'objet de `0048`. VÉRIFIER LES DEUX avant
+-- d'exécuter quoi que ce soit :
+--
+--   select * from zabelie_schema_migrations
+--    where filename = '0047_search_demand.sql';       -- ce qui est DÉCLARÉ
+--   select to_regclass('public.zabelie_search_misses');        -- ce qui EXISTE
+--   select to_regprocedure('public.zabelie_search_normalize(text)');
+--
+-- SI ELLE EST DÉJÀ APPLIQUÉE ET QU'ON LA REJOUE : ⛔ LE SCRIPT ÉCHOUE.
+-- Trois `create table` sans `if not exists` — `zabelie_search_config`,
+-- `zabelie_search_misses`, `zabelie_search_index_guard`. L'échec tombe sur la
+-- première, APRÈS que les `create or replace function` qui la précèdent sont
+-- passés : une exécution hors transaction laisserait un état partiel.
+-- Exécuter dans une transaction explicite.
 --
 -- LE RENVERSEMENT
 -- ---------------
