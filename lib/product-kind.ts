@@ -232,3 +232,40 @@ export function deliveryNoticeKey(
       return null; // Aucune mention plutôt qu'une promesse.
   }
 }
+
+/**
+ * Types de produits exposés par la recherche de l'API v1.
+ *
+ * Décision porteur du 2026-08-01 : `search_products` ne renvoie **pas** les
+ * prestations. Les services relèvent de Zabelie Business, pas de la place de
+ * marché — les mélanger dans une API destinée à devenir un tool d'agent
+ * ferait proposer une prestation là où l'acheteur cherche un objet.
+ *
+ * ⚠️ Écart assumé avec le site : le catalogue web, lui, affiche les trois
+ * types. L'API v1 est donc plus étroite que `/catalogue`, délibérément, et
+ * `docs/24-API-V1.md` le dit à l'endroit où quelqu'un s'en étonnera.
+ *
+ * Vit ICI et pas dans les schémas Zod parce que la règle du dépôt interdit
+ * tout littéral de type de produit hors de ce module — un tableau
+ * `["fichier", "physical"]` écrit ailleurs serait exactement le contournement
+ * que `tests/product-kind-discipline.test.ts` existe pour attraper.
+ */
+export function isSearchableByApiV1(kind: ProductKind, ref?: string): boolean {
+  switch (kind) {
+    case "fichier":
+    case "physical":
+      return true;
+    case "service":
+      return false;
+    default:
+      exhaustive(kind, "isSearchableByApiV1", ref);
+      // Un type inconnu n'entre pas dans une sortie d'API : on préfère
+      // l'omettre que l'exposer sans savoir ce qu'il est.
+      return false;
+  }
+}
+
+/** Les types réellement interrogeables par l'API v1, dérivés — jamais écrits. */
+export const API_V1_SEARCHABLE_KINDS = PRODUCT_KINDS.filter((k) =>
+  isSearchableByApiV1(k, "API_V1_SEARCHABLE_KINDS")
+) as readonly ProductKind[];
