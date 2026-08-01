@@ -19,6 +19,15 @@ on:
 # Quand plusieurs commits s'enchaînent, le run devenu obsolète est annulé au
 # lieu d'occuper la file jusqu'au bout. Le SHA de tête — le seul que la
 # protection de branche regarde — est toujours celui qui va au bout.
+#
+# CE QUE ÇA LAISSE DERRIÈRE, et qu'il faut savoir avant de s'y fier : un commit
+# INTERMÉDIAIRE d'une PR active garde un état partiel — les jobs courts ont eu
+# le temps de finir, les longs sont annulés. « Annulé » n'est pas « échoué »,
+# mais ce n'est pas « vert » non plus. Lors d'une bissection ou d'un retour
+# arrière, ne pas lire le statut CI d'un commit intermédiaire comme une
+# validation : relancer le workflow sur ce SHA. Le compromis est voulu — seule
+# la tête compte à la fusion — mais une absence de vérification qui ressemble à
+# une vérification est exactement le motif qu'on traque ailleurs dans ce dépôt.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
