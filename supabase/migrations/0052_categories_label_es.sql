@@ -185,6 +185,30 @@ update zabelie_categories c set label_es = v.es
 -- La garde NOMME les manquantes plutôt que de rendre un compte : « 3 lignes
 -- non traduites » oblige à écrire une requête pour savoir lesquelles, et cette
 -- requête ne s'écrit jamais à 23 h.
+--
+-- ⚠️ CONTRÔLE PONCTUEL, PAS RÉCURRENT — et il l'est STRUCTURELLEMENT.
+-- ----------------------------------------------------------------------
+-- Une lecture rapide y voit une contradiction avec le `nullable` ci-dessus :
+-- si toute catégorie sans traduction fait échouer la garde, à quoi sert
+-- d'autoriser le NULL ? La réponse tient à l'ORDRE des migrations.
+--
+-- Ce bloc s'exécute une fois, à la position 0052 de la suite. Une catégorie
+-- créée plus tard — par `0053`, par la console, par une vague d'activation —
+-- naît APRÈS que cette garde a fini de tourner. Elle ne la verra jamais, y
+-- compris en CI, où `run.sh` applique les migrations dans l'ordre.
+--
+-- Le `nullable` sert donc exactement ce qu'il annonce : la catégorie de
+-- demain n'est pas bloquée. Et la garde sert exactement ce qu'elle annonce :
+-- MON oubli d'aujourd'hui, sur les 124 lignes que je viens d'écrire, ne passe
+-- pas.
+--
+-- CE QUE ÇA LAISSE OUVERT, et qu'il ne faut pas confondre avec une garantie :
+-- une catégorie ajoutée plus tard sans `label_es` s'affichera en français
+-- SANS QUE RIEN NE LE DISE. Le repli est silencieux par construction. Y
+-- répondre demande un contrôle d'observabilité — non bloquant, quotidien, du
+-- même genre que `zabelie_objets_requis` (0048) — et non un durcissement de
+-- cette garde-ci, qui transformerait le `nullable` en décoration.
+-- → inscrit dans `OPS_TODO.md`.
 do $$
 declare v_manquantes text;
 begin

@@ -148,6 +148,33 @@ Concrètement — retirer le garde et voir le test échouer ; amputer les donné
 et voir la sonde le dire. Un instrument qui n'a jamais échoué n'a pas encore
 démontré qu'il pouvait.
 
+#### La mutation qui n'a pas muté — assurer la post-condition, pas la vérifier
+
+Quatre fois dans la session du 2026-08-01/02, une mutation destinée à éprouver
+un test **n'a pas été appliquée** : ancre écrite avec des guillemets simples au
+lieu de doubles, `\n` passé littéralement par le shell, désalignement d'espaces
+dans un fichier SQL aligné en colonnes. À chaque fois la commande a rendu un
+succès, la suite est restée verte, et ce vert a été lu comme « le test résiste
+à la mutation » alors qu'il signifiait « le fichier n'a pas changé ».
+
+C'est le même défaut que les fixtures qui encodaient le bug : **l'instrument
+ment, et son mensonge ressemble exactement à une réussite.** « pass 0 » n'est
+pas non plus « le test a échoué » — c'est souvent « le fichier ne compile
+plus ».
+
+Règle : **toute édition programmatique assure sa post-condition avant qu'on
+lise quoi que ce soit d'autre.** Pas « vérifier ensuite » — une assertion qui
+échoue, dans le même geste :
+
+* `assert s.count(ancre) == 1` **avant** de remplacer — zéro occurrence et dix
+  occurrences sont deux fautes différentes, toutes deux silencieuses ;
+* après écriture, relire la zone et assurer que la modification y est ;
+* pour une mutation de test : afficher la ligne mutée avant de lancer la suite.
+
+La vigilance ne suffit pas ici, et c'est précisément la leçon : quatre
+occurrences en une session, par quelqu'un qui connaissait le piège dès la
+deuxième.
+
 Corollaire d'observabilité : **l'absence de signal doit être un signal.** Une
 branche par défaut journalise ce qu'elle a reçu (`lib/product-kind.ts`) ; un
 cron journalise chaque passage, y compris à zéro (`app/api/stock/expire`).

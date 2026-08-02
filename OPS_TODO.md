@@ -398,6 +398,21 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
       lieu tant qu'elles ne sont pas levées **ou explicitement acceptées par
       écrit** — l'accepter est un choix légitime, l'oublier ne l'est pas.
 
+## Observabilité — signaux non bloquants à ajouter
+
+- [ ] **Catégories sans `label_es`** — la garde de `0052` est un contrôle
+      PONCTUEL : elle ne voit que les catégories existant à sa position dans
+      la suite des migrations. Une catégorie créée ensuite s'affichera en
+      français **sans que rien ne le dise** — le repli `label_es || label_fr`
+      est silencieux par construction.
+
+      Y répondre en durcissant la garde transformerait le `nullable` en
+      décoration et bloquerait une migration produit sur une question de
+      vocabulaire. La bonne forme est un contrôle **quotidien et non
+      bloquant**, du même genre que `zabelie_objets_requis` (`0048`) :
+      compter et NOMMER les catégories non traduites dans
+      `/api/admin/coherence`. Vaut aussi pour `label_en` et `label_kr`.
+
 ## Paiements (rappels)
 
 > **Une seule de ces décisions bloque la première commande : D-4.** Un produit
