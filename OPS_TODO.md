@@ -180,8 +180,11 @@ c'est la référence de comparaison, elle doit survivre à la session.
       éprouvée, **non appliquée**. Sans elle, la recherche fonctionne
       exactement comme avant : le rattrapage flou et le journal dégradent en
       silence (aucune erreur visible). Rien ne bloque.
-      **À planifier au cron** une fois appliquée : `zabelie_purge_search_misses()`
-      (rétention 180 j, en table de config).
+      **Le cron de purge existe désormais** : `/api/search/purge`, déclaré dans
+      `vercel.json` à 14 h 15 UTC. Il appelle `zabelie_purge_search_misses()`.
+      Auparavant la fonction n'avait **aucun appelant** — elle était prouvée par
+      les tests SQL et n'avait jamais tourné. Le croisement qui aurait dû le
+      dire existe maintenant aussi : `tests/crons-appelants.test.ts`.
       **La sortie à lire chaque semaine** : `GET /api/admin/search-demand?jours=7`
       — et **au démarrage, `?jours=30&min_sessions=1`** : à faible trafic
       presque aucun terme n'atteint 3 sessions distinctes en 7 jours, la
@@ -189,6 +192,22 @@ c'est la référence de comparaison, elle doit survivre à la session.
       capteur muet. Le mode ouvert est étiqueté `fiable: false` dans la
       réponse — il mélange demande réelle, robots et vendeurs qui testent
       leur fiche.
+      ⛔ **NE PAS POSER LE POIVRE AVANT D'AVOIR LU LE JOURNAL DE LA PURGE.**
+      L'ordre n'est pas un confort, c'est un préalable : poser le poivre ouvre
+      la collecte de termes **en clair** à côté d'un `session_hash`, et la
+      promesse de `0047` (« l'empreinte tourne chaque jour, ce n'est pas un
+      suivi ») ne tient que si la rétention est effectivement bornée. Or **un
+      cron déclaré n'est pas un cron exécuté** — secret absent, déploiement non
+      promu, chemin renommé laissent tous l'entrée en place et ne produisent
+      rien.
+      Ce qui compte comme preuve, et rien d'autre : dans les journaux Vercel,
+      une ligne
+      `[search/purge] {"at":"…","issue":"termine","purgees":N,"dureeMs":…}`
+      — `N = 0` convient parfaitement, c'est la LIGNE qui prouve, pas le
+      chiffre. La présence de `/api/search/purge` dans `vercel.json` ne prouve
+      rien. Si rien n'apparaît le lendemain de la mise en production, vérifier
+      `CRON_SECRET` puis déclencher à la main :
+      `curl -X POST -H "Authorization: Bearer $RECONCILE_SECRET" https://…/api/search/purge`
       ⚠️ **`SEARCH_FINGERPRINT_SALT` — REQUISE (≥ 16 caractères), sans repli.**
       Sans elle, **rien n'est enregistré** et le journal reste vide : c'est
       voulu, mais ça se confond avec « personne ne cherche ». Le serveur
@@ -429,6 +448,47 @@ montre le plus. `home.h1.a` → `home.h1.d` (« Vendez vos produits digitaux et
 vos talents ») portent la même chose dans les DEUX langues. La question n'est
 pas « quel libellé » mais **quelle est la promesse d'accueil de Zabelie
 maintenant, en kreyòl d'abord**.
+
+## Rétention du capteur de demande — tranché à 90 jours
+
+- [ ] **`0053_search_retention_90j.sql` — écrite, NON APPLIQUÉE.** Passe
+      `zabelie_search_config.retention_days` de **180 à 90**.
+
+      **Pourquoi ce n'est pas un arbitrage** : le seul lecteur de la table est
+      déjà plafonné à 90 jours — `app/api/admin/search-demand/route.ts:40`,
+      `Math.min(90, …)` — et `zabelie_search_demand` est révoquée pour `anon`
+      et `authenticated` (`0047:248`), donc il n'existe aucun autre chemin de
+      lecture. Les jours 91 à 180 étaient conservés **sans que quiconque
+      puisse les voir** : que du risque, aucun usage. 180 n'avait d'ailleurs
+      jamais été choisi — c'était le défaut écrit d'un trait avec
+      `min_sessions` et `min_length`.
+
+      Ce que ça réduit concrètement : la fenêtre pendant laquelle des termes
+      **en clair** (`0047` nomme les cas — « klinik avòtman », « tès VIH »,
+      « avoka pou divòs ») coexistent sous une même empreinte de session. À
+      faible trafic, une suite de recherches reste distinctive même sans
+      identifiant qui traverse les jours ; c'est le seul paramètre qu'on
+      contrôle, on le divise par deux.
+
+      **Si le plafond de la route bouge un jour, c'est LUI qu'il faudra
+      rediscuter, et cette rétention avec.**
+
+      La migration ne supprime rien elle-même : elle change un paramètre, et
+      c'est le passage suivant de la purge qui applique la borne. Elle affiche
+      le compte des lignes concernées **avant** de modifier quoi que ce soit,
+      et échoue (`ZB053`) si `retention_days` ne vaut pas 90 après coup.
+
+- [ ] **`zabelie_fulfillment_sweep` (`0043`) n'a toujours aucun appelant** —
+      même défaut que la purge, encore ouvert. Elle est exemptée dans
+      `tests/crons-appelants.test.ts` pour une raison précise : `0043` est
+      **non appliquée** et porte trois valeurs à arbitrer (`docs/21`), donc un
+      cron déclaré aujourd'hui appellerait une fonction absente de la base et
+      échouerait chaque jour.
+      **Condition, pas tâche : la route et l'entrée `vercel.json` se câblent
+      DANS LE MÊME GESTE que l'application de `0043`**, et l'exemption se
+      retire alors du test — qui échouera de lui-même si on l'oublie dans
+      l'autre sens (une exemption dont la fonction a gagné un appelant est
+      signalée comme périmée).
 
 ## Observabilité — signaux non bloquants à ajouter
 

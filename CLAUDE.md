@@ -180,6 +180,39 @@ branche par défaut journalise ce qu'elle a reçu (`lib/product-kind.ts`) ; un
 cron journalise chaque passage, y compris à zéro (`app/api/stock/expire`).
 Sinon « n'a pas tourné » et « a tourné, rien trouvé » produisent le même vide.
 
+#### Le code sans appelant — croiser, parce que rien ne le signalera
+
+`zabelie_purge_search_misses()` est née avec `0047` : correcte, révoquée,
+journalisant même à zéro. **Sans aucun appelant.** Ses deux seules invocations
+du dépôt étaient dans `supabase/tests/search_demand.test.sql`. La suite SQL
+était verte, la purge était *prouvée*, et elle n'avait jamais tourné une fois.
+Quatre mois de rétention non bornée seraient passés en silence — parce que
+migration, tests et revue regardaient tous **la fonction**, et rien ne
+regardait **l'endroit d'où elle devait être appelée**.
+
+Le motif se généralise : un artefact jamais invoqué ne lève rien, ne
+journalise rien, ne ralentit rien. Son défaut est invisible *par nature* — le
+corollaire d'observabilité ci-dessus ne l'attrape pas, puisqu'il n'y a même pas
+de passage à journaliser. Seule une **vérification croisée entre deux endroits
+du dépôt** le rend visible.
+
+Règle : **tout artefact dont l'appelant vit ailleurs se croise
+mécaniquement avec la liste de ses appelants, et l'absence d'appelant
+échoue.** Premier cas câblé : `tests/crons-appelants.test.ts` croise les
+fonctions de maintenance (`purge|expire|sweep|mature|reconcil|_job`) de
+`supabase/migrations/` avec les RPC appelées par les routes déclarées dans
+`vercel.json` → `crons`.
+
+Deux points qui font la différence entre ce contrôle et un vœu :
+
+* **Les exemptions se périment dans les deux sens.** Une liste qui ne sait que
+  grandir devient une conformité par usure. Le test échoue donc aussi quand une
+  fonction exemptée a *gagné* un appelant.
+* **Un appelant n'est pas une exécution.** Ce croisement prouve que le code
+  existe, pas que le cron tourne — secret absent, déploiement non promu, projet
+  dont les crons sont désactivés le laissent vert. La preuve d'exécution est le
+  journal de la route, et elle se lit dans Vercel. Les deux sont nécessaires.
+
 ### `product_kind` — le module est obligatoire
 Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
 vérifié par `tests/product-kind-discipline.test.ts`. Raison : ajouter une
