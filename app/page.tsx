@@ -201,6 +201,25 @@ export default async function HomePage() {
               {t(lang, "home.sub")}
             </p>
 
+            {/* ACTION VENDEUR — rendue au hero.
+                `home.cta.sell` était traduite dans QUATRE langues et n'avait
+                AUCUN site d'appel : le bouton avait disparu d'ici sans que
+                rien ne le signale, et le titre acheteur est resté seul
+                au-dessus d'un champ de recherche pendant que toute la page en
+                dessous s'adresse au vendeur (Pibliye / Resevwa lajan /
+                Livre & retire, puis « Sa w ap vann merite peye » → /vendre).
+                Ce n'était pas un choix de positionnement, c'était une
+                régression silencieuse. `tests/i18n-cles-mortes.test.ts` ferme
+                la classe.
+                Le chemin acheteur n'est pas retiré pour autant : la recherche
+                reste juste en dessous, et le catalogue est dans la nav. */}
+            <Link
+              href="/vendre"
+              className="mt-6 inline-block rounded-xl bg-cloud px-7 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+            >
+              {t(lang, "home.cta.sell")}
+            </Link>
+
             {/* RECHERCHE — premier bloc utile, au-dessus de la ligne de
                 flottaison : une marketplace physique se cherche, elle ne se
                 butine pas. GET, fonctionne sans JS. */}

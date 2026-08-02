@@ -64,7 +64,10 @@ export async function SiteNav() {
               >
                 {t(lang, "nav.pro")}
               </Link>
-              <SignOutButton className="hidden text-sm text-mist transition hover:text-cloud sm:block" />
+              <SignOutButton
+                className="hidden text-sm text-mist transition hover:text-cloud sm:block"
+                label={t(lang, "nav.logout")}
+              />
               <Link
                 href="/vendre"
                 className="rounded-xl bg-cloud px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90"

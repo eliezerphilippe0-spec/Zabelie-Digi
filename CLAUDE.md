@@ -203,6 +203,15 @@ fonctions de maintenance (`purge|expire|sweep|mature|reconcil|_job`) de
 `supabase/migrations/` avec les RPC appelées par les routes déclarées dans
 `vercel.json` → `crons`.
 
+Deuxième cas câblé, et le plus coûteux : `tests/i18n-cles-mortes.test.ts`
+croise les clés de `lib/i18n.ts` avec leurs sites d'appel. `home.cta.sell` et
+`nav.logout` étaient traduites dans quatre langues sans aucun appelant — le
+bouton vendeur avait disparu du hero (le `h1` acheteur restait seul au-dessus
+d'une page entièrement vendeur, ce qui se lisait comme un choix de
+positionnement à trancher), et `sign-out-button.tsx` affichait « Déconnexion »
+**en dur** à un utilisateur kreyòl. `Record<I18nKey, string>` vérifie que chaque
+langue porte chaque clé, jamais qu'une clé atteint un écran.
+
 Deux points qui font la différence entre ce contrôle et un vœu :
 
 * **Les exemptions se périment dans les deux sens.** Une liste qui ne sait que

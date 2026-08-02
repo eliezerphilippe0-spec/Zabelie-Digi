@@ -121,12 +121,11 @@ const fr = {
 
   // Accueil
   "home.badge": "La marketplace haïtienne",
-  "home.h1": "Achetez en Haïti, payez avec MonCash",
+  "home.h1": "Ouvrez votre boutique depuis votre téléphone, sans avance",
   "badge.pay": "Paiement sécurisé avec MonCash",
   "home.sub":
-    "Des vendeurs vérifiés près de chez vous. Vous payez avec MonCash, le vendeur vous livre.",
+    "L'acheteur paie avec MonCash, l'argent entre dans votre solde.",
   "home.cta.sell": "Commencer à vendre",
-  "home.cta.browse": "Explorer le catalogue",
   "home.stat1": "haïtien",
   "home.stat2": "paiement mobile",
   "home.stat3": "après paiement",
@@ -526,12 +525,11 @@ const ht: Record<I18nKey, string> = {
     "Règ sa yo ka chanje. Chak nouvo vèsyon gen nimewo pa l, e se vèsyon ou te aksepte a ki rete make.",
 
   "home.badge": "Makètplas ayisyen an",
-  "home.h1": "Achte an Ayiti, peye ak MonCash",
+  "home.h1": "Louvri boutik ou sou telefòn ou, san avans",
   "badge.pay": "Peman sekirize ak MonCash",
   "home.sub":
-    "Vandè verifye toupre w. Ou peye ak MonCash, vandè a livre w.",
+    "Achtè a peye ak MonCash, kòb la antre nan balans ou.",
   "home.cta.sell": "Kòmanse vann",
-  "home.cta.browse": "Gade katalòg la",
   "home.stat1": "ayisyen",
   "home.stat2": "peman mobil",
   "home.stat3": "apre peman",
@@ -912,12 +910,11 @@ const en = {
 
   // Home
   "home.badge": "The Haitian marketplace",
-  "home.h1": "Buy in Haiti, pay with MonCash",
+  "home.h1": "Open your shop from your phone, nothing to pay upfront",
   "badge.pay": "Secure payment with MonCash",
   "home.sub":
-    "Verified sellers near you. You pay with MonCash, the seller delivers.",
+    "The buyer pays with MonCash, the money lands in your balance.",
   "home.cta.sell": "Start selling",
-  "home.cta.browse": "Browse the catalog",
   "home.stat1": "Haitian",
   "home.stat2": "mobile payment",
   "home.stat3": "after payment",
@@ -1311,12 +1308,11 @@ const es = {
 
   // Inicio
   "home.badge": "El marketplace haitiano",
-  "home.h1": "Compra en Haití, paga con MonCash",
+  "home.h1": "Abre tu tienda desde tu teléfono, sin adelantar nada",
   "badge.pay": "Pago seguro con MonCash",
   "home.sub":
-    "Vendedores verificados cerca de ti. Tú pagas con MonCash, el vendedor entrega.",
+    "El comprador paga con MonCash, el dinero entra en tu saldo.",
   "home.cta.sell": "Empezar a vender",
-  "home.cta.browse": "Explorar el catálogo",
   "home.stat1": "haitiano",
   "home.stat2": "pago móvil",
   "home.stat3": "tras el pago",

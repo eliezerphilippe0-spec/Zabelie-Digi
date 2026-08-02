@@ -505,6 +505,50 @@ maintenant, en kreyòl d'abord**.
       l'autre sens (une exemption dont la fonction a gagné un appelant est
       signalée comme périmée).
 
+## Accueil — ce que le croisement des clés i18n a mis au jour
+
+> `tests/i18n-cles-mortes.test.ts` croise chaque clé de `lib/i18n.ts` avec ses
+> sites d'appel. Deux clés mortes ont produit des défauts VISIBLES, corrigés :
+> `home.cta.sell` (bouton vendeur disparu du hero — c'est ce qui faisait lire
+> le `h1` acheteur comme un choix de positionnement) et `nav.logout`
+> (`sign-out-button.tsx` affichait « Déconnexion » **en dur**, donc en français
+> à un utilisateur kreyòl). Restent **cinq clés à trancher**, exemptées avec
+> leur raison dans le test — le test les rappelle à chaque exécution, et
+> l'exemption échoue d'elle-même si la clé regagne un appelant.
+
+- [ ] **`home.badge`** (« La marketplace haïtienne ») — résidu de
+      l'assainissement du hero. Supprimer des quatre langues, ou rebrancher.
+- [ ] **`sec.free.badge`** (« GRATUIT ») — `sec.free` et `sec.free.sub` sont
+      rendues, la pastille ne l'est pas. Écart d'affichage, pas un résidu.
+- [ ] **`product.pay.loading`** (« Redirection vers MonCash… ») — jamais rendu :
+      le bouton ne montre rien pendant la redirection. **À vérifier sur le
+      chemin réel** : sur 3G, un bouton qui ne réagit pas se reclique.
+- [ ] **`order.ref`** (« N° de commande ») — la référence `ZB-…` de `0042` est
+      lue et affichée, jamais avec ce libellé.
+- [ ] **`status.draft`** — supplantée par une décision produit explicite
+      (`app/vendre/page.tsx:126`), conservée si la revue humaine cesse un jour
+      d'être systématique. La seule des cinq qui ne demande rien.
+
+- [ ] **🔴 `components/account-actions.tsx` est un îlot entièrement en
+      français** — « Supprimer votre compte ? », « Exporter mes données », et
+      le texte du `window.confirm` qui explique l'anonymisation légale. Aucune
+      clé i18n, donc **le croisement ne le voit pas** : il ferme « traduit mais
+      jamais branché », pas « jamais traduit ». C'est l'écran de SUPPRESSION DE
+      COMPTE — celui où un malentendu de langue coûte le plus cher.
+
+- [ ] **Débord horizontal à 360 px en FR et ES** (`scrollWidth` 371 / 372 pour
+      360 de viewport) — la barre de navigation : le bouton « Vendre » /
+      « Vender » plus le sélecteur de langue. **Mesuré, et pré-existant** : la
+      même mesure sur l'état d'avant ce chantier rend exactement 371 / 372.
+      Ne se voit **ni en kreyòl ni en anglais** (« Vann », « Sell » tiennent,
+      `scrollWidth` = 360 pile) — c'est la vérification en QUATRE langues qui
+      le révèle, pas trois. Même famille que RES-01.
+      Le `h1` nouveau, lui, tient dans les quatre : 320 px de large, bord droit
+      340, et le bouton vendeur du hero fait 44 px de haut (seuil BL-124).
+      Asymétrie connue et acceptée : le `h1` prend 2 lignes en kreyòl, 3 en
+      anglais et espagnol, **4 en français** — la langue de référence est la
+      plus courte, ce qui est le bon sens de l'écart.
+
 ## Observabilité — signaux non bloquants à ajouter
 
 - [ ] **Catégories sans `label_es`** — la garde de `0052` est un contrôle
