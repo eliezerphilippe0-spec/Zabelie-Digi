@@ -24,10 +24,11 @@ import { ROUNDING_IN_FORCE } from "../lib/commission";
  * premier contrôle FAUX-NÉGATIF (aucune promesse trouvée → échec bruyant, cas
  * favorable) mais surtout le DEUXIÈME faux-positif — une clé par défaut
  * promettant l'arrondi au vendeur en anglais passerait inaperçue. L'anglais a
- * été ajouté ici le 2026-08-01, à l'occasion de la troisième langue, et c'est
- * ce test qui l'a réclamé de lui-même en échouant.
+ * été ajouté ici le 2026-08-01 et l'espagnol le 2026-08-02 — les deux fois,
+ * c'est CE TEST qui l'a réclamé de lui-même en échouant. Il se défend seul
+ * tant qu'on lit ses messages.
  */
-const PROMESSE = /en (votre|ta) faveur|an favè w|in your favou?r/i;
+const PROMESSE = /en (votre|ta) faveur|an favè w|in your favou?r|a tu favor/i;
 
 const CLES = [
   { enVigueur: "faq.a3", floor: "faq.a3.floor" },

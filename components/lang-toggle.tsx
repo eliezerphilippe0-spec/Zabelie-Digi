@@ -11,11 +11,12 @@ import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
  *
  * `Record<Lang, …>` : ajouter une langue sans son libellé ne compile pas.
  */
-const ABBR: Record<Lang, string> = { fr: "FR", ht: "KR", en: "EN" };
+const ABBR: Record<Lang, string> = { fr: "FR", ht: "KR", en: "EN", es: "ES" };
 const NOM: Record<Lang, string> = {
   fr: "Français",
   ht: "Kreyòl ayisyen",
   en: "English",
+  es: "Español",
 };
 
 /**

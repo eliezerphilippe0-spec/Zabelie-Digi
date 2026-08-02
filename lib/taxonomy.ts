@@ -59,6 +59,19 @@ function labelFor(row: CategoryRow, lang: Lang): string {
       return row.label_kr || row.label_fr;
     case "en":
       return row.label_en || row.label_fr;
+    // ⚠️ ESPAGNOL : `zabelie_categories` n'a PAS de colonne `label_es`
+    // (vérifié en base le 2026-08-02 : seules `label_kr`, `label_fr`,
+    // `label_en` existent). L'ajout de l'espagnol à l'interface n'est donc
+    // PAS symétrique de celui de l'anglais : les noms de rayons retombent sur
+    // le français, et le resteront tant qu'une migration n'aura pas ajouté la
+    // colonne et ses 123 traductions.
+    //
+    // Ce repli est VISIBLE et assumé, pas silencieux : un hispanophone verra
+    // « Alimentation & épicerie » au milieu d'une interface espagnole, et
+    // comprendra qu'une partie n'est pas traduite. L'alternative — masquer les
+    // rayons faute de traduction — supprimerait le catalogue.
+    case "es":
+      return row.label_fr;
     case "fr":
       return row.label_fr;
   }

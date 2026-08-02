@@ -81,7 +81,25 @@ test("isLang accepte chaque membre de LANGS", () => {
 });
 
 test("isLang refuse ce qui n'est pas une langue", () => {
-  for (const v of ["", "es", "FR", "en-US", null, undefined, 42, {}]) {
+  // ⚠️ Cette liste contenait « es » — écrit quand l'espagnol n'existait pas.
+  // Le jour où il est devenu une vraie langue (2026-08-02), le test a échoué
+  // en affirmant qu'une langue valide devait être refusée. Une liste de
+  // CONTRE-EXEMPLES écrite en dur vieillit exactement comme la liste qu'elle
+  // sert à contrôler. Les codes plausibles sont donc DÉRIVÉS : on ne garde
+  // que ceux qui ne sont pas (ou plus) des langues du produit.
+  const plausibles = ["es", "pt", "ht-HT", "en-US", "FR", "Fr", ""];
+  const faux: unknown[] = [
+    ...plausibles.filter((c) => !(LANGS as string[]).includes(c)),
+    null,
+    undefined,
+    42,
+    {},
+    [],
+  ];
+  for (const v of faux) {
     assert.equal(isLang(v), false, `isLang accepte ${JSON.stringify(v)}`);
   }
+  // Contrôle de l'instrument : la liste ne doit pas s'être vidée à force de
+  // filtrer, sinon ce test passerait sans rien vérifier.
+  assert.ok(faux.length >= 6, "la liste de contre-exemples s'est vidée");
 });
