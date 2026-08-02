@@ -10,7 +10,13 @@
  * Faire évoluer la politique = incrémenter ici ET ajouter une ligne
  * d'attestation, jamais mettre à jour l'ancienne (registre append-only).
  */
-export const POLICY_VERSION = "v1";
+// v2 (2026-08-02) — ajout de la section « Alcool », à l'ouverture du rayon
+// « Produits locaux » (clairin). La v1 ne disait rien de l'alcool ; un silence
+// n'est ni une autorisation ni une règle opposable. Zéro acceptation `v1`
+// n'était enregistrée au moment du changement (vérifié en base), donc aucun
+// vendeur n'est tenu à un texte qu'il n'a pas lu — c'est précisément ce que
+// `0046` existe pour garantir quand il y en aura.
+export const POLICY_VERSION = "v2";
 
 /** Chemin public de la politique — cité par le pied de page et les formulaires. */
 export const POLICY_PATH = "/produits-interdits";

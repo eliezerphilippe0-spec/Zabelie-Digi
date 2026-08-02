@@ -124,6 +124,16 @@ export default async function ProduitsInterditsPage() {
           <List lang={lang} k="policy.digital.items" />
         </Section>
 
+        {/* Ajoutée en v2 (2026-08-02) à l'ouverture du rayon « Produits
+            locaux ». Le clairin est un spiritueux : la politique v1 n'en
+            disait RIEN, ni pour l'autoriser ni pour l'interdire. Un silence
+            n'est pas une autorisation, et il n'est pas non plus opposable. */}
+        <Section title={t(lang, "policy.alcohol.h")}>
+          <p>{t(lang, "policy.alcohol.p1")}</p>
+          <List lang={lang} k="policy.alcohol.items" />
+          <p>{t(lang, "policy.alcohol.p2")}</p>
+        </Section>
+
         <Section title={t(lang, "policy.sanctions.h")}>
           <p>{t(lang, "policy.sanctions.p1")}</p>
           <p className="font-semibold text-cloud">

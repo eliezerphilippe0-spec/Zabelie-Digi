@@ -22,6 +22,9 @@ export const LANGS: Lang[] = ["fr", "ht", "en"];
 const fr = {
   // Nav / footer
   "nav.catalog": "Catalogue",
+  "menu.rayons": "Rayons",
+  "menu.empty": "bientôt",
+  "menu.all": "Tout le catalogue →",
   "nav.talents": "Talents",
   "nav.how": "Comment ça marche",
   "nav.login": "Connexion",
@@ -97,6 +100,13 @@ const fr = {
   "policy.digital.items":
     "logiciels piratés, activateurs, clés de licence non authentiques ;\nmusique, films, livres, cours ou tout contenu que vous n'avez pas le droit de vendre ;\ncomptes revendus : streaming, réseaux sociaux, jeux ;\nlistes de données personnelles : numéros de téléphone, adresses e-mail, contacts.",
   "policy.sanctions.h": "7. Sanctions",
+  "policy.alcohol.h": "9. Alcool — autorisé, sous la responsabilité du vendeur",
+  "policy.alcohol.p1":
+    "Les spiritueux et boissons alcoolisées produits en Haïti — clairin, rhum, liqueurs artisanales — peuvent être vendus sur Zabelie. La v1 de ces règles n'en disait rien : un silence n'est ni une autorisation ni une règle opposable, d'où cette section.",
+  "policy.alcohol.items":
+    "le vendeur garantit qu'il a le droit de vendre ce qu'il met en ligne, et que le produit est propre à la consommation ;\nla remise à un mineur est interdite — c'est le vendeur qui remet la marchandise, donc c'est lui qui vérifie ;\nl'alcool frelaté ou reconditionné dans un contenant d'une autre marque relève de la contrefaçon (§2) ;\naucune promesse d'effet sur la santé.",
+  "policy.alcohol.p2":
+    "⚠️ Zabelie ne vérifie pas l'âge de l'acheteur et ne livre pas. La plateforme met en relation ; le contrôle a lieu au moment de la remise, en main propre, et il appartient au vendeur. Si une vérification d'âge devient obligatoire, cette section changera de version.",
   "policy.sanctions.p1":
     "En cas de violation : retrait immédiat de la fiche, suspension du compte, conservation des éléments.",
   "policy.sanctions.p2":
@@ -419,6 +429,9 @@ export type I18nKey = keyof typeof fr;
 
 const ht: Record<I18nKey, string> = {
   "nav.catalog": "Katalòg",
+  "menu.rayons": "Reyon yo",
+  "menu.empty": "talè",
+  "menu.all": "Tout katalòg la →",
   "nav.talents": "Talan",
   "nav.how": "Kijan sa mache",
   "nav.login": "Konekte",
@@ -493,6 +506,13 @@ const ht: Record<I18nKey, string> = {
   "policy.digital.items":
     "lojisyèl pirat, aktivatè, kle lisans ki pa otantik ;\nmizik, fim, liv, kou oswa nenpòt kontni ou pa gen dwa vann ;\nkont ou revann : streaming, rezo sosyal, jwèt ;\nlis done pèsonèl : nimewo telefòn, adrès imel, kontak moun.",
   "policy.sanctions.h": "7. Sanksyon",
+  "policy.alcohol.h": "9. Alkòl — otorize, sou responsablite machann nan",
+  "policy.alcohol.p1":
+    "Bweson ki gen alkòl ki fèt an Ayiti — klerin, wonm, likè atizanal — ka vann sou Zabelie. Vèsyon 1 règ sa yo pa t di anyen sou sa : yon silans se ni yon otorizasyon ni yon règ ou ka aplike, se poutèt sa seksyon sa a la.",
+  "policy.alcohol.items":
+    "machann nan garanti li gen dwa vann sa l ap mete an liy, epi pwodwi a bon pou moun bwè ;\nentèdi bay yon minè — se machann nan ki lage machandiz la, donk se li ki verifye ;\nalkòl ki melanje oswa mete nan yon boutèy yon lòt mak se kontrefason (§2) ;\npa gen okenn pwomès sou sante.",
+  "policy.alcohol.p2":
+    "⚠️ Zabelie pa verifye laj moun k ap achte a epi li pa livre. Platfòm nan mete moun an kontak ; kontwòl la fèt lè machandiz la lage, an men pwòp, epi se responsablite machann nan. Si yon verifikasyon laj vin obligatwa, seksyon sa a ap chanje vèsyon.",
   "policy.sanctions.p1":
     "Si yon fich vyole règ sa yo : nou retire fich la lapoula, nou sispann kont lan, e nou konsève eleman yo.",
   "policy.sanctions.p2":
@@ -793,6 +813,9 @@ const ht: Record<I18nKey, string> = {
 const en = {
   // Nav / footer
   "nav.catalog": "Catalog",
+  "menu.rayons": "Departments",
+  "menu.empty": "coming soon",
+  "menu.all": "Full catalog →",
   "nav.talents": "Talent",
   "nav.how": "How it works",
   "nav.login": "Sign in",
@@ -868,6 +891,13 @@ const en = {
   "policy.digital.items":
     "pirated software, activators, non-authentic license keys;\nmusic, films, books, courses or any content you do not have the right to sell;\nresold accounts: streaming, social media, games;\npersonal data lists: phone numbers, email addresses, contacts.",
   "policy.sanctions.h": "7. Enforcement",
+  "policy.alcohol.h": "9. Alcohol — allowed, under the seller's responsibility",
+  "policy.alcohol.p1":
+    "Spirits and alcoholic drinks produced in Haiti — clairin, rum, artisanal liqueurs — may be sold on Zabelie. Version 1 of these rules said nothing about alcohol: silence is neither permission nor an enforceable rule, hence this section.",
+  "policy.alcohol.items":
+    "the seller warrants they have the right to sell what they list, and that the product is fit for consumption;\nhanding over to a minor is prohibited — the seller delivers the goods, so the seller checks;\nadulterated alcohol, or alcohol repackaged in another brand's container, is counterfeiting (§2);\nno health claims.",
+  "policy.alcohol.p2":
+    "⚠️ Zabelie does not verify the buyer's age and does not deliver. The platform introduces the parties; the check happens at hand-over and belongs to the seller. If age verification becomes mandatory, this section will change version.",
   "policy.sanctions.p1":
     "In case of violation: immediate removal of the listing, account suspension, retention of the evidence.",
   "policy.sanctions.p2":

@@ -178,3 +178,107 @@ export async function productIdsInCategory(slug: string): Promise<string[] | nul
   if (error || !liens) return null;
   return (liens as unknown as { product_id: string }[]).map((l) => l.product_id);
 }
+
+// ════════════ Menu déroulant des rayons (capture porteur, 2026-08-02) ═══════
+
+/** Un rayon dans le menu : son libellé, s'il est désert, et ses sous-rayons. */
+export type RayonMenu = {
+  slug: string;
+  label: string;
+  /** Aucun produit publié dans ce rayon NI dans ses descendants. */
+  vide: boolean;
+  enfants: RayonMenu[];
+};
+
+/**
+ * Construction du menu, PURE et exportée pour être éprouvée sans base.
+ *
+ * DÉCISION PORTEUR (2026-08-02) : on affiche TOUS les rayons actifs, y compris
+ * ceux sans produit, mais on les MARQUE. C'est un compromis assumé avec V-13
+ * (« aucun rayon désert ») : V-13 interdisait d'afficher une rangée vide sur
+ * l'accueil comme si elle contenait quelque chose. Ici l'étendue prévue du
+ * catalogue est une information utile — à condition que l'acheteur voie du
+ * premier coup d'œil où il y a de la marchandise et où il n'y en a pas encore.
+ * Un rayon marqué vide ne doit pas être cliquable : une impasse signalée reste
+ * une impasse si on peut y entrer.
+ *
+ * REMONTÉE DES COMPTES : un rayon de niveau 1 n'est vide que si LUI et tous
+ * ses descendants le sont. Sans cette remontée, un département dont toute la
+ * marchandise est rangée au niveau 2 s'afficherait grisé alors qu'il est plein
+ * — l'erreur exacte que `agregerFacettes` évite déjà pour la barre de facettes.
+ */
+export function construireMenu(
+  cats: (CategoryRow & { active: boolean; position: number })[],
+  comptes: Map<string, number>,
+  lang: Lang
+): RayonMenu[] {
+  const actifs = cats.filter((c) => c.active);
+  const parIdent = new Map(actifs.map((c) => [c.id, c]));
+
+  /** Compte propre + descendants, quel que soit le nombre de niveaux. */
+  const total = (id: string): number => {
+    let n = comptes.get(id) ?? 0;
+    for (const c of actifs) {
+      if (c.parent_id === id) n += total(c.id);
+    }
+    return n;
+  };
+
+  const noeud = (c: (typeof actifs)[number]): RayonMenu => ({
+    slug: c.slug,
+    label: labelFor(c, lang),
+    vide: total(c.id) === 0,
+    enfants: actifs
+      .filter((e) => e.parent_id === c.id)
+      .sort((a, b) => a.position - b.position)
+      .map(noeud),
+  });
+
+  return actifs
+    // Un rayon de niveau 1 n'a pas de parent ; un niveau 2 dont le parent est
+    // INACTIF ne doit pas remonter à la racine du menu — il apparaîtrait comme
+    // un département, ce qu'il n'est pas.
+    .filter((c) => c.level === 1 && c.parent_id === null)
+    .sort((a, b) => a.position - b.position)
+    .map(noeud);
+}
+
+/**
+ * Le menu, depuis la base. Rend `[]` plutôt qu'une erreur : un en-tête sans
+ * menu reste utilisable, un en-tête qui plante ne l'est pas.
+ */
+export async function getMenuRayons(lang: Lang): Promise<RayonMenu[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = await createClient();
+
+  const { data: cats, error } = await supabase
+    .from("zabelie_categories")
+    .select("id, slug, label_fr, label_kr, label_en, level, parent_id, active, position")
+    .eq("active", true);
+
+  if (error || !cats) {
+    // L'absence de signal doit être un signal : sans cette ligne, « le menu
+    // est vide » et « la requête a échoué » produisent le même écran.
+    console.error("[taxonomie] menu indisponible", error?.message ?? "réponse vide");
+    return [];
+  }
+
+  // Comptes par catégorie fine, produits PUBLIÉS seulement. Un brouillon ne
+  // doit pas décompter un rayon comme peuplé.
+  const { data: liens } = await supabase
+    .from("zabelie_physical_products")
+    .select("category_id, products!inner(status)")
+    .eq("products.status", "published")
+    .limit(5000);
+
+  const comptes = new Map<string, number>();
+  for (const l of (liens ?? []) as unknown as { category_id: string }[]) {
+    comptes.set(l.category_id, (comptes.get(l.category_id) ?? 0) + 1);
+  }
+
+  return construireMenu(
+    cats as unknown as (CategoryRow & { active: boolean; position: number })[],
+    comptes,
+    lang
+  );
+}
