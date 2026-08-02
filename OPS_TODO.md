@@ -200,6 +200,21 @@ c'est la référence de comparaison, elle doit survivre à la session.
       cron déclaré n'est pas un cron exécuté** — secret absent, déploiement non
       promu, chemin renommé laissent tous l'entrée en place et ne produisent
       rien.
+      ⚠️ **CE VERROU A UNE DÉPENDANCE QU'IL FAUT CONNAÎTRE MAINTENANT.** Le
+      cron ne s'exécutera pas tant que le code n'est pas **déployé en
+      Production**. Or ce cron vit sur `claude/api-v1-tool-ready` — la plus
+      large et la moins relue des branches en attente. Le verrou place donc de
+      fait le poivre **derrière la fusion d'une grosse PR**.
+      Ce n'est pas un problème aujourd'hui : sans trafic, le capteur n'a rien à
+      enregistrer avant la diffusion sur WhatsApp. Mais autant le savoir
+      maintenant que le découvrir dans trois semaines. Si le poivre devient
+      urgent avant cette fusion, la sortie est de porter les trois fichiers du
+      cron (`app/api/search/purge/route.ts`, l'entrée `vercel.json`,
+      `tests/crons-appelants.test.ts`) sur une branche minuscule et de fusionner
+      celle-là — le cron ne dépend d'aucun autre morceau de cette branche.
+      Préalable commun aux deux voies : **savoir quelle branche Vercel sert en
+      Production** (première ligne des conditions ci-dessous).
+
       Ce qui compte comme preuve, et rien d'autre : dans les journaux Vercel,
       une ligne
       `[search/purge] {"at":"…","issue":"termine","purgees":N,"dureeMs":…}`
