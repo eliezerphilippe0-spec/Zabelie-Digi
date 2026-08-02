@@ -260,6 +260,26 @@ forme corrigée sans `i` rend encore `false` sur « **V**andè » à cause de la
 seule majuscule. Puis poser l'assertion qui aurait échoué
 (`tests/promesse-vendeur.test.ts` la porte pour les quatre langues).
 
+**Choisir les cas de test à l'œil ne marche pas ici** — et c'est le même défaut
+une couche plus haut. Un jeu constitué en repérant « des mots accentués »
+contiendra surtout des `vérifiés`, des `sètifye`, des `sekirite` : tous
+accentués, tous **passants**, et l'impression d'avoir couvert le sujet.
+
+Le critère n'est pas « porte un accent », c'est **accent sur la dernière lettre,
+ou sur la première** — les deux seules positions qui touchent une frontière :
+
+* finale (fréquent en kreyòl) : `vandè`, `machandè`, `bò`, `lè`, `pè`, `dyò` ;
+* finale en français : `café`, `marché`, `santé`, `côté`, `déjà`, `là`, `où` ;
+* initiale (plus rare, réel) : `èske`, `élève`, `être`.
+
+Ces listes ont été **exécutées**, pas composées : la première version portait
+`journée`, qui PASSE — son accent est au milieu, le `e` final est nu. Idem
+`forêt` et `année`. La faute a été commise en rédigeant la règle qui la
+décrit, ce qui dit assez qu'on ne s'en protège pas par attention.
+
+La liste est bien plus courte qu'elle n'en a l'air, et c'est exactement ce qui
+la rend facile à manquer.
+
 Vaut aussi pour `\w`, `[a-z]` et toute classe écrite en ASCII sur des données
 qui ne le sont pas.
 
