@@ -338,6 +338,61 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
       dont `auth.uid()` résout la revendication, ou si PostgREST cessait de
       propager le rôle `authenticated`, aucun test actuel ne le verrait.
 
+- [ ] **💱 `USD_HTG_RATE` — POSER CETTE VARIABLE EST UN GESTE BLOQUÉ.**
+
+      Aujourd'hui elle est vide (`.env.example:16`), et le checkout USD répond
+      **422** plutôt que d'inventer un taux. C'est le bon comportement, et il
+      rend le risque **dormant, pas absent**.
+
+      **Le jour où tu la poses, tu fais trois choses d'un coup**, et rien dans
+      le dépôt ne le dira à celui qui la posera — peut-être toi, dans trois
+      mois, sans ce contexte : tu ouvres le rail **Stripe**, tu ouvres le rail
+      **Zelle**, et tu **démarres une horloge** que personne ne surveille.
+
+      **Deux préalables, à lever AVANT de renseigner la variable :**
+
+      1. **Séparer les deux fonctions.** `usdCentsFromHtg` est aujourd'hui
+         appelée sur un chemin d'AFFICHAGE (fiche produit, formulaire de
+         recharge) **et** sur un chemin d'ÉCRITURE — `app/api/checkout/route.ts:209`
+         → `payments.expected_usd_cents`, et
+         `app/api/zabelie/topup/orders/route.ts:117` →
+         `zabelie_topup_orders.expected_usd_cents`. Même fonction, même
+         variable d'environnement, deux natures. Il faut deux fonctions
+         distinctes, pour que le compilateur puisse dire laquelle est appelée
+         où — sinon la garantie « affichage seulement » repose sur la
+         vigilance.
+
+      2. **Un mécanisme de fraîcheur.** Le bon comportement existe déjà, il
+         suffit de l'étendre : ajouter `USD_HTG_RATE_AS_OF` à côté de la
+         valeur, et rendre le **même 422** au-delà de N jours. Refuser plutôt
+         qu'inventer, exactement comme le fait déjà l'absence de taux.
+
+      **Pourquoi c'est plus grave qu'une réclamation.** `expected_usd_cents`
+      est figé au checkout. La confirmation Zelle
+      (`app/api/admin/confirm-zelle/route.ts:62`) et le webhook Stripe
+      comparent le montant reçu à **ce chiffre figé**. Un taux périmé ne
+      produit donc pas une erreur visible : il produit une **CONFIRMATION**.
+      Le système déclare que tout va bien pendant que la plateforme absorbe
+      l'écart de change.
+
+- [ ] **⚖️ QUESTION OUVERTE — combien de temps `expected_usd_cents` reste-t-il
+      opposable ?** (arbitrage porteur, du même genre que D-4)
+
+      Un virement Zelle met plusieurs jours à arriver. Le montant en dollars
+      est figé au moment du checkout. Donc :
+
+      * **s'il n'expire jamais** — un acheteur peut virer trois semaines plus
+        tard, au taux d'il y a trois semaines, et c'est la plateforme qui
+        absorbe l'écart ;
+      * **si le délai est trop court** — on invalide des paiements
+        légitimement en route, ce qui est pire : l'argent est parti.
+
+      Ce n'est pas un défaut à corriger, c'est un **nombre à choisir**. Et il
+      doit être choisi **avant** d'écrire la séparation des deux fonctions,
+      sinon la séparation sera à réécrire.
+
+      Ni Claude ni personne d'autre que le porteur ne tranche ce nombre.
+
 - [ ] **🧾 Première commande réelle** — `docs/22-PREMIERE-COMMANDE-REELLE.md`.
       C'est l'événement qui ferme les deux conditions ci-dessus. Il n'a pas
       lieu tant qu'elles ne sont pas levées **ou explicitement acceptées par

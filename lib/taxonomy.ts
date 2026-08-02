@@ -36,6 +36,8 @@ type CategoryRow = {
   label_fr: string;
   label_kr: string;
   label_en: string;
+  /** `null` tant que 0052 n'est pas appliquée — le repli est explicite. */
+  label_es: string | null;
   level: number;
   parent_id: string | null;
 };
@@ -59,19 +61,13 @@ function labelFor(row: CategoryRow, lang: Lang): string {
       return row.label_kr || row.label_fr;
     case "en":
       return row.label_en || row.label_fr;
-    // ⚠️ ESPAGNOL : `zabelie_categories` n'a PAS de colonne `label_es`
-    // (vérifié en base le 2026-08-02 : seules `label_kr`, `label_fr`,
-    // `label_en` existent). L'ajout de l'espagnol à l'interface n'est donc
-    // PAS symétrique de celui de l'anglais : les noms de rayons retombent sur
-    // le français, et le resteront tant qu'une migration n'aura pas ajouté la
-    // colonne et ses 123 traductions.
-    //
-    // Ce repli est VISIBLE et assumé, pas silencieux : un hispanophone verra
-    // « Alimentation & épicerie » au milieu d'une interface espagnole, et
-    // comprendra qu'une partie n'est pas traduite. L'alternative — masquer les
-    // rayons faute de traduction — supprimerait le catalogue.
+    // `label_es` arrive avec `0052`. Le repli sur le français reste en place
+    // pour DEUX cas distincts : la migration pas encore appliquée, et une
+    // catégorie créée plus tard sans traduction. La colonne est volontairement
+    // nullable — obliger toute catégorie future à naître traduite bloquerait
+    // une migration produit sur une question de vocabulaire.
     case "es":
-      return row.label_fr;
+      return row.label_es || row.label_fr;
     case "fr":
       return row.label_fr;
   }
@@ -109,7 +105,7 @@ export async function getCategoryFacets(
 
   const { data: cats } = await supabase
     .from("zabelie_categories")
-    .select("id, slug, label_fr, label_kr, label_en, level, parent_id")
+    .select("id, slug, label_fr, label_kr, label_en, label_es, level, parent_id")
     .in("id", [...new Set((liens as unknown as { category_id: string }[]).map((l) => l.category_id))]);
 
   return agregerFacettes(
@@ -266,7 +262,7 @@ export async function getMenuRayons(lang: Lang): Promise<RayonMenu[]> {
 
   const { data: cats, error } = await supabase
     .from("zabelie_categories")
-    .select("id, slug, label_fr, label_kr, label_en, level, parent_id, active, position")
+    .select("id, slug, label_fr, label_kr, label_en, label_es, level, parent_id, active, position")
     .eq("active", true);
 
   if (error || !cats) {

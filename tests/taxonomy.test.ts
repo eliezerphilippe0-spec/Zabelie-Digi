@@ -13,10 +13,10 @@ import { agregerFacettes } from "../lib/taxonomy";
  */
 
 const CATS = [
-  { id: "d1", slug: "fren-oto", label_fr: "Freinage", label_kr: "Fren", label_en: "Brakes", level: 3, parent_id: "p1" },
-  { id: "d2", slug: "filtrasyon-oto", label_fr: "Filtration", label_kr: "Filtrasyon", label_en: "Filtration", level: 3, parent_id: "p1" },
-  { id: "p1", slug: "pyes-detache-oto", label_fr: "Pièces détachées auto", label_kr: "Pyès detache oto", label_en: "Auto parts", level: 2, parent_id: "r" },
-  { id: "p2", slug: "kawotchou-jant", label_fr: "Pneus & jantes", label_kr: "Kawotchou", label_en: "Tires & rims", level: 2, parent_id: "r" },
+  { id: "d1", slug: "fren-oto", label_fr: "Freinage", label_kr: "Fren", label_en: "Brakes", label_es: "Frenos", level: 3, parent_id: "p1" },
+  { id: "d2", slug: "filtrasyon-oto", label_fr: "Filtration", label_kr: "Filtrasyon", label_en: "Filtration", label_es: "Filtración", level: 3, parent_id: "p1" },
+  { id: "p1", slug: "pyes-detache-oto", label_fr: "Pièces détachées auto", label_kr: "Pyès detache oto", label_en: "Auto parts", label_es: "Repuestos de auto", level: 2, parent_id: "r" },
+  { id: "p2", slug: "kawotchou-jant", label_fr: "Pneus & jantes", label_kr: "Kawotchou", label_en: "Tires & rims", label_es: "Neumáticos y llantas", level: 2, parent_id: "r" },
 ];
 
 test("les niveaux 3 remontent sur leur parent, et les comptes s'additionnent", () => {
@@ -71,6 +71,20 @@ test("libellé créole manquant → repli sur le français, jamais du vide", () 
 test("anglais : le libellé suit la langue", () => {
   const f = agregerFacettes([{ category_id: "p2" }], CATS, "en");
   assert.equal(f[0].label, "Tires & rims");
+});
+
+test("espagnol : le libellé suit la langue", () => {
+  const f = agregerFacettes([{ category_id: "p2" }], CATS, "es");
+  assert.equal(f[0].label, "Neumáticos y llantas");
+});
+
+test("libellé espagnol NULL → repli sur le français (0052 non appliquée)", () => {
+  // `label_es` est nullable : c'est l'état AVANT `0052`, et celui d'une
+  // catégorie créée plus tard sans traduction. Les deux doivent rester
+  // lisibles plutôt que de rendre un rayon sans nom.
+  const sansEs = [{ ...CATS[3], label_es: null }];
+  const f = agregerFacettes([{ category_id: "p2" }], sansEs, "es");
+  assert.equal(f[0].label, "Pneus & jantes");
 });
 
 test("libellé anglais manquant → repli sur le français, jamais du vide", () => {
