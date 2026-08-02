@@ -398,6 +398,38 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
       lieu tant qu'elles ne sont pas levées **ou explicitement acceptées par
       écrit** — l'accepter est un choix légitime, l'oublier ne l'est pas.
 
+## ⚠️ Risque de FUSION — la promesse de livraison corrigée sur DEUX branches
+
+La promesse « livraison instantanée » a été retirée à deux endroits, sur deux
+branches différentes, à quelques heures d'intervalle :
+
+* `claude/promesse-livraison-instantanee` (depuis `main`) — corrige
+  `home.stat3.v`, `product.delivery` et `home.sub` en **fr** et **ht** ;
+* `claude/api-v1-tool-ready` — corrige `product.delivery` en **fr**, **ht**,
+  **en** et **es**, et porte la garde `tests/promesse-livraison.test.ts`.
+
+**Les deux touchent les mêmes clés de `lib/i18n.ts`.** Une fusion mal résolue
+peut donc RESSUSCITER la promesse — c'est exactement ce qui s'est déjà produit
+une fois : `home.stat3.v` avait été corrigée, `product.delivery` oubliée, puis
+traduite en anglais et en espagnol. La promesse a gagné deux langues pendant
+qu'on la croyait supprimée.
+
+**Ce qui protège** : `tests/promesse-livraison.test.ts` échoue si une clé de
+livraison reprend une formule de délai, dans n'importe laquelle des quatre
+langues. Il vit sur `api-v1-tool-ready` — donc **tant que cette branche n'est
+pas fusionnée, `main` n'a aucune garde**. À vérifier au moment de la fusion :
+la suite doit être verte APRÈS résolution des conflits, pas seulement avant.
+
+**Question de fond qui n'appartient qu'au porteur** — voir aussi ci-dessous :
+`main` porte encore, en kreyòl, la proposition de valeur d'AVANT le pivot
+(« Modèl, fòmasyon, beat, akonpayman… »), quand le français décrit déjà une
+marketplace de pièces détachées. Ce n'est pas une traduction en retard, c'est
+le pivot à moitié propagé — et c'est la langue de référence du marché qui le
+montre le plus. `home.h1.a` → `home.h1.d` (« Vendez vos produits digitaux et
+vos talents ») portent la même chose dans les DEUX langues. La question n'est
+pas « quel libellé » mais **quelle est la promesse d'accueil de Zabelie
+maintenant, en kreyòl d'abord**.
+
 ## Observabilité — signaux non bloquants à ajouter
 
 - [ ] **Catégories sans `label_es`** — la garde de `0052` est un contrôle

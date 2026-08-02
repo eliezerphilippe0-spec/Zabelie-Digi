@@ -182,7 +182,7 @@ const fr = {
   "common.copy": "Copier",
   "common.copied": "Copié ✓",
   "pay.other": "Diaspora ? Payez en USD :",
-  "product.delivery": "Livraison instantanée après confirmation du paiement.",
+  "product.delivery": "Disponible dès que le paiement est confirmé.",
   // Produit PHYSIQUE : Zabelie ne livre pas (ni flotte, ni entrepôt, ni
   // contrat transporteur). Ce qui s'affiche est ce que le vendeur DÉCLARE,
   // attribué à lui — jamais une promesse de la plateforme. Aucune mention de
@@ -583,7 +583,7 @@ const ht: Record<I18nKey, string> = {
   "common.copy": "Kopye",
   "common.copied": "Kopye ✓",
   "pay.other": "Dyaspora ? Peye an USD :",
-  "product.delivery": "Livrezon nan menm moman apre peman an konfime.",
+  "product.delivery": "Disponib depi peman an konfime.",
   "product.delivery.declared":
     "Livrezon : {zone}, nan {days} jou — se vandè a ki bay enfòmasyon sa a.",
   "product.delivery.toAgree": "Livrezon : n ap antann ou ak vandè a.",
@@ -972,7 +972,7 @@ const en = {
   "common.copy": "Copy",
   "common.copied": "Copied ✓",
   "pay.other": "In the diaspora? Pay in USD:",
-  "product.delivery": "Instant delivery once payment is confirmed.",
+  "product.delivery": "Available as soon as payment is confirmed.",
   "product.delivery.declared":
     "Delivery: {zone}, within {days} days — stated by the seller",
   "product.delivery.toAgree": "Delivery to be arranged with the seller",
@@ -1371,7 +1371,7 @@ const es = {
   "common.copy": "Copiar",
   "common.copied": "Copiado ✓",
   "pay.other": "¿Estás en la diáspora? Paga en USD:",
-  "product.delivery": "Entrega inmediata tras la confirmación del pago.",
+  "product.delivery": "Disponible en cuanto se confirme el pago.",
   "product.delivery.declared":
     "Entrega: {zone}, en {days} días — indicado por el vendedor",
   "product.delivery.toAgree": "Entrega a coordinar con el vendedor",
