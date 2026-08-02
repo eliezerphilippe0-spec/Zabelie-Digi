@@ -266,7 +266,13 @@ test("get_order : une référence au mauvais format fait échouer la SORTIE", ()
  * interdit est bien ABSENT de l'objet validé, ce qui prouve que le schéma ne
  * le laisse pas traverser même si la couche d'accès aux données l'ajoutait.
  */
-const INTERDITS = ["commission", "commissionHtg", "commissionBps", "cashback", "points", "netHtg"];
+// `role` rejoint la liste le 2026-08-02, sur constat de production :
+// `profiles_public_read` a pour prédicat `true` et `authenticated` dispose de
+// grants par colonne — le rôle est donc lisible par n'importe qui via
+// PostgREST. Que la base le laisse voir n'oblige pas l'API à le relayer :
+// `get_seller` expose le TIER, qui décrit une relation commerciale publique,
+// jamais le RÔLE, qui décrit un privilège interne.
+const INTERDITS = ["commission", "commissionHtg", "commissionBps", "cashback", "points", "netHtg", "role"];
 
 test("aucune sortie acheteur ne laisse passer commission / cashback / points", () => {
   const pollue = (o: Record<string, unknown>) => {
@@ -284,6 +290,7 @@ test("aucune sortie acheteur ne laisse passer commission / cashback / points", (
         seller: pollue({
           id: UUID,
           tier: "elite",
+          role: "admin",
           memberSince: NOW,
           productCount: 3,
           salesCount: 12,

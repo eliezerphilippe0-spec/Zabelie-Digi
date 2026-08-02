@@ -286,6 +286,63 @@ et **une seule est honnête** :
 C'est la même mécanique que l'apurement manuel : une boucle qui ne casse
 jamais franchement, qu'on saute une semaine chargée, puis deux.
 
+## 🔒 CONDITIONS D'OUVERTURE — à lever AVANT la première transaction réelle
+
+> Ce ne sont **pas des tâches**. Une tâche peut glisser d'une semaine à l'autre
+> sans que rien ne se casse ; une condition d'ouverture a un moment de
+> fermeture nommé, et ce moment est **la première commande réelle**
+> (`docs/22-PREMIERE-COMMANDE-REELLE.md`).
+>
+> Pourquoi cette distinction plutôt qu'une case à cocher de plus : un écart
+> consigné sans échéance devient une conformité par usure. Au bout de trois
+> mois, plus personne ne se souvient que le contrôle n'a jamais tourné, et le
+> vert de la CI se lit comme une preuve qu'il a tourné.
+
+- [ ] **⚖️ D-4 — le sens de l'arrondi.** Déjà détaillée plus bas dans
+      « Paiements ». Reprise ici parce qu'elle partage le même moment de
+      fermeture : la ligne n°1 du registre doit dire sous quelle règle elle a
+      été produite.
+
+- [ ] **🔐 Isolation RLS des commandes — exécuter le test sous un VRAI JWT.**
+
+      **Ce qui EST fait** (2026-08-02) : `supabase/tests/orders_rls_isolation.test.sql`
+      exerce les policies réelles de `orders` sur un Postgres 16, avec six cas,
+      et il est éprouvé par trois mutations qui le font tomber chacune sur le
+      cas visé (policy acheteur retirée → cas 1 ; policy rendue permissive →
+      cas 2 ; policy vendeur retirée → cas 4).
+
+      **Ce qui N'EST PAS fait, et qu'il ne faut jamais présenter comme une
+      conformité** : aucun JWT n'est émis, signé ni vérifié. `auth.uid()` est
+      un **stub** qui lit un réglage de session (`supabase/tests/_bootstrap.sql`).
+      Ce qui est exercé, c'est le **moteur de policies** avec une identité
+      choisie — pas la chaîne complète « jeton GoTrue → PostgREST → policy ».
+
+      **Pourquoi ça n'a pas été fait** : le test réel exige une branche
+      Supabase, réservée au plan Pro (constaté le 2026-08-02 :
+      `PaymentRequiredException — Branching is supported only on the Pro plan
+      or above`). Le coût de la branche elle-même est négligeable —
+      **0,01344 $/heure**, soit quatre centimes pour trois heures — mais
+      l'abonnement mensuel ne l'est pas, et il a été jugé, à raison, un mauvais
+      échange pour protéger un chemin que personne n'emprunte : **0 commande,
+      0 produit, 1 profil** en base au moment de la décision.
+
+      **Comment la lever, le jour venu** : passer le projet en Pro le temps
+      d'une branche éphémère, y rejouer les migrations, créer deux acheteurs et
+      un vendeur via GoTrue (vrais comptes, vrais jetons), appeler
+      `/api/v1/get_user_orders` avec le jeton de chacun, vérifier qu'un
+      acheteur ne voit que ses achats **et qu'un vendeur ne voit aucun achat**.
+      Puis détruire la branche — et le **vérifier** par `list_branches`, pas le
+      prévoir.
+
+      **Ce que ça garde ouvert entre-temps** : si Supabase changeait la façon
+      dont `auth.uid()` résout la revendication, ou si PostgREST cessait de
+      propager le rôle `authenticated`, aucun test actuel ne le verrait.
+
+- [ ] **🧾 Première commande réelle** — `docs/22-PREMIERE-COMMANDE-REELLE.md`.
+      C'est l'événement qui ferme les deux conditions ci-dessus. Il n'a pas
+      lieu tant qu'elles ne sont pas levées **ou explicitement acceptées par
+      écrit** — l'accepter est un choix légitime, l'oublier ne l'est pas.
+
 ## Paiements (rappels)
 
 > **Une seule de ces décisions bloque la première commande : D-4.** Un produit
