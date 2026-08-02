@@ -54,7 +54,7 @@ const fr = {
   "home.stat1": "digital & talents",
   "home.stat2": "paiement mobile",
   "home.stat3": "livraison après paiement",
-  "home.stat3.v": "Instant",
+  "home.stat3.v": "Livraison",
   "home.trends": "Tendances du moment",
   "home.trends.sub": "Les produits et talents les plus demandés.",
   "home.all": "Tout voir →",
@@ -106,7 +106,7 @@ const fr = {
   "common.copy": "Copier",
   "common.copied": "Copié ✓",
   "pay.other": "Diaspora ? Payez en USD :",
-  "product.delivery": "Livraison instantanée après confirmation du paiement.",
+  "product.delivery": "Disponible dès que le paiement est confirmé.",
   // Produit PHYSIQUE : Zabelie ne livre pas (ni flotte, ni entrepôt, ni
   // contrat transporteur). Ce qui s'affiche est ce que le vendeur DÉCLARE,
   // attribué à lui — jamais une promesse de la plateforme. Aucune mention de
@@ -359,13 +359,13 @@ const ht: Record<I18nKey, string> = {
   "home.h1.c": "ak",
   "home.h1.d": "talan ou",
   "home.sub":
-    "Modèl, fòmasyon, beat, akonpayman… Pibliye, resevwa lajan ak mobile money, epi livre nan menm moman. Fèt pou reyalite lakay.",
+    "Filt, fren, luil, batri. Ou peye ak MonCash, machann nan livre w.",
   "home.cta.sell": "Kòmanse vann",
   "home.cta.browse": "Gade katalòg la",
   "home.stat1": "dijital & talan",
   "home.stat2": "peman mobil",
   "home.stat3": "livrezon apre peman",
-  "home.stat3.v": "Rapid",
+  "home.stat3.v": "Livrezon",
   "home.trends": "Sa k ap mache kounye a",
   "home.trends.sub": "Pwodwi ak talan moun plis ap chèche yo.",
   "home.all": "Wè tout →",
@@ -413,7 +413,7 @@ const ht: Record<I18nKey, string> = {
   "common.copy": "Kopye",
   "common.copied": "Kopye ✓",
   "pay.other": "Dyaspora ? Peye an USD :",
-  "product.delivery": "Livrezon nan menm moman apre peman an konfime.",
+  "product.delivery": "Disponib depi peman an konfime.",
   "product.delivery.declared":
     "Livrezon : {zone}, nan {days} jou — se vandè a ki bay enfòmasyon sa a.",
   "product.delivery.toAgree": "Livrezon : n ap antann ou ak vandè a.",
