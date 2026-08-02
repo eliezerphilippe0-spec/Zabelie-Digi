@@ -185,6 +185,26 @@ La vigilance ne suffit pas ici, et c'est précisément la leçon : quatre
 occurrences en une session, par quelqu'un qui connaissait le piège dès la
 deuxième.
 
+#### Le drapeau qui filtre et le drapeau qui agit portent le même nom
+
+`npm audit fix --omit=dev` ne filtre pas l'audit : il **réinstalle** sans les
+dépendances de développement. `@types/react` a disparu, `tsc` s'est mis à
+écrire « Cannot find namespace 'React' », et les tests chargés sont tombés à
+0 succès sur 14 — le correctif de sécurité avait l'air d'avoir cassé le
+projet. C'était le drapeau.
+
+Règle : **avant d'ajouter un drapeau à une commande qui MODIFIE quelque chose,
+vérifier ce qu'il fait à la commande, pas à sa sortie.** Le même `--omit=dev`
+est inoffensif sur `npm audit` (il filtre un rapport) et destructeur sur
+`npm audit fix` (il réinstalle). Vérifier avant, pas après.
+
+C'est la troisième forme du même défaut dans une seule session, et c'est la
+classe dominante de ce projet : la mutation qui rend un succès sans avoir
+modifié le fichier, le taux périmé qui produit une confirmation au lieu d'une
+erreur, la commande qui réussit en ayant fait autre chose que ce que son nom
+annonce. **Le point commun n'est pas l'échec — c'est que l'échec se présente
+comme une réussite.**
+
 Corollaire d'observabilité : **l'absence de signal doit être un signal.** Une
 branche par défaut journalise ce qu'elle a reçu (`lib/product-kind.ts`) ; un
 cron journalise chaque passage, y compris à zéro (`app/api/stock/expire`).
