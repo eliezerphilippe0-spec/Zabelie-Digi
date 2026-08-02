@@ -222,6 +222,47 @@ Deux points qui font la différence entre ce contrôle et un vœu :
   dont les crons sont désactivés le laissent vert. La preuve d'exécution est le
   journal de la route, et elle se lit dans Vercel. Les deux sont nécessaires.
 
+#### `\b` ne connaît pas le kreyòl — propriété du produit, pas leçon d'un tour
+
+En JavaScript, `\w` vaut `[A-Za-z0-9_]` : **les lettres accentuées ne sont pas
+des caractères de mot.** Une frontière `\b` posée contre `è`, `é`, `ò`, `ô`
+tombe donc du mauvais côté et le motif ne s'applique pas.
+
+⚠️ **Et le piège est pire qu'un accent qui casse tout** — mesuré, pas déduit :
+
+```js
+/\bvandè\b/.test("vandè")                      // false  ← accent EN FRONTIÈRE
+/\bvérifiés\b/.test("vendeurs vérifiés près")  // true   ← accent AU MILIEU
+/\bmachann\b/.test("machann nan")              // true   ← sans accent
+```
+
+Seules les frontières **contre** un accent tombent. Un motif accentué marche
+donc la plupart du temps, et échoue précisément sur les mots dont l'accent est
+au bout — `vandè`, `sètifye`, `bagay yo`. Un contrôle mixte semble
+fonctionner, et son unique trou est invisible.
+
+Ce que ça donne, mesuré : le détecteur de `tests/promesse-vendeur.test.ts` a
+été aveugle à « Vandè verifye toupre w » — c'est-à-dire **exactement en kreyòl,
+la langue de référence du produit**, tout en fonctionnant parfaitement en
+anglais. Sans cas connu-positif, il serait passé vert en ne voyant rien, et son
+vert aurait été lu comme « aucune promesse non tenue ».
+
+C'est le pire endroit possible pour un angle mort : un dépôt kreyòl-first dont
+les instruments ne voient que l'anglais valide toujours la langue qui compte le
+moins. Et rien ne le signale — le motif ne lève pas d'erreur, il ne trouve
+simplement rien.
+
+Règle : **toute expression régulière portant sur du texte d'interface se
+vérifie sur une chaîne accentuée connue, en kreyòl et en français, avant qu'on
+lui fasse confiance.** En pratique : remplacer `\b…\b` par
+`(?<![\p{L}])…(?![\p{L}])` **avec les drapeaux `u` ET `i`** — vérifié, la
+forme corrigée sans `i` rend encore `false` sur « **V**andè » à cause de la
+seule majuscule. Puis poser l'assertion qui aurait échoué
+(`tests/promesse-vendeur.test.ts` la porte pour les quatre langues).
+
+Vaut aussi pour `\w`, `[a-z]` et toute classe écrite en ASCII sur des données
+qui ne le sont pas.
+
 ### `product_kind` — le module est obligatoire
 Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
 vérifié par `tests/product-kind-discipline.test.ts`. Raison : ajouter une
