@@ -251,13 +251,33 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-4">
+        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-2 sm:gap-4">
           {stats.map((s) => (
             <div
               key={s.label}
-              className="rounded-2xl border border-line bg-surface-maroon/60 p-4"
+              className="rounded-2xl border border-line bg-surface-maroon/60 p-3 sm:p-4"
             >
-              <p className="metric text-xl font-bold text-gradient sm:text-2xl">
+              {/* RES-01 — à 360 px, trois colonnes laissent ~96 px par tuile.
+                  « MonCash » et « Livraison » y débordaient en `text-xl` :
+                  vérifié par capture, dans les quatre langues, pas déduit du
+                  CSS. Deux corrections qui se complètent :
+                    • `text-base` sous `sm:` — la valeur redevient la plus
+                      grande de la tuile sans réclamer une largeur qu'elle n'a
+                      pas ;
+                    • `break-words` — « MonCash » n'a pas d'espace, donc rien
+                      ne peut le couper : sans cette règle un mot plus long
+                      déborderait encore, quelle que soit la taille choisie.
+                  PAS de `truncate` : couper « Livrais… » rendrait la coupure
+                  intentionnelle et l'information resterait perdue.
+
+                  `break-words` reste comme FILET, pas comme solution. Avec
+                  `text-base` et la gouttière/rembourrage resserrés sous `sm:`,
+                  « MonCash » tient sur UNE ligne — mesuré dans le navigateur,
+                  pas supposé. Le filet ne sert que si un libellé plus long
+                  arrive un jour : il se coupera plutôt que de sortir de sa
+                  boîte. Une marque coupée est laide ; une marque hors cadre
+                  est cassée. */}
+              <p className="metric break-words text-base font-bold text-gradient sm:text-2xl">
                 {s.value}
               </p>
               <p className="mt-1 text-xs text-mist">{s.label}</p>
