@@ -16,8 +16,9 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
 | Décision | Depuis | Ce qu'elle bloque |
 |---|---|---|
-| **Branche de Production Vercel** — laquelle est servie ? | 2026-08-03 | **Tout.** Si c'est `main`, le site en ligne dit « Pièces auto et moto » avec « digital & talents » à côté et « Instant ». La priorité devient alors de faire arriver `api-v1-tool-ready` en ligne, et les 5 autres branches passent après. **Non mesurable par l'agent** : sortie réseau fermée (403 au proxy). |
-| **Branche par défaut GitHub** = `claude/install-skills-eGRxy` (2026-06-22, sans `lib/i18n.ts`) | mesuré 2026-07-27 | L'ouverture de toute PR sur une base saine — une PR s'ouvre par défaut contre cette branche. ~30 s. |
+| ✅ ~~Branche de Production Vercel~~ — **RÉPONDU 2026-08-03 : `main`.** Dernier déploiement Production `bb5ee4a`, **2026-07-26**, soit la tête actuelle de `main` : le site en ligne est exactement `main`, sans décalage. | — | **Résolu — et c'est le pire des trois cas.** Le site public dit depuis le 26 juillet « Pièces auto et moto, livrées en Haïti », « digital & talents » et **« Instant »**, en 2 langues. Remplacée par la ligne suivante. |
+| **🔴 Faire arriver le chantier en ligne** — avancer la branche de la **PR #55** jusqu'à `ccf21a8`, relire, fusionner | 2026-08-03 | **Le site public.** 87 commits, 151 fichiers contre `main`. Aucune divergence : `7f1981d` (tête de #55) est un **ancêtre direct** de `ccf21a8` — avance rapide, aucun `--force`, aucun historique réécrit. Les 5 autres branches passent après. |
+| ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | **Protection de `main`** (`protected: false`) | mesuré 2026-07-27 | Rien mécaniquement, et c'est le problème : la CI existe et n'empêche pas de fusionner au rouge. |
 | **D-4 — sens de l'arrondi** (`round` / `floor`) | 2026-07-26 | La **première vente réelle**. Le registre est append-only : chaque ligne écrite avant porte l'ancienne règle pour toujours. Avis porteur donné (`floor`), jamais de « go ». |
 | **Signature datée du réexamen `sharp`** | 2026-08-02 | La fusion de **SEC-01**. C'est un geste bloqué, pas une acceptation : il lui faut une date de réexamen signée. |
