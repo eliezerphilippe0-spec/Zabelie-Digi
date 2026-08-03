@@ -119,9 +119,19 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 - `docs/CASHBACK-GARDE-FOUS.md` · `REVUE-2026-07-22-rails-paiement.md`
 - `docs/21-EXPEDITION-ET-REMISE.md` — état d'expédition (`0043`, non appliquée)
 - `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
+- `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
+  contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
 - `OPS_TODO.md` — actions opérationnelles porteur + écarts de réconciliation
 
 ## Méthode
+→ **`docs/25-BOUCLE-DE-TRAVAIL.md`** porte la boucle complète. Trois choses
+en tête : rien ne démarre sans **objectif vérifiable, arrêt ferme, périmètre**
+(§0) ; **une seule mutation par tour** (§1) ; et la boucle **s'arrête net**
+devant argent, migration à appliquer, variable d'environnement, promesse
+commerciale, positionnement, dépense, merge (§4) — analyse et options, jamais
+trancher. Ce qui est rendu au porteur s'inscrit au **registre en tête
+d'`OPS_TODO.md`**, relu à l'ouverture de chaque chantier.
+
 Un chantier à la fois, dans l'ordre de `docs/18` §11. Tests écrits avec le
 code. Migration rédigée **non appliquée** tant que le porteur ne l'a pas
 exécutée. Signaler toute contradiction plutôt que trancher seul ; demander

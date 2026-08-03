@@ -3,6 +3,33 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## ⏳ Registre des décisions en attente — `docs/25` §4.1
+
+> **Relu à l'ouverture de chaque chantier, avant de choisir quoi construire.**
+> La troisième colonne est la seule qui compte : une décision qui bloque six
+> branches et une qui bloque un libellé n'ont pas le même poids, et sans la
+> trace rien ne les distingue. Ce tableau est un **index** — le détail de
+> chaque ligne est plus bas dans ce fichier, et c'est lui qui fait foi.
+>
+> Ne figure ici que ce qui attend une DÉCISION. La panne d'inscription
+> ci-dessous n'en est pas une : c'est un défaut, et il passe devant.
+
+| Décision | Depuis | Ce qu'elle bloque |
+|---|---|---|
+| **Branche de Production Vercel** — laquelle est servie ? | 2026-08-03 | **Tout.** Si c'est `main`, le site en ligne dit « Pièces auto et moto » avec « digital & talents » à côté et « Instant ». La priorité devient alors de faire arriver `api-v1-tool-ready` en ligne, et les 5 autres branches passent après. **Non mesurable par l'agent** : sortie réseau fermée (403 au proxy). |
+| **Branche par défaut GitHub** = `claude/install-skills-eGRxy` (2026-06-22, sans `lib/i18n.ts`) | mesuré 2026-07-27 | L'ouverture de toute PR sur une base saine — une PR s'ouvre par défaut contre cette branche. ~30 s. |
+| **Protection de `main`** (`protected: false`) | mesuré 2026-07-27 | Rien mécaniquement, et c'est le problème : la CI existe et n'empêche pas de fusionner au rouge. |
+| **D-4 — sens de l'arrondi** (`round` / `floor`) | 2026-07-26 | La **première vente réelle**. Le registre est append-only : chaque ligne écrite avant porte l'ancienne règle pour toujours. Avis porteur donné (`floor`), jamais de « go ». |
+| **Signature datée du réexamen `sharp`** | 2026-08-02 | La fusion de **SEC-01**. C'est un geste bloqué, pas une acceptation : il lui faut une date de réexamen signée. |
+| **Appliquer `0051` (clairin) et `0052` (`label_es`)** | 2026-08-01 | Le rayon produits locaux, et l'espagnol complet du menu. Chacune porte sa garde. |
+| **Appliquer `0053` (rétention 90 j)** | 2026-08-03 | Rien d'autre — mais elle borne la conservation de termes de recherche **en clair**. |
+| **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
+| **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
+| **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien aujourd'hui ; à trancher avec D-4 tant que le registre est vide. |
+| **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
+| **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
+| **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
+
 ## 🔴 EN TÊTE — la panne d'inscription : deux écrans, pas un formulaire
 
 **Statut au 2026-08-01 : NON RÉSOLUE.** C'est la seule chose de ce fichier qui
