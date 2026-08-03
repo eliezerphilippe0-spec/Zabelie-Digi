@@ -460,6 +460,34 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
       lieu tant qu'elles ne sont pas levées **ou explicitement acceptées par
       écrit** — l'accepter est un choix légitime, l'oublier ne l'est pas.
 
+- [ ] **`sharp` — risque ACCEPTÉ le 2026-08-02, à revoir avant le premier
+      téléversement vendeur.**
+
+      **Accepté sur un fait mesuré, pas sur une impression** : la base contient
+      **0 produit**. Aucune image vendeur n'a jamais été téléversée, donc
+      l'entrée non fiable qui atteindrait libvips **n'existe pas encore**. Le
+      risque est réel mais entièrement FUTUR.
+
+      `sharp@0.34.5` — version de l'arbre **INSTALLÉ**, pas de `package.json` :
+      elle n'y figure pas, elle arrive par `next@16.2.10`. Avis
+      GHSA-f88m-g3jw-g9cj, quatre CVE dans libvips, corrigé en `>= 0.35.0`.
+
+      **Pourquoi ça n'a pas été corrigé.** `npm audit fix --force` proposerait
+      un RECUL de `next` 16.2.10 → 14.2.35, incompatible avec React 19 —
+      vérifié en `--dry-run`, jamais exécuté. Et forcer `sharp` par un
+      `overrides` que Next n'a pas validé échangerait un risque futur contre un
+      risque de rendu sur les photos produit, c'est-à-dire sur l'actif qu'on
+      n'a pas encore.
+
+      **Moment d'activation identifiable** : le PREMIER téléversement vendeur.
+      Avant d'ouvrir cette surface, revérifier `sharp`.
+
+      **Surveillance en place, sans rien à relire** :
+      `tests/sharp-avis-securite.test.ts` est un test **INVERSÉ** — il échoue
+      le jour où `sharp >= 0.35` apparaît dans l'arbre installé, et son message
+      dit quoi faire. Une ligne de suivi demande qu'on pense à la relire ; ce
+      test ne demande rien.
+
 ## ⚠️ Risque de FUSION — la promesse de livraison corrigée sur DEUX branches
 
 La promesse « livraison instantanée » a été retirée à deux endroits, sur deux
