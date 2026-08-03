@@ -60,7 +60,18 @@ export type RoundingRule = "round" | "floor";
  * contrôle de cohérence, et le relevé de la première commande (`docs/22`)
  * ferme la boucle en comparant l'affiché au crédité.
  */
-export const ROUNDING_IN_FORCE: RoundingRule = "round";
+/**
+ * D-4 tranchée par le porteur le 2026-08-03 : **`floor`**, l'arrondi va au
+ * VENDEUR. Basculée en même temps que `0044` est appliquée en base.
+ *
+ * ⚠️ CETTE LIGNE MENT SI `0044` N'EST PAS APPLIQUÉE. Elle décrit ce que la
+ * BASE fait, pas ce qu'on souhaite — c'est tout l'objet du miroir. La sonde
+ * de `/api/admin/coherence` le dira, mais l'ordre des gestes est la vraie
+ * protection : base d'abord, écran ensuite. Dans cet ordre l'intervalle donne
+ * au vendeur PLUS que ce qui lui est annoncé ; dans l'autre on lui promet une
+ * gourde qu'on ne verse pas.
+ */
+export const ROUNDING_IN_FORCE: RoundingRule = "floor";
 
 /**
  * Commission prélevée par la plateforme (HTG entiers).
