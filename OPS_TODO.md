@@ -21,7 +21,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | **Protection de `main`** (`protected: false`) | mesuré 2026-07-27 | Rien mécaniquement, et c'est le problème : la CI existe et n'empêche pas de fusionner au rouge. |
 | **D-4 — sens de l'arrondi** (`round` / `floor`) | 2026-07-26 | La **première vente réelle**. Le registre est append-only : chaque ligne écrite avant porte l'ancienne règle pour toujours. Avis porteur donné (`floor`), jamais de « go ». |
-| **Signature datée du réexamen `sharp`** | 2026-08-02 | La fusion de **SEC-01**. C'est un geste bloqué, pas une acceptation : il lui faut une date de réexamen signée. |
+| ✅ ~~Signature datée du réexamen `sharp`~~ — **SIGNÉE 2026-08-03, réexamen au 2026-11-03.** | — | Résolu. Deux événements rouvrent le dossier, le premier qui arrive gagne : la date, ou le premier téléversement vendeur. |
 | **Appliquer `0051` (clairin) et `0052` (`label_es`)** | 2026-08-01 | Le rayon produits locaux, et l'espagnol complet du menu. Chacune porte sa garde. |
 | **Appliquer `0053` (rétention 90 j)** | 2026-08-03 | Rien d'autre — mais elle borne la conservation de termes de recherche **en clair**. |
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
@@ -487,6 +487,37 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
       le jour où `sharp >= 0.35` apparaît dans l'arbre installé, et son message
       dit quoi faire. Une ligne de suivi demande qu'on pense à la relire ; ce
       test ne demande rien.
+
+      ---
+
+      ### ✍️ Signature — acceptation datée
+
+      > **Réexamen fixé au 2026-11-03.** Accepté par **eliezerphilippe0-spec**
+      > (porteur), le 2026-08-03.
+      >
+      > **Ce n'est pas une acceptation, c'est un report avec une échéance.** La
+      > différence n'est pas rhétorique : une acceptation ne demande plus rien à
+      > personne, un report a une date à laquelle quelqu'un doit revenir. Sans
+      > cette date, l'avis GHSA-f88m-g3jw-g9cj cesse d'exister le jour où cette
+      > ligne descend dans le fichier.
+      >
+      > **Deux événements rouvrent le dossier, et le premier qui arrive gagne :**
+      >
+      > 1. **Le 2026-11-03**, quelle que soit l'activité de la plateforme.
+      > 2. **Le premier téléversement vendeur**, même s'il arrive demain — c'est
+      >    lui qui crée l'entrée non fiable vers libvips, donc le risque réel.
+      >
+      > **Ce qu'il faudra refaire ce jour-là**, et pas seulement relire : mesurer
+      > la version de `sharp` dans l'arbre **installé**
+      > (`node -p "require('./node_modules/sharp/package.json').version"`, pas
+      > `package.json`, où elle ne figure pas), vérifier si `next` a rattrapé
+      > `sharp >= 0.35`, et refaire un `npm audit fix --force --dry-run` pour
+      > voir si le recul de `next` 16 → 14 est toujours le prix à payer.
+      >
+      > ⚠️ **Si la date passe sans que personne ne revienne, ce fichier ne le
+      > dira pas.** Une date écrite dans un markdown n'est pas un mécanisme —
+      > c'est la limite connue de cette signature, et elle est écrite ici plutôt
+      > que découverte en novembre.
 
 ## ⚠️ Risque de FUSION — la promesse de livraison corrigée sur DEUX branches
 
