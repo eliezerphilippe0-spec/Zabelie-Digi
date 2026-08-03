@@ -72,6 +72,29 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3000" },
     },
     {
+      // ⚠️ CE QUE CE PROJET NE PEUT PAS TESTER — mesuré le 2026-08-01, en
+      // essayant d'y ajouter un test des messages d'échec d'inscription.
+      //
+      // `STUB_ENV` est passé à `npm run START`, donc au RUNTIME. Or
+      // `lib/supabase/client.ts` lit `process.env.NEXT_PUBLIC_SUPABASE_URL`,
+      // que Next.js **remplace à la compilation** dans le bundle navigateur.
+      // Le build a lieu avant, sans ces variables : le client embarque donc
+      // `undefined`, `createClient()` lève, et tout composant client tombe en
+      // « Mode démo » — constaté dans la capture d'échec de Playwright.
+      //
+      // Conséquence : ce projet couvre les chemins rendus par le SERVEUR
+      // (fiche produit, /mes-achats, route de téléchargement), qui lisent
+      // `process.env` à l'exécution. AUCUN comportement client adossé à
+      // Supabase n'est atteignable — inscription, connexion, déconnexion.
+      // C'est pour ça que le formulaire d'inscription n'a jamais eu de
+      // couverture de bout en bout, et pourquoi une panne réelle a dû être
+      // diagnostiquée en interrogeant la base.
+      //
+      // Pour lever la limite il faudrait BUILD avec les variables du stub.
+      // Ce n'est pas gratuit : le projet `chromium` (port 3000) repose sur
+      // l'absence de configuration Supabase, et le même `.next` sert les
+      // deux. Toucher à ça touche au harnais du money-path — à faire
+      // délibérément, pas en passant.
       name: "physique",
       testMatch: /parcours-physique/,
       use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:3001" },

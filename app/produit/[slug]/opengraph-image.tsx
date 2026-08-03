@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { getProductView } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { pickByKind } from "@/lib/product-kind";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 
 // Aperçu de partage (WhatsApp / Facebook / X) généré à la volée par produit.
 // Objectif marché : un lien produit partagé sur WhatsApp affiche une mini-affiche
@@ -48,15 +49,60 @@ function Logo() {
   );
 }
 
+
+/**
+ * Délai sur la RECHERCHE PRODUIT — même règle que la photo, un cran plus haut.
+ * Le crawler de WhatsApp a son propre délai : s'il abandonne avant que la
+ * carte arrive, il met en cache un lien NU, durablement. « La carte rend
+ * quand même » n'est vrai que si quelqu'un attend encore. Base muette en 2 s
+ * → carte générique immédiate : une carte générique vaut mieux qu'un lien nu,
+ * et infiniment mieux qu'un lien nu figé.
+ */
+const PRODUCT_TIMEOUT_MS = 2000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+/** Délai au-delà duquel on renonce à la photo plutôt que retarder la carte. */
+const COVER_TIMEOUT_MS = 2000;
+/** Au-delà, l'encodage en data URI coûte plus qu'il ne rapporte. */
+const COVER_MAX_BYTES = 2 * 1024 * 1024;
+
+async function fetchCover(url: string | null): Promise<string | null> {
+  const sized = coverUrlAt(url, COVER_WIDTHS.share);
+  if (!sized || !/^https?:\/\//.test(sized)) return null;
+  try {
+    const res = await fetch(sized, { signal: AbortSignal.timeout(COVER_TIMEOUT_MS) });
+    if (!res.ok) return null;
+    const type = res.headers.get("content-type") ?? "";
+    if (!type.startsWith("image/")) return null;
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength === 0 || buf.byteLength > COVER_MAX_BYTES) return null;
+    return `data:${type};base64,${Buffer.from(buf).toString("base64")}`;
+  } catch {
+    // Délai dépassé, hôte injoignable, réponse illisible : on rend sans photo.
+    return null;
+  }
+}
+
 export default async function Image({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductView(slug).catch(() => undefined);
+  const product = await withTimeout(
+    getProductView(slug).catch(() => undefined),
+    PRODUCT_TIMEOUT_MS,
+    undefined
+  );
 
-  // Repli : produit introuvable → carte de marque générique (jamais d'image cassée).
+  // Repli : produit introuvable OU base muette → carte de marque générique
+  // (jamais d'image cassée, jamais de crawler qui abandonne).
   const title = product?.title ?? "Zabelie";
   const creator = product?.creator ?? "Marketplace digitale haïtienne";
   const price = product ? formatHTG(product.priceHTG) : null;
@@ -78,6 +124,15 @@ export default async function Image({
       })
     : "Paiement MonCash";
   const safeTitle = title.length > 90 ? title.slice(0, 88) + "…" : title;
+  // Photo produit — récupérée ICI, avec un délai borné, et intégrée en data
+  // URI plutôt que confiée au rendu.
+  //
+  // Pourquoi ne pas passer l'URL à satori : il la téléchargerait lui-même,
+  // sans délai maîtrisé. Un stockage lent ou injoignable ferait alors traîner
+  // ou échouer la génération de la carte — la surface où un échec coûte le
+  // plus cher, puisque WhatsApp fige l'aperçu obtenu. Ici, si l'image n'est
+  // pas là en 2 s, on rend la carte SANS elle : dégradée, jamais cassée.
+  const cover = await fetchCover(product?.coverUrl ?? null);
 
   return new ImageResponse(
     (
@@ -86,11 +141,17 @@ export default async function Image({
           width: "100%",
           height: "100%",
           display: "flex",
+          background: BG,
+          fontFamily: "sans-serif",
+        }}
+      >
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: BG,
           padding: 70,
-          fontFamily: "sans-serif",
         }}
       >
         {/* En-tête : logo + badge type */}
@@ -123,7 +184,10 @@ export default async function Image({
           <div
             style={{
               display: "flex",
-              fontSize: safeTitle.length > 45 ? 64 : 78,
+              // Colonne rétrécie quand la photo occupe la droite.
+              fontSize: cover
+                ? safeTitle.length > 45 ? 48 : 58
+                : safeTitle.length > 45 ? 64 : 78,
               fontWeight: 800,
               color: TEXT,
               lineHeight: 1.05,
@@ -160,6 +224,17 @@ export default async function Image({
             </div>
           )}
         </div>
+      </div>
+      {cover && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={cover}
+          alt=""
+          width={430}
+          height={630}
+          style={{ width: 430, height: 630, objectFit: "cover" }}
+        />
+      )}
       </div>
     ),
     { ...size }

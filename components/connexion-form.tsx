@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BrandMark } from "@/components/brand-logo";
 import { safeNext } from "@/lib/safe-next";
+import { causeAuth, estModeDemo } from "@/lib/auth-erreurs";
+import { checkDisplayName } from "@/lib/display-name";
 
 type Mode = "signin" | "signup";
 
@@ -23,6 +25,17 @@ export type ConnexionLabels = {
   backHome: string;
   errorGeneric: string;
   forgot: string;
+  nameRequired: string;
+  nameReserved: string;
+  /** Causes d'échec nommées — voir lib/auth-erreurs.ts. */
+  errExists: string;
+  errCredentials: string;
+  errPassword: string;
+  errNotConfirmed: string;
+  errRate: string;
+  errDisabled: string;
+  errEmail: string;
+  errNetwork: string;
 };
 
 function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
@@ -51,15 +64,39 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
       // lève — l'utilisateur doit voir un message, pas un bouton figé.
       const supabase = createClient();
       if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // Le nom part dans les métadonnées, donc il doit être jugé ICI : la
+        // base le remplacerait sans rien dire (0045).
+        const verdict = checkDisplayName(name || email.split("@")[0]);
+        if (!verdict.ok) {
+          setMsg(
+            verdict.reason === "brand" ? labels.nameReserved : labels.nameRequired,
+          );
+          return;
+        }
+        // Le nom passe par les MÉTADONNÉES du compte, pas seulement par
+        // l'insert ci-dessous : c'est la seule voie qui survit à une
+        // confirmation par e-mail (aucune session au retour) et c'est ce que
+        // lit le déclencheur `zabelie_handle_new_user` (migration 0045).
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { display_name: verdict.value } },
+        });
         if (error) throw error;
-        // Crée le profil (RLS : self insert autorisé) si session active.
+        // Insert de repli, volontairement conservé : tant que 0045 n'est pas
+        // appliquée, c'est le SEUL chemin qui crée le profil. Une fois
+        // appliquée, la ligne existe déjà et `upsert`+`ignoreDuplicates` en
+        // fait un no-op. Le code doit être juste dans les deux états — il est
+        // déployé bien avant que la migration ne soit passée à la main.
         if (data.user && data.session) {
-          await supabase.from("profiles").insert({
-            id: data.user.id,
-            display_name: name || email.split("@")[0],
-            role: "buyer",
-          });
+          await supabase.from("profiles").upsert(
+            {
+              id: data.user.id,
+              display_name: verdict.value,
+              role: "buyer",
+            },
+            { onConflict: "id", ignoreDuplicates: true },
+          );
           router.push(nextPath);
           router.refresh();
           return;
@@ -76,7 +113,32 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : labels.errorGeneric;
-      setMsg(raw.includes("URL and API key") ? labels.demoMode : raw);
+      if (estModeDemo(raw)) {
+        setMsg(labels.demoMode);
+        return;
+      }
+      // Par CODE d'abord (lib/auth-erreurs.ts). Hors cas connu : le message
+      // BRUT, jamais un générique rassurant — masquer une cause inconnue,
+      // c'est supprimer la seule information disponible le jour où elle
+      // apparaît. C'est ce qui a rendu l'échec d'inscription du 31 juillet
+      // indiagnosticable sans accès à la base.
+      const cause = causeAuth(
+        err as { code?: string | null; message?: string | null },
+      );
+      const parCause: Record<string, string> = {
+        exists: labels.errExists,
+        credentials: labels.errCredentials,
+        password: labels.errPassword,
+        notConfirmed: labels.errNotConfirmed,
+        rate: labels.errRate,
+        disabled: labels.errDisabled,
+        email: labels.errEmail,
+        network: labels.errNetwork,
+      };
+      setMsg(cause ? parCause[cause] : raw);
+      // Une adresse déjà inscrite n'est pas un échec : c'est le mauvais
+      // onglet. On l'y amène au lieu de laisser refaire la même chose.
+      if (cause === "exists") setMode("signin");
     } finally {
       setLoading(false);
     }

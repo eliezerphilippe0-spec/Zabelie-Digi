@@ -3,7 +3,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getCurrentUser, getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isSupabaseConfigured } from "@/lib/products";
+import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { ProfileForm } from "@/components/profile-form";
 import { AccountActions } from "@/components/account-actions";
@@ -37,6 +37,7 @@ function Shell({
 
 type Sale = {
   id: string;
+  order_ref: string | null; // null avant 0042 (code avant schéma)
   amount_htg: number;
   created_at: string;
   status: string;
@@ -201,14 +202,27 @@ export default async function DashboardPage() {
 
     const productIds = (prods ?? []).map((p) => (p as { id: string }).id);
     if (productIds.length > 0) {
-      const { data: orders } = await admin
+      // Sélection tolérante : 0042 pas encore appliquée → colonne absente,
+      // on redemande sans elle (même motif que le catalogue).
+      const first = await admin
         .from("orders")
-        .select("id, amount_htg, created_at, status, product:products(title)")
+        .select("id, order_ref, amount_htg, created_at, status, product:products(title)")
         .in("product_id", productIds)
         .in("status", ["paid", "delivered"])
         .order("created_at", { ascending: false })
         .limit(8);
-      sales = (orders ?? []) as unknown as Sale[];
+      let rows = first.data;
+      if (isMissingColumn(first.error)) {
+        const retry = await admin
+          .from("orders")
+          .select("id, amount_htg, created_at, status, product:products(title)")
+          .in("product_id", productIds)
+          .in("status", ["paid", "delivered"])
+          .order("created_at", { ascending: false })
+          .limit(8);
+        rows = (retry.data ?? []).map((o) => ({ ...o, order_ref: null }));
+      }
+      sales = (rows ?? []) as unknown as Sale[];
     }
   } catch {
     return (
@@ -288,7 +302,15 @@ export default async function DashboardPage() {
                   key={o.id}
                   className="flex items-center justify-between rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
                 >
-                  <span>{product?.title ?? "Produit"}</span>
+                  <span>
+                    {product?.title ?? "Produit"}
+                    {/* Le numéro que le vendeur cite à l'acheteur — WhatsApp. */}
+                    {o.order_ref && (
+                      <span className="numeric ml-2 text-xs text-mist select-all">
+                        {o.order_ref}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-mist">
                     {formatHTG(o.amount_htg)} ·{" "}
                     {new Date(o.created_at).toLocaleDateString("fr-HT")}

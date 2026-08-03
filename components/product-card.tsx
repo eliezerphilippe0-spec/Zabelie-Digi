@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatHTG } from "@/lib/sample-data";
 import type { ProductView } from "@/lib/products";
 import { pickByKind } from "@/lib/product-kind";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 
 export type ProductCardLabels = {
   kindFile: string;
@@ -28,6 +29,8 @@ export function ProductCard({
 }) {
   // Type inconnu : aucun badge, plutôt qu'un badge « Fichier » sur une pièce
   // détachée (l'ancien `else` promettait un téléchargement).
+  const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
+
   const kindLabel = pickByKind(
     product.kind,
     {
@@ -46,6 +49,24 @@ export function ProductCard({
       <div
         className={`relative h-40 bg-gradient-to-br ${product.accent} opacity-90`}
       >
+        {/* La photo du vendeur d'abord — le dégradé n'est que le repli.
+            Dimensionnée au CDN (lib/product-image) : `lazy` diffère, il ne
+            réduit aucun octet. `width`/`height` explicites = pas de saut de
+            mise en page pendant le chargement. `alt` porte le titre : c'est
+            ce que lit quelqu'un dont l'image ne charge pas — fréquent ici. */}
+        {cover && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt={product.title}
+            width={COVER_WIDTHS.card}
+            height={Math.round(COVER_WIDTHS.card * 0.625)}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        {!cover && (
         <svg
           className="absolute inset-0 h-full w-full opacity-20"
           aria-hidden="true"
@@ -66,6 +87,7 @@ export function ProductCard({
           </pattern>
           <rect width="100%" height="100%" fill={`url(#chev-${product.slug})`} />
         </svg>
+        )}
         {kindLabel && (
           <span className="absolute left-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
             {kindLabel}

@@ -1,0 +1,40 @@
+-- ============================================================================
+-- 0050 — `zabelie_search_fuzzy` quitte la surface RPC publique
+-- ============================================================================
+-- ⚠️ APPLIQUÉE le 2026-07-31, juste après `0047`.
+--
+-- CE QU'ON CORRIGE
+-- ----------------
+-- `0047` révoque explicitement SIX objets sur sept : `zabelie_search_config`,
+-- `zabelie_search_misses`, `zabelie_search_index_guard`,
+-- `zabelie_record_search_miss`, `zabelie_search_demand`,
+-- `zabelie_purge_search_misses` et `zabelie_search_index_integrity`. Il en
+-- oublie un : `zabelie_search_fuzzy`, restée exécutable par `anon` et
+-- `authenticated` via `/rest/v1/rpc/zabelie_search_fuzzy`.
+--
+-- Constaté, pas déduit : `has_function_privilege('anon', …, 'execute')`
+-- rendait `true` pour cette seule fonction du lot.
+--
+-- CE QUE CE N'EST PAS
+-- -------------------
+-- Ce n'est pas une fuite. La fonction est `stable`, PAS `security definer` :
+-- elle s'exécute avec les droits de l'appelant, la RLS de `products`
+-- s'applique, et elle ne rend que des fiches `published` — déjà publiques.
+--
+-- CE QUE C'EST
+-- ------------
+-- Un balayage trigramme sur tout le catalogue, déclenchable par n'importe qui,
+-- sans authentification et sans limite de débit. Le coût n'est pas la
+-- confidentialité, c'est la facture et la latence des autres requêtes.
+--
+-- L'application n'en a aucun besoin : `lib/products.ts:302` l'appelle avec le
+-- client de SERVICE (`admin.rpc`), qui n'est pas concerné par cette
+-- révocation. Aucun chemin utilisateur ne casse.
+--
+-- Migration séparée plutôt que correction de `0047`, pour la même raison
+-- qu'en `0049` : une migration appliquée et inscrite au registre ne se
+-- réécrit pas, elle se complète.
+-- ============================================================================
+
+revoke all on function zabelie_search_fuzzy(text, integer)
+  from public, anon, authenticated;

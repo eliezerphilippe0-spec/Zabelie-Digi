@@ -9,6 +9,10 @@ import {
 } from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
 import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
+import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
+import type { CreatorTier } from "@/lib/commission";
+import { POLICY_PATH } from "@/lib/policy";
+import Link from "next/link";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -28,12 +32,24 @@ export type PublishFormLabels = {
   errorGeneric: string;
   errorNetwork: string;
   footerHint: string;
+  net: NetEstimateLabels;
+  policyAccept: string;
+  policyRead: string;
+  policyRequired: string;
 };
 
-export function PublishForm({ labels }: { labels: PublishFormLabels }) {
+export function PublishForm({
+  labels,
+  tier = "standard",
+}: {
+  labels: PublishFormLabels;
+  /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
+  tier?: CreatorTier;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [policyOk, setPolicyOk] = useState(false);
   const [form, setForm] = useState({
     title: "",
     // Le formulaire ne publie que des produits digitaux : `physical` a sa
@@ -65,6 +81,7 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
           category: form.category,
           description: form.description,
           priceHTG: Number(form.priceHTG),
+          policyAccepted: policyOk,
           deliveryDays: form.deliveryDays ? Number(form.deliveryDays) : null,
           // Un élément par ligne — le serveur reborne (10 max, 140 car.).
           serviceIncludes: form.serviceIncludes
@@ -130,16 +147,19 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
           ))}
         </select>
       </div>
-      <input
-        className={input}
-        type="number"
-        min={0}
-        placeholder={labels.pricePh}
-        aria-label={labels.pricePh}
-        value={form.priceHTG}
-        onChange={(e) => set("priceHTG", e.target.value)}
-        required
-      />
+      <div className="space-y-1.5">
+        <input
+          className={input}
+          type="number"
+          min={0}
+          placeholder={labels.pricePh}
+          aria-label={labels.pricePh}
+          value={form.priceHTG}
+          onChange={(e) => set("priceHTG", e.target.value)}
+          required
+        />
+        <NetEstimate priceHTG={form.priceHTG} tier={tier} labels={labels.net} />
+      </div>
       <textarea
         className={input}
         rows={4}
@@ -179,6 +199,24 @@ export function PublishForm({ labels }: { labels: PublishFormLabels }) {
         {loading ? labels.submitting : labels.submit}
       </button>
       {error && <p className="text-center text-xs text-danger-text">{error}</p>}
+      {/* Attestation : obligatoire, jamais pré-cochée. Le serveur refuse de
+          toute façon sans elle — cette case explique, elle ne garde pas. */}
+      <label className="flex items-start gap-3 rounded-xl border border-line bg-surface/40 p-4 text-xs text-mist">
+        <input
+          type="checkbox"
+          required
+          checked={policyOk}
+          onChange={(e) => setPolicyOk(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>
+          {labels.policyAccept}{" "}
+          <Link href={POLICY_PATH} className="underline hover:text-cloud">
+            {labels.policyRead}
+          </Link>
+        </span>
+      </label>
+
       <p className="text-center text-xs text-mist">{labels.footerHint}</p>
     </form>
   );

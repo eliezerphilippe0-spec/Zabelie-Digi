@@ -47,6 +47,13 @@ si quelque chose diverge, on sait lequel des deux l'a causé.
 | **A** | `0032` · `0033` · `0034` | Chantier 0 — voie de sortie vendeur | oui (par construction) |
 | **B1** | `0035` · `0036` | Taxonomie, produits physiques, stock | non — **vérifié**, cf. §B1 |
 | **B2** | `0037` · `0038` · `0040` | Branchement stock ↔ money-path | **oui** |
+| **B3** | `0043` | État d'expédition + maturation liée à la remise | **oui** — remplace `confirm_payment` |
+
+**B2 et B3 ouvrent ensemble, jamais séparément.** B2 fait décrémenter le stock
+et interdit la survente ; B3 dit ce qui a été remis et cesse de payer le
+vendeur au chronomètre. Appliquer B2 seule rendrait la vente physique
+techniquement possible tout en laissant `/mes-achats` en impasse et l'escrow
+au minuteur — c'est-à-dire en ouvrant la vente sans la sortie. Voir `docs/21`.
 
 ## §B1 — checklist, écrite AVANT application
 
@@ -111,6 +118,25 @@ order by m.num, m.objet;
 **toutes présentes ou toutes absentes** : un mélange signale une migration
 passée à moitié — le cas typique d'un script interrompu dans l'éditeur SQL — et
 il faut le comprendre avant d'empiler quoi que ce soit.
+
+**Regarder `0031` explicitement, pas dans le flot.** On dit la production « à
+`0030` », et le groupe A commence à `0032` : `0031` est donc soit appliquée
+sans qu'on le sache, soit **sautée**. Ce qu'on sait de source sûre, en lisant
+les fichiers :
+
+- `0031_points_caps_expiry.sql` **existe bien** dans le dépôt. Elle crée
+  `points_limits` et remplace `award_points` — plafonds et expiration des
+  points de fidélité.
+- **Le groupe A n'en dépend pas** : `0032`, `0033` et `0034` ne contiennent
+  aucune référence aux points. Vérifié par recherche dans les trois fichiers.
+- **Rien ne casse si elle manque** : le cron `/api/points/expire` appelle
+  `expire_points_batch_job`, définie par `0021` et non par `0031`. Et le
+  système de fidélité est débranché — aucun point n'a jamais été émis.
+
+Donc : si le volet 1 dit `0031` absente, **ce n'est pas un obstacle au groupe
+A** — on le note, on continue, et on l'applique plus tard avec le lot fidélité
+si ce chantier reprend. Mais on le **note** : une migration sautée en silence
+est exactement ce que le registre `0041` existe pour empêcher.
 
 ### Volet 2 — les LIGNES, si les tables existent
 
@@ -291,6 +317,20 @@ select relname, relrowsecurity from pg_class
  order by 1;
 -- Attendu : `t` partout.
 ```
+
+### Contrôle croisé après le groupe A — coût nul, enjeu maximal
+
+**Rejouer les trois requêtes d'encours (`docs/17` §6) après le groupe A. Elles
+doivent rendre EXACTEMENT les mêmes montants qu'avant.**
+
+C'est le test direct de l'hypothèse sur laquelle repose tout le découpage :
+`0032` ajoute de quoi *enregistrer* des règlements, `0033` ouvre un rapport en
+*lecture*, `0034` crée des tables et des fonctions **non appelées** — aucune ne
+doit déplacer un solde existant.
+
+Si un chiffre bouge entre avant et après, **on s'arrête là**. La référence
+d'apurement vient d'être invalidée par la migration elle-même, et on ne paie
+pas des vendeurs sur des montants dont on ne sait plus lesquels font foi.
 
 ### Ce qui doit être INCHANGÉ — c'est le contrôle qui compte
 
@@ -513,6 +553,28 @@ vendeurs physiques. Ne jamais appliquer `0036`-`0038` sans le groupe A.
 | 7 | Comparaison `zabelie_solvency_report()` avant/après | 6 |
 | 8 | Revue séparée puis application de **B2** | 2 et 7 |
 | 9 | Domaine sur Vercel, publication des fiches, ouverture | 8 |
+
+### Vérification à faire une fois, sur la PRODUCTION, dès le déploiement
+
+**Ordre imposé par le cache — la variable AVANT le test, jamais l'inverse.**
+Le cache d'aperçu de WhatsApp est persistant : tester d'abord et corriger
+ensuite fige la mauvaise vignette pour ce lien, et il faudrait une autre fiche
+pour savoir si le correctif a pris. Donc :
+
+1. **Renseigner `NEXT_PUBLIC_SITE_URL`** dans Vercel (Settings → Environment
+   Variables, environnement **Production**) avec le domaine public définitif.
+   Sans elle, `lib/site-url.ts` retombe sur l'URL du déploiement — ça
+   fonctionne, mais l'aperçu affiche un domaine `*.vercel.app`.
+2. **Redéployer** (la variable est lue au build).
+3. **Alors seulement**, s'envoyer UN lien de fiche produit sur WhatsApp.
+
+C'est la seule surface de ce chantier qui n'a jamais été éprouvée ailleurs
+qu'en local et en CI : les tests vérifient que les balises sont correctes et
+que l'image se génère, pas que le robot de WhatsApp les lit comme prévu depuis
+Internet.
+
+Attendu : vignette 1200×630 avec le titre et le prix, ligne de titre portant le
+nom du produit et son prix, description avec le vendeur.
 
 ⚠️ **Avant l'étape 9, une impasse reste ouverte** : l'acheteur d'un produit
 physique voit dans `/mes-achats` une commande figée sur `paid`, sans action ni

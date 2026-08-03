@@ -3,14 +3,19 @@ import Image from "next/image";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
-import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
+import {
+  getCatalogueCategories,
+  getPublishedProducts,
+  isSupabaseConfigured,
+  type ProductView,
+} from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
+import { ROUNDING_IN_FORCE } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +77,7 @@ async function promoSellerIds(): Promise<Set<string>> {
 }
 
 export default async function HomePage() {
-  const [products, lang, promoSellers] = await Promise.all([
+  const [products, lang, promoSellers, catalogueCategories] = await Promise.all([
     // Correctif audit : getPublishedProducts lève désormais en cas d'erreur
     // Supabase (BL-116, pour empêcher un repli silencieux sur le catalogue
     // vers des produits de démo inachetables) — mais l'accueil n'a pas cette
@@ -82,6 +87,10 @@ export default async function HomePage() {
     getPublishedProducts().catch(() => []),
     getLang(),
     promoSellerIds(),
+    // Requête séparée plutôt que dérivée de `products` : celle-ci est bornée à
+    // 60 lignes, et une catégorie qui n'existerait qu'au-delà disparaîtrait de
+    // la barre sans que personne ne le voie.
+    getCatalogueCategories(),
   ]);
 
   const cardLabels: ProductCardLabels = {
@@ -138,13 +147,23 @@ export default async function HomePage() {
 
       {/* BANDEAU CATÉGORIES — barre claire, texte sombre (style Bloop,
           décision porteur 2026-07-25). Fonctionne sans JS : simples liens GET
-          vers le catalogue filtré. */}
+          vers le catalogue filtré.
+
+          V-13 : la barre affichait SIX LIBELLÉS DIGITAUX EN DUR (Photo,
+          Business, Musique…) sous un titre qui promet des pièces auto. Elle
+          n'annonçait pas seulement des pages vides, elle annonçait le mauvais
+          commerce. La brancher telle quelle sur la taxonomie l'aurait fait
+          passer de six catégories fausses à seize catégories vides.
+          Elle est donc DÉRIVÉE DU CATALOGUE : une catégorie n'apparaît que si
+          un produit publié s'y trouve. À catalogue vide — l'état actuel — la
+          barre ne s'affiche pas du tout. */}
+      {catalogueCategories.length > 0 && (
       <nav
         aria-label="Catégories"
         className="overflow-x-auto border-b border-black/10 bg-cloud"
       >
         <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2.5">
-          {PRODUCT_CATEGORIES.map((c) => (
+          {catalogueCategories.map((c) => (
             <Link
               key={c}
               // `cat` — c'est le paramètre que /catalogue lit (app/catalogue
@@ -165,6 +184,7 @@ export default async function HomePage() {
           </Link>
         </div>
       </nav>
+      )}
 
       {/* HERO — court (≤ 40 % du viewport mobile). Chaque pixel au-dessus de
           la ligne de flottaison qui n'est ni un produit ni une recherche est
@@ -180,6 +200,25 @@ export default async function HomePage() {
             <p className="mx-auto mt-3 max-w-xl text-sm text-mist sm:text-base">
               {t(lang, "home.sub")}
             </p>
+
+            {/* ACTION VENDEUR — rendue au hero.
+                `home.cta.sell` était traduite dans QUATRE langues et n'avait
+                AUCUN site d'appel : le bouton avait disparu d'ici sans que
+                rien ne le signale, et le titre acheteur est resté seul
+                au-dessus d'un champ de recherche pendant que toute la page en
+                dessous s'adresse au vendeur (Pibliye / Resevwa lajan /
+                Livre & retire, puis « Sa w ap vann merite peye » → /vendre).
+                Ce n'était pas un choix de positionnement, c'était une
+                régression silencieuse. `tests/i18n-cles-mortes.test.ts` ferme
+                la classe.
+                Le chemin acheteur n'est pas retiré pour autant : la recherche
+                reste juste en dessous, et le catalogue est dans la nav. */}
+            <Link
+              href="/vendre"
+              className="mt-6 inline-block rounded-xl bg-cloud px-7 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+            >
+              {t(lang, "home.cta.sell")}
+            </Link>
 
             {/* RECHERCHE — premier bloc utile, au-dessus de la ligne de
                 flottaison : une marketplace physique se cherche, elle ne se
@@ -239,7 +278,14 @@ export default async function HomePage() {
           <span className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-sm font-bold text-cloud">
             Zelle&nbsp;$
           </span>
-          <span className="rounded-full border border-line px-4 py-1.5 text-sm text-mist/60">
+          {/* `text-mist/60` mesurait 3,56:1 sur ce fond (mist #a6a6a6 à 60 %
+              donne rgb(103,103,103) sur rgb(7,7,7)) — sous le seuil WCAG AA de
+              4,5:1. L'opacité servait à dire « pas encore disponible », mais la
+              couleur ne doit jamais porter seule une information : le libellé
+              « — bientôt » l'énonce déjà, et le rail reste visuellement second
+              par sa bordure là où MonCash et Zelle sont pleins. Sans opacité :
+              8,28:1 (mesuré sur la page rendue, pas déduit du token). */}
+          <span className="rounded-full border border-line px-4 py-1.5 text-sm text-mist">
             {t(lang, "footer.natcash")}
           </span>
         </div>
@@ -306,7 +352,6 @@ export default async function HomePage() {
 
       {/* 3. PRODUITS TENDANCE */}
       <HomeRow
-        id="talents"
         title={t(lang, "home.trends")}
         sub={t(lang, "home.trends.sub")}
         more={t(lang, "home.all")}
@@ -322,6 +367,15 @@ export default async function HomePage() {
         items={newest}
         cardLabels={cardLabels}
       />
+
+      {/* Cible de « Talents » (nav ×2 + pied de page). Posée sur une balise du
+          FLUX, jamais en prop de HomeRow : `HomeRow` s'efface à vide (V-13,
+          ligne 38) et emportait l'ancre avec elle — les trois liens ne
+          faisaient alors rien. Elle était en outre posée sur la rangée
+          TENDANCES, pas sur les services qu'elle prétend désigner.
+          `scroll-mt-24` compense le bandeau collant.
+          Verrouillé par tests/ancres-navigation.test.ts. */}
+      <div id="talents" className="scroll-mt-24" aria-hidden="true" />
 
       {/* 5. SERVICES POPULAIRES */}
       <HomeRow
@@ -378,39 +432,39 @@ export default async function HomePage() {
         cardLabels={cardLabels}
       />
 
-      {/* 9. AVIS CLIENTS */}
-      <section className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          {t(lang, "sec.reviews")}
-        </h2>
-        <p className="mt-2 text-sm text-mist">{t(lang, "sec.reviews.sub")}</p>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {([1, 2, 3] as const).map((i) => (
-            <figure
-              key={i}
-              className="rounded-2xl border border-line bg-surface/60 p-5"
-            >
-              <p className="text-accent">★★★★★</p>
-              <blockquote className="mt-3 text-sm leading-relaxed text-cloud">
-                « {t(lang, `testi.${i}.b` as Parameters<typeof t>[1])} »
-              </blockquote>
-              <figcaption className="mt-4 text-xs font-semibold text-mist">
-                {t(lang, `testi.${i}.n` as Parameters<typeof t>[1])}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </section>
+      {/* 9. AVIS CLIENTS — SECTION RETIRÉE (2026-08-01)
+          Elle bouclait sur [1, 2, 3] en dur, imprimait ★★★★★ en dur, et tirait
+          « Woodley P. », « Fabiola M. », « Ricardo S. » de chaînes i18n. Aucune
+          garde : elle se rendait TOUJOURS, y compris avec zéro commande en base
+          — l'état actuel de la production.
 
-      {/* 10. POURQUOI CHOISIR ZABELIE DIGI */}
+          Ce n'était pas un résidu de vocabulaire comme les autres. Les autres
+          annonçaient le mauvais commerce ; celui-ci affirmait un fait faux sur
+          des personnes nommées, sous deux garanties de vérification :
+          « avis vérifiés uniquement » (sec.reviews.sub) et « seuls les
+          acheteurs ayant réellement payé peuvent noter — garanti par la base
+          de données » (why.2.b). Le texte invoquait la base comme preuve alors
+          que rien de ce bloc n'en venait.
+
+          Retirée plutôt que reformulée : tant qu'aucune commande n'existe, il
+          n'y a rien de vrai à afficher. `why.2` tombe avec elle — une garantie
+          de vérification sans avis à vérifier n'a pas d'objet.
+
+          Elle revient le jour où elle lit `reviews` en base, avec une garde de
+          vacuité comme toutes les autres sections (V-13). Les clés supprimées
+          sont dans l'historique git. */}
+
+      {/* 10. POURQUOI CHOISIR ZABELIE */}
       <section className="mx-auto max-w-6xl px-5 py-12">
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
           {t(lang, "sec.why")}
         </h2>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* `why.2` — « Avis 100 % vérifiés … garanti par la base de données »
+            — retiré avec la section Avis clients : la garantie n'avait plus
+            rien à garantir. Trois colonnes au lieu de quatre. */}
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {([
             ["🛡️", "why.1.t", "why.1.b"],
-            ["✅", "why.2.t", "why.2.b"],
             ["🇭🇹", "why.3.t", "why.3.b"],
             ["⚡", "why.4.t", "why.4.b"],
           ] as const).map(([icon, tt, bb]) => (
@@ -439,7 +493,17 @@ export default async function HomePage() {
                 {t(lang, `faq.q${i}` as Parameters<typeof t>[1])}
               </summary>
               <p className="mt-3 text-sm leading-relaxed text-mist">
-                {t(lang, `faq.a${i}` as Parameters<typeof t>[1])}
+                {/* La réponse 3 annonce le taux ET l'arrondi. Elle suit donc
+                    la règle DÉPLOYÉE (`ROUNDING_IN_FORCE`) au lieu d'attendre
+                    qu'on pense à la réécrire le jour où `0044` est appliquée :
+                    une annonce commerciale qu'il faut penser à mettre à jour
+                    finit toujours par décrire l'état d'avant. */}
+                {t(
+                  lang,
+                  i === 3 && ROUNDING_IN_FORCE === "floor"
+                    ? "faq.a3.floor"
+                    : (`faq.a${i}` as Parameters<typeof t>[1]),
+                )}
               </p>
             </details>
           ))}

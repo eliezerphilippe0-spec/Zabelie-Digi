@@ -1,9 +1,36 @@
 name: CI
 
+# Chaque commit d'une branche portant une PR ouverte satisfaisait LES DEUX
+# déclencheurs : `push` puis `pull_request`/`synchronize`. Deux exécutions
+# complètes du même SHA, `e2e` compris. Sur 388 runs, la moitié était du
+# doublon — et un échec réel se cherchait au milieu.
+#
+# `synchronize` est donc retiré : le push couvre chaque commit, la PR couvre
+# son ouverture. AUCUNE couverture n'est perdue, y compris pour la protection
+# de branche à venir : un check est attaché au SHA, pas à l'événement qui l'a
+# produit. Constaté pendant cette session, pas supposé — l'API des check runs
+# de la PR #55 rendait bien les runs déclenchés par `push`.
 on:
   push:
     branches: ["**"]
   pull_request:
+    types: [opened, reopened, ready_for_review]
+
+# Quand plusieurs commits s'enchaînent, le run devenu obsolète est annulé au
+# lieu d'occuper la file jusqu'au bout. Le SHA de tête — le seul que la
+# protection de branche regarde — est toujours celui qui va au bout.
+#
+# CE QUE ÇA LAISSE DERRIÈRE, et qu'il faut savoir avant de s'y fier : un commit
+# INTERMÉDIAIRE d'une PR active garde un état partiel — les jobs courts ont eu
+# le temps de finir, les longs sont annulés. « Annulé » n'est pas « échoué »,
+# mais ce n'est pas « vert » non plus. Lors d'une bissection ou d'un retour
+# arrière, ne pas lire le statut CI d'un commit intermédiaire comme une
+# validation : relancer le workflow sur ce SHA. Le compromis est voulu — seule
+# la tête compte à la fusion — mais une absence de vérification qui ressemble à
+# une vérification est exactement le motif qu'on traque ailleurs dans ce dépôt.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -41,8 +68,30 @@ jobs:
       - name: Install
         run: npm ci
 
+      # `--with-deps` retiré après mesure, pas par principe. Sur le run
+      # bed4fe0, il n'a installé QUE des polices — « 0 upgraded, 9 newly
+      # installed », les neuf étant fonts-ipafont-gothic, fonts-freefont-ttf,
+      # fonts-unifont, fonts-wqy-zenhei, xfonts-cyrillic… Toutes les vraies
+      # bibliothèques du navigateur (libnss3, libgbm1, libdrm2, libatk,
+      # libxkbcommon0…) étaient déjà là : le journal répète `already the
+      # newest version` pour chacune. L'image ubuntu-24.04 les embarque.
+      #
+      # Ces polices couvrent le japonais, le thaï, le chinois et le
+      # cyrillique. La suite e2e lit du texte latin et vérifie des
+      # redirections — vérifié : aucun `toHaveScreenshot`, aucun
+      # `toMatchSnapshot`, aucune comparaison visuelle dans `e2e/`.
+      #
+      # Ce que ça coûtait : 21,1 Mo tirés à 59 ko/s depuis le miroir Azure,
+      # soit 5 min 58 s — 358 des 425 secondes du job. Tout le reste était
+      # sain (npm ci 10 s, Chromium 177 Mo en 5 s depuis le CDN Playwright,
+      # next build 17 s, tests 8,2 s).
+      #
+      # Mode d'échec si une image d'exécuteur cessait un jour d'embarquer une
+      # bibliothèque : Chromium refuse de démarrer avec un message qui la
+      # NOMME. Bruyant et immédiat — l'inverse des défauts silencieux qu'on
+      # traque ailleurs dans ce dépôt. On remettrait `--with-deps` ce jour-là.
       - name: Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Build
         run: npm run build

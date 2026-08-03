@@ -1,0 +1,10 @@
+# Référence AVANT application (groupes A, B1, 0039, 0042, 0041)
+# Relevé lecture seule via connecteur Supabase — projet zabelie-digi
+# (ddditxykopuxxqzgkqwy), 2026-07-26T21:06:27Z.
+# zabelie_solvency_report() n'existe pas encore (0033 non appliquée) :
+# référence = les trois requêtes brutes de docs/17 §6.
+q1_encours    : disponible=0 HTG · en_attente=0 HTG · du_total=0 HTG · vendeurs_concernes=0
+q2_anciennete : escrow_entries=0 ligne (aucune entrée, aucune maturée)
+q3_volume     : commandes_payees=0 · volume=0 HTG
+coherence     : du_total=0 = escrow_net_non_reverse=0 · volume_brut=0
+orders (backfill 0042) : 0 ligne

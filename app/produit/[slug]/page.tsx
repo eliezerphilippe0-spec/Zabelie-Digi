@@ -12,8 +12,9 @@ import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
-import { t } from "@/lib/i18n";
+import { t, type Lang } from "@/lib/i18n";
 import {
   kindLabelKey,
   deliveryBulletKey as bulletKey,
@@ -69,7 +70,11 @@ export async function generateMetadata({
  * diaspora USD si configurés (Stripe/Zelle + USD_HTG_RATE). Le prix USD affiché
  * est indicatif — la vérité reste figée au checkout puis vérifiée en base.
  */
-function buildBuyOptions(lang: "fr" | "ht", priceHTG: number): BuyOption[] {
+// `Lang`, jamais l'union recopiée à la main : c'est cette recopie qui a fait
+// échouer la compilation à l'ajout de l'anglais. Ici le compilateur a bien
+// énuméré le site — parce que la valeur qui entre EST un `Lang`. Un
+// `lang as "fr" | "ht"` serait passé en silence.
+function buildBuyOptions(lang: Lang, priceHTG: number): BuyOption[] {
   const options: BuyOption[] = [
     { rail: "moncash", label: t(lang, "product.pay", { price: formatHTG(priceHTG) }) },
   ];
@@ -134,11 +139,28 @@ export default async function ProductPage({
       <SiteNav />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-2">
-        {/* Visuel */}
+        {/* Visuel — la photo du vendeur si elle existe, sinon le dégradé.
+            `cover_url` existait depuis 0001 et l'upload depuis 0039, mais
+            aucune surface ne la lisait : le vendeur téléversait une photo
+            qu'aucun acheteur ne voyait. Sur une marketplace, la photo EST le
+            produit. Redimensionnée au CDN Supabase (lib/product-image), pas
+            au rendu : aucun quota Vercel, ~40 Ko au lieu de 5 Mo. */}
         <div>
-          <div
-            className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
-          />
+          {coverUrlAt(product.coverUrl, COVER_WIDTHS.detail) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)!}
+              alt={product.title}
+              width={COVER_WIDTHS.detail}
+              height={Math.round((COVER_WIDTHS.detail * 3) / 4)}
+              decoding="async"
+              className="aspect-[4/3] w-full rounded-3xl border border-line object-cover"
+            />
+          ) : (
+            <div
+              className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
+            />
+          )}
           {/* BL-119 (Gumroad — pas de galerie factice) : les 3 vignettes
               décoratives qui mimaient une galerie inexistante ont été retirées. */}
         </div>

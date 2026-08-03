@@ -18,6 +18,8 @@ export default async function ConnexionPage() {
           tabSignin: t(lang, "auth.tab.signin"),
           tabSignup: t(lang, "auth.tab.signup"),
           namePh: t(lang, "auth.name.ph"),
+          nameRequired: t(lang, "auth.name.required"),
+          nameReserved: t(lang, "auth.name.reserved"),
           emailPh: t(lang, "auth.email.ph"),
           passwordPh: t(lang, "auth.password.ph"),
           signinCta: t(lang, "auth.signin.cta"),
@@ -28,6 +30,14 @@ export default async function ConnexionPage() {
           backHome: t(lang, "auth.back.home"),
           errorGeneric: t(lang, "error.generic"),
           forgot: t(lang, "auth.forgot"),
+          errExists: t(lang, "auth.err.exists"),
+          errCredentials: t(lang, "auth.err.credentials"),
+          errPassword: t(lang, "auth.err.password"),
+          errNotConfirmed: t(lang, "auth.err.notconfirmed"),
+          errRate: t(lang, "auth.err.rate"),
+          errDisabled: t(lang, "auth.err.disabled"),
+          errEmail: t(lang, "auth.err.email"),
+          errNetwork: t(lang, "auth.err.network"),
         }}
       />
     </>

@@ -26,6 +26,13 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000002', 'elite@test.local'),
   ('00000000-0000-0000-0000-000000000003', 'diaspora@test.local')
   on conflict do nothing;
+
+-- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
+-- veulent piloter la ligne eux-mêmes (rôle, tier) et éprouver le chemin
+-- INSERT de `protect_profile_privileges` — on retire donc la ligne
+-- auto-créée plutôt que de basculer en UPDATE, qui ne teste pas la même
+-- chose.
+delete from profiles where id in (select id from auth.users);
 insert into profiles (id, role, display_name, tier) values
   ('00000000-0000-0000-0000-000000000001', 'creator', 'Vendeur Standard', 'standard'),
   ('00000000-0000-0000-0000-000000000002', 'creator', 'Vendeur Elite', 'elite'),

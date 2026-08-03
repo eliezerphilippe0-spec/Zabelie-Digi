@@ -71,7 +71,7 @@ soumis au conseil pour confirmation (Q5), mais il n'aggrave pas l'exposition.
 |---|---|---|---|
 | 1 | « dernière migration appliquée : `0010` » | **31 migrations** (`0001`→`0031`). `0030` appliquée en prod ; **`0031` fusionnée, pas encore appliquée** | La prochaine migration porte le n° **`0032`** |
 | 2 | « rails MonCash/**NatCash** existants » | NatCash **n'existe pas** — ⛔ bloqué faute d'API publique. Rails réels : **MonCash**, **Stripe**, **Zelle** | Rien à « rebasculer » pour NatCash ; il reste hors périmètre |
-| 3 | « Cashback (PR #12) : reste **gelé** » | **Fusionné le 2026-07-13** ; garde-fous ajoutés le 2026-07-24 (PR #50/#51). En base mais **débranché** | L'instruction devient : ne pas câbler l'attribution ni l'UI — état déjà en vigueur |
+| 3 | « Cashback (PR #12) : reste **gelé** » | **Fusionné le 2026-07-13** ; garde-fous ajoutés le 2026-07-24 (PR #50/#51). En base mais **débranché** — et depuis le 2026-07-27, **bloqué par D-6** (qui paie la remise ?) | L'instruction devient : ne pas câbler l'attribution ni l'UI — état déjà en vigueur, désormais adossé à une décision commerciale ouverte et à un garde (`tests/fidelite-discipline.test.ts`) |
 | 4 | Chantier E : « construire Stripe » | **Déjà construit** (V-10) : `lib/stripe.ts`, webhook **à signature vérifiée**, triple contrôle du montant | Le chantier E se réduit à : interface `PaymentProvider` + feature flag |
 
 Corrections mineures :

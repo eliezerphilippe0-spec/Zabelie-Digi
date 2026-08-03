@@ -186,6 +186,64 @@ d'ajouter une action vendeur :
    l'append-only pour rattraper l'historique ferait perdre au registre la
    propriété pour laquelle il existe.
 
+### La requête qui produit la liste de paiement
+
+Les trois requêtes de `docs/17` §6 donnent des agrégats ; l'apurement a besoin
+de « qui, combien, depuis quand, à quel numéro ». Deux règles portées par la
+requête elle-même :
+
+- **Le plus ancien créancier d'abord.** Trier par montant fait payer les gros
+  soldes en premier ; le risque n'est pas le montant, c'est le vendeur qui
+  attend depuis le plus longtemps — et son solde peut être petit.
+- **Le cas A/B est lu en base, pas supposé.** ⚠️ Constat vérifié (2026-07-26) :
+  **aucune colonne ne porte le numéro MonCash d'un vendeur** — ni `profiles`,
+  ni la demande de retrait (`0034`, qui capture méthode et référence de reçu,
+  jamais une destination). La seule source est `auth.users.phone`, rempli
+  uniquement si l'inscription s'est faite par téléphone. Tout vendeur sans ce
+  champ est en **cas B par construction** : le numéro se demande, puis se
+  vérifie contre le fil (§3 ter, point 3).
+
+```sql
+select p.display_name,
+       w.user_id,
+       w.balance_htg                as disponible_htg,
+       w.pending_htg                as en_attente_htg,
+       min(e.created_at)            as attend_depuis,
+       au.phone                     as tel_inscription,
+       au.email                     as email,
+       case when au.phone is not null then 'A — numéro au dossier'
+            else 'B — numéro à demander' end as cas_apurement
+  from wallets w
+  join profiles p        on p.id = w.user_id
+  join auth.users au     on au.id = w.user_id
+  left join escrow_entries e on e.wallet_id = w.id and e.status <> 'reversed'
+ where w.balance_htg + w.pending_htg > 0
+ group by p.display_name, w.user_id, w.balance_htg, w.pending_htg, au.phone, au.email
+ order by attend_depuis asc nulls last;
+```
+
+La sortie contient des identifiants : elle va dans le **journal d'apurement,
+hors dépôt** (`ops/README.md`) — jamais dans git.
+
+**Contrôle de cohérence avant le premier virement** — un écart ici est un
+problème de **registre**, pas de retrait, et il se voit avant de payer :
+
+```sql
+-- (a) du_total = escrow_net_non_reverse — identité EXACTE (aucun payout n'a
+--     jamais été exécuté). (b) du_total ≈ volume − commission (~10 %) — ordre
+--     de grandeur (remboursements et tier Elite expliquent de petits écarts).
+select (select coalesce(sum(balance_htg + pending_htg), 0) from wallets)  as du_total_htg,
+       (select coalesce(sum(amount_htg), 0)
+          from escrow_entries where status <> 'reversed')                 as escrow_net_non_reverse,
+       (select coalesce(sum(amount_htg), 0)
+          from orders where status in ('paid','delivered'))               as volume_brut_htg;
+```
+
+**Collecte du numéro à la demande de retrait — manque à combler en 0.b** : la
+route de retrait devra capturer et conserver le numéro MonCash de destination,
+sinon chaque règlement reposera pour toujours sur un numéro transmis par
+message.
+
 ## 4. Ordre d'exécution proposé
 
 | # | Lot | Effort | Bloquant pour |

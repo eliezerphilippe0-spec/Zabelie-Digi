@@ -4,6 +4,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { PhysicalProductForm } from "@/components/physical-product-form";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/products";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
+import { ROUNDING_IN_FORCE } from "@/lib/commission";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre un produit — Zabelie" };
@@ -28,6 +31,18 @@ export default async function VendrePhysiquePage() {
   }
 
   const user = await getCurrentUser();
+  const lang = await getLang();
+  const netLabels = {
+    youReceive: t(lang, "publish.net.youReceive"),
+    fee: t(lang, "publish.net.fee"),
+    rounding: t(
+      lang,
+      ROUNDING_IN_FORCE === "floor"
+        ? "publish.net.rounding.floor"
+        : "publish.net.rounding",
+    ),
+    caveat: t(lang, "publish.net.caveat"),
+  };
 
   return (
     <div className="bg-grain min-h-screen">
@@ -57,7 +72,12 @@ export default async function VendrePhysiquePage() {
           </div>
         ) : (
           <div className="mt-8">
-            <PhysicalProductForm />
+            <PhysicalProductForm
+              tier={user.tier}
+              netLabels={netLabels}
+              policyAccept={t(lang, "policy.accept")}
+              policyRead={t(lang, "policy.accept.read")}
+            />
           </div>
         )}
       </main>

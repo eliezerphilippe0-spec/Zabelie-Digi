@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PRODUCTS as SAMPLE, type ProductKind } from "@/lib/sample-data";
 
 /**
@@ -19,6 +20,10 @@ export type ProductView = {
   ratingAvg: number | null; // null si aucun avis
   ratingCount: number;
   accent: string;
+  /** Photo produit (bucket public 0039). null = repli dégradé — la colonne
+      existe depuis 0001 mais n'était LUE par aucune surface : les vendeurs
+      téléversaient une photo qu'aucun acheteur ne voyait. */
+  coverUrl: string | null;
   blurb: string;
   deliveryDays: number | null;    // 'service' uniquement — page Fiverr
   serviceIncludes: string[];      // 'service' uniquement — checklist « inclus »
@@ -61,6 +66,7 @@ const sampleAsView = (): ProductView[] =>
     ratingAvg: null,
     ratingCount: 0,
     accent: p.accent,
+    coverUrl: null,
     blurb: p.blurb,
     deliveryDays: null,
     serviceIncludes: [],
@@ -78,6 +84,7 @@ type Row = {
   rating_count: number;
   rating_sum: number;
   seller_id: string;
+  cover_url: string | null;
   seller: { display_name: string } | { display_name: string }[] | null;
   delivery_days: number | null;
   service_includes: string[] | null;
@@ -101,6 +108,7 @@ function rowAsView(r: Row): ProductView {
         : null,
     ratingCount: r.rating_count ?? 0,
     accent: accentFor(r.slug),
+    coverUrl: r.cover_url,
     blurb: r.description ?? "",
     deliveryDays: r.delivery_days,
     serviceIncludes: r.service_includes ?? [],
@@ -108,12 +116,21 @@ function rowAsView(r: Row): ProductView {
 }
 
 const SELECT =
-  "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name)";
+  "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name)";
 
 export type ProductFilters = {
   q?: string;
   category?: string;
+  /**
+   * Restriction au second niveau de rayon (`lib/taxonomy.ts`). `undefined` =
+   * pas de filtre. Une liste VIDE veut dire « rayon sans produit » et doit
+   * rendre zéro résultat.
+   */
+  productIds?: string[];
 };
+
+/** Sentinelle : `in ()` est un rejet côté PostgREST, `in (uuid nul)` non. */
+const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
 
 // BL-134 (FRONT-19) : taille de page — « Voir plus » en GET, 0 JS.
 const CATALOGUE_PAGE_SIZE = 24;
@@ -226,6 +243,100 @@ export async function getPublishedProducts(
  * pagination réelle + recherche qui couvre aussi le nom du créateur (un
  * acheteur qui a suivi un talent sur WhatsApp tape son nom, pas un titre).
  */
+/**
+ * Catégories RÉELLEMENT présentes au catalogue.
+ *
+ * Remplace la liste en dur pour la NAVIGATION (les puces d'accueil et de
+ * catalogue). Raison : `lib/product-categories.ts` ne connaît que les six
+ * libellés digitaux historiques, alors qu'un produit physique enregistre le
+ * libellé de son DÉPARTEMENT (« Auto & Moto », `api/products/physical` §142).
+ * Aucune puce ne pouvait donc l'atteindre — il n'était visible que sous
+ * « Tout », et disparaissait dès qu'on filtrait.
+ *
+ * Dérivée des données, elle règle aussi la réserve de V-13 : elle n'affiche
+ * jamais une catégorie vide, puisqu'une catégorie n'existe que si un produit
+ * publié s'y trouve. À catalogue vide, elle rend une liste vide et l'appelant
+ * n'affiche aucune barre — plutôt que seize rayons déserts.
+ *
+ * ⚠️ La liste en dur reste la source unique pour la PUBLICATION d'un produit
+ * digital (BL-105, taxonomie fermée) : on ne dérive pas ce qu'un vendeur peut
+ * choisir de ce qui existe déjà, sinon la première faute d'orthographe
+ * devient une catégorie.
+ */
+export async function getCatalogueCategories(): Promise<string[]> {
+  if (!isSupabaseConfigured()) {
+    return [...new Set(sampleAsView().map((p) => p.category).filter(Boolean))].sort();
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("category")
+    .eq("status", "published")
+    .not("category", "is", null)
+    // Borne : la barre n'a pas vocation à refléter un catalogue immense, et
+    // une requête non bornée sur une page servie à chaque visite se paie.
+    .limit(2000);
+
+  if (error || !data) {
+    // Dégrader, jamais casser : sans barre, le catalogue reste consultable.
+    console.error("[catalogue] catégories indisponibles", error?.message ?? "réponse vide");
+    return [];
+  }
+  const uniques = [
+    ...new Set((data as { category: string | null }[]).map((r) => r.category ?? "")),
+  ].filter((c) => c.length > 0);
+  return uniques.sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/**
+ * Couche 2 — rattrapage par similarité, appelé UNIQUEMENT quand la recherche
+ * littérale ne rend rien.
+ *
+ * `ilike '%batri%'` exige la sous-chaîne exacte : « batery » ne trouve jamais
+ * « Batri ». C'est le cas courant d'un Kreyòl écrit à l'oreille, et c'est ce
+ * que la similarité trigramme rattrape (`zabelie_search_fuzzy`, 0047).
+ *
+ * Rend une liste VIDE si la fonction n'existe pas encore en base : le
+ * catalogue continue de servir la couche 1, personne ne voit d'erreur.
+ */
+export async function searchFuzzyProductIds(q: string): Promise<string[]> {
+  if (!isSupabaseConfigured() || q.trim().length < 3) return [];
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("zabelie_search_fuzzy", {
+    p_raw: q,
+    p_limit: 24,
+  });
+  if (error || !data) {
+    console.warn("[recherche] rattrapage indisponible", error?.message ?? "réponse vide");
+    return [];
+  }
+  return (data as { product_id: string }[]).map((r) => r.product_id);
+}
+
+/**
+ * Consigne une recherche restée sans résultat. Best-effort, TOUJOURS : un
+ * capteur qui ferait échouer la page qu'il observe serait un mauvais échange.
+ * Journalisé en cas d'échec — l'absence de signal doit rester un signal.
+ */
+export async function recordSearchMiss(input: {
+  q: string;
+  department: string | null;
+  sessionHash: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin.rpc("zabelie_record_search_miss", {
+      p_raw: input.q,
+      p_department: input.department,
+      p_session_hash: input.sessionHash,
+    });
+    if (error) console.warn("[recherche] manque non consigné", error.message);
+  } catch (e) {
+    console.warn("[recherche] manque non consigné", e instanceof Error ? e.message : e);
+  }
+}
+
 export async function getPublishedProductsPage(
   filters: ProductFilters & { page?: number }
 ): Promise<ProductPage> {
@@ -266,6 +377,14 @@ export async function getPublishedProductsPage(
 
     if (filters.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
+    }
+
+    // Second niveau de rayon (catégorie fine). `null` = pas de restriction —
+    // la liste vide, elle, veut dire « aucun produit dans ce rayon » et doit
+    // rendre zéro résultat : confondre les deux afficherait le catalogue
+    // entier sous un rayon vide, sans jamais dire que le filtre n'a pas pris.
+    if (filters.productIds) {
+      query = query.in("id", filters.productIds.length > 0 ? filters.productIds : [ZERO_UUID]);
     }
 
     if (q) {

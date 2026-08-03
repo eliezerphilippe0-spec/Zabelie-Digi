@@ -35,11 +35,33 @@ export async function notifyOrderPaid(
     });
     if (!claimed) return;
 
-    const { data: order } = await admin
+    // `order_ref` (0042) — sélection tolérante : colonne absente tant que la
+    // migration n'est pas appliquée, l'email part alors sans numéro.
+    type OrderForNotify = {
+      id: string;
+      order_ref: string | null;
+      buyer_id: string;
+      amount_htg: number;
+      product:
+        | { title: string; seller_id: string }
+        | { title: string; seller_id: string }[]
+        | null;
+    };
+    let order: OrderForNotify | null;
+    ({ data: order } = await admin
       .from("orders")
-      .select("id, buyer_id, amount_htg, product:products(title, seller_id)")
+      .select("id, order_ref, buyer_id, amount_htg, product:products(title, seller_id)")
       .eq("id", orderId)
-      .single();
+      .single<OrderForNotify>());
+    if (!order) {
+      const retry = await admin
+        .from("orders")
+        .select("id, buyer_id, amount_htg, product:products(title, seller_id)")
+        .eq("id", orderId)
+        .single();
+      if (!retry.data) return;
+      order = { ...(retry.data as Omit<OrderForNotify, "order_ref">), order_ref: null };
+    }
     if (!order) return;
     const product = (Array.isArray(order.product) ? order.product[0] : order.product) as
       | { title: string; seller_id: string }
@@ -77,6 +99,7 @@ export async function notifyOrderPaid(
         productTitle: product.title,
         netLabel: formatHtg(credit.amount_htg),
         dashboardUrl: `${site}/tableau-de-bord`,
+        orderRef: order.order_ref,
       });
       jobs.push(sendEmail({ to: sellerEmail, ...m }));
     }

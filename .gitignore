@@ -21,8 +21,14 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env
-.env*.local
+# Tout fichier d'environnement est ignoré, SAUF le gabarit vide.
+# `.env` + `.env*.local` laissait passer `.env.development`, `.env.production`
+# et `.env.test` — que Next.js lit pourtant, et qu'on crée pour essayer la
+# prod en local. Vérifié par `git check-ignore` : les trois étaient suivis.
+# La forme large + exception ne peut pas se faire déborder par un variant
+# futur, contrairement à une liste qu'il faut penser à compléter.
+.env*
+!.env.example
 
 # typescript
 *.tsbuildinfo

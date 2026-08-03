@@ -12,7 +12,7 @@
 | **MonCash** (Digicel) | ✅ Ouvert — rail du MVP | 1 |
 | **NatCash** | ⛔ Bloqué — en attente d'accès | 2 |
 | **Stripe** (carte, diaspora USD) | 🟡 Construit (V-10) — ⚠️ exige une **entité US** (Haïti non supporté comme pays marchand) ; mode test dès maintenant | 1.5 |
-| **Zelle** (diaspora USD) | ✅ Construit (V-10) — flux **semi-manuel** (pas d'API Zelle) : instructions + mémo, confirmation admin | 1.5 |
+| **Zelle** (diaspora USD) | 🟡 Construit (V-10) — flux **semi-manuel** (pas d'API Zelle) : instructions + mémo, confirmation admin. ⚠️ Exige, **comme Stripe**, un compte bancaire **US** enrôlé Zelle (`ZELLE_RECIPIENT`) : les fonds diaspora atterrissent aux États-Unis, donc **même prérequis d'entité étrangère / *merchant of record*** | 1.5 |
 | **Wallet interne** | ✅ Crédit après confirmation | 1 |
 
 ## 2. Les trois invariants (NON NÉGOCIABLES)
@@ -117,6 +117,20 @@ livraison passe par `/api/download` qui exige une commande `paid`.
 > (cf. §4) indépendamment des identifiants.
 
 ### Rails diaspora USD — Stripe & Zelle (V-10, migration `0009`)
+
+> ⚠️ **Prérequis commun aux DEUX rails, pas seulement à Stripe.** La contrainte
+> d'entité étrangère n'était écrite que sur la ligne Stripe, alors qu'elle porte
+> sur les deux : `ZELLE_RECIPIENT` est un **e-mail ou téléphone US enrôlé
+> Zelle**, adossé à un compte bancaire américain. Encaisser la diaspora par ce
+> canal fait donc atterrir les fonds aux États-Unis exactement comme Stripe, et
+> appelle le même *merchant of record*. La différence entre les deux rails est
+> **opérationnelle** (API contre confirmation manuelle), pas juridique.
+>
+> Conséquence pratique : **ouvrir Zelle ne contourne pas le blocage Stripe.**
+> C'est la lecture que la ligne « ✅ Construit » laissait faire, et elle était
+> fausse. Tant que l'entité n'existe pas, les deux rails sont au même point.
+> Ce prérequis est distinct du dossier `docs/17` (rétention BRH) : celui-ci
+> porte sur *où* les fonds atterrissent, l'autre sur *qui* les retient.
 
 Principe : **le ledger reste en HTG**. Net vendeur, commission et escrow J+7
 sont calculés sur `orders.amount_htg`, identiques pour tous les rails. Le

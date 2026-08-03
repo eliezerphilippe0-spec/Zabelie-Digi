@@ -10,6 +10,8 @@ import {
   backfillCountry,
   countryFromRequest,
 } from "@/lib/geo/country-backfill";
+import { POLICY_VERSION } from "@/lib/policy";
+import { isMissingFunction } from "@/lib/pg-errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +46,7 @@ export async function POST(req: Request) {
     priceHTG?: number;
     deliveryDays?: number | null;
     serviceIncludes?: string[];
+    policyAccepted?: boolean;
   };
   try {
     body = await req.json();
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
 
   // Champs page service (Fiverr) — affichage seulement, pas de prix. Ignorés
   // silencieusement pour un produit 'fichier' (n'a pas de sens hors service).
@@ -91,6 +95,50 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+
+  // ── Attestation (R3) ──────────────────────────────────────────────────────
+  // La politique produits interdits est plus stricte que la loi : ce qui la
+  // rend opposable, c'est que le vendeur l'a acceptée dans une version connue.
+  // La VERSION ne vient jamais du client — il choisirait celle qu'il a
+  // « acceptée ». Elle vient de `lib/policy.ts`.
+  if (body.policyAccepted !== true) {
+    return NextResponse.json(
+      { error: "Vous devez accepter les règles de vente.", code: "policy_required" },
+      { status: 400 }
+    );
+  }
+  // Enregistrée AVANT le produit : une attestation sans fiche est sans
+  // conséquence, une fiche sans attestation est exactement le trou visé.
+  const { error: policyErr } = await admin.rpc("zabelie_record_policy_acceptance", {
+    p_user_id: user.id,
+    p_version: POLICY_VERSION,
+  });
+  if (policyErr) {
+    // Deux destinataires, deux messages. Le VENDEUR lit une phrase courte et
+    // honnête : rien n'a été enregistré, il peut réessayer. Il n'a pas à lire
+    // un identifiant de migration, et une page publique qui nomme l'état
+    // interne du schéma est une fuite gratuite.
+    // TOI, tu lis l'identifiant — ici et dans /api/admin/coherence — pendant
+    // que tu es debout à côté du vendeur en train de publier.
+    if (isMissingFunction(policyErr)) {
+      console.error(
+        "[products] MIGRATION 0046 NON APPLIQUÉE — zabelie_record_policy_acceptance " +
+          "introuvable : AUCUNE fiche ne peut être créée tant qu'elle manque.",
+        policyErr.code
+      );
+    } else {
+      console.error("[products] attestation non enregistrée", policyErr);
+    }
+    return NextResponse.json(
+      {
+        error:
+          "La publication n'a pas abouti. Rien n'a été enregistré — " +
+          "réessayez dans un instant.",
+        code: "policy_unavailable",
+      },
+      { status: 503 }
+    );
+  }
 
   // BL-117 : cadence bornée comme checkout/topup (10 créations/min).
   if (!(await rateLimit(admin, `products:${user.id}`, 10))) {
@@ -137,16 +185,19 @@ export async function POST(req: Request) {
       service_includes: serviceIncludes.length > 0 ? serviceIncludes : null,
       // BL-103 (Gumroad — le fichier est exigé avant la mise en vente) : un
       // produit « fichier » naît en BROUILLON, invisible au public, et sera
-      // publié automatiquement au premier upload du livrable (asset route).
-      // Un service (pas de fichier à livrer) se publie immédiatement.
-      // Un `fichier` naît en BROUILLON et sera publié au premier upload du
-      // livrable ; un service se publie tout de suite. Le défaut reste
-      // « brouillon » : une valeur inconnue ne doit jamais partir en vente
-      // sans que personne l'ait décidé.
+      // TOUTE fiche naît en BROUILLON, quel que soit son type, et attend une
+      // publication humaine (`/api/admin/product-status`).
+      //
+      // Le service se publiait immédiatement et le fichier se publiait tout
+      // seul au premier upload : ces deux chemins mettaient en ligne sans que
+      // personne ne regarde — et ce sont précisément ceux où atterrissent un
+      // « sèvis transfè lajan » ou un logiciel piraté. La règle de plateforme
+      // (`/produits-interdits`) promet une revue ; elle ne peut la promettre
+      // que si elle a lieu pour les trois types.
       status:
         pickByKind(kind, {
           file: "draft",
-          service: "published",
+          service: "draft",
           physical: "draft",
         }) ?? "draft",
     })

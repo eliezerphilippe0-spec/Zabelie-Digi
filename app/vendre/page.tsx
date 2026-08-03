@@ -9,6 +9,8 @@ import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
+import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
+import { POLICY_PATH } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -28,6 +30,25 @@ function Shell({
       <main className="mx-auto max-w-lg px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sell.title")}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
+        {/* Ces deux liens vivent dans le Shell : ils sont donc présents AUSSI
+            sur l'écran de connexion vendeur et en mode démo — c'est-à-dire aux
+            deux endroits où un vendeur arrive avant d'avoir un compte. Placés
+            plus bas, dans la branche authentifiée, ils manquaient exactement
+            là où on cherche à s'orienter. */}
+        <p className="mt-2 text-xs">
+          <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
+            {t(lang, "policy.link")}
+          </Link>
+        </p>
+        <div className="mt-5 rounded-2xl border border-line bg-surface/40 p-5">
+          <p className="text-sm text-cloud">{t(lang, "sell.physical.q")}</p>
+          <Link
+            href="/vendre/physique"
+            className="mt-3 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
+          >
+            {t(lang, "sell.physical.cta")}
+          </Link>
+        </div>
         <div className="mt-8">{children}</div>
       </main>
       <SiteFooter />
@@ -68,6 +89,19 @@ export default async function VendrePage() {
     );
   }
 
+  // Palier du vendeur : il détermine le taux annoncé sous le champ prix.
+  // Lu en base et jamais deviné — mais la colonne peut manquer sur une base
+  // en retard de migration, et une estimation d'affichage ne doit pas faire
+  // tomber la page de publication. Repli sur le palier standard, qui est
+  // aujourd'hui celui de TOUS les vendeurs (aucun chemin n'attribue elite).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("tier")
+    .eq("id", user.id)
+    .maybeSingle();
+  const tier: CreatorTier =
+    (profile as { tier?: string } | null)?.tier === "elite" ? "elite" : "standard";
+
   const { data: mineRaw } = await supabase
     .from("products")
     .select("id, slug, title, status, kind, product_assets(id)")
@@ -85,8 +119,13 @@ export default async function VendrePage() {
   const mine = (mineRaw ?? []) as unknown as MineRow[];
   // BL-130 (FRONT-14) : `status` est un mot-clé technique brut ("published")
   // — jamais affiché tel quel, toujours mappé sur un libellé FR/KR.
+  //
+  // « Brouillon » était exact et inutile : depuis que les trois types naissent
+  // en brouillon et attendent une revue humaine, le vendeur qui ne voit rien
+  // conclut que sa soumission a échoué — et resoumet. On récolterait des
+  // doublons avant la première vente. Le libellé dit donc ce qui se passe.
   const statusLabel = (s: string) =>
-    s === "published" ? t(lang, "status.published") : t(lang, "status.draft");
+    s === "published" ? t(lang, "status.published") : t(lang, "status.review");
   const uploadLabels = {
     sending: t(lang, "upload.sending"),
     replace: t(lang, "upload.replace"),
@@ -98,8 +137,10 @@ export default async function VendrePage() {
 
   return (
     <Shell lang={lang} subtitle={t(lang, "sell.subtitle")}>
+
       <div className="glass rounded-2xl p-6">
         <PublishForm
+          tier={tier}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
             kindAria: t(lang, "publish.kind.aria"),
@@ -118,6 +159,20 @@ export default async function VendrePage() {
             errorGeneric: t(lang, "publish.error.generic"),
             errorNetwork: t(lang, "error.network"),
             footerHint: t(lang, "publish.footer.hint"),
+            net: {
+              youReceive: t(lang, "publish.net.youReceive"),
+              fee: t(lang, "publish.net.fee"),
+              rounding: t(
+                lang,
+                ROUNDING_IN_FORCE === "floor"
+                  ? "publish.net.rounding.floor"
+                  : "publish.net.rounding",
+              ),
+              caveat: t(lang, "publish.net.caveat"),
+            },
+            policyAccept: t(lang, "policy.accept"),
+            policyRead: t(lang, "policy.accept.read"),
+            policyRequired: t(lang, "policy.accept.required"),
           }}
         />
       </div>
@@ -125,6 +180,9 @@ export default async function VendrePage() {
       {mine.length > 0 && (
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-cloud">{t(lang, "sell.mine.title")}</h2>
+          {mine.some((p) => p.status !== "published") && (
+            <p className="mt-2 text-xs text-mist">{t(lang, "status.review.hint")}</p>
+          )}
           <ul className="mt-3 space-y-2">
             {mine.map((p) => (
               <li
@@ -146,7 +204,15 @@ export default async function VendrePage() {
                   ) : (
                     <span className="block truncate">{p.title}</span>
                   )}
-                  <span className="text-xs text-mist">{statusLabel(p.status)}</span>
+                  <span
+                    className={
+                      p.status === "published"
+                        ? "text-xs text-mist"
+                        : "text-xs font-semibold text-warning-text"
+                    }
+                  >
+                    {statusLabel(p.status)}
+                  </span>
                 </div>
                 {/* L'upload de livrable n'a de sens que pour un fichier. Le
                     `else` étiquetait « Service » tout le reste — un produit

@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
+import type { CreatorTier } from "@/lib/commission";
+import { POLICY_PATH } from "@/lib/policy";
+import Link from "next/link";
 
 /**
  * Création d'un produit physique (chantier B — UI vendeur).
@@ -31,7 +35,25 @@ type Fitment = { modelId: string; yearStart: string; yearEnd: string };
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-export function PhysicalProductForm() {
+export function PhysicalProductForm({
+  tier = "standard",
+  netLabels,
+  policyAccept,
+  policyRead,
+}: {
+  /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
+  tier?: CreatorTier;
+  /**
+   * Libellés de l'estimation, traduits côté serveur. Le reste de ce
+   * formulaire est encore en français en dur (dette connue, OPS_TODO) — ce
+   * n'est pas une raison pour y ajouter du français non traduit, encore
+   * moins sur un montant.
+   */
+  netLabels: NetEstimateLabels;
+  /** Libellés de l'attestation, traduits côté serveur. */
+  policyAccept: string;
+  policyRead: string;
+}) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [models, setModels] = useState<VehicleModel[]>([]);
@@ -49,6 +71,7 @@ export function PhysicalProductForm() {
   const [variants, setVariants] = useState<Variant[]>([]);
   const [fitment, setFitment] = useState<Fitment[]>([]);
 
+  const [policyOk, setPolicyOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,6 +136,7 @@ export function PhysicalProductForm() {
           priceHTG: Number(price),
           quantity: Number(quantity),
           categorySlug,
+          policyAccepted: policyOk,
           variants: showVariants
             ? variants
                 .filter((v) => v.label.trim())
@@ -224,6 +248,11 @@ export function PhysicalProductForm() {
             placeholder="2500"
             className="mt-1 w-full rounded-xl border border-line bg-ink px-4 py-3 disabled:opacity-50"
           />
+          {!showVariants && (
+            <div className="mt-1.5">
+              <NetEstimate priceHTG={price} tier={tier} labels={netLabels} />
+            </div>
+          )}
         </label>
         <label className="block">
           <span className="text-sm font-semibold">Quantité en stock</span>
@@ -353,6 +382,24 @@ export function PhysicalProductForm() {
 
       {error && <p className="text-sm text-danger-text">{error}</p>}
 
+      {/* Attestation : obligatoire, jamais pré-cochée. Placée APRÈS le bouton
+          serait invisible sur un écran de 360 px — elle vient donc avant. */}
+      <label className="flex items-start gap-3 rounded-xl border border-line bg-surface/40 p-4 text-xs text-mist">
+        <input
+          type="checkbox"
+          required
+          checked={policyOk}
+          onChange={(e) => setPolicyOk(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>
+          {policyAccept}{" "}
+          <Link href={POLICY_PATH} className="underline hover:text-cloud">
+            {policyRead}
+          </Link>
+        </span>
+      </label>
+
       {/* ── 4. PUBLIER ───────────────────────────────────────────────── */}
       <button
         type="submit"
@@ -361,6 +408,7 @@ export function PhysicalProductForm() {
       >
         {busy ? "Publication…" : "Publier le produit"}
       </button>
+
     </form>
   );
 }

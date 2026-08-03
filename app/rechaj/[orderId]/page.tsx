@@ -122,7 +122,12 @@ export default async function RechajOrderPage({
         )}
 
         <div className="mt-8 text-center">
-          <Link href="/rechaj" className="text-sm text-mist hover:text-cloud">
+          {/* V-17 : `/rechaj` redirige désormais vers le catalogue. Ce lien y
+              allait, donc via un aller-retour inutile — et le libellé
+              (`pay.back` = « Retour au catalogue ») annonçait déjà la vraie
+              destination. On pointe droit dessus, comme les trois pages de
+              paiement sœurs. */}
+          <Link href="/catalogue" className="text-sm text-mist hover:text-cloud">
             {t(lang, "pay.back")}
           </Link>
         </div>

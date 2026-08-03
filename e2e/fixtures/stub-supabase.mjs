@@ -15,6 +15,7 @@
  * `delivered`. Les relire via GET /__ecritures.
  */
 import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.STUB_PORT ?? 54321);
 
@@ -38,6 +39,7 @@ const PRODUCT = {
   seller_id: SELLER_ID,
   delivery_days: null,
   service_includes: null,
+  cover_url: "http://127.0.0.1:54321/cover.png",
   status: "published",
   in_stock: true,
   seller: { display_name: "Garaj Petyonvil" },
@@ -45,6 +47,7 @@ const PRODUCT = {
 
 const ORDER = {
   id: ORDER_ID,
+  order_ref: "ZB-260720-TESTX",
   buyer_id: BUYER_ID,
   product_id: PRODUCT_ID,
   status: "paid",
@@ -80,6 +83,24 @@ const server = createServer((req, res) => {
     return send(200, 0);
   }
 
+  // Photo produit. `STUB_COVER` permet d'éprouver les cas de DÉFAILLANCE de la
+  // carte de partage — la surface où un échec coûte le plus cher, puisque
+  // WhatsApp fige l'aperçu obtenu :
+  //   STUB_COVER=404   → stockage qui répond en erreur
+  //   STUB_COVER=lent  → stockage qui traîne (8 s), au-delà du délai interne
+  if (url.pathname === "/cover.png") {
+    const servir = () => {
+      res.writeHead(200, { "content-type": "image/png" });
+      res.end(readFileSync(new URL("./cover.png", import.meta.url)));
+    };
+    if (process.env.STUB_COVER === "404") {
+      res.writeHead(404);
+      return res.end();
+    }
+    if (process.env.STUB_COVER === "lent") return setTimeout(servir, 8000);
+    return servir();
+  }
+
   if (url.pathname === "/__ecritures") return send(200, ecritures);
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
@@ -99,6 +120,21 @@ const server = createServer((req, res) => {
 
   // ── PostgREST ───────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/rest/v1/orders")) {
+    // STUB_DRIFT=0030 : rejoue le schéma de production AVANT 0042 — toute
+    // sélection de `order_ref` répond 42703, comme le vrai PostgREST. C'est ce
+    // qui permet d'ÉPROUVER la tolérance de dérive des surfaces (règle 3),
+    // pas de la raisonner.
+    if (
+      process.env.STUB_DRIFT === "0030" &&
+      (url.searchParams.get("select") ?? "").includes("order_ref")
+    ) {
+      return send(400, {
+        code: "42703",
+        details: null,
+        hint: null,
+        message: "column orders.order_ref does not exist",
+      });
+    }
     if (req.method !== "GET") {
       let body = "";
       req.on("data", (c) => (body += c));

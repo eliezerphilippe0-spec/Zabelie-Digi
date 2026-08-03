@@ -49,8 +49,16 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0041`** — registre des migrations ; production
-   appliquée jusqu'à `0030`, groupes A/B1/B2 en attente, `docs/20`).
+   (dernière écrite : **`0050`**. Production **2026-07-31** : `0030` + groupe A
+   + B1 + `0039` + `0041` + `0042`, puis **`0045`→`0050` appliquées et
+   vérifiées** (cas connu-positif ET connu-négatif à chaque fois). **Restent
+   non appliquées** : `0031` (fidélité, volontairement sautée), **B2**
+   `0037`/`0038`/`0040` — prérequis à l'ouverture de la vente physique, et
+   `0043` (état d'expédition, trois valeurs à arbitrer, `docs/21`).
+   ⚠️ Le repli de `lib/products.ts` sur `in_stock` est **actif en production**,
+   observé dans les journaux d'API : chaque page catalogue fait un 400 puis
+   rejoue sans le filtre. C'est la dégradation prévue, pas une panne — elle
+   cessera avec B2. Registre : `zabelie_schema_migrations`.)
 
 ## Registre vendeur — invariant comptable (0033)
 ```
@@ -92,8 +100,12 @@ aucune UI, **aucun point jamais émis**. Non convertibles en valeur : seule
 sortie = remise **en pourcentage** (`coupon_type` mono-valeur), non
 achetables, non transférables, non remboursables, expirants (90 j, plafond
 180), solde plafonné. **4 garde-fous normatifs** →
-`docs/CASHBACK-GARDE-FOUS.md`. Ne pas câbler l'attribution ni l'UI sans
-décision explicite.
+`docs/CASHBACK-GARDE-FOUS.md`. ⛔ **Bloqué par D-6** : les garde-fous disent ce
+qu'un point *est*, aucun ne dit ce qu'une remise *coûte ni à qui*. En l'état,
+une remise de points réduirait `orders.amount_htg`, donc le net du **vendeur**
+— il financerait la rétention de la plateforme sans l'avoir choisie. Ne pas
+câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
+`tests/fidelite-discipline.test.ts`.
 
 ## Documents
 - `docs/00-CONTEXTE.md` · `01-PRD.md` · `02-DECISIONS.md`
@@ -105,9 +117,21 @@ décision explicite.
 - `docs/18-SPEC-BUILD-V1.md` — **spécification autoritaire du chantier en cours**
 - `docs/19-CHANTIER-0-RETRAIT-VENDEUR.md` — voie de sortie vendeur
 - `docs/CASHBACK-GARDE-FOUS.md` · `REVUE-2026-07-22-rails-paiement.md`
+- `docs/21-EXPEDITION-ET-REMISE.md` — état d'expédition (`0043`, non appliquée)
+- `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
+- `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
+  contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
 - `OPS_TODO.md` — actions opérationnelles porteur + écarts de réconciliation
 
 ## Méthode
+→ **`docs/25-BOUCLE-DE-TRAVAIL.md`** porte la boucle complète. Trois choses
+en tête : rien ne démarre sans **objectif vérifiable, arrêt ferme, périmètre**
+(§0) ; **une seule mutation par tour** (§1) ; et la boucle **s'arrête net**
+devant argent, migration à appliquer, variable d'environnement, promesse
+commerciale, positionnement, dépense, merge (§4) — analyse et options, jamais
+trancher. Ce qui est rendu au porteur s'inscrit au **registre en tête
+d'`OPS_TODO.md`**, relu à l'ouverture de chaque chantier.
+
 Un chantier à la fois, dans l'ordre de `docs/18` §11. Tests écrits avec le
 code. Migration rédigée **non appliquée** tant que le porteur ne l'a pas
 exécutée. Signaler toute contradiction plutôt que trancher seul ; demander
@@ -134,10 +158,140 @@ Concrètement — retirer le garde et voir le test échouer ; amputer les donné
 et voir la sonde le dire. Un instrument qui n'a jamais échoué n'a pas encore
 démontré qu'il pouvait.
 
+#### La mutation qui n'a pas muté — assurer la post-condition, pas la vérifier
+
+Quatre fois dans la session du 2026-08-01/02, une mutation destinée à éprouver
+un test **n'a pas été appliquée** : ancre écrite avec des guillemets simples au
+lieu de doubles, `\n` passé littéralement par le shell, désalignement d'espaces
+dans un fichier SQL aligné en colonnes. À chaque fois la commande a rendu un
+succès, la suite est restée verte, et ce vert a été lu comme « le test résiste
+à la mutation » alors qu'il signifiait « le fichier n'a pas changé ».
+
+C'est le même défaut que les fixtures qui encodaient le bug : **l'instrument
+ment, et son mensonge ressemble exactement à une réussite.** « pass 0 » n'est
+pas non plus « le test a échoué » — c'est souvent « le fichier ne compile
+plus ».
+
+Règle : **toute édition programmatique assure sa post-condition avant qu'on
+lise quoi que ce soit d'autre.** Pas « vérifier ensuite » — une assertion qui
+échoue, dans le même geste :
+
+* `assert s.count(ancre) == 1` **avant** de remplacer — zéro occurrence et dix
+  occurrences sont deux fautes différentes, toutes deux silencieuses ;
+* après écriture, relire la zone et assurer que la modification y est ;
+* pour une mutation de test : afficher la ligne mutée avant de lancer la suite.
+
+La vigilance ne suffit pas ici, et c'est précisément la leçon : quatre
+occurrences en une session, par quelqu'un qui connaissait le piège dès la
+deuxième.
+
 Corollaire d'observabilité : **l'absence de signal doit être un signal.** Une
 branche par défaut journalise ce qu'elle a reçu (`lib/product-kind.ts`) ; un
 cron journalise chaque passage, y compris à zéro (`app/api/stock/expire`).
 Sinon « n'a pas tourné » et « a tourné, rien trouvé » produisent le même vide.
+
+#### Le code sans appelant — croiser, parce que rien ne le signalera
+
+`zabelie_purge_search_misses()` est née avec `0047` : correcte, révoquée,
+journalisant même à zéro. **Sans aucun appelant.** Ses deux seules invocations
+du dépôt étaient dans `supabase/tests/search_demand.test.sql`. La suite SQL
+était verte, la purge était *prouvée*, et elle n'avait jamais tourné une fois.
+Quatre mois de rétention non bornée seraient passés en silence — parce que
+migration, tests et revue regardaient tous **la fonction**, et rien ne
+regardait **l'endroit d'où elle devait être appelée**.
+
+Le motif se généralise : un artefact jamais invoqué ne lève rien, ne
+journalise rien, ne ralentit rien. Son défaut est invisible *par nature* — le
+corollaire d'observabilité ci-dessus ne l'attrape pas, puisqu'il n'y a même pas
+de passage à journaliser. Seule une **vérification croisée entre deux endroits
+du dépôt** le rend visible.
+
+Règle : **tout artefact dont l'appelant vit ailleurs se croise
+mécaniquement avec la liste de ses appelants, et l'absence d'appelant
+échoue.** Premier cas câblé : `tests/crons-appelants.test.ts` croise les
+fonctions de maintenance (`purge|expire|sweep|mature|reconcil|_job`) de
+`supabase/migrations/` avec les RPC appelées par les routes déclarées dans
+`vercel.json` → `crons`.
+
+Deuxième cas câblé, et le plus coûteux : `tests/i18n-cles-mortes.test.ts`
+croise les clés de `lib/i18n.ts` avec leurs sites d'appel. `home.cta.sell` et
+`nav.logout` étaient traduites dans quatre langues sans aucun appelant — le
+bouton vendeur avait disparu du hero (le `h1` acheteur restait seul au-dessus
+d'une page entièrement vendeur, ce qui se lisait comme un choix de
+positionnement à trancher), et `sign-out-button.tsx` affichait « Déconnexion »
+**en dur** à un utilisateur kreyòl. `Record<I18nKey, string>` vérifie que chaque
+langue porte chaque clé, jamais qu'une clé atteint un écran.
+
+Deux points qui font la différence entre ce contrôle et un vœu :
+
+* **Les exemptions se périment dans les deux sens.** Une liste qui ne sait que
+  grandir devient une conformité par usure. Le test échoue donc aussi quand une
+  fonction exemptée a *gagné* un appelant.
+* **Un appelant n'est pas une exécution.** Ce croisement prouve que le code
+  existe, pas que le cron tourne — secret absent, déploiement non promu, projet
+  dont les crons sont désactivés le laissent vert. La preuve d'exécution est le
+  journal de la route, et elle se lit dans Vercel. Les deux sont nécessaires.
+
+#### `\b` ne connaît pas le kreyòl — propriété du produit, pas leçon d'un tour
+
+En JavaScript, `\w` vaut `[A-Za-z0-9_]` : **les lettres accentuées ne sont pas
+des caractères de mot.** Une frontière `\b` posée contre `è`, `é`, `ò`, `ô`
+tombe donc du mauvais côté et le motif ne s'applique pas.
+
+⚠️ **Et le piège est pire qu'un accent qui casse tout** — mesuré, pas déduit :
+
+```js
+/\bvandè\b/.test("vandè")                      // false  ← accent EN FRONTIÈRE
+/\bvérifiés\b/.test("vendeurs vérifiés près")  // true   ← accent AU MILIEU
+/\bmachann\b/.test("machann nan")              // true   ← sans accent
+```
+
+Seules les frontières **contre** un accent tombent. Un motif accentué marche
+donc la plupart du temps, et échoue précisément sur les mots dont l'accent est
+au bout — `vandè`, `sètifye`, `bagay yo`. Un contrôle mixte semble
+fonctionner, et son unique trou est invisible.
+
+Ce que ça donne, mesuré : le détecteur de `tests/promesse-vendeur.test.ts` a
+été aveugle à « Vandè verifye toupre w » — c'est-à-dire **exactement en kreyòl,
+la langue de référence du produit**, tout en fonctionnant parfaitement en
+anglais. Sans cas connu-positif, il serait passé vert en ne voyant rien, et son
+vert aurait été lu comme « aucune promesse non tenue ».
+
+C'est le pire endroit possible pour un angle mort : un dépôt kreyòl-first dont
+les instruments ne voient que l'anglais valide toujours la langue qui compte le
+moins. Et rien ne le signale — le motif ne lève pas d'erreur, il ne trouve
+simplement rien.
+
+Règle : **toute expression régulière portant sur du texte d'interface se
+vérifie sur une chaîne accentuée connue, en kreyòl et en français, avant qu'on
+lui fasse confiance.** En pratique : remplacer `\b…\b` par
+`(?<![\p{L}])…(?![\p{L}])` **avec les drapeaux `u` ET `i`** — vérifié, la
+forme corrigée sans `i` rend encore `false` sur « **V**andè » à cause de la
+seule majuscule. Puis poser l'assertion qui aurait échoué
+(`tests/promesse-vendeur.test.ts` la porte pour les quatre langues).
+
+**Choisir les cas de test à l'œil ne marche pas ici** — et c'est le même défaut
+une couche plus haut. Un jeu constitué en repérant « des mots accentués »
+contiendra surtout des `vérifiés`, des `sètifye`, des `sekirite` : tous
+accentués, tous **passants**, et l'impression d'avoir couvert le sujet.
+
+Le critère n'est pas « porte un accent », c'est **accent sur la dernière lettre,
+ou sur la première** — les deux seules positions qui touchent une frontière :
+
+* finale (fréquent en kreyòl) : `vandè`, `machandè`, `bò`, `lè`, `pè`, `dyò` ;
+* finale en français : `café`, `marché`, `santé`, `côté`, `déjà`, `là`, `où` ;
+* initiale (plus rare, réel) : `èske`, `élève`, `être`.
+
+Ces listes ont été **exécutées**, pas composées : la première version portait
+`journée`, qui PASSE — son accent est au milieu, le `e` final est nu. Idem
+`forêt` et `année`. La faute a été commise en rédigeant la règle qui la
+décrit, ce qui dit assez qu'on ne s'en protège pas par attention.
+
+La liste est bien plus courte qu'elle n'en a l'air, et c'est exactement ce qui
+la rend facile à manquer.
+
+Vaut aussi pour `\w`, `[a-z]` et toute classe écrite en ASCII sur des données
+qui ne le sont pas.
 
 ### `product_kind` — le module est obligatoire
 Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
