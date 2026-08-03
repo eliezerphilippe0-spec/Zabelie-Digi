@@ -137,6 +137,10 @@ code. Migration rédigée **non appliquée** tant que le porteur ne l'a pas
 exécutée. Signaler toute contradiction plutôt que trancher seul ; demander
 plutôt qu'inventer une règle métier, **surtout financière**.
 
+**Toute PR ouverte se donne avec son lien cliquable**, systématiquement et sans
+qu'on le demande — le numéro seul oblige à aller le chercher. Idem quand
+plusieurs attendent : la liste des liens, dans l'ordre de fusion.
+
 **Le point de contrôle humain est la PR, jamais le commit.** Un hook `Stop`
 du dépôt exige de commiter et pousser tout travail en cours : « montre-moi
 avant de commiter » n'est donc pas un contrôle disponible ici. Un commit sur
