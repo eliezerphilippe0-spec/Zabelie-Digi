@@ -12,13 +12,35 @@ gamme, bande passante faible, coupures fréquentes.
 « Zabelie Digi » est **éliminé**. Le repo GitHub `uniondigitale` est une
 étiquette technique **à renommer** par le porteur.
 
-⚠️ **Ne jamais écrire « Zabely »** à la place de « Zabelie ». En revanche
-`zabely` / `zabelie` coexistent dans les **identifiants techniques** existants :
-**aucun grep-replace global**.
+⚠️ **Ne jamais écrire « Zabely »** à la place de « Zabelie ».
 
-⚠️ **Piège de renommage** : ne jamais remplacer la sous-chaîne `Digi` seule —
-**`Digicel`** est l'opérateur télécom partenaire (MonCash, recharge). Ne
-remplacer que la chaîne exacte `Zabelie Digi`.
+✅ **Le préfixe `zabely_` n'existe pas** — mesuré le 2026-08-04, `git grep -lI
+"zabely_"` rend **zéro fichier** dans tout le dépôt. Les versions précédentes de
+ce fichier affirmaient une coexistence `zabely` / `zabelie` dans les
+identifiants techniques : c'était faux. Tous les objets portent `zabelie_`.
+La consigne « aucun grep-replace global » reste valable, mais pour une autre
+raison — le piège `Digi` ci-dessous, lui, est **mesuré**.
+
+⚠️ **Piège de renommage — mesuré le 2026-08-04, pas supposé** : ne jamais
+remplacer la sous-chaîne `Digi` seule. **`Digicel`** est l'opérateur télécom
+partenaire (MonCash, recharge) et la chaîne apparaît dans **14 fichiers** —
+7 `.ts`, 3 `.tsx`, 4 `.sql`, 12 `.md`. Les cas qui rendent l'erreur
+irrattrapable :
+
+- `supabase/migrations/0010_topup.sql:267-270` — **valeurs de données** insérées
+  (`('digicel', 'Rechaj Digicel 25 HTG', …)`) dans une migration **appliquée en
+  production**. Un remplacement casserait la correspondance avec les
+  `operatorId` du fournisseur, et une migration appliquée **ne se réécrit pas**.
+- `lib/i18n.ts:250, 648, 1034, 1432` — la même phrase commerciale dans les
+  **quatre langues**.
+- `app/confidentialite/page.tsx:148` — « MonCash (**Digicel**) » dans un texte
+  **juridique**.
+
+Ne remplacer que la chaîne exacte `Zabelie Digi`.
+
+📌 Résidu connu, non traité : `.env.example:39` porte encore
+`EMAIL_FROM=Zabelie Digi <…>`, alors que ce nom est éliminé depuis le
+2026-07-24.
 
 ### Décision d'identité (2026-07-24)
 Ce repo **est** Zabelie. Règle appliquée : *on garde le repo qui porte
@@ -59,6 +81,21 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
    observé dans les journaux d'API : chaque page catalogue fait un 400 puis
    rejoue sans le filtre. C'est la dégradation prévue, pas une panne — elle
    cessera avec B2. Registre : `zabelie_schema_migrations`.)
+
+## Migrations — discipline
+
+- Numérotées, séquentielles, **immuables une fois appliquées**. Corriger une
+  migration appliquée = écrire la suivante, jamais réécrire l'ancienne.
+- Inscrites au registre `zabelie_schema_migrations` avec leur **empreinte
+  canonique** (`node scripts/zabelie-migration-hash.mjs`, jamais un `sha256sum`
+  brut : la mise en forme ne doit pas produire un faux signal de dérive).
+- **Toute NOUVELLE migration déclare son `-- ROLLBACK:`** en commentaire
+  d'en-tête. ⚠️ Règle d'avenir, pas rétroactive : **0 des 53 migrations
+  existantes** en portent un, et on ne les réécrit pas. Elle vaut à partir de
+  la 54ᵉ.
+- Avant toute session sur le schéma : **vérifier que le déclaré correspond au
+  réel.** Les écarts sont fréquents et silencieux — le registre déclare, le
+  catalogue atteste (`to_regclass`, `to_regprocedure`), et il faut les deux.
 
 ## Registre vendeur — invariant comptable (0033)
 ```
@@ -107,6 +144,40 @@ une remise de points réduirait `orders.amount_htg`, donc le net du **vendeur**
 câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 `tests/fidelite-discipline.test.ts`.
 
+## Données personnelles
+
+**Aucun identifiant personnel dans git** : ni e-mail, ni téléphone, ni `user_id`
+réel, ni IP, ni jeton — **y compris dans les fixtures et les commentaires**.
+Les journaux d'usage utilisent des **empreintes**, jamais des identités
+(`zabelie_search_misses.session_hash`, tournant chaque jour).
+
+Contrôle mécanique : `tests/secrets-hors-depot.test.ts` couvre les clés. Il ne
+couvre **pas** les identifiants personnels — c'est une discipline de relecture,
+et son absence de garde est connue.
+
+## i18n
+
+**Kreyòl d'abord**, puis français, anglais, espagnol (`LANGS`). Aucune chaîne
+visible en dur dans un composant — `t()` et `DICT` sont **serveur uniquement**,
+un composant client reçoit ses libellés en props. Devises : HTG et USD.
+Gardes : `tests/i18n-cles-mortes.test.ts` (toute clé a un site d'appel),
+`tests/i18n-client-discipline.test.ts`.
+
+## Design
+
+Défini dans `app/zabelie-theme.css` :
+
+- Dégradé indigo → marron → indigo : `#2b3050` → `#4a2731` → `#17123a`
+  (vérifié : `app/produit/[slug]/opengraph-image.tsx:18`)
+- Accents ambre-orange : `#f5934f` (primaire), `#f26a21` (CTA), `#fdb868` (ambre)
+- Typo : Manrope 800 pour les titres, Inter pour le corps
+
+L'ancienne palette (`#080808` / `#FF6B00` / DM Sans) est **obsolète** — vérifié
+absente du dépôt. Ne jamais la proposer.
+
+Vérification responsive à **360 px, dans les quatre langues** — pas trois : le
+débord de la barre de nav ne se voit qu'en français et en espagnol.
+
 ## Documents
 - `docs/00-CONTEXTE.md` · `01-PRD.md` · `02-DECISIONS.md`
 - `docs/03-PAIEMENTS.md` — architecture paiement **+ §9 checklist nouveau rail**
@@ -131,6 +202,27 @@ devant argent, migration à appliquer, variable d'environnement, promesse
 commerciale, positionnement, dépense, merge (§4) — analyse et options, jamais
 trancher. Ce qui est rendu au porteur s'inscrit au **registre en tête
 d'`OPS_TODO.md`**, relu à l'ouverture de chaque chantier.
+
+### La boucle en cinq temps (kit agent)
+
+1. **Explorer avant d'écrire.** Pas de code sur un prompt vague.
+2. **Plan écrit, fichier par fichier**, validé avant exécution.
+3. **Exécuter dans le périmètre.** Pas de refactor opportuniste, pas de scope
+   creep. Ce qui n'est pas dans le plan fait l'objet d'une **note**, pas d'un
+   commit.
+4. **Vérifier** — `npm run typecheck`, `npm test`, `npm run build`, puis
+   relecture **adversariale de son propre diff**.
+   ⚠️ **`npm run lint` est CASSÉ** et ne compte pas : `next lint` a été retiré
+   de Next 16, le script rend `Invalid project directory`. Ticket ouvert dans
+   `OPS_TODO.md`. Le dépôt n'a de toute façon aucune configuration ESLint —
+   les disciplines sont portées par des tests (`*-discipline.test.ts`).
+   ⚠️ Le dépôt est en **npm** (`package-lock.json`). Jamais `pnpm` : il n'y a
+   pas de `pnpm-lock.yaml`, et l'utiliser produirait un arbre de dépendances
+   différent de celui que la CI installe.
+5. **Ouvrir la PR. Puis s'arrêter.**
+
+Quand tu ne sais pas : dis-le et pose une question. **Une hypothèse silencieuse
+coûte plus cher qu'un aller-retour.**
 
 Un chantier à la fois, dans l'ordre de `docs/18` §11. Tests écrits avec le
 code. Migration rédigée **non appliquée** tant que le porteur ne l'a pas

@@ -17,6 +17,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | Décision | Depuis | Ce qu'elle bloque |
 |---|---|---|
 | ✅ ~~Branche de Production Vercel~~ — **RÉPONDU 2026-08-03 : `main`.** Dernier déploiement Production `bb5ee4a`, **2026-07-26**, soit la tête actuelle de `main` : le site en ligne est exactement `main`, sans décalage. | — | **Résolu — et c'est le pire des trois cas.** Le site public dit depuis le 26 juillet « Pièces auto et moto, livrées en Haïti », « digital & talents » et **« Instant »**, en 2 langues. Remplacée par la ligne suivante. |
+| **🚨 ROTATION `SUPABASE_SERVICE_ROLE_KEY`** — clé secrète exposée hors du coffre le 2026-08-04 | 2026-08-04 | **Rien fonctionnellement, et c'est le piège : le site tourne parfaitement avec une clé compromise.** Cette clé contourne TOUTE la RLS — comptes, commandes, grand livre, lecture et écriture. À révoquer chez Supabase et remplacer dans Vercel (Production **et** Preview). |
 | ✅ ~~Faire arriver le chantier en ligne~~ — **FAIT 2026-08-03.** PR #55 fusionnée (`53fd939`), puis #56 · #57 · #58 · #59. `main` déployée en Production. | — | Résolu. Le site ne dit plus « Pièces auto et moto » ni « Instant », et porte quatre langues. |
 | ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | ✅ ~~Protection de `main`~~ — **FAIT 2026-08-03.** `build` · `e2e` · `sql-tests` exigés. | — | Résolu. ⚠️ Le premier réglage visait **toutes** les branches et bloquait toute poussée — les contrôles s'exécutant AU push, aucune branche ne pouvait naître (`GH013`). Corrigé pour ne viser que la branche par défaut. À savoir si la règle est un jour recréée. |
@@ -25,6 +26,10 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Appliquer `0051` (clairin) et `0052` (`label_es`)** | 2026-08-01 | Le rayon produits locaux, et l'espagnol complet du menu. Chacune porte sa garde. |
 | **Appliquer `0053` (rétention 90 j)** | 2026-08-03 | Rien d'autre — mais elle borne la conservation de termes de recherche **en clair**. |
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
+| **🔴 D-8 — le retrait à la demande est-il une rétention de fonds ou un cash-out au sens de C121 ?** | 2026-08-04 | **Le chantier 0 (`docs/19`), suspendu.** `zabelie_request_payout` (`0034`) est **appliqué en production** ; C121 est la raison même du versement automatique J+7. **Ce qui débloque : une réponse écrite du Cabinet Volmar.** Compatible → `docs/19` reprend, le J+7 devient un défaut et non une interdiction. Incompatible → `0034` désactivée **par feature flag, PAS supprimée**, et `docs/19` réécrit. ⛔ Ne rien supprimer avant. |
+| **Dette — le taux de commission n'est pas en table de config** | 2026-08-04 | Rien aujourd'hui. `commission_rate_bps` (`supabase/migrations/0005_commission.sql:19`) porte **600 / 1000 en dur** dans une fonction SQL `immutable`, alors que la règle du dépôt exige une table de configuration. Changer un taux demande donc une migration, pas un `update`. Dette identifiée, pas une règle à supprimer. |
+| **Ticket — le script `lint` est cassé** | 2026-08-04 | Rien mécaniquement, et c'est le risque : `npm run lint` rend `Invalid project directory provided, no such directory: …/lint`. `next lint` a été retiré de Next 16. Le dépôt n'a aucune configuration ESLint ; les disciplines passent par des tests. Soit retirer le script, soit installer ESLint — mais un script qui échoue toujours finit par être ignoré, y compris le jour où il dirait vrai. |
+| **Ticket — quel projet Vercel est réellement lié ?** | 2026-08-04 | Rien de bloquant, mais à éclaircir : la Production sert `uniondigitale.vercel.app` alors que le produit s'appelle Zabelie et que le domaine annoncé ailleurs est `zabely.net`. Vercel affichait « +2 » domaines. Vérifier que le projet lié est le bon, et lequel des trois domaines est canonique — c'est celui que les courriels de confirmation et les aperçus WhatsApp figeront. |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
@@ -841,6 +846,37 @@ maintenant, en kreyòl d'abord**.
       sans validation (règle du dépôt). Voir `docs/21` §3 bis.
 - [ ] Zelle : `USD_HTG_RATE`, `ZELLE_RECIPIENT`, `ZELLE_RECIPIENT_NAME`.
 - [ ] Stripe (optionnel) : nécessite une entité US — voir `docs/04 §2 bis`.
+
+## 🚨 Incidents de secrets — journal (`docs/11-SECRETS.md` §5)
+
+> Une ligne par incident. **Jamais la valeur de la clé**, même partielle, même
+> « juste le début » : un préfixe suffit souvent à identifier le projet, et ce
+> fichier est dans Git.
+
+### 2026-08-04 — clé secrète Supabase collée dans une conversation
+
+| | |
+|---|---|
+| **Clé** | `SUPABASE_SERVICE_ROLE_KEY`, forme `sb_secret_…` |
+| **Cause** | collée en clair dans un échange, pour illustrer une consigne |
+| **Portée** | contourne toute la RLS : comptes, commandes, grand livre, en lecture **et** en écriture |
+| **Dépôt touché ?** | **Non** — vérifié, aucune occurrence dans les fichiers suivis par Git |
+
+- [ ] **1. Révoquer et regénérer** — Supabase → *Settings › API Keys*.
+- [ ] **2. Remplacer** dans Vercel → *Environment Variables*, **Production ET
+      Preview** (deux environnements distincts, l'un ne met pas l'autre à jour).
+- [ ] **3. Redéployer** — la variable n'est lue qu'au démarrage.
+- [ ] **4. Vérifier** que `/api/admin/coherence` répond encore : c'est la route
+      qui utilise la clé de service. Si elle rend 500, la nouvelle valeur n'est
+      pas arrivée.
+
+**Ce qui rend cet incident sournois** : rien ne casse. Le site tourne
+exactement pareil avec une clé compromise qu'avec une clé saine — il n'y a
+aucun symptôme à attendre, aucune alerte à guetter. C'est pourquoi la rotation
+se fait **maintenant** et pas « quand on aura le temps ».
+
+**Ce qui n'aurait servi à rien** : supprimer le message. Une clé sortie du
+coffre est sortie. La seule protection est de la rendre inutile.
 
 ## Écarts de réconciliation topup
 
