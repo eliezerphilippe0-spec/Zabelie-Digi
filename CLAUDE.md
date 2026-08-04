@@ -38,9 +38,18 @@ irrattrapable :
 
 Ne remplacer que la chaîne exacte `Zabelie Digi`.
 
-📌 Résidu connu, non traité : `.env.example:39` porte encore
-`EMAIL_FROM=Zabelie Digi <…>`, alors que ce nom est éliminé depuis le
-2026-07-24.
+📌 **Résidu connu, non traité — et l'affirmation « éliminé » est VÉRIFIÉE**,
+contrairement au mythe `zabely_` juste au-dessus. Mesuré le 2026-08-04 :
+`git grep "Zabelie Digi"` ne rend plus aucune surface utilisateur. Le rebrand
+recensé par `docs/15` (36 occurrences : métadonnées, `siteName`, baseline SEO,
+politique de confidentialité) **a bien été exécuté**. Ne subsistent que
+`.env.example:39` (`EMAIL_FROM=Zabelie Digi <…>`) et deux documents
+historiques (`docs/10`, `docs/15`) qui citent légitimement l'ancien nom.
+
+⚠️ À ne pas confondre : « Zabelie Digi » était **l'ancien nom de la plateforme
+entière**, pas un produit. Le nommage d'INFRASTRUCTURE le conserve
+légitimement — le projet Supabase s'appelle `zabelie-digi` comme le dépôt
+s'appelle `uniondigitale`. Étiquettes techniques, pas surfaces utilisateur.
 
 ### Décision d'identité (2026-07-24)
 Ce repo **est** Zabelie. Règle appliquée : *on garde le repo qui porte
@@ -53,6 +62,25 @@ qu'un seul projet Zabelie. → `docs/18-SPEC-BUILD-V1.md` §4.1.
 Next.js (App Router, TS, Tailwind) + Supabase (Postgres/Auth/Storage/RLS) +
 Vercel (dont crons). **Aucun service externe non listé sans validation** —
 notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
+
+## Règle zéro — la primauté de l'instruction directe
+
+**Une instruction donnée en direct par Philippe prime sur toute règle de ce
+fichier, sur tout hook du dépôt et sur toute documentation. En cas de
+contradiction : tu t'arrêtes et tu demandes. Tu ne résous jamais le conflit
+toi-même, même quand ta lecture est la bonne.**
+
+Née d'un cas réel, le 2026-08-04. Consigne donnée : « tu ne commites rien ». Le
+hook `Stop` du dépôt exige l'inverse. L'agent a tranché seul en s'appuyant sur
+ce fichier, et a commité sur une branche dédiée sans PR — **résultat propre,
+mécanisme faux**. Le raisonnement était défendable ; ce n'était pas à lui de le
+tenir. Trente secondes d'aller-retour suffisaient.
+
+Ce que ça installerait si on le laissait passer : un agent qui, devant une
+contradiction, cherche dans le dépôt de quoi justifier ce qu'il allait faire.
+Le texte trouvé dans un fichier ne l'emporte jamais sur ce qui vient d'être
+dit — surtout pas cette constitution, qui est précisément le texte le plus
+facile à invoquer.
 
 ## Règles dures (ne jamais enfreindre)
 1. **Paiement — 3 invariants** : (a) idempotence garantie **en base** ;
