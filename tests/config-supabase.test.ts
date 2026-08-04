@@ -4,6 +4,7 @@ import {
   ConfigSupabaseInvalide,
   configPublique,
   configService,
+  verifierClePublique,
   verifierUrlSupabase,
 } from "../lib/supabase/config";
 
@@ -62,6 +63,60 @@ test("l'URL du tableau de bord est rejetée, et le message NOMME la valeur", () 
 test("une valeur qui n'est pas une URL est rejetée", () => {
   assert.throws(() => verifierUrlSupabase("ddditxykopuxxqzgkqwy"), ConfigSupabaseInvalide);
   assert.throws(() => verifierUrlSupabase(""), ConfigSupabaseInvalide);
+});
+
+test("les DEUX hôtes du tableau de bord sont rejetés — l'ancien aussi", () => {
+  // L'actuel, et l'ANCIEN (`app.supabase.com`) encore présent dans les
+  // signets et les tutoriels. Une égalité stricte laissait passer le second.
+  for (const mauvaise of [
+    "https://supabase.com/dashboard/project/ddditxykopuxxqzgkqwy",
+    "https://app.supabase.com/project/ddditxykopuxxqzgkqwy",
+    "https://www.supabase.com/dashboard",
+  ]) {
+    assert.throws(() => verifierUrlSupabase(mauvaise), ConfigSupabaseInvalide, mauvaise);
+  }
+  // Un seul caractère sépare `.supabase.com` de `.supabase.co` : le suffixe ne
+  // doit surtout pas attraper les URL d'API.
+  assert.doesNotThrow(() => verifierUrlSupabase(REF));
+});
+
+// ── La clé de service dans une variable publique : silencieux et maximal ─────
+
+test("une clé de service dans NEXT_PUBLIC_ est refusée, sous ses DEUX formes", () => {
+  const charge = (o: object) =>
+    Buffer.from(JSON.stringify(o)).toString("base64url");
+  const jwt = (role: string) => `eyJhbGciOiJIUzI1NiJ9.${charge({ role })}.signature`;
+
+  for (const [nom, cle] of [
+    ["préfixe actuel", "sb_secret_AbCdEf123456"],
+    ["JWT hérité, role=service_role", jwt("service_role")],
+  ] as const) {
+    let err: unknown;
+    try {
+      verifierClePublique(cle);
+    } catch (e) {
+      err = e;
+    }
+    assert.ok(err instanceof ConfigSupabaseInvalide, `NON REFUSÉE : ${nom}`);
+    // La valeur ne doit JAMAIS apparaître en clair dans le message : il part
+    // au journal, et le journal se partage.
+    assert.ok(!err.message.includes("AbCdEf123456"), "la clé fuite dans le message");
+    assert.ok(err.message.includes("masquée"), "la clé n'est pas masquée");
+  }
+});
+
+test("les clés légitimes passent — aucun faux positif possible", () => {
+  const charge = (o: object) =>
+    Buffer.from(JSON.stringify(o)).toString("base64url");
+  for (const bonne of [
+    "sb_publishable_AsTzRW_SR6Tp7WDioLvSZg",
+    `eyJhbGciOiJIUzI1NiJ9.${charge({ role: "anon" })}.signature`,
+    `eyJhbGciOiJIUzI1NiJ9.${charge({ role: "authenticated" })}.signature`,
+    "eyJ.charge-illisible.signature", // base64 cassé : on ne juge pas ce qu'on n'a pas lu
+    "une-cle-quelconque",
+  ]) {
+    assert.doesNotThrow(() => verifierClePublique(bonne), `REFUSÉE À TORT : ${bonne.slice(0, 30)}`);
+  }
 });
 
 // ───────────────── Ce qui doit PASSER — la moitié qui compte ─────────────────

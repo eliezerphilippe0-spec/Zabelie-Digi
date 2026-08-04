@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "check:contrast": "node scripts/zabelie-contrast.mjs"
+    "check:contrast": "node scripts/zabelie-contrast.mjs",
+    "prebuild": "node scripts/verifier-config-supabase.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
