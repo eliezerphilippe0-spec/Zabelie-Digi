@@ -129,6 +129,16 @@ export default async function HomePage() {
     .slice(0, 4)
     .map((s) => ({ ...s, rating: s.rN > 0 ? Math.round((s.rSum / s.rN) * 10) / 10 : null }));
 
+  // ── ÉTAT D'AMORÇAGE (spec accueil v1 §3.7) ────────────────────────────────
+  // En dessous de ce seuil, l'accueil n'est pas un catalogue : c'est une page
+  // de recrutement vendeur. Un carrousel à deux produits ne dit pas « petite
+  // sélection », il dit « personne ne vend ici » — et le visiteur a raison.
+  //
+  // D-B laissée ouverte dans la spec (4 ou 8) : 4 retenu, c'est le nombre en
+  // dessous duquel une grille de 3 colonnes n'en remplit même pas une.
+  const SEUIL_AMORCAGE = 4;
+  const enAmorcage = products.length < SEUIL_AMORCAGE;
+
   const steps = [
     { n: "01", title: t(lang, "home.s1.t"), body: t(lang, "home.s1.b") },
     { n: "02", title: t(lang, "home.s2.t"), body: t(lang, "home.s2.b") },
@@ -286,6 +296,33 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* KIJAN SA MACHE — REMONTÉ SOUS LE HERO (2026-08-04).
+          Il vivait en bas de page, après la FAQ. En Côte d'Ivoire la confiance
+          dans le commerce en ligne est acquise ; en Haïti elle EST le produit —
+          un acheteur qui ne comprend pas qui détient son argent ne descend pas
+          jusqu'à la ligne 534 pour l'apprendre.
+          Ce bloc porte la conformité BRH Circ. 121 comme argument commercial :
+          « Zabelie kenbe lajan an » n'est pas une mention légale, c'est la
+          raison d'acheter. */}
+      <section id="comment" className="mx-auto max-w-6xl px-5 py-16">
+        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
+          {t(lang, "home.how")}
+        </h2>
+        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {steps.map((step) => (
+            <div
+              key={step.n}
+              className="rounded-2xl border border-line bg-surface/40 p-6"
+            >
+              <span className="text-3xl font-extrabold text-gradient">{step.n}</span>
+              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
+              <p className="mt-2 text-sm text-mist">{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+
       {/* 1 bis. BANDEAU PAIEMENT (maquette : « PEYE FASIL AK ») */}
       <section className="mx-auto max-w-6xl px-5 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-line bg-surface/40 px-6 py-4">
@@ -371,6 +408,46 @@ export default async function HomePage() {
       )}
 
       {/* 3. PRODUITS TENDANCE */}
+      {/* AMORÇAGE — ce bloc occupe la place que les rails vides prendraient.
+          `HomeRow` s'efface déjà à vide (V-13), donc sans lui l'accueil montre
+          un trou entre le hero et la FAQ. Un trou ne recrute personne.
+
+          ⚠️ AUCUN CHIFFRE ICI. La spec proposait « 340 moun chèche yon bagay
+          nou pa genyen » — le capteur existe (`zabelie_search_misses`) mais
+          `SEARCH_FINGERPRINT_SALT` n'est pas posée, donc la table est vide.
+          Afficher un nombre non mesuré serait exactement le « 12k+ avis » de
+          Bloop au-dessus de 38 fiches à 0.0 (spec §4.5). Le chiffre viendra
+          quand il sera vrai, pas avant. */}
+      {enAmorcage && (
+        <section className="mx-auto max-w-6xl px-5 py-12">
+          <div className="glass glow-ring rounded-3xl px-6 py-10 text-center sm:px-8 sm:py-14">
+            <h2 className="mx-auto max-w-2xl text-2xl font-extrabold tracking-tight sm:text-3xl">
+              {t(lang, "home.seed.t")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm text-mist sm:text-base">
+              {t(lang, "home.seed.b")}
+            </p>
+            <ul className="mx-auto mt-8 flex max-w-xl flex-col gap-2 text-left text-sm sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+              {["home.seed.p1", "home.seed.p2", "home.seed.p3"].map((k) => (
+                <li
+                  key={k}
+                  className="flex items-start gap-2 rounded-xl border border-line bg-surface/40 px-4 py-2.5 text-cloud"
+                >
+                  <span aria-hidden className="mt-0.5 text-brand">✓</span>
+                  <span className="break-words">{t(lang, k as Parameters<typeof t>[1])}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/vendre"
+              className="mt-8 inline-block rounded-xl bg-cloud px-7 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+            >
+              {t(lang, "home.seed.cta")}
+            </Link>
+          </div>
+        </section>
+      )}
+
       <HomeRow
         title={t(lang, "home.trends")}
         sub={t(lang, "home.trends.sub")}
@@ -526,25 +603,6 @@ export default async function HomePage() {
                 )}
               </p>
             </details>
-          ))}
-        </div>
-      </section>
-
-      {/* COMMENT ÇA MARCHE */}
-      <section id="comment" className="mx-auto max-w-6xl px-5 py-16">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
-          {t(lang, "home.how")}
-        </h2>
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {steps.map((step) => (
-            <div
-              key={step.n}
-              className="rounded-2xl border border-line bg-surface/40 p-6"
-            >
-              <span className="text-3xl font-extrabold text-gradient">{step.n}</span>
-              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
-              <p className="mt-2 text-sm text-mist">{step.body}</p>
-            </div>
           ))}
         </div>
       </section>

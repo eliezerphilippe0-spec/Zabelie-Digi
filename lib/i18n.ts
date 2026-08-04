@@ -133,6 +133,13 @@ const fr = {
   "home.trends": "Tendances du moment",
   "home.trends.sub": "Les produits les plus demandés.",
   "home.all": "Tout voir →",
+  "home.seed.t": "Ce que vous vendez a sa place ici",
+  "home.seed.b":
+    "Le catalogue démarre. Publier maintenant, c'est être le premier que les acheteurs trouveront.",
+  "home.seed.p1": "10 % de commission, rien d'autre",
+  "home.seed.p2": "Inscription gratuite",
+  "home.seed.p3": "Paiement automatique 7 jours après la vente",
+  "home.seed.cta": "Devenir vendeur",
   "home.how": "Comment ça marche",
   "home.s1.t": "Publiez",
   "home.s1.b":
@@ -537,6 +544,13 @@ const ht: Record<I18nKey, string> = {
   "home.trends": "Sa k ap mache kounye a",
   "home.trends.sub": "Pwodwi moun plis ap chèche yo.",
   "home.all": "Wè tout →",
+  "home.seed.t": "Sa w ap vann gen plas li isit la",
+  "home.seed.b":
+    "Katalòg la ap kòmanse. Si w pibliye kounye a, se ou menm achtè yo ap jwenn anvan.",
+  "home.seed.p1": "10 % komisyon, anyen anplis",
+  "home.seed.p2": "Enskripsyon gratis",
+  "home.seed.p3": "Peman otomatik 7 jou apre vant lan",
+  "home.seed.cta": "Vin yon machann",
   "home.how": "Kijan sa mache",
   "home.s1.t": "Pibliye",
   "home.s1.b": "Mete pwodwi ou an liy nan kèk minit.",
@@ -922,6 +936,13 @@ const en = {
   "home.trends": "Trending now",
   "home.trends.sub": "The most requested products.",
   "home.all": "See all →",
+  "home.seed.t": "What you sell belongs here",
+  "home.seed.b":
+    "The catalogue is starting. Publishing now means being the first buyers find.",
+  "home.seed.p1": "10% commission, nothing else",
+  "home.seed.p2": "Free to join",
+  "home.seed.p3": "Automatic payout 7 days after the sale",
+  "home.seed.cta": "Become a seller",
   "home.how": "How it works",
   "home.s1.t": "Publish",
   "home.s1.b":
@@ -1320,6 +1341,13 @@ const es = {
   "home.trends": "Tendencias del momento",
   "home.trends.sub": "Los productos más buscados.",
   "home.all": "Ver todo →",
+  "home.seed.t": "Lo que vendes tiene su lugar aquí",
+  "home.seed.b":
+    "El catálogo está empezando. Publicar ahora es ser el primero que los compradores encuentren.",
+  "home.seed.p1": "10 % de comisión, nada más",
+  "home.seed.p2": "Registro gratuito",
+  "home.seed.p3": "Pago automático 7 días después de la venta",
+  "home.seed.cta": "Ser vendedor",
   "home.how": "Cómo funciona",
   "home.s1.t": "Publica",
   "home.s1.b":
