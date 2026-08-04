@@ -35,10 +35,10 @@
 | **D-1** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | **D-2** | `[À CONFIRMER]` _(à préciser — issue de la synthèse)_ | — | Ouverte |
 | ~~**D-3**~~ | ~~Lien auth/wallet avec Zabelie 1~~ | **VERROUILLÉE → V-9.** Séparé, fusion possible plus tard. | ✅ Tranchée |
-| **D-4** | **Sens de l'arrondi de la commission** — `round` (état actuel) ou `floor` (l'arrondi va au vendeur) | Commercial. Migration `0044` **écrite, non appliquée** ; constante `ROUNDING_IN_FORCE` en TS. Coût de `floor` : ≤ 1 HTG par vente. | **Ouverte — en attente d'arbitrage porteur** |
+| **D-4** | **Sens de l'arrondi de la commission** | Commercial. `floor` — l'arrondi va au **vendeur**. Coût borné : ≤ 1 HTG par vente, 0,5 en moyenne. | ✅ **TRANCHÉE le 2026-08-03 par le porteur : `floor`.** Application de `0044` en cours. |
 | **D-6** | **Qui paie la remise de fidélité ?** | Commercial + comptable. La commission porte sur `orders.amount_htg`, le prix **remisé**. Une remise de points y entrerait comme une autre : le **vendeur** financerait la rétention de la plateforme, sans l'avoir choisie ni le savoir. Sorties : commission sur le **prix affiché**, remise **supportée par Zabelie**, ou **participation choisie** par le vendeur. Aucun point n'a jamais été émis — la décision est encore gratuite. Garde : `tests/fidelite-discipline.test.ts`. | **Ouverte — en attente d'arbitrage porteur** |
 | **D-7** | **Un vendeur vérifié peut-il vendre du crédit Digicel/Natcom ?** | Commercial + réglementaire. Distincte de V-17 : « Zabelie ne vend plus de minutes » ne dit **pas** « des vendeurs peuvent en vendre ». Un crédit télécom est un **bien**, pas de la monnaie électronique — la question est donc recevable, contrairement à la revente de solde MonCash/NatCash qui reste **interdite** (`docs/07-TOPUP.md` §3, `docs/17`). Ouverte par effet de bord de V-17 ; **volontairement non implémentée** et non tranchée. | **Ouverte — à ne pas ouvrir sans arbitrage porteur** |
-| **D-5** | **Seuil zéro : faut-il une commission minimale de 1 gourde ?** | Commercial. Sous `round`, une vente < 5 HTG ne rapporte rien ; sous `floor`, une vente < 10 HTG (17 en Elite) non plus. Découper une vente en petites unités devient donc une stratégie. Deux sorties : **prix plancher** ou **commission minimale de 1 HTG dès qu'il y a vente** — la seconde ferme le seuil sans abîmer l'argument « l'arrondi va au vendeur ». | **Ouverte — en attente d'arbitrage porteur** |
+| **D-5** | **Seuil zéro : faut-il une commission minimale de 1 gourde ?** | Commercial. ⚠️ **Un minimum de 1 HTG rétablit exactement ce que `floor` corrige** : sur une vente à 5 HTG il ramène le taux réel à **20 %**, au seul endroit où ça se voit — et il abîme le message (« l'arrondi vous revient, sauf qu'il y a un minimum » n'est plus une phrase de cinq mots). Le risque de découpage, lui, suppose que l'ACHETEUR passe vingt commandes et vingt paiements MonCash : personne ne le fera. | **Ouverte — DÉCLENCHEUR NOMMÉ : à trancher quand des articles sous 10 HTG apparaissent au catalogue, pas avant.** Contrairement à D-4, c'est une règle tarifaire ordinaire, qu'on annonce à l'avance ; elle ne se défend pas mal si elle arrive plus tard. |
 
 ### D-4 (OUVERTE) — l'arrondi penche systématiquement du côté de la plateforme
 
@@ -70,7 +70,19 @@ commission` par soustraction, donc l'identité de `0033` tient quel que soit
 l'arrondi. C'est bien une décision **commerciale**, pas technique — d'où
 l'arbitrage plutôt qu'un correctif.
 
-**Statut : en attente d'arbitrage du porteur.** Personne n'a tranché. Le
+**Statut : ✅ TRANCHÉE le 2026-08-03 — `floor`, par le porteur, explicitement
+(« go floor »).** La recommandation de l'agent et la décision coïncident, mais
+ce sont deux choses distinctes et le registre note laquelle est laquelle.
+Bascule en trois gestes, **et l'ordre est la protection** : (1) `0044`
+appliquée en base, (2) `ROUNDING_IN_FORCE` passée à `"floor"`, (3)
+redéploiement. Dans cet ordre l'intervalle donne au vendeur **plus** que ce
+qui lui est annoncé ; dans l'autre on lui promet une gourde qu'on ne verse
+pas. Contrôle mécanique de l'ordre : la sonde de `/api/admin/coherence` rend
+`desaccord` tant que `0044` n'est pas au journal, et nomme l'écart.
+
+### Historique de l'attribution
+
+Avant le 2026-08-03, ce paragraphe disait : « Personne n'a tranché. Le
 porteur a donné un **avis** — `floor` — en précisant explicitement qu'il ne
 donnait pas de « go » et que la décision ne lui était pas demandée sous cette
 forme. L'agent a d'abord inscrit cet avis comme une décision : c'est une
