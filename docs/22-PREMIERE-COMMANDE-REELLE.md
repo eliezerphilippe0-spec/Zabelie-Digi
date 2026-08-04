@@ -28,7 +28,13 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
 
 ## Ordre — les variables d'abord, sinon le cache fige le mauvais aperçu
 
-0. **Trancher D-4** — le sens de l'arrondi (`docs/02`). *Facultatif si tu
+0. ✅ **D-4 TRANCHÉE le 2026-08-03 : `floor`.** `0044` appliquée en base
+   (registre + catalogue vérifiés), `ROUNDING_IN_FORCE` basculée, sonde
+   d'arrondi à `accord`. **Sur une vente à 25 HTG le vendeur reçoit 23** —
+   c'est le chiffre à retrouver à l'étape 6. Le reste de ce point est
+   conservé pour mémoire :
+
+   ~~Trancher D-4~~ — le sens de l'arrondi (`docs/02`). *Facultatif si tu
    préfères vendre d'abord* : un registre append-only accueille un changement
    de règle dans le temps, à condition que chaque ligne dise laquelle l'a
    produite. Rien ne l'enregistre aujourd'hui, donc si tu achètes avant de

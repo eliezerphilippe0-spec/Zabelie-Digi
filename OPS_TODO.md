@@ -20,8 +20,9 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | ✅ ~~Faire arriver le chantier en ligne~~ — **FAIT 2026-08-03.** PR #55 fusionnée (`53fd939`), puis #56 · #57 · #58 · #59. `main` déployée en Production. | — | Résolu. Le site ne dit plus « Pièces auto et moto » ni « Instant », et porte quatre langues. |
 | ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | ✅ ~~Protection de `main`~~ — **FAIT 2026-08-03.** `build` · `e2e` · `sql-tests` exigés. | — | Résolu. ⚠️ Le premier réglage visait **toutes** les branches et bloquait toute poussée — les contrôles s'exécutant AU push, aucune branche ne pouvait naître (`GH013`). Corrigé pour ne viser que la branche par défaut. À savoir si la règle est un jour recréée. |
-| **🔴 D-4 — TRANCHÉE `floor` le 2026-08-03. Reste à APPLIQUER `0044` en base.** | 2026-08-03 | La **première vente réelle**. Trois gestes dans l'ordre : `0044` en base → `ROUNDING_IN_FORCE` à `"floor"` (PR prête, en brouillon) → redéploiement. L'ordre est la protection ; la sonde de `/api/admin/coherence` rend `desaccord` tant que la base n'a pas suivi. |
+| ✅ ~~D-4 — sens de l'arrondi~~ — **CLOSE le 2026-08-03 : `floor`.** `0044` appliquée en base et au registre, PR #61 fusionnée, sonde à `accord`. Vérifié en base : 25 HTG → commission 2, net vendeur 23 ; les deux copies de la règle appellent le helper unique. | — | Résolu. La première vente réelle n'a plus de préalable décisionnel. |
 | ✅ ~~Signature datée du réexamen `sharp`~~ — **SIGNÉE 2026-08-03, réexamen au 2026-11-03.** | — | Résolu. Deux événements rouvrent le dossier, le premier qui arrive gagne : la date, ou le premier téléversement vendeur. |
+| **🔴 `Site URL` Supabase + `NEXT_PUBLIC_SITE_URL` Vercel** | 2026-08-04 | **La première commande réelle.** Le lien de confirmation renvoie vers `localhost:3000` — un vendeur qui s'inscrit croit que ça a échoué. Et sans `NEXT_PUBLIC_SITE_URL`, l'aperçu WhatsApp fige le mauvais domaine, avec un cache persistant : à poser **avant** tout partage. |
 | **Appliquer `0051` (clairin) et `0052` (`label_es`)** | 2026-08-01 | Le rayon produits locaux, et l'espagnol complet du menu. Chacune porte sa garde. |
 | **Appliquer `0053` (rétention 90 j)** | 2026-08-03 | Rien d'autre — mais elle borne la conservation de termes de recherche **en clair**. |
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
@@ -31,44 +32,66 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
 
-## 🔴 EN TÊTE — la panne d'inscription : deux écrans, pas un formulaire
+## ✅ RÉSOLU — « la panne d'inscription » n'était pas une panne
 
-**Statut au 2026-08-01 : NON RÉSOLUE.** C'est la seule chose de ce fichier qui
-casse un parcours utilisateur aujourd'hui.
+**Diagnostiquée et close le 2026-08-04.** L'inscription fonctionnait depuis le
+début. Ce qui était cassé, c'est **où le courriel de confirmation renvoyait**.
 
-**Constat, pas déduction :** `auth.users` ne contient qu'une ligne, du
-2026-07-09. Aucun trafic d'authentification n'atteint Supabase.
+### Ce qui se passait réellement
 
-**Hypothèse principale :** `NEXT_PUBLIC_SUPABASE_URL` et
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` absentes **au moment du build**. Next.js les
-inline à la compilation : absentes, le client lève avant tout appel réseau, et
-la page affiche « Mode démo ».
+Le champ **Site URL** de Supabase Auth était resté à `http://localhost:3000`,
+sa valeur de développement. Donc : quelqu'un s'inscrit → **le compte est créé**
+→ il reçoit le courriel → il clique → il tombe sur `localhost:3000`, une page
+morte sur sa machine → **il conclut que l'inscription a échoué.**
 
-### Le geste : ouvrir DEUX pages de connexion, ne rien remplir
+Elle avait parfaitement réussi. C'est pour ça qu'aucun journal ne montrait
+d'erreur : il n'y en avait pas.
 
-1. la préversion de la PR #55 ;
-2. la production.
+### La preuve, mesurée le 2026-08-04
 
-La comparaison tranche plus vite que n'importe quelle inscription. Pas de
-saisie, pas de console, pas de compte créé — ce qui élimine du même coup les
-deux faux positifs qui traînaient : « l'adresse était déjà inscrite » et
-« erreur de manipulation ».
+| | |
+|---|---|
+| second compte créé | `00:20:37` |
+| confirmé | `00:21:01` |
+| connecté | `00:21:40` |
+| profil créé automatiquement | ✅ |
 
-### Lire le résultat — Preview et Production sont DEUX environnements Vercel
+Et ce dernier point est un premier : **le déclencheur `0045_profile_on_signup`
+s'est exécuté pour la première fois en production**. Il était appliqué depuis le
+31 juillet sans qu'aucune inscription réelle ne l'ait jamais fait tourner.
 
-Chacun a ses propres variables. Être réglé en Production ne met rien en Preview,
-et l'inverse est vrai aussi. D'où quatre lectures, pas deux :
+### Ce que cette histoire coûte à la méthode
 
-| Préversion | Production | Ce qu'on en conclut |
-|---|---|---|
-| « Mode démo » | « Mode démo » | mécanisme confirmé, variables manquantes des deux côtés |
-| « Mode démo » | formulaire normal | mécanisme confirmé sur Preview ; **rend l'hypothèse très probable en production sans la prouver** |
-| formulaire normal | « Mode démo » | même mécanisme, variables présentes en Preview et absentes en **Production** — c'est le scénario le plus cohérent avec « aucune requête depuis le 9 juillet » |
-| formulaire normal | formulaire normal, et l'inscription échoue **avec une requête visible vers Supabase** dans l'onglet réseau | **seul cas qui fait tomber l'hypothèse.** C'est autre chose ; le F12 redevient nécessaire |
+L'hypothèse principale tenue pendant des semaines — `NEXT_PUBLIC_SUPABASE_URL`
+et `NEXT_PUBLIC_SUPABASE_ANON_KEY` absentes au build — était **fausse**. Le test
+à deux écrans l'a réfutée en trente secondes : préversion ET production
+affichaient un formulaire normal, ce qui était précisément la quatrième ligne du
+tableau, celle qui disait « c'est autre chose ».
 
-⚠️ **Un formulaire normal sur la préversion ne réfute rien à lui seul.**
-L'hypothèse ne tombe pas, elle se **déplace** vers Production. Seule la
-quatrième ligne la réfute, et elle exige de voir une requête partir.
+La leçon n'est pas « l'hypothèse était mauvaise » — elle était raisonnable. Elle
+est que **le symptôme rapporté n'a jamais été vérifié**. « L'inscription ne
+marche pas » décrivait l'expérience d'un utilisateur, pas l'état du système. Une
+seule tentative réelle, en regardant les deux bouts en même temps, valait toutes
+les déductions.
+
+### ⏳ Reste à faire — deux réglages, aucun code
+
+- [ ] **Supabase → Authentication › URL Configuration**
+      - `Site URL` = le domaine de production (**pas** l'URL du tableau de bord
+        `vercel.com/...`, qui est la page d'administration)
+      - `Redirect URLs` : `https://<domaine>/**`, plus
+        `https://*-eliezerphilippe0-1474s-projects.vercel.app/**` pour que le
+        retour d'authentification fonctionne aussi sur les préversions
+- [ ] **Vercel → Environment Variables › Production** : `NEXT_PUBLIC_SITE_URL`,
+      **puis redéployer** — Next.js l'inline à la compilation, la poser ne
+      suffit pas. C'est aussi l'étape 1 de `docs/22` : sans elle, l'aperçu
+      WhatsApp fige le mauvais domaine, et son cache est persistant.
+- [ ] **Vérifier** en créant un troisième compte : le lien du courriel doit
+      ouvrir le site, pas `localhost`.
+
+⚠️ Si le projet a un domaine personnalisé, c'est **lui** qu'il faut partout —
+c'est l'adresse que les vendeurs verront dans leurs courriels et celle que
+WhatsApp figera.
 
 ## Backlog revue Team Agents (BL-xxx) — 2026-07-15
 
