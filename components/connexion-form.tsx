@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BrandMark } from "@/components/brand-logo";
 import { safeNext } from "@/lib/safe-next";
 import { causeAuth, estModeDemo } from "@/lib/auth-erreurs";
+import { ConfigSupabaseInvalide } from "@/lib/supabase/config";
 import { checkDisplayName } from "@/lib/display-name";
 
 type Mode = "signin" | "signup";
@@ -21,6 +22,7 @@ export type ConnexionLabels = {
   signupCta: string;
   signupSuccess: string;
   demoMode: string;
+  errConfig: string;
   linkExpired: string;
   backHome: string;
   errorGeneric: string;
@@ -113,6 +115,17 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : labels.errorGeneric;
+      // AVANT le mode démo, et c'est l'ordre qui compte : une configuration
+      // PRÉSENTE MAIS FAUSSE n'est pas une absence de configuration. Les
+      // confondre dirait « mode démo » à quelqu'un dont les variables sont
+      // posées — un troisième instrument menteur. Le message brut, qui NOMME
+      // la valeur fautive, part au journal ; l'acheteur voit une phrase
+      // inoffensive (`lib/supabase/config.ts`).
+      if (err instanceof ConfigSupabaseInvalide) {
+        console.error("[connexion]", raw);
+        setMsg(labels.errConfig);
+        return;
+      }
       if (estModeDemo(raw)) {
         setMsg(labels.demoMode);
         return;

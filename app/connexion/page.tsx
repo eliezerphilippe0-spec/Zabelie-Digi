@@ -26,6 +26,7 @@ export default async function ConnexionPage() {
           signupCta: t(lang, "auth.signup.cta"),
           signupSuccess: t(lang, "auth.signup.success"),
           demoMode: t(lang, "auth.demo.mode"),
+          errConfig: t(lang, "auth.err.config"),
           linkExpired: t(lang, "auth.link.expired"),
           backHome: t(lang, "auth.back.home"),
           errorGeneric: t(lang, "error.generic"),
