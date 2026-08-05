@@ -24,6 +24,30 @@
 --   F15. Borne TEMPORELLE de l'escalade : atteinte à l'échéance
 --        d'auto-réception alors que les tentatives sont loin du plafond —
 --        et pas avant elle.
+--
+-- LE FILET STRUCTUREL (chantier 1) — F1→F15 éprouvent la machine à états une
+-- fois le suivi OUVERT ; ils ne disent rien du cas où personne ne l'ouvre.
+--   F16. Appel absent → suivi ouvert, escrow verrouillé, `created_at` ancré
+--        sur la confirmation du PAIEMENT et non sur l'heure de la réparation.
+--   F17. Escrow déjà mûri → action requise + file admin, et AUCUNE écriture
+--        sur `escrow_entries` (instantané champ par champ, avant/après).
+--   F18. Quatre cas que le filet ne doit PAS toucher : (a) digital réparable,
+--        (b) commande encore dans la fenêtre de grâce, (c) suivi déjà
+--        `shipped`, (d) DIGITAL à escrow mûri — seul endroit où l'absence de
+--        filtre `kind` se voit, la branche tardive insérant sans passer par
+--        `zabelie_open_fulfillment`.
+--   F19. La fenêtre part de min(confirmed_at) : plusieurs paiements possibles
+--        sur une commande. Jumeau connu-négatif inclus.
+--   F20. Les DEUX causes de `orders.disputed` (garde-fou de montant / remise)
+--        restent distinguables par la présence d'une ligne de suivi.
+--   F21. Identité comptable 0033 inchangée : le filet ne déplace aucun argent.
+--   F22. Appel MAL ORDONNÉ (avant `confirm_payment`) : la ligne existe mais
+--        rien n'est gelé. Le cas qu'un filet cherchant « pas de ligne de
+--        suivi » laisserait passer entièrement.
+--   F23. Commande HONORÉE : après réception le drapeau retombe à faux et
+--        l'escrow reste `maturing`. Sans exclusion des états clos, le filet
+--        reposerait le verrou et le vendeur ne serait JAMAIS payé.
+--   A1.  Balayage à vide : les deux compteurs EXISTENT et valent 0.
 
 begin;
 
@@ -457,6 +481,296 @@ begin
   end if;
 
   raise notice 'OK — F15 borne temporelle : escalade à l''échéance, tentatives loin du plafond';
+end;
+$$;
+
+-- ── F16→F23 — LE FILET STRUCTUREL (chantier 1) ──────────────────────────────
+-- Ce que ces huit cas ajoutent à F1→F15 : ceux-là éprouvent la machine à états
+-- UNE FOIS le suivi ouvert. Ils ne disent rien du cas où PERSONNE ne l'ouvre —
+-- or `zabelie_open_fulfillment` n'a eu, jusqu'à ce chantier, aucun appelant :
+-- le branchement dans `confirm_payment` est resté une note d'application. Tout
+-- 0043 était donc inerte en production, avec quinze tests verts. C'est ce
+-- trou-là que le filet ferme et que ces cas mesurent.
+--
+-- Les fixtures F1→F15 ne créent AUCUNE ligne `payments` : elles ne peuvent
+-- donc pas être ramassées par le filet, qui exige une confirmation de
+-- paiement. Aucune interférence entre les deux moitiés du fichier.
+do $$
+declare
+  v_wallet uuid;
+  -- Réparables — l'argent est encore gelable.
+  v_o16  uuid := '00000000-0000-0000-0000-0000000f0060';  -- appel ABSENT
+  v_o22  uuid := '00000000-0000-0000-0000-0000000f0061';  -- appel MAL ORDONNÉ
+  v_o19a uuid := '00000000-0000-0000-0000-0000000f0062';  -- 2 paiements, 1er ancien
+  -- Tardif — l'argent est déjà sorti.
+  v_o17  uuid := '00000000-0000-0000-0000-0000000f0063';
+  -- À NE PAS toucher.
+  v_o18a uuid := '00000000-0000-0000-0000-0000000f0064';  -- produit DIGITAL
+  v_o18b uuid := '00000000-0000-0000-0000-0000000f0065';  -- dans la grâce
+  v_o18c uuid := '00000000-0000-0000-0000-0000000f0066';  -- déjà `shipped`
+  v_o18d uuid := '00000000-0000-0000-0000-0000000f006a';  -- DIGITAL + escrow mûri
+  v_o19b uuid := '00000000-0000-0000-0000-0000000f0067';  -- 2 paiements, 1er récent
+  v_o20  uuid := '00000000-0000-0000-0000-0000000f0068';  -- litige de MONTANT
+  v_o23  uuid := '00000000-0000-0000-0000-0000000f0069';  -- déjà REÇU
+  v_sweep  jsonb;
+  v_gated  boolean;
+  v_status text;
+  v_bal0   bigint; v_pend0 bigint; v_led0 bigint;
+  v_bal1   bigint; v_pend1 bigint; v_led1 bigint;
+  -- Instantané de l'escrow tardif, champ par champ.
+  v_e_gated0 boolean; v_e_mat0 timestamptz; v_e_st0 text;
+  v_e_gated1 boolean; v_e_mat1 timestamptz; v_e_st1 text;
+  v_created  timestamptz; v_conf timestamptz;
+  v_n        integer;
+begin
+  select id into v_wallet from wallets
+   where owner_id = '00000000-0000-0000-0000-0000000f0001';
+
+  -- ── Fixtures ──────────────────────────────────────────────────────────────
+  insert into orders (id, buyer_id, product_id, amount_htg, status) values
+    (v_o16,  '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o22,  '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o19a, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o17,  '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o18a, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0010', 1000, 'paid'),
+    (v_o18b, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o18c, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o19b, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o20,  '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'disputed'),
+    (v_o23,  '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0011', 2000, 'paid'),
+    (v_o18d, '00000000-0000-0000-0000-0000000f0002', '00000000-0000-0000-0000-0000000f0010', 1000, 'paid');
+
+  insert into payments (order_id, rail, idempotency_key, status, confirmed_at) values
+    (v_o16,  'moncash', 'net_16',  'confirmed', now() - interval '7 hours'),
+    (v_o22,  'moncash', 'net_22',  'confirmed', now() - interval '7 hours'),
+    -- F19 : DEUX paiements. La fenêtre se mesure sur le PREMIER.
+    (v_o19a, 'moncash', 'net_19a1','confirmed', now() - interval '8 hours'),
+    (v_o19a, 'moncash', 'net_19a2','confirmed', now() - interval '1 hour'),
+    (v_o19b, 'moncash', 'net_19b1','confirmed', now() - interval '5 hours'),
+    (v_o19b, 'moncash', 'net_19b2','confirmed', now() - interval '1 hour'),
+    (v_o17,  'moncash', 'net_17',  'confirmed', now() - interval '7 hours'),
+    (v_o18a, 'moncash', 'net_18a', 'confirmed', now() - interval '7 hours'),
+    (v_o18b, 'moncash', 'net_18b', 'confirmed', now() - interval '2 hours'),
+    (v_o18c, 'moncash', 'net_18c', 'confirmed', now() - interval '7 hours'),
+    (v_o18d, 'moncash', 'net_18d', 'confirmed', now() - interval '7 hours'),
+    (v_o23,  'moncash', 'net_23',  'confirmed', now() - interval '7 hours'),
+    -- F20 : le garde-fou de MONTANT (0044) — paiement rejeté, aucun escrow.
+    (v_o20,  'moncash', 'net_20',  'failed',    null);
+
+  insert into escrow_entries (order_id, wallet_id, amount_htg, matures_at, status, gated_on_delivery) values
+    (v_o16,  v_wallet, 1800, now() + interval '7 days', 'maturing', false),
+    (v_o22,  v_wallet, 1800, now() + interval '7 days', 'maturing', false),
+    (v_o19a, v_wallet, 1800, now() + interval '7 days', 'maturing', false),
+    (v_o19b, v_wallet, 1800, now() + interval '7 days', 'maturing', false),
+    (v_o18a, v_wallet,  900, now() + interval '7 days', 'maturing', false),
+    (v_o18b, v_wallet, 1800, now() + interval '7 days', 'maturing', false),
+    (v_o18c, v_wallet, 1800, now() + interval '7 days', 'maturing', true),
+    -- F23 : commande HONORÉE — `mark_received` a remis le drapeau à faux et
+    -- l'escrow reste `maturing` jusqu'au passage de `mature_wallets()`.
+    (v_o23,  v_wallet, 1800, now() + interval '7 days', 'maturing', false),
+    -- F17 : l'argent est DÉJÀ SORTI.
+    (v_o17,  v_wallet, 1800, now() - interval '1 day',  'matured',  false),
+    -- F18d : DIGITAL dont l'escrow a mûri. Seul cas où un filtre `kind`
+    -- manquant se VOIT : la branche tardive insère en direct et n'hérite pas
+    -- du garde de type de `zabelie_open_fulfillment` (la branche réparable,
+    -- elle, passe par lui et serait protégée sans rien faire).
+    (v_o18d, v_wallet,  900, now() - interval '1 day',  'matured',  false);
+
+  -- Suivis préexistants : l'ordre inversé (F22), le colis parti (F18c), la
+  -- commande reçue (F23).
+  insert into zabelie_fulfillment (order_id, status) values (v_o22, 'awaiting_shipment');
+  insert into zabelie_fulfillment (order_id, status, shipped_at)
+    values (v_o18c, 'shipped', now());
+  insert into zabelie_fulfillment (order_id, status, received_at, received_by)
+    values (v_o23, 'received', now(), '00000000-0000-0000-0000-0000000f0002');
+
+  -- L'identité de 0033 doit tenir AVANT le balayage, sinon F21 mesurerait le
+  -- désordre de sa propre fixture.
+  insert into wallet_transactions (wallet_id, type, amount_htg, order_id, idempotency_key)
+  select v_wallet, 'credit', e.amount_htg, e.order_id, 'net_' || e.order_id
+    from escrow_entries e
+   where e.order_id in (v_o16, v_o22, v_o19a, v_o19b, v_o17, v_o18a, v_o18b, v_o18c, v_o23, v_o18d);
+  update wallets set
+    pending_htg = pending_htg + (select coalesce(sum(amount_htg), 0) from escrow_entries
+                                  where order_id in (v_o16, v_o22, v_o19a, v_o19b, v_o18a, v_o18b, v_o18c, v_o23)),
+    balance_htg = balance_htg + (select coalesce(sum(amount_htg), 0) from escrow_entries
+                                  where order_id in (v_o17, v_o18d))
+   where id = v_wallet;
+
+  select balance_htg, pending_htg into v_bal0, v_pend0 from wallets where id = v_wallet;
+  select coalesce(sum(amount_htg), 0) into v_led0 from wallet_transactions where wallet_id = v_wallet;
+  if v_led0 <> v_bal0 + v_pend0 then
+    raise exception 'F21: la FIXTURE elle-même rompt 0033 (ledger=%, soldes=%) — le cas ne mesurerait rien',
+      v_led0, v_bal0 + v_pend0;
+  end if;
+
+  select gated_on_delivery, matures_at, status::text
+    into v_e_gated0, v_e_mat0, v_e_st0 from escrow_entries where order_id = v_o17;
+
+  -- ── Le balayage ───────────────────────────────────────────────────────────
+  v_sweep := zabelie_fulfillment_sweep();
+
+  -- ── F16 · F19a · F22 — les trois réparables ──────────────────────────────
+  select gated_on_delivery into v_gated from escrow_entries where order_id = v_o16;
+  if v_gated is not true then
+    raise exception 'F16: appel absent NON rattrapé — l''escrow mûrira au chronomètre';
+  end if;
+  select status::text into v_status from zabelie_fulfillment where order_id = v_o16;
+  if v_status is distinct from 'awaiting_shipment' then
+    raise exception 'F16: suivi absent ou dans un état inattendu (%)', v_status;
+  end if;
+  -- L'ANCRE : le délai vendeur part de la confirmation du paiement, pas de
+  -- l'heure de la réparation.
+  select created_at into v_created from zabelie_fulfillment where order_id = v_o16;
+  select min(confirmed_at) into v_conf from payments
+   where order_id = v_o16 and status = 'confirmed';
+  if v_created <> v_conf then
+    raise exception 'F16: created_at ancré sur la réparation (%) et non sur le paiement (%) — le vendeur gagnerait le retard de la plateforme',
+      v_created, v_conf;
+  end if;
+
+  select gated_on_delivery into v_gated from escrow_entries where order_id = v_o22;
+  if v_gated is not true then
+    raise exception 'F22: appel MAL ORDONNÉ non rattrapé — la ligne de suivi existe mais rien n''est gelé. C''est le cas qu''un filet cherchant « pas de ligne de suivi » laisserait passer entièrement';
+  end if;
+
+  select gated_on_delivery into v_gated from escrow_entries where order_id = v_o19a;
+  if v_gated is not true then
+    raise exception 'F19: fenêtre mesurée sur max(confirmed_at) — un paiement tardif rajeunit l''orphelin indéfiniment';
+  end if;
+
+  -- ── F17 — le tardif : AUCUNE écriture sur l'escrow ───────────────────────
+  select gated_on_delivery, matures_at, status::text
+    into v_e_gated1, v_e_mat1, v_e_st1 from escrow_entries where order_id = v_o17;
+  if (v_e_gated1, v_e_mat1, v_e_st1) is distinct from (v_e_gated0, v_e_mat0, v_e_st0) then
+    raise exception 'F17: escrow MÛRI modifié par le filet — avant (%, %, %), après (%, %, %). L''argent est parti : re-verrouiller ne récupère rien et rompt 0033',
+      v_e_gated0, v_e_mat0, v_e_st0, v_e_gated1, v_e_mat1, v_e_st1;
+  end if;
+  select status::text into v_status from zabelie_fulfillment where order_id = v_o17;
+  if v_status is distinct from 'action_required' then
+    raise exception 'F17: le tardif n''atterrit pas en action requise (%)', v_status;
+  end if;
+  if (select status::text from orders where id = v_o17) <> 'disputed' then
+    raise exception 'F17: le tardif reste invisible côté commande';
+  end if;
+  if not exists (select 1 from zabelie_fulfillment_overdue where order_id = v_o17) then
+    raise exception 'F17: absent de la file admin — personne ne le verra';
+  end if;
+
+  -- ── F18 — les trois que le filet ne doit PAS toucher ─────────────────────
+  -- (a) DIGITAL. La branche tardive INSÈRE directement et n'hérite donc pas
+  --     du garde de type de `zabelie_open_fulfillment` : c'est ici que se voit
+  --     un filtre `kind` manquant.
+  if exists (select 1 from zabelie_fulfillment where order_id = v_o18a) then
+    raise exception 'F18a: suivi ouvert sur un produit DIGITAL — le flux digital n''est plus intact';
+  end if;
+  if (select gated_on_delivery from escrow_entries where order_id = v_o18a) is true then
+    raise exception 'F18a: escrow d''un DIGITAL verrouillé par le filet';
+  end if;
+  -- (b) DANS LA GRÂCE. `/api/reconcile` ne passe qu'une fois par jour : une
+  --     commande de deux heures n'est pas un oubli.
+  if exists (select 1 from zabelie_fulfillment where order_id = v_o18b) then
+    raise exception 'F18b: commande de 2 h traitée en orphelin — la fenêtre de grâce ne joue pas';
+  end if;
+  -- (c) DÉJÀ EXPÉDIÉE, escrow correctement verrouillé.
+  select status::text into v_status from zabelie_fulfillment where order_id = v_o18c;
+  if v_status is distinct from 'shipped' then
+    raise exception 'F18c: suivi `shipped` recalé par le filet (%)', v_status;
+  end if;
+  -- (d) DIGITAL À ESCROW MÛRI — la branche TARDIVE insère sans passer par
+  --     `zabelie_open_fulfillment` : c'est le seul endroit du filet où
+  --     l'absence de filtre `kind` produit un effet observable.
+  if exists (select 1 from zabelie_fulfillment where order_id = v_o18d) then
+    raise exception 'F18d: suivi de remise ouvert sur un produit DIGITAL par la branche tardive — le filtre `kind` ne protège que la branche réparable';
+  end if;
+  if (select status::text from orders where id = v_o18d) <> 'paid' then
+    raise exception 'F18d: commande DIGITALE passée en litige de remise par le filet';
+  end if;
+  -- (e) F19b — les deux paiements récents : min = 5 h < 6 h de grâce.
+  if exists (select 1 from zabelie_fulfillment where order_id = v_o19b) then
+    raise exception 'F19b: orphelin déclaré alors que la PREMIÈRE confirmation date de 5 h';
+  end if;
+
+  -- ── F23 — le garde qui empêche de ne JAMAIS payer le vendeur ─────────────
+  select gated_on_delivery into v_gated from escrow_entries where order_id = v_o23;
+  if v_gated is not false then
+    raise exception 'F23: commande HONORÉE re-verrouillée par le filet. Après réception, `mark_received` remet le drapeau à faux et l''escrow reste `maturing` — sans l''exclusion des états clos, le filet repose le verrou à chaque passage et le vendeur n''est JAMAIS payé';
+  end if;
+  select status::text into v_status from zabelie_fulfillment where order_id = v_o23;
+  if v_status is distinct from 'received' then
+    raise exception 'F23: état de réception écrasé par le filet (%)', v_status;
+  end if;
+
+  -- ── F20 — les DEUX causes de `orders.disputed` restent distinguables ──────
+  -- Le garde-fou de montant (0044) pose `disputed` sans jamais créer d'escrow
+  -- ni de suivi. Le désambiguïsateur est la présence d'une ligne de suivi.
+  if exists (select 1 from zabelie_fulfillment where order_id = v_o20) then
+    raise exception 'F20: le filet a ouvert un suivi sur un litige de MONTANT';
+  end if;
+  if exists (select 1 from zabelie_fulfillment_overdue where order_id = v_o20) then
+    raise exception 'F20: un litige de MONTANT apparaît dans la file des remises — les deux causes de `disputed` sont confondues';
+  end if;
+
+  -- ── F21 — aucune écriture d'argent (cadre BRH) ───────────────────────────
+  select balance_htg, pending_htg into v_bal1, v_pend1 from wallets where id = v_wallet;
+  select coalesce(sum(amount_htg), 0) into v_led1 from wallet_transactions where wallet_id = v_wallet;
+  if v_led1 <> v_bal1 + v_pend1 then
+    raise exception 'F21: identité 0033 rompue après le filet — ledger=%, soldes=%', v_led1, v_bal1 + v_pend1;
+  end if;
+  if (v_bal1, v_pend1, v_led1) is distinct from (v_bal0, v_pend0, v_led0) then
+    raise exception 'F21: le filet a DÉPLACÉ de l''argent — avant (%, %, %), après (%, %, %)',
+      v_bal0, v_pend0, v_led0, v_bal1, v_pend1, v_led1;
+  end if;
+
+  -- ── Les compteurs, EN DERNIER — et c'est le harnais de mutation qui l'a
+  -- imposé. Placés en tête, ils rougissaient les premiers sur QUATRE des six
+  -- mutations et masquaient le cas précis : « 4 orphelins réparés, 3 attendus »
+  -- dit qu'un garde a sauté, jamais lequel. Un compteur est un fil-piège, pas
+  -- un diagnostic : il passe après les assertions qui nomment le défaut, et
+  -- ne sert plus qu'à attraper ce qu'aucune d'elles ne couvre.
+  if (v_sweep->>'orphelins_repares')::integer <> 3 then
+    raise exception 'F16/F19/F22: % orphelin(s) réparé(s), 3 attendus — %',
+      v_sweep->>'orphelins_repares', v_sweep::text;
+  end if;
+  if (v_sweep->>'orphelins_tardifs')::integer <> 1 then
+    raise exception 'F17: % orphelin(s) tardif(s), 1 attendu', v_sweep->>'orphelins_tardifs';
+  end if;
+
+  -- ── Idempotence — un second passage ne recompte rien ─────────────────────
+  -- Sans elle, le filet republierait les mêmes orphelins chaque jour : les
+  -- compteurs du journal deviendraient du bruit, et la branche tardive
+  -- repasserait une commande déjà chez un humain en `action_required`.
+  v_sweep := zabelie_fulfillment_sweep();
+  if (v_sweep->>'orphelins_repares')::integer <> 0
+     or (v_sweep->>'orphelins_tardifs')::integer <> 0 then
+    raise exception 'F16/F17: second passage non idempotent — %', v_sweep::text;
+  end if;
+
+  raise notice 'OK — F16 appel absent · F17 tardif sans écriture escrow · F18 quatre négatifs (dont F18d digital tardif) · F19 min(confirmed_at) · F20 disputed distinguable · F21 zéro argent · F22 appel mal ordonné · F23 commande honorée intacte';
+end;
+$$;
+
+-- ── Absence de signal — le balayage à vide DOIT porter ses compteurs ────────
+-- « n'a pas tourné » et « a tourné, rien trouvé » ne doivent pas produire le
+-- même vide. L'assertion porte sur l'EXISTENCE de la clé : une clé oubliée
+-- dans `jsonb_build_object` rend `null`, et un compteur absent se lit comme
+-- « rien à faire ».
+do $$
+declare
+  v_sweep jsonb;
+begin
+  delete from zabelie_fulfillment;
+  delete from escrow_entries;
+  delete from payments;
+  v_sweep := zabelie_fulfillment_sweep();
+  if not (v_sweep ? 'orphelins_repares') or not (v_sweep ? 'orphelins_tardifs') then
+    raise exception 'A1: compteurs du filet ABSENTS du journal du cron — %', v_sweep::text;
+  end if;
+  if (v_sweep->>'orphelins_repares')::integer <> 0
+     or (v_sweep->>'orphelins_tardifs')::integer <> 0 then
+    raise exception 'A1: base vide et compteurs non nuls — %', v_sweep::text;
+  end if;
+  raise notice 'OK — A1 balayage à vide : les deux compteurs existent et valent 0';
 end;
 $$;
 

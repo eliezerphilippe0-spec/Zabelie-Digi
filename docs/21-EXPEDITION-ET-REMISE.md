@@ -222,7 +222,10 @@ et la relance est ce qui le rend acceptable.
 
 ## 4. Ce qui est vérifié, et comment
 
-`supabase/tests/fulfillment.test.sql` — quinze contrôles, dont deux centraux :
+`supabase/tests/fulfillment.test.sql` — vingt-trois contrôles plus le cas
+d'absence de signal. F1→F15 couvrent la machine à états ; F16→F23 le filet
+structurel du chantier 1 (§4 bis).
+
 
 | # | Contrôle |
 |---|---|
@@ -240,6 +243,15 @@ et la relance est ce qui le rend acceptable.
 | F13 | « Je n'ai pas reçu » avant l'échéance → litige, escrow toujours verrouillé, auto-réception impuissante |
 | F14 | Avis en échec, **tentatives épuisées** → file admin — et pas avant |
 | **F15** | **Borne temporelle** : escalade à l'échéance d'auto-réception, tentatives loin du plafond |
+| F16 | Appel absent → suivi ouvert, escrow verrouillé, `created_at` ancré sur la confirmation du **paiement** |
+| **F17** | **Escrow déjà mûri → aucune écriture sur `escrow_entries`**, instantané champ par champ |
+| F18 | Quatre négatifs : digital réparable · dans la grâce · déjà `shipped` · **digital à escrow mûri** |
+| F19 | Fenêtre sur `min(confirmed_at)`, jumeau connu-négatif inclus |
+| F20 | Les deux causes de `orders.disputed` restent distinguables |
+| F21 | Identité `0033` inchangée — le filet ne déplace aucun argent |
+| **F22** | **Appel mal ordonné** : ligne de suivi présente, rien de gelé |
+| **F23** | **Commande honorée non re-verrouillée** — sans ce garde, le vendeur n'est jamais payé |
+| A1 | Balayage à vide : les deux compteurs **existent** et valent 0 |
 
 **Deux gardes éprouvés par mutation** (règle du dépôt) — retirés, les tests
 échouent :
@@ -251,7 +263,12 @@ et la relance est ce qui le rend acceptable.
   l'échéance et AUCUNE escalade — le vendeur attend sans que personne voie le
   dossier`.
 
-## 4 bis. Plan de tests du chantier d'activation (étape 3)
+## 4 bis. Le filet structurel — plan de tests, et ce que son exécution a appris
+
+> **État : exécuté.** Suite SQL complète verte (27 fichiers) et six mutations
+> passées, chacune vue par l'assertion qui la nomme. Ce qui suit garde la
+> forme d'un plan parce que c'est ainsi qu'il a été arbitré ; les écarts entre
+> le plan et ce que la mesure a donné sont signalés en place.
 
 Ce §4 bis ne redécrit pas F1→F15 : ils couvrent déjà le cœur de `0043`. Il
 décrit **uniquement ce que le patch d'activation ajoute** — l'appel manquant,
@@ -346,7 +363,7 @@ arrêté plus d'une semaine.
 |---|---|---|
 | **F16** | **Positif, réparable** : commande physique, `confirmed_at` = −7 h, escrow `maturing`, aucune ligne de suivi → balayage | Ligne créée en `awaiting_shipment`, `gated_on_delivery` **passe à vrai**, `orphelins_repares = 1` |
 | **F17** | **Positif, tardif** : idem mais escrow déjà `matured` | Ligne créée directement en `action_required`, commande `disputed`, présente dans `zabelie_fulfillment_overdue`, `orphelins_tardifs = 1` — et **instantané strict avant/après de `(gated_on_delivery, matures_at, status)` sur `escrow_entries` : identique au champ près**. L'argent est parti ; re-verrouiller serait une écriture sur un escrow mûri |
-| **F18** | **Négatif du filet**, trois sous-cas dans le **même** balayage : (a) commande digitale sans suivi ; (b) commande physique `confirmed_at` = −2 h (< grâce) ; (c) commande physique dont le suivi est déjà en `shipped` | Aucune ligne créée, aucun état recalé, **compteurs à 0** |
+| **F18** | **Négatif du filet**, quatre sous-cas dans le **même** balayage : (a) commande digitale réparable ; (b) commande physique `confirmed_at` = −2 h (< grâce) ; (c) commande physique dont le suivi est déjà en `shipped` ; **(d)** commande **digitale à escrow mûri** | Aucune ligne créée, aucun état recalé. ⚠️ **(d) ajouté après coup** : sur (a), `zabelie_open_fulfillment` refuse déjà le non-physique, donc retirer le filtre `kind` ne produisait aucun effet observable. Seule la branche **tardive**, qui insère en direct, expose le défaut |
 | **F19** | **`min(confirmed_at)`** : deux paiements sur la même commande, à −8 h et −1 h | Orphelin détecté. Jumeau connu-négatif : paiements à −5 h et −1 h → **pas** orphelin |
 | **F20** | **Le `disputed` partagé** : commande digitale passée `disputed` par le garde-fou de montant, sans ligne de suivi | Absente de `zabelie_fulfillment_overdue`, aucune ligne créée par le filet |
 | **F21** | **Identité comptable `0033`** avant/après le balayage complet | `Σ(wallet_transactions) = balance_htg + pending_htg` — le filet n'écrit **aucun** montant (cadre BRH) |
@@ -368,8 +385,10 @@ une mutation n'a pas muté et le vert a été lu comme une résistance.
 |---|---|---|
 | M1 | Retirer le garde `escrow.status = 'maturing'` de la branche réparable | **F17** — la branche tardive re-verrouillerait un escrow mûri ; l'instantané diverge |
 | M2 | `min(confirmed_at)` → `max(confirmed_at)` | **F19** |
-| M3 | Retirer le filtre `kind = 'physical'` de la branche **tardive** | **F18 (a)** — la branche tardive **n'appelle pas** `open_fulfillment` : elle insère directement et n'hérite donc pas de son garde de type. C'est la mutation la plus importante des cinq |
+| M3 | Retirer le filtre `kind = 'physical'` | **F18 (d)** — et non (a), comme le plan l'annonçait : la branche réparable passe par `open_fulfillment`, qui refuse déjà le non-physique. Seule la branche tardive insère en direct |
 | M4 | Retirer `orphan_grace_hours` de la condition | **F18 (b)** |
+| **M5** | **Retirer l'exclusion des états clos** (`received`, `action_required`, `disputed_by_buyer`) | **F23** — mutation absente du plan initial, ajoutée avec le garde qu'elle éprouve |
+| **M6** | **Revenir à « pas de ligne de suivi »** | **F22** — la formulation abandonnée, gardée sous mutation pour qu'on ne puisse pas y revenir sans que ça rougisse |
 | M5 | Retirer la ligne `/api/fulfillment/sweep` de `vercel.json` — puis, séparément, la remettre **en gardant** l'exemption | `tests/crons-appelants.test.ts` : `orphelines` d'un côté, `exemptionsPerimees` de l'autre. Les deux sens sont déjà câblés dans l'instrument |
 
 ### 4 bis.4 — Absence de signal
@@ -411,11 +430,29 @@ premier endroit où une revue se trompe.
 ## 5. Ce qui reste à faire avant application
 
 1. **Arbitrer les trois valeurs** du §2.
-2. **Recopier le corps de `confirm_payment` version `0038`** dans `0043` §6 en
-   y ajoutant l'appel à `zabelie_open_fulfillment`. Délibérément non fait
-   tant que les valeurs ne sont pas arbitrées : dupliquer une fonction du
-   money-path pour la laisser diverger d'une revue à l'autre est précisément
-   ce qu'on cherche à éviter.
+2. **Brancher `zabelie_open_fulfillment`** — ⚠️ **c'est le trou qui rendait
+   toute cette migration inerte** : la fonction n'a eu, jusqu'au chantier 1,
+   **aucun appelant**. Quinze tests verts prouvaient une machine à états que
+   rien n'ouvrait jamais.
+
+   **Décision (chantier 1), en remplacement de la note d'application du §6
+   de `0043`** : l'appel se fait depuis les **quatre routes serveur** qui
+   invoquent `confirm_payment` (`app/api/moncash/return/route.ts:131`,
+   `app/api/reconcile/route.ts:62`, `app/api/stripe/webhook/route.ts:52`,
+   `app/api/admin/confirm-zelle/route.ts:54`), **et non** par recopie du
+   corps de `confirm_payment` — cette fonction est déjà remplacée par `0005`,
+   `0009`, `0027` et `0044`, et une recopie de plus recréerait le « dernier
+   `create or replace` gagne » que `0044` documente.
+
+   Le prix de ce choix est assumé : quatre sites d'appel, c'est quatre
+   occasions d'oublier, et un cinquième rail n'hériterait de rien. D'où les
+   deux contre-mesures, **livrées avec** :
+   - le **filet structurel** du §6 bis de `0043` (§4 bis ici), qui rattrape
+     l'appel absent **et** l'appel mal ordonné ;
+   - un croisement TypeScript **T1** : toute route qui appelle
+     `confirm_payment` doit appeler `zabelie_open_fulfillment`, et l'absence
+     échoue — sur le modèle de `tests/crons-appelants.test.ts`, parce qu'un
+     test SQL ne voit pas le TypeScript.
 3. **Les surfaces** — aucune n'existe encore :
    - vendeur : bouton « Mwen remèt li / J'ai remis » + note de remise ;
    - acheteur (`/mes-achats`) : « Mwen resevwa l / J'ai reçu » **et
@@ -433,7 +470,12 @@ premier endroit où une revue se trompe.
    long).
 4. **Le cron** `zabelie_fulfillment_sweep()` — une route qui journalise ses
    compteurs **même à zéro** (règle d'observabilité), et une entrée dans
-   `vercel.json`.
+   `vercel.json`. Le jour où elle est déclarée, l'exemption
+   `zabelie_fulfillment_sweep` de `tests/crons-appelants.test.ts` doit être
+   **retirée** : ce contrôle échoue aussi sur une exemption devenue périmée,
+   donc la laisser en place ferait rougir la suite. Rappel de sa limite :
+   il prouve qu'un appelant existe dans le dépôt, **pas** que le cron
+   s'exécute — cette preuve-là se lit dans le journal Vercel.
 5. **B2 avant** : `0037`/`0038`/`0040` doivent être appliquées d'abord —
    `0043` §6 remplace la version `0038` de `confirm_payment`.
 6. **Les textes de façade qui attendent cette migration.** Aujourd'hui ils ne
