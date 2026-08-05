@@ -9,7 +9,7 @@
 --   F5. L'acheteur ne peut pas confirmer une remise NON déclarée.
 --   F6. Réception → commande `delivered`, escrow déverrouillé, PUIS il mûrit.
 --   F7. Silence de l'acheteur → auto-réception par le cron.
---   F8. Silence du VENDEUR → `refund_required` + commande `disputed`.
+--   F8. Silence du VENDEUR → `action_required` + commande `disputed`.
 --   F9. Idempotence : déclarer/confirmer deux fois ne double rien.
 --   F10. L'identité comptable de 0033 tient à chaque étape.
 --   F11. Déclaration de remise → DEUX avis acheteur créés dans la même
@@ -21,6 +21,9 @@
 --   F14. Avis en échec → escalade en file admin, par l'UN OU L'AUTRE des deux
 --        déclencheurs : tentatives épuisées, ou échéance d'auto-réception
 --        atteinte avec avis en attente. Et pas avant l'un des deux.
+--   F15. Borne TEMPORELLE de l'escalade : atteinte à l'échéance
+--        d'auto-réception alors que les tentatives sont loin du plafond —
+--        et pas avant elle.
 
 begin;
 
