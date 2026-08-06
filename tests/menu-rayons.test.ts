@@ -35,6 +35,26 @@ const CATS: Cat[] = [
   cat({ id: "d3", slug: "dormant", label_fr: "Dormant", level: 1, active: false, position: 30 }),
 ];
 
+test("le lien d'un rayon filtre par le label_fr du DÉPARTEMENT, jamais par son slug", () => {
+  // Le bug que ce test fige : `?cat=<slug>` alors que `products.category`
+  // stocke le label_fr du département (`api/products/physical` §160). Un
+  // clic de menu rendait toujours zéro résultat — et rien ne le signalait
+  // tant qu'aucun produit physique n'était publié.
+  const m = construireMenu(CATS, new Map(), "ht"); // langue ≠ fr, exprès :
+  // le libellé AFFICHÉ suit la langue, le FILTRE reste label_fr.
+  const dep = m[0];
+  assert.equal(dep.href, "/catalogue?cat=Alimentation");
+  assert.equal(dep.enfants[0].href, "/catalogue?cat=Alimentation&sous=pwodwi-lokal");
+  // Connu-négatif : la forme fautive d'origine ne doit réapparaître nulle part.
+  const tous = m.flatMap((r) => [r, ...r.enfants]);
+  for (const r of tous) {
+    assert.ok(
+      !r.href.includes("cat=" + r.slug),
+      `href fautif (slug comme filtre département) : ${r.href}`
+    );
+  }
+});
+
 test("seuls les rayons ACTIFS apparaissent", () => {
   const m = construireMenu(CATS, new Map(), "fr");
   assert.deepEqual(m.map((r) => r.slug), ["manje", "elektwonik"]);
