@@ -6,6 +6,7 @@ import { UploadAsset } from "@/components/upload-asset";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
+import { isPrefetch, logLanding } from "@/lib/metrics";
 import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
@@ -58,6 +59,11 @@ function Shell({
 
 export default async function VendrePage() {
   const lang = await getLang();
+  // Mesure : arriver ici EST le signal « CTA vendeur » — tous les chemins
+  // (topbar, slide 3, rail, section finale) convergent sur cette page, et le
+  // serveur le voit sans un octet de JS. Garde préchargement : un survol de
+  // lien n'est pas un clic.
+  if (!(await isPrefetch())) logLanding("sell_cta_clicked");
 
   if (!isSupabaseConfigured()) {
     return (

@@ -3,6 +3,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { FaqList } from "@/components/faq-list";
 import { whatsappHref } from "@/lib/whatsapp";
+import { MetricA } from "@/components/metric-a";
 import { POLICY_PATH } from "@/lib/policy";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -42,15 +43,14 @@ export default async function AidePage() {
         {(wa || email) && (
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             {wa && (
-              <a
+              <MetricA
+                event="whatsapp_clicked"
                 href={wa}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="rounded-2xl border border-line bg-surface/40 p-5 transition hover:border-brand/60"
               >
                 <p className="font-semibold text-cloud">{t(lang, "wa.chat")}</p>
                 <p className="mt-1 text-sm text-mist">{t(lang, "rail.wa.b")}</p>
-              </a>
+              </MetricA>
             )}
             {email && (
               <a

@@ -4,6 +4,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { CategoryMenu } from "@/components/category-menu";
 import { SearchBox, type SearchSuggestion } from "@/components/search-box";
+import { MetricA } from "@/components/metric-a";
 import { getMenuRayons, type RayonMenu } from "@/lib/taxonomy";
 import { whatsappHref } from "@/lib/whatsapp";
 import { getCurrentUser } from "@/lib/auth";
@@ -55,15 +56,17 @@ export async function SiteNav() {
           </Link>
           <div className="flex items-center gap-4">
             {/* Masqué tant que le porteur n'a pas posé le numéro (env). */}
+            {/* Masqué sous sm : à 360 px le libellé se replie sur trois
+                lignes dans une barre de 36 px — la carte WhatsApp du rail
+                d'accueil couvre le mobile. */}
             {wa && (
-              <a
+              <MetricA
+                event="whatsapp_clicked"
                 href={wa}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-mist transition hover:text-cloud"
+                className="hidden text-mist transition hover:text-cloud sm:block"
               >
                 {t(lang, "wa.chat")}
-              </a>
+              </MetricA>
             )}
             <LangToggle current={lang} />
           </div>

@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/product-card";
 import { CategorySidebar } from "@/components/category-sidebar";
 import { DepartmentIcon } from "@/components/department-icons";
 import { HeroCarousel } from "@/components/hero-carousel";
+import { MetricA } from "@/components/metric-a";
 import { LANDING_SLIDES } from "@/lib/landing-slides";
 import { getMenuRayons } from "@/lib/taxonomy";
 import { whatsappHref } from "@/lib/whatsapp";
@@ -22,8 +23,16 @@ import { t } from "@/lib/i18n";
 import { isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { FaqList } from "@/components/faq-list";
+import { siteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
+
+// Canonique explicite (metadataBase : lib/site-url). PAS de hreflang : la
+// langue vit dans un cookie, toutes les langues partagent la même URL — un
+// hreflang qui pointe quatre fois sur la même adresse est un signal faux.
+export const metadata = {
+  alternates: { canonical: "/" },
+};
 
 /** Rangée de produits — masquée si vide (les sections vivent avec les données). */
 function HomeRow({
@@ -152,8 +161,37 @@ export default async function HomePage() {
     { n: "03", title: t(lang, "home.s3.t"), body: t(lang, "home.s3.b") },
   ];
 
+  // JSON-LD : Organization + WebSite avec SearchAction (sitelinks searchbox).
+  // La cible de recherche est le VRAI point d'entrée (/catalogue?q=), pas un
+  // endpoint inventé pour le balisage.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: "Zabelie",
+        url: siteUrl(),
+        logo: `${siteUrl()}/icon.svg`,
+      },
+      {
+        "@type": "WebSite",
+        name: "Zabelie",
+        url: siteUrl(),
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${siteUrl()}/catalogue?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ],
+  };
+
   return (
     <div className="bg-grain">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteNav />
 
       {/* BANDEAU CATÉGORIES — barre claire, texte sombre (style Bloop,
@@ -258,15 +296,14 @@ export default async function HomePage() {
             <p className="mt-1 text-xs text-mist">{t(lang, "rail.help.b")}</p>
           </Link>
           {whatsappHref(t(lang, "wa.prefill")) && (
-            <a
+            <MetricA
+              event="whatsapp_clicked"
               href={whatsappHref(t(lang, "wa.prefill"))!}
-              target="_blank"
-              rel="noopener noreferrer"
               className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
             >
               <p className="font-semibold text-cloud">{t(lang, "wa.chat")}</p>
               <p className="mt-1 text-xs text-mist">{t(lang, "rail.wa.b")}</p>
-            </a>
+            </MetricA>
           )}
           <Link
             href="/vendre"

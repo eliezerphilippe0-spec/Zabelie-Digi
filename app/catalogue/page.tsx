@@ -12,6 +12,7 @@ import { sessionFingerprint } from "@/lib/search-demand";
 import { headers } from "next/headers";
 import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
+import { isPrefetch, logLanding } from "@/lib/metrics";
 import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,15 @@ export default async function CataloguePage({
       }
     }
   }
+  // Mesure (journal Vercel, zéro PII — lib/metrics). Côté SERVEUR : la page
+  // qui reçoit la navigation voit l'événement sans un octet de JS client. Le
+  // garde préchargement évite de compter chaque survol de lien comme un clic.
+  if (!(await isPrefetch())) {
+    if (q) logLanding("search_submitted");
+    if (activeCat !== "Tout") logLanding("category_clicked", { cat: activeCat });
+    if (manque) logLanding("demand_sensor_submitted");
+  }
+
   const CATEGORIES = ["Tout", ...categories];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses

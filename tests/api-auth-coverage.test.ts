@@ -36,6 +36,11 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // — jamais du client ; bornée par token contre l'abus. Confirmation réelle =
   // serveur-à-serveur dans moncash/return (INVARIANT 2).
   "facture/[token]/pay/route.ts": /rateLimit\(/,
+  // Mesure de la landing : publique par nature (l'acheteur n'est pas
+  // connecté), n'écrit RIEN d'autre qu'une ligne de journal validée contre
+  // une liste fermée d'événements ; bornée par IP contre l'inondation du
+  // journal.
+  "metrics/landing/route.ts": /rateLimit\(/,
 };
 
 function collectRoutes(dir: string): string[] {
