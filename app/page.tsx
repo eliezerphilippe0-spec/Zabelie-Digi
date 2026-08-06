@@ -3,6 +3,12 @@ import Image from "next/image";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
+import { CategorySidebar } from "@/components/category-sidebar";
+import { DepartmentIcon } from "@/components/department-icons";
+import { HeroCarousel } from "@/components/hero-carousel";
+import { LANDING_SLIDES } from "@/lib/landing-slides";
+import { getMenuRayons } from "@/lib/taxonomy";
+import { whatsappHref } from "@/lib/whatsapp";
 import {
   getCatalogueCategories,
   getPublishedProducts,
@@ -92,6 +98,10 @@ export default async function HomePage() {
     // la barre sans que personne ne le voie.
     getCatalogueCategories(),
   ]);
+  // Les mêmes rayons que l'en-tête (RLS anon : actifs seulement) — la sidebar
+  // desktop et la grille de l'état vide en dérivent tous deux. Après le
+  // Promise.all : la requête dépend de `lang`.
+  const rayons = await getMenuRayons(lang);
 
   const cardLabels: ProductCardLabels = {
     kindFile: t(lang, "card.kind.file"),
@@ -129,16 +139,17 @@ export default async function HomePage() {
     .slice(0, 4)
     .map((s) => ({ ...s, rating: s.rN > 0 ? Math.round((s.rSum / s.rN) * 10) / 10 : null }));
 
-  const steps = [
+  // Deux parcours en trois pas — l'acheteur d'abord (c'est sa page), le
+  // vendeur ensuite. Mêmes cartes, deux sous-titres.
+  const stepsAcheteur = [
+    { n: "01", title: t(lang, "home.b1.t"), body: t(lang, "home.b1.b") },
+    { n: "02", title: t(lang, "home.b2.t"), body: t(lang, "home.b2.b") },
+    { n: "03", title: t(lang, "home.b3.t"), body: t(lang, "home.b3.b") },
+  ];
+  const stepsVendeur = [
     { n: "01", title: t(lang, "home.s1.t"), body: t(lang, "home.s1.b") },
     { n: "02", title: t(lang, "home.s2.t"), body: t(lang, "home.s2.b") },
     { n: "03", title: t(lang, "home.s3.t"), body: t(lang, "home.s3.b") },
-  ];
-
-  const stats = [
-    { value: "100%", label: t(lang, "home.stat1") },
-    { value: "MonCash", label: t(lang, "home.stat2") },
-    { value: t(lang, "home.stat3.v"), label: t(lang, "home.stat3") },
   ];
 
   return (
@@ -186,44 +197,131 @@ export default async function HomePage() {
       </nav>
       )}
 
-      {/* HERO — court (≤ 40 % du viewport mobile). Chaque pixel au-dessus de
-          la ligne de flottaison qui n'est ni un produit ni une recherche est
-          perdu sur Android d'entrée de gamme. Promesse concrète : ce qu'on
-          achète, où c'est livré, comment on paie. Pas d'animation. */}
-      <section className="mx-auto max-w-6xl px-5 pb-10 pt-10 sm:pt-14">
-        <div className="mx-auto max-w-3xl text-center">
-          <div>
-            <h1 className="text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl">
-              {t(lang, "home.h1")}
-            </h1>
+      {/* HERO v2 — l'accueil appartient à l'ACHETEUR.
+          Le principe écrit ici depuis la v1 (« chaque pixel au-dessus de la
+          ligne de flottaison qui n'est ni un produit ni une recherche est
+          perdu ») devient appliqué : recherche (en-tête), rayons (sidebar /
+          menu), une proposition de valeur d'UNE ligne. Le parcours vendeur ne
+          disparaît pas — topbar, slide 3, rail, section finale — il cesse de
+          dominer. Tri-produit assumé : physique + digital + services. */}
+      <div className="mx-auto max-w-6xl px-5 pb-10 pt-6 lg:grid lg:grid-cols-[240px_1fr_210px] lg:items-start lg:gap-5">
+        {/* Colonne rayons — desktop seulement ; mobile passe par le tiroir. */}
+        <aside className="hidden lg:block">
+          <CategorySidebar
+            rayons={rayons}
+            labels={{
+              title: t(lang, "search.sugg"),
+              empty: t(lang, "menu.empty"),
+              all: t(lang, "menu.all"),
+            }}
+          />
+        </aside>
 
-            <p className="mx-auto mt-3 max-w-xl text-sm text-mist sm:text-base">
-              {t(lang, "home.sub")}
-            </p>
+        <div className="min-w-0">
+          <h1 className="text-center text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+            {t(lang, "home.h1b")}
+          </h1>
 
-            {/* ACTION VENDEUR — rendue au hero.
-                `home.cta.sell` était traduite dans QUATRE langues et n'avait
-                AUCUN site d'appel : le bouton avait disparu d'ici sans que
-                rien ne le signale, et le titre acheteur est resté seul
-                au-dessus d'un champ de recherche pendant que toute la page en
-                dessous s'adresse au vendeur (Pibliye / Resevwa lajan /
-                Livre & retire, puis « Sa w ap vann merite peye » → /vendre).
-                Ce n'était pas un choix de positionnement, c'était une
-                régression silencieuse. `tests/i18n-cles-mortes.test.ts` ferme
-                la classe.
-                Le chemin acheteur n'est pas retiré pour autant : la recherche
-                reste juste en dessous, et le catalogue est dans la nav. */}
-            <Link
-              href="/vendre"
-              className="mt-6 inline-block rounded-xl bg-cloud px-7 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+          <div className="mt-5">
+            <HeroCarousel
+              gotoLabel={t(lang, "hero.goto")}
+              slides={LANDING_SLIDES.map((sl) => ({
+                title: t(lang, sl.titleKey),
+                cta: t(lang, sl.ctaKey),
+                href: sl.href,
+                accent: sl.accent,
+              }))}
+            />
+          </div>
+
+          {/* Un SEUL argument de confiance — le seul vérifiable aujourd'hui.
+              « Livraison rapide » et « Qualité garantie » restent bannis :
+              la livraison est assurée par les vendeurs et la plateforme ne
+              détient aucun stock. */}
+          <p className="mt-4 flex items-center justify-center gap-2 text-sm text-mist">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-cloud" strokeWidth="1.6">
+              <path d="M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z" />
+            </svg>
+            {t(lang, "badge.pay")}
+          </p>
+        </div>
+
+        {/* Rail : aide, contact humain, entrée vendeur. Sous lg, trois cartes
+            sous le hero. La carte WhatsApp se masque si le numéro n'est pas
+            posé (env) — un bouton de contact vers personne est pire que rien. */}
+        <aside className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:mt-0 lg:grid-cols-1">
+          <Link
+            href="/aide"
+            className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
+          >
+            <p className="font-semibold text-cloud">{t(lang, "nav.help")}</p>
+            <p className="mt-1 text-xs text-mist">{t(lang, "rail.help.b")}</p>
+          </Link>
+          {whatsappHref(t(lang, "wa.prefill")) && (
+            <a
+              href={whatsappHref(t(lang, "wa.prefill"))!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
             >
+              <p className="font-semibold text-cloud">{t(lang, "wa.chat")}</p>
+              <p className="mt-1 text-xs text-mist">{t(lang, "rail.wa.b")}</p>
+            </a>
+          )}
+          <Link
+            href="/vendre"
+            className="rounded-2xl border border-accent/40 bg-gradient-to-br from-surface-maroon to-surface p-4 transition hover:border-accent"
+          >
+            <p className="font-semibold text-accent">{t(lang, "topbar.sell")}</p>
+            <p className="mt-1 text-xs text-mist">{t(lang, "rail.sell.b")}</p>
+            <span className="mt-3 inline-block rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-ink">
               {t(lang, "home.cta.sell")}
-            </Link>
+            </span>
+          </Link>
+        </aside>
+      </div>
 
-            {/* RECHERCHE — premier bloc utile, au-dessus de la ligne de
-                flottaison : une marketplace physique se cherche, elle ne se
-                butine pas. GET, fonctionne sans JS. */}
-            <form action="/catalogue" className="mx-auto mt-6 flex max-w-xl gap-2">
+      {/* ÉTAT B — catalogue vide : la page reste une marketplace NAVIGABLE.
+          La grille des rayons ouverts remplace les rangées de produits, et le
+          capteur de demande passe en première classe — chaque recherche vide
+          devient un signal de recrutement (lot S). Les cartes SONT cliquables,
+          y compris vides : arbitrage porteur de la landing v2, distinct de la
+          règle du menu (2026-08-02) — parce qu'ici la destination est honnête,
+          l'écran « rayon en ouverture » du catalogue, pas une impasse muette. */}
+      {products.length === 0 && rayons.length > 0 && (
+        <section id="kategori" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-8">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            {t(lang, "sec.cats")}
+          </h2>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {rayons.map((r) => (
+              <Link
+                key={r.slug}
+                href={r.href}
+                className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
+              >
+                <DepartmentIcon slug={r.slug} className="h-6 w-6 stroke-accent" />
+                <p className="mt-3 font-semibold text-cloud">{r.label}</p>
+                {r.enfants.length > 0 && (
+                  <p className="mt-1 truncate text-xs text-mist">
+                    {r.enfants.slice(0, 3).map((e) => e.label).join(" · ")}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* Capteur de demande — le formulaire mène au catalogue, dont
+              l'écran zéro-résultat journalise le manque (fingerprint salé,
+              zéro PII — lib/search-demand). */}
+          <div className="mt-8 rounded-2xl border border-line bg-surface/40 p-6 text-center">
+            <p className="text-base font-semibold text-cloud">
+              {t(lang, "home.demand.t")}
+            </p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-mist">
+              {t(lang, "home.demand.b")}
+            </p>
+            <form action="/catalogue" className="mx-auto mt-4 flex max-w-md gap-2">
               <input
                 name="q"
                 placeholder={t(lang, "catalog.search.ph")}
@@ -231,60 +329,14 @@ export default async function HomePage() {
               />
               <button
                 type="submit"
-                className="rounded-xl bg-cloud px-5 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+                className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
               >
                 {t(lang, "catalog.search.btn")}
               </button>
             </form>
-
-            {/* Un SEUL argument de confiance — le seul vérifiable aujourd'hui.
-                « Livraison rapide » et « Qualité garantie » ont été retirés :
-                la livraison est assurée par les vendeurs et la plateforme ne
-                détient aucun stock. « Kòd konfimasyon » et « Machann verifye »
-                ne sont pas ajoutés — ni l'un ni l'autre n'existe encore. */}
-            <p className="mt-5 inline-flex items-center gap-2 text-sm text-mist">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-cloud" strokeWidth="1.6">
-                <path d="M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z" />
-              </svg>
-              {t(lang, "badge.pay")}
-            </p>
           </div>
-        </div>
-
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-2 sm:gap-4">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="rounded-2xl border border-line bg-surface-maroon/60 p-3 sm:p-4"
-            >
-              {/* RES-01 — à 360 px, trois colonnes laissent ~96 px par tuile.
-                  « MonCash » et « Livraison » y débordaient en `text-xl` :
-                  vérifié par capture, dans les quatre langues, pas déduit du
-                  CSS. Deux corrections qui se complètent :
-                    • `text-base` sous `sm:` — la valeur redevient la plus
-                      grande de la tuile sans réclamer une largeur qu'elle n'a
-                      pas ;
-                    • `break-words` — « MonCash » n'a pas d'espace, donc rien
-                      ne peut le couper : sans cette règle un mot plus long
-                      déborderait encore, quelle que soit la taille choisie.
-                  PAS de `truncate` : couper « Livrais… » rendrait la coupure
-                  intentionnelle et l'information resterait perdue.
-
-                  `break-words` reste comme FILET, pas comme solution. Avec
-                  `text-base` et la gouttière/rembourrage resserrés sous `sm:`,
-                  « MonCash » tient sur UNE ligne — mesuré dans le navigateur,
-                  pas supposé. Le filet ne sert que si un libellé plus long
-                  arrive un jour : il se coupera plutôt que de sortir de sa
-                  boîte. Une marque coupée est laide ; une marque hors cadre
-                  est cassée. */}
-              <p className="metric break-words text-base font-bold text-gradient sm:text-2xl">
-                {s.value}
-              </p>
-              <p className="mt-1 text-xs text-mist">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 1 bis. BANDEAU PAIEMENT (maquette : « PEYE FASIL AK ») */}
       <section className="mx-auto max-w-6xl px-5 pb-4">
@@ -535,10 +587,28 @@ export default async function HomePage() {
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
           {t(lang, "home.how")}
         </h2>
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {steps.map((step) => (
+        <p className="mt-8 text-xs font-semibold uppercase tracking-wider text-accent">
+          {t(lang, "home.how.buy")}
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {stepsAcheteur.map((step) => (
             <div
-              key={step.n}
+              key={"b" + step.n}
+              className="rounded-2xl border border-line bg-surface/40 p-6"
+            >
+              <span className="text-3xl font-extrabold text-gradient">{step.n}</span>
+              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
+              <p className="mt-2 text-sm text-mist">{step.body}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-8 text-xs font-semibold uppercase tracking-wider text-accent">
+          {t(lang, "home.how.sell")}
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {stepsVendeur.map((step) => (
+            <div
+              key={"s" + step.n}
               className="rounded-2xl border border-line bg-surface/40 p-6"
             >
               <span className="text-3xl font-extrabold text-gradient">{step.n}</span>
