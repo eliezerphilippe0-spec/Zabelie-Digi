@@ -52,6 +52,24 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
+/**
+ * Fixtures de démonstration — OPT-IN EXPLICITE, jamais un défaut.
+ *
+ * L'ancienne garde était `!isSupabaseConfigured()` seule : correcte en
+ * production (la base y est configurée), mais elle faisait des fixtures le
+ * comportement PAR DÉFAUT de tout environnement sans clés — et la landing se
+ * concevait donc devant un faux catalogue au lieu de l'état réel du
+ * lancement, le catalogue vide. Le drapeau inverse la charge : sans
+ * `ZABELIE_DEMO_FIXTURES=true` posé consciemment, il n'y a PAS de produits
+ * inventés, nulle part.
+ */
+export function demoFixturesEnabled(): boolean {
+  return process.env.ZABELIE_DEMO_FIXTURES === "true";
+}
+
+/** Ce que le mode non configuré est autorisé à montrer. */
+const demoView = (): ProductView[] => (demoFixturesEnabled() ? sampleAsView() : []);
+
 const sampleAsView = (): ProductView[] =>
   SAMPLE.map((p) => ({
     id: p.slug,
@@ -195,7 +213,7 @@ function filterSample(
 export async function getPublishedProducts(
   filters?: ProductFilters
 ): Promise<ProductView[]> {
-  if (!isSupabaseConfigured()) return filterSample(sampleAsView(), filters);
+  if (!isSupabaseConfigured()) return filterSample(demoView(), filters);
 
   const supabase = await createClient();
   const q = filters?.q?.trim().replace(/[%,()]/g, " ");
@@ -265,7 +283,7 @@ export async function getPublishedProducts(
  */
 export async function getCatalogueCategories(): Promise<string[]> {
   if (!isSupabaseConfigured()) {
-    return [...new Set(sampleAsView().map((p) => p.category).filter(Boolean))].sort();
+    return [...new Set(demoView().map((p) => p.category).filter(Boolean))].sort();
   }
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -344,7 +362,7 @@ export async function getPublishedProductsPage(
   const offset = (page - 1) * CATALOGUE_PAGE_SIZE;
 
   if (!isSupabaseConfigured()) {
-    const all = filterSample(sampleAsView(), filters);
+    const all = filterSample(demoView(), filters);
     return {
       items: all.slice(offset, offset + CATALOGUE_PAGE_SIZE),
       hasMore: offset + CATALOGUE_PAGE_SIZE < all.length,
@@ -419,7 +437,7 @@ export async function getProductView(
   slug: string
 ): Promise<ProductView | undefined> {
   if (!isSupabaseConfigured()) {
-    return sampleAsView().find((p) => p.slug === slug);
+    return demoView().find((p) => p.slug === slug);
   }
 
   const supabase = await createClient();
@@ -430,7 +448,10 @@ export async function getProductView(
     .eq("status", "published")
     .single();
 
-  if (error || !data) return sampleAsView().find((p) => p.slug === slug);
+  // Base configurée : un slug introuvable est un 404, JAMAIS une fixture.
+  // L'ancien repli rendait un produit de démo en PRODUCTION dès que le
+  // slug coïncidait — un produit inventé, présenté comme achetable.
+  if (error || !data) return undefined;
   return rowAsView(data as unknown as Row);
 }
 
@@ -459,7 +480,7 @@ export async function getProductsBySeller(
  * gaspillerait le référencement accumulé. Le catalogue, lui, l'exclut bien.
  */
 export async function getProductsForSitemap(): Promise<ProductView[]> {
-  if (!isSupabaseConfigured()) return sampleAsView();
+  if (!isSupabaseConfigured()) return demoView();
 
   const supabase = await createClient();
   const { data, error } = await supabase
