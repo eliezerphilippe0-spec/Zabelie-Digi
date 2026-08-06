@@ -21,7 +21,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
-import { ROUNDING_IN_FORCE } from "@/lib/commission";
+import { FaqList } from "@/components/faq-list";
 
 export const dynamic = "force-dynamic";
 
@@ -554,31 +554,8 @@ export default async function HomePage() {
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
           {t(lang, "sec.faq")}
         </h2>
-        <div className="mt-8 space-y-3">
-          {([1, 2, 3, 4, 5] as const).map((i) => (
-            <details
-              key={i}
-              className="group rounded-2xl border border-line bg-surface/40 px-5 py-4"
-            >
-              <summary className="cursor-pointer list-none font-semibold marker:content-none">
-                <span className="mr-2 text-accent transition group-open:rotate-90 inline-block">›</span>
-                {t(lang, `faq.q${i}` as Parameters<typeof t>[1])}
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-mist">
-                {/* La réponse 3 annonce le taux ET l'arrondi. Elle suit donc
-                    la règle DÉPLOYÉE (`ROUNDING_IN_FORCE`) au lieu d'attendre
-                    qu'on pense à la réécrire le jour où `0044` est appliquée :
-                    une annonce commerciale qu'il faut penser à mettre à jour
-                    finit toujours par décrire l'état d'avant. */}
-                {t(
-                  lang,
-                  i === 3 && ROUNDING_IN_FORCE === "floor"
-                    ? "faq.a3.floor"
-                    : (`faq.a${i}` as Parameters<typeof t>[1]),
-                )}
-              </p>
-            </details>
-          ))}
+        <div className="mt-8">
+          <FaqList lang={lang} />
         </div>
       </section>
 

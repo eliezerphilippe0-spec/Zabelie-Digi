@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import type { Lang } from "@/lib/i18n";
@@ -274,8 +275,15 @@ export function construireMenu(
 /**
  * Le menu, depuis la base. Rend `[]` plutôt qu'une erreur : un en-tête sans
  * menu reste utilisable, un en-tête qui plante ne l'est pas.
+ *
+ * `cache()` (React) : mémoïsé PAR REQUÊTE — en-tête, sidebar, grille d'accueil
+ * et pied de page partagent une seule lecture de `zabelie_categories` au lieu
+ * de quatre. Pas de cache inter-requêtes : la lecture anon est bornée et un
+ * cache profilé sur un client à cookies est un piège classique.
  */
-export async function getMenuRayons(lang: Lang): Promise<RayonMenu[]> {
+export const getMenuRayons = cache(getMenuRayonsNonMemoise);
+
+async function getMenuRayonsNonMemoise(lang: Lang): Promise<RayonMenu[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createClient();
 
