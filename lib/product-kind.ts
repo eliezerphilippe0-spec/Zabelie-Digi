@@ -23,8 +23,38 @@ export type ProductKind = (typeof PRODUCT_KINDS)[number];
 /**
  * Types créés par le formulaire digital (`/vendre`). Un produit physique a sa
  * propre route et n'entre jamais par là.
+ *
+ * Déclarés en TABLEAU et non en union écrite à la main : le garde ci-dessous
+ * en dérive, donc ajouter un type digital ne peut pas laisser le garde en
+ * arrière. Une union et une liste maintenues séparément divergent toujours.
  */
-export type DigitalKind = typeof KIND_FILE | typeof KIND_SERVICE;
+export const DIGITAL_KINDS = [KIND_FILE, KIND_SERVICE] as const;
+export type DigitalKind = (typeof DIGITAL_KINDS)[number];
+
+/**
+ * Le `kind` reçu d'un CLIENT est-il un type digital valide ?
+ *
+ * POURQUOI CE GARDE EXISTE — un type qui ment à la frontière du réseau.
+ * `app/api/products/route.ts` déclarait `kind?: DigitalKind` sur un corps
+ * issu de `req.json()`. `DigitalKind` est un type TypeScript : EFFACÉ à la
+ * compilation. Rien ne validait donc `kind` à l'exécution — seule sa présence
+ * était testée (`!kind`). Or `physical` est une valeur d'énumération valide
+ * en base depuis `0036` : un POST forgé avec `kind: "physical"` créait une
+ * fiche PHYSIQUE par la route DIGITALE, hors de
+ * `app/api/products/physical/route.ts` et de ses validations (catégorie
+ * active, poids, stock, variantes, acceptation de politique).
+ *
+ * Mitigation qui existait déjà, et qui explique pourquoi ce n'était pas une
+ * urgence : toute fiche naît en BROUILLON et attend une publication humaine.
+ * Le contrôle existait, il était humain — et un humain ne dit pas POURQUOI
+ * une fiche est mal formée.
+ *
+ * C'est la même classe que le reste de ce module : ce qui n'échoue pas à la
+ * compilation doit échouer à l'exécution, sinon rien n'échoue.
+ */
+export function isDigitalKind(value: unknown): value is DigitalKind {
+  return (DIGITAL_KINDS as readonly unknown[]).includes(value);
+}
 
 /**
  * Traitement exhaustif du type de produit.
