@@ -748,6 +748,52 @@ maintenant, en kreyòl d'abord**.
       estimation vendeur, console pro, FR + KR) suivent automatiquement la
       constante — rien à réécrire à la main.
       **Si `round` : rien à faire**, `0044` reste au dépôt.
+- [ ] **📋 Jour J `0043` + PR 2/2 — les contrôles du premier passage,
+      écrits AVANT d'en avoir besoin** (revue 2026-08-08). L'ordre gravé :
+      #70 → #71 → #64 rebasée → appliquer `0043` (registre `0041` vérifié) →
+      signal à l'agent → PR 2/2 le même jour → déploiement → `docs/22`.
+      Trois lectures au premier passage du balayage, dans cet ordre :
+
+      **(0) Noter ICI l'horodatage exact du déploiement de la PR 2/2** — il
+      n'existe qu'à cet instant et ne se reconstruit pas après coup :
+      `DEPLOIEMENT_PR22 = ____-__-__T__:__:__Z`
+
+      **(1) Le journal du balayage** : les six compteurs existent (clé
+      absente = `null`, jamais « rien à faire ») ; `orphelins_repares` =
+      nombre de commandes physiques payées pendant la fenêtre ;
+      `orphelins_tardifs` **= 0, sinon SIGNAL D'ARRÊT** — un tardif au
+      premier passage contredit l'hypothèse même de la fenêtre courte et
+      invalide le déroulé, pas une ligne.
+
+      **(2) L'ancrage, instrument calibré** — deux régimes, et le seuil est
+      une TOLÉRANCE PRAGMATIQUE (retries, routes lentes), pas la frontière
+      exacte : une ligne à 2 min n'appartient à aucun régime et passe sans
+      signal — l'instrument ne la voit pas, c'est dit ici pour être su :
+      ```sql
+      -- réparée (F16) : delta = 0 exactement · nominale : quelques secondes
+      select f.order_id, f.created_at, f.created_at - a.ancre as delta
+        from zabelie_fulfillment f
+        cross join lateral (
+          select min(p.confirmed_at) as ancre from payments p
+           where p.order_id = f.order_id and p.status = 'confirmed') a
+       where f.created_at < a.ancre
+          or f.created_at - a.ancre > interval '5 minutes';
+      -- zéro ligne attendu
+      ```
+
+      **(3) Le contrôle de fenêtre, EXÉCUTABLE** — remplacer le paramètre
+      par la valeur du (0) : toute ligne née de la fenêtre n'a pu venir que
+      du filet, donc delta = 0 exactement :
+      ```sql
+      select f.order_id, f.created_at - a.ancre as delta
+        from zabelie_fulfillment f
+        cross join lateral (
+          select min(p.confirmed_at) as ancre from payments p
+           where p.order_id = f.order_id and p.status = 'confirmed') a
+       where a.ancre < 'DEPLOIEMENT_PR22'::timestamptz
+         and f.created_at <> a.ancre;
+      -- zéro ligne attendu ; toute ligne = F16 réel ≠ F16 testé
+      ```
 - [ ] **🔐 Audit transversal des routes service-role (chantier, pas urgent
       avant lancement — inscrit 2026-08-08, revue PR #71).** Les 13 routes
       `app/api/admin/**` (menu-counts compris) tiennent toutes sur le même
