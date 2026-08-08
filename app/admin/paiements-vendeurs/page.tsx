@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { SiteNav } from "@/components/site-nav";
-import { SiteFooter } from "@/components/site-footer";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { PayoutForm } from "@/components/payout-form";
 import { PayoutQueue, type PayoutRequestRow } from "@/components/payout-queue";
 import { getCurrentUser } from "@/lib/auth";
@@ -31,36 +30,24 @@ type Row = {
   deja_regle_htg: number;
 };
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-grain min-h-screen">
-      <SiteNav />
-      <main className="mx-auto max-w-5xl px-5 py-16">{children}</main>
-      <SiteFooter />
-    </div>
-  );
-}
-
 export default async function PaiementsVendeursPage() {
   if (!isSupabaseConfigured()) {
     return (
-      <Shell>
-        <h1 className="text-3xl font-black tracking-tight">Règlements vendeurs</h1>
+      <AdminShell title="Règlements vendeurs" actif="/admin/paiements-vendeurs">
         <p className="mt-4 text-cloud">Supabase non configuré.</p>
-      </Shell>
+      </AdminShell>
     );
   }
 
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     return (
-      <Shell>
-        <h1 className="text-3xl font-black tracking-tight">Accès refusé</h1>
+      <AdminShell title="Accès refusé" actif="/admin/paiements-vendeurs">
         <p className="mt-4 text-cloud">
           Cette page est réservée à l&apos;administration.{" "}
           <Link href="/" className="underline">Retour</Link>
         </p>
-      </Shell>
+      </AdminShell>
     );
   }
 
@@ -102,8 +89,11 @@ export default async function PaiementsVendeursPage() {
   const totalAttente = rows.reduce((s, r) => s + Number(r.en_attente_htg), 0);
 
   return (
-    <Shell>
-      <h1 className="text-3xl font-black tracking-tight">Règlements vendeurs</h1>
+    <AdminShell
+      title="Règlements vendeurs"
+      actif="/admin/paiements-vendeurs"
+      userName={user.displayName}
+    >
       <p className="mt-2 max-w-2xl text-sm text-cloud">
         Aucune route de décaissement n&apos;existe encore : les vendeurs sont
         réglés à la main (virement MonCash direct). Chaque versement doit être
@@ -176,6 +166,6 @@ export default async function PaiementsVendeursPage() {
           ))}
         </ul>
       )}
-    </Shell>
+    </AdminShell>
   );
 }
