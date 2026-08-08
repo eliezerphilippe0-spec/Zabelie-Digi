@@ -748,6 +748,27 @@ maintenant, en kreyòl d'abord**.
       estimation vendeur, console pro, FR + KR) suivent automatiquement la
       constante — rien à réécrire à la main.
       **Si `round` : rien à faire**, `0044` reste au dépôt.
+- [ ] **🔐 Audit transversal des routes service-role (chantier, pas urgent
+      avant lancement — inscrit 2026-08-08, revue PR #71).** Les 13 routes
+      `app/api/admin/**` (menu-counts compris) tiennent toutes sur le même
+      étage unique : garde applicative `getCurrentUser()` puis
+      `createAdminClient()` — c'est-à-dire sur l'hypothèse « la garde est
+      correcte et la clé service-role ne fuit jamais ».
+      `protect_profile_privileges` (0015) ferme le chemin « devenir admin »,
+      pas le chemin « contourner la garde » : un bug de garde ou une clé dans
+      un journal = lecture-écriture totale. Le point a été jugé NON bloquant
+      pour menu-counts (compteurs agrégés, sans PII ni montants) précisément
+      parce que durcir la route la moins sensible en laissant refund et
+      confirm-zelle sur l'étage unique serait du théâtre. Périmètre du
+      chantier, arbitré en revue :
+      (1) inventaire des routes service-role ; (2) classement par sensibilité
+      — les MUTATIONS FINANCIÈRES d'abord (refund, confirm-zelle, payouts,
+      topup) ; (3) décision PAR CLASSE : garde renforcée, RLS admin, ou statu
+      quo documenté. ⚠️ Piège connu à ne pas reproduire : une RPC à contrôle
+      `auth.uid()` interne appelée via service role ne vérifie rien —
+      `auth.uid()` y est NULL. Les deux étages n'existent qu'avec le client
+      SESSION. C'est exactement le genre de dette qui devient invisible parce
+      que « c'est le motif du dépôt ».
 - [ ] **⚖️ D-6 — Qui paie la remise de fidélité ? (décision porteur).** La
       commission porte sur `orders.amount_htg`, le prix **remisé**. Pour un
       coupon vendeur (`zabelie_coupons`) c'est juste : il l'a créé lui-même.
