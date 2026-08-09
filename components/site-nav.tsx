@@ -50,10 +50,12 @@ export async function SiteNav() {
           Le CTA vendeur vit ICI désormais : toujours présent, jamais dominant
           — le hero appartient à l'acheteur. */}
       <div className="border-b border-line bg-ink/95 backdrop-blur">
-        <div className="mx-auto flex h-9 max-w-6xl items-center justify-between gap-4 px-5 text-xs">
-          <Link href="/vendre" className="font-semibold text-accent transition hover:text-accent-strong">
-            {t(lang, "topbar.sell")}
-          </Link>
+        <div className="mx-auto flex h-9 max-w-6xl items-center justify-end gap-4 px-5 text-xs">
+          {/* Le CTA vendeur a QUITTÉ la topbar (2026-08-09) : il vivait ici ET
+              en ligne 2 depuis que la maquette l'y a fait descendre — donc deux
+              fois à l'écran, à trois centimètres d'écart. Un même libellé à
+              deux endroits n'est pas une insistance, c'est une hésitation
+              visible. La topbar ne garde que la langue et le contact. */}
           <div className="flex items-center gap-4">
             {/* Masqué tant que le porteur n'a pas posé le numéro (env). */}
             {/* Masqué sous sm : à 360 px le libellé se replie sur trois

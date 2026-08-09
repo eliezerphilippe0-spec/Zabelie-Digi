@@ -7,7 +7,7 @@ import { CategorySidebar } from "@/components/category-sidebar";
 import { DepartmentIcon } from "@/components/department-icons";
 import { HeroCarousel } from "@/components/hero-carousel";
 import { MetricA } from "@/components/metric-a";
-import { LANDING_SLIDES } from "@/lib/landing-slides";
+import { LANDING_SLIDES, secondGeste } from "@/lib/landing-slides";
 import { getMenuRayons } from "@/lib/taxonomy";
 import { whatsappHref, whatsappAffichage } from "@/lib/whatsapp";
 import {
@@ -34,6 +34,27 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   alternates: { canonical: "/" },
 };
+
+/**
+ * Icône du rail — un `<path>` dans un gabarit commun. Trois `<svg>` recopiés
+ * divergeraient sur la taille au premier ajustement, et c'est une colonne où
+ * l'alignement se voit.
+ */
+function RailIcone({ d, cercle }: { d: string; cercle?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="mt-0.5 h-5 w-5 shrink-0 fill-none stroke-accent"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {cercle && <circle cx="12" cy="12" r="9" />}
+      <path d={d} />
+    </svg>
+  );
+}
 
 /** Rangée de produits — masquée si vide (les sections vivent avec les données). */
 function HomeRow({
@@ -269,6 +290,12 @@ export default async function HomePage() {
                 cta: t(lang, sl.ctaKey),
                 href: sl.href,
                 accent: sl.accent,
+                badge: sl.badgeKey ? t(lang, sl.badgeKey) : undefined,
+                // Le second geste n'existe que si le numéro est posé — la
+                // décision vit dans `secondGeste`, pas ici : en ligne dans un
+                // composant serveur, elle était hors de portée d'un test.
+                secondHref: secondGeste(sl, t(lang, "wa.prefill"))?.href,
+                secondCta: secondGeste(sl, t(lang, "wa.prefill"))?.cta,
               }))}
             />
           </div>
@@ -288,41 +315,77 @@ export default async function HomePage() {
         {/* Rail : aide, contact humain, entrée vendeur. Sous lg, trois cartes
             sous le hero. La carte WhatsApp se masque si le numéro n'est pas
             posé (env) — un bouton de contact vers personne est pire que rien. */}
-        <aside className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:mt-0 lg:grid-cols-1">
+        <aside className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
+          {/* Les trois entrées du rail deviennent des RANGÉES à icône, dans une
+              seule carte — c'est la forme de la maquette, et elle tient dans la
+              hauteur du carrousel au lieu de le dépasser. */}
+          <div className="divide-y divide-line rounded-2xl border border-line bg-surface/40">
           <Link
             href="/aide"
-            className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
+            className="flex items-start gap-3 p-4 transition hover:bg-black/20"
           >
-            <p className="font-semibold text-cloud">{t(lang, "nav.help")}</p>
-            <p className="mt-1 text-xs text-mist">{t(lang, "rail.help.b")}</p>
+            <RailIcone d="M12 17h.01M9.1 9a3 3 0 115.8 1c0 2-2.9 2.4-2.9 4" cercle />
+            <span className="min-w-0">
+              <span className="block font-semibold text-cloud">{t(lang, "nav.help")}</span>
+              <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.help.b")}</span>
+            </span>
           </Link>
           {whatsappHref(t(lang, "wa.prefill")) && (
             <MetricA
               event="whatsapp_clicked"
               href={whatsappHref(t(lang, "wa.prefill"))!}
-              className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
+              className="flex items-start gap-3 p-4 transition hover:bg-black/20"
             >
-              <p className="font-semibold text-cloud">{t(lang, "wa.chat")}</p>
-              <p className="mt-1 text-xs text-mist">{t(lang, "rail.wa.b")}</p>
+              <RailIcone d="M4 5h16v11H9l-5 4V5z" />
+              <span className="min-w-0">
+              <span className="block font-semibold text-cloud">{t(lang, "wa.chat")}</span>
+              <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.wa.b")}</span>
               {/* Le numéro EN CLAIR (maquette porteur) : beaucoup enregistrent
                   le contact à la main ou rappellent d'un autre téléphone. */}
-              {whatsappAffichage() && (
-                <p className="numeric mt-2 select-all text-sm font-bold text-accent">
-                  {whatsappAffichage()}
-                </p>
-              )}
+              </span>
             </MetricA>
           )}
           <Link
             href="/vendre"
-            className="rounded-2xl border border-accent/40 bg-gradient-to-br from-surface-maroon to-surface p-4 transition hover:border-accent"
+            className="flex items-start gap-3 p-4 transition hover:bg-black/20"
           >
-            <p className="font-semibold text-accent">{t(lang, "topbar.sell")}</p>
-            <p className="mt-1 text-xs text-mist">{t(lang, "rail.sell.b")}</p>
-            <span className="mt-3 inline-block rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-ink">
-              {t(lang, "home.cta.sell")}
+            <RailIcone d="M4 7h16v12H4zM4 7l2-3h12l2 3" />
+            <span className="min-w-0">
+              <span className="block font-semibold text-cloud">{t(lang, "topbar.sell")}</span>
+              <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.sell.b")}</span>
             </span>
           </Link>
+          </div>
+
+          {/* Carte « ouvrez votre boutique » — l'accent de la maquette, avec le
+              numéro en pastille. Elle se masque entièrement si le numéro n'est
+              pas posé : une pastille de contact vide vaut moins que rien. */}
+          <div className="rounded-2xl border border-accent/40 bg-gradient-to-br from-surface-maroon to-surface p-4 text-center">
+            <p className="text-base font-bold leading-snug text-cloud">
+              {t(lang, "rail.shop.t")}
+            </p>
+            <p className="mt-2 inline-block rounded-lg bg-brand px-3 py-1 text-sm font-extrabold text-ink">
+              {t(lang, "rail.shop.free")}
+            </p>
+            {whatsappHref(t(lang, "wa.prefill")) && whatsappAffichage() && (
+              <MetricA
+                event="whatsapp_clicked"
+                href={whatsappHref(t(lang, "wa.prefill"))!}
+                className="numeric mt-3 flex items-center justify-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-bold text-ink transition hover:opacity-90"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-ink" strokeWidth="1.8">
+                  <path d="M4 5h16v11H9l-5 4V5z" />
+                </svg>
+                {whatsappAffichage()}
+              </MetricA>
+            )}
+            <Link
+              href="/vendre"
+              className="mt-3 block text-xs font-semibold text-accent transition hover:text-accent-strong"
+            >
+              {t(lang, "home.cta.sell")}
+            </Link>
+          </div>
         </aside>
       </div>
 
@@ -335,11 +398,23 @@ export default async function HomePage() {
           l'écran « rayon en ouverture » du catalogue, pas une impasse muette. */}
       {rayons.length > 0 && (
         <section id="kategori" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-8">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {t(lang, "sec.cats")}
-          </h2>
+          {/* Titre + « tout voir » sur la même ligne (maquette). La grille est
+              bornée à HUIT tuiles : au-delà elle cesse d'être un raccourci et
+              redevient un annuaire — la colonne de gauche et le menu portent
+              déjà la liste complète des rayons ouverts. */}
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              {t(lang, "sec.cats")}
+            </h2>
+            <Link
+              href="/catalogue"
+              className="shrink-0 text-sm font-semibold text-accent transition hover:text-accent-strong"
+            >
+              {t(lang, "home.all")}
+            </Link>
+          </div>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {rayons.map((r) => (
+            {rayons.slice(0, 8).map((r) => (
               <Link
                 key={r.slug}
                 href={r.href}

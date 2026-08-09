@@ -120,3 +120,47 @@ test("le numéro WhatsApp s'affiche au format haïtien, ou pas du tout", () => {
     else process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = avant;
   }
 });
+
+/**
+ * LE SECOND GESTE DE LA BANNIÈRE — découvert non testé par une mutation.
+ *
+ * `secondGeste` décide si la bannière vendeur affiche le bouton WhatsApp. La
+ * logique vivait en ligne dans `app/page.tsx`, donc dans un composant serveur,
+ * donc hors de portée d'un test : retirer la garde du numéro ne faisait rougir
+ * RIEN. Conséquence d'un tel oubli : un bouton de contact vers personne —
+ * exactement ce que `lib/whatsapp.ts` s'engage à ne jamais produire.
+ *
+ * Elle a été extraite pour être éprouvable. C'est la mutation qui l'a exigé,
+ * pas une relecture.
+ */
+test("le geste WhatsApp de la bannière : les deux champs, ou aucun", async () => {
+  const { secondGeste, LANDING_SLIDES } = await import("@/lib/landing-slides");
+  const vendeur = LANDING_SLIDES.find((s) => s.whatsapp);
+  assert.ok(vendeur, "aucun slide ne porte le second geste — le contrôle est vide");
+  const sansWa = LANDING_SLIDES.find((s) => !s.whatsapp);
+  assert.ok(sansWa, "tous les slides portent WhatsApp — le connu-négatif est vide");
+
+  const avant = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  try {
+    // Numéro absent → AUCUN geste. C'est le cas que la mutation a révélé.
+    delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+    assert.equal(secondGeste(vendeur!, "bonjou"), null);
+
+    // Numéro tronqué → aucun geste non plus.
+    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "5093";
+    assert.equal(secondGeste(vendeur!, "bonjou"), null);
+
+    // Numéro posé → les DEUX champs, jamais un seul.
+    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "50937376615";
+    const g = secondGeste(vendeur!, "bonjou");
+    assert.ok(g, "geste attendu avec un numéro valide");
+    assert.ok(g!.href.startsWith("https://wa.me/50937376615"), `href inattendu : ${g!.href}`);
+    assert.equal(g!.cta, "+509 3737 6615");
+
+    // Un slide qui ne demande pas WhatsApp n'en reçoit pas, numéro ou non.
+    assert.equal(secondGeste(sansWa!, "bonjou"), null);
+  } finally {
+    if (avant === undefined) delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+    else process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = avant;
+  }
+});

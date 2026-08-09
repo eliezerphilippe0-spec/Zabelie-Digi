@@ -178,6 +178,36 @@ BL-136 (achat invité) reste explicitement en attente d'une décision produit.
 
 ## Application des migrations — journal
 
+### Activations de rayons — journal
+
+> Ce ne sont PAS des migrations : `zabelie_categories.active` est de la donnée
+> d'exploitation, modifiable par `UPDATE`. Mais l'ouverture d'un rayon est une
+> décision COMMERCIALE — elle promet un commerce — et une décision commerciale
+> qui n'est écrite nulle part se reprend en boucle.
+
+| Date (UTC) | Geste | Avant | Après | Par |
+|---|---|---|---|---|
+| 2026-08-09 ~23:0xZ | Les **12 départements restants** passés `active` | 4/16 | **16/16** | connecteur, sur demande explicite du porteur |
+
+**Ce qui a été dit avant de le faire, et assumé** : avec **0 produit publié**,
+seize rayons ouverts disent seize fois « rien ici » là où quatre en disaient
+quatre. Les rayons sans produit s'affichent MARQUÉS et NON cliquables dans la
+colonne (décision du 2026-08-02) — c'est ce qui empêche l'impasse muette.
+L'ouverture reste défendable comme signal d'intention vers les vendeurs.
+
+**Retour arrière, une ligne** — remet l'état du 2026-08-09 au matin :
+
+```sql
+update zabelie_categories set active = false
+ where level = 1
+   and slug not in ('otomobil-moto', 'elektwonik', 'bote-swen', 'dijital-sevis');
+```
+
+**Non touché** : les niveaux 2 et 3 (10/74 et 33/33 actifs). Les douze
+départements ouverts n'ont donc aucun sous-rayon actif — ils apparaissent
+seuls, sans arborescence, jusqu'à une activation de niveau 2.
+
+
 > Une ligne par groupe appliqué. L'**heure UTC** compte autant que la date :
 > si quelque chose bouge dans les jours qui suivent, c'est ce qui permet de
 > corréler avec les journaux Vercel et Supabase. Sans elle, on compare des
