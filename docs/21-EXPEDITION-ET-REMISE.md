@@ -475,11 +475,29 @@ premier endroit où une revue se trompe.
      d'une requête (il contourne la vérification d'identité), et le balayage
      passe AVANT la maturation dans la journée (sinon un orphelin est payé
      avant d'être gelé).
-3. ⏳ **Les surfaces** — **TOUJOURS OUVERT**, et c'est ce qui manque pour que
-   le mécanisme soit utilisable par un humain. L'**API existe** depuis la
+3. ✅ **Les surfaces** — **FAITES (lot « surfaces »)**. L'API livrée par la
    PR 2/2 (`POST /api/fulfillment/declare`, `…/received`, `…/not-received` —
-   identité prise dans la SESSION, jamais dans le corps de requête) ; il n'y a
-   aucun écran pour l'appeler :
+   identité prise dans la SESSION, jamais dans le corps de requête) a
+   désormais ses écrans :
+   - **vendeur : `/mes-ventes`**, page NOUVELLE. `/vendre` listait ses
+     PRODUITS ; rien n'avait jamais listé ses VENTES. Sans cet écran, aucune
+     remise n'était déclarable et toute commande honorée serait partie en
+     « action requise » au bout de `shipment_deadline_days` : le mécanisme
+     entier tenait sur un bouton qui n'existait pas. Lien dans la navigation —
+     une page sans chemin pour y arriver est la même absence d'appelant que
+     celle que les croisements du dépôt traquent ailleurs.
+   - **acheteur : `/mes-achats`** porte l'état, la note du vendeur, l'échéance
+     d'auto-réception, et les DEUX gestes à l'état `shipped`.
+   - **admin : `/admin/livraisons`**, la file `zabelie_fulfillment_overdue`,
+     séparée par cause — vendeur muet d'un côté, acheteur qui a levé la main de
+     l'autre — parce que les deux n'appellent pas la même conversation.
+   Traduits dans les **quatre langues** (18 clés). `action_required` garde un
+   libellé NEUTRE dans les quatre : un test refuse tout libellé qui annoncerait
+   un remboursement, l'énumération SQL ayant été nommée pour éviter exactement
+   ça.
+   ⚠️ Ce qui suit reste vrai et n'est pas fait — le reste de `/mes-achats`
+   (titre, libellés de remise statiques) est encore en français en dur,
+   antérieur à ce lot. Les trois surfaces demandées à l'origine étaient :
    - vendeur : bouton « Mwen remèt li / J'ai remis » + note de remise ;
    - acheteur (`/mes-achats`) : « Mwen resevwa l / J'ai reçu » **et
      « Mwen pa resevwa l / Je n'ai pas reçu »**, plus l'état courant et

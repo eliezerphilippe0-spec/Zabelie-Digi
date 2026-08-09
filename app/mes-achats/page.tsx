@@ -3,12 +3,17 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { DownloadButton } from "@/components/download-button";
 import { ReviewForm } from "@/components/review-form";
+import { FulfillmentAction } from "@/components/fulfillment-actions";
 import { getReviewedOrderIds } from "@/lib/reviews";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG, type ProductKind } from "@/lib/sample-data";
 import { isDownloadable, pickByKind } from "@/lib/product-kind";
 import { isMissingColumn } from "@/lib/products";
+import { cleEtatRemise, estEtatRemise, lireLimiteRemise, type EtatRemise } from "@/lib/fulfillment";
+import { getLang } from "@/lib/i18n-server";
+import { t, type Lang } from "@/lib/i18n";
 
 /**
  * Où en est la remise, pour un produit qui ne se télécharge PAS.
@@ -107,6 +112,98 @@ export default async function MesAchatsPage() {
 
   const orders = (rows ?? []) as unknown as OrderRow[];
   const reviewed = await getReviewedOrderIds(orders.map((o) => o.id));
+  const lang = await getLang();
+
+  /* ── Suivi de remise (0043) ───────────────────────────────────────────────
+   * Lu avec le client de SESSION : la RLS de `zabelie_fulfillment` n'ouvre la
+   * ligne qu'à l'acheteur de la commande et au vendeur du produit. Aucun
+   * service role ici — ce serait contourner la garantie qu'on vient d'écrire.
+   *
+   * La requête se dégrade si la table n'existe pas : même règle que le repli
+   * `order_ref` ci-dessus, le code peut devancer le schéma sur une base en
+   * retard (Preview, base de développement), et une page d'achats ne tombe pas
+   * pour un suivi absent. */
+  type SuiviRow = {
+    order_id: string;
+    status: EtatRemise;
+    shipped_at: string | null;
+    shipment_note: string | null;
+  };
+  let suivis = new Map<string, SuiviRow>();
+  if (orders.length > 0) {
+    const { data: suiviData } = await supabase
+      .from("zabelie_fulfillment")
+      .select("order_id, status, shipped_at, shipment_note")
+      .in(
+        "order_id",
+        orders.map((o) => o.id)
+      );
+    suivis = new Map(
+      ((suiviData ?? []) as unknown as SuiviRow[])
+        .filter((s) => estEtatRemise(s.status))
+        .map((s) => [s.order_id, s])
+    );
+  }
+
+  // Le délai d'auto-réception vit dans une table révoquée au navigateur : seul
+  // le service role la lit, et UNIQUEMENT pour cet entier — aucune requête sur
+  // des données d'utilisateur ne passe par ce client ici.
+  const joursReception =
+    suivis.size > 0
+      ? await lireLimiteRemise(createAdminClient(), "auto_receive_days", 7)
+      : 7;
+
+  function blocRemise(suivi: SuiviRow | undefined, lg: Lang) {
+    if (!suivi) return null;
+    const echeance =
+      suivi.status === "shipped" && suivi.shipped_at
+        ? new Date(
+            new Date(suivi.shipped_at).getTime() + joursReception * 86_400_000
+          ).toLocaleDateString("fr-HT")
+        : null;
+    return (
+      <div className="mt-1 flex flex-col items-end gap-1">
+        <span className="text-xs text-mist">{t(lg, cleEtatRemise(suivi.status))}</span>
+        {suivi.shipment_note && (
+          <span className="max-w-xs text-right text-[11px] text-mist">
+            {t(lg, "ship.note", { note: suivi.shipment_note })}
+          </span>
+        )}
+        {echeance && (
+          <span className="max-w-xs text-right text-[11px] text-mist">
+            {t(lg, "ship.deadline", { date: echeance })}
+          </span>
+        )}
+        {/* Les deux gestes n'existent QU'À l'état `shipped` — et le second doit
+            exister AVANT l'échéance : sans lui, la seule protection de
+            l'acheteur serait de ne rien faire, or ne rien faire est le geste
+            qui paie le vendeur. */}
+        {suivi.status === "shipped" && (
+          <div className="flex flex-col items-end gap-2">
+            <FulfillmentAction
+              orderId={suivi.order_id}
+              variante="received"
+              labels={{
+                cta: t(lg, "ship.received.cta"),
+                erreur: t(lg, "ship.error.generic"),
+                reseau: t(lg, "error.network"),
+              }}
+            />
+            <FulfillmentAction
+              orderId={suivi.order_id}
+              variante="notReceived"
+              labels={{
+                cta: t(lg, "ship.notreceived.cta"),
+                placeholder: t(lg, "ship.notreceived.ph"),
+                erreur: t(lg, "ship.error.generic"),
+                reseau: t(lg, "error.network"),
+              }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Shell>
@@ -148,6 +245,12 @@ export default async function MesAchatsPage() {
                     sans rien promettre au nom de Zabelie. */}
                 {o.product && isDownloadable(o.product.kind) ? (
                   <DownloadButton orderId={o.id} />
+                ) : suivis.has(o.id) ? (
+                  // Un suivi existe : il DIT où en est la remise, et il rend
+                  // le libellé statique inutile — « remise à convenir » sous un
+                  // « le vendeur déclare avoir remis » serait une contradiction
+                  // affichée à l'acheteur.
+                  blocRemise(suivis.get(o.id), lang)
                 ) : (
                   remiseLabel(o.product?.kind) && (
                     <span className="text-xs text-mist">

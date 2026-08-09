@@ -83,6 +83,98 @@ export function codeHttpDuMotif(motif: string | undefined): number {
   return CODE_PAR_MOTIF[motif] ?? 400;
 }
 
+/* ───────────────────────── L'état, côté écran ───────────────────────────── */
+
+/**
+ * Les cinq valeurs de l'énumération SQL `fulfillment_status` (0043 §1).
+ *
+ * ⚠️ MÊME DISCIPLINE QUE `lib/product-kind.ts`, ET POUR LA MÊME RAISON.
+ * Ajouter une valeur à l'énumération en base ne casse AUCUNE compilation ici :
+ * un `if/else` ou un objet indexé par `string` reste typé. La garantie ne vient
+ * donc pas du type mais du `switch` EXHAUSTIF de `cleEtatRemise` — le
+ * `never` final refuse de compiler si un état n'est pas traité.
+ *
+ * Toute valeur ajoutée à `fulfillment_status` doit l'être ici aussi, et
+ * `tests/fulfillment-etats.test.ts` croise les deux listes pour que l'oubli
+ * échoue au lieu de s'afficher en blanc.
+ */
+export const ETATS_REMISE = [
+  "awaiting_shipment",
+  "shipped",
+  "received",
+  "action_required",
+  "disputed_by_buyer",
+] as const;
+
+export type EtatRemise = (typeof ETATS_REMISE)[number];
+
+export function estEtatRemise(v: unknown): v is EtatRemise {
+  return (ETATS_REMISE as readonly unknown[]).includes(v);
+}
+
+/**
+ * Clé i18n de l'état, du point de vue de l'ACHETEUR.
+ *
+ * `action_required` se dit « en cours d'examen » et non « à rembourser » : sur
+ * ce marché, une remise en main propre sans clic est le cas le plus fréquent,
+ * et nommer l'état par une issue reviendrait à l'annoncer. C'est exactement le
+ * choix fait pour l'énumération SQL (0043 §1) ; l'écran ne doit pas le défaire.
+ */
+export function cleEtatRemise(
+  etat: EtatRemise
+): "ship.state.awaiting" | "ship.state.shipped" | "ship.state.received" | "ship.state.action" | "ship.state.disputed" {
+  switch (etat) {
+    case "awaiting_shipment":
+      return "ship.state.awaiting";
+    case "shipped":
+      return "ship.state.shipped";
+    case "received":
+      return "ship.state.received";
+    case "action_required":
+      return "ship.state.action";
+    case "disputed_by_buyer":
+      return "ship.state.disputed";
+    default: {
+      // Exhaustivité prouvée par le compilateur, et journalisée à l'exécution :
+      // une valeur inconnue arrivant de la base doit se VOIR, pas s'afficher
+      // en blanc (règle d'observabilité, même motif que lib/product-kind.ts).
+      const jamais: never = etat;
+      console.log(
+        "[fulfillment/etat]",
+        JSON.stringify({ at: new Date().toISOString(), issue: "etat_inconnu", recu: jamais })
+      );
+      return "ship.state.action";
+    }
+  }
+}
+
+/**
+ * Lit un paramètre de `zabelie_fulfillment_limits`.
+ *
+ * ⚠️ EXIGE LE CLIENT SERVICE ROLE : la table est révoquée pour `anon` et
+ * `authenticated` (0043 §0), et c'est voulu — un paramètre d'exploitation n'a
+ * pas à être lisible par le navigateur. L'appeler avec le client de session
+ * rendrait donc toujours la valeur par défaut, en silence.
+ *
+ * Ce que cette fonction NE FAIT PAS : aucune requête portant sur des données
+ * d'utilisateur. Elle est le seul usage du service role sur les pages acheteur
+ * et vendeur, et il ne porte que sur un entier de configuration.
+ */
+export async function lireLimiteRemise(
+  admin: SupabaseClient,
+  cle: string,
+  defaut: number
+): Promise<number> {
+  const { data, error } = await admin
+    .from("zabelie_fulfillment_limits")
+    .select("value")
+    .eq("key", cle)
+    .maybeSingle();
+  if (error || !data) return defaut;
+  const v = (data as { value?: number }).value;
+  return Number.isInteger(v) ? (v as number) : defaut;
+}
+
 /**
  * Journal émis à CHAQUE appel, y compris quand il n'y a rien à ouvrir.
  *

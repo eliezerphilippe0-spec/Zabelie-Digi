@@ -6,7 +6,14 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/tableau-de-bord", "/mes-achats", "/paiement/"],
+      disallow: [
+        "/api/",
+        "/tableau-de-bord",
+        "/mes-achats",
+        // Même raison que /mes-achats : page privée, propre à un compte.
+        "/mes-ventes",
+        "/paiement/",
+      ],
     },
     sitemap: `${base}/sitemap.xml`,
   };

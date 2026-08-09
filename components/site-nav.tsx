@@ -119,6 +119,16 @@ export async function SiteNav() {
                 >
                   {t(lang, "nav.pro")}
                 </Link>
+                {/* Le vendeur d'un produit physique n'avait aucun endroit
+                    où déclarer une remise. Sans ce lien, la page existerait
+                    sans chemin pour y arriver — la même absence d'appelant que
+                    celle que les croisements du dépôt traquent ailleurs. */}
+                <Link
+                  href="/mes-ventes"
+                  className="hidden text-sm text-mist transition hover:text-cloud sm:block"
+                >
+                  {t(lang, "sales.title")}
+                </Link>
                 <SignOutButton
                   className="hidden text-sm text-mist transition hover:text-cloud sm:block"
                   label={t(lang, "nav.logout")}

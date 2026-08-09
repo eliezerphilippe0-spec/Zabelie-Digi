@@ -667,6 +667,15 @@ maintenant, en kreyòl d'abord**.
 
 ## Observabilité — signaux non bloquants à ajouter
 
+- [ ] **`/mes-achats` est encore à moitié en français en dur** — le bloc de
+      remise ajouté par le lot « surfaces » passe par `lib/i18n.ts` (quatre
+      langues), mais le titre de la page et les libellés statiques
+      (« Remise à convenir avec le vendeur », « Service · mise en relation »)
+      sont antérieurs et ne sont pas traduits. Un acheteur kreyòl voit donc une
+      page mixte. Six clés à ajouter ; aucun mécanisme ne le signalera —
+      `Record<I18nKey, string>` vérifie que chaque langue porte chaque clé,
+      jamais qu'un écran passe par une clé.
+
 - [ ] **Deux projets Supabase, et celui qui s'appelle « Zabelie » n'est PAS la
       base de Zabelie.** Constaté le 2026-08-09 en cherchant où appliquer
       `0043`. Le projet nommé **`Zabelie`** (`oqnt…`, us-east-1) porte un tout

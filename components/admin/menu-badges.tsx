@@ -25,6 +25,7 @@ export const MENU_ADMIN: { label: string; href: string; cle: keyof Counts | null
   { label: "Zelle", href: "/admin#zelle", cle: "zelle" },
   { label: "Rechaj", href: "/admin#rechaj", cle: "rechaj" },
   { label: "Litiges", href: "/admin#commandes", cle: "litiges" },
+  { label: "Remises", href: "/admin/livraisons", cle: null },
   { label: "Règlements", href: "/admin/paiements-vendeurs", cle: null },
   { label: "Géo", href: "/admin/geo", cle: null },
 ];
