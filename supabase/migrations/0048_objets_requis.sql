@@ -1,10 +1,18 @@
 -- ============================================================================
 -- 0048 — Présence des objets dont le code déployé dépend
 -- ============================================================================
--- ⚠️ ÉTAT : appliquée le 2026-07-31 D'APRÈS LE JOURNAL DE SESSION.
--- **NON CONFIRMÉ CONTRE LA BASE** — la session qui écrit cette ligne n'a aucun
--- accès Postgres. Ce commentaire n'est donc PAS une source de vérité : il dit
--- ce qu'on croit savoir, et d'où on le tient.
+-- ✅ ÉTAT : APPLIQUÉE le 2026-07-31, **CONFIRMÉ CONTRE LA BASE** le
+-- 2026-08-04 — pour la première fois. Les sessions précédentes n'avaient
+-- aucun accès Postgres et l'écrivaient honnêtement (« d'après le journal de
+-- session, non confirmé »). Cette ligne-ci repose sur deux lectures
+-- indépendantes, parce que l'une seule ne suffit jamais :
+--
+--   • LE REGISTRE DÉCLARE — zabelie_schema_migrations porte ce fichier ;
+--   • LE CATALOGUE ATTESTE — la sonde elle-même répond, c'est sa propre attestation.
+--
+-- ⚠️ Un en-tête reste écrit une fois et jamais revérifié : c'est vrai de
+-- celui-ci comme des autres. Il porte sa date et sa méthode pour qu'on
+-- puisse le contredire, pas pour qu'on le croie.
 --
 -- Pourquoi il ne peut pas en être une : un en-tête est écrit une fois et jamais
 -- revérifié. Il portait « NON APPLIQUÉE » alors que `0049` disait, deux fichiers
