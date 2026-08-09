@@ -155,6 +155,37 @@ test("aucune route n'expose p_auto : la réception système ne vient pas du clie
 });
 
 /**
+ * LA RLS DE `zabelie_fulfillment` OUVRE LA LIGNE AUX DEUX PARTIES.
+ *
+ * Les politiques de `0043` §1 laissent lire l'acheteur de la commande ET le
+ * vendeur du produit — c'est voulu, chacun doit voir où en est sa remise. La
+ * conséquence est qu'une page « mes ventes » qui interroge cette table SANS
+ * filtrer sur `seller_id` liste aussi les ACHATS de l'utilisateur, avec un
+ * bouton « j'ai remis » dessus. Les RPC les refuseraient (`non_autorise`),
+ * donc rien ne casserait côté argent — mais l'utilisateur verrait un bouton
+ * qui ne marche pas, et il aurait raison de croire le site cassé.
+ *
+ * La RLS ne peut pas trancher à notre place : elle ne sait pas dans QUEL rôle
+ * la page se place. Ce filtre est donc du ressort de l'application, et son
+ * absence est silencieuse — d'où ce contrôle.
+ */
+test("la page des ventes filtre sur seller_id, en plus de la RLS", () => {
+  const page = modules.find((f) => f.chemin === join("app", "mes-ventes", "page.tsx"));
+  assert.ok(page, "app/mes-ventes/page.tsx introuvable — la page a été déplacée");
+  assert.ok(
+    /zabelie_fulfillment/.test(page!.source),
+    "la page ne lit plus `zabelie_fulfillment` : ce contrôle ne vérifie plus rien"
+  );
+  assert.match(
+    page!.source,
+    /seller_id["'`]?\s*,\s*user\.id|\.eq\(\s*["'`][^"'`]*seller_id["'`]\s*,\s*user\.id/,
+    "app/mes-ventes/page.tsx interroge `zabelie_fulfillment` sans filtrer sur " +
+      "`seller_id` = l'utilisateur. La RLS ouvre la ligne à l'acheteur AUSSI : " +
+      "sans ce filtre, la page liste ses achats comme des ventes."
+  );
+});
+
+/**
  * ORDRE DANS LA JOURNÉE — une propriété d'ARGENT, pas de confort.
  *
  * Le balayage répare les orphelins (il GÈLE des escrows) ; `/api/maturation`

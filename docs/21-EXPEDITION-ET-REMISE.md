@@ -475,18 +475,47 @@ premier endroit où une revue se trompe.
      d'une requête (il contourne la vérification d'identité), et le balayage
      passe AVANT la maturation dans la journée (sinon un orphelin est payé
      avant d'être gelé).
-3. ⏳ **Les surfaces** — **TOUJOURS OUVERT**, et c'est ce qui manque pour que
-   le mécanisme soit utilisable par un humain. L'**API existe** depuis la
+3. ✅ **Les surfaces** — **FAITES (lot « surfaces »)**. L'API livrée par la
    PR 2/2 (`POST /api/fulfillment/declare`, `…/received`, `…/not-received` —
-   identité prise dans la SESSION, jamais dans le corps de requête) ; il n'y a
-   aucun écran pour l'appeler :
+   identité prise dans la SESSION, jamais dans le corps de requête) a
+   désormais ses écrans :
+   - **vendeur : `/mes-ventes`**, page NOUVELLE. `/vendre` listait ses
+     PRODUITS ; rien n'avait jamais listé ses VENTES. Sans cet écran, aucune
+     remise n'était déclarable et toute commande honorée serait partie en
+     « action requise » au bout de `shipment_deadline_days` : le mécanisme
+     entier tenait sur un bouton qui n'existait pas. Lien dans la navigation —
+     une page sans chemin pour y arriver est la même absence d'appelant que
+     celle que les croisements du dépôt traquent ailleurs.
+   - **acheteur : `/mes-achats`** porte l'état, la note du vendeur, l'échéance
+     d'auto-réception, et les DEUX gestes à l'état `shipped`.
+   - **admin : `/admin/livraisons`**, la file `zabelie_fulfillment_overdue`,
+     séparée par cause — vendeur muet d'un côté, acheteur qui a levé la main de
+     l'autre — parce que les deux n'appellent pas la même conversation.
+   Traduits dans les **quatre langues** (18 clés). `action_required` garde un
+   libellé NEUTRE dans les quatre : un test refuse tout libellé qui annoncerait
+   un remboursement, l'énumération SQL ayant été nommée pour éviter exactement
+   ça.
+   ⚠️ Ce qui suit reste vrai et n'est pas fait — le reste de `/mes-achats`
+   (titre, libellés de remise statiques) est encore en français en dur,
+   antérieur à ce lot. Les trois surfaces demandées à l'origine étaient :
    - vendeur : bouton « Mwen remèt li / J'ai remis » + note de remise ;
    - acheteur (`/mes-achats`) : « Mwen resevwa l / J'ai reçu » **et
      « Mwen pa resevwa l / Je n'ai pas reçu »**, plus l'état courant et
      l'échéance à la place de l'impasse actuelle ;
    - admin : la file `zabelie_fulfillment_overdue`.
-4. ⏳ **L'envoi des avis** — **TOUJOURS OUVERT**. La file existe en base,
-   l'expéditeur non. Contrat de
+4. ✅ **L'envoi des avis** — **FAIT (lot « avis »)**. `lib/fulfillment-notices.ts`,
+   appelé par `/api/fulfillment/sweep` **après** le balayage — l'ordre est un
+   choix : envoyer avant lèverait le garde de légitimité dans la seconde, et un
+   avis expédié à 12:30:01 autoriserait la réception à 12:30:02 sur un message
+   que personne n'a ouvert. En envoyant après, tout avis qui part laisse au
+   moins un passage complet avant de pouvoir servir à trancher un silence.
+   Réclamation atomique **sans migration** : `attempts` sert de numéro de
+   version (`update … where attempts = n and sent_at is null`), donc deux
+   passages simultanés n'envoient jamais deux fois. `RESEND_API_KEY` absente →
+   AUCUNE réclamation : incrémenter les tentatives sans pouvoir envoyer
+   épuiserait la borne en cinq jours et ferait remonter en file admin des
+   commandes dont le seul tort serait une clé non posée.
+   Contrat d'origine, pour mémoire, et il est tenu : Contrat de
    la route : ne prendre que les avis **échus** (`due_at <= now()` — le rappel
    est programmé à mi-délai, le dépiler à l'aveugle enverrait deux messages
    identiques d'affilée puis plus rien pendant sept jours) ; idempotence par
