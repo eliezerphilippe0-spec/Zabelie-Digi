@@ -18,6 +18,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 |---|---|---|
 | ✅ ~~Branche de Production Vercel~~ — **RÉPONDU 2026-08-03 : `main`.** Dernier déploiement Production `bb5ee4a`, **2026-07-26**, soit la tête actuelle de `main` : le site en ligne est exactement `main`, sans décalage. | — | **Résolu — et c'est le pire des trois cas.** Le site public dit depuis le 26 juillet « Pièces auto et moto, livrées en Haïti », « digital & talents » et **« Instant »**, en 2 langues. Remplacée par la ligne suivante. |
 | ✅ ~~Faire arriver le chantier en ligne~~ — **FAIT 2026-08-03.** PR #55 fusionnée (`53fd939`), puis #56 · #57 · #58 · #59. `main` déployée en Production. | — | Résolu. Le site ne dit plus « Pièces auto et moto » ni « Instant », et porte quatre langues. |
+| 🔔 **VEILLE — seuil de sortie des SERVICES** (arbitrage B tranché 2026-08-08). Exposition ACCEPTÉE, pas fermée : `zabelie_open_fulfillment` rend `false` hors `physical`, donc un service vendu n'a aucun état de remise et son escrow mûrit au chronomètre. Seul garde-fou : la publication manuelle du porteur — un contrôle humain, qui ne passe pas à l'échelle et se dégrade en silence. **Trois déclencheurs, le PREMIER l'emporte** : (1) 10 services publiés actifs ; (2) première délégation de la publication ; (3) premier acheteur signalant un service non rendu (il arrivera par WhatsApp, pas par le système — rien ne l'enregistre, ce qui EST le problème). Compteur au 2026-08-08 : **zéro**. Détail : `docs/26` §3. | 2026-08-08 | Au premier déclencheur : le chantier « qu'est-ce que *rendu* pour une prestation » passe de backlog à **BLOQUANT** — plus aucune NOUVELLE publication de service. ⚠️ Ce seuil n'a **aucun instrument** : rien ne peut le mesurer (le 2 est un geste humain, le 3 arrive hors système). **Cette ligne EST le filet.** |
 | ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | ✅ ~~Protection de `main`~~ — **FAIT 2026-08-03.** `build` · `e2e` · `sql-tests` exigés. | — | Résolu. ⚠️ Le premier réglage visait **toutes** les branches et bloquait toute poussée — les contrôles s'exécutant AU push, aucune branche ne pouvait naître (`GH013`). Corrigé pour ne viser que la branche par défaut. À savoir si la règle est un jour recréée. |
 | **🔴 D-4 — TRANCHÉE `floor` le 2026-08-03. Reste à APPLIQUER `0044` en base.** | 2026-08-03 | La **première vente réelle**. Trois gestes dans l'ordre : `0044` en base → `ROUNDING_IN_FORCE` à `"floor"` (PR prête, en brouillon) → redéploiement. L'ordre est la protection ; la sonde de `/api/admin/coherence` rend `desaccord` tant que la base n'a pas suivi. |
@@ -748,28 +749,6 @@ maintenant, en kreyòl d'abord**.
       estimation vendeur, console pro, FR + KR) suivent automatiquement la
       constante — rien à réécrire à la main.
       **Si `round` : rien à faire**, `0044` reste au dépôt.
-- [ ] **🔔 VEILLE — seuil de sortie des services (arbitrage B, tranché
-      2026-08-08).** Les services sont CONFIRMÉS avec une exposition
-      ACCEPTÉE, pas fermée : `zabelie_open_fulfillment` rend `false` pour
-      tout ce qui n'est pas `physical`, donc un service vendu n'a aucun état
-      de remise et son escrow mûrit au chronomètre. Le seul garde-fou est la
-      **publication manuelle par le porteur** — un contrôle humain, qui ne
-      passe pas à l'échelle et se dégrade en silence.
-      **Trois déclencheurs, le PREMIER ATTEINT l'emporte** :
-      **(1)** 10 services publiés actifs simultanément ;
-      **(2)** première délégation de la publication à quelqu'un d'autre ;
-      **(3)** premier acheteur signalant un service non rendu — ⚠️ il
-      arrivera par WhatsApp, pas par le système : rien n'existe pour
-      l'enregistrer, ce qui EST le problème.
-      **Conséquence** : le chantier « qu'est-ce que *rendu* pour une
-      prestation » passe de backlog à **BLOQUANT** — plus aucune NOUVELLE
-      publication de service tant qu'il n'est pas livré ; les services déjà
-      publiés restent (on ferme le robinet, pas le stock).
-      Compteur au 2026-08-08 : **zéro** (catalogue vide, aucun service
-      jamais vendu — `docs/22`). Détail : `docs/26` §3.
-      ⚠️ Ce seuil n'a **aucun instrument** : aucun test ne peut le mesurer
-      (le déclencheur 2 est un geste humain, le 3 arrive hors système).
-      Cette ligne EST le filet. La relire à chaque ouverture de chantier.
 - [ ] **⚖️ D-6 — Qui paie la remise de fidélité ? (décision porteur).** La
       commission porte sur `orders.amount_htg`, le prix **remisé**. Pour un
       coupon vendeur (`zabelie_coupons`) c'est juste : il l'a créé lui-même.
