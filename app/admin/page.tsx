@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { SiteNav } from "@/components/site-nav";
-import { SiteFooter } from "@/components/site-footer";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminProductRow } from "@/components/admin-product-row";
 import { AdminSellerRow } from "@/components/admin-seller-row";
 import { AdminRefundButton } from "@/components/admin-refund-button";
@@ -20,25 +19,6 @@ import { isMissingColumn } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Administration — Zabelie" };
-
-function Shell({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-grain min-h-screen">
-      <SiteNav />
-      <main className="mx-auto max-w-5xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
-        {children}
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
 
 type ProductRow = {
   id: string;
@@ -106,18 +86,18 @@ export default async function AdminPage({
   const refQuery = (await searchParams)?.ref?.trim().toUpperCase() ?? "";
   if (!isSupabaseConfigured()) {
     return (
-      <Shell title="Administration">
+      <AdminShell title="Administration" actif="/admin">
         <p className="mt-4 text-sm text-mist">
           Mode démo — connecte Supabase pour accéder au back-office.
         </p>
-      </Shell>
+      </AdminShell>
     );
   }
 
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     return (
-      <Shell title="Administration">
+      <AdminShell title="Administration" actif="/admin">
         <p className="mt-4 text-sm text-mist">
           Accès réservé aux administrateurs.{" "}
           {!user && (
@@ -129,7 +109,7 @@ export default async function AdminPage({
         <p className="mt-2 text-xs text-mist">
           Pour devenir admin : passer <code>profiles.role = &apos;admin&apos;</code> en base.
         </p>
-      </Shell>
+      </AdminShell>
     );
   }
 
@@ -234,7 +214,7 @@ export default async function AdminPage({
   ];
 
   return (
-    <Shell title="Back-office">
+    <AdminShell title="Back-office" actif="/admin" userName={user.displayName}>
       <p className="mt-2 text-sm text-mist">
         <Link href="/admin/geo" className="text-cloud underline">
           Carte géo-localisation →
@@ -281,7 +261,7 @@ export default async function AdminPage({
       </section>
 
       {/* Modération produits */}
-      <section className="mt-10">
+      <section id="produits" className="mt-10 scroll-mt-24">
         <h2 className="text-lg font-semibold">Modération des produits</h2>
         {products.length === 0 ? (
           <p className="mt-3 text-sm text-mist">Aucun produit.</p>
@@ -301,7 +281,7 @@ export default async function AdminPage({
       </section>
 
       {/* Commandes : remboursement + litiges */}
-      <section className="mt-10">
+      <section id="commandes" className="mt-10 scroll-mt-24">
         <h2 className="text-lg font-semibold">Commandes</h2>
         <p className="mt-1 text-xs text-mist">
           Rembourser annule l&apos;escrow (avant maturité : aucun solde fantôme).
@@ -368,7 +348,7 @@ export default async function AdminPage({
 
       {/* Virements Zelle en attente de confirmation manuelle */}
       {zelleQueue.length > 0 && (
-        <section className="mt-10">
+        <section id="zelle" className="mt-10 scroll-mt-24">
           <h2 className="text-lg font-semibold">Paiements Zelle à confirmer</h2>
           <p className="mt-1 text-xs text-mist">
             Vérifiez le relevé bancaire (montant exact + mémo) avant de
@@ -418,7 +398,7 @@ export default async function AdminPage({
 
       {/* Recharges téléphoniques : Zelle à confirmer + remboursements (checkpoint humain) */}
       {topupQueue.length > 0 && (
-        <section className="mt-10">
+        <section id="rechaj" className="mt-10 scroll-mt-24">
           <h2 className="text-lg font-semibold">Recharges — actions requises</h2>
           <p className="mt-1 text-xs text-mist">
             Zelle : vérifier le relevé (montant exact + mémo) avant de confirmer
@@ -531,6 +511,6 @@ export default async function AdminPage({
           </ul>
         )}
       </section>
-    </Shell>
+    </AdminShell>
   );
 }

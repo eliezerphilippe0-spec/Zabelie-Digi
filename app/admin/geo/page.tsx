@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { SiteNav } from "@/components/site-nav";
-import { SiteFooter } from "@/components/site-footer";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { GeoMap, type GeoRow } from "@/components/geo-map";
 import { HaitiMap, type HtRow } from "@/components/haiti-map";
 import { getCurrentUser } from "@/lib/auth";
@@ -13,25 +12,6 @@ import { departmentName } from "@/lib/geo/haiti";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Géo-localisation — Zabelie" };
 
-function Shell({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-grain min-h-screen">
-      <SiteNav />
-      <main className="mx-auto max-w-5xl px-5 py-16">
-        <h1 className="text-3xl font-black tracking-tight">{title}</h1>
-        {children}
-      </main>
-      <SiteFooter />
-    </div>
-  );
-}
-
 type UserAgg = { country_code: string; role: string; users: number };
 type SalesAgg = { country_code: string; orders: number; gmv_htg: number };
 type HtAgg = { region_code: string; creators: number; users: number };
@@ -39,18 +19,18 @@ type HtAgg = { region_code: string; creators: number; users: number };
 export default async function GeoPage() {
   if (!isSupabaseConfigured()) {
     return (
-      <Shell title="Géo-localisation">
+      <AdminShell title="Géo-localisation" actif="/admin/geo">
         <p className="mt-4 text-sm text-mist">
           Mode démo — connecte Supabase pour afficher la carte.
         </p>
-      </Shell>
+      </AdminShell>
     );
   }
 
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     return (
-      <Shell title="Géo-localisation">
+      <AdminShell title="Géo-localisation" actif="/admin/geo">
         <p className="mt-4 text-sm text-mist">
           Accès réservé aux administrateurs.{" "}
           {!user && (
@@ -59,7 +39,7 @@ export default async function GeoPage() {
             </Link>
           )}
         </p>
-      </Shell>
+      </AdminShell>
     );
   }
 
@@ -127,7 +107,7 @@ export default async function GeoPage() {
   ];
 
   return (
-    <Shell title="Géo-localisation">
+    <AdminShell title="Géo-localisation" actif="/admin/geo" userName={user.displayName}>
       <p className="mt-2 text-sm text-mist">
         D’où viennent nos clients et nos talents.{" "}
         <Link href="/admin" className="text-cloud underline">
@@ -268,6 +248,6 @@ export default async function GeoPage() {
           </section>
         </>
       )}
-    </Shell>
+    </AdminShell>
   );
 }
