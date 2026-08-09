@@ -69,11 +69,13 @@ insert into zabelie_fulfillment_limits (key, value, comment) values
   ('auto_receive_days', 7,
    'ANCRE : déclaration de remise par le vendeur — JAMAIS le paiement. Les deux délais se CHAÎNENT : si celui-ci partait du paiement, un acheteur dont le vendeur déclare au 5e jour n''aurait que 2 jours pour réagir, et le chiffre ne voudrait rien dire. Passé ce délai sans réponse, la commande est réputée reçue.'),
   ('post_receipt_maturation_days', 0,
-   'ANCRE : confirmation de réception. 0 — et l''argument est plus fort que la commodité : MonCash n''a PAS de rétrofacturation. Le J+7 digital protège d''une contestation bancaire qui n''existe pas sur ce rail. Retenir l''argent après une confirmation EXPLICITE de l''acheteur ne protège de rien : ça reconstitue la rétention (docs/17).'),
+   'ANCRE : confirmation de réception. 0 — et l''argument est plus fort que la commodité : MonCash n''a PAS de rétrofacturation. Le J+7 digital protège d''une contestation bancaire qui n''existe pas sur ce rail. Retenir l''argent après une confirmation EXPLICITE de l''acheteur ne protège de rien : ça reconstitue la rétention (docs/17). ⚠️ 0 NE VEUT PAS DIRE « payé sur-le-champ » : `zabelie_mark_received` pose `greatest(matures_at, now() + délai)`, donc le J+7 posé à la confirmation du paiement reste un PLANCHER ANTI-FRAUDE. Une réception confirmée au 2e jour ne paie pas le vendeur au 2e jour. Les deux horloges ne s''ADDITIONNENT pas non plus : au pire, avec 5/7, le vendeur d''une commande honorée attend J+12 (5 pour déclarer, 7 de silence acheteur), jamais J+7+12.'),
   ('notice_max_attempts', 5,
    'Tentatives d''envoi d''un avis avant escalade ANTICIPÉE en file admin — pour une adresse qui rebondit dès le 2e jour, inutile d''attendre la fenêtre entière. La borne DURE, elle, est temporelle et ne coûte aucune constante : à shipped_at + auto_receive_days, une commande dont les avis ne sont pas partis escalade au lieu de rester en limbe. Le vendeur d''une commande honorée attend donc AU PLUS auto_receive_days avant qu''un humain voie le dossier — le même délai que le silence normal, jamais plus.'),
   ('dispute_weekly_ceiling', 5,
-   'SEUIL POSÉ D''AVANCE, avant que la question soit chargée : au-delà de N litiges par semaine, le traitement manuel cesse d''être tenable. Tout litige atterrit chez le porteur, à la main, sans rétrofacturation pour aider. Franchi durablement → suspendre l''ouverture physique ou financer un vrai processus, pas serrer les dents.')
+   'SEUIL POSÉ D''AVANCE, avant que la question soit chargée : au-delà de N litiges par semaine, le traitement manuel cesse d''être tenable. Tout litige atterrit chez le porteur, à la main, sans rétrofacturation pour aider. Franchi durablement → suspendre l''ouverture physique ou financer un vrai processus, pas serrer les dents.'),
+  ('orphan_grace_hours', 6,
+   'FILET STRUCTUREL (§6 bis), pas un paramètre commercial. ANCRE : `min(payments.confirmed_at)` de la commande — la PREMIÈRE confirmation, car `payments.order_id` ne porte qu''un index et une commande peut avoir plusieurs paiements ; avec `max()`, un paiement tardif rajeunirait indéfiniment un orphelin. Délai avant qu''une commande physique payée dont l''escrow n''est pas verrouillé soit traitée comme un oubli. Non nul parce que `/api/reconcile` ne passe QU''UNE FOIS PAR JOUR : une commande qui attend légitimement ce passage n''est pas un orphelin. Latence de réparation au pire ~30 h (24 h de cron + 6 h de grâce), à comparer aux 7 jours avant maturation de l''escrow — la réparation atterrit toujours largement avant que l''argent bouge.')
 on conflict (key) do nothing;  -- config d'exploitation : jamais réécrite au rejeu
 
 alter table zabelie_fulfillment_limits enable row level security;
@@ -463,6 +465,9 @@ declare
   v_rappels  integer := 0;
   v_echecs   integer := 0;
   v_maxtry   integer;
+  v_grace    integer;
+  v_orph_rep  integer := 0;   -- orphelins réparés (escrow encore gelable)
+  v_orph_tard integer := 0;   -- orphelins détectés trop tard (argent parti)
   v_recv     integer;
   v_ship     integer;
   r          record;
@@ -471,6 +476,80 @@ begin
     from zabelie_fulfillment_limits where key = 'auto_receive_days';
   select coalesce(max(value), 5) into v_ship
     from zabelie_fulfillment_limits where key = 'shipment_deadline_days';
+
+  -- (0) FILET STRUCTUREL — l'appel manquant ou mal ordonné ────────────────
+  -- `zabelie_open_fulfillment` est appelée depuis QUATRE routes serveur (les
+  -- seules qui invoquent `confirm_payment`). Quatre sites d'appel, c'est
+  -- quatre occasions d'oublier, et un cinquième rail ajouté plus tard
+  -- n'hériterait de rien. Ce bloc rattrape l'oubli.
+  --
+  -- CE QU'IL TESTE, ET POURQUOI PAS AUTRE CHOSE. La condition porte sur
+  -- l'ÉTAT QU'ON VEUT GARANTIR — « l'argent de cette commande physique est
+  -- gelé » — et non sur un INDICE de cet état (« une ligne de suivi
+  -- existe »). La nuance n'est pas cosmétique : si une route appelait
+  -- `zabelie_open_fulfillment` AVANT `confirm_payment`, l'escrow n'existerait
+  -- pas encore, le `update … where status = 'maturing'` ne toucherait aucune
+  -- ligne — mais la ligne de suivi, elle, serait bien créée. Un filet qui
+  -- cherche « pas de ligne de suivi » verrait une ligne, conclurait que tout
+  -- va bien, et laisserait un escrow NON VERROUILLÉ mûrir au chronomètre. Le
+  -- défaut se présenterait comme une réussite, une fois de plus.
+  --
+  -- LE GARDE QUI COMPTE LE PLUS : `f.status in ('received', …)`. Après une
+  -- réception, `zabelie_mark_received` REMET `gated_on_delivery` à faux et
+  -- l'escrow reste `maturing` jusqu'au passage de `mature_wallets()`. Sans
+  -- cette exclusion, le filet « réparerait » toute commande honorée en
+  -- reposant le verrou — et le vendeur ne serait JAMAIS payé. Les trois
+  -- états exclus sont ceux où l'attente est close ou déjà chez un humain.
+  select coalesce(max(value), 6) into v_grace
+    from zabelie_fulfillment_limits where key = 'orphan_grace_hours';
+
+  for r in
+    select e.order_id,
+           e.status as escrow_status,
+           c.confirmed_at
+      from escrow_entries e
+      join orders   o on o.id = e.order_id
+      join products p on p.id = o.product_id
+      cross join lateral (
+        select min(pay.confirmed_at) as confirmed_at
+          from payments pay
+         where pay.order_id = e.order_id and pay.status = 'confirmed'
+      ) c
+     where p.kind = 'physical'
+       and c.confirmed_at is not null
+       and c.confirmed_at < now() - make_interval(hours => v_grace)
+       and not exists (
+         select 1 from zabelie_fulfillment f
+          where f.order_id = e.order_id
+            and f.status in ('received', 'action_required', 'disputed_by_buyer'))
+       and (e.status <> 'maturing' or e.gated_on_delivery = false)
+     for update of e skip locked
+  loop
+    if r.escrow_status = 'maturing' then
+      -- RÉPARABLE : l'argent est encore là, on le gèle.
+      perform zabelie_open_fulfillment(r.order_id);
+      -- Le délai vendeur part de la confirmation du PAIEMENT (l'ancre de
+      -- `shipment_deadline_days`), pas de l'heure où le filet a réparé —
+      -- sinon un oubli de la plateforme offrirait au vendeur autant de jours
+      -- qu'elle a mis à s'en apercevoir.
+      update zabelie_fulfillment
+         set created_at = r.confirmed_at
+       where order_id = r.order_id and created_at > r.confirmed_at;
+      v_orph_rep := v_orph_rep + 1;
+    else
+      -- TARDIF : l'escrow a déjà mûri (ou été repris). L'argent est parti ;
+      -- il n'y a plus rien à geler et on N'ÉCRIT PAS UNE LIGNE dans
+      -- `escrow_entries` — re-verrouiller un escrow mûri romprait l'identité
+      -- comptable de 0033 sans rien récupérer. Un humain prend le dossier.
+      insert into zabelie_fulfillment (order_id, status, created_at)
+      values (r.order_id, 'action_required', r.confirmed_at)
+      on conflict (order_id)
+        do update set status = 'action_required', updated_at = now();
+      update orders set status = 'disputed'
+       where id = r.order_id and status = 'paid';
+      v_orph_tard := v_orph_tard + 1;
+    end if;
+  end loop;
 
   -- (a) Acheteur silencieux après remise → réception prononcée.
   -- CONDITION DE LÉGITIMITÉ : les deux avis doivent être PARTIS. Un acheteur
@@ -549,7 +628,9 @@ begin
   end loop;
 
   return jsonb_build_object('auto_recus', v_auto, 'action_requise', v_overdue,
-                            'rappels_dus', v_rappels, 'avis_en_echec', v_echecs);
+                            'rappels_dus', v_rappels, 'avis_en_echec', v_echecs,
+                            'orphelins_repares', v_orph_rep,
+                            'orphelins_tardifs', v_orph_tard);
 end;
 $$;
 revoke all on function zabelie_fulfillment_sweep() from public, anon, authenticated;
