@@ -503,8 +503,19 @@ premier endroit où une revue se trompe.
      « Mwen pa resevwa l / Je n'ai pas reçu »**, plus l'état courant et
      l'échéance à la place de l'impasse actuelle ;
    - admin : la file `zabelie_fulfillment_overdue`.
-4. ⏳ **L'envoi des avis** — **TOUJOURS OUVERT**. La file existe en base,
-   l'expéditeur non. Contrat de
+4. ✅ **L'envoi des avis** — **FAIT (lot « avis »)**. `lib/fulfillment-notices.ts`,
+   appelé par `/api/fulfillment/sweep` **après** le balayage — l'ordre est un
+   choix : envoyer avant lèverait le garde de légitimité dans la seconde, et un
+   avis expédié à 12:30:01 autoriserait la réception à 12:30:02 sur un message
+   que personne n'a ouvert. En envoyant après, tout avis qui part laisse au
+   moins un passage complet avant de pouvoir servir à trancher un silence.
+   Réclamation atomique **sans migration** : `attempts` sert de numéro de
+   version (`update … where attempts = n and sent_at is null`), donc deux
+   passages simultanés n'envoient jamais deux fois. `RESEND_API_KEY` absente →
+   AUCUNE réclamation : incrémenter les tentatives sans pouvoir envoyer
+   épuiserait la borne en cinq jours et ferait remonter en file admin des
+   commandes dont le seul tort serait une clé non posée.
+   Contrat d'origine, pour mémoire, et il est tenu : Contrat de
    la route : ne prendre que les avis **échus** (`due_at <= now()` — le rappel
    est programmé à mi-délai, le dépiler à l'aveugle enverrait deux messages
    identiques d'affilée puis plus rien pendant sept jours) ; idempotence par

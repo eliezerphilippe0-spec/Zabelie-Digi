@@ -76,6 +76,21 @@ async function handle(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     const c = (data ?? {}) as Compteurs;
+
+    /* ── Les avis partent APRÈS le balayage, et l'ordre est un choix ────────
+     * Le garde de légitimité du balayage retient l'auto-réception tant qu'un
+     * avis n'est pas parti. Envoyer AVANT lèverait ce garde dans la seconde :
+     * un avis expédié à 12:30:01 autoriserait la réception à 12:30:02, sur un
+     * message que l'acheteur n'a pas encore ouvert. En envoyant après, tout
+     * avis qui part aujourd'hui laisse au moins un passage complet — donc une
+     * journée — avant de pouvoir servir à trancher un silence.
+     *
+     * Le cas « le fournisseur était en panne pendant sept jours » n'est pas
+     * pour autant laissé en limbe : la borne dure du balayage a déjà fait
+     * remonter la commande en file admin, chez un humain. */
+    const { envoyerAvisDus } = await import("@/lib/fulfillment-notices");
+    const avis = await envoyerAvisDus(admin);
+
     journal({
       issue: "termine",
       auto_recus: c.auto_recus ?? 0,
@@ -84,9 +99,14 @@ async function handle(req: Request) {
       avis_en_echec: c.avis_en_echec ?? 0,
       orphelins_repares: c.orphelins_repares ?? 0,
       orphelins_tardifs: c.orphelins_tardifs ?? 0,
+      avis_dus: avis.dus,
+      avis_envoyes: avis.envoyes,
+      avis_echecs: avis.echecs,
+      avis_concurrents: avis.concurrents,
+      avis_abandonnes: avis.abandonnes,
       dureeMs: Date.now() - debut,
     });
-    return NextResponse.json(c);
+    return NextResponse.json({ ...c, avis });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur";
     journal({ issue: "exception", message, dureeMs: Date.now() - debut });
