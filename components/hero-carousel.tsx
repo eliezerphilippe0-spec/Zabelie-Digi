@@ -20,6 +20,15 @@ export type CarouselSlide = {
   cta: string;
   href: string;
   accent: string;
+  /**
+   * Chiffre-choc facultatif, ex. « 0 HTG » — la pastille de la maquette.
+   * OPTIONNEL À DESSEIN : un slide qui n'a rien de chiffré à dire n'en met
+   * pas, plutôt que d'inventer un nombre pour remplir la case.
+   */
+  badge?: string;
+  /** Second geste facultatif — aujourd'hui WhatsApp, masqué si absent. */
+  secondHref?: string;
+  secondCta?: string;
 };
 
 export function HeroCarousel({
@@ -68,18 +77,45 @@ export function HeroCarousel({
     >
       {/* Ratio contenu : ~2:1 mobile, ~3:1 dès sm — le hero est un bandeau,
           pas un écran. */}
+      {/* Ratio élargi (maquette porteur) : ~4:3 mobile, ~16:9 dès sm — c'est
+          une BANNIÈRE, plus un bandeau. Toujours zéro image : sur Android
+          d'entrée de gamme et 3G, une photo de hero coûte plus cher que tout
+          le reste de la page réunie. Le jour où des photos terrain existent,
+          elles remplacent `accent` slide par slide (lib/landing-slides.ts).
+
+          ⚠️ LE TEXTE RESTE DU TEXTE, jamais incrusté dans une image : le site
+          porte quatre langues, un lecteur d'écran doit le lire, et à 360 px
+          une typographie gravée devient illisible. */}
       <div
-        className={`flex aspect-[2/1] flex-col items-center justify-center gap-4 rounded-3xl bg-gradient-to-br px-6 text-center sm:aspect-[3/1] ${slide.accent}`}
+        className={`flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-3xl bg-gradient-to-br px-6 py-8 text-center sm:aspect-[16/9] ${slide.accent}`}
       >
-        <p className="max-w-2xl text-xl font-extrabold leading-tight tracking-tight text-ink sm:text-3xl">
+        <p className="max-w-2xl text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
           {slide.title}
         </p>
-        <Link
-          href={slide.href}
-          className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-cloud transition hover:opacity-90"
-        >
-          {slide.cta}
-        </Link>
+        {slide.badge && (
+          <p className="rounded-xl bg-ink px-4 py-1.5 text-2xl font-extrabold tracking-tight text-brand sm:text-3xl">
+            {slide.badge}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Link
+            href={slide.href}
+            className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-cloud transition hover:opacity-90"
+          >
+            {slide.cta}
+          </Link>
+          {slide.secondHref && slide.secondCta && (
+            <a
+              href={slide.secondHref}
+              className="flex items-center gap-2 rounded-xl border-2 border-ink px-5 py-2.5 text-sm font-bold text-ink transition hover:bg-ink/10"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-ink" strokeWidth="1.8">
+                <path d="M4 5h16v11H9l-5 4V5z" />
+              </svg>
+              {slide.secondCta}
+            </a>
+          )}
+        </div>
       </div>
 
       {slides.length > 1 && (

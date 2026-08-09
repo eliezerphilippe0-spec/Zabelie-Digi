@@ -7,7 +7,7 @@ import { CategorySidebar } from "@/components/category-sidebar";
 import { DepartmentIcon } from "@/components/department-icons";
 import { HeroCarousel } from "@/components/hero-carousel";
 import { MetricA } from "@/components/metric-a";
-import { LANDING_SLIDES } from "@/lib/landing-slides";
+import { LANDING_SLIDES, secondGeste } from "@/lib/landing-slides";
 import { getMenuRayons } from "@/lib/taxonomy";
 import { whatsappHref, whatsappAffichage } from "@/lib/whatsapp";
 import {
@@ -290,6 +290,12 @@ export default async function HomePage() {
                 cta: t(lang, sl.ctaKey),
                 href: sl.href,
                 accent: sl.accent,
+                badge: sl.badgeKey ? t(lang, sl.badgeKey) : undefined,
+                // Le second geste n'existe que si le numéro est posé — la
+                // décision vit dans `secondGeste`, pas ici : en ligne dans un
+                // composant serveur, elle était hors de portée d'un test.
+                secondHref: secondGeste(sl, t(lang, "wa.prefill"))?.href,
+                secondCta: secondGeste(sl, t(lang, "wa.prefill"))?.cta,
               }))}
             />
           </div>

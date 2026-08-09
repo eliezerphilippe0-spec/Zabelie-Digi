@@ -1,4 +1,5 @@
 import type { I18nKey } from "@/lib/i18n";
+import { whatsappAffichage, whatsappHref } from "@/lib/whatsapp";
 
 /**
  * Les slides du hero — configuration, pas composant : un slide s'ajoute ou se
@@ -22,6 +23,13 @@ export type LandingSlide = {
   href: string;
   /** Dégradé tailwind du fond (tokens du thème). */
   accent: string;
+  /**
+   * Chiffre-choc facultatif (clé i18n), ex. « 0 HTG ». Optionnel à dessein :
+   * un slide sans chiffre vrai à annoncer n'en invente pas un.
+   */
+  badgeKey?: I18nKey;
+  /** Le slide propose-t-il WhatsApp en second geste ? */
+  whatsapp?: boolean;
 };
 
 export const LANDING_SLIDES: LandingSlide[] = [
@@ -41,5 +49,47 @@ export const LANDING_SLIDES: LandingSlide[] = [
   },
   // Vendeur : la phrase historique du hero v1, descendue au rang de slide —
   // le parcours ne disparaît pas, il cesse de dominer.
-  { titleKey: "home.h1", ctaKey: "home.cta.sell", href: "/vendre", accent: "from-gold to-amber" },
+  // Vendeur : c'est le slide que le porteur a choisi de mettre en avant
+  // (2026-08-09). Il porte le chiffre — 0 HTG pour ouvrir — et le second
+  // geste WhatsApp, parce que sur ce marché l'inscription commence souvent
+  // par un message, pas par un formulaire.
+  //
+  // « 0 HTG » et non « 0 GDES » : c'est le code de la gourde utilisé dans
+  // tout le dépôt, et un sigle inventé sur une bannière qui parle d'argent
+  // se paie cher.
+  {
+    // `home.h1` plutôt que `rail.shop.t` : la phrase historique du hero v1
+    // dit la même chose EN MIEUX (« depuis votre téléphone, sans avance »), et
+    // la garder ici lui rend son site d'appel. C'est le contrôle des clés
+    // mortes qui a signalé sa disparition, pas une relecture.
+    titleKey: "home.h1",
+    ctaKey: "home.cta.sell",
+    href: "/vendre",
+    accent: "from-gold to-amber",
+    badgeKey: "rail.shop.free",
+    whatsapp: true,
+  },
 ];
+
+/**
+ * Le SECOND GESTE d'un slide — aujourd'hui WhatsApp, demain autre chose.
+ *
+ * Extrait de `app/page.tsx` pour être ÉPROUVABLE : la logique y était en
+ * ligne dans un composant serveur, donc hors de portée d'un test. Une
+ * mutation l'a montré — retirer la garde du numéro ne faisait rougir aucun
+ * contrôle, alors que la conséquence est un bouton de contact vers personne,
+ * exactement ce que `lib/whatsapp.ts` s'engage à ne jamais produire.
+ *
+ * Contrat : les DEUX champs, ou AUCUN. Un lien sans libellé afficherait un
+ * bouton vide ; un libellé sans lien, un bouton mort.
+ */
+export function secondGeste(
+  slide: LandingSlide,
+  prefill: string
+): { href: string; cta: string } | null {
+  if (!slide.whatsapp) return null;
+  const href = whatsappHref(prefill);
+  const cta = whatsappAffichage();
+  if (!href || !cta) return null;
+  return { href, cta };
+}
