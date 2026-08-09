@@ -5,9 +5,9 @@
 > Score et `RESTRICTED` cités comme disponibles alors qu'ils sont différés).
 > Gouvernée par la charte marketplace v3.1 §2. Le dépôt fait foi.
 >
-> ⚠️ **La section 4 (payout) porte un trou volontaire** : l'arbitrage A
-> (charte §10) n'est pas tranché. Cette spec ne choisit pas à la place du
-> porteur — elle montre le trou au lieu de le masquer.
+> ✅ **Le trou de la section 4 est refermé** : l'arbitrage A a été tranché
+> le 2026-08-08 — option (b), déclenchement automatique à maturité et
+> règlement manuel. La spec est complète.
 
 ## 1. Chaîne d'états du compte vendeur
 
@@ -76,13 +76,44 @@ préservée par chaque écriture ; coordonnée de versement collectée au KYC ;
 gel administratif `HELD` motivé et tracé ; toutes les vues vendeur dérivées
 du ledger, aucun solde éditable.
 
-**⏳ EN ATTENTE D'ARBITRAGE A** (charte §10 — options (a) demande /
-(b) déclenchement auto + règlement manuel, recommandée / (c) B2C auto) : le
-mode de déclenchement, le devenir de `zabelie_request_payout` (`0034`), et la
-forme de la file admin de règlement. **Aucune implémentation du §4 avant le
-mot du porteur.** La suspension (`SUSPENDED`) ne bloque pas le règlement des
-fonds déjà mûris — retenir l'argent d'un vendeur suspendu serait la rétention
-de `docs/17` sous une forme nouvelle ; seul `HELD`, motivé, le peut.
+**✅ ARBITRAGE A TRANCHÉ — (b), 2026-08-08** : *déclenchement automatique à
+maturité, règlement manuel.* Le trou de cette section est refermé.
+
+```
+maturité J+7 atteinte  →  SCHEDULED (automatique, cron)
+                       →  PROCESSING (le porteur exécute le versement)
+                       →  PAID (référence opérateur saisie)
+   branches : FAILED → RETRY (recul borné) · HELD (gel motivé, tracé)
+```
+
+Ce que (b) change, et pourquoi c'est le bon cadre BRH : le **déclenchement**
+cesse d'être discrétionnaire. Un vendeur n'a plus à *demander* ce qui lui est
+dû — l'échéance le produit. C'est ce qui distingue un règlement d'une
+rétention (`docs/17`), et c'est l'argument à porter au conseil. Le
+**règlement**, lui, reste manuel : aucun rail de versement sortant n'est
+prouvé (MonCash B2C — étape 0 de `docs/03` §9 non franchie), et un règlement
+manuel borné par le volume est un garde-fou, pas une dette.
+
+**Conséquences d'implémentation** :
+
+- `zabelie_request_payout` (`0034`) **n'est pas supprimée** : elle devient le
+  chemin d'exception (le vendeur signale une coordonnée à corriger, un
+  versement non reçu), plus le chemin nominal. Le supprimer casserait le
+  chantier 0 sans rien remplacer tant que l'automatisation n'a pas tourné.
+- Un cron pose les payouts `SCHEDULED` à maturité — il **journalise même à
+  zéro** (`tests/crons-appelants.test.ts` croise son appelant).
+- La file admin de règlement suit le motif Zelle existant : liste, exécution,
+  saisie de la référence opérateur, double confirmation sur le montant.
+- **Aucun fonds ne bouge sans maturité** : le cron ne fait que rendre
+  *exigible*, il ne verse pas.
+
+La suspension (`SUSPENDED`) ne bloque pas le règlement des fonds déjà mûris —
+retenir l'argent d'un vendeur suspendu serait la rétention de `docs/17` sous
+une forme nouvelle ; seul `HELD`, motivé et tracé, le peut.
+
+**Ce que le KYC doit donc collecter** (et c'était la dépendance annoncée) :
+le **numéro MonCash au nom du vendeur** suffit — (b) n'exige aucune donnée
+d'API B2C. Le §3 est complet en l'état.
 
 ## 5. Journal d'audit
 
