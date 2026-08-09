@@ -47,6 +47,19 @@ export default defineConfig({
   webServer: [
     {
       command: "npm run start",
+      // Le projet `chromium` tourne SANS Supabase : son catalogue est celui de
+      // `lib/sample-data.ts`. Depuis que les fixtures sont un OPT-IN explicite
+      // (`demoFixturesEnabled()`, lib/products.ts), ce serveur doit poser le
+      // drapeau lui-même — sinon `/produit/<slug>` est introuvable, la fiche ne
+      // porte plus de bouton MonCash et ses métadonnées retombent sur celles du
+      // layout. Mesuré, pas déduit : sans cette ligne, trois tests rouges
+      // (`money-path` ×2, `partage-fiche` ×1).
+      //
+      // Le drapeau vit ICI et pas dans `.github/workflows/ci.yml` : le harnais
+      // local doit tourner dans les mêmes conditions que la CI — même raison
+      // que `RECYCLER = false` ci-dessus. Le croisement est tenu par
+      // `tests/harnais-fixtures-e2e.test.ts`.
+      env: { ZABELIE_DEMO_FIXTURES: "true" },
       url: "http://localhost:3000",
       reuseExistingServer: RECYCLER,
       timeout: 120_000,
