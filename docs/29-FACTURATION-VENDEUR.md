@@ -4,9 +4,10 @@
 > porteur, **corrigée contre le dépôt** (règle 7) : six écarts factuels et
 > une collision structurelle. Le dépôt fait foi.
 >
-> **⛔ Non implémentable en l'état** — trois de ses fondations n'existent pas.
-> Voir §0. Cette spec est écrite maintenant pour être *prête*, pas pour être
-> exécutée maintenant.
+> **✅ Arbitrages D, E, F et C′ tranchés le 2026-08-08.** Il ne reste
+> qu'une dépendance, technique : **`0043` appliquée en production**. PR-A
+> devient écrivable ce jour-là — les deux replis du §0.3 lèvent l'attente
+> des chantiers 2 et 4.
 
 ## 0. Ce que la vérification a trouvé — à lire avant tout
 
@@ -29,8 +30,25 @@ l'invariant 7 du brief interdit.
 **Mais les deux métiers sont distincts, et c'est vérifié** : `0022` n'a
 **aucune référence à `orders`** — un professionnel y facture *son* client,
 hors marketplace. Ici, la facture est l'artefact d'une commande marketplace.
-Deux systèmes peuvent donc légitimement coexister. **⚠️ Arbitrage D (porteur)**
-— trois sorties, à trancher avant PR-A :
+
+**✅ ARBITRAGE D TRANCHÉ — (b) table dédiée, briques partagées.** Et la
+raison décisive n'est pas le goût mais une **contradiction d'invariants** :
+les factures Business sont **modifiables** (`draft`, `invoice-editor.tsx`,
+`zabelie_biz_recompute_invoice`) ; les factures marketplace doivent être
+**immuables dès l'émission**. Une table commune exigerait un trigger qui
+*branche* selon l'origine de la ligne — un garde conditionnel, donc un garde
+qu'on peut se tromper à écrire, sur de la donnée comptable. S'y ajoute une
+divergence de modèle : le « client » Business est un contact CRM
+(`zabelie_biz_clients`), le nôtre est un `auth.users` qui a payé.
+
+La réversibilité pousse au même endroit : séparer plus tard deux métiers
+mêlés dans une table pleine de factures réelles est un chantier ; rapprocher
+deux tables ne l'est pas.
+
+**Ce qui se réutilise est du CODE, pas du schéma** : le motif `public_token`,
+la route `/facture/[token]`, le rendu. Rien à réécrire.
+
+Les trois sorties examinées :
 
 | Sortie | Ce qu'elle implique |
 |---|---|
@@ -56,10 +74,12 @@ réfère à rien du dépôt ; l'alignement réel est `zabelie_biz_invoice_status
 ### 0.3 Les dépendances, dans l'ordre
 
 1. **`0043` appliquée en production** — correctement identifiée par le brief.
-2. **`zabelie_sellers`** — chantier 2 (PR #66 en revue). Sans elle, pas de
-   compteur par vendeur ni de `seller_snapshot`. **Repli possible** : ancrer
-   sur `profiles.id` (le vendeur *est* un profil aujourd'hui) — ce qui rend
-   le socle implémentable avant le chantier 2. **Arbitrage E (porteur)**.
+2. **`zabelie_sellers`** — chantier 2 (PR #66). **✅ ARBITRAGE E DISSOUS** :
+   `docs/23` §1 bis précise désormais que l'entité vendeur est une
+   **extension de `profiles`, clé sur `profiles.id`**. Ancrer la facturation
+   sur `profiles` aujourd'hui, c'est donc *déjà* l'ancrer sur
+   `zabelie_sellers` demain — aucune migration de reprise, aucun choix à
+   regretter. Ce n'était pas un arbitrage, c'était un silence de spec.
 3. **`order_items`** — chantier 4 (PR #68). **Repli** : `lines` contient une
    seule ligne dérivée de `orders.product_id` — fidèle au réel d'aujourd'hui,
    et le jour du panier multi-produits, la structure `jsonb` absorbe N lignes
@@ -132,8 +152,23 @@ Génération à la demande, pas de stockage systématique.
 
 Pas de bouton « générer » (automatique), pas de « modifier » (immuable +
 avoirs), pas de « marquer payée » à la main (l'état vient du flux MonCash
-réel). Montant nul : `>= 0` avec un drapeau explicite plutôt qu'un `> 0` qui
-interdirait une promotion légitime — **arbitrage F**.
+réel).
+
+**✅ ARBITRAGE F TRANCHÉ — `total_htg > 0`**, et c'est le code qui l'a
+tranché, pas une préférence : `app/api/products/route.ts:65` rejette
+`price < 1` à la publication, et `0012` borne les coupons à
+`percent between 1 and 90` — au minimum 10 % du prix reste dû. **Aucun
+chemin du système ne produit un total nul.** Un total 0 signifierait donc
+qu'un de ces trois garde-fous a cédé : la facture doit refuser de
+l'entériner. Le drapeau `is_zero_total` était une complexité pour un cas
+que le système interdit.
+
+⚠️ **Constat séparé, trouvé en vérifiant F** : `app/page.tsx:110` filtre
+`priceHTG === 0` pour la rangée « Produits gratuits » de l'accueil. Comme la
+publication interdit `price < 1`, **cette section ne peut jamais rien
+afficher** — une rangée morte, invisible parce que la garde `HomeRow` la
+masque à vide. Deux sorties : autoriser le prix 0 (et F redevient ouvert),
+ou retirer la section. Hors périmètre de ce chantier, inscrit au backlog.
 
 ## 7. Découpage
 
@@ -143,13 +178,39 @@ interdirait une promotion légitime — **arbitrage F**.
 | B | `zabelie_issue_invoice` + hook dans `mark_received` + test « total ≠ payé → rejet » | A |
 | C | Vérification publique (réutilisant `/facture/[token]`) | A |
 | D | PDF + partage WhatsApp | B, C |
-| E | Avoirs — **arbitrage C du brief** (avoir libre vs conditionné à un litige) | B |
+| E | Avoirs — libres + trois garde-fous (C′ tranché) | B |
 
-## 8. Arbitrages ouverts
+## 7 bis. Avoirs — ✅ C′ tranché : libres, avec trois garde-fous
 
-| ID | Question | Recommandation |
+**La question se réduit une fois posée proprement : un avoir est un
+document, pas un mouvement de fonds.** Le seul chemin qui déplace de l'argent
+est `refund_order` (`0006`/`0037`), avec son point de contrôle humain. Un
+avoir qui ne touche pas le grand livre ne peut ni voler un acheteur ni sortir
+un vendeur — le risque n'est pas financier, il est **documentaire** : un
+vendeur qui annulerait ses factures pour maquiller son chiffre.
+
+Trois garde-fous suffisent, et **aucun ne dépend de M3** (`docs/28`, non
+construit) :
+
+1. **Motif obligatoire** — un avoir sans raison n'est pas émis.
+2. **Écriture au journal d'audit** — qui, quand, sur quelle facture, pourquoi.
+3. **Interdiction explicite de déclencher un remboursement** — l'avoir
+   *constate*, il ne rembourse pas. Le remboursement reste l'acte séparé,
+   existant, à checkpoint humain.
+
+`zabelie_issue_credit_note(p_invoice_id, p_reason)` : ligne négative
+référençant l'origine, l'origine passe `void`. Conditionner l'avoir à un
+litige aurait rendu ce chantier dépendant de `docs/28` pour un risque que la
+séparation document/argent neutralise déjà.
+
+## 8. Arbitrages — tous tranchés le 2026-08-08
+
+| ID | Question | Décision |
 |---|---|---|
-| **D** | Table dédiée ou extension de `zabelie_biz_*` | **(b)** dédiée + briques partagées |
-| **E** | Ancrer sur `profiles` (implémentable maintenant) ou attendre `zabelie_sellers` | **`profiles`** — le vendeur *est* un profil aujourd'hui |
-| **F** | Facture à total nul autorisée ? | `>= 0` + drapeau explicite |
-| **C′** | Avoir libre vendeur ou conditionné à un litige tracé | À trancher — touche l'argent |
+| **D** | Table dédiée ou extension `zabelie_biz_*` | ✅ **(b)** dédiée + briques partagées — contradiction d'invariants : Business est modifiable, marketplace est immuable |
+| **E** | Ancrage vendeur | ✅ **dissous** — `docs/23` §1 bis clé l'entité vendeur sur `profiles.id` |
+| **F** | Facture à total nul | ✅ **`> 0`** — aucun chemin du système ne produit 0 (publication `price >= 1`, coupons ≤ 90 %) |
+| **C′** | Avoir libre ou conditionné | ✅ **libre + trois garde-fous** — un avoir est un document, pas un mouvement de fonds |
+
+**Il ne reste aucune décision.** La seule dépendance est technique :
+`0043` appliquée en production.
