@@ -67,7 +67,10 @@ function liveDeps(): ReconcileDeps {
       });
       if (error) return { error: error.message };
       if (data?.status === "confirmed") {
-        // idempotency_key = order.id ; e-mails best-effort, une seule fois.
+        // idempotency_key = order.id. Suivi de remise d'abord (attendu :
+        // l'escrow doit être gelé), e-mails ensuite (best-effort, une fois).
+        const { ouvrirSuiviLivraison } = await import("@/lib/fulfillment");
+        await ouvrirSuiviLivraison(admin, idempotencyKey, "reconcile");
         const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
         notifyOrderPaid(admin, idempotencyKey).catch(() => undefined);
       }

@@ -154,6 +154,13 @@ export async function GET(req: Request) {
     return NextResponse.redirect(`${site}/paiement/echec?raison=montant${produit}`);
   }
 
+  // Produit physique : on gèle l'escrow AVANT de rendre la main. Attendu, pas
+  // en fire-and-forget — c'est de l'argent qui cesse de mûrir au chronomètre.
+  // L'échec ne casse rien : le filet du balayage quotidien reprend la commande
+  // (0043 §6 bis). Voir lib/fulfillment.ts pour l'ordre obligatoire.
+  const { ouvrirSuiviLivraison } = await import("@/lib/fulfillment");
+  await ouvrirSuiviLivraison(admin, orderId, "moncash/return");
+
   // E-mails livraison acheteur + 🎉 vendeur (best-effort, idempotent en base).
   const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
   notifyOrderPaid(admin, orderId).catch(() => undefined);

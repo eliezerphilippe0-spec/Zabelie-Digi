@@ -57,14 +57,12 @@ const MOTIF_MAINTENANCE = /purge|expire|sweep|mature|reconcil|_job\b/;
  * de cette liste a gagné un appelant : l'exemption périmée est un défaut au
  * même titre que la fonction orpheline.
  */
-const SANS_APPELANT: Record<string, string> = {
-  zabelie_fulfillment_sweep:
-    "Définie par `0043_fulfillment.sql`, qui est NON APPLIQUÉE et porte trois " +
-    "valeurs encore à arbitrer (docs/21). Un cron déclaré aujourd'hui " +
-    "appellerait une fonction absente de la base et échouerait chaque jour. " +
-    "À câbler EN MÊME TEMPS que l'application de 0043, jamais avant — inscrit " +
-    "comme condition dans OPS_TODO.md.",
-};
+// Vide depuis le 2026-08-09 : `zabelie_fulfillment_sweep` était la seule
+// entrée, exemptée parce que `0043` n'était pas appliquée. Elle l'est
+// désormais, et `/api/fulfillment/sweep` est déclarée dans `vercel.json` —
+// l'exemption est donc retirée, comme l'exige la règle des deux sens. La
+// laisser aurait été le premier pas vers la conformité par usure.
+const SANS_APPELANT: Record<string, string> = {};
 
 // ─────────────────────────── Extraction ──────────────────────────────────────
 

@@ -69,6 +69,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (data?.status === "confirmed") {
+    // Suivi de remise d'abord (attendu : l'escrow doit être gelé avant qu'on
+    // rende 200 à Stripe), e-mails ensuite.
+    const { ouvrirSuiviLivraison } = await import("@/lib/fulfillment");
+    await ouvrirSuiviLivraison(admin, orderId, "stripe/webhook");
     const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
     notifyOrderPaid(admin, orderId).catch(() => undefined);
   }
