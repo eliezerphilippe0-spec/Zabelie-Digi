@@ -328,10 +328,10 @@ avant toute déclaration de conformité — zéro écart déclaré/déployé tol
 |---|---|---|
 | **A** | Modèle de payout | ✅ **(b)** — déclenchement auto, règlement manuel (2026-08-08) |
 | **B** | Services | ✅ **(i)** confirmés + **condition de sortie tranchée** (2026-08-08) — §3 |
-| C′ | Avoir : libre ou conditionné à un litige | ⏳ `docs/29` — recommandé : libre + trois garde-fous |
-| D | Facturation : table dédiée ou extension `zabelie_biz_*` | ⏳ `docs/29` — recommandé : dédiée + briques partagées |
-| E | Facturation : ancrage `profiles` vs `zabelie_sellers` | ⏳ `docs/29` — se dissout en amendant `docs/23` |
-| F | Facture à total nul | ⏳ `docs/29` — recommandé : `> 0` (aucun chemin ne produit 0) |
+| **C′** | Avoir : libre ou conditionné | ✅ **libre + 3 garde-fous** (2026-08-08) — un avoir est un document, pas un mouvement de fonds |
+| **D** | Facturation : table dédiée ou extension `zabelie_biz_*` | ✅ **dédiée + briques partagées** (2026-08-08) — Business est modifiable, marketplace immuable : invariants contradictoires |
+| **E** | Facturation : ancrage vendeur | ✅ **dissous** (2026-08-08) — `docs/23` §1 bis clé le vendeur sur `profiles.id` |
+| **F** | Facture à total nul | ✅ **`> 0`** (2026-08-08) — tranché par le code : aucun chemin ne produit 0 |
 | D-10→D-14 | Notifications : contact, canal, reversal, file, délais | ⏳ `docs/28` |
 | — | `SEARCH_FINGERPRINT_SALT` | ⏳ après preuve de purge au journal |
 | — | Protection de branche `main` | ⏳ à verrouiller |
