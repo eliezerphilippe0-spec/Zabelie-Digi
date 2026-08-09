@@ -6,6 +6,10 @@
       "schedule": "0 12 * * *"
     },
     {
+      "path": "/api/fulfillment/sweep",
+      "schedule": "30 12 * * *"
+    },
+    {
       "path": "/api/maturation",
       "schedule": "0 13 * * *"
     },

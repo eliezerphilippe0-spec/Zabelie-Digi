@@ -66,6 +66,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (data?.status === "confirmed") {
+    // Suivi de remise d'abord (attendu : l'escrow doit être gelé), e-mails
+    // ensuite. Rail semi-manuel, mais la règle ne change pas avec le rail.
+    const { ouvrirSuiviLivraison } = await import("@/lib/fulfillment");
+    await ouvrirSuiviLivraison(admin, body.orderId, "admin/confirm-zelle");
     const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
     notifyOrderPaid(admin, body.orderId).catch(() => undefined);
   }

@@ -427,11 +427,25 @@ alors que le fichier porte quinze contrôles. Corrigé dans le même commit que
 ce §4 bis : un instrument dont la notice décrit un autre appareil est le
 premier endroit où une revue se trompe.
 
-## 5. Ce qui reste à faire avant application
+## 5. État d'application — fait le 2026-08-09, et ce qui reste
 
-1. **Arbitrer les trois valeurs** du §2.
-2. **Brancher `zabelie_open_fulfillment`** — ⚠️ **c'est le trou qui rendait
-   toute cette migration inerte** : la fonction n'a eu, jusqu'au chantier 1,
+> **`0043` EST APPLIQUÉE EN PRODUCTION** (2026-08-09, registre
+> `zabelie_schema_migrations`, empreinte canonique `d2af3699d1ae…`), et le
+> câblage TypeScript est livré avec. Ce qui suit garde la liste d'origine, avec
+> l'état de chaque point : une liste dont on efface les lignes faites ne dit
+> plus pourquoi elles ont été faites dans cet ordre.
+>
+> ⚠️ Elle a été appliquée **sans B2** — voir le **point 6**, qui portait
+> l'exigence inverse et qui est **caduc**.
+
+1. ⏳ **Arbitrer les trois valeurs** du §2 — **TOUJOURS OUVERT**. Elles sont en
+   base à leurs valeurs *proposées* (`shipment_deadline_days = 5`,
+   `auto_receive_days = 7`, `post_receipt_maturation_days = 0`) parce qu'une
+   table de config ne peut pas être vide. Proposées ≠ décidées : elles se
+   changent par `UPDATE`, sans migration. Rien ne les consommera tant qu'aucune
+   commande physique n'existe.
+2. ✅ **Brancher `zabelie_open_fulfillment`** — **FAIT (PR 2/2)**.
+   ⚠️ **C'était le trou qui rendait toute cette migration inerte** : la fonction n'a eu, jusqu'au chantier 1,
    **aucun appelant**. Quinze tests verts prouvaient une machine à états que
    rien n'ouvrait jamais.
 
@@ -453,13 +467,26 @@ premier endroit où une revue se trompe.
      `confirm_payment` doit appeler `zabelie_open_fulfillment`, et l'absence
      échoue — sur le modèle de `tests/crons-appelants.test.ts`, parce qu'un
      test SQL ne voit pas le TypeScript.
-3. **Les surfaces** — aucune n'existe encore :
+     → livré : `tests/fulfillment-appelants.test.ts`. L'appel passe par
+     `lib/fulfillment.ts` (`ouvrirSuiviLivraison`) plutôt qu'en direct :
+     quatre appels restent quatre, mais le croisement a besoin d'UN NOM à
+     chercher dans chaque fichier qui confirme un paiement. Le même fichier
+     tient deux autres propriétés : `p_auto` n'est jamais lu depuis le corps
+     d'une requête (il contourne la vérification d'identité), et le balayage
+     passe AVANT la maturation dans la journée (sinon un orphelin est payé
+     avant d'être gelé).
+3. ⏳ **Les surfaces** — **TOUJOURS OUVERT**, et c'est ce qui manque pour que
+   le mécanisme soit utilisable par un humain. L'**API existe** depuis la
+   PR 2/2 (`POST /api/fulfillment/declare`, `…/received`, `…/not-received` —
+   identité prise dans la SESSION, jamais dans le corps de requête) ; il n'y a
+   aucun écran pour l'appeler :
    - vendeur : bouton « Mwen remèt li / J'ai remis » + note de remise ;
    - acheteur (`/mes-achats`) : « Mwen resevwa l / J'ai reçu » **et
      « Mwen pa resevwa l / Je n'ai pas reçu »**, plus l'état courant et
      l'échéance à la place de l'impasse actuelle ;
    - admin : la file `zabelie_fulfillment_overdue`.
-4. **L'envoi des avis** — la file existe en base, l'expéditeur non. Contrat de
+4. ⏳ **L'envoi des avis** — **TOUJOURS OUVERT**. La file existe en base,
+   l'expéditeur non. Contrat de
    la route : ne prendre que les avis **échus** (`due_at <= now()` — le rappel
    est programmé à mi-délai, le dépiler à l'aveugle enverrait deux messages
    identiques d'affilée puis plus rien pendant sept jours) ; idempotence par
@@ -468,17 +495,33 @@ premier endroit où une revue se trompe.
    échecs consultables. Sans cette route, l'auto-réception ne se déclenche
    jamais (côté court) et F14 remonte les commandes en file admin (côté
    long).
-4. **Le cron** `zabelie_fulfillment_sweep()` — une route qui journalise ses
-   compteurs **même à zéro** (règle d'observabilité), et une entrée dans
-   `vercel.json`. Le jour où elle est déclarée, l'exemption
+5. ✅ **Le cron** `zabelie_fulfillment_sweep()` — **FAIT (PR 2/2)** :
+   `app/api/fulfillment/sweep/route.ts`, déclarée dans `vercel.json` à
+   **12:30**, soit APRÈS `/api/reconcile` (12:00) et AVANT `/api/maturation`
+   (13:00). Cet ordre n'est pas cosmétique : la maturation PAIE, le balayage
+   GÈLE — inversés, un orphelin réparé le serait un jour trop tard. La route
+   journalise ses six compteurs **même à zéro** (règle d'observabilité), et
+   l'ordre est verrouillé par un test. Le jour où elle est déclarée, l'exemption
    `zabelie_fulfillment_sweep` de `tests/crons-appelants.test.ts` doit être
    **retirée** : ce contrôle échoue aussi sur une exemption devenue périmée,
    donc la laisser en place ferait rougir la suite. Rappel de sa limite :
    il prouve qu'un appelant existe dans le dépôt, **pas** que le cron
    s'exécute — cette preuve-là se lit dans le journal Vercel.
-5. **B2 avant** : `0037`/`0038`/`0040` doivent être appliquées d'abord —
-   `0043` §6 remplace la version `0038` de `confirm_payment`.
-6. **Les textes de façade qui attendent cette migration.** Aujourd'hui ils ne
+6. ❌ **« B2 avant »** — **CADUC**, et la contradiction valait d'être écrite
+   plutôt qu'effacée. Ce point exigeait `0037`/`0038`/`0040` avant `0043`,
+   parce que le §6 de `0043` remplaçait la version `0038` de
+   `confirm_payment`. Or le point 2 ci-dessus a remplacé cette approche par le
+   câblage au niveau des routes, et le §6 du fichier n'a JAMAIS contenu de
+   SQL : c'est une note d'application, pas une instruction exécutable.
+   `confirm_payment` n'est donc pas touchée par `0043`, et B2 n'en est pas un
+   prérequis. Vérifié plutôt que déduit : `0043` a été appliquée le
+   2026-08-09 sur une base où `0037`/`0038`/`0040` sont absentes, après
+   répétition sur un Postgres jetable reproduisant ce schéma exact — seule
+   `fulfillment.test.sql` change d'état, aucun autre test ne bouge.
+   B2 reste requise pour **ouvrir la vente physique** (stock, rupture,
+   `in_stock`) ; elle ne l'est pas pour le suivi de remise.
+7. ⏳ **Les textes de façade qui attendaient cette migration** — **ÉCHU** :
+   la borne exécutable existe désormais. Aujourd'hui ils ne
    promettent AUCUN délai sur le physique, faute de borne exécutable. Le jour
    où `0043` est appliquée, la borne existe et le silence devient une
    sous-information. À reprendre alors :

@@ -29,6 +29,8 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Poser `NEXT_PUBLIC_WHATSAPP_NUMBER=50937376615`** (Vercel, Production + Preview) | 2026-08-06 | Toutes les surfaces WhatsApp de la landing v2 (topbar, rail d'accueil, /aide) — masquées tant que la variable est absente. Numéro fourni par le porteur en session ; variable NEXT_PUBLIC → **redéploiement requis** après pose (valeur inlinée au build). |
 | **Poser `NEXT_PUBLIC_CONTACT_EMAIL`** (Vercel) — valeur au choix du porteur | 2026-08-06 | La carte email de /aide, masquée sans elle. Même règle de redéploiement. |
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
+| **Arbitrer les trois valeurs de `0043`** — `shipment_deadline_days` (5), `auto_receive_days` (7), `post_receipt_maturation_days` (0) | 2026-08-09 | **Rien aujourd'hui, et c'est exactement le moment de trancher.** `0043` est appliquée : les trois valeurs sont EN BASE, à leurs valeurs *proposées*, parce qu'une table de config ne peut pas être vide. Proposées ≠ décidées. Elles se changent par `UPDATE`, sans migration, tant qu'aucune commande physique n'existe — après, chaque changement déplace une échéance de paiement sur des commandes en cours. Détail et raisonnement : `docs/21` §2. |
+| **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
@@ -185,7 +187,8 @@ BL-136 (achat invité) reste explicitement en attente d'une décision produit.
 | A (0032-0034) | prod zabelie-digi | 2026-07-26T21:06Z | 21:12Z | zéros / zéros identiques (ok=true) | connecteur (session Claude, go porteur) |
 | B1 (0035-0036) + 0039 | prod zabelie-digi | 21:14Z | 21:17Z | inchangé (ok=true) | idem |
 | 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
-| _restent : 0031 (fidélité) · 0037/0038/0040 (B2, revue séparée)_ | | | | | |
+| 0043 (suivi de remise) | prod zabelie-digi | 2026-08-09T19:05Z | 19:09Z | base vide : 0 commande, 0 paiement confirmé, 0 escrow, 0 produit physique | connecteur (session assistée, go porteur) |
+| _restent : 0031 (fidélité, sautée) · 0037/0038/0040 (B2, revue séparée) · 0051 · 0052 · 0053 · 0054_ | | | | | |
 
 ⚠️ **Trois contrôles restent NON ÉPROUVÉS** — la base était vide le jour de
 l'application : le rapport de solvabilité à `ok=true` sur zéro ligne, le
@@ -663,6 +666,33 @@ maintenant, en kreyòl d'abord**.
       plus courte, ce qui est le bon sens de l'écart.
 
 ## Observabilité — signaux non bloquants à ajouter
+
+- [ ] **Deux projets Supabase, et celui qui s'appelle « Zabelie » n'est PAS la
+      base de Zabelie.** Constaté le 2026-08-09 en cherchant où appliquer
+      `0043`. Le projet nommé **`Zabelie`** (`oqnt…`, us-east-1) porte un tout
+      autre schéma — `vendors`, `affiliates`, `courses`, `rentals`,
+      `registries` — sans aucune table `zabelie_*` ni registre de migrations.
+      La production de ce dépôt est le projet nommé **`zabelie-digi`**
+      (`dddi…`). Un jour de fatigue, l'éditeur SQL ouvert sur le mauvais
+      projet, et une migration part dans une base étrangère : le nom est le
+      seul repère visible dans l'interface, et il désigne l'inverse de ce
+      qu'on croit. À renommer, ou à archiver s'il ne sert plus.
+
+- [ ] **Quatre fonctions de `0042` ont un `search_path` mutable** —
+      `zabelie_order_ref_candidate`, `zabelie_assign_order_ref`,
+      `zabelie_orders_ref_on_insert`, `zabelie_orders_ref_immutable`. Relevé
+      par le linter Supabase (WARN), antérieur au 2026-08-09 et sans rapport
+      avec `0043`. C'est la règle dure n°4 (« `search_path` épinglé ») non
+      tenue sur un lot. Correctif : une migration qui refait les quatre avec
+      `set search_path = public`, rien d'autre.
+
+- [ ] **`seller_is_active` est exécutable par `anon` en `security definer`** —
+      même relevé. Peut être délibéré (elle sert l'affichage public d'une
+      fiche vendeur), mais aucune trace ne le dit. À confirmer ou révoquer,
+      comme `0049` et `0050` l'ont fait pour deux oublis du même genre.
+      `zabelie_biz_get_invoice_by_token` est dans le même cas et paraît, elle,
+      volontairement publique (facture consultable par jeton) — à écrire noir
+      sur blanc plutôt qu'à laisser deviner.
 
 - [ ] **Catégories sans `label_es`** — la garde de `0052` est un contrôle
       PONCTUEL : elle ne voit que les catégories existant à sa position dans
