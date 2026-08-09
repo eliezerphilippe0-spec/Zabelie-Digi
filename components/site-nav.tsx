@@ -133,12 +133,6 @@ export async function SiteNav() {
                   className="hidden text-sm text-mist transition hover:text-cloud sm:block"
                   label={t(lang, "nav.logout")}
                 />
-                <Link
-                  href="/mes-achats"
-                  className="rounded-xl bg-cloud px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90"
-                >
-                  {t(lang, "pay.ok.cta")}
-                </Link>
               </>
             ) : (
               <>
@@ -147,12 +141,6 @@ export async function SiteNav() {
                   className="hidden text-sm text-mist transition hover:text-cloud sm:block"
                 >
                   {t(lang, "nav.login")}
-                </Link>
-                <Link
-                  href="/vendre"
-                  className="rounded-xl bg-cloud px-4 py-2 text-sm font-semibold text-ink transition hover:opacity-90"
-                >
-                  {t(lang, "nav.sell")}
                 </Link>
               </>
             )}
@@ -194,17 +182,38 @@ export async function SiteNav() {
         </div>
 
         {/* Desktop : rayons + repères, sous la recherche. */}
-        <nav className="mt-2 hidden items-center gap-7 border-t border-line pt-2 text-sm text-mist md:flex">
-          <CategoryMenu rayons={rayons} labels={menuLabels} />
-          <Link href="/catalogue" className="transition hover:text-cloud">
-            {t(lang, "nav.catalog")}
-          </Link>
-          <Link href="/#talents" className="transition hover:text-cloud">
-            {t(lang, "nav.talents")}
-          </Link>
-          <Link href="/#comment" className="transition hover:text-cloud">
-            {t(lang, "nav.how")}
-          </Link>
+        {/* Ligne 2 desktop (maquette porteur 2026-08-09) : les repères de
+            navigation à gauche, les deux ACTIONS à droite. Elles vivaient
+            en ligne 1 ; les remonter ici leur donne le poids de la maquette
+            sans les dupliquer — un même libellé à deux endroits finit
+            toujours par diverger. */}
+        <nav className="mt-2 hidden items-center justify-between gap-7 border-t border-line pt-2 text-sm text-mist md:flex">
+          <div className="flex items-center gap-7">
+            <CategoryMenu rayons={rayons} labels={menuLabels} />
+            <Link href="/catalogue" className="transition hover:text-cloud">
+              {t(lang, "nav.catalog")}
+            </Link>
+            <Link href="/#talents" className="transition hover:text-cloud">
+              {t(lang, "nav.talents")}
+            </Link>
+            <Link href="/#comment" className="transition hover:text-cloud">
+              {t(lang, "nav.how")}
+            </Link>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/vendre"
+              className="rounded-xl border border-accent/60 px-4 py-1.5 text-sm font-semibold text-accent transition hover:bg-accent/10"
+            >
+              {t(lang, "topbar.sell")}
+            </Link>
+            <Link
+              href="/mes-achats"
+              className="rounded-xl bg-cloud px-4 py-1.5 text-sm font-semibold text-ink transition hover:opacity-90"
+            >
+              {t(lang, "pay.ok.cta")}
+            </Link>
+          </div>
         </nav>
       </div>
     </header>

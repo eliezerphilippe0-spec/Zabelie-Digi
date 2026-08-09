@@ -9,7 +9,7 @@ import { HeroCarousel } from "@/components/hero-carousel";
 import { MetricA } from "@/components/metric-a";
 import { LANDING_SLIDES } from "@/lib/landing-slides";
 import { getMenuRayons } from "@/lib/taxonomy";
-import { whatsappHref } from "@/lib/whatsapp";
+import { whatsappHref, whatsappAffichage } from "@/lib/whatsapp";
 import {
   getCatalogueCategories,
   getPublishedProducts,
@@ -23,6 +23,7 @@ import { t } from "@/lib/i18n";
 import { isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { FaqList } from "@/components/faq-list";
+import { TrustBar } from "@/components/trust-bar";
 import { siteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -303,6 +304,13 @@ export default async function HomePage() {
             >
               <p className="font-semibold text-cloud">{t(lang, "wa.chat")}</p>
               <p className="mt-1 text-xs text-mist">{t(lang, "rail.wa.b")}</p>
+              {/* Le numéro EN CLAIR (maquette porteur) : beaucoup enregistrent
+                  le contact à la main ou rappellent d'un autre téléphone. */}
+              {whatsappAffichage() && (
+                <p className="numeric mt-2 select-all text-sm font-bold text-accent">
+                  {whatsappAffichage()}
+                </p>
+              )}
             </MetricA>
           )}
           <Link
@@ -325,7 +333,7 @@ export default async function HomePage() {
           y compris vides : arbitrage porteur de la landing v2, distinct de la
           règle du menu (2026-08-02) — parce qu'ici la destination est honnête,
           l'écran « rayon en ouverture » du catalogue, pas une impasse muette. */}
-      {products.length === 0 && rayons.length > 0 && (
+      {rayons.length > 0 && (
         <section id="kategori" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-8">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
             {t(lang, "sec.cats")}
@@ -350,7 +358,13 @@ export default async function HomePage() {
 
           {/* Capteur de demande — le formulaire mène au catalogue, dont
               l'écran zéro-résultat journalise le manque (fingerprint salé,
-              zéro PII — lib/search-demand). */}
+              zéro PII — lib/search-demand).
+
+              Il reste conditionné au catalogue VIDE, alors que la grille des
+              rayons est devenue permanente (maquette porteur 2026-08-09) :
+              demander « qu'est-ce qui vous manque ? » sous des rangées de
+              produits bien remplies serait une question déplacée. */}
+          {products.length === 0 && (
           <div className="mt-8 rounded-2xl border border-line bg-surface/40 p-6 text-center">
             <p className="text-base font-semibold text-cloud">
               {t(lang, "home.demand.t")}
@@ -372,8 +386,23 @@ export default async function HomePage() {
               </button>
             </form>
           </div>
+          )}
         </section>
       )}
+
+      {/* BANDEAU DE CONFIANCE (maquette porteur 2026-08-09).
+          Cinq promesses TENUES — la maquette en proposait cinq autres, dont
+          « livraison rapide » et « vendeurs vérifiés », qui n'existent pas.
+          Le raisonnement complet est en tête de components/trust-bar.tsx. */}
+      <TrustBar
+        items={[
+          { t: t(lang, "trust.1.t"), b: t(lang, "trust.1.b"), icone: "bouclier" },
+          { t: t(lang, "trust.2.t"), b: t(lang, "trust.2.b"), icone: "coffre" },
+          { t: t(lang, "trust.3.t"), b: t(lang, "trust.3.b"), icone: "gourde" },
+          { t: t(lang, "trust.4.t"), b: t(lang, "trust.4.b"), icone: "mobile" },
+          { t: t(lang, "trust.5.t"), b: t(lang, "trust.5.b"), icone: "message" },
+        ]}
+      />
 
       {/* 1 bis. BANDEAU PAIEMENT (maquette : « PEYE FASIL AK ») */}
       <section className="mx-auto max-w-6xl px-5 pb-4">

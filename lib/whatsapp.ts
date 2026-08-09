@@ -23,3 +23,26 @@ export function whatsappHref(prefill?: string): string | null {
   const texte = prefill ? `?text=${encodeURIComponent(prefill)}` : "";
   return `https://wa.me/${numero}${texte}`;
 }
+
+/**
+ * Le numéro, LISIBLE — la maquette porteur l'affiche en clair dans le rail,
+ * et elle a raison : sur ce marché beaucoup enregistrent le contact à la main
+ * ou appellent depuis un autre téléphone. Un lien `wa.me` seul ne le permet
+ * pas.
+ *
+ * Même contrat que `whatsappHref` : `null` si la variable est absente, et la
+ * surface se masque entièrement. Format haïtien : `+509 XXXX XXXX`.
+ * Tout autre indicatif est rendu tel quel, groupé par blocs de deux — mieux
+ * vaut un espacement imparfait qu'un numéro déformé par une règle qui ne le
+ * concerne pas.
+ */
+export function whatsappAffichage(): string | null {
+  const brut = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  if (!brut) return null;
+  const n = brut.replace(/\D/g, "");
+  if (n.length < 8) return null;
+  if (n.startsWith("509") && n.length === 11) {
+    return `+509 ${n.slice(3, 7)} ${n.slice(7)}`;
+  }
+  return `+${n}`;
+}
