@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import type { Lang } from "@/lib/i18n";
@@ -194,6 +195,19 @@ export async function productIdsInCategory(slug: string): Promise<string[] | nul
 export type RayonMenu = {
   slug: string;
   label: string;
+  /**
+   * Lien de catalogue CORRECT pour ce rayon — calculé ici, une fois, parce
+   * que le calcul est piégeux et qu'il a déjà été raté : le menu liait
+   * `?cat=<slug>` alors que la page catalogue filtre `products.category`,
+   * qui stocke le `label_fr` du DÉPARTEMENT (`api/products/physical` §160).
+   * Un clic sur un rayon peuplé rendait toujours zéro résultat — invisible
+   * tant qu'aucun produit physique n'est publié (B2), c'est-à-dire un lien
+   * sans trafic, la variante navigation du code sans appelant.
+   *   - niveau 1 → `/catalogue?cat=<label_fr du département>`
+   *   - niveau 2+ → `/catalogue?cat=<label_fr du département>&sous=<slug>`
+   *     (`sous` est résolu par `productIdsInCategory`, qui parle en slugs)
+   */
+  href: string;
   /** Aucun produit publié dans ce rayon NI dans ses descendants. */
   vide: boolean;
   enfants: RayonMenu[];
@@ -233,14 +247,20 @@ export function construireMenu(
     return n;
   };
 
-  const noeud = (c: (typeof actifs)[number]): RayonMenu => ({
+  const noeud = (c: (typeof actifs)[number], departementFr: string): RayonMenu => ({
     slug: c.slug,
     label: labelFor(c, lang),
+    href:
+      c.level === 1
+        ? `/catalogue?cat=${encodeURIComponent(departementFr)}`
+        : `/catalogue?cat=${encodeURIComponent(departementFr)}&sous=${encodeURIComponent(c.slug)}`,
     vide: total(c.id) === 0,
     enfants: actifs
       .filter((e) => e.parent_id === c.id)
       .sort((a, b) => a.position - b.position)
-      .map(noeud),
+      // Le département de rattachement se PROPAGE : chaque descendant filtre
+      // d'abord par son département (label_fr), puis par son propre slug.
+      .map((e) => noeud(e, departementFr)),
   });
 
   return actifs
@@ -249,14 +269,21 @@ export function construireMenu(
     // un département, ce qu'il n'est pas.
     .filter((c) => c.level === 1 && c.parent_id === null)
     .sort((a, b) => a.position - b.position)
-    .map(noeud);
+    .map((c) => noeud(c, c.label_fr));
 }
 
 /**
  * Le menu, depuis la base. Rend `[]` plutôt qu'une erreur : un en-tête sans
  * menu reste utilisable, un en-tête qui plante ne l'est pas.
+ *
+ * `cache()` (React) : mémoïsé PAR REQUÊTE — en-tête, sidebar, grille d'accueil
+ * et pied de page partagent une seule lecture de `zabelie_categories` au lieu
+ * de quatre. Pas de cache inter-requêtes : la lecture anon est bornée et un
+ * cache profilé sur un client à cookies est un piège classique.
  */
-export async function getMenuRayons(lang: Lang): Promise<RayonMenu[]> {
+export const getMenuRayons = cache(getMenuRayonsNonMemoise);
+
+async function getMenuRayonsNonMemoise(lang: Lang): Promise<RayonMenu[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createClient();
 

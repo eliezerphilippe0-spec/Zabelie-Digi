@@ -26,11 +26,14 @@ import { DICT, LANGS, type I18nKey } from "../lib/i18n";
  * porte donc sur des CLÉS nommées, pas sur le fichier.
  */
 
-/** Clés qui décrivent une livraison que la plateforme n'assure pas. */
+/** Clés qui décrivent une livraison que la plateforme n'assure pas.
+ *
+ * `home.stat3.v`, `home.stat3` et `home.sub` figuraient ici : elles ont été
+ * SUPPRIMÉES du dictionnaire avec le hero v1 (landing v2) — la forme la plus
+ * forte de « pas de promesse » est l'absence de clé, et `i18n-cles-mortes`
+ * empêche leur retour silencieux. Si l'une renaît un jour, la remettre ICI
+ * dans le même geste. */
 const SANS_PROMESSE: I18nKey[] = [
-  "home.stat3.v",
-  "home.stat3",
-  "home.sub",
   "product.delivery",
 ];
 

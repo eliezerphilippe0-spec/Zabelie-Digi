@@ -66,7 +66,10 @@ function Rayon({
           </span>
         ) : (
           <Link
-            href={`/catalogue?cat=${encodeURIComponent(rayon.slug)}`}
+            // `rayon.href` est calculé par `construireMenu` : c'est lui qui
+            // connaît le `label_fr` du département que la page catalogue
+            // filtre. L'ancien `?cat=<slug>` rendait toujours zéro résultat.
+            href={rayon.href}
             className="block flex-1 py-3 text-cloud hover:text-brand"
           >
             {texte}
@@ -115,7 +118,9 @@ export function CategoryMenu({
   if (rayons.length === 0) return null;
 
   return (
-    <div className="relative">
+    // Escape ferme — capté sur le conteneur : il reçoit l'événement tant que
+    // le focus est dans le panneau, sans écouteur global à démonter.
+    <div className="relative" onKeyDown={(e) => e.key === "Escape" && setOuvert(false)}>
       <button
         type="button"
         onClick={() => setOuvert((v) => !v)}
@@ -126,19 +131,45 @@ export function CategoryMenu({
       </button>
 
       {ouvert && (
-        <div className="absolute left-0 z-50 mt-1 max-h-[70vh] w-72 overflow-y-auto rounded-xl border border-line bg-surface p-2 shadow-xl">
-          <ul>
-            {rayons.map((r) => (
-              <Rayon key={r.slug} rayon={r} labels={labels} niveau={1} />
-            ))}
-          </ul>
-          <Link
-            href="/catalogue"
-            className="mt-2 block border-t border-line pt-3 text-sm font-semibold text-brand"
-          >
-            {labels.all}
-          </Link>
-        </div>
+        <>
+          {/* Voile mobile : un tap dehors ferme. `aria-hidden` — le vrai
+              contrôle de fermeture reste le bouton, atteignable au clavier. */}
+          <button
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            onClick={() => setOuvert(false)}
+            className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          />
+          {/* Sous md : tiroir plein écran ancré à gauche (le geste maquette).
+              Dès md : le même panneau redevient une liste déroulante. */}
+          <div className="fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm overflow-y-auto border-r border-line bg-surface p-3 md:absolute md:inset-auto md:left-0 md:z-50 md:mt-1 md:max-h-[70vh] md:w-72 md:rounded-xl md:border md:p-2 md:shadow-xl">
+            <div className="mb-1 flex items-center justify-between md:hidden">
+              <p className="px-1 text-sm font-semibold text-cloud">{labels.title}</p>
+              {/* 44×44 (BL-124) et libellé du bouton d'ouverture réutilisé :
+                  pas de nouvelle clé pour un « × » qui se comprend seul. */}
+              <button
+                type="button"
+                onClick={() => setOuvert(false)}
+                aria-label={labels.title}
+                className="grid h-11 w-11 place-items-center text-mist"
+              >
+                <span aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <ul>
+              {rayons.map((r) => (
+                <Rayon key={r.slug} rayon={r} labels={labels} niveau={1} />
+              ))}
+            </ul>
+            <Link
+              href="/catalogue"
+              className="mt-2 block border-t border-line pt-3 text-sm font-semibold text-brand"
+            >
+              {labels.all}
+            </Link>
+          </div>
+        </>
       )}
     </div>
   );

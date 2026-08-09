@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getProductsForSitemap } from "@/lib/products";
+import { getMenuRayons } from "@/lib/taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/catalogue",
     "/vendre",
     "/connexion",
+    "/aide",
   ].map((path) => ({
     url: `${base}${path}`,
     lastModified: now,
@@ -41,5 +43,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...productRoutes, ...creatorRoutes];
+  // Les rayons ACTIFS — chacun est une page d'atterrissage réelle, y compris
+  // vide (écran « rayon ouvre bientôt » + recrutement). La langue des libellés
+  // n'importe pas ici : le href filtre par label_fr, indépendant de la langue.
+  const rayons = await getMenuRayons("fr").catch(() => []);
+  const rayonRoutes: MetadataRoute.Sitemap = rayons.map((r) => ({
+    url: `${base}${r.href}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.6,
+  }));
+
+  return [...staticRoutes, ...rayonRoutes, ...productRoutes, ...creatorRoutes];
 }

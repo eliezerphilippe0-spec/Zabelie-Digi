@@ -12,6 +12,7 @@ import { sessionFingerprint } from "@/lib/search-demand";
 import { headers } from "next/headers";
 import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
+import { isPrefetch, logLanding } from "@/lib/metrics";
 import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,15 @@ export default async function CataloguePage({
       }
     }
   }
+  // Mesure (journal Vercel, zéro PII — lib/metrics). Côté SERVEUR : la page
+  // qui reçoit la navigation voit l'événement sans un octet de JS client. Le
+  // garde préchargement évite de compter chaque survol de lien comme un clic.
+  if (!(await isPrefetch())) {
+    if (q) logLanding("search_submitted");
+    if (activeCat !== "Tout") logLanding("category_clicked", { cat: activeCat });
+    if (manque) logLanding("demand_sensor_submitted");
+  }
+
   const CATEGORIES = ["Tout", ...categories];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
@@ -256,6 +266,32 @@ export default async function CataloguePage({
               >
                 {t(lang, "catalog.miss.share")}
               </a>
+            </div>
+          ) : filtre && !q ? (
+            /* Rayon filtré, AUCUNE recherche : c'est l'atterrissage des cartes
+               de la grille d'accueil et des liens du menu. « Aucun résultat +
+               réinitialiser » n'aurait aucun sens — il n'y a rien à
+               reformuler. On dit la vérité utile : le rayon est ouvert, les
+               premiers vendeurs s'installent, la place est libre. Aucun état
+               vide muet (landing v2). */
+            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+              <p className="text-base font-semibold text-cloud">
+                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : activeCat}
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
+                {t(lang, "catalog.cat0.b")}
+              </p>
+              <Link
+                href="/vendre"
+                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+              >
+                {t(lang, "catalog.empty.cta")}
+              </Link>
+              <p className="mt-4 text-sm">
+                <Link href="/catalogue" className="text-mist underline hover:text-cloud">
+                  {t(lang, "catalog.reset")}
+                </Link>
+              </p>
             </div>
           ) : filtre ? (
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
