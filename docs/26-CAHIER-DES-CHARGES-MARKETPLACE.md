@@ -15,7 +15,7 @@
 > jamais au présent de l'indicatif dans le §0.
 >
 > **v3.2 (2026-08-08)** — versionnée au dépôt ; arbitrages **A** et **B**
-> tranchés par le porteur et intégrés.
+> tranchés par le porteur et intégrés, **B avec sa condition de sortie**.
 
 ---
 
@@ -115,17 +115,31 @@ passe pas à l'échelle et il se dégrade en silence** — le jour où la
 publication est déléguée, ou où le volume fait cliquer vite, la protection
 disparaît sans qu'aucun test n'échoue.
 
-**⏳ CE QUI MANQUE À CET ARBITRAGE : sa condition de sortie.** (i) n'est
-« accepter un risque borné » que si un seuil écrit fait basculer le chantier
-« qu'est-ce que *rendu* pour une prestation » de backlog à **bloquant** ;
-sans seuil, c'est « reporter indéfiniment », et la différence est invisible
-de l'intérieur. Le seuil est une décision **commerciale** — trois valeurs
-attendues : le déclencheur (N services publiés, ou première délégation de la
-publication — le premier atteint l'emporte), la conséquence (plus aucune
-nouvelle publication de service tant que le chantier n'est pas livré), et
-l'inscription simultanée ici **et** dans `OPS_TODO`. Motif de référence :
-`dispute_weekly_ceiling` (`0043`), un seuil posé pendant que la question est
-théorique pour ne pas être renégocié sous pression.
+### ✅ Condition de sortie de B — tranchée le 2026-08-08
+
+Sans elle, (i) ne serait pas « accepter un risque borné » mais « reporter
+indéfiniment », et la différence est invisible de l'intérieur. Posée pendant
+que la question est théorique — le compteur est à **zéro** : catalogue vide,
+aucun service jamais vendu (`docs/22`). Même motif que
+`dispute_weekly_ceiling` (`0043`).
+
+**Trois déclencheurs. Le PREMIER ATTEINT l'emporte :**
+
+| # | Déclencheur | Pourquoi celui-là |
+|---|---|---|
+| 1 | **10 services publiés actifs** simultanément | Une capacité **humaine**, pas une métrique commerciale : au-delà d'une dizaine, le porteur ne tient plus en tête lequel est en cours, lequel a été rendu, lequel traîne. Le garde-fou est sa mémoire ; dix est l'ordre où elle lâche |
+| 2 | **Première délégation de la publication** | Le jour où quelqu'un d'autre clique « publier », le garde-fou **change de nature sans changer d'apparence**. C'est le déclencheur qui peut survenir sans que personne le remarque |
+| 3 | **Premier acheteur signalant un service non rendu** | Un risque prédit n'est pas un risque observé. Un seul cas suffit : il prouve le mode de défaillance **et** donne un cas concret contre lequel concevoir. ⚠️ Il arrivera par **WhatsApp, pas par le système** — rien n'existe pour l'enregistrer, ce qui *est* le problème |
+
+**Conséquence, au présent** : au premier déclencheur atteint, le chantier
+« qu'est-ce que *rendu* pour une prestation » passe de backlog à
+**BLOQUANT** — plus aucune **nouvelle** publication de service tant qu'il
+n'est pas livré. Les services déjà publiés restent : c'est le robinet qu'on
+ferme, pas le stock qu'on retire.
+
+**Écarté, et pourquoi** : « 50 services » ou « au bout d'un mois » placent
+l'échéance après le moment où le porteur peut encore la vérifier lui-même.
+Un seuil dont le franchissement est invisible n'est pas un seuil.
 
 Reste du périmètre : variantes, SKU, prix, stock, images, attributs ; page
 « produits interdits » appliquée **à la publication**, pas seulement à
@@ -313,7 +327,7 @@ avant toute déclaration de conformité — zéro écart déclaré/déployé tol
 | ID | Décision | État |
 |---|---|---|
 | **A** | Modèle de payout | ✅ **(b)** — déclenchement auto, règlement manuel (2026-08-08) |
-| **B** | Services | ✅ **(i)** confirmés (2026-08-08) — ⏳ **seuil de sortie manquant**, §3 |
+| **B** | Services | ✅ **(i)** confirmés + **condition de sortie tranchée** (2026-08-08) — §3 |
 | C′ | Avoir : libre ou conditionné à un litige | ⏳ `docs/29` — recommandé : libre + trois garde-fous |
 | D | Facturation : table dédiée ou extension `zabelie_biz_*` | ⏳ `docs/29` — recommandé : dédiée + briques partagées |
 | E | Facturation : ancrage `profiles` vs `zabelie_sellers` | ⏳ `docs/29` — se dissout en amendant `docs/23` |

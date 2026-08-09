@@ -748,6 +748,28 @@ maintenant, en kreyòl d'abord**.
       estimation vendeur, console pro, FR + KR) suivent automatiquement la
       constante — rien à réécrire à la main.
       **Si `round` : rien à faire**, `0044` reste au dépôt.
+- [ ] **🔔 VEILLE — seuil de sortie des services (arbitrage B, tranché
+      2026-08-08).** Les services sont CONFIRMÉS avec une exposition
+      ACCEPTÉE, pas fermée : `zabelie_open_fulfillment` rend `false` pour
+      tout ce qui n'est pas `physical`, donc un service vendu n'a aucun état
+      de remise et son escrow mûrit au chronomètre. Le seul garde-fou est la
+      **publication manuelle par le porteur** — un contrôle humain, qui ne
+      passe pas à l'échelle et se dégrade en silence.
+      **Trois déclencheurs, le PREMIER ATTEINT l'emporte** :
+      **(1)** 10 services publiés actifs simultanément ;
+      **(2)** première délégation de la publication à quelqu'un d'autre ;
+      **(3)** premier acheteur signalant un service non rendu — ⚠️ il
+      arrivera par WhatsApp, pas par le système : rien n'existe pour
+      l'enregistrer, ce qui EST le problème.
+      **Conséquence** : le chantier « qu'est-ce que *rendu* pour une
+      prestation » passe de backlog à **BLOQUANT** — plus aucune NOUVELLE
+      publication de service tant qu'il n'est pas livré ; les services déjà
+      publiés restent (on ferme le robinet, pas le stock).
+      Compteur au 2026-08-08 : **zéro** (catalogue vide, aucun service
+      jamais vendu — `docs/22`). Détail : `docs/26` §3.
+      ⚠️ Ce seuil n'a **aucun instrument** : aucun test ne peut le mesurer
+      (le déclencheur 2 est un geste humain, le 3 arrive hors système).
+      Cette ligne EST le filet. La relire à chaque ouverture de chantier.
 - [ ] **⚖️ D-6 — Qui paie la remise de fidélité ? (décision porteur).** La
       commission porte sur `orders.amount_htg`, le prix **remisé**. Pour un
       coupon vendeur (`zabelie_coupons`) c'est juste : il l'a créé lui-même.
