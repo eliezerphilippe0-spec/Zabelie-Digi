@@ -38,6 +38,31 @@ REGISTERED → KYC_PENDING → KYC_VERIFIED → SELLER_ACTIVE
 - Un compte non-`SELLER_ACTIVE` ne publie pas et ses produits publiés sont
   masqués (même mécanique de catalogue que la suspension `0017`).
 
+## 1 bis. L'entité vendeur est une EXTENSION DE `profiles`, clé sur son id
+
+**Tranché 2026-08-08 (arbitrage E de `docs/29`).** `zabelie_sellers` porte
+l'état du §1 et rien d'autre :
+
+```sql
+create table zabelie_sellers (
+  id uuid primary key references profiles (id) on delete cascade,
+  ...
+);
+```
+
+Pas d'identifiant propre. La raison est une propriété, pas une préférence :
+**le vendeur EST déjà un profil** — `products.seller_id → profiles.id`,
+`wallets.owner_id → profiles.id`, `escrow_entries` via le wallet. Donner au
+vendeur un second identifiant créerait deux clés pour une même personne, et
+la première jointure qui se trompe de clé produit un catalogue vide ou, pire,
+le net d'un autre vendeur.
+
+**Conséquence directe, et c'est ce qui débloque un autre chantier** : tout
+mécanisme qui doit s'ancrer sur « le vendeur » peut le faire sur
+`profiles.id` **dès aujourd'hui**, sans attendre cette migration —
+l'ancrage sera identique après. C'est ce qui rend le socle de facturation
+(`docs/29`) implémentable avant le chantier 2.
+
 ## 2. Boutique
 
 Table `zabelie_stores` — **une par vendeur** (`seller_id unique`) :
