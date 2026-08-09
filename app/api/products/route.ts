@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { normalizeCategory } from "@/lib/product-categories";
-import { isService, pickByKind, type DigitalKind } from "@/lib/product-kind";
+import {
+  isDigitalKind,
+  isService,
+  pickByKind,
+  type DigitalKind,
+} from "@/lib/product-kind";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
@@ -62,9 +67,14 @@ export async function POST(req: Request) {
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 140) : "";
   const description =
     typeof body.description === "string" ? body.description.slice(0, 5000) : null;
-  if (!title || !kind || !Number.isFinite(price) || price < 1) {
+  // `isDigitalKind` et non `!kind` : le type `DigitalKind` est effacé à la
+  // compilation, il ne validait donc RIEN sur un corps issu de `req.json()`.
+  // `kind: "physical"` (valeur d'énumération valide depuis `0036`) créait une
+  // fiche physique par CETTE route, hors des validations de
+  // `/api/products/physical`. Le garde narrow aussi `kind` pour la suite.
+  if (!title || !isDigitalKind(kind) || !Number.isFinite(price) || price < 1) {
     return NextResponse.json(
-      { error: "Champs requis : titre, type, prix valide (≥ 1 HTG)." },
+      { error: "Champs requis : titre, type valide, prix valide (≥ 1 HTG)." },
       { status: 400 }
     );
   }
