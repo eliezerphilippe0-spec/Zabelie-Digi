@@ -32,6 +32,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Arbitrer les trois valeurs de `0043`** — `shipment_deadline_days` (5), `auto_receive_days` (7), `post_receipt_maturation_days` (0) | 2026-08-09 | **Rien aujourd'hui, et c'est exactement le moment de trancher.** `0043` est appliquée : les trois valeurs sont EN BASE, à leurs valeurs *proposées*, parce qu'une table de config ne peut pas être vide. Proposées ≠ décidées. Elles se changent par `UPDATE`, sans migration, tant qu'aucune commande physique n'existe — après, chaque changement déplace une échéance de paiement sur des commandes en cours. Détail et raisonnement : `docs/21` §2. |
 | **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
+| **Identifiants API MonCash — portail + 3 variables** (compte MonCash Business créé le 2026-08-10, formulaire d'URLs en cours) | 2026-08-10 | **Le rail de paiement principal.** Gestes, dans l'ordre : (a) portail MonCash → Website Url = l'URL `.vercel.app` de Production, Return Url = `…/api/moncash/return` (le champ CRITIQUE — `app/api/moncash/return/route.ts` attend `?transactionId=`), Alert Url = `…/mes-achats` ; (b) Vercel, Production **et** Preview : `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET` (bouton **Reveal/Copy**, jamais une sélection du champ masqué — l'incident du caractère `•`), `MONCASH_MODE=sandbox` ; (c) **Redeploy** ; (d) le test de bout en bout `docs/05-TEST-SANDBOX.md` — dernier maillon avant la première commande réelle (`docs/22`). Au rattachement de `zabelie.com` : étape 2 bis du runbook ci-dessous (remplacer les 3 URLs du portail). |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
@@ -761,6 +762,15 @@ maintenant, en kreyòl d'abord**.
          (Vercel, Production+Preview) et Supabase Auth → Site URL =
          `https://zabelie.com`, puis REDÉPLOYER — variable NEXT_PUBLIC,
          inlinée au build.
+      2 bis. **Revenir dans le portail MonCash Business** et remplacer les
+         trois URLs posées avec le domaine `.vercel.app` :
+         Website Url → `https://zabelie.com` ·
+         Return Url → `https://zabelie.com/api/moncash/return` ·
+         Alert Url → `https://zabelie.com/mes-achats`.
+         ⚠️ Tant que ce geste n'est pas fait, un paiement lancé depuis
+         `zabelie.com` renvoie l'acheteur vers l'ancien domaine — le
+         paiement est confirmé (la vérité est serveur-à-serveur), mais
+         l'acheteur atterrit ailleurs que là où il a payé.
       3. Mettre hors ligne l'ancien déploiement Vite (son hébergeur), une fois
          le domaine détaché.
       4. Archiver le dépôt GitHub `eliezerphilippe0-spec/Zabelie`
