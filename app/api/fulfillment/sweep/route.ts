@@ -91,6 +91,24 @@ async function handle(req: Request) {
     const { envoyerAvisDus } = await import("@/lib/fulfillment-notices");
     const avis = await envoyerAvisDus(admin);
 
+    /* Purge de rétention (0056) : les avis ENVOYÉS depuis plus de 90 jours
+     * sortent du registre — un avis parti ne sert plus qu'à l'audit, et
+     * l'audit a un délai. Best-effort : un échec de purge ne doit pas faire
+     * échouer un balayage qui a gelé et payé correctement — mais il se
+     * journalise (purges: -1 = « la purge n'a pas pu tourner », distinct de
+     * 0 = « tournée, rien à purger »). Tant que 0056 n'est pas appliquée en
+     * base, c'est -1 à chaque passage : la dégradation prévue, visible. */
+    let purges = -1;
+    try {
+      const { data: purgees, error: ePurge } = await admin.rpc(
+        "zabelie_purge_sent_notices",
+        { p_days: 90 }
+      );
+      if (!ePurge) purges = Number(purgees ?? 0);
+    } catch {
+      /* purges reste -1 — la ligne de journal ci-dessous le dit. */
+    }
+
     journal({
       issue: "termine",
       auto_recus: c.auto_recus ?? 0,
@@ -104,9 +122,10 @@ async function handle(req: Request) {
       avis_echecs: avis.echecs,
       avis_concurrents: avis.concurrents,
       avis_abandonnes: avis.abandonnes,
+      purges,
       dureeMs: Date.now() - debut,
     });
-    return NextResponse.json({ ...c, avis });
+    return NextResponse.json({ ...c, avis, purges });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur";
     journal({ issue: "exception", message, dureeMs: Date.now() - debut });
