@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { isMissingColumn } from "@/lib/products";
 import { isSupabaseConfigured } from "@/lib/products";
 import type { Lang } from "@/lib/i18n";
 
@@ -104,10 +105,11 @@ export async function getCategoryFacets(
     return [];
   }
 
-  const { data: cats } = await supabase
-    .from("zabelie_categories")
-    .select("id, slug, label_fr, label_kr, label_en, label_es, level, parent_id")
-    .in("id", [...new Set((liens as unknown as { category_id: string }[]).map((l) => l.category_id))]);
+  const { data: cats } = await lireCategories(
+    supabase,
+    "id, slug, label_fr, label_kr, label_en, label_es, level, parent_id",
+    (q) => q.in("id", [...new Set((liens as unknown as { category_id: string }[]).map((l) => l.category_id))])
+  );
 
   return agregerFacettes(
     liens as unknown as { category_id: string }[],
@@ -283,14 +285,46 @@ export function construireMenu(
  */
 export const getMenuRayons = cache(getMenuRayonsNonMemoise);
 
+
+/**
+ * Lit `zabelie_categories` en tolérant l'absence de `label_es` (`0052` non
+ * appliquée — c'est l'état MESURÉ de la production au 2026-08-10).
+ *
+ * Sans ce repli, la requête échoue en 42703, le menu revient vide, et la
+ * colonne des rayons comme la grille des catégories DISPARAISSENT de
+ * l'accueil — c'est exactement ce qui s'est produit : les 16 rayons activés
+ * en base ne se sont jamais affichés. Même règle que `lib/products.ts` pour
+ * `in_stock` : le code devance le schéma, une requête se dégrade, elle ne
+ * tombe pas. Le repli espagnol → français est déjà dans `libelle()`.
+ */
+export async function lireCategories(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  colonnes: string,
+  filtre: (q: ReturnType<ReturnType<Awaited<ReturnType<typeof createClient>>["from"]>["select"]>) => unknown
+): Promise<{ data: unknown[] | null; error: { code?: string; message?: string } | null }> {
+  const requete = (cols: string) =>
+    filtre(supabase.from("zabelie_categories").select(cols)) as PromiseLike<{
+      data: unknown[] | null;
+      error: { code?: string; message?: string } | null;
+    }>;
+  const premier = await requete(colonnes);
+  if (!isMissingColumn(premier.error)) return premier;
+  const second = await requete(colonnes.replace(/,\s*label_es/, ""));
+  return {
+    data: (second.data ?? [])?.map((r) => ({ ...(r as object), label_es: null })),
+    error: second.error,
+  };
+}
+
 async function getMenuRayonsNonMemoise(lang: Lang): Promise<RayonMenu[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = await createClient();
 
-  const { data: cats, error } = await supabase
-    .from("zabelie_categories")
-    .select("id, slug, label_fr, label_kr, label_en, label_es, level, parent_id, active, position")
-    .eq("active", true);
+  const { data: cats, error } = await lireCategories(
+    supabase,
+    "id, slug, label_fr, label_kr, label_en, label_es, level, parent_id, active, position",
+    (q) => q.eq("active", true)
+  );
 
   if (error || !cats) {
     // L'absence de signal doit être un signal : sans cette ligne, « le menu
