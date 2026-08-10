@@ -448,12 +448,29 @@ export default async function HomePage() {
                 className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
               >
                 <DepartmentIcon slug={r.slug} className="h-6 w-6 stroke-accent" />
-                <p className="mt-3 font-semibold text-cloud">{r.label}</p>
-                {r.enfants.length > 0 && (
-                  <p className="mt-1 truncate text-xs text-mist">
-                    {r.enfants.slice(0, 3).map((e) => e.label).join(" · ")}
-                  </p>
-                )}
+                <p className="mt-3 font-semibold text-cloud">
+                  {r.label}
+                  {/* Même marque que la colonne de gauche (revue 2026-08-10,
+                      UI-06) : deux surfaces montraient les mêmes rayons et une
+                      seule disait qu'ils sont vides — le clic sur la tuile
+                      arrivait sur un rayon en ouverture sans prévenir. */}
+                  {r.vide && (
+                    <span className="ml-2 text-xs font-normal text-mist">
+                      {t(lang, "menu.empty")}
+                    </span>
+                  )}
+                </p>
+                {/* Ligne TOUJOURS rendue (UI-09) : quatre tuiles avec
+                    sous-catégories et quatre sans donnaient des hauteurs
+                    inégales — l'espace est réservé, vide ou non. Le repli est
+                    un U+00A0 (insécable), PAS une espace ordinaire : seule
+                    dans un bloc, l'ordinaire est du blanc « collapsable » et
+                    la ligne disparaîtrait. */}
+                <p className="mt-1 truncate text-xs text-mist">
+                  {r.enfants.length > 0
+                    ? r.enfants.slice(0, 3).map((e) => e.label).join(" · ")
+                    : " "}
+                </p>
               </Link>
             ))}
           </div>
@@ -480,11 +497,16 @@ export default async function HomePage() {
                 placeholder={t(lang, "catalog.search.ph")}
                 className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-violet"
               />
+              {/* Libellé PROPRE (revue 2026-08-10, UX-06) : le capteur
+                  affichait le même bouton que la recherche de l'en-tête,
+                  toujours visible juste au-dessus (sticky) — rien ne disait
+                  que ce geste-ci est une réponse à « qu'est-ce qui vous
+                  manque ? », pas une recherche de plus. */}
               <button
                 type="submit"
                 className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
               >
-                {t(lang, "catalog.search.btn")}
+                {t(lang, "home.demand.btn")}
               </button>
             </form>
           </div>
@@ -556,11 +578,14 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 2. CATÉGORIES PRINCIPALES */}
+      {/* 2. CATÉGORIES DU CATALOGUE — clé PROPRE (revue 2026-08-10, UI-03) :
+          elle partageait `sec.cats` avec la grille des rayons, et comme cette
+          section est conditionnée au catalogue non vide, le doublon de titre
+          serait apparu exactement le jour de la première vente réelle. */}
       {categories.length > 0 && (
         <section className="mx-auto max-w-6xl px-5 py-8">
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {t(lang, "sec.cats")}
+            {t(lang, "sec.cats.explore")}
           </h2>
           <div className="mt-5 flex flex-wrap gap-2">
             {categories.map(([cat, n]) => (
@@ -594,15 +619,6 @@ export default async function HomePage() {
         cardLabels={cardLabels}
       />
 
-      {/* Cible de « Talents » (nav ×2 + pied de page). Posée sur une balise du
-          FLUX, jamais en prop de HomeRow : `HomeRow` s'efface à vide (V-13,
-          ligne 38) et emportait l'ancre avec elle — les trois liens ne
-          faisaient alors rien. Elle était en outre posée sur la rangée
-          TENDANCES, pas sur les services qu'elle prétend désigner.
-          `scroll-mt-24` compense le bandeau collant.
-          Verrouillé par tests/ancres-navigation.test.ts. */}
-      <div id="talents" className="scroll-mt-24" aria-hidden="true" />
-
       {/* 4 bis. FICHIERS DIGITAUX — section demandée par le porteur
           (2026-08-10), VISIBLE MÊME VIDE via l'invitation de HomeRow. */}
       <HomeRow
@@ -617,6 +633,16 @@ export default async function HomePage() {
           href: "/vendre",
         }}
       />
+
+      {/* Cible de « Talents » (nav ×2 + pied de page). Posée sur une balise du
+          FLUX, jamais en prop de HomeRow : `HomeRow` s'efface à vide (V-13)
+          et emporterait l'ancre avec elle. `scroll-mt-24` compense le bandeau
+          collant. DÉPLACÉE devant la section SERVICES (revue 2026-08-10,
+          UX-04) : elle était posée devant « Fichiers digitaux », et les trois
+          liens « Talents » déposaient le visiteur sur des fichiers
+          téléchargeables. Le test d'ancres vérifie désormais la POSITION, pas
+          seulement l'existence. */}
+      <div id="talents" className="scroll-mt-24" aria-hidden="true" />
 
       {/* 5. SERVICES POPULAIRES — visible même vide, même décision. */}
       <HomeRow
@@ -708,14 +734,28 @@ export default async function HomePage() {
         {/* `why.2` — « Avis 100 % vérifiés … garanti par la base de données »
             — retiré avec la section Avis clients : la garantie n'avait plus
             rien à garantir. Trois colonnes au lieu de quatre. */}
+        {/* SVG et non émojis (revue 2026-08-10, UI-08) : 🛡️ sortait BLEU
+            (couleur système, hors palette) et 🇭🇹 sortait « HT » — le repli
+            des drapeaux régionaux sur les plateformes qui ne les embarquent
+            pas, Windows en tête. Même gabarit de trait que le bandeau de
+            confiance. « lakay » = la maison, d'où le toit. */}
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {([
-            ["🛡️", "why.1.t", "why.1.b"],
-            ["🇭🇹", "why.3.t", "why.3.b"],
-            ["⚡", "why.4.t", "why.4.b"],
-          ] as const).map(([icon, tt, bb]) => (
+            ["M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z", "why.1.t", "why.1.b"],
+            ["M3 11l9-8 9 8M5 9.5V21h14V9.5M10 21v-6h4v6", "why.3.t", "why.3.b"],
+            ["M13 2L4.5 13.5h6L9.5 22 19 10.5h-6L13 2z", "why.4.t", "why.4.b"],
+          ] as const).map(([d, tt, bb]) => (
             <div key={tt} className="rounded-2xl border border-line bg-surface/40 p-6">
-              <span className="text-2xl">{icon}</span>
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-7 w-7 fill-none stroke-accent"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d={d} />
+              </svg>
               <h3 className="mt-3 font-semibold">{t(lang, tt)}</h3>
               <p className="mt-2 text-sm text-mist">{t(lang, bb)}</p>
             </div>
@@ -782,8 +822,15 @@ export default async function HomePage() {
               priority
               className="h-40 w-40 rounded-2xl object-cover object-top ring-2 ring-accent/50"
             />
-            <span className="absolute -bottom-2 -right-2 grid h-9 w-9 place-items-center rounded-xl bg-brand text-lg">
-              🇭🇹
+            {/* Drapeau en SVG, pas en émoji : 🇭🇹 se replie sur « HT » là où
+                les drapeaux régionaux ne sont pas embarqués (Windows). Les
+                deux couleurs sont EN DUR à dessein — un drapeau national
+                n'est pas thémable, ce sont les bleu et rouge officiels. */}
+            <span className="absolute -bottom-2 -right-2 grid h-9 w-9 place-items-center rounded-xl bg-brand">
+              <svg viewBox="0 0 24 16" aria-label="Haïti" className="h-4 w-6 rounded-[3px]">
+                <rect width="24" height="8" fill="#00209f" />
+                <rect y="8" width="24" height="8" fill="#d21034" />
+              </svg>
             </span>
           </div>
           <div className="text-center sm:text-left">

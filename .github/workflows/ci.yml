@@ -49,6 +49,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Bloquant depuis la revue 2026-08-10 (UI-04) : l'ancien QC mesurait la
+      # palette abandonnée, sortait en 0 et n'était appelé nulle part — un
+      # contrôle qui ne bloque rien est un vœu. Sortie ≠ 0 = paire sous le
+      # seuil WCAG ou opacité de texte < /80 dans app/ ou components/.
+      - name: Contraste (WCAG AA)
+        run: npm run check:contrast
+
       - name: Tests
         run: npm test
 
