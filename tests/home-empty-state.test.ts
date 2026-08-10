@@ -33,20 +33,51 @@ import { readFileSync } from "node:fs";
 
 const SOURCE = readFileSync("app/page.tsx", "utf8");
 
-test("HomeRow s'efface quand il n'a rien à montrer (V-13)", () => {
-  // Tolère les variantes d'écriture — `!items.length`, espaces, point-virgule
-  // optionnel — mais exige une sortie anticipée sur la vacuité de `items`.
+test("HomeRow s'efface à vide, sauf invitation explicite (V-13 amendée)", () => {
+  /* AMENDEMENT PORTEUR 2026-08-10. V-13 disait : une section vide s'efface,
+   * point. Le porteur a demandé que « Fichiers digitaux » et « Services »
+   * restent VISIBLES à vide. La règle amendée tient les deux exigences :
+   *   - sans prop `empty`, la section s'efface (comportement historique) ;
+   *   - avec `empty`, elle affiche une INVITATION À VENDRE — un contenu
+   *     honnête, jamais un titre au-dessus du néant ni de faux produits.
+   * La garde reste une sortie anticipée, désormais conditionnée à `!empty`. */
   const garde =
-    /if\s*\(\s*(?:items\.length\s*===?\s*0|!\s*items\.length|items\.length\s*<\s*1)\s*\)\s*return\s+null/;
+    /if\s*\(\s*items\.length\s*===?\s*0\s*&&\s*!\s*empty\s*\)\s*return\s+null/;
 
   assert.match(
     SOURCE,
     garde,
-    "La garde de vacuité de HomeRow a disparu de app/page.tsx. Sans elle, " +
-      "chaque rangée de l'accueil affiche son titre et son sous-titre " +
-      "au-dessus d'une grille vide — « Services populaires » suivi de rien. " +
-      "C'est exactement ce que V-13 interdit."
+    "La garde de vacuité de HomeRow a changé de forme dans app/page.tsx. " +
+      "Elle doit rester : vide SANS invitation → rien ; vide AVEC invitation " +
+      "→ le contenu d'invitation. Toute autre forme fait soit réapparaître " +
+      "l'étagère déserte (V-13), soit disparaître les deux sections que le " +
+      "porteur veut permanentes."
   );
+});
+
+test("l'invitation à vide est un privilège de DEUX sections, et mène à /vendre", () => {
+  /* Sans cette borne, la prop `empty` s'étendrait rangée par rangée jusqu'à
+   * vider V-13 de son sens — chaque section finirait par afficher quelque
+   * chose à vide, et l'accueil d'un catalogue désert redeviendrait un couloir
+   * de promesses creuses. Deux sections, celles que le porteur a nommées. */
+  const invitations = SOURCE.match(/empty=\{\{/g) ?? [];
+  assert.equal(
+    invitations.length,
+    2,
+    `${invitations.length} section(s) portent une invitation à vide — la ` +
+      "décision porteur du 2026-08-10 en nomme exactement deux (fichiers " +
+      "digitaux, services). En ajouter une est un nouvel arbitrage, pas un " +
+      "détail."
+  );
+  // Et l'invitation appelle à VENDRE : c'est sa seule justification honnête.
+  const cibles = SOURCE.match(/empty=\{\{[\s\S]*?href:\s*"([^"]+)"/g) ?? [];
+  assert.equal(cibles.length, 2, "invitations sans cible lisible");
+  for (const c of cibles) {
+    assert.ok(
+      c.includes('"/vendre"'),
+      "une invitation à vide ne mène pas à /vendre : " + c
+    );
+  }
 });
 
 test("toutes les rangées de produits passent par HomeRow", () => {

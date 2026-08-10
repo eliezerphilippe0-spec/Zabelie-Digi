@@ -20,7 +20,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
-import { isService } from "@/lib/product-kind";
+import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { FaqList } from "@/components/faq-list";
 import { TrustBar } from "@/components/trust-bar";
@@ -64,6 +64,7 @@ function HomeRow({
   more,
   items,
   cardLabels,
+  empty,
 }: {
   id?: string;
   title: string;
@@ -71,8 +72,33 @@ function HomeRow({
   more: string;
   items: ProductView[];
   cardLabels: ProductCardLabels;
+  /**
+   * État vide EXPLICITE — décision porteur 2026-08-10, amendement à V-13.
+   * La règle reste « aucune étagère déserte » : une section vide ne montre
+   * jamais un titre au-dessus du néant. Mais une section qui porte cette prop
+   * affiche une INVITATION À VENDRE — un contenu honnête, pas une absence.
+   * Sans la prop, le comportement historique demeure : la section s'efface.
+   */
+  empty?: { body: string; cta: string; href: string };
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0 && !empty) return null;
+  if (items.length === 0 && empty) {
+    return (
+      <section id={id} className="mx-auto max-w-6xl px-5 py-12">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
+        <p className="mt-2 text-sm text-mist">{sub}</p>
+        <div className="mt-6 rounded-2xl border border-dashed border-line bg-surface/40 p-8 text-center">
+          <p className="text-sm text-mist">{empty.body}</p>
+          <Link
+            href={empty.href}
+            className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink transition hover:opacity-90"
+          >
+            {empty.cta}
+          </Link>
+        </div>
+      </section>
+    );
+  }
   return (
     <section id={id} className="mx-auto max-w-6xl px-5 py-12">
       <div className="flex items-end justify-between">
@@ -148,6 +174,7 @@ export default async function HomePage() {
   const trending = bySales.slice(0, 6);
   const newest = products.slice(0, 3); // requête déjà triée par date desc
   const services = bySales.filter((p) => isService(p.kind, p.id)).slice(0, 3);
+  const fichiers = bySales.filter((p) => isDownloadable(p.kind)).slice(0, 3);
   const free = products.filter((p) => p.priceHTG === 0).slice(0, 3);
   const promo = bySales
     .filter((p) => p.creatorId && promoSellers.has(p.creatorId))
@@ -577,13 +604,33 @@ export default async function HomePage() {
           Verrouillé par tests/ancres-navigation.test.ts. */}
       <div id="talents" className="scroll-mt-24" aria-hidden="true" />
 
-      {/* 5. SERVICES POPULAIRES */}
+      {/* 4 bis. FICHIERS DIGITAUX — section demandée par le porteur
+          (2026-08-10), VISIBLE MÊME VIDE via l'invitation de HomeRow. */}
+      <HomeRow
+        title={t(lang, "sec.digital")}
+        sub={t(lang, "sec.digital.sub")}
+        more={t(lang, "home.all")}
+        items={fichiers}
+        cardLabels={cardLabels}
+        empty={{
+          body: t(lang, "home.empty.digital"),
+          cta: t(lang, "home.cta.sell"),
+          href: "/vendre",
+        }}
+      />
+
+      {/* 5. SERVICES POPULAIRES — visible même vide, même décision. */}
       <HomeRow
         title={t(lang, "sec.services")}
         sub={t(lang, "sec.services.sub")}
         more={t(lang, "home.all")}
         items={services}
         cardLabels={cardLabels}
+        empty={{
+          body: t(lang, "home.empty.services"),
+          cta: t(lang, "home.cta.sell"),
+          href: "/vendre",
+        }}
       />
 
       {/* 6. MEILLEURS VENDEURS */}
