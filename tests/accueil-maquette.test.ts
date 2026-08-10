@@ -25,9 +25,24 @@ import { whatsappAffichage } from "@/lib/whatsapp";
  * — « vandè verifye » non. Le connu-positif ci-dessous porte les deux cas.
  */
 
+/**
+ * ÉLARGI aux clés `why.*` (revue 2026-08-10, UX-01) : le garde ne couvrait que
+ * le bandeau, et `why.1.b` — sur le MÊME écran — promettait « escrow jusqu'à
+ * la livraison » dans les quatre langues, ce que 0043 ne fait pas.
+ * Un garde dont le périmètre est plus étroit que son nom est un garde vert
+ * au-dessus du défaut qu'il porte dans son motif.
+ *
+ * `home.b*` / `home.s*` sont EXCLUS à dessein, pas oubliés : « Fichier livré
+ * immédiatement » (home.b3.b) est VRAI — la livraison d'un fichier est
+ * automatique — et « Livrez & retirez » (home.s3.t) s'adresse au vendeur, il
+ * ne promet rien au nom de la plateforme. Le motif interdit des promesses de
+ * PLATEFORME ; l'étendre à des gestes d'acteurs fabriquerait des faux positifs
+ * qu'il faudrait exempter un à un, et la liste d'exemptions mangerait le garde.
+ */
 const CLES_CONFIANCE = [
   "trust.1.t", "trust.1.b", "trust.2.t", "trust.2.b", "trust.3.t",
   "trust.3.b", "trust.4.t", "trust.4.b", "trust.5.t", "trust.5.b",
+  "why.1.t", "why.1.b", "why.3.t", "why.3.b", "why.4.t", "why.4.b",
 ] as const;
 
 /** Ce qu'aucun de ces dix libellés ne doit affirmer. */
@@ -69,6 +84,104 @@ test("aucun libellé du bandeau de confiance n'annonce ce qui n'existe pas", () 
         `${cle} (${lang}) promet ce que la plateforme ne tient pas : « ${texte} »`
       );
     }
+  }
+});
+
+/**
+ * AUCUNE PHRASE RENDUE DEUX FOIS PAR L'ACCUEIL.
+ *
+ * « Paiement sécurisé avec MonCash » s'affichait deux fois mot pour mot, à
+ * 200 px d'écart (`badge.pay` sous le carrousel + `trust.1.t` dans le
+ * bandeau) — troisième doublon d'affilée sur cet écran après « Vendez sur
+ * Zabelie » ×3 et « Aide » ×2, tous signalés par le porteur. Le motif se
+ * répétait parce que rien ne le détectait : `Record<I18nKey, string>` vérifie
+ * que chaque clé a une valeur, jamais que deux clés n'ont pas la même.
+ *
+ * Périmètre assumé : les clés dont le LITTÉRAL apparaît dans `app/page.tsx`
+ * (y compris via les tableaux `["🛡️", "why.1.t", …]`). Les clés rendues par
+ * les composants importés (nav, footer) ne sont pas croisées ici.
+ */
+function clesRenduesParLAccueil(src: string): string[] {
+  const fr = DICT.fr as Record<string, string>;
+  return [...new Set(
+    [...src.matchAll(/"([a-z][a-z0-9.]+)"/g)].map((m) => m[1]).filter((k) => k in fr)
+  )];
+}
+
+/** Paires (clés triées, jointes par `|`) → doublons par langue. */
+function paresDupliquees(
+  dict: Record<string, string>,
+  cles: string[]
+): Map<string, string> {
+  const parValeur = new Map<string, string[]>();
+  for (const k of cles) {
+    const v = dict[k];
+    parValeur.set(v, [...(parValeur.get(v) ?? []), k]);
+  }
+  const out = new Map<string, string>();
+  for (const [v, ks] of parValeur) {
+    if (ks.length > 1) out.set([...ks].sort().join("|"), v);
+  }
+  return out;
+}
+
+/**
+ * Paires AUTORISÉES à partager une valeur — et la liste se périme dans les
+ * deux sens : une exemption qui ne correspond plus à aucun doublon réel
+ * échoue aussi (la règle des exemptions de crons-appelants).
+ *   - product.sales|sec.sellers.sales : le MOT « ventes », unité de compte
+ *     sur la carte produit et la carte vendeur — même mot, deux rôles.
+ *   - catalog.search.btn|home.b1.t : « Chèche »/« Search » — le bouton de
+ *     recherche et le titre de l'étape 1 tombent sur le même mot en kreyòl
+ *     et en anglais (pas en français) : coïncidence de langue, pas doublon
+ *     d'écran.
+ */
+const DOUBLONS_EXEMPTES = new Set([
+  "product.sales|sec.sellers.sales",
+  "catalog.search.btn|home.b1.t",
+]);
+
+test("le détecteur de doublons voit un doublon, et se tait sur des valeurs distinctes", () => {
+  // Connu-positif — la paire badge.pay/trust.1.t d'avant le correctif.
+  const avecDoublon = paresDupliquees(
+    { "badge.pay": "Paiement sécurisé avec MonCash", "trust.1.t": "Paiement sécurisé avec MonCash", "trust.2.t": "Autre" },
+    ["badge.pay", "trust.1.t", "trust.2.t"]
+  );
+  assert.deepEqual([...avecDoublon.keys()], ["badge.pay|trust.1.t"]);
+  // Connu-négatif — trois valeurs distinctes, aucun doublon.
+  const sans = paresDupliquees(
+    { a: "un", b: "deux", c: "trois" },
+    ["a", "b", "c"]
+  );
+  assert.equal(sans.size, 0);
+});
+
+test("aucune paire de clés de l'accueil ne partage une valeur, hors exemptions vivantes", () => {
+  const src = readFileSync("app/page.tsx", "utf8");
+  const cles = clesRenduesParLAccueil(src);
+  assert.ok(cles.length >= 60, `extraction suspecte : ${cles.length} clés`);
+  assert.ok(cles.includes("why.1.b"), "clé de référence absente — l'extraction a bougé");
+
+  const vivantes = new Set<string>();
+  for (const lang of LANGS) {
+    for (const [paire, valeur] of paresDupliquees(DICT[lang] as Record<string, string>, cles)) {
+      if (DOUBLONS_EXEMPTES.has(paire)) {
+        vivantes.add(paire);
+        continue;
+      }
+      assert.fail(
+        `Doublon i18n sur l'accueil (${lang}) : [${paire}] = « ${valeur} ». ` +
+          "Deux clés, une phrase : l'écran la répète. Supprimer l'une des deux, " +
+          "ou exempter la paire ICI avec sa justification."
+      );
+    }
+  }
+  // Le sens inverse : une exemption sans doublon réel est morte, elle sort.
+  for (const ex of DOUBLONS_EXEMPTES) {
+    assert.ok(
+      vivantes.has(ex),
+      `L'exemption « ${ex} » ne correspond plus à aucun doublon : la retirer.`
+    );
   }
 });
 

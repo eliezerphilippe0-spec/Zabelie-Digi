@@ -153,7 +153,7 @@ export function ZabelieTopupForm({
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder={labels.phonePh}
-          className="mt-2 w-full rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm text-cloud placeholder:text-mist/60 focus:border-brand/60 focus:outline-none"
+          className="mt-2 w-full rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
         />
         {phone && !normalized && (
           <p className="mt-1 text-xs text-danger-text">{labels.invalid}</p>
@@ -169,7 +169,7 @@ export function ZabelieTopupForm({
           value={phone2}
           onChange={(e) => setPhone2(e.target.value)}
           placeholder={labels.phonePh}
-          className="mt-2 w-full rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm text-cloud placeholder:text-mist/60 focus:border-brand/60 focus:outline-none"
+          className="mt-2 w-full rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
         />
         <p className="mt-1 text-xs text-mist">{labels.phone2Why}</p>
         {phone2 && normalized && !phonesMatch && (

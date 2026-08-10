@@ -105,7 +105,7 @@ function Stars({ value }: { value: number }) {
   return (
     <span aria-label={`${value} sur 5`} className="text-accent">
       {"★".repeat(Math.round(value))}
-      <span className="text-mist/40">{"★".repeat(5 - Math.round(value))}</span>
+      <span className="text-mist">{"★".repeat(5 - Math.round(value))}</span>
     </span>
   );
 }
@@ -374,7 +374,7 @@ export default async function ProductPage({
                 {r.comment && (
                   <p className="mt-2 text-sm text-mist">{r.comment}</p>
                 )}
-                <p className="mt-2 text-xs text-mist/70">
+                <p className="mt-2 text-xs text-mist">
                   {new Date(r.createdAt).toLocaleDateString("fr-HT")} ·{" "}
                   {t(lang, "product.verified")}
                 </p>

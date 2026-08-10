@@ -735,22 +735,39 @@ maintenant, en kreyòl d'abord**.
       `zabelie-digi` n'a PAS pu être confirmée d'ici (réseau sortant du
       conteneur bloqué vers ce domaine) — c'est l'étape 0 ci-dessous.
 
+      **Précision porteur (2026-08-10) : `zabelie.com` est LE domaine acheté
+      du projet.** Il doit donc finir branché sur CE dépôt (uniondigitale sur
+      Vercel) — et l'hypothèse la plus probable est qu'il sert AUJOURD'HUI la
+      vieille application Vite : l'audit ouvre sur « zabelie.com est
+      accessible » en décrivant le bundle de marketplace-hub, et l'incident
+      « catalogue indisponible » du 2026-08-09 renvoyait le HTML du site
+      Zabély quand l'app interrogeait sa variable `NEXT_PUBLIC_SUPABASE_URL` —
+      ce qui arrive précisément si cette variable a reçu le domaine du site au
+      lieu de l'URL Supabase. À VÉRIFIER à l'étape 0, pas à supposer.
+
       **Exécution — gestes du porteur, dans l'ordre :**
-      0. Vérifier la liaison : afficher le code source de zabely.com, chercher
-         « supabase.co ». Si `ddditxykopuxxqzgkqwy` y figure, l'app tourne sur
-         NOTRE base → étapes suivantes URGENTES ; sinon, simple hygiène.
-      1. Rediriger le domaine `zabely.com` → le domaine de production Zabelie
-         (301) — capter le trafic plutôt que le tuer.
-      2. Mettre hors ligne le déploiement de zabely.com (son projet
-         Vercel/hébergeur).
-      3. Archiver le dépôt GitHub `eliezerphilippe0-spec/Zabelie`
+      0. Ce que sert `zabelie.com` aujourd'hui : afficher son code source.
+         `/assets/index-….js` + « Zabély » = la vieille app Vite ;
+         `/_next/` = déjà la bonne. Chercher aussi « supabase.co » : si
+         `ddditxykopuxxqzgkqwy` figure dans le bundle VITE, il tourne sur
+         NOTRE base → suite urgente.
+      1. **Brancher `zabelie.com` sur le projet Vercel d'uniondigitale**
+         (Vercel → Settings → Domains → Add). C'est un RATTACHEMENT, pas une
+         redirection : le domaine acheté doit servir la vraie marketplace.
+         Si `zabely.com` est aussi possédé : 301 → `zabelie.com`.
+      2. Après rattachement : `NEXT_PUBLIC_SITE_URL=https://zabelie.com`
+         (Vercel, Production+Preview) et Supabase Auth → Site URL =
+         `https://zabelie.com`, puis REDÉPLOYER — variable NEXT_PUBLIC,
+         inlinée au build.
+      3. Mettre hors ligne l'ancien déploiement Vite (son hébergeur), une fois
+         le domaine détaché.
+      4. Archiver le dépôt GitHub `eliezerphilippe0-spec/Zabelie`
          (Settings → Danger Zone → Archive). Le dossier local
-         `marketplace-hub` : à zipper puis supprimer, ou garder hors de tout
+         `marketplace-hub` : zipper puis supprimer, ou garder hors de tout
          déploiement.
-      4. Mettre en pause le projet Supabase « Zabelie » (`oqnt…`) — APRÈS
-         l'étape 2, jamais avant (le mettre en pause d'abord casserait
-         zabely.com en plein vol au lieu de le rediriger proprement).
-      5. Si l'étape 0 a confirmé la liaison à `zabelie-digi` : la rotation de
+      5. Mettre en pause le projet Supabase « Zabelie » (`oqnt…`) — APRÈS
+         l'étape 3, jamais avant.
+      6. Si l'étape 0 a confirmé la liaison à `zabelie-digi` : la rotation de
          la clé anon legacy (déjà au registre via la migration vers les clés
          `sb_…`) fermera l'accès résiduel du vieux bundle.
 - [x] **RPC facture par jeton sans garde de forme ni débit** — constat RETENU,

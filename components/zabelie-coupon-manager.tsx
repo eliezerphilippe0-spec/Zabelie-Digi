@@ -77,7 +77,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
             placeholder="PROMO50"
             maxLength={24}
             required
-            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist/60 focus:border-brand/60 focus:outline-none"
+            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
           />
         </div>
         <div className="w-24">
@@ -102,7 +102,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
             value={maxUses}
             onChange={(e) => setMaxUses(e.target.value)}
             placeholder="∞"
-            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm text-cloud placeholder:text-mist/60 focus:border-brand/60 focus:outline-none"
+            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
           />
         </div>
         <button

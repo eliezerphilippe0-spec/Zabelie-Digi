@@ -45,7 +45,13 @@ export const LANDING_SLIDES: LandingSlide[] = [
     titleKey: "hero.s2.t",
     ctaKey: "hero.s2.cta",
     href: "/#kategori",
-    accent: "from-violet to-teal",
+    // `from-violet to-teal` rendait ORANGE→VERT : `--color-violet` a été
+    // remappé sur l'orange #f5934f au changement de palette (2026-07-25) mais
+    // `--color-teal` est resté le vert succès #8fbf6f. Un résidu du remapping,
+    // vu par l'audit externe du 2026-08-10 (« le dégradé vert-orange affaiblit
+    // l'identité ») — la rampe reste désormais dans la famille orange, comme
+    // les deux autres slides.
+    accent: "from-brand to-amber",
   },
   // Vendeur : la phrase historique du hero v1, descendue au rang de slide —
   // le parcours ne disparaît pas, il cesse de dominer.

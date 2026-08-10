@@ -55,10 +55,10 @@ export function CategorySidebar({
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-3 py-2.5 hover:bg-black/20 [&::-webkit-details-marker]:hidden">
                   <span className="flex min-w-0 items-center gap-2.5">
                     <DepartmentIcon slug={r.slug} className="h-4 w-4 shrink-0 stroke-mist" />
-                    <span className={`truncate text-sm ${r.vide ? "text-mist/50" : "text-cloud"}`}>
+                    <span className={`truncate text-sm ${r.vide ? "text-mist" : "text-cloud"}`}>
                       {r.label}
                       {r.vide && (
-                        <span className="ml-2 text-xs text-mist/60">{labels.empty}</span>
+                        <span className="ml-2 text-xs text-mist">{labels.empty}</span>
                       )}
                     </span>
                   </span>
@@ -84,9 +84,9 @@ export function CategorySidebar({
                   {r.enfants.map((e) => (
                     <li key={e.slug}>
                       {e.vide ? (
-                        <span aria-disabled="true" className="block px-2 py-2 text-sm text-mist/50">
+                        <span aria-disabled="true" className="block px-2 py-2 text-sm text-mist">
                           {e.label}
-                          <span className="ml-2 text-xs text-mist/60">{labels.empty}</span>
+                          <span className="ml-2 text-xs text-mist">{labels.empty}</span>
                         </span>
                       ) : (
                         <Link
@@ -121,14 +121,14 @@ function RangDepartement({ rayon, empty }: { rayon: RayonMenu; empty: string }) 
       <DepartmentIcon slug={rayon.slug} className="h-4 w-4 shrink-0 stroke-mist" />
       <span className="truncate text-sm">
         {rayon.label}
-        {rayon.vide && <span className="ml-2 text-xs text-mist/60">{empty}</span>}
+        {rayon.vide && <span className="ml-2 text-xs text-mist">{empty}</span>}
       </span>
     </>
   );
   return rayon.vide ? (
     <span
       aria-disabled="true"
-      className="flex items-center gap-2.5 px-3 py-2.5 text-mist/50"
+      className="flex items-center gap-2.5 px-3 py-2.5 text-mist"
     >
       {contenu}
     </span>

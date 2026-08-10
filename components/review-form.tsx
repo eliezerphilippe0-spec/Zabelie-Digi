@@ -61,7 +61,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
             onClick={() => setRating(n)}
             aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
             className={`text-lg transition ${
-              n <= rating ? "text-accent" : "text-mist/40"
+              n <= rating ? "text-accent" : "text-mist"
             }`}
           >
             ★

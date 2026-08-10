@@ -209,12 +209,19 @@ export async function SiteNav() {
             >
               {t(lang, "topbar.sell")}
             </Link>
-            <Link
-              href="/mes-achats"
-              className="rounded-xl bg-cloud px-4 py-1.5 text-sm font-semibold text-ink transition hover:opacity-90"
-            >
-              {t(lang, "pay.ok.cta")}
-            </Link>
+            {/* Réservé aux CONNECTÉS (revue 2026-08-10, UX-03) : c'est le
+                bouton le plus fort de l'écran — plein blanc — et pour un
+                anonyme il menait à un mur de connexion. Un primo-visiteur
+                n'a pas d'achats à voir ; lui laisser le CTA vendeur seul
+                réduit d'un la file d'appels à l'action du premier écran. */}
+            {user && (
+              <Link
+                href="/mes-achats"
+                className="rounded-xl bg-cloud px-4 py-1.5 text-sm font-semibold text-ink transition hover:opacity-90"
+              >
+                {t(lang, "pay.ok.cta")}
+              </Link>
+            )}
           </div>
         </nav>
       </div>

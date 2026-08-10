@@ -198,7 +198,7 @@ export default async function CataloguePage({
                 }`}
               >
                 {f.label}{" "}
-                <span className={f.slug === sous ? "text-ink/60" : "text-mist/60"}>
+                <span className={f.slug === sous ? "text-ink/60" : "text-mist"}>
                   {f.count}
                 </span>
               </Link>

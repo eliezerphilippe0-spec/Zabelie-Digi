@@ -49,7 +49,7 @@ function Rayon({
     <>
       {rayon.label}
       {rayon.vide && (
-        <span className="ml-2 text-xs text-mist/70">{labels.empty}</span>
+        <span className="ml-2 text-xs text-mist">{labels.empty}</span>
       )}
     </>
   );
@@ -60,7 +60,7 @@ function Rayon({
         {rayon.vide ? (
           <span
             aria-disabled="true"
-            className="block flex-1 py-3 text-mist/50"
+            className="block flex-1 py-3 text-mist"
           >
             {texte}
           </span>
