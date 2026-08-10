@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -73,5 +74,12 @@ export async function POST(req: Request) {
     const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
     notifyOrderPaid(admin, body.orderId).catch(() => undefined);
   }
+  await journaliserActeAdmin(admin, {
+    actorId: user.id,
+    action: "payment.confirm_zelle",
+    targetType: "order",
+    targetId: body.orderId,
+    metadata: { status: data?.status ?? null },
+  });
   return NextResponse.json({ ok: true, status: data?.status });
 }

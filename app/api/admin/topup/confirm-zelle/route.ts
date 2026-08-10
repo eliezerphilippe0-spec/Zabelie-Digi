@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fulfillTopupOrder } from "@/lib/zabelie-topup/fulfill";
 
@@ -68,5 +69,12 @@ export async function POST(req: Request) {
   if (confirmed?.status === "paid") {
     fulfillment = await fulfillTopupOrder(admin, body.orderId);
   }
+  await journaliserActeAdmin(admin, {
+    actorId: user.id,
+    action: "topup.confirm_zelle",
+    targetType: "topup_order",
+    targetId: body.orderId,
+    metadata: { status: confirmed?.status ?? null },
+  });
   return NextResponse.json({ ok: true, status: confirmed?.status, fulfillment });
 }
