@@ -710,15 +710,49 @@ maintenant, en kreyòl d'abord**.
 > est bien `zabelie-digi` (les comptes concordent). Le « feu rouge » agrège
 > donc les défauts d'un AUTRE dépôt avec notre base.
 
-- [ ] 🚨 **Le bundle de `marketplace-hub` appellerait des Edge Functions
-      (`moncash-payment`, `natcash-payment`, `geo-detect`) sur `zabelie-digi`,
-      qui n'en a aucune.** Si c'est exact, l'application Vite est CONFIGURÉE
-      CONTRE NOTRE BASE FINANCIÈRE. Deux frontends dont un hors de tout
-      contrôle Git (« 128 changements locaux non validés » selon l'audit) sur
-      le même ledger est ingérable — et « natcash-payment » désigne un rail
-      **interdit** (⛔ aucune API). À trancher : soit archiver marketplace-hub,
-      soit le repointer définitivement ailleurs. Même famille que le constat
-      « le projet Supabase nommé Zabelie n'est pas la base de Zabelie ».
+- [ ] 🚨 **TRANCHÉ le 2026-08-10 : ARCHIVER `marketplace-hub` / zabely.com.**
+      Décision demandée au connecteur par le porteur (« choisis la meilleure
+      option »), rendue avec ses motifs — le porteur peut la casser, mais
+      qu'elle soit écrite :
+
+      **Pourquoi archiver plutôt que repointer.** (1) La décision d'identité
+      du 2026-07-24 dit qu'il n'existe QU'UN projet Zabelie — ce dépôt, celui
+      qui porte l'infrastructure financière ; repointer marketplace-hub vers
+      une autre base le maintiendrait comme SECOND magasin sous une marque
+      quasi identique, et tout ce que l'audit lui reproche (source map
+      publique qui expose le code, CSP affaiblie, 50 fichiers hors typage,
+      dernier commit GitHub le 27 AVRIL + 128 changements locaux jamais
+      commités) resterait à corriger dans un dépôt que plus personne ne
+      maintient. (2) Son nom public viole la règle de nommage (« Ne jamais
+      écrire Zabely »). (3) Ses promesses sont celles que Zabelie a refusées
+      pièce par pièce : NatCash (⛔), PayPal, « −20 % », « livraison rapide »,
+      numéro WhatsApp faux. (4) Repointer coûte du travail récurrent ;
+      archiver en coûte une fois.
+
+      **Ce qui a été vérifié avant de trancher** : le dépôt GitHub est
+      `eliezerphilippe0-spec/Zabelie` (privé, dernier push 2026-04-27 — la
+      date exacte que l'audit cite). La liaison du bundle zabely.com à
+      `zabelie-digi` n'a PAS pu être confirmée d'ici (réseau sortant du
+      conteneur bloqué vers ce domaine) — c'est l'étape 0 ci-dessous.
+
+      **Exécution — gestes du porteur, dans l'ordre :**
+      0. Vérifier la liaison : afficher le code source de zabely.com, chercher
+         « supabase.co ». Si `ddditxykopuxxqzgkqwy` y figure, l'app tourne sur
+         NOTRE base → étapes suivantes URGENTES ; sinon, simple hygiène.
+      1. Rediriger le domaine `zabely.com` → le domaine de production Zabelie
+         (301) — capter le trafic plutôt que le tuer.
+      2. Mettre hors ligne le déploiement de zabely.com (son projet
+         Vercel/hébergeur).
+      3. Archiver le dépôt GitHub `eliezerphilippe0-spec/Zabelie`
+         (Settings → Danger Zone → Archive). Le dossier local
+         `marketplace-hub` : à zipper puis supprimer, ou garder hors de tout
+         déploiement.
+      4. Mettre en pause le projet Supabase « Zabelie » (`oqnt…`) — APRÈS
+         l'étape 2, jamais avant (le mettre en pause d'abord casserait
+         zabely.com en plein vol au lieu de le rediriger proprement).
+      5. Si l'étape 0 a confirmé la liaison à `zabelie-digi` : la rotation de
+         la clé anon legacy (déjà au registre via la migration vers les clés
+         `sb_…`) fermera l'accès résiduel du vieux bundle.
 - [x] **RPC facture par jeton sans garde de forme ni débit** — constat RETENU,
       corrigé côté application le 2026-08-10 : `estTokenFacture` (24 car.
       base64url exacts, vérifié contre 0 jeton historique) + 30 lectures/min
