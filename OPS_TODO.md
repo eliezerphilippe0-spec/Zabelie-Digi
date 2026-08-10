@@ -749,6 +749,19 @@ maintenant, en kreyòl d'abord**.
       lieu de l'URL Supabase. À VÉRIFIER à l'étape 0, pas à supposer.
 
       **Exécution — gestes du porteur, dans l'ordre :**
+      ✅ **BASCULE FAITE le 2026-08-10, vérifiée de l'extérieur** : zabelie.com
+      rend « Zabelie — La marketplace haïtienne » (`_next/` présent, zéro
+      « Zabely »). Découverte en chemin : le vieux site Vite était hébergé
+      sur VERCEL (pas Hostinger) depuis avril, domaine accroché à ce vieux
+      projet — le geste réel a été un TRANSFERT de domaine entre projets du
+      même compte, pas un changement DNS. Étape 3 réalisée par le transfert
+      même (l'ancien projet a perdu le domaine). Étape 6 TOMBÉE : le vieux
+      bundle (1 Mo, index-6JaXkId_.js) audité de l'extérieur — librairie
+      supabase-js présente (8 mentions, grep à connu-positif) mais AUCUNE
+      URL *.supabase.co, ni ddditxykopuxxqzgkqwy, ni oqnt : buildé sans
+      base configurée (d'où sa page noire), rien à révoquer. Restent : (a)
+      NEXT_PUBLIC_SITE_URL + Redeploy · (b) Site URL Supabase · (c) URLs
+      MonCash (2 bis) · étapes 4-5 (archiver le dépôt Zabelie, pauser oqnt).
       0. Ce que sert `zabelie.com` aujourd'hui : afficher son code source.
          `/assets/index-….js` + « Zabély » = la vieille app Vite ;
          `/_next/` = déjà la bonne. Chercher aussi « supabase.co » : si
