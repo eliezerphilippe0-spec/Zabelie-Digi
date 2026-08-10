@@ -164,3 +164,55 @@ test("le geste WhatsApp de la bannière : les deux champs, ou aucun", async () =
     else process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = avant;
   }
 });
+
+/**
+ * LE MENU DES RAYONS SURVIT À `label_es` ABSENTE — la panne réelle du
+ * 2026-08-10, mesurée en production : `0052` n'est pas appliquée, la requête
+ * échouait en 42703, le menu revenait vide, et la colonne des rayons comme la
+ * grille des catégories DISPARAISSAIENT de l'accueil. Les 16 rayons activés
+ * en base ne se sont jamais affichés.
+ *
+ * Même règle que le repli `in_stock` de lib/products.ts : le code devance le
+ * schéma, une requête se dégrade, elle ne tombe pas.
+ */
+test("lireCategories rejoue sans label_es quand la colonne manque", async () => {
+  const { lireCategories } = await import("@/lib/taxonomy");
+
+  const faux = (reponses: Record<string, { data: unknown[] | null; error: { code?: string; message?: string } | null }>) => {
+    const appels: string[] = [];
+    const client = {
+      from: () => ({
+        select: (cols: string) => {
+          appels.push(cols);
+          const r = reponses[cols.includes("label_es") ? "avec" : "sans"];
+          return { eq: () => Promise.resolve(r), in: () => Promise.resolve(r), then: (f: (v: unknown) => unknown) => Promise.resolve(r).then(f) };
+        },
+      }),
+    };
+    return { client: client as never, appels };
+  };
+  const filtre = (q: { eq: (a: string, b: unknown) => unknown }) => q.eq("active", true);
+
+  // Connu-positif : 42703 sur label_es → rejeu sans, lignes complétées à null.
+  const cas1 = faux({
+    avec: { data: null, error: { code: "42703", message: "column label_es does not exist" } },
+    sans: { data: [{ slug: "a", label_fr: "A" }], error: null },
+  });
+  const r1 = await lireCategories(cas1.client, "id, slug, label_fr, label_es, level", filtre as never);
+  assert.equal(cas1.appels.length, 2, "le rejeu n'a pas eu lieu");
+  assert.ok(!cas1.appels[1].includes("label_es"), "le rejeu porte encore label_es");
+  assert.deepEqual(r1.data, [{ slug: "a", label_fr: "A", label_es: null }]);
+
+  // Connu-négatif 1 : succès direct → UN seul appel, données intactes.
+  const cas2 = faux({ avec: { data: [{ slug: "b", label_es: "B" }], error: null }, sans: { data: [], error: null } });
+  const r2 = await lireCategories(cas2.client, "id, label_es", filtre as never);
+  assert.equal(cas2.appels.length, 1, "un rejeu a eu lieu sans raison");
+  assert.deepEqual(r2.data, [{ slug: "b", label_es: "B" }]);
+
+  // Connu-négatif 2 : une AUTRE erreur ne déclenche pas le rejeu — la
+  // dégradation vise la colonne absente, pas les pannes en général.
+  const cas3 = faux({ avec: { data: null, error: { code: "57014", message: "timeout" } }, sans: { data: [], error: null } });
+  const r3 = await lireCategories(cas3.client, "id, label_es", filtre as never);
+  assert.equal(cas3.appels.length, 1);
+  assert.equal(r3.error?.code, "57014", "l'erreur réelle a été avalée");
+});

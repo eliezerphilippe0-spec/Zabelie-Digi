@@ -312,25 +312,17 @@ export default async function HomePage() {
           </p>
         </div>
 
-        {/* Rail : aide, contact humain, entrée vendeur. Sous lg, trois cartes
-            sous le hero. La carte WhatsApp se masque si le numéro n'est pas
-            posé (env) — un bouton de contact vers personne est pire que rien. */}
+        {/* Rail — SANS DOUBLON (demande porteur 2026-08-10). Les rangées
+            « Aide » et « Vendez sur Zabelie » sont retirées : « Aide » vit déjà
+            dans l'en-tête, « Vendez sur Zabelie » en ligne 2 ET dans la carte
+            boutique juste dessous — trois fois la même destination dans le
+            premier écran, c'est une hésitation, pas une insistance. Ne reste
+            que ce que le rail est seul à porter : le contact WhatsApp (masqué
+            sans numéro — un bouton vers personne est pire que rien) et la
+            carte boutique. */}
         <aside className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
-          {/* Les trois entrées du rail deviennent des RANGÉES à icône, dans une
-              seule carte — c'est la forme de la maquette, et elle tient dans la
-              hauteur du carrousel au lieu de le dépasser. */}
-          <div className="divide-y divide-line rounded-2xl border border-line bg-surface/40">
-          <Link
-            href="/aide"
-            className="flex items-start gap-3 p-4 transition hover:bg-black/20"
-          >
-            <RailIcone d="M12 17h.01M9.1 9a3 3 0 115.8 1c0 2-2.9 2.4-2.9 4" cercle />
-            <span className="min-w-0">
-              <span className="block font-semibold text-cloud">{t(lang, "nav.help")}</span>
-              <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.help.b")}</span>
-            </span>
-          </Link>
           {whatsappHref(t(lang, "wa.prefill")) && (
+            <div className="rounded-2xl border border-line bg-surface/40">
             <MetricA
               event="whatsapp_clicked"
               href={whatsappHref(t(lang, "wa.prefill"))!}
@@ -342,20 +334,15 @@ export default async function HomePage() {
               <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.wa.b")}</span>
               {/* Le numéro EN CLAIR (maquette porteur) : beaucoup enregistrent
                   le contact à la main ou rappellent d'un autre téléphone. */}
+              {whatsappAffichage() && (
+                <span className="numeric mt-1 block select-all text-sm font-bold text-accent">
+                  {whatsappAffichage()}
+                </span>
+              )}
               </span>
             </MetricA>
+            </div>
           )}
-          <Link
-            href="/vendre"
-            className="flex items-start gap-3 p-4 transition hover:bg-black/20"
-          >
-            <RailIcone d="M4 7h16v12H4zM4 7l2-3h12l2 3" />
-            <span className="min-w-0">
-              <span className="block font-semibold text-cloud">{t(lang, "topbar.sell")}</span>
-              <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.sell.b")}</span>
-            </span>
-          </Link>
-          </div>
 
           {/* Carte « ouvrez votre boutique » — l'accent de la maquette, avec le
               numéro en pastille. Elle se masque entièrement si le numéro n'est
