@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
+import { estTokenFacture } from "@/lib/business";
+import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { formatHTG } from "@/lib/sample-data";
 import { PayInvoiceButton } from "@/components/business/pay-invoice-button";
 
@@ -46,7 +49,22 @@ export default async function FacturePortal({
 
   if (!isSupabaseConfigured()) notFound();
 
+  /* Durcissement (audit externe 2026-08-10, constat retenu) — deux étages
+   * AVANT la RPC `security definer` :
+   *   1. FORME : un jeton est exactement 24 caractères base64url. Ce qui n'y
+   *      ressemble pas est un 404 sans toucher la base — ni chaîne d'un Mo,
+   *      ni tentative d'injection à journaliser.
+   *   2. DÉBIT : 30 lectures/min par IP. L'entropie (144 bits) rend
+   *      l'énumération irréaliste, mais une borne rend le scan VISIBLE et
+   *      borné au lieu de gratuit. Fail-open assumé (lib/zabelie-rate-limit) :
+   *      une panne d'infra ne bloque pas un client venu payer sa facture. */
+  if (!estTokenFacture(token)) notFound();
+
   const admin = createAdminClient();
+  const fwd = (await headers()).get("x-forwarded-for");
+  const ip = fwd?.split(",")[0]?.trim() || "unknown";
+  if (!(await rateLimit(admin, `facture:${ip}`, 30, 60))) notFound();
+
   const { data } = await admin.rpc("zabelie_biz_get_invoice_by_token", {
     p_token: token,
   });

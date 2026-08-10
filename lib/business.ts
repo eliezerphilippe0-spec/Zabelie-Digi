@@ -74,6 +74,21 @@ export function invoiceToken(): string {
 }
 
 /**
+ * Garde de FORME du jeton public — audit externe du 2026-08-10, constat
+ * retenu : la page /facture/[token] transmettait n'importe quelle chaîne à la
+ * RPC `security definer`, sans borne de longueur ni de format. Les 144 bits
+ * d'entropie rendent l'énumération irréaliste, mais rien n'obligeait un
+ * appel à RESSEMBLER à un jeton avant d'atteindre la base.
+ *
+ * `randomBytes(18)` → base64url → EXACTEMENT 24 caractères de [A-Za-z0-9_-],
+ * sans padding. Vérifié en base avant d'écrire la garde : 0 facture, donc
+ * aucun jeton historique d'une autre forme à préserver.
+ */
+export function estTokenFacture(v: unknown): v is string {
+  return typeof v === "string" && /^[A-Za-z0-9_-]{24}$/.test(v);
+}
+
+/**
  * Espace pro de l'utilisateur, ou null s'il n'en a pas encore.
  * `admin` = client service role (lecture serveur, hors RLS).
  */

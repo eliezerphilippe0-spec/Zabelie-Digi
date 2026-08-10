@@ -698,6 +698,52 @@ maintenant, en kreyòl d'abord**.
 
 ## Observabilité — signaux non bloquants à ajouter
 
+### Audit externe Codex (2026-08-10) — verdict après contre-vérification
+
+> ⚠️ **L'audit a mélangé DEUX projets.** Les chemins qu'il cite
+> (`C:/Users/Philippe/marketplace-hub/vite.config.ts`, `src/services/
+> monCashService.ts`, React Router, 82 tests, 50 fichiers `@ts-nocheck`)
+> appartiennent à **marketplace-hub** — l'application Vite de `zabely.com`,
+> sur le poste du porteur. **AUCUN de ces fichiers n'existe dans
+> `uniondigitale`** (vérifié : ni vite.config, ni src/, ni react-router,
+> ni un seul `@ts-nocheck` ; 263 tests, pas 82). La base examinée, elle,
+> est bien `zabelie-digi` (les comptes concordent). Le « feu rouge » agrège
+> donc les défauts d'un AUTRE dépôt avec notre base.
+
+- [ ] 🚨 **Le bundle de `marketplace-hub` appellerait des Edge Functions
+      (`moncash-payment`, `natcash-payment`, `geo-detect`) sur `zabelie-digi`,
+      qui n'en a aucune.** Si c'est exact, l'application Vite est CONFIGURÉE
+      CONTRE NOTRE BASE FINANCIÈRE. Deux frontends dont un hors de tout
+      contrôle Git (« 128 changements locaux non validés » selon l'audit) sur
+      le même ledger est ingérable — et « natcash-payment » désigne un rail
+      **interdit** (⛔ aucune API). À trancher : soit archiver marketplace-hub,
+      soit le repointer définitivement ailleurs. Même famille que le constat
+      « le projet Supabase nommé Zabelie n'est pas la base de Zabelie ».
+- [x] **RPC facture par jeton sans garde de forme ni débit** — constat RETENU,
+      corrigé côté application le 2026-08-10 : `estTokenFacture` (24 car.
+      base64url exacts, vérifié contre 0 jeton historique) + 30 lectures/min
+      par IP AVANT la RPC. `tests/facture-token.test.ts`, mutation au rouge.
+- [ ] **Advisors performance Supabase** (~25 politiques RLS ré-évaluant
+      `auth.uid()` par ligne, ~16 FK non indexées, ~15 politiques permissives
+      multiples) — plausible, non bloquant à 0 commande. À traiter par UNE
+      migration dédiée (index FK + `(select auth.uid())`) quand le trafic
+      existera, jamais en catimini dans un autre lot.
+- [ ] **Protection « mots de passe compromis » désactivée** (Supabase Auth →
+      HaveIBeenPwned) — un interrupteur dans le tableau de bord, déjà relevé
+      par notre propre passage d'advisors du 2026-08-09.
+
+**Constats de l'audit NON retenus pour ce dépôt, et pourquoi** :
+« Aucun cron » — les 7 crons Vercel existent et sont visibles dans le tableau
+de bord (capture porteur du 2026-08-09) ; le compte de l'auditeur n'avait
+simplement pas accès au projet Vercel. « Storage sans politique RLS » — par
+CONSTRUCTION : les fichiers partent exclusivement en URL signée service-role
+via /api/download, aucun client ne touche le bucket. « 400 sur in_stock /
+label_es » — déjà documenté ici même : `label_es` corrigé (PR #80),
+`in_stock` attend B2. « Source map publique, CSP unsafe-inline, npm audit
+React Router/ws/nanoid, ESLint 54 erreurs » — marketplace-hub, pas nous
+(notre npm audit : 3 high, toutes `sharp`/libvips, dossier signé jusqu'au
+2026-11-03).
+
 - [ ] **`/mes-achats` est encore à moitié en français en dur** — le bloc de
       remise ajouté par le lot « surfaces » passe par `lib/i18n.ts` (quatre
       langues), mais le titre de la page et les libellés statiques
