@@ -32,11 +32,13 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Arbitrer les trois valeurs de `0043`** — `shipment_deadline_days` (5), `auto_receive_days` (7), `post_receipt_maturation_days` (0) | 2026-08-09 | **Rien aujourd'hui, et c'est exactement le moment de trancher.** `0043` est appliquée : les trois valeurs sont EN BASE, à leurs valeurs *proposées*, parce qu'une table de config ne peut pas être vide. Proposées ≠ décidées. Elles se changent par `UPDATE`, sans migration, tant qu'aucune commande physique n'existe — après, chaque changement déplace une échéance de paiement sur des commandes en cours. Détail et raisonnement : `docs/21` §2. |
 | **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
 | **Appliquer `0055` (journal d'audit admin — `zabelie_admin_actions`)** | 2026-08-10 | Rien fonctionnellement — les 9 routes admin mutantes appellent déjà le journal, et tant que la table n'existe pas chaque appel trace `[admin/audit] echec_ecriture` dans les logs serveur (dégradation prévue, comme le repli `in_stock`). L'appliquer fait exister la trace ; ne pas l'appliquer laisse les actes admin sans historique, l'état d'avant. Rédigée et éprouvée sur base de répétition (harnais CI complet + mutation du trigger). |
+
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
 | **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
+| **Hygiène du registre `zabelie_schema_migrations` : les lignes à hash « - »** (0031, 0037, 0038, 0040 — présentes avec `applied_at` mais hash « - », alors que le schéma atteste leur non-application) | 2026-08-10 | Rien — mais l'ambiguïté a fait dérailler une prémisse de revue le jour même : « au registre » ne veut pas dire « appliquée ». Deux issues : purger ces lignes fantômes, ou ajouter un statut explicite `redigee/appliquee`. Petit arbitrage, sans urgence. |
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
 | **« NatCash — bientôt » sur l'accueil** (`footer.natcash`, bandeau paiement + pied de page) | 2026-08-10 | Rien mécaniquement — mais la règle dure n°2 classe NatCash ⛔ (aucune API publique) et la pastille engage un calendrier qui ne dépend pas de nous (revue accueil, UX-02). Trois options : (a) retirer la pastille ; (b) reformuler sans promesse de calendrier (« pas encore disponible ») ; (c) l'assumer comme signal de demande. Zone d'arrêt promesse commerciale : rien ne bouge sans arbitrage. |
 | **16 rayons « bientôt » ou repli à 4** | 2026-08-10 | Rien — conséquence assumée de l'activation 16/16 du 2026-08-10 (revue accueil, UX-05) : « bientôt » est le mot le plus répété du premier écran. Le SQL de repli à 4 est au journal des rayons ci-dessous ; l'alternative sans retour arrière est la première publication réelle (`docs/22`), qui éteint les badges du rayon concerné. |
@@ -223,6 +225,40 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
 | 0043 (suivi de remise) | prod zabelie-digi | 2026-08-09T19:05Z | 19:09Z | base vide : 0 commande, 0 paiement confirmé, 0 escrow, 0 produit physique | connecteur (session assistée, go porteur) |
 | _restent : 0031 (fidélité, sautée) · 0037/0038/0040 (B2, revue séparée) · 0051 · 0052 · 0053 · 0054 · 0055 (audit admin)_ | | | | | |
+### Contrôle day-J — intentions d'audit orphelines (fail-closed 0055)
+
+Le fail-closed écrit la trace AVANT la RPC : une ligne d'intention sans
+résultat corrélé signifie « un admin a ordonné un acte d'argent qui n'a pas
+abouti » — à lire au jour le jour, pas à découvrir en incident. La clé de
+jointure est `target_id` = `orders.id` (qui joint `payments.idempotency_key`
+et `orders.order_ref`). À exécuter chaque matin tant qu'un tableau de bord
+ne le porte pas :
+
+```sql
+-- Intentions refund/confirm-zelle des dernières 24 h sans résultat corrélé.
+-- 0 ligne = tout ce qui a été ordonné a abouti (ou était un doublon idempotent).
+select a.created_at, a.action, a.actor_id, a.target_id, o.order_ref
+from zabelie_admin_actions a
+left join orders o on o.id::text = a.target_id
+where a.created_at > now() - interval '24 hours'
+  and (
+    (a.action = 'order.refund'
+       and (o.id is null or o.status <> 'refunded'))
+    or
+    (a.action = 'payment.confirm_zelle'
+       and not exists (
+         select 1 from payments p
+         where p.idempotency_key = a.target_id
+           and p.status = 'confirmed'))
+  )
+order by a.created_at desc;
+```
+
+Lecture : `order.refund` orphelin = la RPC a refusé (commande introuvable,
+état invalide) APRÈS que l'ordre a été tracé — c'est le comportement voulu,
+la tentative est l'événement. Un volume anormal d'orphelins, en revanche,
+est un signal (admin qui insiste, bug de route, base qui refuse).
+
 
 ⚠️ **Trois contrôles restent NON ÉPROUVÉS** — la base était vide le jour de
 l'application : le rapport de solvabilité à `ok=true` sur zéro ligne, le
