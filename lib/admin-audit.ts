@@ -32,6 +32,63 @@ export type ActeAdmin = {
   metadata?: Record<string, unknown>;
 };
 
+/**
+ * Variante BLOQUANTE — arbitrage porteur 2026-08-10 : « pas d'audit, pas de
+ * mutation » pour les routes de sensibilité maximale (refund, confirm-zelle).
+ *
+ * La trace s'écrit AVANT l'acte, et son échec l'interdit. Le sens de la ligne
+ * change avec sa position : elle enregistre l'ORDRE (« qui a ordonné quoi »),
+ * pas le résultat — le résultat vit déjà dans les tables d'argent (payments,
+ * escrow, ledger), qui sont la source de vérité de ce qui s'est produit. Si
+ * la RPC échoue après la trace, la ligne reste : une tentative d'acte admin
+ * est un événement d'audit à part entière.
+ *
+ * ⚠️ Conséquence assumée, voulue par l'arbitrage : tant que 0055 n'est pas
+ * appliquée, les routes fail-closed rendent 503 — le remboursement et la
+ * confirmation Zelle sont INDISPONIBLES. C'est le prix de « pas d'audit, pas
+ * de mutation », et c'est pourquoi la fusion de la PR et l'application de
+ * 0055 doivent se faire dans la même session.
+ */
+export async function exigerTraceAdmin(
+  admin: SupabaseClient,
+  acte: ActeAdmin
+): Promise<boolean> {
+  try {
+    const { error } = await admin.from("zabelie_admin_actions").insert({
+      actor_id: acte.actorId,
+      action: acte.action,
+      target_type: acte.targetType ?? null,
+      target_id: acte.targetId ?? null,
+      reason: acte.reason ?? null,
+      metadata: acte.metadata ?? null,
+    });
+    if (error) {
+      console.log(
+        "[admin/audit]",
+        JSON.stringify({
+          at: new Date().toISOString(),
+          issue: "trace_refusee_acte_bloque",
+          action: acte.action,
+          message: error.message,
+        })
+      );
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.log(
+      "[admin/audit]",
+      JSON.stringify({
+        at: new Date().toISOString(),
+        issue: "trace_refusee_acte_bloque",
+        action: acte.action,
+        message: e instanceof Error ? e.message : String(e),
+      })
+    );
+    return false;
+  }
+}
+
 export async function journaliserActeAdmin(
   admin: SupabaseClient,
   acte: ActeAdmin

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { journaliserActeAdmin } from "@/lib/admin-audit";
+import { exigerTraceAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -52,6 +52,22 @@ export async function POST(req: Request) {
       ? body.reference.trim().slice(0, 64)
       : null;
 
+  /* FAIL-CLOSED (arbitrage porteur 2026-08-10) : même règle que refund —
+   * pas de trace, pas de confirmation. L'issue (confirmed/duplicate) vit dans
+   * payments ; la ligne d'audit dit qui a ordonné la confirmation. */
+  const trace = await exigerTraceAdmin(admin, {
+    actorId: user.id,
+    action: "payment.confirm_zelle",
+    targetType: "order",
+    targetId: body.orderId,
+  });
+  if (!trace) {
+    return NextResponse.json(
+      { error: "Journal d'audit indisponible — confirmation refusée (fail-closed)" },
+      { status: 503 }
+    );
+  }
+
   const { data, error } = await admin.rpc("confirm_payment", {
     p_idempotency_key: body.orderId, // = order.id
     p_provider_ref: `ZELLE:${reference ?? "releve-bancaire"}`,
@@ -74,12 +90,5 @@ export async function POST(req: Request) {
     const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
     notifyOrderPaid(admin, body.orderId).catch(() => undefined);
   }
-  await journaliserActeAdmin(admin, {
-    actorId: user.id,
-    action: "payment.confirm_zelle",
-    targetType: "order",
-    targetId: body.orderId,
-    metadata: { status: data?.status ?? null },
-  });
   return NextResponse.json({ ok: true, status: data?.status });
 }

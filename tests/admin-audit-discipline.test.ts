@@ -69,9 +69,9 @@ test("toute route admin mutante journalise son acte (zabelie_admin_actions)", ()
 
     mutantes += 1;
     assert.ok(
-      src.includes("journaliserActeAdmin("),
+      src.includes("journaliserActeAdmin(") || src.includes("exigerTraceAdmin("),
       `${rel} : route admin MUTANTE sans trace d'audit — appeler ` +
-        `journaliserActeAdmin(admin, { actorId, action: "domaine.verbe", … }) ` +
+        `journaliserActeAdmin (best-effort) ou exigerTraceAdmin (fail-closed) ` +
         `avant le retour de succès, ou justifier une entrée MUTANTS_LECTURE_SEULE`
     );
   }
@@ -85,6 +85,40 @@ test("toute route admin mutante journalise son acte (zabelie_admin_actions)", ()
     assert.ok(
       exemptionsVues.has(ex),
       `L'exemption « ${ex} » ne correspond plus à aucune route mutante : la retirer.`
+    );
+  }
+});
+
+/**
+ * FAIL-CLOSED : la trace PRÉCÈDE l'acte — arbitrage porteur 2026-08-10.
+ *
+ * Pour les routes de sensibilité maximale, « pas d'audit, pas de mutation » :
+ * la trace s'écrit AVANT la RPC d'argent, et son échec rend 503 sans muter.
+ * Une garde écrite APRÈS l'appel protégerait le néant (la leçon de
+ * facture-token) — ce test verrouille donc l'ORDRE, pas la seule présence.
+ * La liste est fermée et se lit comme une politique : y entrer ou en sortir
+ * est un arbitrage porteur, pas un détail d'implémentation.
+ */
+const FAIL_CLOSED: Record<string, string> = {
+  // route → la RPC d'argent que la trace doit précéder
+  "refund/route.ts": '.rpc("refund_order"',
+  "confirm-zelle/route.ts": '.rpc("confirm_payment"',
+};
+
+test("routes fail-closed : la trace d'audit est exigée AVANT la RPC d'argent", () => {
+  for (const [rel, rpc] of Object.entries(FAIL_CLOSED)) {
+    const src = readFileSync(join(ADMIN_ROOT, rel), "utf8");
+    const iTrace = src.indexOf("exigerTraceAdmin(");
+    const iRpc = src.indexOf(rpc);
+    assert.ok(iTrace > -1, `${rel} : exigerTraceAdmin absent — la route n'est plus fail-closed`);
+    assert.ok(iRpc > -1, `${rel} : la RPC attendue « ${rpc} » est introuvable — la liste est périmée`);
+    assert.ok(
+      iTrace < iRpc,
+      `${rel} : la trace (${iTrace}) est écrite APRÈS la RPC (${iRpc}) — elle ne bloque rien`
+    );
+    assert.ok(
+      src.includes("status: 503"),
+      `${rel} : aucun refus 503 — l'échec de trace doit interdire l'acte`
     );
   }
 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { journaliserActeAdmin } from "@/lib/admin-audit";
+import { exigerTraceAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -29,17 +29,27 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+  /* FAIL-CLOSED (arbitrage porteur 2026-08-10) : la trace d'audit s'écrit
+   * AVANT l'acte, et son échec l'interdit — pas d'audit, pas de remboursement.
+   * La ligne enregistre l'ORDRE ; le résultat vit dans le ledger. */
+  const trace = await exigerTraceAdmin(admin, {
+    actorId: user.id,
+    action: "order.refund",
+    targetType: "order",
+    targetId: body.orderId,
+  });
+  if (!trace) {
+    return NextResponse.json(
+      { error: "Journal d'audit indisponible — remboursement refusé (fail-closed)" },
+      { status: 503 }
+    );
+  }
+
   const { data, error } = await admin.rpc("refund_order", {
     p_order_id: body.orderId,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  await journaliserActeAdmin(admin, {
-    actorId: user.id,
-    action: "order.refund",
-    targetType: "order",
-    targetId: body.orderId,
-  });
   return NextResponse.json({ ok: true, result: data });
 }
