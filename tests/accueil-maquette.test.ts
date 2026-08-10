@@ -131,14 +131,14 @@ function paresDupliquees(
  * échoue aussi (la règle des exemptions de crons-appelants).
  *   - product.sales|sec.sellers.sales : le MOT « ventes », unité de compte
  *     sur la carte produit et la carte vendeur — même mot, deux rôles.
- *   - catalog.search.btn|home.b1.t : « Chèche »/« Search » — le bouton de
- *     recherche et le titre de l'étape 1 tombent sur le même mot en kreyòl
- *     et en anglais (pas en français) : coïncidence de langue, pas doublon
- *     d'écran.
+ *
+ * (L'exemption catalog.search.btn|home.b1.t est morte le jour de sa création :
+ * le capteur de demande a reçu son propre libellé `home.demand.btn` (UX-06) et
+ * `catalog.search.btn` a quitté la page. C'est le contrôle inverse qui l'a
+ * signalé — première preuve en conditions réelles.)
  */
 const DOUBLONS_EXEMPTES = new Set([
   "product.sales|sec.sellers.sales",
-  "catalog.search.btn|home.b1.t",
 ]);
 
 test("le détecteur de doublons voit un doublon, et se tait sur des valeurs distinctes", () => {

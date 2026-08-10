@@ -91,3 +91,28 @@ test("aucune ancre visée n'est passée en prop à un composant", () => {
     );
   }
 });
+
+/**
+ * L'ANCRE « TALENTS » PRÉCÈDE LA SECTION QU'ELLE DÉSIGNE — la position, pas
+ * seulement l'existence.
+ *
+ * Revue 2026-08-10 (UX-04) : l'ancre existait, le test ci-dessus était VERT,
+ * et les trois liens « Talents » déposaient le visiteur sur « Fichiers
+ * digitaux » — l'ancre était posée un cran trop haut. Un test qui vérifie
+ * l'existence valide aussi bien la bonne position que la mauvaise.
+ *
+ * La règle : `id="talents"` vit APRÈS le titre de la rangée des fichiers
+ * (`sec.digital`) et AVANT celui des services (`sec.services`). Si l'une des
+ * deux rangées bouge, ce test dit où l'ancre doit suivre.
+ */
+test("l'ancre #talents est posée entre les fichiers digitaux et les services", () => {
+  const src = readFileSync("app/page.tsx", "utf8");
+  const iAncre = src.indexOf('id="talents"');
+  const iDigital = src.indexOf('"sec.digital"');
+  const iServices = src.indexOf('"sec.services"');
+  assert.ok(iAncre > -1 && iDigital > -1 && iServices > -1, "repère absent — l'extraction a bougé");
+  assert.ok(
+    iDigital < iAncre && iAncre < iServices,
+    `l'ancre #talents n'est pas entre les fichiers (${iDigital}) et les services (${iServices}) : ${iAncre}`
+  );
+});

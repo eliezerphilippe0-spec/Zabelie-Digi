@@ -37,6 +37,8 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
 | **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
+| **« NatCash — bientôt » sur l'accueil** (`footer.natcash`, bandeau paiement + pied de page) | 2026-08-10 | Rien mécaniquement — mais la règle dure n°2 classe NatCash ⛔ (aucune API publique) et la pastille engage un calendrier qui ne dépend pas de nous (revue accueil, UX-02). Trois options : (a) retirer la pastille ; (b) reformuler sans promesse de calendrier (« pas encore disponible ») ; (c) l'assumer comme signal de demande. Zone d'arrêt promesse commerciale : rien ne bouge sans arbitrage. |
+| **16 rayons « bientôt » ou repli à 4** | 2026-08-10 | Rien — conséquence assumée de l'activation 16/16 du 2026-08-10 (revue accueil, UX-05) : « bientôt » est le mot le plus répété du premier écran. Le SQL de repli à 4 est au journal des rayons ci-dessous ; l'alternative sans retour arrière est la première publication réelle (`docs/22`), qui éteint les badges du rayon concerné. |
 
 ## ✅ RÉSOLU — « la panne d'inscription » n'était pas une panne
 
