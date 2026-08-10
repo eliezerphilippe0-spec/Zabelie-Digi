@@ -49,7 +49,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#17123a",
+  // #17123a était le violet de la palette ABANDONNÉE le 2026-07-25 : sur
+  // Chrome Android — le terrain principal — la barre d'adresse s'affichait
+  // violette au-dessus d'un site noir et orange. Aligné sur --color-bg-1.
+  themeColor: "#0a0a0a",
 };
 
 export default async function RootLayout({

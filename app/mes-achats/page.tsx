@@ -71,16 +71,20 @@ export default async function MesAchatsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
+    // i18n (revue 2026-08-10, UX-03) : ce mur est la destination du bouton
+    // le plus visible de l'en-tête — il était écrit en dur en français, servi
+    // tel quel à un visiteur kreyòl. La dette du reste de la page (libellés
+    // de commandes) est au registre OPS_TODO ; ce bloc-ci est le premier
+    // écran que voit un anonyme, il ne pouvait pas attendre.
+    const langAnon = await getLang();
     return (
       <Shell>
-        <p className="mt-4 text-sm text-mist">
-          Connecte-toi pour voir tes achats.
-        </p>
+        <p className="mt-4 text-sm text-mist">{t(langAnon, "purchases.login.b")}</p>
         <Link
           href="/connexion"
           className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
         >
-          Se connecter
+          {t(langAnon, "nav.login")}
         </Link>
       </Shell>
     );

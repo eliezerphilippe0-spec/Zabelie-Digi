@@ -327,16 +327,12 @@ export default async function HomePage() {
             />
           </div>
 
-          {/* Un SEUL argument de confiance — le seul vérifiable aujourd'hui.
-              « Livraison rapide » et « Qualité garantie » restent bannis :
-              la livraison est assurée par les vendeurs et la plateforme ne
-              détient aucun stock. */}
-          <p className="mt-4 flex items-center justify-center gap-2 text-sm text-mist">
-            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-cloud" strokeWidth="1.6">
-              <path d="M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z" />
-            </svg>
-            {t(lang, "badge.pay")}
-          </p>
+          {/* La ligne `badge.pay` qui vivait ici est SUPPRIMÉE (revue
+              2026-08-10, UI-02) : elle répétait mot pour mot `trust.1.t`, à
+              200 px du bandeau de confiance — troisième doublon d'affilée sur
+              cet écran. Le bandeau, remonté juste sous le hero, porte la même
+              phrase avec sa preuve. Verrouillé par le test de valeurs i18n
+              dupliquées (tests/accueil-maquette.test.ts). */}
         </div>
 
         {/* Rail — SANS DOUBLON (demande porteur 2026-08-10). Les rangées
@@ -402,6 +398,23 @@ export default async function HomePage() {
           </div>
         </aside>
       </div>
+
+      {/* BANDEAU DE CONFIANCE (maquette porteur 2026-08-09).
+          Cinq promesses TENUES — la maquette en proposait cinq autres, dont
+          « livraison rapide » et « vendeurs vérifiés », qui n'existent pas.
+          Le raisonnement complet est en tête de components/trust-bar.tsx.
+          REMONTÉ sous le hero (revue croisée 2026-08-10) : les deux audits
+          convergent — la réassurance pèse le plus AVANT que le visiteur ne
+          descende, pas après la grille des rayons. */}
+      <TrustBar
+        items={[
+          { t: t(lang, "trust.1.t"), b: t(lang, "trust.1.b"), icone: "bouclier" },
+          { t: t(lang, "trust.2.t"), b: t(lang, "trust.2.b"), icone: "coffre" },
+          { t: t(lang, "trust.3.t"), b: t(lang, "trust.3.b"), icone: "gourde" },
+          { t: t(lang, "trust.4.t"), b: t(lang, "trust.4.b"), icone: "mobile" },
+          { t: t(lang, "trust.5.t"), b: t(lang, "trust.5.b"), icone: "message" },
+        ]}
+      />
 
       {/* ÉTAT B — catalogue vide : la page reste une marketplace NAVIGABLE.
           La grille des rayons ouverts remplace les rangées de produits, et le
@@ -478,20 +491,6 @@ export default async function HomePage() {
           )}
         </section>
       )}
-
-      {/* BANDEAU DE CONFIANCE (maquette porteur 2026-08-09).
-          Cinq promesses TENUES — la maquette en proposait cinq autres, dont
-          « livraison rapide » et « vendeurs vérifiés », qui n'existent pas.
-          Le raisonnement complet est en tête de components/trust-bar.tsx. */}
-      <TrustBar
-        items={[
-          { t: t(lang, "trust.1.t"), b: t(lang, "trust.1.b"), icone: "bouclier" },
-          { t: t(lang, "trust.2.t"), b: t(lang, "trust.2.b"), icone: "coffre" },
-          { t: t(lang, "trust.3.t"), b: t(lang, "trust.3.b"), icone: "gourde" },
-          { t: t(lang, "trust.4.t"), b: t(lang, "trust.4.b"), icone: "mobile" },
-          { t: t(lang, "trust.5.t"), b: t(lang, "trust.5.b"), icone: "message" },
-        ]}
-      />
 
       {/* 1 bis. BANDEAU PAIEMENT (maquette : « PEYE FASIL AK ») */}
       <section className="mx-auto max-w-6xl px-5 pb-4">

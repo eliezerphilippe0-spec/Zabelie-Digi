@@ -60,7 +60,7 @@ export function ZelleReferenceForm({
         onChange={(e) => setReference(e.target.value)}
         placeholder={labels.placeholder}
         maxLength={64}
-        className="mt-2 w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-cloud placeholder:text-mist/60 focus:border-brand/60 focus:outline-none"
+        className="mt-2 w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
       />
       <button
         type="submit"

@@ -26,7 +26,7 @@ export async function SiteFooter() {
                 r.vide ? (
                   // Même règle que le menu (décision porteur 2026-08-02) : un
                   // rayon désert n'est pas un lien, il est marqué.
-                  <span key={r.slug} className="text-mist/50">
+                  <span key={r.slug} className="text-mist">
                     {r.label} <span className="text-xs">{t(lang, "menu.empty")}</span>
                   </span>
                 ) : (
@@ -59,7 +59,7 @@ export async function SiteFooter() {
             <p className="font-semibold text-cloud">{t(lang, "footer.payment")}</p>
             <span className="text-mist">MonCash</span>
             <span className="text-mist">Zelle (USD)</span>
-            <span className="text-mist/50">{t(lang, "footer.natcash")}</span>
+            <span className="text-mist">{t(lang, "footer.natcash")}</span>
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.help")}</p>
