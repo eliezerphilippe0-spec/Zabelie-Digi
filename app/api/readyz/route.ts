@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,8 +29,13 @@ export async function GET() {
   const t0 = Date.now();
   let pret = false;
   try {
-    const admin = createAdminClient();
-    const sonde = admin.from("zabelie_categories").select("id", { count: "exact", head: true }).limit(1);
+    /* Client ANON, pas service role (revue porteur 2026-08-10) : la sonde
+     * n'a besoin d'aucun privilège — zabelie_categories est la taxonomie
+     * publique, lisible sous RLS par tout visiteur. Bonus réel : on teste le
+     * CHEMIN DES ACHETEURS (PostgREST + RLS anon), pas un chemin privilégié
+     * qui pourrait marcher quand le leur est cassé. */
+    const anon = await createClient();
+    const sonde = anon.from("zabelie_categories").select("id", { count: "exact", head: true }).limit(1);
     const coupure = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("delai")), DELAI_MS)
     );
