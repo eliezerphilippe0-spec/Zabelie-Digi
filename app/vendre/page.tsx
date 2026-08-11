@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { PublishForm } from "@/components/publish-form";
 import { UploadAsset } from "@/components/upload-asset";
 import { createClient } from "@/lib/supabase/server";
+import { lireRayonsPublication } from "@/lib/product-categories";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { isPrefetch, logLanding } from "@/lib/metrics";
@@ -108,6 +109,11 @@ export default async function VendrePage() {
   const tier: CreatorTier =
     (profile as { tier?: string } | null)?.tier === "elite" ? "elite" : "standard";
 
+  // Les rayons OUVERTS, lus en base : le vendeur publie désormais dans la
+  // MÊME taxonomie que celle qu'affichent le menu, la colonne des rayons et
+  // le catalogue (correctif 2026-08-11 — voir lib/product-categories).
+  const rayonsPublication = await lireRayonsPublication(supabase, lang);
+
   const { data: mineRaw } = await supabase
     .from("products")
     .select("id, slug, title, status, kind, product_assets(id)")
@@ -147,6 +153,7 @@ export default async function VendrePage() {
       <div className="glass rounded-2xl p-6">
         <PublishForm
           tier={tier}
+          categories={rayonsPublication}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
             kindAria: t(lang, "publish.kind.aria"),
