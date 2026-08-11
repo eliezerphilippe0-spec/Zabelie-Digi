@@ -31,8 +31,20 @@ export function ForgotPasswordForm({ labels }: { labels: ForgotPasswordLabels })
       const site = window.location.origin;
       // Message identique succès/échec (pas d'énumération de comptes) : le
       // formulaire ne révèle jamais si l'e-mail existe.
+      /* Le lien pointe DIRECTEMENT sur la page de réinitialisation, plus
+       * sur /auth/callback (correctif 2026-08-11, « rien ne se passe »).
+       * Deux raisons, mesurées :
+       *   • /auth/callback ne sait QUE traiter `?code=` (PKCE). Selon le
+       *     gabarit d'e-mail du projet, Supabase renvoie les jetons dans le
+       *     FRAGMENT (`#access_token=…`) — invisible côté serveur par
+       *     construction. La route redirigeait alors sans session, et la
+       *     page concluait « lien invalide » ou n'affichait rien ;
+       *   • un aller-retour de plus multiplie les occasions de perdre le
+       *     cookie `code_verifier` du PKCE, qui est lié à l'ORIGINE — le
+       *     couple zabelie.com / www.zabelie.com suffit à le casser.
+       * La page cible sait désormais traiter les DEUX formes elle-même. */
       await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${site}/auth/callback?next=/reinitialiser-mot-de-passe`,
+        redirectTo: `${site}/reinitialiser-mot-de-passe`,
       });
       setDone(true);
     } catch (err) {

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isMissingColumn } from "@/lib/products";
 import { isSupabaseConfigured } from "@/lib/products";
 import type { Lang } from "@/lib/i18n";
+import { KIND_PHYSICAL } from "@/lib/product-kind";
 
 /**
  * Navigation par rayon — les 74 catégories de `0035`, enfin lisibles.
@@ -344,6 +345,43 @@ async function getMenuRayonsNonMemoise(lang: Lang): Promise<RayonMenu[]> {
   const comptes = new Map<string, number>();
   for (const l of (liens ?? []) as unknown as { category_id: string }[]) {
     comptes.set(l.category_id, (comptes.get(l.category_id) ?? 0) + 1);
+  }
+
+  /* PRODUITS NON PHYSIQUES — ils ne comptaient JAMAIS (correctif 2026-08-11).
+   *
+   * Le comptage ci-dessus ne lit que `zabelie_physical_products`. Un fichier
+   * ou un service n'y figure pas : son rattachement est le libellé français
+   * du rayon, porté par `products.category`. Résultat mesuré en production :
+   * deux produits publiés, et le badge « bientôt » qui ne pouvait pas
+   * s'éteindre — le porteur l'a lu comme un défaut de rafraîchissement.
+   *
+   * L'exclusion du type PHYSIQUE est indispensable : un produit physique porte
+   * AUSSI son libellé de rayon dans `products.category`, et le compter deux
+   * fois gonflerait des rayons au hasard. */
+  const { data: nonPhysiques } = await supabase
+    .from("products")
+    .select("category")
+    .eq("status", "published")
+    .neq("kind", KIND_PHYSICAL)
+    .not("category", "is", null)
+    .limit(5000);
+
+  const idParLabelFr = new Map(
+    (cats as unknown as CategoryRow[]).map((c) => [c.label_fr, c.id])
+  );
+  for (const p of (nonPhysiques ?? []) as unknown as { category: string }[]) {
+    const id = idParLabelFr.get(p.category);
+    // Libellé orphelin (taxonomie d'avant l'unification) : on l'ignore, mais
+    // on le DIT — sinon un produit invisible dans la navigation reste un
+    // mystère silencieux.
+    if (!id) {
+      console.log(
+        "[taxonomie]",
+        JSON.stringify({ issue: "categorie_orpheline", valeur: p.category })
+      );
+      continue;
+    }
+    comptes.set(id, (comptes.get(id) ?? 0) + 1);
   }
 
   return construireMenu(

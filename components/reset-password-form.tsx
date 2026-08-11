@@ -30,12 +30,57 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    // /auth/callback a déjà échangé le code contre une session (recovery) —
-    // ici on vérifie juste qu'elle existe avant d'exposer le formulaire.
+    /* CETTE PAGE OUVRE LA SESSION ELLE-MÊME (correctif 2026-08-11).
+     *
+     * Elle supposait qu'/auth/callback avait déjà fait le travail. Or ce
+     * callback ne traite que la forme PKCE (`?code=`) : quand Supabase
+     * renvoie les jetons dans le FRAGMENT (`#access_token=…&type=recovery`),
+     * le serveur ne les voit pas — un fragment n'est jamais transmis. Le
+     * visiteur atterrissait sans session : « rien ne se passe ».
+     *
+     * Les deux formes sont désormais couvertes :
+     *   • fragment → le client supabase le consomme au chargement
+     *     (`detectSessionInUrl`), d'où la seconde lecture après un tick ;
+     *   • `?code=` → échange explicite ici, sur la MÊME origine que le
+     *     formulaire d'envoi, donc avec son cookie `code_verifier`.
+     */
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
+    let vivant = true;
+
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      if (code) {
+        try {
+          await supabase.auth.exchangeCodeForSession(code);
+        } catch {
+          /* Lien expiré ou déjà consommé (double-clic, préfetch d'antivirus
+           * de messagerie) : on retombe sur la lecture ci-dessous, qui
+           * affichera « lien invalide » — un message, jamais un écran mort. */
+        }
+      }
+
+      let { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        // Course avec `detectSessionInUrl` : le fragment peut n'être
+        // consommé qu'au tick suivant. Une seule seconde chance, pas une
+        // boucle — un écran qui tourne sans fin est pire qu'un refus clair.
+        await new Promise((r) => setTimeout(r, 400));
+        data = (await supabase.auth.getUser()).data;
+      }
+      if (!vivant) return;
+
+      // L'URL porte les jetons : on les efface de la barre d'adresse une
+      // fois la session ouverte (historique, captures, épaule du voisin).
+      if (data.user && (window.location.hash || window.location.search)) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
       setStatus(data.user ? "ready" : "invalid");
-    });
+    })();
+
+    return () => {
+      vivant = false;
+    };
   }, []);
 
   async function submit(e: React.FormEvent) {
