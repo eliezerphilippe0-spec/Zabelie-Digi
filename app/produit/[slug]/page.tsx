@@ -183,9 +183,16 @@ export default async function ProductPage({
             <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
               {product.category}
             </span>
-            {isService(product.kind, product.id) && product.deliveryDays && (
+            {/* `!= null` et non truthy : 0 (« le jour même ») est une
+                valeur MOINS un manque — le test truthy le masquait. */}
+            {isService(product.kind, product.id) && product.deliveryDays != null && (
               <span className="rounded-full border border-line px-3 py-1 text-xs text-accent">
-                ⏱ {t(lang, "product.delivery.days", { days: String(product.deliveryDays) })}
+                ⏱{" "}
+                {product.deliveryDays === 0
+                  ? t(lang, "product.delivery.sameday")
+                  : t(lang, "product.delivery.days", {
+                      days: String(product.deliveryDays),
+                    })}
               </span>
             )}
           </div>

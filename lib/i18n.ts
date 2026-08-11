@@ -216,6 +216,7 @@ const fr = {
   "product.service": "✓ Mise en relation après paiement",
   "product.verifiedOnly": "✓ Avis réservés aux acheteurs vérifiés",
   "product.delivery.days": "Livraison en {days} jour(s)",
+  "product.delivery.sameday": "Livré le jour même",
   "product.includes": "Ce qui est inclus",
   "product.reviews": "Avis vérifiés",
   "product.reviews.note": "Seuls les acheteurs ayant payé peuvent laisser un avis.",
@@ -399,7 +400,7 @@ const fr = {
   "publish.description.ph": "Description",
   "publish.service.hint":
     "Page service (façon Fiverr) — optionnel, mais rassure l'acheteur.",
-  "publish.deliveryDays.ph": "Délai de livraison (en jours)",
+  "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
   "publish.includes.ph":
     "Ce qui est inclus — un élément par ligne\nEx. 3 révisions\nFichier source livré",
   "publish.submit": "Publier le produit",
@@ -674,6 +675,7 @@ const ht: Record<I18nKey, string> = {
   "product.service": "✓ Kontak ak vandè a apre peman",
   "product.verifiedOnly": "✓ Avi yo rezève pou achtè verifye sèlman",
   "product.delivery.days": "Livrezon nan {days} jou",
+  "product.delivery.sameday": "Livre menm jou a",
   "product.includes": "Sa ki enkli",
   "product.reviews": "Avi verifye",
   "product.reviews.note": "Se sèlman achtè ki peye ki ka bay avi.",
@@ -841,7 +843,7 @@ const ht: Record<I18nKey, string> = {
   "publish.description.ph": "Deskripsyon",
   "publish.service.hint":
     "Paj sèvis (menm jan ak Fiverr) — opsyonèl, men sa rasire achtè a.",
-  "publish.deliveryDays.ph": "Dele livrezon (an jou)",
+  "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
   "publish.includes.ph":
     "Sa ki enkli — yon eleman pou chak liy\nEgz. 3 revizyon\nFichye sous livre",
   "publish.submit": "Pibliye pwodui a",
@@ -1119,6 +1121,7 @@ const en = {
   "product.service": "✓ Introduction after payment",
   "product.verifiedOnly": "✓ Reviews limited to verified buyers",
   "product.delivery.days": "Delivery in {days} day(s)",
+  "product.delivery.sameday": "Delivered same day",
   "product.includes": "What's included",
   "product.reviews": "Verified reviews",
   "product.reviews.note": "Only buyers who have paid can leave a review.",
@@ -1295,7 +1298,7 @@ const en = {
   "publish.description.ph": "Description",
   "publish.service.hint":
     "Service page (Fiverr style) — optional, but reassures the buyer.",
-  "publish.deliveryDays.ph": "Delivery time (in days)",
+  "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
   "publish.includes.ph":
     "What's included — one item per line\ne.g. 3 revisions\nSource file delivered",
   "publish.submit": "Publish the product",
@@ -1574,6 +1577,7 @@ const es = {
   "product.service": "✓ Puesta en contacto tras el pago",
   "product.verifiedOnly": "✓ Reseñas reservadas a compradores verificados",
   "product.delivery.days": "Entrega en {days} día(s)",
+  "product.delivery.sameday": "Entregado el mismo día",
   "product.includes": "Qué incluye",
   "product.reviews": "Reseñas verificadas",
   "product.reviews.note": "Solo los compradores que han pagado pueden dejar una reseña.",

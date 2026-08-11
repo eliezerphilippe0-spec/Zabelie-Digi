@@ -82,7 +82,8 @@ export function PublishForm({
           description: form.description,
           priceHTG: Number(form.priceHTG),
           policyAccepted: policyOk,
-          deliveryDays: form.deliveryDays ? Number(form.deliveryDays) : null,
+          deliveryDays:
+            form.deliveryDays.trim() !== "" ? Number(form.deliveryDays) : null,
           // Un élément par ligne — le serveur reborne (10 max, 140 car.).
           serviceIncludes: form.serviceIncludes
             .split("\n")
@@ -174,7 +175,7 @@ export function PublishForm({
           <input
             className={input}
             type="number"
-            min={1}
+            min={0}
             max={365}
             placeholder={labels.deliveryDaysPh}
             aria-label={labels.deliveryDaysPh}
