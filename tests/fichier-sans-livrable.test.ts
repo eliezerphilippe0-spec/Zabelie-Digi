@@ -58,10 +58,20 @@ test("la publication d'un fichier vérifie qu'un livrable existe", () => {
     /from\("product_assets"\)/,
     "Sans lecture de `product_assets`, le garde ne peut rien vérifier."
   );
+  /* LE REFUS DOIT ÊTRE ATTEINT PAR UN COMPTAGE, pas seulement écrit.
+   *
+   * Première version de cette assertion : `assert.match(PORTE, /livrable_
+   * manquant/)`. Elle est restée VERTE sous la mutation qui remplaçait
+   * `if ((count ?? 0) === 0)` par `if (false)` — le message était toujours
+   * dans le fichier, simplement plus jamais rendu. Un garde inatteignable et
+   * un garde absent produisent le même texte ; seule la condition les
+   * distingue. Même aveuglement de sous-chaîne que sur `CartPayButton`. */
   assert.match(
     PORTE,
-    /livrable_manquant/,
-    "Le refus doit porter un code stable — un admin doit savoir CE QUI manque."
+    /count[^;]{0,40}===\s*0[\s\S]{0,400}livrable_manquant/,
+    "Le refus 422 doit être commandé par un comptage de `product_assets` à " +
+      "zéro. Le message seul ne prouve rien : il survit intact à un garde " +
+      "qu'on a rendu inatteignable."
   );
 });
 
