@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { CartPayButton } from "@/components/cart-pay-button";
 import { RemoveFromCart } from "@/components/remove-from-cart";
 import { createClient } from "@/lib/supabase/server";
 import { formatHTG } from "@/lib/sample-data";
@@ -84,8 +85,11 @@ export default async function PanierPage() {
         <>
           <ul className="mt-6 divide-y divide-line rounded-2xl border border-line bg-surface/40">
             {items.map((l) => (
-              <li key={l.product_id} className="flex items-center gap-4 p-4">
-                <div className="min-w-0 flex-1">
+              <li
+                key={l.product_id}
+                className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4"
+              >
+                <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                   <Link
                     href={`/produit/${l.product!.slug}`}
                     className="font-semibold text-cloud transition hover:text-accent"
@@ -101,6 +105,14 @@ export default async function PanierPage() {
                 <span className="numeric shrink-0 font-bold text-cloud">
                   {formatHTG(l.product!.price_htg)}
                 </span>
+                <CartPayButton
+                  productId={l.product_id}
+                  labels={{
+                    pay: t(lang, "cart.pay"),
+                    loading: t(lang, "cart.paying"),
+                    error: t(lang, "error.generic"),
+                  }}
+                />
                 <RemoveFromCart
                   productId={l.product_id}
                   label={t(lang, "cart.remove")}
