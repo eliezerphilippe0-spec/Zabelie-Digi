@@ -7,6 +7,7 @@ import { formatHTG } from "@/lib/sample-data";
 import { getProductView } from "@/lib/products";
 import { getProductReviews } from "@/lib/reviews";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
+import { AddToCart } from "@/components/add-to-cart";
 import { getPhysicalView } from "@/lib/products-physical";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
@@ -293,6 +294,20 @@ export default async function ProductPage({
                   generic: t(lang, "error.generic"),
                   network: t(lang, "error.network"),
                   provider: t(lang, "error.provider"),
+                }}
+              />
+              {/* Le panier ne remplace pas l'achat direct : il ajoute le cas
+                  « je prends plusieurs choses ». Bouton secondaire, sous le
+                  primaire — la hiérarchie dit le chemin recommandé. */}
+              <AddToCart
+                productId={product.id}
+                labels={{
+                  add: t(lang, "cart.add"),
+                  adding: t(lang, "cart.adding"),
+                  added: t(lang, "cart.added"),
+                  seeCart: t(lang, "cart.see"),
+                  signin: t(lang, "nav.login"),
+                  error: t(lang, "error.generic"),
                 }}
               />
             </div>
