@@ -229,6 +229,52 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
 | **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
 | _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### 📏 Règle — schéma et registre divergent : investiguer, jamais régulariser
+
+Deux divergences sont possibles, elles n'ont pas la même gravité, et **aucune
+ne se répare en silence**.
+
+**A · Objet en base SANS ligne au registre.** Le cas grave : l'objet n'a pas de
+provenance, donc aucun geste officiel ne l'a créé. Dater son arrivée avant
+toute chose (journaux Supabase, historique de connexions), identifier le geste,
+et n'appliquer la migration correspondante qu'ensuite — l'appliquer par-dessus
+régulariserait l'anomalie au lieu de l'élucider. **Jamais constaté à ce jour.**
+
+**B · Migration au registre dont le FICHIER n'est pas dans `main`.** Constaté :
+`0055_admin_audit.sql`, appliquée le 2026-08-10 22:14:26Z, hash
+`274f4a2b013a05ec…` identique au fichier de la branche de #88 (vérifié le
+2026-08-11 : table, deux index, trigger `zabelie_admin_actions_immutable`, RLS
+active, 0 droit anon, 0 ligne écrite). L'ordre a été inversé **à dessein** —
+appliquer avant de fusionner supprimait la fenêtre où le code fail-closed
+déployé aurait appelé une table inexistante. C'est la fusion qui n'est pas
+venue.
+
+Conséquence à garder en tête : **un acte d'administration sur l'argent ne
+laisse aucune trace aujourd'hui**, puisque le code qui écrit dans ce journal
+vit sur une branche. `zabelie_admin_actions` compte 0 ligne, et ce zéro-là
+n'est pas « rien à signaler » : c'est « personne ne peut écrire ».
+
+⚠️ **Et `0062` dira `appliquee` pour `0055`** — correctement, puisqu'elle sonde
+le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
+complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
+qui tient le second, par le trou de numérotation.
+
+### 🧪 Scénarios que la répétition de `0060`/`0061`/`0062` DOIT couvrir
+
+Sur socle prod-conforme à l'état appliqué réel, et pas seulement « ça passe » :
+
+1. **`0062` appliquée après `0060`/`0061`** → les deux classées `appliquee`.
+2. **`0062` appliquée SEULE**, sans `0060`/`0061` → les deux classées
+   `redigee`, sans échec. Les sondes existent dans la migration ; elles n'ont
+   **jamais été exécutées**.
+3. **Ce que rend le registre PENDANT que `0062` le migre** — la colonne est
+   ajoutée nullable, remplie, puis contrainte : vérifier qu'aucune lecture
+   concurrente ne voit un état mi-classé.
+4. **Objet déjà présent, version divergente** — le jour où #88 fusionne,
+   `0055` sera rejouée sur une table qui existe. Elle utilise `create table`
+   sans `if not exists` : elle **échouera bruyamment**, ce qui est le bon
+   comportement — mais il faut l'avoir vu une fois plutôt que le découvrir.
+
 ### 🔬 Instrument CANDIDAT — revue des écrivains multiples par statut
 
 **Non construit. Noté pendant que la liste est fraîche, à mesurer avant de
