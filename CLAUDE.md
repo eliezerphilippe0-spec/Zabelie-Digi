@@ -201,6 +201,33 @@ lise quoi que ce soit d'autre.** Pas « vérifier ensuite » — une assertion q
 * après écriture, relire la zone et assurer que la modification y est ;
 * pour une mutation de test : afficher la ligne mutée avant de lancer la suite.
 
+##### Le piège de sous-chaîne résiste à la connaissance qu'on en a
+
+Un test structurel qui cherche la PRÉSENCE d'un texte reste vert quand le code
+qui devait le produire est devenu inatteignable. Mesuré deux fois :
+
+* `src.includes("CartPayButton")` est resté vert après renommage en
+  `CartPayButtonOff` — la sous-chaîne survit à l'ajout d'un suffixe ;
+* `assert.match(PORTE, /livrable_manquant/)` est resté vert après
+  `if ((count ?? 0) === 0)` → `if (false)` — le message était toujours dans le
+  fichier, simplement plus jamais rendu.
+
+**La seconde a été commise en connaissant la première, dans la même session,
+au tour suivant.** C'est le fait qui compte : ce piège n'est pas un défaut
+d'attention, il ne se corrige pas en y pensant plus fort. Il se présente comme
+un test qui passe, et un test qui passe n'appelle aucune inspection.
+
+Règle : **une assertion structurelle porte sur ce qui COMMANDE, jamais sur ce
+qui est produit.** La condition, la frontière, l'appel — pas le libellé, pas le
+code d'erreur, pas le nom de composant seul. Un garde absent et un garde rendu
+inatteignable laissent exactement le même texte dans le fichier ; seule la
+condition les distingue. En pratique :
+
+* frontière explicite plutôt que sous-chaîne : `/<CartPayButton[\s>]/` ;
+* la condition avec sa cible : `/count[^;]{0,40}===\s*0[\s\S]{0,400}livrable_manquant/` ;
+* et la mutation qui rend le garde inatteignable (`if (false)`), pas seulement
+  celle qui le supprime — les deux échouent différemment.
+
 La vigilance ne suffit pas ici, et c'est précisément la leçon : quatre
 occurrences en une session, par quelqu'un qui connaissait le piège dès la
 deuxième.
@@ -271,6 +298,39 @@ Deux points qui font la différence entre ce contrôle et un vœu :
   existe, pas que le cron tourne — secret absent, déploiement non promu, projet
   dont les crons sont désactivés le laissent vert. La preuve d'exécution est le
   journal de la route, et elle se lit dans Vercel. Les deux sont nécessaires.
+
+#### « Sans appelant » n'est jamais une conclusion de grep
+
+Trois fois dans la session du 2026-08-11, un silence de recherche a été lu
+comme une preuve d'absence. Le motif est stable au point de mériter une règle.
+
+* `zabelie_shipments` « absente » attestait que `0043` n'était pas appliquée.
+  `0043` ne crée aucune table de ce nom — elle était appliquée depuis deux jours.
+* Un `grep` excluant le fichier de définition a rendu `DeliveryDeclaration`
+  « sans producteur ni lecteur ». Il est **consommé par `deliveryNoticeKey`**,
+  déclaré juste en dessous, et **produit par la fiche produit**. La suppression
+  annoncée aurait cassé `/produit/[slug]` en production.
+* Le filet de `0043` « ne couvrait pas le digital » : vrai, mais ce que
+  « non couvert » voulait dire n'avait jamais été mesuré — un vendeur payé pour
+  un fichier qui n'existe pas.
+
+Règle : **« sans appelant » est une HYPOTHÈSE, et la confirmation est une
+suppression qui doit casser quelque chose.** Le « quelque chose » dépend de la
+façon dont l'artefact est adressé, et c'est tout l'enjeu :
+
+* **référence typée** (type, fonction, constante importée) → retirer, lancer
+  `tsc`. S'il reste propre, l'artefact est mort ; s'il rougit, il ne l'est pas.
+  Coût : trente secondes. C'est la mutation appliquée à « ça existe encore ? »
+  plutôt qu'à « c'est testé ? ».
+* **artefact adressé par CHAÎNE** — nom de RPC, clé i18n, nom de bucket,
+  `kind` en base — → `tsc` ne verra jamais rien, par construction. Ce sont
+  exactement les cas que les croisements du dépôt existent pour attraper
+  (`crons-appelants`, `i18n-cles-mortes`, `migrations-suite`). Un artefact de
+  cette classe qu'aucun croisement ne couvre est un angle mort ouvert : le
+  croisement s'écrit AVANT de conclure quoi que ce soit sur sa mort.
+
+Et jamais `grep` seul, dans les deux cas — un motif ne prouve rien sur ce
+qu'il n'a pas cherché, et il ne dit pas qu'il ne l'a pas cherché.
 
 #### `\b` ne connaît pas le kreyòl — propriété du produit, pas leçon d'un tour
 
