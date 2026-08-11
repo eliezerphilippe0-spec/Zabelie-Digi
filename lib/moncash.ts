@@ -12,15 +12,23 @@
 
 type MonCashMode = "sandbox" | "production";
 
+/**
+ * ⚠️ L'hôte est `digicelgroup.com`, PAS `digicel.com` — mesuré le 2026-08-10 :
+ * `sandbox.moncashbutton.digicel.com` ne résout plus du tout (DNS mort), là où
+ * `…digicelgroup.com` rend 401 sur /Api/oauth/token et /Api/v1/CreatePayment
+ * (le serveur existe et exige l'authentification). C'est aussi l'hôte du
+ * portail Business et de la doc officielle. Verrouillé par
+ * tests/moncash-hote.test.ts.
+ */
 function bases(mode: MonCashMode) {
   return mode === "production"
     ? {
-        rest: "https://moncashbutton.digicel.com/Api",
-        gateway: "https://moncashbutton.digicel.com/Moncash-middleware",
+        rest: "https://moncashbutton.digicelgroup.com/Api",
+        gateway: "https://moncashbutton.digicelgroup.com/Moncash-middleware",
       }
     : {
-        rest: "https://sandbox.moncashbutton.digicel.com/Api",
-        gateway: "https://sandbox.moncashbutton.digicel.com/Moncash-middleware",
+        rest: "https://sandbox.moncashbutton.digicelgroup.com/Api",
+        gateway: "https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware",
       };
 }
 
