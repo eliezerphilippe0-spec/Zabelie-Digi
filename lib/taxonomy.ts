@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isMissingColumn } from "@/lib/products";
 import { isSupabaseConfigured } from "@/lib/products";
 import type { Lang } from "@/lib/i18n";
+import { KIND_PHYSICAL } from "@/lib/product-kind";
 
 /**
  * Navigation par rayon — les 74 catégories de `0035`, enfin lisibles.
