@@ -15,10 +15,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type KindOutbox = "order_paid_buyer" | "order_paid_seller";
 
-/** Borne dure de tentatives. Au-delà, le message est abandonné et sa dernière
- *  erreur reste lisible en base — un abandon silencieux serait le défaut
- *  qu'on vient de corriger, à un cran de plus. */
-export const MAX_TENTATIVES = 5;
+/* La borne de tentatives et la durée du bail de ligne vivent en BASE
+ * (`zabelie_outbox_limits`), plus ici. Deux appelants — l'envoi immédiat et le
+ * drain du cron — doivent appliquer la même règle, et une borne écrite deux
+ * fois diverge toujours. La réclamation SQL pose l'abandon quand elle est
+ * atteinte ; le TypeScript n'a plus à la connaître. */
 
 export type ResultatDepot = {
   /** L'envoi immédiat a-t-il réussi ? */
@@ -69,6 +70,17 @@ export async function deposerEtTenter(
     }
   }
 
+  /* RÉCLAMATION — chemin de sortie UNIQUE, partagé avec le drain du cron.
+   *
+   * Sans elle, l'envoi immédiat et le cron sont deux écrivains sur la même
+   * ligne : le cron peut prendre une ligne dont l'envoi est encore en vol,
+   * l'acheteur reçoit deux reçus, et deux reculs concurrents s'écrasent. */
+  const { data: pris } = await admin.rpc("zabelie_outbox_claim", { p_id: id });
+  if (pris !== true) {
+    journal({ issue: "deja_reclame" });
+    return { envoye: false, inscrit: true };
+  }
+
   try {
     const ok = await envoi();
     if (ok) {
@@ -116,6 +128,7 @@ export async function drainerOutbox(
     .from("zabelie_outbox")
     .select("id, kind, order_id, destinataire, attempts")
     .is("sent_at", null)
+    .is("abandonne_a", null)
     .lte("due_at", new Date().toISOString())
     .order("due_at", { ascending: true })
     .limit(50);
@@ -124,7 +137,11 @@ export async function drainerOutbox(
 
   for (const m of data as { id: string; kind: KindOutbox; order_id: string; destinataire: string; attempts: number }[]) {
     c.dus += 1;
-    if (m.attempts >= MAX_TENTATIVES) {
+    // MÊME réclamation que l'envoi immédiat — un seul chemin de sortie.
+    const { data: pris } = await admin.rpc("zabelie_outbox_claim", { p_id: m.id });
+    if (pris !== true) {
+      // Soit un autre envoyeur la tient, soit la borne est atteinte et la
+      // réclamation vient de poser l'abandon. Les deux se lisent en base.
       c.abandonnes += 1;
       continue;
     }

@@ -229,6 +229,37 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
 | **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
 | _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### Contrôle day-J — outbox des confirmations de vente (0061)
+
+⚠️ **À lire dès le lendemain de l'application de `0061`, et pas plus tard.**
+`RESEND_API_KEY` n'est pas posée : les lignes vont donc s'accumuler **par
+construction**, et cette accumulation doit être un chiffre qu'on lit, pas un
+silence. Un compteur à zéro sur cette requête ne voudra rien dire tant que la
+clé manque — c'est « aucun cas possible », pas « aucun cas ».
+
+```sql
+-- Confirmations de vente en souffrance. Trois colonnes, trois lectures.
+select
+  count(*) filter (where sent_at is null and abandonne_a is null
+                     and created_at < now() - interval '1 hour') as pendantes_1h,
+  count(*) filter (where abandonne_a is not null)                as abandon_terminal,
+  count(*) filter (where sent_at is not null)                    as parties
+from zabelie_outbox;
+
+-- Le détail de ce qui est mort, avec la raison — jamais un simple total.
+select order_id, kind, attempts, left(last_error, 120) as erreur, abandonne_a
+  from zabelie_outbox
+ where abandonne_a is not null
+ order by abandonne_a desc
+ limit 20;
+```
+
+**Lecture.** `abandon_terminal > 0` veut dire qu'un acheteur a payé et n'a
+jamais su que son argent était arrivé — cinq tentatives épuisées. Ce n'est pas
+une statistique, c'est une liste de personnes à recontacter, et `last_error`
+dit pourquoi. `pendantes_1h` élevé avec `abandon_terminal = 0` désigne le
+fournisseur, pas les messages.
+
 
 ⚠️ **Trois contrôles restent NON ÉPROUVÉS** — la base était vide le jour de
 l'application : le rapport de solvabilité à `ok=true` sur zéro ligne, le

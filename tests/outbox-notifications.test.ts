@@ -75,9 +75,11 @@ test("le dépôt précède l'envoi", async () => {
   });
   assert.deepEqual(
     ordreVu,
-    ["zabelie_outbox_enqueue"],
-    "Au moment de l'envoi, le dépôt doit DÉJÀ avoir eu lieu — sinon un " +
-      "plantage entre les deux perd le message sans laisser de trace."
+    ["zabelie_outbox_enqueue", "zabelie_outbox_claim"],
+    "Au moment de l'envoi, le dépôt ET la réclamation doivent DÉJÀ avoir eu " +
+      "lieu. Le dépôt d'abord, sinon un plantage perd le message ; la " +
+      "réclamation ensuite, sinon le drain du cron peut prendre la même ligne " +
+      "pendant que cet envoi est en vol et l'acheteur reçoit deux reçus."
   );
 });
 
@@ -137,6 +139,46 @@ test("le drain est appelé par le cron déclaré", () => {
   for (const c of ["outbox_dus", "outbox_envoyes", "outbox_echecs", "outbox_abandonnes"]) {
     assert.ok(cron.includes(`${c}: relances.`), `compteur \`${c}\` absent du journal`);
   }
+});
+
+test("le dépôt est ATOMIQUE avec la confirmation du paiement", () => {
+  const mig = readFileSync("supabase/migrations/0061_outbox_notifications.sql", "utf8")
+    .replace(/--[^\n]*/g, "");
+  // Mesuré file:line le 2026-08-11 : le dépôt vivait dans une TROISIÈME
+  // transaction, après un `claim` déjà consommé dans la deuxième. Un plantage
+  // entre les deux perdait le reçu définitivement. L'assertion porte sur ce
+  // qui COMMANDE l'atomicité — le trigger sur `payments` — pas sur un libellé.
+  assert.match(
+    mig,
+    /create trigger \w+\s+after update of status on payments/,
+    "Sans trigger sur `payments`, le dépôt reste hors de la transaction qui " +
+      "confirme l'argent, et « déposer avant d'envoyer » ne suffit pas."
+  );
+  assert.match(
+    mig,
+    /if new\.status <> 'confirmed' or coalesce\(old\.status, ''\) = 'confirmed' then/,
+    "Le trigger doit ne rien faire hors de la TRANSITION vers `confirmed`."
+  );
+});
+
+test("l'abandon est un état lisible, pas une déduction", () => {
+  const mig = readFileSync("supabase/migrations/0061_outbox_notifications.sql", "utf8")
+    .replace(/--[^\n]*/g, "");
+  assert.match(mig, /abandonne_a\s+timestamptz/, "colonne d'état terminal absente");
+  assert.match(
+    mig,
+    /set abandonne_a = now\(\)[\s\S]{0,300}attempts >= coalesce\(v_max/,
+    "L'abandon doit être POSÉ quand la borne est atteinte. Le déduire d'un " +
+      "`attempts >= 5` à la lecture rend la requête day-J dépendante d'une " +
+      "constante qui vit ailleurs."
+  );
+  const ops = readFileSync("OPS_TODO.md", "utf8");
+  assert.match(
+    ops,
+    /abandon_terminal/,
+    "Un abandon qu'aucune requête ne compte est un abandon silencieux — le " +
+      "défaut que 0061 corrige, reproduit un cran plus haut."
+  );
 });
 
 test("notifyOrderPaid ne jette plus le résultat de l'envoi", () => {
