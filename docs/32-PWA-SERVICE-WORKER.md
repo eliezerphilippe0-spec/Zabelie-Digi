@@ -63,10 +63,37 @@ Trois options, à trancher :
 
 * **A — `NetworkOnly`.** La fiche ne s'affiche jamais hors réseau. Le plus sûr,
   et ça vide le chantier de la moitié de sa valeur.
-* **B — `StaleWhileRevalidate` avec bandeau d'âge.** « Informations du
-  *[date]* — reconnectez-vous pour le prix à jour », et le bouton d'achat
-  désactivé tant que la revalidation n'a pas répondu. *(Recommandation.)*
+* **B — `StaleWhileRevalidate`, bandeau d'âge, et revalidation AU TAP.**
+  *(Recommandation.)* Voir ci-dessous : la forme compte autant que le choix.
 * **C — `StaleWhileRevalidate` nu.** Le plus rapide, et il ment en silence.
+
+### La forme de l'option B — et le piège qu'elle doit éviter
+
+La première rédaction de cette spec proposait « bouton d'achat **désactivé**
+tant que la revalidation n'a pas répondu ». **C'est faux sur ce terrain, et
+d'une façon qui retourne le remède contre lui-même.**
+
+Sur un réseau qui rame ou qui tombe, la revalidation peut ne **jamais**
+répondre de toute la session. Un bouton mort, sans explication, ne se lit pas
+« données périmées » — il se lit **« le site est cassé »**. On aurait échangé
+un prix douteux contre une panne apparente, ce qui est pire : le prix douteux
+n'engage rien, la panne apparente fait partir l'acheteur.
+
+La forme qui tient :
+
+* le **bandeau d'âge** reste — « Enfòmasyon yo soti *[date]* » ;
+* le **bouton d'achat reste actif**, toujours ;
+* le **tap** déclenche la revalidation **bloquante**, avec un état d'attente
+  honnête — « N'ap verifye pri a… » — et non un blocage silencieux ;
+* sans réseau, ce tap échoue et **le dit**. Ce n'est pas une régression :
+  MonCash exige le réseau de toute façon. L'acheteur hors-ligne peut
+  **regarder** le catalogue ; il ne peut simplement pas franchir la porte du
+  paiement, ce qui était déjà vrai avant toute PWA.
+
+Même garantie financière — aucun prix périmé n'atteint jamais le serveur — et
+zéro faux « cassé ». La différence entre les deux formes ne tient pas au
+mécanisme, elle tient à **qui attend et à ce qu'on lui dit pendant ce
+temps-là**.
 
 ## 3. Discipline de versionnage — non négociable
 
@@ -98,9 +125,23 @@ Lighthouse valide une *forme*, pas un *comportement*. Critères verts :
 
 **Serwist** — successeur maintenu de `next-pwa`, compatible App Router. Une
 implémentation vanilla est possible, mais réinventerait la gestion de version,
-qui est précisément le cœur du risque. **Dépendance nouvelle → validation
-porteur** (règle « aucun service externe non listé »), même si celle-ci est une
-bibliothèque de build et non un service.
+qui est précisément le cœur du risque.
+
+**⚖️ ARBITRAGE — et il mérite mieux qu'un oui automatique.** Ce n'est pas une
+dépendance de build ordinaire : elle **génère du code qui s'exécute chez le
+client et survit aux déploiements**. C'est la classe la plus lourde possible
+pour une bibliothèque — plus lourde qu'un service externe, qu'on peut couper.
+
+La question à poser avant le oui n'est pas « est-elle maintenue ? » (elle
+l'est) mais **« que se passe-t-il si le projet meurt dans deux ans ? »**.
+Réponse honnête, et elle est rassurante : le service worker déjà généré
+**continue de fonctionner** — c'est un fichier statique, pas un runtime — et
+la sortie est **pénible mais bornée**, parce que le protocole Service Worker
+est un standard du navigateur ; seule la *génération* est propriétaire.
+Réécrire à la main ce que Serwist génère est un chantier fini, pas une
+impasse.
+
+C'est un oui raisonnable. **Mais c'est le sien.**
 
 ## 6. Hors périmètre — PR 3/3
 
