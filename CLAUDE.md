@@ -49,21 +49,32 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0053`**. **État MESURÉ en base le 2026-08-04** — registre
-   ET catalogue croisés, concordance totale ; les états précédents reposaient sur
-   le journal de session, faute d'accès Postgres.
-   **Appliquées** : groupe A + B1, `0039`, `0041`, `0042`, `0045`→`0050`, et
-   **`0044`** (D-4 `floor`, 2026-08-03).
+   (dernière écrite : **`0058`**. **État MESURÉ en base le 2026-08-11** — registre
+   ET présence des objets croisés, objet par objet.
+   **Appliquées** : groupe A + B1, `0039`, `0041`, `0042`, `0045`→`0050`,
+   `0044` (D-4 `floor`), `0043`, **B2 complète** `0037`/`0038`/`0040`, `0055`,
+   `0057`, `0058`.
    **Non appliquées, et leur absence est attestée** : `0031` (fidélité,
-   volontairement sautée) · **B2** `0037`/`0038`/`0040` — `products.in_stock`
-   n'existe pas, prérequis à l'ouverture de la vente physique · `0043`
-   (`zabelie_shipments` absente, trois valeurs à arbitrer, `docs/21`) ·
-   `0051`/`0052` (`categories.label_es` absente) · `0053`
-   (`retention_days` vaut encore 180).
-   ⚠️ Le repli de `lib/products.ts` sur `in_stock` est **actif en production**,
-   observé dans les journaux d'API : chaque page catalogue fait un 400 puis
-   rejoue sans le filtre. C'est la dégradation prévue, pas une panne — elle
-   cessera avec B2. Registre : `zabelie_schema_migrations`.)
+   volontairement sautée) · `0051`/`0052` (`categories.label_es` absente) ·
+   `0053` (`retention_days` vaut encore 180) · `0054`
+   (`zabelie_commission_config` absente) · `0056` (`0055` est appliquée, `0056`
+   ne l'est pas). Registre : `zabelie_schema_migrations`.
+
+   ⚠️ **Le fichier `0055_admin_audit.sql` n'est PAS dans `main`** — il vit sur
+   la branche de la PR #88, encore ouverte, comme `0056` sur celle de la #90.
+   La base porte donc `zabelie_admin_actions` alors qu'aucun code déployé n'y
+   écrit. Un objet en base sans le fichier qui le décrit est l'inverse exact du
+   « code sans appelant » : même angle mort, autre bout.
+
+   ⚠️ **Un objet vérifié n'est pas le bon objet.** L'état précédent affirmait
+   `0043` non appliquée, preuve à l'appui : « `zabelie_shipments` absente ».
+   Elle l'est — et pour cause, `0043` ne crée **aucune** table de ce nom ; elle
+   crée `zabelie_fulfillment`, `zabelie_fulfillment_limits`,
+   `zabelie_fulfillment_notices` et cinq fonctions, toutes présentes. La sonde
+   ne mentait pas, elle regardait à côté, et son « absent » se lisait comme une
+   preuve. Vérifier une migration, c'est croiser la LISTE de ses objets
+   (`grep -E '^\s*create (table|view|function|type)' <migration>`) avec la base,
+   jamais un nom retenu de mémoire.)
 
 ## Registre vendeur — invariant comptable (0033)
 ```
