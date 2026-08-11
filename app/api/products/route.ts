@@ -87,9 +87,13 @@ export async function POST(req: Request) {
   if (isService(kind)) {
     if (body.deliveryDays !== undefined && body.deliveryDays !== null) {
       const d = Number(body.deliveryDays);
-      if (!Number.isInteger(d) || d < 1 || d > 365) {
+      // 0 est VALIDE et signifie « le jour même » (demande porteur
+      // 2026-08-11) : un cours par Zoom, une consultation, une retouche
+      // photo se livrent dans l'heure — exiger « au moins 1 jour »
+      // obligeait le vendeur à annoncer plus lent qu'il ne l'est.
+      if (!Number.isInteger(d) || d < 0 || d > 365) {
         return NextResponse.json(
-          { error: "Délai de livraison : entre 1 et 365 jours." },
+          { error: "Délai de livraison : entre 0 (jour même) et 365 jours." },
           { status: 400 }
         );
       }
@@ -102,6 +106,17 @@ export async function POST(req: Request) {
         .filter(Boolean)
         .slice(0, 10); // borné : une checklist, pas un roman
     }
+  }
+
+  /* La liste blanche vit en BASE, plus dans une constante : une liste en dur
+   * ne peut pas suivre une taxonomie qui bouge, et c'est exactement ce qui
+   * avait fait publier dans un vocabulaire que la navigation ignorait. */
+  const categorieCanonique = await normalizeCategory(supabase, category);
+  if (!categorieCanonique) {
+    return NextResponse.json(
+      { error: "Catégorie inconnue — choisissez un rayon dans la liste." },
+      { status: 400 }
+    );
   }
 
   const admin = createAdminClient();
@@ -189,7 +204,7 @@ export async function POST(req: Request) {
       description,
       kind,
       // BL-105 : whitelist serveur — jamais de texte libre en base.
-      category: normalizeCategory(category),
+      category: categorieCanonique,
       price_htg: Math.round(price),
       delivery_days: deliveryDays,
       service_includes: serviceIncludes.length > 0 ? serviceIncludes : null,

@@ -8,7 +8,7 @@ import {
   type DigitalKind,
 } from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
-import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
+import type { OptionCategorie } from "@/lib/product-categories";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import type { CreatorTier } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
@@ -40,9 +40,17 @@ export type PublishFormLabels = {
 
 export function PublishForm({
   labels,
+  categories,
   tier = "standard",
 }: {
   labels: PublishFormLabels;
+  /**
+   * Les rayons OUVERTS, lus en base côté serveur (lib/product-categories).
+   * En prop et non importés : ce composant est client, et la taxonomie vit
+   * en base — l'ancienne liste en dur est précisément ce qui avait créé
+   * deux vocabulaires parallèles.
+   */
+  categories: OptionCategorie[];
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
 }) {
@@ -82,7 +90,8 @@ export function PublishForm({
           description: form.description,
           priceHTG: Number(form.priceHTG),
           policyAccepted: policyOk,
-          deliveryDays: form.deliveryDays ? Number(form.deliveryDays) : null,
+          deliveryDays:
+            form.deliveryDays.trim() !== "" ? Number(form.deliveryDays) : null,
           // Un élément par ligne — le serveur reborne (10 max, 140 car.).
           serviceIncludes: form.serviceIncludes
             .split("\n")
@@ -140,9 +149,12 @@ export function PublishForm({
           required
         >
           <option value="">{labels.categoryEmpty}</option>
-          {PRODUCT_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
+          {categories.map((c) => (
+            /* value = label_fr (la clé de jointure du catalogue), texte =
+               le libellé traduit. Les confondre rendrait introuvables les
+               produits publiés par un vendeur kreyòl. */
+            <option key={c.value} value={c.value}>
+              {c.label}
             </option>
           ))}
         </select>
@@ -174,7 +186,7 @@ export function PublishForm({
           <input
             className={input}
             type="number"
-            min={1}
+            min={0}
             max={365}
             placeholder={labels.deliveryDaysPh}
             aria-label={labels.deliveryDaysPh}
