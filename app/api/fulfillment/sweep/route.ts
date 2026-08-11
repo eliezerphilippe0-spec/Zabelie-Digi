@@ -70,12 +70,42 @@ async function handle(req: Request) {
   }
   try {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("zabelie_fulfillment_sweep");
-    if (error) {
-      journal({ issue: "echec", message: error.message, dureeMs: Date.now() - debut });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+
+    /* BAIL D'EXÉCUTION (0060) — un seul porteur à la fois.
+     *
+     * Ce balayage est déjà sûr en concurrence : ses quatre boucles portent
+     * `for update skip locked`. Le bail n'y change rien et ne prétend pas le
+     * contraire — il rend la sûreté structurelle plutôt que dépendante du SQL
+     * écrit en dessous, et il RÉVÈLE les chevauchements, qui aujourd'hui font
+     * le travail deux fois sans que rien ne le dise.
+     *
+     * Fail-open si `0060` n'est pas appliquée : voir `lib/cron-lease.ts`. Un
+     * cron qui gèle des escrows ne s'abstient pas parce qu'une table de
+     * verrous manque. */
+    const { avecBail } = await import("@/lib/cron-lease");
+    const detenteur = `sweep-${debut}`;
+    const { bail, resultat } = await avecBail(
+      admin,
+      "fulfillment_sweep",
+      detenteur,
+      async () => {
+        const { data, error } = await admin.rpc("zabelie_fulfillment_sweep");
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      { journal: (champs) => journal({ issue: "bail", ...champs }) }
+    );
+
+    if (!bail.autorise) {
+      journal({ issue: "ignore_bail_tenu", dureeMs: Date.now() - debut });
+      return NextResponse.json({ ignore: "bail_tenu" }, { status: 200 });
     }
-    const c = (data ?? {}) as Compteurs;
+
+    // L'échec de la RPC est désormais levé DANS le travail sous bail, donc
+    // rattrapé par le `catch` du bas — qui journalise et rend 500. Garder ici
+    // un `if (error)` sur une valeur toujours nulle aurait été exactement le
+    // garde inatteignable que ce dépôt traque partout ailleurs.
+    const c = (resultat ?? {}) as Compteurs;
 
     /* ── Le balayage DIGITAL, dans le même passage ──────────────────────────
      * `zabelie_fulfillment_sweep` filtre sur `kind = 'physical'` : les
