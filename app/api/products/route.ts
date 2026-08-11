@@ -108,6 +108,17 @@ export async function POST(req: Request) {
     }
   }
 
+  /* La liste blanche vit en BASE, plus dans une constante : une liste en dur
+   * ne peut pas suivre une taxonomie qui bouge, et c'est exactement ce qui
+   * avait fait publier dans un vocabulaire que la navigation ignorait. */
+  const categorieCanonique = await normalizeCategory(supabase, category);
+  if (!categorieCanonique) {
+    return NextResponse.json(
+      { error: "Catégorie inconnue — choisissez un rayon dans la liste." },
+      { status: 400 }
+    );
+  }
+
   const admin = createAdminClient();
 
   // ── Attestation (R3) ──────────────────────────────────────────────────────
@@ -193,7 +204,7 @@ export async function POST(req: Request) {
       description,
       kind,
       // BL-105 : whitelist serveur — jamais de texte libre en base.
-      category: normalizeCategory(category),
+      category: categorieCanonique,
       price_htg: Math.round(price),
       delivery_days: deliveryDays,
       service_includes: serviceIncludes.length > 0 ? serviceIncludes : null,
