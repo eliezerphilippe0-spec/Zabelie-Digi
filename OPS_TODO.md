@@ -229,6 +229,27 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
 | **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
 | _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### 📒 Les huit dettes du registre — nommées, aucune entamée (2026-08-11)
+
+Mesurées, chacune avec sa requête. **Aucune ne se referme avant la fusion de
+#87/#88** : le prochain geste est la fusion, pas une mesure de plus.
+
+| # | Dette | Périmètre EXACT (mesuré) |
+|---|---|---|
+| 1 | **Registre incomplet** | **30 lignes** manquantes : `0001`→`0024` (présentes dans `supabase_migrations`, absentes du nôtre) **+ `0025`→`0030`** (dans AUCUN des deux journaux). Les six fichiers existent et leurs objets sont tous en schéma — vérifié : `zabelie_wallet_ledger_guard`, `products_status_created_idx`, `zabelie_topup_reserve_order` avec son `pg_advisory_xact_lock`, `zabelie_coupon_consume` dans `confirm_payment`. Backfill légitime (importer un enregistrement réel n'invente rien). ⚠️ La date d'application de `0025`→`0030` est **déduite par encadrement**, pas attestée : la ligne dira « présence constatée en schéma, application datée par encadrement `[0024, 0041]` », jamais une date. |
+| 2 | **Divergence `0044_commission_floor`** | Déclarée appliquée chez nous (hash réel, 2026-08-03), **jamais vue par `apply_migration`**. Appliquée par un autre chemin. ⛔ **Attente d'attestation porteur** : « avez-vous appliqué `0044` via l'éditeur SQL vers le 3 août ? » Oui/non/je ne sais plus — les trois sont enregistrables. On inscrit une provenance **attestée**, jamais **déduite**. |
+| 3 | **Les 16 `applied_by = 'postgres'`** | Ce n'est PAS un vide : c'est le rôle de connexion, un défaut qui se lit comme une réponse. À requalifier en `non renseigné (antérieur à règle 5)`. Les 7 autres portent `porteur (session assistee)` — vraie trace. |
+| 4 | **`0031` à classer `abandonnee`** | Seule ligne ni en A, ni en B, ni en C. Hash `-`, absente de Supabase, sautée à dessein. `0062` la classera. |
+| 5 | **Préambule de garde des migrations** | `apply_migration` ne consulte JAMAIS `zabelie_schema_migrations`. À adopter **pour les migrations à partir de son adoption**, jamais rétroactivement — l'injecter dans un fichier déjà haché changerait son empreinte. Hash divergent → `ZB0XX` bruyant, pas un skip. |
+| 6 | **Chantier des dormantes** | Application ordonnée : lesquelles vivent, lesquelles passent `abandonnee`. Croise D-10→D-14 pour `0056`. |
+| 7 | **D-10→D-14, avec la question `disputed`** | Posée dans `docs/28` : l'acheteur d'une commande `disputed` ne reçoit plus rien depuis `0061`. |
+| 8 | **Revue des écrivains multiples par statut** | Instrument CANDIDAT (section dédiée plus bas). À passer une fois à la main avant le lancement. |
+
+**Règle amont, appliquée sans exception** : toute assertion d'état sur une
+table s'accompagne, **dans le même bloc**, de la requête qui l'a établie. Deux
+assertions fausses ont été publiées le 2026-08-11 faute de ce geste — les deux
+en lisant la STRUCTURE d'une table et en parlant de ses VALEURS.
+
 ### 📏 Règle — schéma et registre divergent : investiguer, jamais régulariser
 
 Deux divergences sont possibles, elles n'ont pas la même gravité, et **aucune
