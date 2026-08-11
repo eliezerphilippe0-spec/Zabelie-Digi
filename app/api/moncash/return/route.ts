@@ -163,6 +163,18 @@ export async function GET(req: Request) {
 
   // E-mails livraison acheteur + 🎉 vendeur (best-effort, idempotent en base).
   const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
+  /* PAS d'`await` — et depuis `0061`, c'est un CHOIX DE LATENCE, plus un bug.
+   *
+   * Il y a deux commits, cette ligne était un défaut : le dépôt en outbox
+   * vivait dans `notifyOrderPaid`, donc la fonction serverless pouvait rendre
+   * la main et se faire geler avant l'INSERT — le reçu était perdu, et la
+   * réclamation de `0012` déjà consommée empêchait toute reprise.
+   *
+   * Le trigger de `0061` a déplacé le dépôt DANS la transaction de
+   * `confirm_payment` : la ligne existe avant que cette instruction ne soit
+   * atteinte. Ce que le fire-and-forget peut encore perdre, c'est la TENTATIVE
+   * IMMÉDIATE — et le drain du cron la reprend. Dégradation propre par
+   * construction : le reçu arrive plus tard, jamais jamais. */
   notifyOrderPaid(admin, orderId).catch(() => undefined);
 
   return NextResponse.redirect(`${site}/paiement/succes?commande=${orderId}`);

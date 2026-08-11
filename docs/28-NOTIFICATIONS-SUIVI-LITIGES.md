@@ -173,3 +173,28 @@ suivi d'un litige (signal de fausse remise).
 l'argent — mutations exigées) → 5. exécution remboursement (gated **D-12**)
 → 6. risk events. Rien de tout cela n'est « implémentable aujourd'hui » :
 tout descend de la fusion du chantier 1 — donc de la revue de la #64.
+
+## ⚖️ Trou constaté le 2026-08-11 — l'acheteur d'une commande `disputed` ne reçoit RIEN
+
+**Absent par construction depuis `0061`, et c'est délibéré — mais c'est un
+silence, pas une solution.**
+
+Le trigger de dépôt des reçus est gardé par `new.status = 'paid'`. La branche de
+rupture de stock (`0038:176`) écrit `disputed` : elle ne dépose donc plus rien,
+ce qui corrige un vrai défaut — un reçu de vente partait pour une marchandise
+que l'acheteur ne recevrait jamais.
+
+Mais la conséquence n'est pas neutre. Un acheteur dont le paiement est **bien
+encaissé** et dont la commande passe en `disputed` n'a maintenant **aucun
+message** : ni le faux reçu d'avant, ni le vrai message qui devrait exister —
+« votre commande ne peut pas être honorée, votre argent est protégé, un humain
+la traite ». Sur ce marché, un débit sans aucun message est indiscernable d'une
+arnaque.
+
+⛔ **Rien n'est construit ici** : le périmètre relève des arbitrages
+**D-10 → D-14** (litiges). Cette ligne existe pour que l'arbitrage trouve la
+question POSÉE au lieu de la redécouvrir — le motif exact que le registre
+cherche à éviter.
+
+Ce qu'il faudra trancher le moment venu : qui écrit ce message, à quel moment
+de la transition, et ce qu'il promet exactement sur le remboursement.

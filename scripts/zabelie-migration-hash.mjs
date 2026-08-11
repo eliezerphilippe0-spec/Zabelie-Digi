@@ -119,7 +119,9 @@ if (sqlMode) {
   for (const f of files) {
     const h = migrationHash(readFileSync(join(DIR, f), "utf8"));
     console.log(
-      `update zabelie_schema_migrations set sha256 = '${h}' where filename = '${f}' and sha256 <> '-';`
+      `update zabelie_schema_migrations set sha256 = '${h}' where filename = '${f}' and statut = 'appliquee';`
+      // Le garde porte sur `statut` depuis `0062`, plus sur `sha256 <> '-'` :
+      // deux sources de vérité pour le même fait est le défaut que 0062 ferme.
     );
   }
 } else {
