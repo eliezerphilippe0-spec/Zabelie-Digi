@@ -226,7 +226,9 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | B1 (0035-0036) + 0039 | prod zabelie-digi | 21:14Z | 21:17Z | inchangé (ok=true) | idem |
 | 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
 | 0043 (suivi de remise) | prod zabelie-digi | 2026-08-09T19:05Z | 19:09Z | base vide : 0 commande, 0 paiement confirmé, 0 escrow, 0 produit physique | connecteur (session assistée, go porteur) |
-| _restent : 0031 (fidélité, sautée) · 0037/0038/0040 (B2, revue séparée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis) · 0057 (catégories services)_ | | | | | |
+| 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
+| **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
+| _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
 
 ⚠️ **Trois contrôles restent NON ÉPROUVÉS** — la base était vide le jour de
 l'application : le rapport de solvabilité à `ok=true` sur zéro ligne, le
