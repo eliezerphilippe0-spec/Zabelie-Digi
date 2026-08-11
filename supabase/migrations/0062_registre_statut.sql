@@ -4,10 +4,20 @@
 -- ============================================================================
 -- `zabelie_schema_migrations` (0041) portait UNE convention pour dire l'état
 -- d'une migration : `sha256 = '-'` voulait dire « pas appliquée ». Une
--- convention n'est pas une donnée. Elle ne se contraint pas, ne s'interroge
--- pas proprement, et surtout elle a MENTI : `0043` y figurait avec un vrai
--- hash et une date, alors que ses objets n'existaient pas encore — l'erreur
--- qui a fait dériver un état de session entier.
+-- convention n'est pas une donnée : elle ne se contraint pas, ne s'interroge
+-- pas proprement, et elle ne sait dire que DEUX choses là où le dépôt en vit
+-- trois — `0031` est sautée à dessein et n'a nulle part où le dire.
+--
+-- ⚠️ CORRECTION DU 2026-08-11, et elle vaut plus que la migration. Une version
+-- antérieure de cet en-tête accusait la convention d'avoir « menti sur
+-- `0043` ». C'est FAUX, et la vérification demandée n'a produit aucun
+-- `file:line` parce qu'il n'y en a pas. Ce qui s'est passé : une sonde a
+-- cherché `zabelie_shipments` — table que `0043` ne crée pas — a rendu zéro,
+-- et l'agent en a conclu que le registre affichait une application fictive.
+-- Le registre était JUSTE, hash et date exacts ; la sonde regardait à côté, et
+-- la ligne correcte a failli être « corrigée ». L'histoire a ensuite été
+-- recyclée comme justification de cette migration : une erreur de mesure
+-- promue en défaut de l'objet mesuré.
 --
 -- Un troisième état est apparu dans la vraie vie du dépôt et n'avait nulle
 -- part où se dire : `0031` (fidélité) est **volontairement sautée**, elle ne
@@ -64,7 +74,7 @@ declare
 begin
   for r in select filename from zabelie_schema_migrations loop
     -- Sonde inconnue → ÉCHEC. Pas de classement par défaut : c'est
-    -- exactement la commodité qui a permis à `0043` de mentir.
+    -- exactement la commodité qui rend un registre incontestable et faux.
     if not exists (select 1 from _sondes s where s.fichier = r.filename) then
       -- Les migrations du socle historique (0001→0030, 0032→0034, 0039,
       -- 0041, 0042, 0044→0050) sont appliquées par construction : le schéma
@@ -101,4 +111,4 @@ alter table zabelie_schema_migrations
     check (statut in ('redigee', 'appliquee', 'abandonnee'));
 
 comment on column zabelie_schema_migrations.statut is
-  'redigee | appliquee | abandonnee. Remplace la convention sha256 = ''-'', qui n''était pas une donnée et qui a menti sur 0043. Chaque ligne a été classée par SONDE CONTRE LE SCHÉMA RÉEL à l''application de 0062, jamais par relecture du hash.';
+  'redigee | appliquee | abandonnee. Remplace la convention sha256 = ''-'', qui n''était pas une donnée et ne savait pas dire ''abandonnee''. Chaque ligne a été classée par SONDE CONTRE LE SCHÉMA RÉEL à l''application de 0062, jamais par relecture du hash.';

@@ -229,6 +229,31 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
 | **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
 | _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### 🔬 Instrument CANDIDAT — revue des écrivains multiples par statut
+
+**Non construit. Noté pendant que la liste est fraîche, à mesurer avant de
+l'outiller — la même discipline que pour le reste.**
+
+D'où ça vient : la meilleure prise du 2026-08-11 n'a été trouvée ni par la CI,
+ni par le harnais de mutation, mais par une **question de forme fixe** —
+*« combien de fois cette colonne de statut change-t-elle, et dans quelles
+branches ? »*. Posée sur `payments.status`, elle a révélé que `confirm_payment`
+écrit `'confirmed'` en DEUX endroits (`0038:176` et `0038:189`), et que le
+premier est la branche de rupture de stock. Un trigger posé là aurait envoyé un
+reçu de vente pour une marchandise que l'acheteur ne recevrait jamais.
+
+Ce qui rend la question outillable : elle ne dépend d'aucune connaissance
+métier. Elle se pose **mécaniquement sur n'importe quelle colonne de statut du
+schéma** — `orders.status`, `payments.status`, `escrow_entries.status`,
+`zabelie_fulfillment.status`, `zabelie_topup_orders`… : lister tous les sites
+d'écriture, et pour chaque valeur cible, vérifier que les branches qui y mènent
+sont bien celles qu'on croit.
+
+**À faire tourner UNE FOIS avant le lancement**, à la main s'il le faut. Si la
+passe manuelle trouve quelque chose, alors seulement écrire l'outil : un
+instrument construit avant d'avoir mesuré son trou rendrait zéro et paraîtrait
+sain.
+
 ### ⚠️ `confirm_payment` rouge peut vouloir dire « outbox », pas « MonCash »
 
 **À savoir AVANT le premier incident, pas pendant.** Depuis `0061`, le dépôt du

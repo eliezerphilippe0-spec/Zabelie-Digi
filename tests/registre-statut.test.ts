@@ -7,9 +7,13 @@ import { readFileSync, readdirSync } from "node:fs";
  *
  * `zabelie_schema_migrations` (0041) codait l'état d'une migration dans
  * `sha256 = '-'`. Une convention n'est pas une donnée : elle ne se contraint
- * pas, ne s'interroge pas, et elle a menti — `0043` y figurait avec un vrai
- * hash et une date alors que ses objets n'existaient pas, ce qui a fait
- * dériver un état de session entier.
+ * pas, ne s'interroge pas, et elle ne sait dire que DEUX choses là où le dépôt
+ * en vit trois — `0031` est sautée à dessein.
+ *
+ * ⚠️ Ce fichier a d'abord accusé la convention d'avoir « menti sur `0043` ».
+ * Faux : le registre était juste, c'est une sonde qui cherchait une table que
+ * `0043` ne crée pas. Une erreur de mesure promue en défaut de l'objet
+ * mesuré — le motif même que ces contrôles existent pour attraper.
  *
  * Ce que ce contrôle protège, et qui est plus étroit que « 0062 existe » :
  *   1. les trois états sont CONTRAINTS en base, pas conventionnels ;
@@ -53,8 +57,8 @@ test("la reprise classe par SONDE, jamais en relisant le hash", () => {
   assert.doesNotMatch(
     bloc,
     /sha256/,
-    "Relire `sha256` pour classer recopierait le mensonge de 0043 dans une " +
-      "colonne, avec l'autorité d'une donnée en plus."
+    "Relire `sha256` pour classer figerait une convention non contrainte " +
+      "dans une colonne, avec l'autorité d'une donnée en plus."
   );
 });
 
@@ -63,7 +67,7 @@ test("une migration sans sonde fait ÉCHOUER la reprise", () => {
     MIG,
     /if not exists \(select 1 from _sondes[\s\S]{0,600}raise exception 'ZB062/,
     "Un classement par défaut est exactement la commodité qui a permis à " +
-      "`0043` de figurer comme appliquée sans l'être."
+      "une ligne de figurer comme classée sans qu'on ait rien vérifié."
   );
   assert.match(
     MIG,
