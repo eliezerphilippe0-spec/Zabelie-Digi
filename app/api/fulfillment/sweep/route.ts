@@ -40,7 +40,7 @@ function authorize(req: Request): boolean {
 }
 
 /**
- * Journal d'exécution — émis à CHAQUE passage, LES SIX COMPTEURS COMPRIS,
+ * Journal d'exécution — émis à CHAQUE passage, LES HUIT COMPTEURS COMPRIS,
  * y compris quand ils valent tous zéro.
  *
  * Sans ligne systématique, « le cron n'a pas tourné » et « il a tourné, rien à
@@ -77,6 +77,27 @@ async function handle(req: Request) {
     }
     const c = (data ?? {}) as Compteurs;
 
+    /* ── Le balayage DIGITAL, dans le même passage ──────────────────────────
+     * `zabelie_fulfillment_sweep` filtre sur `kind = 'physical'` : les
+     * commandes d'un `fichier` sans livrable n'étaient vues par personne, et
+     * mûrissaient au chronomètre (voir l'en-tête de `0059`). Fonction séparée
+     * plutôt qu'une branche de plus : la première est adjacente à l'argent, et
+     * on ne rouvre pas 180 lignes de money-path pour en ajouter vingt.
+     *
+     * Un échec ici ne fait PAS échouer le passage physique, qui a déjà réussi
+     * et dont les avis partent plus bas — mais il est journalisé, sans quoi
+     * « la sonde n'a pas tourné » et « elle n'a rien trouvé » se ressemblent.
+     * Schéma en retard (`0059` non appliquée) : même traitement. */
+    let digital: { fichiers_signales?: number; fichiers_leves?: number } = {};
+    const { data: dData, error: dErr } = await admin.rpc(
+      "zabelie_fichier_sans_livrable_sweep"
+    );
+    if (dErr) {
+      journal({ issue: "echec_digital", message: dErr.message });
+    } else {
+      digital = (dData ?? {}) as typeof digital;
+    }
+
     /* ── Les avis partent APRÈS le balayage, et l'ordre est un choix ────────
      * Le garde de légitimité du balayage retient l'auto-réception tant qu'un
      * avis n'est pas parti. Envoyer AVANT lèverait ce garde dans la seconde :
@@ -99,6 +120,8 @@ async function handle(req: Request) {
       avis_en_echec: c.avis_en_echec ?? 0,
       orphelins_repares: c.orphelins_repares ?? 0,
       orphelins_tardifs: c.orphelins_tardifs ?? 0,
+      fichiers_signales: digital.fichiers_signales ?? 0,
+      fichiers_leves: digital.fichiers_leves ?? 0,
       avis_dus: avis.dus,
       avis_envoyes: avis.envoyes,
       avis_echecs: avis.echecs,
@@ -106,7 +129,7 @@ async function handle(req: Request) {
       avis_abandonnes: avis.abandonnes,
       dureeMs: Date.now() - debut,
     });
-    return NextResponse.json({ ...c, avis });
+    return NextResponse.json({ ...c, ...digital, avis });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur";
     journal({ issue: "exception", message, dureeMs: Date.now() - debut });
