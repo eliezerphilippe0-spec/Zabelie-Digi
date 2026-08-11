@@ -393,6 +393,53 @@ la rend facile à manquer.
 Vaut aussi pour `\w`, `[a-z]` et toute classe écrite en ASCII sur des données
 qui ne le sont pas.
 
+#### Un filet sur un chemin impraticable mesure zéro — et paraît sain
+
+C'est le même défaut que tout ce qui précède, à l'échelle d'un chantier entier
+plutôt que d'une assertion. Session du 2026-08-11, mesuré à la fin de la
+journée, après tout le reste :
+
+```
+storage.objects   rls_activee = true   policies = 0
+storage.buckets   rls_activee = true   policies = 0
+objets, tous buckets confondus                  : 0
+produits du catalogue avec une image téléversée : 0   (cover_url NULL partout)
+```
+
+RLS active et aucune policy : **tout** le stockage passe par service-role, et
+la clé posée en production n'en est pas une. Conséquence, jamais formulée avant
+ce jour-là : **aucun vendeur n'a jamais pu franchir la PREMIÈRE étape** de la
+création d'un produit — la photo, qui vient avant le livrable, avant la revue,
+avant la publication. Le marketplace n'a pas une seule image, et ça se voyait
+depuis l'accueil par n'importe qui.
+
+Pendant ce temps, la journée avait produit : un filet pour les orphelins de
+remise, un pour les ruptures de stock, un pour les fichiers sans livrable, une
+porte de publication, deux règles d'instrument. **Rien de tout cela n'est
+faux** — les gardes sont éprouvés, les filets tiennent. Le défaut était dans le
+choix de la question, et il s'est reproduit à chaque tour parce que chaque tour
+partait du précédent : une spec de licences a appelé une spec de notifications,
+qui a appelé un filet, qui a appelé une porte. La chaîne était cohérente de
+bout en bout et personne n'est jamais remonté à sa source.
+
+Règle : **avant d'instrumenter un chemin, le parcourir une fois de bout en
+bout.** Pas le raisonner — le parcourir, ou mesurer qu'il a été parcouru : une
+ligne en base qui prouve que quelqu'un est passé. Un filet posé sur un chemin
+que personne ne peut emprunter rend zéro à chaque passage, et zéro se lit comme
+« rien à signaler ». C'est le vert de la mutation qui n'a pas muté, transposé à
+la question qu'on choisit de se poser.
+
+Corollaire, qui prolonge celui d'observabilité d'un cran : **« aucun cas » et
+« aucun cas possible » ne se distinguent pas d'eux-mêmes.** Un compteur à zéro
+doit pouvoir être opposé à une preuve que le chemin est praticable, sans quoi
+il atteste seulement qu'on n'a rien vu.
+
+Et l'asymétrie qui a rendu la chose durable mérite d'être nommée, parce qu'elle
+n'est pas propre à ce jour-là : **le chemin acheteur est instrumenté, le chemin
+vendeur ne l'est pas.** Les échecs vendeur ne remontent nulle part. Trois
+brouillons du même produit, trois abandons, zéro fichier — la seule trace que
+quelqu'un a essayé, et il a fallu la lire en base pour la voir.
+
 ### `product_kind` — le module est obligatoire
 Comparer un type de produit **hors de `lib/product-kind.ts`** est interdit et
 vérifié par `tests/product-kind-discipline.test.ts`. Raison : ajouter une
