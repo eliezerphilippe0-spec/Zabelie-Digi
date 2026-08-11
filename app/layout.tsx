@@ -3,6 +3,7 @@ import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
 import { siteUrl } from "@/lib/site-url";
+import { SITE_TITLE, SITE_DESCRIPTION } from "@/lib/brand";
 
 // Polices AUTO-HÉBERGÉES par Next (sous-ensemble latin, servies depuis notre
 // domaine) — supprime la requête tierce bloquante vers Google Fonts, gain net
@@ -20,9 +21,10 @@ const manrope = Manrope({
   display: "swap",
 });
 
-const title = "Zabelie — La marketplace haïtienne";
-const description =
-  "Achetez et vendez en Haïti : produits, talents, recharge téléphonique. Paiement mobile money, pensé pour la 3G.";
+// Source UNIQUE — partagée avec `app/manifest.ts`. Deux copies d'une chaîne de
+// marque divergent : le monogramme l'a fait, en silence, pendant des semaines.
+const title = SITE_TITLE;
+const description = SITE_DESCRIPTION;
 
 export const metadata: Metadata = {
   title: {
