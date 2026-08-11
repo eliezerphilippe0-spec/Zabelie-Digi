@@ -87,9 +87,13 @@ export async function POST(req: Request) {
   if (isService(kind)) {
     if (body.deliveryDays !== undefined && body.deliveryDays !== null) {
       const d = Number(body.deliveryDays);
-      if (!Number.isInteger(d) || d < 1 || d > 365) {
+      // 0 est VALIDE et signifie « le jour même » (demande porteur
+      // 2026-08-11) : un cours par Zoom, une consultation, une retouche
+      // photo se livrent dans l'heure — exiger « au moins 1 jour »
+      // obligeait le vendeur à annoncer plus lent qu'il ne l'est.
+      if (!Number.isInteger(d) || d < 0 || d > 365) {
         return NextResponse.json(
-          { error: "Délai de livraison : entre 1 et 365 jours." },
+          { error: "Délai de livraison : entre 0 (jour même) et 365 jours." },
           { status: 400 }
         );
       }
