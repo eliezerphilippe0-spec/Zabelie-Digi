@@ -4,6 +4,37 @@
 > Quinze tests SQL ne diront pas ce que cette commande dira : elle est la
 > seule chose de tout le chantier qui n'a **jamais traversé la production**.
 
+## ⭐ Étape 0 — la première image, avant la première commande
+
+> **Ajouté le 2026-08-11, et ça déplace tout ce qui suit d'un cran.**
+
+La suite de ce document dit que le flux digital « est complet en production
+depuis longtemps ». **C'était faux, et la mesure l'a montré :**
+
+```
+storage.objects   rls_activee = true   policies = 0
+objets, tous buckets confondus                  : 0
+produits du catalogue avec une image téléversée : 0   (cover_url NULL partout)
+```
+
+Tout le stockage passe par service-role, et la clé posée en production n'en est
+pas une. **Aucun vendeur n'a jamais pu franchir la première étape** — la photo,
+qui vient avant le livrable, avant la revue, avant la publication. Il n'existe
+donc pas encore de produit vendable, et la première commande réelle est
+impossible tant que ce geste n'est pas fait (`OPS_TODO`, item clé).
+
+**Ce qu'il faut faire de cette image quand elle apparaîtra.** Ce ne sera pas
+une vérification de plus : ce sera **la première écriture Storage réussie de
+l'histoire du projet**, et donc la ligne en base qui prouve que le chemin
+vendeur est praticable — exactement ce que la règle 3 de `CLAUDE.md` exige
+avant d'instrumenter quoi que ce soit. Sans elle, tout compteur à zéro sur ce
+chemin atteste seulement qu'on n'a rien vu.
+
+→ **Coller la capture d'écran de cette première image ICI, en tête de ce
+document, avec sa date et l'identifiant du produit.** Elle est la pièce
+d'ouverture : la première commande réelle commence par la première image
+réelle.
+
 ## Pourquoi maintenant, et pourquoi ça ne dépend de rien
 
 Un seul préalable, et il est **décisionnel, pas technique** : D-4, le sens de
