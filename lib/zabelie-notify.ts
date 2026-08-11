@@ -83,7 +83,20 @@ export async function notifyOrderPaid(
       admin.auth.admin.getUserById(product.seller_id),
     ]);
 
-    const jobs: Promise<boolean>[] = [];
+    /* OUTBOX (0061) — DÉPOSER AVANT D'ENVOYER.
+     *
+     * L'ancien code envoyait puis jetait le résultat (`Promise.allSettled`
+     * dont on ne lisait rien) sous un `catch` vide, alors que la réclamation
+     * de `0012` était DÉJÀ consommée plus haut. Fournisseur en panne, clé
+     * absente, coupure : l'acheteur n'apprenait jamais que son argent était
+     * arrivé, et rien nulle part n'en gardait la trace.
+     *
+     * Désormais chaque message est d'abord POSÉ en base, puis tenté tout de
+     * suite. L'envoi immédiat reste — une confirmation de vente qui arrive le
+     * lendemain n'est plus une confirmation — mais son échec est maintenant
+     * rattrapable par le drain du cron au lieu d'être perdu. */
+    const { deposerEtTenter } = await import("@/lib/outbox");
+
     const buyerEmail = buyer.data.user?.email;
     if (buyerEmail) {
       const m = buyerPurchaseEmail({
@@ -91,7 +104,9 @@ export async function notifyOrderPaid(
         amountLabel: formatHtg(order.amount_htg),
         purchasesUrl: `${site}/mes-achats`,
       });
-      jobs.push(sendEmail({ to: buyerEmail, ...m }));
+      await deposerEtTenter(admin, orderId, "order_paid_buyer", buyerEmail, () =>
+        sendEmail({ to: buyerEmail, ...m })
+      );
     }
     const sellerEmail = seller.data.user?.email;
     if (sellerEmail && credit) {
@@ -101,10 +116,76 @@ export async function notifyOrderPaid(
         dashboardUrl: `${site}/tableau-de-bord`,
         orderRef: order.order_ref,
       });
-      jobs.push(sendEmail({ to: sellerEmail, ...m }));
+      await deposerEtTenter(admin, orderId, "order_paid_seller", sellerEmail, () =>
+        sendEmail({ to: sellerEmail, ...m })
+      );
     }
-    await Promise.allSettled(jobs);
   } catch {
-    // best-effort : jamais d'impact sur le money-path
+    // best-effort : jamais d'impact sur le money-path. Ce `catch` reste, mais
+    // il n'avale plus l'échec d'envoi — celui-ci est désormais INSCRIT en base
+    // par `deposerEtTenter` avant de remonter ici.
   }
+}
+
+/**
+ * REJOUE UN message de vente — appelé par le drain de l'outbox (`0061`).
+ *
+ * Pourquoi une fonction séparée plutôt qu'un rejeu de `notifyOrderPaid` : la
+ * réclamation de `0012` est déjà consommée, donc `notifyOrderPaid` sortirait
+ * immédiatement sans rien envoyer. Rejouer, c'est refaire l'ENVOI, pas la
+ * décision d'envoyer.
+ *
+ * Le destinataire vient de l'outbox, jamais d'une relecture du compte : c'est
+ * l'adresse au moment de la vente. Un acheteur qui change d'email entre-temps
+ * doit recevoir la confirmation de SA commande, à l'adresse qu'il avait.
+ */
+export async function renvoyerNotificationVente(
+  admin: SupabaseClient,
+  kind: "order_paid_buyer" | "order_paid_seller",
+  destinataire: string,
+  orderId: string
+): Promise<boolean> {
+  if (!isEmailEnabled()) return false;
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+
+  const { data: order } = await admin
+    .from("orders")
+    .select("id, order_ref, amount_htg, product:products(title)")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return false;
+
+  const p = order.product as { title: string } | { title: string }[] | null;
+  const titre = (Array.isArray(p) ? p[0]?.title : p?.title) ?? "";
+
+  if (kind === "order_paid_buyer") {
+    return sendEmail({
+      to: destinataire,
+      ...buyerPurchaseEmail({
+        productTitle: titre,
+        amountLabel: formatHtg(order.amount_htg as number),
+        purchasesUrl: `${site}/mes-achats`,
+      }),
+    });
+  }
+
+  // Vendeur : le net est RELU du grand livre, jamais recalculé — une commission
+  // qui aurait changé entre-temps ne doit pas réécrire le montant d'une vente
+  // déjà créditée.
+  const { data: credit } = await admin
+    .from("wallet_transactions")
+    .select("amount_htg")
+    .eq("idempotency_key", `order_credit:${orderId}`)
+    .maybeSingle();
+  if (!credit) return false;
+
+  return sendEmail({
+    to: destinataire,
+    ...sellerSaleEmail({
+      productTitle: titre,
+      netLabel: formatHtg(credit.amount_htg as number),
+      dashboardUrl: `${site}/tableau-de-bord`,
+      orderRef: (order.order_ref as string | null) ?? null,
+    }),
+  });
 }

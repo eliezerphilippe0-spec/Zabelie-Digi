@@ -142,6 +142,21 @@ async function handle(req: Request) {
     const { envoyerAvisDus } = await import("@/lib/fulfillment-notices");
     const avis = await envoyerAvisDus(admin);
 
+    /* ── Drain de l'OUTBOX des notifications de vente (0061) ────────────────
+     * Les confirmations de vente dont l'envoi immédiat a échoué. Sans ce
+     * drain, `drainerOutbox` serait du code sans appelant — et la reprise
+     * qu'on vient d'écrire n'aurait jamais lieu, ce qui est exactement le
+     * défaut que l'outbox corrige, reproduit un cran plus haut. */
+    const { drainerOutbox } = await import("@/lib/outbox");
+    const { renvoyerNotificationVente } = await import("@/lib/zabelie-notify");
+    const { isEmailEnabled } = await import("@/lib/zabelie-email");
+    const relances = await drainerOutbox(
+      admin,
+      (kind, destinataire, orderId) =>
+        renvoyerNotificationVente(admin, kind, destinataire, orderId),
+      isEmailEnabled()
+    );
+
     journal({
       issue: "termine",
       auto_recus: c.auto_recus ?? 0,
@@ -157,6 +172,10 @@ async function handle(req: Request) {
       avis_echecs: avis.echecs,
       avis_concurrents: avis.concurrents,
       avis_abandonnes: avis.abandonnes,
+      outbox_dus: relances.dus,
+      outbox_envoyes: relances.envoyes,
+      outbox_echecs: relances.echecs,
+      outbox_abandonnes: relances.abandonnes,
       dureeMs: Date.now() - debut,
     });
     return NextResponse.json({ ...c, ...digital, avis });
