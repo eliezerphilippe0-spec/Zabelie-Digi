@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { exigerTraceAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -50,6 +51,22 @@ export async function POST(req: Request) {
     typeof body.reference === "string" && body.reference.trim()
       ? body.reference.trim().slice(0, 64)
       : null;
+
+  /* FAIL-CLOSED (arbitrage porteur 2026-08-10) : même règle que refund —
+   * pas de trace, pas de confirmation. L'issue (confirmed/duplicate) vit dans
+   * payments ; la ligne d'audit dit qui a ordonné la confirmation. */
+  const trace = await exigerTraceAdmin(admin, {
+    actorId: user.id,
+    action: "payment.confirm_zelle",
+    targetType: "order",
+    targetId: body.orderId,
+  });
+  if (!trace) {
+    return NextResponse.json(
+      { error: "Journal d'audit indisponible — confirmation refusée (fail-closed)" },
+      { status: 503 }
+    );
+  }
 
   const { data, error } = await admin.rpc("confirm_payment", {
     p_idempotency_key: body.orderId, // = order.id

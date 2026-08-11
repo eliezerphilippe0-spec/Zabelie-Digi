@@ -31,12 +31,19 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
 | **Arbitrer les trois valeurs de `0043`** — `shipment_deadline_days` (5), `auto_receive_days` (7), `post_receipt_maturation_days` (0) | 2026-08-09 | **Rien aujourd'hui, et c'est exactement le moment de trancher.** `0043` est appliquée : les trois valeurs sont EN BASE, à leurs valeurs *proposées*, parce qu'une table de config ne peut pas être vide. Proposées ≠ décidées. Elles se changent par `UPDATE`, sans migration, tant qu'aucune commande physique n'existe — après, chaque changement déplace une échéance de paiement sur des commandes en cours. Détail et raisonnement : `docs/21` §2. |
 | **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
+| **Appliquer `0058` (panier — tables + RPC)** | 2026-08-11 | **Le bouton « Ajouter au panier », qui est DÉJÀ dans le code.** Sans elle, l'ajout rend « Panier indisponible » (journalisé `[panier] ajout_impossible`) — dégradation prévue. RLS propriétaire seul, aucun prix stocké (règle dure n°3), gardes ZB058 (non publié, auto-achat). Répétée sur schéma prod-conforme, PA1-PA7 verts, mutation du garde d'auto-achat → rouge. Le paiement groupé (`docs/27` §3) est la marche SUIVANTE, sa propre PR d'argent. |
+| **✅ B2 (`0037`/`0038`/`0040`) — RÉPÉTITION FAITE le 2026-08-11, verdict : PRÊTE** | 2026-08-11 | **La vente physique, et le panier derrière elle** (`docs/27` §prérequis). Répétée sur schéma PROD-CONFORME (socle sans les dormantes, `0055` comprise) : les trois s'appliquent dans l'ordre sans erreur, `products.in_stock` apparaît, la vue `zabelie_stock_ruptures` est créée, et **26 tests SQL passent** dont les quatre du stock (`stock_money_path`, `stock_rupture`, `stock_lifecycle`, `in_stock_flag`). Deux échecs, tous deux ÉTRANGERS à B2 et attendus : `commission_config` réclame `0054`, `points_caps` réclame `0031` (volontairement sautée). Effet immédiat de l'application : le repli 400-puis-rejeu de `lib/products.ts` cesse. Reste un geste porteur. |
+| **Appliquer `0057` (12 catégories de services)** | 2026-08-11 | L'éventail des services : aujourd'hui `sevis-pwofesyonel` est une case fourre-tout sans enfant, un vendeur de cours/coiffure/réparation n'a nulle part où se ranger. Insertions seules, idempotentes, post-condition ZB057 dans la migration. Répétée sur schéma prod-conforme, rejeu compris. |
+| **🔑 Supabase → Auth → URL Configuration : la liste blanche de redirection** | 2026-08-11 | **Le lien « mot de passe oublié ».** Le correctif de code est livré, mais si l'URL de retour n'est pas autorisée, Supabase ignore `redirectTo` et renvoie sur le Site URL — l'utilisateur atterrit sur l'accueil, « rien ne se passe ». À poser dans **Redirect URLs**, les deux, à cause du couple nu/www : `https://zabelie.com/**` ET `https://www.zabelie.com/**`. Et **Site URL** = le domaine qui sert réellement le site. |
+| ✅ ~~Appliquer `0055` (journal d'audit admin)~~ — **APPLIQUÉE le 2026-08-10 22:14Z**, hash `274f4a2b013a…` au registre. Ordre choisi : AVANT la fusion de #88, ce qui supprime la fenêtre 503 du fail-closed (la table précède le code). Prouvée en prod : trigger ZB055 sur UPDATE (transaction avortée, zéro ligne résiduelle), zéro droit client, requête day-J à 0 orphelin. **Reste le dernier demi-point : une mutation admin bénigne (suspension/réactivation d'un compte de test) APRÈS fusion+déploiement de #88, pour voir la ligne atterrir par la route — geste porteur, je relis la table ensuite.**  |
 | **Brancher une supervision externe sur `/api/health` et `/api/readyz`** (UptimeRobot ou équivalent gratuit, au moment du rattachement de `zabelie.com`) | 2026-08-10 | Rien mécaniquement — mais sans elle, « le site est tombé » se découvre par un client. `health` = le processus répond ; `readyz` = **le chemin des acheteurs** répond sous 1,5 s (client anon → PostgREST → RLS → `zabelie_categories`, la taxonomie publique de `0035` — table stable et volontairement ouverte, une future policy resserrée rendrait un résultat vide sans erreur, pas une panne de sonde ; seul un `revoke` la ferait tomber, et ce serait un vrai signal). ⚠️ Lecture d'alerte : un 503 `readyz` veut dire « chemin acheteur cassé » — base, PostgREST **ou** droits anon — pas seulement « DB down ». Les deux routes sont publiques et n'exposent qu'un booléen et une latence. |
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
+| **Identifiants API MonCash — portail + 3 variables** (compte MonCash Business créé le 2026-08-10, formulaire d'URLs en cours) | 2026-08-10 | **Le rail de paiement principal.** Gestes, dans l'ordre : (a) portail MonCash → Website Url = l'URL `.vercel.app` de Production, Return Url = `…/api/moncash/return` (le champ CRITIQUE — `app/api/moncash/return/route.ts` attend `?transactionId=`), Alert Url = `…/mes-achats` ; (b) Vercel, Production **et** Preview : `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET` (bouton **Reveal/Copy**, jamais une sélection du champ masqué — l'incident du caractère `•`), `MONCASH_MODE=sandbox` ; (c) **Redeploy** ; (d) le test de bout en bout `docs/05-TEST-SANDBOX.md` — dernier maillon avant la première commande réelle (`docs/22`). Au rattachement de `zabelie.com` : étape 2 bis du runbook ci-dessous (remplacer les 3 URLs du portail). |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
 | **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
+| **Hygiène du registre `zabelie_schema_migrations` : les lignes à hash « - »** (0031, 0037, 0038, 0040 — présentes avec `applied_at` mais hash « - », alors que le schéma atteste leur non-application) | 2026-08-10 | Rien — mais l'ambiguïté a fait dérailler une prémisse de revue le jour même : « au registre » ne veut pas dire « appliquée ». Deux issues : purger ces lignes fantômes, ou ajouter un statut explicite `redigee/appliquee`. Petit arbitrage, sans urgence. **Règle actée en attendant (revue 2026-08-10) : toute application de migration se répète contre l'état APPLIQUÉ réel du schéma cible — jamais contre l'ordre des fichiers.** L'ordre a divergé durablement (0055 appliquée avant 0051→0054) : quand les dormantes sortiront de dormance, leurs répétitions d'hier seront invalides pour la même raison — à refaire sur schéma prod-conforme du moment. Un statut explicite au registre rendrait cet état interrogeable au lieu de reconstitué. |
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
 | **« NatCash — bientôt » sur l'accueil** (`footer.natcash`, bandeau paiement + pied de page) | 2026-08-10 | Rien mécaniquement — mais la règle dure n°2 classe NatCash ⛔ (aucune API publique) et la pastille engage un calendrier qui ne dépend pas de nous (revue accueil, UX-02). Trois options : (a) retirer la pastille ; (b) reformuler sans promesse de calendrier (« pas encore disponible ») ; (c) l'assumer comme signal de demande. Zone d'arrêt promesse commerciale : rien ne bouge sans arbitrage. |
 | **16 rayons « bientôt » ou repli à 4** | 2026-08-10 | Rien — conséquence assumée de l'activation 16/16 du 2026-08-10 (revue accueil, UX-05) : « bientôt » est le mot le plus répété du premier écran. Le SQL de repli à 4 est au journal des rayons ci-dessous ; l'alternative sans retour arrière est la première publication réelle (`docs/22`), qui éteint les badges du rayon concerné. |
@@ -221,8 +228,43 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | A (0032-0034) | prod zabelie-digi | 2026-07-26T21:06Z | 21:12Z | zéros / zéros identiques (ok=true) | connecteur (session Claude, go porteur) |
 | B1 (0035-0036) + 0039 | prod zabelie-digi | 21:14Z | 21:17Z | inchangé (ok=true) | idem |
 | 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
+| 0055 (audit admin) | prod zabelie-digi | 2026-08-10T22:14Z | 22:14Z | appliquée AVANT la fusion de #88 (supprime la fenêtre 503 du fail-closed) ; répétée sur schéma prod-conforme (sans les dormantes) avant application | hash `274f4a2b013a` |
 | 0043 (suivi de remise) | prod zabelie-digi | 2026-08-09T19:05Z | 19:09Z | base vide : 0 commande, 0 paiement confirmé, 0 escrow, 0 produit physique | connecteur (session assistée, go porteur) |
-| _restent : 0031 (fidélité, sautée) · 0037/0038/0040 (B2, revue séparée) · 0051 · 0052 · 0053 · 0054_ | | | | | |
+| _restent : 0031 (fidélité, sautée) · 0037/0038/0040 (B2, revue séparée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis) · 0057 (catégories services)_ | | | | | |
+### Contrôle day-J — intentions d'audit orphelines (fail-closed 0055)
+
+Le fail-closed écrit la trace AVANT la RPC : une ligne d'intention sans
+résultat corrélé signifie « un admin a ordonné un acte d'argent qui n'a pas
+abouti » — à lire au jour le jour, pas à découvrir en incident. La clé de
+jointure est `target_id` = `orders.id` (qui joint `payments.idempotency_key`
+et `orders.order_ref`). À exécuter chaque matin tant qu'un tableau de bord
+ne le porte pas :
+
+```sql
+-- Intentions refund/confirm-zelle des dernières 24 h sans résultat corrélé.
+-- 0 ligne = tout ce qui a été ordonné a abouti (ou était un doublon idempotent).
+select a.created_at, a.action, a.actor_id, a.target_id, o.order_ref
+from zabelie_admin_actions a
+left join orders o on o.id::text = a.target_id
+where a.created_at > now() - interval '24 hours'
+  and (
+    (a.action = 'order.refund'
+       and (o.id is null or o.status <> 'refunded'))
+    or
+    (a.action = 'payment.confirm_zelle'
+       and not exists (
+         select 1 from payments p
+         where p.idempotency_key = a.target_id
+           and p.status = 'confirmed'))
+  )
+order by a.created_at desc;
+```
+
+Lecture : `order.refund` orphelin = la RPC a refusé (commande introuvable,
+état invalide) APRÈS que l'ordre a été tracé — c'est le comportement voulu,
+la tentative est l'événement. Un volume anormal d'orphelins, en revanche,
+est un signal (admin qui insiste, bug de route, base qui refuse).
+
 
 ⚠️ **Trois contrôles restent NON ÉPROUVÉS** — la base était vide le jour de
 l'application : le rapport de solvabilité à `ok=true` sur zéro ligne, le
@@ -749,6 +791,19 @@ maintenant, en kreyòl d'abord**.
       lieu de l'URL Supabase. À VÉRIFIER à l'étape 0, pas à supposer.
 
       **Exécution — gestes du porteur, dans l'ordre :**
+      ✅ **BASCULE FAITE le 2026-08-10, vérifiée de l'extérieur** : zabelie.com
+      rend « Zabelie — La marketplace haïtienne » (`_next/` présent, zéro
+      « Zabely »). Découverte en chemin : le vieux site Vite était hébergé
+      sur VERCEL (pas Hostinger) depuis avril, domaine accroché à ce vieux
+      projet — le geste réel a été un TRANSFERT de domaine entre projets du
+      même compte, pas un changement DNS. Étape 3 réalisée par le transfert
+      même (l'ancien projet a perdu le domaine). Étape 6 TOMBÉE : le vieux
+      bundle (1 Mo, index-6JaXkId_.js) audité de l'extérieur — librairie
+      supabase-js présente (8 mentions, grep à connu-positif) mais AUCUNE
+      URL *.supabase.co, ni ddditxykopuxxqzgkqwy, ni oqnt : buildé sans
+      base configurée (d'où sa page noire), rien à révoquer. Restent : (a)
+      NEXT_PUBLIC_SITE_URL + Redeploy · (b) Site URL Supabase · (c) URLs
+      MonCash (2 bis) · étapes 4-5 (archiver le dépôt Zabelie, pauser oqnt).
       0. Ce que sert `zabelie.com` aujourd'hui : afficher son code source.
          `/assets/index-….js` + « Zabély » = la vieille app Vite ;
          `/_next/` = déjà la bonne. Chercher aussi « supabase.co » : si
@@ -762,6 +817,15 @@ maintenant, en kreyòl d'abord**.
          (Vercel, Production+Preview) et Supabase Auth → Site URL =
          `https://zabelie.com`, puis REDÉPLOYER — variable NEXT_PUBLIC,
          inlinée au build.
+      2 bis. **Revenir dans le portail MonCash Business** et remplacer les
+         trois URLs posées avec le domaine `.vercel.app` :
+         Website Url → `https://zabelie.com` ·
+         Return Url → `https://zabelie.com/api/moncash/return` ·
+         Alert Url → `https://zabelie.com/mes-achats`.
+         ⚠️ Tant que ce geste n'est pas fait, un paiement lancé depuis
+         `zabelie.com` renvoie l'acheteur vers l'ancien domaine — le
+         paiement est confirmé (la vérité est serveur-à-serveur), mais
+         l'acheteur atterrit ailleurs que là où il a payé.
       3. Mettre hors ligne l'ancien déploiement Vite (son hébergeur), une fois
          le domaine détaché.
       4. Archiver le dépôt GitHub `eliezerphilippe0-spec/Zabelie`

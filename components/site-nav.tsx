@@ -44,6 +44,23 @@ export async function SiteNav() {
   };
   const wa = whatsappHref(t(lang, "wa.prefill"));
 
+  /* Compteur du panier — lu avec le client de SESSION : la RLS de 0058 ne
+   * rend que le panier de l'appelant, donc aucun filtre applicatif à écrire
+   * (et aucun à oublier). `head: true` : on veut le nombre, pas les lignes.
+   *
+   * Erreur ou 0058 non appliquée → `null`, et l'icône se masque. Un panier
+   * qui afficherait « 0 » alors que la table n'existe pas mentirait avec
+   * aplomb ; absent, il ne dit rien. */
+  let articlesPanier: number | null = null;
+  if (user) {
+    const { createClient: creerClientSession } = await import("@/lib/supabase/server");
+    const sb = await creerClientSession();
+    const { count, error: ePanier } = await sb
+      .from("zabelie_cart_items")
+      .select("id", { count: "exact", head: true });
+    if (!ePanier) articlesPanier = count ?? 0;
+  }
+
   return (
     <header className="sticky top-0 z-50">
       {/* TOPBAR — une ligne : l'entrée vendeur, le contact humain, la langue.
@@ -203,6 +220,32 @@ export async function SiteNav() {
             </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {/* Panier — visible dès qu'il contient quelque chose. Un panier
+                vide n'a rien à dire ; le montrer quand même ajouterait un
+                repère mort au premier écran. */}
+            {articlesPanier !== null && articlesPanier > 0 && (
+              <Link
+                href="/panier"
+                aria-label={`${t(lang, "cart.title")} (${articlesPanier})`}
+                className="relative rounded-xl border border-line px-3 py-1.5 text-cloud transition hover:border-brand/60"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-5 w-5 fill-none stroke-current"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 4h2l2.4 10.4a2 2 0 002 1.6h7.2a2 2 0 002-1.6L20 7H6" />
+                  <circle cx="10" cy="19" r="1.4" />
+                  <circle cx="17" cy="19" r="1.4" />
+                </svg>
+                <span className="numeric absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-ink">
+                  {articlesPanier}
+                </span>
+              </Link>
+            )}
             <Link
               href="/vendre"
               className="rounded-xl border border-accent/60 px-4 py-1.5 text-sm font-semibold text-accent transition hover:bg-accent/10"

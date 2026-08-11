@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -87,6 +88,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 422 });
   }
 
+  await journaliserActeAdmin(admin, {
+    actorId: user.id,
+    action: "payout.record_manual",
+    targetType: "wallet",
+    targetId: body.walletId,
+    metadata: { amountHtg: amount, method, duplicate: Boolean(data?.duplicate) },
+  });
   return NextResponse.json({
     ok: true,
     duplicate: Boolean(data?.duplicate),
