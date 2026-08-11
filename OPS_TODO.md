@@ -229,6 +229,25 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
 | **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
 | _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### ⚠️ `confirm_payment` rouge peut vouloir dire « outbox », pas « MonCash »
+
+**À savoir AVANT le premier incident, pas pendant.** Depuis `0061`, le dépôt du
+reçu se fait par trigger DANS la transaction de `confirm_payment`. C'est ce qui
+rend le reçu inséparable du commit de l'argent — et c'est donc du **fail-closed
+sur le reçu** : si l'insertion en outbox échoue, `confirm_payment` échoue avec
+elle, et le paiement n'est pas confirmé.
+
+Choix assumé, pour une raison précise : un paiement **non confirmé** est
+exactement le cas que le réconciliateur (`/api/reconcile`, 12:00) sait
+reprendre — l'inverse du cas fermé par `0061`, où la commande déjà réclamée ne
+repassait jamais. L'argent a bien quitté MonCash ; il sera confirmé au passage
+suivant.
+
+**Lecture d'incident.** Un `confirm_payment` en erreur ne désigne pas
+forcément l'opérateur. Regarder aussi `zabelie_outbox` et `auth.users` (le
+trigger y lit les adresses). Une adresse introuvable ne bloque rien — le
+trigger n'insère alors aucune ligne, à dessein.
+
 ### Contrôle day-J — outbox des confirmations de vente (0061)
 
 ⚠️ **À lire dès le lendemain de l'application de `0061`, et pas plus tard.**

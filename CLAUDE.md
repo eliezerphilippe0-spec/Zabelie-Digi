@@ -9,8 +9,16 @@ vendeur. Marché : **Haïti** + **diaspora**. Terrain : Android d'entrée de
 gamme, bande passante faible, coupures fréquentes.
 
 **Naming (tranché, 2026-07-24)** : le nom officiel et UNIQUE est « **Zabelie** ».
-« Zabelie Digi » est **éliminé**. Le repo GitHub `uniondigitale` est une
-étiquette technique **à renommer** par le porteur.
+« Zabelie Digi » est **éliminé**.
+
+⚠️ **Le repo GitHub s'appelle désormais `Zabelie-Digi`** (renommé depuis
+`uniondigitale` ; GitHub redirige encore l'ancien nom). **Ce nom de dépôt
+désigne le MONOREPO MARKETPLACE — il ne désigne PAS le produit top-up.** La
+collision est réelle et elle a déjà induit une revue en erreur le 2026-08-11,
+qui a soupçonné un glissement de périmètre vers le flux de recharge. Un travail
+sur ce dépôt est un travail sur la marketplace, sauf mention explicite de
+`app/rechaj` ou `lib/zabelie-topup/`. Le renommage du dépôt vers « Zabelie »
+tout court reste à faire par le porteur.
 
 ⚠️ **Ne jamais écrire « Zabely »** à la place de « Zabelie ». En revanche
 `zabely` / `zabelie` coexistent dans les **identifiants techniques** existants :

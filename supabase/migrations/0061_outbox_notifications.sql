@@ -266,7 +266,29 @@ comment on table zabelie_outbox is
 -- Adresse introuvable → aucune ligne, plutôt qu'une ligne inenvoyable qui
 -- consommerait cinq tentatives pour rien.
 
-create function zabelie_outbox_on_payment_confirmed()
+-- ⚠️ LA TABLE SUR LAQUELLE ON POSE LE TRIGGER EST LE CŒUR DE LA CORRECTION.
+--
+-- Première rédaction : `after update of status on payments`, gardée sur le
+-- passage à `confirmed`. FAUX, et dangereusement. `confirm_payment` passe le
+-- paiement à `confirmed` en DEUX endroits (`0038:176` et `0038:189`), et le
+-- premier est la BRANCHE DE RUPTURE DE STOCK : paiement bien encaissé,
+-- commande mise en `disputed`, vendeur NON crédité. Le trigger y aurait tiré,
+-- et un acheteur aurait reçu un reçu de vente pour une marchandise qu'il ne
+-- recevra jamais — avec, en prime, un avis vendeur pour une vente sans crédit,
+-- qui aurait épuisé ses cinq tentatives faute de ligne de grand livre à citer.
+--
+-- La vente, ce n'est pas « le paiement est confirmé » : c'est
+-- **`orders.status = 'paid'`**, écrit uniquement dans la branche qui aboutit.
+-- La branche de rupture écrit `disputed`, le remboursement écrit `refunded` :
+-- ni l'une ni l'autre ne franchit le garde. Et l'atomicité est préservée —
+-- `update orders set status = 'paid'` vit dans la transaction de
+-- `confirm_payment`, avant même l'écriture d'escrow.
+--
+-- Le garde est un `when` de trigger plutôt qu'un `if` en tête de corps : la
+-- condition devient une propriété DÉCLARÉE de l'objet, lisible dans le
+-- catalogue système, et la fonction n'est pas même appelée hors transition.
+
+create function zabelie_outbox_on_order_paid()
 returns trigger
 language plpgsql
 security definer
@@ -277,36 +299,31 @@ declare
   v_seller_email text;
   v_seller       uuid;
 begin
-  if new.status <> 'confirmed' or coalesce(old.status, '') = 'confirmed' then
-    return new;
-  end if;
+  select email into v_buyer_email from auth.users where id = new.buyer_id;
 
-  select u.email into v_buyer_email
-    from orders o join auth.users u on u.id = o.buyer_id
-   where o.id = new.order_id;
-
-  select p.seller_id into v_seller
-    from orders o join products p on p.id = o.product_id
-   where o.id = new.order_id;
+  select p.seller_id into v_seller from products p where p.id = new.product_id;
   select email into v_seller_email from auth.users where id = v_seller;
 
+  -- Adresse introuvable → AUCUNE ligne, plutôt qu'une ligne inenvoyable qui
+  -- consommerait cinq tentatives pour rien.
   if v_buyer_email is not null then
-    perform zabelie_outbox_enqueue(new.order_id, 'order_paid_buyer', v_buyer_email);
+    perform zabelie_outbox_enqueue(new.id, 'order_paid_buyer', v_buyer_email);
   end if;
   if v_seller_email is not null then
-    perform zabelie_outbox_enqueue(new.order_id, 'order_paid_seller', v_seller_email);
+    perform zabelie_outbox_enqueue(new.id, 'order_paid_seller', v_seller_email);
   end if;
   return new;
 end;
 $$;
 
-revoke all on function zabelie_outbox_on_payment_confirmed()
+revoke all on function zabelie_outbox_on_order_paid()
   from public, anon, authenticated;
 
 create trigger zabelie_outbox_paiement_confirme
-  after update of status on payments
+  after update of status on orders
   for each row
-  execute function zabelie_outbox_on_payment_confirmed();
+  when (new.status = 'paid' and old.status is distinct from 'paid')
+  execute function zabelie_outbox_on_order_paid();
 
 -- ⚠️ POST-CONDITION DE LA MIGRATION — le trigger doit exister, sinon tout ce
 -- qui précède est une table que personne ne remplit.

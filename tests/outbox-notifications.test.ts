@@ -150,14 +150,26 @@ test("le dépôt est ATOMIQUE avec la confirmation du paiement", () => {
   // qui COMMANDE l'atomicité — le trigger sur `payments` — pas sur un libellé.
   assert.match(
     mig,
-    /create trigger \w+\s+after update of status on payments/,
-    "Sans trigger sur `payments`, le dépôt reste hors de la transaction qui " +
-      "confirme l'argent, et « déposer avant d'envoyer » ne suffit pas."
+    /create trigger \w+\s+after update of status on orders/,
+    "Le trigger doit vivre sur `orders`, pas sur `payments` : `confirm_payment` " +
+      "passe le paiement à `confirmed` DEUX fois (0038:176 et 0038:189), et la " +
+      "première est la branche de RUPTURE DE STOCK — commande `disputed`, " +
+      "vendeur non crédité. Un trigger sur `payments` y déposerait un reçu de " +
+      "vente pour une marchandise que l'acheteur ne recevra jamais."
   );
   assert.match(
     mig,
-    /if new\.status <> 'confirmed' or coalesce\(old\.status, ''\) = 'confirmed' then/,
-    "Le trigger doit ne rien faire hors de la TRANSITION vers `confirmed`."
+    /when \(new\.status = 'paid' and old\.status is distinct from 'paid'\)/,
+    "Le garde porte sur la TRANSITION vers `paid` — la seule écriture que fait " +
+      "la branche qui aboutit. `disputed` (rupture) et `refunded` " +
+      "(remboursement) ne doivent jamais déposer."
+  );
+  // Le dépôt reste dans la transaction de confirm_payment : `update orders set
+  // status = 'paid'` y vit, avant même l'écriture d'escrow.
+  assert.doesNotMatch(
+    mig,
+    /create trigger[\s\S]{0,120}on payments/,
+    "Aucun trigger de dépôt ne doit subsister sur `payments`."
   );
 });
 

@@ -29,7 +29,18 @@ export async function notifyOrderPaid(
   try {
     if (!isEmailEnabled()) return;
 
-    // Réservation atomique : ne notifie que le PREMIER passage.
+    /* Réservation de `0012` — DÉCLASSÉE depuis `0061`, et il faut le dire.
+     *
+     * Elle ne garde plus la correction : le trigger de `0061` dépose la ligne
+     * dans la transaction de l'argent, et `zabelie_outbox_claim` est le seul
+     * chemin de sortie, emprunté par l'envoi immédiat comme par le drain. Ce
+     * claim-ci n'est plus qu'une sortie anticipée qui épargne quelques
+     * requêtes aux quatre routes de confirmation et au réconciliateur.
+     *
+     * Conséquence à connaître : sur un rejeu, cette ligne fait sortir avant la
+     * tentative immédiate, et le reçu part alors au prochain passage du cron.
+     * C'est acceptable PARCE QUE la ligne d'outbox existe déjà — avant `0061`,
+     * la même sortie perdait le message pour toujours. */
     const { data: claimed } = await admin.rpc("zabelie_claim_notification", {
       p_order_id: orderId,
     });
