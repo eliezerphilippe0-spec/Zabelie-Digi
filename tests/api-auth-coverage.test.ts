@@ -41,6 +41,12 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // une liste fermée d'événements ; bornée par IP contre l'inondation du
   // journal.
   "metrics/landing/route.ts": /rateLimit\(/,
+  // Sondes de supervision (docs/30, P10) : une sonde derrière un login ne
+  // peut pas être appelée par la supervision externe. Elles n'exposent rien
+  // (ni version, ni erreur interne) et ne mutent rien — la « preuve » est
+  // l'absence de dépendance pour health, la coupure de délai pour readyz.
+  "health/route.ts": /never lies|ne ment jamais/,
+  "readyz/route.ts": /Promise\.race/,
 };
 
 function collectRoutes(dir: string): string[] {
