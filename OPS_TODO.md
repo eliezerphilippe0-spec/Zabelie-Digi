@@ -316,6 +316,43 @@ le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
 
+### ✅ RÉPÉTITION FAITE le 2026-08-12 — `0059`→`0062` sur état appliqué réel : PRÊTES
+
+Socle **prod-conforme** : uniquement les migrations appliquées, dans l'ordre
+d'application constaté, **et les 23 lignes du registre recopiées depuis la
+production** — sans elles la boucle de reprise de `0062` ne classe rien, la
+limite exacte que la CI avait rendue visible.
+
+| scénario | résultat |
+|---|---|
+| **1** · `0059`→`0062` dans l'ordre | ✅ les quatre s'appliquent. Classement : `0031` → **abandonnee**, les 22 autres → **appliquee** |
+| **2** · `0062` SEULE, sans `0059`/`0060`/`0061` | ✅ `0051`, `0054`, `0056`, `0059`, `0060`, `0061` → **redigee**. Les sondes des lignes 51-52 et suivantes ont été exécutées pour la PREMIÈRE fois, et elles discriminent |
+| **3** · état du registre PENDANT la migration | ⚠️ voir ci-dessous |
+| **4** · objet déjà présent, `0055` rejouée | ✅ échoue bruyamment : `relation "zabelie_admin_actions" already exists` |
+| suite SQL complète | **28 verts, 2 rouges** — `commission_config` (réclame `0054`) et `points_caps` (réclame `0031`), tous deux ÉTRANGERS à ce lot |
+
+**Scénario 3 — la réponse dépend de l'outil d'application, et ça se décide.**
+`0062` procède en trois temps : colonne ajoutée *nullable*, remplie, puis
+contrainte `not null`. Appliquée par `apply_migration`, le tout tient dans UNE
+transaction : aucun lecteur ne voit d'état mi-classé. Appliquée par `psql`
+sans `-1`, chaque instruction est sa propre transaction et une fenêtre existe
+où `statut` est NULL pour certaines lignes. → **appliquer `0062` par
+`apply_migration`**, pas au fil de l'eau.
+
+**⚠️ DÉCOUVERTE que le plan ne prévoyait pas.** Après `0062`, insérer une
+ligne de registre **sans `statut` est REFUSÉ** :
+
+```
+ERROR: null value in column "statut" violates not-null constraint
+```
+
+C'est fail-closed et c'est voulu — on ne peut plus ajouter une migration au
+registre sans dire son état. Mais la conséquence est immédiate et pratique :
+**les lignes de `0059`, `0060`, `0061` et `0062` elles-mêmes devront porter
+`statut` à l'insertion.** Sans quoi le geste habituel échouera, bruyamment,
+juste après l'application. C'est exactement le genre de chose qu'une
+répétition existe pour trouver — le plan ne la contenait pas.
+
 ### 🧪 Scénarios que la répétition de `0060`/`0061`/`0062` DOIT couvrir
 
 Sur socle prod-conforme à l'état appliqué réel, et pas seulement « ça passe » :
