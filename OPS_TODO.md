@@ -316,6 +316,41 @@ le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
 
+### ✅ APPLIQUÉES le 2026-08-12 — `0054` puis `0066`, sur signal porteur
+
+> **Signal** : demandé en session le 2026-08-12, **après levée d'ambiguïté** —
+> le message disait « applique 004 puis 0056 ». `004` n'existe pas, et `0056`
+> porte un arrêt que le porteur avait posé lui-même (D-10→D-14). Question
+> posée, réponse : **`0054` puis `0066`**. `0056` **reste bloquée**.
+> **Exécutant** : agent, par `apply_migration`. Empreintes exécutables du SQL
+> reçu croisées avec les fichiers du dépôt : **identiques pour les deux**.
+
+**Les valeurs ne changent pas** : 10 % standard, 6 % Elite, commission sur
+25 HTG toujours à 2 (règle `floor`, D-4). Ce qui change, c'est qu'un futur
+`UPDATE` du taux sera **suivi par l'écran** au lieu d'être trahi par lui.
+
+| | rôle |
+|---|---|
+| `0054` | la table de config, le trigger anti-suppression, la borne à 30 %, et `commission_rate_bps` qui lit la table |
+| `0066` | **première migration gardée par `0065`** — expose les taux à l'écran vendeur par une fonction `security definer`, `authenticated` seulement |
+
+**Éprouvé EN PRODUCTION après application** : suppression d'un taux →
+**refusée** · taux à 60000 (le fat-finger) → **refusé** par la borne ·
+`UPDATE` à 850 → **affiché et facturé passent tous deux à 850**, puis valeur
+restaurée à 1000 dans la même transaction · 0 exposition à `anon` · invariant
+`0033` à 0.
+
+Cas connu-négatif joué en répétition : **`0066` sans `0054` lève `ZB066`** et
+dit quoi appliquer d'abord.
+
+⚠️ **Ce que ça ne prouve pas** : que l'écran affiche le bon chiffre. La chaîne
+TypeScript est gardée par `tests/commission-config.test.ts` (quatre mutations,
+quatre rouges), mais la preuve d'écran est un vendeur qui saisit un prix — et
+elle attend `docs/22`.
+
+**Registre après** : 63 `appliquee` · 2 `redigee` (`0051`, `0056`) ·
+1 `abandonnee`.
+
 ### ✅ APPLIQUÉES le 2026-08-12 — `0053` puis `0052`, sur signal porteur
 
 > **Signal** : « applique 0053 puis 0052 », porteur, en session, 2026-08-12.
