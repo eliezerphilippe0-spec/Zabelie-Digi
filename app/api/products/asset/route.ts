@@ -107,7 +107,7 @@ export async function POST(req: Request) {
   // le supprimer une fois le nouveau livrable en place.
   const { data: oldAsset } = await admin
     .from("product_assets")
-    .select("storage_path")
+    .select("id, storage_path")
     .eq("product_id", product.id)
     .maybeSingle();
 
@@ -121,8 +121,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
 
-  // Un seul livrable par produit pour l'instant : on remplace l'éventuel ancien.
-  await admin.from("product_assets").delete().eq("product_id", product.id);
+  /* REMPLACER SANS DÉTRUIRE — l'ordre compte, et il était inversé.
+   *
+   * La séquence était `delete` PUIS `insert`. Un `insert` en échec laissait
+   * donc le produit avec ZÉRO livrable : le vendeur croyait remplacer son
+   * fichier, il le perdait, et si le produit était publié il devenait
+   * indélivrable en silence. Une commande passée là-dessus suit exactement le
+   * chemin décrit en tête de `0059` — payée, jamais remise, vendeur payé.
+   *
+   * ⚠️ Ce n'est PAS ce qui s'est produit sur « cours du créole » : le stockage
+   * de production était vide de bout en bout, donc aucun téléversement n'a
+   * jamais atteint cette ligne. Le défaut est réel et latent, il n'était pas
+   * la cause. Les deux méritaient d'être dits séparément.
+   *
+   * Il n'y a pas d'unicité sur `product_id` : insérer avant de supprimer est
+   * donc possible, et pendant l'instant où deux lignes coexistent le
+   * téléchargement reste servi — par l'ancien fichier, qui fonctionne. */
   const { error: insErr } = await admin.from("product_assets").insert({
     product_id: product.id,
     storage_path: path,
@@ -130,7 +144,28 @@ export async function POST(req: Request) {
     size_bytes: file.size,
   });
   if (insErr) {
+    // L'ancien livrable est INTACT : le vendeur n'a rien perdu.
     return NextResponse.json({ error: insErr.message }, { status: 500 });
+  }
+
+  if (oldAsset?.id) {
+    const { error: delErr } = await admin
+      .from("product_assets")
+      .delete()
+      .eq("id", oldAsset.id);
+    // Deux lignes qui survivent sont une gêne, zéro ligne est une panne : on
+    // ne fait pas échouer le téléversement là-dessus, on le journalise.
+    if (delErr) {
+      console.log(
+        "[livrable]",
+        JSON.stringify({
+          at: new Date().toISOString(),
+          issue: "ancien_livrable_non_retire",
+          productId: product.id,
+          message: delErr.message,
+        })
+      );
+    }
   }
 
   // Nettoyage best-effort de l'ancien objet (chemin différent uniquement) —
@@ -145,8 +180,14 @@ export async function POST(req: Request) {
   // et « publié » ne sont pas le même mot : la fiche reste en brouillon et
   // attend `/api/admin/product-status`.
   //
-  // L'invariant BL-103 (pas de vente d'un fichier sans livrable) est préservé
-  // par le brouillon lui-même : `/produit/[slug]` ne sert que `published`.
+  // ⚠️ CORRIGÉ 2026-08-11 — cette ligne affirmait que l'invariant BL-103 (pas
+  // de vente d'un fichier sans livrable) était « préservé par le brouillon
+  // lui-même, puisque /produit/[slug] ne sert que published ». C'était faux, et
+  // mesuré faux : le brouillon ne garde que CE chemin-ci. Rien n'empêchait
+  // `/api/admin/product-status` de publier un fichier à zéro livrable, et la
+  // production en portait un — « cours du créole », publié, indélivrable.
+  // L'invariant est désormais tenu par le garde de cette route-là ; ici, le
+  // brouillon ne fait que retarder la question, il ne la tranche pas.
 
   return NextResponse.json({ ok: true, file_name: safeName });
 }
