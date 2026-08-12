@@ -57,22 +57,40 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0058`**. **État MESURÉ en base le 2026-08-11** — registre
-   ET présence des objets croisés, objet par objet.
-   **Appliquées** : groupe A + B1, `0039`, `0041`, `0042`, `0045`→`0050`,
-   `0044` (D-4 `floor`), `0043`, **B2 complète** `0037`/`0038`/`0040`, `0055`,
-   `0057`, `0058`.
-   **Non appliquées, et leur absence est attestée** : `0031` (fidélité,
-   volontairement sautée) · `0051`/`0052` (`categories.label_es` absente) ·
-   `0053` (`retention_days` vaut encore 180) · `0054`
-   (`zabelie_commission_config` absente) · `0056` (`0055` est appliquée, `0056`
-   ne l'est pas). Registre : `zabelie_schema_migrations`.
+   (dernière écrite : **`0062`**. **L'état ne se raconte plus, il s'interroge** —
+   depuis `0062`, appliquée le **2026-08-12**, chaque ligne du registre porte
+   une colonne `statut` (`redigee` · `appliquee` · `abandonnee`), classée à
+   l'application par **sonde contre le schéma réel**, jamais par relecture du
+   hash. La question « qu'est-ce qui est appliqué ? » se répond désormais par
+   une requête, et ce paragraphe n'en est plus la source :
 
-   ⚠️ **Le fichier `0055_admin_audit.sql` n'est PAS dans `main`** — il vit sur
-   la branche de la PR #88, encore ouverte, comme `0056` sur celle de la #90.
-   La base porte donc `zabelie_admin_actions` alors qu'aucun code déployé n'y
-   écrit. Un objet en base sans le fichier qui le décrit est l'inverse exact du
-   « code sans appelant » : même angle mort, autre bout.
+   ```sql
+   select statut, count(*), string_agg(filename, ', ' order by filename)
+     from zabelie_schema_migrations group by statut;
+   ```
+
+   **Mesuré le 2026-08-12** : 27 lignes — 26 `appliquee`, 1 `abandonnee`
+   (`0031`, fidélité, volontairement sautée). `0059`→`0062` appliquées ce
+   jour-là sur signal porteur.
+   **Non appliquées** : `0051`/`0052`, `0053`, `0054`, `0056` — elles n'ont
+   pas encore de ligne au registre, donc pas de `statut` : leur absence se lit
+   à l'absence de ligne, et c'est la dette ci-dessous.
+
+   ⚠️ **Le registre est INCOMPLET, et `statut` ne le répare pas.** 62 fichiers
+   de migration, 27 lignes : **35 fichiers n'ont aucune ligne** — les 30 du
+   socle historique `0001`→`0030` (antérieures à `0041`, qui crée le registre)
+   et les 5 dormantes ci-dessus. Un fichier sans ligne et un fichier `redigee`
+   se ressemblent, alors qu'ils disent l'inverse l'un de l'autre. Le
+   rattrapage est prévu : la boucle de reprise de `0062` classe déjà le socle
+   en bloc par motif (`^(00(0[1-9]|1[0-9]|2[0-9]|30)|003[2-4]|…)_`), il ne
+   manque que les lignes.
+
+   ⚠️ **`0062` est fail-closed à l'insertion** : depuis son application, une
+   ligne de registre **sans `statut` est REFUSÉE** (`not-null`), et un statut
+   hors énumération aussi (`check`). Les deux refus ont été éprouvés en
+   production le 2026-08-12, sondes négatives à l'appui. On ne peut donc plus
+   ajouter une migration au registre sans dire son état — ce qui veut dire
+   qu'un `insert` de registre écrit de mémoire échouera, bruyamment.
 
    ⚠️ **Un objet vérifié n'est pas le bon objet.** L'état précédent affirmait
    `0043` non appliquée, preuve à l'appui : « `zabelie_shipments` absente ».
