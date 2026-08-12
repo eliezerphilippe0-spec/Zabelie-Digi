@@ -17,7 +17,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | Décision | Depuis | Ce qu'elle bloque |
 |---|---|---|
 | ✅ ~~Branche de Production Vercel~~ — **RÉPONDU 2026-08-03 : `main`.** Dernier déploiement Production `bb5ee4a`, **2026-07-26**, soit la tête actuelle de `main` : le site en ligne est exactement `main`, sans décalage. | — | **Résolu — et c'est le pire des trois cas.** Le site public dit depuis le 26 juillet « Pièces auto et moto, livrées en Haïti », « digital & talents » et **« Instant »**, en 2 langues. Remplacée par la ligne suivante. |
-| **🚨 ROTATION `SUPABASE_SERVICE_ROLE_KEY`** — clé secrète exposée hors du coffre le 2026-08-04 | 2026-08-04 | **Rien fonctionnellement, et c'est le piège : le site tourne parfaitement avec une clé compromise.** Cette clé contourne TOUTE la RLS — comptes, commandes, grand livre, lecture et écriture. À révoquer chez Supabase et remplacer dans Vercel (Production **et** Preview). |
+| **🚨🚨 `SUPABASE_SERVICE_ROLE_KEY` — BLOCAGE FONCTIONNEL TOTAL DU STOCKAGE, + clé exposée hors du coffre le 2026-08-04** | 2026-08-04 | **RECLASSÉ le 2026-08-11 : ce n'était pas un item de sécurité en attente, c'est LE blocage du catalogue digital, et il précède `docs/22`.** Mesuré en base : `storage.objects` et `storage.buckets` ont `rls_activee = true` et **zéro policy** — donc TOUT passe par service-role, lecture comme écriture, pour tous les kinds. Corroboré : **0 objet dans tous les buckets**, couvertures comprises. Aucune écriture de stockage n'a jamais réussi depuis l'application. Conséquences : aucun vendeur ne peut attacher un livrable (le kind `fichier` est structurellement invendable), ni téléverser une image de couverture. Un vendeur qui essaie sur un BROUILLON lit « Produit introuvable » — la policy `products_seller_read_own` exige `auth.uid()`, qu'un client dégradé n'a pas ; sur un PUBLIÉ, la lecture passe (`products_public_read_published`) et l'échec se déplace au stockage, en message brut de RLS. Trace réelle : trois brouillons de « cours du créole », trois abandons, zéro fichier. ⚠️ L'ancienne estimation — « rien fonctionnellement, le site tourne parfaitement » — décrivait l'absence de symptôme OBSERVÉ, pas l'absence de symptôme : le chemin acheteur est instrumenté, le chemin vendeur ne l'est pas, donc ses échecs ne remontent nulle part. À révoquer chez Supabase et remplacer dans Vercel (Production **et** Preview), puis **retenter un téléversement et lire le message** — il date la panne. |
 | ✅ ~~Faire arriver le chantier en ligne~~ — **FAIT 2026-08-03.** PR #55 fusionnée (`53fd939`), puis #56 · #57 · #58 · #59. `main` déployée en Production. | — | Résolu. Le site ne dit plus « Pièces auto et moto » ni « Instant », et porte quatre langues. |
 | ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | ✅ ~~Protection de `main`~~ — **FAIT 2026-08-03.** `build` · `e2e` · `sql-tests` exigés. | — | Résolu. ⚠️ Le premier réglage visait **toutes** les branches et bloquait toute poussée — les contrôles s'exécutant AU push, aucune branche ne pouvait naître (`GH013`). Corrigé pour ne viser que la branche par défaut. À savoir si la règle est un jour recréée. |
@@ -31,9 +31,9 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
 | **Arbitrer les trois valeurs de `0043`** — `shipment_deadline_days` (5), `auto_receive_days` (7), `post_receipt_maturation_days` (0) | 2026-08-09 | **Rien aujourd'hui, et c'est exactement le moment de trancher.** `0043` est appliquée : les trois valeurs sont EN BASE, à leurs valeurs *proposées*, parce qu'une table de config ne peut pas être vide. Proposées ≠ décidées. Elles se changent par `UPDATE`, sans migration, tant qu'aucune commande physique n'existe — après, chaque changement déplace une échéance de paiement sur des commandes en cours. Détail et raisonnement : `docs/21` §2. |
 | **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
-| **Appliquer `0058` (panier — tables + RPC)** | 2026-08-11 | **Le bouton « Ajouter au panier », qui est DÉJÀ dans le code.** Sans elle, l'ajout rend « Panier indisponible » (journalisé `[panier] ajout_impossible`) — dégradation prévue. RLS propriétaire seul, aucun prix stocké (règle dure n°3), gardes ZB058 (non publié, auto-achat). Répétée sur schéma prod-conforme, PA1-PA7 verts, mutation du garde d'auto-achat → rouge. Le paiement groupé (`docs/27` §3) est la marche SUIVANTE, sa propre PR d'argent. |
-| **✅ B2 (`0037`/`0038`/`0040`) — RÉPÉTITION FAITE le 2026-08-11, verdict : PRÊTE** | 2026-08-11 | **La vente physique, et le panier derrière elle** (`docs/27` §prérequis). Répétée sur schéma PROD-CONFORME (socle sans les dormantes, `0055` comprise) : les trois s'appliquent dans l'ordre sans erreur, `products.in_stock` apparaît, la vue `zabelie_stock_ruptures` est créée, et **26 tests SQL passent** dont les quatre du stock (`stock_money_path`, `stock_rupture`, `stock_lifecycle`, `in_stock_flag`). Deux échecs, tous deux ÉTRANGERS à B2 et attendus : `commission_config` réclame `0054`, `points_caps` réclame `0031` (volontairement sautée). Effet immédiat de l'application : le repli 400-puis-rejeu de `lib/products.ts` cesse. Reste un geste porteur. |
-| **Appliquer `0057` (12 catégories de services)** | 2026-08-11 | L'éventail des services : aujourd'hui `sevis-pwofesyonel` est une case fourre-tout sans enfant, un vendeur de cours/coiffure/réparation n'a nulle part où se ranger. Insertions seules, idempotentes, post-condition ZB057 dans la migration. Répétée sur schéma prod-conforme, rejeu compris. |
+| ✅ ~~Appliquer `0058` (panier)~~ · ~~`0057` (12 catégories de services)~~ · ~~`0040`~~ — **FAIT le 2026-08-11.** | — | Résolu. Le panier fonctionne de bout en bout (icône, compteur, paiement ligne à ligne, PR #95 fusionnée). |
+| ✅ ~~**B2 (`0037`/`0038`/`0040`)** — appliquée~~ — **FAIT le 2026-08-11.** | — | **Résolu : le stock est branché sur le chemin d'argent.** `confirm_payment` consomme le stock DANS la transaction du paiement, `refund_order` le relibère, et `zabelie_consume_stock_strict` remplace la survente silencieuse par une rupture explicite (commande `disputed`, vendeur NON crédité, vue `zabelie_stock_ruptures` pour l'admin). TTL de réservation porté à **120 min** — valeur prudente, ⚠️ **à confirmer contre le timeout réel MonCash**, ce qui reste un point ouvert (`0038` §1). Le repli 400-puis-rejeu de `lib/products.ts` a cessé. |
+| **🔀 Fusionner les quatre PR Izikit — #87, #88, #89, #90** | 2026-08-11 | **Le journal d'audit admin, qui n'existe qu'à moitié.** `0055` est appliquée en base depuis le 2026-08-10 : la table `zabelie_admin_actions` est là, mais le code qui y écrit vit sur la branche de la #88, jamais fusionnée — **aucun acte d'administration n'est journalisé aujourd'hui**. Idem pour les sondes (#89) et la purge des avis (#90, migration `0056` ni fusionnée ni appliquée). Ordre de fusion : [#87](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/87) → [#88](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/88) → [#89](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/89) → [#90](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/90). `0056` s'appliquera APRÈS la fusion de la #90. |
 | **🔑 Supabase → Auth → URL Configuration : la liste blanche de redirection** | 2026-08-11 | **Le lien « mot de passe oublié ».** Le correctif de code est livré, mais si l'URL de retour n'est pas autorisée, Supabase ignore `redirectTo` et renvoie sur le Site URL — l'utilisateur atterrit sur l'accueil, « rien ne se passe ». À poser dans **Redirect URLs**, les deux, à cause du couple nu/www : `https://zabelie.com/**` ET `https://www.zabelie.com/**`. Et **Site URL** = le domaine qui sert réellement le site. |
 | ✅ ~~Appliquer `0055` (journal d'audit admin)~~ — **APPLIQUÉE le 2026-08-10 22:14Z**, hash `274f4a2b013a…` au registre. Ordre choisi : AVANT la fusion de #88, ce qui supprime la fenêtre 503 du fail-closed (la table précède le code). Prouvée en prod : trigger ZB055 sur UPDATE (transaction avortée, zéro ligne résiduelle), zéro droit client, requête day-J à 0 orphelin. **Reste le dernier demi-point : une mutation admin bénigne (suspension/réactivation d'un compte de test) APRÈS fusion+déploiement de #88, pour voir la ligne atterrir par la route — geste porteur, je relis la table ensuite.**  |
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
@@ -229,7 +229,181 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0042 puis 0041 | prod zabelie-digi | 21:17Z | 21:18Z | inchangé (ok=true) · backfill 0 ligne | idem |
 | 0055 (audit admin) | prod zabelie-digi | 2026-08-10T22:14Z | 22:14Z | appliquée AVANT la fusion de #88 (supprime la fenêtre 503 du fail-closed) ; répétée sur schéma prod-conforme (sans les dormantes) avant application | hash `274f4a2b013a` |
 | 0043 (suivi de remise) | prod zabelie-digi | 2026-08-09T19:05Z | 19:09Z | base vide : 0 commande, 0 paiement confirmé, 0 escrow, 0 produit physique | connecteur (session assistée, go porteur) |
-| _restent : 0031 (fidélité, sautée) · 0037/0038/0040 (B2, revue séparée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis) · 0057 (catégories services)_ | | | | | |
+| 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
+| **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
+| _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### ⛔ La mutation bénigne ne peut PAS être exécutée par l'agent
+
+**Constaté le 2026-08-11, après la fusion de #88.** Deux empêchements, aucun
+contournable, et le second est le plus important.
+
+1. **Aucune session admin.** La route `/api/admin/user-status` exige
+   `getCurrentUser()` avec le rôle admin. L'agent n'a pas de session, et un mot
+   de passe ne se demande pas.
+2. **Le réseau de la session refuse `zabelie.com`.** Vérifié :
+   `gateway answered 403 to CONNECT — host zabelie.com:443`, dans le journal du
+   proxy. La production n'est pas joignable en HTTP depuis ici.
+
+⚠️ **ET SURTOUT — il ne faut PAS la simuler.** L'agent a un accès service-role
+à la base : il pourrait insérer une ligne dans `zabelie_admin_actions` en une
+instruction. **Ce serait un faux.** La ligne serait indiscernable d'une vraie
+dans la table, alors que sa provenance ne serait pas le code déployé mais
+l'agent lui-même — exactement le geste que la règle dure n°5 existe pour
+interdire, commis sur le journal d'audit, et pour sa PREMIÈRE ligne.
+
+Ce qui doit être fait, par le porteur, dans cet ordre :
+
+1. vérifier que Vercel a bien déployé `de898f68` (Production) ;
+2. se connecter en admin, aller sur `/admin`, **suspendre puis réactiver** le
+   compte de test — deux actes, deux lignes attendues ;
+3. le dire ici.
+
+Les quatre preuves seront alors mesurées côté base, dans la même session :
+`zabelie_admin_actions` avec horodatage et `actor_id`, la forme `domaine.verbe`
+de `action`, la requête intention-orpheline à zéro, et le fait que ces lignes
+viennent du code déployé — pas d'une main.
+
+### 📒 Les huit dettes du registre — nommées, aucune entamée (2026-08-11)
+
+Mesurées, chacune avec sa requête. **Aucune ne se referme avant la fusion de
+#87/#88** : le prochain geste est la fusion, pas une mesure de plus.
+
+| # | Dette | Périmètre EXACT (mesuré) |
+|---|---|---|
+| 1 | **Registre incomplet** | **30 lignes** manquantes : `0001`→`0024` (présentes dans `supabase_migrations`, absentes du nôtre) **+ `0025`→`0030`** (dans AUCUN des deux journaux). Les six fichiers existent et leurs objets sont tous en schéma — vérifié : `zabelie_wallet_ledger_guard`, `products_status_created_idx`, `zabelie_topup_reserve_order` avec son `pg_advisory_xact_lock`, `zabelie_coupon_consume` dans `confirm_payment`. Backfill légitime (importer un enregistrement réel n'invente rien). ⚠️ La date d'application de `0025`→`0030` est **déduite par encadrement**, pas attestée : la ligne dira « présence constatée en schéma, application datée par encadrement `[0024, 0041]` », jamais une date. |
+| 2 | **Divergence `0044_commission_floor`** | Déclarée appliquée chez nous (hash réel, 2026-08-03), **jamais vue par `apply_migration`**. Appliquée par un autre chemin. ⛔ **Attente d'attestation porteur** : « avez-vous appliqué `0044` via l'éditeur SQL vers le 3 août ? » Oui/non/je ne sais plus — les trois sont enregistrables. On inscrit une provenance **attestée**, jamais **déduite**. |
+| 3 | **Les 16 `applied_by = 'postgres'`** | Ce n'est PAS un vide : c'est le rôle de connexion, un défaut qui se lit comme une réponse. À requalifier en `non renseigné (antérieur à règle 5)`. Les 7 autres portent `porteur (session assistee)` — vraie trace. |
+| 4 | **`0031` à classer `abandonnee`** | Seule ligne ni en A, ni en B, ni en C. Hash `-`, absente de Supabase, sautée à dessein. `0062` la classera. |
+| 5 | **Préambule de garde des migrations** | `apply_migration` ne consulte JAMAIS `zabelie_schema_migrations`. À adopter **pour les migrations à partir de son adoption**, jamais rétroactivement — l'injecter dans un fichier déjà haché changerait son empreinte. Hash divergent → `ZB0XX` bruyant, pas un skip. |
+| 6 | **Chantier des dormantes** | Application ordonnée : lesquelles vivent, lesquelles passent `abandonnee`. Croise D-10→D-14 pour `0056`. |
+| 7 | **D-10→D-14, avec la question `disputed`** | Posée dans `docs/28` : l'acheteur d'une commande `disputed` ne reçoit plus rien depuis `0061`. |
+| 8 | **Revue des écrivains multiples par statut** | Instrument CANDIDAT (section dédiée plus bas). À passer une fois à la main avant le lancement. |
+
+**Règle amont, appliquée sans exception** : toute assertion d'état sur une
+table s'accompagne, **dans le même bloc**, de la requête qui l'a établie. Deux
+assertions fausses ont été publiées le 2026-08-11 faute de ce geste — les deux
+en lisant la STRUCTURE d'une table et en parlant de ses VALEURS.
+
+### 📏 Règle — schéma et registre divergent : investiguer, jamais régulariser
+
+Deux divergences sont possibles, elles n'ont pas la même gravité, et **aucune
+ne se répare en silence**.
+
+**A · Objet en base SANS ligne au registre.** Le cas grave : l'objet n'a pas de
+provenance, donc aucun geste officiel ne l'a créé. Dater son arrivée avant
+toute chose (journaux Supabase, historique de connexions), identifier le geste,
+et n'appliquer la migration correspondante qu'ensuite — l'appliquer par-dessus
+régulariserait l'anomalie au lieu de l'élucider. **Jamais constaté à ce jour.**
+
+**B · Migration au registre dont le FICHIER n'est pas dans `main`.** ✅ **RÉSOLU le 2026-08-11** pour `0055` : PR #88 fusionnée (`de898f68`) sur signal porteur — le fichier est dans `main`, et le code qui écrit dans le journal est déployable. Reste `0056`, sur la branche de la #90. Constaté :
+`0055_admin_audit.sql`, appliquée le 2026-08-10 22:14:26Z, hash
+`274f4a2b013a05ec…` identique au fichier de la branche de #88 (vérifié le
+2026-08-11 : table, deux index, trigger `zabelie_admin_actions_immutable`, RLS
+active, 0 droit anon, 0 ligne écrite). L'ordre a été inversé **à dessein** —
+appliquer avant de fusionner supprimait la fenêtre où le code fail-closed
+déployé aurait appelé une table inexistante. C'est la fusion qui n'est pas
+venue.
+
+Conséquence à garder en tête : **un acte d'administration sur l'argent ne
+laisse aucune trace aujourd'hui**, puisque le code qui écrit dans ce journal
+vit sur une branche. `zabelie_admin_actions` compte 0 ligne, et ce zéro-là
+n'est pas « rien à signaler » : c'est « personne ne peut écrire ».
+
+⚠️ **Et `0062` dira `appliquee` pour `0055`** — correctement, puisqu'elle sonde
+le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
+complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
+qui tient le second, par le trou de numérotation.
+
+### 🧪 Scénarios que la répétition de `0060`/`0061`/`0062` DOIT couvrir
+
+Sur socle prod-conforme à l'état appliqué réel, et pas seulement « ça passe » :
+
+1. **`0062` appliquée après `0060`/`0061`** → les deux classées `appliquee`.
+2. **`0062` appliquée SEULE**, sans `0060`/`0061` → les deux classées
+   `redigee`, sans échec. Les sondes existent dans la migration ; elles n'ont
+   **jamais été exécutées**.
+3. **Ce que rend le registre PENDANT que `0062` le migre** — la colonne est
+   ajoutée nullable, remplie, puis contrainte : vérifier qu'aucune lecture
+   concurrente ne voit un état mi-classé.
+4. **Objet déjà présent, version divergente** — le jour où #88 fusionne,
+   `0055` sera rejouée sur une table qui existe. Elle utilise `create table`
+   sans `if not exists` : elle **échouera bruyamment**, ce qui est le bon
+   comportement — mais il faut l'avoir vu une fois plutôt que le découvrir.
+
+### 🔬 Instrument CANDIDAT — revue des écrivains multiples par statut
+
+**Non construit. Noté pendant que la liste est fraîche, à mesurer avant de
+l'outiller — la même discipline que pour le reste.**
+
+D'où ça vient : la meilleure prise du 2026-08-11 n'a été trouvée ni par la CI,
+ni par le harnais de mutation, mais par une **question de forme fixe** —
+*« combien de fois cette colonne de statut change-t-elle, et dans quelles
+branches ? »*. Posée sur `payments.status`, elle a révélé que `confirm_payment`
+écrit `'confirmed'` en DEUX endroits (`0038:176` et `0038:189`), et que le
+premier est la branche de rupture de stock. Un trigger posé là aurait envoyé un
+reçu de vente pour une marchandise que l'acheteur ne recevrait jamais.
+
+Ce qui rend la question outillable : elle ne dépend d'aucune connaissance
+métier. Elle se pose **mécaniquement sur n'importe quelle colonne de statut du
+schéma** — `orders.status`, `payments.status`, `escrow_entries.status`,
+`zabelie_fulfillment.status`, `zabelie_topup_orders`… : lister tous les sites
+d'écriture, et pour chaque valeur cible, vérifier que les branches qui y mènent
+sont bien celles qu'on croit.
+
+**À faire tourner UNE FOIS avant le lancement**, à la main s'il le faut. Si la
+passe manuelle trouve quelque chose, alors seulement écrire l'outil : un
+instrument construit avant d'avoir mesuré son trou rendrait zéro et paraîtrait
+sain.
+
+### ⚠️ `confirm_payment` rouge peut vouloir dire « outbox », pas « MonCash »
+
+**À savoir AVANT le premier incident, pas pendant.** Depuis `0061`, le dépôt du
+reçu se fait par trigger DANS la transaction de `confirm_payment`. C'est ce qui
+rend le reçu inséparable du commit de l'argent — et c'est donc du **fail-closed
+sur le reçu** : si l'insertion en outbox échoue, `confirm_payment` échoue avec
+elle, et le paiement n'est pas confirmé.
+
+Choix assumé, pour une raison précise : un paiement **non confirmé** est
+exactement le cas que le réconciliateur (`/api/reconcile`, 12:00) sait
+reprendre — l'inverse du cas fermé par `0061`, où la commande déjà réclamée ne
+repassait jamais. L'argent a bien quitté MonCash ; il sera confirmé au passage
+suivant.
+
+**Lecture d'incident.** Un `confirm_payment` en erreur ne désigne pas
+forcément l'opérateur. Regarder aussi `zabelie_outbox` et `auth.users` (le
+trigger y lit les adresses). Une adresse introuvable ne bloque rien — le
+trigger n'insère alors aucune ligne, à dessein.
+
+### Contrôle day-J — outbox des confirmations de vente (0061)
+
+⚠️ **À lire dès le lendemain de l'application de `0061`, et pas plus tard.**
+`RESEND_API_KEY` n'est pas posée : les lignes vont donc s'accumuler **par
+construction**, et cette accumulation doit être un chiffre qu'on lit, pas un
+silence. Un compteur à zéro sur cette requête ne voudra rien dire tant que la
+clé manque — c'est « aucun cas possible », pas « aucun cas ».
+
+```sql
+-- Confirmations de vente en souffrance. Trois colonnes, trois lectures.
+select
+  count(*) filter (where sent_at is null and abandonne_a is null
+                     and created_at < now() - interval '1 hour') as pendantes_1h,
+  count(*) filter (where abandonne_a is not null)                as abandon_terminal,
+  count(*) filter (where sent_at is not null)                    as parties
+from zabelie_outbox;
+
+-- Le détail de ce qui est mort, avec la raison — jamais un simple total.
+select order_id, kind, attempts, left(last_error, 120) as erreur, abandonne_a
+  from zabelie_outbox
+ where abandonne_a is not null
+ order by abandonne_a desc
+ limit 20;
+```
+
+**Lecture.** `abandon_terminal > 0` veut dire qu'un acheteur a payé et n'a
+jamais su que son argent était arrivé — cinq tentatives épuisées. Ce n'est pas
+une statistique, c'est une liste de personnes à recontacter, et `last_error`
+dit pourquoi. `pendantes_1h` élevé avec `abandon_terminal = 0` désigne le
+fournisseur, pas les messages.
 ### Contrôle day-J — intentions d'audit orphelines (fail-closed 0055)
 
 Le fail-closed écrit la trace AVANT la RPC : une ligne d'intention sans

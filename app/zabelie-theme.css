@@ -63,12 +63,19 @@
   --color-teal: #8fbf6f;     /* = success */
 
   /* ── Typographie ──
-     Titres : Manrope ExtraBold (800) · Texte : Inter · Boutons : Inter SemiBold.
+     Titres : Playfair Display 700 (serif) · Texte : Inter · Boutons : Inter 600.
      Polices AUTO-HÉBERGÉES via next/font (layout.tsx) → variables --font-inter
-     / --font-manrope. Repli système immédiat le temps du swap. */
+     / --font-display. Repli système immédiat le temps du swap.
+
+     ⚠️ LE REPLI DES TITRES EST UN SERIF, et ce n'est pas cosmétique. Avec
+     `display: swap`, le titre s'affiche d'abord dans la police de repli puis
+     bascule. Un repli sans-serif ferait sauter la forme des lettres ET la
+     largeur du bloc au moment du basculement — sur 3G, où l'attente se compte
+     en secondes, ce saut est visible et il déplace la mise en page. Georgia
+     est présent partout et proche en chasse. */
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto,
     sans-serif;
-  --font-heading: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+  --font-heading: var(--font-display), Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
 
   --radius-xl: 1.25rem;

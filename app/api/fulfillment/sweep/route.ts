@@ -40,7 +40,7 @@ function authorize(req: Request): boolean {
 }
 
 /**
- * Journal d'exécution — émis à CHAQUE passage, LES SIX COMPTEURS COMPRIS,
+ * Journal d'exécution — émis à CHAQUE passage, LES HUIT COMPTEURS COMPRIS,
  * y compris quand ils valent tous zéro.
  *
  * Sans ligne systématique, « le cron n'a pas tourné » et « il a tourné, rien à
@@ -70,12 +70,63 @@ async function handle(req: Request) {
   }
   try {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("zabelie_fulfillment_sweep");
-    if (error) {
-      journal({ issue: "echec", message: error.message, dureeMs: Date.now() - debut });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+
+    /* BAIL D'EXÉCUTION (0060) — un seul porteur à la fois.
+     *
+     * Ce balayage est déjà sûr en concurrence : ses quatre boucles portent
+     * `for update skip locked`. Le bail n'y change rien et ne prétend pas le
+     * contraire — il rend la sûreté structurelle plutôt que dépendante du SQL
+     * écrit en dessous, et il RÉVÈLE les chevauchements, qui aujourd'hui font
+     * le travail deux fois sans que rien ne le dise.
+     *
+     * Fail-open si `0060` n'est pas appliquée : voir `lib/cron-lease.ts`. Un
+     * cron qui gèle des escrows ne s'abstient pas parce qu'une table de
+     * verrous manque. */
+    const { avecBail } = await import("@/lib/cron-lease");
+    const detenteur = `sweep-${debut}`;
+    const { bail, resultat } = await avecBail(
+      admin,
+      "fulfillment_sweep",
+      detenteur,
+      async () => {
+        const { data, error } = await admin.rpc("zabelie_fulfillment_sweep");
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      { journal: (champs) => journal({ issue: "bail", ...champs }) }
+    );
+
+    if (!bail.autorise) {
+      journal({ issue: "ignore_bail_tenu", dureeMs: Date.now() - debut });
+      return NextResponse.json({ ignore: "bail_tenu" }, { status: 200 });
     }
-    const c = (data ?? {}) as Compteurs;
+
+    // L'échec de la RPC est désormais levé DANS le travail sous bail, donc
+    // rattrapé par le `catch` du bas — qui journalise et rend 500. Garder ici
+    // un `if (error)` sur une valeur toujours nulle aurait été exactement le
+    // garde inatteignable que ce dépôt traque partout ailleurs.
+    const c = (resultat ?? {}) as Compteurs;
+
+    /* ── Le balayage DIGITAL, dans le même passage ──────────────────────────
+     * `zabelie_fulfillment_sweep` filtre sur `kind = 'physical'` : les
+     * commandes d'un `fichier` sans livrable n'étaient vues par personne, et
+     * mûrissaient au chronomètre (voir l'en-tête de `0059`). Fonction séparée
+     * plutôt qu'une branche de plus : la première est adjacente à l'argent, et
+     * on ne rouvre pas 180 lignes de money-path pour en ajouter vingt.
+     *
+     * Un échec ici ne fait PAS échouer le passage physique, qui a déjà réussi
+     * et dont les avis partent plus bas — mais il est journalisé, sans quoi
+     * « la sonde n'a pas tourné » et « elle n'a rien trouvé » se ressemblent.
+     * Schéma en retard (`0059` non appliquée) : même traitement. */
+    let digital: { fichiers_signales?: number; fichiers_leves?: number } = {};
+    const { data: dData, error: dErr } = await admin.rpc(
+      "zabelie_fichier_sans_livrable_sweep"
+    );
+    if (dErr) {
+      journal({ issue: "echec_digital", message: dErr.message });
+    } else {
+      digital = (dData ?? {}) as typeof digital;
+    }
 
     /* ── Les avis partent APRÈS le balayage, et l'ordre est un choix ────────
      * Le garde de légitimité du balayage retient l'auto-réception tant qu'un
@@ -91,6 +142,21 @@ async function handle(req: Request) {
     const { envoyerAvisDus } = await import("@/lib/fulfillment-notices");
     const avis = await envoyerAvisDus(admin);
 
+    /* ── Drain de l'OUTBOX des notifications de vente (0061) ────────────────
+     * Les confirmations de vente dont l'envoi immédiat a échoué. Sans ce
+     * drain, `drainerOutbox` serait du code sans appelant — et la reprise
+     * qu'on vient d'écrire n'aurait jamais lieu, ce qui est exactement le
+     * défaut que l'outbox corrige, reproduit un cran plus haut. */
+    const { drainerOutbox } = await import("@/lib/outbox");
+    const { renvoyerNotificationVente } = await import("@/lib/zabelie-notify");
+    const { isEmailEnabled } = await import("@/lib/zabelie-email");
+    const relances = await drainerOutbox(
+      admin,
+      (kind, destinataire, orderId) =>
+        renvoyerNotificationVente(admin, kind, destinataire, orderId),
+      isEmailEnabled()
+    );
+
     journal({
       issue: "termine",
       auto_recus: c.auto_recus ?? 0,
@@ -99,14 +165,20 @@ async function handle(req: Request) {
       avis_en_echec: c.avis_en_echec ?? 0,
       orphelins_repares: c.orphelins_repares ?? 0,
       orphelins_tardifs: c.orphelins_tardifs ?? 0,
+      fichiers_signales: digital.fichiers_signales ?? 0,
+      fichiers_leves: digital.fichiers_leves ?? 0,
       avis_dus: avis.dus,
       avis_envoyes: avis.envoyes,
       avis_echecs: avis.echecs,
       avis_concurrents: avis.concurrents,
       avis_abandonnes: avis.abandonnes,
+      outbox_dus: relances.dus,
+      outbox_envoyes: relances.envoyes,
+      outbox_echecs: relances.echecs,
+      outbox_abandonnes: relances.abandonnes,
       dureeMs: Date.now() - debut,
     });
-    return NextResponse.json({ ...c, avis });
+    return NextResponse.json({ ...c, ...digital, avis });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur";
     journal({ issue: "exception", message, dureeMs: Date.now() - debut });
