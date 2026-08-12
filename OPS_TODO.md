@@ -316,6 +316,32 @@ le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
 
+### 🗂️ CHANTIER DES DORMANTES — état MESURÉ le 2026-08-12, rien d'appliqué
+
+> Les cinq dormantes ne sont pas cinq fois la même question. Deux sont
+> mécaniques, une est un piège si on l'applique seule, une reporte sa propre
+> décision, une reste bloquée. Mesuré une par une, jamais relu du registre.
+
+| # | ce qu'elle fait vraiment | ce que coûte le statu quo | nature |
+|---|---|---|---|
+| **`0052`** `label_es` | ajoute la colonne + traduit 123 rayons | ⚠️ **un aller-retour SQL DOUBLÉ à chaque lecture de catégories.** `lireCategories` (`lib/taxonomy.ts:301`) tente la requête avec `label_es`, reçoit `42703`, et **rejoue sans la colonne**. Le repli est correct et documenté — il paie juste deux requêtes là où une suffirait, sur un marché défini par la bande passante faible. Concerne le menu d'accueil, la taxonomie et `/vendre`. | **mécanique** — aucun arbitrage |
+| **`0053`** rétention 90 j | 180 → 90 jours sur les termes de recherche | rien aujourd'hui : `zabelie_search_misses` = **0 ligne**, la capture est éteinte (`SEARCH_FINGERPRINT_SALT` absente). ⭐ **Mais l'ordre compte** : appliquée MAINTENANT, sur table vide, aucun terme ne sera jamais conservé sous l'ancienne règle de 180 j. Appliquée après la pose du sel, une cohorte aura été capturée sous 180. | **mécanique**, et le bon moment est *avant* |
+| **`0054`** config commission | crée `zabelie_commission_config` | ⛔ **PIÈGE : aucun lecteur, ni TypeScript ni SQL.** Vérifié. Le taux vit dans `lib/commission.ts` (`standard: 1000, elite: 600`). L'appliquer seule créerait une table que personne ne lit, avec l'apparence de satisfaire la règle dure n°3 — et quiconque changerait la table plus tard ne verrait **aucun effet**. Classe « artefact sans appelant », version la plus coûteuse : sur un paramètre d'argent. | **à appliquer AVEC son câblage**, jamais seule |
+| **`0051`** rayon klerin | insère UNE catégorie, `active = false` | rien — et c'est le point : le rayon serait **invisible**. L'appliquer n'engage donc rien ; la décision (clairin = alcool : cadre légal, règles des rails de paiement) se prend le jour où quelqu'un passe `active = true`. | **reporte sa propre décision** |
+| **`0056`** purge des avis | purge les avis envoyés > 90 j | rien : **0 avis envoyé**, 0 ligne de `zabelie_fulfillment`, 4 commandes au total. Le sweep journalise `purges: -1`, dégradation prévue et visible. | ⛔ **bloquée** par D-10→D-14 (`docs/28`) — un avis est une pièce du futur suivi des litiges |
+
+**Ce que ce tableau ne dit pas** : aucune de ces cinq n'est sur le chemin de
+la première vente. Le blocage réel reste `SUPABASE_SERVICE_ROLE_KEY`.
+
+⚠️ **Une fausse alerte, consignée parce qu'elle vaut la mesure.** En traçant
+`0052`, un `grep` a montré `label_es` dans le `select` de
+`lireRayonsPublication`, appelée par `/vendre` — donc, apparemment, un
+formulaire vendeur dont la liste de rayons revenait vide et un `<select
+required>` insubmersible. Faux : `lireCategories` est le helper TOLÉRANT, et
+son repli était écrit le 2026-08-10 en citant l'état mesuré de la production.
+Un `grep` qui montre une colonne dans une requête ne prouve pas que la
+requête échoue.
+
 ### ✅ APPLIQUÉE le 2026-08-12 — `0063`, le registre complet
 
 > **Signal** : « complète le registre avec les 35 lignes manquantes »,
