@@ -41,7 +41,6 @@ const DIR = "supabase/migrations";
 
 /** Trous DÉLIBÉRÉS ou en attente, chacun avec sa raison. */
 const TROUS_ADMIS: Record<number, string> = {
-  56: "0056_purge_sent_notices.sql — sur la branche de la PR #90, non fusionnée. NON appliquée en base.",
 };
 
 function numerosPresents(): number[] {
