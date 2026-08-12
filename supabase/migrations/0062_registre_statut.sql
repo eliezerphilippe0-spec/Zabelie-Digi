@@ -41,7 +41,16 @@ alter table zabelie_schema_migrations
   add column statut text;
 
 -- Table de sondes : une expression booléenne par migration, explicite.
-create temporary table _sondes (fichier text primary key, expr text) on commit drop;
+--
+-- ⚠️ PAS de `on commit drop`, et la CI l'a appris à mes dépens. La première
+-- version le portait : `psql` étant en AUTOCOMMIT, la table mourait à la fin
+-- de l'instruction qui la créait, et le `insert` suivant trouvait le néant —
+-- `ERROR: relation "_sondes" does not exist`. Le test de garde de cette
+-- migration LIT le fichier, il ne l'EXÉCUTE pas : `0062` n'avait donc jamais
+-- tourné une seule fois avant que la suite SQL ne la joue. Encore un
+-- instrument qui n'avait pas été éprouvé sur ce qu'il prétendait couvrir.
+-- La table est supprimée explicitement en fin de migration.
+create temporary table _sondes (fichier text primary key, expr text);
 
 insert into _sondes (fichier, expr) values
   -- Objet créé, présence directe.
@@ -104,6 +113,8 @@ begin
     raise exception 'ZB062 : % ligne(s) non classée(s) après reprise', v_reste;
   end if;
 end $$;
+
+drop table _sondes;
 
 alter table zabelie_schema_migrations
   alter column statut set not null,
