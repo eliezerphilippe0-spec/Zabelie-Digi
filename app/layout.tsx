@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
 import { siteUrl } from "@/lib/site-url";
@@ -14,10 +14,20 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
-const manrope = Manrope({
+/* Titres — Playfair Display, serif de forte modulation (demande porteur
+   2026-08-11, d'après la carte de restaurant photographiée).
+   
+   FONTE VARIABLE, et c'est mesuré : la première version chargeait deux
+   graisses statiques (600/700). Le `h1` de l'accueil porte un utilitaire
+   `font-extrabold`, donc 800 — que le navigateur SYNTHÉTISAIT faute de
+   l'avoir. Un faux gras sur une grotesque passe inaperçu ; sur un serif à
+   forte modulation il épaissit les déliés autant que les pleins et détruit
+   le dessin de la lettre. La variable couvre 400→900 dans UN SEUL fichier :
+   plus léger que deux statiques, et aucune graisse inventée.
+   Sous-ensemble `latin` : couvre è, ò, é, ô, à, ç — français ET kreyòl. */
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["800"],
-  variable: "--font-manrope",
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -66,7 +76,7 @@ export default async function RootLayout({
   // sur "fr" auparavant, le Kreyòl était prononcé avec les règles du français.
   const lang = await getLang();
   return (
-    <html lang={lang} className={`${inter.variable} ${manrope.variable}`}>
+    <html lang={lang} className={`${inter.variable} ${playfair.variable}`}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   );

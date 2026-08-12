@@ -1,6 +1,6 @@
-/* Typo AUTO-HÉBERGÉE via next/font (voir app/layout.tsx) : Manrope 800 (titres)
-   + Inter 400/500/600/700/800 (texte, boutons). Plus de requête tierce bloquante
-   vers Google Fonts — gain net sur 3G. */
+/* Typo AUTO-HÉBERGÉE via next/font (voir app/layout.tsx) : Playfair Display
+   600/700 (titres, serif) + Inter 400→800 (texte, boutons). Plus de requête
+   tierce bloquante vers Google Fonts — gain net sur 3G. */
 @import "tailwindcss";
 @import "./zabelie-theme.css"; /* SOURCE UNIQUE des design tokens */
 
@@ -18,8 +18,11 @@
     background-color: var(--color-brand);
     color: var(--color-ink); /* texte sombre : 5.79:1 (blanc sur brand = 2.66:1) */
   }
-  /* Titres → Manrope ExtraBold (les utilitaires de poids explicites gardent
-     la priorité, mais la famille vient du token heading). */
+  /* Titres → Playfair Display Bold (les utilitaires de poids explicites
+     gardent la priorité, mais la famille vient du token heading).
+     700 et non 800 : un serif à fort contraste épaissit les pleins bien plus
+     vite qu'une grotesque, et Manrope 800 transposé tel quel donnait des
+     titres empâtés. */
   h1,
   h2,
   h3,
@@ -27,7 +30,7 @@
   h5,
   h6 {
     font-family: var(--font-heading);
-    font-weight: 800;
+    font-weight: 700;
   }
   /* Boutons → Inter SemiBold par défaut (surclassable par utilitaire). */
   button {

@@ -89,7 +89,14 @@ export function HeroCarousel({
       <div
         className={`flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-3xl bg-gradient-to-br px-6 py-8 text-center sm:aspect-[16/9] ${slide.accent}`}
       >
-        <p className="max-w-2xl text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
+        {/* `font-heading` explicite : ce titre est un `<p>`, pas un `h*`, donc
+            la règle de `globals.css` ne l'atteint pas. Sans cette classe il
+            restait la SEULE grande écriture de l'accueil en grotesque après
+            le passage au serif — un écart qui se lit comme un oubli.
+            Le badge en dessous garde Inter à dessein : il porte un PRIX, et
+            les chiffres d'un serif à forte modulation se confondent à petite
+            taille sur un écran d'entrée de gamme. */}
+        <p className="max-w-2xl font-heading text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
           {slide.title}
         </p>
         {slide.badge && (
