@@ -316,7 +316,48 @@ le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
 
-### 🗂️ CHANTIER DES DORMANTES — état MESURÉ le 2026-08-12, rien d'appliqué
+### ✅ APPLIQUÉES le 2026-08-12 — `0053` puis `0052`, sur signal porteur
+
+> **Signal** : « applique 0053 puis 0052 », porteur, en session, 2026-08-12.
+> **Exécutant** : agent, par `apply_migration`. Empreintes exécutables du SQL
+> reçu croisées avec les fichiers du dépôt : **identiques pour les deux**.
+> `applied_by = 'porteur (session assistee)'`.
+
+| | empreinte canonique | effet mesuré après |
+|---|---|---|
+| `0053` | `5d13a074932273d7…` | `retention_days` **180 → 90**, table à 0 ligne, garde `ZB053` franchie |
+| `0052` | `2f938dc02aedcc62…` ⚠️ **nouvelle** | colonne `label_es` créée, **135 catégories traduites, 0 sans traduction** |
+
+**La répétition contre l'état appliqué réel a payé, et c'est le fait du
+tour.** `0052` a été écrite le 2026-08-02 et couvrait 124 slugs. `0057` a été
+appliquée le 2026-08-11 et a créé 12 feuilles sous `sevis-pwofesyonel`. La
+production en portait donc **135** : la garde `ZB052` — celle qui échoue si
+une seule catégorie reste sans traduction — **refusait l'application**. Cas
+connu-négatif joué sur socle prod-conforme : l'ancienne version est refusée et
+la garde **nomme les douze**. Le fichier a été complété le jour même, d'où une
+empreinte nouvelle au registre.
+
+⚠️ **Les douze traductions espagnoles sont de l'agent**, calquées sur les
+libellés français et anglais déjà en base, **non relues par un hispanophone**.
+C'est écrit dans le fichier. `bote-ak-swen` reprend volontairement le libellé
+du département `bote-swen` : le français et l'anglais le font déjà, et lever
+l'ambiguïté serait une décision de nommage, pas une traduction.
+
+**Ce que `0052` supprime au passage** : le double aller-retour SQL de
+`lireCategories`. Chaque lecture de catégories tentait la requête avec
+`label_es`, recevait `42703`, puis la rejouait sans la colonne. Le menu
+d'accueil, la taxonomie et `/vendre` payaient deux requêtes là où une suffit.
+
+**Ce que `0053` verrouille** : appliquée **avant** la pose de
+`SEARCH_FINGERPRINT_SALT`, donc aucun terme de recherche n'aura jamais été
+conservé sous l'ancienne règle de 180 jours. Appliquée après, une cohorte
+l'aurait été — c'est le seul point où attendre coûtait quelque chose
+d'irréversible.
+
+**Registre après** : 61 `appliquee` · 3 `redigee` (`0051`, `0054`, `0056`) ·
+1 `abandonnee`. Invariant comptable `0033` : 0 écart.
+
+### 🗂️ CHANTIER DES DORMANTES — état MESURÉ le 2026-08-12
 
 > Les cinq dormantes ne sont pas cinq fois la même question. Deux sont
 > mécaniques, une est un piège si on l'applique seule, une reporte sa propre
