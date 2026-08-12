@@ -12,6 +12,7 @@ import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
 import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
+import { lireTauxCommission } from "@/lib/commission-config";
 import { POLICY_PATH } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
@@ -113,6 +114,11 @@ export default async function VendrePage() {
   // MÊME taxonomie que celle qu'affichent le menu, la colonne des rayons et
   // le catalogue (correctif 2026-08-11 — voir lib/product-categories).
   const rayonsPublication = await lireRayonsPublication(supabase, lang);
+  // Le taux RÉELLEMENT configuré (0054/0066), pour que l'estimation suive
+  // un UPDATE d'exploitation sans redéploiement. Repli = constante compilée.
+  const { taux } = await lireTauxCommission(supabase, (c) =>
+    console.error("[commission] taux de repli utilisé", c),
+  );
 
   const { data: mineRaw } = await supabase
     .from("products")
@@ -153,6 +159,7 @@ export default async function VendrePage() {
       <div className="glass rounded-2xl p-6">
         <PublishForm
           tier={tier}
+          rateBpsEnVigueur={taux[tier]}
           categories={rayonsPublication}
           labels={{
             titlePh: t(lang, "publish.title.ph"),

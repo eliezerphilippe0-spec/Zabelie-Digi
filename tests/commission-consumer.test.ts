@@ -25,9 +25,20 @@ const IMPORT_RE = /from\s+["'](?:@\/lib\/commission|(?:\.\.?\/)+lib\/commission|
 /**
  * Un import de TYPE ne compte pas : il est effacé à la compilation, donc il
  * ne peut rien faire diverger. Seul un APPEL au calcul est un consommateur —
- * c'est pourquoi on exige l'un des deux appels, pas seulement l'import.
+ * c'est pourquoi on exige l'un des appels, pas seulement l'import.
+ *
+ * ⚠️ LISTE À TENIR À JOUR, et elle a déjà bougé une fois. Le 2026-08-12, le
+ * câblage de `0054` a fait passer `net-estimate.tsx` de `commissionHTG` à
+ * `commissionAuTaux` — l'écran consommait toujours le module, mais ce garde
+ * a rougi parce qu'il énumérait les NOMS. Le rouge était juste dans sa forme
+ * (quelque chose a changé) et faux dans son message (« oracle sans
+ * consommateur »).
+ *
+ * Ne pas remplacer cette énumération par un simple test d'import : c'est
+ * précisément ce que la note ci-dessus refuse, un import de type suffirait
+ * alors à faire croire le module branché.
  */
-const CALL_RE = /\b(?:commissionHTG|netHTG)\s*\(/;
+const CALL_RE = /\b(?:commissionHTG|netHTG|commissionAuTaux)\s*\(/;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

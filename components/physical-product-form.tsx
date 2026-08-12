@@ -37,12 +37,15 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export function PhysicalProductForm({
   tier = "standard",
+  rateBpsEnVigueur,
   netLabels,
   policyAccept,
   policyRead,
 }: {
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
+  /** Taux configuré en base (0066) ; omis → repli sur la constante. */
+  rateBpsEnVigueur?: number;
   /**
    * Libellés de l'estimation, traduits côté serveur. Le reste de ce
    * formulaire est encore en français en dur (dette connue, OPS_TODO) — ce
@@ -250,7 +253,12 @@ export function PhysicalProductForm({
           />
           {!showVariants && (
             <div className="mt-1.5">
-              <NetEstimate priceHTG={price} tier={tier} labels={netLabels} />
+              <NetEstimate
+                priceHTG={price}
+                tier={tier}
+                rateBpsEnVigueur={rateBpsEnVigueur}
+                labels={netLabels}
+              />
             </div>
           )}
         </label>

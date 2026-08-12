@@ -42,6 +42,7 @@ export function PublishForm({
   labels,
   categories,
   tier = "standard",
+  rateBpsEnVigueur,
 }: {
   labels: PublishFormLabels;
   /**
@@ -53,6 +54,8 @@ export function PublishForm({
   categories: OptionCategorie[];
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
+  /** Taux configuré en base (0066) ; omis → repli sur la constante. */
+  rateBpsEnVigueur?: number;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -170,7 +173,12 @@ export function PublishForm({
           onChange={(e) => set("priceHTG", e.target.value)}
           required
         />
-        <NetEstimate priceHTG={form.priceHTG} tier={tier} labels={labels.net} />
+        <NetEstimate
+          priceHTG={form.priceHTG}
+          tier={tier}
+          rateBpsEnVigueur={rateBpsEnVigueur}
+          labels={labels.net}
+        />
       </div>
       <textarea
         className={input}
