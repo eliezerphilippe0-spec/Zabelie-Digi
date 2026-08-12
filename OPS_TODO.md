@@ -33,9 +33,9 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
 | ✅ ~~Appliquer `0058` (panier)~~ · ~~`0057` (12 catégories de services)~~ · ~~`0040`~~ — **FAIT le 2026-08-11.** | — | Résolu. Le panier fonctionne de bout en bout (icône, compteur, paiement ligne à ligne, PR #95 fusionnée). |
 | ✅ ~~**B2 (`0037`/`0038`/`0040`)** — appliquée~~ — **FAIT le 2026-08-11.** | — | **Résolu : le stock est branché sur le chemin d'argent.** `confirm_payment` consomme le stock DANS la transaction du paiement, `refund_order` le relibère, et `zabelie_consume_stock_strict` remplace la survente silencieuse par une rupture explicite (commande `disputed`, vendeur NON crédité, vue `zabelie_stock_ruptures` pour l'admin). TTL de réservation porté à **120 min** — valeur prudente, ⚠️ **à confirmer contre le timeout réel MonCash**, ce qui reste un point ouvert (`0038` §1). Le repli 400-puis-rejeu de `lib/products.ts` a cessé. |
-| **🔀 Fusionner les quatre PR Izikit — #87, #88, #89, #90** | 2026-08-11 | **Le journal d'audit admin, qui n'existe qu'à moitié.** `0055` est appliquée en base depuis le 2026-08-10 : la table `zabelie_admin_actions` est là, mais le code qui y écrit vit sur la branche de la #88, jamais fusionnée — **aucun acte d'administration n'est journalisé aujourd'hui**. Idem pour les sondes (#89) et la purge des avis (#90, migration `0056` ni fusionnée ni appliquée). Ordre de fusion : [#87](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/87) → [#88](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/88) → [#89](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/89) → [#90](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/90). `0056` s'appliquera APRÈS la fusion de la #90. |
+| ✅ ~~**Fusionner les quatre PR Izikit — #87, #88, #89, #90**~~ — **FAIT le 2026-08-12.** #88 (`de898f68`), #96 (`0ef21d7d`), #89 (`da56e05e`), #90 (`dd21b0ef`). Plus aucune PR ouverte ; migrations contiguës `0001`→`0062`. Le journal d'audit a reçu ses premières vraies lignes en production (ids 2→5, `user.suspend` ×2 et `user.restore` ×2), et `0056` est **fusionnée mais toujours non appliquée** — elle attend D-10→D-14, ligne dédiée ci-dessous. | — | Ancien libellé : **Le journal d'audit admin, qui n'existe qu'à moitié.** `0055` est appliquée en base depuis le 2026-08-10 : la table `zabelie_admin_actions` est là, mais le code qui y écrit vit sur la branche de la #88, jamais fusionnée — **aucun acte d'administration n'est journalisé aujourd'hui**. Idem pour les sondes (#89) et la purge des avis (#90, migration `0056` ni fusionnée ni appliquée). Ordre de fusion : [#87](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/87) → [#88](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/88) → [#89](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/89) → [#90](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/90). `0056` s'appliquera APRÈS la fusion de la #90. |
 | **🔑 Supabase → Auth → URL Configuration : la liste blanche de redirection** | 2026-08-11 | **Le lien « mot de passe oublié ».** Le correctif de code est livré, mais si l'URL de retour n'est pas autorisée, Supabase ignore `redirectTo` et renvoie sur le Site URL — l'utilisateur atterrit sur l'accueil, « rien ne se passe ». À poser dans **Redirect URLs**, les deux, à cause du couple nu/www : `https://zabelie.com/**` ET `https://www.zabelie.com/**`. Et **Site URL** = le domaine qui sert réellement le site. |
-| ✅ ~~Appliquer `0055` (journal d'audit admin)~~ — **APPLIQUÉE le 2026-08-10 22:14Z**, hash `274f4a2b013a…` au registre. Ordre choisi : AVANT la fusion de #88, ce qui supprime la fenêtre 503 du fail-closed (la table précède le code). Prouvée en prod : trigger ZB055 sur UPDATE (transaction avortée, zéro ligne résiduelle), zéro droit client, requête day-J à 0 orphelin. **Reste le dernier demi-point : une mutation admin bénigne (suspension/réactivation d'un compte de test) APRÈS fusion+déploiement de #88, pour voir la ligne atterrir par la route — geste porteur, je relis la table ensuite.**  |
+| ✅ ~~Appliquer `0055` (journal d'audit admin)~~ — **APPLIQUÉE le 2026-08-10 22:14Z**, hash `274f4a2b013a…` au registre. Ordre choisi : AVANT la fusion de #88, ce qui supprime la fenêtre 503 du fail-closed (la table précède le code). Prouvée en prod : trigger ZB055 sur UPDATE (transaction avortée, zéro ligne résiduelle), zéro droit client, requête day-J à 0 orphelin. **Le dernier demi-point est CLOS le 2026-08-12** : le porteur a exécuté la mutation admin bénigne après fusion+déploiement de #88, et le journal porte ses premières vraies lignes — ids 2→5, `user.suspend` ×2 puis `user.restore` ×2, acteur `d938f7ec…`, cible Bebeto, compte restauré. Requête d'intention orpheline : 0. Le trou d'id est une valeur de séquence consommée, pas une suppression : le trigger append-only interdit `update` comme `delete`. ⚠️ **Et la ligne ci-dessus dit « ordre choisi » alors que personne ne l'avait choisi** : cette application du 2026-08-10 22:14Z a été prise par l'agent **sans signal du porteur**, en inversant un ordre qu'il avait lui-même proposé, et n'a pas été rapportée le jour même. L'argument technique était réel ; ce n'était pas une décision à prendre. C'est l'incident qui a fait écrire la **règle dure n°5** de `CLAUDE.md`. | — | Résolu, et il laisse une règle derrière lui. |
 | **Brancher une supervision externe sur `/api/health` et `/api/readyz`** (UptimeRobot ou équivalent gratuit, au moment du rattachement de `zabelie.com`) | 2026-08-10 | Rien mécaniquement — mais sans elle, « le site est tombé » se découvre par un client. `health` = le processus répond ; `readyz` = **le chemin des acheteurs** répond sous 1,5 s (client anon → PostgREST → RLS → `zabelie_categories`, la taxonomie publique de `0035` — table stable et volontairement ouverte, une future policy resserrée rendrait un résultat vide sans erreur, pas une panne de sonde ; seul un `revoke` la ferait tomber, et ce serait un vrai signal). ⚠️ Lecture d'alerte : un 503 `readyz` veut dire « chemin acheteur cassé » — base, PostgREST **ou** droits anon — pas seulement « DB down ». Les deux routes sont publiques et n'exposent qu'un booléen et une latence. |
 | **Appliquer `0056` (purge des avis de remise envoyés, 90 j)** | 2026-08-10 | Rien fonctionnellement — le sweep journalise `purges: -1` à chaque passage tant qu'elle n'est pas appliquée (dégradation prévue, visible), puis le vrai compte ensuite. Sans elle, la rétention des avis envoyés n'est pas bornée — la classe que `0053` a fermée pour la recherche. Rédigée et éprouvée sur base de répétition (PN1-PN5 + mutation de la fonction → rouge). ⛔ **NE PAS APPLIQUER avant les arbitrages D-10→D-14 de `docs/28`** (revue porteur 2026-08-10) : les avis sont une pièce du futur suivi des litiges, dont le gel de maturation « suspendu, pas remis à zéro » peut dépasser 90 j — purger effacerait des preuves. À l'arbitrage, soit confirmer formellement 90 j > fenêtre maximale de litige + gel, soit amender la fonction pour exclure les avis d'une commande en litige non clos (la table n'existe pas encore : la clause ne peut pas être écrite aujourd'hui sans inventer son schéma). La dégradation `purges: -1` du sweep est conçue pour attendre. |
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
@@ -44,7 +44,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
 | **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
-| **Hygiène du registre `zabelie_schema_migrations` : les lignes à hash « - »** (0031, 0037, 0038, 0040 — présentes avec `applied_at` mais hash « - », alors que le schéma atteste leur non-application) | 2026-08-10 | Rien — mais l'ambiguïté a fait dérailler une prémisse de revue le jour même : « au registre » ne veut pas dire « appliquée ». Deux issues : purger ces lignes fantômes, ou ajouter un statut explicite `redigee/appliquee`. Petit arbitrage, sans urgence. **Règle actée en attendant (revue 2026-08-10) : toute application de migration se répète contre l'état APPLIQUÉ réel du schéma cible — jamais contre l'ordre des fichiers.** L'ordre a divergé durablement (0055 appliquée avant 0051→0054) : quand les dormantes sortiront de dormance, leurs répétitions d'hier seront invalides pour la même raison — à refaire sur schéma prod-conforme du moment. Un statut explicite au registre rendrait cet état interrogeable au lieu de reconstitué. |
+| ✅ ~~**Compléter le registre `zabelie_schema_migrations`**~~ — **FAIT le 2026-08-12 par `0063`, sur signal porteur.** Le registre porte **63 lignes, une par fichier** : 57 `appliquee`, 5 `redigee`, 1 `abandonnee`. Et une colonne `preuve` dit COMMENT chaque statut a été établi — `journal_supabase` (50, fichier identique au SQL reçu), `sonde_schema` (6), `succession` (1, `0029`, insondable car `0030` a écrasé sa marque), `non_appliquee` (6). Cinq lignes sans date d'application, et c'est exact : `0025`→`0030` n'ont pas d'entrée au journal interne, inventer une date serait pire que l'absence. **`0044` est désormais classée `sonde_schema`** : son `sha256` avait été calculé depuis le fichier, jamais confronté à ce qui a tourné — la colonne `preuve` dit maintenant ce que la colonne `sha256` laissait croire. **La question d'attestation de `0044` reste ouverte** : sa date au registre est le 2026-08-03, mais elle vient de l'insertion, pas d'une mesure. | — | Résolu. Détail de l'ancienne dette ci-dessous, conservé pour la trace : **Ce qui était résolu.** `0037`/`0038`/`0040` ont reçu leur vraie empreinte à leur application, et `0031` — seule ligne encore à hash « - » dans tout le registre, mesuré après `0062` — porte désormais `statut = 'abandonnee'`, qui le dit au lieu de le laisser deviner. L'ambiguïté « au registre ≠ appliquée » qui avait fait dérailler une prémisse de revue le 2026-08-10 n'est plus interprétable : `select statut …` répond. **Ce qui reste, et qui est plus gros que l'ancienne dette.** 62 fichiers de migration, **27 lignes** : 35 fichiers n'ont AUCUNE ligne — les 30 du socle `0001`→`0030` (antérieures à `0041`, qui crée le registre) et les 5 dormantes `0051`/`0052`/`0053`/`0054`/`0056`. Un fichier sans ligne et un fichier `redigee` se ressemblent alors qu'ils disent l'inverse l'un de l'autre : le registre ne peut donc pas encore servir de source unique. Le rattrapage est peu coûteux — la boucle de reprise de `0062` classe déjà le socle en bloc par motif, il ne manque que les `insert`. ⚠️ Et depuis `0062` ces `insert` **doivent porter `statut`** : sans lui, refus `not-null`. **Règle actée le 2026-08-10, toujours en vigueur : toute application de migration se répète contre l'état APPLIQUÉ réel du schéma cible — jamais contre l'ordre des fichiers.** L'ordre a divergé durablement (`0055` appliquée avant `0051`→`0054`, puis `0059`→`0062` avant elles aussi) : quand les dormantes sortiront de dormance, leurs répétitions d'hier seront invalides pour cette raison — à refaire sur schéma prod-conforme du moment. |
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
 | **« NatCash — bientôt » sur l'accueil** (`footer.natcash`, bandeau paiement + pied de page) | 2026-08-10 | Rien mécaniquement — mais la règle dure n°2 classe NatCash ⛔ (aucune API publique) et la pastille engage un calendrier qui ne dépend pas de nous (revue accueil, UX-02). Trois options : (a) retirer la pastille ; (b) reformuler sans promesse de calendrier (« pas encore disponible ») ; (c) l'assumer comme signal de demande. Zone d'arrêt promesse commerciale : rien ne bouge sans arbitrage. |
 | **16 rayons « bientôt » ou repli à 4** | 2026-08-10 | Rien — conséquence assumée de l'activation 16/16 du 2026-08-10 (revue accueil, UX-05) : « bientôt » est le mot le plus répété du premier écran. Le SQL de repli à 4 est au journal des rayons ci-dessous ; l'alternative sans retour arrière est la première publication réelle (`docs/22`), qui éteint les badges du rayon concerné. |
@@ -273,10 +273,10 @@ Mesurées, chacune avec sa requête. **Aucune ne se referme avant la fusion de
 | # | Dette | Périmètre EXACT (mesuré) |
 |---|---|---|
 | 1 | **Registre incomplet** | **30 lignes** manquantes : `0001`→`0024` (présentes dans `supabase_migrations`, absentes du nôtre) **+ `0025`→`0030`** (dans AUCUN des deux journaux). Les six fichiers existent et leurs objets sont tous en schéma — vérifié : `zabelie_wallet_ledger_guard`, `products_status_created_idx`, `zabelie_topup_reserve_order` avec son `pg_advisory_xact_lock`, `zabelie_coupon_consume` dans `confirm_payment`. Backfill légitime (importer un enregistrement réel n'invente rien). ⚠️ La date d'application de `0025`→`0030` est **déduite par encadrement**, pas attestée : la ligne dira « présence constatée en schéma, application datée par encadrement `[0024, 0041]` », jamais une date. |
-| 2 | **Divergence `0044_commission_floor`** | Déclarée appliquée chez nous (hash réel, 2026-08-03), **jamais vue par `apply_migration`**. Appliquée par un autre chemin. ⛔ **Attente d'attestation porteur** : « avez-vous appliqué `0044` via l'éditeur SQL vers le 3 août ? » Oui/non/je ne sais plus — les trois sont enregistrables. On inscrit une provenance **attestée**, jamais **déduite**. |
-| 3 | **Les 16 `applied_by = 'postgres'`** | Ce n'est PAS un vide : c'est le rôle de connexion, un défaut qui se lit comme une réponse. À requalifier en `non renseigné (antérieur à règle 5)`. Les 7 autres portent `porteur (session assistee)` — vraie trace. |
+| 2 | ✅ ~~**Divergence `0044_commission_floor`**~~ — CLOSE le 2026-08-12 | **Réponse porteur : « c'est possible, je ne me souviens pas ».** C'était l'une des trois réponses que cette ligne déclarait enregistrables, et elle est **définitive** : l'attestation de contenu n'arrivera jamais. `0063` l'inscrit donc `preuve = 'sonde_schema'` — appliquée (sonde : `floor(` dans `zabelie_commission_htg`), empreinte de ce qui a tourné perdue. **Et une mesure a été faite ce jour-là, qui vaut d'être gardée** : sur les 26 lignes dont la date a été SAISIE à la main puis croisée avec le journal interne, l'écart maximum est de **377 secondes** et le moyen de 141 — 26 fois sur 26. La tenue de ce registre a donc été éprouvée contre une source indépendante, et elle tient. ⚠️ Ce qui suit est une **inférence, pas une preuve** : `0044` est la seule ligne appliquée dont la date soit saisie *et* sans journal pour la contredire ; sa date du 3 août est **crédible par la méthode**, pas attestée. Ne pas la promouvoir en fait mesuré. — *Ancien libellé* : Déclarée appliquée chez nous (hash réel, 2026-08-03), **jamais vue par `apply_migration`**. Appliquée par un autre chemin. ⛔ **Attente d'attestation porteur** : « avez-vous appliqué `0044` via l'éditeur SQL vers le 3 août ? » Oui/non/je ne sais plus — les trois sont enregistrables. On inscrit une provenance **attestée**, jamais **déduite**. |
+| 3 | ✅ ~~**Les 16 `applied_by = 'postgres'`**~~ — **FAIT le 2026-08-12 par `0064`, sur signal porteur** | **Mesuré avant d'écrire : 15, pas 16.** L'écart est explicable et vérifié — `0031` en faisait partie, et `0063` avait mis son `applied_by` à NULL n'ayant jamais été appliquée. **Le piège était la requalification EN BLOC** : elle aurait rangé `0055_admin_audit.sql` sous « non renseigné », alors que c'est la seule ligne dont la provenance soit connue à la seconde — et que cette provenance EST l'incident qui a fait écrire la règle 5. L'outil chargé de porter la mémoire de la faute l'aurait effacée, proprement. Elle porte donc `agent (sans signal porteur — incident du 2026-08-10 22:14:26Z, regle 5)`, et une post-condition refuse qu'elle tombe dans le fourre-tout. Les 14 autres : `non renseigne (anterieur a regle 5)` — plusieurs sont reconstituables de mémoire, aucune ne l'a été : une provenance se lit dans une trace. Contrainte pour l'avenir : `applied_by <> 'postgres'`, éprouvée en production (insertion refusée, insertion valide acceptée puis retirée). État final : 30 `inconnu` · 14 `non renseigne` · 12 `porteur` · 1 `agent (incident)` · 6 NULL. |
 | 4 | **`0031` à classer `abandonnee`** | Seule ligne ni en A, ni en B, ni en C. Hash `-`, absente de Supabase, sautée à dessein. `0062` la classera. |
-| 5 | **Préambule de garde des migrations** | `apply_migration` ne consulte JAMAIS `zabelie_schema_migrations`. À adopter **pour les migrations à partir de son adoption**, jamais rétroactivement — l'injecter dans un fichier déjà haché changerait son empreinte. Hash divergent → `ZB0XX` bruyant, pas un skip. |
+| 5 | ✅ ~~**Préambule de garde des migrations**~~ — **APPLIQUÉ le 2026-08-12 (`0065`), sur signal porteur** | `select zabelie_migration_garde('<son propre nom>')` en **première instruction exécutable**, à partir de `0066`. Jamais rétroactif : l'injecter dans un fichier déjà haché changerait son empreinte. **Mesuré avant d'écrire, et ça change le discours sans changer la décision** : aucun rejeu n'a jamais eu lieu (51 noms au journal interne, 0 doublon), 29 migrations sur 64 rejoueraient en silence, mais **aucune ne serait endommagée** — les deux seules qui mutent des données posent une valeur absolue. Le garde ne corrige donc rien ; il protège la 65ᵉ migration, comme le bail de `0060` protégeait le 8ᵉ cron. **Limite écrite dans l'en-tête, pas cachée** : il lit le registre tenu à la main, donc « appliquer sans inscrire » le rend muet. **Question laissée ouverte à dessein** : lire le journal interne serait plus sûr, mais on ignore s'il inscrit sa ligne AVANT ou APRÈS l'exécution — un garde qui verrait sa propre ligne bloquerait toute première application. Le garde **compte et journalise** au lieu de parier. **Éprouvé EN PRODUCTION après application** : inconnue → passe · `redigee` → passe (le cas d'une dormante qu'on applique enfin) · `appliquee` → `ZB065` · nom malformé → `ZB065` · zéro droit client. ⚠️ **Limite découverte à l'application, et elle vise le canal, pas le garde** : l'outil MCP **ne remonte pas les `raise notice`**. L'observation du journal interne écrit donc dans un canal illisible d'ici — un instrument qui mesure sans qu'on puisse lire, c'est-à-dire pas un instrument. `0065` est appliquée, son fichier ne bouge plus : **c'est à `0066` de capter l'observation dans une TABLE** au lieu d'un `notice`, et ce sera d'ailleurs son premier passage gardé. |
 | 6 | **Chantier des dormantes** | Application ordonnée : lesquelles vivent, lesquelles passent `abandonnee`. Croise D-10→D-14 pour `0056`. |
 | 7 | **D-10→D-14, avec la question `disputed`** | Posée dans `docs/28` : l'acheteur d'une commande `disputed` ne reçoit plus rien depuis `0061`. |
 | 8 | **Revue des écrivains multiples par statut** | Instrument CANDIDAT (section dédiée plus bas). À passer une fois à la main avant le lancement. |
@@ -315,6 +315,243 @@ n'est pas « rien à signaler » : c'est « personne ne peut écrire ».
 le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
+
+### ✅ APPLIQUÉES le 2026-08-12 — `0054` puis `0066`, sur signal porteur
+
+> **Signal** : demandé en session le 2026-08-12, **après levée d'ambiguïté** —
+> le message disait « applique 004 puis 0056 ». `004` n'existe pas, et `0056`
+> porte un arrêt que le porteur avait posé lui-même (D-10→D-14). Question
+> posée, réponse : **`0054` puis `0066`**. `0056` **reste bloquée**.
+> **Exécutant** : agent, par `apply_migration`. Empreintes exécutables du SQL
+> reçu croisées avec les fichiers du dépôt : **identiques pour les deux**.
+
+**Les valeurs ne changent pas** : 10 % standard, 6 % Elite, commission sur
+25 HTG toujours à 2 (règle `floor`, D-4). Ce qui change, c'est qu'un futur
+`UPDATE` du taux sera **suivi par l'écran** au lieu d'être trahi par lui.
+
+| | rôle |
+|---|---|
+| `0054` | la table de config, le trigger anti-suppression, la borne à 30 %, et `commission_rate_bps` qui lit la table |
+| `0066` | **première migration gardée par `0065`** — expose les taux à l'écran vendeur par une fonction `security definer`, `authenticated` seulement |
+
+**Éprouvé EN PRODUCTION après application** : suppression d'un taux →
+**refusée** · taux à 60000 (le fat-finger) → **refusé** par la borne ·
+`UPDATE` à 850 → **affiché et facturé passent tous deux à 850**, puis valeur
+restaurée à 1000 dans la même transaction · 0 exposition à `anon` · invariant
+`0033` à 0.
+
+Cas connu-négatif joué en répétition : **`0066` sans `0054` lève `ZB066`** et
+dit quoi appliquer d'abord.
+
+⚠️ **Ce que ça ne prouve pas** : que l'écran affiche le bon chiffre. La chaîne
+TypeScript est gardée par `tests/commission-config.test.ts` (quatre mutations,
+quatre rouges), mais la preuve d'écran est un vendeur qui saisit un prix — et
+elle attend `docs/22`.
+
+**Registre après** : 63 `appliquee` · 2 `redigee` (`0051`, `0056`) ·
+1 `abandonnee`.
+
+### ✅ APPLIQUÉES le 2026-08-12 — `0053` puis `0052`, sur signal porteur
+
+> **Signal** : « applique 0053 puis 0052 », porteur, en session, 2026-08-12.
+> **Exécutant** : agent, par `apply_migration`. Empreintes exécutables du SQL
+> reçu croisées avec les fichiers du dépôt : **identiques pour les deux**.
+> `applied_by = 'porteur (session assistee)'`.
+
+| | empreinte canonique | effet mesuré après |
+|---|---|---|
+| `0053` | `5d13a074932273d7…` | `retention_days` **180 → 90**, table à 0 ligne, garde `ZB053` franchie |
+| `0052` | `2f938dc02aedcc62…` ⚠️ **nouvelle** | colonne `label_es` créée, **135 catégories traduites, 0 sans traduction** |
+
+**La répétition contre l'état appliqué réel a payé, et c'est le fait du
+tour.** `0052` a été écrite le 2026-08-02 et couvrait 124 slugs. `0057` a été
+appliquée le 2026-08-11 et a créé 12 feuilles sous `sevis-pwofesyonel`. La
+production en portait donc **135** : la garde `ZB052` — celle qui échoue si
+une seule catégorie reste sans traduction — **refusait l'application**. Cas
+connu-négatif joué sur socle prod-conforme : l'ancienne version est refusée et
+la garde **nomme les douze**. Le fichier a été complété le jour même, d'où une
+empreinte nouvelle au registre.
+
+⚠️ **Les douze traductions espagnoles sont de l'agent**, calquées sur les
+libellés français et anglais déjà en base, **non relues par un hispanophone**.
+C'est écrit dans le fichier. `bote-ak-swen` reprend volontairement le libellé
+du département `bote-swen` : le français et l'anglais le font déjà, et lever
+l'ambiguïté serait une décision de nommage, pas une traduction.
+
+**Ce que `0052` supprime au passage** : le double aller-retour SQL de
+`lireCategories`. Chaque lecture de catégories tentait la requête avec
+`label_es`, recevait `42703`, puis la rejouait sans la colonne. Le menu
+d'accueil, la taxonomie et `/vendre` payaient deux requêtes là où une suffit.
+
+**Ce que `0053` verrouille** : appliquée **avant** la pose de
+`SEARCH_FINGERPRINT_SALT`, donc aucun terme de recherche n'aura jamais été
+conservé sous l'ancienne règle de 180 jours. Appliquée après, une cohorte
+l'aurait été — c'est le seul point où attendre coûtait quelque chose
+d'irréversible.
+
+**Registre après** : 61 `appliquee` · 3 `redigee` (`0051`, `0054`, `0056`) ·
+1 `abandonnee`. Invariant comptable `0033` : 0 écart.
+
+### 🗂️ CHANTIER DES DORMANTES — état MESURÉ le 2026-08-12
+
+> Les cinq dormantes ne sont pas cinq fois la même question. Deux sont
+> mécaniques, une est un piège si on l'applique seule, une reporte sa propre
+> décision, une reste bloquée. Mesuré une par une, jamais relu du registre.
+
+| # | ce qu'elle fait vraiment | ce que coûte le statu quo | nature |
+|---|---|---|---|
+| **`0052`** `label_es` | ajoute la colonne + traduit 123 rayons | ⚠️ **un aller-retour SQL DOUBLÉ à chaque lecture de catégories.** `lireCategories` (`lib/taxonomy.ts:301`) tente la requête avec `label_es`, reçoit `42703`, et **rejoue sans la colonne**. Le repli est correct et documenté — il paie juste deux requêtes là où une suffirait, sur un marché défini par la bande passante faible. Concerne le menu d'accueil, la taxonomie et `/vendre`. | **mécanique** — aucun arbitrage |
+| **`0053`** rétention 90 j | 180 → 90 jours sur les termes de recherche | rien aujourd'hui : `zabelie_search_misses` = **0 ligne**, la capture est éteinte (`SEARCH_FINGERPRINT_SALT` absente). ⭐ **Mais l'ordre compte** : appliquée MAINTENANT, sur table vide, aucun terme ne sera jamais conservé sous l'ancienne règle de 180 j. Appliquée après la pose du sel, une cohorte aura été capturée sous 180. | **mécanique**, et le bon moment est *avant* |
+| **`0054`** config commission | crée `zabelie_commission_config` | ⛔ **PIÈGE : aucun lecteur, ni TypeScript ni SQL.** Vérifié. Le taux vit dans `lib/commission.ts` (`standard: 1000, elite: 600`). L'appliquer seule créerait une table que personne ne lit, avec l'apparence de satisfaire la règle dure n°3 — et quiconque changerait la table plus tard ne verrait **aucun effet**. Classe « artefact sans appelant », version la plus coûteuse : sur un paramètre d'argent. | **à appliquer AVEC son câblage**, jamais seule |
+| **`0051`** rayon klerin | insère UNE catégorie, `active = false` | rien — et c'est le point : le rayon serait **invisible**. L'appliquer n'engage donc rien ; la décision (clairin = alcool : cadre légal, règles des rails de paiement) se prend le jour où quelqu'un passe `active = true`. | **reporte sa propre décision** |
+| **`0056`** purge des avis | purge les avis envoyés > 90 j | rien : **0 avis envoyé**, 0 ligne de `zabelie_fulfillment`, 4 commandes au total. Le sweep journalise `purges: -1`, dégradation prévue et visible. | ⛔ **bloquée** par D-10→D-14 (`docs/28`) — un avis est une pièce du futur suivi des litiges |
+
+**Ce que ce tableau ne dit pas** : aucune de ces cinq n'est sur le chemin de
+la première vente. Le blocage réel reste `SUPABASE_SERVICE_ROLE_KEY`.
+
+⚠️ **Une fausse alerte, consignée parce qu'elle vaut la mesure.** En traçant
+`0052`, un `grep` a montré `label_es` dans le `select` de
+`lireRayonsPublication`, appelée par `/vendre` — donc, apparemment, un
+formulaire vendeur dont la liste de rayons revenait vide et un `<select
+required>` insubmersible. Faux : `lireCategories` est le helper TOLÉRANT, et
+son repli était écrit le 2026-08-10 en citant l'état mesuré de la production.
+Un `grep` qui montre une colonne dans une requête ne prouve pas que la
+requête échoue.
+
+### ✅ APPLIQUÉE le 2026-08-12 — `0063`, le registre complet
+
+> **Signal** : « complète le registre avec les 35 lignes manquantes »,
+> porteur, en session, le 2026-08-12. **Exécutant** : agent, par
+> `apply_migration` sur `ddditxykopuxxqzgkqwy`. Empreinte canonique
+> `9f6940d9c7eac64b…`, `applied_by = 'porteur (session assistee)'`.
+
+**Fidélité de transcription** : empreinte exécutable du SQL reçu par la base
+croisée avec le fichier du dépôt — **identiques**. **Invariant `0033`** :
+0 écart. **Sondes négatives en production**, dans un bloc à exception donc
+sans résidu : `preuve` hors énumération → refusée · `redigee` avec une preuve
+d'application → refusée · `appliquee` sans preuve → refusée.
+
+**Ce que la répétition a trouvé et que la relecture n'avait pas vu — trois
+défauts, dont deux auraient été invisibles en production :**
+
+1. **`applied_at` porte `default now()` depuis `0041`.** Omettre la colonne à
+   l'insertion datait TRENTE migrations de juillet du jour où le registre a
+   été rempli. Le SQL était correct à lire, faux à exécuter.
+2. **`0062` porte une sonde MORTE pour `0053`** — `where key = 'retention_days'`
+   sur `zabelie_search_config`, une table à ligne unique qui n'a ni `key` ni
+   `value`. Elle n'a jamais tourné, faute de ligne `0053` au registre, donc
+   rien ne l'a signalée. `0063` l'avait recopiée ; la répétition CI l'a fait
+   tomber. `0062` est appliquée, son fichier ne bouge plus : la sonde corrigée
+   vit dans `0063`.
+3. **Une première version vérifiait « 62 lignes dont 56 appliquées ».** Verte
+   en production, elle aurait cassé `sql-tests` au premier passage : la CI
+   applique tout dans l'ordre des noms et les cinq dormantes y sont
+   appliquées. Ce qui dépend de l'environnement est désormais SONDÉ.
+
+Et un quatrième, trouvé en relisant le fichier généré et non par une
+répétition : le générateur passait `null` à sa fonction de citation, qui
+rendait fidèlement la CHAÎNE `'null'` — 49 notes en étaient remplies, et les
+quatre répétitions étaient vertes parce que **rien n'assertait sur `note`**.
+
+**Éprouvée dans les deux mondes** : CI (ordre des fichiers, suite SQL verte)
+et socle prod-conforme reconstitué à l'identique — 27 lignes, ordre
+d'application réel, faux journal interne pour que les post-conditions fortes
+s'exécutent vraiment au lieu d'être sautées. **Quatre cas connus-négatifs,
+tous rouges** : sonde cassée, classification divergente de `0062`, ligne
+`journal_supabase` sans entrée au journal, ligne inconnue de `0063`.
+
+⚠️ **Ce que ça ne prouve pas.** Que le fichier du dépôt soit ce qui a tourné
+pour `0025`→`0030` et `0044` : leur empreinte est perdue, et `preuve =
+'sonde_schema'` le dit au lieu de le masquer.
+
+### ✅ APPLIQUÉES le 2026-08-12 — `0059`→`0062`, sur signal porteur
+
+> **Règle dure n°5 — la trace du « qui a autorisé », écrite dans le tour où
+> l'écriture a eu lieu.**
+>
+> **Signal** : « applique 0059 à 0062 avec statut renseigné », porteur, en
+> session, le 2026-08-12. **Exécutant** : agent, par `apply_migration` sur le
+> projet `ddditxykopuxxqzgkqwy`, une migration par appel.
+
+| # | empreinte canonique (sha256, commentaires retirés) | `statut` inscrit |
+|---|---|---|
+| `0059_fichier_sans_livrable.sql` | `8385574ab8c7623a2b…` | `appliquee` |
+| `0060_cron_leases.sql` | `fd72322aa965806b6f…` | `appliquee` |
+| `0061_outbox_notifications.sql` | `05bd4f4f81c02b15f7…` | `appliquee` |
+| `0062_registre_statut.sql` | `b8a0ff69218d9fe51f…` | `appliquee` |
+
+`applied_by = 'porteur (session assistee)'` sur les quatre lignes, et le
+`note` de chacune porte la phrase du signal. La colonne `applied_by` existait
+depuis `0041` et n'avait jamais servi à ça.
+
+**Ce qui a été vérifié APRÈS, et comment :**
+
+* **Fidélité de transcription** — l'empreinte exécutable de ce que la base a
+  reçu (`supabase_migrations.schema_migrations.statements`, commentaires
+  retirés, espaces réduits) a été comparée à celle des fichiers du dépôt :
+  **identiques sur les quatre**. Sans ce croisement, le hash inscrit décrirait
+  le fichier et non ce qui a tourné — exactement l'écart que
+  `scripts/zabelie-migration-hash.mjs` a été écrit pour fermer.
+* **Objets** — `zabelie_fichier_sans_livrable_sweep`, `zabelie_cron_leases`,
+  `zabelie_outbox`, ses 2 lignes de seed, et le trigger
+  `zabelie_outbox_paiement_confirme` (post-condition `ZB061` franchie à
+  l'application). **0 droit** résiduel `anon`/`authenticated` sur les trois
+  nouvelles tables.
+* **Registre** — 27 lignes : **26 `appliquee`, 1 `abandonnee`** (`0031`).
+  Conforme à la répétition (22 + 4 = 26).
+* **Invariant comptable `0033`** — **0 compte en écart** après le lot.
+* **Sondes NÉGATIVES en production**, parce qu'un garde jamais mis en échec
+  n'a rien démontré : ligne sans `statut` → refusée (`not_null_violation`) ;
+  `statut = 'peut-etre'` → refusé (`check_violation`) ; `statut = 'redigee'` →
+  acceptée, puis ligne d'essai retirée. Les trois dans un bloc à exception,
+  donc sans résidu.
+* **File humaine** — `action_required` à **0** : `0059` crée la fonction, elle
+  ne l'exécute pas. Le premier passage sera celui du cron, et son journal
+  (`fichiers_signales`) est la preuve d'exécution — pas ceci.
+
+⚠️ **Ce que cette application ne prouve pas.** Que le code déployé appelle ces
+objets. `lib/outbox.ts`, `lib/cron-lease.ts` et le balayage digital sont dans
+`main`, mais **le déploiement Vercel doit avoir promu `main` après la fusion
+de #90** pour que l'outbox soit drainée. `zabelie_outbox` à 0 ligne est
+attendu tant qu'aucune commande ne passe à `paid` — et ne se distingue pas
+d'un trigger qui ne tirerait pas. La distinction se fera à la première vente.
+
+### ✅ RÉPÉTITION FAITE le 2026-08-12 — `0059`→`0062` sur état appliqué réel : PRÊTES
+
+Socle **prod-conforme** : uniquement les migrations appliquées, dans l'ordre
+d'application constaté, **et les 23 lignes du registre recopiées depuis la
+production** — sans elles la boucle de reprise de `0062` ne classe rien, la
+limite exacte que la CI avait rendue visible.
+
+| scénario | résultat |
+|---|---|
+| **1** · `0059`→`0062` dans l'ordre | ✅ les quatre s'appliquent. Classement : `0031` → **abandonnee**, les 22 autres → **appliquee** |
+| **2** · `0062` SEULE, sans `0059`/`0060`/`0061` | ✅ `0051`, `0054`, `0056`, `0059`, `0060`, `0061` → **redigee**. Les sondes des lignes 51-52 et suivantes ont été exécutées pour la PREMIÈRE fois, et elles discriminent |
+| **3** · état du registre PENDANT la migration | ⚠️ voir ci-dessous |
+| **4** · objet déjà présent, `0055` rejouée | ✅ échoue bruyamment : `relation "zabelie_admin_actions" already exists` |
+| suite SQL complète | **28 verts, 2 rouges** — `commission_config` (réclame `0054`) et `points_caps` (réclame `0031`), tous deux ÉTRANGERS à ce lot |
+
+**Scénario 3 — la réponse dépend de l'outil d'application, et ça se décide.**
+`0062` procède en trois temps : colonne ajoutée *nullable*, remplie, puis
+contrainte `not null`. Appliquée par `apply_migration`, le tout tient dans UNE
+transaction : aucun lecteur ne voit d'état mi-classé. Appliquée par `psql`
+sans `-1`, chaque instruction est sa propre transaction et une fenêtre existe
+où `statut` est NULL pour certaines lignes. → **appliquer `0062` par
+`apply_migration`**, pas au fil de l'eau.
+
+**⚠️ DÉCOUVERTE que le plan ne prévoyait pas.** Après `0062`, insérer une
+ligne de registre **sans `statut` est REFUSÉ** :
+
+```
+ERROR: null value in column "statut" violates not-null constraint
+```
+
+C'est fail-closed et c'est voulu — on ne peut plus ajouter une migration au
+registre sans dire son état. Mais la conséquence est immédiate et pratique :
+**les lignes de `0059`, `0060`, `0061` et `0062` elles-mêmes devront porter
+`statut` à l'insertion.** Sans quoi le geste habituel échouera, bruyamment,
+juste après l'application. C'est exactement le genre de chose qu'une
+répétition existe pour trouver — le plan ne la contenait pas.
 
 ### 🧪 Scénarios que la répétition de `0060`/`0061`/`0062` DOIT couvrir
 

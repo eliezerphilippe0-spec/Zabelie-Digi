@@ -1,6 +1,6 @@
 "use client";
 
-import { commissionHTG, netHTG, type CreatorTier } from "@/lib/commission";
+import { commissionAuTaux, rateBps, type CreatorTier } from "@/lib/commission";
 
 /**
  * Ce que le vendeur touchera, sous le prix qu'il est en train de saisir.
@@ -45,10 +45,17 @@ export type NetEstimateLabels = {
 export function NetEstimate({
   priceHTG,
   tier = "standard",
+  rateBpsEnVigueur,
   labels,
 }: {
   priceHTG: string | number;
   tier?: CreatorTier;
+  /**
+   * Taux RÉELLEMENT configuré en base, lu côté serveur (`0066`) et passé
+   * jusqu'ici. Omis, on retombe sur la constante compilée — c'est le repli,
+   * pas la source. Voir `lib/commission-config.ts`.
+   */
+  rateBpsEnVigueur?: number;
   labels: NetEstimateLabels;
 }) {
   const raw = typeof priceHTG === "string" ? priceHTG.trim() : priceHTG;
@@ -59,8 +66,12 @@ export function NetEstimate({
   // gratuit (0 HTG) existe sur le catalogue — il n'a pas de net à afficher.
   if (!Number.isFinite(gross) || gross <= 0) return null;
 
-  const fee = commissionHTG(gross, tier);
-  const net = netHTG(gross, tier);
+  // Le taux VENU DE LA BASE prime ; la constante n'est que le repli.
+  const bps = Number.isInteger(rateBpsEnVigueur)
+    ? (rateBpsEnVigueur as number)
+    : rateBps(tier);
+  const fee = commissionAuTaux(gross, bps);
+  const net = gross - fee;
 
   // Une commission nulle (petits montants) n'est PAS annoncée comme telle.
   // L'écrire — « aucune commission à ce prix » — reviendrait à enseigner le

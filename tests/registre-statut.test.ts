@@ -77,9 +77,28 @@ test("une migration sans sonde fait ÉCHOUER la reprise", () => {
 });
 
 test("chaque migration du dépôt hors socle a sa sonde nommée", () => {
+  /* BORNE À `0062`, ET LA RAISON EST DATÉE — 2026-08-12.
+   *
+   * La boucle de reprise de `0062` ne classe que les lignes PRÉSENTES au
+   * registre au moment où elle tourne. `0062` est appliquée en production
+   * depuis ce jour-là : sa boucle ne repassera jamais, et son fichier ne doit
+   * plus bouger — le modifier ferait diverger son empreinte de ce qui a
+   * réellement tourné.
+   *
+   * Depuis `0063`, le registre est COMPLET (62 lignes) et toute migration
+   * nouvelle est inscrite avec son `statut` et sa `preuve` à l'insertion —
+   * la colonne `statut` est `not null`, donc l'oubli est refusé par la base,
+   * pas par un test. Exiger une sonde dans `0062` pour `0063` et ses
+   * suivantes reviendrait à demander qu'une migration déjà exécutée connaisse
+   * l'avenir.
+   *
+   * Ce qui garde les fichiers ≤ `0062`, c'est ce test ; ce qui garde
+   * `0063` lui-même, c'est `tests/registre-preuve.test.ts`, qui croise sa
+   * liste avec le disque. */
   const fichiers = readdirSync("supabase/migrations").filter((f) => /^\d{4}_.*\.sql$/.test(f));
   const horsSocle = fichiers.filter((f) => {
     const n = Number(f.slice(0, 4));
+    if (n > 62) return false;
     return n >= 31 && n !== 32 && n !== 33 && n !== 34 && n !== 39 && !(n >= 41 && n <= 50) && n !== 62;
   });
   const manquantes = horsSocle.filter((f) => !MIG.includes(`'${f}'`));

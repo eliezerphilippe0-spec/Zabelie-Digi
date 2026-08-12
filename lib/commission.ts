@@ -25,7 +25,17 @@
 
 export type CreatorTier = "standard" | "elite";
 
-/** Taux en points de base (1000 = 10 %, 600 = 6 %). */
+/**
+ * Taux en points de base (1000 = 10 %, 600 = 6 %).
+ *
+ * ⚠️ DEPUIS `0054`/`0066`, CE N'EST PLUS LA SOURCE — C'EST LE REPLI. Les taux
+ * vivent en table de configuration ; `lib/commission-config.ts` les lit et les
+ * passe à l'écran. Ces constantes ne servent plus que lorsque la lecture
+ * échoue, et elles doivent alors rendre exactement ce que rend le `coalesce`
+ * de `commission_rate_bps` en base — sans quoi une dégradation ferait diverger
+ * l'estimation affichée du net réellement crédité.
+ * `tests/commission-config.test.ts` croise les deux et échoue s'ils s'écartent.
+ */
 export const RATE_BPS: Record<CreatorTier, number> = {
   standard: 1000,
   elite: 600,
@@ -87,7 +97,23 @@ export function commissionHTG(
   tier: CreatorTier,
   rule: RoundingRule = ROUNDING_IN_FORCE,
 ): number {
-  const exact = (grossHTG * rateBps(tier)) / 10000;
+  return commissionAuTaux(grossHTG, rateBps(tier), rule);
+}
+
+/**
+ * La même règle, à un taux EXPLICITE.
+ *
+ * C'est par ici que passe l'affichage depuis `0066` : l'écran reçoit le taux
+ * réellement configuré en base plutôt que la constante compilée. La formule
+ * est partagée avec `commissionHTG` — une seconde copie de l'arrondi serait
+ * exactement le genre de divergence que ce module existe pour éviter.
+ */
+export function commissionAuTaux(
+  grossHTG: number,
+  bps: number,
+  rule: RoundingRule = ROUNDING_IN_FORCE,
+): number {
+  const exact = (grossHTG * bps) / 10000;
   return rule === "floor" ? Math.floor(exact) : Math.round(exact);
 }
 

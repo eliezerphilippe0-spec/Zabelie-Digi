@@ -57,22 +57,48 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0058`**. **État MESURÉ en base le 2026-08-11** — registre
-   ET présence des objets croisés, objet par objet.
-   **Appliquées** : groupe A + B1, `0039`, `0041`, `0042`, `0045`→`0050`,
-   `0044` (D-4 `floor`), `0043`, **B2 complète** `0037`/`0038`/`0040`, `0055`,
-   `0057`, `0058`.
-   **Non appliquées, et leur absence est attestée** : `0031` (fidélité,
-   volontairement sautée) · `0051`/`0052` (`categories.label_es` absente) ·
-   `0053` (`retention_days` vaut encore 180) · `0054`
-   (`zabelie_commission_config` absente) · `0056` (`0055` est appliquée, `0056`
-   ne l'est pas). Registre : `zabelie_schema_migrations`.
+   (dernière écrite : **`0063`**. **L'état ne se raconte plus, il s'interroge.**
+   Depuis `0062` puis `0063`, appliquées le **2026-08-12**, le registre est
+   COMPLET — un fichier, une ligne — et chaque ligne porte deux colonnes :
+   `statut` (`redigee` · `appliquee` · `abandonnee`) et **`preuve`**, qui dit
+   COMMENT ce statut a été établi. Ce paragraphe n'est plus la source :
 
-   ⚠️ **Le fichier `0055_admin_audit.sql` n'est PAS dans `main`** — il vit sur
-   la branche de la PR #88, encore ouverte, comme `0056` sur celle de la #90.
-   La base porte donc `zabelie_admin_actions` alors qu'aucun code déployé n'y
-   écrit. Un objet en base sans le fichier qui le décrit est l'inverse exact du
-   « code sans appelant » : même angle mort, autre bout.
+   ```sql
+   select statut, preuve, count(*) from zabelie_schema_migrations
+    group by 1, 2 order by 1, 2;
+   ```
+
+   **Mesuré le 2026-08-12, après `0063`** : 63 lignes — 57 `appliquee`,
+   5 `redigee` (`0051`/`0052`/`0053`/`0054`/`0056`), 1 `abandonnee` (`0031`,
+   fidélité, volontairement sautée).
+
+   Les quatre valeurs de `preuve`, et **elles ne se valent pas** :
+   `journal_supabase` (50) — le fichier du dépôt est identique au SQL que la
+   base a reçu, croisé un par un · `sonde_schema` (6) — les objets sont là,
+   le SQL exact est perdu (passées par l'éditeur SQL : `0025`→`0028`, `0030`,
+   `0044`) · `succession` (1) — **aucune preuve directe** : `0029` est
+   insondable, `0030` remplace la même fonction et a écrasé sa marque ·
+   `non_appliquee` (6). Un registre où tout serait `journal_supabase`
+   n'apprendrait rien ; celui-ci dit en une requête ce qui est **attesté** et
+   ce qui est **cru**.
+
+   Cinq lignes n'ont **aucune date d'application**, et c'est exact : `0025`→
+   `0030` n'ont pas d'entrée au journal interne de Supabase. Inventer une date
+   serait pire que l'absence.
+
+   ⚠️ **Le registre est fail-closed à l'insertion** — éprouvé en production le
+   2026-08-12, sondes négatives à l'appui. Sont REFUSÉS : une ligne sans
+   `statut` (`not-null`), un statut hors énumération, une `preuve` hors
+   énumération, et toute incohérence entre les deux (`redigee` avec une preuve
+   d'application, `appliquee` sans preuve). Un `insert` de registre écrit de
+   mémoire échouera, bruyamment.
+
+   ⚠️ **`0062` porte une sonde MORTE** pour `0053` (`where key = …` sur une
+   table à ligne unique qui n'a ni `key` ni `value`). Elle n'a jamais tourné —
+   `0053` n'avait pas de ligne au registre — donc rien ne l'a signalée.
+   Trouvée par la répétition CI de `0063`, qui l'avait recopiée telle quelle.
+   `0062` est appliquée : **son fichier ne doit plus bouger**, la sonde
+   corrigée vit dans `0063`.
 
    ⚠️ **Un objet vérifié n'est pas le bon objet.** L'état précédent affirmait
    `0043` non appliquée, preuve à l'appui : « `zabelie_shipments` absente ».

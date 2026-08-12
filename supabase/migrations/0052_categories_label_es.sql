@@ -173,7 +173,38 @@ update zabelie_categories c set label_es = v.es
 
     -- ── Ajouté par 0051, traduit ici pour que l'ordre d'application ─────────
     --    des deux migrations n'ait pas d'importance.
-    ('klerin',              'Clairin')
+    ('klerin',              'Clairin'),
+
+    -- ── LES 12 FEUILLES DE SERVICES DE `0057`, ajoutées le 2026-08-12 ───────
+    -- L'anticipation ci-dessus valait pour `0051` ; elle ne pouvait pas valoir
+    -- pour `0057`, qui n'existait pas quand ce fichier a été écrit le
+    -- 2026-08-02. `0057` a été APPLIQUÉE le 2026-08-11, `0052` ne l'est
+    -- toujours pas : l'ordre a divergé, et la production porte 135 catégories
+    -- là où cette liste en couvrait 124.
+    --
+    -- Sans ces douze lignes, la garde `ZB052` de fin de fichier REFUSE
+    -- l'application — et elle a raison : c'est exactement le cas qu'elle
+    -- existe pour attraper. Mesuré avant d'écrire, pas déduit : les douze
+    -- slugs manquants sont précisément les feuilles de `sevis-pwofesyonel`.
+    --
+    -- ⚠️ Ces douze traductions sont de l'agent, calquées sur les libellés
+    -- français et anglais déjà en base — elles n'ont pas été relues par un
+    -- hispanophone. `bote-ak-swen` reprend volontairement le libellé du
+    -- département `bote-swen` : le français et l'anglais le font déjà, et
+    -- lever cette ambiguïté serait une décision de nommage, pas une
+    -- traduction.
+    ('bote-ak-swen',        'Belleza y cuidado'),
+    ('devlopman-web',       'Desarrollo web y apps'),
+    ('evenman-ak-treteur',  'Eventos y catering'),
+    ('foto-ak-videyo',      'Foto y video'),
+    ('grafik-ak-design',    'Diseño gráfico'),
+    ('konsèy-ak-jesyon',    'Consultoría y gestión'),
+    ('kou-ak-fòmasyon',     'Cursos y formación'),
+    ('maketin-rezo',        'Marketing y redes sociales'),
+    ('mizik-ak-son',        'Música y audio'),
+    ('reparasyon',          'Reparación y mantenimiento'),
+    ('sevis-konstriksyon',  'Construcción y oficios'),
+    ('tradiksyon',          'Traducción')
   ) as v(slug, es)
  where c.slug = v.slug;
 

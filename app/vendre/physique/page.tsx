@@ -7,6 +7,8 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { ROUNDING_IN_FORCE } from "@/lib/commission";
+import { lireTauxCommission } from "@/lib/commission-config";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre un produit — Zabelie" };
@@ -31,6 +33,11 @@ export default async function VendrePhysiquePage() {
   }
 
   const user = await getCurrentUser();
+  // Le taux RÉELLEMENT configuré (0054/0066) : l'estimation suit un UPDATE
+  // d'exploitation sans redéploiement. Repli = constante compilée.
+  const { taux } = await lireTauxCommission(await createClient(), (c) =>
+    console.error("[commission] taux de repli utilisé", c),
+  );
   const lang = await getLang();
   const netLabels = {
     youReceive: t(lang, "publish.net.youReceive"),
@@ -74,6 +81,7 @@ export default async function VendrePhysiquePage() {
           <div className="mt-8">
             <PhysicalProductForm
               tier={user.tier}
+              rateBpsEnVigueur={taux[user.tier]}
               netLabels={netLabels}
               policyAccept={t(lang, "policy.accept")}
               policyRead={t(lang, "policy.accept.read")}
