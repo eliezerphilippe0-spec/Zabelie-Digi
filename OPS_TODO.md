@@ -229,6 +229,37 @@ seuls, sans arborescence, jusqu'à une activation de niveau 2.
 | 0057 (catégories services) · 0040 (`in_stock`) · 0058 (panier) | prod zabelie-digi | 2026-08-11T03:12Z | 03:20Z | inchangé — aucune de ces trois ne touche un solde | connecteur (session Claude, go porteur) |
 | **0037 + 0038 (B2 — stock sur le money-path)** | prod zabelie-digi | 2026-08-11T03:4xZ | 03:47Z | **0 portefeuille en écart, avant comme après** | idem. Empreintes exécutables des 4 fonctions identiques à une répétition CONFORME À L'ÉTAT APPLIQUÉ (0040 avant 0037, comme en prod), sonde éprouvée connu-positif ET connu-négatif |
 | _restent : 0031 (fidélité, sautée) · 0051 · 0052 · 0053 · 0054 · 0056 (purge avis, verrouillée D-10→D-14)_ | | | | | |
+### ⛔ La mutation bénigne ne peut PAS être exécutée par l'agent
+
+**Constaté le 2026-08-11, après la fusion de #88.** Deux empêchements, aucun
+contournable, et le second est le plus important.
+
+1. **Aucune session admin.** La route `/api/admin/user-status` exige
+   `getCurrentUser()` avec le rôle admin. L'agent n'a pas de session, et un mot
+   de passe ne se demande pas.
+2. **Le réseau de la session refuse `zabelie.com`.** Vérifié :
+   `gateway answered 403 to CONNECT — host zabelie.com:443`, dans le journal du
+   proxy. La production n'est pas joignable en HTTP depuis ici.
+
+⚠️ **ET SURTOUT — il ne faut PAS la simuler.** L'agent a un accès service-role
+à la base : il pourrait insérer une ligne dans `zabelie_admin_actions` en une
+instruction. **Ce serait un faux.** La ligne serait indiscernable d'une vraie
+dans la table, alors que sa provenance ne serait pas le code déployé mais
+l'agent lui-même — exactement le geste que la règle dure n°5 existe pour
+interdire, commis sur le journal d'audit, et pour sa PREMIÈRE ligne.
+
+Ce qui doit être fait, par le porteur, dans cet ordre :
+
+1. vérifier que Vercel a bien déployé `de898f68` (Production) ;
+2. se connecter en admin, aller sur `/admin`, **suspendre puis réactiver** le
+   compte de test — deux actes, deux lignes attendues ;
+3. le dire ici.
+
+Les quatre preuves seront alors mesurées côté base, dans la même session :
+`zabelie_admin_actions` avec horodatage et `actor_id`, la forme `domaine.verbe`
+de `action`, la requête intention-orpheline à zéro, et le fait que ces lignes
+viennent du code déployé — pas d'une main.
+
 ### 📒 Les huit dettes du registre — nommées, aucune entamée (2026-08-11)
 
 Mesurées, chacune avec sa requête. **Aucune ne se referme avant la fusion de
@@ -261,7 +292,7 @@ toute chose (journaux Supabase, historique de connexions), identifier le geste,
 et n'appliquer la migration correspondante qu'ensuite — l'appliquer par-dessus
 régulariserait l'anomalie au lieu de l'élucider. **Jamais constaté à ce jour.**
 
-**B · Migration au registre dont le FICHIER n'est pas dans `main`.** Constaté :
+**B · Migration au registre dont le FICHIER n'est pas dans `main`.** ✅ **RÉSOLU le 2026-08-11** pour `0055` : PR #88 fusionnée (`de898f68`) sur signal porteur — le fichier est dans `main`, et le code qui écrit dans le journal est déployable. Reste `0056`, sur la branche de la #90. Constaté :
 `0055_admin_audit.sql`, appliquée le 2026-08-10 22:14:26Z, hash
 `274f4a2b013a05ec…` identique au fichier de la branche de #88 (vérifié le
 2026-08-11 : table, deux index, trigger `zabelie_admin_actions_immutable`, RLS
