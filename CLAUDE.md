@@ -57,40 +57,48 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0062`**. **L'état ne se raconte plus, il s'interroge** —
-   depuis `0062`, appliquée le **2026-08-12**, chaque ligne du registre porte
-   une colonne `statut` (`redigee` · `appliquee` · `abandonnee`), classée à
-   l'application par **sonde contre le schéma réel**, jamais par relecture du
-   hash. La question « qu'est-ce qui est appliqué ? » se répond désormais par
-   une requête, et ce paragraphe n'en est plus la source :
+   (dernière écrite : **`0063`**. **L'état ne se raconte plus, il s'interroge.**
+   Depuis `0062` puis `0063`, appliquées le **2026-08-12**, le registre est
+   COMPLET — un fichier, une ligne — et chaque ligne porte deux colonnes :
+   `statut` (`redigee` · `appliquee` · `abandonnee`) et **`preuve`**, qui dit
+   COMMENT ce statut a été établi. Ce paragraphe n'est plus la source :
 
    ```sql
-   select statut, count(*), string_agg(filename, ', ' order by filename)
-     from zabelie_schema_migrations group by statut;
+   select statut, preuve, count(*) from zabelie_schema_migrations
+    group by 1, 2 order by 1, 2;
    ```
 
-   **Mesuré le 2026-08-12** : 27 lignes — 26 `appliquee`, 1 `abandonnee`
-   (`0031`, fidélité, volontairement sautée). `0059`→`0062` appliquées ce
-   jour-là sur signal porteur.
-   **Non appliquées** : `0051`/`0052`, `0053`, `0054`, `0056` — elles n'ont
-   pas encore de ligne au registre, donc pas de `statut` : leur absence se lit
-   à l'absence de ligne, et c'est la dette ci-dessous.
+   **Mesuré le 2026-08-12, après `0063`** : 63 lignes — 57 `appliquee`,
+   5 `redigee` (`0051`/`0052`/`0053`/`0054`/`0056`), 1 `abandonnee` (`0031`,
+   fidélité, volontairement sautée).
 
-   ⚠️ **Le registre est INCOMPLET, et `statut` ne le répare pas.** 62 fichiers
-   de migration, 27 lignes : **35 fichiers n'ont aucune ligne** — les 30 du
-   socle historique `0001`→`0030` (antérieures à `0041`, qui crée le registre)
-   et les 5 dormantes ci-dessus. Un fichier sans ligne et un fichier `redigee`
-   se ressemblent, alors qu'ils disent l'inverse l'un de l'autre. Le
-   rattrapage est prévu : la boucle de reprise de `0062` classe déjà le socle
-   en bloc par motif (`^(00(0[1-9]|1[0-9]|2[0-9]|30)|003[2-4]|…)_`), il ne
-   manque que les lignes.
+   Les quatre valeurs de `preuve`, et **elles ne se valent pas** :
+   `journal_supabase` (50) — le fichier du dépôt est identique au SQL que la
+   base a reçu, croisé un par un · `sonde_schema` (6) — les objets sont là,
+   le SQL exact est perdu (passées par l'éditeur SQL : `0025`→`0028`, `0030`,
+   `0044`) · `succession` (1) — **aucune preuve directe** : `0029` est
+   insondable, `0030` remplace la même fonction et a écrasé sa marque ·
+   `non_appliquee` (6). Un registre où tout serait `journal_supabase`
+   n'apprendrait rien ; celui-ci dit en une requête ce qui est **attesté** et
+   ce qui est **cru**.
 
-   ⚠️ **`0062` est fail-closed à l'insertion** : depuis son application, une
-   ligne de registre **sans `statut` est REFUSÉE** (`not-null`), et un statut
-   hors énumération aussi (`check`). Les deux refus ont été éprouvés en
-   production le 2026-08-12, sondes négatives à l'appui. On ne peut donc plus
-   ajouter une migration au registre sans dire son état — ce qui veut dire
-   qu'un `insert` de registre écrit de mémoire échouera, bruyamment.
+   Cinq lignes n'ont **aucune date d'application**, et c'est exact : `0025`→
+   `0030` n'ont pas d'entrée au journal interne de Supabase. Inventer une date
+   serait pire que l'absence.
+
+   ⚠️ **Le registre est fail-closed à l'insertion** — éprouvé en production le
+   2026-08-12, sondes négatives à l'appui. Sont REFUSÉS : une ligne sans
+   `statut` (`not-null`), un statut hors énumération, une `preuve` hors
+   énumération, et toute incohérence entre les deux (`redigee` avec une preuve
+   d'application, `appliquee` sans preuve). Un `insert` de registre écrit de
+   mémoire échouera, bruyamment.
+
+   ⚠️ **`0062` porte une sonde MORTE** pour `0053` (`where key = …` sur une
+   table à ligne unique qui n'a ni `key` ni `value`). Elle n'a jamais tourné —
+   `0053` n'avait pas de ligne au registre — donc rien ne l'a signalée.
+   Trouvée par la répétition CI de `0063`, qui l'avait recopiée telle quelle.
+   `0062` est appliquée : **son fichier ne doit plus bouger**, la sonde
+   corrigée vit dans `0063`.
 
    ⚠️ **Un objet vérifié n'est pas le bon objet.** L'état précédent affirmait
    `0043` non appliquée, preuve à l'appui : « `zabelie_shipments` absente ».

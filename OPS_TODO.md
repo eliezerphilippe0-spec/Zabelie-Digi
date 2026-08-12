@@ -44,7 +44,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
 | **`USD_HTG_RATE` / opposabilité `expected_usd_cents`** | 2026-07-30 | Les rails Stripe et Zelle. Geste bloqué. |
-| **Compléter le registre `zabelie_schema_migrations` : 35 fichiers sans ligne** — *l'ancienne « hygiène des lignes à hash « - » » est CLOSE le 2026-08-12 par `0062`* | 2026-08-10, reformulée le 2026-08-12 | **Ce qui est résolu.** `0037`/`0038`/`0040` ont reçu leur vraie empreinte à leur application, et `0031` — seule ligne encore à hash « - » dans tout le registre, mesuré après `0062` — porte désormais `statut = 'abandonnee'`, qui le dit au lieu de le laisser deviner. L'ambiguïté « au registre ≠ appliquée » qui avait fait dérailler une prémisse de revue le 2026-08-10 n'est plus interprétable : `select statut …` répond. **Ce qui reste, et qui est plus gros que l'ancienne dette.** 62 fichiers de migration, **27 lignes** : 35 fichiers n'ont AUCUNE ligne — les 30 du socle `0001`→`0030` (antérieures à `0041`, qui crée le registre) et les 5 dormantes `0051`/`0052`/`0053`/`0054`/`0056`. Un fichier sans ligne et un fichier `redigee` se ressemblent alors qu'ils disent l'inverse l'un de l'autre : le registre ne peut donc pas encore servir de source unique. Le rattrapage est peu coûteux — la boucle de reprise de `0062` classe déjà le socle en bloc par motif, il ne manque que les `insert`. ⚠️ Et depuis `0062` ces `insert` **doivent porter `statut`** : sans lui, refus `not-null`. **Règle actée le 2026-08-10, toujours en vigueur : toute application de migration se répète contre l'état APPLIQUÉ réel du schéma cible — jamais contre l'ordre des fichiers.** L'ordre a divergé durablement (`0055` appliquée avant `0051`→`0054`, puis `0059`→`0062` avant elles aussi) : quand les dormantes sortiront de dormance, leurs répétitions d'hier seront invalides pour cette raison — à refaire sur schéma prod-conforme du moment. |
+| ✅ ~~**Compléter le registre `zabelie_schema_migrations`**~~ — **FAIT le 2026-08-12 par `0063`, sur signal porteur.** Le registre porte **63 lignes, une par fichier** : 57 `appliquee`, 5 `redigee`, 1 `abandonnee`. Et une colonne `preuve` dit COMMENT chaque statut a été établi — `journal_supabase` (50, fichier identique au SQL reçu), `sonde_schema` (6), `succession` (1, `0029`, insondable car `0030` a écrasé sa marque), `non_appliquee` (6). Cinq lignes sans date d'application, et c'est exact : `0025`→`0030` n'ont pas d'entrée au journal interne, inventer une date serait pire que l'absence. **`0044` est désormais classée `sonde_schema`** : son `sha256` avait été calculé depuis le fichier, jamais confronté à ce qui a tourné — la colonne `preuve` dit maintenant ce que la colonne `sha256` laissait croire. **La question d'attestation de `0044` reste ouverte** : sa date au registre est le 2026-08-03, mais elle vient de l'insertion, pas d'une mesure. | — | Résolu. Détail de l'ancienne dette ci-dessous, conservé pour la trace : **Ce qui était résolu.** `0037`/`0038`/`0040` ont reçu leur vraie empreinte à leur application, et `0031` — seule ligne encore à hash « - » dans tout le registre, mesuré après `0062` — porte désormais `statut = 'abandonnee'`, qui le dit au lieu de le laisser deviner. L'ambiguïté « au registre ≠ appliquée » qui avait fait dérailler une prémisse de revue le 2026-08-10 n'est plus interprétable : `select statut …` répond. **Ce qui reste, et qui est plus gros que l'ancienne dette.** 62 fichiers de migration, **27 lignes** : 35 fichiers n'ont AUCUNE ligne — les 30 du socle `0001`→`0030` (antérieures à `0041`, qui crée le registre) et les 5 dormantes `0051`/`0052`/`0053`/`0054`/`0056`. Un fichier sans ligne et un fichier `redigee` se ressemblent alors qu'ils disent l'inverse l'un de l'autre : le registre ne peut donc pas encore servir de source unique. Le rattrapage est peu coûteux — la boucle de reprise de `0062` classe déjà le socle en bloc par motif, il ne manque que les `insert`. ⚠️ Et depuis `0062` ces `insert` **doivent porter `statut`** : sans lui, refus `not-null`. **Règle actée le 2026-08-10, toujours en vigueur : toute application de migration se répète contre l'état APPLIQUÉ réel du schéma cible — jamais contre l'ordre des fichiers.** L'ordre a divergé durablement (`0055` appliquée avant `0051`→`0054`, puis `0059`→`0062` avant elles aussi) : quand les dormantes sortiront de dormance, leurs répétitions d'hier seront invalides pour cette raison — à refaire sur schéma prod-conforme du moment. |
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
 | **« NatCash — bientôt » sur l'accueil** (`footer.natcash`, bandeau paiement + pied de page) | 2026-08-10 | Rien mécaniquement — mais la règle dure n°2 classe NatCash ⛔ (aucune API publique) et la pastille engage un calendrier qui ne dépend pas de nous (revue accueil, UX-02). Trois options : (a) retirer la pastille ; (b) reformuler sans promesse de calendrier (« pas encore disponible ») ; (c) l'assumer comme signal de demande. Zone d'arrêt promesse commerciale : rien ne bouge sans arbitrage. |
 | **16 rayons « bientôt » ou repli à 4** | 2026-08-10 | Rien — conséquence assumée de l'activation 16/16 du 2026-08-10 (revue accueil, UX-05) : « bientôt » est le mot le plus répété du premier écran. Le SQL de repli à 4 est au journal des rayons ci-dessous ; l'alternative sans retour arrière est la première publication réelle (`docs/22`), qui éteint les badges du rayon concerné. |
@@ -315,6 +315,52 @@ n'est pas « rien à signaler » : c'est « personne ne peut écrire ».
 le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
+
+### ✅ APPLIQUÉE le 2026-08-12 — `0063`, le registre complet
+
+> **Signal** : « complète le registre avec les 35 lignes manquantes »,
+> porteur, en session, le 2026-08-12. **Exécutant** : agent, par
+> `apply_migration` sur `ddditxykopuxxqzgkqwy`. Empreinte canonique
+> `9f6940d9c7eac64b…`, `applied_by = 'porteur (session assistee)'`.
+
+**Fidélité de transcription** : empreinte exécutable du SQL reçu par la base
+croisée avec le fichier du dépôt — **identiques**. **Invariant `0033`** :
+0 écart. **Sondes négatives en production**, dans un bloc à exception donc
+sans résidu : `preuve` hors énumération → refusée · `redigee` avec une preuve
+d'application → refusée · `appliquee` sans preuve → refusée.
+
+**Ce que la répétition a trouvé et que la relecture n'avait pas vu — trois
+défauts, dont deux auraient été invisibles en production :**
+
+1. **`applied_at` porte `default now()` depuis `0041`.** Omettre la colonne à
+   l'insertion datait TRENTE migrations de juillet du jour où le registre a
+   été rempli. Le SQL était correct à lire, faux à exécuter.
+2. **`0062` porte une sonde MORTE pour `0053`** — `where key = 'retention_days'`
+   sur `zabelie_search_config`, une table à ligne unique qui n'a ni `key` ni
+   `value`. Elle n'a jamais tourné, faute de ligne `0053` au registre, donc
+   rien ne l'a signalée. `0063` l'avait recopiée ; la répétition CI l'a fait
+   tomber. `0062` est appliquée, son fichier ne bouge plus : la sonde corrigée
+   vit dans `0063`.
+3. **Une première version vérifiait « 62 lignes dont 56 appliquées ».** Verte
+   en production, elle aurait cassé `sql-tests` au premier passage : la CI
+   applique tout dans l'ordre des noms et les cinq dormantes y sont
+   appliquées. Ce qui dépend de l'environnement est désormais SONDÉ.
+
+Et un quatrième, trouvé en relisant le fichier généré et non par une
+répétition : le générateur passait `null` à sa fonction de citation, qui
+rendait fidèlement la CHAÎNE `'null'` — 49 notes en étaient remplies, et les
+quatre répétitions étaient vertes parce que **rien n'assertait sur `note`**.
+
+**Éprouvée dans les deux mondes** : CI (ordre des fichiers, suite SQL verte)
+et socle prod-conforme reconstitué à l'identique — 27 lignes, ordre
+d'application réel, faux journal interne pour que les post-conditions fortes
+s'exécutent vraiment au lieu d'être sautées. **Quatre cas connus-négatifs,
+tous rouges** : sonde cassée, classification divergente de `0062`, ligne
+`journal_supabase` sans entrée au journal, ligne inconnue de `0063`.
+
+⚠️ **Ce que ça ne prouve pas.** Que le fichier du dépôt soit ce qui a tourné
+pour `0025`→`0030` et `0044` : leur empreinte est perdue, et `preuve =
+'sonde_schema'` le dit au lieu de le masquer.
 
 ### ✅ APPLIQUÉES le 2026-08-12 — `0059`→`0062`, sur signal porteur
 
