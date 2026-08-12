@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -91,6 +92,13 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+    await journaliserActeAdmin(admin, {
+      actorId: me.id,
+      action: "user.suspend",
+      targetType: "user",
+      targetId: userId,
+      reason,
+    });
     return NextResponse.json({ ok: true, status: "suspended" });
   }
 
@@ -113,5 +121,11 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+  await journaliserActeAdmin(admin, {
+    actorId: me.id,
+    action: "user.restore",
+    targetType: "user",
+    targetId: userId,
+  });
   return NextResponse.json({ ok: true, status: "active" });
 }

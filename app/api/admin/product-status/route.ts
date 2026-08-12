@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -41,5 +42,12 @@ export async function POST(req: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  await journaliserActeAdmin(admin, {
+    actorId: user.id,
+    action: "product.set_status",
+    targetType: "product",
+    targetId: productId,
+    metadata: { status },
+  });
   return NextResponse.json({ ok: true, status });
 }

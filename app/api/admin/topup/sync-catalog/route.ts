@@ -5,6 +5,7 @@ import {
   TOPUP_CLOSED_STATUS,
 } from "@/lib/topup-flag";
 import { getCurrentUser } from "@/lib/auth";
+import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { reloadlyProvider, isReloadlyEnabled } from "@/lib/zabelie-topup/reloadly";
 import type { TopupOperator, TopupProduct } from "@/lib/zabelie-topup/provider";
@@ -120,6 +121,11 @@ export async function POST() {
     seen.add(key);
   }
 
+  await journaliserActeAdmin(admin, {
+    actorId: user.id,
+    action: "topup.sync_catalog",
+    metadata: { inserted, updated },
+  });
   return NextResponse.json({
     ok: true,
     inserted,
