@@ -202,6 +202,15 @@ d'achat meurt en erreur.
 
 *\* SRV-01b est 🔴 par nature mais vient après les S : le seuil (ordre 2) borne le risque en attendant, exactement comme le cahier le prévoit.*
 
+**Décision porteur, 2026-08-13, reçue pendant la livraison de ce plan :
+« Zabelie ne fait pas du cash à la livraison. »** Les mentions COD/Glovo Cash
+du benchmark ci-dessus sont donc à lire comme du contexte concurrentiel,
+jamais comme une piste : le rail d'encaissement de Zabelie est le mobile money
+(MonCash), point. Aucune surface du site ne promet un paiement à la livraison
+— vérifié par recensement le jour même — et aucun chantier futur ne doit en
+introduire. C'est cohérent avec la leçon Konga du benchmark : ils ont
+construit leur escrow mobile pour SORTIR du COD ; Zabelie y est née.
+
 **Par quoi commencer aujourd'hui** : les ordres 1 à 3 sont trois gestes porteur
 sans une ligne de code — la clé, le seuil, la dépublication. Le premier point de
 contrôle humain avant toute opération en prod est inchangé : toute écriture

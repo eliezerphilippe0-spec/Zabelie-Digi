@@ -115,7 +115,26 @@ passe pas à l'échelle et il se dégrade en silence** — le jour où la
 publication est déléguée, ou où le volume fait cliquer vite, la protection
 disparaît sans qu'aucun test n'échoue.
 
-**⏳ CE QUI MANQUE À CET ARBITRAGE : sa condition de sortie.** (i) n'est
+**✅ CONDITION DE SORTIE POSÉE — 2026-08-13.** Décision déléguée par le
+porteur en session (« fait le meilleur choix ») ; valeurs choisies par l'agent
+sur le motif `dispute_weekly_ceiling`, amendables par le porteur d'un trait :
+
+* **Déclencheur** — le premier atteint l'emporte : **3 services publiés** au
+  catalogue, OU **première délégation de la publication** (le jour où quelqu'un
+  d'autre que le porteur publie).
+* **Conséquence** — **gel de toute nouvelle publication de service** tant que
+  le chantier « qu'est-ce que *rendu* pour une prestation » (SRV-01b,
+  `docs/REVUE-KINDS-2026-08-13.md`) n'est pas livré. Les services déjà publiés
+  restent en vente : le gel borne l'exposition, il ne casse pas l'existant.
+* **Inscription** — ici même et dans `OPS_TODO.md` (registre des décisions),
+  le même jour.
+
+Mesure au 2026-08-13 : **1** service publié sur 3 — le seuil laisse de la
+marge sans être théorique.
+
+**⏳ Le texte d'origine, conservé parce qu'il explique le seuil :**
+
+**⏳ CE QUI MANQUAIT À CET ARBITRAGE : sa condition de sortie.** (i) n'est
 « accepter un risque borné » que si un seuil écrit fait basculer le chantier
 « qu'est-ce que *rendu* pour une prestation » de backlog à **bloquant** ;
 sans seuil, c'est « reporter indéfiniment », et la différence est invisible
