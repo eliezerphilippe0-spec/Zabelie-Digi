@@ -42,7 +42,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Ce que l'appel a produit — la valeur sert au journal, pas au flux. */
-export type IssueSuivi = "ouvert" | "non_physique" | "echec";
+/**
+ * `sans_suivi` : le kind n'entre pas dans la machine de remise. Avant 0068
+ * c'était tout sauf `physical` (et la valeur se nommait `non_physique`) ;
+ * depuis 0068 les services y entrent, et seul `fichier` reste dehors — sa
+ * remise EST le téléchargement (0059). Le nom a suivi le fait.
+ */
+export type IssueSuivi = "ouvert" | "sans_suivi" | "echec";
 
 /**
  * Ce que rendent les trois RPC de déclaration (§4 et §4 bis de `0043`).
@@ -207,8 +213,8 @@ export async function ouvrirSuiviLivraison(
       return "echec";
     }
     const ouvert = data === true;
-    journal({ issue: ouvert ? "ouvert" : "non_physique", site, commande: orderId });
-    return ouvert ? "ouvert" : "non_physique";
+    journal({ issue: ouvert ? "ouvert" : "sans_suivi", site, commande: orderId });
+    return ouvert ? "ouvert" : "sans_suivi";
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur";
     journal({ issue: "echec", site, commande: orderId, message });

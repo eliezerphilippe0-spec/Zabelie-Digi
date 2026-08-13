@@ -128,6 +128,23 @@ async function handle(req: Request) {
       digital = (dData ?? {}) as typeof digital;
     }
 
+    /* ── Le filet orphelin des SERVICES (0068), même contrat que le digital ─
+     * Depuis 0068, `zabelie_open_fulfillment` admet les services : la machine
+     * de 0043 (déclaration, acceptation, auto-acceptation, escalade) les
+     * couvre par ses branches SANS filtre de kind. Ce filet-ci ne traite que
+     * l'angle mort restant — un escrow de service confirmé SANS ligne de
+     * suivi (appel d'ouverture omis ou raté). Fonction séparée du money-path,
+     * échec isolé, journalisé même à zéro : mêmes règles que 0059. */
+    let services: { services_repares?: number; services_tardifs?: number } = {};
+    const { data: sData, error: sErr } = await admin.rpc(
+      "zabelie_service_sans_suivi_sweep"
+    );
+    if (sErr) {
+      journal({ issue: "echec_service", message: sErr.message });
+    } else {
+      services = (sData ?? {}) as typeof services;
+    }
+
     /* ── Les avis partent APRÈS le balayage, et l'ordre est un choix ────────
      * Le garde de légitimité du balayage retient l'auto-réception tant qu'un
      * avis n'est pas parti. Envoyer AVANT lèverait ce garde dans la seconde :
@@ -185,6 +202,8 @@ async function handle(req: Request) {
       orphelins_tardifs: c.orphelins_tardifs ?? 0,
       fichiers_signales: digital.fichiers_signales ?? 0,
       fichiers_leves: digital.fichiers_leves ?? 0,
+      services_repares: services.services_repares ?? 0,
+      services_tardifs: services.services_tardifs ?? 0,
       avis_dus: avis.dus,
       avis_envoyes: avis.envoyes,
       avis_echecs: avis.echecs,
@@ -197,7 +216,7 @@ async function handle(req: Request) {
       purges,
       dureeMs: Date.now() - debut,
     });
-    return NextResponse.json({ ...c, ...digital, avis, purges });
+    return NextResponse.json({ ...c, ...digital, ...services, avis, purges });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur";
     journal({ issue: "exception", message, dureeMs: Date.now() - debut });
