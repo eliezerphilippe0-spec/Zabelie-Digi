@@ -63,6 +63,8 @@ const fr = {
 
   // ── Politique produits interdits (v1) ────────────────────────────────────
   "policy.link": "Ce qui ne peut pas être vendu",
+  "footer.legal": "Légal",
+  "footer.privacy": "Confidentialité",
   "catalog.allShelves": "Tous les rayons",
   "catalog.miss.title": "Nous n'avons pas encore",
   "catalog.miss.body": "Personne ne vend ça sur Zabelie pour le moment. Nous notons votre recherche : c'est comme ça que nous choisissons quels vendeurs aller chercher.",
@@ -543,6 +545,8 @@ const ht: Record<I18nKey, string> = {
 
   // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
   "policy.link": "Sa ou pa gen dwa vann",
+  "footer.legal": "Legal",
+  "footer.privacy": "Konfidansyalite",
   "catalog.allShelves": "Tout rayon yo",
   "catalog.miss.title": "Nou poko genyen",
   "catalog.miss.body": "Pou kounye a pèsonn pa vann sa sou Zabelie. Nou note rechèch ou a : se konsa nou chwazi ki vandè pou n al chèche.",
@@ -995,6 +999,8 @@ const en = {
 
   // ── Prohibited items policy (v1) ─────────────────────────────────────────
   "policy.link": "What cannot be sold",
+  "footer.legal": "Legal",
+  "footer.privacy": "Privacy",
   "catalog.allShelves": "All departments",
   "catalog.miss.title": "We don't have this yet",
   "catalog.miss.body": "Nobody is selling this on Zabelie right now. We're recording your search: that is how we decide which sellers to go find.",
@@ -1462,6 +1468,8 @@ const es = {
 
   // Política de productos prohibidos (v2)
   "policy.link": "Lo que no se puede vender",
+  "footer.legal": "Legal",
+  "footer.privacy": "Privacidad",
   "catalog.allShelves": "Todas las secciones",
   "catalog.miss.title": "Todavía no tenemos",
   "catalog.miss.body": "Nadie vende esto en Zabelie por ahora. Anotamos tu búsqueda: así decidimos a qué vendedores ir a buscar.",

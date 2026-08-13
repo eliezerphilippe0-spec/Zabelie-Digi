@@ -74,12 +74,12 @@ export async function SiteFooter() {
             </Link>
           </div>
           <div className="flex flex-col gap-2">
-            <p className="font-semibold text-cloud">Légal</p>
+            <p className="font-semibold text-cloud">{t(lang, "footer.legal")}</p>
             <Link
               href="/confidentialite"
               className="text-mist hover:text-cloud"
             >
-              Confidentialité
+              {t(lang, "footer.privacy")}
             </Link>
             <Link href={POLICY_PATH} className="text-mist hover:text-cloud">
               {t(lang, "policy.link")}
