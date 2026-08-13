@@ -40,7 +40,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Appliquer `0056` (purge des avis de remise envoyés, 90 j)** | 2026-08-10 | Rien fonctionnellement — le sweep journalise `purges: -1` à chaque passage tant qu'elle n'est pas appliquée (dégradation prévue, visible), puis le vrai compte ensuite. Sans elle, la rétention des avis envoyés n'est pas bornée — la classe que `0053` a fermée pour la recherche. Rédigée et éprouvée sur base de répétition (PN1-PN5 + mutation de la fonction → rouge). ⛔ **NE PAS APPLIQUER avant les arbitrages D-10→D-14 de `docs/28`** (revue porteur 2026-08-10) : les avis sont une pièce du futur suivi des litiges, dont le gel de maturation « suspendu, pas remis à zéro » peut dépasser 90 j — purger effacerait des preuves. À l'arbitrage, soit confirmer formellement 90 j > fenêtre maximale de litige + gel, soit amender la fonction pour exclure les avis d'une commande en litige non clos (la table n'existe pas encore : la clause ne peut pas être écrite aujourd'hui sans inventer son schéma). La dégradation `purges: -1` du sweep est conçue pour attendre. |
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
 | **Identifiants API MonCash — portail + 3 variables** (compte MonCash Business créé le 2026-08-10, formulaire d'URLs en cours) | 2026-08-10 | **Le rail de paiement principal.** Gestes, dans l'ordre : (a) portail MonCash → Website Url = l'URL `.vercel.app` de Production, Return Url = `…/api/moncash/return` (le champ CRITIQUE — `app/api/moncash/return/route.ts` attend `?transactionId=`), Alert Url = `…/mes-achats` ; (b) Vercel, Production **et** Preview : `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET` (bouton **Reveal/Copy**, jamais une sélection du champ masqué — l'incident du caractère `•`), `MONCASH_MODE=sandbox` ; (c) **Redeploy** ; (d) le test de bout en bout `docs/05-TEST-SANDBOX.md` — dernier maillon avant la première commande réelle (`docs/22`). Au rattachement de `zabelie.com` : étape 2 bis du runbook ci-dessous (remplacer les 3 URLs du portail). |
-| ✅ ~~**Seuil de sortie de l'arbitrage B(i) — services**~~ — **POSÉ le 2026-08-13**, sur délégation porteur (« fait le meilleur choix »), valeurs de l'agent, amendables. Déclencheur : **3 services publiés** OU **première délégation de la publication** — le premier atteint l'emporte. Conséquence : **gel des nouvelles publications de service** jusqu'à livraison du chantier « rendu pour une prestation » (SRV-01b, `docs/REVUE-KINDS-2026-08-13.md`). Mesuré au jour de la pose : 1 service publié sur 3. Détail : `docs/26` §services. | 2026-08-13 | Rien tant que le seuil n'est pas atteint — c'est sa fonction : borner l'exposition acceptée par l'arbitrage B(i) au lieu de la laisser ouverte sans borne. |
+| ✅ ~~**Seuil de sortie de l'arbitrage B(i) — services**~~ — **POSÉ le 2026-08-13**, sur délégation porteur (« fait le meilleur choix »), valeurs de l'agent, amendables. Déclencheur : **3 services publiés** OU **première délégation de la publication** — le premier atteint l'emporte. Conséquence : **gel des nouvelles publications de service** jusqu'à livraison du chantier « rendu pour une prestation » (SRV-01b, `docs/REVUE-KINDS-2026-08-13.md`). Mesuré au jour de la pose : 1 service publié sur 3. Détail : `docs/26` §services. **MàJ 2026-08-13 soir : `0068` appliquée en production sur signal porteur — la machine de remise couvre désormais les services côté base.** Le chantier SRV-01b est livré côté SQL ; le seuil s'éteint à la fusion de la branche (qui apporte l'appelant du filet dans le cron de balayage). | 2026-08-13 | Rien tant que le seuil n'est pas atteint — c'est sa fonction : borner l'exposition acceptée par l'arbitrage B(i) au lieu de la laisser ouverte sans borne. |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
@@ -316,6 +316,50 @@ n'est pas « rien à signaler » : c'est « personne ne peut écrire ».
 le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
+
+### ✅ APPLIQUÉE le 2026-08-13 — `0068` (rendu de prestation), sur signal porteur
+
+> **Signal** : « applique 0068 », porteur, en session, 2026-08-13 (répété une
+> seconde fois pendant l'exécution). **Exécutant** : agent, par
+> `apply_migration`, à **17:43:40Z** (journal interne `20260813174340`).
+> Empreinte canonique du SQL reçu croisée avec le fichier du dépôt :
+> **identique** (`md5 e0dff51d2b67512486546a77611b2e0a` des deux côtés).
+> Registre : `sha256 fdb3fe20466ab48cb…`, `preuve = journal_supabase`,
+> ligne inscrite dans le même tour.
+
+**Ce qu'elle change** : le kind `service` entre dans la machine de remise de
+`0043`. La porte `zabelie_open_fulfillment` admet `('physical', 'service')` —
+liste explicite, jamais un « tout sauf » — et le filet orphelin
+`zabelie_service_sans_suivi_sweep` couvre les escrow de service sans ligne de
+suivi (réparable → ré-ouvert et verrouillé, délai ancré sur le paiement ;
+tardif → file humaine, **zéro écriture** sur `escrow_entries`). `fichier`
+reste hors machine : sa remise EST le téléchargement (`0059`).
+
+**Répétition prod-conforme préalable** : socle des 63 migrations appliquées
+rejoué dans l'**ordre réel** du journal interne (56 lignes au journal factice,
+`0025`→`0030` et `0044` placées au rang numérique, registre aligné ligne à
+ligne sur la production) · `0068` passe, post-conditions ZB068 comprises ·
+suite **S1→S10 verte** (porte, verrou, déclaration, acceptation,
+auto-acceptation par le sweep de `0043` NON modifié, filet réparable ancré sur
+le paiement, tardif à instantané d'escrow intact champ par champ, identité
+`0033`) · connu-négatif : `0068` pré-inscrite `appliquee` → **rejeu refusé
+`ZB065` à la première instruction**.
+
+**Vérifié EN PRODUCTION après application** (lecture seule) : la porte admet
+le service PAR SA CONDITION et `fichier` reste dehors (les deux sondées sur
+`pg_get_functiondef`) · ACL du filet = `postgres` + `service_role` seulement ·
+`zabelie_fulfillment` à 0 ligne et 0 escrow de service — **aucun dossier
+rétroactif touché**, exactement comme l'en-tête l'annonce.
+
+**Ce qui reste en dehors de ce geste** : (a) l'**appelant** du filet — le bloc
+`services` de `app/api/fulfillment/sweep/route.ts` vit sur la branche
+`claude/zabelie-talent-geolocation-map-74apxa`, il tournera à la prochaine
+fusion ; d'ici là le filet est dans le même état « fonction sans appelant »
+que `0047` jadis, mais **tracé ici** et gardé par `tests/service-rendu.test.ts`
+qui échouera si le câblage disparaît. (b) `0067` reste **rédigée non
+appliquée** (aucun signal) : l'observation du garde de `0068` est donc partie
+dans le canal `notice`, illisible par MCP — première application qui aurait pu
+la capter en table, et c'est mesuré, pas regretté : `0067` attend son signal.
 
 ### ✅ APPLIQUÉES le 2026-08-12 — `0054` puis `0066`, sur signal porteur
 
