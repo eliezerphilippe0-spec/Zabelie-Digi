@@ -48,3 +48,10 @@ yarn-error.log*
 # (identifiants, numéros MonCash, références de virement) reste HORS dépôt.
 ops/apurement*
 ops/**/apurement*
+
+# Service worker GÉNÉRÉ par Serwist à chaque build (`app/sw.ts` est la source).
+# Le commiter ferait diverger le fichier servi de son code source, et le diff
+# de 49 Ko minifié cacherait toute revue.
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js

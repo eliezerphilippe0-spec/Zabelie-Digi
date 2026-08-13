@@ -33,6 +33,37 @@ zéro et paraîtrait sain — c'est la règle 3 de `CLAUDE.md` mot pour mot :
 **V-2 — arbitrage porteur : la liste `NetworkOnly` (§2).** À trancher **avant**
 la première ligne, pas pendant la revue.
 
+## ✅ ARBITRAGE RENDU — 2026-08-13
+
+> **Porteur** : « fais le meilleur choix pour Zabelie, inspire-toi des géants
+> sur le marché africain. » Décision déléguée à l'agent, avec sa référence.
+
+**Ce que font les géants du terrain.** Jumia et Konga ont fait de leur PWA une
+pièce maîtresse sur exactement ce marché — bande passante chère, réseau qui
+tombe, Android d'entrée de gamme. Leur motif converge : **on parcourt le
+catalogue hors réseau, on ne paie jamais depuis un cache.** Et ils s'appuient
+sur Workbox plutôt que de réécrire la gestion de version.
+
+* **§2 — option B retenue** : fiche produit cachée AVEC bandeau d'âge et
+  revalidation au tap.
+* **§5 — Serwist retenu** (successeur de `next-pwa`, bâti sur Workbox).
+
+**⚠️ Séquencement imposé, et il n'est pas cosmétique.** La PR livrée le
+2026-08-13 met `/produit/` dans la liste `NetworkOnly` — donc l'option A **à
+titre provisoire**. Raison : livrer le cache de la fiche AVANT son bandeau
+d'âge, ce serait livrer l'option C, celle que cette spec rejette parce qu'elle
+« ment en silence ». Les deux arrivent dans le même geste ou pas du tout.
+
+**Ce que la PR du 2026-08-13 livre donc** : installabilité, précache des
+fichiers de build (le gain réel de données), page hors réseau en quatre
+langues, sortie de secours, et la liste `NetworkOnly` complète, croisée par
+`tests/pwa-service-worker.test.ts` (5 mutations, 5 rouges).
+
+**Ce qu'elle ne livre pas** : le cache de la fiche produit et son bandeau —
+c'est le geste suivant. Et V-1 reste entier : `SUPABASE_SERVICE_ROLE_KEY`, donc
+aucune image au catalogue, donc aucune règle de cache d'images (elle
+mesurerait zéro et paraîtrait saine).
+
 ## 2. ⚖️ ARBITRAGE — les chemins JAMAIS cachés
 
 > **Un service worker qui sert une page de paiement périmée n'est pas un bug

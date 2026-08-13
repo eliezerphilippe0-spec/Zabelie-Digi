@@ -1,3 +1,5 @@
+import withSerwistInit from "@serwist/next";
+
 /** @type {import('next').NextConfig} */
 
 /**
@@ -83,4 +85,23 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * PWA — `docs/32`. Le service worker vit dans `app/sw.ts` ; Serwist le compile
+ * vers `public/sw.js` et y injecte le manifeste de précache.
+ *
+ * `disable` en développement : un service worker qui met en cache pendant
+ * qu'on code produit des « ça marche chez moi » impossibles à reproduire, et
+ * masque justement les rechargements qu'on essaie d'observer.
+ *
+ * ⚠️ `reloadOnOnline: false`. Par défaut Serwist recharge la page au retour du
+ * réseau. Sur une connexion qui va et vient — le terrain visé — ça peut
+ * recharger un formulaire à moitié rempli sous les doigts de l'utilisateur.
+ */
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+  reloadOnOnline: false,
+});
+
+export default withSerwist(nextConfig);
