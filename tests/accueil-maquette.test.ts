@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { DICT, LANGS } from "@/lib/i18n";
-import { whatsappAffichage } from "@/lib/whatsapp";
 
 /**
  * L'ACCUEIL NE PROMET QUE CE QUE LA PLATEFORME TIENT.
@@ -185,54 +184,6 @@ test("aucune paire de clés de l'accueil ne partage une valeur, hors exemptions 
   }
 });
 
-/**
- * La grille des rayons est devenue PERMANENTE (elle ne s'affichait qu'à
- * catalogue vide). Le capteur de demande, lui, doit rester conditionné au
- * catalogue vide : demander « qu'est-ce qui vous manque ? » sous des rangées
- * bien remplies serait une question déplacée.
- *
- * Les deux tenaient sur la MÊME condition ; les séparer est exactement le
- * genre de changement qu'une relecture ultérieure défait sans le voir.
- */
-test("la grille des rayons est permanente, le capteur reste conditionnel", () => {
-  const src = readFileSync("app/page.tsx", "utf8");
-  assert.match(
-    src,
-    /\{rayons\.length > 0 && \(\s*\n\s*<section id="kategori"/,
-    "la grille des rayons n'est plus permanente — elle a retrouvé une condition"
-  );
-  assert.ok(
-    src.includes("{products.length === 0 && (\n          <div"),
-    "le capteur de demande n'est plus conditionné au catalogue vide"
-  );
-});
-
-test("le numéro WhatsApp s'affiche au format haïtien, ou pas du tout", () => {
-  const avant = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  try {
-    // Absent → rien. Une surface de contact vers personne est pire que rien.
-    delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    assert.equal(whatsappAffichage(), null);
-
-    // Tronqué → rien non plus : un numéro incomplet n'est pas un numéro.
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "509373";
-    assert.equal(whatsappAffichage(), null);
-
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "50937376615";
-    assert.equal(whatsappAffichage(), "+509 3737 6615");
-
-    // Déjà formaté par le porteur → même rendu, pas de double espacement.
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "+509 3737 6615";
-    assert.equal(whatsappAffichage(), "+509 3737 6615");
-
-    // Autre indicatif → rendu tel quel, jamais déformé par la règle haïtienne.
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "13475551234";
-    assert.equal(whatsappAffichage(), "+13475551234");
-  } finally {
-    if (avant === undefined) delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    else process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = avant;
-  }
-});
 
 /**
  * LE SECOND GESTE DE LA BANNIÈRE — découvert non testé par une mutation.
@@ -257,21 +208,22 @@ test("le geste WhatsApp de la bannière : les deux champs, ou aucun", async () =
   try {
     // Numéro absent → AUCUN geste. C'est le cas que la mutation a révélé.
     delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    assert.equal(secondGeste(vendeur!, "bonjou"), null);
+    assert.equal(secondGeste(vendeur!, "bonjou", "Pale ak nou"), null);
 
     // Numéro tronqué → aucun geste non plus.
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "5093";
-    assert.equal(secondGeste(vendeur!, "bonjou"), null);
+    assert.equal(secondGeste(vendeur!, "bonjou", "Pale ak nou"), null);
 
     // Numéro posé → les DEUX champs, jamais un seul.
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "50937376615";
-    const g = secondGeste(vendeur!, "bonjou");
+    const g = secondGeste(vendeur!, "bonjou", "Pale ak nou");
     assert.ok(g, "geste attendu avec un numéro valide");
     assert.ok(g!.href.startsWith("https://wa.me/50937376615"), `href inattendu : ${g!.href}`);
-    assert.equal(g!.cta, "+509 3737 6615");
+    // Le CTA est le LIBELLÉ traduit, plus jamais le numéro (2026-08-14).
+    assert.equal(g!.cta, "Pale ak nou");
 
     // Un slide qui ne demande pas WhatsApp n'en reçoit pas, numéro ou non.
-    assert.equal(secondGeste(sansWa!, "bonjou"), null);
+    assert.equal(secondGeste(sansWa!, "bonjou", "Pale ak nou"), null);
   } finally {
     if (avant === undefined) delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
     else process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = avant;

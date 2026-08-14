@@ -9,7 +9,7 @@ import { HeroCarousel } from "@/components/hero-carousel";
 import { MetricA } from "@/components/metric-a";
 import { LANDING_SLIDES, secondGeste } from "@/lib/landing-slides";
 import { getMenuRayons } from "@/lib/taxonomy";
-import { whatsappHref, whatsappAffichage } from "@/lib/whatsapp";
+import { whatsappHref } from "@/lib/whatsapp";
 import {
   getCatalogueCategories,
   getPublishedProducts,
@@ -321,8 +321,8 @@ export default async function HomePage() {
                 // Le second geste n'existe que si le numéro est posé — la
                 // décision vit dans `secondGeste`, pas ici : en ligne dans un
                 // composant serveur, elle était hors de portée d'un test.
-                secondHref: secondGeste(sl, t(lang, "wa.prefill"))?.href,
-                secondCta: secondGeste(sl, t(lang, "wa.prefill"))?.cta,
+                secondHref: secondGeste(sl, t(lang, "wa.prefill"), t(lang, "wa.chat"))?.href,
+                secondCta: secondGeste(sl, t(lang, "wa.prefill"), t(lang, "wa.chat"))?.cta,
               }))}
             />
           </div>
@@ -355,13 +355,9 @@ export default async function HomePage() {
               <span className="min-w-0">
               <span className="block font-semibold text-cloud">{t(lang, "wa.chat")}</span>
               <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.wa.b")}</span>
-              {/* Le numéro EN CLAIR (maquette porteur) : beaucoup enregistrent
-                  le contact à la main ou rappellent d'un autre téléphone. */}
-              {whatsappAffichage() && (
-                <span className="numeric mt-1 block select-all text-sm font-bold text-accent">
-                  {whatsappAffichage()}
-                </span>
-              )}
+              {/* Le numéro en clair a été RETIRÉ (décision porteur
+                  2026-08-14) : le bouton ouvre la conversation, il ne
+                  publie plus le numéro. Voir lib/whatsapp.ts. */}
               </span>
             </MetricA>
             </div>
@@ -377,16 +373,16 @@ export default async function HomePage() {
             <p className="mt-2 inline-block rounded-lg bg-brand px-3 py-1 text-sm font-extrabold text-ink">
               {t(lang, "rail.shop.free")}
             </p>
-            {whatsappHref(t(lang, "wa.prefill")) && whatsappAffichage() && (
+            {whatsappHref(t(lang, "wa.prefill")) && (
               <MetricA
                 event="whatsapp_clicked"
                 href={whatsappHref(t(lang, "wa.prefill"))!}
-                className="numeric mt-3 flex items-center justify-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-bold text-ink transition hover:opacity-90"
+                className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-bold text-ink transition hover:opacity-90"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-ink" strokeWidth="1.8">
                   <path d="M4 5h16v11H9l-5 4V5z" />
                 </svg>
-                {whatsappAffichage()}
+                {t(lang, "wa.chat")}
               </MetricA>
             )}
             <Link

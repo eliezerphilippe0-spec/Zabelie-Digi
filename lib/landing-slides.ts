@@ -1,5 +1,5 @@
 import type { I18nKey } from "@/lib/i18n";
-import { whatsappAffichage, whatsappHref } from "@/lib/whatsapp";
+import { whatsappHref } from "@/lib/whatsapp";
 
 /**
  * Les slides du hero — configuration, pas composant : un slide s'ajoute ou se
@@ -91,11 +91,14 @@ export const LANDING_SLIDES: LandingSlide[] = [
  */
 export function secondGeste(
   slide: LandingSlide,
-  prefill: string
+  prefill: string,
+  // Le libellé du bouton, traduit par l'appelant (« Pale ak nou… ») — le
+  // NUMÉRO n'est plus jamais affiché (décision porteur 2026-08-14, voir
+  // lib/whatsapp.ts) : le bouton ouvre la conversation, il ne publie rien.
+  libelle: string
 ): { href: string; cta: string } | null {
   if (!slide.whatsapp) return null;
   const href = whatsappHref(prefill);
-  const cta = whatsappAffichage();
-  if (!href || !cta) return null;
-  return { href, cta };
+  if (!href || !libelle) return null;
+  return { href, cta: libelle };
 }
