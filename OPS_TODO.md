@@ -40,6 +40,11 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Appliquer `0056` (purge des avis de remise envoyés, 90 j)** | 2026-08-10 | Rien fonctionnellement — le sweep journalise `purges: -1` à chaque passage tant qu'elle n'est pas appliquée (dégradation prévue, visible), puis le vrai compte ensuite. Sans elle, la rétention des avis envoyés n'est pas bornée — la classe que `0053` a fermée pour la recherche. Rédigée et éprouvée sur base de répétition (PN1-PN5 + mutation de la fonction → rouge). ⛔ **NE PAS APPLIQUER avant les arbitrages D-10→D-14 de `docs/28`** (revue porteur 2026-08-10) : les avis sont une pièce du futur suivi des litiges, dont le gel de maturation « suspendu, pas remis à zéro » peut dépasser 90 j — purger effacerait des preuves. À l'arbitrage, soit confirmer formellement 90 j > fenêtre maximale de litige + gel, soit amender la fonction pour exclure les avis d'une commande en litige non clos (la table n'existe pas encore : la clause ne peut pas être écrite aujourd'hui sans inventer son schéma). La dégradation `purges: -1` du sweep est conçue pour attendre. |
 | **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
 | **Identifiants API MonCash — portail + 3 variables** (compte MonCash Business créé le 2026-08-10, formulaire d'URLs en cours) | 2026-08-10 | **Le rail de paiement principal.** Gestes, dans l'ordre : (a) portail MonCash → Website Url = l'URL `.vercel.app` de Production, Return Url = `…/api/moncash/return` (le champ CRITIQUE — `app/api/moncash/return/route.ts` attend `?transactionId=`), Alert Url = `…/mes-achats` ; (b) Vercel, Production **et** Preview : `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET` (bouton **Reveal/Copy**, jamais une sélection du champ masqué — l'incident du caractère `•`), `MONCASH_MODE=sandbox` ; (c) **Redeploy** ; (d) le test de bout en bout `docs/05-TEST-SANDBOX.md` — dernier maillon avant la première commande réelle (`docs/22`). Au rattachement de `zabelie.com` : étape 2 bis du runbook ci-dessous (remplacer les 3 URLs du portail). |
+| ✅ ~~**Seuil de sortie de l'arbitrage B(i) — services**~~ — **POSÉ le 2026-08-13**, sur délégation porteur (« fait le meilleur choix »), valeurs de l'agent, amendables. Déclencheur : **3 services publiés** OU **première délégation de la publication** — le premier atteint l'emporte. Conséquence : **gel des nouvelles publications de service** jusqu'à livraison du chantier « rendu pour une prestation » (SRV-01b, `docs/REVUE-KINDS-2026-08-13.md`). Mesuré au jour de la pose : 1 service publié sur 3. Détail : `docs/26` §services. **MàJ 2026-08-13 soir : `0068` appliquée en production sur signal porteur — la machine de remise couvre désormais les services côté base.** Le chantier SRV-01b est livré côté SQL ; le seuil s'éteint à la fusion de la branche (qui apporte l'appelant du filet dans le cron de balayage). | 2026-08-13 | Rien tant que le seuil n'est pas atteint — c'est sa fonction : borner l'exposition acceptée par l'arbitrage B(i) au lieu de la laisser ouverte sans borne. |
+| **Ouvrir le kind `service` à la vente avant la fusion de la branche ?** | 2026-08-13 | **Presque rien, et c'est mesuré, pas supposé** (revue du tour 0068, prémisse corrigée sur `main`) : le code DÉPLOYÉ couvre déjà tout le parcours service — `lib/fulfillment.ts:197` appelle l'ouverture sans condition, le sweep déployé porte l'auto-acceptation J+7 (branche sans filtre de kind), et la chaîne déclaration/confirmation (`fulfillment/declare`, `fulfillment/received`, `fulfillment-actions.tsx`) ne mentionne jamais le kind. **Le seul trou jusqu'à la fusion** : le filet orphelin `zabelie_service_sans_suivi_sweep` n'a pas d'appelant — si l'appel d'ouverture échoue (webhook en erreur), cet escrow-là mûrit non verrouillé en silence, comme avant `0068`. Deux options : (a) fusionner avant d'ouvrir la vente — ferme le trou et éteint le seuil de sortie dans le même geste ; (b) accepter la fenêtre — exposition limitée aux échecs d'ouverture, pas au parcours nominal. **La fenêtre n'est pas aveugle** : la sonde lecture seule « escrow de service confirmé sans ligne de suivi » (la forme exacte du `SELECT` du filet, éprouvée connu-positif en S8/S9) se passe en session à tout moment — exécutée le 2026-08-13 : 0/0. **Borne de la réparation** : le filet ne répare que tant que l'escrow mûrit ; passé J+7 sans fusion, branche tardive → dossier humain, l'argent est parti. `0067` est SANS RAPPORT avec cette fenêtre (elle capte le garde de REJEU, pas les orphelins) — les deux décisions sont découplées. **Discipline si l'option (b) est choisie** (revue du 2026-08-13) : une sonde à la demande ne protège que si elle passe — la protection réelle est « la sonde passe plus souvent que J+7 », donc **cadence à fixer, une passe par session ou tous les 2-3 jours**, large contre une maturation à 7 jours. Et un passage positif ne bute pas sur la fusion : **la fonction du filet est déjà en production** (seul l'appelant cron manque) — détection → proposition en session → signal porteur → un appel de `zabelie_service_sans_suivi_sweep`, réparation pendant que l'escrow mûrit encore. ⚠️ Dans les deux cas la limite `RESEND_API_KEY` (partagée avec le physique) fait remonter chaque auto-acceptation en file admin tant que la clé n'est pas posée. |
+| **Appliquer `0069` (zones — localisation déclarative, Phase 1)** — après fusion de PR-Z1 | 2026-08-13 | Le chantier zones entier (`docs/33`, arbitré le 2026-08-13 sur signal « oui ») : PR-Z2 (filtre catalogue) et PR-Z3 (UI vendeur/acheteur) se dégradent sans elle. Rédigée, éprouvée sur cluster jetable (suite CI complète + Z1→Z6 + deux mutations rouges pour la bonne raison), **non appliquée** — règle dure n°5, répétition prod-conforme au moment du signal. ⚠️ Les graphies kreyòl du seed (19 communes du Nord, 5 quartiers du Cap) sont best-effort agent, **en attente de relecture native** — même statut que l'espagnol de `0052` ; à marquer au registre à l'application. |
+| **🔐 Dépôt GitHub PUBLIC — assumer ou passer en privé avant l'argent réel** | 2026-08-13 | Rien mécaniquement — mais observation de second lecteur (revue PR #98) : le dépôt est lisible sans connexion, et les messages de commit + `OPS_TODO` décrivent en détail les mécanismes de sécurité, les horodatages d'application en production, la structure de l'escrow et les fenêtres temporaires (« le filet attend son appelant »). Les gardes du dépôt ne reposent PAS sur le secret (aucune clé committée, RLS, fail-closed) — mais la divulgation de CALENDRIER (quelle fenêtre est ouverte, jusqu'à quand) est une information d'attaque gratuite. Geste : Settings → General → Danger Zone → Change visibility → Private, deux clics, réversible. Recommandation : **privé avant la première commande réelle** (`docs/22`), sauf choix d'ouverture assumé. |
+| **⚖️ CGU — faire relire le gabarit par le conseil juridique + remplir les 4 marqueurs** | 2026-08-14 | Rien mécaniquement — la page `/conditions` est EN LIGNE dès la fusion, gabarit honnête : structure complète (13 sections, 4 langues), seuls les termes déjà tranchés y figurent (maturation J+7, barème affiché, remboursement moyen d'origine, pas de COD), et **4 marqueurs `[À COMPLÉTER]` visibles** — âge minimum, fenêtre de litige (dépend de D-10→D-14), résiliation plateforme, droit applicable. Le compte est FIGÉ par `tests/conditions-utilisation.test.ts` dans les deux sens : remplir un marqueur exige de décrémenter le test dans le même commit. La fenêtre de litige se remplira naturellement avec les arbitrages D-10→D-14 (`docs/28`). **Adossé au même jalon que le passage en privé : avant la première commande réelle** (`docs/22`). Remplir `entite`/`email` dans `lib/policy-privacy.ts` remplit les DEUX documents d'un coup. |
 | **D-6 — qui paie la remise de fidélité** | 2026-07-24 | L'attribution des points et leur UI. Décision encore **gratuite** : aucun point n'a jamais été émis, elle ne le sera plus après une ligne de grand livre. |
 | **D-5 — commission minimale de 1 gourde** | 2026-07-26 | Rien. **Déclencheur nommé** : à trancher quand des articles sous 10 HTG apparaissent au catalogue. Un minimum rétablirait 20 % sur une vente à 5 HTG — soit ce que `floor` vient de corriger. |
 | **Avis juridique BRH — rétention** (`docs/17`) | 2026-07-22 | Rien mécaniquement, et c'est le piège : la consigne est de ne rien construire qui **aggrave** la rétention. Sans réponse, l'aggravation se fait par petits pas. |
@@ -315,6 +320,61 @@ n'est pas « rien à signaler » : c'est « personne ne peut écrire ».
 le SCHÉMA, pas le déploiement. Les deux faits sont vrais et distincts ; ne pas
 complexifier `0062` pour les confondre. C'est `tests/migrations-suite.test.ts`
 qui tient le second, par le trou de numérotation.
+
+### ✅ APPLIQUÉE le 2026-08-13 — `0068` (rendu de prestation), sur signal porteur
+
+> **Signal** : « applique 0068 », porteur, en session, 2026-08-13 (répété une
+> seconde fois pendant l'exécution). **Exécutant** : agent, par
+> `apply_migration`, à **17:43:40Z** (journal interne `20260813174340`).
+> Empreinte canonique du SQL reçu croisée avec le fichier du dépôt :
+> **identique** (`md5 e0dff51d2b67512486546a77611b2e0a` des deux côtés).
+> Registre : `sha256 fdb3fe20466ab48cb…`, `preuve = journal_supabase`,
+> ligne inscrite dans le même tour.
+
+**Ce qu'elle change** : le kind `service` entre dans la machine de remise de
+`0043`. La porte `zabelie_open_fulfillment` admet `('physical', 'service')` —
+liste explicite, jamais un « tout sauf » — et le filet orphelin
+`zabelie_service_sans_suivi_sweep` couvre les escrow de service sans ligne de
+suivi (réparable → ré-ouvert et verrouillé, délai ancré sur le paiement ;
+tardif → file humaine, **zéro écriture** sur `escrow_entries`). `fichier`
+reste hors machine : sa remise EST le téléchargement (`0059`).
+
+**Répétition prod-conforme préalable** : socle des 63 migrations appliquées
+rejoué dans l'**ordre réel** du journal interne (56 lignes au journal factice,
+`0025`→`0030` et `0044` placées au rang numérique, registre aligné ligne à
+ligne sur la production) · `0068` passe, post-conditions ZB068 comprises ·
+suite **S1→S10 verte** (porte, verrou, déclaration, acceptation,
+auto-acceptation par le sweep de `0043` NON modifié, filet réparable ancré sur
+le paiement, tardif à instantané d'escrow intact champ par champ, identité
+`0033`) · connu-négatif : `0068` pré-inscrite `appliquee` → **rejeu refusé
+`ZB065` à la première instruction**.
+
+**Vérifié EN PRODUCTION après application** (lecture seule) : la porte admet
+le service PAR SA CONDITION et `fichier` reste dehors (les deux sondées sur
+`pg_get_functiondef`) · ACL du filet = `postgres` + `service_role` seulement ·
+`zabelie_fulfillment` à 0 ligne et 0 escrow de service — **aucun dossier
+rétroactif touché**, exactement comme l'en-tête l'annonce.
+
+**Ce qui reste en dehors de ce geste** : (a) l'**appelant** du filet — le bloc
+`services` de `app/api/fulfillment/sweep/route.ts` vit sur la branche
+`claude/zabelie-talent-geolocation-map-74apxa`, il tournera à la prochaine
+fusion ; d'ici là le filet est dans le même état « fonction sans appelant »
+que `0047` jadis, mais **tracé ici** et gardé par `tests/service-rendu.test.ts`
+qui échouera si le câblage disparaît. (b) `0067` reste **rédigée non
+appliquée** (aucun signal) : l'observation du garde de `0068` est donc partie
+dans le canal `notice`, illisible par MCP — première application qui aurait pu
+la capter en table, et c'est mesuré, pas regretté : `0067` attend son signal.
+
+**Addendum (revue du tour, mesuré sur `origin/main`)** : la fenêtre
+« fonction sans appelant » est PLUS ÉTROITE que le paragraphe (a) pouvait le
+laisser croire. Le code déployé couvre déjà tout le parcours nominal d'un
+service payé — ouverture appelée sans condition par les trois rails
+(`lib/fulfillment.ts:197`), auto-acceptation J+7 par le sweep déployé (branche
+sans filtre de kind), déclaration et confirmation sans mention de kind
+(`fulfillment/declare` · `fulfillment/received` · `fulfillment-actions.tsx`,
+0 occurrence chacun). Seul l'échec de l'appel d'ouverture reste sans filet
+jusqu'à la fusion. La décision d'ouvrir la vente avant ou après est au
+registre des décisions, ci-dessus.
 
 ### ✅ APPLIQUÉES le 2026-08-12 — `0054` puis `0066`, sur signal porteur
 

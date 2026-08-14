@@ -63,6 +63,15 @@ const fr = {
 
   // ── Politique produits interdits (v1) ────────────────────────────────────
   "policy.link": "Ce qui ne peut pas être vendu",
+  "footer.legal": "Légal",
+  "offline.title": "Vous êtes hors réseau",
+  "offline.body":
+    "Cette page n'a pas pu être chargée. Zabelie garde en mémoire ce que vous avez déjà ouvert ; le reste attend le retour du réseau.",
+  "offline.retry": "Réessayer",
+  "offline.home": "Revenir à l'accueil",
+  "order.reviewed": "Avis déposé ✓",
+  "footer.privacy": "Confidentialité",
+  "footer.terms": "Conditions d'utilisation",
   "catalog.allShelves": "Tous les rayons",
   "catalog.miss.title": "Nous n'avons pas encore",
   "catalog.miss.body": "Personne ne vend ça sur Zabelie pour le moment. Nous notons votre recherche : c'est comme ça que nous choisissons quels vendeurs aller chercher.",
@@ -543,6 +552,14 @@ const ht: Record<I18nKey, string> = {
 
   // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
   "policy.link": "Sa ou pa gen dwa vann",
+  "footer.legal": "Legal",
+  "footer.privacy": "Konfidansyalite",
+  "footer.terms": "Kondisyon itilizasyon",
+  "offline.title": "Ou pa gen rezo",
+  "offline.body": "Paj sa a pa t ka chaje. Zabelie kenbe sa ou te deja louvri ; rès la ap tann rezo a tounen.",
+  "offline.retry": "Eseye ankò",
+  "offline.home": "Tounen nan akèy la",
+  "order.reviewed": "Avi depoze ✓",
   "catalog.allShelves": "Tout rayon yo",
   "catalog.miss.title": "Nou poko genyen",
   "catalog.miss.body": "Pou kounye a pèsonn pa vann sa sou Zabelie. Nou note rechèch ou a : se konsa nou chwazi ki vandè pou n al chèche.",
@@ -995,6 +1012,14 @@ const en = {
 
   // ── Prohibited items policy (v1) ─────────────────────────────────────────
   "policy.link": "What cannot be sold",
+  "footer.legal": "Legal",
+  "footer.privacy": "Privacy",
+  "footer.terms": "Terms of use",
+  "offline.title": "You are offline",
+  "offline.body": "This page could not be loaded. Zabelie keeps what you have already opened; the rest waits for the network to come back.",
+  "offline.retry": "Try again",
+  "offline.home": "Back to home",
+  "order.reviewed": "Review submitted ✓",
   "catalog.allShelves": "All departments",
   "catalog.miss.title": "We don't have this yet",
   "catalog.miss.body": "Nobody is selling this on Zabelie right now. We're recording your search: that is how we decide which sellers to go find.",
@@ -1462,6 +1487,14 @@ const es = {
 
   // Política de productos prohibidos (v2)
   "policy.link": "Lo que no se puede vender",
+  "footer.legal": "Legal",
+  "footer.privacy": "Privacidad",
+  "footer.terms": "Condiciones de uso",
+  "offline.title": "Está sin conexión",
+  "offline.body": "Esta página no se pudo cargar. Zabelie conserva lo que ya abrió; el resto espera a que vuelva la red.",
+  "offline.retry": "Reintentar",
+  "offline.home": "Volver al inicio",
+  "order.reviewed": "Reseña enviada ✓",
   "catalog.allShelves": "Todas las secciones",
   "catalog.miss.title": "Todavía no tenemos",
   "catalog.miss.body": "Nadie vende esto en Zabelie por ahora. Anotamos tu búsqueda: así decidimos a qué vendedores ir a buscar.",

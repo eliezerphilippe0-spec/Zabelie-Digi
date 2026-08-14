@@ -263,7 +263,7 @@ export default async function MesAchatsPage() {
                   )
                 )}
                 {reviewed.has(o.id) ? (
-                  <span className="text-xs text-success-text">Avis déposé ✓</span>
+                  <span className="text-xs text-success-text">{t(lang, "order.reviewed")}</span>
                 ) : (
                   <ReviewForm orderId={o.id} />
                 )}

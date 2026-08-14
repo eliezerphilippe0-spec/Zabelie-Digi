@@ -1,27 +1,22 @@
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
-import {
-  POLITIQUE,
-  resoudre,
-  type Bloc,
-  type Politique,
-} from "@/lib/policy-privacy";
+import { resoudre, type Bloc, type Politique } from "@/lib/policy-privacy";
+import { CONDITIONS } from "@/lib/policy-terms";
 
 export const metadata = {
-  title: "Politique de confidentialité — Zabelie",
+  title: "Conditions d'utilisation — Zabelie",
 };
 
-// Dernière mise à jour de la politique (à actualiser à chaque changement).
-const LAST_UPDATE = "7 juillet 2026";
+// Dernière mise à jour du gabarit (à actualiser à chaque changement — et la
+// première vraie « mise à jour » sera la relecture du conseil juridique).
+const LAST_UPDATE = "14 août 2026";
 
 /**
- * `**gras**` et `*italique*` → JSX.
- *
- * Écrit à la main plutôt qu'avec une bibliothèque markdown : le texte est
- * connu, la grammaire tient en deux marqueurs, et une dépendance de plus sur
- * un chemin juridique se justifierait mal. Le découpage capture les
- * délimiteurs pour qu'aucun caractère du texte ne se perde en route.
+ * `**gras**` et `*italique*` → JSX. Même rendu que `app/confidentialite/
+ * page.tsx`, même raison : deux marqueurs connus, pas de dépendance markdown
+ * sur un chemin juridique. (Dupliqué plutôt que factorisé : la consigne du
+ * chantier interdit de toucher aux pages existantes au-delà du pied de page.)
  */
 function riche(texte: string): React.ReactNode[] {
   return texte.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).filter(Boolean).map((bout, i) => {
@@ -60,9 +55,9 @@ function Section({ titre, blocs, lang }: { titre: string; blocs: Bloc[]; lang: P
   );
 }
 
-export default async function ConfidentialitePage() {
+export default async function ConditionsPage() {
   const lang = await getLang();
-  const doc: Politique = POLITIQUE[lang];
+  const doc: Politique = CONDITIONS[lang];
 
   return (
     <div className="bg-grain min-h-screen">
@@ -72,9 +67,7 @@ export default async function ConfidentialitePage() {
         <p className="mt-2 text-sm text-mist">
           {doc.majLabel} : {LAST_UPDATE}
         </p>
-        {/* Sur les versions traduites seulement : dire laquelle fait foi. Une
-            traduction non relue par un juriste qui se présenterait comme le
-            texte de référence serait un engagement qu'on n'a pas pris. */}
+        {/* Sur les versions traduites seulement : dire laquelle fait foi. */}
         {doc.avisTraduction && (
           <p className="mt-4 rounded-xl border border-line px-4 py-3 text-xs text-mist">
             {doc.avisTraduction}
