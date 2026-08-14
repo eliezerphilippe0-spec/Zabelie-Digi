@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSellerIdsInZone } from "@/lib/zones";
 import { PRODUCTS as SAMPLE, type ProductKind } from "@/lib/sample-data";
 
 /**
@@ -145,6 +146,14 @@ export type ProductFilters = {
    * rendre zéro résultat.
    */
   productIds?: string[];
+  /**
+   * Filtre par zone (PR-Z2, `docs/33` §4) : produits dont le VENDEUR a
+   * déclaré une zone dans le sous-arbre de celle-ci (choisir une komin
+   * inclut ses katye). Zone inconnue, désactivée ou sans vendeur → zéro
+   * résultat, jamais « pas de filtre ». En mode DÉMO les fixtures n'ont pas
+   * de zone : le filtre y rend zéro résultat aussi, pour la même raison.
+   */
+  zoneId?: string;
 };
 
 /** Sentinelle : `in ()` est un rejet côté PostgREST, `in (uuid nul)` non. */
@@ -362,7 +371,10 @@ export async function getPublishedProductsPage(
   const offset = (page - 1) * CATALOGUE_PAGE_SIZE;
 
   if (!isSupabaseConfigured()) {
-    const all = filterSample(demoView(), filters);
+    // Les fixtures démo n'ont pas de zone : un filtre zone y rend ZÉRO
+    // résultat — afficher tout le catalogue sous un filtre qui n'a pas pris
+    // est exactement le défaut que la règle `productIds` ci-dessus interdit.
+    const all = filters.zoneId ? [] : filterSample(demoView(), filters);
     return {
       items: all.slice(offset, offset + CATALOGUE_PAGE_SIZE),
       hasMore: offset + CATALOGUE_PAGE_SIZE < all.length,
@@ -370,6 +382,15 @@ export async function getPublishedProductsPage(
   }
 
   const supabase = await createClient();
+
+  // PR-Z2 (docs/33 §4) : le sous-arbre de la zone est résolu UNE fois, hors
+  // de la requête catalogue — même règle que la recherche par nom de
+  // créateur (BL-134) : un rejeu du filtre de stock ne relance pas la
+  // lecture des zones.
+  let zoneSellerIds: string[] | null = null;
+  if (filters.zoneId) {
+    zoneSellerIds = await getSellerIdsInZone(filters.zoneId);
+  }
 
   const q = filters.q?.trim().replace(/[%,()]/g, " ");
   // BL-134 (C-7b) : la recherche couvre aussi le nom du créateur. Résolu une
@@ -403,6 +424,13 @@ export async function getPublishedProductsPage(
     // entier sous un rayon vide, sans jamais dire que le filtre n'a pas pris.
     if (filters.productIds) {
       query = query.in("id", filters.productIds.length > 0 ? filters.productIds : [ZERO_UUID]);
+    }
+
+    // Zone : mêmes règles que `productIds` — une zone sans vendeur (ou
+    // inconnue, ou désactivée) filtre sur la sentinelle et rend zéro
+    // résultat, jamais le catalogue entier.
+    if (zoneSellerIds) {
+      query = query.in("seller_id", zoneSellerIds.length > 0 ? zoneSellerIds : [ZERO_UUID]);
     }
 
     if (q) {
