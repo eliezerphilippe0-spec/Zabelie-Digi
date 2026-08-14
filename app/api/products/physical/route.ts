@@ -349,7 +349,25 @@ export async function POST(req: Request) {
         year_end: f.yearEnd,
       }))
     );
-    if (fitErr) return abort("insert fitment", fitErr);
+    if (fitErr) {
+      // 23505 = deux lignes de compatibilité identiques (même modèle, même
+      // année de début — `fitment_unique`, 0036). C'est une erreur de SAISIE,
+      // pas une panne : on nettoie comme `abort`, mais on DIT la cause.
+      // Mesuré le 2026-08-14 : le premier vrai test vendeur post-clé a butté
+      // exactement ici, et « Création échouée » a fait accuser la clé.
+      if (fitErr.code === "23505") {
+        console.error("products/physical: fitment en double", fitErr);
+        await admin.from("products").delete().eq("id", product.id);
+        return NextResponse.json(
+          {
+            error:
+              "Deux lignes de compatibilité identiques (même modèle, même année de début) — retirez le doublon.",
+          },
+          { status: 422 }
+        );
+      }
+      return abort("insert fitment", fitErr);
+    }
   }
 
   return NextResponse.json({
