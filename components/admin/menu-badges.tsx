@@ -28,6 +28,7 @@ export const MENU_ADMIN: { label: string; href: string; cle: keyof Counts | null
   { label: "Remises", href: "/admin/livraisons", cle: null },
   { label: "Règlements", href: "/admin/paiements-vendeurs", cle: null },
   { label: "Géo", href: "/admin/geo", cle: null },
+  { label: "Zones", href: "/admin/zones", cle: null },
 ];
 
 export function MenuBadges({ actif }: { actif: string }) {
