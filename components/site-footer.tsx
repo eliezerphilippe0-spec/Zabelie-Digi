@@ -81,6 +81,9 @@ export async function SiteFooter() {
             >
               {t(lang, "footer.privacy")}
             </Link>
+            <Link href="/conditions" className="text-mist hover:text-cloud">
+              {t(lang, "footer.terms")}
+            </Link>
             <Link href={POLICY_PATH} className="text-mist hover:text-cloud">
               {t(lang, "policy.link")}
             </Link>
