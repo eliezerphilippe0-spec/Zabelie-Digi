@@ -424,6 +424,21 @@ façon dont l'artefact est adressé, et c'est tout l'enjeu :
 Et jamais `grep` seul, dans les deux cas — un motif ne prouve rien sur ce
 qu'il n'a pas cherché, et il ne dit pas qu'il ne l'a pas cherché.
 
+#### Un prédicat ne porte pas d'état — le regex `/g` qui ment un appel sur deux
+
+En JavaScript, un regex portant `g` (ou `y`) est **À ÉTAT** : `.test()` et
+`.exec()` avancent `lastIndex`, et l'appel suivant repart de là — un
+`RE.test(s)` dans un `filter()` rend donc vrai ou faux selon l'ORDRE des
+appels, en silence. Mordu le 2026-08-14 dans
+`tests/conditions-utilisation.test.ts` (prédicat de marqueurs partagé avec un
+compteur `match`), attrapé avant exécution uniquement parce que le motif était
+connu — c'est la même classe que la mutation qui n'a pas muté : l'instrument
+ment, et son mensonge ressemble à un résultat.
+
+Règle : **un regex qui sert de prédicat ne porte jamais `g`.** Pour compter,
+`s.match(re)` — insensible à `lastIndex` — et jamais `.test()` répété. Un
+regex partagé entre prédicat et comptage se dédouble.
+
 #### `\b` ne connaît pas le kreyòl — propriété du produit, pas leçon d'un tour
 
 En JavaScript, `\w` vaut `[A-Za-z0-9_]` : **les lettres accentuées ne sont pas

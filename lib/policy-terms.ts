@@ -28,7 +28,11 @@ import type { Politique } from "./policy-privacy";
  *
  * `{entite}` et `{email}` sont résolus par le `resoudre` de
  * `lib/policy-privacy.ts` — l'objet `IDENTITE` n'est PAS dupliqué ici : les
- * remplir là-bas les remplit sur les deux documents.
+ * remplir là-bas les remplit sur les deux documents. Ce jour-là, c'est le
+ * cliquet de la CONFIDENTIALITÉ (`champsManquants`) qui rougira — pas
+ * celui-ci : les quatre marqueurs d'ici sont d'AUTRES blancs, juridiques,
+ * comptés dans le texte SOURCE, qu'`IDENTITE` ne touche pas. Deux comptes
+ * orthogonaux, deux décisions distinctes.
  *
  * Les versions kreyòl, anglaise et espagnole sont des traductions de l'agent,
  * non relues par un juriste ni un locuteur natif. Le français fait foi.
