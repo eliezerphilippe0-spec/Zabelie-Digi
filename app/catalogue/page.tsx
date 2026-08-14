@@ -12,6 +12,8 @@ import { sessionFingerprint } from "@/lib/search-demand";
 import { headers } from "next/headers";
 import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
+import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
+import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
 import { t } from "@/lib/i18n";
 
@@ -29,23 +31,52 @@ export const metadata = {
 export default async function CataloguePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; sous?: string; page?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    cat?: string;
+    sous?: string;
+    page?: string;
+    zd?: string;
+    zk?: string;
+    zq?: string;
+  }>;
 }) {
-  const { q, cat, sous, page: pageRaw } = await searchParams;
+  const { q, cat, sous, page: pageRaw, zd, zk, zq } = await searchParams;
   const activeCat = cat ?? "Tout";
   const page = Math.max(1, Number.parseInt(pageRaw ?? "1", 10) || 1);
-  // Le second niveau se résout AVANT la requête catalogue : il la restreint.
-  const productIds = sous ? await productIdsInCategory(sous) : null;
-  const [{ items: products, hasMore }, lang, categories] = await Promise.all([
-    getPublishedProductsPage({
-      q,
-      category: activeCat,
-      page,
-      productIds: productIds ?? undefined,
-    }),
+  const [lang, categories, zones] = await Promise.all([
     getLang(),
     getCatalogueCategories(),
+    isSupabaseConfigured() ? getZonesActives() : Promise.resolve([] as Zone[]),
   ]);
+
+  // PR-Z3 (docs/33 §4) : la zone active est la plus PROFONDE choisie —
+  // katye > komin > depatman — APRÈS validation de cohérence : la cascade
+  // GET sans JS laisse un `zk`/`zq` périmé survivre à un changement de `zd`
+  // dans la même soumission ; un enfant qui n'appartient pas au parent
+  // soumis est simplement IGNORÉ, jamais filtré à contresens.
+  const zkValide = zk && zones.some((z) => z.id === zk && z.parent_id === zd) ? zk : undefined;
+  const zqValide = zq && zones.some((z) => z.id === zq && z.parent_id === zkValide) ? zq : undefined;
+  const zoneId = zqValide || zkValide || zd || undefined;
+
+  // Le second niveau se résout AVANT la requête catalogue : il la restreint.
+  const productIds = sous ? await productIdsInCategory(sous) : null;
+  const { items: products, hasMore } = await getPublishedProductsPage({
+    q,
+    category: activeCat,
+    page,
+    productIds: productIds ?? undefined,
+    zoneId,
+  });
+
+  // Les trois étages du sélecteur, depuis la même liste (34 lignes au
+  // seed) : les komin du depatman choisi, les katye de la komin choisie.
+  const depatmans = zones.filter((z) => z.level === "depatman");
+  const komins = zd ? zones.filter((z) => z.level === "komin" && z.parent_id === zd) : [];
+  const katyes = zkValide
+    ? zones.filter((z) => z.level === "katye" && z.parent_id === zkValide)
+    : [];
+  const zoneActive = zoneId ? zones.find((z) => z.id === zoneId) : undefined;
   // Rayons fins du département actif. Vide hors département, et vide tant
   // qu'aucun produit publié n'y est rangé (V-13 : jamais un rayon désert).
   const facettes =
@@ -107,6 +138,12 @@ export default async function CataloguePage({
     // département courant, le garder afficherait un filtre impossible.
     const s2 = opts.sous === null ? undefined : (opts.sous ?? (opts.cat ? undefined : sous));
     if (s2) params.set("sous", s2);
+    // La zone survit à la pagination et au changement de rayon : la perdre
+    // en tournant la page serait un filtre qui se défait en silence. On ne
+    // propage que les étages VALIDÉS — un enfant périmé meurt ici.
+    if (zd) params.set("zd", zd);
+    if (zkValide) params.set("zk", zkValide);
+    if (zqValide) params.set("zq", zqValide);
     const p = opts.page ?? 1;
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
@@ -134,7 +171,8 @@ export default async function CataloguePage({
           {products.length} {t(lang, "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
           {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
-          {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}.
+          {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}
+          {zoneActive ? ` · ${libelleZone(zoneActive, lang)}` : ""}.
         </p>
 
         {/* Recherche (GET, fonctionne sans JS) */}
@@ -142,6 +180,9 @@ export default async function CataloguePage({
           {activeCat !== "Tout" && (
             <input type="hidden" name="cat" value={activeCat} />
           )}
+          {zd && <input type="hidden" name="zd" value={zd} />}
+          {zkValide && <input type="hidden" name="zk" value={zkValide} />}
+          {zqValide && <input type="hidden" name="zq" value={zqValide} />}
           <input
             name="q"
             defaultValue={q ?? ""}
@@ -155,6 +196,71 @@ export default async function CataloguePage({
             {t(lang, "catalog.search.btn")}
           </button>
         </form>
+
+        {/* Filtre par zone (PR-Z3, docs/33 §4) — GET, cascade SANS JS :
+            choisir un étage recharge la page et révèle le suivant. Masqué
+            tant que la table des zones est vide (démo, ou 0069 pas encore
+            en base) — un sélecteur à une option n'est pas un filtre. */}
+        {depatmans.length > 0 && (
+          <form action="/catalogue" className="mt-4 flex flex-wrap items-center gap-2">
+            {q && <input type="hidden" name="q" value={q} />}
+            {activeCat !== "Tout" && <input type="hidden" name="cat" value={activeCat} />}
+            {sous && <input type="hidden" name="sous" value={sous} />}
+            <label className="text-sm text-mist" htmlFor="zone-zd">
+              {t(lang, "zone.filter.title")}
+            </label>
+            <select
+              id="zone-zd"
+              name="zd"
+              defaultValue={zd ?? ""}
+              aria-label={t(lang, "zone.level.depatman")}
+              className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-violet"
+            >
+              <option value="">{t(lang, "zone.filter.all")}</option>
+              {depatmans.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {libelleZone(z, lang)}
+                </option>
+              ))}
+            </select>
+            {komins.length > 0 && (
+              <select
+                name="zk"
+                defaultValue={zkValide ?? ""}
+                aria-label={t(lang, "zone.level.komin")}
+                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-violet"
+              >
+                <option value="">{t(lang, "zone.level.komin")}</option>
+                {komins.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {libelleZone(z, lang)}
+                  </option>
+                ))}
+              </select>
+            )}
+            {katyes.length > 0 && (
+              <select
+                name="zq"
+                defaultValue={zqValide ?? ""}
+                aria-label={t(lang, "zone.level.katye")}
+                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-violet"
+              >
+                <option value="">{t(lang, "zone.level.katye")}</option>
+                {katyes.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {libelleZone(z, lang)}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="submit"
+              className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-violet"
+            >
+              {t(lang, "zone.filter.apply")}
+            </button>
+          </form>
+        )}
 
         {/* Filtres catégories — masqués tant qu'il n'y a rien à filtrer :
             une seule puce « Tout » n'est pas un filtre, c'est du décor. */}

@@ -6,6 +6,7 @@ import { getCreator } from "@/lib/creators";
 import { ShareButtons } from "@/components/share-buttons";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,12 @@ export default async function CreatorPage({
   const { id } = await params;
   const [creator, lang] = await Promise.all([getCreator(id), getLang()]);
   if (!creator) notFound();
+
+  // La zone du vendeur, remontée jusqu'au depatman — lue seulement si une
+  // zone est déclarée : pas de lecture de table pour ne rien afficher.
+  const cheminVendeur = creator.zoneId
+    ? cheminZone(await getZonesActives(), creator.zoneId)
+    : [];
 
   const initials = creator.displayName.slice(0, 2).toUpperCase();
 
@@ -64,6 +71,22 @@ export default async function CreatorPage({
 
         {creator.bio && (
           <p className="mt-6 max-w-2xl text-mist">{creator.bio}</p>
+        )}
+
+        {/* Zone déclarée (PR-Z3, docs/33 §4) : « Katye, Komin — Depatman »
+            + pwen repè. Rien ne s'affiche sans zone — pas de ligne vide. */}
+        {cheminVendeur.length > 0 && (
+          <p className="mt-4 text-sm text-mist">
+            <span className="font-semibold text-cloud">
+              {t(lang, "zone.seller.label")}
+            </span>{" "}
+            : {cheminVendeur
+              .slice()
+              .reverse()
+              .map((z) => libelleZone(z, lang))
+              .join(", ")}
+            {creator.pwenRepe ? ` · ${creator.pwenRepe}` : ""}
+          </p>
         )}
 
         {/* Boutique en un lien : se partage sur WhatsApp comme une vitrine */}
