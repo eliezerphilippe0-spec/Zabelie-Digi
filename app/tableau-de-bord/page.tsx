@@ -276,6 +276,12 @@ export default async function DashboardPage() {
     pwen: t(lang, "zone.form.pwen"),
     pwenPh: t(lang, "zone.form.pwen.ph"),
     all: t(lang, "zone.filter.all"),
+    reqHint: t(lang, "zone.req.hint"),
+    reqPh: t(lang, "zone.req.ph"),
+    reqBtn: t(lang, "zone.req.btn"),
+    reqOk: t(lang, "zone.req.ok"),
+    reqDup: t(lang, "zone.req.dup"),
+    reqErr: t(lang, "zone.req.err"),
   };
 
   return (

@@ -22,6 +22,12 @@ export type ZoneLabels = {
   pwen: string;
   pwenPh: string;
   all: string;
+  reqHint: string;
+  reqPh: string;
+  reqBtn: string;
+  reqOk: string;
+  reqDup: string;
+  reqErr: string;
 };
 
 export function ProfileForm({
@@ -62,6 +68,37 @@ export function ProfileForm({
   const [zd, setZd] = useState(parId.get(zk)?.parent_id ?? "");
   const komins = zones.filter((z) => z.level === "komin" && z.parent_id === zd);
   const katyes = zones.filter((z) => z.level === "katye" && z.parent_id === zk);
+
+  // PR-Z4 (Z-C) : le katye manquant se PROPOSE — rien ne naît côté client,
+  // la demande part en modération (/api/zones/request, table 0070).
+  const [reqNom, setReqNom] = useState("");
+  const [reqMsg, setReqMsg] = useState<string | null>(null);
+  const [reqBusy, setReqBusy] = useState(false);
+
+  async function demanderKatye() {
+    if (!zk || reqNom.trim().length < 2 || !zoneLabels) return;
+    setReqBusy(true);
+    setReqMsg(null);
+    try {
+      const res = await fetch("/api/zones/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kominId: zk, nom: reqNom.trim() }),
+      });
+      if (res.ok) {
+        setReqMsg(zoneLabels.reqOk);
+        setReqNom("");
+      } else if (res.status === 409) {
+        setReqMsg(zoneLabels.reqDup);
+      } else {
+        setReqMsg(zoneLabels.reqErr);
+      }
+    } catch {
+      setReqMsg(zoneLabels.reqErr);
+    } finally {
+      setReqBusy(false);
+    }
+  }
 
   function set<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -220,6 +257,32 @@ export function ProfileForm({
             value={form.pwen_repe}
             onChange={(e) => set("pwen_repe", e.target.value)}
           />
+
+          {/* Katye manquant → demande modérée (PR-Z4, Z-C). Visible dès
+              qu'une komin est choisie : c'est là qu'on découvre le manque. */}
+          {zk && (
+            <div className="space-y-2 border-t border-line pt-3">
+              <p className="text-xs text-mist">{zoneLabels.reqHint}</p>
+              <div className="flex gap-2">
+                <input
+                  className={input}
+                  maxLength={80}
+                  placeholder={zoneLabels.reqPh}
+                  value={reqNom}
+                  onChange={(e) => setReqNom(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={demanderKatye}
+                  disabled={reqBusy || reqNom.trim().length < 2}
+                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-violet disabled:opacity-60"
+                >
+                  {reqBusy ? "…" : zoneLabels.reqBtn}
+                </button>
+              </div>
+              {reqMsg && <p className="text-xs text-mist">{reqMsg}</p>}
+            </div>
+          )}
         </fieldset>
       )}
       <button

@@ -61,6 +61,16 @@ export function cheminZone(zones: Zone[], id: string): Zone[] {
   return chemin;
 }
 
+/** Slug ASCII depuis un toponyme — accents pliés, le reste en tirets. */
+export function slugifierZone(nom: string): string {
+  return nom
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /**
  * La zone et tous ses descendants, calculés sur la liste fournie.
  *
