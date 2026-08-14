@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
+import { slugifierZone } from "@/lib/zones";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,16 +21,6 @@ export const dynamic = "force-dynamic";
  * (0070), slug unique par parent. On traduit leurs refus, on ne les
  * réimplémente pas.
  */
-
-/** Slug ASCII depuis un toponyme — accents pliés, le reste en tirets. */
-export function slugifierZone(nom: string): string {
-  return nom
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export async function POST(req: Request) {
   const me = await getCurrentUser();
