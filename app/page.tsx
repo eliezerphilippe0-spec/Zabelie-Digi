@@ -373,18 +373,11 @@ export default async function HomePage() {
             <p className="mt-2 inline-block rounded-lg bg-brand px-3 py-1 text-sm font-extrabold text-ink">
               {t(lang, "rail.shop.free")}
             </p>
-            {whatsappHref(t(lang, "wa.prefill")) && (
-              <MetricA
-                event="whatsapp_clicked"
-                href={whatsappHref(t(lang, "wa.prefill"))!}
-                className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-bold text-ink transition hover:opacity-90"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-ink" strokeWidth="1.8">
-                  <path d="M4 5h16v11H9l-5 4V5z" />
-                </svg>
-                {t(lang, "wa.chat")}
-              </MetricA>
-            )}
+            {/* Le bouton WhatsApp de cette carte a été RETIRÉ (porteur,
+                2026-08-14) : depuis que le numéro est caché, il disait mot
+                pour mot la même chose que la carte contact juste au-dessus —
+                deux « Écrivez-nous sur WhatsApp » empilés. Le contact vit
+                dans SA carte ; celle-ci vend. */}
             <Link
               href="/vendre"
               className="mt-3 block text-xs font-semibold text-accent transition hover:text-accent-strong"
