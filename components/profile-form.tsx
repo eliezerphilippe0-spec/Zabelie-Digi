@@ -5,8 +5,35 @@ import { useRouter } from "next/navigation";
 import { COUNTRIES } from "@/lib/geo/countries";
 import { HT_DEPARTMENTS } from "@/lib/geo/haiti";
 
+/** Une zone telle que le serveur la sert au client : libellé déjà localisé. */
+export type ZoneOption = {
+  id: string;
+  parent_id: string | null;
+  level: "depatman" | "komin" | "katye";
+  label: string;
+};
+
+export type ZoneLabels = {
+  title: string;
+  hint: string;
+  depatman: string;
+  komin: string;
+  katye: string;
+  pwen: string;
+  pwenPh: string;
+  all: string;
+  reqHint: string;
+  reqPh: string;
+  reqBtn: string;
+  reqOk: string;
+  reqDup: string;
+  reqErr: string;
+};
+
 export function ProfileForm({
   initial,
+  zones = [],
+  zoneLabels,
 }: {
   initial: {
     display_name: string;
@@ -14,12 +41,64 @@ export function ProfileForm({
     avatar_url: string;
     country_code: string;
     region_code: string;
+    zone_id: string;
+    pwen_repe: string;
   };
+  zones?: ZoneOption[];
+  zoneLabels?: ZoneLabels;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // PR-Z3 (docs/33 §4) : la cascade Depatman → Komin → Katye, reconstituée
+  // depuis la zone déclarée (komin ou katye — jamais un depatman seul,
+  // ZB069). La liste vient du serveur, libellés déjà localisés.
+  const parId = new Map(zones.map((z) => [z.id, z]));
+  const initiale = parId.get(initial.zone_id);
+  const [zq, setZq] = useState(initiale?.level === "katye" ? initiale.id : "");
+  const [zk, setZk] = useState(
+    initiale?.level === "komin"
+      ? initiale.id
+      : initiale?.level === "katye"
+        ? (initiale.parent_id ?? "")
+        : "",
+  );
+  const [zd, setZd] = useState(parId.get(zk)?.parent_id ?? "");
+  const komins = zones.filter((z) => z.level === "komin" && z.parent_id === zd);
+  const katyes = zones.filter((z) => z.level === "katye" && z.parent_id === zk);
+
+  // PR-Z4 (Z-C) : le katye manquant se PROPOSE — rien ne naît côté client,
+  // la demande part en modération (/api/zones/request, table 0070).
+  const [reqNom, setReqNom] = useState("");
+  const [reqMsg, setReqMsg] = useState<string | null>(null);
+  const [reqBusy, setReqBusy] = useState(false);
+
+  async function demanderKatye() {
+    if (!zk || reqNom.trim().length < 2 || !zoneLabels) return;
+    setReqBusy(true);
+    setReqMsg(null);
+    try {
+      const res = await fetch("/api/zones/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kominId: zk, nom: reqNom.trim() }),
+      });
+      if (res.ok) {
+        setReqMsg(zoneLabels.reqOk);
+        setReqNom("");
+      } else if (res.status === 409) {
+        setReqMsg(zoneLabels.reqDup);
+      } else {
+        setReqMsg(zoneLabels.reqErr);
+      }
+    } catch {
+      setReqMsg(zoneLabels.reqErr);
+    } finally {
+      setReqBusy(false);
+    }
+  }
 
   function set<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -33,7 +112,12 @@ export function ProfileForm({
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        // La zone déclarée = la plus profonde choisie, komin MINIMUM : un
+        // depatman seul ne suffit pas (ZB069) et vaut « pas de zone ».
+        // `zone_id` part TOUJOURS, même vide : c'est ce qui déclenche le
+        // trigger de cohérence côté base (zone posée → region_code dérivé ;
+        // zone vide → le département saisi ci-dessous reste maître).
+        body: JSON.stringify({ ...form, zone_id: zq || zk || "" }),
       });
       const data = await res.json();
       setMsg(res.ok ? "Profil mis à jour." : (data.error ?? "Échec."));
@@ -106,6 +190,101 @@ export function ProfileForm({
         value={form.bio}
         onChange={(e) => set("bio", e.target.value)}
       />
+
+      {/* « Ki kote ou ye ? » (PR-Z3) — visible seulement si la liste des
+          zones est arrivée (0069 en base) ET les libellés fournis. */}
+      {zones.length > 0 && zoneLabels && (
+        <fieldset className="space-y-3 rounded-xl border border-line p-4">
+          <legend className="px-1 text-sm font-semibold">{zoneLabels.title}</legend>
+          <p className="text-xs text-mist">{zoneLabels.hint}</p>
+          <select
+            className={input}
+            value={zd}
+            aria-label={zoneLabels.depatman}
+            onChange={(e) => {
+              setZd(e.target.value);
+              setZk("");
+              setZq("");
+            }}
+          >
+            <option value="">{zoneLabels.all}</option>
+            {zones
+              .filter((z) => z.level === "depatman")
+              .map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.label}
+                </option>
+              ))}
+          </select>
+          {komins.length > 0 && (
+            <select
+              className={input}
+              value={zk}
+              aria-label={zoneLabels.komin}
+              onChange={(e) => {
+                setZk(e.target.value);
+                setZq("");
+              }}
+            >
+              <option value="">{zoneLabels.komin}</option>
+              {komins.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {katyes.length > 0 && (
+            <select
+              className={input}
+              value={zq}
+              aria-label={zoneLabels.katye}
+              onChange={(e) => setZq(e.target.value)}
+            >
+              <option value="">{zoneLabels.katye}</option>
+              {katyes.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <input
+            className={input}
+            maxLength={200}
+            placeholder={zoneLabels.pwenPh}
+            aria-label={zoneLabels.pwen}
+            value={form.pwen_repe}
+            onChange={(e) => set("pwen_repe", e.target.value)}
+          />
+
+          {/* Katye manquant → demande modérée (PR-Z4, Z-C). Visible dès
+              qu'une komin est choisie : c'est là qu'on découvre le manque. */}
+          {zk && (
+            <div className="space-y-2 border-t border-line pt-3">
+              <p className="text-xs text-mist">{zoneLabels.reqHint}</p>
+              <div className="flex gap-2">
+                <input
+                  className={input}
+                  maxLength={80}
+                  placeholder={zoneLabels.reqPh}
+                  value={reqNom}
+                  onChange={(e) => setReqNom(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={demanderKatye}
+                  disabled={reqBusy || reqNom.trim().length < 2}
+                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-violet disabled:opacity-60"
+                >
+                  {reqBusy ? "…" : zoneLabels.reqBtn}
+                </button>
+              </div>
+              {reqMsg && <p className="text-xs text-mist">{reqMsg}</p>}
+            </div>
+          )}
+        </fieldset>
+      )}
       <button
         type="submit"
         disabled={loading}

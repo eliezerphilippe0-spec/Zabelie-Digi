@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Lang } from "@/lib/i18n";
 
 /**
  * ZONES — la couche de lecture du filtre catalogue (PR-Z2, `docs/33` §4).
@@ -18,6 +19,57 @@ export type ZoneNode = {
   id: string;
   parent_id: string | null;
 };
+
+/** Une zone complète, telle que l'UI la consomme (PR-Z3). */
+export type Zone = ZoneNode & {
+  level: "depatman" | "komin" | "katye";
+  slug: string;
+  label_kr: string;
+  label_fr: string;
+  label_en: string | null;
+  label_es: string | null;
+};
+
+/**
+ * Le libellé d'une zone dans la langue demandée. `en`/`es` sont nullables en
+ * base (arbitrage Z-D : des toponymes se traduisent rarement) — le repli est
+ * TOUJOURS le français, jamais une chaîne vide.
+ */
+export function libelleZone(z: Pick<Zone, "label_kr" | "label_fr" | "label_en" | "label_es">, lang: Lang): string {
+  if (lang === "ht") return z.label_kr;
+  if (lang === "en") return z.label_en ?? z.label_fr;
+  if (lang === "es") return z.label_es ?? z.label_fr;
+  return z.label_fr;
+}
+
+/**
+ * Le chemin d'une zone vers sa racine : `[depatman, komin, katye?]`, dans
+ * l'ordre d'affichage. Zone inconnue de la liste → `[]` (rien à afficher —
+ * jamais un chemin inventé). Borné comme `sousArbre` : un cycle termine.
+ */
+export function cheminZone(zones: Zone[], id: string): Zone[] {
+  const parId = new Map(zones.map((z) => [z.id, z]));
+  const chemin: Zone[] = [];
+  let courant = parId.get(id);
+  for (let garde = 0; courant && garde < zones.length; garde++) {
+    chemin.unshift(courant);
+    if (!courant.parent_id) break;
+    const parent = parId.get(courant.parent_id);
+    if (!parent || chemin.includes(parent)) break;
+    courant = parent;
+  }
+  return chemin;
+}
+
+/** Slug ASCII depuis un toponyme — accents pliés, le reste en tirets. */
+export function slugifierZone(nom: string): string {
+  return nom
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 /**
  * La zone et tous ses descendants, calculés sur la liste fournie.
@@ -62,6 +114,24 @@ export function sousArbre(zones: ZoneNode[], racine: string): string[] {
  * atteint que sur cette branche, la branche démo ayant sa propre règle.
  * (Importer `isSupabaseConfigured` d'ici créerait un cycle products↔zones.)
  */
+/**
+ * Toutes les zones ACTIVES (la RLS masque les fermées), triées pour l'UI.
+ * Même précondition que `getSellerIdsInZone` : Supabase configuré. En cas
+ * d'échec, `[]` journalisé — un sélecteur vide plutôt qu'une page tombée.
+ */
+export async function getZonesActives(): Promise<Zone[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("zabelie_zones")
+    .select("id, parent_id, level, slug, label_kr, label_fr, label_en, label_es")
+    .order("label_fr");
+  if (error || !data) {
+    console.warn("[zones] liste illisible, sélecteur vide", error?.message);
+    return [];
+  }
+  return data as Zone[];
+}
+
 export async function getSellerIdsInZone(zoneId: string): Promise<string[]> {
   const supabase = await createClient();
 
