@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n";
 import { ROUNDING_IN_FORCE } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
 import { createClient } from "@/lib/supabase/server";
+import { aiProviderDisponible } from "@/lib/ai-description";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre un produit — Zabelie" };
@@ -39,6 +40,13 @@ export default async function VendrePhysiquePage() {
     console.error("[commission] taux de repli utilisé", c),
   );
   const lang = await getLang();
+  const aiLabels = {
+    button: t(lang, "ai.desc.button"),
+    loading: t(lang, "ai.desc.loading"),
+    error: t(lang, "ai.desc.error"),
+    hint: t(lang, "ai.desc.hint"),
+    needTitle: t(lang, "ai.desc.needTitle"),
+  };
   const netLabels = {
     youReceive: t(lang, "publish.net.youReceive"),
     fee: t(lang, "publish.net.fee"),
@@ -85,6 +93,8 @@ export default async function VendrePhysiquePage() {
               netLabels={netLabels}
               policyAccept={t(lang, "policy.accept")}
               policyRead={t(lang, "policy.accept.read")}
+              aiActif={aiProviderDisponible() !== null}
+              aiLabels={aiLabels}
             />
           </div>
         )}
