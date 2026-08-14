@@ -14,6 +14,7 @@ import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
 import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
 import { POLICY_PATH } from "@/lib/policy";
+import { aiProviderDisponible } from "@/lib/ai-description";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -160,6 +161,7 @@ export default async function VendrePage() {
         <PublishForm
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
+          aiActif={aiProviderDisponible() !== null}
           categories={rayonsPublication}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
@@ -193,6 +195,13 @@ export default async function VendrePage() {
             policyAccept: t(lang, "policy.accept"),
             policyRead: t(lang, "policy.accept.read"),
             policyRequired: t(lang, "policy.accept.required"),
+            ai: {
+              button: t(lang, "ai.desc.button"),
+              loading: t(lang, "ai.desc.loading"),
+              error: t(lang, "ai.desc.error"),
+              hint: t(lang, "ai.desc.hint"),
+              needTitle: t(lang, "ai.desc.needTitle"),
+            },
           }}
         />
       </div>

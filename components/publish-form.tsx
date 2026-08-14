@@ -10,6 +10,10 @@ import {
 import { useRouter } from "next/navigation";
 import type { OptionCategorie } from "@/lib/product-categories";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
+import {
+  AiDescriptionHelp,
+  type AiHelpLabels,
+} from "@/components/ai-description-help";
 import type { CreatorTier } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
 import Link from "next/link";
@@ -36,6 +40,7 @@ export type PublishFormLabels = {
   policyAccept: string;
   policyRead: string;
   policyRequired: string;
+  ai: AiHelpLabels;
 };
 
 export function PublishForm({
@@ -43,6 +48,7 @@ export function PublishForm({
   categories,
   tier = "standard",
   rateBpsEnVigueur,
+  aiActif = false,
 }: {
   labels: PublishFormLabels;
   /**
@@ -56,6 +62,11 @@ export function PublishForm({
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
   rateBpsEnVigueur?: number;
+  /**
+   * Aide IA à la rédaction — décidé au SERVEUR (`aiProviderDisponible()`),
+   * jamais ici : pas de clé fournisseur posée → pas de bouton.
+   */
+  aiActif?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -187,6 +198,13 @@ export function PublishForm({
         aria-label={labels.descriptionPh}
         value={form.description}
         onChange={(e) => set("description", e.target.value)}
+      />
+      <AiDescriptionHelp
+        actif={aiActif}
+        title={form.title}
+        category={form.category || undefined}
+        labels={labels.ai}
+        onSuggestion={(texte) => set("description", texte)}
       />
       {isService(form.kind) && (
         <div className="space-y-3 rounded-xl border border-line/60 p-4">

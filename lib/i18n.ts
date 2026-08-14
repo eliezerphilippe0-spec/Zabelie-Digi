@@ -435,6 +435,12 @@ const fr = {
   "publish.category.empty": "— Catégorie —",
   "publish.price.ph": "Prix (HTG)",
   "publish.description.ph": "Description",
+  "ai.desc.button": "M'aider à rédiger",
+  "ai.desc.loading": "Rédaction…",
+  "ai.desc.error": "La suggestion a échoué. Réessayez.",
+  "ai.desc.hint":
+    "Ceci est une suggestion — relisez et corrigez : vous restez responsable de votre fiche.",
+  "ai.desc.needTitle": "Écrivez d'abord le titre",
   "publish.service.hint":
     "Page service (façon Fiverr) — optionnel, mais rassure l'acheteur.",
   "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
@@ -914,6 +920,12 @@ const ht: Record<I18nKey, string> = {
   "publish.category.empty": "— Kategori —",
   "publish.price.ph": "Pri (HTG)",
   "publish.description.ph": "Deskripsyon",
+  "ai.desc.button": "Ede m ekri deskripsyon an",
+  "ai.desc.loading": "N ap ekri…",
+  "ai.desc.error": "Sijesyon an pa t mache. Eseye ankò.",
+  "ai.desc.hint":
+    "Sa se yon sijesyon — li l, korije l : se ou ki responsab fich ou a.",
+  "ai.desc.needTitle": "Ekri tit la anvan",
   "publish.service.hint":
     "Paj sèvis (menm jan ak Fiverr) — opsyonèl, men sa rasire achtè a.",
   "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
@@ -1405,6 +1417,12 @@ const en = {
   "publish.category.empty": "— Category —",
   "publish.price.ph": "Price (HTG)",
   "publish.description.ph": "Description",
+  "ai.desc.button": "Help me write",
+  "ai.desc.loading": "Writing…",
+  "ai.desc.error": "The suggestion failed. Try again.",
+  "ai.desc.hint":
+    "This is a suggestion — review and edit it: you remain responsible for your listing.",
+  "ai.desc.needTitle": "Write the title first",
   "publish.service.hint":
     "Service page (Fiverr style) — optional, but reassures the buyer.",
   "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
@@ -1896,6 +1914,12 @@ const es = {
   "publish.category.empty": "— Categoría —",
   "publish.price.ph": "Precio (HTG)",
   "publish.description.ph": "Descripción",
+  "ai.desc.button": "Ayúdame a redactar",
+  "ai.desc.loading": "Redactando…",
+  "ai.desc.error": "La sugerencia falló. Inténtelo de nuevo.",
+  "ai.desc.hint":
+    "Esto es una sugerencia — revísela y corríjala: usted sigue siendo responsable de su ficha.",
+  "ai.desc.needTitle": "Escriba primero el título",
   "publish.service.hint":
     "Página de servicio (estilo Fiverr) — opcional, pero da confianza al comprador.",
   "publish.deliveryDays.ph": "Plazo de entrega (en días)",

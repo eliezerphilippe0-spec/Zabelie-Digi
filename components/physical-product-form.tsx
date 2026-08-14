@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
+import {
+  AiDescriptionHelp,
+  type AiHelpLabels,
+} from "@/components/ai-description-help";
 import type { CreatorTier } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
 import Link from "next/link";
@@ -41,6 +45,8 @@ export function PhysicalProductForm({
   netLabels,
   policyAccept,
   policyRead,
+  aiActif = false,
+  aiLabels,
 }: {
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
@@ -56,6 +62,10 @@ export function PhysicalProductForm({
   /** Libellés de l'attestation, traduits côté serveur. */
   policyAccept: string;
   policyRead: string;
+  /** Aide IA à la rédaction — décidé au serveur (`aiProviderDisponible()`). */
+  aiActif?: boolean;
+  /** Libellés du bouton d'aide, traduits côté serveur. */
+  aiLabels: AiHelpLabels;
 }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -319,6 +329,17 @@ export function PhysicalProductForm({
           maxLength={5000}
           className="mt-3 w-full rounded-xl border border-line bg-ink px-4 py-3 text-sm"
         />
+        <div className="mt-3">
+          <AiDescriptionHelp
+            actif={aiActif}
+            title={title}
+            category={
+              categories.find((c) => c.slug === categorySlug)?.label_fr
+            }
+            labels={aiLabels}
+            onSuggestion={setDescription}
+          />
+        </div>
       </details>
 
       <details
