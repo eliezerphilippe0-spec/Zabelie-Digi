@@ -24,6 +24,8 @@ export async function POST(req: Request) {
     avatar_url?: string;
     country_code?: string;
     region_code?: string;
+    zone_id?: string;
+    pwen_repe?: string;
   };
   try {
     body = await req.json();
@@ -62,6 +64,19 @@ export async function POST(req: Request) {
   }
   const region = rawCountry === "HT" ? rawRegion || null : null;
 
+  // Zone déclarée (PR-Z3, 0069). Format seulement : le NIVEAU (komin ou
+  // katye, jamais depatman) est gardé par le trigger ZB069 en base — on ne
+  // duplique pas un garde qui existe déjà, on traduit son refus en 400.
+  const rawZone = body.zone_id?.trim() || "";
+  if (rawZone && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawZone)) {
+    return NextResponse.json({ error: "Zone invalide" }, { status: 400 });
+  }
+
+  const rawPwen = body.pwen_repe?.trim() || "";
+  if (rawPwen.length > 200) {
+    return NextResponse.json({ error: "Point de repère trop long (200 max)" }, { status: 400 });
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -70,10 +85,21 @@ export async function POST(req: Request) {
       avatar_url: body.avatar_url?.trim() || null,
       country_code: rawCountry || null,
       region_code: region,
+      // `zone_id` TOUJOURS dans l'UPDATE, même null : c'est ce qui déclenche
+      // le trigger de cohérence (0069) — zone posée → region_code dérivé et
+      // le département saisi ci-dessus est écrasé (la zone est maître, Z-A) ;
+      // zone nulle → le trigger ne touche rien, le département reste.
+      zone_id: rawZone || null,
+      pwen_repe: rawPwen || null,
     })
     .eq("id", user.id);
 
   if (error) {
+    // ZB069 = zone d'un niveau non déclarable (depatman) ou incohérente —
+    // une erreur de SAISIE, pas une panne : 400, avec le message du garde.
+    if (error.message.includes("ZB069")) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

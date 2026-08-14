@@ -6,6 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { ProfileForm } from "@/components/profile-form";
+import { getZonesActives, libelleZone } from "@/lib/zones";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
 import { PayoutRequest } from "@/components/payout-request";
 import {
@@ -122,6 +125,8 @@ export default async function DashboardPage() {
     avatar_url: "",
     country_code: "",
     region_code: "",
+    zone_id: "",
+    pwen_repe: "",
   };
 
   try {
@@ -172,7 +177,7 @@ export default async function DashboardPage() {
 
     const { data: prof } = await admin
       .from("profiles")
-      .select("display_name, bio, avatar_url, country_code, region_code")
+      .select("display_name, bio, avatar_url, country_code, region_code, zone_id, pwen_repe")
       .eq("id", user.id)
       .maybeSingle();
     if (prof) {
@@ -182,6 +187,8 @@ export default async function DashboardPage() {
         avatar_url: prof.avatar_url ?? "",
         country_code: prof.country_code ?? "",
         region_code: prof.region_code ?? "",
+        zone_id: prof.zone_id ?? "",
+        pwen_repe: prof.pwen_repe ?? "",
       };
     }
 
@@ -249,6 +256,27 @@ export default async function DashboardPage() {
     { label: `Revenus nets · ${totalSales} vente${totalSales > 1 ? "s" : ""}`, value: formatHTG(netTotal) },
     { label: "Produits publiés", value: String(published) },
   ];
+
+  // PR-Z3 (docs/33 §4) : la déclaration de zone (« Ki kote ou ye ? ») vit
+  // dans le formulaire de profil. Libellés précalculés côté serveur — un
+  // composant client ne lit pas les cookies de langue.
+  const lang = await getLang();
+  const zonesPourForm = (isSupabaseConfigured() ? await getZonesActives() : []).map((z) => ({
+    id: z.id,
+    parent_id: z.parent_id,
+    level: z.level,
+    label: libelleZone(z, lang),
+  }));
+  const zoneLabels = {
+    title: t(lang, "zone.form.title"),
+    hint: t(lang, "zone.form.hint"),
+    depatman: t(lang, "zone.level.depatman"),
+    komin: t(lang, "zone.level.komin"),
+    katye: t(lang, "zone.level.katye"),
+    pwen: t(lang, "zone.form.pwen"),
+    pwenPh: t(lang, "zone.form.pwen.ph"),
+    all: t(lang, "zone.filter.all"),
+  };
 
   return (
     <Shell title={`Bonjour, ${user.displayName}`}>
@@ -386,7 +414,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
         <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-          <ProfileForm initial={profile} />
+          <ProfileForm initial={profile} zones={zonesPourForm} zoneLabels={zoneLabels} />
         </div>
       </section>
 
