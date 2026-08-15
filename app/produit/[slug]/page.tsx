@@ -295,7 +295,7 @@ export default async function ProductPage({
             </p>
             {/* Preuve sociale À CÔTÉ du prix : c'est là que l'hésitation se joue. */}
             {(product.ratingAvg !== null || product.sales > 0) && (
-              <p className="mt-1 text-xs text-mist">
+              <p className="mt-1 text-sm text-mist">
                 {product.ratingAvg !== null && (
                   <>
                     <span className="text-accent">★</span> {product.ratingAvg} (
@@ -358,7 +358,7 @@ export default async function ProductPage({
                 physique. Sur un produit physique, elle attribue explicitement
                 l'information au vendeur : Zabelie ne livre pas. */}
             {delivery && (
-              <p className="mt-3 text-center text-xs text-mist">
+              <p className="mt-3 text-center text-sm text-mist">
                 {t(lang, delivery.key, delivery.params)}
               </p>
             )}
@@ -378,7 +378,7 @@ export default async function ProductPage({
                 {physical.fitment.map((f, i) => (
                   <li
                     key={i}
-                    className="rounded-full border border-line px-3 py-1 text-xs text-cloud"
+                    className="rounded-full border border-line px-3 py-1 text-sm text-cloud"
                   >
                     {f.kind === "moto" ? "🏍 " : "🚗 "}
                     {f.make} {f.model} · {f.yearStart}
@@ -386,7 +386,7 @@ export default async function ProductPage({
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-mist">
+              <p className="mt-3 text-sm text-mist">
                 Vérifiez votre modèle avant d&apos;acheter. En cas de doute,
                 contactez le vendeur.
               </p>
@@ -480,7 +480,7 @@ export default async function ProductPage({
           <h2 className="text-lg font-semibold">
             {t(lang, "product.reviews")} ({reviews.length})
           </h2>
-          <p className="mt-1 text-xs text-mist">
+          <p className="mt-1 text-sm text-mist">
             {t(lang, "product.reviews.note")}
           </p>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">

@@ -34,7 +34,7 @@ export default async function AidePage() {
     <div className="bg-grain min-h-screen">
       <SiteNav />
 
-      <section className="mx-auto max-w-3xl px-5 pb-16 pt-12">
+      <section className="mx-auto max-w-2xl px-5 pb-16 pt-12">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           {t(lang, "aide.title")}
         </h1>
