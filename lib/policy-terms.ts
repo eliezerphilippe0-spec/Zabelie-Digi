@@ -110,7 +110,26 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "7. Commissions",
+      titre: "7. Vérification d'identité du vendeur",
+      blocs: [
+        {
+          p: "Avant de procéder au règlement des sommes dues à un vendeur, Zabelie peut exiger la vérification de son identité. Cette vérification n'est requise **ni** pour créer un compte, **ni** pour publier une offre, **ni** pour acheter : elle conditionne uniquement le versement des fonds.",
+        },
+        {
+          ul: [
+            "**Ce qui est demandé** : deux documents parmi une carte d'identification nationale, un passeport, et une photographie du titulaire permettant le rapprochement avec le document présenté.",
+            "**Comment** : la vérification est effectuée **manuellement** par Zabelie ; la décision est horodatée et attribuée à son auteur.",
+            "**Tant qu'elle n'a pas abouti** : le règlement peut être suspendu. Les sommes restent **acquises au vendeur** et inscrites à son registre — elles ne sont ni perdues, ni réduites, ni prescrites de ce fait.",
+            "**Confidentialité et durée** : les pièces ne sont jamais publiées ni communiquées à des tiers, et sont détruites au terme de la durée indiquée dans la **politique de confidentialité**, section « Pièces d'identité ».",
+          ],
+        },
+        {
+          p: "En cas de refus, le motif est communiqué au vendeur, qui peut soumettre un nouveau dossier. Zabelie n'exige **aucun paiement** pour cette vérification.",
+        },
+      ],
+    },
+    {
+      titre: "8. Commissions",
       blocs: [
         {
           p: "Zabelie prélève une commission sur chaque vente, selon le **barème en vigueur affiché au vendeur** avant la publication et dans son tableau de bord. Le barème peut évoluer ; le taux applicable à une vente est celui en vigueur au moment de la commande.",
@@ -118,7 +137,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "8. Services optionnels payants",
+      titre: "9. Services optionnels payants",
       blocs: [
         {
           p: "Zabelie propose aux vendeurs des services optionnels payants — aujourd'hui, l'aide à la rédaction de descriptions de produits au-delà d'un quota gratuit quotidien. Aucun service payant n'est déclenché sans votre consentement explicite : le prix par utilisation est affiché au moment où vous choisissez de continuer, et c'est ce prix affiché qui fait foi.",
@@ -135,7 +154,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "9. Litiges et remboursements",
+      titre: "10. Litiges et remboursements",
       blocs: [
         {
           p: "Si la remise n'a pas lieu ou n'est pas conforme, l'acheteur peut le signaler depuis son espace « mes achats ». Le dossier est alors examiné et le règlement du vendeur suspendu le temps de l'examen. Tout remboursement s'effectue **vers le moyen de paiement d'origine** — jamais vers un solde interne.",
@@ -146,7 +165,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "10. Propriété intellectuelle",
+      titre: "11. Propriété intellectuelle",
       blocs: [
         {
           p: "Le vendeur conserve ses droits sur les contenus qu'il publie et garantit qu'il détient les droits nécessaires à leur vente. L'achat d'un produit digital confère à l'acheteur un droit d'usage personnel, non exclusif et non transférable, sauf licence plus large indiquée sur la fiche produit. La marque et l'interface Zabelie restent la propriété de la plateforme.",
@@ -154,7 +173,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "11. Données personnelles",
+      titre: "12. Données personnelles",
       blocs: [
         {
           p: "Le traitement de vos données est décrit dans la *politique de confidentialité*, qui fait partie des présentes conditions.",
@@ -162,7 +181,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "12. Résiliation",
+      titre: "13. Résiliation",
       blocs: [
         {
           p: "Vous pouvez supprimer votre compte à tout moment depuis votre tableau de bord. Les obligations nées avant la résiliation (commandes en cours, règlements, obligations légales) survivent à la fermeture du compte.",
@@ -173,7 +192,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "13. Droit applicable",
+      titre: "14. Droit applicable",
       blocs: [
         {
           p: "[À COMPLÉTER : droit applicable et juridiction compétente]",
@@ -181,7 +200,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "14. Contact",
+      titre: "15. Contact",
       blocs: [{ p: "Pour toute question relative aux présentes conditions : **{email}**." }],
     },
   ],
@@ -261,7 +280,26 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "7. Komisyon",
+      titre: "7. Verifikasyon idantite vandè a",
+      blocs: [
+        {
+          p: "Anvan Zabelie peye yon vandè lajan li merite a, li ka mande l verifye idantite l. Verifikasyon sa a **pa** obligatwa pou louvri yon kont, **ni** pou pibliye yon òf, **ni** pou achte : se sèlman peman lajan an ki depann de li.",
+        },
+        {
+          ul: [
+            "**Sa yo mande** : de dokiman pami yon kat idantifikasyon nasyonal, yon paspò, ak yon foto moun nan ki pèmèt konpare l ak dokiman an.",
+            "**Kijan** : se Zabelie ki fè verifikasyon an **alamen** ; desizyon an enskri ak dat li ak non moun ki pran l.",
+            "**Toutotan li poko abouti** : peman an ka sispann. Lajan an rete **pou vandè a** epi li enskri nan rejis li — li pa pèdi, li pa diminye, epi li pa ekspire poutèt sa.",
+            "**Konfidansyalite ak dire** : pyès yo pa janm pibliye ni bay okenn lòt moun, epi yo detwi lè dire ki nan **politik konfidansyalite** a, seksyon « Pyès idantite », fini.",
+          ],
+        },
+        {
+          p: "Si yo refize, y ap di vandè a poukisa, epi li ka voye yon nouvo dosye. Zabelie **pa mande okenn lajan** pou verifikasyon sa a.",
+        },
+      ],
+    },
+    {
+      titre: "8. Komisyon",
       blocs: [
         {
           p: "Zabelie pran yon komisyon sou chak vant, dapre **barèm ki an vigè epi ki afiche bay vandè a** anvan piblikasyon an ak nan tablo li. Barèm lan ka chanje ; to ki aplike sou yon vant se sa ki te an vigè lè kòmand lan te pase.",
@@ -269,7 +307,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "8. Sèvis opsyonèl peyan",
+      titre: "9. Sèvis opsyonèl peyan",
       blocs: [
         {
           p: "Zabelie ofri vandè yo sèvis opsyonèl peyan — jodi a, èd pou ekri deskripsyon pwodui lè ou depase yon kantite gratis chak jou. Okenn sèvis peyan pa janm lanse san konsantman klè ou : pri chak itilizasyon parèt nan moman ou chwazi kontinye a, e se pri ki parèt la ki konte.",
@@ -286,7 +324,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "9. Litij ak ranbousman",
+      titre: "10. Litij ak ranbousman",
       blocs: [
         {
           p: "Si remiz la pa fèt oswa li pa konfòm, achtè a ka siyale sa nan espas « acha mwen yo ». Dosye a egzamine epi règleman vandè a sispann pandan egzamen an. Tout ranbousman fèt **sou mwayen peman orijinal la** — pa janm sou yon balans entèn.",
@@ -297,7 +335,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "10. Pwopriyete entelektyèl",
+      titre: "11. Pwopriyete entelektyèl",
       blocs: [
         {
           p: "Vandè a kenbe dwa li sou kontni li pibliye yo epi li garanti li gen dwa ki nesesè pou vann yo. Acha yon pwodwi dijital bay achtè a yon dwa itilizasyon pèsonèl, ki pa eksklizif epi ki pa transferab, sof si fich pwodwi a endike yon lisans pi laj. Mak ak entèfas Zabelie a rete pwopriyete platfòm lan.",
@@ -305,7 +343,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "11. Done pèsonèl",
+      titre: "12. Done pèsonèl",
       blocs: [
         {
           p: "Tretman done ou yo dekri nan *politik konfidansyalite* a, ki fè pati kondisyon sa yo.",
@@ -313,7 +351,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "12. Fèmti kont",
+      titre: "13. Fèmti kont",
       blocs: [
         {
           p: "Ou ka efase kont ou nenpòt lè nan tablo ou. Obligasyon ki te fèt anvan fèmti a (kòmand an kou, règleman, obligasyon legal) rete valab apre kont lan fèmen.",
@@ -324,7 +362,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "13. Lwa ki aplikab",
+      titre: "14. Lwa ki aplikab",
       blocs: [
         {
           p: "[POU KONPLETE : lwa ki aplikab ak tribinal ki konpetan]",
@@ -332,7 +370,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "14. Kontak",
+      titre: "15. Kontak",
       blocs: [{ p: "Pou nenpòt kesyon sou kondisyon sa yo : **{email}**." }],
     },
   ],
@@ -412,7 +450,26 @@ const en: Politique = {
       ],
     },
     {
-      titre: "7. Commissions",
+      titre: "7. Seller identity verification",
+      blocs: [
+        {
+          p: "Before settling the amounts owed to a seller, Zabelie may require verification of their identity. This verification is required **neither** to create an account, **nor** to publish an offer, **nor** to buy: it conditions the payment of funds only.",
+        },
+        {
+          ul: [
+            "**What is asked for**: two documents among a national identification card, a passport, and a photograph of the holder allowing a match with the document presented.",
+            "**How**: verification is carried out **manually** by Zabelie; the decision is timestamped and attributed to its author.",
+            "**Until it succeeds**: settlement may be suspended. The amounts remain **the seller's** and stay recorded in their register — they are neither lost, nor reduced, nor time-barred by this fact.",
+            "**Confidentiality and duration**: the documents are never published or disclosed to third parties, and are destroyed at the end of the period stated in the **privacy policy**, section “Identity documents”.",
+          ],
+        },
+        {
+          p: "If verification is refused, the reason is communicated to the seller, who may submit a new file. Zabelie charges **no fee** for this verification.",
+        },
+      ],
+    },
+    {
+      titre: "8. Commissions",
       blocs: [
         {
           p: "Zabelie charges a commission on each sale, according to the **schedule in force shown to the seller** before publication and in their dashboard. The schedule may change; the rate applicable to a sale is the one in force when the order was placed.",
@@ -420,7 +477,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "8. Optional paid services",
+      titre: "9. Optional paid services",
       blocs: [
         {
           p: "Zabelie offers sellers optional paid services — currently, help writing product descriptions beyond a free daily quota. No paid service is ever triggered without your explicit consent: the price per use is displayed at the moment you choose to continue, and that displayed price is what applies.",
@@ -437,7 +494,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "9. Disputes and refunds",
+      titre: "10. Disputes and refunds",
       blocs: [
         {
           p: "If delivery does not occur or does not conform, the buyer can report it from their “my purchases” space. The case is then reviewed and the seller settlement is withheld during the review. Any refund is made **to the original payment method** — never to an internal balance.",
@@ -448,7 +505,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "10. Intellectual property",
+      titre: "11. Intellectual property",
       blocs: [
         {
           p: "The seller retains rights over the content they publish and warrants that they hold the rights required to sell it. Purchasing a digital product grants the buyer a personal, non-exclusive, non-transferable right of use, unless a broader licence is stated on the product page. The Zabelie brand and interface remain the property of the platform.",
@@ -456,7 +513,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "11. Personal data",
+      titre: "12. Personal data",
       blocs: [
         {
           p: "The processing of your data is described in the *privacy policy*, which forms part of these terms.",
@@ -464,7 +521,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "12. Termination",
+      titre: "13. Termination",
       blocs: [
         {
           p: "You may delete your account at any time from your dashboard. Obligations arising before termination (pending orders, settlements, legal obligations) survive the closure of the account.",
@@ -475,7 +532,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "13. Governing law",
+      titre: "14. Governing law",
       blocs: [
         {
           p: "[TO BE COMPLETED: governing law and competent jurisdiction]",
@@ -483,7 +540,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "14. Contact",
+      titre: "15. Contact",
       blocs: [{ p: "For any question about these terms: **{email}**." }],
     },
   ],
@@ -563,7 +620,26 @@ const es: Politique = {
       ],
     },
     {
-      titre: "7. Comisiones",
+      titre: "7. Verificación de identidad del vendedor",
+      blocs: [
+        {
+          p: "Antes de liquidar las cantidades adeudadas a un vendedor, Zabelie puede exigir la verificación de su identidad. Esta verificación **no** es necesaria para crear una cuenta, **ni** para publicar una oferta, **ni** para comprar: únicamente condiciona el pago de los fondos.",
+        },
+        {
+          ul: [
+            "**Qué se pide**: dos documentos entre una cédula de identificación nacional, un pasaporte, y una fotografía del titular que permita compararlo con el documento presentado.",
+            "**Cómo**: la verificación la realiza Zabelie de forma **manual**; la decisión queda fechada y atribuida a su autor.",
+            "**Mientras no prospere**: la liquidación puede suspenderse. Las cantidades siguen siendo **del vendedor** y constan en su registro — no se pierden, no se reducen ni prescriben por este hecho.",
+            "**Confidencialidad y plazo**: los documentos nunca se publican ni se comunican a terceros, y se destruyen al término del plazo indicado en la **política de privacidad**, sección «Documentos de identidad».",
+          ],
+        },
+        {
+          p: "En caso de denegación, se comunica el motivo al vendedor, que puede presentar un nuevo expediente. Zabelie **no cobra importe alguno** por esta verificación.",
+        },
+      ],
+    },
+    {
+      titre: "8. Comisiones",
       blocs: [
         {
           p: "Zabelie cobra una comisión por cada venta, según el **baremo vigente mostrado al vendedor** antes de la publicación y en su panel. El baremo puede cambiar; el tipo aplicable a una venta es el vigente en el momento del pedido.",
@@ -571,7 +647,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "8. Servicios opcionales de pago",
+      titre: "9. Servicios opcionales de pago",
       blocs: [
         {
           p: "Zabelie ofrece a los vendedores servicios opcionales de pago — actualmente, ayuda para redactar descripciones de productos más allá de una cuota gratuita diaria. Ningún servicio de pago se activa sin su consentimiento explícito: el precio por uso se muestra en el momento en que usted decide continuar, y ese precio mostrado es el que rige.",
@@ -588,7 +664,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "9. Controversias y reembolsos",
+      titre: "10. Controversias y reembolsos",
       blocs: [
         {
           p: "Si la entrega no se produce o no es conforme, el comprador puede señalarlo desde su espacio «mis compras». El expediente se examina y la liquidación al vendedor se suspende durante el examen. Todo reembolso se efectúa **al medio de pago original** — nunca a un saldo interno.",
@@ -599,7 +675,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "10. Propiedad intelectual",
+      titre: "11. Propiedad intelectual",
       blocs: [
         {
           p: "El vendedor conserva sus derechos sobre los contenidos que publica y garantiza que posee los derechos necesarios para su venta. La compra de un producto digital confiere al comprador un derecho de uso personal, no exclusivo e intransferible, salvo licencia más amplia indicada en la ficha del producto. La marca y la interfaz de Zabelie siguen siendo propiedad de la plataforma.",
@@ -607,7 +683,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "11. Datos personales",
+      titre: "12. Datos personales",
       blocs: [
         {
           p: "El tratamiento de sus datos se describe en la *política de privacidad*, que forma parte de estas condiciones.",
@@ -615,7 +691,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "12. Terminación",
+      titre: "13. Terminación",
       blocs: [
         {
           p: "Puede eliminar su cuenta en cualquier momento desde su panel. Las obligaciones nacidas antes de la terminación (pedidos en curso, liquidaciones, obligaciones legales) sobreviven al cierre de la cuenta.",
@@ -626,7 +702,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "13. Derecho aplicable",
+      titre: "14. Derecho aplicable",
       blocs: [
         {
           p: "[POR COMPLETAR: derecho aplicable y jurisdicción competente]",
@@ -634,7 +710,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "14. Contacto",
+      titre: "15. Contacto",
       blocs: [{ p: "Para cualquier consulta sobre estas condiciones: **{email}**." }],
     },
   ],

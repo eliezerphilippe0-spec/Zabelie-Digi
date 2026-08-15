@@ -47,9 +47,14 @@ function texte(lang: Lang): string {
 test("les quatre versions ont les mêmes 13 sections, bloc à bloc", () => {
   const ref = CONDITIONS.fr.sections;
   // 13 → 14 le 2026-08-15 : section « Services optionnels payants » ajoutée
+  // 14 → 15 le 2026-08-15 : section « Vérification d'identité du vendeur »
+  // (§7). Elle n'ouvre AUCUN blanc : la durée de conservation n'est pas
+  // répétée ici, elle renvoie à la politique de confidentialité — un seul
+  // endroit porte le chiffre, et c'est celui que le cliquet des blancs
+  // surveille déjà (docs/36).
   // sur décision porteur (surplus IA, docs/34) — gabarit à faire relire par
   // le conseil, comme le reste du document.
-  assert.equal(ref.length, 14, "le gabarit compte 14 sections (docs/26 §légal + docs/34)");
+  assert.equal(ref.length, 15, "le gabarit compte 15 sections (docs/26 §légal + docs/34 + docs/36)");
   for (const lang of LANGS) {
     const sections = CONDITIONS[lang].sections;
     assert.equal(
@@ -67,6 +72,27 @@ test("les quatre versions ont les mêmes 13 sections, bloc à bloc", () => {
         s.blocs.length, ref[i].blocs.length,
         `${lang} : section « ${s.titre} » a ${s.blocs.length} blocs, le français en a ${ref[i].blocs.length}`,
       );
+      /* ⚠️ TROU MESURÉ le 2026-08-15, en éprouvant la section 7 par mutation :
+       * retirer une PUCE de la liste kreyòl laissait la suite VERTE. Le
+       * contrôle comparait le nombre de blocs — un `ul` reste un `ul` qu'il
+       * porte trois puces ou quatre. La politique de confidentialité
+       * croisait déjà `ul.length` ; les CGU ne l'avaient jamais fait, et le
+       * défaut est resté invisible tant qu'aucune section à liste n'avait été
+       * traduite. Un lecteur kreyòl aurait perdu une obligation contractuelle
+       * sans que rien ne le signale. */
+      s.blocs.forEach((b, j) => {
+        const r = ref[i].blocs[j];
+        assert.equal(
+          "ul" in b, "ul" in r,
+          `${lang} : section « ${s.titre} », bloc ${j + 1} — liste et paragraphe ne se correspondent pas`,
+        );
+        if ("ul" in b && "ul" in r) {
+          assert.equal(
+            b.ul.length, r.ul.length,
+            `${lang} : section « ${s.titre} » a ${b.ul.length} puces, le français en a ${r.ul.length}`,
+          );
+        }
+      });
     });
   }
 });
