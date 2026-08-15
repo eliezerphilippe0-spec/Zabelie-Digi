@@ -61,7 +61,17 @@ portait le slug `sak-vwayaj`, déjà celui de son parent de niveau 2
 erreur ni trace. Le contrôle du dépôt vérifiait l'unicité *dans* le seed,
 jamais contre les slugs déjà pris aux niveaux 1 et 2 : le croisement est
 désormais dans `tests/taxonomie-seed.test.ts`, avec exemption datée qui se
-périme dans les deux sens. Réparation : `0078`, rédigée non appliquée.
+périme dans les deux sens. Réparation : `0078`, appliquée le 2026-08-15 à 13:04:10Z.
+
+**Compte bouclé mécaniquement après réparation** — et c'est ce croisement, pas
+une inspection à l'œil, qui clôt la question : les 16 lignes avalées se
+décomposent en **13 collisions de concept avec la vague 1 de `0035`**,
+**2 avec `0057`** (les catégories de services, sources oubliées au premier
+comptage) et **1 collision de niveau**, la seule anormale, réparée. Aucune
+ligne perdue sans explication. ⚠️ Le premier croisement, lui, annonçait
+« 6 écarts » : il ne connaissait que `0035` comme source de niveau 3. Cinq
+étaient des excédents légitimes venus d'ailleurs — un écart n'est pas un
+défaut tant qu'on n'a pas vérifié ce que l'instrument ignore.
 
 ## V-4 — Rabais vendeur, ancien prix visible
 
