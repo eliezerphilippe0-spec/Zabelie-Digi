@@ -94,22 +94,43 @@ téléphone de contact est probablement plus important que l'adresse postale
 sur ce terrain (les livraisons haïtiennes se coordonnent par téléphone) —
 le formulaire portera les deux.
 
-## V-6 — KYC vendeur : deux pièces d'identité avec photo
+## V-6 — KYC vendeur — ARBITRÉ le 2026-08-15, livré
 
-⚠️ **ZONE D'ARRÊT double.**
-1. « Installer un système d'authentification haïtien » : **aucune API
-   publique de vérification d'identité haïtienne (CIN/NIF) n'existe** —
-   checklist `docs/03` §9, étape 0 éliminatoire : on ne code pas un rail
-   dont l'API n'existe pas. La v1 réaliste est : téléversement en bucket
-   **PRIVÉ** (jamais public — ce sont des pièces d'identité), revue MANUELLE
-   par l'admin, badge « vendeur vérifié ».
-2. Données ultra-sensibles : rétention à borner (purge après décision ?),
-   politique de confidentialité à amender, et le dossier BRH (`docs/17`)
-   y gagne un pilier KYC — à documenter dans le même geste.
-Arbitrages porteur avant construction : quelles pièces acceptées (CIN,
-passeport, permis), rétention des images après vérification, obligatoire
-pour vendre ou pour RETIRER (recommandation : bloquer le retrait, pas la
-publication — l'argent sort seulement vers un compte vérifié).
+Arbitrages porteur : « **bloque le retrait** » (pas la publication — l'argent
+ne sort que vers un compte vérifié) et « **CIN ou passeport** ». Livré par
+`0079`, **rédigée non appliquée**.
+
+**Ce qu'on ne construit pas** : « un système d'authentification haïtien »
+n'existe pas — aucune API publique ne vérifie une CIN ou un NIF haïtien
+(checklist `docs/03` §9, étape 0 éliminatoire). La vérification est donc
+**manuelle** : le vendeur dépose, un humain décide, chaque décision est
+journalisée dans `zabelie_admin_actions`. Le jour où une API existe, elle se
+branche sur ce même schéma.
+
+**Le blocage est DORMANT à l'application** : `requis_pour_retrait = false`
+par défaut, et une post-condition casse la migration si ce défaut change.
+Appliquer `0079` ne coupe le retrait de personne ; le porteur arme par
+`UPDATE` quand les vendeurs ont eu le temps de se faire vérifier. Couper la
+voie de sortie à l'instant d'une migration serait exactement ce que le
+dossier BRH (`docs/17`) reproche.
+
+**Les pièces ne sont jamais publiques** : bucket privé sans aucune policy
+(service-role seul), l'admin les ouvre par **URL signée de 5 minutes**,
+rechargée à chaque consultation. Aucune surface ne rend d'image — vérifié par
+test. Rétention bornée et purgée par cron (`/api/kyc/purge`, déclaré dans
+`vercel.json` — une purge sans appelant ne purge rien).
+
+⚠️ **La DURÉE de rétention reste à confirmer** : défaut prudent de 90 jours
+après décision, en table de config, modifiable par `UPDATE`. C'est le seul
+des trois arbitrages qui n'a pas été rendu ; il est au registre.
+
+**Deux pièces avec photo** — la demande initiale — se heurte au marché : seuls
+CIN et passeport sont acceptés, et le passeport est peu répandu en Haïti.
+Exiger deux pièces *distinctes* bloquerait la majorité des vendeurs. Le
+schéma accepte donc `cin`, `paspo` **et `selfie`** (photo du vendeur tenant sa
+pièce, standard KYC courant) : la paire reste de deux documents avec photo,
+sans exiger de posséder deux titres. Le nombre requis vit en config
+(`docs_requis`, défaut 2).
 
 ## Ordre proposé
 

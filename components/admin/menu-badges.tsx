@@ -29,6 +29,7 @@ export const MENU_ADMIN: { label: string; href: string; cle: keyof Counts | null
   { label: "Règlements", href: "/admin/paiements-vendeurs", cle: null },
   { label: "Géo", href: "/admin/geo", cle: null },
   { label: "Zones", href: "/admin/zones", cle: null },
+  { label: "Vérifications", href: "/admin/kyc", cle: null },
 ];
 
 export function MenuBadges({ actif }: { actif: string }) {
