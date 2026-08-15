@@ -98,7 +98,8 @@ le formulaire portera les deux.
 
 Arbitrages porteur : « **bloque le retrait** » (pas la publication — l'argent
 ne sort que vers un compte vérifié) et « **CIN ou passeport** ». Livré par
-`0079`, **rédigée non appliquée**.
+`0079`, **appliquée en production le 2026-08-15 à 13:35Z** sur signal porteur
+« 0079 » (sha256 `626e3486…`, registre à 78).
 
 **Ce qu'on ne construit pas** : « un système d'authentification haïtien »
 n'existe pas — aucune API publique ne vérifie une CIN ou un NIF haïtien
@@ -109,10 +110,20 @@ branche sur ce même schéma.
 
 **Le blocage est DORMANT à l'application** : `requis_pour_retrait = false`
 par défaut, et une post-condition casse la migration si ce défaut change.
-Appliquer `0079` ne coupe le retrait de personne ; le porteur arme par
-`UPDATE` quand les vendeurs ont eu le temps de se faire vérifier. Couper la
-voie de sortie à l'instant d'une migration serait exactement ce que le
-dossier BRH (`docs/17`) reproche.
+Appliquer `0079` n'a coupé le retrait de personne — **mesuré après
+application**, pas déduit : `requis_pour_retrait = false` en base. Le porteur
+arme par `UPDATE` quand les vendeurs ont eu le temps de se faire vérifier.
+Couper la voie de sortie à l'instant d'une migration serait exactement ce que
+le dossier BRH (`docs/17`) reproche.
+
+**Une fonction d'argent réécrite se croise avant, pas après.** `0079` est la
+**troisième** version de `zabelie_request_payout` (`0034` → `0072` → `0079`) :
+le numéro de migration ne prouve pas ce que la base contient réellement. Avant
+d'écraser, le corps en production a été comparé au corps attendu de `0072` par
+md5 canonique (`4e1fba1b…`, identique) ; après, une sonde a confirmé que la
+nouvelle version porte À LA FOIS `zabelie_ai_surplus` et `kyc_requis`. Une
+réécriture qui aurait silencieusement perdu le recouvrement du surplus IA
+n'aurait rien cassé de visible — elle aurait simplement cessé de facturer.
 
 **Les pièces ne sont jamais publiques** : bucket privé sans aucune policy
 (service-role seul), l'admin les ouvre par **URL signée de 5 minutes**,
