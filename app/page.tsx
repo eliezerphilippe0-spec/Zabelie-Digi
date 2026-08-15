@@ -258,7 +258,12 @@ export default async function HomePage() {
       {catalogueCategories.length > 0 && (
       <nav
         aria-label="Catégories"
-        className="overflow-x-auto border-b border-black/10 bg-cloud"
+        /* UI-02 — `bg-cloud` faisait de ce rail le SEUL fond clair de la
+             page (détection programmatique : un élément sur toute la page),
+             une bande de 53 px pleine largeur au milieu d'un thème sombre.
+             `surface-maroon` appartient au système et passe AA avec
+             `--cloud` (17,76:1) comme avec `--mist` (7,29:1). */
+          className="overflow-x-auto border-b border-line bg-surface-maroon"
       >
         <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2.5">
           {catalogueCategories.map((c) => (
@@ -269,14 +274,14 @@ export default async function HomePage() {
               // ouvrait le catalogue ENTIER sans jamais dire que le filtre
               // n'avait pas pris.
               href={`/catalogue?cat=${encodeURIComponent(c)}`}
-              className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-black/5"
+              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold text-cloud transition hover:bg-white/10"
             >
               {c}
             </Link>
           ))}
           <Link
             href="/catalogue"
-            className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-black/5"
+            className="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold text-cloud transition hover:bg-white/10"
           >
             {t(lang, "home.all")}
           </Link>
@@ -380,7 +385,11 @@ export default async function HomePage() {
                 dans SA carte ; celle-ci vend. */}
             <Link
               href="/vendre"
-              className="mt-3 block text-xs font-semibold text-accent transition hover:text-accent-strong"
+              /* RES-01 — mesuré à 16 px de haut : `block` sur du `text-xs`
+                 (12 px) ne donne que la hauteur de ligne. C'était le plus
+                 PETIT élément cliquable de la page, et celui qui recrute
+                 les vendeurs. */
+              className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-accent transition hover:text-accent-strong"
             >
               {t(lang, "home.cta.sell")}
             </Link>
@@ -851,7 +860,10 @@ export default async function HomePage() {
           </p>
           <Link
             href="/vendre"
-            className="mt-8 inline-block rounded-xl bg-cloud px-7 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+            /* RES-01 : `inline-block` sur un texte de 14 px rendait 16 px de haut
+               — le lien qui recrute les vendeurs était le plus petit de la
+               page. `min-h-11` + centrage vertical le porte à 44 px. */
+            className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl bg-cloud px-7 text-sm font-semibold text-ink transition hover:opacity-90"
           >
             {t(lang, "home.final.cta")}
           </Link>

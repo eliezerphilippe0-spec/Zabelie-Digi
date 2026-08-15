@@ -87,7 +87,18 @@ export function HeroCarousel({
           porte quatre langues, un lecteur d'écran doit le lire, et à 360 px
           une typographie gravée devient illisible. */}
       <div
-        className={`flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-3xl bg-gradient-to-br px-6 py-8 text-center sm:aspect-[16/9] ${slide.accent}`}
+        /* UI-01 — `aspect-[4/3] sm:aspect-[16/9]` fixait la hauteur sur la
+           LARGEUR : à 1440 px le bloc mesurait ~350 px pour ~120 px de
+           contenu, soit 230 px de dégradé vide au centre de la zone la
+           plus regardée. Le ratio réservait la place d'un visuel qui
+           n'existe pas encore.
+
+           `min-h` plutôt que rien du tout : sans plancher, les trois
+           diapositives prendraient des hauteurs différentes (l'une porte
+           un badge de prix, l'autre un second bouton) et le carrousel
+           sauterait à chaque défilement. Le plancher garde l'uniformité
+           en rendant la place au contenu. */
+        className={`flex min-h-52 flex-col items-center justify-center gap-4 rounded-3xl bg-gradient-to-br px-6 py-10 text-center sm:min-h-56 ${slide.accent}`}
       >
         {/* `font-heading` explicite : ce titre est un `<p>`, pas un `h*`, donc
             la règle de `globals.css` ne l'atteint pas. Sans cette classe il
@@ -107,14 +118,14 @@ export function HeroCarousel({
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Link
             href={slide.href}
-            className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-cloud transition hover:opacity-90"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-ink px-5 text-sm font-semibold text-cloud transition hover:opacity-90"
           >
             {slide.cta}
           </Link>
           {slide.secondHref && slide.secondCta && (
             <a
               href={slide.secondHref}
-              className="flex items-center gap-2 rounded-xl border-2 border-ink px-5 py-2.5 text-sm font-bold text-ink transition hover:bg-ink/10"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border-2 border-ink px-5 text-sm font-bold text-ink transition hover:bg-ink/10"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-ink" strokeWidth="1.8">
                 <path d="M4 5h16v11H9l-5 4V5z" />

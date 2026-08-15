@@ -30,7 +30,7 @@ export async function SiteFooter() {
                     {r.label} <span className="text-xs">{t(lang, "menu.empty")}</span>
                   </span>
                 ) : (
-                  <Link key={r.slug} href={r.href} className="text-mist hover:text-cloud">
+                  <Link key={r.slug} href={r.href} className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
                     {r.label}
                   </Link>
                 )
@@ -39,19 +39,19 @@ export async function SiteFooter() {
           )}
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.explore")}</p>
-            <Link href="/catalogue" className="text-mist hover:text-cloud">
+            <Link href="/catalogue" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.catalog")}
             </Link>
-            <Link href="/#talents" className="text-mist hover:text-cloud">
+            <Link href="/#talents" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.talents")}
             </Link>
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.sell")}</p>
-            <Link href="/vendre" className="text-mist hover:text-cloud">
+            <Link href="/vendre" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "footer.become")}
             </Link>
-            <Link href="/#comment" className="text-mist hover:text-cloud">
+            <Link href="/#comment" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.how")}
             </Link>
           </div>
@@ -63,13 +63,13 @@ export async function SiteFooter() {
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.help")}</p>
-            <Link href="/aide" className="text-mist hover:text-cloud">
+            <Link href="/aide" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.help")}
             </Link>
-            <Link href="/aide#faq" className="text-mist hover:text-cloud">
+            <Link href="/aide#faq" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "sec.faq")}
             </Link>
-            <Link href="/mes-achats" className="text-mist hover:text-cloud">
+            <Link href="/mes-achats" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "pay.ok.cta")}
             </Link>
           </div>
@@ -77,14 +77,14 @@ export async function SiteFooter() {
             <p className="font-semibold text-cloud">{t(lang, "footer.legal")}</p>
             <Link
               href="/confidentialite"
-              className="text-mist hover:text-cloud"
+              className="inline-flex min-h-11 items-center text-mist hover:text-cloud"
             >
               {t(lang, "footer.privacy")}
             </Link>
-            <Link href="/conditions" className="text-mist hover:text-cloud">
+            <Link href="/conditions" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "footer.terms")}
             </Link>
-            <Link href={POLICY_PATH} className="text-mist hover:text-cloud">
+            <Link href={POLICY_PATH} className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "policy.link")}
             </Link>
           </div>
