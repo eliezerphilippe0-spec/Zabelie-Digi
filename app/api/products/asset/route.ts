@@ -27,10 +27,34 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 
 /**
- * POST /api/products/asset  (multipart : productId, file)
- * Envoie le fichier livrable d'un produit dans le bucket privé et enregistre
- * product_assets. Réservé au vendeur propriétaire du produit. Upload via service
- * role : le fichier n'est jamais public (livraison par URL signée après paiement).
+ * POST /api/products/asset  — protocole en DEUX TEMPS (JSON) :
+ *   { productId, step: "demande",  fileName }        → { path, token }
+ *   { productId, step: "confirme", path, fileName }  → { ok: true }
+ *
+ * Le client téléverse LUI-MÊME vers le stockage entre les deux, par lien
+ * signé. Réservé au vendeur propriétaire. Le bucket est privé : la livraison
+ * se fait par URL signée après paiement (`/api/download`).
+ *
+ * ─── POURQUOI CE N'EST PLUS DU MULTIPART ────────────────────────────────────
+ * Cette route acceptait le fichier en `multipart/form-data` et le repostait
+ * au stockage depuis la fonction. Elle annonçait **50 Mo** — que la plateforme
+ * serverless ne porte pas ; `docs/35` §V1-B l'écrit noir sur blanc et la
+ * vidéo avait déjà été construite en deux temps pour cette raison exacte.
+ * La contrainte était connue, documentée, appliquée à la galerie — et jamais
+ * à ce chemin-ci.
+ *
+ * Le pire n'est pas l'échec, c'est sa forme : au-delà de la limite, la requête
+ * est refusée AVANT que la fonction s'exécute. Aucune ligne de code d'ici ne
+ * tourne, donc rien ne journalise, et le vendeur voit un échec sans cause.
+ * C'est « l'absence de signal » de CLAUDE.md dans sa version la plus coûteuse :
+ * le 2026-08-11 à 01:46, trois créations du même produit en vingt et une
+ * secondes, puis l'abandon — et zéro trace de ce qui s'est passé.
+ *
+ * ⚠️ Le stockage de production était vide de bout en bout à cette date, donc
+ * la clé service-role défaillante est une cause suffisante à elle seule pour
+ * ces trois-là. Ce défaut-ci est indépendant : il survit à la réparation de la
+ * clé, et il n'aurait mordu qu'au premier ebook dépassant quelques mégaoctets.
+ * Les deux méritaient d'être dits séparément.
  */
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -50,33 +74,24 @@ export async function POST(req: Request) {
     );
   }
 
-  let form: FormData;
+  let body: { productId?: unknown; step?: unknown; path?: unknown; fileName?: unknown };
   try {
-    form = await req.formData();
+    body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Formulaire invalide" }, { status: 400 });
+    return NextResponse.json({ error: "Corps JSON requis" }, { status: 400 });
   }
 
-  const productId = form.get("productId");
-  const file = form.get("file");
-  if (typeof productId !== "string" || !(file instanceof File)) {
-    return NextResponse.json(
-      { error: "productId et file requis" },
-      { status: 400 }
-    );
-  }
-  if (file.size === 0) {
-    return NextResponse.json({ error: "Fichier vide" }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: "Fichier trop volumineux (max 50 Mo)" },
-      { status: 413 }
-    );
+  const productId = typeof body.productId === "string" ? body.productId : "";
+  const step = body.step === "demande" || body.step === "confirme" ? body.step : null;
+  if (!productId || !step) {
+    return NextResponse.json({ error: "productId et step requis" }, { status: 400 });
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
+  // Nom d'affichage : c'est lui que l'acheteur verra à l'enregistrement. Il ne
+  // sert JAMAIS à construire le chemin de stockage — voir plus bas.
+  const safeName = String(body.fileName ?? "").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const ext = safeName.split(".").pop()?.toLowerCase() ?? "";
+  if (!safeName || !ALLOWED_EXTENSIONS.has(ext)) {
     return NextResponse.json(
       {
         error:
@@ -98,28 +113,67 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
   }
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `${user.id}/${product.id}/${safeName}`;
+  if (step === "demande") {
+    /* Chemin SERVEUR, et un UUID plutôt que le nom du fichier.
+     *
+     * Deux raisons. Le lien signé ne vaut que pour ce chemin précis : un
+     * chemin choisi par le client permettrait d'écrire ailleurs que sous son
+     * propre produit. Et BL-138 (C-12) disparaît au passage — l'ancien chemin
+     * dépendait du NOM, donc un remplacement sous un autre nom laissait un
+     * objet orphelin. Deux UUID distincts ne collident jamais, et l'ancien
+     * objet est retiré explicitement à la confirmation. */
+    const path = `${user.id}/${product.id}/liv-${crypto.randomUUID()}.${ext}`;
+    const { data, error } = await admin.storage
+      .from(BUCKET)
+      .createSignedUploadUrl(path);
+    if (error || !data) {
+      return NextResponse.json({ error: "Lien d'envoi indisponible" }, { status: 502 });
+    }
+    return NextResponse.json({ ok: true, path: data.path, token: data.token });
+  }
 
-  // BL-138 (C-12) : le chemin dépend du NOM du fichier — un remplacement avec
-  // un nom différent laissait l'ancien objet orphelin dans le bucket (upsert
-  // ne réécrit que sur un chemin identique). On retient l'ancien chemin pour
-  // le supprimer une fois le nouveau livrable en place.
+  // ── step === "confirme" ───────────────────────────────────────────────────
+  const path = String(body.path ?? "");
+  const attendu = new RegExp(
+    `^${user.id}/${product.id}/liv-[0-9a-fA-F-]{36}\\.${ext}$`
+  );
+  if (!attendu.test(path)) {
+    return NextResponse.json({ error: "Chemin invalide" }, { status: 400 });
+  }
+
+  /* L'objet RÉELLEMENT téléversé — jamais la taille annoncée par le client.
+   * C'est le seul endroit où la taille peut être vérifiée : à la demande, le
+   * fichier n'est pas encore parti. */
+  const dossier = path.slice(0, path.lastIndexOf("/"));
+  const nom = path.slice(path.lastIndexOf("/") + 1);
+  const { data: objets, error: listErr } = await admin.storage
+    .from(BUCKET)
+    .list(dossier, { search: nom });
+  const objet = (objets ?? []).find((o) => o.name === nom);
+  if (listErr || !objet) {
+    return NextResponse.json(
+      { error: "Fichier introuvable au stockage" },
+      { status: 404 }
+    );
+  }
+  const taille = Number((objet.metadata as { size?: number } | null)?.size ?? 0);
+  if (taille <= 0 || taille > MAX_BYTES) {
+    // Un client menteur perd son objet — jamais de ligne pour un fichier hors
+    // contrat, et jamais de livrable à zéro octet vendu comme un ebook.
+    await admin.storage.from(BUCKET).remove([path]);
+    return NextResponse.json(
+      { error: "Fichier refusé : 50 Mo maximum, et non vide." },
+      { status: 422 }
+    );
+  }
+
+  // BL-138 (C-12) : on retient l'ancien livrable pour le retirer une fois le
+  // nouveau en place.
   const { data: oldAsset } = await admin
     .from("product_assets")
     .select("id, storage_path")
     .eq("product_id", product.id)
     .maybeSingle();
-
-  const { error: upErr } = await admin.storage
-    .from(BUCKET)
-    .upload(path, file, {
-      upsert: true,
-      contentType: file.type || "application/octet-stream",
-    });
-  if (upErr) {
-    return NextResponse.json({ error: upErr.message }, { status: 500 });
-  }
 
   /* REMPLACER SANS DÉTRUIRE — l'ordre compte, et il était inversé.
    *
@@ -129,11 +183,6 @@ export async function POST(req: Request) {
    * indélivrable en silence. Une commande passée là-dessus suit exactement le
    * chemin décrit en tête de `0059` — payée, jamais remise, vendeur payé.
    *
-   * ⚠️ Ce n'est PAS ce qui s'est produit sur « cours du créole » : le stockage
-   * de production était vide de bout en bout, donc aucun téléversement n'a
-   * jamais atteint cette ligne. Le défaut est réel et latent, il n'était pas
-   * la cause. Les deux méritaient d'être dits séparément.
-   *
    * Il n'y a pas d'unicité sur `product_id` : insérer avant de supprimer est
    * donc possible, et pendant l'instant où deux lignes coexistent le
    * téléchargement reste servi — par l'ancien fichier, qui fonctionne. */
@@ -141,10 +190,12 @@ export async function POST(req: Request) {
     product_id: product.id,
     storage_path: path,
     file_name: safeName,
-    size_bytes: file.size,
+    size_bytes: taille,
   });
   if (insErr) {
-    // L'ancien livrable est INTACT : le vendeur n'a rien perdu.
+    // L'ancien livrable est INTACT : le vendeur n'a rien perdu. On retire en
+    // revanche l'objet qui vient d'arriver et que plus rien n'adresse.
+    await admin.storage.from(BUCKET).remove([path]);
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
 

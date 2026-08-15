@@ -3,6 +3,63 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 🔴 PV — écriture en production du 2026-08-15 (dépublication)
+
+**Signal porteur** : « Sur la dépublication : oui, sans hésiter. »
+
+```sql
+update products set status = 'draft'
+ where slug = 'cours-du-creole-dt0ps' and kind = 'fichier'
+   and not exists (select 1 from product_assets a where a.product_id = products.id);
+-- 1 ligne. Sonde après : fichiers_publiés_sans_livrable = 0.
+```
+
+Ce produit était **en vente à 1 200 HTG depuis le 2026-08-11 sans aucun
+livrable**. Un acheteur aurait payé et reçu un 404. Aucune commande payée
+n'existe à ce jour (1 en attente, 4 annulées, **zéro payée depuis l'origine**),
+donc personne n'a été lésé — l'exposition, elle, était ouverte depuis quatre
+jours.
+
+⚠️ **Ce n'était pas un trou dans le code.** La porte de
+`/api/admin/product-status` refuse bien de publier un fichier à zéro livrable,
+et elle a été posée le 2026-08-11 en réponse à ce cas précis. **La ligne déjà
+passée n'a jamais été rattrapée.** Poser un filet ne répare pas ce qui est
+tombé avant lui — et rien, dans le dépôt, ne croisait l'état de la production
+avec les gardes qu'on venait d'y ajouter.
+
+### Le défaut structurel trouvé en cherchant la cause
+
+`/api/products/asset` annonçait **50 Mo** tout en recevant le fichier en
+`multipart` — c'est-à-dire à travers la fonction serverless, que
+`docs/35` §V1-B déclare explicitement incapable de les porter. La galerie
+vidéo avait été construite en deux temps (lien signé + téléversement direct)
+pour cette raison exacte ; **le chemin du livrable n'a jamais reçu la même
+conclusion.**
+
+Le pire n'est pas l'échec, c'est sa forme : au-delà de la limite, la requête
+est refusée **avant** que la fonction s'exécute. Aucun garde ne tourne, rien
+ne journalise, le vendeur voit un échec sans cause. C'est « l'absence de
+signal » dans sa version la plus coûteuse — trois créations du même produit en
+vingt et une secondes le 2026-08-11 à 01:46, puis l'abandon, et pas une ligne
+pour le dire.
+
+Corrigé : protocole en deux temps, taille lue **au stockage** (jamais annoncée
+par le client), objet retiré si hors contrat. Le chemin dépend désormais d'un
+UUID et non du nom du fichier — BL-138 (C-12) disparaît au passage.
+
+⚠️ **Ce que ça ne prouve pas** : que le chemin fonctionne. Les octets ne
+transitent plus par la fonction — c'est une propriété du code, vérifiée par
+mutation. **Un vrai PDF déposé depuis un vrai téléphone reste à faire**, et
+c'est la seule preuve qui compte. `product-files` porte toujours **zéro
+objet** ; le catalogue n'a **aucun** produit `fichier` livrable.
+
+### Ce qui n'est PAS fait, et ne peut pas l'être d'ici
+
+La re-livraison de « cours du créole » demande **le fichier du vendeur**.
+Attacher un PDF de substitution et republier mettrait en vente un livrable
+inventé — le défaut qu'on vient de fermer, retourné. Le vendeur doit redéposer
+lui-même ; le produit l'attend en brouillon.
+
 ## ⏳ Registre des décisions en attente — `docs/25` §4.1
 
 > **Relu à l'ouverture de chaque chantier, avant de choisir quoi construire.**

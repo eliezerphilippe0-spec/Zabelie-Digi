@@ -33,6 +33,7 @@ import { readFileSync } from "node:fs";
 const PORTE = readFileSync("app/api/admin/product-status/route.ts", "utf8");
 const UPLOAD = readFileSync("app/api/products/asset/route.ts", "utf8");
 const CRON = readFileSync("app/api/fulfillment/sweep/route.ts", "utf8");
+const LIVRABLE_UI = readFileSync("components/upload-asset.tsx", "utf8");
 const MIG_BRUT = readFileSync("supabase/migrations/0059_fichier_sans_livrable.sql", "utf8");
 
 /**
@@ -72,6 +73,74 @@ test("la publication d'un fichier vérifie qu'un livrable existe", () => {
     "Le refus 422 doit être commandé par un comptage de `product_assets` à " +
       "zéro. Le message seul ne prouve rien : il survit intact à un garde " +
       "qu'on a rendu inatteignable."
+  );
+});
+
+/* ── LE LIVRABLE NE TRAVERSE PAS LA FONCTION ────────────────────────────────
+ *
+ * Ajouté le 2026-08-15, après avoir mesuré que la suite restait VERTE pendant
+ * qu'on remplaçait le protocole d'envoi de bout en bout. Elle ne vérifiait que
+ * l'ordre insert/delete — vrai avant, vrai après, et parfaitement aveugle au
+ * reste.
+ *
+ * Le défaut couvert ici : la route annonçait 50 Mo tout en recevant le fichier
+ * en `multipart`. Au-delà de la limite serverless, la requête est refusée
+ * AVANT que le code s'exécute — donc aucune de ces lignes ne tourne, rien ne
+ * journalise, et le vendeur voit un échec sans cause. `docs/35` §V1-B avait
+ * déjà tiré la conclusion pour la vidéo ; ce chemin-ci ne l'avait jamais reçue.
+ */
+test("le fichier livrable ne transite JAMAIS par la fonction", () => {
+  // La CONDITION, pas le commentaire : une route qui lit un formulaire
+  // multipart reçoit les octets, quoi qu'elle en dise ailleurs.
+  assert.ok(
+    !/formData\(\)/.test(UPLOAD),
+    "La route lit un formulaire multipart : les octets traversent de nouveau " +
+      "la fonction, et la limite serverless refusera le fichier avant que le " +
+      "moindre garde d'ici s'exécute."
+  );
+  assert.match(
+    UPLOAD,
+    /createSignedUploadUrl\(/,
+    "Sans lien signé, le navigateur n'a aucun moyen d'écrire au stockage."
+  );
+  assert.match(
+    LIVRABLE_UI,
+    /uploadToSignedUrl\(/,
+    "Le client doit téléverser directement — sinon la route a beau offrir un " +
+      "lien signé, personne ne l'emprunte."
+  );
+});
+
+test("la taille est lue AU STOCKAGE, jamais annoncée par le client", () => {
+  /* Un client qui déclare « 2 Mo » et dépose 800 Mo passerait tous les
+   * contrôles faits à la demande : à cet instant le fichier n'est pas encore
+   * parti. La seule taille qui existe est celle de l'objet réellement écrit,
+   * et elle se lit après coup. */
+  /* ⚠️ PREMIÈRE VERSION FAUSSE, gardée en mémoire ici parce qu'elle a passé
+   * la mutation : `/\.list\(dossier[\s\S]{0,700}taille > MAX_BYTES/`. Elle
+   * n'exigeait que le VOISINAGE de deux chaînes. Remplacer
+   * `const taille = Number((objet.metadata …))` par
+   * `const taille = Number(body.tailleAnnoncee ?? 1)` laissait les deux
+   * intactes et la suite verte — la borne portait alors sur un chiffre fourni
+   * par le client. Encore une assertion sur ce qui est PRODUIT plutôt que sur
+   * ce qui COMMANDE. La forme correcte lie la variable à sa source. */
+  assert.match(
+    UPLOAD,
+    /const taille = Number\(\(objet\.metadata[^;]{0,140};[\s\S]{0,240}taille > MAX_BYTES/,
+    "La borne de 50 Mo doit porter sur une taille LUE dans les métadonnées de " +
+      "l'objet réellement écrit, jamais sur une valeur venue de la requête."
+  );
+  assert.match(
+    UPLOAD,
+    /\.list\(dossier/,
+    "Sans lecture du stockage, il n'y a aucune taille réelle à lire."
+  );
+  // Et un objet hors contrat ne laisse pas de ligne derrière lui.
+  assert.match(
+    UPLOAD,
+    /taille > MAX_BYTES[\s\S]{0,300}\.remove\(\[path\]\)/,
+    "Un fichier refusé doit être retiré : sinon le bucket garde un objet que " +
+      "plus rien n'adresse, et que rien ne purge."
   );
 });
 
