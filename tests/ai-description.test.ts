@@ -62,6 +62,8 @@ test("la consigne interdit l'invention, la livraison, le prix — et porte la la
   assert.match(c, /prix/);
   assert.match(c, /kreyòl ayisyen/);
   assert.match(consigneSysteme("es"), /espagnol/);
+  // Les faits vendeur s'intègrent FIDÈLEMENT — ni modifiés, ni complétés.
+  assert.match(c, /intègre-les tous fidèlement/);
 });
 
 // ── OpenAI : forme de la requête, parsing, erreurs ──────────────────────────
@@ -98,6 +100,26 @@ test("openai : Bearer en en-tête, titre et catégorie dans le message, contenu 
   assert.equal(corps.messages[0].role, "system");
   assert.match(corps.messages[1].content, /Savon lokal/);
   assert.match(corps.messages[1].content, /Bèlte ak swen/);
+  sansCles();
+});
+
+test("les faits vendeur (keywords) arrivent dans le message — et seulement s'ils existent", async () => {
+  sansCles();
+  process.env.OPENAI_API_KEY = "sk-test";
+  const avec = fauxFetch({ choices: [{ message: { content: "ok" } }] });
+  await genererDescription(
+    { title: "Savon lokal", keywords: "koko, lavann, 100 g", lang: "ht" },
+    avec.fetcher
+  );
+  const corpsAvec = JSON.parse(String(avec.appels[0].init.body));
+  assert.match(
+    corpsAvec.messages[1].content,
+    /Faits fournis par le vendeur : koko, lavann, 100 g/
+  );
+  const sans = fauxFetch({ choices: [{ message: { content: "ok" } }] });
+  await genererDescription({ title: "Savon lokal", lang: "ht" }, sans.fetcher);
+  const corpsSans = JSON.parse(String(sans.appels[0].init.body));
+  assert.ok(!/Faits fournis/.test(corpsSans.messages[1].content));
   sansCles();
 });
 
@@ -206,6 +228,9 @@ test("composant : !actif → null (pas de clé, pas de bouton)", () => {
   // type="submit", et il appelle onSuggestion.
   assert.match(src, /type="button"/);
   assert.match(src, /onSuggestion\(data\.description\)/);
+  // Le champ « faits réels » existe et part dans la requête.
+  assert.match(src, /placeholder=\{labels\.kwPh\}/);
+  assert.match(src, /keywords: keywords\.trim\(\) \|\| undefined/);
 });
 
 test("les deux formulaires vendeur montent le bouton (frontière, pas sous-chaîne)", () => {

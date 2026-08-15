@@ -441,6 +441,8 @@ const fr = {
   "ai.desc.hint":
     "Ceci est une suggestion — relisez et corrigez : vous restez responsable de votre fiche.",
   "ai.desc.needTitle": "Écrivez d'abord le titre",
+  "ai.desc.kw.ph":
+    "Détails réels à inclure : matière, tailles, couleurs, état… (facultatif)",
   "publish.service.hint":
     "Page service (façon Fiverr) — optionnel, mais rassure l'acheteur.",
   "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
@@ -926,6 +928,8 @@ const ht: Record<I18nKey, string> = {
   "ai.desc.hint":
     "Sa se yon sijesyon — li l, korije l : se ou ki responsab fich ou a.",
   "ai.desc.needTitle": "Ekri tit la anvan",
+  "ai.desc.kw.ph":
+    "Detay reyèl pou mete : matyè, gwosè, koulè, eta… (si ou vle)",
   "publish.service.hint":
     "Paj sèvis (menm jan ak Fiverr) — opsyonèl, men sa rasire achtè a.",
   "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
@@ -1423,6 +1427,8 @@ const en = {
   "ai.desc.hint":
     "This is a suggestion — review and edit it: you remain responsible for your listing.",
   "ai.desc.needTitle": "Write the title first",
+  "ai.desc.kw.ph":
+    "Real details to include: material, sizes, colors, condition… (optional)",
   "publish.service.hint":
     "Service page (Fiverr style) — optional, but reassures the buyer.",
   "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
@@ -1920,6 +1926,8 @@ const es = {
   "ai.desc.hint":
     "Esto es una sugerencia — revísela y corríjala: usted sigue siendo responsable de su ficha.",
   "ai.desc.needTitle": "Escriba primero el título",
+  "ai.desc.kw.ph":
+    "Detalles reales a incluir: material, tallas, colores, estado… (opcional)",
   "publish.service.hint":
     "Página de servicio (estilo Fiverr) — opcional, pero da confianza al comprador.",
   "publish.deliveryDays.ph": "Plazo de entrega (en días)",

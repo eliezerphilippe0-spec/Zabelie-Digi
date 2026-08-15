@@ -10,6 +10,8 @@ export type AiHelpLabels = {
   hint: string;
   /** Affiché quand le bouton attend un titre. */
   needTitle: string;
+  /** Placeholder du champ « faits réels » (matière, tailles, état…). */
+  kwPh: string;
 };
 
 /**
@@ -39,6 +41,10 @@ export function AiDescriptionHelp({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [suggested, setSuggested] = useState(false);
+  // Les faits réels du vendeur — la seule source de DÉTAILS de la
+  // suggestion : la consigne serveur interdit d'inventer, donc tout ce qui
+  // doit figurer de précis (matière, tailles, état…) se donne ici.
+  const [keywords, setKeywords] = useState("");
 
   if (!actif) return null;
 
@@ -51,7 +57,11 @@ export function AiDescriptionHelp({
       const res = await fetch("/api/ai/description", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, category }),
+        body: JSON.stringify({
+          title,
+          category,
+          keywords: keywords.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || typeof data.description !== "string") {
@@ -69,6 +79,14 @@ export function AiDescriptionHelp({
 
   return (
     <div className="space-y-1.5">
+      <input
+        className="w-full rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-violet"
+        placeholder={labels.kwPh}
+        aria-label={labels.kwPh}
+        maxLength={300}
+        value={keywords}
+        onChange={(e) => setKeywords(e.target.value)}
+      />
       <div className="flex items-center gap-3">
         <button
           type="button"
