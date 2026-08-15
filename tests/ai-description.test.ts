@@ -208,9 +208,9 @@ test("route : auth requise (401), suspension bloquée (403)", () => {
   assert.match(ROUTE, /getSuspension\(user\.id\)[\s\S]{0,300}status: 403/);
 });
 
-test("route : débit borné par utilisateur, rafale ET journée, sinon 429", () => {
-  assert.match(ROUTE, /rateLimit\(admin, `ai_desc:\$\{user\.id\}`/);
-  assert.match(ROUTE, /rateLimit\(admin, `ai_desc_jour:\$\{user\.id\}`/);
+test("route : débit borné par utilisateur, rafale ET journée (50/j, décision porteur 2026-08-15), sinon 429", () => {
+  assert.match(ROUTE, /rateLimit\(admin, `ai_desc:\$\{user\.id\}`, 5, 60\)/);
+  assert.match(ROUTE, /rateLimit\(admin, `ai_desc_jour:\$\{user\.id\}`, 50, 86_400\)/);
   assert.match(ROUTE, /if \(!okMinute \|\| !okJour\)[\s\S]{0,200}status: 429/);
 });
 
@@ -231,6 +231,9 @@ test("composant : !actif → null (pas de clé, pas de bouton)", () => {
   // Le champ « faits réels » existe et part dans la requête.
   assert.match(src, /placeholder=\{labels\.kwPh\}/);
   assert.match(src, /keywords: keywords\.trim\(\) \|\| undefined/);
+  // 429 ≠ panne : la limite du jour a sa branche et son message propres.
+  assert.match(src, /res\.status === 429[\s\S]{0,80}setLimited\(true\)/);
+  assert.match(src, /\{limited && [\s\S]{0,80}labels\.limit/);
 });
 
 test("les deux formulaires vendeur montent le bouton (frontière, pas sous-chaîne)", () => {

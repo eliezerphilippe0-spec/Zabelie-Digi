@@ -67,13 +67,17 @@ export async function POST(req: Request) {
       ? body.keywords.trim().slice(0, AI_KEYWORDS_MAX)
       : undefined;
 
-  // Débit borné DEUX fois : la rafale (5/min) et la journée (60/j) — c'est,
-  // avec le plafond de dépense posé côté console fournisseur, ce qui borne
-  // le coût du service. Par utilisateur, pas par IP : la route est
-  // authentifiée.
+  // Débit borné DEUX fois : la rafale (5/min) et la journée (50/j, décision
+  // porteur du 2026-08-15) — c'est, avec le plafond de dépense posé côté
+  // console fournisseur, ce qui borne le coût du service. Par utilisateur,
+  // pas par IP : la route est authentifiée.
+  //
+  // ⚠️ Un « au-delà payant » a été évoqué par le porteur le même jour : c'est
+  // une zone d'arrêt (argent) — rien n'est câblé, la décision est au registre
+  // d'OPS_TODO. Ici, au-delà de 50, la seule réponse est 429.
   const admin = createAdminClient();
   const okMinute = await rateLimit(admin, `ai_desc:${user.id}`, 5, 60);
-  const okJour = await rateLimit(admin, `ai_desc_jour:${user.id}`, 60, 86_400);
+  const okJour = await rateLimit(admin, `ai_desc_jour:${user.id}`, 50, 86_400);
   if (!okMinute || !okJour) {
     return NextResponse.json(
       { error: "Trop de demandes — réessayez plus tard." },

@@ -443,6 +443,8 @@ const fr = {
   "ai.desc.needTitle": "Écrivez d'abord le titre",
   "ai.desc.kw.ph":
     "Détails réels à inclure : matière, tailles, couleurs, état… (facultatif)",
+  "ai.desc.limit":
+    "Limite du jour atteinte — l'aide revient demain. Vous pouvez toujours écrire vous-même.",
   "publish.service.hint":
     "Page service (façon Fiverr) — optionnel, mais rassure l'acheteur.",
   "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
@@ -930,6 +932,8 @@ const ht: Record<I18nKey, string> = {
   "ai.desc.needTitle": "Ekri tit la anvan",
   "ai.desc.kw.ph":
     "Detay reyèl pou mete : matyè, gwosè, koulè, eta… (si ou vle)",
+  "ai.desc.limit":
+    "Ou rive nan limit jounen an — èd la ap tounen demen. Ou toujou ka ekri li ou menm.",
   "publish.service.hint":
     "Paj sèvis (menm jan ak Fiverr) — opsyonèl, men sa rasire achtè a.",
   "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
@@ -1429,6 +1433,8 @@ const en = {
   "ai.desc.needTitle": "Write the title first",
   "ai.desc.kw.ph":
     "Real details to include: material, sizes, colors, condition… (optional)",
+  "ai.desc.limit":
+    "Daily limit reached — the helper returns tomorrow. You can still write it yourself.",
   "publish.service.hint":
     "Service page (Fiverr style) — optional, but reassures the buyer.",
   "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
@@ -1928,6 +1934,8 @@ const es = {
   "ai.desc.needTitle": "Escriba primero el título",
   "ai.desc.kw.ph":
     "Detalles reales a incluir: material, tallas, colores, estado… (opcional)",
+  "ai.desc.limit":
+    "Límite diario alcanzado — la ayuda vuelve mañana. Siempre puede escribirla usted mismo.",
   "publish.service.hint":
     "Página de servicio (estilo Fiverr) — opcional, pero da confianza al comprador.",
   "publish.deliveryDays.ph": "Plazo de entrega (en días)",

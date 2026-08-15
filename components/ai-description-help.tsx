@@ -12,6 +12,8 @@ export type AiHelpLabels = {
   needTitle: string;
   /** Placeholder du champ « faits réels » (matière, tailles, état…). */
   kwPh: string;
+  /** Affiché sur 429 : la limite du jour, pas une panne. */
+  limit: string;
 };
 
 /**
@@ -40,6 +42,8 @@ export function AiDescriptionHelp({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  // 429 ≠ panne : la limite du jour se DIT, sinon elle se lit comme un bug.
+  const [limited, setLimited] = useState(false);
   const [suggested, setSuggested] = useState(false);
   // Les faits réels du vendeur — la seule source de DÉTAILS de la
   // suggestion : la consigne serveur interdit d'inventer, donc tout ce qui
@@ -53,6 +57,7 @@ export function AiDescriptionHelp({
   async function demander() {
     setBusy(true);
     setError(false);
+    setLimited(false);
     try {
       const res = await fetch("/api/ai/description", {
         method: "POST",
@@ -64,6 +69,10 @@ export function AiDescriptionHelp({
         }),
       });
       const data = await res.json();
+      if (res.status === 429) {
+        setLimited(true);
+        return;
+      }
       if (!res.ok || typeof data.description !== "string") {
         setError(true);
         return;
@@ -98,8 +107,11 @@ export function AiDescriptionHelp({
         </button>
         {!pret && <span className="text-xs text-mist">{labels.needTitle}</span>}
       </div>
-      {error && <p className="text-xs text-danger-text">{labels.error}</p>}
-      {suggested && !error && <p className="text-xs text-mist">{labels.hint}</p>}
+      {limited && <p className="text-xs text-mist">{labels.limit}</p>}
+      {error && !limited && <p className="text-xs text-danger-text">{labels.error}</p>}
+      {suggested && !error && !limited && (
+        <p className="text-xs text-mist">{labels.hint}</p>
+      )}
     </div>
   );
 }
