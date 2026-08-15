@@ -36,6 +36,7 @@ type VenteRow = {
     order_ref: string | null;
     amount_htg: number;
     created_at: string;
+    buyer_id: string;
     products: { title: string; seller_id: string } | null;
   } | null;
 };
@@ -107,7 +108,7 @@ export default async function MesVentesPage() {
   const { data } = await supabase
     .from("zabelie_fulfillment")
     .select(
-      "order_id, status, shipped_at, order:orders!inner(id, order_ref, amount_htg, created_at, products!inner(title, seller_id))"
+      "order_id, status, shipped_at, order:orders!inner(id, order_ref, amount_htg, created_at, buyer_id, products!inner(title, seller_id))"
     )
     .eq("order.products.seller_id", user.id)
     .order("created_at", { ascending: true });
@@ -115,6 +116,28 @@ export default async function MesVentesPage() {
   const ventes = ((data ?? []) as unknown as VenteRow[]).filter((v) =>
     estEtatRemise(v.status)
   );
+
+  /* V-5 (docs/35) : coordonnées de livraison des acheteurs — CLIENT DE
+   * SESSION exprès : c'est la policy `zabelie_delivery_seller_read` (0076)
+   * qui décide ce que CE vendeur a le droit de voir (commande payée
+   * uniquement). Un service-role ici contournerait le garde qu'on vient de
+   * poser. Table absente (0076 non appliquée) → map vide, rien ne s'affiche. */
+  const buyerIds = [
+    ...new Set(ventes.map((v) => v.order?.buyer_id).filter(Boolean)),
+  ] as string[];
+  const livParAcheteur = new Map<
+    string,
+    { full_name: string | null; phone: string | null; adres_liv: string | null }
+  >();
+  if (buyerIds.length > 0) {
+    const { data: livs } = await supabase
+      .from("zabelie_delivery_info")
+      .select("user_id, full_name, phone, adres_liv")
+      .in("user_id", buyerIds);
+    for (const l of livs ?? []) {
+      livParAcheteur.set(l.user_id, l);
+    }
+  }
 
   return (
     <Shell lang={lang}>
@@ -149,6 +172,38 @@ export default async function MesVentesPage() {
                   )}
                 </p>
                 <p className="mt-1 text-xs text-mist">{t(lang, cleEtatRemise(v.status))}</p>
+                {/* V-5 : les coordonnées de livraison — présentes UNIQUEMENT
+                    si la policy 0076 les a laissées passer (commande payée),
+                    en attente d'expédition. */}
+                {v.status === "awaiting_shipment" &&
+                  (() => {
+                    const liv = v.order
+                      ? livParAcheteur.get(v.order.buyer_id)
+                      : undefined;
+                    if (!liv || (!liv.full_name && !liv.phone && !liv.adres_liv)) {
+                      return (
+                        <p className="mt-2 text-xs text-mist">
+                          {t(lang, "sales.liv.missing")}
+                        </p>
+                      );
+                    }
+                    return (
+                      <div className="mt-2 rounded-lg border border-line/60 p-2 text-xs">
+                        <p className="font-semibold text-cloud">
+                          {t(lang, "sales.liv.title")}
+                        </p>
+                        {liv.full_name && <p>{liv.full_name}</p>}
+                        {liv.phone && (
+                          <p>
+                            <a className="underline" href={`tel:${liv.phone}`}>
+                              {liv.phone}
+                            </a>
+                          </p>
+                        )}
+                        {liv.adres_liv && <p className="text-mist">{liv.adres_liv}</p>}
+                      </div>
+                    );
+                  })()}
               </div>
 
               <div className="shrink-0">
