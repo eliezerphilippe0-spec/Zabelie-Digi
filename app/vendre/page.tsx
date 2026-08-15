@@ -17,6 +17,8 @@ import { POLICY_PATH } from "@/lib/policy";
 import { aiProviderDisponible } from "@/lib/ai-description";
 import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { listerMedias, MAX_IMAGES_PER_PRODUCT } from "@/lib/product-media";
+import { GalerieManager } from "@/components/galerie-manager";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -144,6 +146,24 @@ export default async function VendrePage() {
     product_assets: { id: string }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+
+  // Galerie V-1A (docs/35) : l'état initial de chaque gestionnaire vient du
+  // serveur — [] tant que 0073 n'est pas appliquée, et le gestionnaire
+  // affiche alors l'erreur de la route au premier essai (503 explicite).
+  const galeries = await Promise.all(
+    mine.map((p) => listerMedias(supabase, p.id))
+  );
+  const galerieLabels = {
+    title: t(lang, "sell.galerie.title"),
+    add: t(lang, "sell.galerie.add"),
+    sending: t(lang, "sell.galerie.sending"),
+    remove: t(lang, "sell.galerie.remove"),
+    hint: t(lang, "sell.galerie.hint").replace(
+      "{max}",
+      String(MAX_IMAGES_PER_PRODUCT)
+    ),
+    error: t(lang, "sell.galerie.error"),
+  };
   // BL-130 (FRONT-14) : `status` est un mot-clé technique brut ("published")
   // — jamais affiché tel quel, toujours mappé sur un libellé FR/KR.
   //
@@ -226,7 +246,7 @@ export default async function VendrePage() {
             <p className="mt-2 text-xs text-mist">{t(lang, "status.review.hint")}</p>
           )}
           <ul className="mt-3 space-y-2">
-            {mine.map((p) => (
+            {mine.map((p, i) => (
               <li
                 key={p.slug}
                 className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
@@ -255,6 +275,14 @@ export default async function VendrePage() {
                   >
                     {statusLabel(p.status)}
                   </span>
+                  <GalerieManager
+                    productId={p.id}
+                    initial={(galeries[i] ?? [])
+                      .filter((m) => m.kind === "image")
+                      .map((m) => ({ id: m.id, url: m.url }))}
+                    max={MAX_IMAGES_PER_PRODUCT}
+                    labels={galerieLabels}
+                  />
                 </div>
                 {/* L'upload de livrable n'a de sens que pour un fichier. Le
                     `else` étiquetait « Service » tout le reste — un produit

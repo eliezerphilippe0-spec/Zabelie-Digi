@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { formatHTG } from "@/lib/sample-data";
-import { getProductView } from "@/lib/products";
+import { getProductView, isSupabaseConfigured } from "@/lib/products";
+import { createClient } from "@/lib/supabase/server";
+import { listerMedias } from "@/lib/product-media";
+import { GalerieProduit } from "@/components/galerie-produit";
 import { getProductReviews } from "@/lib/reviews";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
 import { AddToCart } from "@/components/add-to-cart";
@@ -120,9 +123,13 @@ export default async function ProductPage({
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
   if (!product) notFound();
 
-  const [reviews, physical] = await Promise.all([
+  const [reviews, physical, medias] = await Promise.all([
     product.creatorId ? getProductReviews(product.id) : Promise.resolve([]),
     getPhysicalView(product.id),
+    // Galerie V-1A — [] en démo, [] tant que 0073 n'est pas appliquée.
+    isSupabaseConfigured()
+      ? createClient().then((c) => listerMedias(c, product.id))
+      : Promise.resolve([]),
   ]);
 
   const kindKey = kindLabelKey(product.kind, product.id);
@@ -147,23 +154,21 @@ export default async function ProductPage({
             produit. Redimensionnée au CDN Supabase (lib/product-image), pas
             au rendu : aucun quota Vercel, ~40 Ko au lieu de 5 Mo. */}
         <div>
-          {coverUrlAt(product.coverUrl, COVER_WIDTHS.detail) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)!}
+          {coverUrlAt(product.coverUrl, COVER_WIDTHS.detail) || medias.length > 0 ? (
+            /* V-1A (docs/35) : la galerie RÉELLE — l'inverse exact des
+               vignettes factices retirées par BL-119. Sans 0073 appliquée,
+               `medias` est vide et le rendu est la couverture seule,
+               exactement comme avant. */
+            <GalerieProduit
+              couverture={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)}
+              medias={medias.filter((m) => m.kind === "image").map((m) => m.url)}
               alt={product.title}
-              width={COVER_WIDTHS.detail}
-              height={Math.round((COVER_WIDTHS.detail * 3) / 4)}
-              decoding="async"
-              className="aspect-[4/3] w-full rounded-3xl border border-line object-cover"
             />
           ) : (
             <div
               className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
             />
           )}
-          {/* BL-119 (Gumroad — pas de galerie factice) : les 3 vignettes
-              décoratives qui mimaient une galerie inexistante ont été retirées. */}
         </div>
 
         {/* Infos + achat */}
