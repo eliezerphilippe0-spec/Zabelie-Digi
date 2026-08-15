@@ -46,7 +46,10 @@ function texte(lang: Lang): string {
 
 test("les quatre versions ont les mêmes 13 sections, bloc à bloc", () => {
   const ref = CONDITIONS.fr.sections;
-  assert.equal(ref.length, 13, "le gabarit compte 13 sections (docs/26 §légal)");
+  // 13 → 14 le 2026-08-15 : section « Services optionnels payants » ajoutée
+  // sur décision porteur (surplus IA, docs/34) — gabarit à faire relire par
+  // le conseil, comme le reste du document.
+  assert.equal(ref.length, 14, "le gabarit compte 14 sections (docs/26 §légal + docs/34)");
   for (const lang of LANGS) {
     const sections = CONDITIONS[lang].sections;
     assert.equal(
@@ -78,8 +81,10 @@ test("l'avis « le français fait foi » est sur les traductions, jamais sur l'o
 // ── 2. Le cliquet des marqueurs juridiques ──────────────────────────────────
 
 test("quatre marqueurs juridiques par langue — ni plus, ni moins", () => {
-  /* FIGÉ le 2026-08-14 : âge minimum (§1), fenêtre de litige (§8),
-   * résiliation plateforme (§11), droit applicable (§12).
+  /* FIGÉ le 2026-08-14 : âge minimum (§1), fenêtre de litige (§9),
+   * résiliation plateforme (§12), droit applicable (§13) — numéros décalés
+   * d'un cran le 2026-08-15 par l'insertion du §8 (services payants), qui
+   * n'ouvre AUCUN blanc nouveau : les faits y sont tous tranchés (docs/34).
    * Pour REMPLIR un marqueur (décision porteur + conseil juridique) :
    * décrémenter ici DANS LE MÊME COMMIT. Pour en AJOUTER : ne pas — un
    * nouveau blanc juridique est une décision, pas un réflexe. */
