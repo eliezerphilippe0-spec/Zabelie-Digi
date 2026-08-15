@@ -5,6 +5,7 @@ import { getSuspension } from "@/lib/auth";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { getLang } from "@/lib/i18n-server";
 import {
+  AI_KEYWORDS_MAX,
   AI_TITLE_MAX,
   aiProviderDisponible,
   genererDescription,
@@ -14,7 +15,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/ai/description  { title, category? }
+ * POST /api/ai/description  { title, category?, keywords? }
  * Suggestion de description produit pour le vendeur connecté.
  *
  * Kill-switch : aucune clé fournisseur posée → 503, et les pages vendeur
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { title?: string; category?: string };
+  let body: { title?: string; category?: string; keywords?: string };
   try {
     body = await req.json();
   } catch {
@@ -59,6 +60,11 @@ export async function POST(req: Request) {
   const category =
     typeof body.category === "string" && body.category.trim()
       ? body.category.trim()
+      : undefined;
+  // Les faits vendeur : bornés, jamais refusés — la voie du détail réel.
+  const keywords =
+    typeof body.keywords === "string" && body.keywords.trim()
+      ? body.keywords.trim().slice(0, AI_KEYWORDS_MAX)
       : undefined;
 
   // Débit borné DEUX fois : la rafale (5/min) et la journée (60/j) — c'est,
@@ -79,6 +85,7 @@ export async function POST(req: Request) {
     const description = await genererDescription({
       title,
       category,
+      keywords,
       lang: await getLang(),
     });
     return NextResponse.json({ description });

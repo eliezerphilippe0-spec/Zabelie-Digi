@@ -53,6 +53,12 @@ export type AiDescriptionInput = {
   title: string;
   /** Libellé de catégorie (humain, pas un slug), facultatif. */
   category?: string;
+  /**
+   * Faits fournis par le vendeur (matière, tailles, couleurs, état…),
+   * texte libre facultatif. C'est LA voie du détail : la consigne interdit
+   * d'inventer, donc tout ce qui doit figurer de précis passe par ici.
+   */
+  keywords?: string;
   /** Langue de génération = langue de session du vendeur. */
   lang: Lang;
 };
@@ -60,6 +66,7 @@ export type AiDescriptionInput = {
 /** Bornes d'entrée — au-delà on tronque, on ne refuse pas. */
 export const AI_TITLE_MAX = 140;
 export const AI_CATEGORY_MAX = 80;
+export const AI_KEYWORDS_MAX = 300;
 /** Borne de sortie : une description n'est pas une page de vente. */
 export const AI_DESCRIPTION_MAX = 1800;
 
@@ -94,6 +101,7 @@ export function consigneSysteme(lang: Lang): string {
     // jamais une caractéristique précise que le vendeur n'a pas fournie.
     "Développe ce que le titre et la catégorie permettent d'affirmer : à quoi sert le produit, à qui il convient, dans quelles occasions on l'utilise, comment en prendre soin.",
     "N'invente aucune caractéristique précise : ni dimension, ni matière, ni marque, ni garantie que le vendeur n'a pas fournies.",
+    "Si le vendeur fournit des faits (matière, tailles, couleurs, état…), intègre-les tous fidèlement, sans les modifier ni en ajouter d'autres.",
     "Ne promets jamais de livraison, de délai, ni de paiement à la livraison.",
     "Ne mentionne jamais de prix, de remise ni de promotion.",
     "Ton chaleureux et honnête, adressé à un acheteur en Haïti ou dans la diaspora.",
@@ -103,9 +111,11 @@ export function consigneSysteme(lang: Lang): string {
 function messageVendeur(input: AiDescriptionInput): string {
   const titre = input.title.trim().slice(0, AI_TITLE_MAX);
   const categorie = input.category?.trim().slice(0, AI_CATEGORY_MAX);
+  const faits = input.keywords?.trim().slice(0, AI_KEYWORDS_MAX);
   return [
     `Titre du produit : ${titre}`,
     categorie ? `Catégorie : ${categorie}` : null,
+    faits ? `Faits fournis par le vendeur : ${faits}` : null,
     "Rédige la description.",
   ]
     .filter(Boolean)
