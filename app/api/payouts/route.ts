@@ -63,6 +63,15 @@ export async function POST(req: Request) {
           ? `, après ${data.frais_ia_htg} HTG de frais IA à régler`
           : "") +
         `).`,
+      // V-6 : le retrait est gardé par la vérification d'identité. Trois
+      // messages distincts, parce que ce ne sont pas trois fois la même
+      // action pour le vendeur : attendre, corriger, ou déposer.
+      kyc_requis:
+        data?.kyc_statut === "pending"
+          ? "Vérification d'identité en cours — le retrait sera possible dès que votre dossier sera validé."
+          : data?.kyc_statut === "rejected"
+            ? "Dossier d'identité refusé — corrigez-le depuis votre tableau de bord."
+            : "Vérification d'identité requise avant tout retrait — déposez vos pièces depuis votre tableau de bord.",
     };
     return NextResponse.json(
       {

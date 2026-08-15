@@ -28,6 +28,10 @@
     {
       "path": "/api/search/purge",
       "schedule": "15 14 * * *"
+    },
+    {
+      "path": "/api/kyc/purge",
+      "schedule": "45 14 * * *"
     }
   ]
 }

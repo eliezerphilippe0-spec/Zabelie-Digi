@@ -7,6 +7,8 @@ import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { ProfileForm } from "@/components/profile-form";
 import { DeliveryInfoForm } from "@/components/delivery-info-form";
+import { KycForm } from "@/components/kyc-form";
+import { lireDossierKyc } from "@/lib/kyc";
 import { isMissingTable } from "@/lib/product-media";
 import { getZonesActives, libelleZone } from "@/lib/zones";
 import { getLang } from "@/lib/i18n-server";
@@ -126,6 +128,8 @@ export default async function DashboardPage() {
   let livInfo:
     | { full_name: string; phone: string; adres_liv: string }
     | undefined;
+  // V-6 : dossier KYC — `null` = 0079 non appliquée, la section se tait.
+  let dossierKyc: Awaited<ReturnType<typeof lireDossierKyc>> = null;
   let profile = {
     display_name: user.displayName,
     bio: "",
@@ -196,6 +200,8 @@ export default async function DashboardPage() {
     } else if (!isMissingTable(livErr)) {
       console.error("[delivery-info] lecture échouée", livErr.code);
     }
+
+    dossierKyc = await lireDossierKyc(admin, user.id);
 
     const { data: prof } = await admin
       .from("profiles")
@@ -446,6 +452,29 @@ export default async function DashboardPage() {
         </div>
         {/* V-5 (docs/35) : coordonnées de livraison — table SÉPARÉE du profil
             public, masquée tant que 0076 n'est pas appliquée. */}
+        {dossierKyc && (
+          <div className="max-w-lg">
+            <KycForm
+              statut={dossierKyc.statut}
+              deposes={dossierKyc.documents}
+              noteAdmin={dossierKyc.noteAdmin}
+              labels={{
+                title: t(lang, "kyc.title"),
+                why: t(lang, "kyc.why"),
+                pending: t(lang, "kyc.pending"),
+                approved: t(lang, "kyc.approved"),
+                rejected: t(lang, "kyc.rejected"),
+                cin: t(lang, "kyc.cin"),
+                paspo: t(lang, "kyc.paspo"),
+                selfie: t(lang, "kyc.selfie"),
+                add: t(lang, "kyc.add"),
+                sending: t(lang, "kyc.sending"),
+                error: t(lang, "sell.galerie.error"),
+                deposited: t(lang, "kyc.deposited"),
+              }}
+            />
+          </div>
+        )}
         {livInfo !== undefined && (
           <div className="max-w-lg">
             <DeliveryInfoForm
