@@ -36,7 +36,10 @@ import type { Lang } from "@/lib/i18n";
  *     (Zabelie n'en fait pas) — le paiement est confirmé AVANT ;
  *   - aucun prix, aucune remise, aucun « meilleur prix » : les paramètres
  *     commerciaux ne sortent jamais d'un modèle de langage ;
- *   - texte brut court (3 à 6 phrases), dans la langue du vendeur.
+ *   - texte brut, deux courts paragraphes, dans la langue du vendeur
+ *     (allongé le 2026-08-15 sur retour porteur : « trop courte » — le
+ *     développement passe par les angles honnêtes, usage/public/entretien,
+ *     jamais par des caractéristiques inventées).
  *
  * Et le principe au-dessus de tout : c'est une SUGGESTION. Le vendeur la
  * relit, la corrige, et reste l'auteur de sa fiche — rien n'est jamais
@@ -58,7 +61,7 @@ export type AiDescriptionInput = {
 export const AI_TITLE_MAX = 140;
 export const AI_CATEGORY_MAX = 80;
 /** Borne de sortie : une description n'est pas une page de vente. */
-export const AI_DESCRIPTION_MAX = 1200;
+export const AI_DESCRIPTION_MAX = 1800;
 
 /**
  * Le fournisseur actif, ou `null` si le service est éteint. C'est LA source
@@ -85,8 +88,12 @@ const LANGUE: Record<Lang, string> = {
 export function consigneSysteme(lang: Lang): string {
   return [
     "Tu rédiges des descriptions de produits pour Zabelie, un marketplace haïtien.",
-    `Écris en ${LANGUE[lang]}, en 3 à 6 phrases courtes, en texte brut (aucun markdown, aucune liste, aucun émoji).`,
-    "Décris uniquement ce que le vendeur a fourni : n'invente aucune caractéristique, dimension, matière, marque ni garantie.",
+    `Écris en ${LANGUE[lang]}, en deux courts paragraphes (6 à 9 phrases en tout), en texte brut (aucun markdown, aucune liste, aucun émoji).`,
+    // « Développer sans inventer » : les angles autorisés sont ceux qu'un
+    // titre honnête permet d'affirmer — l'usage, le public, l'entretien —
+    // jamais une caractéristique précise que le vendeur n'a pas fournie.
+    "Développe ce que le titre et la catégorie permettent d'affirmer : à quoi sert le produit, à qui il convient, dans quelles occasions on l'utilise, comment en prendre soin.",
+    "N'invente aucune caractéristique précise : ni dimension, ni matière, ni marque, ni garantie que le vendeur n'a pas fournies.",
     "Ne promets jamais de livraison, de délai, ni de paiement à la livraison.",
     "Ne mentionne jamais de prix, de remise ni de promotion.",
     "Ton chaleureux et honnête, adressé à un acheteur en Haïti ou dans la diaspora.",
@@ -148,7 +155,7 @@ async function viaOpenAI(
         { role: "system", content: consigneSysteme(input.lang) },
         { role: "user", content: messageVendeur(input) },
       ],
-      max_tokens: 400,
+      max_tokens: 800,
       temperature: 0.7,
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -178,7 +185,7 @@ async function viaGemini(
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: consigneSysteme(input.lang) }] },
         contents: [{ role: "user", parts: [{ text: messageVendeur(input) }] }],
-        generationConfig: { maxOutputTokens: 400, temperature: 0.7 },
+        generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     }
