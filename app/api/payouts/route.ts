@@ -57,7 +57,12 @@ export async function POST(req: Request) {
       portefeuille_absent: "Aucun portefeuille pour ce compte.",
       demande_en_cours: "Une demande est déjà en cours de traitement.",
       delai_non_ecoule: `Une nouvelle demande est possible après ${data?.cooldown_hours ?? 24} h.`,
-      solde_insuffisant: `Solde disponible insuffisant (${data?.disponible_htg ?? 0} HTG).`,
+      solde_insuffisant:
+        `Solde disponible insuffisant (${data?.disponible_htg ?? 0} HTG` +
+        (Number(data?.frais_ia_htg) > 0
+          ? `, après ${data.frais_ia_htg} HTG de frais IA à régler`
+          : "") +
+        `).`,
     };
     return NextResponse.json(
       {
@@ -72,5 +77,8 @@ export async function POST(req: Request) {
     ok: true,
     payoutId: data.payout_id,
     balanceHtg: data.balance_htg,
+    // Recouvrement de la dette IA effectué avec cette demande (0072) —
+    // 0 tant que 0071/0072 ne sont pas appliquées ou sans dette.
+    fraisIaReglesHtg: Number(data.frais_ia_regles_htg ?? 0),
   });
 }

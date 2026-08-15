@@ -36,14 +36,21 @@ Décisions porteur du **2026-08-15**, prises en session, dans l'ordre :
   chemin de consentement + registre de surplus. Tant que 0071 n'est pas en
   prod, `lireConfigSurplus` rend `null` et TOUT se comporte comme avant :
   blocage gratuit à 50. Dormant, comme la brique elle-même.
-- **Tranche 2 (à venir)** : la déduction effective au moment du règlement
-  vendeur — somme des lignes `settled_at is null` du vendeur, déduite du
-  versement, lignes marquées réglées avec la référence du règlement, et
-  l'écriture correspondante au grand livre (invariant 0033 : par écriture
-  propre, jamais par modification d'une ligne existante).
-- ⛔ **0071 ne s'applique qu'après la fusion de la tranche 2.** Facturer sans
-  chemin de recouvrement créerait des dettes sans mécanique de collecte.
-  L'ordre est garanti par le signal porteur, comme pour toute migration.
+- **Tranche 2 (0072, livrée)** : le recouvrement à la **demande de retrait** —
+  c'est là que l'argent sort, c'est là que la dette se collecte.
+  `zabelie_request_payout` est remplacée (même signature) : lignes non
+  réglées **verrouillées puis sommées**, solde exigé = montant + dette,
+  double écriture au grand livre (`payout` −montant ; `debit` −dette,
+  idempotence `ai_surplus:<payout>`), lignes marquées réglées **par
+  identifiant** (une dette née pendant la demande attend la sortie
+  suivante). Refus en NET : `disponible_htg = balance − dette`, avec
+  `frais_ia_htg`. ⚠️ **Un rejet de la demande restitue le montant, jamais
+  les frais** — le service a été consommé au prix consenti,
+  `zabelie_reject_payout` reste inchangée.
+- ⛔ **Ordre d'application, sur signal porteur : `0071` puis `0072`**, dans
+  la même fenêtre — 0072 référence la table de 0071. Avant ce signal, tout
+  reste dormant (gratuit bloqué au quota) ; la ligne CGU du service payant
+  précède l'application.
 
 ## §3 Ce qui reste au porteur
 
