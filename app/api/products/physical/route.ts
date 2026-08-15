@@ -7,6 +7,7 @@ import { slugify } from "@/lib/payment-utils";
 import { KIND_PHYSICAL } from "@/lib/product-kind";
 import { POLICY_VERSION } from "@/lib/policy";
 import { isMissingFunction } from "@/lib/pg-errors";
+import { specsEtenduesDisponibles } from "@/lib/products-physical";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,12 @@ export async function POST(req: Request) {
     categorySlug?: unknown;
     weightGrams?: unknown;
     fragile?: unknown;
+    lengthMm?: unknown;
+    widthMm?: unknown;
+    heightMm?: unknown;
+    brand?: unknown;
+    material?: unknown;
+    condition?: unknown;
     variants?: VariantInput[];
     fitment?: FitmentInput[];
     policyAccepted?: unknown;
@@ -182,6 +189,54 @@ export async function POST(req: Request) {
       );
     }
     weightGrams = w;
+  }
+
+  // ── Caractéristiques (V-2, docs/35) ───────────────────────────────────────
+  // Dimensions : colonnes de 0036, toujours acceptables. Bornes en mm.
+  const dims: Record<string, number> = {};
+  for (const [cle, col] of [
+    ["lengthMm", "length_mm"],
+    ["widthMm", "width_mm"],
+    ["heightMm", "height_mm"],
+  ] as const) {
+    const brut = body[cle];
+    if (brut === undefined || brut === null || brut === "") continue;
+    const v = Number(brut);
+    if (!Number.isInteger(v) || v < 1 || v > 10000) {
+      return NextResponse.json(
+        { error: "Dimensions en millimètres, entiers entre 1 et 10 000." },
+        { status: 422 }
+      );
+    }
+    dims[col] = v;
+  }
+  // Marque/matière/état : colonnes de 0074 — refus EXPLICITE si la migration
+  // n'est pas appliquée (jamais une perte silencieuse de saisie vendeur).
+  const brand =
+    typeof body.brand === "string" && body.brand.trim()
+      ? body.brand.trim().slice(0, 60)
+      : null;
+  const material =
+    typeof body.material === "string" && body.material.trim()
+      ? body.material.trim().slice(0, 60)
+      : null;
+  const condition =
+    body.condition === "nef" || body.condition === "dezyem-men"
+      ? body.condition
+      : null;
+  if (body.condition !== undefined && body.condition !== null &&
+      body.condition !== "" && condition === null) {
+    return NextResponse.json(
+      { error: "État inconnu — nef ou dezyem-men." },
+      { status: 422 }
+    );
+  }
+  const veutSpecsEtendues = brand !== null || material !== null || condition !== null;
+  if (veutSpecsEtendues && !(await specsEtenduesDisponibles(admin))) {
+    return NextResponse.json(
+      { error: "Marque/matière/état non activés (0074 à appliquer)." },
+      { status: 422 }
+    );
   }
 
   // ── Variantes : OPTIONNELLES. Sans elles → une variante par défaut. ───────
@@ -301,6 +356,13 @@ export async function POST(req: Request) {
     category_id: category.id,
     weight_grams: weightGrams,
     fragile: Boolean(body.fragile),
+    // Dimensions : colonnes 0036, toujours présentes.
+    ...dims,
+    // Marque/matière/état : uniquement si fournis — et la garde plus haut a
+    // déjà refusé la requête si 0074 n'est pas appliquée.
+    ...(brand !== null ? { brand } : {}),
+    ...(material !== null ? { material } : {}),
+    ...(condition !== null ? { condition } : {}),
   });
   if (physErr) return abort("insert physical", physErr);
 
