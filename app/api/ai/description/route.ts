@@ -5,6 +5,11 @@ import { getSuspension } from "@/lib/auth";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { getLang } from "@/lib/i18n-server";
 import {
+  SURPLUS_DEFAUTS,
+  enregistrerSurplus,
+  lireConfigSurplus,
+} from "@/lib/ai-billing";
+import {
   AI_KEYWORDS_MAX,
   AI_TITLE_MAX,
   aiProviderDisponible,
@@ -46,7 +51,12 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { title?: string; category?: string; keywords?: string };
+  let body: {
+    title?: string;
+    category?: string;
+    keywords?: string;
+    surplusOk?: boolean;
+  };
   try {
     body = await req.json();
   } catch {
@@ -67,22 +77,69 @@ export async function POST(req: Request) {
       ? body.keywords.trim().slice(0, AI_KEYWORDS_MAX)
       : undefined;
 
-  // Débit borné DEUX fois : la rafale (5/min) et la journée (50/j, décision
-  // porteur du 2026-08-15) — c'est, avec le plafond de dépense posé côté
-  // console fournisseur, ce qui borne le coût du service. Par utilisateur,
-  // pas par IP : la route est authentifiée.
-  //
-  // ⚠️ Un « au-delà payant » a été évoqué par le porteur le même jour : c'est
-  // une zone d'arrêt (argent) — rien n'est câblé, la décision est au registre
-  // d'OPS_TODO. Ici, au-delà de 50, la seule réponse est 429.
+  // Débit borné : la rafale (5/min), puis le quota gratuit du jour (50/j,
+  // décision porteur 2026-08-15) — et, depuis docs/34, un AU-DELÀ PAYANT
+  // consenti : 402 avec le prix, puis facturation AVANT génération sur
+  // `surplusOk: true`. Par utilisateur, pas par IP : la route est
+  // authentifiée.
   const admin = createAdminClient();
   const okMinute = await rateLimit(admin, `ai_desc:${user.id}`, 5, 60);
-  const okJour = await rateLimit(admin, `ai_desc_jour:${user.id}`, 50, 86_400);
-  if (!okMinute || !okJour) {
+  if (!okMinute) {
     return NextResponse.json(
       { error: "Trop de demandes — réessayez plus tard." },
       { status: 429 }
     );
+  }
+
+  // Tant que 0071 n'est pas appliquée : config null → comportement
+  // historique, blocage gratuit au quota compilé. On ne facture jamais sur
+  // un repli, et on ne débloque jamais sur un repli.
+  const config = await lireConfigSurplus(admin);
+  const quota = config?.quotaGratuitJour ?? SURPLUS_DEFAUTS.quotaGratuitJour;
+  const okJour = await rateLimit(admin, `ai_desc_jour:${user.id}`, quota, 86_400);
+  if (!okJour) {
+    if (!config) {
+      return NextResponse.json(
+        { error: "Trop de demandes — réessayez plus tard." },
+        { status: 429 }
+      );
+    }
+    // Le consentement est EXPLICITE, à chaque franchissement : sans
+    // `surplusOk`, on répond le prix, on ne facture rien.
+    if (body.surplusOk !== true) {
+      return NextResponse.json(
+        {
+          error: "Quota gratuit du jour atteint.",
+          prixHtg: config.prixSurplusHtg,
+        },
+        { status: 402 }
+      );
+    }
+    // Plafond dur, payant compris — borne d'abus et de dépense consentie.
+    const okCap = await rateLimit(
+      admin,
+      `ai_desc_cap:${user.id}`,
+      Math.max(0, config.plafondJour - config.quotaGratuitJour),
+      86_400
+    );
+    if (!okCap) {
+      return NextResponse.json(
+        { error: "Trop de demandes — réessayez plus tard." },
+        { status: 429 }
+      );
+    }
+    // Facturation AVANT génération — jamais de génération non facturée.
+    const inscrit = await enregistrerSurplus(
+      admin,
+      user.id,
+      config.prixSurplusHtg
+    );
+    if (!inscrit) {
+      return NextResponse.json(
+        { error: "Suggestion indisponible — réessayez." },
+        { status: 502 }
+      );
+    }
   }
 
   try {
