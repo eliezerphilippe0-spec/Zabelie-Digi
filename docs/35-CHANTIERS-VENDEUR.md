@@ -53,6 +53,16 @@ en attente de relecture native** (même statut que le seed des zones). Les
 Reloadly. Post-conditions : plancher 450 lignes (une collision de slugs
 avalée en masse casserait), zéro activation par le seed.
 
+⚠️ **Mesuré à l'application (2026-08-15) : 468 semées, 452 insérées.** Quinze
+absences étaient voulues (collisions de concept avec la vague 1, qui garde
+ses lignes actives) ; **la seizième ne l'était pas** — « Sacs de voyage »
+portait le slug `sak-vwayaj`, déjà celui de son parent de niveau 2
+(« Bagagerie »), et le slug est unique sur TOUTE la table. Ligne avalée sans
+erreur ni trace. Le contrôle du dépôt vérifiait l'unicité *dans* le seed,
+jamais contre les slugs déjà pris aux niveaux 1 et 2 : le croisement est
+désormais dans `tests/taxonomie-seed.test.ts`, avec exemption datée qui se
+périme dans les deux sens. Réparation : `0078`, rédigée non appliquée.
+
 ## V-4 — Rabais vendeur, ancien prix visible
 
 Champ `compare_at_htg` + règles d'honnêteté NON NÉGOCIABLES (la classe
