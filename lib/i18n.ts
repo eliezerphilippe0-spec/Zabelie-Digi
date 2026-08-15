@@ -448,6 +448,8 @@ const fr = {
   "ai.desc.surplus":
     "Vos suggestions gratuites du jour sont utilisées. Chaque suggestion supplémentaire coûte {prix} HTG, déduits de votre prochain règlement.",
   "ai.desc.surplus.go": "Continuer — {prix} HTG la suggestion",
+  "ai.desc.tarif":
+    "{quota} suggestions gratuites par jour ; au-delà, {prix} HTG par suggestion, déduits de votre prochain règlement.",
   "publish.service.hint":
     "Page service (façon Fiverr) — optionnel, mais rassure l'acheteur.",
   "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
@@ -940,6 +942,8 @@ const ht: Record<I18nKey, string> = {
   "ai.desc.surplus":
     "Ou fin itilize sijesyon gratis jodi a. Chak sijesyon anplis koute {prix} HTG, y ap dedwi l nan pwochen règleman w.",
   "ai.desc.surplus.go": "Kontinye — {prix} HTG pou chak sijesyon",
+  "ai.desc.tarif":
+    "{quota} sijesyon gratis chak jou; apre sa, {prix} HTG pou chak sijesyon, y ap dedwi l nan pwochen règleman w.",
   "publish.service.hint":
     "Paj sèvis (menm jan ak Fiverr) — opsyonèl, men sa rasire achtè a.",
   "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
@@ -1444,6 +1448,8 @@ const en = {
   "ai.desc.surplus":
     "Your free suggestions for today are used up. Each extra suggestion costs {prix} HTG, deducted from your next payout.",
   "ai.desc.surplus.go": "Continue — {prix} HTG per suggestion",
+  "ai.desc.tarif":
+    "{quota} free suggestions per day; beyond that, {prix} HTG per suggestion, deducted from your next payout.",
   "publish.service.hint":
     "Service page (Fiverr style) — optional, but reassures the buyer.",
   "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
@@ -1948,6 +1954,8 @@ const es = {
   "ai.desc.surplus":
     "Sus sugerencias gratuitas de hoy están agotadas. Cada sugerencia adicional cuesta {prix} HTG, deducidos de su próximo pago.",
   "ai.desc.surplus.go": "Continuar — {prix} HTG por sugerencia",
+  "ai.desc.tarif":
+    "{quota} sugerencias gratuitas al día; después, {prix} HTG por sugerencia, deducidos de su próximo pago.",
   "publish.service.hint":
     "Página de servicio (estilo Fiverr) — opcional, pero da confianza al comprador.",
   "publish.deliveryDays.ph": "Plazo de entrega (en días)",

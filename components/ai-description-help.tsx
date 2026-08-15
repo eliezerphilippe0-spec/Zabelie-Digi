@@ -18,6 +18,14 @@ export type AiHelpLabels = {
   surplus: string;
   /** Libellé du bouton de consentement — contient « {prix} ». */
   surplusGo: string;
+  /**
+   * Tarif affiché D'EMBLÉE sous le bouton (décision porteur 2026-08-15 :
+   * « le vendeur doit savoir que chaque utilisation supplémentaire coûte
+   * 5 gourdes »). Composé au SERVEUR depuis la config en base — quota et
+   * prix déjà substitués. Absent tant que 0071 n'est pas appliquée : on
+   * n'annonce pas un tarif qui n'existe pas.
+   */
+  tarif?: string;
 };
 
 /**
@@ -124,6 +132,7 @@ export function AiDescriptionHelp({
         </button>
         {!pret && <span className="text-xs text-mist">{labels.needTitle}</span>}
       </div>
+      {labels.tarif && <p className="text-xs text-mist">{labels.tarif}</p>}
       {surplusPrix !== null && (
         <div className="space-y-1.5 rounded-lg border border-line/60 p-3">
           <p className="text-xs text-mist">

@@ -15,6 +15,8 @@ import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
 import { POLICY_PATH } from "@/lib/policy";
 import { aiProviderDisponible } from "@/lib/ai-description";
+import { tarifSurplusAffiche } from "@/lib/ai-billing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -115,6 +117,12 @@ export default async function VendrePage() {
   // MÊME taxonomie que celle qu'affichent le menu, la colonne des rayons et
   // le catalogue (correctif 2026-08-11 — voir lib/product-categories).
   const rayonsPublication = await lireRayonsPublication(supabase, lang);
+  // Le tarif du surplus IA, affiché D'EMBLÉE sous le bouton d'aide — lu en
+  // base (quota et prix suivent un UPDATE sans redéploiement), absent tant
+  // que l'aide est éteinte ou 0071 non appliquée.
+  const aiTarif = aiProviderDisponible()
+    ? await tarifSurplusAffiche(createAdminClient(), lang)
+    : undefined;
   // Le taux RÉELLEMENT configuré (0054/0066), pour que l'estimation suive
   // un UPDATE d'exploitation sans redéploiement. Repli = constante compilée.
   const { taux } = await lireTauxCommission(supabase, (c) =>
@@ -205,6 +213,7 @@ export default async function VendrePage() {
               limit: t(lang, "ai.desc.limit"),
               surplus: t(lang, "ai.desc.surplus"),
               surplusGo: t(lang, "ai.desc.surplus.go"),
+              tarif: aiTarif,
             },
           }}
         />
