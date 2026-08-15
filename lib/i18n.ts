@@ -445,6 +445,9 @@ const fr = {
     "Détails réels à inclure : matière, tailles, couleurs, état… (facultatif)",
   "ai.desc.limit":
     "Limite du jour atteinte — l'aide revient demain. Vous pouvez toujours écrire vous-même.",
+  "ai.desc.surplus":
+    "Vos suggestions gratuites du jour sont utilisées. Chaque suggestion supplémentaire coûte {prix} HTG, déduits de votre prochain règlement.",
+  "ai.desc.surplus.go": "Continuer — {prix} HTG la suggestion",
   "publish.service.hint":
     "Page service (façon Fiverr) — optionnel, mais rassure l'acheteur.",
   "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
@@ -934,6 +937,9 @@ const ht: Record<I18nKey, string> = {
     "Detay reyèl pou mete : matyè, gwosè, koulè, eta… (si ou vle)",
   "ai.desc.limit":
     "Ou rive nan limit jounen an — èd la ap tounen demen. Ou toujou ka ekri li ou menm.",
+  "ai.desc.surplus":
+    "Ou fin itilize sijesyon gratis jodi a. Chak sijesyon anplis koute {prix} HTG, y ap dedwi l nan pwochen règleman w.",
+  "ai.desc.surplus.go": "Kontinye — {prix} HTG pou chak sijesyon",
   "publish.service.hint":
     "Paj sèvis (menm jan ak Fiverr) — opsyonèl, men sa rasire achtè a.",
   "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
@@ -1435,6 +1441,9 @@ const en = {
     "Real details to include: material, sizes, colors, condition… (optional)",
   "ai.desc.limit":
     "Daily limit reached — the helper returns tomorrow. You can still write it yourself.",
+  "ai.desc.surplus":
+    "Your free suggestions for today are used up. Each extra suggestion costs {prix} HTG, deducted from your next payout.",
+  "ai.desc.surplus.go": "Continue — {prix} HTG per suggestion",
   "publish.service.hint":
     "Service page (Fiverr style) — optional, but reassures the buyer.",
   "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
@@ -1936,6 +1945,9 @@ const es = {
     "Detalles reales a incluir: material, tallas, colores, estado… (opcional)",
   "ai.desc.limit":
     "Límite diario alcanzado — la ayuda vuelve mañana. Siempre puede escribirla usted mismo.",
+  "ai.desc.surplus":
+    "Sus sugerencias gratuitas de hoy están agotadas. Cada sugerencia adicional cuesta {prix} HTG, deducidos de su próximo pago.",
+  "ai.desc.surplus.go": "Continuar — {prix} HTG por sugerencia",
   "publish.service.hint":
     "Página de servicio (estilo Fiverr) — opcional, pero da confianza al comprador.",
   "publish.deliveryDays.ph": "Plazo de entrega (en días)",

@@ -14,6 +14,10 @@ export type AiHelpLabels = {
   kwPh: string;
   /** Affiché sur 429 : la limite du jour, pas une panne. */
   limit: string;
+  /** Consentement surplus (402) — contient « {prix} », remplacé au rendu. */
+  surplus: string;
+  /** Libellé du bouton de consentement — contient « {prix} ». */
+  surplusGo: string;
 };
 
 /**
@@ -44,6 +48,10 @@ export function AiDescriptionHelp({
   const [error, setError] = useState(false);
   // 429 ≠ panne : la limite du jour se DIT, sinon elle se lit comme un bug.
   const [limited, setLimited] = useState(false);
+  // 402 = quota gratuit épuisé, surplus payant proposé : le prix (HTG) vient
+  // de la réponse serveur — jamais codé ici. Non-null ⇒ le consentement
+  // s'affiche ; le clic sur « Continuer » renvoie la demande avec surplusOk.
+  const [surplusPrix, setSurplusPrix] = useState<number | null>(null);
   const [suggested, setSuggested] = useState(false);
   // Les faits réels du vendeur — la seule source de DÉTAILS de la
   // suggestion : la consigne serveur interdit d'inventer, donc tout ce qui
@@ -54,10 +62,11 @@ export function AiDescriptionHelp({
 
   const pret = title.trim().length >= 2;
 
-  async function demander() {
+  async function demander(surplusOk = false) {
     setBusy(true);
     setError(false);
     setLimited(false);
+    if (!surplusOk) setSurplusPrix(null);
     try {
       const res = await fetch("/api/ai/description", {
         method: "POST",
@@ -66,9 +75,16 @@ export function AiDescriptionHelp({
           title,
           category,
           keywords: keywords.trim() || undefined,
+          // Le consentement est explicite : absent par défaut, posé
+          // uniquement par le bouton qui AFFICHE le prix.
+          surplusOk: surplusOk || undefined,
         }),
       });
       const data = await res.json();
+      if (res.status === 402 && typeof data.prixHtg === "number") {
+        setSurplusPrix(data.prixHtg);
+        return;
+      }
       if (res.status === 429) {
         setLimited(true);
         return;
@@ -79,6 +95,7 @@ export function AiDescriptionHelp({
       }
       onSuggestion(data.description);
       setSuggested(true);
+      setSurplusPrix(null);
     } catch {
       setError(true);
     } finally {
@@ -99,7 +116,7 @@ export function AiDescriptionHelp({
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={demander}
+          onClick={() => demander()}
           disabled={busy || !pret}
           className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud transition hover:border-violet disabled:opacity-50"
         >
@@ -107,6 +124,23 @@ export function AiDescriptionHelp({
         </button>
         {!pret && <span className="text-xs text-mist">{labels.needTitle}</span>}
       </div>
+      {surplusPrix !== null && (
+        <div className="space-y-1.5 rounded-lg border border-line/60 p-3">
+          <p className="text-xs text-mist">
+            {labels.surplus.replace("{prix}", String(surplusPrix))}
+          </p>
+          <button
+            type="button"
+            onClick={() => demander(true)}
+            disabled={busy}
+            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-50"
+          >
+            {busy
+              ? labels.loading
+              : labels.surplusGo.replace("{prix}", String(surplusPrix))}
+          </button>
+        </div>
+      )}
       {limited && <p className="text-xs text-mist">{labels.limit}</p>}
       {error && !limited && <p className="text-xs text-danger-text">{labels.error}</p>}
       {suggested && !error && !limited && (

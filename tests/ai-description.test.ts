@@ -208,10 +208,29 @@ test("route : auth requise (401), suspension bloquée (403)", () => {
   assert.match(ROUTE, /getSuspension\(user\.id\)[\s\S]{0,300}status: 403/);
 });
 
-test("route : débit borné par utilisateur, rafale ET journée (50/j, décision porteur 2026-08-15), sinon 429", () => {
+test("route : débit borné par utilisateur — rafale, quota du jour (config, repli 50), plafond dur", () => {
   assert.match(ROUTE, /rateLimit\(admin, `ai_desc:\$\{user\.id\}`, 5, 60\)/);
-  assert.match(ROUTE, /rateLimit\(admin, `ai_desc_jour:\$\{user\.id\}`, 50, 86_400\)/);
-  assert.match(ROUTE, /if \(!okMinute \|\| !okJour\)[\s\S]{0,200}status: 429/);
+  assert.match(ROUTE, /rateLimit\(admin, `ai_desc_jour:\$\{user\.id\}`, quota, 86_400\)/);
+  assert.match(ROUTE, /if \(!okMinute\)[\s\S]{0,200}status: 429/);
+  assert.match(ROUTE, /ai_desc_cap:\$\{user\.id\}/);
+});
+
+test("route : surplus (docs/34) — repli GRATUIT, consentement 402, facturation AVANT génération", () => {
+  // Config absente (0071 non appliquée) → comportement historique : 429.
+  assert.match(ROUTE, /if \(!config\)[\s\S]{0,250}status: 429/);
+  // Sans consentement explicite : le prix (celui de la CONFIG, jamais un
+  // nombre en dur) part dans un 402, rien n'est facturé.
+  assert.match(
+    ROUTE,
+    /surplusOk !== true[\s\S]{0,400}prixHtg: config\.prixSurplusHtg[\s\S]{0,200}status: 402/
+  );
+  // Facturation avant génération : l'inscription précède l'appel fournisseur,
+  // et son échec coupe tout.
+  assert.ok(
+    ROUTE.indexOf("enregistrerSurplus(") < ROUTE.indexOf("genererDescription("),
+    "l'inscription du surplus doit précéder la génération"
+  );
+  assert.match(ROUTE, /if \(!inscrit\)[\s\S]{0,250}status: 502/);
 });
 
 test("route : la langue vient du serveur (cookie), jamais du corps de requête", () => {
