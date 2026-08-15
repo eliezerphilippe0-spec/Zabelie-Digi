@@ -10,6 +10,8 @@ import { ROUNDING_IN_FORCE } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
 import { createClient } from "@/lib/supabase/server";
 import { aiProviderDisponible } from "@/lib/ai-description";
+import { tarifSurplusAffiche } from "@/lib/ai-billing";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre un produit — Zabelie" };
@@ -40,6 +42,10 @@ export default async function VendrePhysiquePage() {
     console.error("[commission] taux de repli utilisé", c),
   );
   const lang = await getLang();
+  // Tarif du surplus IA, lu en base — voir app/vendre/page.tsx.
+  const aiTarif = aiProviderDisponible()
+    ? await tarifSurplusAffiche(createAdminClient(), lang)
+    : undefined;
   const aiLabels = {
     button: t(lang, "ai.desc.button"),
     loading: t(lang, "ai.desc.loading"),
@@ -50,6 +56,7 @@ export default async function VendrePhysiquePage() {
     limit: t(lang, "ai.desc.limit"),
     surplus: t(lang, "ai.desc.surplus"),
     surplusGo: t(lang, "ai.desc.surplus.go"),
+    tarif: aiTarif,
   };
   const netLabels = {
     youReceive: t(lang, "publish.net.youReceive"),

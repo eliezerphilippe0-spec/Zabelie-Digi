@@ -6,6 +6,7 @@ import {
   SURPLUS_DEFAUTS,
   enregistrerSurplus,
   lireConfigSurplus,
+  tarifSurplusAffiche,
 } from "../lib/ai-billing";
 
 /**
@@ -80,6 +81,36 @@ test("SURPLUS_DEFAUTS = les défauts de la migration 0071 — les deux replis ne
   assert.equal(Number(quota![1]), SURPLUS_DEFAUTS.quotaGratuitJour);
   assert.equal(Number(prix![1]), SURPLUS_DEFAUTS.prixSurplusHtg);
   assert.equal(Number(plafond![1]), SURPLUS_DEFAUTS.plafondJour);
+});
+
+// ── Le tarif affiché d'emblée (décision porteur 2026-08-15) ─────────────────
+
+test("tarifSurplusAffiche : quota et prix de la BASE substitués, dans la langue — jamais un chiffre des libellés", async () => {
+  const admin = adminAvecConfig({
+    data: { quota_gratuit_jour: 40, prix_surplus_htg: 7, plafond_jour: 150 },
+    error: null,
+  });
+  const ht = await tarifSurplusAffiche(admin, "ht");
+  assert.ok(ht && ht.includes("40 sijesyon") && ht.includes("7 HTG"), ht);
+  const fr = await tarifSurplusAffiche(admin, "fr");
+  assert.ok(fr && fr.includes("40 suggestions") && fr.includes("7 HTG"), fr);
+  // Aucun placeholder résiduel.
+  assert.ok(!/\{(quota|prix)\}/.test(ht!) && !/\{(quota|prix)\}/.test(fr!));
+});
+
+test("tarifSurplusAffiche : config absente (0071 non appliquée) → undefined, la surface se tait", async () => {
+  const admin = adminAvecConfig({ data: null, error: null });
+  assert.equal(await tarifSurplusAffiche(admin, "ht"), undefined);
+});
+
+test("les deux pages vendeur composent le tarif au serveur et le passent au bouton", () => {
+  for (const f of ["app/vendre/page.tsx", "app/vendre/physique/page.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    assert.match(src, /tarifSurplusAffiche\(createAdminClient\(\), lang\)/, f);
+    assert.match(src, /tarif: aiTarif/, f);
+  }
+  const comp = readFileSync("components/ai-description-help.tsx", "utf8");
+  assert.match(comp, /\{labels\.tarif && [^}]{0,80}\{labels\.tarif\}/);
 });
 
 // ── 0072 — le recouvrement : les gardes structurels du chemin d'argent ──────

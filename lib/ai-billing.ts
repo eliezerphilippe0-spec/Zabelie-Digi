@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { t, type Lang } from "@/lib/i18n";
 
 /**
  * Surplus IA — lecture de configuration et registre (docs/34).
@@ -46,6 +47,24 @@ export async function lireConfigSurplus(
   } catch {
     return null;
   }
+}
+
+/**
+ * Le tarif à AFFICHER D'EMBLÉE sous le bouton d'aide (décision porteur
+ * 2026-08-15 : le vendeur doit connaître le prix AVANT d'épuiser le quota,
+ * pas au moment du dépassement). Quota et prix viennent de la BASE —
+ * `undefined` tant que 0071 n'est pas appliquée : on n'annonce pas un tarif
+ * qui n'existe pas, et la surface se tait.
+ */
+export async function tarifSurplusAffiche(
+  admin: SupabaseClient,
+  lang: Lang
+): Promise<string | undefined> {
+  const cfg = await lireConfigSurplus(admin);
+  if (!cfg) return undefined;
+  return t(lang, "ai.desc.tarif")
+    .replace("{quota}", String(cfg.quotaGratuitJour))
+    .replace("{prix}", String(cfg.prixSurplusHtg));
 }
 
 /**
