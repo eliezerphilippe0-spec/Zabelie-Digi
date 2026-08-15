@@ -24,6 +24,7 @@ import {
 } from "@/lib/geo/country-backfill";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { offreFlashActive, flashEpuisee } from "@/lib/flash";
+import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -267,6 +268,20 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  // Affiliation (0081) : attribution FIGÉE maintenant, jamais au paiement
+  // (leçon Jumia, docs/37). Best-effort par contrat — un cookie cassé est
+  // ignoré, jamais un checkout bloqué.
+  const refCookie = req.headers
+    .get("cookie")
+    ?.match(new RegExp(`${REF_COOKIE}=([a-z0-9]{6,16})`))?.[1];
+  await attribuerCommande(admin, {
+    orderId: order.id,
+    productId: product.id,
+    buyerId: user.id,
+    sellerId: product.seller_id,
+    code: refCookie && CODE_RE.test(refCookie) ? refCookie : null,
+  });
 
   // Paiement (pending). idempotency_key = order.id (1 paiement/commande).
   const { error: payErr } = await admin.from("payments").insert({
