@@ -57,7 +57,7 @@ test("genererDescription sans clé : refuse au lieu d'appeler dans le vide", asy
 
 test("la consigne interdit l'invention, la livraison, le prix — et porte la langue", () => {
   const c = consigneSysteme("ht");
-  assert.match(c, /n'invente aucune/);
+  assert.match(c, /[Nn]'invente aucune/);
   assert.match(c, /livraison/);
   assert.match(c, /prix/);
   assert.match(c, /kreyòl ayisyen/);
