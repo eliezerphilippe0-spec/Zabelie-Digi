@@ -104,7 +104,7 @@ export default async function VendrePhysiquePage() {
             </p>
             <Link
               href="/connexion?suivant=/vendre/physique"
-              className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-ink"
+              className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-on-brand"
             >
               Se connecter
             </Link>

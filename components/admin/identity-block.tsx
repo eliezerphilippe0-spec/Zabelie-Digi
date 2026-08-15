@@ -32,7 +32,7 @@ export function IdentityBlock({ name }: { name: string }) {
       className="relative flex items-center gap-2.5"
       onKeyDown={(e) => e.key === "Escape" && setOuvert(false)}
     >
-      <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-sm font-extrabold text-ink">
+      <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-sm font-extrabold text-on-brand">
         {initiales || "A"}
         <span className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-ink">
           <OnlineStatus variant="dot" />

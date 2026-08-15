@@ -138,7 +138,7 @@ export function FlashManager({
             <button
               onClick={lancer}
               disabled={busy || !prix || !heures || Number(prix) >= prixHtg}
-              className="inline-flex min-h-11 items-center rounded-lg bg-brand px-3 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+              className="inline-flex min-h-11 items-center rounded-lg bg-brand px-3 text-xs font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
             >
               {labels.launch}
             </button>

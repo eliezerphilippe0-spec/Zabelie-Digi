@@ -23,6 +23,11 @@
   --color-accent-strong: #fdb868; /* ambre (highlight, fin de dégradé) */
   --color-accent-gold: #feb56c;   /* or clair */
   --color-brand: #f26a21;         /* orange vif (CTA principal) */
+  /* Texte posé SUR la rampe orange (CTA, badges brand, titres du héros).
+     NE BASCULE PAS avec le thème : blanc sur orange = 2,66:1, mesuré — le
+     texte sur orange est sombre en clair comme en sombre. `ink`, lui,
+     bascule (c'est le chrome). */
+  --color-on-brand: #0a0a0a;
 
   /* ── Texte ── */
   /* ⚠️ blanc chaud : #f4eee8, sans voile rosé */
@@ -90,4 +95,73 @@
     var(--color-accent-strong)
   );
   --progress-track: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════ MODE CLAIR ═══════════════════════════════════
+ * Bascule par `data-theme="light"` sur <html> (posé par layout.tsx depuis le
+ * cookie `zab_theme` — rendu serveur, donc AUCUN flash de mauvais thème).
+ *
+ * Tailwind v4 émet les tokens @theme en variables :root et les utilitaires
+ * référencent var(--color-*) : redéfinir les variables ici rebascule tout le
+ * site sans toucher un composant. `--color-on-brand` n'est PAS redéfini —
+ * c'est son contrat.
+ *
+ * ⚠️ Les accents s'ASSOMBRISSENT en clair, ils ne s'éclaircissent pas :
+ * l'orange #f26a21 mesure 2,9:1 sur crème — sous le seuil graphique. Chaque
+ * valeur ci-dessous est jugée par scripts/zabelie-contrast.mjs, qui valide
+ * les DEUX palettes sur les mêmes paires. */
+[data-theme="light"] {
+  /* Fond — crème chaud, même dégradé haut → bas */
+  --color-bg-1: #faf5ee;
+  --color-bg-2: #f6f0e7;
+  --color-bg-3: #f3ece2;
+
+  /* Surfaces */
+  --color-surface-maroon: #fbf6ef;
+  --color-surface-neutral: #fffdf9;
+  --color-surface-brown: #f8f2e9;
+
+  /* Accents — la rampe orange, assombrie pour tenir sur crème */
+  --color-accent: #a3540e;
+  --color-accent-strong: #8a4a10;
+  --color-accent-gold: #96520f;
+  /* Fenêtre étroite, calculée : ≥3:1 sur la surface la plus claire ET
+     ≥4,5:1 sous le texte on-brand. #c85c10 rend 3,59 et 4,71. */
+  --color-brand: #c85c10;
+
+  /* États sémantiques — assombris (texte 4.5:1 sur teinte 10 % de crème) */
+  --color-success: #3f7d24;
+  --color-success-text: #2f6317;
+  --color-warning: #7d5a10;
+  --color-warning-text: #6b4d0d;
+  --color-danger: #b3362e;
+  --color-danger-text: #9c2f28;
+  --color-info: #2f6a9c;
+  --color-info-text: #275a85;
+
+  /* Chrome et texte — le monde s'inverse, on-brand ne bouge pas */
+  --color-ink: #f6f0e7;      /* le chrome (nav, boutons inverses) devient clair */
+  --color-ink-soft: #eee7db;
+  --color-surface: #fffdf9;
+  --color-line: rgba(20, 12, 4, 0.14);
+  --color-mist: #5d5348;     /* texte secondaire sombre */
+  --color-cloud: #221a12;    /* texte principal sombre */
+  --color-gold: #96520f;
+  --color-amber: #a3540e;
+  --color-magenta: #b3362e;
+  --color-violet: #a3540e;
+  --color-teal: #3f7d24;
+}
+
+[data-theme="light"] body,
+[data-theme="light"] {
+  color-scheme: light; /* champs natifs, ascenseurs, autofill */
+}
+:root:not([data-theme="light"]) {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --progress-done: #221a12;
+  --progress-track: rgba(20, 12, 4, 0.1);
 }

@@ -110,7 +110,7 @@ export function PayoutQueue({ rows }: { rows: PayoutRequestRow[] }) {
                 <button
                   type="submit"
                   disabled={busy === r.id}
-                  className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-ink disabled:opacity-60"
+                  className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-60"
                 >
                   {busy === r.id ? "…" : "Marquer réglé"}
                 </button>

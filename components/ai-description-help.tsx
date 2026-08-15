@@ -142,7 +142,7 @@ export function AiDescriptionHelp({
             type="button"
             onClick={() => demander(true)}
             disabled={busy}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-50"
           >
             {busy
               ? labels.loading

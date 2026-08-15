@@ -34,7 +34,7 @@ export default async function NotFound() {
         <div className="mt-8 flex flex-col gap-3">
           <Link
             href="/"
-            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
           >
             {t(lang, "err.404.home")}
           </Link>

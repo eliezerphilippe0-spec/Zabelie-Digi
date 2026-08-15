@@ -49,7 +49,7 @@ export function PayoutRequest({
       <button
         onClick={() => setOpen(true)}
         disabled={disponibleHtg <= 0}
-        className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-ink disabled:opacity-50"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-50"
       >
         {labels.open}
       </button>
@@ -106,7 +106,7 @@ export function PayoutRequest({
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-ink disabled:opacity-60"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-60"
         >
           {busy ? labels.submitting : labels.submit}
         </button>

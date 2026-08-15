@@ -80,7 +80,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-ink disabled:opacity-60"
+          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-60"
         >
           {loading ? "…" : "Publier"}
         </button>

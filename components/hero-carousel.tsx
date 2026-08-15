@@ -107,7 +107,7 @@ export function HeroCarousel({
             Le badge en dessous garde Inter à dessein : il porte un PRIX, et
             les chiffres d'un serif à forte modulation se confondent à petite
             taille sur un écran d'entrée de gamme. */}
-        <p className="max-w-2xl font-heading text-2xl font-extrabold leading-tight tracking-tight text-ink sm:text-4xl">
+        <p className="max-w-2xl font-heading text-2xl font-extrabold leading-tight tracking-tight text-on-brand sm:text-4xl">
           {slide.title}
         </p>
         {slide.badge && (
@@ -125,9 +125,9 @@ export function HeroCarousel({
           {slide.secondHref && slide.secondCta && (
             <a
               href={slide.secondHref}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border-2 border-ink px-5 text-sm font-bold text-ink transition hover:bg-ink/10"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border-2 border-on-brand px-5 text-sm font-bold text-on-brand transition hover:bg-on-brand/10"
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-ink" strokeWidth="1.8">
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-on-brand" strokeWidth="1.8">
                 <path d="M4 5h16v11H9l-5 4V5z" />
               </svg>
               {slide.secondCta}

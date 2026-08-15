@@ -259,7 +259,7 @@ export function InvoiceEditor({
           <button
             onClick={send}
             disabled={busy || invoice.total_htg <= 0}
-            className="w-full rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-ink disabled:opacity-60"
+            className="w-full rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand disabled:opacity-60"
           >
             {invoice.total_htg <= 0
               ? "Ajoute au moins une ligne"

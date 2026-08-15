@@ -216,7 +216,7 @@ export function ZabelieTopupForm({
             onClick={() => submit(r.rail)}
             className={
               i === 0
-                ? "w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-50"
+                ? "w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-50"
                 : "w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-50"
             }
           >

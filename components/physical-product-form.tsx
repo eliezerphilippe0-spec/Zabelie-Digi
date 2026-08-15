@@ -544,7 +544,7 @@ export function PhysicalProductForm({
       <button
         type="submit"
         disabled={busy || !categorySlug}
-        className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-ink disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-on-brand disabled:opacity-60"
       >
         {busy ? "Publication…" : "Publier le produit"}
       </button>

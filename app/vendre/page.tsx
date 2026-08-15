@@ -56,7 +56,7 @@ function Shell({
           <p className="text-sm text-cloud">{t(lang, "sell.physical.q")}</p>
           <Link
             href="/vendre/physique"
-            className="mt-3 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
+            className="mt-3 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
           >
             {t(lang, "sell.physical.cta")}
           </Link>
@@ -98,7 +98,7 @@ export default async function VendrePage() {
       <Shell lang={lang} subtitle={t(lang, "sell.login.subtitle")}>
         <Link
           href="/connexion?next=/vendre"
-          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
         >
           {t(lang, "auth.signin.cta")}
         </Link>

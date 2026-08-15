@@ -101,7 +101,7 @@ export function PickupAdmin() {
           <button
             onClick={creer}
             disabled={busy || !nom.trim() || !adresse.trim()}
-            className="inline-flex min-h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
           >
             Créer (fermé)
           </button>
@@ -128,7 +128,7 @@ export function PickupAdmin() {
                   {p.nom}{" "}
                   <span
                     className={`ml-2 rounded-full px-2 py-0.5 text-xs font-bold ${
-                      p.actif ? "bg-brand text-ink" : "border border-line text-mist"
+                      p.actif ? "bg-brand text-on-brand" : "border border-line text-mist"
                     }`}
                   >
                     {p.actif ? "ouvert" : "fermé"}

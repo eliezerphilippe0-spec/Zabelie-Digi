@@ -84,7 +84,7 @@ export default async function MesVentesPage() {
       <Shell lang={lang}>
         <Link
           href="/connexion?next=/mes-ventes"
-          className="mt-6 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
+          className="mt-6 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           {t(lang, "auth.signin.cta")}
         </Link>

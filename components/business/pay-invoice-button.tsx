@@ -33,7 +33,7 @@ export function PayInvoiceButton({ token }: { token: string }) {
       <button
         onClick={pay}
         disabled={loading}
-        className="w-full rounded-xl bg-brand px-5 py-3 text-center text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-5 py-3 text-center text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {loading ? "Redirection vers MonCash…" : "Payer avec MonCash"}
       </button>

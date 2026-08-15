@@ -52,7 +52,7 @@ export default async function ProPage() {
       <Shell subtitle="Connecte-toi pour facturer tes clients.">
         <Link
           href="/connexion"
-          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
         >
           Se connecter
         </Link>

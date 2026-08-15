@@ -268,7 +268,7 @@ export default async function ProductPage({
                 checkout ; ceci est l'étalage. */}
             {flash ? (
               <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
-                <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">
+                <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-on-brand">
                   {t(lang, "product.flash.badge")}
                 </span>
                 <span className="line-through">{formatHTG(product.priceHTG)}</span>
@@ -510,7 +510,7 @@ export default async function ProductPage({
           <div className="mt-8 text-center">
             <a
               href="#acheter"
-              className="inline-block rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+              className="inline-block rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
             >
               {t(lang, "product.cta.bottom", { price: formatHTG(product.priceHTG) })}
             </a>

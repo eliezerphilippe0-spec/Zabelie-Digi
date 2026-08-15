@@ -466,6 +466,8 @@ const fr = {
   "sell.rabais.remove": "Retirer le rabais",
   "sell.rabais.hint":
     "L'ancien prix affiché sera votre prix actuel — jamais une saisie libre.",
+  "nav.theme.light": "Passer en mode clair",
+  "nav.theme.dark": "Passer en mode sombre",
   "product.flash.badge": "Vente flash",
   "product.flash.ends": "Se termine dans",
   "sell.flash.title": "Vente flash",
@@ -1022,6 +1024,8 @@ const ht: Record<I18nKey, string> = {
   "sell.rabais.remove": "Retire raba a",
   "sell.rabais.hint":
     "Ansyen pri ki parèt la se pri w genyen kounye a — ou pa ka envante l.",
+  "nav.theme.light": "Pase an mòd klè",
+  "nav.theme.dark": "Pase an mòd fonse",
   "product.flash.badge": "Vant flash",
   "product.flash.ends": "Ap fini nan",
   "sell.flash.title": "Vant flash",
@@ -1590,6 +1594,8 @@ const en = {
   "sell.rabais.remove": "Remove discount",
   "sell.rabais.hint":
     "The struck-through price will be your current price — never a free entry.",
+  "nav.theme.light": "Switch to light mode",
+  "nav.theme.dark": "Switch to dark mode",
   "product.flash.badge": "Flash sale",
   "product.flash.ends": "Ends in",
   "sell.flash.title": "Flash sale",
@@ -2158,6 +2164,8 @@ const es = {
   "sell.rabais.remove": "Quitar rebaja",
   "sell.rabais.hint":
     "El precio tachado será su precio actual — nunca una entrada libre.",
+  "nav.theme.light": "Cambiar a modo claro",
+  "nav.theme.dark": "Cambiar a modo oscuro",
   "product.flash.badge": "Venta flash",
   "product.flash.ends": "Termina en",
   "sell.flash.title": "Venta flash",

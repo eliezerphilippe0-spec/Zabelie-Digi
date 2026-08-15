@@ -50,7 +50,7 @@ export function HeroVisual() {
       {/* Carte secondaire : "beat / audio" avec waveform */}
       <div className="glass absolute bottom-12 right-2 w-48 rounded-2xl p-4">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-gold to-amber text-ink">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-gold to-amber text-on-brand">
             ♪
           </span>
           <div className="flex-1">

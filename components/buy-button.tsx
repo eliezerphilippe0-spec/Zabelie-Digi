@@ -283,7 +283,7 @@ export function BuyButton({
       <button
         onClick={() => handleBuy(primary.rail)}
         disabled={busy || soldOut || selectedOut}
-        className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {soldOut || selectedOut
           ? (stockLabels?.variantOut ?? "Indisponible")

@@ -131,7 +131,7 @@ export function PayoutForm({
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-ink disabled:opacity-60"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-60"
         >
           {busy ? "Enregistrement…" : "Enregistrer"}
         </button>

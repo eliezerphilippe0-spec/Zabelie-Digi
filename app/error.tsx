@@ -70,7 +70,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={reset}
-            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
           >
             {l.retry}
           </button>

@@ -77,7 +77,7 @@ export function MenuBadges({ actif }: { actif: string }) {
             {n > 0 && (
               <span
                 aria-label={`${n} en attente`}
-                className="rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold leading-none text-ink"
+                className="rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold leading-none text-on-brand"
               >
                 {n > 99 ? "99+" : n}
               </span>
