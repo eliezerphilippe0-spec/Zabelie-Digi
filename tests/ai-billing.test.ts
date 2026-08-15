@@ -82,6 +82,30 @@ test("SURPLUS_DEFAUTS = les défauts de la migration 0071 — les deux replis ne
   assert.equal(Number(plafond![1]), SURPLUS_DEFAUTS.plafondJour);
 });
 
+// ── 0072 — le recouvrement : les gardes structurels du chemin d'argent ──────
+
+test("0072 : lignes verrouillées puis réglées PAR IDENTIFIANT — jamais « toutes les non réglées »", () => {
+  const sql = readFileSync(
+    "supabase/migrations/0072_ai_surplus_recouvrement.sql",
+    "utf8"
+  );
+  // Le verrou porte les lignes sommées…
+  assert.match(sql, /settled_at is null\s+for update/);
+  // …et le marquage ne vise QUE ces lignes (la course avec une dette née
+  // pendant la demande est le défaut que cette forme ferme).
+  assert.match(sql, /set settled_at = now\(\)[\s\S]{0,120}where id = any\(v_surplus_ids\)/);
+  // Écriture de recouvrement idempotente, au grand livre.
+  assert.match(sql, /'ai_surplus:' \|\| v_payout_id/);
+  // Le refus rend le NET et la dette.
+  assert.match(sql, /'disponible_htg', greatest\(v_balance - v_surplus_due, 0\)/);
+});
+
+test("route payouts : le refus dit les frais IA quand ils existent, le succès remonte le recouvré", () => {
+  const src = readFileSync("app/api/payouts/route.ts", "utf8");
+  assert.match(src, /frais_ia_htg[\s\S]{0,120}frais IA à régler/);
+  assert.match(src, /fraisIaReglesHtg: Number\(data\.frais_ia_regles_htg \?\? 0\)/);
+});
+
 // ── Le composant : consentement 402, prix du serveur seulement ──────────────
 
 test("composant : 402 → prix affiché depuis la RÉPONSE, consentement explicite via demander(true)", () => {
