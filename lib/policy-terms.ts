@@ -118,7 +118,24 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "8. Litiges et remboursements",
+      titre: "8. Services optionnels payants",
+      blocs: [
+        {
+          p: "Zabelie propose aux vendeurs des services optionnels payants — aujourd'hui, l'aide à la rédaction de descriptions de produits au-delà d'un quota gratuit quotidien. Aucun service payant n'est déclenché sans votre consentement explicite : le prix par utilisation est affiché au moment où vous choisissez de continuer, et c'est ce prix affiché qui fait foi.",
+        },
+        {
+          ul: [
+            "un quota d'utilisations gratuites par jour, indiqué dans l'application, s'applique avant toute facturation ;",
+            "au-delà, chaque utilisation est facturée au prix affiché à l'écran de consentement, en gourdes (HTG) ;",
+            "les frais consentis sont déduits de votre prochain règlement vendeur et enregistrés comme une écriture distincte ;",
+            "un service consommé reste dû : si une demande de retrait est rejetée, le montant du retrait est restitué, mais les frais de services déjà consommés ne le sont pas ;",
+            "toute modification de prix ne s'applique qu'aux utilisations futures, jamais rétroactivement.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "9. Litiges et remboursements",
       blocs: [
         {
           p: "Si la remise n'a pas lieu ou n'est pas conforme, l'acheteur peut le signaler depuis son espace « mes achats ». Le dossier est alors examiné et le règlement du vendeur suspendu le temps de l'examen. Tout remboursement s'effectue **vers le moyen de paiement d'origine** — jamais vers un solde interne.",
@@ -129,7 +146,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "9. Propriété intellectuelle",
+      titre: "10. Propriété intellectuelle",
       blocs: [
         {
           p: "Le vendeur conserve ses droits sur les contenus qu'il publie et garantit qu'il détient les droits nécessaires à leur vente. L'achat d'un produit digital confère à l'acheteur un droit d'usage personnel, non exclusif et non transférable, sauf licence plus large indiquée sur la fiche produit. La marque et l'interface Zabelie restent la propriété de la plateforme.",
@@ -137,7 +154,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "10. Données personnelles",
+      titre: "11. Données personnelles",
       blocs: [
         {
           p: "Le traitement de vos données est décrit dans la *politique de confidentialité*, qui fait partie des présentes conditions.",
@@ -145,7 +162,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "11. Résiliation",
+      titre: "12. Résiliation",
       blocs: [
         {
           p: "Vous pouvez supprimer votre compte à tout moment depuis votre tableau de bord. Les obligations nées avant la résiliation (commandes en cours, règlements, obligations légales) survivent à la fermeture du compte.",
@@ -156,7 +173,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "12. Droit applicable",
+      titre: "13. Droit applicable",
       blocs: [
         {
           p: "[À COMPLÉTER : droit applicable et juridiction compétente]",
@@ -164,7 +181,7 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "13. Contact",
+      titre: "14. Contact",
       blocs: [{ p: "Pour toute question relative aux présentes conditions : **{email}**." }],
     },
   ],
@@ -252,7 +269,24 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "8. Litij ak ranbousman",
+      titre: "8. Sèvis opsyonèl peyan",
+      blocs: [
+        {
+          p: "Zabelie ofri vandè yo sèvis opsyonèl peyan — jodi a, èd pou ekri deskripsyon pwodui lè ou depase yon kantite gratis chak jou. Okenn sèvis peyan pa janm lanse san konsantman klè ou : pri chak itilizasyon parèt nan moman ou chwazi kontinye a, e se pri ki parèt la ki konte.",
+        },
+        {
+          ul: [
+            "gen yon kantite itilizasyon gratis chak jou, ki make nan aplikasyon an, anvan nenpòt fakti ;",
+            "apre sa, chak itilizasyon peye pri ki parèt sou ekran konsantman an, an goud (HTG) ;",
+            "frè ou konsanti yo ap dedwi nan pwochen règleman vandè w, e yo anrejistre kòm yon liy apa ;",
+            "yon sèvis ou deja itilize rete dèt : si yo rejte yon demann retrè, y ap remèt ou montan retrè a, men yo p ap remèt frè sèvis ou deja konsome yo ;",
+            "si pri a chanje, se sèlman pou itilizasyon k ap vini yo, jamè pou sa ki fèt deja.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "9. Litij ak ranbousman",
       blocs: [
         {
           p: "Si remiz la pa fèt oswa li pa konfòm, achtè a ka siyale sa nan espas « acha mwen yo ». Dosye a egzamine epi règleman vandè a sispann pandan egzamen an. Tout ranbousman fèt **sou mwayen peman orijinal la** — pa janm sou yon balans entèn.",
@@ -263,7 +297,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "9. Pwopriyete entelektyèl",
+      titre: "10. Pwopriyete entelektyèl",
       blocs: [
         {
           p: "Vandè a kenbe dwa li sou kontni li pibliye yo epi li garanti li gen dwa ki nesesè pou vann yo. Acha yon pwodwi dijital bay achtè a yon dwa itilizasyon pèsonèl, ki pa eksklizif epi ki pa transferab, sof si fich pwodwi a endike yon lisans pi laj. Mak ak entèfas Zabelie a rete pwopriyete platfòm lan.",
@@ -271,7 +305,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "10. Done pèsonèl",
+      titre: "11. Done pèsonèl",
       blocs: [
         {
           p: "Tretman done ou yo dekri nan *politik konfidansyalite* a, ki fè pati kondisyon sa yo.",
@@ -279,7 +313,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "11. Fèmti kont",
+      titre: "12. Fèmti kont",
       blocs: [
         {
           p: "Ou ka efase kont ou nenpòt lè nan tablo ou. Obligasyon ki te fèt anvan fèmti a (kòmand an kou, règleman, obligasyon legal) rete valab apre kont lan fèmen.",
@@ -290,7 +324,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "12. Lwa ki aplikab",
+      titre: "13. Lwa ki aplikab",
       blocs: [
         {
           p: "[POU KONPLETE : lwa ki aplikab ak tribinal ki konpetan]",
@@ -298,7 +332,7 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "13. Kontak",
+      titre: "14. Kontak",
       blocs: [{ p: "Pou nenpòt kesyon sou kondisyon sa yo : **{email}**." }],
     },
   ],
@@ -386,7 +420,24 @@ const en: Politique = {
       ],
     },
     {
-      titre: "8. Disputes and refunds",
+      titre: "8. Optional paid services",
+      blocs: [
+        {
+          p: "Zabelie offers sellers optional paid services — currently, help writing product descriptions beyond a free daily quota. No paid service is ever triggered without your explicit consent: the price per use is displayed at the moment you choose to continue, and that displayed price is what applies.",
+        },
+        {
+          ul: [
+            "a free daily usage quota, shown in the app, applies before any billing;",
+            "beyond it, each use is billed at the price shown on the consent screen, in gourdes (HTG);",
+            "consented fees are deducted from your next seller settlement and recorded as a separate entry;",
+            "a consumed service remains due: if a withdrawal request is rejected, the withdrawal amount is returned, but fees for services already consumed are not;",
+            "any price change applies to future uses only, never retroactively.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "9. Disputes and refunds",
       blocs: [
         {
           p: "If delivery does not occur or does not conform, the buyer can report it from their “my purchases” space. The case is then reviewed and the seller settlement is withheld during the review. Any refund is made **to the original payment method** — never to an internal balance.",
@@ -397,7 +448,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "9. Intellectual property",
+      titre: "10. Intellectual property",
       blocs: [
         {
           p: "The seller retains rights over the content they publish and warrants that they hold the rights required to sell it. Purchasing a digital product grants the buyer a personal, non-exclusive, non-transferable right of use, unless a broader licence is stated on the product page. The Zabelie brand and interface remain the property of the platform.",
@@ -405,7 +456,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "10. Personal data",
+      titre: "11. Personal data",
       blocs: [
         {
           p: "The processing of your data is described in the *privacy policy*, which forms part of these terms.",
@@ -413,7 +464,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "11. Termination",
+      titre: "12. Termination",
       blocs: [
         {
           p: "You may delete your account at any time from your dashboard. Obligations arising before termination (pending orders, settlements, legal obligations) survive the closure of the account.",
@@ -424,7 +475,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "12. Governing law",
+      titre: "13. Governing law",
       blocs: [
         {
           p: "[TO BE COMPLETED: governing law and competent jurisdiction]",
@@ -432,7 +483,7 @@ const en: Politique = {
       ],
     },
     {
-      titre: "13. Contact",
+      titre: "14. Contact",
       blocs: [{ p: "For any question about these terms: **{email}**." }],
     },
   ],
@@ -520,7 +571,24 @@ const es: Politique = {
       ],
     },
     {
-      titre: "8. Controversias y reembolsos",
+      titre: "8. Servicios opcionales de pago",
+      blocs: [
+        {
+          p: "Zabelie ofrece a los vendedores servicios opcionales de pago — actualmente, ayuda para redactar descripciones de productos más allá de una cuota gratuita diaria. Ningún servicio de pago se activa sin su consentimiento explícito: el precio por uso se muestra en el momento en que usted decide continuar, y ese precio mostrado es el que rige.",
+        },
+        {
+          ul: [
+            "una cuota diaria gratuita, indicada en la aplicación, se aplica antes de cualquier facturación;",
+            "más allá de ella, cada uso se factura al precio mostrado en la pantalla de consentimiento, en gourdes (HTG);",
+            "las tarifas consentidas se deducen de su próxima liquidación de vendedor y se registran como una línea separada;",
+            "un servicio consumido sigue siendo debido: si una solicitud de retiro es rechazada, se devuelve el monto del retiro, pero no las tarifas de servicios ya consumidos;",
+            "cualquier cambio de precio se aplica solo a usos futuros, nunca retroactivamente.",
+          ],
+        },
+      ],
+    },
+    {
+      titre: "9. Controversias y reembolsos",
       blocs: [
         {
           p: "Si la entrega no se produce o no es conforme, el comprador puede señalarlo desde su espacio «mis compras». El expediente se examina y la liquidación al vendedor se suspende durante el examen. Todo reembolso se efectúa **al medio de pago original** — nunca a un saldo interno.",
@@ -531,7 +599,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "9. Propiedad intelectual",
+      titre: "10. Propiedad intelectual",
       blocs: [
         {
           p: "El vendedor conserva sus derechos sobre los contenidos que publica y garantiza que posee los derechos necesarios para su venta. La compra de un producto digital confiere al comprador un derecho de uso personal, no exclusivo e intransferible, salvo licencia más amplia indicada en la ficha del producto. La marca y la interfaz de Zabelie siguen siendo propiedad de la plataforma.",
@@ -539,7 +607,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "10. Datos personales",
+      titre: "11. Datos personales",
       blocs: [
         {
           p: "El tratamiento de sus datos se describe en la *política de privacidad*, que forma parte de estas condiciones.",
@@ -547,7 +615,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "11. Terminación",
+      titre: "12. Terminación",
       blocs: [
         {
           p: "Puede eliminar su cuenta en cualquier momento desde su panel. Las obligaciones nacidas antes de la terminación (pedidos en curso, liquidaciones, obligaciones legales) sobreviven al cierre de la cuenta.",
@@ -558,7 +626,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "12. Derecho aplicable",
+      titre: "13. Derecho aplicable",
       blocs: [
         {
           p: "[POR COMPLETAR: derecho aplicable y jurisdicción competente]",
@@ -566,7 +634,7 @@ const es: Politique = {
       ],
     },
     {
-      titre: "13. Contacto",
+      titre: "14. Contacto",
       blocs: [{ p: "Para cualquier consulta sobre estas condiciones: **{email}**." }],
     },
   ],
