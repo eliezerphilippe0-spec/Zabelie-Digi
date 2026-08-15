@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { ProfileForm } from "@/components/profile-form";
+import { DeliveryInfoForm } from "@/components/delivery-info-form";
+import { isMissingTable } from "@/lib/product-media";
 import { getZonesActives, libelleZone } from "@/lib/zones";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -119,6 +121,11 @@ export default async function DashboardPage() {
   let products: ProductRow[] = [];
   let sales: Sale[] = [];
   let coupons: CouponItem[] = [];
+  // V-5 : coordonnées de livraison — `undefined` = 0076 non appliquée (le
+  // bloc ne se rend pas), sinon les valeurs (vides si jamais renseignées).
+  let livInfo:
+    | { full_name: string; phone: string; adres_liv: string }
+    | undefined;
   let profile = {
     display_name: user.displayName,
     bio: "",
@@ -173,6 +180,21 @@ export default async function DashboardPage() {
       ]);
       nextMaturity = nextEscrow?.matures_at ?? null;
       netTotal = (credits ?? []).reduce((s, c) => s + c.amount_htg, 0);
+    }
+
+    const { data: liv, error: livErr } = await admin
+      .from("zabelie_delivery_info")
+      .select("full_name, phone, adres_liv")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!livErr) {
+      livInfo = {
+        full_name: liv?.full_name ?? "",
+        phone: liv?.phone ?? "",
+        adres_liv: liv?.adres_liv ?? "",
+      };
+    } else if (!isMissingTable(livErr)) {
+      console.error("[delivery-info] lecture échouée", livErr.code);
     }
 
     const { data: prof } = await admin
@@ -422,6 +444,26 @@ export default async function DashboardPage() {
         <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
           <ProfileForm initial={profile} zones={zonesPourForm} zoneLabels={zoneLabels} />
         </div>
+        {/* V-5 (docs/35) : coordonnées de livraison — table SÉPARÉE du profil
+            public, masquée tant que 0076 n'est pas appliquée. */}
+        {livInfo !== undefined && (
+          <div className="max-w-lg">
+            <DeliveryInfoForm
+              initial={livInfo}
+              labels={{
+                title: t(lang, "profile.liv.title"),
+                fullName: t(lang, "profile.liv.fullname"),
+                phone: t(lang, "profile.liv.phone"),
+                adres: t(lang, "profile.liv.adres"),
+                hint: t(lang, "profile.liv.hint"),
+                save: t(lang, "profile.liv.save"),
+                saving: t(lang, "profile.liv.saving"),
+                saved: t(lang, "profile.liv.saved"),
+                error: t(lang, "sell.galerie.error"),
+              }}
+            />
+          </div>
+        )}
       </section>
 
       {/* Données & compte (RGPD) */}
