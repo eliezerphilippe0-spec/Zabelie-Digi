@@ -10,6 +10,7 @@ import { ROUNDING_IN_FORCE } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
 import { createClient } from "@/lib/supabase/server";
 import { aiProviderDisponible } from "@/lib/ai-description";
+import { specsEtenduesDisponibles } from "@/lib/products-physical";
 import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -42,6 +43,18 @@ export default async function VendrePhysiquePage() {
     console.error("[commission] taux de repli utilisé", c),
   );
   const lang = await getLang();
+  // Marque/matière/état : montrés seulement si 0074 est appliquée (sonde).
+  const specsEtendues = await specsEtenduesDisponibles(await createClient());
+  const specsLabels = {
+    title: t(lang, "sell.specs.title"),
+    weight: t(lang, "sell.specs.weight"),
+    dims: t(lang, "sell.specs.dims"),
+    brand: t(lang, "sell.specs.brand"),
+    material: t(lang, "sell.specs.material"),
+    condition: t(lang, "sell.specs.condition"),
+    conditionNef: t(lang, "specs.condition.nef"),
+    conditionDezyem: t(lang, "specs.condition.dezyem"),
+  };
   // Tarif du surplus IA, lu en base — voir app/vendre/page.tsx.
   const aiTarif = aiProviderDisponible()
     ? await tarifSurplusAffiche(createAdminClient(), lang)
@@ -106,6 +119,8 @@ export default async function VendrePhysiquePage() {
               policyRead={t(lang, "policy.accept.read")}
               aiActif={aiProviderDisponible() !== null}
               aiLabels={aiLabels}
+              specsEtendues={specsEtendues}
+              specsLabels={specsLabels}
             />
           </div>
         )}

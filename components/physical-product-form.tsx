@@ -47,6 +47,8 @@ export function PhysicalProductForm({
   policyRead,
   aiActif = false,
   aiLabels,
+  specsEtendues = false,
+  specsLabels,
 }: {
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
@@ -66,6 +68,23 @@ export function PhysicalProductForm({
   aiActif?: boolean;
   /** Libellés du bouton d'aide, traduits côté serveur. */
   aiLabels: AiHelpLabels;
+  /**
+   * Marque/matière/état disponibles ? Décidé au SERVEUR (sonde 0074) — les
+   * trois champs n'apparaissent que si la base peut les garder : jamais une
+   * saisie vendeur perdue en silence.
+   */
+  specsEtendues?: boolean;
+  /** Libellés des caractéristiques, traduits côté serveur. */
+  specsLabels: {
+    title: string;
+    weight: string;
+    dims: string;
+    brand: string;
+    material: string;
+    condition: string;
+    conditionNef: string;
+    conditionDezyem: string;
+  };
 }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -79,6 +98,15 @@ export function PhysicalProductForm({
   const [quantity, setQuantity] = useState("");
   const [categorySlug, setCategorySlug] = useState("");
   const [description, setDescription] = useState("");
+
+  // Caractéristiques (V-2, docs/35) — cm à l'écran, mm au serveur (entiers).
+  const [poidsG, setPoidsG] = useState("");
+  const [longCm, setLongCm] = useState("");
+  const [largCm, setLargCm] = useState("");
+  const [hautCm, setHautCm] = useState("");
+  const [marque, setMarque] = useState("");
+  const [matiere, setMatiere] = useState("");
+  const [etat, setEtat] = useState("");
 
   const [showVariants, setShowVariants] = useState(false);
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -150,6 +178,13 @@ export function PhysicalProductForm({
           quantity: Number(quantity),
           categorySlug,
           policyAccepted: policyOk,
+          weightGrams: poidsG.trim() ? Number(poidsG) : undefined,
+          lengthMm: longCm.trim() ? Number(longCm) * 10 : undefined,
+          widthMm: largCm.trim() ? Number(largCm) * 10 : undefined,
+          heightMm: hautCm.trim() ? Number(hautCm) * 10 : undefined,
+          brand: marque.trim() || undefined,
+          material: matiere.trim() || undefined,
+          condition: etat || undefined,
           variants: showVariants
             ? variants
                 .filter((v) => v.label.trim())
@@ -339,6 +374,82 @@ export function PhysicalProductForm({
             labels={aiLabels}
             onSuggestion={setDescription}
           />
+        </div>
+      </details>
+
+      {/* ── CARACTÉRISTIQUES (V-2, docs/35) — libellés traduits en props ── */}
+      <details className="rounded-xl border border-line bg-surface/40 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-cloud">
+          {specsLabels.title}
+        </summary>
+        <div className="mt-3 space-y-3">
+          <label className="block text-xs text-mist">
+            {specsLabels.weight}
+            <input
+              type="number"
+              min={1}
+              max={200000}
+              value={poidsG}
+              onChange={(e) => setPoidsG(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs text-mist">
+            {specsLabels.dims}
+            <div className="mt-1 grid grid-cols-3 gap-2">
+              {(
+                [
+                  [longCm, setLongCm],
+                  [largCm, setLargCm],
+                  [hautCm, setHautCm],
+                ] as const
+              ).map(([v, set], i) => (
+                <input
+                  key={i}
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={v}
+                  onChange={(e) => set(e.target.value)}
+                  className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                />
+              ))}
+            </div>
+          </label>
+          {specsEtendues && (
+            <>
+              <label className="block text-xs text-mist">
+                {specsLabels.brand}
+                <input
+                  maxLength={60}
+                  value={marque}
+                  onChange={(e) => setMarque(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block text-xs text-mist">
+                {specsLabels.material}
+                <input
+                  maxLength={60}
+                  value={matiere}
+                  onChange={(e) => setMatiere(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block text-xs text-mist">
+                {specsLabels.condition}
+                <select
+                  value={etat}
+                  onChange={(e) => setEtat(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                >
+                  <option value=""></option>
+                  <option value="nef">{specsLabels.conditionNef}</option>
+                  <option value="dezyem-men">{specsLabels.conditionDezyem}</option>
+                </select>
+              </label>
+            </>
+          )}
         </div>
       </details>
 
