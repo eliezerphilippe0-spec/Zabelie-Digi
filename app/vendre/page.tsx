@@ -202,6 +202,7 @@ export default async function VendrePage() {
               hint: t(lang, "ai.desc.hint"),
               needTitle: t(lang, "ai.desc.needTitle"),
               kwPh: t(lang, "ai.desc.kw.ph"),
+              limit: t(lang, "ai.desc.limit"),
             },
           }}
         />

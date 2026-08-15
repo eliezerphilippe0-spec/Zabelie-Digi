@@ -47,6 +47,7 @@ export default async function VendrePhysiquePage() {
     hint: t(lang, "ai.desc.hint"),
     needTitle: t(lang, "ai.desc.needTitle"),
     kwPh: t(lang, "ai.desc.kw.ph"),
+    limit: t(lang, "ai.desc.limit"),
   };
   const netLabels = {
     youReceive: t(lang, "publish.net.youReceive"),
