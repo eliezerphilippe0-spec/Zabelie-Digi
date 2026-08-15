@@ -96,7 +96,7 @@ test("route media : cette route n'accepte QUE des images — la vidéo attend la
 
 test("galerie fiche : zéro média → null (l'inverse de la galerie factice BL-119)", () => {
   const src = readFileSync("components/galerie-produit.tsx", "utf8");
-  assert.match(src, /if \(toutes\.length === 0\) return null/);
+  assert.match(src, /if \(items\.length === 0\) return null/);
   /* L'attribut JSX (`autoPlay`, casse exacte), PAS le mot : le commentaire du
    * composant dit « pas d'autoplay » et une recherche insensible à la casse
    * s'y déclenchait — le piège de sous-chaîne du dépôt, une fois de plus. */
@@ -112,6 +112,35 @@ test("fiche produit et /vendre montent la galerie (frontière, pas sous-chaîne)
     readFileSync("app/vendre/page.tsx", "utf8"),
     /<GalerieManager[\s>]/
   );
+});
+
+// ── V-1B — la vidéo (arbitrages porteur : 60 s / 50 Mo) ─────────────────────
+
+const VIDEO_ROUTE = readFileSync("app/api/products/media/video/route.ts", "utf8");
+
+test("route vidéo : chemin serveur revalidé, taille vérifiée sur l'OBJET RÉEL, hors-contrat supprimé", () => {
+  assert.match(VIDEO_ROUTE, /cheminVideoValide\(product\.id, path\)/);
+  assert.match(
+    VIDEO_ROUTE,
+    /taille <= 0 \|\| taille > MAX_VIDEO_BYTES \|\| !type\.startsWith\("video\/"\)/
+  );
+  // Le fichier hors contrat perd son objet AVANT le 422 — jamais de ligne.
+  assert.match(VIDEO_ROUTE, /\.remove\(\[path\]\);[\s\S]{0,300}status: 422/);
+  // Une seule vidéo, redit app-side (ZB073 reste le juge en base).
+  assert.match(VIDEO_ROUTE, /\(count \?\? 0\) >= 1[\s\S]{0,250}status: 422/);
+});
+
+test("manager : durée ET poids vérifiés AVANT tout envoi ; téléversement par lien signé", () => {
+  const src = readFileSync("components/galerie-manager.tsx", "utf8");
+  assert.match(src, /file\.size > MAX_VIDEO_BYTES/);
+  assert.match(src, /duree > MAX_VIDEO_SECONDS/);
+  assert.match(src, /uploadToSignedUrl\(lien\.path, lien\.token, file/);
+});
+
+test("galerie : la vidéo se lit sur tap — preload none, jamais d'autoPlay", () => {
+  const src = readFileSync("components/galerie-produit.tsx", "utf8");
+  assert.match(src, /preload="none"/);
+  assert.ok(!/autoPlay/.test(src), "pas d'autoPlay sur données comptées");
 });
 
 test("le plafond partagé route/UI vient d'une seule constante", () => {

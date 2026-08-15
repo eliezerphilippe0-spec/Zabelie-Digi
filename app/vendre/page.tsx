@@ -176,6 +176,9 @@ export default async function VendrePage() {
       String(MAX_IMAGES_PER_PRODUCT)
     ),
     error: t(lang, "sell.galerie.error"),
+    videoAdd: t(lang, "sell.galerie.video.add"),
+    videoTooLong: t(lang, "sell.galerie.video.long"),
+    videoTooBig: t(lang, "sell.galerie.video.big"),
   };
   // BL-130 (FRONT-14) : `status` est un mot-clé technique brut ("published")
   // — jamais affiché tel quel, toujours mappé sur un libellé FR/KR.
@@ -293,6 +296,12 @@ export default async function VendrePage() {
                     initial={(galeries[i] ?? [])
                       .filter((m) => m.kind === "image")
                       .map((m) => ({ id: m.id, url: m.url }))}
+                    initialVideo={(() => {
+                      const v = (galeries[i] ?? []).find(
+                        (m) => m.kind === "video"
+                      );
+                      return v ? { id: v.id, url: v.url } : null;
+                    })()}
                     max={MAX_IMAGES_PER_PRODUCT}
                     labels={galerieLabels}
                   />

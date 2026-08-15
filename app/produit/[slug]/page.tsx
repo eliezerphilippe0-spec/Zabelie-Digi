@@ -167,6 +167,7 @@ export default async function ProductPage({
             <GalerieProduit
               couverture={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)}
               medias={medias.filter((m) => m.kind === "image").map((m) => m.url)}
+              video={medias.find((m) => m.kind === "video")?.url ?? null}
               alt={product.title}
             />
           ) : (

@@ -20,13 +20,15 @@ position ordonnée, plafond par trigger ZB073, RLS lecture publiée-ou-vendeur,
 vendeur. Dormant sans 0073 : la fiche montre la couverture seule, comme
 aujourd'hui.
 
-**Tranche B : la vidéo.** ⚠️ Pas par la même filière : une route serverless
-plafonne le corps à ~4,5 Mo — une vidéo passe par un **lien de téléversement
-signé** (client → stockage directement), puis confirmation serveur. Arbitrages
-porteur avant de construire : durée max (proposition 60 s), poids max
-(proposition 50 Mo), et le coût de stockage/bande passante que ça engage sur
-le terrain 3G (une vidéo de 50 Mo est LOURDE à charger pour l'acheteur —
-proposition : affichage sur tap, jamais en autoplay).
+**Tranche B : la vidéo — ARBITRÉE le 2026-08-15 (« 60s et 50 Mo ok »), livrée.**
+Lien de téléversement **signé** (client → stockage direct, une route
+serverless ne porte pas 50 Mo), puis **confirmation serveur** qui vérifie
+l'objet réellement téléversé (existence, ≤ 50 Mo, type vidéo) avant
+d'inscrire la ligne — un fichier hors contrat est supprimé, jamais inscrit.
+La durée (60 s) se vérifie côté client avant l'envoi (métadonnées, zéro
+octet transféré en cas de refus) ; la borne DURE reste le poids, côté
+serveur. Une vidéo par produit (ZB073). Affichage : vignette ▶ dans la
+galerie, lecture sur tap, `preload="none"`, jamais d'autoplay.
 
 ## V-2 — Fiche produit riche (dimensions, poids, attributs)
 
