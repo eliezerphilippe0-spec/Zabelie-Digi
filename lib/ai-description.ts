@@ -13,7 +13,13 @@ import type { Lang } from "@/lib/i18n";
  *   - `OPENAI_API_KEY`  → fournisseur OpenAI  (modèle : `OPENAI_MODEL`,
  *     défaut `gpt-4o-mini`) ;
  *   - `GEMINI_API_KEY`  → fournisseur Google  (modèle : `GEMINI_MODEL`,
- *     défaut `gemini-2.5-flash`).
+ *     défaut `gemini-3.7-flash`).
+ *
+ * ⚠️ Google RETIRE ses modèles vite — mesuré en production le 2026-08-15 :
+ * le défaut initial `gemini-2.5-flash` rendait 404 sur une clé neuve (arrêt
+ * annoncé au 2026-10-16, déjà indisponible aux nouveaux projets). Quand ce
+ * 404 revient, la sortie sans code est `GEMINI_MODEL` ; le vrai correctif
+ * est de remonter ce défaut vers le modèle flash courant.
  *
  * Si les deux sont posées, OpenAI gagne — un ordre écrit vaut mieux qu'un
  * hasard, et le porteur choisit en ne posant qu'une clé.
@@ -158,7 +164,7 @@ async function viaGemini(
   input: AiDescriptionInput,
   fetcher: typeof fetch
 ): Promise<string> {
-  const modele = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+  const modele = process.env.GEMINI_MODEL?.trim() || "gemini-3.7-flash";
   const res = await fetcher(
     // Clé en EN-TÊTE, jamais en query string — une URL se retrouve dans les
     // journaux d'accès, un en-tête non.
