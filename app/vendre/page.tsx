@@ -19,6 +19,8 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listerMedias, MAX_IMAGES_PER_PRODUCT } from "@/lib/product-media";
 import { GalerieManager } from "@/components/galerie-manager";
+import { lireCompares } from "@/lib/product-discount";
+import { RabaisManager } from "@/components/rabais-manager";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -133,7 +135,7 @@ export default async function VendrePage() {
 
   const { data: mineRaw } = await supabase
     .from("products")
-    .select("id, slug, title, status, kind, product_assets(id)")
+    .select("id, slug, title, status, kind, price_htg, product_assets(id)")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -143,6 +145,7 @@ export default async function VendrePage() {
     title: string;
     status: string;
     kind: ProductKind;
+    price_htg: number;
     product_assets: { id: string }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
@@ -153,6 +156,16 @@ export default async function VendrePage() {
   const galeries = await Promise.all(
     mine.map((p) => listerMedias(supabase, p.id))
   );
+  // Rabais V-4 : map vide tant que 0075 n'est pas appliquée.
+  const compares = await lireCompares(supabase, user.id);
+  const rabaisLabels = {
+    title: t(lang, "sell.rabais.title"),
+    newPh: t(lang, "sell.rabais.newPh"),
+    apply: t(lang, "sell.rabais.apply"),
+    remove: t(lang, "sell.rabais.remove"),
+    hint: t(lang, "sell.rabais.hint"),
+    error: t(lang, "sell.galerie.error"),
+  };
   const galerieLabels = {
     title: t(lang, "sell.galerie.title"),
     add: t(lang, "sell.galerie.add"),
@@ -282,6 +295,12 @@ export default async function VendrePage() {
                       .map((m) => ({ id: m.id, url: m.url }))}
                     max={MAX_IMAGES_PER_PRODUCT}
                     labels={galerieLabels}
+                  />
+                  <RabaisManager
+                    productId={p.id}
+                    prixHtg={p.price_htg}
+                    compareHtg={compares.get(p.id) ?? null}
+                    labels={rabaisLabels}
                   />
                 </div>
                 {/* L'upload de livrable n'a de sens que pour un fichier. Le
