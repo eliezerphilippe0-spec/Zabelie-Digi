@@ -18,6 +18,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const MEDIA_BUCKET = "product-covers";
 export const MAX_IMAGES_PER_PRODUCT = 6;
 
+/** Arbitrages porteur du 2026-08-15 (« 60s et 50 Mo ok ») — V-1B, docs/35. */
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MAX_VIDEO_SECONDS = 60;
+
+/**
+ * Le chemin vidéo ISSU DU SERVEUR, revalidé à la confirmation : le client
+ * rapporte le chemin qu'on lui a signé, il ne choisit rien — et un chemin
+ * hors du dossier galerie du produit est refusé avant toute lecture.
+ */
+export function cheminVideoValide(productId: string, path: string): boolean {
+  const re = new RegExp(
+    `^${productId}/galerie/vid-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(mp4|webm)$`
+  );
+  return re.test(path);
+}
+
 export type ProductMedia = {
   id: string;
   kind: "image" | "video";
