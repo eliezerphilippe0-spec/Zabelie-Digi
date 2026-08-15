@@ -161,7 +161,21 @@ test("le garde de publication est fail-closed", () => {
   const zone = PORTE.slice(PORTE.indexOf('if (status === "published")'));
   assert.match(
     zone,
-    /eAssets[\s\S]{0,200}status: 503/,
+    /* Ancré sur la CONDITION plutôt que sur l'identifiant.
+     *
+     * La forme précédente — `/eAssets[\s\S]{0,200}status: 503/` — RÉSISTE à
+     * la mutation `if (eAssets)` → `if (false)`, et c'est ce qui la rendait
+     * trompeuse : elle y résiste par la DISTANCE, pas par la liaison.
+     * `eAssets` apparaît aussi dans la déstructuration en amont, simplement
+     * au-delà de la fenêtre de 200 caractères. Deux lignes de commentaire
+     * insérées entre le `if` et son `return`, ou trois retirées au-dessus, et
+     * le garde bascule sans que personne ne touche à ce qu'il surveille.
+     *
+     * Un contrôle qui tient par la mise en page tient par accident. Trouvée
+     * le 2026-08-15 en appliquant au dépôt le passage « la régression de
+     * proximité » de CLAUDE.md — 72 proximités, 9 à extrémité gauche nue,
+     * celle-ci la seule sur un chemin fail-closed. */
+    /if \(eAssets\)[\s\S]{0,200}status: 503/,
     "Une erreur de lecture de `product_assets` doit REFUSER la publication, " +
       "pas la laisser passer."
   );
