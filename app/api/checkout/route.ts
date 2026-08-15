@@ -23,6 +23,7 @@ import {
   countryFromRequest,
 } from "@/lib/geo/country-backfill";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { offreFlashActive, flashEpuisee } from "@/lib/flash";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -154,7 +155,37 @@ export async function POST(req: Request) {
   let couponCode: string | null = null;
   let couponId: string | null = null;
   let discountHtg = 0;
-  if (typeof couponInput === "string" && couponInput.trim()) {
+
+  /* Vente flash (0080) — la fenêtre est relue ICI, au moment de créer la
+   * commande, jamais crue depuis l'affichage : une offre expirée entre la
+   * fiche et le clic facture le prix normal, explicitement. Le prix flash
+   * devient `amount_htg`, donc commission et garde-fous s'y appliquent sans
+   * qu'aucune fonction d'argent ne change. */
+  const flash = await offreFlashActive(admin, product.id);
+  if (flash) {
+    if (typeof couponInput === "string" && couponInput.trim()) {
+      // Deux remises empilées feraient un prix que ni le vendeur ni la
+      // config n'ont jamais approuvé. Refus explicite, jamais silencieux.
+      return NextResponse.json(
+        {
+          error: "Code promo non cumulable avec une vente flash.",
+          code: "flash_non_cumulable",
+        },
+        { status: 422 }
+      );
+    }
+    if (await flashEpuisee(admin, product.id, flash)) {
+      return NextResponse.json(
+        { error: "Offre flash épuisée — le prix normal s'applique de nouveau.",
+          code: "flash_epuisee" },
+        { status: 409 }
+      );
+    }
+    finalPriceHtg = flash.prixFlashHtg;
+    discountHtg = product.price_htg - flash.prixFlashHtg;
+  }
+
+  if (!flash && typeof couponInput === "string" && couponInput.trim()) {
     const code = normalizeCouponCode(couponInput);
     // `code: "coupon_invalid"` permet au client d'afficher le message dans la
     // langue de l'acheteur (FR/KR) — le texte serveur n'est qu'un repli.

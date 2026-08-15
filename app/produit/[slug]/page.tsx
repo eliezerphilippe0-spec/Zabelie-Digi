@@ -10,6 +10,8 @@ import { listerMedias } from "@/lib/product-media";
 import { lireComparePrix, pourcentageRabais } from "@/lib/product-discount";
 import { GalerieProduit } from "@/components/galerie-produit";
 import { getProductReviews } from "@/lib/reviews";
+import { offreFlashActive } from "@/lib/flash";
+import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
 import { AddToCart } from "@/components/add-to-cart";
 import { getPhysicalView } from "@/lib/products-physical";
@@ -124,7 +126,7 @@ export default async function ProductPage({
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
   if (!product) notFound();
 
-  const [reviews, physical, medias, compareHtg] = await Promise.all([
+  const [reviews, physical, medias, compareHtg, flash] = await Promise.all([
     product.creatorId ? getProductReviews(product.id) : Promise.resolve([]),
     getPhysicalView(product.id),
     // Galerie V-1A — [] en démo, [] tant que 0073 n'est pas appliquée.
@@ -134,6 +136,10 @@ export default async function ProductPage({
     // Rabais V-4 — null en démo, null tant que 0075 n'est pas appliquée.
     isSupabaseConfigured()
       ? createClient().then((c) => lireComparePrix(c, product.id))
+      : Promise.resolve(null),
+    // Vente flash (0080) — null en démo, null tant que 0080 n'est pas appliquée.
+    isSupabaseConfigured()
+      ? createClient().then((c) => offreFlashActive(c, product.id))
       : Promise.resolve(null),
   ]);
 
@@ -257,16 +263,30 @@ export default async function ProductPage({
           <div id="acheter" className="mt-8 scroll-mt-24 rounded-2xl border border-line bg-surface/60 p-6">
             {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
                 pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
-            {compareHtg && compareHtg > product.priceHTG && (
-              <p className="text-sm text-mist">
-                <span className="line-through">{formatHTG(compareHtg)}</span>
-                <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
-                  −{pourcentageRabais(compareHtg, product.priceHTG)}%
+            {/* Vente flash (0080) : prime sur le rabais — deux barrés
+                empilés seraient deux vérités. Le prix FAIT FOI au serveur du
+                checkout ; ceci est l'étalage. */}
+            {flash ? (
+              <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
+                <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-ink">
+                  {t(lang, "product.flash.badge")}
                 </span>
+                <span className="line-through">{formatHTG(product.priceHTG)}</span>
+                <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
               </p>
+            ) : (
+              compareHtg &&
+              compareHtg > product.priceHTG && (
+                <p className="text-sm text-mist">
+                  <span className="line-through">{formatHTG(compareHtg)}</span>
+                  <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                    −{pourcentageRabais(compareHtg, product.priceHTG)}%
+                  </span>
+                </p>
+              )
             )}
             <p className="numeric text-3xl font-extrabold text-gradient">
-              {formatHTG(product.priceHTG)}
+              {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
               {usdHint(product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">
                   ≈ {usdHint(product.priceHTG)}

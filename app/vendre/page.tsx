@@ -21,6 +21,8 @@ import { listerMedias, MAX_IMAGES_PER_PRODUCT } from "@/lib/product-media";
 import { GalerieManager } from "@/components/galerie-manager";
 import { lireCompares } from "@/lib/product-discount";
 import { RabaisManager } from "@/components/rabais-manager";
+import { FlashManager } from "@/components/flash-manager";
+import { lireOffresVivantes } from "@/lib/flash-vendeur";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendre — Zabelie" };
@@ -158,6 +160,18 @@ export default async function VendrePage() {
   );
   // Rabais V-4 : map vide tant que 0075 n'est pas appliquée.
   const compares = await lireCompares(supabase, user.id);
+  const offresFlash = await lireOffresVivantes(supabase, user.id);
+  const flashLabels = {
+    title: t(lang, "sell.flash.title"),
+    pricePh: t(lang, "sell.flash.pricePh"),
+    hoursPh: t(lang, "sell.flash.hoursPh"),
+    unitsPh: t(lang, "sell.flash.unitsPh"),
+    launch: t(lang, "sell.flash.launch"),
+    stop: t(lang, "sell.flash.stop"),
+    active: t(lang, "sell.flash.active"),
+    hint: t(lang, "sell.flash.hint"),
+    error: t(lang, "sell.flash.error"),
+  };
   const rabaisLabels = {
     title: t(lang, "sell.rabais.title"),
     newPh: t(lang, "sell.rabais.newPh"),
@@ -310,6 +324,12 @@ export default async function VendrePage() {
                     prixHtg={p.price_htg}
                     compareHtg={compares.get(p.id) ?? null}
                     labels={rabaisLabels}
+                  />
+                  <FlashManager
+                    productId={p.id}
+                    prixHtg={p.price_htg}
+                    offre={offresFlash.get(p.id) ?? null}
+                    labels={flashLabels}
                   />
                 </div>
                 {/* L'upload de livrable n'a de sens que pour un fichier. Le
