@@ -39,18 +39,19 @@ tableau « Caractéristiques ». S'articule avec le champ « détails réels » 
 l'aide IA (les attributs remplis nourrissent la génération). Pas de zone
 d'arrêt — chantier direct après V-1.
 
-## V-3 — Sous-catégories complètes
+## V-3 — Sous-catégories complètes — ARBITRÉ le 2026-08-15, livré
 
-⚠️ **ZONE D'ARRÊT — contredit une décision existante.** `docs/16` a tranché
-« 16 départements, **activation par vagues** » : on n'ouvre un rayon que
-quand il peut recevoir des produits, pour qu'un catalogue vide ne s'affiche
-pas comme un magasin mort. « Ajouter toutes les sous-catégories » rouvre cet
-arbitrage. Options : (a) tout seeder mais n'ACTIVER que par vagues (le seed
-dort en base, l'activation reste un UPDATE) — recommandé, compatible avec
-docs/16 ; (b) tout activer d'un coup — c'est un choix de positionnement à
-trancher explicitement contre docs/16. Le seed lui-même est un travail de
-contenu (centaines de lignes, 2 langues minimum par rayon) — à faire par
-vagues de toute façon.
+Arbitrage porteur : « **ok pour tout seeder et activer par vagues** » —
+l'option (a), compatible avec docs/16. Livré par `0077` : les **468
+sous-catégories de niveau 3** du document (le niveau 2, 74 rayons, était
+déjà complet en base), toutes `active = false` — l'ouverture d'un rayon est
+désormais un simple `UPDATE ... set active = true`, sans migration.
+FR = docs/16 (qui fait foi) ; **KR et EN produits par l'agent, best-effort,
+en attente de relecture native** (même statut que le seed des zones). Les
+~45 sous-catégories de la vague 1 gardent leur ligne et leur état
+(`on conflict do nothing`) ; 16.3 (Digicel/Natcom) exclu — catalogue
+Reloadly. Post-conditions : plancher 450 lignes (une collision de slugs
+avalée en masse casserait), zéro activation par le seed.
 
 ## V-4 — Rabais vendeur, ancien prix visible
 
