@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export type UploadAssetLabels = {
   sending: string;
@@ -12,8 +13,16 @@ export type UploadAssetLabels = {
   errorNetwork: string;
 };
 
+const BUCKET = "product-files";
+
 /**
- * Envoie le fichier livrable d'un produit vers /api/products/asset.
+ * Envoie le fichier livrable d'un produit — en DEUX TEMPS.
+ *
+ * Le fichier ne passe PAS par `/api/products/asset` : la route délivre un lien
+ * signé, le navigateur téléverse directement vers le stockage, puis la route
+ * confirme et enregistre. Une fonction serverless ne porte pas 50 Mo, et au
+ *-delà de sa limite la requête est refusée avant que le code s'exécute —
+ * l'échec n'aurait donc ni cause affichée ni trace au journal.
  */
 export function UploadAsset({
   productId,
@@ -35,16 +44,41 @@ export function UploadAsset({
     setLoading(true);
     setMsg(null);
     try {
-      const fd = new FormData();
-      fd.append("productId", productId);
-      fd.append("file", file);
-      const res = await fetch("/api/products/asset", {
+      const demande = await fetch("/api/products/asset", {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, step: "demande", fileName: file.name }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setMsg(data.error ?? labels.error);
+      const lien = await demande.json();
+      if (!demande.ok || !lien.path || !lien.token) {
+        setMsg(typeof lien.error === "string" ? lien.error : labels.error);
+        return;
+      }
+
+      // Direct au stockage — une route serverless ne porte pas 50 Mo.
+      const { error: upErr } = await createClient()
+        .storage.from(BUCKET)
+        .uploadToSignedUrl(lien.path, lien.token, file, {
+          contentType: file.type || "application/octet-stream",
+        });
+      if (upErr) {
+        setMsg(labels.error);
+        return;
+      }
+
+      const confirme = await fetch("/api/products/asset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          step: "confirme",
+          path: lien.path,
+          fileName: file.name,
+        }),
+      });
+      const data = await confirme.json();
+      if (!confirme.ok) {
+        setMsg(typeof data.error === "string" ? data.error : labels.error);
         return;
       }
       setMsg(labels.saved);

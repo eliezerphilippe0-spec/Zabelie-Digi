@@ -3,6 +3,63 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 🔴 PV — écriture en production du 2026-08-15 (dépublication)
+
+**Signal porteur** : « Sur la dépublication : oui, sans hésiter. »
+
+```sql
+update products set status = 'draft'
+ where slug = 'cours-du-creole-dt0ps' and kind = 'fichier'
+   and not exists (select 1 from product_assets a where a.product_id = products.id);
+-- 1 ligne. Sonde après : fichiers_publiés_sans_livrable = 0.
+```
+
+Ce produit était **en vente à 1 200 HTG depuis le 2026-08-11 sans aucun
+livrable**. Un acheteur aurait payé et reçu un 404. Aucune commande payée
+n'existe à ce jour (1 en attente, 4 annulées, **zéro payée depuis l'origine**),
+donc personne n'a été lésé — l'exposition, elle, était ouverte depuis quatre
+jours.
+
+⚠️ **Ce n'était pas un trou dans le code.** La porte de
+`/api/admin/product-status` refuse bien de publier un fichier à zéro livrable,
+et elle a été posée le 2026-08-11 en réponse à ce cas précis. **La ligne déjà
+passée n'a jamais été rattrapée.** Poser un filet ne répare pas ce qui est
+tombé avant lui — et rien, dans le dépôt, ne croisait l'état de la production
+avec les gardes qu'on venait d'y ajouter.
+
+### Le défaut structurel trouvé en cherchant la cause
+
+`/api/products/asset` annonçait **50 Mo** tout en recevant le fichier en
+`multipart` — c'est-à-dire à travers la fonction serverless, que
+`docs/35` §V1-B déclare explicitement incapable de les porter. La galerie
+vidéo avait été construite en deux temps (lien signé + téléversement direct)
+pour cette raison exacte ; **le chemin du livrable n'a jamais reçu la même
+conclusion.**
+
+Le pire n'est pas l'échec, c'est sa forme : au-delà de la limite, la requête
+est refusée **avant** que la fonction s'exécute. Aucun garde ne tourne, rien
+ne journalise, le vendeur voit un échec sans cause. C'est « l'absence de
+signal » dans sa version la plus coûteuse — trois créations du même produit en
+vingt et une secondes le 2026-08-11 à 01:46, puis l'abandon, et pas une ligne
+pour le dire.
+
+Corrigé : protocole en deux temps, taille lue **au stockage** (jamais annoncée
+par le client), objet retiré si hors contrat. Le chemin dépend désormais d'un
+UUID et non du nom du fichier — BL-138 (C-12) disparaît au passage.
+
+⚠️ **Ce que ça ne prouve pas** : que le chemin fonctionne. Les octets ne
+transitent plus par la fonction — c'est une propriété du code, vérifiée par
+mutation. **Un vrai PDF déposé depuis un vrai téléphone reste à faire**, et
+c'est la seule preuve qui compte. `product-files` porte toujours **zéro
+objet** ; le catalogue n'a **aucun** produit `fichier` livrable.
+
+### Ce qui n'est PAS fait, et ne peut pas l'être d'ici
+
+La re-livraison de « cours du créole » demande **le fichier du vendeur**.
+Attacher un PDF de substitution et republier mettrait en vente un livrable
+inventé — le défaut qu'on vient de fermer, retourné. Le vendeur doit redéposer
+lui-même ; le produit l'attend en brouillon.
+
 ## ⏳ Registre des décisions en attente — `docs/25` §4.1
 
 > **Relu à l'ouverture de chaque chantier, avant de choisir quoi construire.**
@@ -31,7 +88,7 @@ réconciliation topup détectés par le cron doivent aussi être consignés ici.
 | **Appliquer `0076` (coordonnées de livraison — V-5 de `docs/35`)** — rédigée, éprouvée par la CI (L1–L3 : own-row, lecture vendeur UNIQUEMENT sur commande payée, fenêtre refermée après livraison, écriture own-row seule), non appliquée | 2026-08-15 | Nom/téléphone/adresse de l'acheteur : table SÉPARÉE de `profiles` (qui est en lecture publique — une adresse n'y aurait rien à faire) ; la règle « visible au moment d'envoyer » est encodée dans la RLS, pas dans une bonne intention. Sans 0076 : formulaire masqué, route 503. Politique de confidentialité déjà mise à jour ×4 langues dans la même PR. ✅ APPLIQUÉE le 2026-08-15 04:01:40Z (journal 20260815040140, sha256 a8d9b57a…, 4 policies vérifiées, registre à 75) sur signal « applique 0076 ». Le formulaire de livraison et la vue vendeur sont vivants. |
 | **Appliquer `0077` (taxonomie niveau 3 — V-3 de `docs/35`)** — rédigée, non appliquée. 468 sous-catégories, TOUTES inactives (arbitrage porteur 2026-08-15 : « tout seeder, activer par vagues ») ; l'ouverture d'un rayon devient un `UPDATE ... set active = true`, sans migration. KR/EN best-effort agent, relecture native en attente (registre). Post-conditions : plancher 450, zéro activation. ✅ APPLIQUÉE le 2026-08-15 12:50:20Z (journal 20260815125020, sha256 2ea49531…, registre à 76). Mesuré : 452 lignes insérées sur 468 semées, 45 actives INCHANGÉES (vague 1 intacte), 0 orpheline, 73/74 rayons couverts — le 74e (`rechaj-telefon`) est l'exclusion volontaire du catalogue Reloadly. ⚠️ Une ligne perdue en silence, voir la ligne 0078 ci-dessous. | 2026-08-15 | Rien à l'écran tant qu'un rayon n'est pas activé — le seed dort, exactement comme docs/16 le voulait. |
 | **Appliquer `0078` (réparation d'une ligne perdue par `0077`)** — rédigée, non appliquée | 2026-08-15 | « Sacs de voyage » manque sous « Bagagerie » : son slug `sak-vwayaj` était déjà celui de son parent de niveau 2, et le slug est unique sur toute la table — ligne avalée par `on conflict`, sans erreur ni trace. Aucun impact utilisateur aujourd'hui (le rayon est dormant). La réparation la recrée sous `sak-de-vwayaj`, inactive. L'angle mort du contrôle est fermé (`tests/taxonomie-seed.test.ts` croise désormais les slugs du seed avec ceux des niveaux 1 et 2, exemption datée périmable dans les deux sens, éprouvée par deux mutations). ✅ APPLIQUÉE le 2026-08-15 13:04:10Z (journal 20260815130410, sha256 293bf42c…, registre à 77). Sondes : « Bagagerie » a bien 4 sous-catégories, la ligne réparée est INACTIVE, 45 actives inchangées, niveau 3 à 498. **Compte du déficit bouclé mécaniquement** : 468 semées − 452 insérées = 16 = 13 collisions de concept avec `0035` + 2 avec `0057` (services) + 1 de niveau (réparée). Aucune ligne perdue sans explication. |
-| **Appliquer `0079` (KYC vendeur — V-6 de `docs/35`)** — ✅ **APPLIQUÉE le 2026-08-15 13:35:15Z** (sha256 626e3486…, registre à 78, `applied_by` renseigné). Signal porteur : « **0079** », réponse directe à la ligne « applique 0079 ». ⚠️ **Le geste (1) est fait, le geste (2) reste entier** : à l'application le blocage est **DORMANT** — mesuré, `requis_pour_retrait = false`, et **aucun vendeur n'est coupé**. Reste : `update zabelie_kyc_config set requis_pour_retrait = true` pour l'armer, **quand les vendeurs auront eu le temps de se faire vérifier** (armer le jour de l'application couperait la voie de sortie de tout le monde). 🔴 **Arbitrage restant : la DURÉE DE RÉTENTION des pièces d'identité** — défaut prudent 90 jours après décision, en table de config ; à confirmer ou changer par `UPDATE`, ce sont des données ultra-sensibles. La politique de confidentialité devra décrire cette collecte avant l'armement (elle ne le fait pas encore). Sondes de post-application, toutes vertes : bucket `kyc-documents` **privé** (`public = false`), **0 policy** sur `storage.objects` le concernant, `zabelie_kyc_docs_expires` et `zabelie_purge_kyc_documents` présentes, et `zabelie_request_payout` — sa **troisième** version — porte À LA FOIS le recouvrement du surplus IA (`zabelie_ai_surplus`, hérité de `0072`) et la garde `kyc_requis`. Avant la réécriture, le corps en production a été croisé avec celui attendu de `0072` (md5 canonique `4e1fba1b…`, identique) : on n'écrase pas une fonction d'argent sur la foi d'un numéro de migration. Dossiers déposés à ce jour : **0** — le chemin est ouvert, personne ne l'a encore emprunté. | 2026-08-15 | Retrait inchangé pour tout le monde ; la surface de vérification est en ligne et le cron de purge tourne à vide, en le journalisant. |
+| **Appliquer `0079` (KYC vendeur — V-6 de `docs/35`)** — ✅ **APPLIQUÉE le 2026-08-15 13:35:15Z** (sha256 626e3486…, registre à 78, `applied_by` renseigné). Signal porteur : « **0079** », réponse directe à la ligne « applique 0079 ». ⚠️ **Le geste (1) est fait, le geste (2) reste entier** : à l'application le blocage est **DORMANT** — mesuré, `requis_pour_retrait = false`, et **aucun vendeur n'est coupé**. Reste : `update zabelie_kyc_config set requis_pour_retrait = true` pour l'armer, **quand les vendeurs auront eu le temps de se faire vérifier** (armer le jour de l'application couperait la voie de sortie de tout le monde). 🔴 **Arbitrage restant : la DURÉE DE RÉTENTION des pièces d'identité** — défaut prudent 90 jours après décision, en table de config ; à confirmer ou changer par `UPDATE`, ce sont des données ultra-sensibles. **La politique de confidentialité décrit désormais cette collecte** (§9 « Pièces d'identité », quatre langues, 2026-08-15) : ce qu'on demande, qui le voit, le stockage privé, le lien signé de cinq minutes, et le fait qu'aucun achat ni aucune publication ne l'exige. ⚠️ **La DURÉE y est un blanc visible** (`{retentionKyc}`, cinquième marqueur `[À COMPLÉTER]`), délibérément : `zabelie_kyc_config.retention_jours` porte un défaut technique de 90 jours, mais une obligation de vigilance anti-blanchiment peut imposer une durée **minimale** de conservation — donc plus longue, pas plus courte. Recopier le 90 d'aujourd'hui publierait un engagement qu'un conseil peut inverser. **Question à porter à Cabinet Volmar en même temps que la relecture des CGU.** Sondes de post-application, toutes vertes : bucket `kyc-documents` **privé** (`public = false`), **0 policy** sur `storage.objects` le concernant, `zabelie_kyc_docs_expires` et `zabelie_purge_kyc_documents` présentes, et `zabelie_request_payout` — sa **troisième** version — porte À LA FOIS le recouvrement du surplus IA (`zabelie_ai_surplus`, hérité de `0072`) et la garde `kyc_requis`. Avant la réécriture, le corps en production a été croisé avec celui attendu de `0072` (md5 canonique `4e1fba1b…`, identique) : on n'écrase pas une fonction d'argent sur la foi d'un numéro de migration. Dossiers déposés à ce jour : **0** — le chemin est ouvert, personne ne l'a encore emprunté. | 2026-08-15 | Retrait inchangé pour tout le monde ; la surface de vérification est en ligne et le cron de purge tourne à vide, en le journalisant. |
 | **Poser `NEXT_PUBLIC_CONTACT_EMAIL`** (Vercel) — valeur au choix du porteur | 2026-08-06 | La carte email de /aide, masquée sans elle. Même règle de redéploiement. |
 | **Appliquer `0073` (galerie produit — V-1A de `docs/35`)** — rédigée, éprouvée par la CI (M1–M3 : plafond ZB073 6 images + 1 vidéo, RLS publiée-ou-vendeur), non appliquée | 2026-08-15 | La galerie multi-photos : sans elle, tout est dormant — la fiche montre la couverture seule (comme avant), le gestionnaire vendeur répond « Galerie non activée (0073 à appliquer) » au premier essai. Aucune donnée en jeu, migration purement additive. ✅ APPLIQUÉE le 2026-08-15 03:21:46Z (journal 20260815032146, sha256 3714ab4e…) — signal porteur « applique 0072 et lance V-2 », numéro corrigé en session (AskUserQuestion + « 0073* »), consigné au registre. La galerie est vivante. La liste complète des six chantiers vendeur du 2026-08-15 (photos/vidéos, fiche riche, sous-catégories, rabais, adresses, KYC) est triée dans **`docs/35-CHANTIERS-VENDEUR.md`** — deux y attendent un arbitrage porteur (V-3 sous-catégories vs « vagues » de docs/16 ; V-6 KYC : pièces acceptées, rétention, bloquer le retrait ou la publication). |
 | **Allumer l'aide IA à la rédaction — poser UNE clé fournisseur** (Vercel, Production) : `OPENAI_API_KEY` (OpenAI, modèle par défaut `gpt-4o-mini`) **ou** `GEMINI_API_KEY` (Google, défaut `gemini-3.7-flash` — l'initial `gemini-2.5-flash` rendait 404 dès le premier essai réel : Google l'a retiré des nouveaux projets, arrêt complet le 2026-10-16) — si les deux sont posées, OpenAI gagne. **État au 2026-08-15** : le porteur a posé les clés le jour même ; deux pannes réelles trouvées et traitées à la première utilisation — valeur collée EN DOUBLE dans le champ Vercel (retour à la ligne au milieu → « invalid header value », le fail-loud a fonctionné), puis clé Gemini régénérée parce qu'elle avait transité par le chat dans une capture de journal ; **premier succès de bout en bout confirmé par le porteur le 2026-08-15** (« ça marche maintenant ») — l'aide est allumée en production sur le rail Gemini. Reste au porteur à confirmer qu'un plafond/quota de dépense est bien posé côté console Google. **Quota arbitré le 2026-08-15 : 50 suggestions/jour par vendeur** (appliqué en code, message dédié au vendeur à la limite — pas l'erreur générique). |

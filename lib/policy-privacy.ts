@@ -43,14 +43,18 @@ import type { Lang } from "./i18n";
  */
 
 /**
- * Les quatre faits que la politique promet et que le dépôt ne connaît pas.
+ * Les cinq faits que la politique promet et que le dépôt ne connaît pas.
  * `null` = non renseigné : le rendu le montre.
  */
-export const IDENTITE: Record<"entite" | "email" | "purge" | "hebergement", string | null> = {
+export const IDENTITE: Record<
+  "entite" | "email" | "purge" | "hebergement" | "retentionKyc",
+  string | null
+> = {
   entite: null,
   email: null,
   purge: null,
   hebergement: null,
+  retentionKyc: null,
 };
 
 /** Ce qu'on affiche à la place d'un champ vide, par langue. */
@@ -60,30 +64,34 @@ const MANQUANT: Record<Lang, Record<keyof typeof IDENTITE, string>> = {
     email: "[À COMPLÉTER : e-mail de contact]",
     purge: "[À COMPLÉTER : durée de purge]",
     hebergement: "[À COMPLÉTER : région d'hébergement et garanties de transfert]",
+    retentionKyc: "[À COMPLÉTER : durée de conservation des pièces d'identité]",
   },
   ht: {
     entite: "[POU KONPLETE : antite jiridik ak adrès]",
     email: "[POU KONPLETE : imèl kontak]",
     purge: "[POU KONPLETE : dire konsèvasyon]",
     hebergement: "[POU KONPLETE : rejyon ebèjman ak garanti transfè]",
+    retentionKyc: "[POU KONPLETE : dire konsèvasyon pyès idantite yo]",
   },
   en: {
     entite: "[TO BE COMPLETED: legal entity and address]",
     email: "[TO BE COMPLETED: contact e-mail]",
     purge: "[TO BE COMPLETED: purge period]",
     hebergement: "[TO BE COMPLETED: hosting region and transfer safeguards]",
+    retentionKyc: "[TO BE COMPLETED: identity document retention period]",
   },
   es: {
     entite: "[POR COMPLETAR: entidad jurídica y dirección]",
     email: "[POR COMPLETAR: correo de contacto]",
     purge: "[POR COMPLETAR: plazo de purga]",
     hebergement: "[POR COMPLETAR: región de alojamiento y garantías de transferencia]",
+    retentionKyc: "[POR COMPLETAR: plazo de conservación de los documentos de identidad]",
   },
 };
 
-/** Remplace `{entite}`, `{email}`, `{purge}`, `{hebergement}`. */
+/** Remplace `{entite}`, `{email}`, `{purge}`, `{hebergement}`, `{retentionKyc}`. */
 export function resoudre(texte: string, lang: Lang): string {
-  return texte.replace(/\{(entite|email|purge|hebergement)\}/g, (_, cle) => {
+  return texte.replace(/\{(entite|email|purge|hebergement|retentionKyc)\}/g, (_, cle) => {
     const k = cle as keyof typeof IDENTITE;
     return IDENTITE[k] ?? MANQUANT[lang][k];
   });
@@ -129,6 +137,7 @@ const fr: Politique = {
             "**Paiement** : références de transaction MonCash nécessaires à la confirmation et à la réconciliation de vos paiements.",
             "**Activité** : produits publiés, commandes passées, solde du wallet vendeur.",
             "**Livraison** (si vous les renseignez) : nom complet, téléphone et adresse de livraison — montrés à un vendeur *uniquement* lorsqu'il a une commande payée à vous expédier, jamais publics.",
+            "**Pièces d'identité** (vendeurs seulement, lorsqu'une vérification est demandée) : documents officiels et photo, conservés à part et jamais publics — voir §9.",
           ],
         },
       ],
@@ -163,6 +172,7 @@ const fr: Politique = {
             "Données de paiement et de commande : conservées pour la durée légale applicable (obligations comptables), puis supprimées ou anonymisées.",
             "Détails techniques du paiement (payload opérateur) : minimisés à la confirmation (l'identifiant du payeur n'est pas conservé) et purgés après **{purge}**.",
             "Termes de recherche non aboutis : conservés **90 jours**, puis purgés automatiquement.",
+            "Pièces d'identité d'un vendeur : voir **§9**, qui en détaille la durée séparément.",
           ],
         },
       ],
@@ -206,7 +216,27 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "9. Contact",
+      titre: "9. Pièces d'identité (vérification vendeur)",
+      blocs: [
+        {
+          p: "Pour retirer les sommes gagnées sur Zabelie, un vendeur peut avoir à faire **vérifier son identité**. Cette vérification est **manuelle** : aucune administration haïtienne ne propose aujourd'hui de service permettant de contrôler automatiquement une pièce d'identité. Un membre de notre équipe examine le dossier, et sa décision est horodatée et attribuée dans notre journal interne.",
+        },
+        {
+          ul: [
+            "**Ce que nous demandons** : deux documents parmi une *carte d'identification nationale*, un *passeport* et une *photo de vous* permettant de vous rapprocher du document présenté.",
+            "**Qui les voit** : uniquement les membres de notre équipe chargés de la vérification. Elles ne sont **jamais** publiées, ni montrées aux acheteurs, ni montrées aux autres vendeurs.",
+            "**Comment elles sont conservées** : dans un espace de stockage **privé**, qu'aucun lien public n'ouvre. Notre équipe y accède par un lien signé qui **expire au bout de cinq minutes**.",
+            "**Combien de temps** : **{retentionKyc}** après la décision. Le fichier et sa trace sont ensuite supprimés automatiquement.",
+            "**Pourquoi** : prévenir la fraude et sécuriser les retraits d'argent — *intérêt légitime* — et satisfaire nos obligations de vigilance là où elles s'appliquent — *obligation légale*.",
+          ],
+        },
+        {
+          p: "Déposer une pièce d'identité n'est **jamais** nécessaire pour acheter, pour ouvrir un compte, ni pour publier un produit. Vous pouvez demander la suppression de votre dossier à tout moment en écrivant à **{email}** ; nous ne garderons alors que ce qu'une obligation légale nous impose de conserver, et un retrait de vos gains pourra vous être refusé tant qu'aucune vérification n'a abouti.",
+        },
+      ],
+    },
+    {
+      titre: "10. Contact",
       blocs: [{ p: "Pour exercer vos droits ou pour toute question : **{email}**." }],
     },
   ],
@@ -237,6 +267,7 @@ const ht: Politique = {
             "**Peman** : referans tranzaksyon MonCash ki nesesè pou konfime epi rekonsilye peman ou yo.",
             "**Aktivite** : pwodwi ou pibliye, kòmand ou pase, balans pòtfèy vandè a.",
             "**Livrezon** (si ou mete yo) : non konplè, telefòn ak adrès livrezon — yon vandè wè yo *sèlman* lè li gen yon kòmand ou peye pou l voye ba ou, yo pa janm piblik.",
+            "**Pyès idantite** (vandè sèlman, lè nou mande yon verifikasyon) : dokiman ofisyèl ak foto, kenbe apa epi yo pa janm piblik — gade §9.",
           ],
         },
       ],
@@ -271,6 +302,7 @@ const ht: Politique = {
             "Done peman ak kòmand : konsève pou dire legal ki aplikab (obligasyon kontab), apre sa efase oswa anonimize.",
             "Detay teknik peman an (payload operatè a) : redwi lè konfimasyon an fèt (idantifyan moun ki peye a pa konsève) epi efase apre **{purge}**.",
             "Mo rechèch ki pa bay rezilta : konsève **90 jou**, apre sa efase otomatikman.",
+            "Pyès idantite yon vandè : gade **§9**, ki bay dire a apa.",
           ],
         },
       ],
@@ -314,7 +346,27 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "9. Kontak",
+      titre: "9. Pyès idantite (verifikasyon vandè)",
+      blocs: [
+        {
+          p: "Pou yon vandè retire lajan li fè sou Zabelie, nou ka mande l **verifye idantite l**. Verifikasyon sa a fèt **alamen** : jodi a pa gen okenn administrasyon ayisyen ki ofri yon sèvis pou kontwole yon pyès idantite otomatikman. Se yon manm ekip nou an ki egzamine dosye a, epi desizyon l enskri ak dat li ak non li nan jounal entèn nou an.",
+        },
+        {
+          ul: [
+            "**Sa nou mande** : de dokiman pami yon *kat idantifikasyon nasyonal*, yon *paspò* ak yon *foto ou* ki pèmèt nou konpare ou ak dokiman an.",
+            "**Kilès ki wè yo** : sèlman manm ekip nou an ki responsab verifikasyon an. Yo pa **janm** pibliye, ni montre bay achtè, ni montre bay lòt vandè.",
+            "**Kijan nou kenbe yo** : nan yon depo **prive**, okenn lyen piblik pa ouvri l. Ekip nou an ouvri yo ak yon lyen siyen ki **ekspire apre senk minit**.",
+            "**Konbyen tan** : **{retentionKyc}** apre desizyon an. Apre sa, fichye a ak tras li efase otomatikman.",
+            "**Poukisa** : anpeche fwod epi sekirize retrè lajan — *enterè lejitim* — epi respekte obligasyon vijilans nou yo kote yo aplikab — *obligasyon legal*.",
+          ],
+        },
+        {
+          p: "Ou **pa janm** bezwen depoze yon pyès idantite pou achte, pou louvri yon kont, ni pou pibliye yon pwodwi. Ou ka mande efasman dosye ou nenpòt lè nan **{email}** ; lè sa a nou ap kenbe sèlman sa yon obligasyon legal fòse nou kenbe, epi nou ka refize yon retrè sou lajan ou toutotan okenn verifikasyon pa abouti.",
+        },
+      ],
+    },
+    {
+      titre: "10. Kontak",
       blocs: [{ p: "Pou egzèse dwa ou oswa pou nenpòt kesyon : **{email}**." }],
     },
   ],
@@ -345,6 +397,7 @@ const en: Politique = {
             "**Payment**: MonCash transaction references required to confirm and reconcile your payments.",
             "**Activity**: products published, orders placed, seller wallet balance.",
             "**Delivery** (if you provide them): full name, phone and delivery address — shown to a seller *only* when they have a paid order to ship to you, never public.",
+            "**Identity documents** (sellers only, when a verification is requested): official documents and photo, stored separately and never public — see §9.",
           ],
         },
       ],
@@ -379,6 +432,7 @@ const en: Politique = {
             "Payment and order data: kept for the applicable statutory period (accounting obligations), then deleted or anonymised.",
             "Technical payment details (operator payload): minimised at confirmation (the payer identifier is not kept) and purged after **{purge}**.",
             "Unsuccessful search terms: kept **90 days**, then purged automatically.",
+            "A seller's identity documents: see **§9**, which sets out their retention separately.",
           ],
         },
       ],
@@ -422,7 +476,27 @@ const en: Politique = {
       ],
     },
     {
-      titre: "9. Contact",
+      titre: "9. Identity documents (seller verification)",
+      blocs: [
+        {
+          p: "To withdraw the money they have earned on Zabelie, a seller may be asked to **verify their identity**. This verification is **manual**: no Haitian authority currently offers a service that checks an identity document automatically. A member of our team reviews the file, and their decision is timestamped and attributed in our internal log.",
+        },
+        {
+          ul: [
+            "**What we ask for**: two documents among a *national identification card*, a *passport* and a *photo of you* that lets us match you to the document presented.",
+            "**Who sees them**: only the members of our team responsible for verification. They are **never** published, shown to buyers, or shown to other sellers.",
+            "**How they are stored**: in a **private** storage area that no public link opens. Our team reaches them through a signed link that **expires after five minutes**.",
+            "**For how long**: **{retentionKyc}** after the decision. The file and its record are then deleted automatically.",
+            "**Why**: to prevent fraud and secure money withdrawals — *legitimate interest* — and to meet our due-diligence obligations where they apply — *legal obligation*.",
+          ],
+        },
+        {
+          p: "Submitting an identity document is **never** required to buy, to open an account, or to publish a product. You may request deletion of your file at any time by writing to **{email}**; we will then keep only what a legal obligation requires us to keep, and a withdrawal of your earnings may be refused for as long as no verification has succeeded.",
+        },
+      ],
+    },
+    {
+      titre: "10. Contact",
       blocs: [{ p: "To exercise your rights or for any question: **{email}**." }],
     },
   ],
@@ -453,6 +527,7 @@ const es: Politique = {
             "**Pago**: referencias de transacción MonCash necesarias para confirmar y conciliar sus pagos.",
             "**Actividad**: productos publicados, pedidos realizados, saldo del monedero del vendedor.",
             "**Entrega** (si los indica): nombre completo, teléfono y dirección de entrega — mostrados a un vendedor *solo* cuando tiene un pedido pagado que enviarle, nunca públicos.",
+            "**Documentos de identidad** (solo vendedores, cuando se solicita una verificación): documentos oficiales y foto, conservados aparte y nunca públicos — véase §9.",
           ],
         },
       ],
@@ -487,6 +562,7 @@ const es: Politique = {
             "Datos de pago y pedido: conservados durante el plazo legal aplicable (obligaciones contables) y después eliminados o anonimizados.",
             "Detalles técnicos del pago (payload del operador): minimizados en la confirmación (no se conserva el identificador del pagador) y purgados tras **{purge}**.",
             "Términos de búsqueda sin resultado: conservados **90 días** y purgados automáticamente después.",
+            "Documentos de identidad de un vendedor: véase **§9**, que detalla su plazo por separado.",
           ],
         },
       ],
@@ -530,7 +606,27 @@ const es: Politique = {
       ],
     },
     {
-      titre: "9. Contacto",
+      titre: "9. Documentos de identidad (verificación del vendedor)",
+      blocs: [
+        {
+          p: "Para retirar las sumas ganadas en Zabelie, a un vendedor se le puede pedir que **verifique su identidad**. Esta verificación es **manual**: hoy ninguna administración haitiana ofrece un servicio que compruebe automáticamente un documento de identidad. Un miembro de nuestro equipo examina el expediente, y su decisión queda fechada y atribuida en nuestro registro interno.",
+        },
+        {
+          ul: [
+            "**Qué pedimos**: dos documentos entre una *cédula de identificación nacional*, un *pasaporte* y una *foto suya* que permita compararle con el documento presentado.",
+            "**Quién los ve**: únicamente los miembros de nuestro equipo encargados de la verificación. **Nunca** se publican, ni se muestran a los compradores, ni a otros vendedores.",
+            "**Cómo se conservan**: en un espacio de almacenamiento **privado** que ningún enlace público abre. Nuestro equipo accede a ellos mediante un enlace firmado que **caduca a los cinco minutos**.",
+            "**Cuánto tiempo**: **{retentionKyc}** tras la decisión. Después, el archivo y su rastro se eliminan automáticamente.",
+            "**Por qué**: prevenir el fraude y proteger las retiradas de dinero — *interés legítimo* — y cumplir nuestras obligaciones de diligencia donde sean aplicables — *obligación legal*.",
+          ],
+        },
+        {
+          p: "Aportar un documento de identidad **nunca** es necesario para comprar, para abrir una cuenta, ni para publicar un producto. Puede solicitar la supresión de su expediente en cualquier momento escribiendo a **{email}**; conservaremos entonces únicamente lo que una obligación legal nos imponga guardar, y podrá denegarse una retirada de sus ganancias mientras ninguna verificación haya prosperado.",
+        },
+      ],
+    },
+    {
+      titre: "10. Contacto",
       blocs: [{ p: "Para ejercer sus derechos o para cualquier consulta: **{email}**." }],
     },
   ],

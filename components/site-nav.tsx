@@ -187,14 +187,26 @@ export async function SiteNav() {
             maquette porteur, et le catalogue reste atteignable juste après. */}
         <div className="mt-2 flex items-center justify-center gap-5 border-t border-line pt-2 md:hidden">
           <CategoryMenu rayons={rayons} labels={menuLabels} />
-          <nav className="flex items-center gap-5 text-sm text-mist">
-            <Link href="/catalogue" className="py-1 transition hover:text-cloud">
+          {/* RES-01 : `py-1` donnait 28 px de haut. Le seuil de 44 px n'est pas
+              cosmétique, c'est la largeur d'un pouce — et cette barre est LA
+              navigation du terrain visé (Android d'entrée de gamme). */}
+          <nav className="flex items-center gap-4 text-sm text-mist">
+            <Link
+              href="/catalogue"
+              className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+            >
               {t(lang, "nav.catalog")}
             </Link>
-            <Link href="/#talents" className="py-1 transition hover:text-cloud">
+            <Link
+              href="/#talents"
+              className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+            >
               {t(lang, "nav.talents")}
             </Link>
-            <Link href="/aide" className="py-1 transition hover:text-cloud">
+            <Link
+              href="/aide"
+              className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+            >
               {t(lang, "nav.help")}
             </Link>
           </nav>

@@ -103,12 +103,17 @@ test("un champ non renseigné se VOIT, dans les quatre langues", () => {
    * lirait « Responsable du traitement : . » et personne ne remarquerait
    * qu'il manque quelque chose. Le marqueur doit être visible. */
   for (const lang of LANGS) {
-    const rendu = resoudre("X **{entite}** Y", lang as Lang);
-    assert.ok(
-      /\[.+\]/.test(rendu),
-      `En ${lang}, un champ vide ne produit aucun marqueur visible : « ${rendu} »`,
-    );
-    assert.ok(!/\{entite\}/.test(rendu), `En ${lang}, le gabarit n'a pas été résolu.`);
+    for (const cle of Object.keys(IDENTITE) as (keyof typeof IDENTITE)[]) {
+      const rendu = resoudre(`X **{${cle}}** Y`, lang as Lang);
+      assert.ok(
+        /\[.+\]/.test(rendu),
+        `En ${lang}, « ${cle} » vide ne produit aucun marqueur visible : « ${rendu} »`,
+      );
+      assert.ok(
+        !rendu.includes(`{${cle}}`),
+        `En ${lang}, le gabarit « {${cle}} » se rend TEL QUEL au lecteur.`,
+      );
+    }
   }
 });
 
@@ -118,17 +123,26 @@ test("les blancs sont COMPTÉS — leur nombre ne peut pas grossir en silence", 
    * remplira un, ce qui est le seul « échec » qu'on souhaite : il oblige à
    * venir ici baisser le chiffre, donc à constater le progrès.
    *
-   * C'est la péremption dans les deux sens, appliquée à une dette. */
+   * C'est la péremption dans les deux sens, appliquée à une dette.
+   *
+   * ⚠️ `retentionKyc` (ajouté le 2026-08-15) n'est PAS un blanc de la même
+   * nature que les quatre autres. Ceux-là attendent une saisie — une raison
+   * sociale, une adresse e-mail — que le porteur connaît déjà. Celui-ci
+   * attend un AVIS : `zabelie_kyc_config.retention_jours` porte bien un
+   * défaut technique de 90 jours, mais une obligation de vigilance
+   * anti-blanchiment peut imposer une durée MINIMALE de conservation, donc
+   * plus longue, pas plus courte. Recopier le 90 d'aujourd'hui dans la
+   * politique publierait un engagement qu'un conseil peut inverser. */
   const vides = champsManquants();
   assert.deepEqual(
     vides.sort(),
-    ["email", "entite", "hebergement", "purge"],
+    ["email", "entite", "hebergement", "purge", "retentionKyc"],
     `Les faits non renseignés de la politique ont changé : ${vides.join(", ")}. ` +
       `Mettre ce test à jour EN MÊME TEMPS que lib/policy-privacy.ts.`,
   );
   assert.equal(
     Object.keys(IDENTITE).length,
-    4,
+    5,
     "Le nombre de faits attendus par la politique a changé.",
   );
 });

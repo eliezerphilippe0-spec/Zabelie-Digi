@@ -324,6 +324,68 @@ La vigilance ne suffit pas ici, et c'est précisément la leçon : quatre
 occurrences en une session, par quelqu'un qui connaissait le piège dès la
 deuxième.
 
+###### Le REMÈDE a la même faille que le mal — la régression de proximité
+
+Troisième occurrence, le 2026-08-15, et la seule qui apprenne quelque chose de
+neuf : **la règle ci-dessus était écrite, connue, et relue le jour même.** Elle
+n'a rien empêché, parce que le piège s'est présenté sous la forme du remède.
+
+La ligne d'exemple ci-dessus — `/count[^;]{0,40}===\s*0[\s\S]{0,400}livrable_
+manquant/` — est correcte. Elle a été recopiée dans sa FORME pour garder la
+borne des 50 Mo du livrable :
+
+```js
+/\.list\(dossier[\s\S]{0,700}taille > MAX_BYTES/     // FAUX
+```
+
+Verte sous la mutation qui remplace `const taille = Number((objet.metadata…))`
+par `const taille = Number(body.tailleAnnoncee ?? 1)` : les deux fragments
+restent présents et voisins, et la borne porte désormais sur un chiffre fourni
+par l'appelant. Un vendeur annonçant « 2 Mo » pouvait déposer ce qu'il voulait.
+
+**Ce qui distingue les deux n'est pas visible à l'œil**, et c'est tout le
+problème : l'intervalle `[\s\S]{0,N}` a la même tête dans les deux cas.
+
+* dans le bon, le motif CONTIENT la condition — `count … === 0` — donc ce qui
+  commande est *dans* l'assertion ;
+* dans le faux, les deux extrémités sont un appel et une comparaison, et **rien
+  ne lie `taille` à ce que `.list()` a rendu**. Le motif n'affirme qu'une
+  adjacence de texte.
+
+Règle : **un intervalle `[\s\S]{0,N}` ne prouve rien par lui-même — il faut
+qu'une des deux extrémités porte la LIAISON.** Concrètement, ancrer sur
+l'affectation plutôt que sur l'usage :
+
+```js
+/const taille = Number\(\(objet\.metadata[^;]{0,140};[\s\S]{0,240}taille > MAX_BYTES/
+```
+
+La variable y est liée à sa source, puis comparée. Et la mutation à écrire
+n'est pas « supprimer le contrôle » mais **« changer la SOURCE en gardant le
+contrôle »** — c'est elle qui sépare les deux formes, et c'est la seule des
+quatre de ce tour qui soit passée.
+
+Corollaire pour ce dépôt : les proximités déjà en place ne sont pas suspectes
+en bloc, elles se relisent une par une avec une question unique — *si je
+rebranche l'extrémité gauche sur une autre source, ce motif rougit-il ?*
+
+**Passage effectué le 2026-08-15** : 72 proximités, 63 à extrémité gauche
+portant une liaison, 9 nues, une seule sur un chemin fail-closed —
+`/eAssets[\s\S]{0,200}status: 503/`. Et le résultat contredit la prédiction,
+ce qui est tout l'intérêt de l'avoir passée : **elle RÉSISTE à la mutation.**
+
+Mais pas pour la bonne raison. Elle y résiste par la **distance** —
+`eAssets` apparaît aussi dans la déstructuration en amont, simplement au-delà
+de la fenêtre de 200 caractères. Deux lignes de commentaire insérées entre le
+`if` et son `return`, ou trois retirées au-dessus, et le garde bascule sans
+que personne n'ait touché à ce qu'il surveille.
+
+C'est le troisième mode d'échec, et le plus retors des trois : **un contrôle
+peut passer la mutation en tenant par la mise en page.** Ni la relecture ni la
+mutation ne le distinguent d'un contrôle sain — seule la lecture de ce que
+l'extrémité gauche désigne vraiment. Corollaire : « la mutation rougit » reste
+nécessaire, et cesse d'être suffisant.
+
 #### Le drapeau qui filtre et le drapeau qui agit portent le même nom
 
 `npm audit fix --omit=dev` ne filtre pas l'audit : il **réinstalle** sans les
