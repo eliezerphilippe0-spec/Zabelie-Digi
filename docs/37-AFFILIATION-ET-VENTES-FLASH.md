@@ -1,8 +1,11 @@
 # Affiliation et ventes flash — ce que font les géants, adapté au terrain
 
-> **Statut** : spécification, RIEN N'EST CONSTRUIT. Les paramètres commerciaux
-> (taux, bornes, durées) sont des **arbitrages porteur** marqués ⏳ — ce
-> document propose des défauts, il ne les décide pas.
+> **Statut (2026-08-15, soir)** : **CONSTRUIT, DORMANT, NON APPLIQUÉ.**
+> Flash : `0080` rédigée (bornes proposées en config). Affiliation option B :
+> `0081` rédigée (`actif = false`, s'arme par UPDATE). Points de retrait :
+> `0082` rédigée (répertoire admin, points fermés par défaut). Les trois
+> migrations attendent le signal « applique 008x » du porteur — et les
+> défauts de config restent modifiables par UPDATE, jamais en dur.
 > **Rédigé le** : 2026-08-15 · Sources en fin de document.
 > Prolonge `docs/06-ANALYSE-CHARIOW.md` §P4 (spec affiliation d'origine).
 
