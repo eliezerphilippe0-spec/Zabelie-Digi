@@ -87,8 +87,14 @@ export function ForgotPasswordForm({ labels }: { labels: ForgotPasswordLabels })
             </>
           )}
         </div>
+        {/* RES-01 : mesuré à 15 px de haut. Sur le chemin de récupération de
+            compte — celui d'un utilisateur DÉJÀ bloqué — une sortie de
+            secours qu'on rate au pouce est le pire endroit possible. */}
         <p className="mt-6 text-center text-xs text-mist">
-          <Link href="/connexion" className="hover:text-cloud">
+          <Link
+            href="/connexion"
+            className="inline-flex min-h-11 items-center px-2 hover:text-cloud"
+          >
             {labels.back}
           </Link>
         </p>
