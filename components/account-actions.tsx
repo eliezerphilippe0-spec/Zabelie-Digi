@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export function AccountActions() {
   const router = useRouter();
@@ -25,8 +24,12 @@ export function AccountActions() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Échec de la suppression.");
       }
-      // Fin de session puis retour à l'accueil.
-      await createClient().auth.signOut();
+      /* Fin de session par le MÊME endpoint serveur que le bouton de
+       * déconnexion : `signOut()` client ne révoquait que la session locale,
+       * donc supprimer son compte laissait vivantes les sessions ouvertes
+       * ailleurs. Hors de l'énoncé de la mission, mais dans son esprit —
+       * un compte supprimé ne doit survivre nulle part. */
+      await fetch("/api/auth/signout", { method: "POST" });
       router.push("/");
       router.refresh();
     } catch (e) {

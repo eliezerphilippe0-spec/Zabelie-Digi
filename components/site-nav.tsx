@@ -214,6 +214,16 @@ export async function SiteNav() {
             >
               {t(lang, "nav.help")}
             </Link>
+            {/* La déconnexion vivait UNIQUEMENT en `sm:block` — donc invisible
+                sur le format majoritaire du terrain visé. Or c'est exactement
+                là qu'elle compte : Android partagé, cybercafé. Un formulaire,
+                donc aucun JS requis. */}
+            {user && (
+              <SignOutButton
+                label={t(lang, "nav.logout")}
+                className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+              />
+            )}
           </nav>
         </div>
 
