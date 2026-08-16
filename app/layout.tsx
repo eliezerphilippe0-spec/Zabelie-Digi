@@ -5,6 +5,7 @@ import { getLang } from "@/lib/i18n-server";
 import { cookies } from "next/headers";
 import { siteUrl } from "@/lib/site-url";
 import { SITE_TITLE, SITE_DESCRIPTION } from "@/lib/brand";
+import { RecoveryCatcher } from "@/components/recovery-catcher";
 
 // Polices AUTO-HÉBERGÉES par Next (sous-ensemble latin, servies depuis notre
 // domaine) — supprime la requête tierce bloquante vers Google Fonts, gain net
@@ -83,7 +84,14 @@ export default async function RootLayout({
     (await cookies()).get("zab_theme")?.value === "light" ? "light" : "dark";
   return (
     <html lang={lang} data-theme={theme} className={`${inter.variable} ${playfair.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        {/* Monté sur TOUTES les pages, parce qu'on ne sait pas d'avance où
+            Supabase déposera l'utilisateur quand l'allowlist Auth ignore le
+            `redirectTo` : il retombe sur le Site URL, quel qu'il soit. Ne rend
+            rien et ne se déclenche que sur `type=recovery`. */}
+        <RecoveryCatcher />
+        {children}
+      </body>
     </html>
   );
 }
