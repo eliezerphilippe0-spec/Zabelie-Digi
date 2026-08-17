@@ -123,7 +123,12 @@ test("le partage n'apparaît QUE quand une boutique existe vraiment", () => {
   /* Un bouton « partager ma boutique » sur une boutique vide enverrait le
    * vendeur promouvoir une page sans produit — pire que pas de bouton. */
   assert.match(COMP, /const partage = etape === "publie_sans_vente" && lienBoutique;/);
-  assert.match(PAGE, /etape === "publie_sans_vente" \? `\$\{siteUrl\(\)\}\/createur\/\$\{user\.id\}` : undefined/);
+  /* L'URL n'est plus composée ici : `hrefBoutique` décide seul entre
+     l'adresse lisible et l'ancienne. La condition, elle, n'a pas bougé. */
+  assert.match(
+    PAGE,
+    /etape === "publie_sans_vente"\s*\n\s*\? `\$\{siteUrl\(\)\}\$\{hrefBoutique\(\{ id: user\.id, boutikSlug \}\)\}`\s*\n\s*: undefined/
+  );
 });
 
 test("le bouton respecte la cible tactile de 44 px", () => {
