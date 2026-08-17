@@ -160,11 +160,26 @@ export type ProductFilters = {
 const ZERO_UUID = "00000000-0000-0000-0000-000000000000";
 
 // BL-134 (FRONT-19) : taille de page — « Voir plus » en GET, 0 JS.
-const CATALOGUE_PAGE_SIZE = 24;
+export const CATALOGUE_PAGE_SIZE = 24;
 
 export type ProductPage = {
   items: ProductView[];
   hasMore: boolean;
+  /**
+   * Nombre TOTAL de produits correspondant au filtre — pas celui de la page.
+   *
+   * ⚠️ L'écran affichait `items.length`, donc « 24 résultats » que le
+   * catalogue en compte 24 ou 3 000. Un compteur qui plafonne à la taille de
+   * page est faux dès la deuxième page, et c'est le seul chiffre par lequel
+   * un acheteur juge si la recherche a trouvé quelque chose.
+   */
+  total: number;
+  /**
+   * `false` = le total est un PLANCHER (le COUNT n'a pas répondu). L'écran le
+   * préfixe alors « ≥ », comme les sommes d'argent : jamais un nombre nu
+   * qu'on sait incomplet.
+   */
+  totalExact: boolean;
 };
 
 /**
@@ -190,8 +205,19 @@ export function isMissingColumn(error: { code?: string; message?: string } | nul
  * pire que l'afficher.
  */
 export async function runTolerantOfMissingStock<T>(
-  build: (withStockFilter: boolean) => PromiseLike<{ data: T | null; error: { code?: string; message?: string } | null }>
-): Promise<{ data: T | null; error: { code?: string; message?: string } | null }> {
+  build: (
+    withStockFilter: boolean
+  ) => PromiseLike<{
+    data: T | null;
+    error: { code?: string; message?: string } | null;
+    /** Compte TOTAL du filtre, quand la requête l'a demandé (`count: exact`). */
+    count?: number | null;
+  }>
+): Promise<{
+  data: T | null;
+  error: { code?: string; message?: string } | null;
+  count?: number | null;
+}> {
   const first = await build(true);
   if (!isMissingColumn(first.error)) return first;
   return build(false);
@@ -378,6 +404,8 @@ export async function getPublishedProductsPage(
     return {
       items: all.slice(offset, offset + CATALOGUE_PAGE_SIZE),
       hasMore: offset + CATALOGUE_PAGE_SIZE < all.length,
+      total: all.length,
+      totalExact: true,
     };
   }
 
@@ -406,8 +434,14 @@ export async function getPublishedProductsPage(
     sellerIds = (matchingSellers ?? []).map((s) => s.id);
   }
 
-  const { data, error } = await runTolerantOfMissingStock<Row[]>((withStockFilter) => {
-    let query = supabase.from("products").select(SELECT).eq("status", "published");
+  const { data, error, count } = await runTolerantOfMissingStock<Row[]>((withStockFilter) => {
+    // `count: exact` : le TOTAL du filtre, dans la MÊME requête que la page —
+    // pas de second aller-retour. Il porte exactement les mêmes filtres que
+    // les lignes rendues, par construction : c'est la même requête.
+    let query = supabase
+      .from("products")
+      .select(SELECT, { count: "exact" })
+      .eq("status", "published");
     // Spec §9 : un produit en rupture n'apparaît pas dans les résultats — un
     // catalogue fantôme détruit la confiance plus vite qu'une offre courte.
     // Sa FICHE reste accessible (lien WhatsApp partagé) et affiche la rupture.
@@ -446,6 +480,7 @@ export async function getPublishedProductsPage(
       .range(offset, offset + CATALOGUE_PAGE_SIZE) as unknown as PromiseLike<{
       data: Row[] | null;
       error: { code?: string; message?: string } | null;
+      count: number | null;
     }>;
   });
 
@@ -458,7 +493,15 @@ export async function getPublishedProductsPage(
     const v = rowAsView(r);
     return { ...v, blurb: v.blurb.length > 160 ? v.blurb.slice(0, 157) + "…" : v.blurb };
   });
-  return { items, hasMore };
+  /* Repli qui SOUS-ESTIME : sans COUNT, on rend ce qu'on a effectivement vu
+   * (les pages précédentes + celle-ci) et on le marque inexact. Un repli sur
+   * `items.length` serait le bug d'origine avec un autre nom. */
+  return {
+    items,
+    hasMore,
+    total: count ?? offset + items.length,
+    totalExact: count != null,
+  };
 }
 
 export async function getProductView(

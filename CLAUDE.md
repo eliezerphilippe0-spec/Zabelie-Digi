@@ -57,7 +57,7 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0063`**. **L'état ne se raconte plus, il s'interroge.**
+   (dernière écrite : **`0082`**. **L'état ne se raconte plus, il s'interroge.**
    Depuis `0062` puis `0063`, appliquées le **2026-08-12**, le registre est
    COMPLET — un fichier, une ligne — et chaque ligne porte deux colonnes :
    `statut` (`redigee` · `appliquee` · `abandonnee`) et **`preuve`**, qui dit
@@ -68,9 +68,21 @@ notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
     group by 1, 2 order by 1, 2;
    ```
 
-   **Mesuré le 2026-08-12, après `0063`** : 63 lignes — 57 `appliquee`,
-   5 `redigee` (`0051`/`0052`/`0053`/`0054`/`0056`), 1 `abandonnee` (`0031`,
-   fidélité, volontairement sautée).
+   **Mesuré le 2026-08-17, après `0067`/`0080`/`0081`/`0082`** : 82 lignes pour
+   82 fichiers — 79 `appliquee`, 2 `redigee` (`0051`/`0056`), 1 `abandonnee`
+   (`0031`, fidélité, volontairement sautée). *(Mesure précédente, 2026-08-12
+   après `0063` : 63 lignes, 57 `appliquee`, 5 `redigee`, 1 `abandonnee`.)*
+
+   ⚠️ **« Complet » n'a été VRAI qu'à partir du 2026-08-17.** `0063` a déclaré
+   le registre complet le 12 ; il l'était à une ligne près, et personne ne l'a
+   vu pendant cinq jours. `0067` n'avait aucune ligne — 81 fichiers inscrits
+   sur 82 — parce qu'elle n'avait jamais été appliquée alors que le corps
+   déployé de `zabelie_migration_garde` portait un bloc d'observation qui lui
+   ressemblait : celui de `0065`. Le comptage `select count(*)` d'un côté et
+   `ls supabase/migrations | wc -l` de l'autre l'aurait dit en dix secondes ;
+   la lecture d'un commentaire familier a suffi à ne pas le poser. **Un
+   registre qui se déclare complet doit être croisé avec le disque, pas avec
+   le souvenir.**
 
    Les quatre valeurs de `preuve`, et **elles ne se valent pas** :
    `journal_supabase` (50) — le fichier du dépôt est identique au SQL que la
