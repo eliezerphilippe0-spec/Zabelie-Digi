@@ -12,8 +12,11 @@ import { lireDossierKyc } from "@/lib/kyc";
 import { isMissingTable } from "@/lib/product-media";
 import { getZonesActives, libelleZone } from "@/lib/zones";
 import { sommeHTG } from "@/lib/somme-htg";
+import { etapeVendeur, besoinDeGuidage, clesEtape } from "@/lib/vendeur-etape";
+import { VendeurPremierPas } from "@/components/vendeur-premier-pas";
+import { siteUrl } from "@/lib/site-url";
 import { getLang } from "@/lib/i18n-server";
-import { t } from "@/lib/i18n";
+import { t, type I18nKey } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
 import { PayoutRequest } from "@/components/payout-request";
 import {
@@ -357,8 +360,46 @@ export default async function DashboardPage() {
     reqErr: t(lang, "zone.req.err"),
   };
 
+  /* PREMIERS PAS (2026-08-17). Décidé par une fonction pure, pas par une
+   * cascade de ternaires dans le rendu — les quatre cas s'énumèrent et se
+   * testent sans rendre quoi que ce soit. Le guidage passe AVANT les
+   * métriques : quatre zéros en très gros au-dessus d'un « publiez votre
+   * premier produit » diraient l'échec avant de dire quoi faire. */
+  const etape = etapeVendeur({
+    produits: products.length,
+    publies: published,
+    ventes: totalSales,
+  });
+  const brouillon = products.find((p) => p.status !== "published");
+  const premierPas =
+    besoinDeGuidage(etape) && etape !== "en_vente"
+      ? {
+          etape,
+          href: etape === "brouillon" && brouillon ? `/vendre?slug=${brouillon.slug}` : "/vendre",
+          // La boutique publique, pas un produit : le lien reste valable quand
+          // le catalogue du vendeur change.
+          lienBoutique: etape === "publie_sans_vente" ? `${siteUrl()}/createur/${user.id}` : undefined,
+          labels: {
+            titre: t(lang, clesEtape(etape).titre as I18nKey),
+            texte: t(lang, clesEtape(etape).texte as I18nKey),
+            cta: t(lang, clesEtape(etape).cta as I18nKey),
+            lien: t(lang, "pas.publie.lien"),
+            message: t(lang, "pas.publie.message"),
+          },
+        }
+      : null;
+
   return (
     <Shell title={`Bonjour, ${user.displayName}`}>
+      {premierPas && (
+        <VendeurPremierPas
+          etape={premierPas.etape}
+          labels={premierPas.labels}
+          href={premierPas.href}
+          lienBoutique={premierPas.lienBoutique}
+        />
+      )}
+
       {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
           largeur, et SEULE à porter le dégradé de la marque. */}
       <div className="mt-8 rounded-2xl border border-line bg-surface-maroon/70 p-6">
