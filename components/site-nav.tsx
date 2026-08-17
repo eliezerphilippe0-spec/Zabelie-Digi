@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 import { LangToggle } from "@/components/lang-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { CategoryMenu } from "@/components/category-menu";
 import { SearchBox, type SearchSuggestion } from "@/components/search-box";
 import { MetricA } from "@/components/metric-a";
@@ -87,6 +88,10 @@ export async function SiteNav() {
                 {t(lang, "wa.chat")}
               </MetricA>
             )}
+            <ThemeToggle
+              labelToLight={t(lang, "nav.theme.light")}
+              labelToDark={t(lang, "nav.theme.dark")}
+            />
             <LangToggle current={lang} />
           </div>
         </div>
@@ -209,6 +214,16 @@ export async function SiteNav() {
             >
               {t(lang, "nav.help")}
             </Link>
+            {/* La déconnexion vivait UNIQUEMENT en `sm:block` — donc invisible
+                sur le format majoritaire du terrain visé. Or c'est exactement
+                là qu'elle compte : Android partagé, cybercafé. Un formulaire,
+                donc aucun JS requis. */}
+            {user && (
+              <SignOutButton
+                label={t(lang, "nav.logout")}
+                className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+              />
+            )}
           </nav>
         </div>
 
@@ -253,7 +268,7 @@ export async function SiteNav() {
                   <circle cx="10" cy="19" r="1.4" />
                   <circle cx="17" cy="19" r="1.4" />
                 </svg>
-                <span className="numeric absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-ink">
+                <span className="numeric absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-on-brand">
                   {articlesPanier}
                 </span>
               </Link>

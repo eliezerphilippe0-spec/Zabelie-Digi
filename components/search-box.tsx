@@ -64,7 +64,7 @@ export function SearchBox({
         />
         <button
           type="submit"
-          className={`rounded-xl bg-brand px-5 text-sm font-semibold text-ink transition hover:opacity-90 ${
+          className={`rounded-xl bg-brand px-5 text-sm font-semibold text-on-brand transition hover:opacity-90 ${
             compact ? "py-2" : "py-3"
           }`}
         >

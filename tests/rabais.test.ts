@@ -44,7 +44,9 @@ test("route discount : auth, RPC seule (aucun UPDATE direct), 503 sans 0075", ()
 
 test("surfaces : fiche (barré + pourcentage, conditionnés), vendeur (manager monté)", () => {
   const fiche = readFileSync("app/produit/[slug]/page.tsx", "utf8");
-  assert.match(fiche, /\{compareHtg && compareHtg > product\.priceHTG && \(/);
+  // Depuis 0080, le barré rabais vit dans la branche SANS flash — la
+  // condition est la même, la mise en page a changé (flash prime).
+  assert.match(fiche, /compareHtg &&\s*\n?\s*compareHtg > product\.priceHTG && \(/);
   assert.match(fiche, /pourcentageRabais\(compareHtg, product\.priceHTG\)/);
   const vendre = readFileSync("app/vendre/page.tsx", "utf8");
   assert.match(vendre, /<RabaisManager[\s>]/);

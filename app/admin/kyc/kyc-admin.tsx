@@ -118,7 +118,7 @@ export function KycAdmin() {
               type="button"
               disabled={busy === d.userId}
               onClick={() => decider(d.userId, "approve")}
-              className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-ink disabled:opacity-50"
+              className="rounded-xl bg-brand px-4 py-2 text-xs font-semibold text-on-brand disabled:opacity-50"
             >
               Vérifier
             </button>

@@ -94,9 +94,29 @@ export function paires(T) {
     out.push([`--accent (graphique) sur ${nom}`, T.accent, fond, LARGE]);
     out.push([`--brand (graphique) sur ${nom}`, T.brand, fond, LARGE]);
   }
-  // CTA : texte sombre sur orange vif — la paire de ::selection et des boutons.
-  out.push(["--ink sur CTA --brand", T.ink, T.brand, NORMAL]);
+  // CTA : texte sombre sur orange vif — la paire de ::selection et des
+  // boutons. Depuis le mode clair, ce texte est `on-brand` (FIXE dans les
+  // deux thèmes), plus `ink` (qui bascule avec le chrome) : la paire suit le
+  // token réellement employé par les composants.
+  out.push(["--on-brand sur CTA --brand", T["on-brand"], T.brand, NORMAL]);
   return out;
+}
+
+/**
+ * Depuis le mode clair (2026-08-15), le fichier de thème porte DEUX
+ * palettes : les tokens @theme (sombre) puis un bloc [data-theme="light"]
+ * qui en redéfinit une partie. `lireTokens` sur le fichier ENTIER écraserait
+ * le sombre par le clair — mesuré : --ink sur --brand rendait 4,25:1, un
+ * faux échec fabriqué par la collision. On découpe au bloc, et le clair
+ * HÉRITE du sombre pour tout ce qu'il ne redéfinit pas — exactement la
+ * cascade CSS.
+ */
+export function lirePalettes(css) {
+  const coupe = css.indexOf('[data-theme="light"]');
+  if (coupe === -1) return { sombre: lireTokens(css), clair: null };
+  const sombre = lireTokens(css.slice(0, coupe));
+  const clair = { ...sombre, ...lireTokens(css.slice(coupe)) };
+  return { sombre, clair };
 }
 
 // ─── Police d'opacité — la classe du défaut UI-01 ────────────────────────────
@@ -131,16 +151,25 @@ export function opacitesInterdites(racines = RACINES, lecteur = readFileSync) {
 
 const enTantQueScript = process.argv[1]?.endsWith("zabelie-contrast.mjs");
 if (enTantQueScript) {
-  const T = lireTokens(readFileSync("app/zabelie-theme.css", "utf8"));
+  const { sombre, clair } = lirePalettes(
+    readFileSync("app/zabelie-theme.css", "utf8")
+  );
   let echecs = 0;
 
-  for (const [nom, fg, bg, seuil] of paires(T)) {
-    const r = ratio(fg, bg);
-    const ok = r >= seuil;
-    if (!ok) echecs++;
-    console.log(
-      `${ok ? "✅" : "❌"} ${r.toFixed(2)}:1 (seuil ${seuil}:1) — ${nom}`
-    );
+  for (const [etiquette, T] of [
+    ["sombre", sombre],
+    ["clair", clair],
+  ]) {
+    if (!T) continue;
+    console.log(`── palette ${etiquette} ──`);
+    for (const [nom, fg, bg, seuil] of paires(T)) {
+      const r = ratio(fg, bg);
+      const ok = r >= seuil;
+      if (!ok) echecs++;
+      console.log(
+        `${ok ? "✅" : "❌"} ${r.toFixed(2)}:1 (seuil ${seuil}:1) — ${nom}`
+      );
+    }
   }
 
   const fautes = opacitesInterdites();

@@ -38,7 +38,7 @@ function Section({ titre, blocs, lang }: { titre: string; blocs: Bloc[]; lang: P
   return (
     <section className="mt-10">
       <h2 className="text-xl font-bold tracking-tight">{titre}</h2>
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-mist">
+      <div className="mt-3 space-y-3 text-base leading-relaxed text-mist">
         {blocs.map((bloc, i) =>
           "p" in bloc ? (
             <p key={i}>{riche(resoudre(bloc.p, lang))}</p>
@@ -62,7 +62,7 @@ export default async function ConditionsPage() {
   return (
     <div className="bg-grain min-h-screen">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main className="mx-auto max-w-2xl px-5 py-16">
         <h1 className="text-3xl font-black tracking-tight">{doc.titre}</h1>
         <p className="mt-2 text-sm text-mist">
           {doc.majLabel} : {LAST_UPDATE}

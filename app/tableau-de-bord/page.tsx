@@ -11,6 +11,7 @@ import { KycForm } from "@/components/kyc-form";
 import { lireDossierKyc } from "@/lib/kyc";
 import { isMissingTable } from "@/lib/product-media";
 import { getZonesActives, libelleZone } from "@/lib/zones";
+import { sommeHTG } from "@/lib/somme-htg";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
@@ -76,7 +77,7 @@ export default async function DashboardPage() {
         <p className="mt-4 text-sm text-mist">Connecte-toi pour accéder à ton tableau de bord.</p>
         <Link
           href="/connexion"
-          className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
+          className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           Se connecter
         </Link>
@@ -119,6 +120,9 @@ export default async function DashboardPage() {
   let pending = 0;
   let hasPendingPayout = false;
   let netTotal = 0;
+  // `false` = total partiel. Il est alors préfixé « ≥ » : un vendeur ne doit
+  // jamais lire comme exact un montant qu'on sait amputé.
+  let netComplet = true;
   let nextMaturity: string | null = null;
   let products: ProductRow[] = [];
   let sales: Sale[] = [];
@@ -166,7 +170,7 @@ export default async function DashboardPage() {
 
     if (wallet?.id) {
       // « Quand est-ce que l'argent arrive ? » vaut plus que la règle J+7.
-      const [{ data: nextEscrow }, { data: credits }] = await Promise.all([
+      const [{ data: nextEscrow }, somme] = await Promise.all([
         admin
           .from("escrow_entries")
           .select("matures_at")
@@ -175,15 +179,25 @@ export default async function DashboardPage() {
           .order("matures_at", { ascending: true })
           .limit(1)
           .maybeSingle(),
-        admin
-          .from("wallet_transactions")
-          .select("amount_htg")
-          .eq("wallet_id", wallet.id)
-          .eq("type", "credit")
-          .limit(1000),
+        // Somme COMPLÈTE du grand livre, par lots. Le `.limit(1000)` précédent
+        // amputait les revenus nets au-delà de 1 000 crédits, en silence — un
+        // vendeur n'a aucun moyen de voir qu'un total est tronqué, et celui-ci
+        // est le chiffre par lequel il juge ce que la plateforme lui doit.
+        sommeHTG(
+          (de, a) =>
+            admin
+              .from("wallet_transactions")
+              .select("amount_htg")
+              .eq("wallet_id", wallet.id)
+              .eq("type", "credit")
+              .order("created_at", { ascending: true })
+              .range(de, a),
+          "vendeur.revenus_nets"
+        ),
       ]);
       nextMaturity = nextEscrow?.matures_at ?? null;
-      netTotal = (credits ?? []).reduce((s, c) => s + c.amount_htg, 0);
+      netTotal = somme.total;
+      netComplet = somme.complet;
     }
 
     const { data: liv, error: livErr } = await admin
@@ -272,17 +286,48 @@ export default async function DashboardPage() {
   const totalSales = products.reduce((s, p) => s + p.sales_count, 0);
   const published = products.filter((p) => p.status === "published").length;
 
-  const stats = [
-    { label: "Disponible", value: formatHTG(balance) },
+  /* HIÉRARCHIE DES MÉTRIQUES (2026-08-17).
+   *
+   * Les quatre cartes avaient la même taille ET le même `text-gradient` :
+   * « Produits publiés », qui est une anecdote, pesait exactement autant que
+   * « Disponible », qui est la question que le vendeur se pose vraiment.
+   * Un accent posé partout ne désigne plus rien — c'est ce qui distingue un
+   * tableau de bord d'une grille de chiffres.
+   *
+   * Le libellé passe AU-DESSUS de la valeur : on sait ce qu'on lit avant de
+   * le lire, ce qui compte d'autant plus quand quatre nombres se suivent.
+   *
+   * Chaque métrique porte désormais sa FENÊTRE. Un montant sans période est
+   * un montant qu'on ne sait pas interpréter — « Revenus nets » ne disait pas
+   * sur quel intervalle, donc ne disait rien de vérifiable.
+   */
+  const metriquePrincipale = {
+    label: "Disponible",
+    value: formatHTG(balance),
+    // C'est la part DÉJÀ MÛRE du grand livre : le reste est dans « En attente ».
+    fenetre: "Après maturation J+7",
+  };
+
+  const metriques: Array<{ label: string; value: string; fenetre?: string }> = [
     {
-      label: nextMaturity
-        ? `En attente · débloqué le ${new Date(nextMaturity).toLocaleDateString("fr-HT")}`
-        : "En attente (J+7)",
+      label: "En attente",
       value: formatHTG(pending),
+      fenetre: nextMaturity
+        ? `Débloqué le ${new Date(nextMaturity).toLocaleDateString("fr-HT")}`
+        : "Maturation J+7",
     },
     // Montant net cumulé d'abord (standard Chariow), le compte en contexte.
-    { label: `Revenus nets · ${totalSales} vente${totalSales > 1 ? "s" : ""}`, value: formatHTG(netTotal) },
-    { label: "Produits publiés", value: String(published) },
+    {
+      label: "Revenus nets",
+      value: netComplet ? formatHTG(netTotal) : `≥ ${formatHTG(netTotal)}`,
+      fenetre: `${totalSales} vente${totalSales > 1 ? "s" : ""} · depuis l'ouverture`,
+    },
+    {
+      label: "Produits publiés",
+      value: String(published),
+      // « 3 » seul ne dit pas s'il en reste en brouillon. « 3 sur 5 » le dit.
+      fenetre: products.length ? `sur ${products.length} au total` : undefined,
+    },
   ];
 
   // PR-Z3 (docs/33 §4) : la déclaration de zone (« Ki kote ou ye ? ») vit
@@ -314,14 +359,36 @@ export default async function DashboardPage() {
 
   return (
     <Shell title={`Bonjour, ${user.displayName}`}>
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {stats.map((s) => (
+      {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
+          largeur, et SEULE à porter le dégradé de la marque. */}
+      <div className="mt-8 rounded-2xl border border-line bg-surface-maroon/70 p-6">
+        <p className="text-xs uppercase tracking-wide text-mist">
+          {metriquePrincipale.label}
+        </p>
+        <p className="metric mt-1 text-4xl font-extrabold text-gradient sm:text-5xl">
+          {metriquePrincipale.value}
+        </p>
+        <p className="mt-1 text-xs text-mist">{metriquePrincipale.fenetre}</p>
+      </div>
+
+      {/* Les trois secondaires : plus petites, sans dégradé, en couleur pleine.
+          `last:col-span-2` évite la carte orpheline à mi-largeur sur 360 px. */}
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        {metriques.map((m) => (
           <div
-            key={s.label}
-            className="rounded-2xl border border-line bg-surface-maroon/70 p-5"
+            key={m.label}
+            className="rounded-2xl border border-line bg-surface-maroon/40 p-4 last:col-span-2 sm:last:col-span-1"
           >
-            <p className="metric text-2xl font-extrabold text-gradient">{s.value}</p>
-            <p className="mt-1 text-xs text-mist">{s.label}</p>
+            <p className="text-xs uppercase tracking-wide text-mist">{m.label}</p>
+            {/* `text-lg` sur mobile, MESURÉ et pas choisi : à `text-xl`,
+                « 124 600 HTG » se coupait en deux dans une carte de 167 px et
+                « HTG » restait seul sur sa ligne. Reste honnête sur la limite —
+                un cumul à sept chiffres passera bien sur deux lignes, que
+                `leading-tight` garde compactes. */}
+            <p className="metric mt-1 text-lg font-bold leading-tight text-cloud sm:text-xl">
+              {m.value}
+            </p>
+            {m.fenetre && <p className="mt-1 text-xs text-mist">{m.fenetre}</p>}
           </div>
         ))}
       </div>
@@ -360,23 +427,38 @@ export default async function DashboardPage() {
             {sales.map((o) => {
               const product = Array.isArray(o.product) ? o.product[0] : o.product;
               return (
+                /* COLONNES ALIGNÉES (2026-08-17).
+                 *
+                 * Montant et date vivaient dans le MÊME `<span>` poussé à
+                 * droite par un `justify-between` : « 1 200 HTG · 14/08 » et
+                 * « 950 HTG · 12/08 » ne se superposaient donc pas, et deux
+                 * montants ne pouvaient pas se comparer d'un coup d'œil.
+                 *
+                 * La date descend au niveau des métadonnées, où elle
+                 * appartient : ce n'est pas une mesure. Le montant occupe
+                 * seul une colonne de droite, en chiffres tabulaires
+                 * (`.metric`, déjà dans globals.css) — c'est ce qui fait lire
+                 * un TABLEAU plutôt qu'une liste d'application mobile. */
                 <li
                   key={o.id}
-                  className="flex items-center justify-between rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
+                  className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-xl border border-line bg-surface/60 px-4 py-3"
                 >
-                  <span>
-                    {product?.title ?? "Produit"}
-                    {/* Le numéro que le vendeur cite à l'acheteur — WhatsApp. */}
-                    {o.order_ref && (
-                      <span className="numeric ml-2 text-xs text-mist select-all">
-                        {o.order_ref}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-mist">
-                    {formatHTG(o.amount_htg)} ·{" "}
-                    {new Date(o.created_at).toLocaleDateString("fr-HT")}
-                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm">{product?.title ?? "Produit"}</p>
+                    <p className="mt-0.5 text-xs text-mist">
+                      {new Date(o.created_at).toLocaleDateString("fr-HT")}
+                      {/* Le numéro que le vendeur cite à l'acheteur — WhatsApp. */}
+                      {o.order_ref && (
+                        <>
+                          {" · "}
+                          <span className="numeric select-all">{o.order_ref}</span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <p className="metric text-right text-sm font-semibold">
+                    {formatHTG(o.amount_htg)}
+                  </p>
                 </li>
               );
             })}

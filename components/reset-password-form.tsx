@@ -117,7 +117,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
               <p className="mt-4 text-sm text-mist">{labels.invalid}</p>
               <Link
                 href="/connexion"
-                className="mt-4 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+                className="mt-4 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {labels.signinCta}
               </Link>
@@ -153,7 +153,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+                  className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
                 >
                   {loading ? labels.submitting : labels.submit}
                 </button>

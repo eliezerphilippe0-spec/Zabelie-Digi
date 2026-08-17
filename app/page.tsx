@@ -91,7 +91,7 @@ function HomeRow({
           <p className="text-sm text-mist">{empty.body}</p>
           <Link
             href={empty.href}
-            className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink transition hover:opacity-90"
+            className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand transition hover:opacity-90"
           >
             {empty.cta}
           </Link>
@@ -375,7 +375,7 @@ export default async function HomePage() {
             <p className="text-base font-bold leading-snug text-cloud">
               {t(lang, "rail.shop.t")}
             </p>
-            <p className="mt-2 inline-block rounded-lg bg-brand px-3 py-1 text-sm font-extrabold text-ink">
+            <p className="mt-2 inline-block rounded-lg bg-brand px-3 py-1 text-sm font-extrabold text-on-brand">
               {t(lang, "rail.shop.free")}
             </p>
             {/* Le bouton WhatsApp de cette carte a été RETIRÉ (porteur,
@@ -502,7 +502,7 @@ export default async function HomePage() {
                   manque ? », pas une recherche de plus. */}
               <button
                 type="submit"
-                className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+                className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
               >
                 {t(lang, "home.demand.btn")}
               </button>
@@ -518,7 +518,7 @@ export default async function HomePage() {
           <span className="text-xs font-semibold uppercase tracking-wider text-mist">
             {t(lang, "home.pay")}
           </span>
-          <span className="rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-ink">
+          <span className="rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-on-brand">
             MonCash
           </span>
           <span className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-sm font-bold text-cloud">
@@ -567,7 +567,7 @@ export default async function HomePage() {
                     <span className="text-accent">★</span> {featured.ratingAvg} ({featured.ratingCount})
                   </span>
                 )}
-                <span className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-ink">
+                <span className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand">
                   {t(lang, "featured.cta")}
                 </span>
               </div>
@@ -670,7 +670,7 @@ export default async function HomePage() {
                 href={s.id ? `/createur/${s.id}` : "/catalogue"}
                 className="rounded-2xl border border-line bg-surface/60 p-5 transition hover:border-brand/60"
               >
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand text-lg font-extrabold text-ink">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand text-lg font-extrabold text-on-brand">
                   {s.name.charAt(0)}
                 </span>
                 <p className="mt-3 truncate font-semibold">{s.name}</p>

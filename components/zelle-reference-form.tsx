@@ -65,7 +65,7 @@ export function ZelleReferenceForm({
       <button
         type="submit"
         disabled={loading}
-        className="mt-3 w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="mt-3 w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {labels.submit}
       </button>

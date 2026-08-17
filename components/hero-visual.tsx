@@ -37,7 +37,7 @@ export function HeroVisual() {
 
       {/* Carte principale : "produit en vedette" */}
       <div className="glass glow-ring absolute left-6 top-10 w-52 rounded-2xl p-4">
-        <div className="h-20 rounded-xl bg-gradient-to-br from-amber to-magenta" />
+        <div className="h-20 rounded-xl bg-gradient-to-br from-accent to-brand" />
         <p className="mt-3 text-xs font-semibold text-cloud">
           Pack presets — Afro Tones
         </p>
@@ -50,7 +50,7 @@ export function HeroVisual() {
       {/* Carte secondaire : "beat / audio" avec waveform */}
       <div className="glass absolute bottom-12 right-2 w-48 rounded-2xl p-4">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-gold to-amber text-ink">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-accent to-brand text-on-brand">
             ♪
           </span>
           <div className="flex-1">
@@ -64,7 +64,7 @@ export function HeroVisual() {
             (h, i) => (
               <span
                 key={i}
-                className="flex-1 rounded-full bg-gradient-to-t from-violet to-teal"
+                className="flex-1 rounded-full bg-gradient-to-t from-brand to-accent"
                 style={{ height: `${h * 1.1}px` }}
               />
             )

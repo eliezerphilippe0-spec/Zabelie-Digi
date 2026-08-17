@@ -10,6 +10,8 @@ import { listerMedias } from "@/lib/product-media";
 import { lireComparePrix, pourcentageRabais } from "@/lib/product-discount";
 import { GalerieProduit } from "@/components/galerie-produit";
 import { getProductReviews } from "@/lib/reviews";
+import { offreFlashActive } from "@/lib/flash";
+import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
 import { AddToCart } from "@/components/add-to-cart";
 import { getPhysicalView } from "@/lib/products-physical";
@@ -124,7 +126,7 @@ export default async function ProductPage({
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
   if (!product) notFound();
 
-  const [reviews, physical, medias, compareHtg] = await Promise.all([
+  const [reviews, physical, medias, compareHtg, flash] = await Promise.all([
     product.creatorId ? getProductReviews(product.id) : Promise.resolve([]),
     getPhysicalView(product.id),
     // Galerie V-1A — [] en démo, [] tant que 0073 n'est pas appliquée.
@@ -134,6 +136,10 @@ export default async function ProductPage({
     // Rabais V-4 — null en démo, null tant que 0075 n'est pas appliquée.
     isSupabaseConfigured()
       ? createClient().then((c) => lireComparePrix(c, product.id))
+      : Promise.resolve(null),
+    // Vente flash (0080) — null en démo, null tant que 0080 n'est pas appliquée.
+    isSupabaseConfigured()
+      ? createClient().then((c) => offreFlashActive(c, product.id))
       : Promise.resolve(null),
   ]);
 
@@ -257,16 +263,30 @@ export default async function ProductPage({
           <div id="acheter" className="mt-8 scroll-mt-24 rounded-2xl border border-line bg-surface/60 p-6">
             {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
                 pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
-            {compareHtg && compareHtg > product.priceHTG && (
-              <p className="text-sm text-mist">
-                <span className="line-through">{formatHTG(compareHtg)}</span>
-                <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
-                  −{pourcentageRabais(compareHtg, product.priceHTG)}%
+            {/* Vente flash (0080) : prime sur le rabais — deux barrés
+                empilés seraient deux vérités. Le prix FAIT FOI au serveur du
+                checkout ; ceci est l'étalage. */}
+            {flash ? (
+              <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
+                <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-on-brand">
+                  {t(lang, "product.flash.badge")}
                 </span>
+                <span className="line-through">{formatHTG(product.priceHTG)}</span>
+                <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
               </p>
+            ) : (
+              compareHtg &&
+              compareHtg > product.priceHTG && (
+                <p className="text-sm text-mist">
+                  <span className="line-through">{formatHTG(compareHtg)}</span>
+                  <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                    −{pourcentageRabais(compareHtg, product.priceHTG)}%
+                  </span>
+                </p>
+              )
             )}
             <p className="numeric text-3xl font-extrabold text-gradient">
-              {formatHTG(product.priceHTG)}
+              {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
               {usdHint(product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">
                   ≈ {usdHint(product.priceHTG)}
@@ -275,7 +295,7 @@ export default async function ProductPage({
             </p>
             {/* Preuve sociale À CÔTÉ du prix : c'est là que l'hésitation se joue. */}
             {(product.ratingAvg !== null || product.sales > 0) && (
-              <p className="mt-1 text-xs text-mist">
+              <p className="mt-1 text-sm text-mist">
                 {product.ratingAvg !== null && (
                   <>
                     <span className="text-accent">★</span> {product.ratingAvg} (
@@ -338,7 +358,7 @@ export default async function ProductPage({
                 physique. Sur un produit physique, elle attribue explicitement
                 l'information au vendeur : Zabelie ne livre pas. */}
             {delivery && (
-              <p className="mt-3 text-center text-xs text-mist">
+              <p className="mt-3 text-center text-sm text-mist">
                 {t(lang, delivery.key, delivery.params)}
               </p>
             )}
@@ -358,7 +378,7 @@ export default async function ProductPage({
                 {physical.fitment.map((f, i) => (
                   <li
                     key={i}
-                    className="rounded-full border border-line px-3 py-1 text-xs text-cloud"
+                    className="rounded-full border border-line px-3 py-1 text-sm text-cloud"
                   >
                     {f.kind === "moto" ? "🏍 " : "🚗 "}
                     {f.make} {f.model} · {f.yearStart}
@@ -366,7 +386,7 @@ export default async function ProductPage({
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-mist">
+              <p className="mt-3 text-sm text-mist">
                 Vérifiez votre modèle avant d&apos;acheter. En cas de doute,
                 contactez le vendeur.
               </p>
@@ -460,7 +480,7 @@ export default async function ProductPage({
           <h2 className="text-lg font-semibold">
             {t(lang, "product.reviews")} ({reviews.length})
           </h2>
-          <p className="mt-1 text-xs text-mist">
+          <p className="mt-1 text-sm text-mist">
             {t(lang, "product.reviews.note")}
           </p>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -490,7 +510,7 @@ export default async function ProductPage({
           <div className="mt-8 text-center">
             <a
               href="#acheter"
-              className="inline-block rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+              className="inline-block rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
             >
               {t(lang, "product.cta.bottom", { price: formatHTG(product.priceHTG) })}
             </a>

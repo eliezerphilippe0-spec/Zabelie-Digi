@@ -30,6 +30,7 @@ export const MENU_ADMIN: { label: string; href: string; cle: keyof Counts | null
   { label: "Géo", href: "/admin/geo", cle: null },
   { label: "Zones", href: "/admin/zones", cle: null },
   { label: "Vérifications", href: "/admin/kyc", cle: null },
+  { label: "Retraits colis", href: "/admin/points-retrait", cle: null },
 ];
 
 export function MenuBadges({ actif }: { actif: string }) {
@@ -76,7 +77,7 @@ export function MenuBadges({ actif }: { actif: string }) {
             {n > 0 && (
               <span
                 aria-label={`${n} en attente`}
-                className="rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold leading-none text-ink"
+                className="rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold leading-none text-on-brand"
               >
                 {n > 99 ? "99+" : n}
               </span>

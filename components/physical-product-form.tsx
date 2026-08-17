@@ -9,6 +9,11 @@ import {
 } from "@/components/ai-description-help";
 import type { CreatorTier } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
+import {
+  compresserImage,
+  poidsLisible,
+  type Compression,
+} from "@/lib/image-compress";
 import Link from "next/link";
 
 /**
@@ -93,6 +98,8 @@ export function PhysicalProductForm({
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [compression, setCompression] = useState<Compression | null>(null);
+  const [compressing, setCompressing] = useState(false);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -155,12 +162,28 @@ export function PhysicalProductForm({
         (k) => categorySlug.includes(k)
       );
 
-  function selectPhoto(f: File | null) {
-    setPhoto(f);
+  /* La compression a lieu À LA SÉLECTION, pas à l'envoi : le vendeur voit le
+   * gain AVANT de valider, et l'attente se paie pendant qu'il remplit le
+   * reste du formulaire plutôt qu'au moment critique de la soumission. */
+  async function selectPhoto(f: File | null) {
     setPhotoPreview((old) => {
       if (old) URL.revokeObjectURL(old);
-      return f ? URL.createObjectURL(f) : null;
+      return null;
     });
+    setCompression(null);
+    if (!f) {
+      setPhoto(null);
+      return;
+    }
+    setCompressing(true);
+    try {
+      const c = await compresserImage(f);
+      setPhoto(c.fichier);
+      setCompression(c);
+      setPhotoPreview(URL.createObjectURL(c.fichier));
+    } finally {
+      setCompressing(false);
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -266,6 +289,25 @@ export function PhysicalProductForm({
             className="text-sm"
           />
         </div>
+        {/* Le vendeur doit COMPRENDRE que la plateforme travaille pour lui :
+            sans ce retour, une attente d'une seconde ressemble à un bug et le
+            gain reste invisible. Kreyòl — c'est la langue du vendeur. */}
+        {compressing && (
+          <p className="mt-2 text-sm text-mist">N ap prepare foto a…</p>
+        )}
+        {!compressing && compression && compression.apres < compression.avant && (
+          <p className="mt-2 text-sm text-success-text">
+            Foto a pare : {poidsLisible(compression.avant)} →{" "}
+            <strong>{poidsLisible(compression.apres)}</strong> — l ap monte pi
+            vit sou entènèt ou.
+          </p>
+        )}
+        {!compressing && compression && compression.apres >= compression.avant && (
+          <p className="mt-2 text-sm text-mist">
+            Foto a deja lejè ({poidsLisible(compression.avant)}) — nou kite l
+            jan l ye.
+          </p>
+        )}
       </label>
 
       {/* ── 2. TITRE + PRIX + QUANTITÉ ───────────────────────────────── */}
@@ -544,7 +586,7 @@ export function PhysicalProductForm({
       <button
         type="submit"
         disabled={busy || !categorySlug}
-        className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-ink disabled:opacity-60"
+        className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-on-brand disabled:opacity-60"
       >
         {busy ? "Publication…" : "Publier le produit"}
       </button>

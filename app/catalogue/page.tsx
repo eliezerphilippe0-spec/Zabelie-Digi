@@ -368,7 +368,7 @@ export default async function CataloguePage({
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+                className="mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.miss.share")}
               </a>
@@ -389,7 +389,7 @@ export default async function CataloguePage({
               </p>
               <Link
                 href="/vendre"
-                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
@@ -420,7 +420,7 @@ export default async function CataloguePage({
               </p>
               <Link
                 href="/vendre"
-                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>

@@ -55,7 +55,7 @@ export default async function CreatorPage({
               className="h-20 w-20 rounded-2xl object-cover"
             />
           ) : (
-            <span className="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-gold to-violet text-2xl font-extrabold text-ink">
+            <span className="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-accent to-brand text-2xl font-extrabold text-on-brand">
               {initials}
             </span>
           )}

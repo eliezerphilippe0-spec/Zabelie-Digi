@@ -206,7 +206,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+            className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
           >
             {loading ? "…" : mode === "signin" ? labels.signinCta : labels.signupCta}
           </button>
@@ -214,7 +214,14 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
 
         {mode === "signin" && (
           <p className="mt-4 text-center text-xs">
-            <Link href="/mot-de-passe-oublie" className="text-mist hover:text-cloud">
+            {/* RES-01 : 15 px mesurés. C'est l'ENTRÉE du parcours de
+                récupération — quelqu'un qui ne parvient pas à se connecter
+                cherche exactement ce lien-là, souvent au pouce, souvent
+                agacé. */}
+            <Link
+              href="/mot-de-passe-oublie"
+              className="inline-flex min-h-11 items-center px-2 text-mist hover:text-cloud"
+            >
               {labels.forgot}
             </Link>
           </p>

@@ -55,7 +55,7 @@ export function DesinstallerSW() {
         type="button"
         onClick={desinstaller}
         disabled={etat.phase === "en_cours"}
-        className="rounded-xl bg-brand px-5 py-3 text-sm font-bold text-ink disabled:opacity-60"
+        className="rounded-xl bg-brand px-5 py-3 text-sm font-bold text-on-brand disabled:opacity-60"
       >
         {etat.phase === "en_cours" ? "Retrait en cours…" : "Désinstaller maintenant"}
       </button>

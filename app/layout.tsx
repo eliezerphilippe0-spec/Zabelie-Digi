@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
+import { cookies } from "next/headers";
 import { siteUrl } from "@/lib/site-url";
-import { SITE_TITLE, SITE_DESCRIPTION } from "@/lib/brand";
+import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK } from "@/lib/brand";
+import { RecoveryCatcher } from "@/components/recovery-catcher";
 
 // Polices AUTO-HÉBERGÉES par Next (sous-ensemble latin, servies depuis notre
 // domaine) — supprime la requête tierce bloquante vers Google Fonts, gain net
@@ -64,7 +66,7 @@ export const viewport: Viewport = {
   // #17123a était le violet de la palette ABANDONNÉE le 2026-07-25 : sur
   // Chrome Android — le terrain principal — la barre d'adresse s'affichait
   // violette au-dessus d'un site noir et orange. Aligné sur --color-bg-1.
-  themeColor: "#0a0a0a",
+  themeColor: BRAND_INK,
 };
 
 export default async function RootLayout({
@@ -75,9 +77,21 @@ export default async function RootLayout({
   // BL-112 : lang suit la langue de session (lecteurs d'écran + SEO) — figé
   // sur "fr" auparavant, le Kreyòl était prononcé avec les règles du français.
   const lang = await getLang();
+  // Thème : le cookie décide AU RENDU SERVEUR — la page arrive dans le bon
+  // thème, sans flash. Toute valeur autre que "light" rend le sombre : le
+  // sombre est l'identité par défaut, le clair un choix explicite.
+  const theme =
+    (await cookies()).get("zab_theme")?.value === "light" ? "light" : "dark";
   return (
-    <html lang={lang} className={`${inter.variable} ${playfair.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang={lang} data-theme={theme} className={`${inter.variable} ${playfair.variable}`}>
+      <body className="min-h-screen antialiased">
+        {/* Monté sur TOUTES les pages, parce qu'on ne sait pas d'avance où
+            Supabase déposera l'utilisateur quand l'allowlist Auth ignore le
+            `redirectTo` : il retombe sur le Site URL, quel qu'il soit. Ne rend
+            rien et ne se déclenche que sur `type=recovery`. */}
+        <RecoveryCatcher />
+        {children}
+      </body>
     </html>
   );
 }

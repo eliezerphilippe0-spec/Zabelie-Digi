@@ -36,7 +36,7 @@ export default async function EchecPage({
           {produit && (
             <Link
               href={`/produit/${encodeURIComponent(produit)}#acheter`}
-              className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+              className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
             >
               {t(lang, "pay.retry")}
             </Link>
@@ -46,7 +46,7 @@ export default async function EchecPage({
             className={
               produit
                 ? "rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
-                : "rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink"
+                : "rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
             }
           >
             {t(lang, "pay.back")}

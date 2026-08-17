@@ -22,6 +22,10 @@ import { execFileSync } from "node:child_process";
 
 type Instrument = {
   lireTokens: (css: string) => Record<string, string>;
+  lirePalettes: (css: string) => {
+    sombre: Record<string, string>;
+    clair: Record<string, string> | null;
+  };
   ratio: (a: string, b: string) => number;
   paires: (T: Record<string, string>) => [string, string, string, number][];
   opacitesInterdites: (racines?: string[], lecteur?: (p: string, e: string) => string) => string[];
@@ -43,19 +47,34 @@ test("les tokens viennent du CSS réel, et les clés porteuses y sont", async ()
 });
 
 test("connu-positif : un token assombri fait échouer sa paire", async () => {
-  const { lireTokens, ratio, paires } = await charge();
-  const T = lireTokens(readFileSync("app/zabelie-theme.css", "utf8"));
+  /* ⚠️ RÉÉCRIT le 2026-08-15 avec le mode clair. L'ancienne forme lisait le
+   * fichier ENTIER via lireTokens : depuis que le bloc [data-theme="light"]
+   * existe, ses valeurs écrasaient les sombres et CE TEST est tombé — la
+   * preuve vivante de la collision que lirePalettes existe pour régler. */
+  const { lirePalettes, ratio, paires } = await charge();
+  const { sombre, clair } = lirePalettes(
+    readFileSync("app/zabelie-theme.css", "utf8")
+  );
   // mist assombri à la valeur qui rendait la colonne illisible (mist à 50 %
   // sur le fond réel ≈ #565656) : la paire doit tomber sous 4,5.
-  const truque = { ...T, mist: "#565656" };
+  const truque = { ...sombre, mist: "#565656" };
   const echouees = paires(truque).filter(([, fg, bg, seuil]) => ratio(fg, bg) < seuil);
   assert.ok(
     echouees.some(([nom]) => nom.includes("--mist")),
     "le mist illisible n'a fait échouer aucune paire — l'instrument ne mesure pas ce qu'il annonce"
   );
-  // Connu-négatif : les tokens réels ne font rien échouer.
-  const reelles = paires(T).filter(([, fg, bg, seuil]) => ratio(fg, bg) < seuil);
-  assert.deepEqual(reelles.map(([nom]) => nom), []);
+  // Et le symétrique CLAIR : un mist éclairci (illisible sur crème) échoue.
+  assert.ok(clair, "le bloc [data-theme=light] doit exister");
+  const truqueClair = { ...clair!, mist: "#b8ada2" };
+  assert.ok(
+    paires(truqueClair).some(([nom, fg, bg, seuil]) => nom.includes("--mist") && ratio(fg, bg) < seuil),
+    "un mist trop clair sur crème doit échouer — sinon la palette claire n'est pas gardée"
+  );
+  // Connu-négatif : les tokens réels des DEUX palettes ne font rien échouer.
+  for (const T of [sombre, clair!]) {
+    const reelles = paires(T).filter(([, fg, bg, seuil]) => ratio(fg, bg) < seuil);
+    assert.deepEqual(reelles.map(([nom]) => nom), []);
+  }
 });
 
 test("connu-positif : la police d'opacité voit text-mist/50, et ignore commentaires et /80", async () => {

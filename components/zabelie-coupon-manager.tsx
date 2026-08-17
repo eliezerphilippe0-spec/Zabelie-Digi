@@ -108,7 +108,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+          className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
         >
           {loading ? "…" : "Créer"}
         </button>

@@ -23,6 +23,8 @@ import {
   countryFromRequest,
 } from "@/lib/geo/country-backfill";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { offreFlashActive, flashEpuisee } from "@/lib/flash";
+import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -154,7 +156,37 @@ export async function POST(req: Request) {
   let couponCode: string | null = null;
   let couponId: string | null = null;
   let discountHtg = 0;
-  if (typeof couponInput === "string" && couponInput.trim()) {
+
+  /* Vente flash (0080) — la fenêtre est relue ICI, au moment de créer la
+   * commande, jamais crue depuis l'affichage : une offre expirée entre la
+   * fiche et le clic facture le prix normal, explicitement. Le prix flash
+   * devient `amount_htg`, donc commission et garde-fous s'y appliquent sans
+   * qu'aucune fonction d'argent ne change. */
+  const flash = await offreFlashActive(admin, product.id);
+  if (flash) {
+    if (typeof couponInput === "string" && couponInput.trim()) {
+      // Deux remises empilées feraient un prix que ni le vendeur ni la
+      // config n'ont jamais approuvé. Refus explicite, jamais silencieux.
+      return NextResponse.json(
+        {
+          error: "Code promo non cumulable avec une vente flash.",
+          code: "flash_non_cumulable",
+        },
+        { status: 422 }
+      );
+    }
+    if (await flashEpuisee(admin, product.id, flash)) {
+      return NextResponse.json(
+        { error: "Offre flash épuisée — le prix normal s'applique de nouveau.",
+          code: "flash_epuisee" },
+        { status: 409 }
+      );
+    }
+    finalPriceHtg = flash.prixFlashHtg;
+    discountHtg = product.price_htg - flash.prixFlashHtg;
+  }
+
+  if (!flash && typeof couponInput === "string" && couponInput.trim()) {
     const code = normalizeCouponCode(couponInput);
     // `code: "coupon_invalid"` permet au client d'afficher le message dans la
     // langue de l'acheteur (FR/KR) — le texte serveur n'est qu'un repli.
@@ -236,6 +268,20 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  // Affiliation (0081) : attribution FIGÉE maintenant, jamais au paiement
+  // (leçon Jumia, docs/37). Best-effort par contrat — un cookie cassé est
+  // ignoré, jamais un checkout bloqué.
+  const refCookie = req.headers
+    .get("cookie")
+    ?.match(new RegExp(`${REF_COOKIE}=([a-z0-9]{6,16})`))?.[1];
+  await attribuerCommande(admin, {
+    orderId: order.id,
+    productId: product.id,
+    buyerId: user.id,
+    sellerId: product.seller_id,
+    code: refCookie && CODE_RE.test(refCookie) ? refCookie : null,
+  });
 
   // Paiement (pending). idempotency_key = order.id (1 paiement/commande).
   const { error: payErr } = await admin.from("payments").insert({

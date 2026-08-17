@@ -88,7 +88,7 @@ export function ProConsole({
           />
           <button
             disabled={busy}
-            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink disabled:opacity-60"
+            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand disabled:opacity-60"
           >
             {busy ? "Ouverture…" : "Ouvrir mon espace pro"}
           </button>
@@ -164,7 +164,7 @@ function NewInvoice({ clients }: { clients: Client[] }) {
           </select>
           <button
             disabled={busy}
-            className="whitespace-nowrap rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink disabled:opacity-60"
+            className="whitespace-nowrap rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand disabled:opacity-60"
           >
             {busy ? "…" : "Créer"}
           </button>
@@ -245,7 +245,7 @@ function ClientsCard({ clients }: { clients: Client[] }) {
           </div>
           <button
             disabled={busy}
-            className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
+            className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand disabled:opacity-60"
           >
             {busy ? "Ajout…" : "Enregistrer"}
           </button>

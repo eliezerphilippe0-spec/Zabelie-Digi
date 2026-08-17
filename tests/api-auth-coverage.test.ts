@@ -45,6 +45,13 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // peut pas être appelée par la supervision externe. Elles n'exposent rien
   // (ni version, ni erreur interne) et ne mutent rien — la « preuve » est
   // l'absence de dépendance pour health, la coupure de délai pour readyz.
+  // Déconnexion : publique PAR NÉCESSITÉ — exiger une session valide pour en
+  // sortir bloquerait précisément le cas qui compte (session expirée, token
+  // corrompu, poste partagé). La route ne peut agir que sur le porteur des
+  // cookies de LA requête : elle ne révoque jamais la session d'un tiers.
+  // Le vecteur restant serait une déconnexion forcée par `<img src>` — fermé
+  // par l'absence de tout export GET, vérifiée dans tests/deconnexion.test.ts.
+  "auth/signout/route.ts": /cookieStore\.getAll\(\)/,
   "health/route.ts": /never lies|ne ment jamais/,
   "readyz/route.ts": /Promise\.race/,
 };
