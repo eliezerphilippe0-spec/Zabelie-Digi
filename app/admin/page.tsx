@@ -17,6 +17,31 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { isMissingColumn } from "@/lib/products";
 import { sommeHTG } from "@/lib/somme-htg";
+import { surveillerFile, SEUIL_ALERTE, type EtatFile } from "@/lib/file-attente";
+
+/**
+ * Fil de détente d'une file d'action (ZB086). Ne rend RIEN sous le seuil :
+ * un avertissement permanent cesse d'être lu, et cette file est vide la
+ * plupart du temps.
+ *
+ * Deux messages distincts, parce que les deux situations appellent des gestes
+ * opposés : « il reste de la marge, construis la pagination » d'un côté,
+ * « des demandes sont invisibles, va les chercher » de l'autre.
+ */
+function AlerteFile({ etat }: { etat: EtatFile }) {
+  if (!etat.alerte) return null;
+  return (
+    <p
+      className={`mt-2 rounded-lg px-3 py-2 text-xs ${
+        etat.tronquee ? "bg-red-500/15 text-red-200" : "bg-amber-500/15 text-amber-200"
+      }`}
+    >
+      {etat.tronquee
+        ? `⚠️ ${etat.total} en attente, seules les ${etat.affichees} plus anciennes sont affichées — ${etat.total - etat.affichees} ne sont visibles nulle part.`
+        : `${etat.total} en attente sur ${etat.affichees} affichables (seuil ${SEUIL_ALERTE}). La pagination admin devient nécessaire.`}
+    </p>
+  );
+}
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Administration — Zabelie" };
@@ -124,6 +149,8 @@ export default async function AdminPage({
     { data: recentOrders },
     { data: zellePendings },
     { data: topupActions },
+    zelleCountRes,
+    topupCountRes,
     { data: sellerRows },
   ] = await Promise.all([
       admin
@@ -195,6 +222,21 @@ export default async function AdminPage({
         .or("and(rail.eq.zelle,status.eq.payment_pending),status.eq.refund_pending")
         .order("created_at", { ascending: true })
         .limit(50),
+      /* Comptes RÉELS des deux files — une ligne chacun (`head`), pas
+       * cinquante. `.length` du tableau plafonné ne pourrait jamais dépasser
+       * le seuil : l'alerte ne se déclencherait pas. Les filtres sont les
+       * MÊMES que ceux des deux requêtes ci-dessus, et un test croise les
+       * deux textes — une divergence de filtre rendrait le compteur muet
+       * sur exactement les lignes qui manquent. */
+      admin
+        .from("payments")
+        .select("*", { count: "exact", head: true })
+        .eq("rail", "zelle")
+        .eq("status", "pending"),
+      admin
+        .from("zabelie_topup_orders")
+        .select("*", { count: "exact", head: true })
+        .or("and(rail.eq.zelle,status.eq.payment_pending),status.eq.refund_pending"),
       admin
         .from("profiles")
         .select("id, display_name, suspended_at, suspended_reason")
@@ -209,6 +251,11 @@ export default async function AdminPage({
   const orders = (recentOrders ?? []) as unknown as OrderRow[];
   const zelleQueue = (zellePendings ?? []) as unknown as ZellePendingRow[];
   const topupQueue = (topupActions ?? []) as unknown as TopupActionRow[];
+  /* Fil de détente (ZB086) : le compte vient du COUNT, jamais de `.length`.
+   * Repli sur la longueur si le count a échoué — un repli qui SOUS-estime,
+   * donc qui ne peut pas inventer une alerte, seulement en manquer une. */
+  const zelleFile = surveillerFile("admin.zelle", zelleCountRes.count ?? zelleQueue.length);
+  const topupFile = surveillerFile("admin.topup", topupCountRes.count ?? topupQueue.length);
   /* « ≥ » quand la somme est partielle — sans langue, donc lisible par tous,
    * et surtout : jamais un nombre nu qu'on sait faux. Rendre le total amputé
    * comme s'il était exact serait le défaut d'origine, avec un plafond
@@ -369,6 +416,7 @@ export default async function AdminPage({
             confirmer. La confirmation livre le produit et crédite le vendeur
             (escrow J+7) — elle est idempotente.
           </p>
+          <AlerteFile etat={zelleFile} />
           <ul className="mt-4 space-y-2">
             {zelleQueue.map((z) => {
               const buyerRef =
@@ -419,6 +467,7 @@ export default async function AdminPage({
             — la recharge part immédiatement. Remboursements : rembourser via le
             moyen de paiement d&apos;origine PUIS enregistrer la référence.
           </p>
+          <AlerteFile etat={topupFile} />
           <ul className="mt-4 space-y-2">
             {topupQueue.map((z) => (
               <li

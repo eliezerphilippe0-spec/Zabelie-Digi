@@ -23,6 +23,25 @@
  * correctif d'affichage qui attend un geste du porteur est un correctif qui
  * n'est pas en ligne. Le parcours par lots marche le jour où il est fusionné.
  *
+ * ⚠️ CE MODULE EST UN PIS-ALLER, et l'argument ci-dessus est INCOMPLET.
+ * PostgREST sait agréger sans aucune migration — `select("amount_htg.sum()")`
+ * — à condition que `db_aggregates_enabled` soit actif sur le projet. Le
+ * réglage n'a PAS pu être vérifié depuis la session du 2026-08-16 : il ne
+ * figure pas dans `pg_db_role_setting` (Supabase l'applique à la
+ * configuration du conteneur PostgREST, pas en base), et l'egress de la
+ * session est fermé — l'unique test décisif, une vraie requête REST, est
+ * hors d'atteinte. Absence de preuve, pas preuve d'absence.
+ *
+ * Ce qu'il faut retenir pour la suite, indépendamment du réglage : à volume
+ * réel, 50 allers-retours séquentiels par rendu de tableau de bord vendeur
+ * coûtent cher, et ce coût est payé à CHAQUE visite. Deux sorties, par ordre
+ * de préférence :
+ *   1. l'agrégat SQL, si le drapeau est actif — zéro migration, une requête ;
+ *   2. un solde MATÉRIALISÉ dérivé du grand livre append-only, à écrire quand
+ *      une fenêtre de migration s'ouvre (`0043` et suivantes). C'est la vraie
+ *      réponse : le total cesse d'être recalculé pour devenir maintenu.
+ * → geste porteur consigné dans `OPS_TODO.md`.
+ *
  * ─── CE QU'ELLE PROMET, ET CE QU'ELLE REFUSE DE PROMETTRE ──────────────────
  * Elle rend `complet: false` plutôt que de mentir. L'appelant DOIT le dire à
  * l'écran — le préfixe « ≥ » y suffit, et il n'a pas de langue. Rendre un
