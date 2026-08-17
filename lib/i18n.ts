@@ -217,6 +217,11 @@ const fr = {
   "catalog.none": "Aucun résultat.",
   "catalog.reset": "Réinitialiser",
   "catalog.more": "Voir plus",
+  "catalog.prev": "Précédent",
+  "catalog.pageOf": "Page {n} sur {total}",
+  "catalog.page404.t": "Cette page n'existe pas",
+  "catalog.page404.b": "Le catalogue ne compte pas autant de pages. Les produits sont toujours là — revenez au début.",
+  "catalog.page404.cta": "Revenir à la première page",
 
   // Produit
   "product.back": "← Retour au catalogue",
@@ -807,6 +812,11 @@ const ht: Record<I18nKey, string> = {
   "catalog.none": "Pa gen rezilta.",
   "catalog.reset": "Rekòmanse",
   "catalog.more": "Wè plis",
+  "catalog.prev": "Anvan",
+  "catalog.pageOf": "Paj {n} sou {total}",
+  "catalog.page404.t": "Paj sa a pa egziste",
+  "catalog.page404.b": "Katalòg la pa gen otan paj. Pwodui yo toujou la — tounen nan konmansman an.",
+  "catalog.page404.cta": "Tounen nan premye paj la",
 
   "product.back": "← Tounen nan katalòg la",
   "product.kind.file": "Fichye dijital",
@@ -1379,6 +1389,11 @@ const en = {
   "catalog.none": "No results.",
   "catalog.reset": "Reset",
   "catalog.more": "See more",
+  "catalog.prev": "Previous",
+  "catalog.pageOf": "Page {n} of {total}",
+  "catalog.page404.t": "This page does not exist",
+  "catalog.page404.b": "The catalog does not have that many pages. The products are still there — go back to the start.",
+  "catalog.page404.cta": "Back to the first page",
 
   // Product
   "product.back": "← Back to catalog",
@@ -1961,6 +1976,11 @@ const es = {
   "catalog.none": "Sin resultados.",
   "catalog.reset": "Restablecer",
   "catalog.more": "Ver más",
+  "catalog.prev": "Anterior",
+  "catalog.pageOf": "Página {n} de {total}",
+  "catalog.page404.t": "Esta página no existe",
+  "catalog.page404.b": "El catálogo no tiene tantas páginas. Los productos siguen ahí — vuelva al principio.",
+  "catalog.page404.cta": "Volver a la primera página",
 
   // Producto
   "product.back": "← Volver al catálogo",

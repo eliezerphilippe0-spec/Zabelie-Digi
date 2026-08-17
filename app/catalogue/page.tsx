@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/product-card";
 import {
   getCatalogueCategories,
   getPublishedProductsPage,
+  CATALOGUE_PAGE_SIZE,
   recordSearchMiss,
   searchFuzzyProductIds,
 } from "@/lib/products";
@@ -61,7 +62,7 @@ export default async function CataloguePage({
 
   // Le second niveau se résout AVANT la requête catalogue : il la restreint.
   const productIds = sous ? await productIdsInCategory(sous) : null;
-  const { items: products, hasMore } = await getPublishedProductsPage({
+  const { items: products, hasMore, total, totalExact } = await getPublishedProductsPage({
     q,
     category: activeCat,
     page,
@@ -122,6 +123,11 @@ export default async function CataloguePage({
     if (manque) logLanding("demand_sensor_submitted");
   }
 
+  /* Le nombre de pages se DÉDUIT du total, il ne se compte pas à part : deux
+     sources donneraient deux réponses le jour où l'une dérive. `max(1, …)`
+     parce qu'un catalogue vide reste « page 1 sur 1 », jamais « sur 0 ». */
+  const nbPages = Math.max(1, Math.ceil(total / CATALOGUE_PAGE_SIZE));
+
   const CATEGORIES = ["Tout", ...categories];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
@@ -168,7 +174,7 @@ export default async function CataloguePage({
           {t(lang, "catalog.title")}
         </h1>
         <p className="mt-2 text-sm text-mist">
-          {products.length} {t(lang, "catalog.results")}
+          {totalExact ? total : `≥ ${total}`} {t(lang, "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
           {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
           {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}
@@ -329,7 +335,29 @@ export default async function CataloguePage({
             </div>
           </>
         ) : products.length === 0 ? (
-          manque ? (
+          page > 1 ? (
+            /* PAGE HORS LIMITES — trouvé en PARCOURANT le catalogue, pas en
+               le relisant : `/catalogue?page=3` sur un catalogue de deux pages
+               affichait « le catalogue est encore vide », ce qui est FAUX, et
+               sans aucun moyen de revenir — le pied de pagination vivait dans
+               la branche « il y a des produits ». Un lien périmé, une URL
+               retapée, et le visiteur était dans un cul-de-sac qui lui disait
+               en plus que la boutique n'avait rien à vendre. */
+            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+              <p className="text-base font-semibold text-cloud">
+                {t(lang, "catalog.page404.t")}
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
+                {t(lang, "catalog.page404.b")}
+              </p>
+              <Link
+                href={hrefFor({ page: 1 })}
+                className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand"
+              >
+                {t(lang, "catalog.page404.cta")}
+              </Link>
+            </div>
+          ) : manque ? (
             /* L'écran qui EST le produit du lot S. Trois éléments, dans cet
                ordre : ce qui a été cherché, où regarder à côté, et le seul
                geste qui change quelque chose — dire qu'on connaît un vendeur.
@@ -443,15 +471,34 @@ export default async function CataloguePage({
                 />
               ))}
             </div>
-            {hasMore && (
-              <div className="mt-10 text-center">
-                <Link
-                  href={hrefFor({ page: page + 1 })}
-                  className="inline-block rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-semibold text-cloud transition hover:border-violet/50"
-                >
-                  {t(lang, "catalog.more")}
-                </Link>
-              </div>
+            {(hasMore || page > 1) && (
+              /* PIED DE PAGINATION (2026-08-17). Il n'y avait qu'un « Voir
+                 plus » : arrivé page 3, le visiteur ne savait ni où il était
+                 ni comment revenir. Trois éléments, tous en liens GET — ça
+                 marche sans JavaScript, comme le reste du catalogue. */
+              <nav className="mt-10 flex items-center justify-center gap-3 text-sm">
+                {page > 1 ? (
+                  <Link
+                    href={hrefFor({ page: page - 1 })}
+                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-violet/50"
+                  >
+                    {t(lang, "catalog.prev")}
+                  </Link>
+                ) : null}
+                <span className="numeric text-mist">
+                  {t(lang, "catalog.pageOf")
+                    .replace("{n}", String(page))
+                    .replace("{total}", String(nbPages))}
+                </span>
+                {hasMore ? (
+                  <Link
+                    href={hrefFor({ page: page + 1 })}
+                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-violet/50"
+                  >
+                    {t(lang, "catalog.more")}
+                  </Link>
+                ) : null}
+              </nav>
             )}
           </>
         )}
