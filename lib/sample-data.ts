@@ -31,7 +31,7 @@ export const PRODUCTS: Product[] = [
     priceHTG: 1500,
     rating: 4.9,
     sales: 312,
-    accent: "from-amber to-magenta",
+    accent: "from-brand to-accent",
     blurb: "Donnez à vos photos une colorimétrie chaude et lumineuse en un clic.",
   },
   {
@@ -43,7 +43,7 @@ export const PRODUCTS: Product[] = [
     priceHTG: 4500,
     rating: 4.8,
     sales: 187,
-    accent: "from-violet to-teal",
+    accent: "from-accent to-brand",
     blurb: "12 modules vidéo pour vendre en ligne et encaisser via mobile money.",
   },
   {
@@ -55,7 +55,7 @@ export const PRODUCTS: Product[] = [
     priceHTG: 2500,
     rating: 5.0,
     sales: 96,
-    accent: "from-gold to-amber",
+    accent: "from-brand to-surface-brown",
     blurb: "Instrumental original prêt à l'emploi, stems inclus.",
   },
   {
@@ -67,7 +67,7 @@ export const PRODUCTS: Product[] = [
     priceHTG: 3500,
     rating: 4.9,
     sales: 54,
-    accent: "from-magenta to-violet",
+    accent: "from-accent to-surface-maroon",
     blurb: "Revue de portfolio et plan d'action personnalisé en visio.",
   },
   {
@@ -79,7 +79,7 @@ export const PRODUCTS: Product[] = [
     priceHTG: 800,
     rating: 4.7,
     sales: 421,
-    accent: "from-teal to-violet",
+    accent: "from-surface-maroon to-brand",
     blurb: "Démarquez-vous avec un CV moderne, prêt en 10 minutes.",
   },
   {
@@ -91,7 +91,7 @@ export const PRODUCTS: Product[] = [
     priceHTG: 5000,
     rating: 4.8,
     sales: 38,
-    accent: "from-amber to-violet",
+    accent: "from-surface-brown to-accent",
     blurb: "Analyse complète de votre compte et plan de contenu sur mesure.",
   },
 ];
