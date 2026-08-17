@@ -17,31 +17,61 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { isMissingColumn } from "@/lib/products";
 import { sommeHTG } from "@/lib/somme-htg";
-import { surveillerFile, SEUIL_ALERTE, type EtatFile } from "@/lib/file-attente";
+import {
+  surveillerFile,
+  bornesFile,
+  pageDepuisParam,
+  SEUIL_ALERTE,
+  type EtatFile,
+} from "@/lib/file-attente";
 
 /**
- * Fil de détente d'une file d'action (ZB086). Ne rend RIEN sous le seuil :
- * un avertissement permanent cesse d'être lu, et cette file est vide la
- * plupart du temps.
+ * Bandeau d'ARRIÉRÉ (ZB086). Ne rend RIEN sous le seuil : un avertissement
+ * permanent cesse d'être lu, et ces files sont vides la plupart du temps.
  *
- * Deux messages distincts, parce que les deux situations appellent des gestes
- * opposés : « il reste de la marge, construis la pagination » d'un côté,
- * « des demandes sont invisibles, va les chercher » de l'autre.
+ * ⚠️ Il ne dit plus « tu ne vois pas tout » — depuis la pagination, plus rien
+ * n'est invisible. Il dit « il y en a plus qu'on n'en traite d'une traite »,
+ * ce qui est le risque restant. Un garde dont la panne est devenue impossible
+ * rendrait « rien à signaler » pour toujours.
  */
 function AlerteFile({ etat }: { etat: EtatFile }) {
   if (!etat.alerte) return null;
   return (
-    <p
-      className={`mt-2 rounded-lg px-3 py-2 text-xs ${
-        etat.tronquee
-          ? "bg-danger/15 text-danger-text"
-          : "bg-warning/15 text-warning-text"
-      }`}
-    >
-      {etat.tronquee
-        ? `⚠️ ${etat.total} en attente, seules les ${etat.affichees} plus anciennes sont affichées — ${etat.total - etat.affichees} ne sont visibles nulle part.`
-        : `${etat.total} en attente sur ${etat.affichees} affichables (seuil ${SEUIL_ALERTE}). La pagination admin devient nécessaire.`}
+    <p className="mt-2 rounded-lg bg-warning/15 px-3 py-2 text-xs text-warning-text">
+      {`${etat.total} en attente (seuil ${SEUIL_ALERTE}) — ${etat.pages} page${etat.pages > 1 ? "s" : ""} à traiter.`}
     </p>
+  );
+}
+
+/**
+ * Pied de pagination d'une file. Liens GET, zéro JavaScript — le back-office
+ * doit rester utilisable depuis une connexion dégradée, comme le reste.
+ *
+ * `href` reçoit le NUMÉRO de page et rend l'URL complète : c'est l'appelant
+ * qui sait quels autres paramètres préserver (la recherche par numéro de
+ * commande, et la page de l'AUTRE file). Les perdre en tournant une page
+ * serait un filtre qui se défait en silence.
+ */
+function PiedFile({ etat, href }: { etat: EtatFile; href: (p: number) => string }) {
+  if (etat.pages <= 1) return null;
+  const lien =
+    "inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50";
+  return (
+    <nav className="mt-4 flex items-center justify-center gap-3">
+      {etat.page > 1 ? (
+        <Link href={href(etat.page - 1)} className={lien}>
+          Précédent
+        </Link>
+      ) : null}
+      <span className="numeric text-sm text-mist">
+        Page {etat.page} sur {etat.pages}
+      </span>
+      {etat.page < etat.pages ? (
+        <Link href={href(etat.page + 1)} className={lien}>
+          Suivant
+        </Link>
+      ) : null}
+    </nav>
   );
 }
 
@@ -106,12 +136,18 @@ function one<T>(v: T | T[] | null): T | null {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ ref?: string }>;
+  searchParams?: Promise<{ ref?: string; zelle?: string; topup?: string }>;
 }) {
   // Recherche par numéro de commande (0042). Normalisation en MAJUSCULES :
   // l'écriture est toujours en majuscules, la recherche accepte les deux
   // casses — un numéro dicté au téléphone se retape n'importe comment.
-  const refQuery = (await searchParams)?.ref?.trim().toUpperCase() ?? "";
+  const sp = await searchParams;
+  const refQuery = sp?.ref?.trim().toUpperCase() ?? "";
+  /* Une page par file : `?page=` serait ambigu sur un écran qui en porte
+     deux, et tourner l'une remettrait l'autre à zéro sans qu'on l'ait
+     demandé. Les valeurs sont relues, jamais crues. */
+  const pageZelle = pageDepuisParam(sp?.zelle);
+  const pageTopup = pageDepuisParam(sp?.topup);
   if (!isSupabaseConfigured()) {
     return (
       <AdminShell title="Administration" actif="/admin">
@@ -215,7 +251,7 @@ export default async function AdminPage({
         .eq("rail", "zelle")
         .eq("status", "pending")
         .order("created_at", { ascending: true })
-        .limit(50),
+        .range(...bornesFile(pageZelle)),
       admin
         .from("zabelie_topup_orders")
         .select(
@@ -223,7 +259,7 @@ export default async function AdminPage({
         )
         .or("and(rail.eq.zelle,status.eq.payment_pending),status.eq.refund_pending")
         .order("created_at", { ascending: true })
-        .limit(50),
+        .range(...bornesFile(pageTopup)),
       /* Comptes RÉELS des deux files — une ligne chacun (`head`), pas
        * cinquante. `.length` du tableau plafonné ne pourrait jamais dépasser
        * le seuil : l'alerte ne se déclencherait pas. Les filtres sont les
@@ -256,8 +292,22 @@ export default async function AdminPage({
   /* Fil de détente (ZB086) : le compte vient du COUNT, jamais de `.length`.
    * Repli sur la longueur si le count a échoué — un repli qui SOUS-estime,
    * donc qui ne peut pas inventer une alerte, seulement en manquer une. */
-  const zelleFile = surveillerFile("admin.zelle", zelleCountRes.count ?? zelleQueue.length);
-  const topupFile = surveillerFile("admin.topup", topupCountRes.count ?? topupQueue.length);
+  const zelleFile = surveillerFile("admin.zelle", zelleCountRes.count ?? zelleQueue.length, pageZelle);
+  const topupFile = surveillerFile("admin.topup", topupCountRes.count ?? topupQueue.length, pageTopup);
+
+  /* Tourner UNE file préserve la recherche en cours et la page de l'autre.
+     L'ancre `#zelle` / `#rechaj` ramène l'admin à la section qu'il lisait :
+     sans elle, chaque clic le renvoie en haut d'une page longue. */
+  const hrefFile = (cle: "zelle" | "topup", n: number, ancre: string) => {
+    const params = new URLSearchParams();
+    if (refQuery) params.set("ref", refQuery);
+    const z = cle === "zelle" ? n : pageZelle;
+    const t = cle === "topup" ? n : pageTopup;
+    if (z > 1) params.set("zelle", String(z));
+    if (t > 1) params.set("topup", String(t));
+    const qs = params.toString();
+    return `/admin${qs ? `?${qs}` : ""}#${ancre}`;
+  };
   /* « ≥ » quand la somme est partielle — sans langue, donc lisible par tous,
    * et surtout : jamais un nombre nu qu'on sait faux. Rendre le total amputé
    * comme s'il était exact serait le défaut d'origine, avec un plafond
@@ -457,6 +507,7 @@ export default async function AdminPage({
               );
             })}
           </ul>
+          <PiedFile etat={zelleFile} href={(n) => hrefFile("zelle", n, "zelle")} />
         </section>
       )}
 
@@ -524,6 +575,7 @@ export default async function AdminPage({
               </li>
             ))}
           </ul>
+          <PiedFile etat={topupFile} href={(n) => hrefFile("topup", n, "rechaj")} />
         </section>
       )}
 

@@ -15,6 +15,7 @@ import { sommeHTG } from "@/lib/somme-htg";
 import { etapeVendeur, besoinDeGuidage, clesEtape } from "@/lib/vendeur-etape";
 import { VendeurPremierPas } from "@/components/vendeur-premier-pas";
 import { siteUrl } from "@/lib/site-url";
+import { hrefBoutique } from "@/lib/boutique-href";
 import { getLang } from "@/lib/i18n-server";
 import { t, type I18nKey } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
@@ -126,6 +127,7 @@ export default async function DashboardPage() {
   // `false` = total partiel. Il est alors préfixé « ≥ » : un vendeur ne doit
   // jamais lire comme exact un montant qu'on sait amputé.
   let netComplet = true;
+  let boutikSlug: string | null = null;
   let nextMaturity: string | null = null;
   let products: ProductRow[] = [];
   let sales: Sale[] = [];
@@ -225,6 +227,16 @@ export default async function DashboardPage() {
       .select("display_name, bio, avatar_url, country_code, region_code, zone_id, pwen_repe")
       .eq("id", user.id)
       .maybeSingle();
+    /* L'adresse publique lisible (0083), lue À PART et sans bruit : la
+       colonne n'existe qu'après application, et le code se déploie avant.
+       Absente → `boutikSlug` reste null → `hrefBoutique` retombe sur
+       /createur/<id>, qui ne cesse jamais de fonctionner. */
+    const { data: slugRow } = await admin
+      .from("profiles")
+      .select("boutik_slug")
+      .eq("id", user.id)
+      .maybeSingle();
+    boutikSlug = (slugRow as { boutik_slug?: string | null } | null)?.boutik_slug ?? null;
     if (prof) {
       profile = {
         display_name: prof.display_name ?? user.displayName,
@@ -378,7 +390,10 @@ export default async function DashboardPage() {
           href: etape === "brouillon" && brouillon ? `/vendre?slug=${brouillon.slug}` : "/vendre",
           // La boutique publique, pas un produit : le lien reste valable quand
           // le catalogue du vendeur change.
-          lienBoutique: etape === "publie_sans_vente" ? `${siteUrl()}/createur/${user.id}` : undefined,
+          lienBoutique:
+            etape === "publie_sans_vente"
+              ? `${siteUrl()}${hrefBoutique({ id: user.id, boutikSlug })}`
+              : undefined,
           labels: {
             titre: t(lang, clesEtape(etape).titre as I18nKey),
             texte: t(lang, clesEtape(etape).texte as I18nKey),
@@ -564,7 +579,7 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Mon profil public</h2>
           <Link
-            href={`/createur/${user.id}`}
+            href={hrefBoutique({ id: user.id, boutikSlug })}
             className="text-sm text-mist transition hover:text-cloud"
           >
             Voir mon profil →

@@ -112,15 +112,20 @@ test("api/profile — zone_id toujours dans l'UPDATE (le trigger 0069 arbitre la
 });
 
 test("fiche créateur — la zone lue en base et le chemin affiché", () => {
+  /* Les colonnes vivent désormais dans la constante `COLONNES` (la sélection
+     est devenue tolérante à `boutik_slug`, absent avant `0083`), et le rendu
+     dans `components/boutique-vue.tsx`, partagé par les deux adresses. Ce que
+     l'assertion vérifie n'a pas changé — seulement où le regarder. */
   assert.match(
     CREATORS,
-    /select\("id, display_name, bio, avatar_url, zone_id, pwen_repe"\)/,
+    /const COLONNES =\s*\n?\s*"id, display_name, bio, avatar_url, zone_id, pwen_repe";/,
     "getCreator ne lit plus zone_id/pwen_repe",
   );
-  const CREATEUR = readFileSync("app/createur/[id]/page.tsx", "utf8");
+  const VUE = readFileSync("components/boutique-vue.tsx", "utf8");
   assert.match(
-    CREATEUR,
+    VUE,
     /cheminZone\(await getZonesActives\(\), creator\.zoneId\)/,
-    "la fiche créateur ne remonte plus le chemin de la zone",
+    "la vitrine ne remonte plus le chemin de la zone",
   );
+  assert.match(VUE, /libelleZone\(z, lang\)/, "le chemin doit être affiché, pas seulement calculé");
 });
