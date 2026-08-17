@@ -197,7 +197,10 @@ export default async function CataloguePage({
           />
           <button
             type="submit"
-            className="rounded-xl bg-cloud px-5 py-3 text-sm font-semibold text-ink transition hover:opacity-90"
+            /* PRIMAIRE : c'est l'action de CETTE page. Le crème filled
+               était un troisième style de bouton pour une action de premier
+               plan — ni l'accent, ni un contour. */
+            className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
           >
             {t(lang, "catalog.search.btn")}
           </button>

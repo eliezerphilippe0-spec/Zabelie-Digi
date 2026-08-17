@@ -38,7 +38,7 @@ export const LANDING_SLIDES: LandingSlide[] = [
     titleKey: "hero.s1.t",
     ctaKey: "hero.s1.cta",
     href: "/catalogue",
-    accent: "from-amber to-magenta",
+    accent: "from-brand to-accent",
   },
   // Diaspora : acheter pour la famille au pays → la grille des rayons.
   {
@@ -51,7 +51,7 @@ export const LANDING_SLIDES: LandingSlide[] = [
     // vu par l'audit externe du 2026-08-10 (« le dégradé vert-orange affaiblit
     // l'identité ») — la rampe reste désormais dans la famille orange, comme
     // les deux autres slides.
-    accent: "from-brand to-amber",
+    accent: "from-accent to-brand",
   },
   // Vendeur : la phrase historique du hero v1, descendue au rang de slide —
   // le parcours ne disparaît pas, il cesse de dominer.
@@ -71,7 +71,7 @@ export const LANDING_SLIDES: LandingSlide[] = [
     titleKey: "home.h1",
     ctaKey: "home.cta.sell",
     href: "/vendre",
-    accent: "from-gold to-amber",
+    accent: "from-brand to-surface-brown",
     badgeKey: "rail.shop.free",
     whatsapp: true,
   },

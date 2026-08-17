@@ -132,6 +132,31 @@ test("aucune couleur Tailwind BRUTE hors du système de tokens", () => {
   );
 });
 
+test("les dégradés DÉCORATIFS restent dans la famille de l'accent", () => {
+  /* ⚠️ La palette resserrée fuyait par là, et c'était sa surface la plus
+   * visible : chaque produit SANS photo reçoit un dégradé de vignette, et la
+   * liste en tirait `magenta` (= `danger`, le rouge d'un paiement échoué) et
+   * `teal` (= `success`, le vert d'un paiement confirmé). Emprunter des
+   * couleurs de STATUT pour décorer use le signal là où il porte de l'argent.
+   *
+   * La variété vient du sens et des extrémités, pas de la teinte. */
+  const AUTORISES = new Set(["brand", "accent", "surface-maroon", "surface-brown"]);
+  const fichiers = ["lib/products.ts", "lib/sample-data.ts", "lib/landing-slides.ts"];
+  const fautes: string[] = [];
+  let vus = 0;
+  for (const f of fichiers) {
+    const src = readFileSync(f, "utf8");
+    for (const m of src.matchAll(/"from-([a-z-]+) to-([a-z-]+)"/g)) {
+      vus++;
+      for (const jeton of [m[1], m[2]]) {
+        if (!AUTORISES.has(jeton)) fautes.push(`${f} : ${m[0]} — « ${jeton} » hors famille`);
+      }
+    }
+  }
+  assert.ok(vus >= 9, `seulement ${vus} dégradés lus — les extracteurs ont-ils vu le dépôt ?`);
+  assert.deepEqual(fautes, [], `\n${fautes.join("\n")}`);
+});
+
 test("le fond de page ne porte plus DEUX lavis d'accent", () => {
   /* Deux radiaux à 13 % et 11 % se cumulaient en un halo qui couvrait la
    * moitié de l'écran : un fond teinté à ce point devient une couleur de

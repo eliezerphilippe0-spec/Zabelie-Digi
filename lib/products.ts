@@ -30,13 +30,27 @@ export type ProductView = {
   serviceIncludes: string[];      // 'service' uniquement — checklist « inclus »
 };
 
+/**
+ * Dégradés de vignette pour les produits SANS photo.
+ *
+ * ⚠️ UNE SEULE TEINTE, et c'est le point. La liste précédente mélangeait
+ * `magenta` (= `danger`, le rouge d'un paiement échoué) et `teal`
+ * (= `success`, le vert d'un paiement confirmé) : chaque produit sans
+ * couverture recevait donc un dégradé rouge ou vert, sur la surface la plus
+ * visible du site. Le resserrement de palette du 2026-08-17 fuyait
+ * exactement par là — et pire, il empruntait des couleurs de STATUT pour
+ * décorer, ce qui use le signal là où il porte de l'argent.
+ *
+ * La variété vient désormais du SENS et des extrémités, pas de la teinte :
+ * six tuiles distinctes à l'œil, une seule famille.
+ */
 const ACCENTS = [
-  "from-amber to-magenta",
-  "from-violet to-teal",
-  "from-gold to-amber",
-  "from-magenta to-violet",
-  "from-teal to-violet",
-  "from-amber to-violet",
+  "from-brand to-accent",
+  "from-accent to-brand",
+  "from-brand to-surface-brown",
+  "from-accent to-surface-maroon",
+  "from-surface-maroon to-brand",
+  "from-surface-brown to-accent",
 ];
 
 /** Dégradé déterministe à partir d'une chaîne (produits Supabase sans accent). */

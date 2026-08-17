@@ -64,7 +64,15 @@ export function SearchBox({
         />
         <button
           type="submit"
-          className={`rounded-xl bg-brand px-5 text-sm font-semibold text-on-brand transition hover:opacity-90 ${
+          /* SECONDAIRE, et c'est une règle : le CHROME ne porte jamais
+             l'accent primaire. Cette barre est collante, donc présente sur
+             tous les écrans — un bouton orange permanent en ferait l'action
+             la plus voyante de chaque page, y compris de celles qui ont la
+             leur. Mesuré le 2026-08-17 : sur /catalogue, ce bouton et la
+             recherche de la page étaient visibles ENSEMBLE, à 268 px, l'un
+             orange et l'autre crème. Deux primaires sur un écran ne
+             hiérarchisent rien. */
+          className={`rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 ${
             compact ? "py-2" : "py-3"
           }`}
         >
