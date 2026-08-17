@@ -1,78 +1,96 @@
 /**
- * FIL DE DÉTENTE SUR LES FILES ADMIN — prévenir avant que le risque soit réel.
+ * LES FILES D'ACTION ADMIN — paginées, et surveillées pour autre chose.
  *
- * ─── LE RISQUE, ET POURQUOI IL EST THÉORIQUE AUJOURD'HUI ───────────────────
- * Les files d'action admin (Zelle en attente, topups à traiter) sont bornées
- * à `FILE_AFFICHEE` lignes. Au-delà, les plus anciennes disparaissent de
- * l'écran — et comme le tri est par date CROISSANTE, ce sont les plus vieilles
- * demandes, donc les plus urgentes, qui restent visibles… jusqu'à ce que le
- * plafond soit atteint. À partir de là, un paiement Zelle en attente peut
- * n'apparaître JAMAIS à l'admin. Le vrai correctif est une pagination admin ;
- * ce module ne la remplace pas.
+ * ─── CE QUE CE MODULE SURVEILLAIT HIER, ET POURQUOI ÇA CHANGE ──────────────
+ * Les files Zelle et topup étaient bornées à 50 lignes AFFICHÉES, sans suite :
+ * au-delà, les plus anciennes demandes disparaissaient de l'écran. Ce module
+ * comparait donc le compte réel au plafond et criait « tronquée » — un
+ * paiement en attente pouvait n'apparaître JAMAIS à l'admin.
  *
- * ─── CE QU'IL FAIT À LA PLACE ──────────────────────────────────────────────
- * Il demande le compte RÉEL (`count: exact, head: true` — une ligne, pas
- * cinquante) et le compare à ce que l'écran sait montrer. Deux seuils :
- *   • `SEUIL_ALERTE` — on prévient AVANT la troncature, pendant qu'il reste
- *     de la marge pour construire la pagination sans urgence ;
- *   • le plafond lui-même — la file EST tronquée, il faut le dire à l'écran.
+ * Elles sont désormais PAGINÉES. Plus rien n'est invisible, et c'est
+ * exactement pour ça que le garde devait changer : un contrôle dont la panne
+ * est devenue impossible rend « rien à signaler » à chaque passage, pour
+ * toujours. C'est le filet posé sur un chemin impraticable, à l'envers — il
+ * ne mesure plus rien et son silence se lit comme une bonne nouvelle.
  *
- * Sans ça, « la file est vide » et « la file déborde et tu n'en vois qu'un
- * bout » produisent le même écran calme. C'est le corollaire d'observabilité
- * du dépôt appliqué à une liste : l'absence de signal doit être un signal.
+ * ─── CE QU'IL SURVEILLE MAINTENANT ─────────────────────────────────────────
+ * L'ARRIÉRÉ, qui est le vrai risque restant. Une file paginée de 200 Zelle en
+ * attente n'a rien d'invisible — et personne ne les traitera pour autant. Le
+ * seuil ne dit plus « tu ne vois pas tout », il dit « il y en a plus que ce
+ * qu'une personne traite dans une session ».
+ *
+ * Le seuil garde sa valeur (35) parce que la question qu'il pose n'a pas
+ * changé d'échelle, seulement de nature.
  */
 
-/** Ce que les écrans admin savent afficher — doit rester égal au `.limit()`. */
-export const FILE_AFFICHEE = 50;
+/** Lignes par page dans une file d'action. 25 se parcourt d'un écran. */
+export const PAGE_FILE = 25;
 
 /**
- * Seuil de prévenance. 35 = 70 % du plafond : assez tôt pour que la
- * pagination se construise posément, assez tard pour ne pas crier à vide.
+ * Au-delà, l'écran le dit. 35 = une file qu'on ne vide pas d'une traite ;
+ * en dessous, un avertissement permanent cesserait d'être lu.
  */
 export const SEUIL_ALERTE = 35;
 
 export type EtatFile = {
-  /** Compte réel en base. */
+  /** Compte réel en base, tous filtres de la file appliqués. */
   total: number;
-  /** Ce que l'écran montre. */
-  affichees: number;
-  /** Le total approche ou dépasse le seuil — il est temps de paginer. */
+  /** Page courante, 1-indexée. */
+  page: number;
+  /** Nombre total de pages — au moins 1, même à zéro ligne. */
+  pages: number;
+  /** L'arriéré dépasse le seuil : à dire à l'écran, pas seulement au journal. */
   alerte: boolean;
-  /** Des lignes sont INVISIBLES à l'admin. */
-  tronquee: boolean;
 };
 
 /**
- * Compare le compte réel au plafond d'affichage, journalise ce qui sort de
- * l'ordinaire, et rend l'état pour que l'écran puisse le dire.
+ * Bornes `range()` (inclusives des deux côtés) pour une page de file.
+ *
+ * ⚠️ `Math.max(1, NaN)` vaut **NaN**, pas 1 — la première version de cette
+ * fonction laissait donc passer un `range(NaN, NaN)` sur une page absurde.
+ * Attrapé par le test, pas à la relecture : la borne inférieure a l'air
+ * gardée. Un `range` négatif ou NaN ne rend pas « rien », il rend une fenêtre
+ * que personne n'a demandée — un écran plausible et faux.
+ */
+export function bornesFile(page: number): [number, number] {
+  const p = Number.isFinite(page) && page > 1 ? Math.floor(page) : 1;
+  const de = (p - 1) * PAGE_FILE;
+  return [de, de + PAGE_FILE - 1];
+}
+
+/** Lit un `?zelle=2` d'URL sans jamais faire confiance à sa forme. */
+export function pageDepuisParam(brut: string | undefined): number {
+  const n = Number.parseInt(brut ?? "1", 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+/**
+ * Établit l'état d'une file et journalise l'arriéré.
  *
  * ⚠️ `total` doit venir d'un COUNT en base, jamais de `lignes.length` : la
- * longueur du tableau est plafonnée par construction, elle ne peut pas
- * dépasser le seuil et l'alerte ne se déclencherait donc jamais. C'est le
- * piège de la sonde qui regarde à côté — l'appelant est vérifié par test.
+ * longueur d'une page est plafonnée par construction, elle ne peut pas
+ * dépasser le seuil et l'alerte ne partirait donc jamais. C'est le piège de
+ * la sonde qui regarde à côté — l'appelant est vérifié par test.
  */
-export function surveillerFile(
-  nom: string,
-  total: number,
-  affichees: number = FILE_AFFICHEE
-): EtatFile {
-  const tronquee = total > affichees;
+export function surveillerFile(nom: string, total: number, page: number): EtatFile {
+  // Même précaution que `bornesFile` : `Math.max(1, NaN)` vaut NaN.
+  const pages = Number.isFinite(total) && total > 0 ? Math.ceil(total / PAGE_FILE) : 1;
   const alerte = total >= SEUIL_ALERTE;
 
-  if (tronquee || alerte) {
+  if (alerte) {
     console.log(
       "[file]",
       JSON.stringify({
         at: new Date().toISOString(),
         code: "ZB086",
         file: nom,
-        issue: tronquee ? "file_tronquee" : "file_approche_du_plafond",
+        issue: "arriere_au_dessus_du_seuil",
         total,
-        affichees,
         seuil: SEUIL_ALERTE,
+        pages,
       })
     );
   }
 
-  return { total, affichees, alerte, tronquee };
+  return { total, page: Math.min(Math.max(1, page), pages), pages, alerte };
 }
