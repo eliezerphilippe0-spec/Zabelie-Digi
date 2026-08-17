@@ -4,7 +4,7 @@ import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
 import { cookies } from "next/headers";
 import { siteUrl } from "@/lib/site-url";
-import { SITE_TITLE, SITE_DESCRIPTION } from "@/lib/brand";
+import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK } from "@/lib/brand";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
 
 // Polices AUTO-HÉBERGÉES par Next (sous-ensemble latin, servies depuis notre
@@ -66,7 +66,7 @@ export const viewport: Viewport = {
   // #17123a était le violet de la palette ABANDONNÉE le 2026-07-25 : sur
   // Chrome Android — le terrain principal — la barre d'adresse s'affichait
   // violette au-dessus d'un site noir et orange. Aligné sur --color-bg-1.
-  themeColor: "#0a0a0a",
+  themeColor: BRAND_INK,
 };
 
 export default async function RootLayout({

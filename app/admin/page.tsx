@@ -33,7 +33,9 @@ function AlerteFile({ etat }: { etat: EtatFile }) {
   return (
     <p
       className={`mt-2 rounded-lg px-3 py-2 text-xs ${
-        etat.tronquee ? "bg-red-500/15 text-red-200" : "bg-amber-500/15 text-amber-200"
+        etat.tronquee
+          ? "bg-danger/15 text-danger-text"
+          : "bg-warning/15 text-warning-text"
       }`}
     >
       {etat.tronquee

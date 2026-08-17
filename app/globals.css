@@ -48,11 +48,12 @@
 
 @layer utilities {
   .text-gradient {
+    /* DEUX arrêts, plus quatre. Les quatre pointaient sur quatre oranges
+       distincts ; ils n'en désignent plus que deux, et un dégradé qui répète
+       la même valeur trois fois n'est pas un dégradé, c'est du bruit. */
     background-image: linear-gradient(
       100deg,
-      var(--color-accent-gold),
-      var(--color-accent-strong) 40%,
-      var(--color-accent) 75%,
+      var(--color-accent),
       var(--color-brand)
     );
     -webkit-background-clip: text;
@@ -63,15 +64,16 @@
      background-attachment: fixed sur body (cassé sur iOS Safari). */
   .bg-grain {
     min-height: 100dvh;
+    /* UN SEUL lavis, et discret. Il y en avait DEUX, à 13 % et 11 %, l'un
+       d'accent et l'autre de marque : sur le fond brun chaud ils se
+       cumulaient en un halo orange qui couvrait la moitié de l'écran. Un fond
+       teinté à ce point n'est plus un fond, c'est une quatrième couleur — et
+       il vole la vedette au seul élément qui doit être orange, le bouton. La
+       référence a un sol CALME : c'est ce qui fait ressortir l'accent. */
     background-image: radial-gradient(
-        circle at 20% 10%,
-        color-mix(in srgb, var(--color-accent) 13%, transparent),
-        transparent 45%
-      ),
-      radial-gradient(
-        circle at 85% 0%,
-        color-mix(in srgb, var(--color-brand) 11%, transparent),
-        transparent 40%
+        circle at 82% 0%,
+        color-mix(in srgb, var(--color-brand) 6%, transparent),
+        transparent 38%
       ),
       linear-gradient(
         160deg,

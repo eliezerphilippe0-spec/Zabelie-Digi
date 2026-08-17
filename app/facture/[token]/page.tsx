@@ -79,7 +79,7 @@ export default async function FacturePortal({
       <main className="mx-auto max-w-lg px-5 py-12">
         {/* En-tête marque */}
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-gold via-accent to-brand text-lg font-extrabold text-on-brand">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-brand text-lg font-extrabold text-on-brand">
             Z
           </div>
           <span className="text-lg font-bold">

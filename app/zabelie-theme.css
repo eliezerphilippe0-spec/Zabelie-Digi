@@ -7,22 +7,53 @@
  * QC contraste : node scripts/zabelie-contrast.mjs (WCAG 4.5:1 / 3:1).
  */
 
+/* ═══════════════════════ RESSERREMENT DE PALETTE — 2026-08-17 ═══════════════
+ * Demande porteur : « on ne veut pas plusieurs couleurs sur le site ».
+ *
+ * ─── CE QUI A CHANGÉ, ET CE QUI N'A PAS CHANGÉ ─────────────────────────────
+ * L'orange de marque n'a PAS bougé (#f26a21) : c'est déjà celui de la
+ * référence. Le déclencher aurait cassé son contrat de contraste (4,71:1 sous
+ * `on-brand`) pour un gain nul.
+ *
+ * Ce qui a changé, c'est TOUT LE RESTE — et c'est là que se jouait l'écart.
+ * Nos neutres étaient des GRIS PURS (#0a0a0a, #181818, #a6a6a6, #ffffff) ;
+ * ceux de la référence sont des BRUNS CHAUDS. Un gris pur sous un orange se
+ * lit comme un thème par défaut ; le même gris teinté à 25-30° se lit comme
+ * un choix. C'est le seul changement de cette passe qui se voit partout à la
+ * fois, puisqu'il traverse tous les tokens.
+ *
+ * ⚠️ Chaque valeur ci-dessous est choisie à LUMINANCE quasi constante, pas à
+ * l'œil : #181818 (L=0,00913) → #1e1811 (L=0,00970). Les 82 paires du
+ * contrôle de contraste bougent donc de quelques centièmes, jamais de seuil.
+ *
+ * ─── LE COMPTE DES TEINTES ─────────────────────────────────────────────────
+ * Avant : gris + QUATRE oranges + vert + jaune + rouge + bleu = 8 familles.
+ * Après : bruns chauds + UN accent (deux valeurs de la même teinte) + trois
+ * couleurs de STATUT (vert/jaune/rouge, chemin argent) = 4 familles, dont une
+ * seule décorative. Le bleu a disparu (voir `--color-info`).
+ */
 @theme {
-  /* ── Fond — dégradé sombre chaud (haut → milieu → bas) ── */
-  --color-bg-1: #0a0a0a; /* noir (décision porteur 2026-07-25 — style Bloop) */
-  --color-bg-2: #060606; /* noir profond */
-  --color-bg-3: #000000; /* noir pur */
+  /* ── Fond — brun chaud très sombre, ramp haut → bas ── */
+  --color-bg-1: #100c09;
+  --color-bg-2: #0b0806;
+  --color-bg-3: #070505;
 
   /* ── Surfaces / cartes ── */
-  --color-surface-maroon: #181818;  /* cartes mises en avant */
-  --color-surface-neutral: #121212; /* cartes standard */
-  --color-surface-brown: #1c1c1c;   /* grands panneaux */
+  --color-surface-maroon: #1e1811;  /* cartes mises en avant */
+  --color-surface-neutral: #17120d; /* cartes standard */
+  --color-surface-brown: #221b14;   /* grands panneaux */
 
-  /* ── Accents — rampe orange → ambre ── */
-  --color-accent: #f5934f;        /* ⚠️ orange primaire (vérifié au rendu) */
-  --color-accent-strong: #fdb868; /* ambre (highlight, fin de dégradé) */
-  --color-accent-gold: #feb56c;   /* or clair */
-  --color-brand: #f26a21;         /* orange vif (CTA principal) */
+  /* ── Accent — UNE teinte, DEUX valeurs ──
+     `brand` est l'action (CTA, prix, éléments cliquables) ; `accent` est sa
+     version claire, pour les graphiques, le survol et la fin de dégradé.
+     `accent-strong` et `accent-gold` étaient deux ambres SUPPLÉMENTAIRES :
+     ils pointent désormais sur `accent`. Aucune classe n'est renommée — la
+     règle du dépôt interdit les remplacements globaux — mais le nombre de
+     valeurs réelles passe de quatre à deux. */
+  --color-accent: #f5934f;
+  --color-accent-strong: #f5934f;
+  --color-accent-gold: #f5934f;
+  --color-brand: #f26a21;         /* orange vif (CTA principal) — inchangé */
   /* Texte posé SUR la rampe orange (CTA, badges brand, titres du héros).
      NE BASCULE PAS avec le thème : blanc sur orange = 2,66:1, mesuré — le
      texte sur orange est sombre en clair comme en sombre. `ink`, lui,
@@ -48,20 +79,37 @@
   --color-warning-text: #e8b84b; /* passe 4.66:1 sans correction */
   --color-danger: #e0645c;       /* paiement échoué, litige */
   --color-danger-text: #ec9f9a;
-  --color-info: #7fa6c9;         /* notifications neutres */
-  --color-info-text: #99b8d4;
+  /* ⚠️ LE BLEU A DISPARU — et c'est un choix, pas un oubli.
+     `info` était la seule teinte FROIDE de la palette : dans un ensemble
+     chaud, elle ne se lisait pas comme « neutre », elle se lisait comme une
+     couleur de plus. Elle avait DEUX usages en tout (mesuré) — dont un seul
+     visible : le statut « Envoyée » d'une facture pro. Ce statut porte son
+     LIBELLÉ, donc l'information survit à la perte de la teinte : la règle
+     « la couleur n'est jamais le seul vecteur » est ce qui rend ce retrait
+     possible sans rien perdre.
+     Les trois autres statuts RESTENT colorés, eux, et ne sont pas
+     négociables : vert/jaune/rouge portent payé / en attente / échoué sur le
+     chemin de l'argent. Les confondre coûterait plus qu'une palette large. */
+  --color-info: #a99f95;
+  --color-info-text: #a99f95;
 
   /* ── Compat : anciens noms remappés (aucune classe existante renommée) ──
      Les usages existants correspondent 1:1 à la nouvelle sémantique :
      teal = confirmations → success ; magenta = erreurs → danger ;
      gold/amber = CTA/accents → rampe orange ; violet = focus/hover → accent. */
-  --color-ink: #0a0a0a;      /* fond profond + texte sombre sur CTA orange */
-  --color-ink-soft: #161616;
-  --color-surface: #121212;  /* = surface-neutral */
-  --color-line: rgba(255, 255, 255, 0.12); /* = surface-border (renforcé sur noir pur) */
-  --color-mist: #a6a6a6;     /* = text-muted (gris neutre sur noir) */
-  --color-cloud: #ffffff;    /* = text (blanc) */
-  --color-gold: #feb56c;     /* = accent-gold */
+  --color-ink: #100c09;      /* fond profond + texte sombre sur CTA orange */
+  --color-ink-soft: #1b1610;
+  --color-surface: #17120d;  /* = surface-neutral */
+  /* Filet chaud plutôt que blanc pur : un trait blanc sur un fond brun tire
+     au bleu et fait ressortir la grille au lieu de la faire oublier. */
+  --color-line: rgba(245, 232, 216, 0.13);
+  --color-mist: #a99f95;     /* = text-muted, gris CHAUD */
+  /* ⚠️ Plus de blanc PUR sur fond quasi noir : la checklist UI le nomme
+     (« fatigant »), et c'est mesurable — 17,76:1 était au-delà de tout besoin.
+     Ce blanc chaud rend 15,80:1 sur surface-maroon, très au-dessus du seuil,
+     et retire l'éblouissement d'un écran lu la nuit sur un téléphone. */
+  --color-cloud: #f7f2ec;    /* = text (blanc chaud) */
+  --color-gold: #f5934f;     /* = accent (plus une 3ᵉ valeur d'orange) */
   --color-amber: #f5934f;    /* = accent */
   --color-magenta: #e0645c;  /* = danger */
   --color-violet: #f5934f;   /* = accent (focus/hover) */
@@ -121,10 +169,11 @@
   --color-surface-neutral: #fffdf9;
   --color-surface-brown: #f8f2e9;
 
-  /* Accents — la rampe orange, assombrie pour tenir sur crème */
+  /* Accent — UNE teinte, DEUX valeurs, comme en sombre. Les trois anciennes
+     valeurs d'ambre assombri (#8a4a10, #96520f) pointent sur `accent`. */
   --color-accent: #a3540e;
-  --color-accent-strong: #8a4a10;
-  --color-accent-gold: #96520f;
+  --color-accent-strong: #a3540e;
+  --color-accent-gold: #a3540e;
   /* Fenêtre étroite, calculée : ≥3:1 sur la surface la plus claire ET
      ≥4,5:1 sous le texte on-brand. #c85c10 rend 3,59 et 4,71. */
   --color-brand: #c85c10;
@@ -136,8 +185,10 @@
   --color-warning-text: #6b4d0d;
   --color-danger: #b3362e;
   --color-danger-text: #9c2f28;
-  --color-info: #2f6a9c;
-  --color-info-text: #275a85;
+  /* Le bleu disparaît aussi en clair — même raison, même statut porteur de
+     libellé. Neutre chaud, aligné sur `mist`. */
+  --color-info: #5d5348;
+  --color-info-text: #5d5348;
 
   /* Chrome et texte — le monde s'inverse, on-brand ne bouge pas */
   --color-ink: #f6f0e7;      /* le chrome (nav, boutons inverses) devient clair */
@@ -146,7 +197,7 @@
   --color-line: rgba(20, 12, 4, 0.14);
   --color-mist: #5d5348;     /* texte secondaire sombre */
   --color-cloud: #221a12;    /* texte principal sombre */
-  --color-gold: #96520f;
+  --color-gold: #a3540e;
   --color-amber: #a3540e;
   --color-magenta: #b3362e;
   --color-violet: #a3540e;
