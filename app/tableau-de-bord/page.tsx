@@ -319,39 +319,75 @@ export default async function DashboardPage() {
    * un montant qu'on ne sait pas interpréter — « Revenus nets » ne disait pas
    * sur quel intervalle, donc ne disait rien de vérifiable.
    */
+  /* La langue est résolue AVANT les métriques : elles traduisent désormais
+     leurs libellés, et `t()` est réservé au serveur (règle de lib/i18n.ts). */
+  const lang = await getLang();
+
   const metriquePrincipale = {
-    label: "Disponible",
+    label: t(lang, "tb.dispo"),
     value: formatHTG(balance),
     // C'est la part DÉJÀ MÛRE du grand livre : le reste est dans « En attente ».
-    fenetre: "Après maturation J+7",
+    fenetre: t(lang, "tb.dispo.f"),
   };
+
+  /* DEUX QUESTIONS, DEUX CARTES (2026-08-17).
+   *
+   * « Revenus nets · 12 ventes » fusionnait deux mesures dans un libellé : le
+   * compte des ventes vivait dans la ligne de contexte, comme une note de bas
+   * de page. Or « combien de fois quelqu'un m'a acheté » et « combien j'ai
+   * gagné » ne répondent pas à la même question — et l'écart entre les deux
+   * est précisément ce qu'une remise ou une vente flash creuse. Un vendeur
+   * qui voit ses ventes monter pendant que ses revenus stagnent apprend
+   * quelque chose ; le libellé fusionné le lui cachait.
+   *
+   * Le PANIER MOYEN prend la place de la fenêtre sur la carte « Ventes » :
+   * répéter « depuis l'ouverture » quatre fois n'apprend rien, alors que le
+   * montant par vente est le chiffre qui dit s'il faut ajuster ses prix.
+   * Division ENTIÈRE (`Math.floor`) — règle dure n°3, jamais de flottant sur
+   * de l'argent. Et il ne s'affiche pas si le total est incomplet : une
+   * moyenne calculée sur un numérateur amputé serait fausse sans le dire.
+   */
+  const panierMoyen =
+    netComplet && totalSales > 0 ? Math.floor(netTotal / totalSales) : null;
 
   const metriques: Array<{ label: string; value: string; fenetre?: string }> = [
     {
-      label: "En attente",
+      label: t(lang, "tb.attente"),
       value: formatHTG(pending),
       fenetre: nextMaturity
-        ? `Débloqué le ${new Date(nextMaturity).toLocaleDateString("fr-HT")}`
-        : "Maturation J+7",
+        ? t(lang, "tb.attente.date").replace(
+            "{date}",
+            new Date(nextMaturity).toLocaleDateString("fr-HT")
+          )
+        : t(lang, "tb.attente.f"),
     },
-    // Montant net cumulé d'abord (standard Chariow), le compte en contexte.
     {
-      label: "Revenus nets",
+      label: t(lang, "tb.ventes"),
+      value: String(totalSales),
+      fenetre:
+        panierMoyen !== null
+          ? t(lang, "tb.ventes.moy").replace("{montant}", formatHTG(panierMoyen))
+          : t(lang, "tb.ventes.f"),
+    },
+    // Montant net cumulé (standard Chariow), désormais SEUL sur sa carte.
+    {
+      label: t(lang, "tb.nets"),
       value: netComplet ? formatHTG(netTotal) : `≥ ${formatHTG(netTotal)}`,
-      fenetre: `${totalSales} vente${totalSales > 1 ? "s" : ""} · depuis l'ouverture`,
+      fenetre: t(lang, "tb.nets.f"),
     },
     {
-      label: "Produits publiés",
+      label: t(lang, "tb.produits"),
       value: String(published),
       // « 3 » seul ne dit pas s'il en reste en brouillon. « 3 sur 5 » le dit.
-      fenetre: products.length ? `sur ${products.length} au total` : undefined,
+      fenetre: products.length
+        ? t(lang, "tb.produits.f").replace("{total}", String(products.length))
+        : undefined,
     },
   ];
 
   // PR-Z3 (docs/33 §4) : la déclaration de zone (« Ki kote ou ye ? ») vit
   // dans le formulaire de profil. Libellés précalculés côté serveur — un
   // composant client ne lit pas les cookies de langue.
-  const lang = await getLang();
   const zonesPourForm = (isSupabaseConfigured() ? await getZonesActives() : []).map((z) => ({
     id: z.id,
     parent_id: z.parent_id,
@@ -431,12 +467,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* Les trois secondaires : plus petites, sans dégradé, en couleur pleine.
-          `last:col-span-2` évite la carte orpheline à mi-largeur sur 360 px. */}
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          Quatre secondaires : la grille est PAIRE (2×2 sur 360 px), donc plus
+          de carte orpheline à mi-largeur à rattraper. */}
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {metriques.map((m) => (
           <div
             key={m.label}
-            className="rounded-2xl border border-line bg-surface-maroon/40 p-4 last:col-span-2 sm:last:col-span-1"
+            className="rounded-2xl border border-line bg-surface-maroon/40 p-4"
           >
             <p className="text-xs uppercase tracking-wide text-mist">{m.label}</p>
             {/* `text-lg` sur mobile, MESURÉ et pas choisi : à `text-xl`,

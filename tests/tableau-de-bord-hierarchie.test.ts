@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { DICT } from "../lib/i18n";
 
 /**
  * HIÉRARCHIE ET ALIGNEMENT DU TABLEAU DE BORD VENDEUR (2026-08-17).
@@ -54,8 +55,20 @@ test("chaque métrique porte sa FENÊTRE — un montant sans période ne dit rie
    * intervalle, donc n'était pas interprétable. La fenêtre est RENDUE, pas
    * seulement déclarée — un champ posé dans l'objet et jamais affiché serait
    * exactement le garde décoratif que ce dépôt traque. */
-  assert.match(CODE, /fenetre: "Après maturation J\+7"/);
-  assert.match(CODE, /fenetre: `\$\{totalSales\} vente\$\{totalSales > 1 \? "s" : ""\} · depuis l'ouverture`/);
+  /* Les libellés viennent désormais de `t()` — le bloc est traduit dans les
+     quatre langues (2026-08-17). Ce que l'assertion protège n'a pas changé :
+     CHAQUE métrique porte une fenêtre, et elle est RENDUE. Seule la source du
+     texte a bougé, et c'est elle qu'on vérifie maintenant — un libellé en dur
+     qui reviendrait ici rougirait. */
+  assert.match(CODE, /fenetre: t\(lang, "tb\.dispo\.f"\)/);
+  const fenetres = CODE.match(/fenetre:/g) ?? [];
+  assert.equal(fenetres.length, 5, "une fenêtre par métrique, hero compris");
+  for (const cle of ["tb.dispo.f", "tb.attente.f", "tb.ventes.f", "tb.nets.f", "tb.produits.f"]) {
+    for (const l of ["fr", "ht", "en", "es"] as const) {
+      const v = (DICT[l] as Record<string, string>)[cle];
+      assert.ok(typeof v === "string" && v.trim(), `${cle} absente en ${l}`);
+    }
+  }
   assert.match(CODE, /\{metriquePrincipale\.fenetre\}/, "rendue pour le hero");
   assert.match(CODE, /\{m\.fenetre && <p[^>]*>\{m\.fenetre\}<\/p>\}/, "rendue pour les secondaires");
 });
