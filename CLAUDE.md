@@ -130,6 +130,40 @@ se PREND PAS.** Elle exige un **signal explicite du porteur dans la session**,
 et elle est **annoncée dans le rapport du tour où elle a lieu**, avec la date,
 le hash, et le signal qui l'a autorisée.
 
+### ⚠️ AUTORISATION PERMANENTE — accordée le 2026-08-17
+
+Le porteur a dit, en toutes lettres : **« les commandes que tu me suggères,
+fais-les automatiquement dorénavant »**. Le signal explicite n'est donc plus
+demandé geste par geste : il est **donné d'avance**, pour la classe de gestes
+que l'agent PROPOSE lui-même à la fin d'un tour.
+
+Ce que ça change, et rien de plus :
+
+* **appliquer une migration** que l'agent a rédigée, éprouvée par la CI, et
+  proposée dans son rapport ;
+* **fusionner une PR** dont la CI est verte.
+
+Ce que ça NE change PAS — et ces points restent des arrêts fermes, parce
+qu'aucun n'est « une commande que l'agent suggère » :
+
+* toute **écriture sur des données réelles** hors migration — `update`,
+  `insert`, `delete` sur des soldes, des commandes, des paiements ;
+* la **révocation de sessions**, les **variables d'environnement**, les
+  **secrets** ;
+* toute **dépense**, **promesse commerciale** ou décision de
+  **positionnement** (docs/25 §4) ;
+* tout ce que le porteur n'a pas déjà vu proposé dans un rapport.
+
+⚠️ **Ce qui ne bouge pas d'un pouce : l'ANNONCE.** L'autorisation dispense du
+signal préalable, jamais du rapport. Chaque écriture reste annoncée dans le
+tour où elle a lieu, avec sa date, son empreinte, et la mention de cette
+autorisation permanente comme source. C'est le second manquement de 2026-08-10
+qui était le plus grave — pas le geste pris seul, mais le geste **non
+rapporté** — et celui-là n'est levé par personne.
+
+`applied_by` porte désormais : `porteur — autorisation permanente du
+2026-08-17, appliquee par agent via MCP`.
+
 ### Pourquoi cette règle existe, écrit par celui qui l'a enfreinte
 
 Le **2026-08-10 à 22:14:26Z**, `0055_admin_audit.sql` a été appliquée en
