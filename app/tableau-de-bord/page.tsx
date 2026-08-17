@@ -11,6 +11,7 @@ import { KycForm } from "@/components/kyc-form";
 import { lireDossierKyc } from "@/lib/kyc";
 import { isMissingTable } from "@/lib/product-media";
 import { getZonesActives, libelleZone } from "@/lib/zones";
+import { sommeHTG } from "@/lib/somme-htg";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
@@ -119,6 +120,9 @@ export default async function DashboardPage() {
   let pending = 0;
   let hasPendingPayout = false;
   let netTotal = 0;
+  // `false` = total partiel. Il est alors préfixé « ≥ » : un vendeur ne doit
+  // jamais lire comme exact un montant qu'on sait amputé.
+  let netComplet = true;
   let nextMaturity: string | null = null;
   let products: ProductRow[] = [];
   let sales: Sale[] = [];
@@ -166,7 +170,7 @@ export default async function DashboardPage() {
 
     if (wallet?.id) {
       // « Quand est-ce que l'argent arrive ? » vaut plus que la règle J+7.
-      const [{ data: nextEscrow }, { data: credits }] = await Promise.all([
+      const [{ data: nextEscrow }, somme] = await Promise.all([
         admin
           .from("escrow_entries")
           .select("matures_at")
@@ -175,15 +179,25 @@ export default async function DashboardPage() {
           .order("matures_at", { ascending: true })
           .limit(1)
           .maybeSingle(),
-        admin
-          .from("wallet_transactions")
-          .select("amount_htg")
-          .eq("wallet_id", wallet.id)
-          .eq("type", "credit")
-          .limit(1000),
+        // Somme COMPLÈTE du grand livre, par lots. Le `.limit(1000)` précédent
+        // amputait les revenus nets au-delà de 1 000 crédits, en silence — un
+        // vendeur n'a aucun moyen de voir qu'un total est tronqué, et celui-ci
+        // est le chiffre par lequel il juge ce que la plateforme lui doit.
+        sommeHTG(
+          (de, a) =>
+            admin
+              .from("wallet_transactions")
+              .select("amount_htg")
+              .eq("wallet_id", wallet.id)
+              .eq("type", "credit")
+              .order("created_at", { ascending: true })
+              .range(de, a),
+          "vendeur.revenus_nets"
+        ),
       ]);
       nextMaturity = nextEscrow?.matures_at ?? null;
-      netTotal = (credits ?? []).reduce((s, c) => s + c.amount_htg, 0);
+      netTotal = somme.total;
+      netComplet = somme.complet;
     }
 
     const { data: liv, error: livErr } = await admin
@@ -281,7 +295,10 @@ export default async function DashboardPage() {
       value: formatHTG(pending),
     },
     // Montant net cumulé d'abord (standard Chariow), le compte en contexte.
-    { label: `Revenus nets · ${totalSales} vente${totalSales > 1 ? "s" : ""}`, value: formatHTG(netTotal) },
+    {
+      label: `Revenus nets · ${totalSales} vente${totalSales > 1 ? "s" : ""}`,
+      value: netComplet ? formatHTG(netTotal) : `≥ ${formatHTG(netTotal)}`,
+    },
     { label: "Produits publiés", value: String(published) },
   ];
 

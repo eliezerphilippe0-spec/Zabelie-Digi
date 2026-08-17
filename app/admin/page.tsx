@@ -16,6 +16,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { isMissingColumn } from "@/lib/products";
+import { sommeHTG } from "@/lib/somme-htg";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Administration — Zabelie" };
@@ -118,7 +119,7 @@ export default async function AdminPage({
   const [
     { data: prods },
     { data: pays },
-    { data: paidOrders },
+    gmvSomme,
     pendingRes,
     { data: recentOrders },
     { data: zellePendings },
@@ -135,11 +136,19 @@ export default async function AdminPage({
         .select("status, created_at, provider_ref, order:orders(amount_htg)")
         .order("created_at", { ascending: false })
         .limit(20),
-      admin
-        .from("orders")
-        .select("amount_htg")
-        .in("status", ["paid", "delivered"])
-        .limit(1000),
+      // GMV : somme COMPLÈTE, par lots. Un `.limit(1000)` sommé en mémoire
+      // rendait un chiffre faux vers le bas au-delà de 1 000 commandes, sans
+      // rien signaler — voir l'en-tête de `lib/somme-htg.ts`.
+      sommeHTG(
+        (de, a) =>
+          admin
+            .from("orders")
+            .select("amount_htg")
+            .in("status", ["paid", "delivered"])
+            .order("created_at", { ascending: true })
+            .range(de, a),
+        "admin.gmv"
+      ),
       admin
         .from("payments")
         .select("*", { count: "exact", head: true })
@@ -200,7 +209,12 @@ export default async function AdminPage({
   const orders = (recentOrders ?? []) as unknown as OrderRow[];
   const zelleQueue = (zellePendings ?? []) as unknown as ZellePendingRow[];
   const topupQueue = (topupActions ?? []) as unknown as TopupActionRow[];
-  const gmv = (paidOrders ?? []).reduce((s, o) => s + o.amount_htg, 0);
+  /* « ≥ » quand la somme est partielle — sans langue, donc lisible par tous,
+   * et surtout : jamais un nombre nu qu'on sait faux. Rendre le total amputé
+   * comme s'il était exact serait le défaut d'origine, avec un plafond
+   * cinquante fois plus haut. */
+  const gmv = formatHTG(gmvSomme.total);
+  const gmvAffiche = gmvSomme.complet ? gmv : `≥ ${gmv}`;
   const pendingPayments = pendingRes.count ?? 0;
 
   const stats = [
@@ -209,7 +223,7 @@ export default async function AdminPage({
       label: "Publiés",
       value: String(products.filter((p) => p.status === "published").length),
     },
-    { label: "GMV (payé)", value: formatHTG(gmv) },
+    { label: "GMV (payé)", value: gmvAffiche },
     { label: "Paiements en attente", value: String(pendingPayments) },
   ];
 
