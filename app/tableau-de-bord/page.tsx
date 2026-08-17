@@ -16,6 +16,7 @@ import { etapeVendeur, besoinDeGuidage, clesEtape } from "@/lib/vendeur-etape";
 import { VendeurPremierPas } from "@/components/vendeur-premier-pas";
 import { siteUrl } from "@/lib/site-url";
 import { hrefBoutique } from "@/lib/boutique-href";
+import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
 import { t, type I18nKey } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
@@ -61,6 +62,8 @@ type ProductRow = {
   title: string;
   status: string;
   sales_count: number;
+  /** Couverture publique. `null` = produit sans photo (le cas de départ). */
+  cover_url: string | null;
 };
 
 export default async function DashboardPage() {
@@ -251,7 +254,7 @@ export default async function DashboardPage() {
 
     const { data: prods } = await admin
       .from("products")
-      .select("id, slug, title, status, sales_count")
+      .select("id, slug, title, status, sales_count, cover_url")
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false });
     products = (prods ?? []) as ProductRow[];
@@ -542,19 +545,65 @@ export default async function DashboardPage() {
           </p>
         ) : (
           <ul className="mt-4 space-y-2">
-            {products.map((p) => (
+            {products.map((p) => {
+              /* UNE SEULE invocation, liée à un nom. La forme précédente
+                 appelait `coverUrlAt` deux fois — dans la condition et dans
+                 le `src` — et une mutation qui remplaçait le SECOND par
+                 `p.cover_url` laissait le test vert : il vérifiait la
+                 présence de l'appel, pas qu'il alimente l'image. Un nom
+                 unique retire la question. */
+              const vignette = coverUrlAt(p.cover_url, COVER_WIDTHS.card);
+              return (
               <li
                 key={p.slug}
-                className="flex items-center justify-between rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
+                className="grid grid-cols-[3rem_1fr_auto] items-center gap-3 rounded-xl border border-line bg-surface/60 px-4 py-3"
               >
-                <Link href={`/produit/${p.slug}`} className="hover:text-cloud">
-                  {p.title}
+                {/* LA VIGNETTE. Un vendeur reconnaît sa photo avant de lire son
+                    titre — et d'autant plus sur un écran de 360 px en kreyòl.
+                    Les couvertures existent depuis le pipeline d'images ; cette
+                    liste les ignorait encore. `cover` (640 px) est la même
+                    largeur que la carte de catalogue : une seule image en
+                    cache pour les deux écrans. */}
+                {vignette ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={vignette}
+                    alt=""
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  /* Pas de photo : un carré neutre, PAS une image cassée.
+                     Et il dit ce qui manque — c'est la première chose qu'un
+                     acheteur remarquera. */
+                  <span
+                    className="grid h-12 w-12 place-items-center rounded-lg border border-line bg-ink/40 text-[10px] leading-tight text-mist"
+                    title="Aucune photo"
+                  >
+                    ⊘
+                  </span>
+                )}
+
+                <Link href={`/produit/${p.slug}`} className="min-w-0 hover:text-cloud">
+                  <span className="block truncate text-sm">{p.title}</span>
+                  {/* STATUT LISIBLE. La ligne affichait la valeur BRUTE de la
+                      base — « published », « draft » — à quelqu'un qui ne lit
+                      pas l'anglais et n'a pas à connaître notre schéma. Même
+                      décision que `app/vendre` : tout ce qui n'est pas publié
+                      est « en revue », parce qu'un vendeur qui lisait
+                      « Brouillon » croyait sa soumission échouée. */}
+                  <span className="mt-0.5 block text-xs text-mist">
+                    {p.status === "published"
+                      ? t(lang, "status.published")
+                      : t(lang, "status.review")}
+                  </span>
                 </Link>
-                <span className="text-xs text-mist">
-                  {p.sales_count} ventes · {p.status}
+
+                <span className="metric text-right text-xs text-mist">
+                  {p.sales_count} {t(lang, "product.sales")}
                 </span>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>
