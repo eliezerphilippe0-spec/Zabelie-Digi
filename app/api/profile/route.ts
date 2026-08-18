@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkDisplayName } from "@/lib/display-name";
 import { attribuerSlug } from "@/lib/boutik-slug-attribution";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,9 +116,21 @@ export async function POST(req: Request) {
    * voulait faire. Lui rendre une erreur parce qu'une adresse n'a pas pu être
    * calculée serait punir la bonne action. L'échec part au journal (ZB087),
    * pas à l'écran. */
+  /* ⚠️ CLIENT DE SERVICE, et pas celui de la session. Mesuré sous le rôle
+   * `anon` réel le 2026-08-18 : la première requête d'`attribuerSlug`
+   * (`select boutik_slug where id = …`) était REFUSÉE — `boutik_slug` (0083)
+   * n'a jamais été ajoutée à la liste blanche de colonnes posée par `0015`.
+   * Aucun vendeur inscrit depuis n'a donc jamais reçu d'adresse publique, et
+   * le repli `42703` du module ne pouvait pas le voir : le code de refus est
+   * `42501`, pas « colonne inconnue ».
+   *
+   * Le service ne relâche rien ici : `attribuerSlug` est borné à
+   * `.eq("id", userId)` et `.is("boutik_slug", null)`, et `userId` vient de
+   * `auth.getUser()`. L'adresse est calculée par le serveur, jamais fournie
+   * par l'appelant. */
   try {
     await attribuerSlug(
-      supabase as unknown as Parameters<typeof attribuerSlug>[0],
+      createAdminClient() as unknown as Parameters<typeof attribuerSlug>[0],
       user.id,
       displayName
     );
