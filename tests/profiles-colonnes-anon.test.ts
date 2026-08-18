@@ -86,22 +86,48 @@ function estClientDeService(source: string, ident: string): boolean {
   return decl.test(source);
 }
 
-type Site = { fichier: string; ident: string; chaine: string };
+type Site = { fichier: string; ident: string; chaine: string; entiere: boolean };
+
+/**
+ * Les commentaires sont retirés AVANT de découper les chaînes.
+ *
+ * ⚠️ Ce n'est pas de la cosmétique — c'est le correctif d'un défaut de ce
+ * fichier même, trouvé à l'audit du 2026-08-18. La première version découpait
+ * la chaîne PostgREST au premier `;` rencontré dans le texte brut. Dans
+ * `app/api/profile/route.ts`, un `;` vit à l'intérieur d'un COMMENTAIRE, 150
+ * caractères avant le `.eq("id", …)` : la chaîne était coupée à cet endroit,
+ * l'extracteur rendait `[]`, et ce vide se lisait comme « ce site ne lit
+ * aucune colonne réservée ». Un `.eq("boutik_slug", …)` placé après ce
+ * commentaire serait passé inaperçu.
+ *
+ * C'est très exactement le défaut que ce fichier existe pour attraper, commis
+ * par l'outil qui l'attrape : l'instrument ne lisait rien, et son silence
+ * ressemblait à une réussite.
+ */
+function sansCommentaires(src: string): string {
+  // Les chaînes sont préservées : un `//` dans une URL n'est pas un
+  // commentaire, et un `/*` dans un libellé non plus.
+  return src.replace(
+    /(["'`])(?:\\.|(?!\1)[^\\])*\1|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+    (m) => (/^["'`]/.test(m) ? m : " ")
+  );
+}
 
 function sitesProfils(): Site[] {
   const sites: Site[] = [];
   for (const f of ["app", "lib", "components"].flatMap(fichiers)) {
-    const src = readFileSync(f, "utf8");
+    const src = sansCommentaires(readFileSync(f, "utf8"));
     const re = /(\w+)\s*\r?\n?\s*\.from\("profiles"\)/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(src))) {
       // La chaîne PostgREST court jusqu'au `;` qui la termine.
-      const suite = src.slice(m.index, m.index + 900);
+      const suite = src.slice(m.index, m.index + 2000);
       const fin = suite.indexOf(";");
       sites.push({
         fichier: f,
         ident: m[1],
         chaine: fin === -1 ? suite : suite.slice(0, fin),
+        entiere: fin !== -1,
       });
     }
   }
@@ -175,6 +201,14 @@ test("aucun site à clé anon ne cite une colonne réservée de profiles", () =>
 
   for (const s of sitesProfils()) {
     const rel = s.fichier.replace(/\\/g, "/");
+    // Une chaîne tronquée est un ÉCHEC, jamais un silence : sans ce contrôle,
+    // un site trop long serait analysé à moitié et son `[]` se lirait comme
+    // « rien à signaler ».
+    assert.ok(
+      s.entiere,
+      `${rel} — chaîne PostgREST sans \`;\` dans les 2000 caractères suivants : l'analyse serait partielle, et son résultat vide ne prouverait rien`
+    );
+
     if (rel in CLIENT_INJECTE) {
       injectesVus.add(rel);
       continue;
@@ -211,17 +245,54 @@ test("aucun site à clé anon ne cite une colonne réservée de profiles", () =>
   }
 });
 
-test("la liaison — attribuerSlug reçoit le client de SERVICE, jamais celui de la session", () => {
-  /* L'assertion porte sur ce qui COMMANDE : l'argument passé. Chercher la
-     présence de `createAdminClient` dans le fichier ne prouverait rien — il
-     pourrait servir ailleurs pendant qu'`attribuerSlug` garde le client de
-     session, ce qui était très exactement l'état du 2026-08-17. */
-  const ROUTE = readFileSync("app/api/profile/route.ts", "utf8");
-  assert.match(
-    ROUTE,
-    /attribuerSlug\(\s*\n?\s*createAdminClient\(\)/,
-    "attribuerSlug doit recevoir createAdminClient() : son premier `select boutik_slug` est refusé (42501) avec la clé anon, et le module ne peut pas le voir — il ne guette que 42703 (colonne absente)"
-  );
+test("la liaison — TOUT appelant d'un module à client injecté passe le client de SERVICE", () => {
+  /* ⚠️ RÉÉCRIT À L'AUDIT DU 2026-08-18. La version précédente nommait un seul
+     appelant (`app/api/profile/route.ts`) et vérifiait son argument. Elle
+     était juste et insuffisante : la sûreté de `CLIENT_INJECTE` repose sur
+     l'ENSEMBLE des appelants, et rien n'épinglait cet ensemble. Un second
+     appelant passant le client de session serait entré sans un rouge — dans
+     le fichier même dont l'exemption dépend de cette liaison.
+
+     Les appelants sont donc énumérés mécaniquement, pas nommés. L'assertion
+     porte sur ce qui COMMANDE : le premier argument de chaque appel. */
+  const MODULES: { fonction: string; pourquoi: string }[] = [
+    {
+      fonction: "attribuerSlug",
+      pourquoi:
+        "son premier `select boutik_slug` est refusé (42501) avec la clé anon, et le module ne peut pas le voir — il ne guette que 42703 (colonne absente), si bien que le refus se journalise en « colonne_absente »",
+    },
+    {
+      fonction: "backfillCountry",
+      pourquoi: "il écrit `country_code`, colonne réservée au service_role depuis 0015",
+    },
+  ];
+
+  for (const { fonction, pourquoi } of MODULES) {
+    const appels: string[] = [];
+    for (const f of ["app", "lib", "components"].flatMap(fichiers)) {
+      const src = sansCommentaires(readFileSync(f, "utf8"));
+      // L'appel, pas l'import ni la déclaration.
+      for (const m of src.matchAll(
+        new RegExp(`(?<!function\\s)\\b${fonction}\\(\\s*([A-Za-z_$][\\w$]*(?:\\(\\))?)`, "g")
+      )) {
+        if (/^(export|import)/.test(src.slice(Math.max(0, m.index - 30), m.index))) continue;
+        const arg = m[1];
+        const service =
+          arg === "createAdminClient()" || estClientDeService(src, arg);
+        appels.push(`${f} → ${arg}${service ? "" : "   ⛔"}`);
+      }
+    }
+
+    assert.ok(
+      appels.length > 0,
+      `aucun appel de ${fonction} trouvé : soit il est mort, soit la détection ne l'attrape plus — dans les deux cas ce test ne vérifie plus rien`
+    );
+    assert.deepEqual(
+      appels.filter((a) => a.includes("⛔")),
+      [],
+      `${fonction} reçoit un client de session quelque part — ${pourquoi}.\nAppels vus :\n  ${appels.join("\n  ")}`
+    );
+  }
 });
 
 test("la fiche publique passe par la fonction 0084, pas par un select direct", () => {

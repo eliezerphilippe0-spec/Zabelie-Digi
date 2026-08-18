@@ -26,9 +26,8 @@ select zabelie_migration_garde('0084_boutique_publique.sql');
 --                                             profil marche toujours)
 --
 -- Ce que ça donne, écran par écran :
---   1. `/createur/[id]`  → 404 pour tout le monde, depuis le 2026-08-14
---      (déploiement de `988761d`, qui a mis `zone_id, pwen_repe` au select).
---   2. `/boutik/[slug]`  → 404 depuis sa naissance, le 2026-08-17.
+--   1. `/createur/[id]`  → 404 pour tout le monde.
+--   2. `/boutik/[slug]`  → 404.
 --   3. le filtre acheteur par zone → **zéro vendeur, toujours**. Celui-là
 --      journalisait (`[zones] vendeurs introuvables`) et personne ne l'a lu :
 --      un avertissement qui ressemble à « cette zone est vide ».
@@ -38,6 +37,18 @@ select zabelie_migration_garde('0084_boutique_publique.sql');
 -- Une seule cause pour les quatre. C'est ce qui rend ce cas instructif : le
 -- défaut n'est pas dans un écran, il est dans une hypothèse partagée par
 -- quatre morceaux de code écrits par quatre chantiers différents.
+--
+-- ⚠️ CE QUI N'EST PAS MESURÉ — corrigé à l'audit du même jour. La première
+-- rédaction datait chaque panne (« depuis le 2026-08-14 »). C'étaient les
+-- dates des COMMITS sur `main`, pas celles d'un déploiement observé : l'egress
+-- du conteneur est fermé, aucune page n'a pu être chargée. Ce qui EST attesté,
+-- outre les refus ci-dessus : les journaux Postgres de production portent des
+-- `permission denied for table profiles` ORGANIQUES le 2026-08-17 à 10:52 et
+-- 11:44 UTC — ni sonde de l'agent (son travail commence le 18 vers 05:00), ni
+-- conséquence de `0083` (appliquée le 17 à 20:32, après). Du code déployé
+-- heurtait donc déjà la liste blanche. La fenêtre de journaux est plafonnée à
+-- 24 h : « depuis au moins le 2026-08-17 » est vrai, « depuis le 14 » est
+-- vraisemblable et non attesté. → `docs/39` §1.
 --
 -- ─── POURQUOI PERSONNE N'A RIEN VU, ET POURQUOI RIEN NE POUVAIT LE DIRE ────
 -- `pg_policies` dit de `profiles` : `profiles_public_read USING (true)`.

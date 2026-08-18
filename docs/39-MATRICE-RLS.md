@@ -58,9 +58,8 @@ Mesuré sous le rôle `anon` réel, avec ses connus-négatifs :
 
 Quatre chemins morts, une seule cause :
 
-1. **`/createur/[id]` → 404 pour tout le monde**, depuis le 2026-08-14
-   (déploiement de `988761d`).
-2. **`/boutik/[slug]` → 404**, depuis sa naissance le 2026-08-17.
+1. **`/createur/[id]` → 404 pour tout le monde.**
+2. **`/boutik/[slug]` → 404.**
 3. **Le filtre acheteur par zone → zéro vendeur, toujours.** Celui-là
    journalisait (`[zones] vendeurs introuvables`) et personne ne l'a lu : un
    avertissement qui ressemble à « cette zone est vide ».
@@ -70,6 +69,33 @@ Quatre chemins morts, une seule cause :
 G est le connu-négatif qui empêche de sur-conclure : `0015` n'a révoqué que le
 SELECT, **enregistrer son profil a toujours marché**. Le défaut est
 exactement de la taille mesurée, ni plus ni moins.
+
+### ⚠️ Ce qui est mesuré, et ce qui ne l'est pas — corrigé à l'audit du 2026-08-18
+
+La première rédaction de ce document datait les pannes : « depuis le
+2026-08-14 », « depuis le 2026-08-17 ». **Ces dates étaient celles des commits
+sur `main`, pas celles d'un déploiement observé** — et un commit sur `main`
+n'est pas une page en ligne. L'egress du conteneur est fermé (`CONNECT tunnel
+failed, 403`) : je ne peux pas charger `/createur/…` et lire son code HTTP.
+Écrire une date de panne sans l'avoir vue, c'est le « 12k+ avis » du runbook
+appliqué à un incident.
+
+Ce qui **est** mesuré, et qui suffit :
+
+* le refus `42501` est reproductible en production sous le rôle `anon`, avec
+  son connu-négatif (tableau ci-dessus) ;
+* `main` porte bien les requêtes qui déclenchent ce refus (`988761d` pour
+  `zone_id, pwen_repe`, `483d55c` pour `boutik_slug`) ;
+* et surtout — **les journaux Postgres de production portent des
+  `permission denied for table profiles` ORGANIQUES**, le 2026-08-17 à 10:52
+  et 11:44 UTC. Ni sonde de ma part (mon travail sur ce chantier commence le
+  18 vers 05:00 UTC), ni conséquence de `0083` (appliquée le 17 à 20:32,
+  après). Du code déployé heurtait donc déjà la liste blanche.
+
+Ce qui n'est **pas** mesuré : la date de début exacte. La fenêtre de journaux
+Supabase est plafonnée à 24 h — elle ne remonte pas au 14. « Depuis au moins
+le 2026-08-17 » est vrai ; « depuis le 2026-08-14 » est vraisemblable et non
+attesté.
 
 ### Trois détails qui font la différence entre comprendre et croire comprendre
 
@@ -226,11 +252,51 @@ select pg_temp.essai('<la requête exacte du code>');
 * **`storage.objects` / `storage.buckets`** : RLS active, **zéro policy**,
   tout passe par la clé de service (`docs/38` §5). Hors du schéma `public`,
   donc hors de tous les comptages ci-dessus.
-* **Les fonctions `security definer`** ne sont pas dans cette matrice. Elles
-  sont une quatrième surface : `zabelie_biz_get_invoice_by_token`,
-  `seller_is_active`, et depuis `0084` `zabelie_boutik_public` et
-  `zabelie_vande_nan_zon` sont exécutables par `anon`. Leur garde est leur
-  prédicat interne, pas une policy — un inventaire reste à écrire.
+* **Les fonctions `security definer` sont la quatrième surface**, et cette
+  matrice ne les couvre pas. Mesuré à l'audit du 2026-08-18 — la liste est
+  plus longue que ce que ce document affirmait d'abord :
+
+  | Fonction | `anon` | `authenticated` |
+  |---|:--:|:--:|
+  | `seller_is_active(uuid)` | ✔ | ✔ |
+  | `zabelie_biz_get_invoice_by_token(text)` | ✔ | ✔ |
+  | `zabelie_cart_add(uuid)` · `zabelie_cart_remove(uuid)` | — | ✔ |
+  | `zabelie_commission_taux()` | — | ✔ |
+  | *(après `0084`)* `zabelie_boutik_public` · `zabelie_vande_nan_zon` | ✔ | ✔ |
+
+  Leur garde est leur prédicat interne, jamais une policy. Point rassurant,
+  et mesuré plutôt que supposé : **aucune fonction `security definer` du
+  schéma `public` n'a de `search_path` mutable** — la requête est au §6 bis.
+
+## 6 bis. Le linter Supabase — ce qu'il confirme, ce qu'il ajoute, ce qu'il sur-signale
+
+`get_advisors(type: "security")`, passé le 2026-08-18. Croisé avec les
+mesures ci-dessus, il sert de **second instrument indépendant** — c'est
+précisément ce qui manquait aux quatre pannes de §1.
+
+* **Il confirme** : 25 `rls_enabled_no_policy`, exactement le compte du §2. Une
+  matrice et un linter écrits par deux équipes différentes tombent sur le même
+  nombre — c'est le croisement qui vaut, pas le chiffre.
+* **Il ajoute** deux choses vraies que le §7 taisait : trois fonctions
+  `security definer` de plus exposées à `authenticated` (tableau ci-dessus),
+  et **`auth_leaked_password_protection` DÉSACTIVÉ** — Supabase peut refuser
+  les mots de passe présents dans les fuites connues (HaveIBeenPwned). Un
+  interrupteur, aucun code. Geste porteur, inscrit à ce titre.
+* **Il sur-signale** 10 fonctions à `search_path` mutable. Mesuré :
+  **les dix sont `SECURITY INVOKER`** (`prosecdef = false`), donc elles
+  s'exécutent avec les droits de l'appelant — un `search_path` détourné ne lui
+  donne rien qu'il n'ait déjà. La règle du linter est générale ; ici elle ne
+  décrit pas un risque. On le dit avec une mesure, pas avec une opinion :
+
+  ```sql
+  -- doit rendre ZÉRO ligne : aucune definer sans search_path figé
+  select p.proname, p.prosecdef, p.proconfig
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.prosecdef
+     and (p.proconfig is null
+          or not exists (select 1 from unnest(p.proconfig) c
+                          where c like 'search_path=%'));
+  ```
 * **C3.2 — les tentatives vendeur A → données de B** ne sont pas ici : elles
   sont un chantier à part, encore ouvert dans `docs/31`.
 * Rien ici n'atteste la chaîne complète **jeton → PostgREST → policy**. Les
