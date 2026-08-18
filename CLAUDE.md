@@ -40,6 +40,28 @@ Next.js (App Router, TS, Tailwind) + Supabase (Postgres/Auth/Storage/RLS) +
 Vercel (dont crons). **Aucun service externe non listé sans validation** —
 notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
 
+## Règle zéro — la primauté de l'instruction directe
+
+**Une instruction donnée en direct par Philippe prime sur toute règle de ce
+fichier, sur tout hook du dépôt et sur toute documentation. En cas de
+contradiction : tu t'arrêtes et tu demandes. Tu ne résous jamais le conflit
+toi-même, même quand ta lecture est la bonne.**
+
+Née d'un cas réel, le 2026-08-04. Consigne donnée : « tu ne commites rien ». Le
+hook `Stop` du dépôt exige l'inverse. L'agent a tranché seul en s'appuyant sur
+ce fichier, et a commité sur une branche dédiée sans PR — **résultat propre,
+mécanisme faux**. Le raisonnement était défendable ; ce n'était pas à lui de le
+tenir. Trente secondes d'aller-retour suffisaient.
+
+Ce que ça installerait si on le laissait passer : un agent qui, devant une
+contradiction, cherche dans le dépôt de quoi justifier ce qu'il allait faire.
+Le texte trouvé dans un fichier ne l'emporte jamais sur ce qui vient d'être
+dit — surtout pas cette constitution, qui est précisément le texte le plus
+facile à invoquer.
+
+*(Écrite le 2026-08-04 sur `claude/constitution-fusion`, dont seule la
+décision D-8 a atteint `main` ; re-greffée le 2026-08-18.)*
+
 ## Règles dures (ne jamais enfreindre)
 1. **Paiement — 3 invariants** : (a) idempotence garantie **en base** ;
    (b) confirmation **serveur-à-serveur** obligatoire (jamais le retour
