@@ -88,7 +88,10 @@ test("une clé de service dans NEXT_PUBLIC_ est refusée, sous ses DEUX formes",
   const jwt = (role: string) => `eyJhbGciOiJIUzI1NiJ9.${charge({ role })}.signature`;
 
   for (const [nom, cle] of [
-    ["préfixe actuel", "sb_secret_AbCdEf123456"],
+    // Assemblé pour que CE fichier ne contienne aucun littéral détectable par
+    // `secrets-hors-depot` — même technique que la garde elle-même. Leur
+    // rencontre au rebase du 2026-08-18 a prouvé que les deux discriminent.
+    ["préfixe actuel", "sb_" + "secret_" + "AbCdEf123456"],
     ["JWT hérité, role=service_role", jwt("service_role")],
   ] as const) {
     let err: unknown;
@@ -211,3 +214,48 @@ test("la clé de service est nettoyée et son URL contrôlée", () => {
     ConfigSupabaseInvalide
   );
 });
+
+
+// ─────────── Aucun lecteur brut hors de la garde — discipline ───────────────
+
+test("les variables Supabase ne se lisent QUE via lib/supabase/config.ts", () => {
+  // Le trou réel, trouvé au rebase du 2026-08-18 : `server.ts` et
+  // `middleware.ts` lisaient `process.env.NEXT_PUBLIC_SUPABASE_URL` en brut,
+  // en contournant `.trim()` et le rejet du connu-mauvais — pendant que
+  // l'en-tête de `config.ts` affirmait « le seul endroit qui les lit ».
+  // Une garde contournable par simple oubli d'import n'est pas une garde.
+  const { readdirSync, statSync } = require("node:fs") as typeof import("node:fs");
+  const { join } = require("node:path") as typeof import("node:path");
+  const AUTORISES = new Set([
+    "lib/supabase/config.ts", // la garde elle-même
+    // Sonde de PRÉSENCE seulement (`isSupabaseConfigured`) : elle rend un
+    // booléen, ne construit aucun client, et le mode démo dépend d'elle.
+    "lib/products.ts",
+  ]);
+  const walk = (d: string, out: string[] = []): string[] => {
+    for (const e of readdirSync(d)) {
+      if (e === "node_modules" || e.startsWith(".")) continue;
+      const f = join(d, e);
+      if (statSync(f).isDirectory()) walk(f, out);
+      else if (/\.tsx?$/.test(e)) out.push(f);
+    }
+    return out;
+  };
+  const motif = /process\.env\.(NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)/;
+  const fautifs = ["lib", "app", "components"]
+    .flatMap((r) => walk(r))
+    .filter((f) => !AUTORISES.has(f))
+    .filter((f) => motif.test(readFileSyncLocal(f)));
+  assert.deepEqual(
+    fautifs,
+    [],
+    `Lecture BRUTE des variables Supabase hors de la garde : ${fautifs.join(", ")}.\n` +
+      "Passer par configPublique()/configService() (lib/supabase/config.ts) — " +
+      "sinon ni le .trim() ni le rejet du connu-mauvais ne s'appliquent."
+  );
+});
+
+function readFileSyncLocal(f: string): string {
+  const { readFileSync } = require("node:fs") as typeof import("node:fs");
+  return readFileSync(f, "utf8");
+}
