@@ -218,3 +218,53 @@ test("toute fonction de maintenance a un appelant, et toute exemption sert encor
       "l'inverse de ce qu'elle prétend."
   );
 });
+
+/**
+ * ─── Un cron DÉCLARÉ n'est pas un cron OBSERVABLE ──────────────────────────
+ *
+ * Les tests ci-dessus établissent que toute fonction de maintenance a un
+ * appelant. Celui-ci établit l'étape d'après : que ce passage LAISSE UNE
+ * TRACE.
+ *
+ * ⚠️ CONSTAT DU 2026-08-20, relevé sur le tableau de bord. Les huit crons
+ * sont enregistrés et actifs — et leur exécution était **inobservable**. La
+ * rétention Hobby efface les journaux avant qu'on puisse les relire, et
+ * **trois routes n'émettaient rien du tout** : `/api/reconcile`,
+ * `/api/maturation`, `/api/points/expire`. Réussite, passage à vide et échec
+ * produisaient exactement le même silence.
+ *
+ * Les trois muettes étaient les trois qui touchent à l'argent : réconciliation
+ * des paiements, maturation des soldes, expiration des points. Et `CLAUDE.md`
+ * pose la règle depuis longtemps — « un cron journalise chaque passage, y
+ * compris à zéro. Sinon "n'a pas tourné" et "a tourné, rien trouvé"
+ * produisent le même vide. » Elle était tenue par cinq routes sur huit, et
+ * rien ne mesurait l'écart.
+ *
+ * Ce test le mesure. Il ne juge pas la QUALITÉ de la trace — seulement son
+ * existence : c'est ce qu'on peut vérifier mécaniquement, et c'est la
+ * différence entre « muet » et « bavard ».
+ */
+test("toute route de cron déclarée émet une trace d'exécution", () => {
+  const chemins = cheminsCron(readFileSync(VERCEL, "utf8"));
+  assert.ok(
+    chemins.length >= 5,
+    `seulement ${chemins.length} cron(s) lu(s) dans ${VERCEL} : l'extraction est cassée, et « aucune muette » serait le vert du vide`
+  );
+
+  const muettes = chemins
+    .filter((chemin) => {
+      const f = fichierDeRoute(chemin);
+      if (!existsSync(f)) return false; // couvert par les tests précédents
+      const src = readFileSync(f, "utf8");
+      return !/console\.(log|warn|error|info)\s*\(/.test(src);
+    })
+    .sort();
+
+  assert.deepEqual(
+    muettes,
+    [],
+    `Route(s) de cron sans aucune trace d'exécution :\n  ${muettes.join(
+      "\n  "
+    )}\nUn cron déclaré n'est pas un cron exécuté : secret absent, déploiement non promu, chemin renommé — tous ces cas laissent l'entrée dans ${VERCEL} et ne produisent rien. Sans une ligne par passage, « n'a pas tourné » et « a tourné, rien trouvé » sont indiscernables. Ajoutez un journal() sur le modèle de app/api/search/purge/route.ts.`
+  );
+});

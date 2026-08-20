@@ -79,8 +79,30 @@ function liveDeps(): ReconcileDeps {
   };
 }
 
+/**
+ * Journal d'exécution — émis à CHAQUE passage, y compris quand il n'y a rien
+ * à réconcilier.
+ *
+ * ⚠️ AJOUTÉ LE 2026-08-20. Relevé du tableau de bord : les huit crons sont
+ * enregistrés et actifs, mais leur EXÉCUTION est inobservable — la rétention
+ * Hobby efface les journaux avant qu'on puisse les relire, et cette route-ci
+ * n'émettait **rien du tout**. C'est la plus grave des trois muettes : elle
+ * porte l'invariant (c) de `docs/03` — « réconciliation totale, aucun paiement
+ * orphelin ». Sans une ligne par passage, « la réconciliation n'a pas tourné »
+ * et « elle a tourné, rien à rattraper » produisaient le même silence.
+ *
+ * `secretConfigure` sur le refus distingue « quelqu'un a frappé sans jeton »
+ * de « CRON_SECRET n'est pas posée » — deux 401 identiques, deux gestes
+ * différents.
+ */
+function journal(champs: Record<string, unknown>) {
+  console.log("[reconcile]", JSON.stringify({ at: new Date().toISOString(), ...champs }));
+}
+
 async function handle(req: Request) {
+  const debut = Date.now();
   if (!authorize(req)) {
+    journal({ issue: "non_autorise", secretConfigure: Boolean(process.env.CRON_SECRET) });
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   try {
@@ -90,8 +112,10 @@ async function handle(req: Request) {
     const topup = await reconcileTopups(createAdminClient()).catch((e) => ({
       error: e instanceof Error ? e.message : "Erreur topup",
     }));
+    journal({ issue: "termine", ...result, topupErreur: (topup as { error?: string }).error ?? null, dureeMs: Date.now() - debut });
     return NextResponse.json({ ...result, topup });
   } catch (e) {
+    journal({ issue: "exception", message: e instanceof Error ? e.message : "Erreur", dureeMs: Date.now() - debut });
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Erreur" },
       { status: 500 }
