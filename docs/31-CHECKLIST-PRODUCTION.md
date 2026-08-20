@@ -27,6 +27,14 @@ nommé (ne pas coder) · ☐ à faire, rien n'existe · ✗ retiré (faux ou cad
 
 ---
 
+> ⚠️ **Cette checklist se périme.** Constaté le 2026-08-20 : trois cases ☐
+> — C2.6, C3.1, C3.4 — annonçaient « absent » alors que le travail était
+> fusionné dans `main` depuis deux jours. Corrigées ci-dessous, avec leur ligne
+> d'origine conservée pour qu'on voie l'écart. C'est la même divergence
+> déclaration/constat que `0048` traque en base, reproduite dans la prose :
+> **une case cochée est une affirmation, pas une mesure.** Croiser avec le
+> dépôt avant de décider.
+
 ## C1 — Clé storage · ✅ RÉSOLU LE 2026-08-14, deux restes
 
 Le diagnostic du brouillon était le bon et il est **déjà traité** : la clé
@@ -69,7 +77,9 @@ Le seul des six où presque tout reste à faire.
   vaut aussi pour l'exploitation.
 - ☐ C2.4–C2.5 — sauvegardes : configuration jamais vérifiée, restauration
   jamais répétée. Un test de restauration daté sur projet jetable.
-- ☐ C2.6 — `RUNBOOK` : absent (mesuré — `docs/30` est l'audit Izikit, pas un
+- ✅ C2.6 — **FAIT le 2026-08-18** : `docs/38-RUNBOOK.md` (cinq pannes, RPO/RTO
+      délibérément vides tant que C2.4/C2.5 ne les mesurent pas). Ligne
+      d'origine, conservée : `RUNBOOK` : absent (mesuré — `docs/30` est l'audit Izikit, pas un
   runbook). Numéro à prendre : le suivant libre au moment de l'écriture.
 
 ## C3 — Anti-fuite RLS en CI · 🟡 LES TROIS QUARTS EXISTENT
@@ -80,12 +90,17 @@ Le seul des six où presque tout reste à faire.
   depuis le 2026-08-03). Isolation acheteur d'`orders` prouvée par mutations
   (`supabase/tests/orders_rls_isolation.test.sql`) ; ledger anti-UPDATE/DELETE
   testé ; révocations `SECURITY DEFINER` balayées.
-- ☐ C3.1 — la **matrice table × rôle** n'existe pas. 80+ tables maintenant :
+- ✅ C3.1 — **FAIT le 2026-08-18** : `docs/39-MATRICE-RLS.md`, générée sur TROIS
+      axes (`rowsecurity` × `pg_policies` × `column_privileges`) — l'axe des grants
+      de colonne, absent de la demande, est celui qui a révélé quatre chemins morts
+      en production. Ligne d'origine : la matrice n'existe pas. 80+ tables maintenant :
   elle se génère depuis `pg_policies`, elle ne s'écrit pas à la main.
 - ☐ C3.2 — les tentatives **vendeur A → données de B** ne sont pas
   systématiques (l'existant couvre acheteur/commandes et le ledger). À
   compléter : brouillons, wallet, KYC de B.
-- ☐ C3.4 — le garde « nouvelle table `zabelie_*` sans RLS = CI rouge »
+- ✅ C3.4 — **FAIT le 2026-08-18** : `supabase/tests/rls_toutes_tables.test.sql`,
+      éprouvé sur table-témoin puis sur mutation (`alter table wallets disable row
+      level security` → rouge en nommant `wallets`). Ligne d'origine : le garde
   n'existe pas (mesuré : aucun test ne lit `pg_policies`). C'est le cousin de
   `zabelie_objets_requis`, à éprouver par une table-témoin (connu-positif)
   puis suppression.
