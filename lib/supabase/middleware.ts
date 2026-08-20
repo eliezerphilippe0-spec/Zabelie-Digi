@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { configPublique } from "@/lib/supabase/config";
 
 /**
  * Rafraîchit la session Supabase à chaque requête (pattern SSR officiel).
@@ -8,9 +9,18 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(request: NextRequest) {
   const response = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) return response;
+  // Même lecture centralisée que les trois autres clients. Le NO-OP est
+  // préservé — et ÉLARGI en connaissance : absente OU invalide, le middleware
+  // passe sans rafraîchir la session. L'échec bruyant vit dans les clients
+  // (`server.ts`, `client.ts`), qui lèvent avec la valeur nommée ; un
+  // middleware qui lève casserait TOUTES les requêtes, y compris la page
+  // d'erreur censée l'expliquer. (`atob`, pas `Buffer` : runtime Edge.)
+  let url: string, anon: string;
+  try {
+    ({ url, key: anon } = configPublique());
+  } catch {
+    return response;
+  }
 
   const supabase = createServerClient(url, anon, {
     cookies: {

@@ -413,6 +413,8 @@ const fr = {
     "Compte créé. Vérifiez votre e-mail pour confirmer, puis connectez-vous.",
   "auth.demo.mode":
     "Mode démo : connectez le projet Supabase pour activer les comptes.",
+  "auth.err.config":
+    "La configuration du site est incorrecte. Ce n'est pas vous — contactez Zabelie.",
   "auth.link.expired":
     "Ce lien de confirmation a expiré ou a déjà été utilisé. Connectez-vous, ou créez à nouveau votre compte pour recevoir un nouveau lien.",
   "auth.back.home": "← Retour à l'accueil",
@@ -996,6 +998,8 @@ const ht: Record<I18nKey, string> = {
     "Kont kreye. Tcheke imèl ou pou konfime, epi konekte.",
   "auth.demo.mode":
     "Mòd demo : konekte pwojè Supabase pou aktive kont yo.",
+  "auth.err.config":
+    "Konfigirasyon sit la gen yon pwoblèm. Se pa ou — kontakte Zabelie.",
   "auth.link.expired":
     "Lyen konfimasyon sa a ekspire oswa li deja itilize. Konekte, oswa kreye kont ou ankò pou resevwa yon nouvo lyen.",
   "auth.back.home": "← Tounen sou paj akèy la",
@@ -1574,6 +1578,8 @@ const en = {
     "Account created. Check your email to confirm, then sign in.",
   "auth.demo.mode":
     "Demo mode: connect the Supabase project to enable accounts.",
+  "auth.err.config":
+    "The site configuration is incorrect. This is not your fault — contact Zabelie.",
   "auth.link.expired":
     "This confirmation link has expired or has already been used. Sign in, or create your account again to receive a new link.",
   "auth.back.home": "← Back to home",
@@ -2161,6 +2167,8 @@ const es = {
     "Cuenta creada. Revisa tu correo para confirmar, y luego inicia sesión.",
   "auth.demo.mode":
     "Modo demo: conecta el proyecto Supabase para activar las cuentas.",
+  "auth.err.config":
+    "La configuración del sitio es incorrecta. No es culpa tuya — contacta con Zabelie.",
   "auth.link.expired":
     "Este enlace de confirmación venció o ya fue usado. Inicia sesión, o vuelve a crear tu cuenta para recibir uno nuevo.",
   "auth.back.home": "← Volver al inicio",
