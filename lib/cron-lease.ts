@@ -23,9 +23,43 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * projet gèlent des escrows et paient des vendeurs.
  */
 
+/**
+ * PLAFOND D'EXÉCUTION DE LA PLATEFORME — écrit ici pour que la garantie
+ * cesse d'être une coïncidence.
+ *
+ * ⚠️ CE QUI REND LE TTL SÛR AUJOURD'HUI N'EST PAS UN CHOIX, C'EST UN PLAFOND.
+ * Mesuré le 2026-08-20 : **aucune route ne déclare `maxDuration`** — zéro
+ * occurrence dans `app/`, `vercel.json` et `next.config`. Les fonctions
+ * tournent donc au défaut de la plateforme, et le plan Hobby donne 300 s de
+ * défaut ET 300 s de maximum dur, non relevable.
+ *
+ * Le danger que l'en-tête ci-dessous décrit — « un TTL trop court laisse
+ * entrer un second porteur pendant que le premier travaille » — ne peut donc
+ * pas se produire : la plateforme tue à 300 s, soit 300 s AVANT l'expiration
+ * du bail. La marge est de 2×, et elle est **imposée**, pas choisie.
+ *
+ * Le cas miroir se referme aussi : une fonction tuée à 300 s n'exécute pas son
+ * `finally`, donc ne libère pas — le bail reste tenu jusqu'à `expire_a`, soit
+ * 300 s plus tard. Sur une cadence quotidienne, ça se résorbe presque
+ * vingt-quatre heures avant le passage suivant.
+ *
+ * ⚠️ MAIS CETTE SÛRETÉ EST UN EFFET DU PLAN, PAS UNE PROPRIÉTÉ DU CODE.
+ * Sur Pro, `maxDuration` monte à 800 s — au-delà du TTL — et jusqu'à 1800 s en
+ * beta étendue. Le jour où le projet change de plan, ou le jour où quelqu'un
+ * déclare un `maxDuration`, la garantie s'inverse **sans que rien ne le
+ * signale**. C'est exactement le motif que `CLAUDE.md` traque : une propriété
+ * tenue par une coïncidence que personne ne mesure.
+ *
+ * D'où cette constante, et l'assertion qui la relie au TTL dans
+ * `tests/crons-appelants.test.ts`. Relever le plafond sans relever le TTL fait
+ * désormais rougir la CI.
+ */
+export const PLAFOND_PLATEFORME_SECONDES = 300;
+
 /** Durées maximales d'exécution, MAJORANTES et non observées. Un TTL trop
  *  court laisse entrer un second porteur pendant que le premier travaille —
- *  exactement ce qu'on voulait interdire, sans moyen de s'en apercevoir. */
+ *  exactement ce qu'on voulait interdire, sans moyen de s'en apercevoir.
+ *  Doit rester >= 2 x PLAFOND_PLATEFORME_SECONDES — voir ci-dessus. */
 export const TTL_PAR_DEFAUT_SECONDES = 600;
 
 export type ResultatBail = {

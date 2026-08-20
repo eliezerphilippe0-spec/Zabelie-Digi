@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
+import {
+  TTL_PAR_DEFAUT_SECONDES,
+  PLAFOND_PLATEFORME_SECONDES,
+} from "../lib/cron-lease";
 import { join } from "node:path";
 
 /**
@@ -266,5 +270,93 @@ test("toute route de cron déclarée émet une trace d'exécution", () => {
     `Route(s) de cron sans aucune trace d'exécution :\n  ${muettes.join(
       "\n  "
     )}\nUn cron déclaré n'est pas un cron exécuté : secret absent, déploiement non promu, chemin renommé — tous ces cas laissent l'entrée dans ${VERCEL} et ne produisent rien. Sans une ligne par passage, « n'a pas tourné » et « a tourné, rien trouvé » sont indiscernables. Ajoutez un journal() sur le modèle de app/api/search/purge/route.ts.`
+  );
+});
+
+/**
+ * ─── Le bail, et le couplage qui le rend sûr ───────────────────────────────
+ *
+ * `lib/cron-lease.ts` a été écrit pour que « le huitième cron en hérite sans y
+ * penser ». Mesuré le 2026-08-20 : il ne servait qu'à **une route sur huit**.
+ * L'intention était générale, l'usage ne l'était pas — et rien ne mesurait
+ * l'écart.
+ */
+const CRONS_SANS_BAIL: Record<string, string> = {
+  "/api/admin/coherence":
+    "joignable AUSSI par un admin connecté (repli getCurrentUser) : un bail y transformerait un double clic humain en « bail_tenu ». Elle est en lecture seule, le chevauchement n'y coûte rien.",
+};
+
+test("toute route de cron prend un bail, sauf exemption déclarée", () => {
+  const chemins = cheminsCron(readFileSync(VERCEL, "utf8"));
+  assert.ok(chemins.length >= 5, `${chemins.length} cron(s) lu(s) : extraction cassée`);
+
+  const sansBail = chemins
+    .filter((c) => {
+      const f = fichierDeRoute(c);
+      if (!existsSync(f)) return false;
+      return !/avecBail\s*\(/.test(readFileSync(f, "utf8")) && !(c in CRONS_SANS_BAIL);
+    })
+    .sort();
+
+  assert.deepEqual(
+    sansBail,
+    [],
+    `Route(s) de cron sans bail d'exécution :\n  ${sansBail.join(
+      "\n  "
+    )}\nLe plan Hobby annonce une « flexible time window » d'une heure : deux créneaux espacés de 30 min peuvent se chevaucher ou s'inverser. Enveloppez le travail dans avecBail() — modèle : app/api/fulfillment/sweep/route.ts. Ou déclarez l'exemption dans CRONS_SANS_BAIL avec sa raison.`
+  );
+
+  // L'exemption se périme dans les deux sens.
+  for (const [chemin, raison] of Object.entries(CRONS_SANS_BAIL)) {
+    assert.ok(
+      chemins.includes(chemin),
+      `${chemin} est exempté de bail mais n'est plus un cron déclaré — retirez-le de CRONS_SANS_BAIL (${raison})`
+    );
+    const f = fichierDeRoute(chemin);
+    assert.ok(
+      !existsSync(f) || !/avecBail\s*\(/.test(readFileSync(f, "utf8")),
+      `${chemin} est exempté de bail alors qu'il en prend un maintenant — l'exemption est périmée, retirez-la`
+    );
+  }
+});
+
+test("le TTL du bail reste au-dessus du plafond d'exécution de la plateforme", () => {
+  /* ⚠️ CE TEST EXISTE PARCE QUE LA SÛRETÉ EST UNE COÏNCIDENCE.
+   *
+   * Aucune route ne déclare `maxDuration`, donc les fonctions tournent au
+   * défaut Hobby : 300 s, plafond dur. La plateforme tue donc 300 s AVANT
+   * l'expiration du bail (600 s) — la marge est imposée, pas choisie.
+   *
+   * Sur Pro, `maxDuration` monte à 800 s, au-delà du TTL : un second porteur
+   * pourrait entrer pendant que le premier travaille, ce que le bail existe
+   * précisément pour interdire. Le changement de plan ne produirait aucun
+   * signal. Cette assertion en est un. */
+  assert.ok(
+    TTL_PAR_DEFAUT_SECONDES >= 2 * PLAFOND_PLATEFORME_SECONDES,
+    `TTL du bail (${TTL_PAR_DEFAUT_SECONDES} s) trop court face au plafond d'exécution déclaré (${PLAFOND_PLATEFORME_SECONDES} s). Une exécution peut alors survivre à son propre bail, et un second porteur entre sans que rien ne le dise. Relevez TTL_PAR_DEFAUT_SECONDES, ou abaissez le plafond.`
+  );
+
+  // Et si quelqu'un déclare un `maxDuration`, il doit rester sous le plafond.
+  const declares: string[] = [];
+  const pile = ["app"];
+  while (pile.length) {
+    const d = pile.pop()!;
+    for (const e of readdirSync(d)) {
+      const p = join(d, e);
+      if (statSync(p).isDirectory()) pile.push(p);
+      else if (/\.(ts|tsx)$/.test(e)) {
+        const m = /export\s+const\s+maxDuration\s*=\s*(\d+)/.exec(readFileSync(p, "utf8"));
+        if (m && Number(m[1]) > PLAFOND_PLATEFORME_SECONDES) {
+          declares.push(`${p} → maxDuration = ${m[1]} s`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    declares,
+    [],
+    `maxDuration déclaré au-dessus du plafond supposé (${PLAFOND_PLATEFORME_SECONDES} s) :\n  ${declares.join(
+      "\n  "
+    )}\nLe plafond de lib/cron-lease.ts n'est plus le vrai. Mettez-le à jour ET relevez le TTL en conséquence — sinon le bail expire pendant que le travail tourne encore.`
   );
 });
