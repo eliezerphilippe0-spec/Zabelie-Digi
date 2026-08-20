@@ -75,7 +75,16 @@ async function fichePublique(
 
   if (!error) return (data as FichePublique | null) ?? null;
   if (!fonctionAbsente(error)) {
-    console.error("[boutique] fiche publique refusée", error.code);
+    /* Le CODE seul disait « undefined » sur une panne réseau — mesuré le
+       2026-08-20, au moment précis où j'essayais de diagnostiquer. Un code
+       PostgREST n'existe que pour une erreur PostgREST ; une coupure, un hôte
+       injoignable ou un DNS mort n'en portent pas. On journalise donc les
+       deux, sinon la ligne se tait exactement quand elle devrait parler. */
+    console.error(
+      "[boutique] fiche publique refusée",
+      error.code ?? "sans_code",
+      error.message ?? ""
+    );
     return null;
   }
 
