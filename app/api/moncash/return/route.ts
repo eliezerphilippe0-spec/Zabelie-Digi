@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { siteOrigin } from "@/lib/site-origin";
 import {
   retrieveTransactionPayment,
   isSuccessful,
@@ -19,7 +20,11 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const transactionId = url.searchParams.get("transactionId");
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
+  /* Même raison qu'au callback : un acheteur qui revient de MonCash sur
+     www.<domaine> ne doit pas être renvoyé sur l'apex — il y arriverait
+     déconnecté, devant une page de paiement qui ne le reconnaît plus.
+     → lib/site-origin.ts */
+  const site = siteOrigin(url, process.env.NEXT_PUBLIC_SITE_URL);
 
   if (!transactionId) {
     return NextResponse.redirect(`${site}/paiement/echec?raison=transaction_absente`);
