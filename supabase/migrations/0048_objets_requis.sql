@@ -10,6 +10,19 @@
 --   • LE REGISTRE DÉCLARE — zabelie_schema_migrations porte ce fichier ;
 --   • LE CATALOGUE ATTESTE — la sonde elle-même répond, c'est sa propre attestation.
 --
+-- ⚠️ ET SA COUVERTURE EST PÉRIMÉE — ajouté le 2026-08-18. Cette sonde
+-- surveille les DEUX objets qui existaient quand elle a été écrite, à 48
+-- migrations. Le dépôt en compte 83, et le code déployé appelle **53**
+-- fonctions par leur nom. Rien n'est cassé ; c'est ce qui rend le défaut
+-- dangereux plutôt qu'urgent : `/api/admin/coherence` annonçait « tous les
+-- objets requis existent en base » en ayant vérifié 4 % de la surface.
+-- Une sonde qui ne grandit pas avec le système qu'elle observe finit par
+-- mesurer son propre passé.
+-- → `0085_objets_requis_v2.sql` porte la liste à 54, et
+--   `tests/objets-requis-couverture.test.ts` la tient synchrone des `.rpc()`
+--   du code, dans les deux sens — c'est la seule chose qui empêche le gel de
+--   recommencer.
+--
 -- ⚠️ Un en-tête reste écrit une fois et jamais revérifié : c'est vrai de
 -- celui-ci comme des autres. Il porte sa date et sa méthode pour qu'on
 -- puisse le contredire, pas pour qu'on le croie.

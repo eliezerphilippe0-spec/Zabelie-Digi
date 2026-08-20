@@ -1019,10 +1019,21 @@ c'est la référence de comparaison, elle doit survivre à la session.
       Bonne nouvelle pour l'ordre des gestes : la branche de travail est
       **42 commits en avance sur `main`, avec zéro divergence**. Protéger
       `main` maintenant ne bloque donc aucun travail en cours.
-- [ ] **`0048_objets_requis.sql`** — écrite, **non appliquée**. Fait passer le
-      contrôle de schéma de la DÉCLARATION au CONSTAT. Tant qu'elle n'est pas
-      appliquée, `/api/admin/coherence` retombe sur le registre et l'étiquette
-      `source: "registre"` — lis ce champ avant de conclure.
+- [x] **`0048_objets_requis.sql`** — ✅ **APPLIQUÉE le 2026-07-31 23:30 UTC**
+      (registre : `statut = appliquee`, `preuve = journal_supabase`).
+      `/api/admin/coherence` répond donc bien `source: "présence"`.
+      ⚠️ **Cette case est restée cochée « à faire » deux semaines de trop.**
+      L'en-tête de la migration, lui, était corrigé dès le 2026-08-04 : les
+      deux documents se contredisaient, et c'est ce fichier-ci qui avait tort.
+      Constaté le 2026-08-18 en interrogeant le registre plutôt qu'un
+      document. Rien de grave ici — mais c'est exactement la divergence
+      déclaration/constat que `0048` existe pour traquer, reproduite un étage
+      au-dessus, dans la prose.
+      ⚠️ **Le vrai sujet : elle ne surveillait que 2 objets.** Écrite quand le
+      dépôt comptait 48 migrations, jamais étendue depuis ; le code déployé en
+      appelle **53**. Étendue à 54 par **`0085_objets_requis_v2.sql`**, et
+      tenue synchrone du code par `tests/objets-requis-couverture.test.ts`,
+      dans les deux sens.
 
 ## Les trois boucles manuelles — et leur somme
 
