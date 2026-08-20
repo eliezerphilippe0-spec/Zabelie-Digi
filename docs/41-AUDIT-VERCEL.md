@@ -265,9 +265,10 @@ les alertes d'anomalie (proposées à l'écran, réservées à Pro).
 
 ## 14. Ce que cet audit ne dit pas
 
-* **Aucune valeur réelle n'a été lue.** Toutes les lignes ⛔ attendent un
-  écran, et deux suffiraient à fermer l'essentiel : **Environment Variables**
-  et **Domains**.
+* **Les §1 à §14 ne lisent aucune valeur réelle** — ils forment la grille.
+  Les deux écrans qui la ferment, **Environment Variables** et **Domains**,
+  ont été relevés le 20 août 2026 : voir **§15**. Les lignes ⛔ qui restent
+  ouvertes après ce relevé sont recensées au §15.7.
 * **Les sauvegardes ne sont pas ici** — elles sont côté Supabase, et le plan
   Hobby de Vercel ne dit rien du plan Supabase. C2.4 / C2.5 de `docs/31`
   restent ouvertes, et c'est ce qui laisse les **RPO/RTO de `docs/38` §6
@@ -275,3 +276,217 @@ les alertes d'anomalie (proposées à l'écran, réservées à Pro).
 * **Rien ici n'atteste que le site fonctionne.** Une configuration juste et
   une page qui s'affiche sont deux constats différents ; le second se fait
   dans un navigateur.
+---
+
+## 15. Relevé du 20 août 2026 — les écrans ont été lus
+
+> **Provenance.** Cette section est l'œuvre d'une session parallèle disposant
+> de l'accès aux écrans (session `01L37vJcZYQVyR32USUKYLnn`), livrée en patch
+> et jamais poussée faute d'accès en écriture au dépôt. Reconstruite ici à
+> l'identique depuis le patch, à trois détails près : le rendu du chat avait
+> transformé trois occurrences de `www.zabelie.com` en liens markdown —
+> réparées.
+
+Les deux écrans qui manquaient ont été ouverts : projet **`uniondigitale`**,
+équipe `eliezerphilippe0-1474's projects`, plan **Hobby**. Cette section
+remplace les ⛔ des §7, §8 et §12 par des constats datés.
+
+**Aucune valeur secrète n'a été lue.** Les 16 variables sont toutes marquées
+« Sensitive » : leur contenu est invisible au tableau de bord. Ce qui est
+affirmé ici l'est soit par le **nom** de la variable, soit par une **mesure
+faite depuis l'extérieur** du site.
+
+### 15.1 Les 16 variables posées
+
+| Variable | Environnements |
+| --- | --- |
+| `CRON_SECRET` | Production + Preview |
+| `RECONCILE_SECRET` | Production + Preview |
+| `SUPABASE_SERVICE_ROLE_KEY` | Production + Preview |
+| `NEXT_PUBLIC_SUPABASE_URL` | Production + Preview |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production + Preview |
+| `NEXT_PUBLIC_SITE_URL` | Production + Preview |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | Production + Preview |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Production + Preview |
+| `SEARCH_FINGERPRINT_SALT` | Production + Preview |
+| `GEMINI_API_KEY` | Production + Preview |
+| `MONCASH_CLIENT_ID` | Production + Preview |
+| `MONCASH_CLIENT_SECRET` | Production + Preview |
+| `MONCASH_MODE` | Production + Preview |
+| `RELOADLY_CLIENT_ID` | **Preview seulement** |
+| `RELOADLY_CLIENT_SECRET` | **Preview seulement** |
+| `RELOADLY_MODE` | **Preview seulement** |
+
+Onglet **Shared** : « No shared variables linked ». Il n'y a rien d'autre.
+**Aucune variable n'est posée en Development** : un `vercel env pull` local
+ramène un fichier vide.
+
+Les deux constats qui ferment le §0 et le §7.4 :
+
+* **`CRON_SECRET` est posée en Production.** L'hypothèse du 401 silencieux
+  sur les huit routes est morte. Ce n'est pas là qu'il faut chercher.
+* **`ZABELIE_DEMO_FIXTURES` n'existe pas.** Le catalogue servi est le vrai.
+
+### 15.2 Les 14 variables que le code lit et qui ne sont pas posées
+
+Le code applicatif lit 33 noms, dont 3 que Vercel fournit lui-même
+(`NODE_ENV`, `VERCEL_URL`, `NEXT_PUBLIC_VERCEL_URL`). Restent **30 à poser
+soi-même**, dont **16 le sont**. Voici les 14 absentes et ce que leur absence
+produit — lu dans le code, pas supposé :
+
+| Absente | Ce qui se tait en production |
+| --- | --- |
+| `RESEND_API_KEY` | `isEmailEnabled()` → `false`, `sendEmail()` retourne `false` sans lever. **Aucun e-mail transactionnel ne part.** |
+| `EMAIL_FROM` | Sans objet tant que la précédente manque (repli `onboarding@resend.dev`). |
+| `STRIPE_SECRET_KEY` | `isStripeEnabled()` → `false` : le rail carte n'est **jamais affiché** sur la fiche produit. |
+| `STRIPE_WEBHOOK_SECRET` | Sans objet tant que la précédente manque. |
+| `ZELLE_RECIPIENT` | `isZelleEnabled()` → `false` : le rail Zelle n'est jamais affiché. |
+| `ZELLE_RECIPIENT_NAME` | Sans objet (repli `"Zabelie"`). |
+| `USD_HTG_RATE` | `Number(undefined)` → `NaN`. Voir §15.3 — c'est la plus coûteuse. |
+| `ZABELIE_TOPUP_FIRSTPARTY_ENABLED` | La vente de recharges première partie reste close (`topup_firstparty_closed`). |
+| `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` | ≠ `"1"` : **les transformations d'image sont éteintes**. Les visuels partent en taille d'origine — sur cible Android d'entrée de gamme, c'est le poste le plus cher de la page. |
+| `NEXT_PUBLIC_WHATSAPP_LINK` | Repli propre sur le numéro. Sans conséquence. |
+| `OPENAI_API_KEY` | Le fournisseur IA retombe sur Gemini, qui est posé. Voir l'avertissement §15.4. |
+| `OPENAI_MODEL` | Sans objet. |
+| `GEMINI_MODEL` | Repli sur le modèle par défaut du code. |
+| `ZABELIE_DEMO_FIXTURES` | Son absence est **le bon état**. |
+
+Aucune de ces absences ne casse un déploiement. Toutes se taisent. C'est la
+même famille que le §7.3, mais mesurée cette fois.
+
+### 15.3 Un nombre absent éteint deux rails de paiement
+
+`app/produit/[slug]/page.tsx` place l'ajout du rail Stripe **et** du rail
+Zelle à l'intérieur d'un même test :
+
+```ts
+const rate = Number(process.env.USD_HTG_RATE);
+if (Number.isFinite(rate) && rate > 0) {
+  if (isStripeEnabled()) options.push({ rail: "stripe", ... });
+  if (isZelleEnabled())  options.push({ rail: "zelle",  ... });
+}
+```
+
+`USD_HTG_RATE` n'étant pas posée, `rate` vaut `NaN` et le bloc entier est
+sauté. Poser demain `STRIPE_SECRET_KEY` et `ZELLE_RECIPIENT` ne suffirait
+donc **pas** : les deux rails resteraient invisibles, sans erreur et sans
+journal, tant que le taux manque. Un seul nombre absent gouverne deux
+moyens de paiement.
+
+**Conséquence du jour : MonCash est le seul rail de paiement vivant en
+production.**
+
+### 15.4 « Sensitive » sur seize variables sur seize
+
+Les cinq `NEXT_PUBLIC_*` sont marquées « Sensitive » alors que Next.js les
+**inline dans le paquet client** : leur valeur est déjà lisible par n'importe
+quel visiteur dans le JavaScript servi. Le marquage n'ajoute donc aucune
+protection ; il retire seulement la possibilité de relire la valeur au
+tableau de bord — y compris `NEXT_PUBLIC_SITE_URL`, précisément celle qu'on
+a besoin de vérifier le plus souvent (§7.2). Coût réel, bénéfice nul.
+
+Un avertissement à garder : `aiProviderDisponible()` teste `OPENAI_API_KEY`
+**avant** `GEMINI_API_KEY`. Poser un jour la première bascule silencieusement
+tout le générateur de descriptions sur OpenAI.
+
+### 15.5 Domains — l'hypothèse apex ↔ www est confirmée
+
+L'écran liste deux entrées, **toutes deux en Production, toutes deux
+« Valid Configuration », et aucune n'est une redirection** :
+
+| Hôte | Statut |
+| --- | --- |
+| `zabelie.com` | Production · Valid Configuration |
+| `www.zabelie.com` | Production · Valid Configuration |
+
+Mesuré depuis l'extérieur, sur les deux hôtes :
+
+* `https://zabelie.com/` répond `200` et **ne redirige pas** vers `www`.
+* `https://www.zabelie.com/` répond `200` et **ne redirige pas** vers l'apex.
+* Sur les deux, un service worker distinct est enregistré et actif :
+  `zabelie.com/sw.js` et `www.zabelie.com/sw.js`.
+* Sur **www**, `<link rel="canonical">` pointe vers `https://zabelie.com/`.
+* `robots.txt` déclare `Sitemap: https://zabelie.com/sitemap.xml`, et chaque
+  `<loc>` du sitemap est en apex.
+
+De quoi on déduit, sans avoir lu la variable : **`NEXT_PUBLIC_SITE_URL` vaut
+`https://zabelie.com`** — l'apex. Et pourtant le tableau de bord Vercel
+affiche `www.zabelie.com` comme URL de production du projet. C'est là que
+naît la contradiction.
+
+Deux origines servies en parallèle, c'est **deux pots de cookies, deux
+service workers, deux caches** — et un seul canonique qui renvoie tout le
+monde vers l'apex. Une session ouverte sur `www` ne survit donc pas au
+premier lien interne. C'est exactement la prémisse de la PR #144, désormais
+appuyée sur des mesures et non sur une hypothèse.
+
+### 15.6 Cron Jobs — la fonction est active, l'exécution est inobservable
+
+`Settings → Cron Jobs` : la fonctionnalité est **Enabled** et les **huit**
+routes de `vercel.json` y figurent, aux horaires attendus (UTC). Rien n'est
+tronqué par le plan.
+
+Mais leur exécution ne peut pas être vérifiée :
+
+* `Observability → Cron Jobs` affiche « No data found ». La fenêtre par
+  défaut est de 12 h et, relevé fait à 04:30 UTC, elle ne **couvre aucun**
+  des créneaux 12:00–14:45 UTC. Ce vide ne prouve donc rien.
+* Les journaux d'exécution s'ouvrent sur « Last 30 minutes » et la rétention
+  Hobby est trop courte pour remonter au créneau de la veille.
+* Les traces que les routes produisent partent toutes en **journal
+  d'exécution**, jamais en base. Cinq des huit en émettent : quatre passent
+  par un `journal()` local qui n'est qu'un `console.log` structuré
+  (`fulfillment/sweep`, `stock/expire`, `search/purge`, `kyc/purge`), et
+  `admin/coherence` journalise même quand tout va bien — le bon réflexe.
+  Mais la rétention Hobby les efface avant qu'on puisse les relire.
+* **Trois routes n'émettent rien du tout** — zéro appel à `console` :
+  `/api/reconcile`, `/api/maturation`, `/api/points/expire`. Réconciliation
+  des paiements, maturation des soldes, expiration des points : les trois
+  qui touchent à l'argent sont les trois muettes, qu'elles réussissent,
+  qu'elles ne trouvent rien à faire ou qu'elles échouent.
+
+Le vrai manque n'est donc pas le 401 qu'on cherchait : c'est qu'**il
+n'existe aucun moyen de savoir si un cron a réussi**. Une ligne d'audit
+écrite en base par chaque route — l'heure, le résultat, le compte traité —
+fermerait ce trou sans changer de plan, et survivrait à la rétention.
+
+Un second point, propre au plan Hobby, est affiché à l'écran : **« flexible
+time window of 1-hour »**. Les huit créneaux sont espacés de 15 à 30 minutes
+et deux couples sont ordonnés par nécessité — `/api/reconcile` (12:00) avant
+`/api/fulfillment/sweep` (12:30), `/api/maturation` (13:00) avant
+`/api/admin/coherence` (13:30). Une tolérance d'une heure **autorise
+l'inversion**. L'ordre supposé par la chaîne n'est pas garanti par le plan.
+
+### 15.7 Ce qui reste non vérifié après ce relevé
+
+* Les **valeurs** des 16 variables, hors `NEXT_PUBLIC_SITE_URL` déduite en
+  §15.5 — le marquage « Sensitive » les rend illisibles.
+* Le **résultat** des huit crons, pour les raisons du §15.6.
+* Firewall (§5) et CDN (§6), non ouverts ce jour.
+
+### 15.8 Addendum — second relevé du même jour, et ce qui a suivi
+
+Rapporté par la même session parallèle, quelques heures plus tard ; le point
+sur le cache a été **revérifié dans le dépôt** avant d'être écrit ici.
+
+* **Firewall et CDN, les deux derniers ⛔ du §15.7, sont fermés** : Firewall
+  actif, « All systems normal », Bot Protection inactive, 0 règle, 0 requête
+  déniée. CDN : 0 % de 5xx, TTFB p90 à 2 ms, **taux de succès de cache
+  31,2 %**, « No ISR activity ».
+* **Ce 31 % n'est pas un réglage Vercel, c'est le code** — mesuré :
+  **25 pages sont `force-dynamic`, aucune n'utilise `revalidate`**, accueil,
+  catalogue et fiche produit compris. Le CDN ne peut rien mettre en cache,
+  par construction. Ajouté aux transformations d'image éteintes (§15.2),
+  chaque page coûte une invocation de fonction et chaque image part en
+  taille d'origine — sur Android d'entrée de gamme.
+* **Le geste de redirection n'est pas là où son nom l'annonce** :
+  `CDN → Redirects` affiche « Upgrade to Pro » — mais cela ne concerne que
+  les redirects de *chemins*. La redirection d'un **domaine** se règle dans
+  `Settings → Domains`, bouton `Edit` sur la ligne — **disponible sur
+  Hobby**. Décision porteur.
+* **Suites déjà données dans le code** : les trois routes muettes du §15.6
+  journalisent désormais chaque passage (PR #146), et sept crons sur huit
+  prennent le bail `0060` — dont la table `zabelie_cron_leases` porte,
+  durablement, la *dernière heure de démarrage* de chacun (PR #147). Le
+  bail répond à « ont-ils tourné » ; « ont-ils réussi » demande encore une
+  écriture de résultat en base — chantier ouvert, nommé dans la PR #147.
