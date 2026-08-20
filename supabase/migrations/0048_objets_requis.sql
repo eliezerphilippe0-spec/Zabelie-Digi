@@ -18,7 +18,7 @@
 -- objets requis existent en base » en ayant vérifié 4 % de la surface.
 -- Une sonde qui ne grandit pas avec le système qu'elle observe finit par
 -- mesurer son propre passé.
--- → `0085_objets_requis_v2.sql` porte la liste à 54, et
+-- → `0085_objets_requis_v2.sql` porte la liste à 56, et
 --   `tests/objets-requis-couverture.test.ts` la tient synchrone des `.rpc()`
 --   du code, dans les deux sens — c'est la seule chose qui empêche le gel de
 --   recommencer.
