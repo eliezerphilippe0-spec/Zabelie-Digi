@@ -29,7 +29,8 @@ Trois faits mesurés commandent tout le reste :
    maximum. `CLAUDE.md` interdit de l'aggraver sans avis écrit. **Verrou.**
 2. **`orders` porte un produit, un vendeur, et aucune quantité.** Acheter
    trois billets, aujourd'hui, ce sont trois commandes.
-3. **La maturation J+7 est écrite en dur dans huit migrations.** Une
+3. **La maturation J+7 est écrite en dur à huit endroits, dans sept
+   migrations** (`0081` en porte deux). Une
    maturation événementielle différente n'est pas un `UPDATE` de config : c'est
    une neuvième copie, ou le moment de paramétrer.
 
@@ -371,7 +372,7 @@ select ticket_id, count(*) from zabelie_ticket_scans
 | # | Question | Recommandation | Risque accepté |
 |---|---|---|---|
 | **A0** | **Rétention (§3)** — la billetterie aggrave-t-elle le dossier BRH ? | **Envoyer la question au cabinet avant PR-T5.** Livrer T1→T4 (gratuit) entre-temps. | Aucun côté technique. Le risque est de *ne pas* poser la question et de découvrir la réponse après avoir encaissé. |
-| **A1** | Maturation événementielle | **J+2 après la date de fin de l'événement**, pas après l'achat. | ⚠️ Coût technique réel : `now() + interval '7 days'` est **écrit en dur dans 8 migrations** (`0006:109`, `0009:114`, `0027:124`, `0037:137`, `0038:216`, `0044:181`, `0081:289` et `:323`) et l'est encore dans `confirm_payment` en production. Un délai différent = une 9ᵉ copie, **ou** le moment de porter la maturation en table de config comme l'exige `CLAUDE.md` règle 3. **Recommandation : paramétrer.** |
+| **A1** | Maturation événementielle | **J+2 après la date de fin de l'événement**, pas après l'achat. | ⚠️ Coût technique réel : `now() + interval '7 days'` est **écrit en dur à 8 endroits, dans 7 migrations** — `0081` en porte deux (`0006:109`, `0009:114`, `0027:124`, `0037:137`, `0038:216`, `0044:181`, `0081:289` et `:323`) et l'est encore dans `confirm_payment` en production. Un délai différent = une 9ᵉ copie, **ou** le moment de porter la maturation en table de config comme l'exige `CLAUDE.md` règle 3. **Recommandation : paramétrer.** |
 | **A2** | Annulation d'événement | Remboursement intégral automatique. **Zabelie absorbe le frais fixe** — le facturer à un acheteur pour un événement qui n'a pas eu lieu détruit la confiance pour un gain nul. | Coût direct par annulation. Borné : mettre le seuil en table de config, pas en dur. |
 | **A3** | Rôle organisateur | **Extension du rôle `creator`**, pas de nouveau rôle. `user_role` vaut `('buyer','creator','admin')` (`0001:14`) ; ajouter une valeur touche la RLS de tout le dépôt. Un organisateur est un vendeur qui vend un `kind` particulier. | Un organisateur voit la console vendeur. Acceptable en V1. |
 | **A3 bis** | `product_kind` | Un billet est-il un 4ᵉ `kind` (`tike`) ? **Oui, probablement** — mais alors `CLAUDE.md` impose la liste complète : `lib/product-kind.ts`, `lib/sample-data.ts`, `lib/database.types.ts`, la liste `KINDS` de `tests/product-kind-discipline.test.ts`, et l'énum SQL. **Aucune compilation ne cassera si on en oublie un** — c'est écrit dans `CLAUDE.md`, c'est le piège nommé. | À traiter comme une checklist, jamais de mémoire. |
