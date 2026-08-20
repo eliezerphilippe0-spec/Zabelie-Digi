@@ -87,11 +87,36 @@ test("l'adresse lisible est la CANONIQUE dès qu'elle existe", () => {
 
 // ── La lecture tolérante ───────────────────────────────────────────────────
 
-test("la colonne absente ne fait pas tomber la vitrine", () => {
-  /* `0083` est RÉDIGÉE, non appliquée. Le code part avant elle : une
-   * sélection qui exige `boutik_slug` rendrait 500 sur chaque boutique. */
+test("la fonction absente ne fait pas tomber la vitrine", () => {
+  /* ⚠️ CE TEST A ÉTÉ RÉÉCRIT LE 2026-08-18, ET LE POURQUOI COMPTE PLUS QUE LE
+   * QUOI. Sa version précédente assertait la PRÉSENCE de
+   * `.select(\`${COLONNES}, boutik_slug\`)` dans `lib/creators.ts`. Elle est
+   * restée verte pendant que cette requête exacte se faisait refuser en
+   * production (`42501`, colonnes hors de la liste blanche de `0015`) et que
+   * `/createur/[id]` répondait 404 à tout le monde. Un test qui épingle le
+   * texte d'une requête ne peut pas dire que cette requête échoue : il la
+   * fige, et son vert devient une caution.
+   *
+   * Ce qui est vérifié ici est donc le REPLI, pas la ligne : `0084` est
+   * rédigée et le code part avant elle, donc l'absence de la fonction doit
+   * dégrader vers les seules colonnes que `0015` accorde — jamais rendre 500,
+   * jamais rendre 404. La requête nominale, elle, est prouvée par
+   * `supabase/tests/boutique_publique.test.sql`, qui l'exécute vraiment sous
+   * le rôle `anon`. */
   const CREATORS = sansCommentaires(readFileSync("lib/creators.ts", "utf8"));
-  assert.match(CREATORS, /\.select\(`\$\{COLONNES\}, boutik_slug`\)/);
-  assert.match(CREATORS, /\.select\(COLONNES\)/, "la seconde tentative, sans la colonne");
-  assert.match(CREATORS, /boutikSlug:\s*\n?\s*\(profile as \{ boutik_slug\?: string \| null \}\)\.boutik_slug \?\? null/);
+  assert.match(
+    CREATORS,
+    /PGRST202/,
+    "le code de « fonction absente » doit être reconnu — sinon le repli ne se déclenche pas avant l'application de 0084",
+  );
+  assert.match(
+    CREATORS,
+    /fonctionAbsente\(error\)[\s\S]{0,400}\.select\("id, display_name, bio, avatar_url"\)/,
+    "le repli ne doit lire QUE des colonnes accordées par 0015 — sinon il échoue exactement comme le chemin qu'il remplace",
+  );
+  assert.match(
+    CREATORS,
+    /if \(critere\.p_id === null\) return null;/,
+    "le repli ne sait pas résoudre une adresse : filtrer sur boutik_slug est précisément ce que la liste blanche refuse",
+  );
 });

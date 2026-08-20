@@ -112,14 +112,23 @@ test("api/profile — zone_id toujours dans l'UPDATE (le trigger 0069 arbitre la
 });
 
 test("fiche créateur — la zone lue en base et le chemin affiché", () => {
-  /* Les colonnes vivent désormais dans la constante `COLONNES` (la sélection
-     est devenue tolérante à `boutik_slug`, absent avant `0083`), et le rendu
-     dans `components/boutique-vue.tsx`, partagé par les deux adresses. Ce que
-     l'assertion vérifie n'a pas changé — seulement où le regarder. */
+  /* ⚠️ RÉÉCRIT LE 2026-08-18. L'assertion précédente épinglait la constante
+     `COLONNES = "id, display_name, bio, avatar_url, zone_id, pwen_repe"` —
+     autrement dit la requête même qui était REFUSÉE en production (`42501` :
+     `zone_id` et `pwen_repe` n'ont jamais été ajoutées à la liste blanche de
+     `0015`). Le test est resté vert quatre jours pendant que la fiche
+     répondait 404. Il asserttait ce qui est PRODUIT ; il assertte désormais
+     ce qui COMMANDE : que la zone vienne de la fonction `0084`, seule voie
+     qui aboutisse. */
   assert.match(
     CREATORS,
-    /const COLONNES =\s*\n?\s*"id, display_name, bio, avatar_url, zone_id, pwen_repe";/,
-    "getCreator ne lit plus zone_id/pwen_repe",
+    /zone_id: string \| null;[\s\S]{0,120}pwen_repe: string \| null;/,
+    "la fiche publique doit encore porter la zone et le point de repère",
+  );
+  assert.match(
+    CREATORS,
+    /zoneId: fiche\.zone_id \?\? null/,
+    "getCreator ne remonte plus la zone à la vitrine",
   );
   const VUE = readFileSync("components/boutique-vue.tsx", "utf8");
   assert.match(

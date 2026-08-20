@@ -147,14 +147,24 @@ export async function getSellerIdsInZone(zoneId: string): Promise<string[]> {
   }
 
   const ids = sousArbre(zones as ZoneNode[], zoneId);
-  const { data: sellers, error: sErr } = await supabase
-    .from("profiles")
-    .select("id")
-    .in("zone_id", ids)
-    .limit(1000);
+  /* Par la fonction `0084`, jamais par un `.in("zone_id", …)`.
+   *
+   * ⚠️ Mesuré sous le rôle `anon` réel le 2026-08-18 : le filtre direct était
+   * REFUSÉ (« permission denied for table profiles »), donc ce bloc rendait
+   * `[]` à chaque appel depuis le 2026-08-14 — et l'avertissement ci-dessous
+   * se lisait comme « cette zone est vide ». `profiles` porte depuis `0015`
+   * une liste blanche de colonnes ; `zone_id` (`0069`) n'y a jamais été
+   * ajouté. Il suffit de CITER une colonne non accordée dans un `where` pour
+   * que toute la requête soit refusée — elle n'a pas à figurer en sortie. */
+  const { data: sellers, error: sErr } = await supabase.rpc(
+    "zabelie_vande_nan_zon",
+    { p_zone_ids: ids }
+  );
   if (sErr || !sellers) {
     console.warn("[zones] vendeurs introuvables pour la zone", sErr?.message);
     return [];
   }
-  return sellers.map((s) => s.id);
+  return (sellers as { id: string }[] | string[]).map((s) =>
+    typeof s === "string" ? s : s.id
+  );
 }
