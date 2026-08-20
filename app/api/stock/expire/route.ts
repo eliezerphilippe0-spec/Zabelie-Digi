@@ -50,11 +50,36 @@ async function handle(req: Request) {
   }
   try {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("zabelie_expire_stock_reservations");
-    if (error) {
-      journal({ issue: "echec", message: error.message, dureeMs: Date.now() - debut });
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    /* BAIL D'EXÉCUTION (`0060`) — un seul porteur à la fois.
+     *
+     * ⚠️ Ajouté le 2026-08-20. `lib/cron-lease.ts` a été écrit pour que « le
+     * huitième cron en hérite sans y penser » — et il ne servait qu'à UNE
+     * route sur huit. Le plan Hobby annonce par ailleurs une « flexible time
+     * window » d'une heure : deux créneaux espacés de 30 minutes peuvent donc
+     * se chevaucher, ou s'inverser.
+     *
+     * Fail-open si `0060` manque (voir `lib/cron-lease.ts`) : un bail est une
+     * garantie ADDITIONNELLE, jamais une condition de correction. */
+    const { avecBail } = await import("@/lib/cron-lease");
+    const { bail, resultat: data } = await avecBail(
+      admin,
+      "stock_expire",
+      `stock-${debut}`,
+      async () => {
+        const { data: d, error: e } = await admin.rpc("zabelie_expire_stock_reservations");
+        if (e) throw new Error(e.message);
+        return d;
+      },
+      { journal: (champs) => journal({ issue: "bail", ...champs }) }
+    );
+    if (!bail.autorise) {
+      journal({ issue: "ignore_bail_tenu", dureeMs: Date.now() - debut });
+      return NextResponse.json({ ignore: "bail_tenu" }, { status: 200 });
     }
+    /* L'échec de la RPC est désormais levé DANS le travail sous bail, donc
+       rattrapé par le `catch` du bas — qui journalise et rend 500. Garder ici
+       un `if (error)` sur une valeur toujours nulle aurait été exactement le
+       garde inatteignable que ce dépôt traque partout ailleurs. */
     const released = data ?? 0;
     journal({ issue: "termine", liberees: released, dureeMs: Date.now() - debut });
     return NextResponse.json({ released });
