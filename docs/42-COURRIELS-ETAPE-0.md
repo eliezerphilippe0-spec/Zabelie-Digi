@@ -151,29 +151,39 @@ automatique**, et le contrôle retombe sur une lecture manuelle du relevé.
 **Les deux moitiés se posent dans le même envoi.** Découvrir la seconde après
 avoir codé sur la première coûterait le chantier une deuxième fois.
 
-### ⚠️ La question 6 n'est PAS partie avec le courriel — elle attend la relance
+### ✅ La question 6 est PARTIE — complément envoyé le 2026-08-21
 
-**Le courriel est parti le 2026-08-21 avec les questions 1 → 5.** La question 6
-a été rédigée le même jour, **après l'envoi**. Elle figure ci-dessus pour la
-trace et pour le fil de relance ; elle n'a pas encore été posée.
+**Les six questions sont désormais chez Digicel.** Le courriel principal
+(questions 1 → 5) est parti le **2026-08-21** ; la question 6, rédigée le même
+jour **après l'envoi**, a suivi le **2026-08-21** sous forme de **complément**
+(forme A ci-dessous), en réponse dans le même fil.
+
+*(Déclaré par le porteur en session. Voir l'avertissement du §3 : l'agent n'a
+accès ni à la boîte d'envoi ni aux accusés de réception — c'est une déclaration
+fiable et c'est la seule disponible, mais elle ne se lit pas comme une mesure.)*
+
+⚠️ **CE QUE ÇA CHANGE POUR LA SUITE : la forme B ne repose plus la question 6.**
+Elle n'a plus qu'un seul office — **réclamer** une réponse à l'ensemble, à
+partir du 2026-09-01. Reposer une question déjà posée serait exactement le
+défaut que la section suivante existe pour éviter.
 
 **Ne pas renvoyer le corps entier.** Un fournisseur qui reçoit deux fois la
 même demande répond une fois de moins.
 
 ⚠️ **ET IL Y A DEUX LETTRES, PAS UNE — la distinction est datée, pas
-stylistique.** Le premier courriel est parti le **2026-08-21**. Envoyer une
-*relance* le même jour reviendrait à réclamer une réponse à un message vieux de
-quelques heures : c'est le meilleur moyen de faire passer les deux pour du
-bruit. Envoyer un *complément* est au contraire normal et bien reçu.
+stylistique.** Elle a été tranchée le 2026-08-21, et voici pourquoi elle
+comptait : envoyer une *relance* le jour même du premier courriel reviendrait à
+réclamer une réponse à un message vieux de quelques heures — le meilleur moyen
+de faire passer les deux pour du bruit. Un *complément* est au contraire normal
+et bien reçu. **C'est la forme A qui est partie.**
 
-| Forme | Quand | Ce qu'elle fait |
-|---|---|---|
-| **A — Complément** | **immédiatement**, en RÉPONSE dans le même fil | ajoute une question omise. **Ne réclame rien.** |
-| **B — Relance** | à partir du **2026-09-01** (7 j ouvrables) | réclame une réponse ET pose la question 6 |
+| Forme | Quand | Ce qu'elle fait | État |
+|---|---|---|---|
+| **A — Complément** | **immédiatement**, en RÉPONSE dans le même fil | ajoute une question omise. **Ne réclame rien.** | ✅ **ENVOYÉE le 2026-08-21** |
+| **B — Relance** | à partir du **2026-09-01** (7 j ouvrables) | réclame une réponse à l'ensemble. ⚠️ **Ne repose PAS la question 6**, elle est partie avec A. | ⏳ en réserve |
 
-**Choisir A tant que le 2026-09-01 n'est pas atteint.** La seule différence
-tient en une phrase — celle qui réclame — et c'est elle qui change le ton du
-message.
+Les deux corps restent ci-dessous : A pour la trace de ce qui a été envoyé,
+B pour l'échéance du 2026-09-01.
 
 #### A — Complément, à envoyer maintenant (répondre dans le fil du 21 août)
 
@@ -238,23 +248,28 @@ Cordialement,
 jours ouvrables de silence justifient un second canal, ce que le jour même ne
 justifiait pas.
 
-Identique à la forme A, à deux détails près : l'ouverture cite la **date** du
-message initial plutôt que « ce jour », et la clôture **réclame**.
+⚠️ **RÉÉCRITE LE 2026-08-21, APRÈS L'ENVOI DE A.** Elle portait
+« Nous y ajoutons une question que nous avions omise : 6. [même texte] ».
+**La question 6 est partie avec le complément A** — la reposer donnerait au
+destinataire l'impression qu'on ne suit pas son propre dossier, et c'est
+précisément ce qu'une relance doit éviter. B ne fait donc plus qu'une chose :
+**réclamer une réponse aux six questions déjà posées.**
 
 ```
 Objet : Re: Activation de l'endpoint /v1/Transfert sur notre compte marchand MonCash Business
 
 Bonjour,
 
-Nous revenons vers vous au sujet de notre message du 21 août 2026 concernant
-l'endpoint /v1/Transfert, resté à ce jour sans réponse.
+Nous revenons vers vous au sujet de nos messages du 21 août 2026 concernant
+l'endpoint /v1/Transfert — six questions au total, restées à ce jour sans
+réponse.
 
-Nous y ajoutons une question que nous avions omise :
+Pourriez-vous nous indiquer si le dossier a pu être pris en charge, et sous
+quel délai nous pouvons espérer un retour ? À défaut, nous serions
+reconnaissants qu'il soit orienté vers le service compétent.
 
-  6. [même texte que ci-dessus]
-
-Nous restons dans l'attente de votre réponse à l'ensemble de ces points, et
-demeurons disponibles pour tout document complémentaire.
+Nous demeurons disponibles pour tout document complémentaire — statuts,
+justificatifs, description du flux.
 
 Cordialement,
 [NOM]
@@ -262,9 +277,14 @@ Cordialement,
 [TÉLÉPHONE] · [COURRIEL]
 ```
 
-⚠️ **Une seule des deux part.** Envoyer A puis B à dix jours d'écart est
-cohérent — A ajoute, B réclame. Envoyer B après A sans que rien n'ait bougé
-entre-temps, c'est réclamer deux fois.
+⚠️ **A est partie, donc B ne peut plus qu'être une relance.** L'ordre A → B à
+dix jours d'écart est celui qui a eu lieu et il est cohérent : A ajoutait, B
+réclamera. Ce qu'il ne faut plus faire, c'est renvoyer A — les six questions
+sont chez Digicel, les redemander serait réclamer deux fois.
+
+⚠️ **Et si un retour arrive avant le 2026-09-01, B ne part pas du tout.**
+Une échéance de relance s'annule sur réponse ; elle ne se déclenche pas parce
+que la date est arrivée.
 
 ### Pourquoi elle compte — un échec mesuré, pas une précaution
 
@@ -467,7 +487,7 @@ n'est pas un avis juridique.
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
 |---|---|---|---|---|
 | §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
-| §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | — | — | ✍️ **RÉDIGÉ, non envoyé** — à répondre dans le fil du 21 août |
+| §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
@@ -487,9 +507,9 @@ Une attente sans date de reprise devient un abandon silencieux. Les deux
 
 | Échéance | Date | Geste |
 |---|---|---|
-| **Complément Digicel — question 6** (§1, forme A) | **immédiat** | Répondre dans le fil du 21 août. **N'attend pas le 2026-09-01** : ce n'est pas une relance, c'est une omission qu'on répare. Ne réclame rien. |
-| **Relance Digicel** — 7 jours ouvrables (§1, forme B) | **2026-09-01** | Service client **202**, en citant l'objet du courriel. ⚠️ **Si le complément A est parti**, la relance ne repose pas la question 6 : elle réclame une réponse à l'ensemble. |
-| **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux envois |
+| ✅ ~~**Complément Digicel — question 6** (§1, forme A)~~ | ~~immédiat~~ | **FAIT le 2026-08-21.** Les six questions sont chez Digicel. |
+| **Relance Digicel** — 7 jours ouvrables (§1, forme B) | **2026-09-01** | Service client **202** en copie, en citant l'objet du courriel. ⚠️ **Ne repose PAS la question 6** — elle est partie avec A : B réclame une réponse aux six, rien de plus. ⚠️ **Ne part pas du tout si un retour arrive avant** : une échéance de relance s'annule sur réponse, elle ne se déclenche pas parce que la date est arrivée. |
+| **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux dossiers (Digicel et Volmar) |
 
 ⚠️ **Le 2026-09-11 n'est pas une date d'abandon, c'est une date d'ÉCRITURE.**
 « Digicel n'a pas répondu en trois semaines » est un fait qui oriente les
