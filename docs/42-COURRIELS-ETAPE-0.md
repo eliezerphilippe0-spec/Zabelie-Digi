@@ -177,9 +177,30 @@ message.
 
 #### A — Complément, à envoyer maintenant (répondre dans le fil du 21 août)
 
+**À** : `MFS_B.Services@digicelgroup.com` — **par courriel, et nulle part
+ailleurs.** Il n'y a rien à déposer : ni portail, ni formulaire, ni système de
+tickets. C'est la seule adresse Digicel du dépôt, et celle du message du
+21 août.
+
 > **Répondre au message envoyé**, ne pas ouvrir un nouveau fil : l'objet et
 > l'historique voyagent avec, et le destinataire voit d'un coup d'œil que c'est
-> le même dossier.
+> le même dossier. Concrètement : dossier *Envoyés*, message du 21 août,
+> **Répondre**.
+>
+> Ce n'est pas une préférence de forme. Chez un service qui traite les demandes
+> marchands en file, un message neuf devient un **second dossier sans lien avec
+> le premier** — et les six questions cessent d'être groupées. C'est
+> exactement ce qu'on cherche à éviter en n'envoyant pas une relance le jour
+> même.
+>
+> ⚠️ **Le 202 n'est pas une voie alternative pour CE message.** Il est réservé
+> à la relance en cas de silence sous sept jours ouvrables (§3.1) : un appel ne
+> transmet pas une question technique en six points.
+
+**Si le fil est introuvable**, ce n'est plus une réponse : retirer le `Re:`,
+remettre l'objet complet suivi de « — complément », et rappeler en une ligne
+au-dessus de la question 6 **l'identifiant du compte marchand (`client_id`) et
+la date du premier envoi**, pour que Digicel puisse rapprocher les deux.
 
 ```
 Objet : Re: Activation de l'endpoint /v1/Transfert sur notre compte marchand MonCash Business
@@ -212,8 +233,13 @@ Cordialement,
 
 #### B — Relance, à partir du 2026-09-01 seulement
 
-Identique, à deux détails près : l'ouverture cite la **date** du message
-initial plutôt que « ce jour », et la clôture **réclame**.
+**À** : `MFS_B.Services@digicelgroup.com`, toujours **en réponse dans le fil**.
+**Copie** : service client **202**, qui devient pertinent à ce stade — sept
+jours ouvrables de silence justifient un second canal, ce que le jour même ne
+justifiait pas.
+
+Identique à la forme A, à deux détails près : l'ouverture cite la **date** du
+message initial plutôt que « ce jour », et la clôture **réclame**.
 
 ```
 Objet : Re: Activation de l'endpoint /v1/Transfert sur notre compte marchand MonCash Business
@@ -271,7 +297,12 @@ Cette question ne coûte rien de plus : elle voyage avec les cinq autres.
 
 ## 2. Courriel HDIT / Cabinet Volmar — deux questions numérotées
 
-**À** : HDIT / Cabinet Volmar (`hditcabinetvolmar.com`)
+**À** : HDIT / Cabinet Volmar — ⚠️ **aucune adresse nominative n'est connue du
+dépôt**, seulement le domaine `hditcabinetvolmar.com`. Le contact est à relever
+sur le site (page contact ou formulaire) **avant** l'envoi. C'est la différence
+avec Digicel, dont l'adresse `MFS_B.Services@digicelgroup.com` est établie :
+ici le destinataire exact reste à déterminer, et l'écrire évite de croire qu'il
+est acquis.
 **Pièces jointes** : `docs/17-DOSSIER-BRH-RETENTION.md` et
 `docs/36-DOSSIER-RETENTION-KYC.md`, exportés en PDF.
 
