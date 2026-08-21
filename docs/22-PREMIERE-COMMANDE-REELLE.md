@@ -4,9 +4,176 @@
 > Quinze tests SQL ne diront pas ce que cette commande dira : elle est la
 > seule chose de tout le chantier qui n'a **jamais traversé la production**.
 
+---
+
+## ⛔ Étape 0 bis — LA TENTATIVE A DÉJÀ EU LIEU CINQ FOIS
+
+> **Mesuré en production le 2026-08-21, à l'ouverture du chantier.** Ce bloc
+> passe devant tout le reste du document, parce qu'il change ce qu'il faut
+> faire : la suite décrit comment **réussir** la première commande, et
+> personne n'avait relevé qu'on avait déjà **échoué** cinq fois, au même
+> endroit, pour ce qui ressemble à une seule et même raison.
+
+```
+paniers créés ......... 2      ← le chemin acheteur EST praticable
+commandes ............. 5      ← toutes `cancelled`
+commandes payées ...... 0
+paiements ............. 5      ← toutes `failed`, rail moncash
+écritures grand livre . 0
+portefeuilles ......... 0
+escrows ............... 0
+```
+
+Cinq tentatives entre le **2026-08-11 et le 2026-08-14**. Les cinq portent le
+même motif dans `payments.raw` :
+
+```json
+{ "expired_reason": "moncash_unknown_48h", "payment_token": "eyJ…" }
+```
+
+**Ce que ce motif dit exactement**, d'après `lib/reconcile.ts:85` — et il faut
+le lire précisément, parce que les deux branches ne veulent pas dire la même
+chose : `moncash_unknown_48h` est émis quand MonCash répond **404, il ne
+connaît pas cette transaction**. Ce n'est PAS `moncash_not_successful_48h`,
+qui serait « transaction connue, non aboutie ».
+
+Et `provider_ref` est **null** sur les cinq.
+
+**Donc** : la création du paiement fonctionne — MonCash rend bien un jeton
+signé, le JWT porte `"api": true` — et rien n'aboutit jamais de l'autre côté.
+
+⚠️ **Conséquence qui commande le choix du chantier : `confirm_payment` n'a
+jamais tourné une seule fois en production.** Zéro écriture au grand livre,
+zéro portefeuille, zéro escrow, depuis l'origine du projet. Tout ce que le
+dépôt a construit au-dessus de cette fonction — commission, maturation J+7,
+`0043`, l'invariant `0033` — n'a jamais été traversé par une vraie gourde.
+
+*(Le bon côté, qui mérite d'être dit : le RÉCONCILIATEUR, lui, a tourné et a
+fait son travail. Les cinq paiements ont été menés proprement à un état
+terminal, aucun orphelin. La moitié qui surveille marche ; c'est la moitié qui
+confirme qui n'a jamais servi.)*
+
+### La cause la plus probable, et comment la trancher en cinq secondes
+
+`lib/moncash.ts:38` :
+
+```ts
+const mode = (process.env.MONCASH_MODE as MonCashMode) ?? "sandbox";
+```
+
+Le défaut est **`sandbox`**. Et `OPS_TODO` (registre des identifiants MonCash,
+2026-08-10) demande explicitement de poser `MONCASH_MODE=sandbox` dans Vercel,
+Production **et** Preview — c'était le bon réglage à l'époque, pour
+`docs/05-TEST-SANDBOX.md`.
+
+**Un paiement lancé en mode sandbox part sur
+`sandbox.moncashbutton.digicelgroup.com`.** Aucun compte MonCash réel ne peut
+l'honorer, et la vérification serveur-à-serveur interroge le même hôte : d'où
+un 404, d'où `moncash_unknown_48h`, exactement cinq fois.
+
+⚠️ **C'EST UNE HYPOTHÈSE, PAS UNE MESURE, et la distinction compte ici.**
+L'agent **ne peut pas lire les variables d'environnement de Vercel** : la
+sortie réseau du conteneur est bloquée, et il n'a aucun accès au tableau de
+bord. Ce qui est mesuré, c'est le défaut du code et ce que `OPS_TODO` dit
+avoir été posé. La valeur réellement déployée aujourd'hui n'est pas observée.
+
+**La trancher coûte cinq secondes, et personne n'a besoin d'un agent pour ça.**
+Ouvrir la fiche produit, cliquer « Peye ak MonCash », et **lire l'hôte dans la
+barre d'adresse** de la page où le navigateur atterrit :
+
+| Ce qu'affiche la barre d'adresse | Verdict |
+|---|---|
+| `sandbox.moncashbutton.digicelgroup.com/…` | **Mode sandbox** — l'hypothèse est confirmée, aucun paiement réel n'est possible |
+| `moncashbutton.digicelgroup.com/…` (sans `sandbox.`) | Mode production — la cause est ailleurs, et il faut chercher |
+
+Ne pas payer : l'hôte suffit, et il se lit avant de saisir quoi que ce soit.
+
+### Le geste qui débloque, et il n'est pas à l'agent
+
+⛔ **`MONCASH_MODE=production` est une variable d'environnement — zone d'arrêt
+ferme, explicitement HORS de l'autorisation permanente du 2026-08-17.** Aucun
+agent ne la pose. Elle se change dans Vercel, Production, **puis un
+redéploiement** (une variable ne prend effet qu'au déploiement suivant).
+
+Et elle ne se change pas seule. Le portail MonCash Business porte trois URLs
+(Website / Return / Alert) qui pointent aujourd'hui vers ce qui a servi aux
+essais sandbox. **La `Return Url` est la critique** :
+`app/api/moncash/return/route.ts` attend `?transactionId=` — une URL de retour
+fausse produirait un paiement réellement débité et jamais confirmé, ce qui est
+strictement pire que l'échec actuel. → `OPS_TODO`, runbook MonCash, étape 2 bis.
+
+⚠️ **Passer en production, c'est encaisser de l'argent réel.** Le dossier de
+rétention (`docs/17`) est ouvert et sans réponse : la première gourde encaissée
+est aussi la première gourde retenue sur un compte non cantonné. Elle est de
+**300 HTG** et elle est indispensable ; elle n'est pas anodine.
+
+### Ce que cette commande produira, aux chiffres près
+
+Le catalogue ne porte **qu'un seul produit publié**, et il est parfait pour
+cet essai — pas de stock, pas d'expédition, un petit montant :
+
+| | |
+|---|---|
+| Produit | « cours francisation » — `/produit/cours-francisation-apwpm` |
+| Nature | `service` (ni stock ni livraison à gérer) |
+| Prix | **300 HTG** |
+| Vendeur | Bebeto (`creator`) |
+| Image | ❌ **aucune** (`cover_url` est null) — voir l'étape 0 ci-dessous |
+
+**Acheter depuis un SECOND compte**, comme le demande ce document : trois
+profils existent, et le bon est **Ruby** (`buyer`) — ni le vendeur, ni le
+compte admin.
+
+Chiffres attendus, à comparer un par un après le paiement :
+
+| Grandeur | Valeur attendue | D'où elle vient |
+|---|---|---|
+| `orders.amount_htg` | **300** | le prix lu en base, jamais du client |
+| Commission | **30** | `zabelie_commission_config`, `standard = 1000 bps` |
+| Net vendeur | **270** | 300 − 30 |
+| `wallet_transactions` | **1 ligne, +270** | de 0 à 1 : l'objectif vérifiable du chantier |
+| `wallets.pending_htg` | **270** | escrow non maturé |
+| Maturation | **J+7** | `escrow_entries.matures_at` |
+
+⚠️ **D-4 (le sens de l'arrondi) ne mord pas sur cette commande** : 10 % de 300
+font **30 exactement**, il n'y a rien à arrondir. La décision est tranchée
+depuis le 2026-08-03 (`floor`, `0044` appliquée) et l'essai ne la met donc pas
+à l'épreuve — c'est à noter, pour ne pas croire qu'elle l'a été.
+
+### L'objectif vérifiable, en une requête
+
+```sql
+select count(*) from wallet_transactions;   -- 0 aujourd'hui, 1 après
+```
+
+Pas « ça a marché » : **une ligne, ou rien**.
+
+---
+
 ## ⭐ Étape 0 — la première image, avant la première commande
 
 > **Ajouté le 2026-08-11, et ça déplace tout ce qui suit d'un cran.**
+>
+> ✅ **LEVÉE le 2026-08-14, constatée le 2026-08-21.** `storage.objects` porte
+> **1 objet**, écrit le 2026-08-14 à 21:14 dans `product-covers` — la première
+> écriture Storage réussie de l'histoire du projet, rendue possible par la
+> régénération de `SUPABASE_SERVICE_ROLE_KEY`. Le chemin vendeur est
+> **praticable** : ce n'est plus une hypothèse, il y a une ligne en base.
+>
+> ⚠️ **Mais UN seul objet depuis l'origine, et il n'est attaché à aucune fiche
+> publiée** : le seul produit publié du catalogue (« cours francisation ») a
+> `cover_url` **null**. Le blocage est levé, le chemin n'est pas fréquenté.
+>
+> **Ce que ça change pour la première commande : rien ne l'empêche plus.**
+> L'étape 0 disait « il n'existe pas encore de produit vendable » — il en
+> existe un. La fiche s'affichera sans photo, ce qui est laid et pas bloquant.
+> Le vrai blocage a changé de nature et il est décrit en **étape 0 bis**,
+> ci-dessus : le mode MonCash.
+>
+> *(Ce paragraphe est daté et signé plutôt que substitué au texte d'origine —
+> celui-ci est conservé tel quel ci-dessous. Un document de chantier qui
+> efface ses états successifs perd ce qui fait sa valeur : la trace de ce
+> qu'on croyait, et de ce qui l'a corrigé.)*
 
 La suite de ce document dit que le flux digital « est complet en production
 depuis longtemps ». **C'était faux, et la mesure l'a montré :**

@@ -1,10 +1,29 @@
 # Panier multi-vendeurs et scission des commandes — spec (chantier 4)
 
-> **Statut : spec, rien d'implémenté.** Chantier 4 de la charte v3.1
-> (§5–§7) — le cœur *nouveau* du cahier des charges. Rédigée 2026-08-07.
-> **Prérequis d'implémentation** : chantier 1 fusionné (`0043` appliquée) et
-> B2 (`0037`/`0038`/`0040`) appliquée — le panier vend du physique, le
-> physique exige le stock. Le dépôt fait foi.
+> **Statut : PARTIELLEMENT IMPLÉMENTÉ.** Rédigée 2026-08-07, en-tête corrigé
+> le **2026-08-21** — il annonçait « spec, rien d'implémenté », ce qui était
+> faux depuis le 11 août. Le dépôt fait foi, pas cette ligne : voici la mesure.
+>
+> | Étape de §6 | État au 2026-08-21 |
+> |---|---|
+> | 1. Adresses | ⚠️ **Couvertes sous un autre nom** — `zabelie_delivery_info` (`0076`, appliquée le 15/08). Ce n'est pas le carnet multi-adresses de §2, c'est la même donnée pour une commande. **0 ligne en production.** |
+> | 2. Panier + RPC | ✅ **Fait** — `0058` appliquée le 11/08 : `zabelie_carts`, `zabelie_cart_items`, `zabelie_cart_add`, `zabelie_cart_remove`, `/api/panier`, `/panier`, trois composants. **2 paniers créés en production.** |
+> | 3. `confirm_group_payment` | ❌ **Rien** — zéro occurrence de `order_group` dans tout le dépôt |
+> | 4. UI checkout groupé | ❌ Rien. `components/cart-pay-button.tsx` paie **ligne à ligne** vers le checkout existant, et le dit dans son en-tête |
+> | 5. `mes-achats` par groupe | ❌ Rien |
+>
+> ⛔ **ET L'ÉTAPE 3 EST BLOQUÉE PAR UN FAIT, PAS PAR UNE DÉCISION.**
+> `confirm_group_payment` ventile vers `confirm_payment` — une fonction qui
+> **n'a jamais tourné une seule fois en production** (0 écriture au grand
+> livre, 0 portefeuille, 0 escrow ; cinq paiements tentés, cinq échecs
+> `moncash_unknown_48h`). Construire le paiement groupé au-dessus reviendrait
+> à poser un filet sur un chemin dont personne n'a atteint le bout, et sur le
+> chemin de l'argent. → **`docs/22` étape 0 bis passe devant**, arbitrage
+> porteur du 2026-08-21.
+>
+> **Prérequis d'implémentation d'origine** : chantier 1 fusionné (`0043`
+> appliquée) et B2 (`0037`/`0038`/`0040`) appliquée — le panier vend du
+> physique, le physique exige le stock.
 
 ## 1. Le principe directeur : la scission, pas la refonte
 
