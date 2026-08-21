@@ -64,14 +64,17 @@ Nous utilisons aujourd'hui l'API REST MonCash pour l'ENCAISSEMENT
 documentation REST MonCash décrit un endpoint « POST /v1/Transfert » prévu
 pour un versement du compte marchand vers un numéro MonCash.
 
-Notre question est unique et porte sur ce seul endpoint :
+Nos questions portent toutes sur ce seul endpoint :
 
   1. Cet endpoint est-il ACTIVÉ sur notre compte marchand ? Si non, quelle
      est la démarche pour l'activer, et sous quel délai ?
+
   2. Quels PLAFONDS s'appliquent — par transaction, par jour, par mois, et
      par bénéficiaire ?
+
   3. Quels FRAIS s'appliquent à chaque versement, et qui les supporte
      (émetteur ou bénéficiaire) ?
+
   4. Y a-t-il des CONDITIONS D'USAGE particulières — notamment : le
      versement à un tiers vendeur en règlement d'une vente réalisée sur
      notre plateforme entre-t-il dans le cadre prévu par ce service ?
