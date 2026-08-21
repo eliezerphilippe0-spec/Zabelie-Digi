@@ -158,31 +158,87 @@ a été rédigée le même jour, **après l'envoi**. Elle figure ci-dessus pour 
 trace et pour le fil de relance ; elle n'a pas encore été posée.
 
 **Ne pas renvoyer le corps entier.** Un fournisseur qui reçoit deux fois la
-même demande répond une fois de moins. La relance prévue au **2026-09-01** pose
-la question 6 seule :
+même demande répond une fois de moins.
+
+⚠️ **ET IL Y A DEUX LETTRES, PAS UNE — la distinction est datée, pas
+stylistique.** Le premier courriel est parti le **2026-08-21**. Envoyer une
+*relance* le même jour reviendrait à réclamer une réponse à un message vieux de
+quelques heures : c'est le meilleur moyen de faire passer les deux pour du
+bruit. Envoyer un *complément* est au contraire normal et bien reçu.
+
+| Forme | Quand | Ce qu'elle fait |
+|---|---|---|
+| **A — Complément** | **immédiatement**, en RÉPONSE dans le même fil | ajoute une question omise. **Ne réclame rien.** |
+| **B — Relance** | à partir du **2026-09-01** (7 j ouvrables) | réclame une réponse ET pose la question 6 |
+
+**Choisir A tant que le 2026-09-01 n'est pas atteint.** La seule différence
+tient en une phrase — celle qui réclame — et c'est elle qui change le ton du
+message.
+
+#### A — Complément, à envoyer maintenant (répondre dans le fil du 21 août)
+
+> **Répondre au message envoyé**, ne pas ouvrir un nouveau fil : l'objet et
+> l'historique voyagent avec, et le destinataire voit d'un coup d'œil que c'est
+> le même dossier.
 
 ```
+Objet : Re: Activation de l'endpoint /v1/Transfert sur notre compte marchand MonCash Business
+
 Bonjour,
 
-En complément de notre message du 21 août 2026 concernant l'endpoint
-/v1/Transfert, une question que nous avions omise :
+En complément de notre message de ce jour, une question que nous avions
+omise :
 
-Comment obtient-on des COMPTES DE TEST pour l'environnement bac à sable ?
-Nous savons créer un business de test et générer un client_id/client_secret
-depuis le portail bac à sable. Ce qui nous manque est l'autre côté : un
-compte MonCash capable de PAYER en bac à sable, pour dérouler un paiement
-de bout en bout. Nos tentatives de créer un numéro de test par nous-mêmes
-ont toutes échoué, et nous n'avons trouvé aucune procédure documentée.
+  6. Comment obtient-on des COMPTES DE TEST pour l'environnement bac à
+     sable ? Nous savons créer un business de test et générer un
+     client_id/client_secret depuis le portail bac à sable. Ce qui nous
+     manque est l'autre côté : un compte MonCash capable de PAYER en bac à
+     sable, pour dérouler un paiement de bout en bout.
 
-La même question vaut pour le service de versement : y a-t-il un numéro
-bénéficiaire de test permettant d'éprouver un /v1/Transfert sans mouvement
-de fonds réel ?
+     Nos tentatives de créer un numéro de test par nous-mêmes ont toutes
+     échoué, et nous n'avons trouvé aucune procédure documentée.
 
-Nous restons dans l'attente de votre réponse au message précédent.
+     La même question vaut pour le service de versement : y a-t-il un
+     numéro bénéficiaire de test permettant d'éprouver un /v1/Transfert
+     sans mouvement de fonds réel ?
+
+Merci de la traiter avec les cinq précédentes.
 
 Cordialement,
 [NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
 ```
+
+#### B — Relance, à partir du 2026-09-01 seulement
+
+Identique, à deux détails près : l'ouverture cite la **date** du message
+initial plutôt que « ce jour », et la clôture **réclame**.
+
+```
+Objet : Re: Activation de l'endpoint /v1/Transfert sur notre compte marchand MonCash Business
+
+Bonjour,
+
+Nous revenons vers vous au sujet de notre message du 21 août 2026 concernant
+l'endpoint /v1/Transfert, resté à ce jour sans réponse.
+
+Nous y ajoutons une question que nous avions omise :
+
+  6. [même texte que ci-dessus]
+
+Nous restons dans l'attente de votre réponse à l'ensemble de ces points, et
+demeurons disponibles pour tout document complémentaire.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+⚠️ **Une seule des deux part.** Envoyer A puis B à dix jours d'écart est
+cohérent — A ajoute, B réclame. Envoyer B après A sans que rien n'ait bougé
+entre-temps, c'est réclamer deux fois.
 
 ### Pourquoi elle compte — un échec mesuré, pas une précaution
 
@@ -334,6 +390,7 @@ n'est pas un avis juridique.
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
 |---|---|---|---|---|
 | §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
+| §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | — | — | ✍️ **RÉDIGÉ, non envoyé** — à répondre dans le fil du 21 août |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
@@ -353,7 +410,8 @@ Une attente sans date de reprise devient un abandon silencieux. Les deux
 
 | Échéance | Date | Geste |
 |---|---|---|
-| **Relance Digicel** — 7 jours ouvrables (§1) | **2026-09-01** | Service client **202**, en citant l'objet du courriel — **et poser la question 6**, qui n'est pas partie avec l'envoi (§1, corps de relance prêt) |
+| **Complément Digicel — question 6** (§1, forme A) | **immédiat** | Répondre dans le fil du 21 août. **N'attend pas le 2026-09-01** : ce n'est pas une relance, c'est une omission qu'on répare. Ne réclame rien. |
+| **Relance Digicel** — 7 jours ouvrables (§1, forme B) | **2026-09-01** | Service client **202**, en citant l'objet du courriel. ⚠️ **Si le complément A est parti**, la relance ne repose pas la question 6 : elle réclame une réponse à l'ensemble. |
 | **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux envois |
 
 ⚠️ **Le 2026-09-11 n'est pas une date d'abandon, c'est une date d'ÉCRITURE.**
