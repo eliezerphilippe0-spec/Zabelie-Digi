@@ -184,4 +184,83 @@ begin
   raise notice 'E8 OK — le niveau depatman est refuse';
 end $$;
 
+-- ── E9. Le verrou est un TRIGGER, jamais une contrainte `check` ────────────
+-- Contrôle STRUCTUREL, et il garde une propriété qu'aucun test de
+-- comportement ne peut voir : un `check` est inline dans `pg_dump`, donc actif
+-- pendant le `COPY`. L'ordre des COPY etant alphabetique,
+-- `zabelie_event_ticket_types` se recharge AVANT `zabelie_ticket_config` —
+-- config vide, verrou lu `false`, billets payants legitimes REFUSES, et
+-- `psql < dump.sql` sort avec le code 0. Mesure du 2026-08-21 : evenement
+-- restaure, ses categories PERDUES, aucune alerte.
+--
+-- E6 et E7 restent verts avec un `check`. C'est exactement pour ca que ce cas
+-- existe : le defaut ne se voit pas a l'insertion, seulement a la
+-- restauration — et on ne restaure que le jour ou on en a besoin.
+do $$
+declare v_trig int; v_check int;
+begin
+  select count(*) into v_trig from pg_trigger
+   where tgrelid = 'public.zabelie_event_ticket_types'::regclass
+     and tgname = 'trg_zabelie_verrou_billet_payant'
+     and not tgisinternal;
+  assert v_trig = 1,
+    'E9 KO : le trigger du verrou du payant est absent — le verrou ne tient plus';
+
+  select count(*) into v_check from pg_constraint
+   where conrelid = 'public.zabelie_event_ticket_types'::regclass
+     and conname = 'zabelie_ticket_types_gratuit_tant_que_ferme';
+  assert v_check = 0,
+    'E9 KO : la contrainte check du verrou est revenue. Elle casse la restauration des billets payants EN SILENCE (exit 0, lignes perdues) — voir 0086, en-tete du verrou.';
+
+  raise notice 'E9 OK — verrou porte par un trigger, aucune contrainte check residuelle';
+end $$;
+
+-- ── E10. ⛔ LE VERROU SOUS LE VRAI RÔLE — les deux sens ────────────────────
+-- E6 et E7 tournent sous le PROPRIÉTAIRE de la base. Aucun organisateur réel
+-- n'écrit sous ce rôle. Mesuré le 2026-08-21 sur la première rédaction : sous
+-- `authenticated`, verrou OUVERT, un billet payant rendait
+--   ERROR: permission denied for table zabelie_ticket_config  (42501)
+-- parce que la config est révoquée d'`authenticated` et que la fonction était
+-- `security invoker`. Le billet GRATUIT passait — `prix_htg = 0`
+-- court-circuite le `or` — donc tout AVAIT L'AIR de marcher. Le jour de
+-- l'ouverture, rien n'aurait fonctionné.
+--
+-- Ce cas est le connu-positif que E7 ne pouvait pas être.
+do $$
+declare v_ouvert_ok boolean := false; v_ferme_refus boolean := false; v_err text;
+begin
+  -- ① verrou OUVERT, rôle authenticated : le billet payant doit PASSER.
+  update zabelie_ticket_config set paiement_ouvert = true;
+  begin
+    set local role authenticated;
+    set local request.jwt.claim.sub = '00000000-0000-0000-0000-00000000e0a1';
+    insert into zabelie_event_ticket_types (event_id, non, prix_htg, quota)
+    values ('00000000-0000-0000-0000-0000000ee002', 'VIP authentifie', 900, 5);
+    v_ouvert_ok := true;
+  exception when others then
+    v_err := sqlstate || ' ' || sqlerrm;
+  end;
+  reset role;
+  assert v_ouvert_ok,
+    format('E10 KO : verrou OUVERT, un organisateur authentifie ne peut PAS creer de billet payant — %s. Le verrou refuse pour la mauvaise raison ; il tiendrait ferme le jour de son ouverture.', coalesce(v_err, 'sans erreur'));
+
+  -- ② verrou FERMÉ, même rôle : refus, et un refus de VERROU (23514), pas un
+  --    refus de DROITS (42501). Les deux se ressemblent à l'écran.
+  update zabelie_ticket_config set paiement_ouvert = false;
+  begin
+    set local role authenticated;
+    set local request.jwt.claim.sub = '00000000-0000-0000-0000-00000000e0a1';
+    insert into zabelie_event_ticket_types (event_id, non, prix_htg, quota)
+    values ('00000000-0000-0000-0000-0000000ee002', 'VIP refuse', 900, 5);
+  exception when others then
+    v_ferme_refus := (sqlstate = '23514');
+    v_err := sqlstate || ' ' || sqlerrm;
+  end;
+  reset role;
+  assert v_ferme_refus,
+    format('E10 KO : verrou FERME, le refus attendu est check_violation (23514), obtenu %s', coalesce(v_err, 'aucun refus du tout'));
+
+  raise notice 'E10 OK — sous authenticated : accepte verrou ouvert, refuse (23514) verrou ferme';
+end $$;
+
 rollback;

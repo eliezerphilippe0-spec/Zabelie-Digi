@@ -155,11 +155,36 @@ ajouter tient en une phrase :
 > Circulaire 121 ?*
 
 **Le verrou est désormais EN BASE, pas seulement dans ce document.** `0086`
-pose `zabelie_ticket_config.paiement_ouvert = false` et une contrainte
-`check (prix_htg = 0 or zabelie_paiement_billets_ouvert())` : tant que le
+pose `zabelie_ticket_config.paiement_ouvert = false` et un **trigger**
+`before insert or update` (`zabelie_verrou_billet_payant`) : tant que le
 drapeau est faux, **aucune catégorie de billet ne peut porter un prix non
-nul**. Une note dans un document s'oublie ; une contrainte, non. Le jour où
-l'avis arrive, un seul `UPDATE` l'ouvre — aucune migration.
+nul**. Une note dans un document s'oublie ; un trigger, non. Le jour où l'avis
+arrive, un seul `UPDATE` l'ouvre — aucune migration.
+
+⚠️ **Un trigger, et pas une contrainte `check` — corrigé le 2026-08-21 après
+revue et MESURE.** La première rédaction utilisait
+`check (prix_htg = 0 or zabelie_paiement_billets_ouvert())`. Deux pannes,
+éprouvées sur une base locale :
+
+1. **Perte silencieuse à la restauration.** `pg_dump` inline un `check` dans le
+   `create table`, donc actif pendant le `COPY` ; et les `COPY` sortent par
+   ordre alphabétique — `zabelie_event_ticket_types` **avant**
+   `zabelie_ticket_config`. Config vide → verrou lu `false` → billets payants
+   légitimes refusés, **et `psql < dump.sql` sort avec le code 0**. Mesuré :
+   l'événement revient, ses catégories ont disparu. Un trigger est émis en
+   section *post-data*, donc après les données : restauration mesurée à
+   **1 billet payant conservé**, verrou toujours actif ensuite.
+2. **Le verrou aurait tenu fermé le jour de son ouverture.** La config est
+   révoquée d'`authenticated` et la fonction était `security invoker` : sous le
+   vrai rôle, verrou **ouvert**, un billet payant rendait
+   `42501 permission denied for table zabelie_ticket_config`. Le billet gratuit
+   passait — `prix_htg = 0` court-circuite le `or` — donc tout avait l'air de
+   marcher. `E6`/`E7` ne pouvaient pas le voir : ils tournent sous le
+   propriétaire de la base.
+
+→ `E9` (structurel : trigger présent, `check` absent) et `E10` (les deux sens
+sous `authenticated`) gardent désormais les deux propriétés. L'erreur porte le
+même code `check_violation`, donc rien d'autre ne change pour les appelants.
 
 **Ce qui reste faisable sans attendre l'avis**, parce que ça ne retient rien :
 la spécification (ce document), le modèle de données, l'émission et le

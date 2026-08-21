@@ -17,7 +17,7 @@ select zabelie_migration_garde('0086_evenements.sql');
 -- ─── CE QUI EST DÉLIBÉRÉMENT ABSENT ────────────────────────────────────────
 -- * Aucun lien vers `orders`, `payments` ou le ledger. La table ne connaît pas
 --   l'argent, et `prix_htg = 0` est le seul prix qu'elle acceptera tant que
---   `paiement_ouvert` reste `false` (voir la contrainte plus bas).
+--   `paiement_ouvert` reste `false` (voir le trigger plus bas).
 -- * Aucune valeur ajoutée à `product_kind`. `docs/40` A3 bis le pose comme un
 --   arbitrage, et `CLAUDE.md` rappelle qu'ajouter une valeur à cette énumération
 --   ne casse AUCUNE compilation — ça se fait en une passe complète et déclarée,
@@ -26,11 +26,17 @@ select zabelie_migration_garde('0086_evenements.sql');
 --   ajouter une valeur à `user_role` toucherait la RLS de tout le dépôt.
 --
 -- ─── LE VERROU DU PAYANT, EN BASE ET PAS DANS UNE NOTE ─────────────────────
--- `zabelie_ticket_config.paiement_ouvert` vaut `false`, et une contrainte le
--- relie au prix : tant qu'il est faux, **aucune catégorie ne peut porter un
--- prix non nul**. Ce n'est pas une ceinture de plus, c'est la traduction en
--- base de l'unique chose que le dossier BRH ne permet pas encore. Une note
--- dans un document s'oublie ; une contrainte, non.
+-- `zabelie_ticket_config.paiement_ouvert` vaut `false`, et un TRIGGER le relie
+-- au prix : tant qu'il est faux, **aucune catégorie ne peut porter un prix non
+-- nul**. Ce n'est pas une ceinture de plus, c'est la traduction en base de
+-- l'unique chose que le dossier BRH ne permet pas encore. Une note dans un
+-- document s'oublie ; un trigger, non.
+--
+-- ⚠️ Un trigger, et **surtout pas** une contrainte `check` : la première
+-- rédaction en utilisait une, et la mesure a montré qu'elle faisait perdre
+-- les billets payants À LA RESTAURATION, en silence, avec un code de sortie
+-- 0. Le raisonnement complet est en tête de la section 4 — c'est la partie de
+-- cette migration qu'il faut lire avant d'y toucher.
 -- ============================================================================
 
 -- ── 1. Statut d'un événement ────────────────────────────────────────────────
@@ -57,7 +63,7 @@ create table if not exists zabelie_ticket_config (
 insert into zabelie_ticket_config default values on conflict do nothing;
 
 comment on table zabelie_ticket_config is
-  'Bornes et verrou de Tikè Lakay (docs/40). paiement_ouvert = false tant que l''avis BRH n''est pas rendu : la contrainte zabelie_ticket_types_gratuit_tant_que_ferme s''appuie dessus. Défauts PROPOSÉS, modifiables par UPDATE.';
+  'Bornes et verrou de Tikè Lakay (docs/40). paiement_ouvert = false tant que l''avis BRH n''est pas rendu : le trigger trg_zabelie_verrou_billet_payant s''appuie dessus. Défauts PROPOSÉS, modifiables par UPDATE.';
 
 alter table zabelie_ticket_config enable row level security;
 revoke all on zabelie_ticket_config from public, anon, authenticated;
@@ -136,24 +142,104 @@ create table if not exists zabelie_event_ticket_types (
 create index if not exists zabelie_ticket_types_event_idx
   on zabelie_event_ticket_types (event_id);
 
--- ⛔ LE VERROU DU PAYANT. Une contrainte, pas une note : tant que
--- `paiement_ouvert` est faux, aucun prix non nul n'entre en base. La fonction
--- est `stable` et lit la config — le jour où le porteur bascule le drapeau,
--- les prix deviennent admissibles sans qu'une migration soit nécessaire.
+-- ⛔ LE VERROU DU PAYANT — un TRIGGER, pas une contrainte `check`.
+--
+-- ⚠️ LA PREMIÈRE RÉDACTION UTILISAIT `check (prix_htg = 0 or
+-- zabelie_paiement_billets_ouvert())`. C'était faux, et pas d'un cheveu : la
+-- revue du 2026-08-21 l'a signalé, et la MESURE sur une base locale (Postgres
+-- 16, 86 migrations rejouées depuis le vide) a montré deux pannes, dont une
+-- que personne n'avait prédite.
+--
+-- ① RESTAURATION — perte de données SILENCIEUSE.
+--    Un `check` est inliné par `pg_dump` DANS le `create table`, donc actif
+--    pendant le `COPY` des données. Et l'ordre des `COPY` est ALPHABÉTIQUE :
+--    `zabelie_event_ticket_types` (« ev… ») est chargée AVANT
+--    `zabelie_ticket_config` (« ti… ») — mesuré, lignes 7465 et 7796 du dump.
+--    Au moment où les billets se rechargent, la table de config est VIDE, la
+--    fonction rend `false`, et tout billet payant légitime est REFUSÉ.
+--
+--    Le pire n'est pas le refus : `psql < dump.sql` sort avec le code **0**.
+--    L'événement est restauré, ses catégories de billets ont disparu. Une
+--    base qui a l'air restaurée et qui a perdu ses lignes — l'échec déguisé
+--    en réussite, une fois de plus. Un registre append-only et des empreintes
+--    SHA-256 ne valent rien si la base ne se restaure pas.
+--
+--    Un TRIGGER n'a pas ce défaut : `pg_dump` l'émet en section POST-DATA,
+--    donc APRÈS le `COPY`. Il ne voit pas les lignes restaurées, et il garde
+--    toutes les écritures qui suivent. Mesuré dans les deux sens (cf. E9).
+--
+-- ② PERMISSION — le verrou aurait tenu FERMÉ le jour de son ouverture.
+--    `zabelie_ticket_config` est révoquée d'`authenticated` (plus bas), et la
+--    fonction était `security invoker`. Un organisateur authentifié insérant
+--    un billet PAYANT, verrou OUVERT, obtenait :
+--
+--      ERROR: permission denied for table zabelie_ticket_config  (42501)
+--      CONTEXT: SQL function "zabelie_paiement_billets_ouvert"
+--
+--    …et non un succès. E6/E7 ne pouvaient pas le voir : ils tournent sous le
+--    propriétaire de la base, jamais sous `authenticated`. Le billet GRATUIT
+--    passait, lui, parce que `prix_htg = 0` court-circuite le `or` — donc
+--    tout avait l'air de fonctionner. Le jour où le porteur bascule le
+--    drapeau après l'avis du cabinet, rien n'aurait marché, et l'erreur
+--    aurait ressemblé à un problème de droits, pas au verrou. → E10.
+--
+-- Ce que le trigger NE change PAS : `service_role` ne le contourne pas
+-- davantage qu'un `check` (un trigger `before` s'applique à tous les rôles,
+-- RLS ou non), et l'erreur porte le MÊME code `check_violation` — les
+-- appelants et les tests E6/E7 n'ont rien à changer.
+
 create or replace function zabelie_paiement_billets_ouvert()
 returns boolean
 language sql
 stable
-set search_path = public
+set search_path = public, pg_temp
 as $$ select coalesce((select paiement_ouvert from zabelie_ticket_config), false) $$;
 
-alter table zabelie_event_ticket_types
-  add constraint zabelie_ticket_types_gratuit_tant_que_ferme
-  check (prix_htg = 0 or zabelie_paiement_billets_ouvert());
+-- Lecture réservée : elle n'est appelée que par le trigger ci-dessous (qui
+-- s'exécute quels que soient les droits de l'appelant) et par l'admin.
+revoke all on function zabelie_paiement_billets_ouvert() from public, anon, authenticated;
 
-comment on constraint zabelie_ticket_types_gratuit_tant_que_ferme
-  on zabelie_event_ticket_types is
-  'docs/40 §3 : la billetterie PAYANTE attend l''avis du cabinet sur la retention (docs/17). Tant que zabelie_ticket_config.paiement_ouvert est false, seul prix_htg = 0 est admis. Une note dans un document s''oublie ; cette contrainte non.';
+-- ⚠️ `security definer` — c'est la réparation de ② . La fonction lit une table
+-- révoquée d'`authenticated` ; sans cela, le verrou refuse pour la mauvaise
+-- raison. Garde exigée par `CLAUDE.md` : elle ne prend AUCUN argument, ne
+-- rend qu'un booléen de configuration globale, n'écrit rien, et son
+-- `search_path` est figé. Il n'y a pas de surface à détourner.
+create or replace function zabelie_verrou_billet_payant()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  -- Sur UPDATE, on ne re-valide que si le PRIX change : une catégorie payante
+  -- déjà en base (restaurée, ou créée verrou ouvert puis refermé) doit rester
+  -- désactivable sans buter sur le verrou. Changer son prix, non.
+  if new.prix_htg <> 0
+     and (tg_op = 'INSERT' or new.prix_htg is distinct from old.prix_htg)
+     and not zabelie_paiement_billets_ouvert()
+  then
+    raise exception
+      'ZB086: billetterie payante fermee — prix_htg doit valoir 0 tant que zabelie_ticket_config.paiement_ouvert est false (docs/40 §3, docs/17)'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+
+revoke all on function zabelie_verrou_billet_payant() from public, anon, authenticated;
+
+-- La contrainte de la première rédaction est retirée si elle existe : une
+-- base où `0086` aurait été appliquée avant cette correction converge vers le
+-- même état. (Au 2026-08-21 elle n'est appliquée nulle part — ceinture.)
+alter table zabelie_event_ticket_types
+  drop constraint if exists zabelie_ticket_types_gratuit_tant_que_ferme;
+
+drop trigger if exists trg_zabelie_verrou_billet_payant on zabelie_event_ticket_types;
+create trigger trg_zabelie_verrou_billet_payant
+  before insert or update on zabelie_event_ticket_types
+  for each row execute function zabelie_verrou_billet_payant();
+
+comment on function zabelie_verrou_billet_payant() is
+  'docs/40 §3 : la billetterie PAYANTE attend l''avis du cabinet sur la retention (docs/17). Tant que zabelie_ticket_config.paiement_ouvert est false, seul prix_htg = 0 est admis. Trigger et non `check` : un `check` est inline dans le dump et casse la restauration des billets payants EN SILENCE (exit 0, lignes perdues). Une note dans un document s''oublie ; ce trigger non.';
 
 -- ── 5. RLS ──────────────────────────────────────────────────────────────────
 alter table zabelie_events enable row level security;
@@ -214,6 +300,27 @@ begin
      and not rowsecurity;
   if v_n > 0 then
     raise exception '0086 KO: % table(s) sans RLS', v_n;
+  end if;
+
+  -- ⛔ Le verrou est un TRIGGER, et la contrainte `check` de la première
+  -- rédaction n'est plus là. Contrôle STRUCTUREL, avant le contrôle par
+  -- comportement : un `check` réintroduit casserait la restauration en
+  -- silence, et aucun test d'insertion ne le verrait (cf. l'en-tête ① ).
+  if not exists (
+    select 1 from pg_trigger
+     where tgrelid = 'public.zabelie_event_ticket_types'::regclass
+       and tgname = 'trg_zabelie_verrou_billet_payant'
+       and not tgisinternal
+  ) then
+    raise exception '0086 KO: le trigger du verrou du payant est absent';
+  end if;
+
+  if exists (
+    select 1 from pg_constraint
+     where conrelid = 'public.zabelie_event_ticket_types'::regclass
+       and conname = 'zabelie_ticket_types_gratuit_tant_que_ferme'
+  ) then
+    raise exception '0086 KO: la contrainte check du verrou est encore la — elle casse la restauration en silence';
   end if;
 
   -- ⛔ Le verrou tient. C'est LE contrôle de cette migration : si un prix non
