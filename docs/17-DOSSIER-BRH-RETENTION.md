@@ -243,9 +243,22 @@ On conserve l'existant en ajoutant le décaissement réel.
 
 ### Option (c) — Tiers agréé
 Les fonds transitent par un établissement disposant de l'agrément.
-- ✅ Écarte la question réglementaire.
+- ✅ Écarte la question réglementaire — **si et seulement si le tiers est
+  réellement agréé.**
 - ❌ Suppose un partenaire, un contrat et une marge supplémentaire.
 - ⚙️ Impact technique **moyen** ; impact économique à évaluer.
+
+⚠️ **NON INSTRUITE** — statut arrêté le 2026-08-21. Le relevé de marché (§9) a
+fait apparaître des candidats plausibles *en apparence* : des passerelles de
+paiement haïtiennes qui encaissent MonCash pour le compte de tiers. **La
+question préalable n'a pas été posée, et elle commande tout le reste :
+disposent-elles elles-mêmes de l'agrément ?**
+
+Tant qu'elle n'est pas répondue, cette option ne transfère aucune charge
+réglementaire — elle **empile un intermédiaire non agréé sur l'exposition
+existante**, en payant 2,9 % à l'entrée et 5 % à la sortie pour ce
+privilège. Elle ne doit donc pas être présentée au conseil comme une voie de
+conformité, mais comme une hypothèse à instruire.
 
 ---
 
@@ -301,3 +314,170 @@ tel quel.
 **Ce qui reste possible sans lever le gel** : préparer les documents, corriger
 la spécification, définir la taxonomie — c'est-à-dire tout ce qui n'ajoute
 aucune fonctionnalité au mécanisme en question.
+
+---
+
+## 9. Contexte de marché — relevé du 2026-08-21
+
+> ⚠️ **CE QUE CETTE SECTION N'EST PAS, ET LA MISE EN GARDE VIENT AVANT LE
+> CONTENU.**
+>
+> **« Tout le monde fait pareil » est un fait de contexte. Ce n'est pas un
+> moyen de défense, et ça n'atténue rien.** La BRH ne juge pas à la norme du
+> secteur : elle peut sanctionner l'ensemble d'un marché en même temps, et
+> quand elle procède par étapes, elle commence par ce qu'elle **voit**.
+>
+> **Ce qu'elle voit, ce sont des facteurs PUBLICS** : le volume traité, la
+> visibilité commerciale, le bruit marketing, les plaintes d'utilisateurs. Ce
+> sont les seuls déterminants de l'exposition, et aucun d'eux ne dépend de ce
+> que nous écrivons pour nous-mêmes.
+>
+> ⚠️ **CORRECTION PORTÉE LE 2026-08-21, ET ELLE EST IMPORTANTE POUR TOUTES LES
+> SESSIONS FUTURES.** Une version antérieure de cet encadré affirmait que
+> l'acteur « le mieux documenté » vient en premier, et que `docs/17` rendait
+> Zabelie « facile à instruire ». **C'est faux deux fois.** La BRH ne voit pas
+> nos documents internes. Et la documentation interne joue dans l'autre sens :
+> **c'est un actif de DÉFENSE** — ce qui rend une position tenable le jour d'un
+> contrôle, pas ce qui l'attire.
+>
+> La phrase fautive créait une **incitation perverse** : un dossier de
+> conformité affirmant que documenter augmente le risque enseigne, à chaque
+> session qui le relit, qu'il vaut mieux écrire moins. C'est exactement
+> l'inverse de ce que ce document existe pour produire. **`docs/17` se maintient
+> et s'enrichit d'autant plus, pas moins.**
+>
+> **L'urgence relative de ce dossier ne baisse pas d'un cran du fait de cette
+> section.** Elle est versée ici parce qu'un conseil demandera l'état du
+> marché, pas parce qu'elle répond à quoi que ce soit.
+
+### 9.0 Niveau de preuve — à lire avant toute citation
+
+Ce relevé a été fait avec un seul instrument disponible : la **recherche web**.
+La lecture directe des pages (`WebFetch`) est **bloquée par la sortie réseau de
+l'environnement**. Chaque ligne ci-dessous est donc au niveau *« ce qu'un
+extrait de résultat de recherche rapporte d'une page que je n'ai pas
+ouverte »*, jamais au niveau *« vérifié »*. Plusieurs de ces extraits
+proviennent de **pages commerciales d'acteurs en concurrence avec Digicel** sur
+ce créneau : ils sont intéressés.
+
+Rien dans cette section ne doit être transmis à un conseil ou à un régulateur
+comme un constat.
+
+### 9.1 Ce que font les autres plateformes haïtiennes
+
+Quatre acteurs relevés, et **aucun ne divise le paiement à la source** :
+
+| Acteur | Ce que l'extrait rapporte | Lecture |
+|---|---|---|
+| **Bemane** (`seller.bemaneht.com`) | MonCash et NatCash « gérés » ; aucun frais fixe ; **commission sur les ventes**, dégressive jusqu'à 2 % | Une commission dégressive ne se prélève que si la plateforme tient les fonds |
+| **HtiPay** (`htipay.com`) | Système de paiement devenu **marketplace multi-vendeurs** ; les vendeurs « postulent pour devenir vendeur » | Ils ne connectent pas un compte marchand : ils postulent au sien |
+| **Kobara** (`kobara.app`) | Passerelle MonCash + NatCash, liens de paiement, webhooks, tableau de bord marchand | Encaisse pour le compte de tiers |
+| **MonCashConnect** (+ Bazik.io, Peyemapi.com cités en passant) | « 0 % de commission », puis « dépôt 2,9 %, **cashout 5 %** » | Le mot *cashout* dit la structure : la passerelle **détient**, le marchand **retire** |
+
+**Conclusion factuelle** : le modèle « compte marchand unique, commission
+prélevée, vendeur réglé après coup » est la pratique généralisée de ce marché.
+→ Contexte. Voir l'encadré en tête de section pour ce que ça ne vaut pas.
+
+### 9.2 Un fait de contexte qui, lui, change une décision technique
+
+L'argumentaire commercial de MonCashConnect s'intitule *« MonCash n'accepte
+plus de nouveaux marchands ? Voici comment encaisser quand même »*, et rapporte
+des demandes d'accès marchand « rejetées ou sans réponse pendant des semaines »,
+avec des critères excluant de fait les indépendants et les petites boutiques.
+
+C'est un extrait de page de vente d'un concurrent — **intéressé, non vérifié**.
+Mais l'existence de **quatre** passerelles vivant de ce créneau est une preuve
+indirecte de la difficulté qu'elles décrivent.
+
+**Ce que ça condamne** : tout design reposant sur « chaque vendeur (ou chaque
+organisateur d'événement) connecte son propre compte marchand MonCash ». Si
+l'enrôlement est fermé, ce rail n'existe pas pour eux — et coder un rail dont
+on n'a pas prouvé l'existence est l'interdit de la règle dure n° 2.
+
+### 9.3 `POST /v1/Transfert` — un levier réel, étape 0 NON franchie
+
+La documentation REST officielle de Digicel
+(`sandbox.moncashbutton.digicelgroup.com/.../RestAPI_MonCash_doc.pdf`) expose
+un endpoint **`POST /v1/Transfert`** : versement du compte marchand vers un
+numéro MonCash. Plusieurs bibliothèques communautaires l'enveloppent — la
+version Laravel s'écrit `$moncash->transfer(500, '509-xxxx-xxxx', 'Salary')`.
+
+Si cet endpoint est **activé sur le compte marchand de Zabelie**, le règlement
+vendeur cesse d'être manuel : la maturation J+7 se termine par un versement que
+le serveur exécute seul.
+
+**Ce que ça ferait** — attaquer la **durée** de la rétention, que §1 point 6
+désigne comme « durée indéterminée ».
+
+**Ce que ça ne ferait PAS**, et il faut être net :
+- ❌ ça ne divise rien au moment du paiement — `MONCASH_CLIENT_ID` reste unique
+  (`lib/moncash.ts:36-37`), Zabelie reste merchant of record par construction ;
+- ❌ ça ne cantonne rien — §2.6 reste vrai mot pour mot ;
+- ❌ ça ne dit rien de la qualification — un versement automatique vers un
+  numéro de téléphone peut se lire comme un règlement commercial *ou* comme un
+  transfert. C'est exactement l'objet de la question posée au conseil (§9.5).
+
+⚠️ **ÉTAPE 0 DE `docs/03` §9 NON FRANCHIE.** Un endpoint documenté n'est pas un
+endpoint activé sur *ce* compte. **Rien ne se code sur `Transfert` tant que
+Digicel n'a pas confirmé l'activation, les plafonds et les frais.** Le courriel
+qui pose la question est rédigé dans `docs/42` §1.
+
+### 9.4 ⚠️ `Transfert` NE DÉBLOQUE PAS la billetterie payante
+
+**Cette sous-section existe pour empêcher un faux déblocage**, et c'est une
+inférence qu'une session future fera naturellement si on ne l'écrit pas.
+
+`Transfert` raccourcit la rétention du flux **marketplace** : la vente a déjà
+eu lieu, la livraison aussi, et le versement suit à J+7.
+
+La billetterie a un problème **structurel**, pas de durée de traitement : un
+billet vendu 60 jours avant l'événement reste **60 jours retenu**, même avec un
+versement automatique à J+2 après l'événement. La rétention naît de la distance
+entre la vente et l'événement, et cette distance est le cœur du produit
+(`docs/40` §3). Aucun outil de versement ne la raccourcit.
+
+**Les deux dossiers restent découplés :**
+
+| Dossier | Ce qui le débloque |
+|---|---|
+| Rétention marketplace (durée) | Confirmation Digicel de `/v1/Transfert` |
+| **Tikè Lakay payant** | **L'avis écrit du conseil — et rien d'autre** |
+
+Le verrou de `0086` (`paiement_ouvert = false`) **ne s'ouvre pas** sur une
+réponse de Digicel. Par construction, `docs/40` ne mentionne pas `Transfert` :
+le croisement des deux dossiers dans une spécification est précisément ce qu'on
+évite ici.
+
+### 9.5 Reformulation de la question au conseil — acquis à conserver
+
+La question à poser n'est **pas** « sommes-nous un FSP ? » : elle appelle un
+développement long et cher. Elle est :
+
+> *Un `Transfert` MonCash qui règle une vente documentée — commande, facture,
+> écriture au grand livre — constitue-t-il un P2P au sens de la Circulaire 121,
+> ou un règlement commercial ?*
+
+Un oui/non motivé. C'est la bonne granularité pour un cabinet, et c'est ce qui
+part dans `docs/42` §2 (question 1). La question billetterie de `docs/40`
+§3 bis y est jointe comme question 2 — **un seul envoi, deux questions
+numérotées.**
+
+### 9.6 À vérifier sur le texte source — non cité tant que non vérifié
+
+Deux affirmations rencontrées dans ce relevé **ne figurent volontairement pas
+dans ce dossier**, parce qu'elles n'ont pour source que des extraits de presse
+ou de pages commerciales :
+
+1. **La forme sociale exigée pour l'enregistrement d'un fournisseur de services
+   de paiement électronique.** Des résumés de presse en donnent une, ce dossier
+   ne la reproduit pas. → Le porteur télécharge le texte de la **Circulaire
+   n° 121** (BRH, publiée le 6 décembre 2021) et la vérifie sur la source.
+   Tant que ce n'est pas fait, la contrainte de forme sociale n'est **citée
+   nulle part** dans le dépôt.
+2. **Le statut d'agrément de Kobara et de HtiPay.** → §5 option (c), marquée
+   **non instruite**.
+
+C'est la règle du dépôt appliquée à sa propre documentation : un extrait de
+page de vente d'un concurrent de Digicel n'est pas une mesure, et un document
+de conformité qui le traiterait comme telle fabriquerait un biais que toutes
+les sessions suivantes reliraient comme un fait.
