@@ -76,6 +76,17 @@ Notre question est unique et porte sur ce seul endpoint :
      versement à un tiers vendeur en règlement d'une vente réalisée sur
      notre plateforme entre-t-il dans le cadre prévu par ce service ?
 
+  5. L'endpoint accepte-t-il une RÉFÉRENCE EXTERNE fournie par nous à
+     l'appel (identifiant d'idempotence, à l'image du « customIdentifier »
+     d'autres API de versement) ? Autrement dit : si notre appel se termine
+     par un délai d'attente dépassé et que nous le rejouons avec la même
+     référence, MonCash traite-t-il le second appel comme un doublon plutôt
+     que comme un second versement ?
+
+     Et existe-t-il un endpoint permettant de CONSULTER le statut d'un
+     versement à partir de cette référence, ou à défaut un relevé des
+     versements émis sur une période ?
+
 Nous ne développerons rien sur cet endpoint avant votre confirmation.
 
 Nous restons disponibles pour tout document complémentaire (statuts,
@@ -96,11 +107,31 @@ Cordialement,
 | **Refus** ou question 4 répondue négativement | Le rail n'existe pas pour cet usage. On l'écrit dans `docs/03` §2 et on n'y revient plus. |
 | **Aucune réponse sous 3 semaines** | Consigner l'absence de réponse dans `OPS_TODO` — c'est une donnée, pas un vide. |
 
-⚠️ **La question 4 est la plus importante des quatre, et c'est la moins
-évidente.** Un endpoint techniquement disponible peut être contractuellement
-réservé à d'autres usages (paie de salariés, remboursements). Poser la question
-maintenant coûte une ligne ; la découvrir après implémentation coûte le
-chantier.
+⚠️ **La question 4 est la moins évidente des cinq.** Un endpoint techniquement
+disponible peut être contractuellement réservé à d'autres usages (paie de
+salariés, remboursements). Poser la question maintenant coûte une ligne ; la
+découvrir après implémentation coûte le chantier.
+
+⚠️ **La question 5 est celle dont la réponse change le plus de code**, et elle
+a été ajoutée après coup — elle ne figurait pas dans la première rédaction.
+
+- **Réponse « oui, référence externe acceptée »** → l'idempotence est portée
+  par le fournisseur, comme le topup le fait déjà (`customIdentifier =
+  order.id`, `docs/07`). Le rejeu après un délai d'attente dépassé est sûr.
+- **Réponse « non »** → **toute l'architecture d'idempotence change.** Aucun
+  rejeu n'est sûr ; le seul recours est une table d'intentions côté Zabelie
+  plus une réconciliation externe, et un versement dont l'issue est inconnue
+  reste inconnu jusqu'à un relevé. → `docs/43` §3, qui est écrit pour ce cas
+  parce que c'est le pire des deux.
+
+La seconde moitié de la question 5 — **existe-t-il un moyen de consulter le
+statut d'un versement** — est la condition d'existence de la sonde de
+réconciliation externe (`docs/43` §3.3). Sans elle, la panne A (« l'argent est
+parti, la base l'ignore ») n'est **détectable par aucun instrument
+automatique**, et le contrôle retombe sur une lecture manuelle du relevé.
+
+**Les deux moitiés se posent dans le même envoi.** Découvrir la seconde après
+avoir codé sur la première coûterait le chantier une deuxième fois.
 
 ---
 

@@ -325,10 +325,26 @@ aucune fonctionnalité au mécanisme en question.
 > **« Tout le monde fait pareil » est un fait de contexte. Ce n'est pas un
 > moyen de défense, et ça n'atténue rien.** La BRH ne juge pas à la norme du
 > secteur : elle peut sanctionner l'ensemble d'un marché en même temps, et
-> quand elle procède par étapes, c'est l'acteur le plus visible — ou le mieux
-> documenté — qui vient en premier. Zabelie tient un dossier écrit décrivant
-> précisément son exposition ; c'est la bonne pratique, et c'est aussi ce qui
-> la rend facile à instruire.
+> quand elle procède par étapes, elle commence par ce qu'elle **voit**.
+>
+> **Ce qu'elle voit, ce sont des facteurs PUBLICS** : le volume traité, la
+> visibilité commerciale, le bruit marketing, les plaintes d'utilisateurs. Ce
+> sont les seuls déterminants de l'exposition, et aucun d'eux ne dépend de ce
+> que nous écrivons pour nous-mêmes.
+>
+> ⚠️ **CORRECTION PORTÉE LE 2026-08-21, ET ELLE EST IMPORTANTE POUR TOUTES LES
+> SESSIONS FUTURES.** Une version antérieure de cet encadré affirmait que
+> l'acteur « le mieux documenté » vient en premier, et que `docs/17` rendait
+> Zabelie « facile à instruire ». **C'est faux deux fois.** La BRH ne voit pas
+> nos documents internes. Et la documentation interne joue dans l'autre sens :
+> **c'est un actif de DÉFENSE** — ce qui rend une position tenable le jour d'un
+> contrôle, pas ce qui l'attire.
+>
+> La phrase fautive créait une **incitation perverse** : un dossier de
+> conformité affirmant que documenter augmente le risque enseigne, à chaque
+> session qui le relit, qu'il vaut mieux écrire moins. C'est exactement
+> l'inverse de ce que ce document existe pour produire. **`docs/17` se maintient
+> et s'enrichit d'autant plus, pas moins.**
 >
 > **L'urgence relative de ce dossier ne baisse pas d'un cran du fait de cette
 > section.** Elle est versée ici parce qu'un conseil demandera l'état du

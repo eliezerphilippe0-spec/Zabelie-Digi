@@ -1,8 +1,13 @@
 # 43 — Spécification du test connu-négatif de l'écriture compensatoire
 
 > **Statut : SPÉCIFICATION. Zéro code, zéro migration, zéro test écrit.**
-> Rédigée le 2026-08-21 contre `origin/main` = `ef67013` (86 migrations,
-> 49 tests SQL), objets lus dans le dépôt — pas de mémoire.
+> Rédigée le 2026-08-21 contre `origin/main` = `ef67013` — **85 fichiers de
+> migration** (le plus haut numéro est `0085`, aucun doublon) et **48 tests
+> SQL**, comptés sur l'arbre, pas de mémoire.
+>
+> *(Une première rédaction annonçait 86 et 49. Les deux chiffres venaient d'un
+> arbre de travail portant un fichier de plus. `ls | wc -l` est la seule
+> réponse ; le souvenir n'en est pas une.)*
 >
 > ⚠️ **Ce document ne lève aucun gel.** Il décrit le test qui devra rougir
 > AVANT qu'une ligne de versement automatique soit écrite. Le versement
@@ -123,9 +128,125 @@ au fournisseur (`docs/07`) — et non l'inverse.
 
 ---
 
-## 3. Les cas à écrire — `supabase/tests/versement_auto.test.sql`
+## 3. La direction du correctif — trois pièces, et elles tiennent ensemble
 
-Nomenclature `VA1…VA7`. Chaque cas porte sa **paire** : ce qui doit passer, et
+> Ajoutée le 2026-08-21 sur revue porteur : **décrire le trou sans décrire la
+> sortie laisse la prochaine session inventer la sienne.** Ces trois pièces sont
+> spécifiées, pas construites — l'interdit d'étape 0 tient (`docs/42` §1).
+>
+> Elles ne se choisissent pas à la carte. Une table d'intentions sans sonde
+> externe enregistre des `inconnu` que personne ne lève ; une sonde sans table
+> d'intentions n'a rien à croiser ; une clé tirée de la réponse du fournisseur
+> rend les deux inutiles.
+
+### 3.1 Une table d'intentions, append-only, écrite AVANT l'appel
+
+Nom de travail `zabelie_versement_intentions`. Une ligne naît **avant** que le
+moindre octet parte vers MonCash, et son état ne recule jamais :
+
+```
+cree ──► envoye ──┬──► confirme
+                  ├──► echoue
+                  └──► inconnu
+```
+
+| État | Ce qu'il affirme | Qui l'écrit |
+|---|---|---|
+| `cree` | Zabelie a décidé de verser. Rien n'est parti. | Avant l'appel, dans sa propre transaction |
+| `envoye` | L'appel est parti. L'issue n'est pas connue. | Juste avant l'appel HTTP |
+| `confirme` | Le fournisseur a répondu succès, `transactionId` conservé | Après réponse |
+| `echoue` | Le fournisseur a répondu refus — **motif conservé** | Après réponse |
+| `inconnu` | Ni succès ni refus : délai dépassé, coupure, réponse illisible | Après réponse, ou par la sonde §3.3 |
+
+Trois propriétés non négociables :
+
+- **Append-only**, protégée par trigger, comme le grand livre (`0025`). Une
+  intention qui peut être réécrite ne prouve plus rien sur ce qui s'est passé
+  — c'est exactement la raison pour laquelle `wallet_transactions` l'est déjà.
+- **`cree` est écrit et COMMITÉ avant l'appel.** Une intention écrite dans la
+  même transaction que la suite disparaît au rollback, c'est-à-dire précisément
+  dans le cas qu'elle existe pour documenter. C'est ce qui ferme le scénario A :
+  il reste une trace même quand tout le reste est perdu.
+- **`inconnu` n'est pas un échec.** Le confondre avec `echoue` autorise un
+  rejeu, et le rejeu d'un versement peut-être parti est le double paiement.
+
+**L'écriture au grand livre reste ce qu'elle est aujourd'hui** : une ligne
+négative, dans la même transaction que le débit du solde, écrite **uniquement**
+au passage en `confirme`. L'invariant `Σ(ledger) = balance + pending` ne bouge
+pas d'un iota — la table d'intentions vit **à côté**, elle n'y participe pas.
+
+### 3.2 La clé d'idempotence est générée par nous, avant l'appel
+
+Elle vaut l'identifiant de l'intention `cree` — donc elle existe avant que quoi
+que ce soit puisse échouer. Le `transactionId` du fournisseur devient une
+**preuve conservée**, jamais une clé (§2.2).
+
+⚠️ **Une question conditionne la valeur de tout ceci, et elle part dans le même
+courriel** : `/v1/Transfert` accepte-t-il une **référence externe** fournie à
+l'appel ? → `docs/42` §1, question 5.
+
+| Réponse Digicel | Conséquence sur cette architecture |
+|---|---|
+| **Oui, référence externe acceptée** | Le fournisseur déduplique lui-même. Le rejeu après délai dépassé devient sûr, et `inconnu` se résout par un simple rejeu. C'est le régime du topup (`customIdentifier = order.id`, `docs/07`). |
+| **Non** | **Aucun rejeu n'est sûr.** `inconnu` ne peut se lever que par un relevé externe (§3.3) ou par une vérification humaine. La table d'intentions cesse d'être un confort et devient la seule chose qui empêche de payer deux fois. |
+
+**On écrit pour le cas « non »**, parce que c'est le pire des deux et que la
+réponse n'est pas connue. Si c'est « oui », l'architecture reste correcte et se
+simplifie ; l'inverse ne serait pas vrai.
+
+### 3.3 Une sonde de réconciliation EXTERNE — la pièce qui manque aujourd'hui
+
+C'est elle qui répare l'aveuglement de §2.1. Un cron quotidien qui croise **la
+table d'intentions** avec **ce que MonCash dit** — relevé, ou endpoint de
+consultation par référence si Digicel confirme qu'il en existe un (`docs/42`
+§1, question 5, seconde moitié).
+
+Ce qu'elle produit, et rien d'autre :
+
+| Constat | Action |
+|---|---|
+| `confirme` en base, absent chez MonCash | 🚨 **Alerte.** Écriture au grand livre sans versement réel. |
+| Chez MonCash, aucune intention correspondante | 🚨 **Alerte.** Versement hors de tout circuit — le pire cas. |
+| `inconnu` depuis plus de **N** heures | 🚨 **Alerte**, avec le montant et le vendeur. |
+| `envoye` jamais passé à un état terminal | 🚨 **Alerte** — l'exécution est morte en vol. |
+
+⚠️ **ELLE N'A AUCUN POUVOIR D'ÉCRITURE SUR L'ARGENT. Jamais.** Elle ne
+confirme pas, ne rejoue pas, ne compense pas, ne « répare » pas un `inconnu`.
+Elle alerte, et un humain tranche. Une sonde qui résoudrait automatiquement un
+versement d'issue inconnue serait un mécanisme capable de payer deux fois **de
+sa propre initiative**, et à une heure où personne ne regarde.
+
+Trois contraintes qui viennent du dépôt, pas de la théorie :
+
+- **`N` en table de config**, jamais en dur — règle dure n° 3, comme tout
+  paramètre commercial.
+- **Elle journalise chaque passage, y compris à zéro écart.** Sinon « n'a pas
+  tourné » et « a tourné, rien trouvé » produisent le même vide (`CLAUDE.md`,
+  corollaire d'observabilité).
+- **Elle a un appelant déclaré dans `vercel.json → crons`**, et
+  `tests/crons-appelants.test.ts` le croise mécaniquement. `zabelie_purge_search_misses()`
+  a vécu quatre mois correcte, révoquée, journalisant même à zéro — et sans
+  aucun appelant. Une sonde qui ne tourne pas est indiscernable d'une sonde qui
+  ne trouve rien.
+
+⚠️ **Et si Digicel répond qu'aucune consultation de statut n'existe** : cette
+sonde ne peut pas être automatisée. Elle devient un **contrôle manuel** au
+relevé, inscrit à `OPS_TODO` avec sa cadence — ce qui est une réponse honnête,
+et infiniment préférable à un cron qui croiserait la base avec elle-même en
+ayant l'air de réconcilier.
+
+### 3.4 Ce que ces trois pièces NE font pas
+
+- Elles ne cantonnent rien (`docs/17` §2.6 reste vrai).
+- Elles ne disent rien de la qualification juridique (`docs/42` §2, question 1).
+- Elles n'ouvrent pas la billetterie payante (`docs/17` §9.4).
+- **Elles n'autorisent aucune ligne de code** : étape 0 non franchie.
+
+---
+
+## 4. Les cas à écrire — `supabase/tests/versement_auto.test.sql`
+
+Nomenclature `VA1…VA8`. Chaque cas porte sa **paire** : ce qui doit passer, et
 la mutation sous laquelle il doit rougir. Un cas sans mutation n'entre pas dans
 ce fichier.
 
@@ -183,13 +304,19 @@ l'écriture compensatoire — jamais un débit orphelin.
 annuler au refus. Attendu : le solde du vendeur baisse sans qu'il ait reçu quoi
 que ce soit → rouge.
 
-### VA5 — Scénario C : le timeout ne paie pas deux fois
+### VA5 — Scénario C : `inconnu` n'est pas `echoue`, et ne se rejoue pas seul
 
-**Positif** : un appel sans réponse, rejoué, ne produit **qu'un seul** débit —
-la clé de VA2 le garantit.
+**Positif** : un appel sans réponse laisse l'intention en `inconnu` (§3.1), et
+un rejeu portant la même clé interne ne produit **qu'un seul** débit.
 
-**Mutation** : la même que VA2. VA5 est l'expression métier de VA2 ; les deux
-rougissent ensemble ou l'instrument ment.
+**Mutation** : faire retomber `inconnu` dans la branche `echoue` — c'est-à-dire
+traiter « je ne sais pas » comme « ça a échoué ». Attendu : le rejeu s'autorise
+et un second versement part → rouge.
+
+⚠️ **Cette mutation est plus fidèle que « la même que VA2 »**, qui figurait ici
+dans la première rédaction. VA2 éprouve la **provenance** de la clé ; VA5
+éprouve la **confusion de deux états**, qui est un défaut distinct et se
+produirait même avec une clé parfaitement correcte. Les deux doivent exister.
 
 ### VA6 — Le solde en attente reste non décaissable
 
@@ -214,11 +341,30 @@ rouge.
 ⚠️ **La mutation porte sur la DONNÉE, pas sur le code.** C'est la seule forme
 qui distingue « lit la config » de « contient la même valeur que la config ».
 
+### VA8 — La sonde de réconciliation ALERTE et n'écrit rien
+
+**Positif** : présentée à une intention `confirme` sans contrepartie chez le
+fournisseur, la sonde (§3.3) **signale** — et le solde, le grand livre et la
+table d'intentions sont **strictement inchangés** après son passage.
+
+**Mutation** : lui donner le droit de « réparer » — passer l'intention à
+`echoue` et créditer le solde. Attendu : l'assertion d'immutabilité rougit.
+
+⚠️ **Deux assertions, pas une.** Que la sonde alerte est la moitié facile ;
+**qu'elle n'ait rien écrit** est celle qui compte, et elle s'assure en
+comparant les trois tables avant et après — jamais en constatant l'absence d'un
+message. Une sonde silencieuse et une sonde qui a payé produisent la même
+sortie console.
+
+⚠️ Ce cas suppose que Digicel confirme l'existence d'une consultation de statut
+(`docs/42` §1, question 5). **Sinon il n'y a pas de sonde à tester** — le
+contrôle est manuel, et c'est `OPS_TODO` qui le porte, pas ce fichier.
+
 ---
 
-## 4. Protocole de preuve de l'instrument — obligatoire
+## 5. Protocole de preuve de l'instrument — obligatoire
 
-Aucun de ces sept cas ne compte tant qu'il n'a pas été **vu rouge**. Le
+Aucun de ces huit cas ne compte tant qu'il n'a pas été **vu rouge**. Le
 protocole, dans l'ordre, et chaque étape assure sa post-condition avant de lire
 la suivante :
 
@@ -235,9 +381,44 @@ la suivante :
    rougir quel cas. Sans cette ligne, la prochaine session devra tout refaire
    pour savoir si l'instrument a jamais été éprouvé.
 
+### 5.1 Et le protocole s'applique d'abord à ce qui MESURE la mesure
+
+`scripts/zabelie-preflight.mjs` (ajouté le 2026-08-21, `pretest`) compare ce que
+`package.json` déclare avec ce que `node_modules` porte, et échoue sur le
+moindre écart.
+
+**Pourquoi c'est ici et pas dans un coin outillage** : le 2026-08-21, le
+conteneur a démarré avec `node_modules` amputé — `zod` et `serwist` absents. Le
+symptôme fut bruyant (`TS2307`), donc inoffensif. Mais une amputation touchant
+une dépendance chargée par **un seul** fichier de test aurait fait échouer le
+chargement de ce fichier, et la suite aurait rendu un total plus petit.
+**« 700/700 vert » ressemble exactement à « 717/717 vert ».** C'est le motif
+dominant du dépôt appliqué à l'environnement lui-même : l'échec se présente
+comme une réussite.
+
+**Épreuve du 2026-08-21, dans les deux sens :**
+
+| Cas | Geste | Résultat |
+|---|---|---|
+| Connu-positif | tel quel | `OK — 17/17 dépendances présentes`, sortie **0** |
+| **Connu-négatif** | `node_modules/zod` déplacé, absence assurée avant de lire quoi que ce soit | `ÉCHEC — 1 dépendance absente : zod`, sortie **1** |
+| Retour | `zod` remis, présence assurée | `OK — 17/17`, sortie **0** |
+
+Deux détails qui font la différence entre ce contrôle et un vœu :
+
+- **Il teste `<paquet>/package.json`, pas `require.resolve`.** Ce dernier échoue
+  sur les paquets sans point d'entrée — `@types/*` en tête, c'est-à-dire
+  exactement la classe par laquelle la panne d'`npm audit fix --omit=dev` était
+  arrivée. Un contrôle aveugle à la classe par laquelle la panne arrive ne
+  contrôle rien.
+- **Une liste de dépendances vide est un ÉCHEC, pas un succès.** Un manifeste
+  mal lu rendrait zéro paquet à vérifier, et zéro manquant sur zéro vérifié
+  passerait au vert. « Aucun manquant » et « rien vérifié » doivent être
+  distinguables — le corollaire d'observabilité, appliqué au contrôle lui-même.
+
 ---
 
-## 5. Pièges déjà connus du dépôt qui s'appliquent ici
+## 6. Pièges déjà connus du dépôt qui s'appliquent ici
 
 Relevés parce qu'ils ont **déjà mordu** dans ce dépôt, pas par principe :
 
@@ -255,7 +436,7 @@ Relevés parce qu'ils ont **déjà mordu** dans ce dépôt, pas par principe :
 
 ---
 
-## 6. Hors périmètre — explicitement
+## 7. Hors périmètre — explicitement
 
 | Sujet | Pourquoi hors périmètre |
 |---|---|
@@ -266,7 +447,7 @@ Relevés parce qu'ils ont **déjà mordu** dans ce dépôt, pas par principe :
 
 ---
 
-## 7. Ce que ce document a changé par rapport à ce qu'on croyait
+## 8. Ce que ce document a changé par rapport à ce qu'on croyait
 
 Écrit ici parce que la correction vaut plus que la spécification.
 
