@@ -90,12 +90,24 @@ décision D-8 a atteint `main` ; re-greffée le 2026-08-18.)*
     group by 1, 2 order by 1, 2;
    ```
 
-   **Mesuré le 2026-08-21, après `0083`→`0086`** : **86 lignes pour 86
-   fichiers** — 83 `appliquee`, 2 `redigee` (`0051`/`0056`), 1 `abandonnee`
-   (`0031`, fidélité, volontairement sautée). Par preuve : `journal_supabase`
-   76 · `sonde_schema` 6 · `succession` 1 · `non_appliquee` 3. *(Mesures
-   précédentes : 2026-08-17 après `0082`, 82 lignes, 79 `appliquee` · 2026-08-12
-   après `0063`, 63 lignes, 57 `appliquee`.)*
+   **Mesuré le 2026-08-21, après `0051`** : **86 lignes pour 86 fichiers** —
+   84 `appliquee`, **1 `redigee` (`0056` seule)**, 1 `abandonnee` (`0031`,
+   fidélité, volontairement sautée). Par preuve : `journal_supabase` 77 ·
+   `sonde_schema` 6 · `succession` 1 · `non_appliquee` 2. *(Mesures
+   précédentes : 2026-08-21 après `0086`, 83 `appliquee` · 2026-08-17 après
+   `0082`, 82 lignes, 79 `appliquee` · 2026-08-12 après `0063`, 63 lignes,
+   57 `appliquee`.)*
+
+   ⚠️ **`0056` est la dernière `redigee`, et elle l'est VOLONTAIREMENT** —
+   ⛔ gelée jusqu'aux arbitrages **D-10→D-14** de `docs/28` : les avis de remise
+   sont une pièce du futur suivi des litiges, dont le gel de maturation peut
+   dépasser 90 jours, et purger effacerait des preuves. **Appliquée par erreur
+   le 2026-08-21 puis annulée le même jour** — l'agent avait recommandé le
+   geste sans avoir lu l'interdiction portée par la ligne d'`OPS_TODO` qu'il
+   citait. Aucune donnée perdue (la table était vide), les deux journaux ont
+   été remis d'accord, et la colonne `note` du registre porte le récit.
+   **La leçon tient en une phrase : lire la ligne du registre AVANT de
+   recommander le geste, pas au moment de la cocher.**
 
    ⚠️ **`0086` porte la première preuve d'empreinte croisée du dépôt**, et
    c'est la méthode à reprendre : le SHA-256 du SQL **reçu** par Supabase
