@@ -61,9 +61,15 @@ dépôt se mesure. C'est exactement pourquoi cette section passe en premier.
 | scanner **PWA** | `docs/32-PWA-SERVICE-WORKER.md` : « **SPÉCIFIÉ, NON COMMENCÉ** », et il qualifie le service worker de « **pire artefact adressé par chaîne du répertoire** ». Une page de secours existe déjà (`app/sw-desinstaller/page.tsx`). Voir §5.4. |
 | Eventbrite ~291,8 M$ / >3 Md$ GTV | **Non vérifiable ici** (egress fermé, `CONNECT 403`). Ces chiffres ne sont ni confirmés ni infirmés — ils ne servent d'appui à aucune décision de ce document. |
 
-**Dernier numéro de migration** : `0083_boutik_slug.sql` est la dernière
-**appliquée** (80 lignes `appliquee` au registre) ; `0084_boutique_publique.sql`
-est **rédigée non appliquée** (PR #140). **Le premier numéro libre est `0085`.**
+**Dernier numéro de migration** — ⚠️ **corrigé le 2026-08-20, et la
+correction fait partie de PR-T1.** La rédaction initiale annonçait `0085`
+comme premier numéro libre. Entre-temps `0084_boutique_publique.sql` et
+`0085_objets_requis_v2.sql` ont été **appliquées** (registre : `journal_supabase`).
+**Le premier numéro libre est donc `0086`**, et c'est celui que PR-T1 occupe.
+
+Un document de spécification qui annonce un mauvais numéro de migration est
+exactement la dérive que le registre SHA-256 existe pour empêcher : il
+inviterait la prochaine session à écraser un fichier déjà appliqué.
 Non appliquées et assumées : `0031` (fidélité, sautée), `0051`, `0056`.
 
 ### 2.2 Le fantôme `create_pending_order`
@@ -148,6 +154,38 @@ ajouter tient en une phrase :
 > plusieurs mois — relève-t-elle d'un service de paiement au sens de la
 > Circulaire 121 ?*
 
+**Le verrou est désormais EN BASE, pas seulement dans ce document.** `0086`
+pose `zabelie_ticket_config.paiement_ouvert = false` et un **trigger**
+`before insert or update` (`zabelie_verrou_billet_payant`) : tant que le
+drapeau est faux, **aucune catégorie de billet ne peut porter un prix non
+nul**. Une note dans un document s'oublie ; un trigger, non. Le jour où l'avis
+arrive, un seul `UPDATE` l'ouvre — aucune migration.
+
+⚠️ **Un trigger, et pas une contrainte `check` — corrigé le 2026-08-21 après
+revue et MESURE.** La première rédaction utilisait
+`check (prix_htg = 0 or zabelie_paiement_billets_ouvert())`. Deux pannes,
+éprouvées sur une base locale :
+
+1. **Perte silencieuse à la restauration.** `pg_dump` inline un `check` dans le
+   `create table`, donc actif pendant le `COPY` ; et les `COPY` sortent par
+   ordre alphabétique — `zabelie_event_ticket_types` **avant**
+   `zabelie_ticket_config`. Config vide → verrou lu `false` → billets payants
+   légitimes refusés, **et `psql < dump.sql` sort avec le code 0**. Mesuré :
+   l'événement revient, ses catégories ont disparu. Un trigger est émis en
+   section *post-data*, donc après les données : restauration mesurée à
+   **1 billet payant conservé**, verrou toujours actif ensuite.
+2. **Le verrou aurait tenu fermé le jour de son ouverture.** La config est
+   révoquée d'`authenticated` et la fonction était `security invoker` : sous le
+   vrai rôle, verrou **ouvert**, un billet payant rendait
+   `42501 permission denied for table zabelie_ticket_config`. Le billet gratuit
+   passait — `prix_htg = 0` court-circuite le `or` — donc tout avait l'air de
+   marcher. `E6`/`E7` ne pouvaient pas le voir : ils tournent sous le
+   propriétaire de la base.
+
+→ `E9` (structurel : trigger présent, `check` absent) et `E10` (les deux sens
+sous `authenticated`) gardent désormais les deux propriétés. L'erreur porte le
+même code `check_violation`, donc rien d'autre ne change pour les appelants.
+
 **Ce qui reste faisable sans attendre l'avis**, parce que ça ne retient rien :
 la spécification (ce document), le modèle de données, l'émission et le
 contrôle de billets **gratuits** (0 HTG, aucun flux financier), et le scanner.
@@ -155,6 +193,38 @@ C'est un V0 réel, utile aux églises et aux événements communautaires, et il
 n'aggrave rien. → §7, PR-T1 à PR-T4.
 
 ---
+
+### 3 bis. La question à envoyer, telle quelle
+
+Prête à copier dans un courriel. Elle ne demande pas un mandat : elle demande
+l'annotation de deux pages qui existent déjà (`docs/17`, `docs/36`).
+
+> **Objet — Qualification d'une billetterie événementielle au regard de la
+> Circulaire 121**
+>
+> Zabelie encaisse sur un **compte marchand unique**, sans cantonnement, et
+> reverse au vendeur après une période de maturation. Nous envisageons d'y
+> ajouter la vente de **billets d'événement**.
+>
+> La différence tient en une variable : pour un produit, la plateforme retient
+> les fonds environ sept jours après la livraison. Pour un billet, elle les
+> retiendrait **de la vente jusqu'à la tenue de l'événement** — soit
+> potentiellement plusieurs mois, et cette durée est le cœur du produit, pas un
+> cas limite. Payer l'organisateur avant l'événement nous exposerait au risque
+> d'annulation ; c'est pourquoi la conception techniquement prudente est aussi
+> celle qui allonge le plus la rétention.
+>
+> **La question : cette conservation relève-t-elle d'un service de paiement au
+> sens de la Circulaire 121 ?** Et si oui, quelles conditions (cantonnement,
+> agrément, plafond de durée) la rendraient admissible ?
+>
+> Nous ne construisons **aucune** fonctionnalité payante avant votre réponse —
+> le verrou est posé en base (`zabelie_ticket_config.paiement_ouvert = false`),
+> pas seulement dans nos notes.
+
+⚠️ **À envoyer maintenant, quel que soit le sort de PR-T1.** Le délai d'un
+cabinet se compte en semaines : c'est le chemin critique du payant, et le
+lancer en parallèle ne préjuge de rien.
 
 ## 4. Périmètre
 
@@ -226,9 +296,9 @@ regarder avant d'ouvrir l'un ou l'autre up-sell.
 ### 5.1 Tables proposées
 
 Toutes préfixées `zabelie_`, RLS active à la création, policies explicites.
-**Estimation : 3 migrations** (`0085` structure + RLS, `0086` fonctions
-d'émission/scan, `0087` config et plafonds) — sous réserve que `0084`
-(PR #140) soit appliquée d'ici là.
+**Estimation : 3 migrations** — `0086` structure + RLS + config (**livrée**,
+PR-T1), `0087` fonctions d'émission et de scan (PR-T3/T4), `0088` plafonds si
+le payant s'ouvre.
 
 | Table | Rôle | RLS |
 |---|---|---|
@@ -333,7 +403,7 @@ existant, 13:00 UTC).
 
 | PR | Périmètre | Dépend de | Critère d'acceptation |
 |---|---|---|---|
-| **PR-T1** | `0085` — `zabelie_events`, `zabelie_event_ticket_types`, RLS, config. Aucune UI. | `0084` appliquée | `rls_toutes_tables.test.sql` vert ; `colonnes_liste_blanche` vert ; test SQL : un organisateur ne voit pas le brouillon d'un autre (connu-positif **et** connu-négatif) |
+| **PR-T1** ✅ | `0086` — `zabelie_events`, `zabelie_event_ticket_types`, `zabelie_ticket_config`, RLS. Aucune UI. **Livrée le 2026-08-20**, migration **rédigée non appliquée**. | — | `rls_toutes_tables` vert · `colonnes_liste_blanche` vert · `supabase/tests/evenements.test.sql` : E1 connu-positif, **E2 connu-négatif**, E3/E4 anon, E5 écriture croisée, **E6/E7 le verrou du payant dans les deux sens**, E8 zone `depatman` refusée |
 | **PR-T2** | Console organisateur : créer/publier un événement, catégories. Kreyòl d'abord. | T1 | `i18n-chaines-en-dur` vert ; l'affiche se téléverse **et** se relit (preuve = un 201 dans les journaux Supabase, pas « ça a l'air bon ») |
 | **PR-T3** | `0086` — émission par **trigger** sur `orders → paid`, jeton haché, machine à états | T1 | test SQL : commande payée ⇒ billet émis ; **mutation : trigger retiré ⇒ le test échoue** |
 | **PR-T4** | Scanner + `zabelie_ticket_scans` append-only + double scan | T3 | test SQL : `update`/`delete` sur le journal **refusés** ; second scan refusé en nommant le premier |
