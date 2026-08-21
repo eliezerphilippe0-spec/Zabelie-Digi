@@ -71,11 +71,58 @@ Production **et** Preview — c'était le bon réglage à l'époque, pour
 l'honorer, et la vérification serveur-à-serveur interroge le même hôte : d'où
 un 404, d'où `moncash_unknown_48h`, exactement cinq fois.
 
-⚠️ **C'EST UNE HYPOTHÈSE, PAS UNE MESURE, et la distinction compte ici.**
-L'agent **ne peut pas lire les variables d'environnement de Vercel** : la
-sortie réseau du conteneur est bloquée, et il n'a aucun accès au tableau de
-bord. Ce qui est mesuré, c'est le défaut du code et ce que `OPS_TODO` dit
-avoir été posé. La valeur réellement déployée aujourd'hui n'est pas observée.
+> ## ✅ CONFIRMÉ LE 2026-08-21 — c'était bien `sandbox`
+>
+> **Observation du porteur, en session** : au clic sur « Peye ak MonCash », la
+> barre d'adresse affiche `sandbox.moncashbutton.digicelgroup.com`.
+>
+> L'hypothèse ci-dessous devient un **fait**, et les cinq échecs sont
+> expliqués : le rail encaissait en bac à sable, aucun compte MonCash réel ne
+> pouvait honorer ces paiements, et la vérification serveur-à-serveur
+> interrogeait le même hôte — d'où le 404, cinq fois.
+>
+> ⚠️ **Ce qui a tranché n'est pas un instrument, c'est un humain devant un
+> navigateur.** Aucune ligne en base ne distinguait « mode sandbox » de
+> « l'acheteur a renoncé » : `payments.raw` portait le jeton et le motif
+> d'expiration, jamais l'hôte demandé. C'est le défaut instrumenté ci-dessous.
+
+⚠️ **CE QUI SUIT ÉTAIT UNE HYPOTHÈSE AU MOMENT DE L'ÉCRIRE, et le texte est
+conservé tel quel** — c'est le raisonnement qui a mené à la bonne question,
+pas une conclusion. L'agent **ne peut pas lire les variables d'environnement
+de Vercel** : la sortie réseau du conteneur est bloquée, et il n'a aucun accès
+au tableau de bord. Ce qui était mesuré, c'était le défaut du code et ce que
+`OPS_TODO` disait avoir été posé.
+
+### L'instrument qui manquait — posé le 2026-08-21
+
+Le diagnostic a coûté un aller-retour humain pour une information que la base
+aurait dû porter. Corrigé : `payments.raw` inscrit désormais, **à la création
+du paiement**, le mode et l'hôte réellement utilisés.
+
+```sql
+-- Ce qui aurait répondu en dix secondes le 2026-08-11 :
+select raw->>'moncash_mode' as mode, raw->>'moncash_host' as hote,
+       status, count(*)
+  from payments group by 1, 2, 3 order by 4 desc;
+```
+
+Deux points qui séparent ce garde d'un vœu, tous deux éprouvés par mutation
+(`tests/moncash-mode-journalise.test.ts`) :
+
+* **L'hôte inscrit est tiré de `redirectUrl`**, c'est-à-dire de l'URL
+  réellement remise à l'acheteur — pas recalculé depuis l'environnement. Deux
+  dérivations peuvent diverger sans que rien ne le dise ; celle-ci ne le peut
+  pas. **Mutation passée** : rebrancher `gatewayHost` sur une autre source en
+  gardant tout le reste → le test rougit.
+* **L'assertion structurelle porte sur la LIAISON**, pas sur la présence du
+  mot : elle exige que `mode` vienne de la déstructuration de `createPayment`
+  avant d'être inscrit. **Mutation passée** : remplacer `moncash_mode: mode`
+  par une constante en dur → le test rougit, alors qu'un `grep` de
+  « moncash_mode » serait resté vert.
+
+⚠️ **Cet instrument ne répare rien** — il ne change pas le mode, il le
+consigne. Il existe pour que la **prochaine** panne du rail se lise en une
+requête au lieu de demander un humain et un navigateur.
 
 **La trancher coûte cinq secondes, et personne n'a besoin d'un agent pour ça.**
 Ouvrir la fiche produit, cliquer « Peye ak MonCash », et **lire l'hôte dans la

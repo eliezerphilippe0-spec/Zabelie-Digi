@@ -357,13 +357,32 @@ export async function POST(req: Request) {
     }
 
     // MonCash. orderId envoyé = notre order.id (clé de rapprochement).
-    const { redirectUrl, paymentToken } = await createPayment(
+    const { redirectUrl, paymentToken, mode, gatewayHost } = await createPayment(
       order.id,
       order.amount_htg
     );
+    /* ⚠️ LE MODE ET L'HÔTE SONT INSCRITS EN BASE, PAS SEULEMENT JOURNALISÉS.
+     *
+     * Cinq paiements ont échoué du 2026-08-11 au 2026-08-14 sur
+     * `moncash_unknown_48h`, et rien en base ne permettait de distinguer
+     * « le rail encaissait en bac à sable » de « l'acheteur a renoncé ». Il a
+     * fallu qu'un humain clique et lise la barre d'adresse pour trancher —
+     * confirmé le 2026-08-21 : c'était bien `sandbox`.
+     *
+     * Un journal Vercel s'efface et ne se croise avec rien. Une colonne se
+     * requête, six semaines plus tard, sur les paiements qui ont échoué :
+     *   select raw->>'moncash_mode', count(*) from payments group by 1;
+     * C'est le corollaire d'observabilité du dépôt appliqué au rail d'argent :
+     * l'absence de signal doit être un signal, et ici elle n'en était pas un. */
     await admin
       .from("payments")
-      .update({ raw: { payment_token: paymentToken } })
+      .update({
+        raw: {
+          payment_token: paymentToken,
+          moncash_mode: mode,
+          moncash_host: gatewayHost,
+        },
+      })
       .eq("order_id", order.id);
 
     return NextResponse.json({ redirectUrl, orderId: order.id });

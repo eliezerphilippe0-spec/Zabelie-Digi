@@ -82,6 +82,30 @@ export async function getAccessToken(): Promise<string> {
 export type CreatePaymentResult = {
   paymentToken: string;
   redirectUrl: string;
+  /**
+   * LE MODE ET L'HÔTE RÉELLEMENT UTILISÉS — pas ceux qu'on suppose.
+   *
+   * ⚠️ CETTE PAIRE EXISTE À CAUSE D'UNE PANNE DE CINQ SEMAINES QUE PERSONNE
+   * NE POUVAIT LIRE. Cinq paiements tentés du 2026-08-11 au 2026-08-14, tous
+   * terminés en `moncash_unknown_48h` — MonCash répond 404, il ne connaît pas
+   * la transaction. La cause a été CONFIRMÉE le 2026-08-21 par le porteur, en
+   * lisant l'hôte dans la barre d'adresse : `sandbox.moncashbutton…`. Le rail
+   * encaissait en bac à sable, et aucun compte réel ne pouvait l'honorer.
+   *
+   * Rien en base ne le disait. `payments.raw` portait le jeton et le motif
+   * d'expiration, jamais **sur quel hôte on avait demandé** — donc « mode
+   * sandbox » et « l'acheteur a renoncé » laissaient exactement la même trace.
+   * Il a fallu un humain devant un navigateur pour trancher ce qu'une colonne
+   * aurait dit en une requête.
+   *
+   * `redirectUrl` est construit à partir du MÊME `gateway` : l'hôte inscrit
+   * est donc celui où l'acheteur est réellement parti, jamais une seconde
+   * dérivation qui pourrait diverger. C'est ce qu'assure
+   * `tests/moncash-mode-journalise.test.ts` — et la mutation qui le prouve
+   * change la SOURCE de `gatewayHost` en gardant le reste intact.
+   */
+  mode: MonCashMode;
+  gatewayHost: string;
 };
 
 /**
@@ -93,7 +117,7 @@ export async function createPayment(
   amountHTG: number
 ): Promise<CreatePaymentResult> {
   const token = await getAccessToken();
-  const { rest, gateway } = config();
+  const { rest, gateway, mode } = config();
 
   const res = await fetch(`${rest}/v1/CreatePayment`, {
     method: "POST",
@@ -115,9 +139,15 @@ export async function createPayment(
   const paymentToken = data.payment_token?.token;
   if (!paymentToken) throw new Error("MonCash CreatePayment: token absent.");
 
+  const redirectUrl = `${gateway}/Payment/Redirect?token=${paymentToken}`;
   return {
     paymentToken,
-    redirectUrl: `${gateway}/Payment/Redirect?token=${paymentToken}`,
+    redirectUrl,
+    mode,
+    // Tiré de `redirectUrl`, donc de l'URL réellement remise à l'acheteur —
+    // et non recalculé depuis l'environnement. Deux dérivations peuvent
+    // diverger ; celle-ci ne le peut pas.
+    gatewayHost: new URL(redirectUrl).host,
   };
 }
 
