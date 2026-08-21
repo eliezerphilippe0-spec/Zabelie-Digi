@@ -90,6 +90,19 @@ Nos questions portent toutes sur ce seul endpoint :
      versement à partir de cette référence, ou à défaut un relevé des
      versements émis sur une période ?
 
+  6. Comment obtient-on des COMPTES DE TEST pour l'environnement bac à
+     sable ? Nous savons créer un business de test et générer un
+     client_id/client_secret depuis le portail bac à sable. Ce qui nous
+     manque est l'autre côté : un compte MonCash capable de PAYER en bac à
+     sable, pour dérouler un paiement de bout en bout.
+
+     Nos tentatives de créer un numéro de test par nous-mêmes ont toutes
+     échoué, et nous n'avons trouvé aucune procédure documentée.
+
+     La même question vaut pour le service de versement : y a-t-il un
+     numéro bénéficiaire de test permettant d'éprouver un /v1/Transfert
+     sans mouvement de fonds réel ?
+
 Nous ne développerons rien sur cet endpoint avant votre confirmation.
 
 Nous restons disponibles pour tout document complémentaire (statuts,
@@ -109,6 +122,8 @@ Cordialement,
 | **Non activé**, démarche donnée | On suit la démarche. Rien ne se code entre-temps. |
 | **Refus** ou question 4 répondue négativement | Le rail n'existe pas pour cet usage. On l'écrit dans `docs/03` §2 et on n'y revient plus. |
 | **Aucune réponse sous 3 semaines** | Consigner l'absence de réponse dans `OPS_TODO` — c'est une donnée, pas un vide. |
+| **Q6 : comptes de test fournis** | `docs/05` devient parcourable **au-delà de l'étape 1** — la seule qui l'ait jamais été. **Premier geste, avant tout code de versement.** |
+| **Q6 : aucun compte de test payeur n'existe** | Le bac à sable ne peut pas prouver la moitié aval du rail. La seule voie restante est la première commande RÉELLE (`docs/22`), montant minimal et remboursement immédiat. À écrire dans `docs/05` comme une **impossibilité**, pas comme une étape en attente. |
 
 ⚠️ **La question 4 est la moins évidente des cinq.** Un endpoint techniquement
 disponible peut être contractuellement réservé à d'autres usages (paie de
@@ -135,6 +150,66 @@ automatique**, et le contrôle retombe sur une lecture manuelle du relevé.
 
 **Les deux moitiés se posent dans le même envoi.** Découvrir la seconde après
 avoir codé sur la première coûterait le chantier une deuxième fois.
+
+### ⚠️ La question 6 n'est PAS partie avec le courriel — elle attend la relance
+
+**Le courriel est parti le 2026-08-21 avec les questions 1 → 5.** La question 6
+a été rédigée le même jour, **après l'envoi**. Elle figure ci-dessus pour la
+trace et pour le fil de relance ; elle n'a pas encore été posée.
+
+**Ne pas renvoyer le corps entier.** Un fournisseur qui reçoit deux fois la
+même demande répond une fois de moins. La relance prévue au **2026-09-01** pose
+la question 6 seule :
+
+```
+Bonjour,
+
+En complément de notre message du 21 août 2026 concernant l'endpoint
+/v1/Transfert, une question que nous avions omise :
+
+Comment obtient-on des COMPTES DE TEST pour l'environnement bac à sable ?
+Nous savons créer un business de test et générer un client_id/client_secret
+depuis le portail bac à sable. Ce qui nous manque est l'autre côté : un
+compte MonCash capable de PAYER en bac à sable, pour dérouler un paiement
+de bout en bout. Nos tentatives de créer un numéro de test par nous-mêmes
+ont toutes échoué, et nous n'avons trouvé aucune procédure documentée.
+
+La même question vaut pour le service de versement : y a-t-il un numéro
+bénéficiaire de test permettant d'éprouver un /v1/Transfert sans mouvement
+de fonds réel ?
+
+Nous restons dans l'attente de votre réponse au message précédent.
+
+Cordialement,
+[NOM]
+```
+
+### Pourquoi elle compte — un échec mesuré, pas une précaution
+
+Deux faits du 2026-08-21, qui n'en font qu'un :
+
+- le porteur rapporte que **toutes ses tentatives de créer un numéro de
+  téléphone de test ont échoué** ;
+- la base montre **cinq commandes du 11 au 14 août, cinq paiements `failed`**,
+  motif `moncash_unknown_48h` — MonCash répond 404, `provider_ref` null sur les
+  cinq. La création marchait ; rien n'aboutissait de l'autre côté.
+
+*Il n'y avait personne pour payer.* Les deux observations sont le même fait vu
+de deux côtés.
+
+L'asymétrie qu'elle expose est le fait utile : **le côté MARCHAND est
+libre-service** (créer un business de test dans le portail bac à sable, puis
+`Create ClientRestAPI` → `client_id`/`client_secret`), **le côté PAYEUR ne
+l'est pas** — aucune procédure publique, aucun numéro de test documenté. Or un
+paiement a besoin des deux.
+
+Conséquence, écrite en tête de `docs/05` : **les neuf étapes de la checklist
+bac à sable n'ont jamais été franchies**, et chacun de leurs « ✅ Attendu » est
+une prédiction, pas une observation. Le chemin de l'argent est aujourd'hui
+prouvé par des tests SQL et par rien d'autre — ils éprouvent la base, jamais
+l'aller-retour avec MonCash.
+
+Cette question ne coûte rien de plus : elle voyage avec les cinq autres.
 
 ---
 
@@ -278,7 +353,7 @@ Une attente sans date de reprise devient un abandon silencieux. Les deux
 
 | Échéance | Date | Geste |
 |---|---|---|
-| **Relance Digicel** — 7 jours ouvrables (§1) | **2026-09-01** | Service client **202**, en citant l'objet du courriel |
+| **Relance Digicel** — 7 jours ouvrables (§1) | **2026-09-01** | Service client **202**, en citant l'objet du courriel — **et poser la question 6**, qui n'est pas partie avec l'envoi (§1, corps de relance prêt) |
 | **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux envois |
 
 ⚠️ **Le 2026-09-11 n'est pas une date d'abandon, c'est une date d'ÉCRITURE.**
