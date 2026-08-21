@@ -195,6 +195,86 @@ rétention (`docs/17`) est ouvert et sans réponse : la première gourde encaiss
 est aussi la première gourde retenue sur un compte non cantonné. Elle est de
 **300 HTG** et elle est indispensable ; elle n'est pas anodine.
 
+### 🔴 L'ORDRE EXACT — trois consoles, quatre gestes
+
+> Écrit le 2026-08-21. Les éléments étaient déjà tous dans ce document ; ils
+> étaient **dispersés**, et l'un d'eux — le `Site URL` de Supabase — n'y
+> figurait pas du tout. Cette section ne les répète pas : elle les **ordonne**,
+> et dit ce que chaque inversion coûterait.
+>
+> **Aucun de ces quatre gestes n'est à l'agent.** Variables d'environnement et
+> portail fournisseur : zone d'arrêt ferme, explicitement hors de
+> l'autorisation permanente du 2026-08-17.
+
+| # | Console | Geste | Nature |
+|---|---|---|---|
+| **1** | Portail **MonCash Business — production** | **Relever** le `client_id` | lecture seule |
+| **2** | **Supabase** → Auth → URL Configuration | Poser `Site URL` (+ liste blanche de redirection) | écriture, effet immédiat |
+| **3** | Portail **MonCash Business — production** | Poser les **3 URLs** (Website / **Return** / Alert) | écriture |
+| **4** | **Vercel** → Environment Variables | `MONCASH_MODE=production` · `NEXT_PUBLIC_SITE_URL` · les identifiants **si** le geste 1 a révélé un écart — **puis UN SEUL redéploiement** | écriture + déploiement |
+
+#### Pourquoi cet ordre, et ce que chaque inversion coûte
+
+**1 avant 4 — la seule raison est le dépareillage.** Le mode et les
+identifiants sont deux variables indépendantes que rien ne contraint à former
+une paire (voir le §« troisième chose » ci-dessus). Si le `client_id` de
+production diffère de celui posé dans Vercel, il faut changer **les deux dans
+le même déploiement**. Basculer le mode d'abord, c'est un redéploiement qui
+échoue à l'authentification — **une sixième tentative ratée pour une raison
+neuve, sur un rail qu'on croit désormais réel.** Trente secondes de lecture
+l'évitent.
+
+**2 avant 4 — parce que ce geste-là ne coûte pas de déploiement.** Le `Site
+URL` de Supabase prend effet **immédiatement**, sans redéploiement : le poser
+tôt ne gaspille rien, et le poser tard laisse une fenêtre où un vendeur qui
+s'inscrit reçoit un lien de confirmation vers `localhost:3000` et croit que
+l'inscription a échoué. C'est le seul des quatre gestes dont l'oubli frappe
+**les vendeurs** et non les acheteurs — et le chemin vendeur n'est instrumenté
+nulle part, donc personne ne le verrait.
+
+**3 avant 4 — et c'est l'ordre le plus coûteux à inverser.** Tant que
+`MONCASH_MODE` vaut `sandbox`, une `Return Url` périmée est sans conséquence :
+aucun argent réel ne circule. Dès que le mode bascule, une `Return Url` fausse
+produit **un paiement réellement débité et jamais confirmé** —
+`app/api/moncash/return/route.ts` attend `?transactionId=`. C'est strictement
+pire que les cinq échecs actuels, qui n'ont coûté à personne.
+
+**4 en dernier, et en UN seul redéploiement.** C'est le geste qui rend l'argent
+réel. Grouper toutes les variables dans un unique déploiement évite les états
+intermédiaires — un mode `production` déployé pendant que `NEXT_PUBLIC_SITE_URL`
+est encore absente, par exemple.
+
+#### Après le geste 4 : la question se vérifie, elle ne se suppose plus
+
+C'est neuf depuis le 2026-08-21, et c'est ce qui a manqué pendant cinq semaines.
+Chaque paiement inscrit désormais **le mode et l'hôte réellement utilisés** dans
+`payments.raw` (`app/api/checkout/route.ts`) :
+
+```sql
+select raw->>'moncash_mode' as mode,
+       raw->>'moncash_host' as hote,
+       count(*)
+  from payments
+ group by 1, 2 order by 3 desc;
+```
+
+Les cinq paiements de 2026-08-11→14 n'ont **pas** ces clés : elles n'existaient
+pas. Un `null` en tête de liste, c'est l'ancien monde ; toute ligne portant
+`production` / `moncashbutton.digicelgroup.com` est postérieure à la bascule.
+
+⚠️ **`moncash_host` est tiré de `new URL(redirectUrl).host`** — donc de l'URL
+réellement remise à l'acheteur, jamais recalculée depuis l'environnement. Deux
+dérivations peuvent diverger ; celle-ci ne le peut pas. C'est ce qui distingue
+« la variable dit production » de « l'acheteur est parti chez production ».
+
+⚠️ **Une valeur malformée ne lève RIEN.** `lib/moncash.ts` fait
+`mode === "production" ? … : …` — un `else` binaire. `Production` avec une
+majuscule, un espace en fin de champ, une chaîne vide (que le `?? "sandbox"` ne
+rattrape pas, une chaîne vide n'étant pas `null`) retombent **silencieusement en
+bac à sable**. La cause n'est pas gardée ; seul l'effet est désormais lisible.
+**La requête ci-dessus est donc le contrôle, pas la valeur affichée dans
+Vercel.**
+
 ### Ce que cette commande produira, aux chiffres près
 
 Le catalogue ne porte **qu'un seul produit publié**, et il est parfait pour
@@ -341,9 +421,15 @@ Ce qu'une seule commande à 25 HTG éprouve, et qu'aucun test ne peut éprouver 
    Puis inscrire l'empreinte au registre `0041` — c'est aussi ce que lit la
    sonde d'arrondi (`/api/admin/coherence`) pour contredire la constante si
    les deux se désaccordent.
-1. **`NEXT_PUBLIC_SITE_URL`** dans Vercel (Production), puis **redéployer**.
-   Sans elle, `lib/site-url.ts` retombe sur le domaine `*.vercel.app` et
-   l'aperçu WhatsApp le fige. Facultatif mais souhaitable au même moment :
+1. **Les quatre gestes de console, dans l'ordre** → §« 🔴 L'ORDRE EXACT »
+   ci-dessus. **Ils précèdent tout le reste de cette liste** : sans eux le
+   paiement de l'étape 5 part en bac à sable, comme les cinq précédents.
+
+   `NEXT_PUBLIC_SITE_URL` y est le geste 4, groupé avec `MONCASH_MODE` dans un
+   unique redéploiement — ne pas la poser séparément, ce serait un déploiement
+   de plus pour rien. Sans elle, `lib/site-url.ts` retombe sur le domaine
+   `*.vercel.app` et l'aperçu WhatsApp le fige. Facultatif mais souhaitable au
+   même moment :
    `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM=1` (vérifier d'abord que les
    transformations d'image sont incluses dans le plan Supabase).
 2. **Publier un produit digital ou un service** à petit prix — 25 HTG suffit.
