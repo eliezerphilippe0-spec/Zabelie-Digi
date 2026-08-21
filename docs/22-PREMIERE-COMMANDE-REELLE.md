@@ -149,6 +149,47 @@ essais sandbox. **La `Return Url` est la critique** :
 fausse produirait un paiement réellement débité et jamais confirmé, ce qui est
 strictement pire que l'échec actuel. → `OPS_TODO`, runbook MonCash, étape 2 bis.
 
+#### ⚠️ Et une troisième chose, que RIEN dans ce dépôt n'enregistre
+
+**Le mode et les identifiants sont deux variables INDÉPENDANTES, et ils doivent
+former une paire.** `lib/moncash.ts` choisit l'hôte d'après `MONCASH_MODE` ;
+`MONCASH_CLIENT_ID` / `MONCASH_CLIENT_SECRET` viennent de leurs propres
+variables et **ne sont contraints par rien**. Le code ne peut pas détecter le
+dépareillage : il enverra des identifiants d'un monde à l'hôte de l'autre, et
+recevra un refus d'authentification.
+
+Or les deux portails délivrent chacun les leurs — le portail bac à sable
+(*business* de test → `Create ClientRestAPI`) et le portail production, dont
+le compte a été créé le 2026-08-10.
+
+**Le dépôt ne dit nulle part lesquels sont posés dans Vercel aujourd'hui.**
+`docs/11-SECRETS.md` liste les deux noms de variables et rien de plus ; le
+runbook d'`OPS_TODO` dit de les poser sans dire d'où ils viennent. Et l'agent
+ne peut pas le lire : sortie réseau bloquée, aucun accès au tableau de bord.
+
+Les deux dépareillages possibles, et ce qu'ils produisent :
+
+| `MONCASH_MODE` | Identifiants | Résultat |
+|---|---|---|
+| `production` | **de bac à sable** | Refus d'authentification sur `/oauth/token`. Aucun paiement ne se crée. |
+| `production` | **de production** | ✅ Le seul cas qui encaisse réellement. |
+| `sandbox` | de production | Ce qui a peut-être produit les cinq 404 — création acceptée, transaction inconnue de l'hôte interrogé. |
+
+⚠️ **Ne pas conclure de ce tableau que les cinq échecs sont expliqués par le
+dépareillage.** Ce qui est CONFIRMÉ, c'est l'hôte bac à sable, lu à la barre
+d'adresse. La provenance des identifiants n'a jamais été mesurée — c'est
+précisément le trou que ce paragraphe signale.
+
+**Geste, avant de toucher au mode** : ouvrir le portail MonCash Business
+**production**, y relever le `client_id`, et le comparer à celui posé dans
+Vercel. S'ils diffèrent, ce sont les deux qu'il faut changer, dans le même
+déploiement. Trente secondes ; et découvrir le dépareillage après avoir basculé
+en production, c'est une sixième tentative qui échoue pour une nouvelle raison,
+sur un rail qu'on croit désormais réel.
+
+⚠️ **Le `client_secret` se copie par le bouton *Reveal/Copy*, jamais par une
+sélection du champ masqué** — l'incident du caractère `•` est au runbook.
+
 ⚠️ **Passer en production, c'est encaisser de l'argent réel.** Le dossier de
 rétention (`docs/17`) est ouvert et sans réponse : la première gourde encaissée
 est aussi la première gourde retenue sur un compte non cantonné. Elle est de
