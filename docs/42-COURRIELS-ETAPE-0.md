@@ -306,6 +306,31 @@ est acquis.
 **Pièces jointes** : `docs/17-DOSSIER-BRH-RETENTION.md` et
 `docs/36-DOSSIER-RETENTION-KYC.md`, exportés en PDF.
 
+> **Où les trouver, et comment les exporter** — la question s'est posée le
+> 2026-08-21, ce qui prouve que « exportés en PDF » ne suffisait pas.
+>
+> Ce sont **deux fichiers de ce dépôt**, à la racine de `docs/`. Trois façons
+> d'y accéder :
+>
+> | Voie | Comment |
+> |---|---|
+> | **Sur GitHub** | `github.com/eliezerphilippe0-spec/Zabelie-Digi/blob/main/docs/17-DOSSIER-BRH-RETENTION.md` (idem pour `36-…`) — bouton **Raw** pour le texte brut |
+> | **En local** | `docs/17-DOSSIER-BRH-RETENTION.md` et `docs/36-DOSSIER-RETENTION-KYC.md` |
+> | **En HTML prêt à imprimer** | demander à l'agent : il convertit le Markdown en HTML autonome, contrôle la fidélité (mots, titres, tableaux) et l'envoie |
+>
+> **L'export PDF se fait au navigateur** : ouvrir le HTML → `Ctrl+P` / `⌘P` →
+> « Enregistrer au format PDF ». ⚠️ **LibreOffice est installé sur la machine
+> de l'agent mais refuse d'importer ces HTML** — mesuré le 2026-08-21, deux
+> tentatives dont une avec `--infilter="HTML (StarWriter)"` et un profil
+> dédié : `Error: source file could not be loaded`. Le navigateur rend un
+> meilleur résultat de toute façon (tableaux, sauts de page, polices).
+>
+> ⚠️ **Envoyer le PDF, pas le `.md`.** Un cabinet qui reçoit un fichier
+> Markdown voit du texte truffé de `#`, de `**` et de barres verticales : le
+> tableau de la §2.5 — celui qui montre que la table `payouts` existe sans
+> route de décaissement — devient illisible, et c'est l'une des deux pièces
+> qui portent la démonstration.
+
 > **Principe de rédaction** : on ne demande pas un mandat ni une étude. On
 > demande **deux réponses motivées** sur deux qualifications précises. « Sommes-
 > nous un fournisseur de services de paiement ? » appelle un développement long
@@ -394,11 +419,32 @@ notre base de données et non seulement dans une note.
 Merci de nous indiquer vos conditions d'intervention et le délai que vous
 estimez nécessaire.
 
-Cordialement,
+Je vous prie d'agréer, Maître, l'expression de ma considération distinguée.
+
 [NOM]
 [FONCTION] — [SOCIÉTÉ]
 [TÉLÉPHONE] · [COURRIEL]
 ```
+
+⚠️ **La formule de politesse n'est pas décorative, et la première rédaction
+était fautive.** Elle portait « Cordialement », qui convient à un service
+d'entreprise et **pas à un avocat**. À un membre du barreau, l'usage français
+demande une formule complète, reprenant le titre d'adresse employé à
+l'ouverture :
+
+> *Je vous prie d'agréer, Maître, l'expression de ma considération distinguée.*
+
+Deux règles à retenir, parce qu'elles se corrigent en dix secondes et se
+remarquent immédiatement :
+
+- **L'ouverture est « Maître, »** — seule, sans « Bonjour » ni « Cher ». C'est
+  le titre professionnel, il tient lieu de salutation.
+- **La clôture reprend ce même titre**, encadré de virgules. Une formule qui ne
+  le reprend pas sonne comme un copier-coller d'un autre courrier.
+
+**Ne pas « corriger » les courriels Digicel dans l'autre sens** : « Cordialement »
+y est juste. On écrit à un service d'entreprise, pas à un officier ministériel,
+et une formule solennelle y serait aussi déplacée que l'inverse ici.
 
 ### Ce qu'on fait de la réponse
 
