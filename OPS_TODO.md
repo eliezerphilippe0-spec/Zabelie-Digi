@@ -70,10 +70,27 @@ lui-même ; le produit l'attend en brouillon.
 >
 > Ne figure ici que ce qui attend une DÉCISION. La panne d'inscription
 > ci-dessous n'en est pas une : c'est un défaut, et il passe devant.
+>
+> ⚠️ **CE QUI RESTE À APPLIQUER NE SE LIT PLUS DANS CE TABLEAU — ça s'interroge.**
+> Mesuré le **2026-08-21**, une ligne pour chacun des **86 fichiers** :
+>
+> ```sql
+> select filename, statut, preuve from zabelie_schema_migrations
+>  where statut <> 'appliquee' order by filename;
+> ```
+>
+> Réponse ce jour-là, et c'est **tout** : `0031` `abandonnee` (fidélité,
+> volontairement sautée) · `0051` `redigee` · `0056` `redigee`. **Trois lignes.**
+>
+> Quatre entrées de ce tableau demandaient d'appliquer une migration **déjà
+> appliquée** — `0052`, `0053`, `0054`, `0083`. L'une d'elles portait « vérifié
+> en base le 2026-08-09 », ce qui était vrai ce jour-là et faux les douze
+> suivants. Un registre qui vieillit sans se contredire devient une consigne
+> de refaire ce qui est fait. Corrigées ci-dessous ; la requête reste la source.
 
 | Décision | Depuis | Ce qu'elle bloque |
 |---|---|---|
-| **Appliquer `0083` (adresse publique de boutique)** — rédigée, **NON appliquée**. Ajoute `profiles.boutik_slug` (nullable), remplit ce qu'elle peut depuis `display_name`, pose l'index unique et la contrainte de forme. ⚠️ Le dépliage d'accents en SQL est la partie risquée (`translate` exige deux chaînes de même longueur, une erreur d'un caractère décale tout en silence) — **une post-condition relit CHAQUE slug écrit et casse la migration si un seul est mal formé**. Aucun profil ne reçoit d'adresse inventée : un nom illisible garde `null`, et le code retombe sur `/createur/<id>`, qui ne cesse jamais de fonctionner. | 2026-08-17 | Rien avant application — la route `/boutik/<slug>` répond 404, ce qui est la vérité. Après : le lien que le vendeur partage sur WhatsApp devient `zabelie.com/boutik/mari-jakmel` au lieu d'un UUID. |
+| ✅ ~~**Appliquer `0083` (adresse publique de boutique)**~~ — **APPLIQUÉE le 2026-08-17 20:32:31Z**, `preuve = journal_supabase`, constaté au registre le 2026-08-21. La ligne annonçait « rédigée, NON appliquée » quatre jours après son application. | 2026-08-17 | Résolu. Le lien que le vendeur partage sur WhatsApp est `zabelie.com/boutik/mari-jakmel` au lieu d'un UUID. |
 | 🎨 **Le hero de l'accueil reste un grand panneau orange** — *reporté sur signal porteur (« laisse le hero on le corrige après »), 2026-08-17.* Dans la référence de design retenue, **aucune grande surface n'est colorée** : l'accent est réservé à un bouton. Le passer en carte sombre avec un seul CTA orange l'alignerait exactement. ⚠️ **Zone d'arrêt** : c'est la porte d'entrée de la marque, donc du **positionnement** (§4 de `docs/25`) — l'agent ne tranche pas. Le reste de la palette est déjà resserré et tenu par `tests/palette-resserree.test.ts` ; ce panneau est la dernière déviation connue. | 2026-08-17 | Rien techniquement — le site est cohérent sans. C'est un choix d'identité, pas un défaut. |
 | 🎨 **Trois styles pour le même bouton d'envoi** — `components/search-box.tsx:67` rend la recherche en `bg-brand` (orange), `app/catalogue/page.tsx:194` la même action en `bg-cloud` (crème), et `app/catalogue/page.tsx:258` un filtre secondaire en contour. Le contour est légitime (action secondaire) ; les **deux premiers sont la même action rendue différemment**, ce que la checklist UI interdit. Recommandation : `bg-brand` devient le style primaire UNIQUE. ⚠️ À vérifier à l'écran avant de trancher — la page catalogue afficherait alors **deux** boutons orange (barre + page), ce qui est peut-être la raison d'origine du crème. Correction d'une ligne, décision d'une minute. | 2026-08-17 | Rien. Cohérence visuelle. |
 | 🔧 **Supabase → Settings → API : `db_aggregates_enabled` est-il actif ?** — 30 secondes dans le tableau de bord. **Non vérifiable depuis une session d'agent** : le réglage ne figure pas dans `pg_db_role_setting` (Supabase l'applique à la configuration du conteneur PostgREST, pas en base — mesuré le 2026-08-16), et l'egress de session est fermé, donc l'unique test décisif (une vraie requête REST `select("amount_htg.sum()")`) est hors d'atteinte. | 2026-08-16 | Le sort de `lib/somme-htg.ts`. **S'il est ACTIF** : l'agrégat PostgREST rend les mêmes totaux en UNE requête, sans migration — le parcours par lots (50 allers-retours séquentiels par rendu de tableau de bord vendeur, payés à chaque visite) devient une complexité évitable, à retirer. **S'il est INACTIF** : le choix par lots est le bon et le repli « ≥ » est la bonne dégradation. ⚠️ Dans les deux cas le module reste un **pis-aller** : la vraie réponse est un **solde matérialisé** dérivé du grand livre append-only — le total cesse d'être recalculé pour devenir maintenu — à écrire quand une fenêtre de migration s'ouvre. |
@@ -91,8 +108,8 @@ lui-même ; le produit l'attend en brouillon.
 | ✅ ~~D-4 — sens de l'arrondi~~ — **CLOSE le 2026-08-03 : `floor`.** `0044` appliquée en base et au registre, PR #61 fusionnée, sonde à `accord`. Vérifié en base : 25 HTG → commission 2, net vendeur 23 ; les deux copies de la règle appellent le helper unique. | — | Résolu. La première vente réelle n'a plus de préalable décisionnel. |
 | ✅ ~~Signature datée du réexamen `sharp`~~ — **SIGNÉE 2026-08-03, réexamen au 2026-11-03.** | — | Résolu. Deux événements rouvrent le dossier, le premier qui arrive gagne : la date, ou le premier téléversement vendeur. |
 | **🔴 `Site URL` Supabase + `NEXT_PUBLIC_SITE_URL` Vercel** | 2026-08-04 | **La première commande réelle.** Le lien de confirmation renvoie vers `localhost:3000` — un vendeur qui s'inscrit croit que ça a échoué. Et sans `NEXT_PUBLIC_SITE_URL`, l'aperçu WhatsApp fige le mauvais domaine, avec un cache persistant : à poser **avant** tout partage. |
-| **Appliquer `0051` (clairin) et `0052` (`label_es`)** | 2026-08-01 | Le rayon produits locaux, et l'espagnol complet du menu. Chacune porte sa garde. |
-| **Appliquer `0053` (rétention 90 j)** | 2026-08-03 | Rien d'autre — mais elle borne la conservation de termes de recherche **en clair**. |
+| **Appliquer `0051` (clairin)** — ⚠️ **seule `0051` reste**, mesuré le 2026-08-21 : `0052` (`label_es`) est **appliquée**. La ligne d'origine les demandait toutes les deux. | 2026-08-01 | Le rayon produits locaux. Elle porte sa garde. |
+| ✅ ~~**Appliquer `0053` (rétention 90 j)**~~ — **appliquée**, constaté au registre le 2026-08-21. | 2026-08-03 | Résolu. La conservation des termes de recherche en clair est bornée. |
 | **Poser `NEXT_PUBLIC_WHATSAPP_NUMBER=50937376615`** (Vercel, Production + Preview) | 2026-08-06 | Toutes les surfaces WhatsApp de la landing v2 (topbar, rail d'accueil, /aide) — masquées tant que la variable est absente. Numéro fourni par le porteur en session ; variable NEXT_PUBLIC → **redéploiement requis** après pose (valeur inlinée au build). |
 | **Appliquer `0075` (rabais — V-4 de `docs/35`)** — rédigée, éprouvée par la CI (D1–D5 : barré = prix pratiqué, origine conservée, variante unique synchrone, refus multi-variantes, contrainte tenue même en SQL direct), non appliquée | 2026-08-15 | Les rabais vendeur : sans elle, tout est dormant (aucune surface, route 503). Le vendeur ne saisit QUE le nouveau prix ; le barré est posé par la base depuis le prix réellement pratiqué — le « barré gonflé » est structurellement impossible. ✅ APPLIQUÉE le 2026-08-15 03:48:00Z (journal 20260815034800, sha256 c54d572e…) sur signal « applique 0075 et lance V-5 » — transmise sans commentaires d'en-tête (SQL identique, le cas couvert par le hash canonique), registre à 74. Les rabais sont vivants. |
 | **Appliquer `0076` (coordonnées de livraison — V-5 de `docs/35`)** — rédigée, éprouvée par la CI (L1–L3 : own-row, lecture vendeur UNIQUEMENT sur commande payée, fenêtre refermée après livraison, écriture own-row seule), non appliquée | 2026-08-15 | Nom/téléphone/adresse de l'acheteur : table SÉPARÉE de `profiles` (qui est en lecture publique — une adresse n'y aurait rien à faire) ; la règle « visible au moment d'envoyer » est encodée dans la RLS, pas dans une bonne intention. Sans 0076 : formulaire masqué, route 503. Politique de confidentialité déjà mise à jour ×4 langues dans la même PR. ✅ APPLIQUÉE le 2026-08-15 04:01:40Z (journal 20260815040140, sha256 a8d9b57a…, 4 policies vérifiées, registre à 75) sur signal « applique 0076 ». Le formulaire de livraison et la vue vendeur sont vivants. |
@@ -105,7 +122,7 @@ lui-même ; le produit l'attend en brouillon.
 | **Surplus IA — ARBITRÉ le 2026-08-15** (« Ok pour 50 gratuit ferme, facture le surplus ») : rail = **déduction du prochain règlement vendeur**, prix = **5 HTG/suggestion**, plafond dur 200/j — les trois en table de config (`0071`, règle dure n°3). Spec : `docs/34-SURPLUS-IA.md`. Tranche 1 livrée (consentement 402 + registre append-only ZB071, entièrement dormant : config absente → gratuit bloqué à 50, comme avant). **Tranche 2 livrée (`0072`)** : recouvrement à la demande de retrait — solde exigé = montant + dette, double écriture au grand livre (idempotence `ai_surplus:<payout>`), lignes réglées par identifiant, refus en net, rejet de demande sans restitution des frais (service consommé). Éprouvée par les tests SQL T1–T4 (dont invariant 0033 après chaque geste). ✅ **APPLIQUÉES le 2026-08-15, sur signal porteur « applique 0071 et 0072 »** — 0071 à 02:37:06Z (journal 20260815023706, sha256 `fe5e9373dd8f…`), 0072 à 02:37:39Z (journal 20260815023739, sha256 `dff71338ffb1…`), registre inscrit dans la foulée (71 lignes, 68 appliquées). Vérification préalable clé : la forme canonique de `zabelie_request_payout` en prod était IDENTIQUE à 0034 (md5 `94c485e1…` — l'écart brut n'était que les commentaires retirés à la transmission d'époque) : le remplacement partait de la bonne base. Sondes post-application : config 50/5/200 lue, RLS active des deux tables (0 policy sur la config, lecture propre sur le surplus), sondes négatives ZB071 en transaction annulée (delete refusé, réécriture refusée, règlement unique — chaque chemin d'échec lève, le silence est preuve par construction), 0 ligne résiduelle. **Le service payant est VIVANT en production.** 🔴→🟠 **La clause CGU : GABARIT LIVRÉ le 2026-08-15** — section « 8. Services optionnels payants » insérée dans les quatre langues des `/conditions` (quota gratuit indiqué en application, prix qui fait foi = celui de l'écran de consentement — jamais un chiffre figé dans le texte —, déduction au prochain règlement en écriture distincte, non-restitution des frais d'un service consommé, non-rétroactivité des changements de prix). Aucun nouveau marqueur juridique ouvert : les faits sont tous tranchés (docs/34). **Reste le geste porteur : la relecture par le conseil**, avec le reste du document — le service tourne en production depuis 02:37Z avec l'écran de consentement + cette section comme information contractuelle. Le porteur avait choisi d'appliquer avant la clause, en connaissance (consigné au registre 0071). | 2026-08-15 | Aujourd'hui : rien ne change en prod (blocage gratuit à 50). Après tranche 2 + application de 0071 : le vendeur consent explicitement au prix à chaque franchissement, et le surplus se déduit de son prochain règlement. ⚠️ **Poser d'abord un plafond de dépense dans la console du fournisseur** (OpenAI : Settings → Limits ; Google AI Studio : quotas) — c'est, avec le débit borné côté code (5/min et 60/jour par vendeur), la double ceinture du coût. Clé côté serveur (pas `NEXT_PUBLIC`), redéploiement simple suffit. La clé ne transite jamais par le chat. | 2026-08-14 | Le bouton « Ede m ekri deskripsyon an » des deux formulaires vendeur — construit **dormant** (décision porteur du jour : fournisseurs OpenAI/Google, pas Claude) : sans clé, aucun bouton, la route répond 503, zéro dépense. La suggestion remplit le champ, le vendeur relit et corrige — rien n'est publié automatiquement. |
 | **Poser `SEARCH_FINGERPRINT_SALT`** | 2026-07-31 | Le capteur de demande : sans elle, rien n'est enregistré. ⛔ **Verrou** : la purge doit avoir tourné **une fois**, journal lu — donc cette décision dépend elle-même de la mise en ligne de `api-v1-tool-ready`. |
 | **Arbitrer les trois valeurs de `0043`** — `shipment_deadline_days` (5), `auto_receive_days` (7), `post_receipt_maturation_days` (0) | 2026-08-09 | **Rien aujourd'hui, et c'est exactement le moment de trancher.** `0043` est appliquée : les trois valeurs sont EN BASE, à leurs valeurs *proposées*, parce qu'une table de config ne peut pas être vide. Proposées ≠ décidées. Elles se changent par `UPDATE`, sans migration, tant qu'aucune commande physique n'existe — après, chaque changement déplace une échéance de paiement sur des commandes en cours. Détail et raisonnement : `docs/21` §2. |
-| **Appliquer `0054` (table de configuration des commissions)** | 2026-08-09 | Rien — le taux vit encore dans le `case` de repli (10 % / 6 % Elite), qui rend exactement les mêmes valeurs. Elle transforme un paramètre commercial en donnée modifiable sans migration, ce que la règle dure n°3 exige. Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. |
+| ✅ ~~**Appliquer `0054` (table de configuration des commissions)**~~ — **appliquée**, constaté au registre le 2026-08-21. *(Ligne d'origine : « Vérifié en base le 2026-08-09 : `zabelie_commission_config` absente. » — vrai ce jour-là, faux depuis, et personne ne l'a repassé pendant douze jours. C'est l'argument même de la ligne de mesure en tête de ce tableau.)* | 2026-08-09 | Résolu. Le taux est une donnée modifiable sans migration, comme la règle dure n°3 l'exige. |
 | ✅ ~~Appliquer `0058` (panier)~~ · ~~`0057` (12 catégories de services)~~ · ~~`0040`~~ — **FAIT le 2026-08-11.** | — | Résolu. Le panier fonctionne de bout en bout (icône, compteur, paiement ligne à ligne, PR #95 fusionnée). |
 | ✅ ~~**B2 (`0037`/`0038`/`0040`)** — appliquée~~ — **FAIT le 2026-08-11.** | — | **Résolu : le stock est branché sur le chemin d'argent.** `confirm_payment` consomme le stock DANS la transaction du paiement, `refund_order` le relibère, et `zabelie_consume_stock_strict` remplace la survente silencieuse par une rupture explicite (commande `disputed`, vendeur NON crédité, vue `zabelie_stock_ruptures` pour l'admin). TTL de réservation porté à **120 min** — valeur prudente, ⚠️ **à confirmer contre le timeout réel MonCash**, ce qui reste un point ouvert (`0038` §1). Le repli 400-puis-rejeu de `lib/products.ts` a cessé. |
 | ✅ ~~**Fusionner les quatre PR Izikit — #87, #88, #89, #90**~~ — **FAIT le 2026-08-12.** #88 (`de898f68`), #96 (`0ef21d7d`), #89 (`da56e05e`), #90 (`dd21b0ef`). Plus aucune PR ouverte ; migrations contiguës `0001`→`0062`. Le journal d'audit a reçu ses premières vraies lignes en production (ids 2→5, `user.suspend` ×2 et `user.restore` ×2), et `0056` est **fusionnée mais toujours non appliquée** — elle attend D-10→D-14, ligne dédiée ci-dessous. | — | Ancien libellé : **Le journal d'audit admin, qui n'existe qu'à moitié.** `0055` est appliquée en base depuis le 2026-08-10 : la table `zabelie_admin_actions` est là, mais le code qui y écrit vit sur la branche de la #88, jamais fusionnée — **aucun acte d'administration n'est journalisé aujourd'hui**. Idem pour les sondes (#89) et la purge des avis (#90, migration `0056` ni fusionnée ni appliquée). Ordre de fusion : [#87](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/87) → [#88](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/88) → [#89](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/89) → [#90](https://github.com/eliezerphilippe0-spec/uniondigitale/pull/90). `0056` s'appliquera APRÈS la fusion de la #90. |
@@ -271,6 +288,63 @@ BL-136 (achat invité) reste explicitement en attente d'une décision produit.
       avant la fin de cette liste.
 
 ## Application des migrations — journal
+
+### `0086_evenements.sql` — 2026-08-21 19:54:08Z
+
+**Signal** : « applique 0086 », en session, sur l'autorisation permanente du
+2026-08-17. **Appliquée par l'agent via le MCP Supabase**, projet
+`ddditxykopuxxqzgkqwy`. Inscrite au registre : `statut = appliquee`,
+`preuve = journal_supabase`, `applied_by` renseigné avec les deux sources.
+
+**Empreinte** `df9f97af9537f124a0ff2e9f29965510f18e620c9659971800b45778f0268ad2`.
+
+⚠️ **Première application du dépôt dont l'empreinte est CROISÉE, et c'est la
+méthode à reprendre.** Le SQL devait être retranscrit dans un appel MCP — 353
+lignes, exactement le geste qui échoue en silence. Plutôt que de s'en remettre
+au soin :
+
+```sql
+select encode(digest(array_to_string(statements, ''), 'sha256'), 'hex')
+  from supabase_migrations.schema_migrations where name = '0086_evenements';
+-- df9f97af…0268ad2  = sha256sum du fichier de main (3c25711)
+```
+
+Le SQL **reçu** par la base et le **fichier** du dépôt sont identiques. Jusque-là
+`sha256` était calculé depuis le fichier et jamais confronté à ce qui avait
+tourné — c'est ce qui avait fait reclasser `0044` en `sonde_schema`.
+
+**Avant** : aucune ligne au registre, et **les sept objets du fichier absents**
+— liste tirée du fichier par `grep '^create'`, pas de mémoire (c'est le piège
+de `0043`, où une sonde regardait à côté et son « absent » se lisait comme une
+preuve). État propre, pas partiel.
+
+**Après, croisé au catalogue** : `zabelie_ticket_config`, `zabelie_events`,
+`zabelie_event_ticket_types`, le type `zabelie_event_statut`, et les trois
+fonctions — tous présents. `trigger_verrou = 1` · `check_fantome = 0` ·
+`verrou_security_definer = true` · `tables_sans_rls = 0` · `policies = 5` ·
+`paiement_ouvert = false`.
+
+**Sonde en production, retour arrière FORCÉ par un `raise` final** (l'annulation
+est assurée par le moteur, pas par la discipline de l'agent) :
+
+| Cas | Résultat |
+|---|---|
+| prix 500 HTG, verrou fermé | **REFUSÉ** — `check_violation` |
+| prix 0 HTG | **ACCEPTÉ** — 1 ligne |
+
+Le second n'est pas décoratif : sans lui, un verrou refusant *tout* prix
+passerait le premier sans rien prouver. Vérifié après annulation :
+`zabelie_events` = 0 ligne, `zabelie_event_ticket_types` = 0 ligne.
+
+⛔ **`paiement_ouvert` n'a PAS été basculé.** Le sens inverse — verrou ouvert,
+prix accepté — est prouvé par E7/E10 en CI. Toucher le drapeau du payant en
+production, même dans une transaction annulée, est précisément l'objet du gel
+(`docs/17`, `docs/40` §3).
+
+**Garde de rejeu éprouvé dans le sens négatif** : `zabelie_migration_garde('0086_evenements.sql')`
+rend désormais `ZB065 — rejeu refuse`. Provoqué, pas supposé.
+
+**Registre après application : 86 lignes pour 86 fichiers.**
 
 ### Activations de rayons — journal
 

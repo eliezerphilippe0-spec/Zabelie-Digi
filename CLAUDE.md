@@ -79,7 +79,7 @@ décision D-8 a atteint `main` ; re-greffée le 2026-08-18.)*
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0082`**. **L'état ne se raconte plus, il s'interroge.**
+   (dernière écrite : **`0086`**. **L'état ne se raconte plus, il s'interroge.**
    Depuis `0062` puis `0063`, appliquées le **2026-08-12**, le registre est
    COMPLET — un fichier, une ligne — et chaque ligne porte deux colonnes :
    `statut` (`redigee` · `appliquee` · `abandonnee`) et **`preuve`**, qui dit
@@ -90,10 +90,21 @@ décision D-8 a atteint `main` ; re-greffée le 2026-08-18.)*
     group by 1, 2 order by 1, 2;
    ```
 
-   **Mesuré le 2026-08-17, après `0067`/`0080`/`0081`/`0082`** : 82 lignes pour
-   82 fichiers — 79 `appliquee`, 2 `redigee` (`0051`/`0056`), 1 `abandonnee`
-   (`0031`, fidélité, volontairement sautée). *(Mesure précédente, 2026-08-12
-   après `0063` : 63 lignes, 57 `appliquee`, 5 `redigee`, 1 `abandonnee`.)*
+   **Mesuré le 2026-08-21, après `0083`→`0086`** : **86 lignes pour 86
+   fichiers** — 83 `appliquee`, 2 `redigee` (`0051`/`0056`), 1 `abandonnee`
+   (`0031`, fidélité, volontairement sautée). Par preuve : `journal_supabase`
+   76 · `sonde_schema` 6 · `succession` 1 · `non_appliquee` 3. *(Mesures
+   précédentes : 2026-08-17 après `0082`, 82 lignes, 79 `appliquee` · 2026-08-12
+   après `0063`, 63 lignes, 57 `appliquee`.)*
+
+   ⚠️ **`0086` porte la première preuve d'empreinte croisée du dépôt**, et
+   c'est la méthode à reprendre : le SHA-256 du SQL **reçu** par Supabase
+   (`supabase_migrations.schema_migrations.statements`) a été comparé à celui du
+   **fichier** de `main`. Identiques. Jusque-là, `sha256` était calculé depuis
+   le fichier et jamais confronté à ce qui avait tourné — c'est exactement ce
+   qui avait fait reclasser `0044` en `sonde_schema`. Une transcription qui
+   part d'un rapport plutôt que du fichier échoue en silence ; deux hachages
+   qui coïncident le disent.
 
    ⚠️ **« Complet » n'a été VRAI qu'à partir du 2026-08-17.** `0063` a déclaré
    le registre complet le 12 ; il l'était à une ligne près, et personne ne l'a
