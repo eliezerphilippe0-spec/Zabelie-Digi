@@ -258,9 +258,47 @@ n'est pas un avis juridique.
 
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
 |---|---|---|---|---|
-| §1 — activation `/v1/Transfert` | Digicel MFS Business | — | — | ⏳ **rédigé, non envoyé** |
-| §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar | — | — | ⏳ **rédigé, non envoyé** |
+| §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
+| §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
 > dire « pas envoyé », jamais « on ne sait plus » — c'est la différence entre
 > l'absence de signal et le signal d'absence.
+>
+> **Les deux dates du 2026-08-21 sont déclarées par le porteur en session, pas
+> observées.** L'agent n'a accès ni à la boîte d'envoi ni aux accusés de
+> réception. C'est une déclaration fiable et c'est la seule disponible — mais
+> elle ne se lit pas comme une mesure, et une session future qui aurait besoin
+> de la date exacte doit remonter à l'accusé d'envoi, pas à cette ligne.
+
+### 3.1 Échéances — pour que l'attente ait une fin
+
+Une attente sans date de reprise devient un abandon silencieux. Les deux
+échéances sont calculées depuis le **vendredi 2026-08-21** :
+
+| Échéance | Date | Geste |
+|---|---|---|
+| **Relance Digicel** — 7 jours ouvrables (§1) | **2026-09-01** | Service client **202**, en citant l'objet du courriel |
+| **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux envois |
+
+⚠️ **Le 2026-09-11 n'est pas une date d'abandon, c'est une date d'ÉCRITURE.**
+« Digicel n'a pas répondu en trois semaines » est un fait qui oriente les
+décisions suivantes — il vaut d'être écrit exactement comme une réponse. Sans
+cette ligne, « on attend encore » et « personne n'a relancé depuis un mois »
+produisent le même silence.
+
+### 3.2 Ce que l'envoi ne change PAS
+
+À inscrire ici parce que c'est l'inférence naturelle du lendemain :
+
+- ⛔ **`zabelie_ticket_config.paiement_ouvert` reste `false`.** Il s'ouvre sur
+  l'**avis rendu**, pas sur la question posée. Le verrou est un trigger en base
+  (`0086`, appliquée le 2026-08-21) — il ne se lève pas par l'attente.
+- ⛔ **Rien ne se code sur `/v1/Transfert`.** `docs/03` §9 **étape 0 non
+  franchie** : un endpoint documenté n'est pas un endpoint activé, et une
+  question posée n'est pas une réponse reçue. `docs/43` décrit le test qui
+  devra rougir avant la première ligne ; il ne l'autorise toujours pas.
+
+Ce qui a changé, et c'est déjà beaucoup : les deux dossiers ont quitté l'état
+« geste en attente du porteur » pour l'état « réponse en attente d'un tiers ».
+Ce ne sont pas les mêmes ; le second a une échéance.
