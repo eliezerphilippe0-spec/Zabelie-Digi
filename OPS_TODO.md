@@ -48,6 +48,34 @@ Brevo écarté comme doublon). Il n'y a rien à décider, seulement à vérifier
 
 ---
 
+## 🔵 Le 500 au corps VIDE — une classe de 35 routes, gravité mesurée
+
+Trouvé le 2026-08-22 par `scripts/zabelie-verifier-deploiement.mjs`, pas par
+une relecture.
+
+`createClient()` LÈVE quand les variables Supabase manquent. Dans **35 routes**
+d'`app/api`, cet appel est hors de tout `try` — la requête rend alors un **500
+au corps vide**, qui échappe au contrat que toutes les autres erreurs de la
+même route respectent.
+
+⚠️ **GRAVITÉ RÉELLE : faible en production, et c'est pourquoi les 35 ne sont
+PAS réécrites.** Ce chemin ne se déclenche que si l'environnement est mal
+configuré — ce qui n'arrive pas là où le site répond. Réécrire 35 fichiers sur
+une panne qui n'a jamais eu lieu ajouterait 35 diffs pour zéro défaut mesuré.
+
+Deux routes SONT corrigées, parce qu'elles sont neuves et que la sonde les
+désignait : `app/api/v1/[endpoint]` et `app/api/messages`.
+
+⚠️ **La leçon dépasse le correctif.** L'instance avait été réparée dans la
+route v1 deux heures avant que la classe n'apparaisse, sans être generalisee —
+le reflexe est de reparer ce qu'on voit. Ce qui a fait apparaitre la classe
+n'est pas une relecture : c'est d'avoir PARCOURU le chemin avec un instrument.
+
+**A rouvrir si** : un incident de production montre un 500 sans corps, ou si un
+environnement de preproduction devient un usage regulier.
+
+---
+
 ## 🔴 PV — écriture en production du 2026-08-15 (dépublication)
 
 **Signal porteur** : « Sur la dépublication : oui, sans hésiter. »

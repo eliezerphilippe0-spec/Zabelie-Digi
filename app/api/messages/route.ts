@@ -37,11 +37,44 @@ export const dynamic = "force-dynamic";
  * arrière.
  */
 export async function POST(req: Request) {
+  /* ⚠️ LA MÊME GARDE QUE `app/api/v1/[endpoint]/route.ts`, ET ELLE MANQUAIT ICI.
+   *
+   * Trouvée le 2026-08-22 par `scripts/zabelie-verifier-deploiement.mjs`, pas
+   * par une relecture : `createClient()` LÈVE quand les variables Supabase
+   * manquent, et cet appel était hors de tout `try`. La route rendait alors un
+   * **500 au corps VIDE** — la réponse échappait au contrat que toutes les
+   * autres erreurs de ce fichier respectent.
+   *
+   * ⚠️ ET C'EST UNE CLASSE, PAS UN CAS. Mesuré le même jour : **35 routes**
+   * d'`app/api` appellent `createClient()` hors d'un `try`. J'avais corrigé
+   * l'INSTANCE dans la route v1 deux heures plus tôt et je ne l'avais pas
+   * généralisé — le réflexe est de réparer ce qu'on voit.
+   *
+   * Pourquoi les 34 autres ne sont PAS réécrites ici : ce chemin ne se
+   * déclenche que si l'environnement est mal configuré, ce qui n'arrive pas en
+   * production — le site répond. Réécrire 35 fichiers sur une panne qui n'a
+   * jamais eu lieu ajouterait 35 diffs pour zéro défaut mesuré. La classe est
+   * NOMMÉE dans `OPS_TODO`, avec sa gravité réelle, plutôt que traitée en
+   * masse. Celle-ci est corrigée parce qu'elle est neuve et que la sonde la
+   * désigne. */
+  /* ⚠️ LA LANGUE SE RÉSOUT AVANT LA BASE, ET SÉPARÉMENT. `getLang()` lit un
+   * COOKIE — il ne dépend pas de Supabase. Les mettre dans le même `try`
+   * rendait la langue indisponible au moment précis où il faut parler à
+   * l'utilisateur, et j'y avais répondu par un « Service indisponible. » EN
+   * DUR — que le cliquet `tests/i18n-api-cliquet.test.ts` a immédiatement
+   * attrapé. Le garde a fait exactement son travail sur celui qui l'a écrit. */
   const lang = await getLang();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  let user: { id: string } | null;
+  try {
+    supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user ? { id: data.user.id } : null;
+  } catch (e) {
+    console.error("[messages] CLIENT SUPABASE INDISPONIBLE — variables absentes ?", e);
+    return erreurAvecLangue(lang, "api.unavailable", 503);
+  }
   if (!user) return erreurAvecLangue(lang, "api.auth.required", 401);
   if (await getSuspension(user.id)) {
     return erreurAvecLangue(lang, "api.suspended", 403);
