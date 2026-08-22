@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isDownloadable } from "@/lib/product-kind";
+import { isDownloadable, isDigitalKind } from "@/lib/product-kind";
 import { createPayment } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
@@ -40,6 +40,17 @@ export const dynamic = "force-dynamic";
  */
 
 const RAILS = ["moncash", "stripe", "zelle"] as const;
+
+/**
+ * RAIL GRATUIT (`0087`) — jamais choisi par le client, toujours DÉDUIT du prix
+ * lu en base. Il ne figure donc pas dans `RAILS` : personne ne peut le demander.
+ *
+ * ⚠️ C'est la propriété qui rend ce rail sûr. Un rail « gratis » que l'appelant
+ * pourrait réclamer serait une porte ouverte sur toute commande ; celui-ci
+ * s'impose de lui-même quand, et seulement quand, `orders.amount_htg` vaut 0 —
+ * une valeur que seul le serveur écrit, depuis `products.price_htg`.
+ */
+const RAIL_GRATIS = "gratis" as const;
 type Rail = (typeof RAILS)[number];
 
 function railEnabled(rail: Rail): boolean {
@@ -152,6 +163,59 @@ export async function POST(req: Request) {
   // elle est déclenchée par confirm_payment, une fois le paiement CONFIRMÉ
   // (sinon tout échec après coup — 3G coupée, session MonCash abandonnée —
   // brûlait un usage pour une vente qui n'a jamais eu lieu).
+  /* ── RAIL GRATUIT (0087) : périmètre NUMÉRIQUE ────────────────────────────
+   *
+   * Un produit affiché à 0 s'acquiert sans paiement (voir plus bas). Un
+   * produit PHYSIQUE à 0, lui, est refusé — et ce n'est pas une prudence de
+   * principe : la base le dit déjà pour les articles à variantes,
+   * `zabelie_product_variants.price_htg > 0` (0036). Ce garde étend la même
+   * règle au physique sans variante, qui passait entre les mailles.
+   *
+   * Ce qu'un physique gratuit signifierait vraiment : « le vendeur expédie à
+   * ses frais ». C'est un arbitrage commercial du porteur, pas une décision
+   * d'implémentation — et le découvrir après avoir reçu la commande serait le
+   * découvrir trop tard. */
+  const estGratuit = product.price_htg === 0;
+  if (estGratuit && !isDigitalKind(product.kind)) {
+    return NextResponse.json(
+      {
+        error:
+          "Un article livrable ne peut pas être offert à 0 HTG : les frais de remise resteraient à la charge du vendeur.",
+        code: "gratuit_physique_refuse",
+      },
+      { status: 422 }
+    );
+  }
+
+  /* Acquisition gratuite DÉJÀ FAITE : on rend la commande existante au lieu
+   * d'en créer une seconde. Sans ce contrôle, rien n'empêche d'acquérir cent
+   * fois le même produit à 0 — cent commandes, cent paiements, cent lignes de
+   * suivi, cent écritures d'escrow à zéro. Aucun risque d'argent, mais un
+   * registre noyé, et c'est le registre qui sert à tout ici.
+   *
+   * ⚠️ Il reste une course possible : deux clics simultanés peuvent produire
+   * deux commandes. C'est assumé — pour un produit gratuit, le pire est une
+   * ligne en double, pas un double débit. Le fermer complètement demanderait
+   * un index unique partiel, qui viendra si le besoin apparaît. */
+  if (product.price_htg === 0) {
+    const { data: deja } = await admin
+      .from("orders")
+      .select("id")
+      .eq("buyer_id", user.id)
+      .eq("product_id", product.id)
+      .in("status", ["paid", "delivered"])
+      .limit(1)
+      .maybeSingle();
+    if (deja) {
+      return NextResponse.json({
+        redirectUrl: "/mes-achats",
+        orderId: deja.id,
+        gratuit: true,
+        deja: true,
+      });
+    }
+  }
+
   let finalPriceHtg = product.price_htg;
   let couponCode: string | null = null;
   let couponId: string | null = null;
@@ -284,9 +348,15 @@ export async function POST(req: Request) {
   });
 
   // Paiement (pending). idempotency_key = order.id (1 paiement/commande).
+  /* Le rail est DÉDUIT du montant relu en base, jamais du champ envoyé par
+   * l'appelant : un client qui réclamerait `gratis` sur un produit payant
+   * obtient `moncash`, et un client qui réclamerait `moncash` sur un produit à
+   * 0 obtient `gratis`. Dans les deux sens, c'est le prix qui commande. */
+  const railEffectif = order.amount_htg === 0 ? RAIL_GRATIS : rail;
+
   const { error: payErr } = await admin.from("payments").insert({
     order_id: order.id,
-    rail,
+    rail: railEffectif,
     idempotency_key: order.id,
     status: "pending",
     expected_usd_cents: expectedUsdCents,
@@ -330,6 +400,76 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
+  }
+
+  /* ── ACQUISITION GRATUITE (0087) ──────────────────────────────────────────
+   *
+   * Aucun opérateur n'est appelé : il n'y a rien à encaisser. On confirme
+   * directement, par la MÊME fonction que tous les rails payants — commission
+   * 0, escrow 0, commande `paid`, et l'accès au livrable s'ouvre par le chemin
+   * ordinaire (`/api/download` exige `status = paid`).
+   *
+   * ⚠️ `p_amount: 0` N'EST PAS UNE FORMALITÉ, c'est le garde. `confirm_payment`
+   * lève si `p_amount <> orders.amount_htg`. Si une commande non nulle
+   * atteignait cette branche — par une régression de la condition ci-dessus,
+   * par exemple — LA BASE la refuserait. Le contrôle est fail-closed et il
+   * n'est pas dans cette route : c'est ce qui le rend digne de confiance.
+   *
+   * ⚠️ Et il ne peut pas être contourné par une remise : `prix_flash_htg > 0`
+   * (0080) et `discount_percentage between 1 and 90` avec plancher à 10 HTG
+   * (0021/0031, `lib/zabelie-coupons.ts`) rendent `amount_htg = 0`
+   * atteignable UNIQUEMENT depuis un produit affiché à 0. Vérifié, pas supposé. */
+  if (order.amount_htg === 0) {
+    const { error: gratisErr } = await admin.rpc("confirm_payment", {
+      p_idempotency_key: order.id,
+      p_provider_ref: `gratis:${order.id}`,
+      p_raw: {
+        rail: RAIL_GRATIS,
+        note: "produit affiche a 0 HTG — aucun mouvement de fonds",
+        confirme_a: new Date().toISOString(),
+      },
+      p_amount: 0,
+    });
+
+    if (gratisErr) {
+      /* Le cas le plus probable ici est que `0087` ne soit pas appliquée : la
+         valeur d'énumération `gratis` manque et l'insertion du paiement a déjà
+         échoué plus haut. On journalise le motif exact plutôt que de rendre un
+         « échec » muet — sans cette ligne, « migration absente » et « fonction
+         d'argent en panne » produisent le même silence. */
+      console.error(
+        "[gratis]",
+        JSON.stringify({
+          at: new Date().toISOString(),
+          code: "ZB087",
+          order_id: order.id,
+          message: gratisErr.message,
+        })
+      );
+      await admin.from("payments").delete().eq("order_id", order.id);
+      await admin.from("orders").delete().eq("id", order.id);
+      return NextResponse.json(
+        { error: "Acquisition gratuite indisponible pour le moment.", code: "ZB087" },
+        { status: 503 }
+      );
+    }
+
+    /* Suivi de remise — APRÈS `confirm_payment`, jamais avant : l'escrow
+       n'existe pas encore et le gel ne toucherait aucune ligne (0043 §6 bis).
+       Un produit gratuit se remet comme un autre : un fichier se télécharge,
+       un service se rend. Ne rien ouvrir ici priverait l'acheteur du seul
+       canal où réclamer, pour la seule raison qu'il n'a pas payé.
+       ⚠️ Cet appel manquait à ma première écriture — c'est
+       `tests/fulfillment-appelants.test.ts` qui l'a dit, pas moi. */
+    const { ouvrirSuiviLivraison } = await import("@/lib/fulfillment");
+    await ouvrirSuiviLivraison(admin, order.id, "checkout/gratis");
+
+    // Pas de redirection opérateur : l'acheteur va directement à ses achats.
+    return NextResponse.json({
+      redirectUrl: "/mes-achats",
+      orderId: order.id,
+      gratuit: true,
+    });
   }
 
   try {

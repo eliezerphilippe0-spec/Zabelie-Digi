@@ -103,11 +103,22 @@ const { manquants, confirmateurs } = croiser(modules);
 
 test("l'extracteur a lu le dépôt, et pas le vide", () => {
   assert.ok(modules.length >= 100, `modules lus : ${modules.length}`);
-  // Les quatre points de confirmation nommés par 0043 §6 bis. Si l'un d'eux
-  // disparaît de cette liste, ce n'est pas le contrôle qui a bougé : c'est un
-  // rail qui a changé de forme, et il faut aller voir.
+  // Les points de confirmation nommés par 0043 §6 bis. Si l'un d'eux disparaît
+  // de cette liste, ce n'est pas le contrôle qui a bougé : c'est un rail qui a
+  // changé de forme, et il faut aller voir.
+  //
+  // ⚠️ CINQUIÈME ENTRÉE AJOUTÉE LE 2026-08-21 : `checkout/route.ts`, le rail
+  // GRATUIT (`0087`). C'est le seul confirmateur qui n'a pas d'opérateur
+  // derrière lui — il confirme parce qu'il n'y a rien à encaisser, pas parce
+  // qu'un tiers a répondu.
+  //
+  // Cette liste a fait son office : la route a d'abord été écrite SANS
+  // `ouvrirSuiviLivraison`, et c'est ce fichier qui l'a dit. Élargir la liste
+  // sans avoir corrigé l'omission aurait transformé un garde en formalité —
+  // l'ordre compte, et il a été respecté.
   assert.deepEqual(confirmateurs, [
     "app/api/admin/confirm-zelle/route.ts",
+    "app/api/checkout/route.ts",
     "app/api/moncash/return/route.ts",
     "app/api/reconcile/route.ts",
     "app/api/stripe/webhook/route.ts",

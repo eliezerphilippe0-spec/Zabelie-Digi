@@ -82,6 +82,21 @@ export async function generateMetadata({
 // énuméré le site — parce que la valeur qui entre EST un `Lang`. Un
 // `lang as "fr" | "ht"` serait passé en silence.
 function buildBuyOptions(lang: Lang, priceHTG: number): BuyOption[] {
+  /* PRODUIT GRATUIT (0087) — un SEUL bouton, et aucun rail de paiement.
+   *
+   * ⚠️ C'est la réparation d'un défaut mesuré le 2026-08-21. L'accueil porte un
+   * rail « Produits gratuits » (`app/page.tsx:178`) depuis toujours ; cette
+   * fonction, elle, proposait MonCash INCONDITIONNELLEMENT. Un produit à 0
+   * envoyait donc `{ amount: 0 }` à MonCash, qui refuse. La vitrine annonçait
+   * une porte, et la porte était murée.
+   *
+   * Le retour anticipé est délibéré : proposer « Payer 0 HTG », ou laisser un
+   * rail diaspora s'ajouter en dessous, serait absurde à l'écran et faux au
+   * fond — il n'y a rien à payer, dans aucune monnaie. */
+  if (priceHTG === 0) {
+    return [{ rail: "gratis", label: t(lang, "product.get.free") }];
+  }
+
   const options: BuyOption[] = [
     { rail: "moncash", label: t(lang, "product.pay", { price: formatHTG(priceHTG) }) },
   ];

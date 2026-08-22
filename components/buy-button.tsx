@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export type BuyOption = {
-  rail: "moncash" | "stripe" | "zelle";
+  /**
+   * `gratis` (0087) n'est pas un moyen de paiement : c'est l'absence de
+   * paiement. Le serveur l'IGNORE de toute façon — il déduit le rail du prix
+   * relu en base — donc l'envoyer ne donne aucun pouvoir au client. Il figure
+   * ici pour que le bouton porte le bon libellé et le bon état de chargement.
+   */
+  rail: "moncash" | "stripe" | "zelle" | "gratis";
   label: string;
 };
 
