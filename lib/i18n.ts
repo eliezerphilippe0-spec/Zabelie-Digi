@@ -242,6 +242,7 @@ const fr = {
   "product.kind.physical": "Produit physique",
   "product.by": "par",
   "product.sales": "ventes",
+  "product.sales.one": "vente",
   "product.reviews.badge": "avis vérifié(s)",
   "product.pay": "Payer {price} avec MonCash",
   "product.get.free": "Obtenir gratuitement",
@@ -429,6 +430,7 @@ const fr = {
   "sec.sellers": "Meilleurs vendeurs",
   "sec.sellers.sub": "Les vendeurs les plus appréciés de la communauté.",
   "sec.sellers.sales": "ventes",
+  "sec.sellers.sales.one": "vente",
   "sec.free": "Produits gratuits",
   "sec.free.sub": "Découvrez gratuitement, revenez pour la suite.",
   "sec.free.badge": "GRATUIT",
@@ -916,6 +918,9 @@ const ht: Record<I18nKey, string> = {
   "product.kind.physical": "Pwodwi fizik",
   "product.by": "pa",
   "product.sales": "vant",
+  // Le kreyòl ne marque pas le pluriel sur le nom : « 1 vant », « 312 vant ».
+  // Les deux formes sont donc identiques, et c'est correct, pas un oubli.
+  "product.sales.one": "vant",
   "product.reviews.badge": "avi verifye",
   "product.pay": "Peye {price} ak MonCash",
   "product.get.free": "Jwenn li gratis",
@@ -1099,6 +1104,7 @@ const ht: Record<I18nKey, string> = {
   "sec.sellers": "Pi bon vandè yo",
   "sec.sellers.sub": "Vandè kominote a plis renmen yo.",
   "sec.sellers.sales": "vant",
+  "sec.sellers.sales.one": "vant",
   "sec.free": "Pwodui gratis",
   "sec.free.sub": "Dekouvri gratis, tounen pou rès la.",
   "sec.free.badge": "GRATIS",
@@ -1574,6 +1580,7 @@ const en = {
   "product.kind.physical": "Physical product",
   "product.by": "by",
   "product.sales": "sales",
+  "product.sales.one": "sale",
   "product.reviews.badge": "verified review(s)",
   "product.pay": "Pay {price} with MonCash",
   "product.get.free": "Get it free",
@@ -1756,6 +1763,7 @@ const en = {
   "sec.sellers": "Top sellers",
   "sec.sellers.sub": "The community's most appreciated sellers.",
   "sec.sellers.sales": "sales",
+  "sec.sellers.sales.one": "sale",
   "sec.free": "Free products",
   "sec.free.sub": "Try for free, come back for the rest.",
   "sec.free.badge": "FREE",
@@ -2241,6 +2249,7 @@ const es = {
   "product.kind.physical": "Producto físico",
   "product.by": "por",
   "product.sales": "ventas",
+  "product.sales.one": "venta",
   "product.reviews.badge": "reseña(s) verificada(s)",
   "product.pay": "Pagar {price} con MonCash",
   "product.get.free": "Obtener gratis",
@@ -2423,6 +2432,7 @@ const es = {
   "sec.sellers": "Mejores vendedores",
   "sec.sellers.sub": "Los vendedores más valorados de la comunidad.",
   "sec.sellers.sales": "ventas",
+  "sec.sellers.sales.one": "venta",
   "sec.free": "Productos gratuitos",
   "sec.free.sub": "Descubre gratis, vuelve por lo demás.",
   "sec.free.badge": "GRATIS",
@@ -2698,6 +2708,51 @@ export function t(
     for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, v);
   }
   return s;
+}
+
+/**
+ * LA FORME SINGULIÈRE, PAR LANGUE — et les quatre règles sont DIFFÉRENTES.
+ *
+ * ⚠️ NÉ D'UN DÉFAUT VU EN PRODUCTION le 2026-08-22 : la carte du produit
+ * `fxccxfdf` affichait « **1 ventes** ». La cause n'est pas un oubli local —
+ * `product.sales` portait le mot au pluriel, sans forme singulière, et le
+ * gabarit collait le nombre devant. Aucun test ne pouvait le voir : le
+ * dictionnaire était complet dans les quatre langues, et « ventes » est une
+ * traduction parfaitement correcte du mot « ventes ».
+ *
+ * Ce que chaque langue exige, et pourquoi une règle unique serait fausse :
+ *
+ *   • fr — le singulier couvre |n| < 2 : « 0 vente », « 1 vente », « 2 ventes ».
+ *   • en/es — seul 1 est singulier : « 0 sales », « 1 sale », « 0 ventas ».
+ *   • ht — le nom NE S'ACCORDE PAS. « 1 vant », « 312 vant ». La règle rend
+ *     donc toujours la forme unique, et les deux clés portent le même mot :
+ *     c'est correct, pas un doublon oublié.
+ *
+ * `Record<Lang, …>` et non un `switch` : ajouter une langue à `Lang` casse la
+ * compilation ici, ce qu'un `default` n'aurait jamais fait — la leçon exacte
+ * d'`isLang` ci-dessous, appliquée avant d'en payer le prix une seconde fois.
+ */
+const SINGULIER: Record<Lang, (n: number) => boolean> = {
+  fr: (n) => Math.abs(n) < 2,
+  ht: () => true,
+  en: (n) => Math.abs(n) === 1,
+  es: (n) => Math.abs(n) === 1,
+};
+
+/** Le prédicat nu — exposé pour les appelants qui tiennent déjà leurs mots. */
+export function estSingulier(lang: Lang, n: number): boolean {
+  return SINGULIER[lang](n);
+}
+
+/** `t()` accordé : deux clés, la langue tranche. */
+export function tn(
+  lang: Lang,
+  n: number,
+  cleSingulier: I18nKey,
+  clePluriel: I18nKey,
+  vars?: Record<string, string>
+): string {
+  return t(lang, estSingulier(lang, n) ? cleSingulier : clePluriel, vars);
 }
 
 /**

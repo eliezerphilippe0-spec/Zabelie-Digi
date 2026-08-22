@@ -161,6 +161,8 @@ export default async function CataloguePage({
     kindPhysical: t(lang, "card.kind.physical"),
     by: t(lang, "product.by"),
     sales: t(lang, "product.sales"),
+    salesOne: t(lang, "product.sales.one"),
+    lang,
   };
   const catHref = (c: string) => hrefFor({ cat: c, sous: null, page: 1 });
   const sousHref = (slug: string | null) => hrefFor({ sous: slug ?? undefined, page: 1 });
@@ -470,6 +472,8 @@ export default async function CataloguePage({
                     kindPhysical: t(lang, "card.kind.physical"),
                     by: t(lang, "product.by"),
                     sales: t(lang, "product.sales"),
+                    salesOne: t(lang, "product.sales.one"),
+                    lang,
                   }}
                 />
               ))}

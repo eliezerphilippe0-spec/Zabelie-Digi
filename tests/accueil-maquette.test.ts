@@ -130,6 +130,13 @@ function paresDupliquees(
  * échoue aussi (la règle des exemptions de crons-appelants).
  *   - product.sales|sec.sellers.sales : le MOT « ventes », unité de compte
  *     sur la carte produit et la carte vendeur — même mot, deux rôles.
+ *   - product.sales.one|sec.sellers.sales.one : le même mot au SINGULIER,
+ *     ajouté le 2026-08-22 pour corriger « 1 ventes » vu en production. Même
+ *     justification que la paire ci-dessus, une forme plus bas.
+ *   - les QUATRE d'un coup, en kreyòl seulement : « vant » ne s'accorde pas.
+ *     Le kreyòl fond donc singulier et pluriel en une valeur, et les deux
+ *     paires ci-dessus se rejoignent en un seul groupe. Ce n'est pas une
+ *     traduction oubliée — `tests/pluriel.test.ts` P3 l'exige explicitement.
  *
  * (L'exemption catalog.search.btn|home.b1.t est morte le jour de sa création :
  * le capteur de demande a reçu son propre libellé `home.demand.btn` (UX-06) et
@@ -138,6 +145,8 @@ function paresDupliquees(
  */
 const DOUBLONS_EXEMPTES = new Set([
   "product.sales|sec.sellers.sales",
+  "product.sales.one|sec.sellers.sales.one",
+  "product.sales|product.sales.one|sec.sellers.sales|sec.sellers.sales.one",
 ]);
 
 test("le détecteur de doublons voit un doublon, et se tait sur des valeurs distinctes", () => {

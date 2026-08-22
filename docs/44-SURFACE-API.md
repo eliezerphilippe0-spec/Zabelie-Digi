@@ -60,6 +60,12 @@ pas ça ne servirait personne en Haïti.
 > `tests/api-v1-routes.test.ts` croise contrats et handlers **dans les deux
 > sens** et échoue si la route disparaît. Détail complet dans `docs/24`.
 >
+> **Et éprouvé en production le soir même** — quatre requêtes du porteur contre
+> `zabelie.com` : `404` sur un endpoint inconnu, `400 invalid_input` sur une
+> limite hors cap, `200 product_results` (le chemin de données a répondu), et
+> `401 unauthenticated` sur `get_user_orders`. Le tableau et ses réserves —
+> notamment pourquoi `results: []` est la BONNE réponse — sont dans `docs/24`.
+>
 > Le reste de cette section décrit l'état **d'avant**, et il est conservé :
 > c'est le seul endroit où le défaut est décrit tel qu'il était, et c'est ce
 > qui rend le garde compréhensible.

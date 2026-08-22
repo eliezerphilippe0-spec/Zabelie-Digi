@@ -3,13 +3,24 @@ import { formatHTG } from "@/lib/sample-data";
 import type { ProductView } from "@/lib/products";
 import { pickByKind } from "@/lib/product-kind";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
+import { estSingulier, type Lang } from "@/lib/i18n";
 
 export type ProductCardLabels = {
   kindFile: string;
   kindService: string;
   kindPhysical: string;
   by: string;
+  /* LES DEUX FORMES DU MOT « VENTE », plus la langue qui décide laquelle.
+   *
+   * ⚠️ `lang` dans un sac nommé `labels` détonne, et c'est le moindre mal
+   * assumé : le compte n'est connu qu'ICI, par carte, alors que le sac est
+   * construit UNE fois pour toute la grille. L'alternative — descendre `lang`
+   * en prop jusqu'à `ProductCard` — traverse `HomeRow`, qui ne la porte pas et
+   * n'en a aucun autre usage. Un accord n'est pas un libellé, mais il n'a de
+   * sens qu'avec les libellés qu'il accorde. */
   sales: string;
+  salesOne: string;
+  lang: Lang;
 };
 
 const FALLBACK_LABELS: ProductCardLabels = {
@@ -18,6 +29,8 @@ const FALLBACK_LABELS: ProductCardLabels = {
   kindPhysical: "Physique",
   by: "par",
   sales: "ventes",
+  salesOne: "vente",
+  lang: "fr",
 };
 
 export function ProductCard({
@@ -97,7 +110,11 @@ export function ProductCard({
           <span className="absolute right-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
             {product.ratingAvg !== null
               ? `★ ${product.ratingAvg} (${product.ratingCount})`
-              : `${product.sales} ${labels.sales}`}
+              : `${product.sales} ${
+                  estSingulier(labels.lang, product.sales)
+                    ? labels.salesOne
+                    : labels.sales
+                }`}
           </span>
         )}
       </div>

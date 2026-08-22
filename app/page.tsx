@@ -19,7 +19,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { FaqList } from "@/components/faq-list";
@@ -166,6 +166,8 @@ export default async function HomePage() {
     kindPhysical: t(lang, "card.kind.physical"),
     by: t(lang, "product.by"),
     sales: t(lang, "product.sales"),
+    salesOne: t(lang, "product.sales.one"),
+    lang,
   };
 
   // Dérivations : une seule requête catalogue alimente toutes les sections.
@@ -676,7 +678,7 @@ export default async function HomePage() {
                 <p className="mt-3 truncate font-semibold">{s.name}</p>
                 <p className="mt-1 text-xs text-mist">
                   {s.rating !== null && <>★ {s.rating} · </>}
-                  {s.sales} {t(lang, "sec.sellers.sales")}
+                  {s.sales} {tn(lang, s.sales, "sec.sellers.sales.one", "sec.sellers.sales")}
                 </p>
               </Link>
             ))}
