@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { autoriserAdmin } from "@/lib/admin-gate";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
 import { isEmailEnabled } from "@/lib/zabelie-email";
@@ -23,19 +23,11 @@ export const dynamic = "force-dynamic";
  * (contrôle de solvabilité, docs/19 §3.2 — manuel tant qu'aucun endpoint de
  * solde n'existe côté Digicel).
  */
-async function authorize(req: Request): Promise<boolean> {
-  const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
-  const cron = process.env.CRON_SECRET;
-  const manual = process.env.RECONCILE_SECRET;
-  if (cron && bearer === cron) return true;
-  if (manual && (bearer === manual || req.headers.get("x-reconcile-secret") === manual))
-    return true;
-  const user = await getCurrentUser();
-  return user?.role === "admin";
-}
-
+/* Le garde vit dans `lib/admin-gate.ts` depuis le 2026-08-22 : une seconde
+ * route (`admin/email-verify`) en a eu besoin, et une règle d'autorisation
+ * recopiée diverge toujours. */
 async function handle(req: Request) {
-  if (!(await authorize(req))) {
+  if (!(await autoriserAdmin(req))) {
     return erreurTraduite("api.access.denied", 401);
   }
   try {

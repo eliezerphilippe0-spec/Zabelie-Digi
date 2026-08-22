@@ -21,27 +21,57 @@ draine dans le VIDE.** Le cron `/api/fulfillment/sweep` rendrait
 `CLAUDE.md` décrit : « aucun cas » et « aucun cas possible » ne se distinguent
 pas d'eux-mêmes.
 
-**Geste, désormais MESURABLE sans ouvrir Vercel** — appeler
-`/api/admin/coherence` (réservé au rôle admin) et lire le bloc `integrations` :
+**Geste — appeler `/api/admin/email-verify`** (réservé au rôle admin). Un seul
+appel, un verdict, et il interroge RESEND, pas seulement l'environnement :
 
 ```json
-{ "integrations": { "email": { "configure": false,
-    "consequenceSiAbsent": "outbox (0061) et notifications de messagerie (0090) se drainent sans rien envoyer" } } }
+{ "verdict": "repli_bac_a_sable", "clePresente": true, "statutFournisseur": 200,
+  "expediteur": "Zabelie <onboarding@resend.dev>", "expediteurConfigure": false,
+  "domainesVerifies": ["…"], "explication": "…" }
 ```
 
-Ajouté le 2026-08-22, parce que la question « vérifie RESEND_API_KEY » n'avait
-AUCUNE réponse depuis le dépôt : pas d'accès Vercel, et `readyz` n'expose
-délibérément qu'un booléen de base. Le contrôle journalise aussi son verdict,
-pour qu'un exploitant qui n'ouvre jamais cette route le croise quand même.
+| verdict | ce que ça veut dire |
+| --- | --- |
+| `absente` | `RESEND_API_KEY` n'est pas posée |
+| `cle_refusee` | clé présente, **refusée** par Resend — révoquée, tronquée, ou d'un autre compte |
+| `injoignable` | Resend n'a pas répondu ; ne dit **rien** sur la clé |
+| `repli_bac_a_sable` | clé valide, mais `EMAIL_FROM` absente ⚠️ **voir ci-dessous** |
+| `domaine_non_verifie` | clé valide, `EMAIL_FROM` posée sur un domaine non vérifié chez Resend |
+| `ok` | clé valide, expéditeur sur un domaine vérifié |
 
-⚠️ Ce que ça NE prouve PAS : que la clé soit VALIDE. Une clé révoquée est
-présente et n'envoie rien. Ce qui est levé, c'est le doute entre « pas
-configuré » et « configuré » — pas davantage. La preuve d'envoi reste le
-journal du cron `/api/fulfillment/sweep` : plusieurs jours à
-`outbox_envoyes: 0` alors qu'une vente a eu lieu est le signal.
+### ⚠️ La découverte du 2026-08-22 : `EMAIL_FROM` n'est pas optionnelle
 
-Correctif si absent : Vercel → Settings → Environment Variables →
-`RESEND_API_KEY` en **Production**.
+La sonde précédente (`integrations.email.configure`, ajoutée le matin même)
+répondait à une AUTRE question que celle posée. Elle disait « une clé est-elle
+posée ». Elle est vraie dans **trois** situations où pas un e-mail ne part :
+
+1. clé présente mais **révoquée** → Resend répond 401 ;
+2. **`EMAIL_FROM` absente** → l'expéditeur retombe sur `onboarding@resend.dev`,
+   qui est le **bac à sable** de Resend : il ne livre qu'à l'adresse du
+   titulaire du compte. Aucun acheteur, aucun vendeur ne reçoit rien ;
+3. `EMAIL_FROM` posée sur un domaine dont les DNS ne sont pas vérifiés → refus.
+
+**Le cas 2 est l'état par défaut du dépôt** : `EMAIL_FROM` n'est posée nulle
+part, et `lib/zabelie-email.ts` retombe sur le bac à sable. Poser
+`RESEND_API_KEY` **seule** ne débloque donc rien — c'est ce que la ligne du
+tableau ci-dessous laissait croire depuis le 2026-08-09, avec `EMAIL_FROM`
+entre parenthèses comme un accessoire.
+
+Et rien n'aurait signalé l'erreur : jusqu'à aujourd'hui, `sendEmail` rendait
+`res.ok` **sans un mot**, et deux de ses trois appelants jettent ce booléen. Un
+refus du fournisseur était indiscernable d'un envoi réussi, à tous les étages.
+`sendEmail` journalise désormais code HTTP, expéditeur, destinataire masqué et
+motif du fournisseur.
+
+**Correctif, les DEUX variables** : Vercel → Settings → Environment Variables,
+en **Production** — `RESEND_API_KEY`, **et** `EMAIL_FROM` sur un domaine dont
+les DNS sont vérifiés chez Resend (`bonjou@zabelie.com` par exemple, après
+avoir ajouté le domaine côté Resend et posé les enregistrements DNS).
+
+⚠️ Ce que même `ok` NE prouve PAS : qu'un e-mail soit **reçu**. Seul un envoi
+réel le dirait. La preuve d'envoi reste le journal du cron
+`/api/fulfillment/sweep` : plusieurs jours à `outbox_envoyes: 0` alors qu'une
+vente a eu lieu est le signal.
 
 Resend est le fournisseur **validé** (`docs/11`, `docs/API_KEYS_REGISTRY.md` —
 Brevo écarté comme doublon). Il n'y a rien à décider, seulement à vérifier.
@@ -236,7 +266,7 @@ lui-même ; le produit l'attend en brouillon.
 | **Brancher une supervision externe sur `/api/health` et `/api/readyz`** (UptimeRobot ou équivalent gratuit, au moment du rattachement de `zabelie.com`) | 2026-08-10 | Rien mécaniquement — mais sans elle, « le site est tombé » se découvre par un client. `health` = le processus répond ; `readyz` = **le chemin des acheteurs** répond sous 1,5 s (client anon → PostgREST → RLS → `zabelie_categories`, la taxonomie publique de `0035` — table stable et volontairement ouverte, une future policy resserrée rendrait un résultat vide sans erreur, pas une panne de sonde ; seul un `revoke` la ferait tomber, et ce serait un vrai signal). ⚠️ Lecture d'alerte : un 503 `readyz` veut dire « chemin acheteur cassé » — base, PostgREST **ou** droits anon — pas seulement « DB down ». Les deux routes sont publiques et n'exposent qu'un booléen et une latence. |
 | 🆕 **Appliquer `0087` (rail gratuit)** — rédigée le 2026-08-21, éprouvée par la CI (`sql-tests` verte, rejouée depuis une base vierge), **non appliquée**. Une seule instruction : `alter type payment_rail add value if not exists 'gratis'` — même forme que `0009`, qui a ajouté `stripe` et `zelle` au même type sans incident. ⚠️ **Tentative du 2026-08-21 impossible : le connecteur Supabase était déconnecté.** Aucune écriture n'a eu lieu, rien n'est à moitié fait. ⚠️ **DÉCISION PORTEUR DU 2026-08-21 : attendre le retour du connecteur MCP plutôt que de passer par l'éditeur SQL.** La voie manuelle était prête et complète (instruction, sonde de vérification, ligne de registre avec l'empreinte canonique `104316909c20e510…` produite par `scripts/zabelie-migration-hash.mjs`) — elle a été écartée pour ne pas dégrader la preuve : un passage par l'éditeur classe la ligne en `sonde_schema` au lieu de `journal_supabase`, irréversiblement, comme `0025`→`0028`, `0030` et `0044`. **Rien ne presse : le rail est dormant et propre.** ⚠️ **Une nuance nouvelle depuis la PR #168** : un produit à 0 HTG peut désormais être **publié** et s'affichera au rail « Produits gratuits » de l'accueil, sans être acquérable — le clic rend 503 en journalisant `ZB087` après nettoyage. Fenêtre acceptée : aucun vendeur réel ne publie aujourd'hui. **Reprise : dès que le connecteur répond**, sans nouvelle instruction du porteur. ⚠️ **Elle a pris le numéro que `docs/40` réservait à l'émission de billets** — `docs/40` est corrigé (émission → `0088`, plafonds → `0089`) : le disque tranche, pas le plan. | 2026-08-21 | Le rail gratuit, aujourd'hui **DORMANT et non cassé** : la fiche affiche « Obtenir gratuitement » dans les quatre langues, et le clic rend 503 en journalisant `ZB087`, après avoir nettoyé la commande et le paiement. Après application : l'acquisition aboutit, commande `paid`, commission 0, escrow 0, suivi de remise ouvert. **Débloque aussi une dépendance de Tikè Lakay V0** — le billet gratuit suppose une acquisition sans paiement, que la plateforme n'avait pas. |
 | ⛔ **`0056` (purge des avis de remise envoyés, 90 j) — GELÉE, ne pas appliquer.** 🔴 **Appliquée par ERREUR le 2026-08-21 22:48:19Z, puis ANNULÉE le même jour** sur signal « annule, option (a) » : l'agent avait recommandé le geste **sans avoir lu l'interdiction portée par cette ligne même**, qu'il citait deux messages plus tôt. **Aucune donnée supprimée** — `zabelie_fulfillment_notices` portait 0 ligne avant, pendant et après. Retour vérifié : fonction supprimée, registre remis à `redigee`/`non_appliquee` sans date ni auteur, sonde de `0085` rapportant de nouveau l'absence. ⚠️ **Et une trace que l'annulation ne défaisait pas** : `apply_migration` avait écrit dans `supabase_migrations.schema_migrations`, journal **interne** qui ignore `zabelie_schema_migrations` — les deux se contredisaient. Ligne `20260821224752` supprimée sur signal, avec contrôle de portée (77 → 76 : un `delete` trop large aurait le même air de succès). La colonne `note` du registre porte le récit. **Leçon inscrite en tête de ce fichier et dans `CLAUDE.md` : lire la ligne du registre AVANT de recommander le geste, pas au moment de la cocher.** | 2026-08-10 | Rien fonctionnellement — le sweep journalise `purges: -1` à chaque passage tant qu'elle n'est pas appliquée (dégradation prévue, visible), puis le vrai compte ensuite. Sans elle, la rétention des avis envoyés n'est pas bornée — la classe que `0053` a fermée pour la recherche. Rédigée et éprouvée sur base de répétition (PN1-PN5 + mutation de la fonction → rouge). ⛔ **NE PAS APPLIQUER avant les arbitrages D-10→D-14 de `docs/28`** (revue porteur 2026-08-10) : les avis sont une pièce du futur suivi des litiges, dont le gel de maturation « suspendu, pas remis à zéro » peut dépasser 90 j — purger effacerait des preuves. À l'arbitrage, soit confirmer formellement 90 j > fenêtre maximale de litige + gel, soit amender la fonction pour exclure les avis d'une commande en litige non clos (la table n'existe pas encore : la clause ne peut pas être écrite aujourd'hui sans inventer son schéma). La dégradation `purges: -1` du sweep est conçue pour attendre. |
-| **Poser `RESEND_API_KEY`** (et `EMAIL_FROM`) dans Vercel | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
+| **Poser `RESEND_API_KEY` ET `EMAIL_FROM`** dans Vercel — ⚠️ **`EMAIL_FROM` n'est PAS un accessoire, corrigé le 2026-08-22** : sans elle l'expéditeur retombe sur `onboarding@resend.dev`, le bac à sable de Resend, qui ne livre qu'au titulaire du compte. Poser la clé seule laisserait la sonde afficher « configuré » et zéro e-mail arriver. Verdict complet : `/api/admin/email-verify`, section en tête de ce fichier. | 2026-08-09 | **Les avis de remise, donc l'auto-réception.** Sans la clé, l'expéditeur ne réclame RIEN — c'est voulu, une tentative consommée sans envoi épuiserait la borne — mais aucun avis ne part, le garde de légitimité retient, et chaque commande physique honorée remonte en file admin au bout de `auto_receive_days`. Le vendeur attend alors un humain à chaque vente. `docs/11-SECRETS.md` la liste déjà ; elle n'était encore réclamée par rien. |
 | **Identifiants API MonCash — portail + 3 variables** (compte MonCash Business créé le 2026-08-10, formulaire d'URLs en cours) | 2026-08-10 | **Le rail de paiement principal.** Gestes, dans l'ordre : (a) portail MonCash → Website Url = l'URL `.vercel.app` de Production, Return Url = `…/api/moncash/return` (le champ CRITIQUE — `app/api/moncash/return/route.ts` attend `?transactionId=`), Alert Url = `…/mes-achats` ; (b) Vercel, Production **et** Preview : `MONCASH_CLIENT_ID`, `MONCASH_CLIENT_SECRET` (bouton **Reveal/Copy**, jamais une sélection du champ masqué — l'incident du caractère `•`), `MONCASH_MODE=sandbox` ; (c) **Redeploy** ; (d) le test de bout en bout `docs/05-TEST-SANDBOX.md` — dernier maillon avant la première commande réelle (`docs/22`). Au rattachement de `zabelie.com` : étape 2 bis du runbook ci-dessous (remplacer les 3 URLs du portail). |
 | ✅ ~~**Seuil de sortie de l'arbitrage B(i) — services**~~ — **POSÉ le 2026-08-13**, sur délégation porteur (« fait le meilleur choix »), valeurs de l'agent, amendables. Déclencheur : **3 services publiés** OU **première délégation de la publication** — le premier atteint l'emporte. Conséquence : **gel des nouvelles publications de service** jusqu'à livraison du chantier « rendu pour une prestation » (SRV-01b, `docs/REVUE-KINDS-2026-08-13.md`). Mesuré au jour de la pose : 1 service publié sur 3. Détail : `docs/26` §services. **MàJ 2026-08-13 soir : `0068` appliquée en production sur signal porteur — la machine de remise couvre désormais les services côté base.** Le chantier SRV-01b est livré côté SQL ; le seuil s'éteint à la fusion de la branche (qui apporte l'appelant du filet dans le cron de balayage). | 2026-08-13 | Rien tant que le seuil n'est pas atteint — c'est sa fonction : borner l'exposition acceptée par l'arbitrage B(i) au lieu de la laisser ouverte sans borne. |
 | ✅ ~~Ouvrir le kind `service` à la vente avant la fusion ?~~ — **CADUQUE le 2026-08-14 : #98 fusionnée par le porteur (18:48Z)**, le filet orphelin a son appelant cron, le seuil de sortie services est éteint. Sonde de fenêtre au dernier passage : 0/0 — la fenêtre s'est refermée sans qu'aucun cas n'y tombe. Détail conservé ci-dessous pour la trace. | 2026-08-13 | **Presque rien, et c'est mesuré, pas supposé** (revue du tour 0068, prémisse corrigée sur `main`) : le code DÉPLOYÉ couvre déjà tout le parcours service — `lib/fulfillment.ts:197` appelle l'ouverture sans condition, le sweep déployé porte l'auto-acceptation J+7 (branche sans filtre de kind), et la chaîne déclaration/confirmation (`fulfillment/declare`, `fulfillment/received`, `fulfillment-actions.tsx`) ne mentionne jamais le kind. **Le seul trou jusqu'à la fusion** : le filet orphelin `zabelie_service_sans_suivi_sweep` n'a pas d'appelant — si l'appel d'ouverture échoue (webhook en erreur), cet escrow-là mûrit non verrouillé en silence, comme avant `0068`. Deux options : (a) fusionner avant d'ouvrir la vente — ferme le trou et éteint le seuil de sortie dans le même geste ; (b) accepter la fenêtre — exposition limitée aux échecs d'ouverture, pas au parcours nominal. **La fenêtre n'est pas aveugle** : la sonde lecture seule « escrow de service confirmé sans ligne de suivi » (la forme exacte du `SELECT` du filet, éprouvée connu-positif en S8/S9) se passe en session à tout moment — exécutée le 2026-08-13 : 0/0. **Borne de la réparation** : le filet ne répare que tant que l'escrow mûrit ; passé J+7 sans fusion, branche tardive → dossier humain, l'argent est parti. `0067` est SANS RAPPORT avec cette fenêtre (elle capte le garde de REJEU, pas les orphelins) — les deux décisions sont découplées. **Discipline si l'option (b) est choisie** (revue du 2026-08-13) : une sonde à la demande ne protège que si elle passe — la protection réelle est « la sonde passe plus souvent que J+7 », donc **cadence à fixer, une passe par session ou tous les 2-3 jours**, large contre une maturation à 7 jours. Et un passage positif ne bute pas sur la fusion : **la fonction du filet est déjà en production** (seul l'appelant cron manque) — détection → proposition en session → signal porteur → un appel de `zabelie_service_sans_suivi_sweep`, réparation pendant que l'escrow mûrit encore. ⚠️ Dans les deux cas la limite `RESEND_API_KEY` (partagée avec le physique) fait remonter chaque auto-acceptation en file admin tant que la clé n'est pas posée. |

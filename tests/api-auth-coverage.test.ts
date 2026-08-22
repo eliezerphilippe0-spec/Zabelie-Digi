@@ -20,7 +20,45 @@ const AUTH_GUARDS = [
   /getCurrentUser\(/, //    idem + rôle depuis profiles
   /authorize\(req\)/, //    secret Bearer (routes cron)
   /verifyStripeWebhook/, // signature webhook Stripe
+  /!\(await autoriserAdmin\(/, // garde PARTAGÉ (lib/admin-gate.ts) — voir ci-dessous
 ];
+
+/* ⚠️ POURQUOI LE CINQUIÈME MOTIF EXIGE LA NÉGATION, ET PAS L'APPEL.
+ *
+ * Le 2026-08-22, le garde d'administration a été extrait de
+ * `app/api/admin/coherence/route.ts` vers `lib/admin-gate.ts` parce qu'une
+ * seconde route en avait besoin. Ce test est parti ROUGE sur-le-champ, et il
+ * avait raison : **un croisement TEXTUEL ne voit plus un garde qui a quitté le
+ * fichier**. C'est la limite structurelle de ce contrôle, et elle mérite d'être
+ * écrite plutôt que contournée en silence.
+ *
+ * Le motif ancre donc `!(await autoriserAdmin(` — la forme qui REFUSE — et non
+ * `autoriserAdmin(` seul. Une route qui appellerait le garde puis jetterait son
+ * résultat satisferait le second motif et laisserait entrer tout le monde :
+ * c'est le piège de sous-chaîne de `CLAUDE.md`, appliqué à une autorisation.
+ * Ce qu'on assert est ce qui COMMANDE, jamais ce qui est présent.
+ *
+ * ⚠️ ET IL RESTE UNE FAILLE, NOMMÉE ICI PARCE QU'ELLE NE SE VOIT PAS : ce motif
+ * fait confiance au NOM `autoriserAdmin`. Vider cette fonction de son contrôle
+ * de rôle dégarnirait d'un coup toutes les routes qui s'y adossent, sans qu'une
+ * seule ligne des routes ne bouge. Le test qui suit ancre donc cette confiance
+ * à l'endroit où elle est due — dans le garde lui-même. */
+test("le garde PARTAGÉ vérifie réellement le rôle, sinon les routes qui s'y fient tombent avec lui", () => {
+  const src = readFileSync(join(__dirname, "..", "lib", "admin-gate.ts"), "utf8");
+  assert.match(
+    src,
+    /return user\?\.role === "admin"/,
+    "`autoriserAdmin` ne vérifie plus le rôle. Toutes les routes qui l'appellent " +
+      "sont dégardées d'un coup, et aucune d'elles n'a changé d'une ligne — " +
+      "c'est exactement le prix d'un garde partagé, et la raison de ce test."
+  );
+  assert.match(
+    src,
+    /bearer === cron|bearer === manual/,
+    "`autoriserAdmin` ne compare plus les jetons cron : les crons Vercel " +
+      "recevraient 401 sur toutes les routes gardées"
+  );
+});
 
 // Routes publiques PAR CONCEPTION — chacune doit exhiber le garde alternatif
 // indiqué. Toute nouvelle route publique doit être ajoutée ICI, avec sa raison.
@@ -104,14 +142,24 @@ test("chaque route API a un garde d'accès (auth, secret cron, signature ou allo
  * Motifs de contrôle reconnus — liste FERMÉE, comme AUTH_GUARDS :
  *   - `.role !== "admin"` : le refus des routes admin classiques
  *     (`getCurrentUser()` puis 403) ;
- *   - `.role === "admin"` : la forme positive des deux routes doubles
- *     cron/admin (coherence, search-demand — leur `authorize()` locale
- *     termine par `return user?.role === "admin"`).
+ *   - `.role === "admin"` : la forme positive des routes doubles cron/admin
+ *     (`search-demand` — sa fonction `authorize()` locale termine par
+ *     `return user?.role === "admin"`) ;
+ *   - `!(await autoriserAdmin(` : depuis le 2026-08-22, le garde PARTAGÉ de
+ *     `lib/admin-gate.ts`, employé par `coherence` et `email-verify`. La
+ *     négation fait partie du motif — un appel dont on jette le résultat ne
+ *     garde rien. Et le contrôle de rôle du garde lui-même est ancré par le
+ *     test « le garde PARTAGÉ vérifie réellement le rôle » plus haut, sans
+ *     quoi ce motif ne ferait que faire confiance à un nom de fonction.
  * Un nouveau motif s'ajoute ICI, pas en le contournant — c'est le même
  * contrat que PUBLIC_ROUTES. (Correction au passage de docs/30 §3, qui
  * nommait cette fonction locale `estAdmin` : elle s'appelle `authorize`.)
  */
-const ROLE_GUARDS = [/\.role !== "admin"/, /\.role === "admin"/];
+const ROLE_GUARDS = [
+  /\.role !== "admin"/,
+  /\.role === "admin"/,
+  /!\(await autoriserAdmin\(/,
+];
 
 test("toute route sous app/api/admin/ vérifie le RÔLE, pas seulement l'identité", () => {
   const routes = collectRoutes(join(API_ROOT, "admin"));
