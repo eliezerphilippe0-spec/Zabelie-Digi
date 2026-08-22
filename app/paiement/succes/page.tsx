@@ -63,7 +63,7 @@ export default async function SuccesPage({
           >
             {t(lang, "pay.ok.cta")}
           </Link>
-          <Link href="/catalogue" className="text-sm text-mist hover:text-cloud">
+          <Link href="/catalogue" className="inline-flex min-h-11 items-center text-sm text-mist hover:text-cloud">
             {t(lang, "pay.back")}
           </Link>
         </div>

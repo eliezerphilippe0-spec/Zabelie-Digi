@@ -202,7 +202,7 @@ export default async function ProductPage({
         <div className="flex flex-col">
           <Link
             href="/catalogue"
-            className="text-sm text-mist hover:text-cloud"
+            className="inline-flex min-h-11 items-center text-sm text-mist hover:text-cloud"
           >
             {t(lang, "product.back")}
           </Link>

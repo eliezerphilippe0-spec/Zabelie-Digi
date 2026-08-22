@@ -127,7 +127,7 @@ export default async function RechajOrderPage({
               (`pay.back` = « Retour au catalogue ») annonçait déjà la vraie
               destination. On pointe droit dessus, comme les trois pages de
               paiement sœurs. */}
-          <Link href="/catalogue" className="text-sm text-mist hover:text-cloud">
+          <Link href="/catalogue" className="inline-flex min-h-11 items-center text-sm text-mist hover:text-cloud">
             {t(lang, "pay.back")}
           </Link>
         </div>

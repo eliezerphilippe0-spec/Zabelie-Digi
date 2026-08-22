@@ -102,7 +102,7 @@ export function UploadAsset({
       <button
         onClick={() => inputRef.current?.click()}
         disabled={loading}
-        className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-violet/50 disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-violet/50 disabled:opacity-60"
       >
         {loading ? labels.sending : hasAsset ? labels.replace : labels.add}
       </button>

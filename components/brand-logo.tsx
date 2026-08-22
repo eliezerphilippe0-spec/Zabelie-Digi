@@ -53,7 +53,7 @@ export function BrandMark({
 
 export function BrandLogo({ className = "" }: { className?: string }) {
   return (
-    <Link href="/" className={`flex items-center gap-2 ${className}`}>
+    <Link href="/" className={`inline-flex min-h-11 items-center gap-2 ${className}`}>
       <BrandMark size={32} />
       <span className="text-sm font-semibold tracking-tight">
         Zabelie
