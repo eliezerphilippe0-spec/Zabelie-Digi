@@ -297,8 +297,22 @@ regarder avant d'ouvrir l'un ou l'autre up-sell.
 
 Toutes préfixées `zabelie_`, RLS active à la création, policies explicites.
 **Estimation : 3 migrations** — `0086` structure + RLS + config (**livrée et
-APPLIQUÉE en production le 2026-08-21**, PR-T1), `0087` fonctions d'émission et
-de scan (PR-T3/T4), `0088` plafonds si le payant s'ouvre.
+APPLIQUÉE en production le 2026-08-21**, PR-T1), **`0088`** fonctions d'émission
+et de scan (PR-T3/T4), **`0089`** plafonds si le payant s'ouvre.
+
+⚠️ **DÉCALÉES D'UN CRAN LE 2026-08-21, ET C'EST LA DEUXIÈME FOIS.** Ce document
+annonçait `0087` pour l'émission ; le numéro a été pris entre-temps par
+`0087_rail_gratis.sql` (rail gratuit), qui est un fichier réel du dépôt. Une
+spec ne réserve pas un numéro : **le disque tranche, pas le plan.**
+
+La première occurrence est encore visible sur la ligne PR-T3 du tableau §7 —
+elle annonçait `0086`, pris par PR-T1. Deux fois le même piège sur le même
+document en deux jours : **le numéro à écrire dans une spec est celui qu'on
+mesure au moment de rédiger la migration, jamais celui qu'on avait prévu.**
+
+```bash
+ls supabase/migrations | sed 's/_.*//' | sort -n | tail -1   # le dernier pris
+```
 
 | Table | Rôle | RLS |
 |---|---|---|
@@ -405,7 +419,7 @@ existant, 13:00 UTC).
 |---|---|---|---|
 | **PR-T1** ✅ | `0086` — `zabelie_events`, `zabelie_event_ticket_types`, `zabelie_ticket_config`, RLS. Aucune UI. Livrée le 2026-08-20, **APPLIQUÉE en production le 2026-08-21 à 19:54 UTC** (empreinte `df9f97af…0268ad2`, `preuve = journal_supabase` — le SHA du SQL reçu par Supabase est identique à celui du fichier). Sonde production, retour arrière forcé : prix 500 HTG **refusé**, prix 0 HTG **accepté**. `paiement_ouvert` reste `false`. | — | `rls_toutes_tables` vert · `colonnes_liste_blanche` vert · `supabase/tests/evenements.test.sql` : E1 connu-positif, **E2 connu-négatif**, E3/E4 anon, E5 écriture croisée, **E6/E7 le verrou du payant dans les deux sens**, E8 zone `depatman` refusée |
 | **PR-T2** | Console organisateur : créer/publier un événement, catégories. Kreyòl d'abord. | T1 | `i18n-chaines-en-dur` vert ; l'affiche se téléverse **et** se relit (preuve = un 201 dans les journaux Supabase, pas « ça a l'air bon ») |
-| **PR-T3** | `0087` — émission par **trigger** sur `orders → paid`, jeton haché, machine à états. *(Annonçait `0086` : numéro déjà pris par PR-T1 et désormais appliqué — un doc de spec qui donne un numéro occupé invite la prochaine session à écraser un fichier appliqué. Le §5.1 disait déjà `0087`, le tableau le contredisait.)* | T1 | test SQL : commande payée ⇒ billet émis ; **mutation : trigger retiré ⇒ le test échoue** |
+| **PR-T3** | `0088` — émission par **trigger** sur `orders → paid`, jeton haché, machine à états. *(Annonçait `0086` : numéro déjà pris par PR-T1 et désormais appliqué — un doc de spec qui donne un numéro occupé invite la prochaine session à écraser un fichier appliqué. Le §5.1 disait déjà `0087`, le tableau le contredisait.)* | T1 | test SQL : commande payée ⇒ billet émis ; **mutation : trigger retiré ⇒ le test échoue** |
 | **PR-T4** | Scanner + `zabelie_ticket_scans` append-only + double scan | T3 | test SQL : `update`/`delete` sur le journal **refusés** ; second scan refusé en nommant le premier |
 | **PR-T5** | ⛔ **Billets payants** — escrow événementiel, frais, commission | **§3 tranché** | invariant `0033` (Σ ledger = soldes) vrai après vente, après annulation, après remboursement |
 | **PR-T6** | Billet imprimable PDF/HTML | T3 | rendu lisible sur Android d'entrée de gamme |
