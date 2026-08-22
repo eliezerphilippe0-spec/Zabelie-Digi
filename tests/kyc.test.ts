@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { KYC_BUCKET, estTypeKyc, kycRequisPourRetrait } from "../lib/kyc";
+import { refus } from "./refus-forme";
 
 /**
  * KYC vendeur (docs/35 V-6) — arbitrages porteur : retrait bloqué, CIN ou
@@ -83,19 +84,19 @@ const REVUE = readFileSync("app/api/admin/kyc/route.ts", "utf8");
 const PURGE = readFileSync("app/api/kyc/purge/route.ts", "utf8");
 
 test("dépôt : auth, dossier approuvé verrouillé, nettoyage si l'inscription échoue", () => {
-  assert.match(DEPOT, /if \(!user\)[\s\S]{0,200}status: 401/);
-  assert.match(DEPOT, /sub\?\.status === "approved"[\s\S]{0,200}status: 409/);
+  assert.match(DEPOT, new RegExp(`if \\(!user\\)[\\s\\S]{0,200}${refus(401)}`));
+  assert.match(DEPOT, new RegExp(`sub\\?\\.status === "approved"[\\s\\S]{0,200}${refus(409)}`));
   // Une pièce d'identité orpheline au stockage est un défaut de rétention.
-  assert.match(DEPOT, /\.remove\(\[path\]\)[\s\S]{0,200}status: 500/);
+  assert.match(DEPOT, new RegExp(`\\.remove\\(\\[path\\]\\)[\\s\\S]{0,200}${refus(500)}`));
   // Aucune URL n'est rendue au client : le bucket est privé, par construction.
   assert.ok(!/getPublicUrl/.test(DEPOT), "aucune URL publique sur une pièce d'identité");
 });
 
 test("revue : réservée aux admins, URLs SIGNÉES seulement, refus motivé, décision journalisée", () => {
-  assert.match(REVUE, /me\.role !== "admin"[\s\S]{0,120}status: 403/);
+  assert.match(REVUE, new RegExp(`me\\.role !== "admin"[\\s\\S]{0,160}${refus(403)}`));
   assert.match(REVUE, /createSignedUrl\(d\.storage_path, SIGNATURE_SECONDES\)/);
   assert.ok(!/getPublicUrl/.test(REVUE), "aucune URL publique côté admin non plus");
-  assert.match(REVUE, /action === "rejected" && !note[\s\S]{0,200}status: 422/);
+  assert.match(REVUE, new RegExp(`action === "rejected" && !note[\\s\\S]{0,200}${refus(422)}`));
   assert.match(REVUE, /journaliserActeAdmin\(/);
 });
 

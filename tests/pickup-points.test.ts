@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { refus } from "./refus-forme";
 
 /** Points de retrait (docs/37, 0082) — ce qui doit rester vrai. */
 
@@ -22,7 +23,7 @@ test("0082 : un point naît FERMÉ — l'ouverture est un acte, pas un défaut",
 });
 
 test("route admin : gardée par le rôle, chaque acte journalisé (0055)", () => {
-  assert.match(ROUTE, /me\.role !== "admin"[\s\S]{0,120}status: 401/);
+  assert.match(ROUTE, new RegExp(`me\\.role !== "admin"[\\s\\S]{0,160}${refus(401)}`));
   assert.match(ROUTE, /journaliserActeAdmin\(/);
 });
 

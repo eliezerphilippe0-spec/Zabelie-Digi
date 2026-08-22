@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,24 +18,21 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: { orderId?: string; reference?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
   if (!body.orderId) {
-    return NextResponse.json({ error: "orderId requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
   const reference = (body.reference ?? "").trim().slice(0, 64);
   if (!reference) {
-    return NextResponse.json(
-      { error: "Référence du remboursement requise (preuve du moyen d'origine)." },
-      { status: 422 }
-    );
+    return erreurTraduite("api.receipt.required", 422);
   }
 
   const admin = createAdminClient();
@@ -44,7 +42,7 @@ export async function POST(req: Request) {
     .eq("id", body.orderId)
     .single();
   if (!order) {
-    return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
+    return erreurTraduite("api.order.notfound", 404);
   }
   if (order.status !== "refund_pending") {
     return NextResponse.json(

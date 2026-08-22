@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -30,41 +31,29 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return erreurTraduite("api.auth.required", 401);
   }
   if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
-      { status: 403 }
-    );
+    return erreurTraduite("api.suspended", 403);
   }
 
   let form: FormData;
   try {
     form = await req.formData();
   } catch {
-    return NextResponse.json({ error: "Formulaire invalide" }, { status: 400 });
+    return erreurTraduite("api.form.invalid", 400);
   }
   const kind = form.get("kind");
   const file = form.get("file");
   if (!estTypeKyc(kind) || !(file instanceof File)) {
-    return NextResponse.json(
-      { error: "Type de pièce et fichier requis (CIN, passeport ou selfie)." },
-      { status: 400 }
-    );
+    return erreurTraduite("api.kyc.doc.required", 400);
   }
   if (file.size === 0 || file.size > KYC_MAX_BYTES) {
-    return NextResponse.json(
-      { error: "Fichier entre 1 octet et 5 Mo requis." },
-      { status: 422 }
-    );
+    return erreurTraduite("api.kyc.size", 422);
   }
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!KYC_EXTENSIONS.has(ext)) {
-    return NextResponse.json(
-      { error: "Formats acceptés : JPG, PNG, WebP, PDF." },
-      { status: 422 }
-    );
+    return erreurTraduite("api.kyc.format", 422);
   }
 
   const admin = createAdminClient();
@@ -77,18 +66,21 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (subErr) {
     if (isMissingTable(subErr)) {
-      return NextResponse.json(
-        { error: "Vérification non activée (0079 à appliquer)." },
-        { status: 503 }
+      // Deux destinataires, deux messages. Le VENDEUR lit « fonction non
+      // disponible » dans sa langue ; l'identifiant de migration reste au
+      // journal, où l'exploitant le lit. Une page publique qui nomme l'état
+      // interne du schéma est une fuite gratuite — et un identifiant que
+      // PERSONNE ne lit est une observabilité perdue.
+      console.error(
+        "[kyc] MIGRATION 0079 NON APPLIQUÉE — zabelie_kyc_submissions introuvable :",
+        subErr.code
       );
+      return erreurTraduite("api.feature.off", 503);
     }
-    return NextResponse.json({ error: "Lecture du dossier échouée" }, { status: 500 });
+    return erreurTraduite("api.read.failed", 500);
   }
   if (sub?.status === "approved") {
-    return NextResponse.json(
-      { error: "Dossier déjà vérifié — contactez le support pour le modifier." },
-      { status: 409 }
-    );
+    return erreurTraduite("api.kyc.locked", 409);
   }
 
   // Chemin SERVEUR, dans un dossier par utilisateur.
@@ -97,7 +89,7 @@ export async function POST(req: Request) {
     .from(KYC_BUCKET)
     .upload(path, file, { contentType: file.type || undefined });
   if (upErr) {
-    return NextResponse.json({ error: "Envoi échoué" }, { status: 502 });
+    return erreurTraduite("api.upload.failed", 502);
   }
 
   const { data: ligne, error: insErr } = await admin
@@ -109,7 +101,7 @@ export async function POST(req: Request) {
     // Une pièce d'identité orpheline au stockage est un défaut de rétention,
     // pas un simple déchet : on nettoie avant d'échouer.
     await admin.storage.from(KYC_BUCKET).remove([path]);
-    return NextResponse.json({ error: "Enregistrement échoué" }, { status: 500 });
+    return erreurTraduite("api.write.failed", 500);
   }
 
   // Le dépôt (re)met le dossier en attente de décision.
@@ -124,7 +116,7 @@ export async function POST(req: Request) {
     { onConflict: "user_id" }
   );
   if (upsertErr) {
-    return NextResponse.json({ error: "Enregistrement échoué" }, { status: 500 });
+    return erreurTraduite("api.write.failed", 500);
   }
 
   // L'identifiant seul — jamais d'URL : le bucket est privé, par construction.

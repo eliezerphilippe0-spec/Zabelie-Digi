@@ -57,21 +57,53 @@ function compter(): { total: number; parFichier: Map<string, number> } {
 }
 
 /**
- * PLAFOND — mesuré le 2026-08-22, après conversion des trois routes que le
- * porteur traverse (`products`, `checkout`, `admin/product-status`).
+ * PLAFOND — mesuré le 2026-08-22.
+ *
+ * Historique, parce qu'un cliquet sans historique ne prouve pas qu'il descend :
+ *   350 — inventaire initial, avant tout travail ;
+ *   332 — après les trois routes que le porteur traverse (`products`,
+ *         `checkout`, `admin/product-status`) ;
+ *   249 — après les seize routes d'administration et de vérification (KYC),
+ *         soit 83 occurrences de moins en un lot.
  *
  * ⚠️ NE JAMAIS RELEVER CE NOMBRE. Il ne descend que par du travail réel ; le
  * monter reviendrait à transformer un cliquet en décoration. Si une route neuve
  * a besoin d'un message, elle le prend dans `lib/i18n.ts` — c'est deux minutes,
  * et c'est le prix de ne pas laisser un vendeur kreyòl lire du français.
  */
-const PLAFOND = 332;
+const PLAFOND = 249;
 
 /** Routes déjà converties : elles ne doivent JAMAIS régresser. */
 const CONVERTIES = [
+  // Le chemin du porteur : publier, acheter, mettre en ligne.
   "app/api/products/route.ts",
   "app/api/checkout/route.ts",
   "app/api/admin/product-status/route.ts",
+  // Administration — lot du 2026-08-22.
+  "app/api/admin/coherence/route.ts",
+  "app/api/admin/confirm-zelle/route.ts",
+  "app/api/admin/kyc/route.ts",
+  "app/api/admin/menu-counts/route.ts",
+  "app/api/admin/payouts/route.ts",
+  "app/api/admin/payouts/settle/route.ts",
+  "app/api/admin/pickup-points/route.ts",
+  "app/api/admin/refund/route.ts",
+  "app/api/admin/search-demand/route.ts",
+  "app/api/admin/topup/confirm-zelle/route.ts",
+  "app/api/admin/topup/refunds/route.ts",
+  "app/api/admin/user-status/route.ts",
+  "app/api/admin/zones/route.ts",
+  // Vérification vendeur (KYC) — lot du 2026-08-22.
+  "app/api/kyc/route.ts",
+  "app/api/kyc/purge/route.ts",
+  /* ⚠️ `admin/topup/sync-catalog` est ABSENTE, volontairement, et il faut dire
+   * pourquoi plutôt que de la faire disparaître : ses deux messages restants
+   * nomment `RELOADLY_CLIENT_ID` / `RELOADLY_CLIENT_SECRET` et le mode bac à
+   * sable du fournisseur. Ce sont des diagnostics d'EXPLOITANT sur une route
+   * que seul le porteur atteint — les traduire en kreyòl produirait une phrase
+   * que personne ne lira jamais, et ferait perdre le nom exact de la variable
+   * à celui qui, lui, la lira. Elles restent comptées au plafond : une
+   * exemption qui sort du compte est une conformité par usure. */
 ];
 
 test("A0 — l'inventaire a lu le dépôt, pas le vide", () => {

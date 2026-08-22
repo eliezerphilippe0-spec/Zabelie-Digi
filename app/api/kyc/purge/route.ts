@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingFunction } from "@/lib/pg-errors";
 import { KYC_BUCKET } from "@/lib/kyc";
@@ -55,7 +56,7 @@ async function travail(admin: ReturnType<typeof createAdminClient>) {
       return NextResponse.json({ ok: true, purges: -1 });
     }
     journal({ statut: "erreur_lecture", code: error.code });
-    return NextResponse.json({ error: "Lecture échouée" }, { status: 500 });
+    return erreurTraduite("api.read.failed", 500);
   }
 
   const lignes = (expires ?? []) as { id: string; storage_path: string }[];
@@ -70,7 +71,7 @@ async function travail(admin: ReturnType<typeof createAdminClient>) {
     .remove(lignes.map((l) => l.storage_path));
   if (rmErr) {
     journal({ statut: "stockage_refuse", candidats: lignes.length });
-    return NextResponse.json({ error: "Suppression stockage échouée" }, { status: 502 });
+    return erreurTraduite("api.write.failed", 502);
   }
 
   // 2. Les lignes — seulement une fois les objets partis.
@@ -79,7 +80,7 @@ async function travail(admin: ReturnType<typeof createAdminClient>) {
   });
   if (delErr) {
     journal({ statut: "lignes_restantes", objets_supprimes: lignes.length });
-    return NextResponse.json({ error: "Purge partielle" }, { status: 500 });
+    return erreurTraduite("api.write.failed", 500);
   }
 
   journal({ purges: Number(n ?? 0) });
@@ -88,7 +89,7 @@ async function travail(admin: ReturnType<typeof createAdminClient>) {
 
 async function handle(req: Request) {
   if (!authorize(req)) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return erreurTraduite("api.access.denied", 401);
   }
 
   const admin = createAdminClient();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -37,7 +38,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   const admin = createAdminClient();

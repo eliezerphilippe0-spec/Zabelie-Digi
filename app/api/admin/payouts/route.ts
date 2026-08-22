@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,7 +27,7 @@ type PayoutMethod = (typeof METHODS)[number];
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: {
@@ -40,35 +41,29 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   if (!body.walletId) {
-    return NextResponse.json({ error: "walletId requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
 
   // Montant : entier strictement positif (le ledger est en gourdes entières).
   const amount = Number(body.amountHtg);
   if (!Number.isInteger(amount) || amount <= 0) {
-    return NextResponse.json(
-      { error: "Montant invalide (entier positif en HTG requis)" },
-      { status: 422 }
-    );
+    return erreurTraduite("api.amount.invalid", 422);
   }
 
   const method = String(body.method ?? "moncash");
   if (!(METHODS as readonly string[]).includes(method)) {
-    return NextResponse.json({ error: "Moyen de paiement inconnu" }, { status: 422 });
+    return erreurTraduite("api.method.unknown", 422);
   }
 
   // Référence du reçu : c'est elle qui rend le règlement opposable, et elle
   // sert de clé d'idempotence — un formulaire resoumis ne paie pas deux fois.
   const reference = String(body.reference ?? "").trim().slice(0, 120);
   if (!reference) {
-    return NextResponse.json(
-      { error: "Référence du reçu obligatoire (preuve du règlement)" },
-      { status: 422 }
-    );
+    return erreurTraduite("api.receipt.required", 422);
   }
 
   const admin = createAdminClient();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,17 +18,17 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: { orderId?: string; reference?: string | null };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
   if (!body.orderId) {
-    return NextResponse.json({ error: "orderId requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
 
   const admin = createAdminClient();
@@ -38,13 +39,10 @@ export async function POST(req: Request) {
     .single();
 
   if (!order || order.rail !== "zelle") {
-    return NextResponse.json({ error: "Recharge Zelle introuvable" }, { status: 404 });
+    return erreurTraduite("api.order.notfound", 404);
   }
   if (order.expected_usd_cents === null) {
-    return NextResponse.json(
-      { error: "Montant USD attendu absent — confirmation impossible" },
-      { status: 422 }
-    );
+    return erreurTraduite("api.params.invalid", 422);
   }
 
   const reference =
