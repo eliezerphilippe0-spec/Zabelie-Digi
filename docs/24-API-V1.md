@@ -126,6 +126,35 @@ qu'elle n'a jamais été éprouvée. Servir l'API ne referme pas cet écart — 
 le rend opérant**. Ce qui était une preuve manquante sur du code dormant est
 maintenant une preuve manquante sur du code atteignable.
 
+#### Ce qui a ÉTÉ mesuré en production, le 2026-08-22
+
+Quatre requêtes lancées par le porteur depuis son poste contre
+`https://zabelie.com`, rapportées ici parce qu'elles déplacent la frontière du
+prouvé — et **parce qu'elles ne la déplacent pas autant qu'il y paraît**.
+
+| Requête | Réponse | Ce que ça prouve |
+| --- | --- | --- |
+| `POST /api/v1/inconnu` | `404 not_found` | le répartiteur refuse ce qui n'est pas au registre |
+| `POST /api/v1/search_products` `{"limit":50}` | `400 invalid_input`, `field:limit` | le contrat d'entrée **refuse** au lieu de tronquer, en production |
+| `POST /api/v1/search_products` `{"limit":3}` | `200 product_results`, `results: []` | **le chemin de données a répondu** — première fois |
+| `POST /api/v1/get_user_orders` | `401 unauthenticated` | Supabase est joignable et la frontière d'authentification tient |
+
+⚠️ **`results: []` est CORRECT, et il faut le dire pour ne pas le relire comme
+une panne.** Le catalogue affiche `2 résultat(s)` le même jour, et les deux
+produits portent le badge `Service`. `search_products` exclut délibérément les
+prestations (`isSearchableByApiV1`, décision porteur du 2026-08-01). Zéro est
+donc la bonne réponse — mais c'est exactement la forme de zéro que `CLAUDE.md`
+met en garde : *« aucun cas » et « aucun cas possible » ne se distinguent pas
+d'eux-mêmes*. Ici on peut les distinguer, parce qu'on connaît le contenu du
+catalogue. Le jour où un produit `file` ou `physical` sera publié, ce même
+appel deviendra une vraie mesure du chemin de données.
+
+⚠️ **ET LE `401` NE PROUVE PAS LE CHEMIN AUTHENTIFIÉ.** Il prouve que la route
+sait dire non. La question ouverte — *un porteur de jeton reçoit-il exactement
+ses commandes, et rien d'autre ?* — exige un appel **avec** un jeton GoTrue
+valide et au moins deux acheteurs distincts. Aucune des quatre requêtes
+ci-dessus ne s'en approche. L'écart décrit plus haut reste **entier**.
+
 La mitigation applicative existe et elle est testée : `get_order` et
 `get_user_orders` filtrent **explicitement** sur `buyer_id`, exactement le
 cas 5 du tableau ci-dessus, et `tests/api-v1-routes.test.ts` V5 échoue si ce

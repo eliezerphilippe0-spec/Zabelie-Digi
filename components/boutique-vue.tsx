@@ -111,6 +111,8 @@ export async function BoutiqueVue({
                   kindPhysical: t(lang, "card.kind.physical"),
                   by: t(lang, "product.by"),
                   sales: t(lang, "product.sales"),
+                  salesOne: t(lang, "product.sales.one"),
+                  lang,
                 }}
               />
             ))}
