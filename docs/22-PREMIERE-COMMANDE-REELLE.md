@@ -212,6 +212,7 @@ est aussi la première gourde retenue sur un compte non cantonné. Elle est de
 | **2** | **Supabase** → Auth → URL Configuration | Poser `Site URL` (+ liste blanche de redirection) | écriture, effet immédiat |
 | **3** | Portail **MonCash Business — production** | Poser les **3 URLs** (Website / **Return** / Alert) | écriture |
 | **4** | **Vercel** → Environment Variables | `MONCASH_MODE=production` · `NEXT_PUBLIC_SITE_URL` · les identifiants **si** le geste 1 a révélé un écart — **puis UN SEUL redéploiement** | écriture + déploiement |
+| **5** | **Zabelie** → `/api/admin/coherence` | **Lire** `integrations.moncash` : `mode` et `hote` — le pré-vol, avant le premier acheteur | lecture seule |
 
 #### Pourquoi cet ordre, et ce que chaque inversion coûte
 
@@ -267,13 +268,46 @@ réellement remise à l'acheteur, jamais recalculée depuis l'environnement. Deu
 dérivations peuvent diverger ; celle-ci ne le peut pas. C'est ce qui distingue
 « la variable dit production » de « l'acheteur est parti chez production ».
 
-⚠️ **Une valeur malformée ne lève RIEN.** `lib/moncash.ts` fait
-`mode === "production" ? … : …` — un `else` binaire. `Production` avec une
-majuscule, un espace en fin de champ, une chaîne vide (que le `?? "sandbox"` ne
-rattrape pas, une chaîne vide n'étant pas `null`) retombent **silencieusement en
-bac à sable**. La cause n'est pas gardée ; seul l'effet est désormais lisible.
-**La requête ci-dessus est donc le contrôle, pas la valeur affichée dans
-Vercel.**
+> ## ✅ LA CAUSE EST GARDÉE DEPUIS LE 2026-08-22 — et le pré-vol existe
+>
+> Le paragraphe ci-dessous décrivait un piège armé. Il est désarmé, et les
+> deux moitiés du correctif comptent séparément.
+>
+> **1. `MONCASH_MODE` se RÉSOUT au lieu de se caster.**
+> `resolveMonCashMode()` (`lib/moncash.ts`) normalise la casse et les espaces
+> — `Production `, `PRODUCTION`, ` production` valent tous `production` — et
+> **LÈVE** sur tout le reste (`prod`, `live`, `true`, `1`). Absente ou vide
+> reste `sandbox`, le défaut documenté. Fail-closed assumé : lever empêche le
+> paiement, et un paiement qui part chez le mauvais hôte est strictement pire
+> qu'un paiement qui ne part pas.
+> ⚠️ **Il y avait DEUX casts dans le fichier**, pas un — le second dans
+> `config()`. Trouvé parce que l'outil d'édition a refusé une ancre non
+> unique, pas parce qu'il avait été vu. `tests/moncash-mode-resolu.test.ts` R6
+> assert donc l'**ABSENCE** de tout cast, jamais la présence de l'appel.
+>
+> **2. Le pré-vol : `/api/admin/coherence` → `integrations.moncash`.**
+>
+> ```json
+> { "moncash": { "configure": true, "mode": "production",
+>                "hote": "moncashbutton.digicelgroup.com" } }
+> ```
+>
+> Jusqu'ici, la seule façon de savoir si le geste 4 avait pris était de
+> **créer un paiement** puis de lire `payments.raw->>'moncash_host'` —
+> c'est-à-dire d'engager un acheteur réel pour vérifier un champ de
+> formulaire. `mode: "illisible"` signale une valeur mal saisie sans faire
+> tomber le contrôle comptable, qui n'a rien à voir avec elle.
+>
+> **Ordre pratique : geste 4 → redéploiement → pré-vol → seulement ensuite la
+> commande réelle.** Les deux contrôles restent nécessaires et ne disent pas
+> la même chose : le pré-vol lit la CONFIGURATION, la requête ci-dessous lit
+> ce qui a été RÉELLEMENT remis à un acheteur.
+
+⚠️ **Une valeur malformée ne levait RIEN** — texte d'origine conservé, c'est
+lui qui explique le garde. `lib/moncash.ts` fait `mode === "production" ? … : …`
+— un `else` binaire. `Production` avec une majuscule, un espace en fin de champ,
+une chaîne vide (que le `?? "sandbox"` ne rattrape pas, une chaîne vide n'étant
+pas `null`) retombaient **silencieusement en bac à sable**.
 
 ### Ce que cette commande produira, aux chiffres près
 

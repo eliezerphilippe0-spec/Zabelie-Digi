@@ -13,6 +13,63 @@
 type MonCashMode = "sandbox" | "production";
 
 /**
+ * LE MODE SE RÉSOUT, IL NE SE CASTE PAS — posé le 2026-08-22, la veille du
+ * geste 4 de `docs/22`.
+ *
+ * ⚠️ CE QUE FAISAIT LA LIGNE D'AVANT, et pourquoi c'était un piège armé :
+ *
+ *     const mode = (process.env.MONCASH_MODE as MonCashMode) ?? "sandbox";
+ *
+ * Un `as` n'est pas une vérification, c'est une promesse au compilateur. Et
+ * `bases()` compare `mode === "production"` avec un `else` binaire : donc
+ * **`Production`, `production ` (espace de fin), `prod`, ou la chaîne VIDE
+ * retombaient silencieusement en bac à sable.** La chaîne vide n'est pas
+ * `null` — le `?? "sandbox"` ne la rattrapait même pas ; c'est `bases()` qui
+ * la renvoyait au sandbox par défaut de branche.
+ *
+ * `docs/22` §« Après le geste 4 » nomme ce défaut : « une valeur malformée ne
+ * lève RIEN. La cause n'est pas gardée ; seul l'effet est désormais lisible. »
+ * Ce bloc garde la cause.
+ *
+ * Pourquoi ça compte MAINTENANT et pas avant : cinq paiements ont déjà échoué
+ * en production entre le 2026-08-11 et le 2026-08-14, tous pour cause d'hôte
+ * bac à sable. Le geste 4 consiste précisément à taper `production` dans un
+ * champ de formulaire Vercel. Un espace de fin collé depuis un presse-papier
+ * produirait une **sixième** tentative ratée — cette fois sur un rail qu'on
+ * croit réel, avec un acheteur réel devant l'écran.
+ *
+ * Les trois comportements, et l'asymétrie est délibérée :
+ *   • ABSENTE          → `sandbox`. C'est le défaut documenté, il ne bouge pas.
+ *   • casse/espaces    → NORMALISÉE. « Production » veut dire production, et
+ *                        refuser au moment du basculement serait une cruauté
+ *                        gratuite. `lib/site-url.ts:16` `.trim()` déjà pour la
+ *                        même raison.
+ *   • autre chose      → **LÈVE**. `prod`, `true`, `1`, `live` sont ambigus :
+ *                        les deviner, c'est choisir à la place de quelqu'un
+ *                        quel hôte encaisse de l'argent réel.
+ *
+ * Fail-closed assumé : lever empêche le paiement. C'est voulu — un paiement
+ * qui part chez le mauvais hôte est strictement pire qu'un paiement qui ne
+ * part pas, et c'est exactement ce que les cinq échecs ont coûté.
+ */
+export function resolveMonCashMode(brut: string | undefined): MonCashMode {
+  if (brut === undefined) return "sandbox";
+  const v = brut.trim().toLowerCase();
+  if (v === "") return "sandbox";
+  if (v === "sandbox" || v === "production") return v;
+  throw new Error(
+    `MonCash: MONCASH_MODE vaut « ${brut} », qui n'est ni "sandbox" ni ` +
+      `"production". Refus de deviner quel hôte doit encaisser. Corriger la ` +
+      `variable dans Vercel, puis redéployer.`
+  );
+}
+
+/** L'hôte de passerelle réellement employé — ni secret, ni devinable. */
+export function monCashGatewayHost(mode: MonCashMode): string {
+  return new URL(bases(mode).gateway).host;
+}
+
+/**
  * ⚠️ L'hôte est `digicelgroup.com`, PAS `digicel.com` — mesuré le 2026-08-10 :
  * `sandbox.moncashbutton.digicel.com` ne résout plus du tout (DNS mort), là où
  * `…digicelgroup.com` rend 401 sur /Api/oauth/token et /Api/v1/CreatePayment
@@ -35,7 +92,7 @@ function bases(mode: MonCashMode) {
 function config() {
   const clientId = process.env.MONCASH_CLIENT_ID;
   const clientSecret = process.env.MONCASH_CLIENT_SECRET;
-  const mode = (process.env.MONCASH_MODE as MonCashMode) ?? "sandbox";
+  const mode = resolveMonCashMode(process.env.MONCASH_MODE);
 
   if (!clientId || !clientSecret) {
     throw new Error(
