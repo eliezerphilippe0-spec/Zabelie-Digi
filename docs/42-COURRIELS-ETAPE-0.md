@@ -315,6 +315,91 @@ Cette question ne coûte rien de plus : elle voyage avec les cinq autres.
 
 ---
 
+## 1 ter. Courriel Digicel — question 7 : montant minimal de `CreatePayment`
+
+**À** : `MFS_B.Services@digicelgroup.com`.
+
+⚠️ **NOUVEAU FIL, et c'est délibéré — l'inverse de la consigne de la forme A.**
+Les questions 1 → 6 forment un seul dossier : l'activation de `/v1/Transfert`
+et le bac à sable qui va avec. Celle-ci porte sur un **autre endpoint**,
+`CreatePayment`, **déjà actif en production sur notre compte**. Ce n'est pas
+une demande d'activation, c'est une question de comportement d'API — elle a
+toutes les chances d'être traitée par quelqu'un d'autre, et l'accrocher au
+dossier Transfert diluerait les deux.
+
+C'est aussi ce qui la distingue d'une troisième relance en vingt-quatre
+heures : un fil neuf sur un sujet neuf se lit comme une question, pas comme de
+l'insistance.
+
+### Pourquoi elle est posée — une affirmation du dépôt qui n'était pas mesurée
+
+⚠️ **Correction d'une phrase que nous avions écrite au présent de l'indicatif.**
+Le commentaire d'en-tête de la migration `0087` affirmait : « un produit à 0
+envoyait `{ amount: 0 }` à MonCash, qui refuse ». Relecture faite le
+**2026-08-22** : `lib/moncash.ts` transmet le montant tel quel, **il n'y a
+aucun plancher, aucun garde, et aucune trace d'un appel à 0 qui aurait
+échoué**. C'était une supposition, pas une observation — et elle a servi de
+justification à un rail entier.
+
+Le rail « gratis » de `0087` reste bon et il fonctionne : une acquisition à
+0 HTG a été menée de bout en bout le 2026-08-22. Ce qui n'est pas établi,
+c'est qu'il était **nécessaire**. La réponse de Digicel le dira.
+
+⚠️ **Et la vraie valeur de la question n'est pas le zéro.** Même si 0 est
+refusé, connaître le **plancher exact** tranche un arbitrage commercial en
+attente : un produit « gratuit » affiché à 1 HTG passerait par MonCash comme
+n'importe quel achat, sans rail spécial — mais seulement si le plancher est
+bien à 1, et non à 5, 10 ou 25 HTG. Sans ce chiffre, l'option ne peut pas être
+évaluée, seulement devinée.
+
+### Objet
+
+```
+Montant minimal accepté par /v1/CreatePayment — compte marchand MonCash Business
+```
+
+### Corps
+
+```
+Bonjour,
+
+Nous exploitons un compte marchand MonCash Business et utilisons
+/v1/CreatePayment en production.
+
+  7. Quel est le MONTANT MINIMAL accepté par /v1/CreatePayment ?
+
+     Plus précisément, deux points :
+
+     a) Une transaction de 0 HTG est-elle acceptée ? Notre cas d'usage est
+        un article affiché gratuitement sur notre place de marché, pour
+        lequel nous souhaiterions que l'acheteur suive le MÊME parcours de
+        confirmation que pour un achat payant.
+
+     b) Si 0 est refusé, quel est le plus petit montant admis, et le refus
+        se manifeste-t-il par un code d'erreur particulier que nous
+        puissions traiter proprement ?
+
+Cette question est indépendante de notre demande d'activation de
+/v1/Transfert envoyée le 21 août ; nous ouvrons un fil distinct pour ne pas
+mêler les deux dossiers.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+### Ce qu'on fait de la réponse
+
+| Réponse | Conséquence |
+|---|---|
+| **0 HTG accepté** | Le parcours gratuit peut passer par MonCash, comme demandé par le porteur le 2026-08-22. Le rail `gratis` de `0087` reste en base — il ne se retire pas, `alter type … drop value` n'existe pas en PostgreSQL — mais il cesse d'être le chemin par défaut. La phrase fautive de `0087` se corrige par un commentaire daté dans une migration suivante, jamais en réécrivant le fichier appliqué. |
+| **0 refusé, plancher = 1 HTG** | L'option « prix plancher » devient réelle et c'est un **arbitrage porteur**, pas une décision d'implémentation : un article à 1 HTG n'est plus gratuit, et le rail d'accueil « Produits gratuits » perdrait son objet. |
+| **0 refusé, plancher > 1 HTG** | L'option « prix plancher » tombe : personne n'affichera un article « gratuit » à 25 HTG. Le rail `gratis` reste la seule voie, et son écran de confirmation (option 3) devient le chantier. |
+| **Réponse évasive ou aucune sous 3 semaines** | Consigner à `OPS_TODO` au **2026-09-12**. Le rail `gratis` continue de fonctionner entre-temps : cette question n'en bloque aucun. ⚠️ **C'est ce qui la distingue des six autres** — elle éclaire un choix, elle n'ouvre pas une porte fermée. Elle ne doit donc jamais faire attendre le reste. |
+
+---
+
 ## 2. Courriel HDIT / Cabinet Volmar — deux questions numérotées
 
 **À** : `info@hditcabinetvolmar.com` — HDIT / Cabinet Volmar.
@@ -497,12 +582,13 @@ n'est pas un avis juridique.
 
 ---
 
-## 3. Registre — état des deux envois
+## 3. Registre — état des envois
 
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
 |---|---|---|---|---|
 | §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 | §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
+| §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | — | — | 📝 **RÉDIGÉ — à envoyer.** ⚠️ **Nouveau fil**, pas une réponse : autre endpoint, déjà actif en production. Voir §1 ter pour pourquoi la consigne « répondre dans le fil » ne s'applique PAS ici. |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
@@ -542,7 +628,9 @@ Une attente sans date de reprise devient un abandon silencieux. Les deux
 |---|---|---|
 | ✅ ~~**Complément Digicel — question 6** (§1, forme A)~~ | ~~immédiat~~ | **FAIT le 2026-08-21.** Les six questions sont chez Digicel. |
 | **Relance Digicel** — 7 jours ouvrables (§1, forme B) | **2026-09-01** | Service client **202** en copie, en citant l'objet du courriel. ⚠️ **Ne repose PAS la question 6** — elle est partie avec A : B réclame une réponse aux six, rien de plus. ⚠️ **Ne part pas du tout si un retour arrive avant** : une échéance de relance s'annule sur réponse, elle ne se déclenche pas parce que la date est arrivée. |
+| **Envoi de la question 7** (§1 ter) | dès que possible | Nouveau fil. ⚠️ **N'attend pas le 2026-09-01** : ce n'est pas une relance, et elle ne porte pas sur le dossier `/v1/Transfert`. |
 | **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux dossiers (Digicel et Volmar) |
+| **Question 7 sans réponse** — 3 semaines après son envoi | **2026-09-12** si envoyée le 2026-08-22 | Consigner à `OPS_TODO`. ⚠️ Ne bloque rien : le rail `gratis` fonctionne. |
 
 ⚠️ **Le 2026-09-11 n'est pas une date d'abandon, c'est une date d'ÉCRITURE.**
 « Digicel n'a pas répondu en trois semaines » est un fait qui oriente les

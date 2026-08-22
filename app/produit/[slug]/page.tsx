@@ -87,8 +87,27 @@ function buildBuyOptions(lang: Lang, priceHTG: number): BuyOption[] {
    * ⚠️ C'est la réparation d'un défaut mesuré le 2026-08-21. L'accueil porte un
    * rail « Produits gratuits » (`app/page.tsx:178`) depuis toujours ; cette
    * fonction, elle, proposait MonCash INCONDITIONNELLEMENT. Un produit à 0
-   * envoyait donc `{ amount: 0 }` à MonCash, qui refuse. La vitrine annonçait
-   * une porte, et la porte était murée.
+   * envoyait donc `{ amount: 0 }` à MonCash. La vitrine annonçait une porte,
+   * et personne n'a jamais franchi celle-là.
+   *
+   * ⚠️ CORRECTION DU 2026-08-22 — « que MonCash refuse » a été retiré de cette
+   * phrase, et de celle de `0087`, parce que ce N'ÉTAIT PAS MESURÉ.
+   * `lib/moncash.ts` transmet le montant tel quel : aucun plancher, aucun
+   * garde, et aucune trace d'un appel à 0 qui aurait échoué. Nous l'avions
+   * écrit au présent de l'indicatif, et cette supposition a servi de
+   * justification à un rail entier.
+   *
+   * Ce qui reste vrai sans elle : les cinq paiements `failed` du 11 au 14 août
+   * prouvent que le chemin MonCash n'a jamais abouti en bac à sable, faute de
+   * compte payeur (`docs/42` §1 bis). Le rail gratuit fonctionne — une
+   * acquisition à 0 HTG est passée de bout en bout le 2026-08-22. Ce qui n'est
+   * pas établi, c'est qu'il était NÉCESSAIRE.
+   *
+   * La question est partie chez Digicel (`docs/42` §1 ter, question 7). Sa
+   * réponse dira si ce retour anticipé reste le bon chemin ou devient une
+   * option parmi deux. ⚠️ Le fichier de `0087` ne bouge pas : il est appliqué,
+   * son empreinte est au registre. Une migration appliquée se corrige par un
+   * commentaire ailleurs, jamais par une réécriture.
    *
    * Le retour anticipé est délibéré : proposer « Payer 0 HTG », ou laisser un
    * rail diaspora s'ajouter en dessous, serait absurde à l'écran et faux au
