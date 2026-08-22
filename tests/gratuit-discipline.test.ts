@@ -129,6 +129,44 @@ test("G5 — la comparaison de kind passe par lib/product-kind (règle du dépô
   );
 });
 
+test("G7 — la PUBLICATION d'un numérique accepte 0 et refuse le négatif", () => {
+  // ⚠️ LE SECOND MUR, trouvé sur une capture d'écran du porteur le 2026-08-21.
+  // Le premier (checkout → MonCash à 0) est tombé avec 0087 ; celui-ci
+  // refusait la CRÉATION, donc le rail serait resté vide faute de produit.
+  //
+  // Ma recherche initiale l'avait manqué : je grepais `price_htg`, la colonne,
+  // alors que la validation porte sur `price`, la variable locale. Un motif ne
+  // prouve rien sur ce qu'il n'a pas cherché — d'où ce garde.
+  const PRODUITS = code(readFileSync("app/api/products/route.ts", "utf8"));
+  assert.ok(PRODUITS.length > 1000, "le fichier doit avoir été lu");
+
+  // La condition ELLE-MÊME, pas le message : un libellé corrigé sans la
+  // condition laisserait le mur debout en affichant le contraire.
+  assert.match(
+    PRODUITS,
+    /!Number\.isFinite\(price\)\s*\|\|\s*price\s*<\s*0\s*\)/,
+    "la publication numérique doit refuser price < 0, jamais price < 1"
+  );
+  assert.doesNotMatch(
+    PRODUITS,
+    /price\s*<\s*1\b/,
+    "aucun plancher à 1 HTG ne doit subsister sur la route numérique"
+  );
+});
+
+test("G8 — le plancher à 1 HTG reste ENTIER pour les articles livrables", () => {
+  // Le pendant du précédent : ouvrir le gratuit au numérique ne doit pas
+  // l'ouvrir au physique par effet de bord. `zabelie_product_variants
+  // .price_htg > 0` (0036) le dit déjà en base ; ici on garde la route alignée.
+  const PHYS = code(readFileSync("app/api/products/physical/route.ts", "utf8"));
+  assert.ok(PHYS.length > 1000, "le fichier doit avoir été lu");
+  assert.match(
+    PHYS,
+    /!Number\.isInteger\(price\)\s*\|\|\s*price\s*<\s*1\b/,
+    "la route physique doit conserver son plancher à 1 HTG"
+  );
+});
+
 test("G6 — le suivi de remise s'ouvre APRÈS la confirmation, jamais avant", () => {
   // 0043 §6 bis : avant confirm_payment, l'escrow n'existe pas et le gel ne
   // toucherait aucune ligne. L'ordre est le contrôle, pas la présence.
