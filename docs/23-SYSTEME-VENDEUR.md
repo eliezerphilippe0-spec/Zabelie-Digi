@@ -63,6 +63,88 @@ mécanisme qui doit s'ancrer sur « le vendeur » peut le faire sur
 l'ancrage sera identique après. C'est ce qui rend le socle de facturation
 (`docs/29`) implémentable avant le chantier 2.
 
+## 1 ter. UN SEUL COMPTE — le rôle s'AJOUTE, il ne remplace pas
+
+**Écrit le 2026-08-21, sur une question du porteur : « les utilisateurs
+auraient-ils deux comptes s'ils souhaitaient vendre et acheter ? »** La réponse
+est non, et elle n'était énoncée nulle part — c'était une propriété du code que
+personne n'avait mise par écrit.
+
+C'est le corollaire de §1 bis : si le vendeur **est** déjà un profil, alors
+l'acheteur et le vendeur sont **la même personne**, avec un seul identifiant,
+une seule session, un seul mot de passe.
+
+```
+inscription ............ role = 'buyer'     → il achète
+première publication ... role = 'creator'   → il vend AUSSI
+```
+
+**Il ne perd rien en devenant vendeur.** Le rôle est un marqueur — pour les
+statistiques (`/admin/geo`, `0014`) et pour le chemin rapide de la vitrine
+boutique — jamais une porte qui se referme derrière lui.
+
+### Ce qui a été mesuré, le 2026-08-21
+
+| Surface | Garde de rôle |
+|---|---|
+| `app/api/checkout/route.ts` | **aucun** |
+| `app/api/panier/`, `app/produit/`, `components/buy-button.tsx` | **aucun** |
+| `app/vendre/page.tsx`, `app/vendre/physique/page.tsx` | **aucun** |
+| `app/tableau-de-bord/`, `app/mes-ventes/` | **aucun** — deux occurrences, toutes deux des commentaires sur la clé `service_role` |
+| `orders.buyer_id → profiles(id)` | **aucune condition de rôle** |
+
+Un `creator` peut donc être acheteur d'une commande, et la base ne s'y oppose
+pas. Ce qui rattache un produit à son vendeur est **`seller_id`**, jamais un
+rôle — et `0084` le dit déjà à sa façon : *« ses produits, eux, ne mentent
+pas »*.
+
+### Pourquoi ce n'est pas qu'une commodité
+
+Zabelie s'adresse à des gens sur **Android d'entrée de gamme, bande passante
+faible, coupures fréquentes**. Demander à une marchande de Jacmel de jongler
+entre deux comptes — deux mots de passe, deux sessions, deux reconnexions après
+chaque coupure — serait une faute d'usage grave. Sur ce terrain, **chaque
+compte supplémentaire est un abandon supplémentaire.**
+
+### ⚠️ L'exception, et elle ne concerne QUE l'exploitant
+
+| Qui | Comptes | Pourquoi |
+|---|---|---|
+| **Un utilisateur ordinaire** | **1** | achète et vend avec le même |
+| **L'administrateur de la plateforme** | 2 | `admin` **juge**, et on ne se juge pas soi-même |
+
+Le conflit n'est pas « vendre et acheter » — c'est **« approuver les
+vérifications d'identité des vendeurs ET être soi-même vendeur »**.
+`app/admin/kyc/page.tsx` est gardé par `role !== "admin"` : le jour où
+`zabelie_kyc_config.requis_pour_retrait` sera armé (`0079`, décision en attente
+à `OPS_TODO`), un admin-vendeur serait à la fois le vérifié et le vérificateur.
+Le contrôle ne pourrait pas lui refuser.
+
+S'y ajoutent l'audit — `zabelie_admin_actions` (`0055`) existe pour tracer les
+gestes d'administration, et les mêler à un commerce personnel brouille
+exactement la trace qu'il produit — et un fait que `docs/17` gagnera à énoncer
+plutôt qu'à laisser deviner : *l'administrateur est-il marchand sur sa propre
+place de marché ?*
+
+⚠️ **Un troisième compte, acheteur, est une exigence de TEST et non une règle
+produit** : `docs/22` demande d'acheter depuis un second compte pour la
+première commande réelle, parce que plusieurs chemins ne sont pas parcourus
+quand l'acheteur est le vendeur. Un vendeur ordinaire n'en a pas besoin.
+
+### Le garde
+
+`tests/role-jamais-retrograde.test.ts` (§R3) refuse qu'un contrôle de rôle
+apparaisse sur une surface d'achat ou de vente. **Ce n'est pas une interdiction
+définitive** — c'est un point d'arrêt : si un tel contrôle devient
+nécessaire un jour, il faudra modifier le test et écrire pourquoi. Ce qu'on
+empêche, c'est qu'il arrive **par distraction**, et qu'un utilisateur se
+retrouve enfermé du mauvais côté d'une porte que personne n'a voulu poser.
+
+Le précédent est frais : le 2026-08-21, publier un produit **écrasait** le rôle
+de qui le faisait, et le porteur a perdu son rôle d'administrateur sans le
+moindre signal. C'est en cherchant la cause qu'on a découvert que rien
+n'écrivait la règle.
+
 ## 2. Boutique
 
 Table `zabelie_stores` — **une par vendeur** (`seller_id unique`) :

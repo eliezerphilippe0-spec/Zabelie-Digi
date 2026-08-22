@@ -75,6 +75,71 @@ test("R1 — toute écriture de `role` sur profiles est CONDITIONNELLE", () => {
   );
 });
 
+/**
+ * R3 — UN SEUL COMPTE POUR ACHETER ET VENDRE (`docs/23` §1 ter).
+ *
+ * Un utilisateur zabelien a UN compte : il s'inscrit acheteur, il devient
+ * vendeur à sa première publication, et il ne perd rien au passage. Le rôle
+ * s'ajoute, il ne remplace pas.
+ *
+ * ⚠️ CE N'EST PAS UNE INTERDICTION DÉFINITIVE, C'EST UN POINT D'ARRÊT. Si un
+ * contrôle de rôle devient un jour nécessaire sur l'une de ces surfaces, il
+ * faudra modifier ce test ET écrire pourquoi dans `docs/23` §1 ter. Ce qu'on
+ * empêche, c'est qu'il arrive PAR DISTRACTION — et qu'un utilisateur se
+ * retrouve enfermé du mauvais côté d'une porte que personne n'a voulu poser.
+ *
+ * Le terrain rend l'enjeu concret : Android d'entrée de gamme, coupures
+ * fréquentes. Chaque compte supplémentaire est un abandon supplémentaire.
+ */
+const SURFACES_LIBRES = [
+  // Acheter
+  "app/api/checkout/route.ts",
+  "components/buy-button.tsx",
+  // Vendre
+  "app/vendre/page.tsx",
+  "app/vendre/physique/page.tsx",
+  "app/tableau-de-bord/page.tsx",
+  "app/mes-ventes/page.tsx",
+];
+
+test("R3 — aucune surface d'achat ou de vente ne garde sur le rôle", () => {
+  const coupables: string[] = [];
+
+  for (const f of SURFACES_LIBRES) {
+    const src = code(readFileSync(f, "utf8"));
+    // On cherche une COMPARAISON de rôle — ce qui commande — et non la simple
+    // présence du mot « role », qui apparaît dans `service_role` et dans les
+    // objets envoyés aux modèles d'IA.
+    if (/\brole\s*(===|!==|==|!=)\s*["'](buyer|creator|admin)["']/.test(src)) {
+      coupables.push(f);
+    }
+  }
+
+  assert.deepEqual(
+    coupables,
+    [],
+    "Contrôle de rôle sur une surface d'achat ou de vente : " +
+      coupables.join(", ") +
+      ".\nUn utilisateur a UN SEUL compte : il achète et il vend avec le même " +
+      "(docs/23 §1 ter). Un `creator` doit pouvoir acheter, un `admin` doit " +
+      "pouvoir vendre.\nSi ce contrôle est VOULU, modifiez ce test et écrivez " +
+      "pourquoi dans docs/23 §1 ter — mais ne le laissez pas arriver par " +
+      "distraction."
+  );
+});
+
+test("R4 — les fichiers surveillés par R3 existent tous", () => {
+  // Sans ce contrôle, renommer une surface la ferait sortir du périmètre en
+  // silence : R3 passerait au vert en ne regardant plus rien. « Aucun
+  // coupable » et « aucun fichier lu » ne doivent pas se ressembler.
+  for (const f of SURFACES_LIBRES) {
+    assert.ok(
+      statSync(f).isFile(),
+      `${f} est surveillé par R3 mais n'existe plus — mettre la liste à jour`
+    );
+  }
+});
+
 test("R2 — la promotion à la publication borne bien sur « buyer »", () => {
   // Le cas nommé, en plus du contrôle général : si la route change de forme,
   // R1 pourrait cesser de la voir sans que personne s'en aperçoive.
