@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { normalizeCategory } from "@/lib/product-categories";
 import {
   isDigitalKind,
@@ -26,19 +28,20 @@ export const dynamic = "force-dynamic";
  * Crée (et publie) un produit pour le créateur connecté.
  */
 export async function POST(req: Request) {
+  const lang = await getLang();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   }
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
   if (await getSuspension(user.id)) {
     return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
+      { error: t(lang, "api.suspended") },
       { status: 403 }
     );
   }
@@ -56,7 +59,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
 
   const { kind, category } = body;
@@ -96,10 +99,7 @@ export async function POST(req: Request) {
    * Le négatif reste refusé : `price < 0`. */
   if (!title || !isDigitalKind(kind) || !Number.isFinite(price) || price < 0) {
     return NextResponse.json(
-      {
-        error:
-          "Champs requis : titre, type valide, prix valide (0 HTG accepté pour un produit gratuit, jamais négatif).",
-      },
+      { error: t(lang, "api.price.invalid") },
       { status: 400 }
     );
   }
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       // obligeait le vendeur à annoncer plus lent qu'il ne l'est.
       if (!Number.isInteger(d) || d < 0 || d > 365) {
         return NextResponse.json(
-          { error: "Délai de livraison : entre 0 (jour même) et 365 jours." },
+          { error: t(lang, "api.delivery.days") },
           { status: 400 }
         );
       }
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
   const categorieCanonique = await normalizeCategory(supabase, category);
   if (!categorieCanonique) {
     return NextResponse.json(
-      { error: "Catégorie inconnue — choisissez un rayon dans la liste." },
+      { error: t(lang, "api.category.unknown") },
       { status: 400 }
     );
   }
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
   // « acceptée ». Elle vient de `lib/policy.ts`.
   if (body.policyAccepted !== true) {
     return NextResponse.json(
-      { error: "Vous devez accepter les règles de vente.", code: "policy_required" },
+      { error: t(lang, "api.policy.required"), code: "policy_required" },
       { status: 400 }
     );
   }
@@ -181,9 +181,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json(
       {
-        error:
-          "La publication n'a pas abouti. Rien n'a été enregistré — " +
-          "réessayez dans un instant.",
+        error: t(lang, "api.publish.failed"),
         code: "policy_unavailable",
       },
       { status: 503 }
@@ -193,7 +191,7 @@ export async function POST(req: Request) {
   // BL-117 : cadence bornée comme checkout/topup (10 créations/min).
   if (!(await rateLimit(admin, `products:${user.id}`, 10))) {
     return NextResponse.json(
-      { error: "Trop de publications — réessayez dans une minute." },
+      { error: t(lang, "api.publish.limited") },
       { status: 429 }
     );
   }

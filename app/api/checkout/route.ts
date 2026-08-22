@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -60,6 +62,7 @@ function railEnabled(rail: Rail): boolean {
 }
 
 export async function POST(req: Request) {
+  const lang = await getLang();
   let productId: string | undefined;
   let railInput: unknown;
   let couponInput: unknown;
@@ -74,10 +77,10 @@ export async function POST(req: Request) {
       quantity: quantityInput,
     } = await req.json());
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
   if (!productId) {
-    return NextResponse.json({ error: "productId requis" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 400 });
   }
 
   const rail: Rail = (RAILS as readonly string[]).includes(String(railInput ?? "moncash"))
@@ -85,7 +88,7 @@ export async function POST(req: Request) {
     : "moncash";
   if (!railEnabled(rail)) {
     return NextResponse.json(
-      { error: "Ce moyen de paiement n'est pas disponible." },
+      { error: t(lang, "api.rail.unavailable") },
       { status: 422 }
     );
   }
@@ -96,14 +99,14 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   }
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
   if (await getSuspension(user.id)) {
     return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
+      { error: t(lang, "api.suspended") },
       { status: 403 }
     );
   }
@@ -114,7 +117,7 @@ export async function POST(req: Request) {
   // payante) : 10 checkouts/min par compte suffisent largement à un humain.
   if (!(await rateLimit(admin, `checkout:${user.id}`, 10))) {
     return NextResponse.json(
-      { error: "Trop de tentatives — réessayez dans une minute." },
+      { error: t(lang, "api.rate.limited") },
       { status: 429 }
     );
   }
@@ -130,7 +133,7 @@ export async function POST(req: Request) {
     .single();
 
   if (prodErr || !product) {
-    return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
+    return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
 
   // BL-103 (FRONT-2) : on ne vend JAMAIS un fichier sans livrable. Les
@@ -148,7 +151,7 @@ export async function POST(req: Request) {
     if (!assets?.[0]?.count) {
       return NextResponse.json(
         {
-          error: "Ce produit n'a pas encore de fichier à livrer.",
+          error: t(lang, "api.deliverable.missing"),
           code: "produit_incomplet",
         },
         { status: 409 }
@@ -180,7 +183,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Un article livrable ne peut pas être offert à 0 HTG : les frais de remise resteraient à la charge du vendeur.",
+          t(lang, "api.free.physical"),
         code: "gratuit_physique_refuse",
       },
       { status: 422 }
@@ -233,7 +236,7 @@ export async function POST(req: Request) {
       // config n'ont jamais approuvé. Refus explicite, jamais silencieux.
       return NextResponse.json(
         {
-          error: "Code promo non cumulable avec une vente flash.",
+          error: t(lang, "api.coupon.flash"),
           code: "flash_non_cumulable",
         },
         { status: 422 }
@@ -241,7 +244,7 @@ export async function POST(req: Request) {
     }
     if (await flashEpuisee(admin, product.id, flash)) {
       return NextResponse.json(
-        { error: "Offre flash épuisée — le prix normal s'applique de nouveau.",
+        { error: t(lang, "api.flash.exhausted"),
           code: "flash_epuisee" },
         { status: 409 }
       );
@@ -256,7 +259,7 @@ export async function POST(req: Request) {
     // langue de l'acheteur (FR/KR) — le texte serveur n'est qu'un repli.
     const rejected = () =>
       NextResponse.json(
-        { error: "Code promo invalide ou expiré.", code: "coupon_invalid" },
+        { error: t(lang, "api.coupon.invalid"), code: "coupon_invalid" },
         { status: 422 }
       );
     if (!code) return rejected();
@@ -305,7 +308,7 @@ export async function POST(req: Request) {
       expectedUsdCents = usdCentsFromHtg(finalPriceHtg, rate);
     } catch {
       return NextResponse.json(
-        { error: "Taux USD non configuré (USD_HTG_RATE)." },
+        { error: t(lang, "api.usd.rate") },
         { status: 422 }
       );
     }
@@ -328,7 +331,7 @@ export async function POST(req: Request) {
 
   if (orderErr || !order) {
     return NextResponse.json(
-      { error: "Création commande échouée" },
+      { error: t(lang, "api.order.failed") },
       { status: 500 }
     );
   }
@@ -399,7 +402,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "L'acquisition gratuite n'est pas encore ouverte : la migration 0087 n'est pas appliquée en base.",
+            t(lang, "api.free.closed"),
           code: "ZB087",
         },
         { status: 503 }
@@ -407,7 +410,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: "Création paiement échouée" },
+      { error: t(lang, "api.payment.failed") },
       { status: 500 }
     );
   }
@@ -490,7 +493,7 @@ export async function POST(req: Request) {
       await admin.from("payments").delete().eq("order_id", order.id);
       await admin.from("orders").delete().eq("id", order.id);
       return NextResponse.json(
-        { error: "Acquisition gratuite indisponible pour le moment.", code: "ZB087" },
+        { error: t(lang, "api.free.closed"), code: "ZB087" },
         { status: 503 }
       );
     }
@@ -581,7 +584,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json(
       {
-        error: "Paiement momentanément indisponible. Réessayez dans un instant.",
+        error: t(lang, "api.operator.down"),
         code: "provider_unavailable",
       },
       { status: 502 }
