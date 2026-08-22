@@ -72,9 +72,34 @@ export async function POST(req: Request) {
   // `kind: "physical"` (valeur d'énumération valide depuis `0036`) créait une
   // fiche physique par CETTE route, hors des validations de
   // `/api/products/physical`. Le garde narrow aussi `kind` pour la suite.
-  if (!title || !isDigitalKind(kind) || !Number.isFinite(price) || price < 1) {
+  /* ⚠️ `price < 0`, ET NON `price < 1` — corrigé le 2026-08-21.
+   *
+   * Ce plancher à 1 HTG était le SECOND mur du produit gratuit, et le plus
+   * silencieux : l'accueil affiche un rail « Produits gratuits »
+   * (`app/page.tsx:178`), la base autorise `price_htg >= 0` (`0001`), le champ
+   * du formulaire porte `min={0}` (`components/publish-form.tsx:180`) — et
+   * cette ligne refusait la publication. Le vendeur voyait « prix valide
+   * (≥ 1 HTG) » sans que rien n'explique pourquoi une vitrine annonçait des
+   * gratuits que personne ne pouvait créer.
+   *
+   * Le premier mur (le checkout envoyait `amount: 0` à MonCash) est tombé avec
+   * `0087`. Sans celui-ci, il n'aurait rien débloqué : le rail serait resté
+   * vide faute de produit à y mettre.
+   *
+   * ⚠️ Cette route est NUMÉRIQUE seulement — `isDigitalKind` narrow `kind` et
+   * refuse `physical`. Le plancher à 1 HTG reste donc entier pour les articles
+   * livrables (`/api/products/physical`, deux contrôles), en accord avec
+   * `zabelie_product_variants.price_htg > 0` (`0036`) et avec le refus du
+   * checkout. Un physique gratuit signifierait « le vendeur expédie à ses
+   * frais » : arbitrage du porteur, pas décision d'implémentation.
+   *
+   * Le négatif reste refusé : `price < 0`. */
+  if (!title || !isDigitalKind(kind) || !Number.isFinite(price) || price < 0) {
     return NextResponse.json(
-      { error: "Champs requis : titre, type valide, prix valide (≥ 1 HTG)." },
+      {
+        error:
+          "Champs requis : titre, type valide, prix valide (0 HTG accepté pour un produit gratuit, jamais négatif).",
+      },
       { status: 400 }
     );
   }
