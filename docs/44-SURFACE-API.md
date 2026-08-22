@@ -51,9 +51,18 @@ pas ça ne servirait personne en Haïti.
 
 ---
 
-## 2. ⚠️ Neuf endpoints qui n'existent qu'en types
+## 2. ✅ Neuf endpoints qui n'existaient qu'en types — SERVIS le 2026-08-22
 
-**C'est la trouvaille de cet inventaire, et elle est sérieuse.**
+**C'était la trouvaille de cet inventaire. Elle a été réparée le jour même.**
+
+> **État au 2026-08-22, après ce document** : `app/api/v1/[endpoint]/route.ts`
+> sert les neuf, une seule route pilotée par le registre.
+> `tests/api-v1-routes.test.ts` croise contrats et handlers **dans les deux
+> sens** et échoue si la route disparaît. Détail complet dans `docs/24`.
+>
+> Le reste de cette section décrit l'état **d'avant**, et il est conservé :
+> c'est le seul endroit où le défaut est décrit tel qu'il était, et c'est ce
+> qui rend le garde compréhensible.
 
 `lib/api/v1/schemas.ts` déclare `V1_ENDPOINTS` : `search_products`,
 `get_product`, `compare_products`, `get_seller`, `get_reviews`,
@@ -190,7 +199,8 @@ Aucune API supplémentaire ne débloque ça.
 
 | # | Chantier | Pourquoi maintenant |
 |---|---|---|
-| 1 | **Servir la v1** (`app/api/v1/…`) | Contrats écrits, 28 tests verts, il ne manque que les routes. Meilleur rapport valeur/effort du dépôt. |
+| 1 | ✅ ~~**Servir la v1**~~ | **FAIT le 2026-08-22.** 10 tests de câblage, 4 mutations éprouvées, chemin de validation parcouru par `curl`. ⚠️ Le chemin de DONNÉES reste non parcouru ici — pas de clés Supabase dans le conteneur. |
+| 1 bis | **Parcourir la v1 sur le déploiement réel** | Le corollaire de la règle : « avant d'instrumenter un chemin, le parcourir une fois de bout en bout ». Un `curl` sur Vercel suffit. |
 | 2 | **Vérifier `RESEND_API_KEY` en production** | Une minute. Sans elle, aucune notification n'est jamais partie. |
 | 3 | **La première vente réelle** (`docs/22`) | Ce n'est pas un chantier d'API, et c'est la seule chose qui manque vraiment. |
 | 4 | **Messagerie** — après §3, et après l'instruction du §3.1 | La confiance est le frein n°1, mais le canal se décide avant de se coder. |
