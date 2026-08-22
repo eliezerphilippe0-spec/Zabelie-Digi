@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
@@ -24,7 +25,7 @@ const SIGNATURE_SECONDES = 300;
 export async function GET() {
   const me = await getCurrentUser();
   if (!me || me.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   const admin = createAdminClient();
@@ -35,12 +36,13 @@ export async function GET() {
     .order("submitted_at");
   if (error) {
     if (isMissingTable(error)) {
-      return NextResponse.json(
-        { error: "Vérification non activée (0079 à appliquer).", dossiers: [] },
-        { status: 503 }
+      console.error(
+        "[admin/kyc] MIGRATION 0079 NON APPLIQUÉE — zabelie_kyc_submissions introuvable :",
+        error.code
       );
+      return erreurTraduite("api.feature.off", 503, { dossiers: [] });
     }
-    return NextResponse.json({ error: "Lecture échouée" }, { status: 500 });
+    return erreurTraduite("api.read.failed", 500);
   }
 
   const dossiers = [];
@@ -75,18 +77,18 @@ export async function GET() {
 export async function POST(req: Request) {
   const me = await getCurrentUser();
   if (!me || me.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: { userId?: string; action?: string; note?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
   const action = body.action === "approve" ? "approved" : body.action === "reject" ? "rejected" : null;
   if (!body.userId || !action) {
-    return NextResponse.json({ error: "userId et action requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
   const note =
     typeof body.note === "string" && body.note.trim()
@@ -94,10 +96,7 @@ export async function POST(req: Request) {
       : null;
   // Un refus sans motif laisse le vendeur sans rien à corriger.
   if (action === "rejected" && !note) {
-    return NextResponse.json(
-      { error: "Motif de refus obligatoire — le vendeur doit savoir quoi corriger." },
-      { status: 422 }
-    );
+    return erreurTraduite("api.reason.seller", 422);
   }
 
   const admin = createAdminClient();
@@ -113,12 +112,13 @@ export async function POST(req: Request) {
     .eq("status", "pending");
   if (error) {
     if (isMissingTable(error)) {
-      return NextResponse.json(
-        { error: "Vérification non activée (0079 à appliquer)." },
-        { status: 503 }
+      console.error(
+        "[admin/kyc] MIGRATION 0079 NON APPLIQUÉE — zabelie_kyc_submissions introuvable :",
+        error.code
       );
+      return erreurTraduite("api.feature.off", 503);
     }
-    return NextResponse.json({ error: "Décision refusée" }, { status: 422 });
+    return erreurTraduite("api.write.failed", 422);
   }
 
   await journaliserActeAdmin(admin, {

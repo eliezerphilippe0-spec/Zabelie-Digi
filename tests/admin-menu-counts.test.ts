@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { refus } from "./refus-forme";
 
 /**
  * Les badges du menu admin et la route qui les compte disent la MÊME chose.
@@ -63,5 +64,7 @@ test("la route refuse un non-admin AVANT tout comptage", () => {
     "la garde doit précéder la création du client service role — un non-admin " +
       "ne déclenche aucune requête, pas même un count"
   );
-  assert.match(ROUTE, /status: 403/);
+  /* ⚠️ La CONDITION, plus le seul littéral : `/status: 403/` flottait, et un
+   * garde rendu inatteignable (`if (false)`) l'aurait laissé vert. */
+  assert.match(ROUTE, new RegExp(`user\\.role !== "admin"[\\s\\S]{0,160}${refus(403)}`));
 });

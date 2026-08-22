@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { exigerTraceAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -15,17 +16,17 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: { orderId?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
   if (!body.orderId) {
-    return NextResponse.json({ error: "orderId requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
 
   const admin = createAdminClient();
@@ -39,10 +40,7 @@ export async function POST(req: Request) {
     targetId: body.orderId,
   });
   if (!trace) {
-    return NextResponse.json(
-      { error: "Journal d'audit indisponible — remboursement refusé (fail-closed)" },
-      { status: 503 }
-    );
+    return erreurTraduite("api.audit.unavailable", 503);
   }
 
   const { data, error } = await admin.rpc("refund_order", {

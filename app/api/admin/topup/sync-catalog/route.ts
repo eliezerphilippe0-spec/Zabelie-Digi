@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import {
   isTopupFirstPartyEnabled,
   TOPUP_CLOSED_BODY,
@@ -40,7 +41,7 @@ export async function POST() {
 
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
   if (!isReloadlyEnabled()) {
     return NextResponse.json(

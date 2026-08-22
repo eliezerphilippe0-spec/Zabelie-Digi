@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
@@ -25,7 +26,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const me = await getCurrentUser();
   if (!me || me.role !== "admin") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return erreurTraduite("api.access.denied", 401);
   }
 
   let body: {
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   const admin = createAdminClient();
@@ -54,10 +55,7 @@ export async function POST(req: Request) {
   if (body.action === "create_zone") {
     const { level, parentId, code, slug, labelKr, labelFr } = body;
     if (!level || !slug || !labelKr?.trim() || !labelFr?.trim()) {
-      return NextResponse.json(
-        { error: "level, slug, labelKr et labelFr requis" },
-        { status: 400 },
-      );
+      return erreurTraduite("api.params.invalid", 400);
     }
     const { data, error } = await admin
       .from("zabelie_zones")
@@ -88,7 +86,7 @@ export async function POST(req: Request) {
   // ── set_active ────────────────────────────────────────────────────────────
   if (body.action === "set_active") {
     if (!body.zoneId || typeof body.active !== "boolean") {
-      return NextResponse.json({ error: "zoneId et active requis" }, { status: 400 });
+      return erreurTraduite("api.params.invalid", 400);
     }
     const { error } = await admin
       .from("zabelie_zones")
@@ -110,10 +108,7 @@ export async function POST(req: Request) {
   if (body.action === "decide") {
     const { requestId, decision } = body;
     if (!requestId || (decision !== "accept" && decision !== "reject")) {
-      return NextResponse.json(
-        { error: "requestId et decision ('accept' | 'reject') requis" },
-        { status: 400 },
-      );
+      return erreurTraduite("api.params.invalid", 400);
     }
     const { data: demande, error: dErr } = await admin
       .from("zabelie_zone_requests")
@@ -121,7 +116,7 @@ export async function POST(req: Request) {
       .eq("id", requestId)
       .maybeSingle();
     if (dErr || !demande) {
-      return NextResponse.json({ error: "Demande introuvable" }, { status: 404 });
+      return erreurTraduite("api.order.notfound", 404);
     }
 
     let zoneCreee: string | null = null;
@@ -176,5 +171,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, zoneCreee });
   }
 
-  return NextResponse.json({ error: "action inconnue" }, { status: 400 });
+  return erreurTraduite("api.params.invalid", 400);
 }

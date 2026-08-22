@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -20,7 +21,7 @@ const METHODS = ["moncash", "especes", "virement", "autre"] as const;
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: {
@@ -34,11 +35,11 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   if (!body.payoutId) {
-    return NextResponse.json({ error: "payoutId requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
 
   const admin = createAdminClient();
@@ -46,10 +47,7 @@ export async function POST(req: Request) {
   if (body.action === "rejected") {
     const reason = String(body.reason ?? "").trim().slice(0, 300);
     if (!reason) {
-      return NextResponse.json(
-        { error: "Motif de rejet obligatoire (le vendeur doit savoir pourquoi)" },
-        { status: 422 }
-      );
+      return erreurTraduite("api.reason.seller", 422);
     }
     const { data, error } = await admin.rpc("zabelie_reject_payout", {
       p_payout_id: body.payoutId,
@@ -72,14 +70,11 @@ export async function POST(req: Request) {
   // Règlement.
   const method = String(body.method ?? "moncash");
   if (!(METHODS as readonly string[]).includes(method)) {
-    return NextResponse.json({ error: "Moyen de paiement inconnu" }, { status: 422 });
+    return erreurTraduite("api.method.unknown", 422);
   }
   const reference = String(body.reference ?? "").trim().slice(0, 120);
   if (!reference) {
-    return NextResponse.json(
-      { error: "Référence du reçu obligatoire (preuve du règlement)" },
-      { status: 422 }
-    );
+    return erreurTraduite("api.receipt.required", 422);
   }
 
   const { data, error } = await admin.rpc("zabelie_settle_payout", {

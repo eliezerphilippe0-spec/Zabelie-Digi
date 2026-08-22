@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,28 +23,22 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const me = await getCurrentUser();
   if (!me || me.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: { userId?: string; action?: string; reason?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   const { userId, action } = body;
   if (!userId || (action !== "suspend" && action !== "reactivate")) {
-    return NextResponse.json(
-      { error: "userId et action ('suspend' | 'reactivate') requis" },
-      { status: 400 }
-    );
+    return erreurTraduite("api.params.invalid", 400);
   }
   if (userId === me.id) {
-    return NextResponse.json(
-      { error: "Impossible de suspendre son propre compte" },
-      { status: 400 }
-    );
+    return erreurTraduite("api.selfsuspend", 400);
   }
 
   const admin = createAdminClient();
@@ -54,20 +49,17 @@ export async function POST(req: Request) {
     .eq("id", userId)
     .maybeSingle();
   if (!target) {
-    return NextResponse.json({ error: "Compte introuvable" }, { status: 404 });
+    return erreurTraduite("api.account.notfound", 404);
   }
   if (target.role === "admin") {
-    return NextResponse.json(
-      { error: "Un administrateur ne peut pas être suspendu par cette route" },
-      { status: 400 }
-    );
+    return erreurTraduite("api.admin.protected", 400);
   }
 
   if (action === "suspend") {
     const reason = body.reason?.trim();
     if (!reason) {
       // Motif obligatoire : traçabilité de modération (équité, litiges, appels).
-      return NextResponse.json({ error: "Motif requis" }, { status: 400 });
+      return erreurTraduite("api.reason.required", 400);
     }
 
     const { error: updErr } = await admin

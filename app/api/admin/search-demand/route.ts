@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureActive, messageSourcing, type TermeDemande } from "@/lib/search-demand";
@@ -33,7 +34,7 @@ async function authorize(req: Request): Promise<boolean> {
 
 export async function GET(req: Request) {
   if (!(await authorize(req))) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return erreurTraduite("api.access.denied", 401);
   }
 
   const url = new URL(req.url);

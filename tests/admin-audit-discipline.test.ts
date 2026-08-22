@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { refus } from "./refus-forme";
 
 /**
  * TOUTE MUTATION ADMIN LAISSE UNE TRACE — et le test le tient pour l'avenir.
@@ -116,9 +117,20 @@ test("routes fail-closed : la trace d'audit est exigée AVANT la RPC d'argent", 
       iTrace < iRpc,
       `${rel} : la trace (${iTrace}) est écrite APRÈS la RPC (${iRpc}) — elle ne bloque rien`
     );
-    assert.ok(
-      src.includes("status: 503"),
-      `${rel} : aucun refus 503 — l'échec de trace doit interdire l'acte`
+    /* ⚠️ RENFORCÉ le 2026-08-22 — l'assertion précédente était
+     * `src.includes("status: 503")` : un littéral FLOTTANT, que rien ne
+     * rattachait à l'échec de trace. Supprimer le garde `if (!trace)` l'aurait
+     * laissée VERTE dès qu'un 503 subsistait ailleurs dans le fichier — et ces
+     * deux routes en portent d'autres.
+     *
+     * On assert donc sur la LIAISON : c'est l'absence de trace qui commande le
+     * refus. `refus()` reconnaît les deux formes (`status: 503` et
+     * `erreurTraduite(…, 503)`) — voir tests/refus-forme.ts. */
+    assert.match(
+      src,
+      new RegExp(`if \\(!trace\\)[\\s\\S]{0,160}${refus(503)}`),
+      `${rel} : l'échec de trace ne commande aucun refus 503 — la route n'est ` +
+        "plus fail-closed, ou son garde a été rendu inatteignable"
     );
   }
 });

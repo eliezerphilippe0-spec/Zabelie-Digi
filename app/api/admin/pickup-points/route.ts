@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const me = await getCurrentUser();
   if (!me || me.role !== "admin") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return erreurTraduite("api.access.denied", 401);
   }
   const admin = createAdminClient();
   const { data, error } = await admin
@@ -28,10 +29,12 @@ export async function GET() {
     .order("created_at");
   if (error) {
     if (isMissingTable(error)) {
-      return NextResponse.json(
-        { error: "Points de retrait non activés (0082 à appliquer).", points: [] },
-        { status: 503 }
+      console.error(
+        "[admin/pickup-points] MIGRATION 0082 NON APPLIQUÉE — " +
+          "zabelie_pickup_points introuvable :",
+        error.code
       );
+      return erreurTraduite("api.feature.off", 503, { points: [] });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -41,7 +44,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const me = await getCurrentUser();
   if (!me || me.role !== "admin") {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return erreurTraduite("api.access.denied", 401);
   }
 
   let body: {
@@ -56,14 +59,14 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   const admin = createAdminClient();
 
   if (body.action === "create") {
     if (!body.nom?.trim() || !body.adresse?.trim()) {
-      return NextResponse.json({ error: "nom et adresse requis" }, { status: 400 });
+      return erreurTraduite("api.params.invalid", 400);
     }
     const { data, error } = await admin
       .from("zabelie_pickup_points")
@@ -77,10 +80,12 @@ export async function POST(req: Request) {
       .single();
     if (error) {
       if (isMissingTable(error)) {
-        return NextResponse.json(
-          { error: "Points de retrait non activés (0082 à appliquer)." },
-          { status: 503 }
+        console.error(
+          "[admin/pickup-points] MIGRATION 0082 NON APPLIQUÉE — " +
+            "zabelie_pickup_points introuvable :",
+          error.code
         );
+        return erreurTraduite("api.feature.off", 503);
       }
       return NextResponse.json({ error: error.message }, { status: 422 });
     }
@@ -96,7 +101,7 @@ export async function POST(req: Request) {
 
   if (body.action === "set_active") {
     if (!body.id || typeof body.active !== "boolean") {
-      return NextResponse.json({ error: "id et active requis" }, { status: 400 });
+      return erreurTraduite("api.params.invalid", 400);
     }
     const { error } = await admin
       .from("zabelie_pickup_points")
@@ -114,5 +119,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  return NextResponse.json({ error: "action inconnue" }, { status: 400 });
+  return erreurTraduite("api.params.invalid", 400);
 }

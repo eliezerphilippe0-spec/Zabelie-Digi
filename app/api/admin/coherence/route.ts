@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
@@ -33,7 +34,7 @@ async function authorize(req: Request): Promise<boolean> {
 
 async function handle(req: Request) {
   if (!(await authorize(req))) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return erreurTraduite("api.access.denied", 401);
   }
   try {
     const admin = createAdminClient();
