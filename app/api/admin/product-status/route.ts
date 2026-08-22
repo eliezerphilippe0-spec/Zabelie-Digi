@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { getCurrentUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,22 +16,23 @@ const ALLOWED = ["draft", "published", "archived"] as const;
  * Modération : change le statut d'un produit. Réservé au rôle admin.
  */
 export async function POST(req: Request) {
+  const lang = await getLang();
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+    return NextResponse.json({ error: t(lang, "api.access.denied") }, { status: 403 });
   }
 
   let body: { productId?: string; status?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
 
   const { productId, status } = body;
   if (!productId || !status || !ALLOWED.includes(status as (typeof ALLOWED)[number])) {
     return NextResponse.json(
-      { error: "productId et status valide requis" },
+      { error: t(lang, "api.status.invalid") },
       { status: 400 }
     );
   }
@@ -59,7 +62,7 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (eLecture || !produit) {
-      return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
+      return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
     }
 
     if (isDownloadable(produit.kind as ProductKind, productId)) {
@@ -73,16 +76,14 @@ export async function POST(req: Request) {
       // indélivrable ; refuser dans le doute fait patienter un admin.
       if (eAssets) {
         return NextResponse.json(
-          { error: "Vérification du livrable impossible — réessayez" },
+          { error: t(lang, "api.deliverable.check") },
           { status: 503 }
         );
       }
       if ((count ?? 0) === 0) {
         return NextResponse.json(
           {
-            error:
-              "Ce produit est un fichier et n'a aucun livrable téléversé. " +
-              "Publier reviendrait à le mettre en vente sans rien à remettre.",
+            error: t(lang, "api.deliverable.missing"),
             code: "livrable_manquant",
           },
           { status: 422 }

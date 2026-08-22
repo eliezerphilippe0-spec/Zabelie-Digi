@@ -42,9 +42,26 @@ test("la validation serveur interroge la base, pas une constante", () => {
     src.includes("await normalizeCategory(supabase, category)"),
     "la validation n'est plus adossée à la base"
   );
-  assert.ok(
-    src.includes("Catégorie inconnue"),
-    "aucun refus explicite : une catégorie hors taxonomie passerait"
+  /* ⚠️ L'ASSERTION PORTAIT SUR LE LIBELLÉ, PAS SUR CE QUI COMMANDE — corrigé
+   * le 2026-08-22. Elle cherchait la chaîne « Catégorie inconnue », et elle a
+   * rougi le jour où ce message est parti dans `lib/i18n.ts` pour être traduit
+   * en quatre langues. Le refus n'avait pas bougé d'une ligne ; seul son
+   * texte avait déménagé.
+   *
+   * C'est le piège de sous-chaîne de `CLAUDE.md` : un garde SUPPRIMÉ et un
+   * garde dont le LIBELLÉ a changé produisent le même rouge, et — bien pire —
+   * un garde rendu inatteignable aurait laissé ce test VERT, puisque la chaîne
+   * serait restée dans le fichier.
+   *
+   * On assert donc sur la CONDITION et sur ce qu'elle commande : le résultat
+   * de `normalizeCategory` est testé, et son absence rend une réponse
+   * d'erreur. Rebrancher la condition sur autre chose fait rougir ; renommer
+   * le message, non. */
+  assert.match(
+    src,
+    /if\s*\(\s*!\s*categorieCanonique\s*\)[\s\S]{0,200}NextResponse\.json\([\s\S]{0,160}status:\s*400/,
+    "aucun refus explicite : une catégorie hors taxonomie passerait — " +
+      "le refus doit être commandé par l'absence de catégorie canonique"
   );
 });
 
