@@ -317,12 +317,27 @@ Cette question ne coûte rien de plus : elle voyage avec les cinq autres.
 
 ## 2. Courriel HDIT / Cabinet Volmar — deux questions numérotées
 
-**À** : HDIT / Cabinet Volmar — ⚠️ **aucune adresse nominative n'est connue du
-dépôt**, seulement le domaine `hditcabinetvolmar.com`. Le contact est à relever
-sur le site (page contact ou formulaire) **avant** l'envoi. C'est la différence
-avec Digicel, dont l'adresse `MFS_B.Services@digicelgroup.com` est établie :
-ici le destinataire exact reste à déterminer, et l'écrire évite de croire qu'il
-est acquis.
+**À** : `info@hditcabinetvolmar.com` — HDIT / Cabinet Volmar.
+
+> **Adresse établie le 2026-08-21**, déclarée par le porteur au moment de
+> l'envoi. La version précédente de cette ligne portait « aucune adresse
+> nominative n'est connue du dépôt, seulement le domaine
+> `hditcabinetvolmar.com` » — c'était exact, et c'est ce qui a évité de la
+> croire acquise.
+>
+> ✅ **Le courriel parti porte la formule corrigée** (« Je vous prie d'agréer,
+> Maître, l'expression de ma considération distinguée »), et non le
+> « Cordialement » de la première rédaction. Vérifiable par les horloges : la
+> correction est entrée dans `main` avec la PR #163, fusionnée le 2026-08-21 à
+> **23:46 UTC = 19:46 heure d'Haïti** — soit avant l'envoi.
+>
+> ⚠️ **C'est une adresse GÉNÉRIQUE, pas un destinataire nommé**, et ça a une
+> conséquence de suivi : un `info@` arrive dans une boîte partagée, où un
+> courriel non attribué peut rester sans propriétaire. Si aucune réponse
+> n'arrive à l'échéance, la relance ne consiste pas à réécrire à la même
+> adresse — elle consiste à **demander le nom de l'avocat en charge**, par
+> téléphone si le site en donne un. Une seconde copie dans une boîte partagée
+> ne change rien à qui s'en saisit.
 **Pièces jointes** : `docs/17-DOSSIER-BRH-RETENTION.md` et
 `docs/36-DOSSIER-RETENTION-KYC.md`, exportés en PDF.
 
@@ -488,17 +503,35 @@ n'est pas un avis juridique.
 |---|---|---|---|---|
 | §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 | §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
-| §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
+| §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
 > dire « pas envoyé », jamais « on ne sait plus » — c'est la différence entre
 > l'absence de signal et le signal d'absence.
 >
-> **Les deux dates du 2026-08-21 sont déclarées par le porteur en session, pas
+> **Les dates de ce tableau sont déclarées par le porteur en session, pas
 > observées.** L'agent n'a accès ni à la boîte d'envoi ni aux accusés de
 > réception. C'est une déclaration fiable et c'est la seule disponible — mais
 > elle ne se lit pas comme une mesure, et une session future qui aurait besoin
 > de la date exacte doit remonter à l'accusé d'envoi, pas à cette ligne.
+>
+> ⚠️ **ET ELLES SONT EN HEURE D'HAÏTI, PAS EN UTC.** Constaté le 2026-08-21 :
+> l'agent annonçait le 22 pendant que le porteur écrivait « aujourd'hui le
+> 21 » — les deux avaient raison. Haïti est à **UTC−4** ; entre 20 h et minuit
+> à Port-au-Prince, l'horloge de l'agent est **déjà au lendemain**.
+>
+> Les deux familles d'horodatage de ce dépôt ne se comparent donc pas
+> directement :
+>
+> | Source | Fuseau |
+> |---|---|
+> | Ce tableau, `OPS_TODO`, tout ce qui est déclaré par le porteur | **heure d'Haïti** |
+> | `zabelie_schema_migrations.applied_at`, journaux Supabase, CI GitHub, Vercel | **UTC** |
+>
+> Une session qui rapprocherait « migration appliquée le 22 à 00:30 » d'un
+> « courriel envoyé le 21 » conclurait à un écart d'un jour là où il y a une
+> demi-heure. **Convertir avant de comparer, ou dire dans quel fuseau on
+> parle.**
 
 ### 3.1 Échéances — pour que l'attente ait une fin
 
