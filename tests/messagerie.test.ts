@@ -162,14 +162,37 @@ test("M6 — le corps du message n'entre PAS dans le courriel", () => {
   );
 });
 
-test("M7 — 0090 reste NON APPLIQUÉE tant que le porteur ne l'a pas exécutée", () => {
-  /* Rappel de méthode, pas contrôle technique : le fichier porte son état en
-   * tête, et c'est ce qu'un relecteur lit en premier. */
+test("M7 — 0090 porte son préambule de garde", () => {
+  /* ⚠️ CE TEST A ÉTÉ RÉÉCRIT LE 2026-08-22, DANS L'HEURE QUI A SUIVI SON
+   * ÉCRITURE, et le motif vaut plus que le correctif.
+   *
+   * Il assertait `ÉTAT : RÉDIGÉE, NON APPLIQUÉE`. `0090` a été appliquée en
+   * production à 19:33:46 UTC — et l'assertion est restée VERTE, parce que le
+   * fichier ne peut PAS changer : son empreinte est au registre, et une
+   * migration appliquée ne se réécrit jamais.
+   *
+   * Le test attestait donc une affirmation devenue fausse, sans aucun moyen de
+   * s'en apercevoir. C'est la forme la plus pure du défaut de ce dépôt : un
+   * vert qui décrit le passé.
+   *
+   * La règle est déjà écrite dans `CLAUDE.md` et je l'avais sous les yeux :
+   * « L'état ne se raconte plus, il s'interroge. » L'en-tête d'une migration
+   * est une NOTE HISTORIQUE — `0087` porte la même mention et tourne en
+   * production depuis dix-sept heures. Le seul état qui fasse foi est celui
+   * du registre :
+   *
+   *     select statut, preuve from zabelie_schema_migrations
+   *      where filename = '0090_messagerie.sql';
+   *
+   * Ce qui reste vérifiable ICI, et qui compte : le préambule de garde. Sans
+   * lui, la migration serait rejouable en silence — et un rejeu de `0090`
+   * échouerait sur `create table`, ce qui est le bon comportement mais pour la
+   * mauvaise raison. */
   const sql = readFileSync(MIG, "utf8");
-  assert.match(sql, /ÉTAT : RÉDIGÉE, NON APPLIQUÉE/);
   assert.match(
     sql,
-    /select zabelie_migration_garde\('0090_messagerie\.sql'\);/,
-    "le préambule de garde manque : la migration serait rejouable en silence"
+    /^select zabelie_migration_garde\('0090_messagerie\.sql'\);/,
+    "le préambule de garde manque, ou n'est plus en PREMIÈRE ligne : la " +
+      "migration serait rejouable, et le garde ne verrait rien"
   );
 });
