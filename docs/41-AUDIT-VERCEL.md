@@ -148,7 +148,7 @@ PR #144 rend le code robuste au saut `zabelie.com` ↔ `www.zabelie.com`, mais
 
 | Variable | Ce qui disparaît en silence |
 |---|---|
-| `RESEND_API_KEY` · `EMAIL_FROM` | aucun e-mail transactionnel. Le paiement marche quand même |
+| `RESEND_API_KEY` · `EMAIL_FROM` | aucun e-mail transactionnel. Le paiement marche quand même. ⚠️ **Les deux ensemble** — voir §15.2 : la clé seule retombe sur le bac à sable de Resend |
 | `RELOADLY_*` | `/rechaj` affiche « à venir » |
 | `USD_HTG_RATE` · `ZELLE_*` | le rail Zelle est masqué au checkout |
 | `STRIPE_*` | ⚠️ inutilisable de toute façon sans entité étrangère *merchant of record* |
@@ -337,7 +337,7 @@ produit — lu dans le code, pas supposé :
 | Absente | Ce qui se tait en production |
 | --- | --- |
 | `RESEND_API_KEY` | `isEmailEnabled()` → `false`, `sendEmail()` retourne `false` sans lever. **Aucun e-mail transactionnel ne part.** |
-| `EMAIL_FROM` | Sans objet tant que la précédente manque (repli `onboarding@resend.dev`). |
+| `EMAIL_FROM` | ⚠️ **PAS « sans objet » — corrigé le 2026-08-22.** Le repli `onboarding@resend.dev` est le BAC À SABLE de Resend : il ne livre qu'à l'adresse du titulaire du compte. Poser `RESEND_API_KEY` seule donne donc une clé valide, une sonde qui dit « configuré », et **zéro e-mail livré à un acheteur**. Les deux variables, ou aucune. |
 | `STRIPE_SECRET_KEY` | `isStripeEnabled()` → `false` : le rail carte n'est **jamais affiché** sur la fiche produit. |
 | `STRIPE_WEBHOOK_SECRET` | Sans objet tant que la précédente manque. |
 | `ZELLE_RECIPIENT` | `isZelleEnabled()` → `false` : le rail Zelle n'est jamais affiché. |
