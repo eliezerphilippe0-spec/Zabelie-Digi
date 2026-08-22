@@ -198,14 +198,39 @@ export async function POST(req: Request) {
     );
   }
 
-  // S'assure que le profil existe et passe en rôle créateur.
+  /* S'assure que le profil existe et PROMEUT en créateur — sans jamais
+   * rétrograder.
+   *
+   * ⚠️ BUG RÉEL, CONSTATÉ LE 2026-08-21 SUR LE COMPTE DU PORTEUR. Cette ligne
+   * faisait `update({ role: "creator" })` SANS CONDITION : publier un produit
+   * écrasait le rôle, quel qu'il fût. Un administrateur qui publiait perdait
+   * son rôle d'administrateur — définitivement, et sans le moindre signal. Le
+   * seul symptôme visible était un lien « Admin » disparu de la navigation.
+   *
+   * ⚠️ ET LE GARDE EXISTANT NE POUVAIT PAS L'ATTRAPER. `protect_profile_privileges`
+   * (0015) fige pourtant `role` en UPDATE — mais il exempte `service_role`, et
+   * cette écriture passe par le client d'administration. La protection était
+   * là, elle regardait le client de session ; la dégradation venait de l'autre
+   * côté.
+   *
+   * Le correctif est la clause `.eq("role", "buyer")` : la promotion ne touche
+   * QUE les acheteurs. Elle est atomique — un filtre côté base, pas un
+   * lire-puis-écrire qui laisserait une fenêtre entre les deux — et elle est
+   * idempotente : republier ne fait rien pour qui est déjà `creator`.
+   *
+   * ⚠️ Ce qu'elle NE fait pas : rendre son rôle à qui l'a déjà perdu. Les
+   * comptes rétrogradés avant ce correctif doivent être relevés à la main. */
   const { data: existing } = await admin
     .from("profiles")
     .select("id")
     .eq("id", user.id)
     .maybeSingle();
   if (existing) {
-    await admin.from("profiles").update({ role: "creator" }).eq("id", user.id);
+    await admin
+      .from("profiles")
+      .update({ role: "creator" })
+      .eq("id", user.id)
+      .eq("role", "buyer");
   } else {
     await admin.from("profiles").insert({
       id: user.id,
