@@ -179,3 +179,32 @@ test("G6 — le suivi de remise s'ouvre APRÈS la confirmation, jamais avant", (
     "ouvrirSuiviLivraison doit venir APRÈS confirm_payment (0043 §6 bis)"
   );
 });
+
+test("G9 — l'indisponibilité de 0087 est DITE au bon endroit, pas plus bas", () => {
+  /* ⚠️ NÉ D'UNE FAUTE MESURÉE, le 2026-08-22. Le repli `ZB087` avait été placé
+   * au moment de `confirm_payment` — mais tant que `0087` n'est pas appliquée,
+   * l'échec survient à l'INSERTION du paiement, bien avant. Le porteur a vu
+   * « Création paiement échouée », générique et muet, là où on lui avait
+   * annoncé un message nommant la cause.
+   *
+   * Le contrôle porte donc sur l'ORDRE : le repli doit vivre dans la branche
+   * `payErr`, celle qui s'exécute réellement. Vérifier la simple présence de
+   * « ZB087 » dans le fichier resterait vert avec le garde au mauvais endroit
+   * — c'est précisément l'erreur qu'on répare. */
+  const iPayErr = CHECKOUT_CODE.indexOf("if (payErr)");
+  const iConfirm = CHECKOUT_CODE.indexOf("confirm_payment");
+  assert.ok(iPayErr > -1 && iConfirm > -1, "les deux repères doivent exister");
+  assert.ok(iPayErr < iConfirm, "payErr précède confirm_payment — hypothèse du test");
+
+  const branchePayErr = CHECKOUT_CODE.slice(iPayErr, iConfirm);
+  assert.match(
+    branchePayErr,
+    /railEffectif\s*===\s*RAIL_GRATIS[\s\S]{0,200}payment_rail/,
+    "la branche payErr doit reconnaître l'échec d'énumération du rail gratuit"
+  );
+  assert.match(
+    branchePayErr,
+    /code:\s*"ZB087"[\s\S]{0,400}status:\s*503/,
+    "elle doit rendre ZB087 en 503, et non le message générique"
+  );
+});

@@ -365,6 +365,47 @@ export async function POST(req: Request) {
     // BL-122 (C-4a) : un order sans ligne payment serait invisible du
     // réconciliateur (il scanne payments) — on le retire, best-effort.
     await admin.from("orders").delete().eq("id", order.id);
+
+    /* ⚠️ LE RAIL GRATUIT ÉCHOUE **ICI**, PAS PLUS BAS — corrigé le 2026-08-22.
+     *
+     * Le repli `ZB087` avait été placé au moment de `confirm_payment`, et
+     * annoncé au porteur ainsi : « le rail est dormant, pas cassé, il
+     * journalise ZB087 et rend 503 ». C'était FAUX, et il l'a découvert en
+     * essayant d'acheter : tant que `0087` n'est pas appliquée,
+     * `payment_rail` ne connaît pas la valeur `gratis`, l'INSERTION échoue à
+     * cette ligne, et le message rendu était « Création paiement échouée » —
+     * générique, muet sur la cause, et jamais le garde prévu.
+     *
+     * La leçon est celle du dépôt, retournée contre son auteur : le mode de
+     * panne avait été RAISONNÉ au lieu d'être PARCOURU. Un repli écrit pour un
+     * chemin qu'on n'a pas emprunté se place au mauvais endroit, et son
+     * silence ressemble exactement à celui qu'il devait supprimer. */
+    const railGratuitIndisponible =
+      railEffectif === RAIL_GRATIS &&
+      /invalid input value for enum|payment_rail/i.test(payErr.message ?? "");
+
+    console.error(
+      "[checkout] creation paiement echouee",
+      JSON.stringify({
+        at: new Date().toISOString(),
+        code: railGratuitIndisponible ? "ZB087" : "paiement_insert",
+        rail: railEffectif,
+        order_id: order.id,
+        message: payErr.message ?? "",
+      })
+    );
+
+    if (railGratuitIndisponible) {
+      return NextResponse.json(
+        {
+          error:
+            "L'acquisition gratuite n'est pas encore ouverte : la migration 0087 n'est pas appliquée en base.",
+          code: "ZB087",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Création paiement échouée" },
       { status: 500 }
