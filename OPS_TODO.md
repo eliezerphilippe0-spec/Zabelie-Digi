@@ -21,9 +21,27 @@ draine dans le VIDE.** Le cron `/api/fulfillment/sweep` rendrait
 `CLAUDE.md` décrit : « aucun cas » et « aucun cas possible » ne se distinguent
 pas d'eux-mêmes.
 
-**Geste** : Vercel → Settings → Environment Variables → présence de
-`RESEND_API_KEY` en **Production**. Puis lire le journal du cron : plusieurs
-jours à `outbox_envoyes: 0` alors qu'une vente a eu lieu est le signal.
+**Geste, désormais MESURABLE sans ouvrir Vercel** — appeler
+`/api/admin/coherence` (réservé au rôle admin) et lire le bloc `integrations` :
+
+```json
+{ "integrations": { "email": { "configure": false,
+    "consequenceSiAbsent": "outbox (0061) et notifications de messagerie (0090) se drainent sans rien envoyer" } } }
+```
+
+Ajouté le 2026-08-22, parce que la question « vérifie RESEND_API_KEY » n'avait
+AUCUNE réponse depuis le dépôt : pas d'accès Vercel, et `readyz` n'expose
+délibérément qu'un booléen de base. Le contrôle journalise aussi son verdict,
+pour qu'un exploitant qui n'ouvre jamais cette route le croise quand même.
+
+⚠️ Ce que ça NE prouve PAS : que la clé soit VALIDE. Une clé révoquée est
+présente et n'envoie rien. Ce qui est levé, c'est le doute entre « pas
+configuré » et « configuré » — pas davantage. La preuve d'envoi reste le
+journal du cron `/api/fulfillment/sweep` : plusieurs jours à
+`outbox_envoyes: 0` alors qu'une vente a eu lieu est le signal.
+
+Correctif si absent : Vercel → Settings → Environment Variables →
+`RESEND_API_KEY` en **Production**.
 
 Resend est le fournisseur **validé** (`docs/11`, `docs/API_KEYS_REGISTRY.md` —
 Brevo écarté comme doublon). Il n'y a rien à décider, seulement à vérifier.

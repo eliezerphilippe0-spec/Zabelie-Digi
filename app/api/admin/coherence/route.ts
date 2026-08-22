@@ -3,6 +3,8 @@ import { erreurTraduite } from "@/lib/api-erreur";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
+import { isEmailEnabled } from "@/lib/zabelie-email";
+import { isStripeEnabled } from "@/lib/stripe";
 import { verdictObjets, type ObjetRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
@@ -141,7 +143,58 @@ async function handle(req: Request) {
       }
     }
 
-    return NextResponse.json({ ...data, arrondi, schemaRequis, indexRecherche });
+    /* ── INTÉGRATIONS : les clés qui décident si un tuyau débouche ──────────
+     *
+     * ⚠️ NÉ D'UNE QUESTION SANS RÉPONSE, le 2026-08-22 : « vérifie
+     * RESEND_API_KEY ». Personne ne pouvait y répondre depuis le dépôt.
+     * L'agent n'a pas d'accès Vercel, `readyz` n'expose délibérément qu'un
+     * booléen de base, et rien nulle part ne disait si les notifications
+     * partaient. La seule façon de savoir était d'ouvrir la console Vercel.
+     *
+     * Or ce n'est pas une curiosité : `zabelie_outbox` (0061) enfile des
+     * relances de remise, et `lib/messagerie-notify.ts` (0090) prévient d'un
+     * message reçu. Les deux passent par `isEmailEnabled()`. **Sans la clé,
+     * les deux files se drainent dans le VIDE** — le cron rend
+     * `outbox_envoyes: 0`, et zéro se lit comme « rien à signaler » plutôt
+     * que « rien n'est jamais parti ». C'est le corollaire d'observabilité de
+     * `CLAUDE.md` : l'absence de signal doit être un signal.
+     *
+     * ⚠️ AUCUNE VALEUR DE CLÉ N'EST RENDUE, jamais — seulement un booléen de
+     * présence. Une route d'administration reste une surface, et un secret qui
+     * transite par une réponse HTTP a cessé d'être un secret. C'est aussi
+     * pourquoi ce bloc n'est PAS dans `readyz`, qui est public par conception.
+     *
+     * Ce que ça NE prouve pas, et il faut le dire : que la clé soit VALIDE.
+     * Une clé révoquée est présente et n'envoie rien. Seul un envoi réel le
+     * dirait — ici on distingue « pas configuré » de « configuré », ce qui est
+     * exactement le doute qu'on ne savait pas lever. */
+    const integrations = {
+      email: {
+        configure: isEmailEnabled(),
+        consequenceSiAbsent:
+          "outbox (0061) et notifications de messagerie (0090) se drainent sans rien envoyer",
+      },
+      moncash: { configure: Boolean(process.env.MONCASH_CLIENT_ID) },
+      stripe: { configure: isStripeEnabled() },
+    };
+    if (!integrations.email.configure) {
+      console.error(
+        "[coherence] RESEND_API_KEY ABSENTE — aucune notification ne part. " +
+          "Ni l'acheteur ni le vendeur n'est prévenu de quoi que ce soit."
+      );
+    } else {
+      // Journalisé aussi quand tout va bien, même raison que les deux
+      // contrôles ci-dessus.
+      console.info("[coherence] e-mail configuré (présence de la clé, pas sa validité)");
+    }
+
+    return NextResponse.json({
+      ...data,
+      arrondi,
+      schemaRequis,
+      indexRecherche,
+      integrations,
+    });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Erreur" },
