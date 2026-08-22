@@ -320,6 +320,10 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 - `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
 - `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
   contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
+- `docs/44-SURFACE-API.md` — inventaire de la surface d'API (2026-08-22) :
+  ce qui existe, ce qui manque, et ⛔ **ce qu'il ne faut PAS construire**.
+  ⚠️ Y est mesuré que les **neuf endpoints v1** de `lib/api/v1/schemas.ts`
+  ont 28 tests verts et **aucune route qui les serve**.
 - `OPS_TODO.md` — actions opérationnelles porteur + écarts de réconciliation
 
 ## Méthode

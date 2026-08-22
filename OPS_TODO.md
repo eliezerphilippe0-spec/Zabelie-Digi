@@ -3,6 +3,33 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 🟡 Vérifier `RESEND_API_KEY` en production — une minute
+
+Issu de l'inventaire d'API du 2026-08-22 (`docs/44` §3.3).
+
+Toutes les notifications transactionnelles — « vous avez acheté », « vous avez
+vendu », relances de remise — passent par une porte unique :
+
+```ts
+export function isEmailEnabled(): boolean { return Boolean(process.env.RESEND_API_KEY); }
+```
+
+⚠️ **Si la variable n'est pas posée dans Vercel, la file `zabelie_outbox` se
+draine dans le VIDE.** Le cron `/api/fulfillment/sweep` rendrait
+`outbox_envoyes: 0` — et zéro se lit comme « rien à signaler », pas comme
+« rien n'est jamais parti ». C'est exactement le défaut d'observabilité que
+`CLAUDE.md` décrit : « aucun cas » et « aucun cas possible » ne se distinguent
+pas d'eux-mêmes.
+
+**Geste** : Vercel → Settings → Environment Variables → présence de
+`RESEND_API_KEY` en **Production**. Puis lire le journal du cron : plusieurs
+jours à `outbox_envoyes: 0` alors qu'une vente a eu lieu est le signal.
+
+Resend est le fournisseur **validé** (`docs/11`, `docs/API_KEYS_REGISTRY.md` —
+Brevo écarté comme doublon). Il n'y a rien à décider, seulement à vérifier.
+
+---
+
 ## 🔴 PV — écriture en production du 2026-08-15 (dépublication)
 
 **Signal porteur** : « Sur la dépublication : oui, sans hésiter. »
