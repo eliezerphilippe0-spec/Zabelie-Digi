@@ -588,7 +588,7 @@ n'est pas un avis juridique.
 |---|---|---|---|---|
 | §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 | §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
-| §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | — | — | 📝 **RÉDIGÉ — à envoyer.** ⚠️ **Nouveau fil**, pas une réponse : autre endpoint, déjà actif en production. Voir §1 ter pour pourquoi la consigne « répondre dans le fil » ne s'applique PAS ici. |
+| §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | **2026-08-22** | — | 📤 **ENVOYÉ — en attente de réponse.** Fil DISTINCT de celui du 21 août : autre endpoint, déjà actif en production. ⚠️ Déclaré par le porteur en session ; les deux fuseaux concordaient au moment de l'envoi (15h47 Haïti / 19h47 UTC), donc pas d'ambiguïté de date à lever ici. |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
@@ -628,9 +628,9 @@ Une attente sans date de reprise devient un abandon silencieux. Les deux
 |---|---|---|
 | ✅ ~~**Complément Digicel — question 6** (§1, forme A)~~ | ~~immédiat~~ | **FAIT le 2026-08-21.** Les six questions sont chez Digicel. |
 | **Relance Digicel** — 7 jours ouvrables (§1, forme B) | **2026-09-01** | Service client **202** en copie, en citant l'objet du courriel. ⚠️ **Ne repose PAS la question 6** — elle est partie avec A : B réclame une réponse aux six, rien de plus. ⚠️ **Ne part pas du tout si un retour arrive avant** : une échéance de relance s'annule sur réponse, elle ne se déclenche pas parce que la date est arrivée. |
-| **Envoi de la question 7** (§1 ter) | dès que possible | Nouveau fil. ⚠️ **N'attend pas le 2026-09-01** : ce n'est pas une relance, et elle ne porte pas sur le dossier `/v1/Transfert`. |
+| ✅ ~~**Envoi de la question 7** (§1 ter)~~ | ~~dès que possible~~ | **FAIT le 2026-08-22**, en fil distinct. |
 | **Absence de réponse = une donnée** — 3 semaines | **2026-09-11** | Consigner l'absence à `OPS_TODO`, pour les deux dossiers (Digicel et Volmar) |
-| **Question 7 sans réponse** — 3 semaines après son envoi | **2026-09-12** si envoyée le 2026-08-22 | Consigner à `OPS_TODO`. ⚠️ Ne bloque rien : le rail `gratis` fonctionne. |
+| **Question 7 sans réponse** — 3 semaines | **2026-09-12** | Consigner à `OPS_TODO`. ⚠️ Ne bloque rien : le rail `gratis` fonctionne et une acquisition à 0 HTG est passée de bout en bout le 2026-08-22. Cette question éclaire un CHOIX (parcours MonCash pour les gratuits, ou plancher à 1 HTG), elle n'ouvre pas une porte fermée. |
 
 ⚠️ **Le 2026-09-11 n'est pas une date d'abandon, c'est une date d'ÉCRITURE.**
 « Digicel n'a pas répondu en trois semaines » est un fait qui oriente les
