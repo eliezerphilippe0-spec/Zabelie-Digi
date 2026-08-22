@@ -19,6 +19,7 @@ import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
+import { MessageForm } from "@/components/message-form";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
@@ -176,6 +177,14 @@ export default async function ProductPage({
       ? createClient().then((c) => offreFlashActive(c, product.id))
       : Promise.resolve(null),
   ]);
+
+  /* Qui regarde ? Uniquement pour décider du point d'entrée de la messagerie :
+   * un vendeur ne s'écrit pas à lui-même, un visiteur non connecté doit se
+   * connecter d'abord. Aucune donnée personnelle n'entre dans le rendu. */
+  const visiteur = isSupabaseConfigured()
+    ? (await (await createClient()).auth.getUser()).data.user
+    : null;
+  const peutEcrire = Boolean(visiteur) && visiteur!.id !== product.creatorId;
 
   const kindKey = kindLabelKey(product.kind, product.id);
   const deliveryBulletKey = bulletKey(product.kind, product.id);
@@ -495,6 +504,35 @@ export default async function ProductPage({
             {deliveryBulletKey && <li>{t(lang, deliveryBulletKey)}</li>}
             <li>{t(lang, "product.verifiedOnly")}</li>
           </ul>
+
+          {/* ⚠️ LE POINT D'ENTRÉE DE LA MESSAGERIE (0090). Sans lui, les tables,
+              la route et les écrans seraient un artefact sans appelant —
+              exactement le défaut que `docs/44` a trouvé sur l'API v1.
+              `tests/messagerie.test.ts` croise ce rendu avec le composant.
+
+              Il est placé APRÈS le bloc de confiance et AVANT le partage :
+              la question vient quand l'acheteur hésite encore, pas quand il
+              a déjà décidé de transmettre la fiche. */}
+          <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
+            <p className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</p>
+            {peutEcrire ? (
+              <MessageForm
+                productId={product.id}
+                labels={{
+                  placeholder: t(lang, "msg.placeholder"),
+                  send: t(lang, "msg.send"),
+                  sending: t(lang, "msg.sending"),
+                  sent: t(lang, "msg.sent"),
+                  warn: t(lang, "msg.warn"),
+                }}
+              />
+            ) : (
+              /* Le vendeur de la fiche voit ce bloc aussi, et n'y trouve pas de
+                 champ : lui cacher entièrement laisserait croire que ses
+                 acheteurs n'ont pas ce chemin. */
+              <p className="mt-2 text-sm text-mist">{t(lang, "msg.login")}</p>
+            )}
+          </div>
 
           <div className="mt-6">
             <ShareButtons
