@@ -148,6 +148,13 @@ export async function SiteNav() {
                     Admin
                   </Link>
                 )}
+                {/* La messagerie n'existe que si on peut y arriver (0090). */}
+                <Link
+                  href="/messages"
+                  className="hidden text-sm text-mist transition hover:text-cloud sm:block"
+                >
+                  {t(lang, "msg.title")}
+                </Link>
                 <Link
                   href="/tableau-de-bord"
                   className="hidden text-sm text-mist transition hover:text-cloud sm:block"
