@@ -86,7 +86,9 @@ export async function POST(req: Request) {
    * gratuits que personne ne pouvait créer.
    *
    * Le premier mur (le checkout envoyait `amount: 0` à MonCash) est tombé avec
-   * `0087`. Sans celui-ci, il n'aurait rien débloqué : le rail serait resté
+   * `0087`. ⚠️ Nous avions écrit que MonCash « refuse » ce montant : ce n'était
+   * PAS mesuré — `lib/moncash.ts` transmet la valeur telle quelle, sans
+   * plancher. Question posée à Digicel le 2026-08-22 (`docs/42` §1 ter). Sans celui-ci, il n'aurait rien débloqué : le rail serait resté
    * vide faute de produit à y mettre.
    *
    * ⚠️ Cette route est NUMÉRIQUE seulement — `isDigitalKind` narrow `kind` et

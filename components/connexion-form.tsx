@@ -159,7 +159,10 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
 
   return (
     <div className="w-full max-w-sm">
-      <Link href="/" className="mb-8 flex items-center justify-center gap-2">
+      <Link
+        href="/"
+        className="mb-8 inline-flex min-h-11 items-center justify-center gap-2"
+      >
         <BrandMark size={36} />
         <span className="text-lg font-semibold">
           Zabelie
@@ -170,7 +173,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
         <div className="mb-6 flex rounded-xl border border-line p-1 text-sm">
           <button
             onClick={() => setMode("signin")}
-            className={`flex-1 rounded-lg py-2 transition ${
+            className={`min-h-11 flex-1 rounded-lg py-2 transition ${
               mode === "signin" ? "bg-cloud text-ink" : "text-mist"
             }`}
           >
@@ -178,7 +181,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
           </button>
           <button
             onClick={() => setMode("signup")}
-            className={`flex-1 rounded-lg py-2 transition ${
+            className={`min-h-11 flex-1 rounded-lg py-2 transition ${
               mode === "signup" ? "bg-cloud text-ink" : "text-mist"
             }`}
           >
@@ -244,7 +247,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
       </div>
 
       <p className="mt-6 text-center text-xs text-mist">
-        <Link href="/" className="hover:text-cloud">
+        <Link href="/" className="inline-flex min-h-11 items-center hover:text-cloud">
           {labels.backHome}
         </Link>
       </p>

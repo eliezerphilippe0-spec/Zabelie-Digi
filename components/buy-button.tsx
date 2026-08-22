@@ -247,7 +247,7 @@ export function BuyButton({
         <button
           type="button"
           onClick={() => setShowCoupon(true)}
-          className="mb-3 text-xs text-mist underline-offset-2 hover:text-cloud hover:underline"
+          className="inline-flex min-h-11 items-center mb-3 text-xs text-mist underline-offset-2 hover:text-cloud hover:underline"
         >
           {coupon.have}
         </button>

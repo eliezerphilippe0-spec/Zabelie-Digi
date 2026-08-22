@@ -58,7 +58,7 @@ export function SearchBox({
           onChange={(e) => setSaisie(e.target.value)}
           placeholder={placeholder}
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
-          className={`min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 text-base outline-none focus:border-violet ${
+          className={`min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 text-base outline-none focus:border-violet ${
             compact ? "py-2" : "py-3"
           }`}
         />
@@ -72,7 +72,7 @@ export function SearchBox({
              recherche de la page étaient visibles ENSEMBLE, à 268 px, l'un
              orange et l'autre crème. Deux primaires sur un écran ne
              hiérarchisent rien. */
-          className={`rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 ${
+          className={`min-h-11 rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 ${
             compact ? "py-2" : "py-3"
           }`}
         >

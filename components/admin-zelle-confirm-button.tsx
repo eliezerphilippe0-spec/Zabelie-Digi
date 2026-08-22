@@ -53,7 +53,7 @@ export function AdminZelleConfirmButton({
       <button
         onClick={confirm}
         disabled={loading}
-        className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-success-text transition hover:border-success/50 disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-success-text transition hover:border-success/50 disabled:opacity-60"
       >
         {loading ? "…" : "Confirmer la réception"}
       </button>

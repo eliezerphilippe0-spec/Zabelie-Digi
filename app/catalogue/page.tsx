@@ -279,7 +279,7 @@ export default async function CataloguePage({
             <Link
               key={c}
               href={catHref(c)}
-              className={`rounded-full border px-4 py-1.5 text-sm transition ${
+              className={`inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm transition ${
                 c === activeCat
                   ? "border-transparent bg-cloud text-ink"
                   : "border-line text-mist hover:border-violet/50 hover:text-cloud"

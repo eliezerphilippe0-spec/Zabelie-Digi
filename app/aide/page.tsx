@@ -75,10 +75,16 @@ export default async function AidePage() {
           {t(lang, "aide.legal")}
         </h2>
         <div className="mt-4 flex flex-col gap-2 text-sm">
-          <Link href="/confidentialite" className="text-mist underline hover:text-cloud">
-            Confidentialité
+          <Link
+            href="/confidentialite"
+            className="inline-flex min-h-11 items-center text-mist underline hover:text-cloud"
+          >
+            {t(lang, "footer.privacy")}
           </Link>
-          <Link href={POLICY_PATH} className="text-mist underline hover:text-cloud">
+          <Link
+            href={POLICY_PATH}
+            className="inline-flex min-h-11 items-center text-mist underline hover:text-cloud"
+          >
             {t(lang, "policy.link")}
           </Link>
         </div>

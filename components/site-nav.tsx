@@ -63,12 +63,29 @@ export async function SiteNav() {
   }
 
   return (
-    <header className="sticky top-0 z-50">
+    /* ⚠️ COLLANT À PARTIR DE `md` SEULEMENT — mesuré le 2026-08-22.
+     *
+     * Cet en-tête fait **250 px de haut** à 360 px de large : barre
+     * utilitaire, puis logo, puis recherche pleine largeur, puis la rangée
+     * Catalogue · Talents · Aide. Collé en haut, il occupait donc **34 % d'un
+     * écran de 740 px en permanence**, et davantage sur les téléphones plus
+     * courts — c'est-à-dire le parc visé. Sur la fiche produit, la capture le
+     * montrait sans discussion : l'acheteur voyait l'en-tête et un aplat de
+     * couleur, le TITRE du produit était sous la ligne de flottaison.
+     *
+     * Sous `md`, l'en-tête défile donc avec la page. Le contenu récupère la
+     * hauteur entière de l'écran, et remonter coûte un geste.
+     *
+     * ⚠️ Ce que ça COÛTE, et il faut le dire : la recherche n'est plus
+     * atteignable en permanence sur mobile. C'est un arbitrage, pas une
+     * amélioration gratuite. Il se défait en un mot — remettre `sticky` au
+     * lieu de `md:sticky`. */
+    <header className="z-50 md:sticky md:top-0">
       {/* TOPBAR — une ligne : l'entrée vendeur, le contact humain, la langue.
           Le CTA vendeur vit ICI désormais : toujours présent, jamais dominant
           — le hero appartient à l'acheteur. */}
       <div className="border-b border-line bg-ink/95 backdrop-blur">
-        <div className="mx-auto flex h-9 max-w-6xl items-center justify-end gap-4 px-5 text-xs">
+        <div className="mx-auto flex min-h-11 max-w-6xl items-center justify-end gap-4 px-5 text-xs">
           {/* Le CTA vendeur a QUITTÉ la topbar (2026-08-09) : il vivait ici ET
               en ligne 2 depuis que la maquette l'y a fait descendre — donc deux
               fois à l'écran, à trois centimètres d'écart. Un même libellé à
@@ -198,19 +215,19 @@ export async function SiteNav() {
           <nav className="flex items-center gap-4 text-sm text-mist">
             <Link
               href="/catalogue"
-              className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 transition hover:text-cloud"
             >
               {t(lang, "nav.catalog")}
             </Link>
             <Link
               href="/#talents"
-              className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 transition hover:text-cloud"
             >
               {t(lang, "nav.talents")}
             </Link>
             <Link
               href="/aide"
-              className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 transition hover:text-cloud"
             >
               {t(lang, "nav.help")}
             </Link>
@@ -221,7 +238,7 @@ export async function SiteNav() {
             {user && (
               <SignOutButton
                 label={t(lang, "nav.logout")}
-                className="inline-flex min-h-11 items-center px-1 transition hover:text-cloud"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center px-1 transition hover:text-cloud"
               />
             )}
           </nav>

@@ -3,12 +3,9 @@ import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { POLICY_PATH } from "@/lib/policy";
-import { getMenuRayons } from "@/lib/taxonomy";
 
 export async function SiteFooter() {
   const lang = await getLang();
-  // Mémoïsé par requête (React cache) : c'est la même lecture que l'en-tête.
-  const rayons = await getMenuRayons(lang);
 
   return (
     <footer className="mt-24 border-t border-line">
@@ -18,25 +15,22 @@ export async function SiteFooter() {
           <p className="mt-3 text-sm text-mist">{t(lang, "footer.tagline")}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-10 text-sm sm:grid-cols-4">
-          {rayons.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="font-semibold text-cloud">{t(lang, "search.sugg")}</p>
-              {rayons.map((r) =>
-                r.vide ? (
-                  // Même règle que le menu (décision porteur 2026-08-02) : un
-                  // rayon désert n'est pas un lien, il est marqué.
-                  <span key={r.slug} className="text-mist">
-                    {r.label} <span className="text-xs">{t(lang, "menu.empty")}</span>
-                  </span>
-                ) : (
-                  <Link key={r.slug} href={r.href} className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
-                    {r.label}
-                  </Link>
-                )
-              )}
-            </div>
-          )}
+        {/* ⚠️ LA COLONNE DES RAYONS A ÉTÉ RETIRÉE — demande porteur du
+            2026-08-22 (« enlève la section des catégories au bas du site »).
+            Elle listait TOUS les rayons ouverts, sur TOUTES les pages, et
+            c'était sa troisième occurrence : le menu de l'en-tête, la colonne
+            de gauche de l'accueil et la grille `#kategori` la portent déjà.
+
+            Ce qui part avec elle : l'appel `getMenuRayons(lang)` du pied de
+            page. Il était mémoïsé par requête (React cache) et partagé avec
+            l'en-tête — le retirer ne fait donc économiser aucune requête, et
+            le prétendre serait faux. Le gain est de place à l'écran, pas de
+            performance ; c'est sur mobile qu'il compte, où ces liens
+            poussaient les mentions légales très bas.
+
+            La grille est passée de quatre colonnes à trois : à quatre, les
+            cinq blocs restants laissaient une case vide en bout de rangée. */}
+        <div className="grid grid-cols-2 gap-10 text-sm sm:grid-cols-3">
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.explore")}</p>
             <Link href="/catalogue" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">

@@ -126,6 +126,21 @@ export async function createPayment(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
+    /* ⚠️ AUCUN PLANCHER ICI, ET C'EST UN FAIT MESURÉ, PAS UN OUBLI SUPPOSÉ.
+     *
+     * Le montant part tel quel. Plusieurs commentaires du dépôt affirmaient
+     * que MonCash « refuse » un montant de 0 — relecture du 2026-08-22 :
+     * aucun garde dans cette fonction, aucune trace d'un appel à 0 qui aurait
+     * échoué, aucun test. C'était une supposition écrite au présent de
+     * l'indicatif, et elle a servi à justifier le rail `gratis` de `0087`.
+     *
+     * Le rail reste bon et il fonctionne ; ce qui n'est pas établi, c'est
+     * qu'il était nécessaire. La question du montant minimal est partie chez
+     * Digicel le 2026-08-22 (`docs/42` §1 ter, question 7).
+     *
+     * ⚠️ Ne pas ajouter de plancher ici en attendant la réponse : un plancher
+     * inventé serait la MÊME faute une couche plus bas — une règle métier
+     * financière posée sans source. */
     body: JSON.stringify({ amount: amountHTG, orderId }),
     cache: "no-store",
   });

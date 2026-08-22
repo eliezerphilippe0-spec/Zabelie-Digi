@@ -82,7 +82,7 @@ export default async function MesAchatsPage() {
         <p className="mt-4 text-sm text-mist">{t(langAnon, "purchases.login.b")}</p>
         <Link
           href="/connexion"
-          className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           {t(langAnon, "nav.login")}
         </Link>

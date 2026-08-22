@@ -42,7 +42,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
       <div className="text-right">
         <button
           onClick={() => setOpen(true)}
-          className="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50"
+          className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50"
         >
           Laisser un avis
         </button>

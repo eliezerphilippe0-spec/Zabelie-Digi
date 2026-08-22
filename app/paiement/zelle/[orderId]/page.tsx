@@ -117,7 +117,7 @@ export default async function ZellePage({
         </div>
 
         <div className="mt-8 text-center">
-          <Link href="/mes-achats" className="text-sm text-mist hover:text-cloud">
+          <Link href="/mes-achats" className="inline-flex min-h-11 items-center text-sm text-mist hover:text-cloud">
             {t(lang, "pay.wait.cta")}
           </Link>
         </div>

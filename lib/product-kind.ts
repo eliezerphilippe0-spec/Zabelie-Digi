@@ -57,6 +57,24 @@ export function isDigitalKind(value: unknown): value is DigitalKind {
 }
 
 /**
+ * Le garde qui manquait : une valeur venue de la BASE est-elle un type connu ?
+ *
+ * ⚠️ Né le 2026-08-22 en servant l'API v1. `products.kind` arrive de PostgREST
+ * en `string` — le type TypeScript qu'on lui donne est une promesse, pas une
+ * vérification. Sans ce garde, la seule façon de le passer aux prédicats du
+ * module était un `as ProductKind`, c'est-à-dire exactement le contournement
+ * que ce module existe pour rendre inutile.
+ *
+ * L'asymétrie avec `isDigitalKind` mérite d'être dite : celui-là garde une
+ * ENTRÉE (ce qu'un client POSTe), celui-ci garde une SORTIE de base (ce que
+ * Postgres rend). Les deux frontières sont réelles, et une valeur
+ * d'énumération ajoutée en SQL sans l'être ici franchit la seconde sans bruit.
+ */
+export function isProductKind(value: unknown): value is ProductKind {
+  return (PRODUCT_KINDS as readonly unknown[]).includes(value);
+}
+
+/**
  * Traitement exhaustif du type de produit.
  *
  * Pourquoi ce module existe : le rendu s'écrivait partout
@@ -291,6 +309,38 @@ export function isSearchableByApiV1(kind: ProductKind, ref?: string): boolean {
       exhaustive(kind, "isSearchableByApiV1", ref);
       // Un type inconnu n'entre pas dans une sortie d'API : on préfère
       // l'omettre que l'exposer sans savoir ce qu'il est.
+      return false;
+  }
+}
+
+/**
+ * Ce type SUIT-IL un stock chiffré ?
+ *
+ * Né le 2026-08-22, en servant `check_inventory` de l'API v1. La distinction
+ * que ce prédicat porte n'est pas cosmétique — le schéma de sortie en dépend :
+ *
+ *   • `totalAvailable: null` → « ce produit ne suit pas de stock ». Un fichier
+ *     ne s'épuise pas ; un service non plus, il se refuse.
+ *   • `totalAvailable: 0`    → « suivi, et il n'en reste aucun ».
+ *
+ * Confondre les deux ferait annoncer « épuisé » un fichier téléchargeable à
+ * l'infini — c'est-à-dire refuser une vente qui pouvait avoir lieu.
+ *
+ * Le stock chiffré vit dans `zabelie_stock`, adossé aux VARIANTES
+ * (`0036`), et seul le physique en a.
+ */
+export function isTrackedStockKind(kind: ProductKind, ref?: string): boolean {
+  switch (kind) {
+    case "physical":
+      return true;
+    case "fichier":
+    case "service":
+      return false;
+    default:
+      exhaustive(kind, "isTrackedStockKind", ref);
+      // Un type inconnu : on ne PRÉTEND pas connaître son stock. `false` mène
+      // à `totalAvailable: null`, c'est-à-dire « on ne sait pas » — jamais à
+      // un zéro qui se lirait « épuisé ».
       return false;
   }
 }

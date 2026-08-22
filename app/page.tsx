@@ -91,7 +91,7 @@ function HomeRow({
           <p className="text-sm text-mist">{empty.body}</p>
           <Link
             href={empty.href}
-            className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand transition hover:opacity-90"
+            className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand transition hover:opacity-90"
           >
             {empty.cta}
           </Link>
@@ -590,7 +590,7 @@ export default async function HomePage() {
               <Link
                 key={cat}
                 href={`/catalogue?cat=${encodeURIComponent(cat)}`}
-                className="rounded-full border border-line bg-surface/60 px-4 py-2 text-sm text-cloud transition hover:border-brand/60"
+                className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface/60 px-4 py-2 text-sm text-cloud transition hover:border-brand/60"
               >
                 {cat} <span className="text-mist">· {n}</span>
               </Link>

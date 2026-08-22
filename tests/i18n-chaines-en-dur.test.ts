@@ -13,7 +13,7 @@ import { join } from "node:path";
  * traduites, jusqu'au signalement du porteur le 2026-08-13.
  *
  * ─── LA FORME : UN CLIQUET, PAS UN GEL ──────────────────────────────────────
- * 29 segments en dur existent aujourd'hui (inventaire ci-dessous, MESURÉ).
+ * 28 segments en dur existent aujourd'hui (inventaire ci-dessous, MESURÉ).
  * Les traduire tous est un chantier ; les geler tous serait mentir. Le test
  * fait donc les deux choses qu'un inventaire honnête sait faire :
  *
@@ -23,6 +23,13 @@ import { join } from "node:path";
  *     (`CLAUDE.md`) — une liste qui ne sait que grandir devient une
  *     conformité par usure, une liste qui se vide sans témoin ne prouve pas
  *     le progrès.
+ *
+ * ⚠️ 29 → 28 le 2026-08-22. « Confidentialité » d'`app/aide` est passée à
+ * `t(lang, "footer.privacy")` — la clé existait DÉJÀ dans les quatre langues,
+ * elle n'attendait qu'un appelant. Elle n'a pas été trouvée en cherchant du
+ * français : elle est tombée en élargissant les cibles tactiles de cette même
+ * colonne de liens, pour la vue mobile. C'est la seconde moitié du cliquet qui
+ * l'a fait compter — sans elle, le progrès serait passé inaperçu.
  *
  * ─── CE QUE LE SCANNER NE VOIT PAS, ET C'EST ÉCRIT ──────────────────────────
  * Il lit les NŒUDS DE TEXTE JSX (`>texte<`), après retrait des expressions
@@ -76,7 +83,6 @@ export function segmentsEnDur(src: string): string[] {
  * commit que la traduction. Pour AJOUTER : ne pas. Traduire à la place.
  */
 const INVENTAIRE: Record<string, string[]> = {
-  "app/aide/page.tsx": ["Confidentialité"],
   "app/opengraph-image.tsx": [
     "La marketplace haïtienne — payez avec MonCash",
     "Machandiz, sèvis ak pwodui dijital",
