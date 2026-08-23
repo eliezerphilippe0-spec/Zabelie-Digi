@@ -5,7 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
 import { isEmailEnabled } from "@/lib/zabelie-email";
 import { isStripeEnabled } from "@/lib/stripe";
-import { resolveMonCashMode, monCashGatewayHost } from "@/lib/moncash";
+/* LE PRÉ-VOL DU GESTE 5 de `docs/22` vit dans `lib/moncash.ts`, PAS ICI —
+ * déplacé le 2026-08-22 sur exigence de revue. Une sonde définie dans un
+ * fichier de route ne peut être vérifiée qu'en LISANT son `catch` ; déplacée,
+ * elle s'exécute contre des valeurs hostiles (`tests/moncash-mode-resolu` R9).
+ * Un `try` peut être présent et n'attraper rien. */
+import { sondeMonCash } from "@/lib/moncash";
 import { verdictObjets, type ObjetRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
@@ -193,33 +198,6 @@ async function handle(req: Request) {
       { error: e instanceof Error ? e.message : "Erreur" },
       { status: 500 }
     );
-  }
-}
-
-/**
- * LE PRÉ-VOL DU GESTE 4 de `docs/22` — savoir chez QUI on va encaisser, sans
- * dépenser 300 HTG pour l'apprendre.
- *
- * ⚠️ Jusqu'au 2026-08-22, la seule façon de savoir si `MONCASH_MODE` avait pris
- * était de **créer un paiement** puis de lire `payments.raw->>'moncash_host'`.
- * C'est-à-dire d'engager un acheteur réel pour vérifier un champ de formulaire.
- * Cinq paiements ont déjà échoué faute de cette réponse.
- *
- * Ni le mode ni l'hôte ne sont des secrets : l'hôte est l'URL que l'acheteur
- * voit dans sa barre d'adresse. Les identifiants, eux, restent des booléens.
- *
- * ⚠️ `resolveMonCashMode` LÈVE sur une valeur illisible, et c'est précisément
- * le cas qu'on veut voir ici plutôt qu'en production : la sonde le rapporte au
- * lieu de faire tomber tout le contrôle de cohérence, qui est comptable et ne
- * doit dépendre d'aucune autre panne.
- */
-function sondeMonCash(): { mode: string; hote: string | null } {
-  try {
-    const mode = resolveMonCashMode(process.env.MONCASH_MODE);
-    return { mode, hote: monCashGatewayHost(mode) };
-  } catch (e) {
-    console.error("[coherence] MONCASH_MODE ILLISIBLE — aucun paiement ne partira", e);
-    return { mode: "illisible", hote: null };
   }
 }
 

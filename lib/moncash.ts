@@ -39,7 +39,9 @@ type MonCashMode = "sandbox" | "production";
  * croit réel, avec un acheteur réel devant l'écran.
  *
  * Les trois comportements, et l'asymétrie est délibérée :
- *   • ABSENTE          → `sandbox`. C'est le défaut documenté, il ne bouge pas.
+ *   • ABSENTE / VIDE   → `sandbox`, MAIS la SOURCE est rendue avec le mode.
+ *                        Voir l'avertissement ci-dessous : c'est la revue
+ *                        porteur du 2026-08-22 qui a exigé cette distinction.
  *   • casse/espaces    → NORMALISÉE. « Production » veut dire production, et
  *                        refuser au moment du basculement serait une cruauté
  *                        gratuite. `lib/site-url.ts:16` `.trim()` déjà pour la
@@ -48,20 +50,86 @@ type MonCashMode = "sandbox" | "production";
  *                        les deviner, c'est choisir à la place de quelqu'un
  *                        quel hôte encaisse de l'argent réel.
  *
- * Fail-closed assumé : lever empêche le paiement. C'est voulu — un paiement
- * qui part chez le mauvais hôte est strictement pire qu'un paiement qui ne
- * part pas, et c'est exactement ce que les cinq échecs ont coûté.
+ * ⚠️ **LA MÊME PANNE PAR UNE AUTRE PORTE — trouvée par la revue porteur du
+ * 2026-08-22, pas par moi.** La première version rendait `"sandbox"` tout court
+ * pour une variable ABSENTE. Or c'est exactement le défaut que ce garde
+ * prétendait fermer : quelqu'un qui SUPPRIME `MONCASH_MODE` d'un déploiement
+ * de production retombe en bac à sable, silencieusement, et l'on recommence les
+ * cinq échecs — cette fois sans même un espace à incriminer.
+ *
+ * La fonction rend donc `{ mode, source }`. Le chemin de paiement n'utilise que
+ * `mode` (le défaut local ne bouge pas — sinon tout développement casse), et le
+ * PRÉ-VOL distingue `sandbox (absente)` de `sandbox (explicite)`. Deux états du
+ * monde qui produisaient jusqu'ici la même chaîne de caractères.
+ *
+ * Pourquoi ne pas lever aussi sur l'absence : ce serait casser le local et les
+ * Preview de tout le monde pour se prémunir d'une suppression en production. Le
+ * défaut reste légitime ; ce qui ne l'était pas, c'est qu'il soit INDISCERNABLE.
+ *
+ * Fail-closed assumé sur les valeurs illisibles : lever empêche le paiement.
+ * C'est voulu — un paiement qui part chez le mauvais hôte est strictement pire
+ * qu'un paiement qui ne part pas, et c'est exactement ce que les cinq échecs
+ * ont coûté.
  */
-export function resolveMonCashMode(brut: string | undefined): MonCashMode {
-  if (brut === undefined) return "sandbox";
+export type MonCashModeSource = "absente" | "vide" | "explicite";
+
+export function resolveMonCashMode(brut: string | undefined): {
+  mode: MonCashMode;
+  source: MonCashModeSource;
+} {
+  if (brut === undefined) return { mode: "sandbox", source: "absente" };
   const v = brut.trim().toLowerCase();
-  if (v === "") return "sandbox";
-  if (v === "sandbox" || v === "production") return v;
+  if (v === "") return { mode: "sandbox", source: "vide" };
+  if (v === "sandbox" || v === "production") return { mode: v, source: "explicite" };
   throw new Error(
     `MonCash: MONCASH_MODE vaut « ${brut} », qui n'est ni "sandbox" ni ` +
       `"production". Refus de deviner quel hôte doit encaisser. Corriger la ` +
       `variable dans Vercel, puis redéployer.`
   );
+}
+
+/** Ce que le pré-vol du geste 5 (`docs/22`) rapporte. */
+export type SondeMonCash = {
+  /** `sandbox` · `production` · `illisible`. */
+  mode: string;
+  /** `explicite` · `absente` · `vide` · `illisible` — la moitié qui manquait. */
+  source: string;
+  hote: string | null;
+};
+
+/**
+ * LE PRÉ-VOL — et il **NE LÈVE JAMAIS**, quelle que soit l'entrée.
+ *
+ * ⚠️ Exigence de la revue porteur du 2026-08-22, et elle est juste : « une 500
+ * au moment du geste 5 me laisserait sans lecture au pire moment ». Le contrôle
+ * de cohérence qui l'héberge vérifie l'invariant du grand livre (`0033`) — le
+ * faire tomber sur un champ MonCash mal saisi le rendrait indisponible
+ * précisément la veille d'un basculement.
+ *
+ * `tests/moncash-mode-resolu.test.ts` R9 l'ÉPROUVE sur une batterie de valeurs
+ * hostiles plutôt que de lire le `catch` dans le fichier : un `try` peut être
+ * présent et ne rien attraper.
+ */
+export function sondeMonCash(): SondeMonCash {
+  try {
+    const { mode, source } = resolveMonCashMode(process.env.MONCASH_MODE);
+    const hote = monCashGatewayHost(mode);
+    /* Journalisé DANS LES DEUX SENS. Un `sandbox` par absence de variable sur
+     * un déploiement de production est une anomalie qui doit laisser une trace
+     * même si personne n'ouvre la route. */
+    if (source === "explicite") {
+      console.info(`[coherence] MonCash mode=${mode} (explicite) hote=${hote}`);
+    } else {
+      console.error(
+        `[coherence] MONCASH_MODE ${source.toUpperCase()} — repli sur ${mode} ` +
+          `(${hote}). En production, aucun paiement réel n'aboutira.`
+      );
+    }
+    return { mode, source, hote };
+  } catch (e) {
+    console.error("[coherence] MONCASH_MODE ILLISIBLE — aucun paiement ne partira", e);
+    return { mode: "illisible", source: "illisible", hote: null };
+  }
 }
 
 /** L'hôte de passerelle réellement employé — ni secret, ni devinable. */
@@ -92,7 +160,7 @@ function bases(mode: MonCashMode) {
 function config() {
   const clientId = process.env.MONCASH_CLIENT_ID;
   const clientSecret = process.env.MONCASH_CLIENT_SECRET;
-  const mode = resolveMonCashMode(process.env.MONCASH_MODE);
+  const { mode } = resolveMonCashMode(process.env.MONCASH_MODE);
 
   if (!clientId || !clientSecret) {
     throw new Error(

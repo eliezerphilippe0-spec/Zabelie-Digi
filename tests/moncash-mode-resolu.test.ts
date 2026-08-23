@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { resolveMonCashMode, monCashGatewayHost } from "@/lib/moncash";
+import { resolveMonCashMode, monCashGatewayHost, sondeMonCash } from "@/lib/moncash";
 
 /**
  * `MONCASH_MODE` — LE CHAMP DE FORMULAIRE QUI DÉCIDE OÙ VA L'ARGENT.
@@ -28,29 +28,44 @@ import { resolveMonCashMode, monCashGatewayHost } from "@/lib/moncash";
  * engagé un acheteur.
  */
 
-test("R1 — les deux valeurs légitimes passent, telles quelles", () => {
-  assert.equal(resolveMonCashMode("sandbox"), "sandbox");
-  assert.equal(resolveMonCashMode("production"), "production");
+test("R1 — les deux valeurs légitimes passent, avec leur SOURCE", () => {
+  assert.deepEqual(resolveMonCashMode("sandbox"), { mode: "sandbox", source: "explicite" });
+  assert.deepEqual(resolveMonCashMode("production"), { mode: "production", source: "explicite" });
 });
 
-test("R2 — l'absence vaut sandbox, et c'est le défaut DOCUMENTÉ", () => {
-  /* Ne pas confondre avec les cas illisibles ci-dessous : une variable non
-   * posée est un état légitime — c'est celui de tous les environnements de
-   * développement. La changer en erreur casserait le local de tout le monde. */
-  assert.equal(resolveMonCashMode(undefined), "sandbox");
-  assert.equal(resolveMonCashMode(""), "sandbox");
-  assert.equal(resolveMonCashMode("   "), "sandbox");
+test("R2 — l'absence vaut sandbox, mais elle ne se CONFOND plus avec un choix", () => {
+  /* ⚠️ LE POINT SOULEVÉ PAR LA REVUE PORTEUR DU 2026-08-22, et il était juste :
+   * la première version rendait `"sandbox"` tout court pour une variable
+   * absente. C'est LA MÊME PANNE PAR UNE AUTRE PORTE — quelqu'un qui supprime
+   * `MONCASH_MODE` d'un déploiement de production retombe en bac à sable sans
+   * un mot, et l'on recommence les cinq échecs sans même un espace à
+   * incriminer.
+   *
+   * Le mode ne change pas (casser le local de tout le monde pour se prémunir
+   * d'une suppression en production serait un mauvais échange). Ce qui change,
+   * c'est que les deux états du monde cessent de produire la même chaîne. */
+  assert.deepEqual(resolveMonCashMode(undefined), { mode: "sandbox", source: "absente" });
+  assert.deepEqual(resolveMonCashMode(""), { mode: "sandbox", source: "vide" });
+  assert.deepEqual(resolveMonCashMode("   "), { mode: "sandbox", source: "vide" });
+
+  /* Le connu-négatif qui donne son sens au précédent : un `sandbox` CHOISI et
+   * un `sandbox` SUBI ont le même mode et des sources différentes. */
+  assert.equal(resolveMonCashMode("sandbox").mode, resolveMonCashMode(undefined).mode);
+  assert.notEqual(resolveMonCashMode("sandbox").source, resolveMonCashMode(undefined).source);
 });
 
 test("R3 — LE CAS QUI A ARMÉ LE PIÈGE : casse et espaces, normalisés", () => {
   /* Ces quatre-là retombaient SILENCIEUSEMENT en bac à sable. Ce sont
    * exactement les formes qu'un champ de formulaire produit : un copier-coller
    * qui emporte un espace, une majuscule d'autocorrection. */
-  assert.equal(resolveMonCashMode("Production"), "production");
-  assert.equal(resolveMonCashMode("production "), "production");
-  assert.equal(resolveMonCashMode(" production"), "production");
-  assert.equal(resolveMonCashMode("PRODUCTION"), "production");
-  assert.equal(resolveMonCashMode("Sandbox "), "sandbox");
+  for (const brut of ["Production", "production ", " production", "PRODUCTION", "\tproduction\n"]) {
+    assert.deepEqual(
+      resolveMonCashMode(brut),
+      { mode: "production", source: "explicite" },
+      `« ${JSON.stringify(brut)} » doit valoir production, et compter comme un CHOIX`
+    );
+  }
+  assert.deepEqual(resolveMonCashMode("Sandbox "), { mode: "sandbox", source: "explicite" });
 });
 
 test("R4 — tout le reste LÈVE : deviner, c'est choisir qui encaisse", () => {
@@ -103,22 +118,13 @@ test("R6 — plus AUCUN cast de MONCASH_MODE ne subsiste dans le module", () => 
   );
 });
 
-test("R7 — le pré-vol expose le mode ET l'hôte, sans jamais un identifiant", () => {
-  /* La raison d'être de la sonde : `docs/22` demandait de créer un paiement
-   * puis de lire `payments.raw->>'moncash_host'` — c'est-à-dire d'engager un
-   * acheteur réel pour vérifier un champ de formulaire. */
+test("R7 — le pré-vol est CÂBLÉ à la route, et aucun secret ne sort", () => {
   const src = readFileSync("app/api/admin/coherence/route.ts", "utf8");
   assert.match(
     src,
     /moncash: \{ configure: Boolean\(process\.env\.MONCASH_CLIENT_ID\), \.\.\.sondeMonCash\(\) \}/,
     "le bloc `moncash` n'expose plus le pré-vol : il faudrait de nouveau " +
       "dépenser 300 HTG pour savoir chez qui on encaisse"
-  );
-  assert.match(
-    src,
-    /const mode = resolveMonCashMode\(process\.env\.MONCASH_MODE\);[\s\S]{0,120}monCashGatewayHost\(mode\)/,
-    "l'hôte rapporté n'est plus dérivé du mode résolu : les deux pourraient " +
-      "diverger, ce qui est exactement le défaut qu'on ferme"
   );
   /* ⚠️ ET LE SECRET NE SORT PAS. Même règle qu'`integrations-sonde` I3 : la
    * présence d'un identifiant se lit par un booléen, jamais par sa valeur. */
@@ -128,16 +134,124 @@ test("R7 — le pré-vol expose le mode ET l'hôte, sans jamais un identifiant",
   );
 });
 
-test("R8 — une valeur illisible ne fait PAS tomber le contrôle comptable", () => {
-  /* Le contrôle de cohérence vérifie l'invariant du grand livre (`0033`). Le
-   * faire dépendre d'un champ MonCash mal saisi le rendrait indisponible au
-   * moment précis où on en a besoin — la veille d'un basculement. La sonde
-   * ATTRAPE donc, et rapporte « illisible » comme un résultat. */
-  const src = readFileSync("app/api/admin/coherence/route.ts", "utf8");
-  assert.match(
-    src,
-    /catch \(e\) \{[\s\S]{0,260}return \{ mode: "illisible", hote: null \}/,
-    "la sonde MonCash ne rattrape plus l'exception : une variable mal saisie " +
-      "ferait rendre 500 au contrôle du registre, qui n'a rien à voir avec elle"
-  );
+/**
+ * ─────────── LE PRÉ-VOL, EXÉCUTÉ — pas relu ───────────
+ *
+ * ⚠️ EXIGENCE DE LA REVUE PORTEUR DU 2026-08-22, et elle corrige un vrai
+ * manque : la première version de R8 se contentait de CHERCHER le `catch` dans
+ * le texte du fichier. Un `try` peut être présent et n'attraper rien —
+ * exactement le piège de sous-chaîne que `CLAUDE.md` décrit. La sonde a donc
+ * quitté le fichier de route pour `lib/moncash.ts`, afin d'être APPELÉE.
+ *
+ * ⚠️ ET UNE CORRECTION À LA REVUE, parce qu'elle change le cas de test :
+ * `MONCASH_MODE=" production"` (espace de tête) ne rend PAS « illisible ». Il
+ * rend `production` — c'est précisément ce que la normalisation est là pour
+ * faire, et l'exiger « illisible » aurait bloqué le porteur au pire moment.
+ * Les valeurs qui rendent « illisible » sont les AMBIGUËS : `prod`, `live`.
+ */
+function sousMode<T>(valeur: string | undefined, corps: () => T): T {
+  const avant = process.env.MONCASH_MODE;
+  const err = console.error;
+  const info = console.info;
+  console.error = () => {};
+  console.info = () => {};
+  if (valeur === undefined) delete process.env.MONCASH_MODE;
+  else process.env.MONCASH_MODE = valeur;
+  try {
+    return corps();
+  } finally {
+    console.error = err;
+    console.info = info;
+    if (avant === undefined) delete process.env.MONCASH_MODE;
+    else process.env.MONCASH_MODE = avant;
+  }
+}
+
+test("R8 — le pré-vol rend un VERDICT sur une valeur illisible, il ne lève pas", () => {
+  /* Le cas que la revue redoutait, dans sa forme réelle : une valeur ambiguë.
+   * Une 500 ici laisserait le porteur sans lecture au moment du geste 5. */
+  for (const mauvais of ["prod", "live", "true", "1", "on"]) {
+    const r = sousMode(mauvais, () => sondeMonCash());
+    assert.deepEqual(
+      r,
+      { mode: "illisible", source: "illisible", hote: null },
+      `« ${mauvais} » doit rendre un verdict lisible, pas faire tomber la route`
+    );
+  }
+});
+
+test("R9 — le pré-vol ne lève JAMAIS, quelle que soit l'entrée", () => {
+  /* Batterie hostile. L'assertion n'est pas « la valeur est bonne » mais
+   * « la fonction rend », ce qui est la propriété dont dépend le geste 5. */
+  const hostiles = [
+    undefined, "", "   ", "prod", "PRODUCTION", " production", "production ",
+    "sandbox", "\u0000", "sandbox\u0000", "🙂", "a".repeat(5000), "null",
+    "undefined", "[object Object]", "production;drop", "sand box",
+  ];
+  for (const v of hostiles) {
+    const r = sousMode(v, () => {
+      try {
+        return sondeMonCash();
+      } catch (e) {
+        assert.fail(`sondeMonCash a LEVÉ sur ${JSON.stringify(v)} : ${e}`);
+      }
+    });
+    assert.ok(typeof r.mode === "string" && r.mode.length > 0);
+    assert.ok(r.hote === null || typeof r.hote === "string");
+    // Un hôte non nul implique un mode réel — jamais « illisible » avec un hôte.
+    assert.equal(r.hote === null, r.mode === "illisible");
+  }
+});
+
+test("R10 — le pré-vol distingue le sandbox CHOISI du sandbox SUBI", () => {
+  /* La correction demandée par la revue, vue depuis la route : c'est la ligne
+   * que le porteur lira au geste 5. Sans `source`, les deux sont la même
+   * chaîne, et une variable supprimée par erreur passe pour un choix. */
+  const choisi = sousMode("sandbox", () => sondeMonCash());
+  const subi = sousMode(undefined, () => sondeMonCash());
+  const vide = sousMode("", () => sondeMonCash());
+
+  assert.equal(choisi.mode, "sandbox");
+  assert.equal(subi.mode, "sandbox");
+  assert.equal(choisi.source, "explicite");
+  assert.equal(subi.source, "absente");
+  assert.equal(vide.source, "vide");
+  assert.notDeepEqual(choisi, subi, "les deux états du monde sont redevenus indiscernables");
+
+  // Et le cas nominal du geste 5, celui qu'il doit lire après la bascule.
+  assert.deepEqual(sousMode("production", () => sondeMonCash()), {
+    mode: "production",
+    source: "explicite",
+    hote: "moncashbutton.digicelgroup.com",
+  });
+});
+
+test("R11 — l'absence de variable est JOURNALISÉE, pas seulement rendue", () => {
+  /* Corollaire d'observabilité : un exploitant qui n'ouvre jamais la route doit
+   * quand même croiser la ligne. Un `sandbox` par absence de variable sur un
+   * déploiement de production est une anomalie. */
+  const vus: string[] = [];
+  const err = console.error;
+  const info = console.info;
+  const avant = process.env.MONCASH_MODE;
+  console.error = (...a: unknown[]) => vus.push("ERR " + a.map(String).join(" "));
+  console.info = (...a: unknown[]) => vus.push("INFO " + a.map(String).join(" "));
+  try {
+    delete process.env.MONCASH_MODE;
+    sondeMonCash();
+    assert.match(vus.join("\n"), /ERR .*MONCASH_MODE ABSENTE/, "l'absence ne crie pas");
+
+    vus.length = 0;
+    process.env.MONCASH_MODE = "production";
+    sondeMonCash();
+    // Connu-négatif : le cas sain ne doit pas crier — un garde qui crie
+    // toujours ne dit rien.
+    assert.ok(!vus.some((l) => l.startsWith("ERR")), "le cas sain journalise une ERREUR");
+    assert.match(vus.join("\n"), /INFO .*mode=production \(explicite\)/);
+  } finally {
+    console.error = err;
+    console.info = info;
+    if (avant === undefined) delete process.env.MONCASH_MODE;
+    else process.env.MONCASH_MODE = avant;
+  }
 });
