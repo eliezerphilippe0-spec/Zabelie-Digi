@@ -220,8 +220,29 @@ est aussi la première gourde retenue sur un compte non cantonné. Elle est de
 ```json
 { "integrations": { "moncash": {
     "configure": true, "mode": "production", "source": "explicite",
-    "hote": "moncashbutton.digicelgroup.com" } } }
+    "hote": "moncashbutton.digicelgroup.com",
+    "bascule": { "pret": true, "raison": null } } } }
 ```
+
+> ### 🔴 LE PRÉ-VOL SE LIT SUR UN SEUL CHAMP : `bascule.pret`
+>
+> Exigence de la seconde revue porteur (2026-08-22). Comparer `mode`, `source`
+> et `hote` de tête pour en conclure « c'est bon » serait une **impression** —
+> précisément ce que ce document reproche à « ça a marché ». Le verdict est
+> donc calculé et rendu.
+>
+> **`pret: true` n'existe que pour `production` + `explicite`.** Les quatre
+> autres états sont des **arrêts**, et `raison` dit lequel et comment le lever.
+>
+> ⚠️ **`absente` est un arrêt, et c'est le piège de lecture.** `mode: sandbox`
+> paraît rassurant : le repli est sûr **pour la sécurité**. Il est une **panne
+> de revenu** — un déploiement de production en bac à sable n'encaisse rien,
+> l'interface ne montre rien, et personne ne le voit. Ne pas confondre « sans
+> danger » et « fonctionne ».
+>
+> ⚠️ Et l'inverse est vrai aussi : `pret: false` en développement local est le
+> comportement **correct**, pas une panne. On n'est pas prêt à encaisser de
+> l'argent réel, par construction.
 
 ⚠️ **`source` n'est pas décoratif** — il a été ajouté le 2026-08-22 sur revue
 porteur, qui a vu ce que le premier correctif laissait ouvert. `mode` seul ne
@@ -314,6 +335,54 @@ chez Zabelie.
    depuis le registre créerait de la monnaie qui n'y est jamais entrée.
 5. **Prévenir l'acheteur à la main.** 300 HTG et une personne réelle : le
    silence est ici plus coûteux que l'erreur.
+
+##### La pièce à constituer pour Digicel — **le délai de constitution EST le délai de remboursement**
+
+Exigence de la seconde revue porteur (2026-08-22). Le jour où ça arrive, il y a
+un client fâché en face ; chercher les champs à ce moment-là coûte des heures.
+
+Une seule requête les sort tous — sauf un, et c'est le point suivant :
+
+```sql
+select p.created_at                       as horodatage_utc,
+       p.order_id                         as reference_interne,
+       p.id                               as paiement_interne,
+       p.idempotency_key,
+       p.provider_ref,                    -- ⚠️ null en cas A : c'est LE fait
+       p.status,
+       p.raw->>'moncash_mode'  as mode,
+       p.raw->>'moncash_host'  as hote,
+       p.raw->>'expired_reason' as motif, -- moncash_unknown_48h / _not_successful_48h
+       p.raw->>'payer_present' as payeur_connu_de_moncash
+  from payments p
+ where p.order_id = '<ORDER_ID>';
+```
+
+⚠️ **LE NUMÉRO DE L'ACHETEUR N'EST PAS EN BASE, ET C'EST DÉLIBÉRÉ.**
+`redactPayment` (`lib/moncash.ts`) retire l'identifiant du payeur — téléphone
+ou compte — **avant** tout stockage dans `payments.raw`, par minimisation RGPD
+(BL-115), et ne conserve qu'un booléen `payer_present`. La fonction est câblée
+aux trois endroits qui écrivent (`moncash/return` ×2, `reconcile`, plus le
+topup) : ce n'est pas un oubli, c'est un choix appliqué.
+
+**Conséquence pratique, à savoir AVANT et non pendant** : le numéro MonCash
+utilisé pour payer se **demande à l'acheteur**. Zabelie ne l'a jamais eu. Et en
+cas A, `payer_present` vaut le plus souvent `false` — MonCash ne connaissait
+même pas la transaction, il n'a donc jamais renvoyé de payeur.
+
+Ce qui compose le dossier, dans l'ordre où Digicel le lira :
+
+| Champ | D'où il vient |
+|---|---|
+| **Horodatage** de la tentative (UTC) | `payments.created_at` |
+| **Référence interne** | `payments.order_id` (+ `idempotency_key`, qui est la clé transmise au fournisseur) |
+| **Motif serveur-à-serveur** | `payments.raw->>'expired_reason'` — et **citer lequel** : `moncash_unknown_48h` (404, transaction inconnue) ou `moncash_not_successful_48h` (connue, non aboutie). Les deux ne racontent pas la même histoire à Digicel |
+| **Hôte interrogé** | `payments.raw->>'moncash_host'` — prouve qu'on parlait bien à la production |
+| **Numéro de l'acheteur** | ⚠️ **à demander à l'acheteur** — jamais en base, voir ci-dessus |
+
+Y joindre l'heure locale Haïti en plus de l'UTC : les journaux Zabelie sont en
+UTC, l'acheteur raconte son heure, et l'écart de quatre heures a déjà égaré une
+analyse dans ce dépôt.
 
 **Cas B — la commande est `paid`, le grand livre porte les +270, et l'on veut
 défaire.**

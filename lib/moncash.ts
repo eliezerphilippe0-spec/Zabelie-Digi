@@ -95,6 +95,21 @@ export type SondeMonCash = {
   /** `explicite` · `absente` · `vide` · `illisible` — la moitié qui manquait. */
   source: string;
   hote: string | null;
+  /**
+   * ⚠️ LE VERDICT DE BASCULE — ajouté le 2026-08-22, seconde revue porteur.
+   *
+   * Sans lui, le geste 5 demande de comparer TROIS champs de tête et de
+   * conclure. C'est une impression, pas un relevé — exactement ce que ce
+   * document reproche à « ça a marché ». Et l'erreur naturelle est de lire
+   * `mode: "sandbox", source: "absente"` comme rassurant : le repli est sûr
+   * pour la SÉCURITÉ, il est une panne de REVENU. Un déploiement de production
+   * en bac à sable silencieux n'encaisse rien, et personne ne le voit.
+   *
+   * `pret` n'est vrai QUE pour `production` + `explicite`. En développement il
+   * vaut `false` avec une raison, ce qui est correct et non une erreur : on
+   * n'est pas prêt à encaisser de l'argent réel, par construction.
+   */
+  bascule: { pret: boolean; raison: string | null };
 };
 
 /**
@@ -125,11 +140,54 @@ export function sondeMonCash(): SondeMonCash {
           `(${hote}). En production, aucun paiement réel n'aboutira.`
       );
     }
-    return { mode, source, hote };
+    return { mode, source, hote, bascule: verdictBascule(mode, source) };
   } catch (e) {
     console.error("[coherence] MONCASH_MODE ILLISIBLE — aucun paiement ne partira", e);
-    return { mode: "illisible", source: "illisible", hote: null };
+    return {
+      mode: "illisible",
+      source: "illisible",
+      hote: null,
+      bascule: {
+        pret: false,
+        raison:
+          "MONCASH_MODE porte une valeur ambiguë : toute création de paiement " +
+          "lèvera. Corriger la variable dans Vercel, puis redéployer.",
+      },
+    };
   }
+}
+
+/** Le verdict, et il n'est vrai que pour un seul état du monde. */
+function verdictBascule(
+  mode: MonCashMode,
+  source: MonCashModeSource
+): { pret: boolean; raison: string | null } {
+  if (source === "absente") {
+    return {
+      pret: false,
+      raison:
+        "MONCASH_MODE n'est pas posée : repli sandbox. Le repli est SÛR mais " +
+        "il n'encaisse rien — c'est une panne de revenu, invisible depuis " +
+        "l'interface. Poser la variable, puis redéployer.",
+    };
+  }
+  if (source === "vide") {
+    return {
+      pret: false,
+      raison:
+        "MONCASH_MODE existe mais vaut la chaîne vide : repli sandbox, aucun " +
+        "paiement réel. Renseigner la variable, puis redéployer.",
+    };
+  }
+  if (mode !== "production") {
+    return {
+      pret: false,
+      raison:
+        "MONCASH_MODE vaut sandbox, explicitement. Correct en développement " +
+        "et en Preview ; à basculer sur production pour encaisser réellement.",
+    };
+  }
+  return { pret: true, raison: null };
 }
 
 /** L'hôte de passerelle réellement employé — ni secret, ni devinable. */

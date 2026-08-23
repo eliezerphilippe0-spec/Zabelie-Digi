@@ -172,11 +172,11 @@ test("R8 — le pré-vol rend un VERDICT sur une valeur illisible, il ne lève p
    * Une 500 ici laisserait le porteur sans lecture au moment du geste 5. */
   for (const mauvais of ["prod", "live", "true", "1", "on"]) {
     const r = sousMode(mauvais, () => sondeMonCash());
-    assert.deepEqual(
-      r,
-      { mode: "illisible", source: "illisible", hote: null },
-      `« ${mauvais} » doit rendre un verdict lisible, pas faire tomber la route`
-    );
+    assert.equal(r.mode, "illisible", `« ${mauvais} » doit rendre un verdict`);
+    assert.equal(r.source, "illisible");
+    assert.equal(r.hote, null);
+    assert.equal(r.bascule.pret, false, "une valeur ambiguë n'est JAMAIS prête");
+    assert.match(r.bascule.raison!, /ambigu/);
   }
 });
 
@@ -223,7 +223,51 @@ test("R10 — le pré-vol distingue le sandbox CHOISI du sandbox SUBI", () => {
     mode: "production",
     source: "explicite",
     hote: "moncashbutton.digicelgroup.com",
+    bascule: { pret: true, raison: null },
   });
+});
+
+test("R12 — le pré-vol RELÈVE la bascule, il ne la fait pas deviner", () => {
+  /* ⚠️ SECONDE REVUE PORTEUR (2026-08-22) : « le pré-vol n'est réputé passé que
+   * si source = explicite — les trois autres états sont des arrêts, y compris
+   * `absente`, même si le repli sandbox est sûr ».
+   *
+   * Sans ce champ, le geste 5 demande de comparer trois valeurs de tête et de
+   * conclure : une impression, pas un relevé. Et l'erreur naturelle est de lire
+   * `sandbox / absente` comme rassurant — le repli est sûr pour la SÉCURITÉ, il
+   * est une panne de REVENU que rien à l'écran ne montre. */
+  const cas: [string | undefined, boolean][] = [
+    ["production", true],   // le seul état prêt
+    ["Production ", true],  // normalisé → toujours prêt
+    ["sandbox", false],     // choisi, correct en dev, pas prêt
+    [undefined, false],     // ⚠️ le cas de la revue : sûr, mais pas prêt
+    ["", false],
+    ["prod", false],        // ambigu
+  ];
+  for (const [valeur, attendu] of cas) {
+    const r = sousMode(valeur, () => sondeMonCash());
+    assert.equal(
+      r.bascule.pret,
+      attendu,
+      `MONCASH_MODE=${JSON.stringify(valeur)} → pret devrait valoir ${attendu}`
+    );
+    /* Un arrêt sans raison serait un arrêt qu'on ne sait pas lever. Et un
+     * « prêt » qui porterait une raison serait un garde qui hésite. */
+    assert.equal(
+      r.bascule.raison === null,
+      attendu,
+      `MONCASH_MODE=${JSON.stringify(valeur)} : la raison ne suit pas le verdict`
+    );
+  }
+
+  /* Le connu-négatif qui donne son sens au tableau : `absente` et `sandbox`
+   * explicite rendent le MÊME mode et le MÊME hôte. Seules la source et la
+   * raison les séparent — c'est-à-dire exactement ce que la revue a demandé. */
+  const subi = sousMode(undefined, () => sondeMonCash());
+  const choisi = sousMode("sandbox", () => sondeMonCash());
+  assert.equal(subi.mode, choisi.mode);
+  assert.equal(subi.hote, choisi.hote);
+  assert.notEqual(subi.bascule.raison, choisi.bascule.raison);
 });
 
 test("R11 — l'absence de variable est JOURNALISÉE, pas seulement rendue", () => {
