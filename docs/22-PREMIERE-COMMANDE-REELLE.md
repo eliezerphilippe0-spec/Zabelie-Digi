@@ -212,6 +212,206 @@ est aussi la première gourde retenue sur un compte non cantonné. Elle est de
 | **2** | **Supabase** → Auth → URL Configuration | Poser `Site URL` (+ liste blanche de redirection) | écriture, effet immédiat |
 | **3** | Portail **MonCash Business — production** | Poser les **3 URLs** (Website / **Return** / Alert) | écriture |
 | **4** | **Vercel** → Environment Variables | `MONCASH_MODE=production` · `NEXT_PUBLIC_SITE_URL` · les identifiants **si** le geste 1 a révélé un écart — **puis UN SEUL redéploiement** | écriture + déploiement |
+| **5** | **Zabelie** → `/api/admin/coherence` | **Lire** `integrations.moncash` : `mode`, **`source`** et `hote` — le pré-vol, avant le premier acheteur | lecture seule |
+| **6** | — | **Ne pas improviser** : la procédure d'échec est écrite ci-dessous, à lire AVANT l'envoi | lecture |
+
+#### Geste 5 — ce qu'il faut lire, et ce qui doit rendre quoi
+
+```json
+{ "integrations": { "moncash": {
+    "configure": true, "mode": "production", "source": "explicite",
+    "hote": "moncashbutton.digicelgroup.com",
+    "bascule": { "pret": true, "raison": null } } } }
+```
+
+> ### 🔴 LE PRÉ-VOL SE LIT SUR UN SEUL CHAMP : `bascule.pret`
+>
+> Exigence de la seconde revue porteur (2026-08-22). Comparer `mode`, `source`
+> et `hote` de tête pour en conclure « c'est bon » serait une **impression** —
+> précisément ce que ce document reproche à « ça a marché ». Le verdict est
+> donc calculé et rendu.
+>
+> **`pret: true` n'existe que pour `production` + `explicite`.** Les quatre
+> autres états sont des **arrêts**, et `raison` dit lequel et comment le lever.
+>
+> ⚠️ **`absente` est un arrêt, et c'est le piège de lecture.** `mode: sandbox`
+> paraît rassurant : le repli est sûr **pour la sécurité**. Il est une **panne
+> de revenu** — un déploiement de production en bac à sable n'encaisse rien,
+> l'interface ne montre rien, et personne ne le voit. Ne pas confondre « sans
+> danger » et « fonctionne ».
+>
+> ⚠️ Et l'inverse est vrai aussi : `pret: false` en développement local est le
+> comportement **correct**, pas une panne. On n'est pas prêt à encaisser de
+> l'argent réel, par construction.
+
+⚠️ **`source` n'est pas décoratif** — il a été ajouté le 2026-08-22 sur revue
+porteur, qui a vu ce que le premier correctif laissait ouvert. `mode` seul ne
+distingue pas un `sandbox` **choisi** d'un `sandbox` **subi** parce que
+quelqu'un a supprimé la variable. Les quatre valeurs :
+
+| `source` | ce que ça dit |
+|---|---|
+| `explicite` | la variable est posée et lisible — le seul état acceptable au geste 5 |
+| `absente` | ⚠️ la variable n'existe pas. Repli `sandbox`. **Rien n'encaissera.** |
+| `vide` | ⚠️ la variable existe et vaut `""`. Même conséquence. |
+| `illisible` | ⚠️ valeur ambiguë (`prod`, `live`, `1`). `hote` est `null`, et toute création de paiement **lève**. |
+
+⚠️ **`" production"` avec un espace ne rend PAS `illisible`** — il rend
+`production`. C'est exactement ce que la normalisation existe pour faire ; ne
+pas la confondre avec le refus, qui ne frappe que les valeurs **ambiguës**.
+
+#### Le succès de la commande réelle est un RELEVÉ, pas une impression
+
+Exigence de revue (2026-08-22). Quatre requêtes, dans cet ordre, après le
+paiement. Chacune dit ce qu'elle doit rendre.
+
+```sql
+-- 1. LE CHEMIN EMPRUNTÉ — la seule preuve de l'hôte réellement servi.
+--    Attendu : production / moncashbutton.digicelgroup.com
+select raw->>'moncash_mode' as mode, raw->>'moncash_host' as hote,
+       status, provider_ref is not null as ref_recue
+  from payments order by created_at desc limit 1;
+
+-- 2. LA COMMANDE — attendu : status = 'paid', amount_htg = 300
+select id, status, amount_htg, created_at
+  from orders order by created_at desc limit 1;
+
+-- 3. LE GRAND LIVRE — L'OBJECTIF DU CHANTIER.
+--    Attendu : 1 ligne, type 'credit', amount_htg = +270,
+--    wallets.pending_htg = 270, escrow 'maturing', matures_at = J+7.
+--    ⚠️ Zéro ligne ici = `confirm_payment` n'a PAS tourné, quoi qu'affiche
+--    l'écran. C'est le compteur qui est passé de 0 à 1 pour la première fois.
+select wt.type, wt.amount_htg, w.balance_htg, w.pending_htg,
+       e.status as escrow, e.matures_at
+  from wallet_transactions wt
+  join wallets w on w.id = wt.wallet_id
+  left join escrow_entries e on e.order_id = wt.order_id
+ order by wt.created_at desc limit 5;
+
+-- 4. L'INVARIANT COMPTABLE (0033) — attendu : ok = true, ecart_total_htg = 0.
+--    Σ(wallet_transactions) = balance_htg + pending_htg, portefeuille par
+--    portefeuille. Un écart ici prime sur tout le reste : il veut dire qu'un
+--    solde a bougé HORS du grand livre.
+select * from zabelie_solvency_report();
+```
+
+Équivalent sans SQL : `/api/admin/coherence` doit rendre `ok: true` et
+`ecart_total_htg: 0`. **La 4 est celle qui décide.** Les trois premières
+peuvent toutes paraître bonnes pendant que l'identité est rompue ; l'inverse
+n'arrive pas.
+
+#### 🔴 Geste 6 — la procédure d'ÉCHEC, écrite avant d'en avoir besoin
+
+> Exigence de revue (2026-08-22), et l'argument est juste : *« une procédure
+> d'échec improvisée avec un vrai acheteur devant l'écran, c'est comme ça
+> qu'on casse une identité comptable. »*
+
+**Trancher d'abord entre deux mondes**, avec la requête 3 ci-dessus. Ils
+demandent des gestes opposés, et les confondre est la seule vraie faute
+possible ici.
+
+**Cas A — débité chez MonCash, AUCUNE ligne au grand livre.**
+C'est le cas des cinq échecs de 2026-08-11→14, et le plus probable. Aucun
+escrow n'existe, donc **l'invariant `0033` n'est pas menacé** : le grand livre
+n'a rien vu, et il a raison de n'avoir rien vu. L'argent est chez MonCash, pas
+chez Zabelie.
+
+1. **Ne pas appeler `/api/admin/refund`.** `refund_order` (`0006`) commence par
+   `select * into v_esc from escrow_entries where order_id = …` et **lève** s'il
+   ne trouve rien. Il n'y a rien à rembourser au sens comptable — rien n'a été
+   crédité.
+2. **Relancer la vérification serveur-à-serveur** : `/api/reconcile`
+   (Bearer `RECONCILE_SECRET`). C'est elle qui détient la vérité, pas le retour
+   navigateur (INVARIANT 2). Si MonCash répond « successful », `confirm_payment`
+   s'exécute — idempotent — et l'on bascule dans le monde nominal.
+3. **Lire le motif**, qui est déjà instrumenté :
+   `select raw->>'expired_reason', raw->>'moncash_host' from payments …`.
+   `moncash_unknown_48h` = MonCash ne connaît pas la transaction (404) ;
+   `moncash_not_successful_48h` = il la connaît et elle n'a pas abouti. **Ces
+   deux motifs ne veulent pas dire la même chose** et n'appellent pas la même
+   suite.
+4. **Le remboursement de l'acheteur est un dossier DIGICEL**, pas une écriture
+   Zabelie : les fonds ne sont jamais entrés dans le registre. Le rembourser
+   depuis le registre créerait de la monnaie qui n'y est jamais entrée.
+5. **Prévenir l'acheteur à la main.** 300 HTG et une personne réelle : le
+   silence est ici plus coûteux que l'erreur.
+
+##### La pièce à constituer pour Digicel — **le délai de constitution EST le délai de remboursement**
+
+Exigence de la seconde revue porteur (2026-08-22). Le jour où ça arrive, il y a
+un client fâché en face ; chercher les champs à ce moment-là coûte des heures.
+
+Une seule requête les sort tous — sauf un, et c'est le point suivant :
+
+```sql
+select p.created_at                       as horodatage_utc,
+       p.order_id                         as reference_interne,
+       p.id                               as paiement_interne,
+       p.idempotency_key,
+       p.provider_ref,                    -- ⚠️ null en cas A : c'est LE fait
+       p.status,
+       p.raw->>'moncash_mode'  as mode,
+       p.raw->>'moncash_host'  as hote,
+       p.raw->>'expired_reason' as motif, -- moncash_unknown_48h / _not_successful_48h
+       p.raw->>'payer_present' as payeur_connu_de_moncash
+  from payments p
+ where p.order_id = '<ORDER_ID>';
+```
+
+⚠️ **LE NUMÉRO DE L'ACHETEUR N'EST PAS EN BASE, ET C'EST DÉLIBÉRÉ.**
+`redactPayment` (`lib/moncash.ts`) retire l'identifiant du payeur — téléphone
+ou compte — **avant** tout stockage dans `payments.raw`, par minimisation RGPD
+(BL-115), et ne conserve qu'un booléen `payer_present`. La fonction est câblée
+aux trois endroits qui écrivent (`moncash/return` ×2, `reconcile`, plus le
+topup) : ce n'est pas un oubli, c'est un choix appliqué.
+
+**Conséquence pratique, à savoir AVANT et non pendant** : le numéro MonCash
+utilisé pour payer se **demande à l'acheteur**. Zabelie ne l'a jamais eu. Et en
+cas A, `payer_present` vaut le plus souvent `false` — MonCash ne connaissait
+même pas la transaction, il n'a donc jamais renvoyé de payeur.
+
+Ce qui compose le dossier, dans l'ordre où Digicel le lira :
+
+| Champ | D'où il vient |
+|---|---|
+| **Horodatage** de la tentative (UTC) | `payments.created_at` |
+| **Référence interne** | `payments.order_id` (+ `idempotency_key`, qui est la clé transmise au fournisseur) |
+| **Motif serveur-à-serveur** | `payments.raw->>'expired_reason'` — et **citer lequel** : `moncash_unknown_48h` (404, transaction inconnue) ou `moncash_not_successful_48h` (connue, non aboutie). Les deux ne racontent pas la même histoire à Digicel |
+| **Hôte interrogé** | `payments.raw->>'moncash_host'` — prouve qu'on parlait bien à la production |
+| **Numéro de l'acheteur** | ⚠️ **à demander lors de la réclamation — JAMAIS en base (BL-115).** Ne pas le chercher : `redactPayment` le retire avant tout stockage, par conception. Cette ligne existe pour que personne ne perde une heure à fouiller `payments.raw` le jour où un client attend |
+
+Y joindre l'heure locale Haïti en plus de l'UTC : les journaux Zabelie sont en
+UTC, l'acheteur raconte son heure, et l'écart de quatre heures a déjà égaré une
+analyse dans ce dépôt.
+
+**Cas B — la commande est `paid`, le grand livre porte les +270, et l'on veut
+défaire.**
+
+1. `POST /api/admin/refund { orderId }`, rôle admin. La trace d'audit s'écrit
+   **AVANT** l'acte et son échec l'interdit (fail-closed, arbitrage porteur
+   2026-08-10) : pas d'audit, pas de remboursement.
+2. `refund_order` est **idempotent** — un rejeu rend `already_reversed`. Avant
+   maturité il réduit `pending_htg` (aucun solde fantôme) ; après, il débite le
+   disponible.
+3. Il écrit une **ligne de débit compensatoire** de −270 au grand livre. Le
+   crédit initial **reste** : c'est la définition d'un journal append-only.
+4. Repasser la requête 4. `ok` doit redevenir `true`.
+
+**⛔ CE QU'ON NE FAIT DANS AUCUN DES DEUX CAS**
+
+* **Jamais d'`update` ni de `delete` sur `wallet_transactions`.** Le trigger de
+  `0025`/`0026` lève : *« wallet_transactions est APPEND-ONLY : % interdit
+  (corriger par écriture compensatoire) »*. Ce n'est pas un obstacle à
+  contourner, c'est la garantie elle-même.
+* **Jamais d'`update` direct sur `wallets`.** Un solde corrigé à la main rompt
+  `Σ(wallet_transactions) = balance_htg + pending_htg` — l'invariant `0033` —
+  et l'écart apparaîtra au contrôle quotidien sans que personne ne sache d'où
+  il vient. Une correction se fait par **écriture compensatoire**, toujours.
+* **Jamais de « petite correction » du statut de la commande** pour faire
+  concorder l'écran. L'écran suit le registre ; l'inverse est une falsification.
+* **Ne pas relancer un second paiement** avant d'avoir tranché A ou B : deux
+  paiements pour une commande est exactement le cas que l'idempotence est là
+  pour empêcher, et le forcer à la main la contourne.
 
 #### Pourquoi cet ordre, et ce que chaque inversion coûte
 
@@ -267,13 +467,46 @@ réellement remise à l'acheteur, jamais recalculée depuis l'environnement. Deu
 dérivations peuvent diverger ; celle-ci ne le peut pas. C'est ce qui distingue
 « la variable dit production » de « l'acheteur est parti chez production ».
 
-⚠️ **Une valeur malformée ne lève RIEN.** `lib/moncash.ts` fait
-`mode === "production" ? … : …` — un `else` binaire. `Production` avec une
-majuscule, un espace en fin de champ, une chaîne vide (que le `?? "sandbox"` ne
-rattrape pas, une chaîne vide n'étant pas `null`) retombent **silencieusement en
-bac à sable**. La cause n'est pas gardée ; seul l'effet est désormais lisible.
-**La requête ci-dessus est donc le contrôle, pas la valeur affichée dans
-Vercel.**
+> ## ✅ LA CAUSE EST GARDÉE DEPUIS LE 2026-08-22 — et le pré-vol existe
+>
+> Le paragraphe ci-dessous décrivait un piège armé. Il est désarmé, et les
+> deux moitiés du correctif comptent séparément.
+>
+> **1. `MONCASH_MODE` se RÉSOUT au lieu de se caster.**
+> `resolveMonCashMode()` (`lib/moncash.ts`) normalise la casse et les espaces
+> — `Production `, `PRODUCTION`, ` production` valent tous `production` — et
+> **LÈVE** sur tout le reste (`prod`, `live`, `true`, `1`). Absente ou vide
+> reste `sandbox`, le défaut documenté. Fail-closed assumé : lever empêche le
+> paiement, et un paiement qui part chez le mauvais hôte est strictement pire
+> qu'un paiement qui ne part pas.
+> ⚠️ **Il y avait DEUX casts dans le fichier**, pas un — le second dans
+> `config()`. Trouvé parce que l'outil d'édition a refusé une ancre non
+> unique, pas parce qu'il avait été vu. `tests/moncash-mode-resolu.test.ts` R6
+> assert donc l'**ABSENCE** de tout cast, jamais la présence de l'appel.
+>
+> **2. Le pré-vol : `/api/admin/coherence` → `integrations.moncash`.**
+>
+> ```json
+> { "moncash": { "configure": true, "mode": "production",
+>                "hote": "moncashbutton.digicelgroup.com" } }
+> ```
+>
+> Jusqu'ici, la seule façon de savoir si le geste 4 avait pris était de
+> **créer un paiement** puis de lire `payments.raw->>'moncash_host'` —
+> c'est-à-dire d'engager un acheteur réel pour vérifier un champ de
+> formulaire. `mode: "illisible"` signale une valeur mal saisie sans faire
+> tomber le contrôle comptable, qui n'a rien à voir avec elle.
+>
+> **Ordre pratique : geste 4 → redéploiement → pré-vol → seulement ensuite la
+> commande réelle.** Les deux contrôles restent nécessaires et ne disent pas
+> la même chose : le pré-vol lit la CONFIGURATION, la requête ci-dessous lit
+> ce qui a été RÉELLEMENT remis à un acheteur.
+
+⚠️ **Une valeur malformée ne levait RIEN** — texte d'origine conservé, c'est
+lui qui explique le garde. `lib/moncash.ts` fait `mode === "production" ? … : …`
+— un `else` binaire. `Production` avec une majuscule, un espace en fin de champ,
+une chaîne vide (que le `?? "sandbox"` ne rattrape pas, une chaîne vide n'étant
+pas `null`) retombaient **silencieusement en bac à sable**.
 
 ### Ce que cette commande produira, aux chiffres près
 

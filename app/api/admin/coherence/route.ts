@@ -5,6 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { evaluerArrondi } from "@/lib/rounding-probe";
 import { isEmailEnabled } from "@/lib/zabelie-email";
 import { isStripeEnabled } from "@/lib/stripe";
+/* LE PRÉ-VOL DU GESTE 5 de `docs/22` vit dans `lib/moncash.ts`, PAS ICI —
+ * déplacé le 2026-08-22 sur exigence de revue. Une sonde définie dans un
+ * fichier de route ne peut être vérifiée qu'en LISANT son `catch` ; déplacée,
+ * elle s'exécute contre des valeurs hostiles (`tests/moncash-mode-resolu` R9).
+ * Un `try` peut être présent et n'attraper rien. */
+import { sondeMonCash } from "@/lib/moncash";
 import { verdictObjets, type ObjetRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
@@ -166,7 +172,7 @@ async function handle(req: Request) {
         consequenceSiAbsent:
           "outbox (0061) et notifications de messagerie (0090) se drainent sans rien envoyer",
       },
-      moncash: { configure: Boolean(process.env.MONCASH_CLIENT_ID) },
+      moncash: { configure: Boolean(process.env.MONCASH_CLIENT_ID), ...sondeMonCash() },
       stripe: { configure: isStripeEnabled() },
     };
     if (!integrations.email.configure) {
