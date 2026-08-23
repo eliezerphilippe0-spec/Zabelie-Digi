@@ -378,7 +378,7 @@ Ce qui compose le dossier, dans l'ordre où Digicel le lira :
 | **Référence interne** | `payments.order_id` (+ `idempotency_key`, qui est la clé transmise au fournisseur) |
 | **Motif serveur-à-serveur** | `payments.raw->>'expired_reason'` — et **citer lequel** : `moncash_unknown_48h` (404, transaction inconnue) ou `moncash_not_successful_48h` (connue, non aboutie). Les deux ne racontent pas la même histoire à Digicel |
 | **Hôte interrogé** | `payments.raw->>'moncash_host'` — prouve qu'on parlait bien à la production |
-| **Numéro de l'acheteur** | ⚠️ **à demander à l'acheteur** — jamais en base, voir ci-dessus |
+| **Numéro de l'acheteur** | ⚠️ **à demander lors de la réclamation — JAMAIS en base (BL-115).** Ne pas le chercher : `redactPayment` le retire avant tout stockage, par conception. Cette ligne existe pour que personne ne perde une heure à fouiller `payments.raw` le jour où un client attend |
 
 Y joindre l'heure locale Haïti en plus de l'UTC : les journaux Zabelie sont en
 UTC, l'acheteur raconte son heure, et l'écart de quatre heures a déjà égaré une
