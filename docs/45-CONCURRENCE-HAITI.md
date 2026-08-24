@@ -55,6 +55,42 @@ fiche Kobara `docs/03` §9.1, qui distingue « documenté » de « testé ».
 créneau. Kobara n'est pas un passage obligé : si le rail s'ouvre un jour, il y
 a une comparaison à faire, pas un fournisseur à adopter.
 
+### ⚠️ 2 bis. HtiPay n'est PAS qu'une passerelle — c'est aussi une marketplace
+
+**La trouvaille la plus lourde du relevé, et elle traverse deux documents.**
+
+`support.htipay.com` publie : *« D'un système de paiement à un marketplace,
+HtiPay veut réinventer le commerce électronique en Haïti ! »*. D'après le
+relevé, cette marketplace **multi-vendeurs** est ouverte aux marchands
+**depuis août 2020** : les vendeurs candidatent et **créent leur boutique sans
+connaissance technique**.
+
+Pourquoi ça compte plus que les autres lignes :
+
+* **C'est exactement la trajectoire de Zabelie**, mais dans l'autre sens. HtiPay
+  est parti du **rail** et a construit la place de marché par-dessus ; Zabelie
+  part de la **place de marché** et cherche ses rails. L'un des deux a six ans
+  d'avance sur la moitié que l'autre n'a pas encore.
+* **HtiPay figure DÉJÀ dans `docs/03` §9** comme candidat de rail de paiement
+  (« existe, API non confirmée »). Ce document-ci le trouve comme **concurrent
+  marketplace**. ⚠️ **Les deux fiches parlaient du même acteur sans le savoir**
+  — le classer uniquement comme fournisseur était une erreur de catégorie.
+  Adopter un jour son rail reviendrait à faire transiter les paiements de
+  Zabelie par un concurrent direct, qui verrait alors passer **volumes, prix et
+  vendeurs**. Ce n'est pas rédhibitoire, c'est une donnée qui manquait.
+
+À vérifier avant toute conclusion : la marketplace HtiPay est-elle **encore
+active en 2026** ? L'article date de 2020-2021 et rien ici ne dit qu'elle vit
+encore. Un site ouvert et un marché actif ne se distinguent pas d'un résumé de
+recherche.
+
+### 2 ter. Deux acteurs d'un autre type
+
+| | |
+|---|---|
+| **SurfGroupe** (`vendeurs.surfgroupe.com`) | Espace vendeur — un marketplace de plus, non exploré |
+| **PLOGIFY** (`plogify.com`) | ⚠️ **Menace d'une AUTRE nature.** « Kreye yon sit pou Biznis ou kounya » — créer son site de vente **sans code**, en kreyòl. Ne dispute pas les acheteurs à Zabelie : il permet au **vendeur de se passer entièrement d'une marketplace**. C'est le Shopify haïtien, et il attaque la raison d'être, pas la part de marché |
+
 ## 3. Talents et produits numériques — ⚠️ **CORRIGÉ le 2026-08-24**
 
 > ### 🔴 LA PREMIÈRE VERSION DE CETTE SECTION ÉTAIT FAUSSE
@@ -177,6 +213,28 @@ paiement** — *« attention aux homonymes : Htipay ≠ HaitiPay »*. Deux lectu
 possibles, et il faut trancher avant de comparer quoi que ce soit : soit le
 domaine est erroné et l'acteur haïtien vit ailleurs, soit le nom retenu n'est
 pas le bon. **À confirmer par le porteur**, qui a la source.
+
+### `shop509.com` — **introuvable, et le nom est un champ de mines**
+
+Trois requêtes (français, kreyòl, domaine exact), aucun résultat pour ce
+domaine. `EGRESS_BLOCKED` à la tentative d'ouverture. **Ça ne prouve rien** —
+même prudence que ci-dessous.
+
+Ce que la recherche a rendu à la place mérite d'être noté, parce que c'est un
+risque de confusion permanent : **l'indicatif « 509 » est un espace de noms
+saturé**. Sont sortis, tous distincts : `store509.com` (badges et goodies,
+téléphone américain), `code509.com` (produits haïtiens, soins, bijoux),
+`boulevard509.store` (vêtements à la demande), `todous509.com` (cuisine),
+`509sakpaseapparel` (vêtements), et une page Facebook **Haiti Store
+(@509bizishaiti)** qui vend avec **livraison en Haïti et paiement MonCash**.
+
+⚠️ **Deuxième homonyme en une session**, après `koremart.com`. Confirmer le
+domaine exact avant toute comparaison.
+
+⚠️ **Et `@509bizishaiti` est une confirmation directe de la §5** : une **page
+Facebook** qui vend, livre et encaisse en MonCash, sortie spontanément d'une
+recherche de marketplaces. Le concurrent le plus sérieux de Zabelie n'a
+peut-être pas de site.
 
 ### `noula.com` — **non identifié comme marketplace**
 

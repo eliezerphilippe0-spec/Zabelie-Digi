@@ -230,6 +230,7 @@ reporting). ⛔ Bloqué — voir `00-CONTEXTE.md §11` et `§14`.
 | Zappp | ⛔ Introuvable en ligne | Source du porteur attendue |
 | Htipay (htipay.com) | ⚠️ Existe, API non confirmée | Contact direct requis ; ne pas confondre avec HaitiPay |
 | HaitiPay (haitipay.com) | ⚠️ Portail dev public (`devportal.haitipay.com`, « Acceptor API ») | Non demandé par le porteur à ce stade |
+| ⚠️ **Htipay — ERREUR DE CATÉGORIE, corrigée le 2026-08-24** | — | **Htipay n'est pas qu'une passerelle : c'est AUSSI une marketplace multi-vendeurs**, ouverte aux marchands depuis août 2020 (`support.htipay.com`). Ce tableau ne le classait que comme fournisseur. Adopter son rail ferait transiter les paiements de Zabelie par un **concurrent direct**, qui verrait passer volumes, prix et vendeurs. Pas rédhibitoire — mais c'est une donnée qui manquait à la fiche. → `docs/45` §2 bis |
 | **Kobara (kobara.app)** | ⚠️ **Fiche OUVERTE le 2026-08-23, 1 case sur 6** | Passerelle MonCash **et NatCash**. Voir §9.1 ci-dessous. |
 
 ### 9.1 Fiche Kobara — ouverte le 2026-08-23, **INCOMPLÈTE**
