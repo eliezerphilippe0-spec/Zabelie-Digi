@@ -255,30 +255,72 @@ l'opérateur** : ce qu'il faut vérifier n'est plus « NatCash a-t-il une API »
 mais « **cet intermédiaire-ci est-il un tiers à qui confier de l'argent de
 vendeurs** ». Ce sont deux questions différentes, et la seconde est plus dure.
 
-**Ce qui n'est PAS mesuré — les cinq cases vides** :
+**Trois cases passées à « DOCUMENTÉ », le 2026-08-24 — et pas à « testé »**
 
-- [ ] **Documentation d'API publique + sandbox accessible.** ⛔ Non vérifié :
-      `kobara.app` est **bloqué par le proxy de sortie** de l'environnement
-      d'agent (`EGRESS_BLOCKED`). Rien de ce qui suit n'a pu être lu à la
-      source. Les valeurs citées dans le document de session (endpoints,
-      `Idempotency-Key`, `payment.succeeded`) sont **non confirmées**.
-- [ ] **Mécanisme de confirmation signé.** Le document annonce un HMAC-SHA256
-      sur le corps brut. Non vérifié contre une documentation.
-- [ ] **Plafonds.** Le document annonce des plafonds de **retrait** : Free
-      2 500 HTG/jour, Pro 20 000, Premium 50 000. ⚠️ **À rapprocher de
-      `RAIL_CAPS`** : le plafond MonCash de ce dépôt est de 25 000 HTG **par
-      transaction**. Une passerelle plafonnée à 2 500 HTG/jour ne peut pas
-      régler les vendeurs d'une marketplace ; le plan n'est pas un détail de
-      facturation, c'est une **contrainte de faisabilité**.
-- [ ] **Statut réglementaire (BRH).** ⛔ **RIEN.** Aucune mention d'agrément,
-      d'entité juridique enregistrée, ni de licence. Voir l'avertissement
-      ci-dessous — c'est la case qui commande toutes les autres.
-- [ ] **Modalités de règlement** vers notre compte : délai, compte de
-      destination, cantonnement éventuel des fonds pendant la détention.
-- [ ] **Frais** : le document annonce 4 % (Free) / 2,9 % (payant), prélevés sur
-      chaque paiement. Impact direct sur la commission (10 % / 6 % Elite) et
-      donc sur le **net vendeur** — paramètre commercial, table de config,
-      décision porteur (règle dure n°3).
+> ⚠️ **Provenance, et elle est la moitié de la valeur de ces lignes.** Lues
+> **à la source**, sur le site du prestataire, dans le navigateur du porteur —
+> `kobara.app` est bloqué par le proxy de sortie de l'agent (`EGRESS_BLOCKED`)
+> et le restera. Ce ne sont donc **ni des mesures de l'agent, ni un document
+> recopié** : c'est une lecture humaine de la documentation officielle.
+>
+> **Documenté ≠ testé.** Aucun compte n'existe, rien n'a été exécuté, aucun
+> appel n'a jamais été émis. Une documentation décrit une intention ; seul un
+> aller-retour en bac à sable décrit un comportement. Ce dépôt a déjà payé
+> cette confusion — cinq paiements MonCash ont échoué contre un hôte qui
+> répondait exactement comme la documentation l'annonçait.
+
+- [x] **API publique documentée.** `POST https://api.kobara.app/api/v1/payments`,
+      auth `Bearer kbr_sk_live_…`, header **`Idempotency-Key` documenté
+      explicitement** (bon signe : c'est l'invariant 1). Le champ `provider`
+      accepte `"natcash"`, `"moncash"` ou `"kobara"` (page de choix unifiée).
+      Réponse : `id`, `checkout_url`, `status`.
+      - [ ] **Sandbox** : secrets test/live distincts annoncés, mais **aucun
+            identifiant de test obtenu**. La case reste ouverte.
+- [x] **Mécanisme de confirmation signé.** Webhook `payment.succeeded`, headers
+      `Kobara-Signature: t=…,v1=…`, `Kobara-Event`, `Kobara-Environment`,
+      `Kobara-Timestamp`. Signature =
+      `hex(HMAC-SHA256(secret_endpoint, timestamp + "." + raw_body))`, fenêtre
+      de 5 minutes, secrets séparés test/live.
+      **C'est la forme correcte** — corps brut, horodatage dans la charge
+      signée, anti-rejeu — et c'est le modèle déjà en place pour Stripe ici.
+      Elle satisfait l'invariant 2 **sur le papier**.
+- [x] **Frais : 4 % (Free) / 2,9 % (plans payants)**, déduits de **chaque
+      encaissement**. ⚠️ Ils s'ajoutent à la commission (10 % / 6 % Elite) :
+      soit ils rognent le **net vendeur**, soit la **marge plateforme**, et ce
+      choix est un **paramètre commercial** — table de config, décision
+      porteur (règle dure n°3). Il n'a pas de valeur par défaut acceptable.
+
+**⚠️ Correction du 2026-08-24 sur les plafonds — l'obstacle se DÉPLACE, il ne disparaît pas**
+
+La première version de cette fiche traitait les 2 500 HTG/jour comme un
+plafond d'**encaissement**. C'est faux, et la correction vient du porteur :
+c'est le **retrait journalier du solde marchand**. On peut donc collecter
+davantage ; on ne peut pas **sortir** l'argent plus vite.
+
+Ce que ça change : ce n'est plus une contrainte de **faisabilité** mais de
+**trésorerie**. Et elle reste dirimante pour une marketplace, qui doit régler
+ses vendeurs à J+7 — un règlement qu'on ne peut pas retirer est un règlement
+qu'on ne peut pas faire. Elle s'efface sur le plan **Business** (retraits
+illimités, **12 500 HTG/mois** — une **dépense**, donc une décision porteur).
+
+- [ ] **Statut réglementaire (BRH).** ⛔ **RIEN**, et le porteur n'a rien
+      trouvé non plus en cherchant à la source. Aucune entité juridique, aucun
+      agrément, aucune licence. Voir l'avertissement ci-dessous.
+- [ ] **Modalités de règlement / DÉTENTION DES FONDS.** ⛔ **RIEN non plus** :
+      la documentation ne dit pas **qui détient l'argent** entre l'encaissement
+      et le retrait, ni sur quel compte, ni s'il est cantonné. Pour ce dossier
+      c'est la question la plus lourde des six, et c'est celle qu'aucune page
+      technique ne traitera jamais.
+
+#### ⛔ Ce qu'il ne faut PAS conclure de `provider: "moncash"`
+
+Kobara encaisse aussi MonCash. **Ce n'est pas une raison d'y faire passer
+MonCash.** Le rail direct Digicel existe ici, il est construit, et il est à
+quatre gestes de sa première gourde réelle. Le router par un intermédiaire
+payant qui détient les fonds serait une régression sur les deux axes qui
+comptent : **le coût** (2,9 % qui n'existent pas aujourd'hui) et **la
+détention** (un maillon de plus dans le montage examiné par le conseil).
+MonCash reste en direct.
 
 #### ⛔ L'avertissement qui prime : la rétention, pas la technique
 
@@ -296,3 +338,27 @@ est en cours.
 Ce n'est pas un argument technique et il ne se lève pas par du code : il se
 lève par l'avis écrit, ou par une question ajoutée au dossier Volmar. Tant
 qu'il est ouvert, la fiche reste fermée.
+
+⚠️ **Et la qualité technique de la passerelle ne l'atténue pas — elle l'aggrave
+comme piège de lecture.** Les trois cases cochées ci-dessus sont bonnes :
+idempotence documentée, signature HMAC sur le corps brut, anti-rejeu. Une
+intégration soignée donne le sentiment que le dossier avance. Il n'avance pas :
+**les deux cases qui bloquent sont juridiques**, et aucune ligne de code, aussi
+correcte soit-elle, n'y touche. C'est le même défaut de choix de question que
+`CLAUDE.md` décrit à propos du 2026-08-11 — une journée de filets impeccables
+posés pendant que le stockage n'avait pas une seule policy.
+
+#### Décision du 2026-08-24 — fiche EN ATTENTE, et de quoi exactement
+
+Mise de côté **jusqu'après la première gourde réelle sur MonCash**
+(`docs/22`), sur recommandation convergente de l'agent et du porteur. Ce qui
+la rouvrira, dans cet ordre :
+
+1. la **première commande réelle** aboutie sur MonCash — c'est l'essai qui
+   manque depuis l'origine, et ouvrir un second rail avant lui déplacerait
+   l'attention ;
+2. une **réponse de HDIT / Cabinet Volmar** (`docs/17`, parti le 2026-08-21),
+   ou une **question ajoutée** à ce dossier sur la détention par un
+   intermédiaire ;
+3. un **compte Kobara en bac à sable** avec un aller-retour réel : c'est ce qui
+   ferait passer les trois cases de « documenté » à « testé ».
