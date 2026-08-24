@@ -320,6 +320,11 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 - `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
 - `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
   contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
+- `docs/45-CONCURRENCE-HAITI.md` — relevé concurrentiel (2026-08-24) :
+  Bemane, MvinHT, Tchotchom & co. ⚠️ Tiré de **résumés de recherche**, aucune
+  page ouverte (proxy) — arguments de vente, pas mesures. Deux faits qui
+  comptent : la commission concurrente descend à **2 %** (Zabelie 10 % / 6 %),
+  et **NatCash est un standard de place**, pas un avantage.
 - `docs/44-SURFACE-API.md` — inventaire de la surface d'API (2026-08-22) :
   ce qui existe, ce qui manque, et ⛔ **ce qu'il ne faut PAS construire**.
   ⚠️ Y est mesuré que les **neuf endpoints v1** de `lib/api/v1/schemas.ts`
