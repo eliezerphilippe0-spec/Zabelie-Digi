@@ -307,6 +307,14 @@ illimités, **12 500 HTG/mois** — une **dépense**, donc une décision porteur
 - [ ] **Statut réglementaire (BRH).** ⛔ **RIEN**, et le porteur n'a rien
       trouvé non plus en cherchant à la source. Aucune entité juridique, aucun
       agrément, aucune licence. Voir l'avertissement ci-dessous.
+      ⭐ **La question est devenue FERMÉE le 2026-08-24** — plus « statut
+      inconnu » mais : **Kobara est-elle enregistrée comme FSP auprès de la
+      BRH ?** La circulaire 121 impose l'autorisation ou la lettre de
+      non-objection AVANT de fournir un service de paiement électronique, et
+      le délai de conformité est échu depuis décembre 2022 : une entité non
+      conforme **doit cesser ses activités**. Même question pour **Tchotchom**,
+      **HtiPay** et **Mannitòks**. ⚠️ Elle vaut dans les deux sens — un
+      agrément en règle serait un argument POUR. → `docs/17` §7.2 et §7.3.
 - [ ] **Modalités de règlement / DÉTENTION DES FONDS.** ⛔ **RIEN non plus** :
       la documentation ne dit pas **qui détient l'argent** entre l'encaissement
       et le retrait, ni sur quel compte, ni s'il est cantonné. Pour ce dossier
