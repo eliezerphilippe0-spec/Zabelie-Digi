@@ -236,19 +236,55 @@ Facebook** qui vend, livre et encaisse en MonCash, sortie spontanément d'une
 recherche de marketplaces. Le concurrent le plus sérieux de Zabelie n'a
 peut-être pas de site.
 
-### `noula.com` — **non identifié comme marketplace**
+### `noula.ht` — ⚠️ **TRANCHÉ : ce n'est PAS un concurrent**
 
-Ce qui remonte sous « nOula » est une **initiative de la diaspora** décrite par
-`synergiehaiti.org` — fédérer les forces de la diaspora haïtienne — associée à
-**Café nOula**, qui importe au Canada du café de coopératives de petits
-producteurs haïtiens.
+Domaine corrigé par le porteur (`.ht`, pas `.com`). Résultat net :
 
-⚠️ **Ce n'est PAS une confirmation de ce qu'est `noula.com`.** La recherche
-décrit « nOula » ; elle ne dit pas que c'est ce domaine-là, ni que ce domaine
-héberge une marketplace. Et l'absence de résultat marketplace ne prouve rien —
-**c'est la règle du grep, et elle vient d'être vérifiée à mes dépens une
-section plus haut** : le silence en français n'a pas survécu à une requête en
-kreyòl. Case ouverte, à ouvrir dans un navigateur humain.
+**`noula.ht` est « Noula — Portail de gestion de crise — Haïti ».** Un outil
+numérique de gestion de crise, sans rapport avec le commerce. Case fermée.
+
+Deux détails qui ont leur importance :
+
+* **Le domaine ne résout même pas en DNS depuis ici** (`ENOTFOUND`), là où tous
+  les autres rendaient `EGRESS_BLOCKED`. Ce n'est donc pas le proxy : ou bien
+  le site est mort, ou bien son DNS est cassé. Les résultats de recherche le
+  donnent en `http://`, pas `https://` — signature d'un site ancien.
+* **`noulacoop.com` est encore autre chose** : la coopérative de solidarité
+  nOula, entrepreneurs sociaux du Québec et des États-Unis, chaîne
+  d'approvisionnement directe Haïti ↔ Amérique du Nord depuis 15 ans, 2 000
+  familles de petits producteurs agricoles. Elle a bien une boutique en ligne —
+  mais c'est de l'**export équitable vers le Nord**, pas une place de marché
+  haïtienne. Adjacent, pas concurrent.
+
+### `shop509.com` — **toujours introuvable, et un voisin plausible**
+
+Domaine confirmé par le porteur. Quatre requêtes au total, aucun résultat pour
+ce domaine ; `EGRESS_BLOCKED` à l'ouverture. **Toujours pas une preuve
+d'absence** — seulement l'impossibilité de le documenter d'ici.
+
+⚠️ **Un voisin très proche est sorti, et il faut lever le doute** :
+**`achat509.com`** — « Achat509 : Offres uniques, qualité garantie en Haïti ! »,
+boutique en ligne avec livraison rapide dans tout le pays. À vérifier : est-ce
+le site visé, ou un acteur distinct de plus ?
+
+Également apparu : **`konplekslakay.com`** — produits haïtiens (épicerie,
+vêtements, soins), livraison **Canada / USA / Haïti**. Orienté diaspora.
+
+### ⚠️ Ce que ces trois pistes apprennent sur la MÉTHODE
+
+Trois noms fournis de mémoire, trois collisions : `koremart.com` est un
+fondeur de Pennsylvanie, `noula.ht` un portail de crise, `shop509.com`
+introuvable dans un espace de noms saturé de « 509 ».
+
+**Ce n'est pas un défaut d'attention, c'est une propriété de ce marché** : les
+marques y sont massivement homonymes — l'indicatif 509, les mots kreyòl
+courants, les noms génériques. `docs/03` §9 le savait déjà pour les rails
+(« Htipay ≠ HaitiPay ») ; c'est vrai du commerce aussi.
+
+**Conséquence pratique** : un relevé concurrentiel ne se fait pas à partir de
+noms cités de mémoire. Il se fait à partir d'**URL ouvertes dans un
+navigateur**, copiées depuis la barre d'adresse. Le porteur peut le faire ; le
+proxy m'en empêche.
 
 ## 5. Ce qui n'a PAS été cherché, et devrait l'être
 
