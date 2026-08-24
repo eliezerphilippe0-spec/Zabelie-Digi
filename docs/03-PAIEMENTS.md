@@ -222,6 +222,86 @@ reporting). ⛔ Bloqué — voir `00-CONTEXTE.md §11` et `§14`.
    `payment_idempotency.test.sql` pour un rail non-HTG) + garde
    `api-auth-coverage` pour toute nouvelle route.
 
+### ⭐ 9.0 — LA BRH PUBLIE LE REGISTRE DES FSP AGRÉÉS (trouvé le 2026-08-24)
+
+> **Ça change la méthode de sélection d'un rail, pas seulement une fiche.**
+> L'étape 0 demandait « statut réglementaire (licence/agrément BRH le cas
+> échéant) ». On croyait devoir le demander au prestataire. **Il est public.**
+
+**`brh.ht/supervision/fournisseur-de-services-de-paiement-electronique-fspe/`**
+
+⚠️ **Page NON OUVERTE** — `brh.ht` est `EGRESS_BLOCKED` depuis l'agent. Ce qui
+suit vient d'un résumé de recherche, et **la liste est probablement
+partielle**. À télécharger et à recopier ici à la source.
+
+Entités nommées dans le résumé :
+
+| Entité agréée | Service |
+|---|---|
+| **NATCOM S.A.** | **NATCASH** |
+| **Unigestion Holding S.A.** | **MONCASH** ← déjà le partenaire de Zabelie |
+| **Société Générale Haïtienne de Banque S.A.** (Sogebank) | **MAGO** |
+| **Kiskeya Technologies Group S.A.** | **KashPaw** |
+
+**Ce que la liste apprend, indépendamment des noms** : les FSP agréés sont des
+**sociétés anonymes** — un opérateur télécom, une banque, un holding, une
+société de technologie. C'est cohérent avec le champ d'application de la
+circulaire 121 (`docs/17` §7.2).
+
+⚠️ **Aucun des quatre agrégateurs du relevé concurrentiel n'y figure** —
+Kobara, Tchotchom, HtiPay, Mannitòks. **Ce n'est PAS une preuve qu'ils ne sont
+pas agréés** : la liste lue est partielle et n'a pas été ouverte. C'est la
+règle du grep, et elle a déjà démenti ce dépôt deux fois le même jour.
+
+#### La règle de sélection qui en découle
+
+**Ne compare pas les API. Demande le numéro d'agrément.**
+
+Tous les agrégateurs présenteront une intégration correcte — Kobara le fait
+déjà, et bien. L'API n'est pas le critère discriminant ; l'agrément l'est,
+parce qu'il est le seul élément qui touche au dossier `docs/17`. Un candidat
+qui répond par un numéro a répondu. Un candidat qui n'y figure pas a répondu
+aussi.
+
+#### ⚠️ Et la conséquence la plus utile : la voie DIRECTE existe
+
+**NATCOM S.A. est elle-même un FSP agréé pour NATCASH.**
+
+La règle dure n°2 dit « NatCash ⛔ — aucune API publique », et **elle reste
+vraie**. Mais elle décrit un obstacle **commercial**, pas une impossibilité :
+c'est exactement la situation de MonCash avant qu'un compte MonCash Business
+soit ouvert le 2026-08-10 et qu'une correspondance s'engage avec Digicel MFS
+Business (`docs/42` §1).
+
+**Zabelie a déjà résolu ce problème une fois.** Le chemin pour NatCash n'est
+pas forcément un agrégateur : c'est peut-être la même démarche, auprès de
+NATCOM. Un accord marchand direct n'ajoute **aucun dépositaire**, **aucun
+frais d'intermédiaire**, et **aucun maillon** au montage de `docs/17` — les
+trois objections qui bloquent la fiche Kobara.
+
+⚠️ Non tenté, non demandé. C'est une **hypothèse de chemin**, pas un fait.
+
+#### 🔎 Piste Sogebank — potentiellement plus lourde que NatCash
+
+**Sogebank** est une banque commerciale haïtienne (1986, reprise des actifs de
+la Royal Bank of Canada). Elle opère **MAGO**, FSP agréé — et surtout
+**SogePay**, passerelle de paiement en ligne pour marchands, **avec intégration
+par API** (formulaire « Affiliation Commerçant », `sogebank.com/sogepay`).
+
+⚠️ **L'hypothèse à vérifier, et elle vaut plus que NatCash** : `docs/03` §1
+bloque Stripe **et** Zelle sur un même prérequis — une **entité étrangère
+*merchant of record***, parce qu'Haïti n'est pas un pays marchand supporté.
+**Une banque haïtienne servant des marchands haïtiens n'a pas ce problème.**
+
+Si SogePay permet d'encaisser la carte bancaire **sans entité étrangère**, il
+lève un blocage qui dure depuis V-10 et qui coûte la diaspora entière — un
+marché explicitement visé par `CLAUDE.md`. C'est à confirmer auprès de la
+banque, pas à déduire.
+
+⚠️ À ne pas confondre : **MAGO** est un portefeuille, **SogePay** une
+passerelle carte. **Ni l'un ni l'autre n'est NatCash.** Cette piste ne comble
+pas l'écart NatCash — elle en comble un autre, peut-être plus large.
+
 ### Rails candidats — état des fiches (2026-07-22)
 
 | Prestataire | Étape 0 | Notes |
@@ -232,6 +312,10 @@ reporting). ⛔ Bloqué — voir `00-CONTEXTE.md §11` et `§14`.
 | HaitiPay (haitipay.com) | ⚠️ Portail dev public (`devportal.haitipay.com`, « Acceptor API ») | Non demandé par le porteur à ce stade |
 | ⚠️ **Htipay — ERREUR DE CATÉGORIE, corrigée le 2026-08-24** | — | **Htipay n'est pas qu'une passerelle : c'est AUSSI une marketplace multi-vendeurs**, ouverte aux marchands depuis août 2020 (`support.htipay.com`). Ce tableau ne le classait que comme fournisseur. Adopter son rail ferait transiter les paiements de Zabelie par un **concurrent direct**, qui verrait passer volumes, prix et vendeurs. Pas rédhibitoire — mais c'est une donnée qui manquait à la fiche. → `docs/45` §2 bis |
 | **Kobara (kobara.app)** | ⚠️ **Fiche OUVERTE le 2026-08-23, 1 case sur 6** | Passerelle MonCash **et NatCash**. Voir §9.1 ci-dessous. |
+| **NATCOM S.A.** (NatCash, voie DIRECTE) | ⭐ **À OUVRIR — priorité 1** | **FSP agréé BRH** (§9.0). Aucun dépositaire ajouté, aucun frais d'intermédiaire. Même démarche que MonCash/Digicel, que Zabelie sait déjà mener |
+| **Sogebank — SogePay / MAGO** | ⭐ **À OUVRIR — priorité 2** | Banque, **FSP agréé** pour MAGO. SogePay = passerelle carte **avec API**. ⚠️ Hypothèse à vérifier : lève-t-elle le prérequis d'**entité étrangère** qui bloque Stripe ET Zelle ? Si oui, elle vaut plus que NatCash |
+| **Kiskeya Technologies Group S.A.** (KashPaw) | ⚠️ **FSP agréé**, capacités inconnues | Aucune documentation d'API trouvée. Pétion-Ville |
+| Tchotchom · Mannitòks | ⚠️ Agrégateurs, agrément **non vérifié** | Même question que Kobara : numéro d'agrément BRH ? |
 
 ### 9.1 Fiche Kobara — ouverte le 2026-08-23, **INCOMPLÈTE**
 
