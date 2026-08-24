@@ -230,3 +230,69 @@ reporting). ⛔ Bloqué — voir `00-CONTEXTE.md §11` et `§14`.
 | Zappp | ⛔ Introuvable en ligne | Source du porteur attendue |
 | Htipay (htipay.com) | ⚠️ Existe, API non confirmée | Contact direct requis ; ne pas confondre avec HaitiPay |
 | HaitiPay (haitipay.com) | ⚠️ Portail dev public (`devportal.haitipay.com`, « Acceptor API ») | Non demandé par le porteur à ce stade |
+| **Kobara (kobara.app)** | ⚠️ **Fiche OUVERTE le 2026-08-23, 1 case sur 6** | Passerelle MonCash **et NatCash**. Voir §9.1 ci-dessous. |
+
+### 9.1 Fiche Kobara — ouverte le 2026-08-23, **INCOMPLÈTE**
+
+> ⚠️ Ouverte parce qu'un document de mise en service a été présenté en session.
+> Elle n'autorise **aucune ligne de code** : l'étape 0 est éliminatoire et cinq
+> cases sur six sont vides. Elle est consignée ici pour que la recherche ne soit
+> pas refaite, pas pour valider quoi que ce soit.
+
+**Ce qui EST mesuré** (recherche web, 2026-08-23) :
+
+- [x] **Le prestataire existe.** `kobara.app` se présente comme une passerelle
+      de paiement haïtienne pour **MonCash et NatCash** — API, liens de
+      paiement, webhooks, tableau de bord marchand, WooCommerce, montants en
+      HTG. Une page d'agence haïtienne (Coding Club Haïti) crédite le site à un
+      développeur nommé.
+
+⚠️ **CE QUE ÇA CHANGE À UNE PRÉMISSE DU DÉPÔT** : `CLAUDE.md` règle dure n°2
+porte « **NatCash ⛔ (aucune API publique)** ». Cette phrase visait NatCash
+**en direct**, chez Natcom, et elle reste vraie de ce qu'elle vise. Elle a été
+écrite avant que cette passerelle soit connue ici. **Un intermédiaire n'est pas
+l'opérateur** : ce qu'il faut vérifier n'est plus « NatCash a-t-il une API »
+mais « **cet intermédiaire-ci est-il un tiers à qui confier de l'argent de
+vendeurs** ». Ce sont deux questions différentes, et la seconde est plus dure.
+
+**Ce qui n'est PAS mesuré — les cinq cases vides** :
+
+- [ ] **Documentation d'API publique + sandbox accessible.** ⛔ Non vérifié :
+      `kobara.app` est **bloqué par le proxy de sortie** de l'environnement
+      d'agent (`EGRESS_BLOCKED`). Rien de ce qui suit n'a pu être lu à la
+      source. Les valeurs citées dans le document de session (endpoints,
+      `Idempotency-Key`, `payment.succeeded`) sont **non confirmées**.
+- [ ] **Mécanisme de confirmation signé.** Le document annonce un HMAC-SHA256
+      sur le corps brut. Non vérifié contre une documentation.
+- [ ] **Plafonds.** Le document annonce des plafonds de **retrait** : Free
+      2 500 HTG/jour, Pro 20 000, Premium 50 000. ⚠️ **À rapprocher de
+      `RAIL_CAPS`** : le plafond MonCash de ce dépôt est de 25 000 HTG **par
+      transaction**. Une passerelle plafonnée à 2 500 HTG/jour ne peut pas
+      régler les vendeurs d'une marketplace ; le plan n'est pas un détail de
+      facturation, c'est une **contrainte de faisabilité**.
+- [ ] **Statut réglementaire (BRH).** ⛔ **RIEN.** Aucune mention d'agrément,
+      d'entité juridique enregistrée, ni de licence. Voir l'avertissement
+      ci-dessous — c'est la case qui commande toutes les autres.
+- [ ] **Modalités de règlement** vers notre compte : délai, compte de
+      destination, cantonnement éventuel des fonds pendant la détention.
+- [ ] **Frais** : le document annonce 4 % (Free) / 2,9 % (payant), prélevés sur
+      chaque paiement. Impact direct sur la commission (10 % / 6 % Elite) et
+      donc sur le **net vendeur** — paramètre commercial, table de config,
+      décision porteur (règle dure n°3).
+
+#### ⛔ L'avertissement qui prime : la rétention, pas la technique
+
+`CLAUDE.md` : *« Ne rien construire qui **aggrave** la rétention sans avis
+écrit »* (`docs/17`, dossier ouvert chez HDIT / Cabinet Volmar depuis le
+2026-08-21, **sans réponse**).
+
+Aujourd'hui la plateforme encaisse sur un compte marchand unique et retient le
+net vendeur jusqu'au règlement — c'est déjà la question posée au conseil.
+Faire transiter l'argent des vendeurs par **un intermédiaire supplémentaire qui
+détient les fonds**, avec des plafonds de retrait et un statut réglementaire
+inconnu, **ajoute un maillon de détention** au montage exact sur lequel un avis
+est en cours.
+
+Ce n'est pas un argument technique et il ne se lève pas par du code : il se
+lève par l'avis écrit, ou par une question ajoutée au dossier Volmar. Tant
+qu'il est ouvert, la fiche reste fermée.
