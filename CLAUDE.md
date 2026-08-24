@@ -321,10 +321,15 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 - `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
   contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
 - `docs/45-CONCURRENCE-HAITI.md` — relevé concurrentiel (2026-08-24) :
-  Bemane, MvinHT, Tchotchom & co. ⚠️ Tiré de **résumés de recherche**, aucune
-  page ouverte (proxy) — arguments de vente, pas mesures. Deux faits qui
-  comptent : la commission concurrente descend à **2 %** (Zabelie 10 % / 6 %),
-  et **NatCash est un standard de place**, pas un avantage.
+  Bemane, MvinHT, Klasyo, KawBiz, Tchotchom & co. ⚠️ Tiré de **résumés de
+  recherche**, aucune page ouverte (proxy) — arguments de vente, pas mesures.
+  Trois faits : la commission concurrente descend à **2 %** (Zabelie 10 % /
+  6 %) · **NatCash est un standard de place**, pas un avantage · et
+  ⚠️ **UNE RECHERCHE DE MARCHÉ HAÏTIEN SE FAIT EN KREYÒL** — le « couloir
+  numérique vide » affirmé en français a été démenti en une requête kreyòl
+  (Klasyo vend déjà cours et PDF en MonCash). Même défaut que `\b` contre
+  `vandè` : l'instrument qui ne voit que le français valide la langue qui
+  compte le moins.
 - `docs/44-SURFACE-API.md` — inventaire de la surface d'API (2026-08-22) :
   ce qui existe, ce qui manque, et ⛔ **ce qu'il ne faut PAS construire**.
   ⚠️ Y est mesuré que les **neuf endpoints v1** de `lib/api/v1/schemas.ts`

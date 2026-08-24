@@ -55,23 +55,63 @@ fiche Kobara `docs/03` §9.1, qui distingue « documenté » de « testé ».
 créneau. Kobara n'est pas un passage obligé : si le rail s'ouvre un jour, il y
 a une comparaison à faire, pas un fournisseur à adopter.
 
-## 3. Talents et produits numériques — **le couloir est vide**
+## 3. Talents et produits numériques — ⚠️ **CORRIGÉ le 2026-08-24**
 
-C'est le résultat le plus utile du relevé, et c'est une **absence**.
+> ### 🔴 LA PREMIÈRE VERSION DE CETTE SECTION ÉTAIT FAUSSE
+>
+> Elle affirmait : « **le couloir est vide** — aucune plateforme haïtienne
+> trouvée qui vende des produits numériques ». C'était le résultat que je
+> mettais le plus en avant, et il a tenu **une heure**.
+>
+> **Ce qui l'a démenti n'est pas une nouvelle source, c'est une nouvelle
+> LANGUE DE REQUÊTE.** Les recherches en français et en anglais ne rendaient
+> rien. Une requête en **kreyòl** — `achte vann anliy pwodwi` — a fait
+> apparaître **Klasyo** du premier coup.
+>
+> ⚠️ **C'est, mot pour mot, le défaut que `CLAUDE.md` décrit pour les
+> expressions régulières** : *« un dépôt kreyòl-first dont les instruments ne
+> voient que l'anglais valide toujours la langue qui compte le moins »*. Là
+> c'était `\b` contre `vandè` ; ici c'est un moteur de recherche interrogé
+> dans la mauvaise langue. **Le motif ne lève pas d'erreur, il ne trouve
+> simplement rien** — et ce rien s'était lu comme « le couloir est vide ».
+>
+> Règle pour tout relevé futur de ce dépôt : **une recherche de marché
+> haïtien se fait EN KREYÒL, et le français ou l'anglais ne sont que des
+> compléments.** Un « aucun concurrent trouvé » obtenu en français ne vaut
+> rien.
 
-Aucune plateforme haïtienne trouvée qui vende des **produits numériques** ou
-des **prestations de talents** avec paiement en mobile money local. Ce qui
-existe est à côté :
+**Le couloir n'est pas vide — il est occupé, et par au moins un acteur ciblé :**
 
-* **Kre-Yole** — artisanat et produits agricoles locaux. Physique.
+| Plateforme | Ce qui est rapporté |
+|---|---|
+| **Klasyo** (`klasyo.com/sell-digital-products-haiti`) | ⚠️ **CONCURRENT DIRECT SUR LE NUMÉRIQUE.** Aide les **créateurs haïtiens** à publier et vendre des **cours et des PDF**, argent reçu **directement en MonCash**. C'est le cœur du `kind = file` de Zabelie |
+| **KawBiz** (`kawbiz.com`) | « Boutik anliy modèn pou mache ayisyen an ». MonCash, **NatCash**, carte bancaire |
+| **Pwodwi-lakay** (`pwodwi-lakay.com`) | Produits locaux haïtiens |
+
+**Ce qui reste à côté, et le reste :**
+
+* **Kre-Yole** — artisanat et agricole. Physique.
 * **Jwennjob** — recherche d'emploi. Recrutement, pas transaction.
-* **AYITI-Lance** — programme de **formation** de freelances haïtiens.
+* **AYITI-Lance** — **formation** de freelances haïtiens.
 * **Freelancer / Truelancer** — internationaux ; les Haïtiens y sont
   **fournisseurs**, payés en devises, hors circuit HTG.
 
-**Ce que ça vaut** : la partie du positionnement Zabelie qui n'a pas de
-concurrent identifié est aussi **celle qui n'a besoin d'aucun réseau de
-livraison** — ce qui neutralise l'avantage structurel le plus lourd de Bemane.
+**Ce qui SUBSISTE de la thèse d'origine, et il faut être précis** :
+
+* le **numérique** (`kind = file`) a désormais un concurrent identifié —
+  Klasyo, et probablement d'autres qu'une recherche kreyòl plus poussée
+  trouverait ;
+* les **prestations de talents** (`kind = service`) n'ont, elles, **toujours
+  aucun concurrent identifié** — mais après ce démenti, cette phrase doit se
+  lire comme *« pas encore cherchée en kreyòl assez sérieusement »*, pas comme
+  un constat ;
+* l'argument **structurel** tient indépendamment : le numérique et les
+  prestations n'exigent **aucun réseau de livraison**, ce qui neutralise
+  l'avantage le plus lourd de Bemane. Ça reste vrai avec ou sans Klasyo.
+
+⚠️ Et Klasyo change une chose de plus : **elle prouve que le marché du produit
+numérique en HTG existe** — quelqu'un le sert déjà. C'est plus utile qu'un
+couloir vide, qui aurait aussi bien pu vouloir dire « personne n'en veut ».
 
 ## 4. Ce que le relevé dit à Zabelie — faits, puis questions au porteur
 
@@ -118,6 +158,39 @@ de construction.
 « vendeur vérifié et noté par la communauté ». Zabelie a la KYC et les avis
 vérifiés (`0008`, différenciateur revendiqué face à Chariow) — même terrain,
 et là encore c'est déjà construit.
+
+## 4 bis. Deux pistes du porteur — et elles ne donnent pas ce qu'on croyait
+
+Fournies en session le 2026-08-24. Aucune des deux n'a pu être **ouverte**
+(`EGRESS_BLOCKED` sur les deux domaines) ; ce qui suit vient de la recherche.
+
+### `koremart.com` — ⚠️ **HOMONYME, ce n'est pas un acteur haïtien**
+
+Le domaine existe et il est bien indexé. Ce n'est pas une marketplace : **Kore
+Mart Ltd** est un **fournisseur de fonderie américain**, à Hamburg
+(Pennsylvanie) — noyaux de fonderie, sable enrobé de résine, recyclage de
+sable. Fiche entreprise Bloomberg, page LinkedIn, annuaire de fabrication
+additive : tout concorde, et rien n'a le moindre rapport avec Haïti.
+
+⚠️ **C'est exactement le piège que `docs/03` §9 nomme pour les rails de
+paiement** — *« attention aux homonymes : Htipay ≠ HaitiPay »*. Deux lectures
+possibles, et il faut trancher avant de comparer quoi que ce soit : soit le
+domaine est erroné et l'acteur haïtien vit ailleurs, soit le nom retenu n'est
+pas le bon. **À confirmer par le porteur**, qui a la source.
+
+### `noula.com` — **non identifié comme marketplace**
+
+Ce qui remonte sous « nOula » est une **initiative de la diaspora** décrite par
+`synergiehaiti.org` — fédérer les forces de la diaspora haïtienne — associée à
+**Café nOula**, qui importe au Canada du café de coopératives de petits
+producteurs haïtiens.
+
+⚠️ **Ce n'est PAS une confirmation de ce qu'est `noula.com`.** La recherche
+décrit « nOula » ; elle ne dit pas que c'est ce domaine-là, ni que ce domaine
+héberge une marketplace. Et l'absence de résultat marketplace ne prouve rien —
+**c'est la règle du grep, et elle vient d'être vérifiée à mes dépens une
+section plus haut** : le silence en français n'a pas survécu à une requête en
+kreyòl. Case ouverte, à ouvrir dans un navigateur humain.
 
 ## 5. Ce qui n'a PAS été cherché, et devrait l'être
 
