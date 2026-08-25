@@ -15,6 +15,59 @@
 | **Zelle** (diaspora USD) | 🟡 Construit (V-10) — flux **semi-manuel** (pas d'API Zelle) : instructions + mémo, confirmation admin. ⚠️ Exige, **comme Stripe**, un compte bancaire **US** enrôlé Zelle (`ZELLE_RECIPIENT`) : les fonds diaspora atterrissent aux États-Unis, donc **même prérequis d'entité étrangère / *merchant of record*** | 1.5 |
 | **Wallet interne** | ✅ Crédit après confirmation | 1 |
 
+### ⚠️ 1 bis. LA MATURATION J+7 REPOSE SUR UNE PROPRIÉTÉ DE MONCASH
+
+> Trouvé le 2026-08-24, en rédigeant le courriel Sogebank (`docs/42` §2 ter).
+> **Non résolu — écrit ici pour qu'il ne se redécouvre pas au pire moment.**
+
+`0043_fulfillment.sql:72`, **appliquée en production**, justifie le délai de
+confirmation de réception en ces termes :
+
+> *« MonCash n'a PAS de rétrofacturation. Le J+7 digital protège d'une
+> contestation bancaire qui n'existe pas sur ce rail. »*
+
+`docs/21` §46-47 dit la même chose. Le raisonnement est bon — **et il est
+adossé à une propriété du rail, pas à une propriété de la plateforme.**
+
+**Conséquence, jamais formulée** : ouvrir un rail CARTE (Stripe, SogePay, ou
+tout autre) n'ajoute pas simplement un risque de plus. Il **retire la prémisse
+sur laquelle la maturation actuelle a été justifiée par écrit.**
+
+Ce que ça donne concrètement sur un rail carte :
+
+1. l'acheteur paie, `confirm_payment` crédite le net vendeur en attente ;
+2. J+7 passe, `mature_wallets` rend le solde disponible ;
+3. le vendeur retire ;
+4. **puis** la contestation arrive — les fenêtres bancaires se comptent en
+   mois, pas en jours ;
+5. la plateforme est débitée, et le grand livre est **append-only** : la
+   correction est une **écriture compensatoire** contre un solde qui n'est
+   plus là.
+
+⚠️ **Et ce n'est pas seulement un problème futur : `charge.dispute.created`
+n'est écouté nulle part.** `app/api/stripe/webhook/route.ts:35` ignore tout ce
+qui n'est pas `checkout.session.completed`. Le rail Stripe est déclaré
+« construit » depuis V-10 — **sans aucune gestion de contestation**. Il n'a
+jamais encaissé, donc rien n'a explosé ; ça reste un trou dans un rail annoncé
+prêt.
+
+`docs/18` §308 porte déjà « compléter la gestion des remboursements et litiges
+(chargebacks) » dans sa liste. Cette section dit **pourquoi c'est bloquant** et
+non seulement souhaitable.
+
+**Ce qu'il faudra trancher avant d'ouvrir un rail carte** — décision porteur,
+pas agent :
+
+* une maturation **plus longue** sur les rails à rétrofacturation ? (elle
+  aggrave la rétention de `docs/17` : les deux dossiers se contredisent) ;
+* une **réserve** prélevée sur les rails carte ?
+* la plateforme **absorbe** les contestations comme coût d'acquisition de la
+  diaspora ?
+
+Aucune de ces options n'est gratuite, et aucune n'est à l'agent. La question 13
+du courriel `docs/42` §2 ter existe pour obtenir de la banque les délais réels
+avant qu'on choisisse.
+
 ## 2. Les trois invariants (NON NÉGOCIABLES)
 
 1. **Idempotence garantie en base** — clé d'idempotence avec contrainte d'unicité
@@ -222,6 +275,86 @@ reporting). ⛔ Bloqué — voir `00-CONTEXTE.md §11` et `§14`.
    `payment_idempotency.test.sql` pour un rail non-HTG) + garde
    `api-auth-coverage` pour toute nouvelle route.
 
+### ⭐ 9.0 — LA BRH PUBLIE LE REGISTRE DES FSP AGRÉÉS (trouvé le 2026-08-24)
+
+> **Ça change la méthode de sélection d'un rail, pas seulement une fiche.**
+> L'étape 0 demandait « statut réglementaire (licence/agrément BRH le cas
+> échéant) ». On croyait devoir le demander au prestataire. **Il est public.**
+
+**`brh.ht/supervision/fournisseur-de-services-de-paiement-electronique-fspe/`**
+
+⚠️ **Page NON OUVERTE** — `brh.ht` est `EGRESS_BLOCKED` depuis l'agent. Ce qui
+suit vient d'un résumé de recherche, et **la liste est probablement
+partielle**. À télécharger et à recopier ici à la source.
+
+Entités nommées dans le résumé :
+
+| Entité agréée | Service |
+|---|---|
+| **NATCOM S.A.** | **NATCASH** |
+| **Unigestion Holding S.A.** | **MONCASH** ← déjà le partenaire de Zabelie |
+| **Société Générale Haïtienne de Banque S.A.** (Sogebank) | **MAGO** |
+| **Kiskeya Technologies Group S.A.** | **KashPaw** |
+
+**Ce que la liste apprend, indépendamment des noms** : les FSP agréés sont des
+**sociétés anonymes** — un opérateur télécom, une banque, un holding, une
+société de technologie. C'est cohérent avec le champ d'application de la
+circulaire 121 (`docs/17` §7.2).
+
+⚠️ **Aucun des quatre agrégateurs du relevé concurrentiel n'y figure** —
+Kobara, Tchotchom, HtiPay, Mannitòks. **Ce n'est PAS une preuve qu'ils ne sont
+pas agréés** : la liste lue est partielle et n'a pas été ouverte. C'est la
+règle du grep, et elle a déjà démenti ce dépôt deux fois le même jour.
+
+#### La règle de sélection qui en découle
+
+**Ne compare pas les API. Demande le numéro d'agrément.**
+
+Tous les agrégateurs présenteront une intégration correcte — Kobara le fait
+déjà, et bien. L'API n'est pas le critère discriminant ; l'agrément l'est,
+parce qu'il est le seul élément qui touche au dossier `docs/17`. Un candidat
+qui répond par un numéro a répondu. Un candidat qui n'y figure pas a répondu
+aussi.
+
+#### ⚠️ Et la conséquence la plus utile : la voie DIRECTE existe
+
+**NATCOM S.A. est elle-même un FSP agréé pour NATCASH.**
+
+La règle dure n°2 dit « NatCash ⛔ — aucune API publique », et **elle reste
+vraie**. Mais elle décrit un obstacle **commercial**, pas une impossibilité :
+c'est exactement la situation de MonCash avant qu'un compte MonCash Business
+soit ouvert le 2026-08-10 et qu'une correspondance s'engage avec Digicel MFS
+Business (`docs/42` §1).
+
+**Zabelie a déjà résolu ce problème une fois.** Le chemin pour NatCash n'est
+pas forcément un agrégateur : c'est peut-être la même démarche, auprès de
+NATCOM. Un accord marchand direct n'ajoute **aucun dépositaire**, **aucun
+frais d'intermédiaire**, et **aucun maillon** au montage de `docs/17` — les
+trois objections qui bloquent la fiche Kobara.
+
+⚠️ Non tenté, non demandé. C'est une **hypothèse de chemin**, pas un fait.
+
+#### 🔎 Piste Sogebank — potentiellement plus lourde que NatCash
+
+**Sogebank** est une banque commerciale haïtienne (1986, reprise des actifs de
+la Royal Bank of Canada). Elle opère **MAGO**, FSP agréé — et surtout
+**SogePay**, passerelle de paiement en ligne pour marchands, **avec intégration
+par API** (formulaire « Affiliation Commerçant », `sogebank.com/sogepay`).
+
+⚠️ **L'hypothèse à vérifier, et elle vaut plus que NatCash** : `docs/03` §1
+bloque Stripe **et** Zelle sur un même prérequis — une **entité étrangère
+*merchant of record***, parce qu'Haïti n'est pas un pays marchand supporté.
+**Une banque haïtienne servant des marchands haïtiens n'a pas ce problème.**
+
+Si SogePay permet d'encaisser la carte bancaire **sans entité étrangère**, il
+lève un blocage qui dure depuis V-10 et qui coûte la diaspora entière — un
+marché explicitement visé par `CLAUDE.md`. C'est à confirmer auprès de la
+banque, pas à déduire.
+
+⚠️ À ne pas confondre : **MAGO** est un portefeuille, **SogePay** une
+passerelle carte. **Ni l'un ni l'autre n'est NatCash.** Cette piste ne comble
+pas l'écart NatCash — elle en comble un autre, peut-être plus large.
+
 ### Rails candidats — état des fiches (2026-07-22)
 
 | Prestataire | Étape 0 | Notes |
@@ -230,3 +363,148 @@ reporting). ⛔ Bloqué — voir `00-CONTEXTE.md §11` et `§14`.
 | Zappp | ⛔ Introuvable en ligne | Source du porteur attendue |
 | Htipay (htipay.com) | ⚠️ Existe, API non confirmée | Contact direct requis ; ne pas confondre avec HaitiPay |
 | HaitiPay (haitipay.com) | ⚠️ Portail dev public (`devportal.haitipay.com`, « Acceptor API ») | Non demandé par le porteur à ce stade |
+| ⚠️ **Htipay — ERREUR DE CATÉGORIE, corrigée le 2026-08-24** | — | **Htipay n'est pas qu'une passerelle : c'est AUSSI une marketplace multi-vendeurs**, ouverte aux marchands depuis août 2020 (`support.htipay.com`). Ce tableau ne le classait que comme fournisseur. Adopter son rail ferait transiter les paiements de Zabelie par un **concurrent direct**, qui verrait passer volumes, prix et vendeurs. Pas rédhibitoire — mais c'est une donnée qui manquait à la fiche. → `docs/45` §2 bis |
+| **Kobara (kobara.app)** | ⚠️ **Fiche OUVERTE le 2026-08-23, 1 case sur 6** | Passerelle MonCash **et NatCash**. Voir §9.1 ci-dessous. |
+| **NATCOM S.A.** (NatCash, voie DIRECTE) | ⭐ **À OUVRIR — priorité 1** | **FSP agréé BRH** (§9.0). Aucun dépositaire ajouté, aucun frais d'intermédiaire. Même démarche que MonCash/Digicel, que Zabelie sait déjà mener |
+| **Sogebank — SogePay / MAGO** | ⭐ **À OUVRIR — priorité 2** | Banque, **FSP agréé** pour MAGO. SogePay = passerelle carte **avec API**. ⚠️ Hypothèse à vérifier : lève-t-elle le prérequis d'**entité étrangère** qui bloque Stripe ET Zelle ? Si oui, elle vaut plus que NatCash |
+| **Kiskeya Technologies Group S.A.** (KashPaw) | ⚠️ **FSP agréé**, capacités inconnues | Aucune documentation d'API trouvée. Pétion-Ville |
+| Tchotchom · Mannitòks | ⚠️ Agrégateurs, agrément **non vérifié** | Même question que Kobara : numéro d'agrément BRH ? |
+
+### 9.1 Fiche Kobara — ouverte le 2026-08-23, **INCOMPLÈTE**
+
+> ⚠️ Ouverte parce qu'un document de mise en service a été présenté en session.
+> Elle n'autorise **aucune ligne de code** : l'étape 0 est éliminatoire et cinq
+> cases sur six sont vides. Elle est consignée ici pour que la recherche ne soit
+> pas refaite, pas pour valider quoi que ce soit.
+
+**Ce qui EST mesuré** (recherche web, 2026-08-23) :
+
+- [x] **Le prestataire existe.** `kobara.app` se présente comme une passerelle
+      de paiement haïtienne pour **MonCash et NatCash** — API, liens de
+      paiement, webhooks, tableau de bord marchand, WooCommerce, montants en
+      HTG. Une page d'agence haïtienne (Coding Club Haïti) crédite le site à un
+      développeur nommé.
+
+⚠️ **CE QUE ÇA CHANGE À UNE PRÉMISSE DU DÉPÔT** : `CLAUDE.md` règle dure n°2
+porte « **NatCash ⛔ (aucune API publique)** ». Cette phrase visait NatCash
+**en direct**, chez Natcom, et elle reste vraie de ce qu'elle vise. Elle a été
+écrite avant que cette passerelle soit connue ici. **Un intermédiaire n'est pas
+l'opérateur** : ce qu'il faut vérifier n'est plus « NatCash a-t-il une API »
+mais « **cet intermédiaire-ci est-il un tiers à qui confier de l'argent de
+vendeurs** ». Ce sont deux questions différentes, et la seconde est plus dure.
+
+**Trois cases passées à « DOCUMENTÉ », le 2026-08-24 — et pas à « testé »**
+
+> ⚠️ **Provenance, et elle est la moitié de la valeur de ces lignes.** Lues
+> **à la source**, sur le site du prestataire, dans le navigateur du porteur —
+> `kobara.app` est bloqué par le proxy de sortie de l'agent (`EGRESS_BLOCKED`)
+> et le restera. Ce ne sont donc **ni des mesures de l'agent, ni un document
+> recopié** : c'est une lecture humaine de la documentation officielle.
+>
+> **Documenté ≠ testé.** Aucun compte n'existe, rien n'a été exécuté, aucun
+> appel n'a jamais été émis. Une documentation décrit une intention ; seul un
+> aller-retour en bac à sable décrit un comportement. Ce dépôt a déjà payé
+> cette confusion — cinq paiements MonCash ont échoué contre un hôte qui
+> répondait exactement comme la documentation l'annonçait.
+
+- [x] **API publique documentée.** `POST https://api.kobara.app/api/v1/payments`,
+      auth `Bearer kbr_sk_live_…`, header **`Idempotency-Key` documenté
+      explicitement** (bon signe : c'est l'invariant 1). Le champ `provider`
+      accepte `"natcash"`, `"moncash"` ou `"kobara"` (page de choix unifiée).
+      Réponse : `id`, `checkout_url`, `status`.
+      - [ ] **Sandbox** : secrets test/live distincts annoncés, mais **aucun
+            identifiant de test obtenu**. La case reste ouverte.
+- [x] **Mécanisme de confirmation signé.** Webhook `payment.succeeded`, headers
+      `Kobara-Signature: t=…,v1=…`, `Kobara-Event`, `Kobara-Environment`,
+      `Kobara-Timestamp`. Signature =
+      `hex(HMAC-SHA256(secret_endpoint, timestamp + "." + raw_body))`, fenêtre
+      de 5 minutes, secrets séparés test/live.
+      **C'est la forme correcte** — corps brut, horodatage dans la charge
+      signée, anti-rejeu — et c'est le modèle déjà en place pour Stripe ici.
+      Elle satisfait l'invariant 2 **sur le papier**.
+- [x] **Frais : 4 % (Free) / 2,9 % (plans payants)**, déduits de **chaque
+      encaissement**. ⚠️ Ils s'ajoutent à la commission (10 % / 6 % Elite) :
+      soit ils rognent le **net vendeur**, soit la **marge plateforme**, et ce
+      choix est un **paramètre commercial** — table de config, décision
+      porteur (règle dure n°3). Il n'a pas de valeur par défaut acceptable.
+
+**⚠️ Correction du 2026-08-24 sur les plafonds — l'obstacle se DÉPLACE, il ne disparaît pas**
+
+La première version de cette fiche traitait les 2 500 HTG/jour comme un
+plafond d'**encaissement**. C'est faux, et la correction vient du porteur :
+c'est le **retrait journalier du solde marchand**. On peut donc collecter
+davantage ; on ne peut pas **sortir** l'argent plus vite.
+
+Ce que ça change : ce n'est plus une contrainte de **faisabilité** mais de
+**trésorerie**. Et elle reste dirimante pour une marketplace, qui doit régler
+ses vendeurs à J+7 — un règlement qu'on ne peut pas retirer est un règlement
+qu'on ne peut pas faire. Elle s'efface sur le plan **Business** (retraits
+illimités, **12 500 HTG/mois** — une **dépense**, donc une décision porteur).
+
+- [ ] **Statut réglementaire (BRH).** ⛔ **RIEN**, et le porteur n'a rien
+      trouvé non plus en cherchant à la source. Aucune entité juridique, aucun
+      agrément, aucune licence. Voir l'avertissement ci-dessous.
+      ⭐ **La question est devenue FERMÉE le 2026-08-24** — plus « statut
+      inconnu » mais : **Kobara est-elle enregistrée comme FSP auprès de la
+      BRH ?** La circulaire 121 impose l'autorisation ou la lettre de
+      non-objection AVANT de fournir un service de paiement électronique, et
+      le délai de conformité est échu depuis décembre 2022 : une entité non
+      conforme **doit cesser ses activités**. Même question pour **Tchotchom**,
+      **HtiPay** et **Mannitòks**. ⚠️ Elle vaut dans les deux sens — un
+      agrément en règle serait un argument POUR. → `docs/17` §7.2 et §7.3.
+- [ ] **Modalités de règlement / DÉTENTION DES FONDS.** ⛔ **RIEN non plus** :
+      la documentation ne dit pas **qui détient l'argent** entre l'encaissement
+      et le retrait, ni sur quel compte, ni s'il est cantonné. Pour ce dossier
+      c'est la question la plus lourde des six, et c'est celle qu'aucune page
+      technique ne traitera jamais.
+
+#### ⛔ Ce qu'il ne faut PAS conclure de `provider: "moncash"`
+
+Kobara encaisse aussi MonCash. **Ce n'est pas une raison d'y faire passer
+MonCash.** Le rail direct Digicel existe ici, il est construit, et il est à
+quatre gestes de sa première gourde réelle. Le router par un intermédiaire
+payant qui détient les fonds serait une régression sur les deux axes qui
+comptent : **le coût** (2,9 % qui n'existent pas aujourd'hui) et **la
+détention** (un maillon de plus dans le montage examiné par le conseil).
+MonCash reste en direct.
+
+#### ⛔ L'avertissement qui prime : la rétention, pas la technique
+
+`CLAUDE.md` : *« Ne rien construire qui **aggrave** la rétention sans avis
+écrit »* (`docs/17`, dossier ouvert chez HDIT / Cabinet Volmar depuis le
+2026-08-21, **sans réponse**).
+
+Aujourd'hui la plateforme encaisse sur un compte marchand unique et retient le
+net vendeur jusqu'au règlement — c'est déjà la question posée au conseil.
+Faire transiter l'argent des vendeurs par **un intermédiaire supplémentaire qui
+détient les fonds**, avec des plafonds de retrait et un statut réglementaire
+inconnu, **ajoute un maillon de détention** au montage exact sur lequel un avis
+est en cours.
+
+Ce n'est pas un argument technique et il ne se lève pas par du code : il se
+lève par l'avis écrit, ou par une question ajoutée au dossier Volmar. Tant
+qu'il est ouvert, la fiche reste fermée.
+
+⚠️ **Et la qualité technique de la passerelle ne l'atténue pas — elle l'aggrave
+comme piège de lecture.** Les trois cases cochées ci-dessus sont bonnes :
+idempotence documentée, signature HMAC sur le corps brut, anti-rejeu. Une
+intégration soignée donne le sentiment que le dossier avance. Il n'avance pas :
+**les deux cases qui bloquent sont juridiques**, et aucune ligne de code, aussi
+correcte soit-elle, n'y touche. C'est le même défaut de choix de question que
+`CLAUDE.md` décrit à propos du 2026-08-11 — une journée de filets impeccables
+posés pendant que le stockage n'avait pas une seule policy.
+
+#### Décision du 2026-08-24 — fiche EN ATTENTE, et de quoi exactement
+
+Mise de côté **jusqu'après la première gourde réelle sur MonCash**
+(`docs/22`), sur recommandation convergente de l'agent et du porteur. Ce qui
+la rouvrira, dans cet ordre :
+
+1. la **première commande réelle** aboutie sur MonCash — c'est l'essai qui
+   manque depuis l'origine, et ouvrir un second rail avant lui déplacerait
+   l'attention ;
+2. une **réponse de HDIT / Cabinet Volmar** (`docs/17`, parti le 2026-08-21),
+   ou une **question ajoutée** à ce dossier sur la détention par un
+   intermédiaire ;
+3. un **compte Kobara en bac à sable** avec un aller-retour réel : c'est ce qui
+   ferait passer les trois cases de « documenté » à « testé ».

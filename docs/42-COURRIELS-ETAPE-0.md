@@ -9,7 +9,11 @@
 
 ---
 
-## 0. Pourquoi DEUX courriels et non un
+## 0. Pourquoi PLUSIEURS courriels et non un
+
+> ⚠️ Ce paragraphe s'appelait « pourquoi DEUX courriels ». Il y en a quatre au
+> 2026-08-24 : trois chez Digicel (§1, §1 bis, §1 ter), un chez le conseil
+> (§2), un chez NATCOM (§2 bis). Le principe n'a pas bougé, le compte si.
 
 Les deux dossiers qu'ils ouvrent sont **découplés**, et les mélanger dans un
 seul envoi ferait perdre les deux :
@@ -582,6 +586,338 @@ n'est pas un avis juridique.
 
 ---
 
+## 2 bis. Courriel NATCOM — accès marchand NatCash (rédigé le 2026-08-24)
+
+> **Pourquoi il existe, et pourquoi il ne ressemble pas à une demande d'API.**
+>
+> Le 2026-08-24, le registre public des FSP agréés de la BRH
+> (`docs/03` §9.0) a montré que **NATCOM S.A. est elle-même agréée pour
+> NATCASH**. La règle dure n° 2 — « NatCash ⛔, aucune API publique » — reste
+> vraie de ce qu'elle décrit, mais elle décrit un obstacle **commercial**.
+>
+> C'était mot pour mot la situation de MonCash avant l'ouverture du compte
+> Business le 2026-08-10. **Zabelie a déjà mené cette conversation une fois.**
+>
+> Et l'enjeu dépasse NatCash : la voie directe n'ajoute **aucun dépositaire**,
+> **aucun frais d'intermédiaire** et **aucun maillon** au montage examiné par
+> le conseil (`docs/17`) — les trois objections qui tiennent la fiche Kobara
+> fermée (`docs/03` §9.1).
+
+### ⚠️ L'adresse — ce qui est vérifié et ce qui ne l'est pas
+
+**Vérifié** : `customercare@natcom.com.ht` · téléphone **111** · WhatsApp
+**3325-111** · site `natcom.com.ht` · siège à Port-au-Prince.
+
+⛔ **C'est une adresse de SERVICE CLIENT, pas un contact marchand.** Une
+demande d'intégration marchande y sera probablement mal aiguillée. Aucune
+adresse B2B/MFS n'a pu être vérifiée — l'équivalent de
+`MFS_B.Services@digicelgroup.com` côté Digicel n'a pas été trouvé.
+
+**Geste recommandé avant l'envoi** : appeler le **111** ou écrire au WhatsApp
+**3325-111** en demandant *« l'adresse du service marchand / entreprise
+NatCash pour une demande d'intégration »*. Deux minutes, et le courriel part
+au bon endroit. À défaut, envoyer à `customercare@` en demandant explicitement
+le transfert — c'est la première ligne du corps ci-dessous.
+
+### Objet
+
+```
+Demande d'accès marchand NatCash — encaissement en ligne pour une place de marché haïtienne
+```
+
+### Corps
+
+```
+Bonjour,
+
+Si ce message ne relève pas de votre service, merci de le transmettre à
+l'équipe NatCash Entreprise / Marchands — notre demande porte sur un
+accès marchand, non sur un compte particulier.
+
+Nous exploitons une place de marché haïtienne en ligne. Les acheteurs y
+règlent des vendeurs haïtiens en gourdes ; la plateforme encaisse, prélève
+une commission et reverse le vendeur.
+
+  • Raison sociale : [À REMPLIR]
+  • Site : [À REMPLIR]
+  • Contact technique : [À REMPLIR]
+  • Volume actuel : phase de lancement — premières transactions réelles
+
+Nous encaissons aujourd'hui par MonCash via son API REST (compte marchand
+Business, vérification serveur-à-serveur). Nous souhaitons proposer NATCASH
+à nos acheteurs, en DIRECT avec NATCOM plutôt que par un agrégateur tiers.
+
+Nos questions, dans l'ordre où elles nous bloquent :
+
+  1. ACCÈS. Existe-t-il un programme marchand NatCash permettant à un
+     commerce en ligne d'encaisser des paiements NatCash par API ? Quelle
+     est la démarche, quelles pièces fournir, et sous quel délai ?
+
+  2. AGRÉMENT. Nous avons relevé NATCOM S.A. dans le registre des
+     Fournisseurs de Services de Paiement agréés publié par la BRH.
+     Pouvez-vous nous confirmer la référence de cet agrément ? Nous en
+     avons besoin pour notre propre dossier de conformité.
+
+  3. DOCUMENTATION ET BAC À SABLE. Une documentation d'API est-elle
+     disponible, et un environnement de test ?
+
+     ⚠️ Une précision qui nous a coûté cher sur l'autre rail : nous ne
+     demandons pas seulement des identifiants marchands de test. Nous
+     demandons un COMPTE DE TEST CAPABLE DE PAYER — le côté acheteur.
+     Sans lui, un bac à sable ne permet de dérouler que la moitié du
+     parcours, et la première preuve de bout en bout se fait alors avec de
+     l'argent réel. Existe-t-il un tel compte ?
+
+  4. CONFIRMATION DU PAIEMENT. Notre règle interne est qu'aucun paiement
+     n'est réputé reçu sur la seule redirection du navigateur. Proposez-vous
+     (a) un webhook SIGNÉ, et/ou (b) un endpoint de vérification d'état
+     serveur-à-serveur interrogeable par référence de commande ?
+
+     Si webhook signé : quel algorithme de signature, sur quel contenu
+     exact, et avec quelle fenêtre d'horodatage ?
+
+  5. IDEMPOTENCE. Pouvons-nous transmettre une référence externe à la
+     création du paiement, de sorte qu'un appel rejoué après un délai
+     d'attente dépassé soit traité comme un doublon et non comme un second
+     paiement ?
+
+  6. RÈGLEMENT. C'est la question la plus importante pour nous :
+
+     (a) Les sommes encaissées sont-elles reversées sur un COMPTE BANCAIRE
+         à notre nom, ou restent-elles dans un portefeuille NatCash jusqu'à
+         un retrait de notre part ?
+     (b) À quelle fréquence, et sous quel délai ?
+     (c) Existe-t-il un plafond de RETRAIT — par jour, par mois ?
+
+  7. PLAFONDS D'ENCAISSEMENT — par transaction, par jour, par acheteur.
+
+  8. FRAIS — quel pourcentage ou montant fixe, prélevé sur quoi, et à la
+     charge de qui ?
+
+  9. CONDITIONS D'USAGE. L'encaissement par une plateforme pour le compte
+     de vendeurs tiers, avec reversement après commission, entre-t-il dans
+     le cadre prévu par votre service marchand ?
+
+ 10. AGRÉGATEURS. À défaut d'accès direct, travaillez-vous avec des
+     partenaires agréés pour l'encaissement NatCash ? Si oui, lesquels
+     recommandez-vous, et sont-ils eux-mêmes enregistrés comme FSP auprès
+     de la BRH ?
+
+Nous ne développerons rien avant votre réponse.
+
+Nous restons disponibles pour tout document complémentaire — statuts,
+justificatifs, description détaillée du flux de fonds.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+### Ce qui est délibéré dans ce courriel
+
+| Choix | Raison |
+|---|---|
+| **La question 3 insiste sur le compte PAYEUR de test** | C'est la leçon la plus chère de `docs/05` : le bac à sable MonCash n'a jamais pu prouver la moitié aval, faute d'un compte capable de payer. La poser d'emblée coûte une ligne ; la découvrir plus tard coûte un chantier |
+| **La question 6 avant les plafonds et les frais** | Un tarif se négocie, un **dépositaire** ne se défait pas. Savoir si l'argent des vendeurs dort dans un portefeuille NatCash ou arrive sur un compte bancaire au nom de la plateforme change la nature du dossier `docs/17`. C'est la question que personne n'avait posée à Kobara non plus |
+| **La question 2 demande l'agrément** | Il est public (`docs/03` §9.0) — la demander sert à obtenir la **référence** pour le dossier de conformité, et à ouvrir la question 10 sans qu'elle paraisse méfiante |
+| **La question 10 sur les agrégateurs** | Si NATCOM répond « passez par X », c'est la réponse la plus autorisée qu'on puisse obtenir sur Kobara et ses concurrents. Et elle est gratuite |
+| **La question 9 en toutes lettres** | Un service techniquement ouvert peut être contractuellement réservé à d'autres usages. Même piège que la question 4 du courriel Digicel |
+| **Aucun secret, aucun identifiant** | Règle d'or `docs/11`. Le `client_id` MonCash n'a rien à faire ici non plus : autre opérateur, autre dossier |
+| **« Nous ne développerons rien avant votre réponse »** | Étape 0 de `docs/03` §9, dite au fournisseur. Ce n'est pas une politesse : c'est la règle dure n° 2 |
+
+### Ce qu'on fait de la réponse
+
+| Réponse | Conséquence |
+|---|---|
+| **Accès direct accordé** | Fiche d'étape 0 ouverte pour NatCash **en direct**. Aucun dépositaire ajouté, aucun frais d'intermédiaire. La fiche Kobara devient probablement sans objet |
+| **Q6(a) : règlement sur compte bancaire à notre nom** | ⭐ La rétention n'augmente pas d'un maillon. À verser au dossier `docs/17` et à la relance du conseil |
+| **Q6(a) : les fonds restent en portefeuille NatCash** | Un dépositaire de plus, comme avec un agrégateur. L'avantage de la voie directe se réduit aux frais et à la fiabilité |
+| **Q10 : un agrégateur recommandé, avec son agrément** | Réponse autorisée à la question ouverte de `docs/03` §9.1. Le comparatif Kobara / Tchotchom / autres se tranche là |
+| **Refus, ou Q9 négative** | NatCash n'existe pas pour cet usage. On l'écrit dans `docs/03` §1 et on n'y revient plus — comme pour un rail qui ne peut pas exister |
+| **Aucune réponse sous 3 semaines** | Consigner l'absence dans `OPS_TODO`. C'est une donnée, pas un vide (§3.1) |
+
+⚠️ **Ce courriel ne lève aucun gel.** Même statut que les deux précédents :
+tant que la réponse n'est pas là, rien ne se code sur NatCash, et la fiche
+Kobara reste fermée par le blocage BRH de `docs/03` §9.1 — qui, lui, ne dépend
+pas de NATCOM.
+
+---
+
+## 2 ter. Courriel SOGEBANK — SogePay, et le prérequis d'entité étrangère
+
+> **Ce courriel vise plus gros que NatCash, et il faut le dire d'emblée.**
+>
+> `docs/03` §1 bloque **Stripe ET Zelle** sur un même prérequis : une **entité
+> étrangère *merchant of record***, parce qu'Haïti n'est pas un pays marchand
+> supporté. Deux rails construits, testés, et inutilisables — c'est-à-dire
+> **toute la diaspora**, marché explicitement visé par `CLAUDE.md`.
+>
+> **Une banque haïtienne qui affilie des marchands haïtiens n'a pas ce
+> problème.** Si SogePay encaisse la carte bancaire sans entité étrangère,
+> elle lève un blocage vieux de V-10. C'est une **hypothèse**, pas un fait :
+> c'est exactement ce que ce courriel va vérifier.
+
+### ⚠️ Ce n'est PAS d'abord un courriel — c'est un formulaire
+
+**Vérifié** : la page `sogebank.com/entites-du-groupe-sogebank/sogepay/` porte
+un menu **« Affiliation Commerçant »**, et un formulaire SogePay (PDF) figure
+parmi `sogebank.com/nos-formulaires/`. Téléphones : **(509) 2229-5000** ·
+**(509) 2815-5000**. Page de contact : `sogebank.com/contactez-nous/`.
+
+⛔ **Aucune adresse électronique n'a pu être vérifiée.** Ne pas en inventer
+une.
+
+**Ordre recommandé** : (1) télécharger le formulaire d'affiliation et le lire —
+il répond peut-être déjà à la moitié des questions ci-dessous ; (2) appeler le
+**2229-5000** pour obtenir l'interlocuteur SogePay et son adresse ; (3)
+envoyer ce texte **en accompagnement** du formulaire, pas à la place.
+
+⚠️ Et une question à poser au téléphone avant tout le reste, parce qu'elle
+peut arrêter le dossier en une phrase : **faut-il déjà être client Sogebank
+(compte entreprise ouvert) pour être affilié SogePay ?**
+
+### Objet
+
+```
+Affiliation SogePay — encaissement par carte pour une place de marché haïtienne (questions préalables)
+```
+
+### Corps
+
+```
+Bonjour,
+
+Nous exploitons une place de marché en ligne haïtienne : des vendeurs
+haïtiens y proposent des produits et des services, les acheteurs règlent en
+ligne, et la plateforme reverse chaque vendeur après prélèvement d'une
+commission.
+
+  • Raison sociale : [À REMPLIR]
+  • Site : [À REMPLIR]
+  • Contact technique : [À REMPLIR]
+  • Encaissement actuel : MonCash (API REST, compte marchand Business)
+
+Nous souhaitons ouvrir le paiement par CARTE BANCAIRE, principalement pour
+la diaspora haïtienne. Nous préparons une demande d'affiliation SogePay et
+souhaitons vérifier quelques points avant de la déposer.
+
+A. ÉLIGIBILITÉ — la question qui commande toutes les autres
+
+  1. L'affiliation SogePay est-elle ouverte à une société de droit
+     haïtien, sans qu'une entité étrangère soit requise ?
+
+     Nous posons la question parce que les solutions internationales que
+     nous avons étudiées exigent une société établie hors d'Haïti pour
+     agir comme « merchant of record ». Si SogePay ne l'exige pas, cela
+     change entièrement notre feuille de route.
+
+  2. Faut-il être titulaire d'un compte entreprise Sogebank au préalable ?
+     Quelles pièces sont demandées (statuts, patente, NIF, autres) ?
+
+B. CARTES ET DEVISES
+
+  3. Quels réseaux de cartes sont acceptés (Visa, Mastercard, autres) ?
+
+  4. Les cartes ÉMISES À L'ÉTRANGER sont-elles acceptées — notamment les
+     cartes américaines et canadiennes ? C'est notre cas d'usage
+     principal : la diaspora achète pour des proches en Haïti.
+
+  5. Dans quelle devise pouvons-nous facturer (HTG, USD), et dans quelle
+     devise sommes-nous réglés ?
+
+C. INTÉGRATION TECHNIQUE
+
+  6. Une documentation d'API est-elle disponible avant l'affiliation, ou
+     seulement après ? Existe-t-il un environnement de TEST avec des
+     cartes de test ?
+
+  7. Comment un paiement est-il confirmé côté serveur ? Nous n'acceptons
+     jamais la seule redirection du navigateur comme preuve. Proposez-vous
+     un webhook SIGNÉ, et/ou un endpoint de vérification d'état
+     interrogeable par référence de commande ?
+
+  8. Pouvons-nous transmettre une référence d'idempotence, afin qu'un
+     appel rejoué après un délai d'attente dépassé ne produise pas un
+     second débit ?
+
+  9. Le 3-D Secure est-il appliqué, et sous quelle forme ?
+
+D. RÈGLEMENT ET FRAIS
+
+ 10. Sur quel compte les fonds sont-ils versés, et sous quel délai après
+     la transaction ? Y a-t-il une retenue de garantie (rolling reserve) ?
+
+ 11. Quels sont les frais — pourcentage, montant fixe, différence entre
+     carte locale et carte étrangère ?
+
+E. DEUX POINTS PROPRES À NOTRE ACTIVITÉ
+
+ 12. USAGE PLACE DE MARCHÉ. Nous encaissons pour le compte de VENDEURS
+     TIERS, puis les reversons après commission. Cet usage entre-t-il dans
+     le cadre de l'affiliation SogePay, ou relève-t-il d'un contrat
+     particulier ? Nous préférons poser la question maintenant plutôt que
+     de la découvrir à la première contestation.
+
+ 13. IMPAYÉS ET CONTESTATIONS (chargebacks). C'est notre principale
+     inquiétude technique, et elle n'existe pas sur le rail mobile :
+
+     (a) Quel est le délai maximal de contestation d'un paiement par
+         carte ?
+     (b) Qui en supporte la charge, et selon quelle procédure ?
+     (c) Le montant est-il repris sur nos versements ultérieurs ?
+
+     Nous demandons parce que notre modèle règle le vendeur quelques jours
+     après la vente. Si une contestation peut survenir APRÈS ce règlement,
+     nous devons le prévoir dans notre dispositif avant d'ouvrir le rail,
+     pas après.
+
+F. UNE QUESTION CONNEXE — MAGO
+
+ 14. Nous avons relevé MAGO parmi les fournisseurs de services de paiement
+     agréés par la BRH. Existe-t-il une offre d'ENCAISSEMENT MARCHAND sur
+     MAGO, comparable à SogePay mais en portefeuille électronique ? Si
+     oui, nous serions intéressés par la même série de questions.
+
+Nous ne développerons rien avant vos réponses.
+
+Nous restons disponibles pour un rendez-vous et pour fournir tout document
+complémentaire.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+### Ce qui est délibéré dans ce courriel
+
+| Choix | Raison |
+|---|---|
+| **La question 1 est la première, et elle est expliquée** | C'est la seule qui peut rendre tout le reste inutile — ou débloquer deux rails d'un coup. En donner la raison évite qu'on y réponde « oui » machinalement |
+| **La question 4 sépare les cartes étrangères** | Une banque haïtienne peut parfaitement accepter les cartes locales et refuser les étrangères. Or **c'est la diaspora qui paie par carte** : une réponse négative en 4 vide la question 1 de son intérêt |
+| **⚠️ Le bloc 13 sur les contestations** | ⚠️ **CORRIGÉ dans l'heure : j'avais écrit « ce risque n'est dans aucun document du dépôt ». C'est FAUX**, et la vérité est pire. `0043_fulfillment.sql:72` — **appliquée en production** — justifie le J+7 par : *« MonCash n'a PAS de rétrofacturation. Le J+7 digital protège d'une contestation bancaire qui n'existe pas sur ce rail. »* Le dépôt n'ignorait pas les contestations : **il a fondé sa maturation sur leur ABSENCE.** Ouvrir la carte n'ajoute donc pas un risque à un dispositif existant — **ça invalide la justification écrite du dispositif**. Voir `docs/03` §1 bis |
+| **La question 12 en toutes lettres** | Beaucoup d'acquéreurs interdisent l'encaissement pour compte de tiers sans contrat spécifique. Même piège que la question 4 du courriel Digicel et la 9 du courriel NATCOM |
+| **MAGO en fin, comme question unique** | `docs/42` §0 dit de ne pas mélanger deux dossiers découplés. Ici l'interlocuteur est le même et la décision est la même : ce n'est pas un second dossier, c'est **une question de plus au même guichet**. La mélanger en tête aurait en revanche brouillé le sujet principal |
+| **Aucun secret, aucun identifiant** | Règle d'or `docs/11` |
+
+### Ce qu'on fait de la réponse
+
+| Réponse | Conséquence |
+|---|---|
+| **Q1 : pas d'entité étrangère requise** ET **Q4 : cartes étrangères acceptées** | ⭐ **Le blocage V-10 tombe.** La diaspora devient adressable sans société à l'étranger. À écrire dans `docs/03` §1, qui affirme aujourd'hui le contraire pour Stripe et Zelle |
+| **Q1 : oui, mais Q4 : cartes locales seulement** | Le rail sert le marché intérieur, pas la diaspora. Utile, mais ça ne remplace pas Stripe — et l'arbitrage change |
+| **Q13 : contestation possible après J+7** | ⛔ **Zone d'arrêt.** Le rail ne s'ouvre pas avant que le dispositif de reprise soit spécifié. Ouvrir la carte sans ça expose la plateforme à un débit qu'aucun mécanisme actuel ne couvre |
+| **Q12 : usage place de marché hors cadre** | Le rail n'existe pas pour cet usage. On l'écrit et on n'y revient plus |
+| **Q14 : encaissement MAGO existe** | Une piste de rail mobile **agréée FSP**, alternative directe aux agrégateurs de `docs/03` §9.1 |
+| **Aucune réponse sous 3 semaines** | Consigner dans `OPS_TODO` (§3.1) |
+
+⚠️ **Ce courriel ne lève aucun gel** — même statut que les autres. Et il ne
+touche **pas** au dossier `docs/17` : la question de la rétention du net
+vendeur reste entière quel que soit le rail d'encaissement.
+
+---
+
 ## 3. Registre — état des envois
 
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
@@ -590,6 +926,8 @@ n'est pas un avis juridique.
 | §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
 | §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | **2026-08-22** | — | 📤 **ENVOYÉ — en attente de réponse.** Fil DISTINCT de celui du 21 août : autre endpoint, déjà actif en production. ⚠️ Déclaré par le porteur en session ; les deux fuseaux concordaient au moment de l'envoi (15h47 Haïti / 19h47 UTC), donc pas d'ambiguïté de date à lever ici. |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
+| §2 bis — **accès marchand NatCash** | NATCOM S.A. — ⚠️ adresse marchande **à obtenir** (111 / WhatsApp 3325-111) ; `customercare@natcom.com.ht` est du service client | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — en attente de l'adresse B2B, ou d'un envoi assumé à `customercare@` avec demande de transfert |
+| §2 ter — **affiliation SogePay** (+ MAGO) | Sogebank — ⚠️ **aucune adresse vérifiée** ; formulaire « Affiliation Commerçant » + tél. (509) 2229-5000 | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — passer par le FORMULAIRE d'abord ; ce texte l'accompagne, il ne le remplace pas |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
 > dire « pas envoyé », jamais « on ne sait plus » — c'est la différence entre

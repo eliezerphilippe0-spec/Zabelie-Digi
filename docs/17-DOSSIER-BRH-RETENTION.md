@@ -297,7 +297,109 @@ vendeurs.
 
 `docs/BRH-question-fidelite.md` mentionne **HDIT / Cabinet Volmar** comme
 contact pressenti pour un mémo juridique. Ce dossier peut lui être transmis
-tel quel.
+tel quel. **Parti le 2026-08-21** (`docs/42` §2), sans réponse à ce jour.
+
+### 7.1 ⭐ Le conseil saisi a DÉJÀ PUBLIÉ sur la question — trouvé le 2026-08-24
+
+> Découvert en cherchant la concurrence, pas le droit. C'est le résultat le
+> plus utile de ce relevé, et il ne concerne pas les concurrents.
+
+**HDIT / Cabinet Volmar publie deux analyses publiques portant exactement sur
+l'objet du dossier** :
+
+* `hditcabinetvolmar.com/fr/fintech-les-fournisseurs-de-services-de-paiement-numerique/`
+* `hditcabinetvolmar.com/fr/reglementation-services-transfert-argent-paiement-ligne-haiti/`
+
+⚠️ **Ni l'une ni l'autre n'a pu être OUVERTE** — `EGRESS_BLOCKED` sur
+`hditcabinetvolmar.com`, comme sur `brh.ht`. Ce qui suit vient de résumés de
+recherche, **pas d'une lecture**. À lire à la source avant toute citation.
+
+**Ce que ça change concrètement, et c'est immédiat** : une partie de la
+réponse attendue est peut-être **déjà lisible aujourd'hui**, gratuitement, sur
+le site du cabinet saisi. Le geste à faire n'est pas d'attendre — c'est
+d'**ouvrir ces deux pages**, puis de reformuler la relance du 2026-09-01 en
+partant de ce qu'elles disent déjà. Un client qui écrit « j'ai lu votre
+article, voici où mon cas diffère » obtient autre chose qu'un client qui pose
+une question générale.
+
+### 7.2 Ce que la circulaire 121 exige — éléments non vérifiés à la source
+
+**Sources primaires repérées, toutes inaccessibles depuis l'agent** :
+
+* **BRH — « LE SYSTÈME DE PAIEMENT EN HAÏTI »**, réf. `MAE/BRH DI-0011`,
+  **août 2024** : `brh.ht/wp-content/uploads/Le-systeIme-de-Paiment-en-Haiti-02.pdf`.
+  ⭐ **Document officiel de la banque centrale, à télécharger.**
+* Le registre des circulaires : `brh.ht/notes-de-presse/?act=circulaires`.
+
+**Ce que les résumés rapportent** (⚠️ à confirmer, aucun texte lu) :
+
+* **Circulaire 121, en vigueur depuis le 6 décembre 2021.** Toute **société
+  anonyme** qui fournit ou veut fournir des services de paiement électronique
+  doit **d'abord obtenir une autorisation ou une lettre de non-objection de la
+  BRH** et s'enregistrer comme **FSP**.
+* **Champ d'application — trois types de sociétés** : celles dont l'activité
+  principale et régulière consiste **exclusivement** en services de paiement
+  électronique ; celles de la technologie ou des télécoms ayant un
+  **département dédié exclusivement** à cette activité ; et les institutions
+  financières de dépôt agréées par la BRH.
+* **Les activités FSP énumérées** : dépôt et retrait de fonds sur des comptes
+  de paiement électronique · gestion de fonds de paiement électronique ·
+  **émission de portefeuilles électroniques** · ouverture et gestion de comptes
+  de fonds de paiement électronique.
+* **Délai de conformité échu** : douze mois à compter de l'entrée en vigueur —
+  donc **décembre 2022**. Passé ce terme, *« toute entité fournissant des
+  services de paiement électronique qui ne s'y conforme pas doit cesser ses
+  activités »*.
+
+#### ⚠️ Ce que l'agent NE conclut PAS, et pourquoi
+
+Les quatre activités énumérées ci-dessus **recoupent mot pour mot** les
+interdits que `CLAUDE.md` s'impose déjà — *« aucun cash-in, cash-out, ni
+P2P »*, aucun solde rechargeable acheteur, aucun portefeuille émis à un
+acheteur. La tentation est forte d'en tirer que Zabelie est hors champ.
+
+**Cette conclusion n'est pas à l'agent, et elle ne l'est toujours pas.** Trois
+raisons, dans l'ordre :
+
+1. **Rien n'a été lu à la source.** Ce sont des résumés de recherche portant
+   sur des articles de vulgarisation, eux-mêmes portant sur un texte
+   réglementaire. Trois couches entre le texte et cette page.
+2. Le point litigieux du dossier n'est **pas** l'émission de monnaie —
+   §2.7 dit déjà que Zabelie n'en émet pas. Il est la **rétention du net
+   vendeur sur un compte non cantonné** (§2.5, §2.6), et **aucune** des quatre
+   activités énumérées ne la nomme. Un silence n'est pas une autorisation.
+3. `CLAUDE.md` : *« demander plutôt qu'inventer une règle métier, surtout
+   financière »*. Une qualification juridique tirée d'un résumé de moteur de
+   recherche est exactement l'inverse de la discipline de ce dépôt.
+
+**Ce que ça vaut, en revanche** : la question posée au conseil devient **plus
+précise**. Elle n'est plus « sommes-nous en règle ? » mais :
+
+> *La rétention du net vendeur jusqu'à J+7, sur le compte marchand unique de
+> la plateforme et sans cantonnement, entre-t-elle dans l'une des quatre
+> activités FSP de la circulaire 121 — en particulier la « gestion de fonds de
+> paiement électronique » ? Et si non, quel autre régime s'applique à un
+> intermédiaire de commerce qui détient temporairement le produit de la vente
+> d'autrui ?*
+
+À verser à la relance du 2026-09-01.
+
+### 7.3 Conséquence pour la fiche Kobara (`docs/03` §9.1)
+
+Le blocage y était formulé « statut réglementaire inconnu ». Il devient une
+**question fermée, vérifiable** :
+
+> **Kobara est-elle enregistrée comme FSP auprès de la BRH ?**
+
+Parce que si elle fournit des services de paiement électronique sans l'être,
+le régime dit qu'elle **doit cesser ses activités** — et faire transiter
+l'argent des vendeurs de Zabelie par une entité dans cette situation
+ajouterait un risque qui n'est plus seulement contractuel. La même question
+vaut pour **Tchotchom**, **HtiPay** et **Mannitòks**.
+
+⚠️ Et elle vaut aussi dans l'autre sens : **une entité correctement agréée FSP
+serait un argument POUR**, pas contre. La fiche ne dit pas « jamais », elle dit
+« pas avant de savoir ».
 
 ---
 
