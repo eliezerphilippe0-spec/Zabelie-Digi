@@ -78,6 +78,66 @@ Brevo écarté comme doublon). Il n'y a rien à décider, seulement à vérifier
 
 ---
 
+## 🧰 PIÈGE D'ENVIRONNEMENT — `api.github.com` rend 403, et son erreur compte pour zéro
+
+> ⚠️ **Ce n'est PAS une action du porteur.** C'est une note d'outillage pour
+> le prochain agent, inscrite ici sur demande du porteur le 2026-08-25 parce
+> que ce fichier est relu à l'ouverture de chaque chantier.
+
+**Mesuré**, pas supposé :
+
+```
+curl https://api.github.com/repos/.../check-runs   →  HTTP 403
+{"message":"GitHub access is not enabled for this session.
+            An org admin must connect the Claude GitHub App for this organization."}
+```
+
+L'API GitHub n'est joignable **que par les outils MCP** (`mcp__github__*`).
+Toute sonde `curl` vers `api.github.com` échoue — y compris depuis un
+`Monitor` en arrière-plan.
+
+### Pourquoi ça mérite une entrée, et pas seulement une note
+
+**Le 403 ne s'est pas présenté comme un échec.** Une sonde de CI comptait les
+vérifications *non terminées* et concluait « verte » à zéro :
+
+```bash
+pend=$(printf '%s' "$s" | grep -o '"status":"[a-z_]*"' | grep -cv '"status":"completed"')
+if [ "$pend" = "0" ]; then echo "CI-VERTE"; fi     # ⛔ FAUX
+```
+
+Le corps d'erreur ne contient **aucun champ `status`**. `pend` valait donc
+zéro — et zéro s'est lu « rien en attente », alors qu'il fallait lire « je
+n'ai reçu aucune donnée ». La sonde a annoncé une CI verte pendant que deux
+vérifications tournaient encore. **Le mensonge ressemblait exactement à une
+réussite.**
+
+C'est la règle de `CLAUDE.md` appliquée à l'outillage de l'agent lui-même :
+*« aucun cas » et « aucun cas possible » ne se distinguent pas d'eux-mêmes* —
+un compteur à zéro doit pouvoir être opposé à une preuve que le chemin est
+praticable. Cette sonde-là n'avait **aucune assertion positive** : elle ne
+vérifiait jamais qu'elle avait bien reçu des vérifications à compter.
+
+### La règle qui en découle
+
+* **L'état d'une CI se lit par `mcp__github__pull_request_read`**, jamais par
+  `curl`. Et une fusion se décide sur `status: "completed"` **et**
+  `conclusion: "success"` pour **toutes** les entrées, pas sur une absence.
+* **Toute sonde qui conclut d'un compteur à zéro doit d'abord assurer qu'elle
+  a reçu des DONNÉES** — un `total_count` présent et non nul, un champ témoin,
+  n'importe quelle assertion positive. Sans elle, une panne de transport se
+  lit comme un succès.
+* En arrière-plan, préférer une **minuterie** — qui ne prétend rien savoir —
+  à une sonde qui pourrait mentir, puis vérifier avec l'outil.
+
+*(Autres domaines `EGRESS_BLOCKED` mesurés le 2026-08-24/25, pour éviter de
+les retester : `zabelie.com`, `kobara.app`, `brh.ht`, `hditcabinetvolmar.com`,
+`mvinht.com`, `tchotchom.com`, `shop509.com`, `koremart.com`, `noula.com`.
+`noula.ht` échoue en amont, sur le DNS — `ENOTFOUND`, ce qui n'est pas la même
+panne et ne se lit pas pareil.)*
+
+---
+
 ## 🔵 Le 500 au corps VIDE — une classe de 35 routes, gravité mesurée
 
 Trouvé le 2026-08-22 par `scripts/zabelie-verifier-deploiement.mjs`, pas par
