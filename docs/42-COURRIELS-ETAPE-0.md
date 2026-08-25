@@ -744,6 +744,180 @@ pas de NATCOM.
 
 ---
 
+## 2 ter. Courriel SOGEBANK — SogePay, et le prérequis d'entité étrangère
+
+> **Ce courriel vise plus gros que NatCash, et il faut le dire d'emblée.**
+>
+> `docs/03` §1 bloque **Stripe ET Zelle** sur un même prérequis : une **entité
+> étrangère *merchant of record***, parce qu'Haïti n'est pas un pays marchand
+> supporté. Deux rails construits, testés, et inutilisables — c'est-à-dire
+> **toute la diaspora**, marché explicitement visé par `CLAUDE.md`.
+>
+> **Une banque haïtienne qui affilie des marchands haïtiens n'a pas ce
+> problème.** Si SogePay encaisse la carte bancaire sans entité étrangère,
+> elle lève un blocage vieux de V-10. C'est une **hypothèse**, pas un fait :
+> c'est exactement ce que ce courriel va vérifier.
+
+### ⚠️ Ce n'est PAS d'abord un courriel — c'est un formulaire
+
+**Vérifié** : la page `sogebank.com/entites-du-groupe-sogebank/sogepay/` porte
+un menu **« Affiliation Commerçant »**, et un formulaire SogePay (PDF) figure
+parmi `sogebank.com/nos-formulaires/`. Téléphones : **(509) 2229-5000** ·
+**(509) 2815-5000**. Page de contact : `sogebank.com/contactez-nous/`.
+
+⛔ **Aucune adresse électronique n'a pu être vérifiée.** Ne pas en inventer
+une.
+
+**Ordre recommandé** : (1) télécharger le formulaire d'affiliation et le lire —
+il répond peut-être déjà à la moitié des questions ci-dessous ; (2) appeler le
+**2229-5000** pour obtenir l'interlocuteur SogePay et son adresse ; (3)
+envoyer ce texte **en accompagnement** du formulaire, pas à la place.
+
+⚠️ Et une question à poser au téléphone avant tout le reste, parce qu'elle
+peut arrêter le dossier en une phrase : **faut-il déjà être client Sogebank
+(compte entreprise ouvert) pour être affilié SogePay ?**
+
+### Objet
+
+```
+Affiliation SogePay — encaissement par carte pour une place de marché haïtienne (questions préalables)
+```
+
+### Corps
+
+```
+Bonjour,
+
+Nous exploitons une place de marché en ligne haïtienne : des vendeurs
+haïtiens y proposent des produits et des services, les acheteurs règlent en
+ligne, et la plateforme reverse chaque vendeur après prélèvement d'une
+commission.
+
+  • Raison sociale : [À REMPLIR]
+  • Site : [À REMPLIR]
+  • Contact technique : [À REMPLIR]
+  • Encaissement actuel : MonCash (API REST, compte marchand Business)
+
+Nous souhaitons ouvrir le paiement par CARTE BANCAIRE, principalement pour
+la diaspora haïtienne. Nous préparons une demande d'affiliation SogePay et
+souhaitons vérifier quelques points avant de la déposer.
+
+A. ÉLIGIBILITÉ — la question qui commande toutes les autres
+
+  1. L'affiliation SogePay est-elle ouverte à une société de droit
+     haïtien, sans qu'une entité étrangère soit requise ?
+
+     Nous posons la question parce que les solutions internationales que
+     nous avons étudiées exigent une société établie hors d'Haïti pour
+     agir comme « merchant of record ». Si SogePay ne l'exige pas, cela
+     change entièrement notre feuille de route.
+
+  2. Faut-il être titulaire d'un compte entreprise Sogebank au préalable ?
+     Quelles pièces sont demandées (statuts, patente, NIF, autres) ?
+
+B. CARTES ET DEVISES
+
+  3. Quels réseaux de cartes sont acceptés (Visa, Mastercard, autres) ?
+
+  4. Les cartes ÉMISES À L'ÉTRANGER sont-elles acceptées — notamment les
+     cartes américaines et canadiennes ? C'est notre cas d'usage
+     principal : la diaspora achète pour des proches en Haïti.
+
+  5. Dans quelle devise pouvons-nous facturer (HTG, USD), et dans quelle
+     devise sommes-nous réglés ?
+
+C. INTÉGRATION TECHNIQUE
+
+  6. Une documentation d'API est-elle disponible avant l'affiliation, ou
+     seulement après ? Existe-t-il un environnement de TEST avec des
+     cartes de test ?
+
+  7. Comment un paiement est-il confirmé côté serveur ? Nous n'acceptons
+     jamais la seule redirection du navigateur comme preuve. Proposez-vous
+     un webhook SIGNÉ, et/ou un endpoint de vérification d'état
+     interrogeable par référence de commande ?
+
+  8. Pouvons-nous transmettre une référence d'idempotence, afin qu'un
+     appel rejoué après un délai d'attente dépassé ne produise pas un
+     second débit ?
+
+  9. Le 3-D Secure est-il appliqué, et sous quelle forme ?
+
+D. RÈGLEMENT ET FRAIS
+
+ 10. Sur quel compte les fonds sont-ils versés, et sous quel délai après
+     la transaction ? Y a-t-il une retenue de garantie (rolling reserve) ?
+
+ 11. Quels sont les frais — pourcentage, montant fixe, différence entre
+     carte locale et carte étrangère ?
+
+E. DEUX POINTS PROPRES À NOTRE ACTIVITÉ
+
+ 12. USAGE PLACE DE MARCHÉ. Nous encaissons pour le compte de VENDEURS
+     TIERS, puis les reversons après commission. Cet usage entre-t-il dans
+     le cadre de l'affiliation SogePay, ou relève-t-il d'un contrat
+     particulier ? Nous préférons poser la question maintenant plutôt que
+     de la découvrir à la première contestation.
+
+ 13. IMPAYÉS ET CONTESTATIONS (chargebacks). C'est notre principale
+     inquiétude technique, et elle n'existe pas sur le rail mobile :
+
+     (a) Quel est le délai maximal de contestation d'un paiement par
+         carte ?
+     (b) Qui en supporte la charge, et selon quelle procédure ?
+     (c) Le montant est-il repris sur nos versements ultérieurs ?
+
+     Nous demandons parce que notre modèle règle le vendeur quelques jours
+     après la vente. Si une contestation peut survenir APRÈS ce règlement,
+     nous devons le prévoir dans notre dispositif avant d'ouvrir le rail,
+     pas après.
+
+F. UNE QUESTION CONNEXE — MAGO
+
+ 14. Nous avons relevé MAGO parmi les fournisseurs de services de paiement
+     agréés par la BRH. Existe-t-il une offre d'ENCAISSEMENT MARCHAND sur
+     MAGO, comparable à SogePay mais en portefeuille électronique ? Si
+     oui, nous serions intéressés par la même série de questions.
+
+Nous ne développerons rien avant vos réponses.
+
+Nous restons disponibles pour un rendez-vous et pour fournir tout document
+complémentaire.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+### Ce qui est délibéré dans ce courriel
+
+| Choix | Raison |
+|---|---|
+| **La question 1 est la première, et elle est expliquée** | C'est la seule qui peut rendre tout le reste inutile — ou débloquer deux rails d'un coup. En donner la raison évite qu'on y réponde « oui » machinalement |
+| **La question 4 sépare les cartes étrangères** | Une banque haïtienne peut parfaitement accepter les cartes locales et refuser les étrangères. Or **c'est la diaspora qui paie par carte** : une réponse négative en 4 vide la question 1 de son intérêt |
+| **⚠️ Le bloc 13 sur les contestations** | ⚠️ **CORRIGÉ dans l'heure : j'avais écrit « ce risque n'est dans aucun document du dépôt ». C'est FAUX**, et la vérité est pire. `0043_fulfillment.sql:72` — **appliquée en production** — justifie le J+7 par : *« MonCash n'a PAS de rétrofacturation. Le J+7 digital protège d'une contestation bancaire qui n'existe pas sur ce rail. »* Le dépôt n'ignorait pas les contestations : **il a fondé sa maturation sur leur ABSENCE.** Ouvrir la carte n'ajoute donc pas un risque à un dispositif existant — **ça invalide la justification écrite du dispositif**. Voir `docs/03` §1 bis |
+| **La question 12 en toutes lettres** | Beaucoup d'acquéreurs interdisent l'encaissement pour compte de tiers sans contrat spécifique. Même piège que la question 4 du courriel Digicel et la 9 du courriel NATCOM |
+| **MAGO en fin, comme question unique** | `docs/42` §0 dit de ne pas mélanger deux dossiers découplés. Ici l'interlocuteur est le même et la décision est la même : ce n'est pas un second dossier, c'est **une question de plus au même guichet**. La mélanger en tête aurait en revanche brouillé le sujet principal |
+| **Aucun secret, aucun identifiant** | Règle d'or `docs/11` |
+
+### Ce qu'on fait de la réponse
+
+| Réponse | Conséquence |
+|---|---|
+| **Q1 : pas d'entité étrangère requise** ET **Q4 : cartes étrangères acceptées** | ⭐ **Le blocage V-10 tombe.** La diaspora devient adressable sans société à l'étranger. À écrire dans `docs/03` §1, qui affirme aujourd'hui le contraire pour Stripe et Zelle |
+| **Q1 : oui, mais Q4 : cartes locales seulement** | Le rail sert le marché intérieur, pas la diaspora. Utile, mais ça ne remplace pas Stripe — et l'arbitrage change |
+| **Q13 : contestation possible après J+7** | ⛔ **Zone d'arrêt.** Le rail ne s'ouvre pas avant que le dispositif de reprise soit spécifié. Ouvrir la carte sans ça expose la plateforme à un débit qu'aucun mécanisme actuel ne couvre |
+| **Q12 : usage place de marché hors cadre** | Le rail n'existe pas pour cet usage. On l'écrit et on n'y revient plus |
+| **Q14 : encaissement MAGO existe** | Une piste de rail mobile **agréée FSP**, alternative directe aux agrégateurs de `docs/03` §9.1 |
+| **Aucune réponse sous 3 semaines** | Consigner dans `OPS_TODO` (§3.1) |
+
+⚠️ **Ce courriel ne lève aucun gel** — même statut que les autres. Et il ne
+touche **pas** au dossier `docs/17` : la question de la rétention du net
+vendeur reste entière quel que soit le rail d'encaissement.
+
+---
+
 ## 3. Registre — état des envois
 
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
@@ -753,6 +927,7 @@ pas de NATCOM.
 | §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | **2026-08-22** | — | 📤 **ENVOYÉ — en attente de réponse.** Fil DISTINCT de celui du 21 août : autre endpoint, déjà actif en production. ⚠️ Déclaré par le porteur en session ; les deux fuseaux concordaient au moment de l'envoi (15h47 Haïti / 19h47 UTC), donc pas d'ambiguïté de date à lever ici. |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
 | §2 bis — **accès marchand NatCash** | NATCOM S.A. — ⚠️ adresse marchande **à obtenir** (111 / WhatsApp 3325-111) ; `customercare@natcom.com.ht` est du service client | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — en attente de l'adresse B2B, ou d'un envoi assumé à `customercare@` avec demande de transfert |
+| §2 ter — **affiliation SogePay** (+ MAGO) | Sogebank — ⚠️ **aucune adresse vérifiée** ; formulaire « Affiliation Commerçant » + tél. (509) 2229-5000 | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — passer par le FORMULAIRE d'abord ; ce texte l'accompagne, il ne le remplace pas |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
 > dire « pas envoyé », jamais « on ne sait plus » — c'est la différence entre

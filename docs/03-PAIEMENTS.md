@@ -15,6 +15,59 @@
 | **Zelle** (diaspora USD) | 🟡 Construit (V-10) — flux **semi-manuel** (pas d'API Zelle) : instructions + mémo, confirmation admin. ⚠️ Exige, **comme Stripe**, un compte bancaire **US** enrôlé Zelle (`ZELLE_RECIPIENT`) : les fonds diaspora atterrissent aux États-Unis, donc **même prérequis d'entité étrangère / *merchant of record*** | 1.5 |
 | **Wallet interne** | ✅ Crédit après confirmation | 1 |
 
+### ⚠️ 1 bis. LA MATURATION J+7 REPOSE SUR UNE PROPRIÉTÉ DE MONCASH
+
+> Trouvé le 2026-08-24, en rédigeant le courriel Sogebank (`docs/42` §2 ter).
+> **Non résolu — écrit ici pour qu'il ne se redécouvre pas au pire moment.**
+
+`0043_fulfillment.sql:72`, **appliquée en production**, justifie le délai de
+confirmation de réception en ces termes :
+
+> *« MonCash n'a PAS de rétrofacturation. Le J+7 digital protège d'une
+> contestation bancaire qui n'existe pas sur ce rail. »*
+
+`docs/21` §46-47 dit la même chose. Le raisonnement est bon — **et il est
+adossé à une propriété du rail, pas à une propriété de la plateforme.**
+
+**Conséquence, jamais formulée** : ouvrir un rail CARTE (Stripe, SogePay, ou
+tout autre) n'ajoute pas simplement un risque de plus. Il **retire la prémisse
+sur laquelle la maturation actuelle a été justifiée par écrit.**
+
+Ce que ça donne concrètement sur un rail carte :
+
+1. l'acheteur paie, `confirm_payment` crédite le net vendeur en attente ;
+2. J+7 passe, `mature_wallets` rend le solde disponible ;
+3. le vendeur retire ;
+4. **puis** la contestation arrive — les fenêtres bancaires se comptent en
+   mois, pas en jours ;
+5. la plateforme est débitée, et le grand livre est **append-only** : la
+   correction est une **écriture compensatoire** contre un solde qui n'est
+   plus là.
+
+⚠️ **Et ce n'est pas seulement un problème futur : `charge.dispute.created`
+n'est écouté nulle part.** `app/api/stripe/webhook/route.ts:35` ignore tout ce
+qui n'est pas `checkout.session.completed`. Le rail Stripe est déclaré
+« construit » depuis V-10 — **sans aucune gestion de contestation**. Il n'a
+jamais encaissé, donc rien n'a explosé ; ça reste un trou dans un rail annoncé
+prêt.
+
+`docs/18` §308 porte déjà « compléter la gestion des remboursements et litiges
+(chargebacks) » dans sa liste. Cette section dit **pourquoi c'est bloquant** et
+non seulement souhaitable.
+
+**Ce qu'il faudra trancher avant d'ouvrir un rail carte** — décision porteur,
+pas agent :
+
+* une maturation **plus longue** sur les rails à rétrofacturation ? (elle
+  aggrave la rétention de `docs/17` : les deux dossiers se contredisent) ;
+* une **réserve** prélevée sur les rails carte ?
+* la plateforme **absorbe** les contestations comme coût d'acquisition de la
+  diaspora ?
+
+Aucune de ces options n'est gratuite, et aucune n'est à l'agent. La question 13
+du courriel `docs/42` §2 ter existe pour obtenir de la banque les délais réels
+avant qu'on choisisse.
+
 ## 2. Les trois invariants (NON NÉGOCIABLES)
 
 1. **Idempotence garantie en base** — clé d'idempotence avec contrainte d'unicité
