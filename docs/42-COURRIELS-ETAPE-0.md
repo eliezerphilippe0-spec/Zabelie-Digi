@@ -9,7 +9,11 @@
 
 ---
 
-## 0. Pourquoi DEUX courriels et non un
+## 0. Pourquoi PLUSIEURS courriels et non un
+
+> ⚠️ Ce paragraphe s'appelait « pourquoi DEUX courriels ». Il y en a quatre au
+> 2026-08-24 : trois chez Digicel (§1, §1 bis, §1 ter), un chez le conseil
+> (§2), un chez NATCOM (§2 bis). Le principe n'a pas bougé, le compte si.
 
 Les deux dossiers qu'ils ouvrent sont **découplés**, et les mélanger dans un
 seul envoi ferait perdre les deux :
@@ -582,6 +586,164 @@ n'est pas un avis juridique.
 
 ---
 
+## 2 bis. Courriel NATCOM — accès marchand NatCash (rédigé le 2026-08-24)
+
+> **Pourquoi il existe, et pourquoi il ne ressemble pas à une demande d'API.**
+>
+> Le 2026-08-24, le registre public des FSP agréés de la BRH
+> (`docs/03` §9.0) a montré que **NATCOM S.A. est elle-même agréée pour
+> NATCASH**. La règle dure n° 2 — « NatCash ⛔, aucune API publique » — reste
+> vraie de ce qu'elle décrit, mais elle décrit un obstacle **commercial**.
+>
+> C'était mot pour mot la situation de MonCash avant l'ouverture du compte
+> Business le 2026-08-10. **Zabelie a déjà mené cette conversation une fois.**
+>
+> Et l'enjeu dépasse NatCash : la voie directe n'ajoute **aucun dépositaire**,
+> **aucun frais d'intermédiaire** et **aucun maillon** au montage examiné par
+> le conseil (`docs/17`) — les trois objections qui tiennent la fiche Kobara
+> fermée (`docs/03` §9.1).
+
+### ⚠️ L'adresse — ce qui est vérifié et ce qui ne l'est pas
+
+**Vérifié** : `customercare@natcom.com.ht` · téléphone **111** · WhatsApp
+**3325-111** · site `natcom.com.ht` · siège à Port-au-Prince.
+
+⛔ **C'est une adresse de SERVICE CLIENT, pas un contact marchand.** Une
+demande d'intégration marchande y sera probablement mal aiguillée. Aucune
+adresse B2B/MFS n'a pu être vérifiée — l'équivalent de
+`MFS_B.Services@digicelgroup.com` côté Digicel n'a pas été trouvé.
+
+**Geste recommandé avant l'envoi** : appeler le **111** ou écrire au WhatsApp
+**3325-111** en demandant *« l'adresse du service marchand / entreprise
+NatCash pour une demande d'intégration »*. Deux minutes, et le courriel part
+au bon endroit. À défaut, envoyer à `customercare@` en demandant explicitement
+le transfert — c'est la première ligne du corps ci-dessous.
+
+### Objet
+
+```
+Demande d'accès marchand NatCash — encaissement en ligne pour une place de marché haïtienne
+```
+
+### Corps
+
+```
+Bonjour,
+
+Si ce message ne relève pas de votre service, merci de le transmettre à
+l'équipe NatCash Entreprise / Marchands — notre demande porte sur un
+accès marchand, non sur un compte particulier.
+
+Nous exploitons une place de marché haïtienne en ligne. Les acheteurs y
+règlent des vendeurs haïtiens en gourdes ; la plateforme encaisse, prélève
+une commission et reverse le vendeur.
+
+  • Raison sociale : [À REMPLIR]
+  • Site : [À REMPLIR]
+  • Contact technique : [À REMPLIR]
+  • Volume actuel : phase de lancement — premières transactions réelles
+
+Nous encaissons aujourd'hui par MonCash via son API REST (compte marchand
+Business, vérification serveur-à-serveur). Nous souhaitons proposer NATCASH
+à nos acheteurs, en DIRECT avec NATCOM plutôt que par un agrégateur tiers.
+
+Nos questions, dans l'ordre où elles nous bloquent :
+
+  1. ACCÈS. Existe-t-il un programme marchand NatCash permettant à un
+     commerce en ligne d'encaisser des paiements NatCash par API ? Quelle
+     est la démarche, quelles pièces fournir, et sous quel délai ?
+
+  2. AGRÉMENT. Nous avons relevé NATCOM S.A. dans le registre des
+     Fournisseurs de Services de Paiement agréés publié par la BRH.
+     Pouvez-vous nous confirmer la référence de cet agrément ? Nous en
+     avons besoin pour notre propre dossier de conformité.
+
+  3. DOCUMENTATION ET BAC À SABLE. Une documentation d'API est-elle
+     disponible, et un environnement de test ?
+
+     ⚠️ Une précision qui nous a coûté cher sur l'autre rail : nous ne
+     demandons pas seulement des identifiants marchands de test. Nous
+     demandons un COMPTE DE TEST CAPABLE DE PAYER — le côté acheteur.
+     Sans lui, un bac à sable ne permet de dérouler que la moitié du
+     parcours, et la première preuve de bout en bout se fait alors avec de
+     l'argent réel. Existe-t-il un tel compte ?
+
+  4. CONFIRMATION DU PAIEMENT. Notre règle interne est qu'aucun paiement
+     n'est réputé reçu sur la seule redirection du navigateur. Proposez-vous
+     (a) un webhook SIGNÉ, et/ou (b) un endpoint de vérification d'état
+     serveur-à-serveur interrogeable par référence de commande ?
+
+     Si webhook signé : quel algorithme de signature, sur quel contenu
+     exact, et avec quelle fenêtre d'horodatage ?
+
+  5. IDEMPOTENCE. Pouvons-nous transmettre une référence externe à la
+     création du paiement, de sorte qu'un appel rejoué après un délai
+     d'attente dépassé soit traité comme un doublon et non comme un second
+     paiement ?
+
+  6. RÈGLEMENT. C'est la question la plus importante pour nous :
+
+     (a) Les sommes encaissées sont-elles reversées sur un COMPTE BANCAIRE
+         à notre nom, ou restent-elles dans un portefeuille NatCash jusqu'à
+         un retrait de notre part ?
+     (b) À quelle fréquence, et sous quel délai ?
+     (c) Existe-t-il un plafond de RETRAIT — par jour, par mois ?
+
+  7. PLAFONDS D'ENCAISSEMENT — par transaction, par jour, par acheteur.
+
+  8. FRAIS — quel pourcentage ou montant fixe, prélevé sur quoi, et à la
+     charge de qui ?
+
+  9. CONDITIONS D'USAGE. L'encaissement par une plateforme pour le compte
+     de vendeurs tiers, avec reversement après commission, entre-t-il dans
+     le cadre prévu par votre service marchand ?
+
+ 10. AGRÉGATEURS. À défaut d'accès direct, travaillez-vous avec des
+     partenaires agréés pour l'encaissement NatCash ? Si oui, lesquels
+     recommandez-vous, et sont-ils eux-mêmes enregistrés comme FSP auprès
+     de la BRH ?
+
+Nous ne développerons rien avant votre réponse.
+
+Nous restons disponibles pour tout document complémentaire — statuts,
+justificatifs, description détaillée du flux de fonds.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+### Ce qui est délibéré dans ce courriel
+
+| Choix | Raison |
+|---|---|
+| **La question 3 insiste sur le compte PAYEUR de test** | C'est la leçon la plus chère de `docs/05` : le bac à sable MonCash n'a jamais pu prouver la moitié aval, faute d'un compte capable de payer. La poser d'emblée coûte une ligne ; la découvrir plus tard coûte un chantier |
+| **La question 6 avant les plafonds et les frais** | Un tarif se négocie, un **dépositaire** ne se défait pas. Savoir si l'argent des vendeurs dort dans un portefeuille NatCash ou arrive sur un compte bancaire au nom de la plateforme change la nature du dossier `docs/17`. C'est la question que personne n'avait posée à Kobara non plus |
+| **La question 2 demande l'agrément** | Il est public (`docs/03` §9.0) — la demander sert à obtenir la **référence** pour le dossier de conformité, et à ouvrir la question 10 sans qu'elle paraisse méfiante |
+| **La question 10 sur les agrégateurs** | Si NATCOM répond « passez par X », c'est la réponse la plus autorisée qu'on puisse obtenir sur Kobara et ses concurrents. Et elle est gratuite |
+| **La question 9 en toutes lettres** | Un service techniquement ouvert peut être contractuellement réservé à d'autres usages. Même piège que la question 4 du courriel Digicel |
+| **Aucun secret, aucun identifiant** | Règle d'or `docs/11`. Le `client_id` MonCash n'a rien à faire ici non plus : autre opérateur, autre dossier |
+| **« Nous ne développerons rien avant votre réponse »** | Étape 0 de `docs/03` §9, dite au fournisseur. Ce n'est pas une politesse : c'est la règle dure n° 2 |
+
+### Ce qu'on fait de la réponse
+
+| Réponse | Conséquence |
+|---|---|
+| **Accès direct accordé** | Fiche d'étape 0 ouverte pour NatCash **en direct**. Aucun dépositaire ajouté, aucun frais d'intermédiaire. La fiche Kobara devient probablement sans objet |
+| **Q6(a) : règlement sur compte bancaire à notre nom** | ⭐ La rétention n'augmente pas d'un maillon. À verser au dossier `docs/17` et à la relance du conseil |
+| **Q6(a) : les fonds restent en portefeuille NatCash** | Un dépositaire de plus, comme avec un agrégateur. L'avantage de la voie directe se réduit aux frais et à la fiabilité |
+| **Q10 : un agrégateur recommandé, avec son agrément** | Réponse autorisée à la question ouverte de `docs/03` §9.1. Le comparatif Kobara / Tchotchom / autres se tranche là |
+| **Refus, ou Q9 négative** | NatCash n'existe pas pour cet usage. On l'écrit dans `docs/03` §1 et on n'y revient plus — comme pour un rail qui ne peut pas exister |
+| **Aucune réponse sous 3 semaines** | Consigner l'absence dans `OPS_TODO`. C'est une donnée, pas un vide (§3.1) |
+
+⚠️ **Ce courriel ne lève aucun gel.** Même statut que les deux précédents :
+tant que la réponse n'est pas là, rien ne se code sur NatCash, et la fiche
+Kobara reste fermée par le blocage BRH de `docs/03` §9.1 — qui, lui, ne dépend
+pas de NATCOM.
+
+---
+
 ## 3. Registre — état des envois
 
 | Envoi | Destinataire | Date d'envoi | Date de réponse | Statut |
@@ -590,6 +752,7 @@ n'est pas un avis juridique.
 | §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
 | §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | **2026-08-22** | — | 📤 **ENVOYÉ — en attente de réponse.** Fil DISTINCT de celui du 21 août : autre endpoint, déjà actif en production. ⚠️ Déclaré par le porteur en session ; les deux fuseaux concordaient au moment de l'envoi (15h47 Haïti / 19h47 UTC), donc pas d'ambiguïté de date à lever ici. |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
+| §2 bis — **accès marchand NatCash** | NATCOM S.A. — ⚠️ adresse marchande **à obtenir** (111 / WhatsApp 3325-111) ; `customercare@natcom.com.ht` est du service client | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — en attente de l'adresse B2B, ou d'un envoi assumé à `customercare@` avec demande de transfert |
 
 > Ce tableau se remplit à la main, au moment de l'envoi. Une case vide veut
 > dire « pas envoyé », jamais « on ne sait plus » — c'est la différence entre
