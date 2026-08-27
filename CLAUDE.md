@@ -320,6 +320,12 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 - `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
 - `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
   contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
+- `docs/46-STRATEGIE-PRODUIT.md` — où porter l'effort produit (2026-08-25).
+  ⚠️ **Aucune décision** — positionnement = zone d'arrêt. Le fait qui compte :
+  **presque toutes les briques existent déjà** (séquestre, lien payable sans
+  compte `app/facture/[token]`, points de retrait `0082`, affiliation `0081`,
+  format prestation `0020`) — elles ne sont assemblées autour d'aucun travail
+  que quelqu'un cherche à faire faire. Et **rien avant la première gourde**.
 - `docs/45-CONCURRENCE-HAITI.md` — relevé concurrentiel (2026-08-24) :
   Bemane, MvinHT, Klasyo, KawBiz, Tchotchom & co. ⚠️ Tiré de **résumés de
   recherche**, aucune page ouverte (proxy) — arguments de vente, pas mesures.
