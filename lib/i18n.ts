@@ -353,7 +353,13 @@ const fr = {
   // Paiement
   "pay.ok.title": "Paiement confirmé",
   "pay.ok.body":
+    "Merci ! Votre achat est validé. Les détails sont dans « Mes achats ».",
+  "pay.ok.body.file":
     "Merci ! Votre achat est validé. Votre fichier est disponible dans vos téléchargements.",
+  "pay.ok.body.service":
+    "Merci ! Votre achat est validé. Le vendeur doit maintenant réaliser la prestation — vous confirmerez dans « Mes achats ».",
+  "pay.ok.body.physical":
+    "Merci ! Votre achat est validé. Le vendeur doit maintenant vous remettre la commande — vous confirmerez la réception dans « Mes achats ».",
   "pay.ok.cta": "Voir mes achats",
   "pay.back": "Retour au catalogue",
   "pay.wait.title": "Paiement en cours de vérification",
@@ -1026,7 +1032,13 @@ const ht: Record<I18nKey, string> = {
 
   "pay.ok.title": "Peman konfime",
   "pay.ok.body":
+    "Mèsi! Acha ou valide. Detay yo nan « Acha mwen yo ».",
+  "pay.ok.body.file":
     "Mèsi! Acha ou valide. Fichye ou disponib nan telechajman ou yo.",
+  "pay.ok.body.service":
+    "Mèsi! Acha ou valide. Vandè a gen pou l fè travay la — w ap konfime nan « Acha mwen yo ».",
+  "pay.ok.body.physical":
+    "Mèsi! Acha ou valide. Vandè a gen pou l remèt ou li — w ap konfime nan « Acha mwen yo ».",
   "pay.ok.cta": "Wè acha mwen yo",
   "pay.back": "Tounen nan katalòg la",
 
@@ -1686,7 +1698,13 @@ const en = {
   // Payment
   "pay.ok.title": "Payment confirmed",
   "pay.ok.body":
+    "Thank you! Your purchase is confirmed. The details are in “My purchases”.",
+  "pay.ok.body.file":
     "Thank you! Your purchase is confirmed. Your file is available in your downloads.",
+  "pay.ok.body.service":
+    "Thank you! Your purchase is confirmed. The seller now has to carry out the work — you will confirm in “My purchases”.",
+  "pay.ok.body.physical":
+    "Thank you! Your purchase is confirmed. The seller now has to hand it over — you will confirm receipt in “My purchases”.",
   "pay.ok.cta": "View my purchases",
   "pay.back": "Back to catalog",
   "pay.wait.title": "Payment being verified",
@@ -2355,7 +2373,13 @@ const es = {
   // Pago
   "pay.ok.title": "Pago confirmado",
   "pay.ok.body":
+    "¡Gracias! Tu compra está confirmada. Los detalles están en «Mis compras».",
+  "pay.ok.body.file":
     "¡Gracias! Tu compra está confirmada. Tu archivo está disponible en tus descargas.",
+  "pay.ok.body.service":
+    "¡Gracias! Tu compra está confirmada. El vendedor debe realizar el servicio — lo confirmarás en «Mis compras».",
+  "pay.ok.body.physical":
+    "¡Gracias! Tu compra está confirmada. El vendedor debe entregarte el pedido — confirmarás la recepción en «Mis compras».",
   "pay.ok.cta": "Ver mis compras",
   "pay.back": "Volver al catálogo",
   "pay.wait.title": "Verificando el pago",
