@@ -215,6 +215,8 @@ const fr = {
   // Catalogue
   "catalog.title": "Catalogue",
   "catalog.results": "résultat(s)",
+  "catalog.reviews.proof":
+    "Une note ne vient que d'un acheteur qui a payé — un seul avis par commande.",
   "catalog.for": "pour",
   "catalog.search.ph": "Rechercher un produit…",
   "catalog.search.btn": "Rechercher",
@@ -902,6 +904,8 @@ const ht: Record<I18nKey, string> = {
 
   "catalog.title": "Katalòg",
   "catalog.results": "rezilta",
+  "catalog.reviews.proof":
+    "Yon nòt soti sèlman nan yon achtè ki peye — yon sèl avi pou chak kòmand.",
   "catalog.for": "pou",
   "catalog.search.ph": "Chèche yon pwodwi…",
   "catalog.search.btn": "Chèche",
@@ -1573,6 +1577,8 @@ const en = {
   // Catalog
   "catalog.title": "Catalog",
   "catalog.results": "result(s)",
+  "catalog.reviews.proof":
+    "A rating only comes from a buyer who paid — one review per order.",
   "catalog.for": "for",
   "catalog.search.ph": "Search for a product…",
   "catalog.search.btn": "Search",
@@ -2252,6 +2258,8 @@ const es = {
   // Catálogo
   "catalog.title": "Catálogo",
   "catalog.results": "resultado(s)",
+  "catalog.reviews.proof":
+    "Una valoración solo proviene de un comprador que pagó — una reseña por pedido.",
   "catalog.for": "para",
   "catalog.search.ph": "Buscar un producto…",
   "catalog.search.btn": "Buscar",

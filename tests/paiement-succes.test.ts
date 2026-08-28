@@ -277,3 +277,70 @@ test("S7 — plus AUCUN libellé de remise en dur : quatre langues, deux écrans
     }
   }
 });
+
+/**
+ * ─────────── CE QUE L'ÉTOILE VEUT DIRE ───────────
+ *
+ * Regardé le 2026-08-27 chez Mercado Libre, Jumia et Amazon : les trois
+ * exposent le COMPORTEMENT du vendeur, jamais son identité. Le KYC y est une
+ * condition d'entrée, pas un badge.
+ *
+ * Zabelie tient déjà le mécanisme d'Amazon, en plus strict et EN BASE :
+ * `0008` pose `order_id not null unique` — un avis exige une commande PAYÉE,
+ * un seul par commande. Ce n'est pas une politique de modération, c'est une
+ * contrainte Postgres. Elle n'était dite nulle part dans le catalogue.
+ */
+
+const CATALOGUE = "app/catalogue/page.tsx";
+const MIG_AVIS = "supabase/migrations/0008_reviews.sql";
+
+test("S8 — la phrase du catalogue est ADOSSÉE à la contrainte de 0008", () => {
+  /* ⚠️ LE CROISEMENT QUI COMPTE, et il est du même genre que
+   * `tests/crons-appelants` : la phrase promet quelque chose au visiteur, et
+   * ce quelque chose vit dans une MIGRATION. Si la contrainte disparaît, la
+   * phrase devient une promesse non tenue — et rien, sans ce test, ne
+   * relierait les deux. */
+  const sql = readFileSync(MIG_AVIS, "utf8");
+  assert.match(
+    sql,
+    /order_id\s+uuid not null unique references orders/,
+    "0008 ne garantit plus « un avis par commande payée » : la phrase du " +
+      "catalogue devient une promesse que la base ne tient pas"
+  );
+
+  const src = readFileSync(CATALOGUE, "utf8");
+  /* La liaison : la présence d'AU MOINS UNE note doit commander l'affichage.
+   * Expliquer une étoile absente de l'écran n'informe personne — c'est « un
+   * filet sur un chemin impraticable », transposé à une phrase. */
+  assert.match(
+    src,
+    /\{products\.some\(\(p\) => p\.ratingAvg !== null\) && \(/,
+    "la phrase n'est plus conditionnée à la présence d'une note affichée"
+  );
+  assert.match(
+    src,
+    /t\(lang, "catalog\.reviews\.proof"\)/,
+    "la phrase n'est plus rendue dans le catalogue"
+  );
+});
+
+test("S9 — la phrase dit la garantie, et RIEN de plus, en quatre langues", () => {
+  /* Elle ne doit pas glisser vers « vendeur vérifié » : le KYC de `0079` n'est
+   * lisible que par le vendeur lui-même (aucune policy publique), et les trois
+   * géants n'exposent de toute façon pas l'identité. Une phrase qui
+   * l'affirmerait serait invérifiable ET hors sujet. */
+  const INTERDIT =
+    /(?<![\p{L}])(vérifiés?|verifye|verified|verificados?|identité|idantite|identity|identidad|KYC)(?![\p{L}])/iu;
+  for (const lang of LANGS) {
+    const p = (DICT[lang] as Record<string, string>)["catalog.reviews.proof"];
+    assert.ok(p && p.trim().length > 0, `catalog.reviews.proof manquante en ${lang}`);
+    assert.ok(
+      !INTERDIT.test(p),
+      `catalog.reviews.proof (${lang}) parle de vérification d'identité : ` +
+        `« ${p} ». La garantie de 0008 porte sur le PAIEMENT, pas sur le vendeur.`
+    );
+  }
+  // Connu-positif du détecteur : il verrait la dérive s'il elle arrivait.
+  assert.ok(INTERDIT.test("Vandè verifye toupre w"));
+  assert.ok(INTERDIT.test("Vendeurs vérifiés"));
+});
