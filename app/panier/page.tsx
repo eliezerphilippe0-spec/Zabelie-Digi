@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { isProductKind, isDownloadable } from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie" };
@@ -56,11 +57,45 @@ export default async function PanierPage() {
       slug: string;
       title: string;
       price_htg: number;
+      /* ⚠️ `kind` ÉTAIT DÉJÀ SÉLECTIONNÉ (la requête ci-dessus le demande) et
+       * ce type l'omettait : la donnée arrivait et se perdait. Le groupement
+       * ci-dessous ne coûte donc aucune requête de plus. */
+      kind: string;
       creator: { display_name: string | null } | null;
     } | null;
   };
   const items = ((lignes ?? []) as unknown as Ligne[]).filter((l) => l.product);
   const total = items.reduce((n, l) => n + (l.product?.price_htg ?? 0), 0);
+
+  /* ── GROUPEMENT PAR MODE DE REMISE ────────────────────────────────────────
+   *
+   * Question laissée ouverte le 2026-08-27 : où mettre « le vendeur n'est payé
+   * qu'après la remise » sur un panier qui mélange les types ? Par ligne, c'est
+   * du bruit ; en bas de page, c'est FAUX pour les fichiers, dont la livraison
+   * est immédiate.
+   *
+   * La réponse n'est pas à inventer — c'est la convention des places de marché
+   * qui vendent physique ET numérique : **grouper par mode de remise, et
+   * énoncer la garantie UNE fois, au niveau où elle est vraie.** Amazon sépare
+   * les envois des articles numériques et affiche sa garantie au niveau de la
+   * commande ; Etsy groupe par boutique et affiche sa protection une fois.
+   *
+   * Ici deux groupes suffisent, parce qu'il n'y a que deux mondes :
+   *   • à télécharger      → livraison immédiate, aucun escrow à annoncer
+   *   • à remettre         → le vendeur doit agir, et l'escrow protège
+   *
+   * ⚠️ Et s'il n'y a QU'UN groupe, aucun en-tête n'est affiché. Un titre de
+   * section au-dessus d'une seule section est du bruit — c'est aussi ce que
+   * font les géants : personne n'écrit « Envoi 1 sur 1 ». */
+  const aTelecharger = items.filter(
+    (l) => isProductKind(l.product!.kind) && isDownloadable(l.product!.kind, l.product_id)
+  );
+  const aRemettre = items.filter((l) => !aTelecharger.includes(l));
+  const groupes = [
+    { cle: "cart.group.download" as const, lignes: aTelecharger, escrow: false },
+    { cle: "cart.group.handover" as const, lignes: aRemettre, escrow: true },
+  ].filter((g) => g.lignes.length > 0);
+  const montrerEntetes = groupes.length > 1;
 
   return (
     <Coquille titre={t(lang, "cart.title")}>
@@ -83,43 +118,66 @@ export default async function PanierPage() {
       )}
       {!error && items.length > 0 && (
         <>
-          <ul className="mt-6 divide-y divide-line rounded-2xl border border-line bg-surface/40">
-            {items.map((l) => (
-              <li
-                key={l.product_id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4"
-              >
-                <div className="min-w-0 flex-1 basis-full sm:basis-auto">
-                  <Link
-                    href={`/produit/${l.product!.slug}`}
-                    className="font-semibold text-cloud transition hover:text-accent"
+          {groupes.map((g) => (
+            <section key={g.cle} className="mt-6">
+              {montrerEntetes && (
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-mist">
+                  {t(lang, g.cle)}
+                </h2>
+              )}
+              {/* L'escrow, énoncé UNE fois, sur le groupe où il est vrai. */}
+              {g.escrow && (
+                <p className="mb-2 flex items-start gap-2 text-xs text-mist">
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 flex-none fill-none stroke-success"
+                    strokeWidth="1.8"
                   >
-                    {l.product!.title}
-                  </Link>
-                  {l.product!.creator?.display_name && (
-                    <p className="text-xs text-mist">
-                      {t(lang, "product.by")} {l.product!.creator.display_name}
-                    </p>
-                  )}
-                </div>
-                <span className="numeric shrink-0 font-bold text-cloud">
-                  {formatHTG(l.product!.price_htg)}
-                </span>
-                <CartPayButton
-                  productId={l.product_id}
-                  labels={{
-                    pay: t(lang, "cart.pay"),
-                    loading: t(lang, "cart.paying"),
-                    error: t(lang, "error.generic"),
-                  }}
-                />
-                <RemoveFromCart
-                  productId={l.product_id}
-                  label={t(lang, "cart.remove")}
-                />
-              </li>
-            ))}
-          </ul>
+                    <path d="M4 8h16v11H4zM8 8V6a4 4 0 018 0v2" />
+                  </svg>
+                  {t(lang, "trust.2.b")}
+                </p>
+              )}
+              <ul className="divide-y divide-line rounded-2xl border border-line bg-surface/40">
+                {g.lignes.map((l) => (
+                  <li
+                    key={l.product_id}
+                    className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4"
+                  >
+                    <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+                      <Link
+                        href={`/produit/${l.product!.slug}`}
+                        className="font-semibold text-cloud transition hover:text-accent"
+                      >
+                        {l.product!.title}
+                      </Link>
+                      {l.product!.creator?.display_name && (
+                        <p className="text-xs text-mist">
+                          {t(lang, "product.by")} {l.product!.creator.display_name}
+                        </p>
+                      )}
+                    </div>
+                    <span className="numeric shrink-0 font-bold text-cloud">
+                      {formatHTG(l.product!.price_htg)}
+                    </span>
+                    <CartPayButton
+                      productId={l.product_id}
+                      labels={{
+                        pay: t(lang, "cart.pay"),
+                        loading: t(lang, "cart.paying"),
+                        error: t(lang, "error.generic"),
+                      }}
+                    />
+                    <RemoveFromCart
+                      productId={l.product_id}
+                      label={t(lang, "cart.remove")}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
             <span className="numeric text-xl font-extrabold text-gradient">

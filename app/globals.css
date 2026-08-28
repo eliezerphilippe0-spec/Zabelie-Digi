@@ -82,6 +82,42 @@
         var(--color-bg-3) 100%
       );
   }
+  /* ── RÉVÉLATION DE CONFIRMATION ────────────────────────────────────────
+     UNE seule apparition orchestrée, réservée au moment où l'argent vient de
+     bouger (app/paiement/succes). Pas de micro-animation dispersée ailleurs :
+     sur Android d'entrée de gamme, chaque animation est un coût, et une page
+     qui bouge partout ne met rien en avant.
+
+     ⚠️ LE SENS DU DÉFAUT EST INVERSÉ, ET C'EST TOUT LE POINT. L'état de repos
+     est VISIBLE ; l'animation ne s'ajoute qu'à l'intérieur de
+     `prefers-reduced-motion: no-preference`. Écrit dans l'autre sens —
+     `opacity: 0` au repos, révélé par l'animation — un utilisateur en
+     mouvement réduit, un navigateur sans support, ou une feuille de style qui
+     ne charge pas sur 3G verraient une PAGE VIDE après avoir payé. Le défaut
+     doit tomber du côté « tout est là, rien ne bouge ».
+
+     Aucune dépendance, aucun JavaScript : la page de succès reste un
+     composant serveur. */
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: zbReveal 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation-delay: var(--reveal-delay, 0ms);
+    }
+    .reveal-mark {
+      animation: zbMark 520ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    }
+  }
+  @keyframes zbReveal {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+  /* La coche : une seule pulsation d'échelle, sans rotation ni rebond appuyé.
+     Ce n'est pas une célébration — c'est un accusé de réception. */
+  @keyframes zbMark {
+    from { opacity: 0; transform: scale(0.82); }
+    to   { opacity: 1; transform: none; }
+  }
+
   .glass {
     background: color-mix(in srgb, var(--color-surface-maroon) 72%, transparent);
     backdrop-filter: blur(14px);

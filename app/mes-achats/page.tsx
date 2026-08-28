@@ -13,19 +13,25 @@ import { isDownloadable, pickByKind } from "@/lib/product-kind";
 import { isMissingColumn } from "@/lib/products";
 import { cleEtatRemise, estEtatRemise, lireLimiteRemise, type EtatRemise } from "@/lib/fulfillment";
 import { getLang } from "@/lib/i18n-server";
-import { t, type Lang } from "@/lib/i18n";
+import { t, type Lang, type I18nKey } from "@/lib/i18n";
 
 /**
  * Où en est la remise, pour un produit qui ne se télécharge PAS.
  * Rien n'est promis au nom de Zabelie : la plateforme ne livre pas.
  */
-function remiseLabel(kind: ProductKind | undefined): string | null {
+function remiseLabel(kind: ProductKind | undefined, lang: Lang): string | null {
   if (!kind) return null;
-  return pickByKind(kind, {
+  /* ⚠️ C'ÉTAIT DU FRANÇAIS EN DUR, dans une application kreyòl-first à quatre
+   * langues — trouvé le 2026-08-27 en analysant les pages. Un acheteur kreyòl
+   * lisait « Remise à convenir avec le vendeur » sur SA page d'achats.
+   * Les clés sont les mêmes que celles des groupes du panier : un seul
+   * vocabulaire pour la remise, deux écrans. */
+  const cle = pickByKind<I18nKey | null>(kind, {
     file: null,
-    service: "Service · mise en relation",
-    physical: "Remise à convenir avec le vendeur",
+    service: "purchases.mode.service",
+    physical: "purchases.mode.physical",
   });
+  return cle ? t(lang, cle) : null;
 }
 
 export const dynamic = "force-dynamic";
@@ -256,9 +262,9 @@ export default async function MesAchatsPage() {
                   // affichée à l'acheteur.
                   blocRemise(suivis.get(o.id), lang)
                 ) : (
-                  remiseLabel(o.product?.kind) && (
+                  remiseLabel(o.product?.kind, lang) && (
                     <span className="text-xs text-mist">
-                      {remiseLabel(o.product?.kind)}
+                      {remiseLabel(o.product?.kind, lang)}
                     </span>
                   )
                 )}

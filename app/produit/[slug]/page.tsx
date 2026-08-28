@@ -28,6 +28,7 @@ import {
   deliveryBulletKey as bulletKey,
   deliveryNoticeKey,
   isService,
+  isDownloadable,
 } from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
@@ -380,6 +381,35 @@ export default async function ProductPage({
                   provider: t(lang, "error.provider"),
                 }}
               />
+              {/* ── L'ESCROW, DIT LÀ OÙ ON HÉSITE ────────────────────────
+                  Ajouté le 2026-08-27. `trust.2.b` — « le vendeur n'est payé
+                  qu'après la remise » — n'était rendu QUE sur l'accueil
+                  (app/page.tsx:412). Absent de la fiche produit, du panier et
+                  de la page de succès : c'est-à-dire de toutes les pages où
+                  quelqu'un hésite à payer.
+
+                  Or c'est le seul différenciateur qu'AUCUN des sept
+                  concurrents du relevé n'annonce (docs/45 §4.6). Construit,
+                  éprouvé, invisible.
+
+                  ⚠️ Pas sur un fichier : la livraison y est immédiate, et la
+                  même phrase y sèmerait un doute au lieu de le lever. Le test
+                  `isDownloadable` porte la distinction — comparaison de type
+                  hors de `lib/product-kind.ts` interdite (CLAUDE.md). */}
+              {!isDownloadable(product.kind, product.id) && (
+                <p className="mt-3 flex items-start gap-2 text-xs text-mist">
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 flex-none fill-none stroke-success"
+                    strokeWidth="1.8"
+                  >
+                    <path d="M4 8h16v11H4zM8 8V6a4 4 0 018 0v2" />
+                  </svg>
+                  {t(lang, "trust.2.b")}
+                </p>
+              )}
+
               {/* Le panier ne remplace pas l'achat direct : il ajoute le cas
                   « je prends plusieurs choses ». Bouton secondaire, sous le
                   primaire — la hiérarchie dit le chemin recommandé. */}

@@ -38,6 +38,10 @@ const fr = {
   "cart.pay": "Payer",
   "cart.paying": "Redirection…",
   "cart.total": "Total",
+  "cart.group.download": "À télécharger",
+  "cart.group.handover": "À remettre par le vendeur",
+  "purchases.mode.service": "Prestation · à convenir avec le vendeur",
+  "purchases.mode.physical": "Remise à convenir avec le vendeur",
   "cart.note": "Le paiement groupé (un seul paiement pour tout le panier) arrive bientôt. En attendant, payez article par article ci-dessus.",
   "purchases.login.b": "Connectez-vous pour voir vos achats.",
   "nav.help": "Aide",
@@ -211,6 +215,8 @@ const fr = {
   // Catalogue
   "catalog.title": "Catalogue",
   "catalog.results": "résultat(s)",
+  "catalog.reviews.proof":
+    "Une note ne vient que d'un acheteur qui a payé — un seul avis par commande.",
   "catalog.for": "pour",
   "catalog.search.ph": "Rechercher un produit…",
   "catalog.search.btn": "Rechercher",
@@ -353,7 +359,13 @@ const fr = {
   // Paiement
   "pay.ok.title": "Paiement confirmé",
   "pay.ok.body":
+    "Merci ! Votre achat est validé. Les détails sont dans « Mes achats ».",
+  "pay.ok.body.file":
     "Merci ! Votre achat est validé. Votre fichier est disponible dans vos téléchargements.",
+  "pay.ok.body.service":
+    "Merci ! Votre achat est validé. Le vendeur doit maintenant réaliser la prestation — vous confirmerez dans « Mes achats ».",
+  "pay.ok.body.physical":
+    "Merci ! Votre achat est validé. Le vendeur doit maintenant vous remettre la commande — vous confirmerez la réception dans « Mes achats ».",
   "pay.ok.cta": "Voir mes achats",
   "pay.back": "Retour au catalogue",
   "pay.wait.title": "Paiement en cours de vérification",
@@ -721,6 +733,10 @@ const ht: Record<I18nKey, string> = {
   "cart.pay": "Peye",
   "cart.paying": "Redireksyon…",
   "cart.total": "Total",
+  "cart.group.download": "Pou telechaje",
+  "cart.group.handover": "Vandè a gen pou l remèt li",
+  "purchases.mode.service": "Travay · pou n antann nou ak vandè a",
+  "purchases.mode.physical": "Remèt la, pou n antann nou ak vandè a",
   "cart.note": "Peman gwoupe (yon sèl peman pou tout panye a) ap vini talè. Pou kounye a, peye atik pa atik anwo a.",
   "purchases.login.b": "Konekte pou wè acha ou yo.",
   "nav.help": "Èd",
@@ -888,6 +904,8 @@ const ht: Record<I18nKey, string> = {
 
   "catalog.title": "Katalòg",
   "catalog.results": "rezilta",
+  "catalog.reviews.proof":
+    "Yon nòt soti sèlman nan yon achtè ki peye — yon sèl avi pou chak kòmand.",
   "catalog.for": "pou",
   "catalog.search.ph": "Chèche yon pwodwi…",
   "catalog.search.btn": "Chèche",
@@ -1026,7 +1044,13 @@ const ht: Record<I18nKey, string> = {
 
   "pay.ok.title": "Peman konfime",
   "pay.ok.body":
+    "Mèsi! Acha ou valide. Detay yo nan « Acha mwen yo ».",
+  "pay.ok.body.file":
     "Mèsi! Acha ou valide. Fichye ou disponib nan telechajman ou yo.",
+  "pay.ok.body.service":
+    "Mèsi! Acha ou valide. Vandè a gen pou l fè travay la — w ap konfime nan « Acha mwen yo ».",
+  "pay.ok.body.physical":
+    "Mèsi! Acha ou valide. Vandè a gen pou l remèt ou li — w ap konfime nan « Acha mwen yo ».",
   "pay.ok.cta": "Wè acha mwen yo",
   "pay.back": "Tounen nan katalòg la",
 
@@ -1377,6 +1401,10 @@ const en = {
   "cart.pay": "Pay",
   "cart.paying": "Redirecting…",
   "cart.total": "Total",
+  "cart.group.download": "To download",
+  "cart.group.handover": "To be handed over by the seller",
+  "purchases.mode.service": "Service · to arrange with the seller",
+  "purchases.mode.physical": "Handover to arrange with the seller",
   "cart.note": "Group payment (one payment for the whole cart) is coming. For now, pay item by item above.",
   "purchases.login.b": "Sign in to see your purchases.",
   "nav.help": "Help",
@@ -1549,6 +1577,8 @@ const en = {
   // Catalog
   "catalog.title": "Catalog",
   "catalog.results": "result(s)",
+  "catalog.reviews.proof":
+    "A rating only comes from a buyer who paid — one review per order.",
   "catalog.for": "for",
   "catalog.search.ph": "Search for a product…",
   "catalog.search.btn": "Search",
@@ -1686,7 +1716,13 @@ const en = {
   // Payment
   "pay.ok.title": "Payment confirmed",
   "pay.ok.body":
+    "Thank you! Your purchase is confirmed. The details are in “My purchases”.",
+  "pay.ok.body.file":
     "Thank you! Your purchase is confirmed. Your file is available in your downloads.",
+  "pay.ok.body.service":
+    "Thank you! Your purchase is confirmed. The seller now has to carry out the work — you will confirm in “My purchases”.",
+  "pay.ok.body.physical":
+    "Thank you! Your purchase is confirmed. The seller now has to hand it over — you will confirm receipt in “My purchases”.",
   "pay.ok.cta": "View my purchases",
   "pay.back": "Back to catalog",
   "pay.wait.title": "Payment being verified",
@@ -2046,6 +2082,10 @@ const es = {
   "cart.pay": "Pagar",
   "cart.paying": "Redirigiendo…",
   "cart.total": "Total",
+  "cart.group.download": "Para descargar",
+  "cart.group.handover": "El vendedor debe entregarlo",
+  "purchases.mode.service": "Servicio · a acordar con el vendedor",
+  "purchases.mode.physical": "Entrega a acordar con el vendedor",
   "cart.note": "El pago agrupado (un solo pago para todo el carrito) llegará pronto. Por ahora, paga artículo por artículo arriba.",
   "purchases.login.b": "Inicia sesión para ver tus compras.",
   "nav.help": "Ayuda",
@@ -2218,6 +2258,8 @@ const es = {
   // Catálogo
   "catalog.title": "Catálogo",
   "catalog.results": "resultado(s)",
+  "catalog.reviews.proof":
+    "Una valoración solo proviene de un comprador que pagó — una reseña por pedido.",
   "catalog.for": "para",
   "catalog.search.ph": "Buscar un producto…",
   "catalog.search.btn": "Buscar",
@@ -2355,7 +2397,13 @@ const es = {
   // Pago
   "pay.ok.title": "Pago confirmado",
   "pay.ok.body":
+    "¡Gracias! Tu compra está confirmada. Los detalles están en «Mis compras».",
+  "pay.ok.body.file":
     "¡Gracias! Tu compra está confirmada. Tu archivo está disponible en tus descargas.",
+  "pay.ok.body.service":
+    "¡Gracias! Tu compra está confirmada. El vendedor debe realizar el servicio — lo confirmarás en «Mis compras».",
+  "pay.ok.body.physical":
+    "¡Gracias! Tu compra está confirmada. El vendedor debe entregarte el pedido — confirmarás la recepción en «Mis compras».",
   "pay.ok.cta": "Ver mis compras",
   "pay.back": "Volver al catálogo",
   "pay.wait.title": "Verificando el pago",

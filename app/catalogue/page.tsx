@@ -183,6 +183,44 @@ export default async function CataloguePage({
           {zoneActive ? ` · ${libelleZone(zoneActive, lang)}` : ""}.
         </p>
 
+        {/* ── CE QUE L'ÉTOILE VEUT DIRE ICI ───────────────────────────────
+            Ajouté le 2026-08-27, après avoir regardé ce que font Mercado
+            Libre, Jumia et Amazon.
+
+            Les trois exposent le COMPORTEMENT du vendeur, jamais son
+            identité : thermomètre et médailles MercadoLíder sur les commandes
+            honorées, Seller Score de Jumia sur quatre critères de service,
+            badge « Achat vérifié » d'Amazon qui exige que l'avis vienne du
+            compte qui a payé. Le KYC y est une condition d'ENTRÉE, pas un
+            badge — et un badge d'identité ne dit rien à l'acheteur sur ce qui
+            va lui arriver.
+
+            Zabelie tient déjà le mécanisme d'Amazon, en plus strict et EN
+            BASE : `0008` pose `order_id not null unique` — un avis exige une
+            commande PAYÉE, un seul par commande. Ce n'est pas une politique de
+            modération, c'est une contrainte Postgres.
+
+            Ce qui manquait n'était donc pas la garantie, c'était de la DIRE :
+            dans le catalogue, une note s'affichait comme une étoile ordinaire.
+
+            ⚠️ ET LA LIGNE NE S'AFFICHE QUE S'IL Y A UNE ÉTOILE À EXPLIQUER.
+            Expliquer un symbole absent de l'écran, c'est le motif « un filet
+            sur un chemin impraticable » de CLAUDE.md, transposé à une phrase :
+            elle rendrait toujours quelque chose, et n'informerait personne. */}
+        {products.some((p) => p.ratingAvg !== null) && (
+          <p className="mt-1 flex items-start gap-1.5 text-xs text-mist">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="mt-0.5 h-3.5 w-3.5 flex-none fill-none stroke-success"
+              strokeWidth="1.8"
+            >
+              <path d="M5 12l4.5 4.5L19 7" />
+            </svg>
+            {t(lang, "catalog.reviews.proof")}
+          </p>
+        )}
+
         {/* Recherche (GET, fonctionne sans JS) */}
         <form action="/catalogue" className="mt-6 flex gap-2">
           {activeCat !== "Tout" && (
