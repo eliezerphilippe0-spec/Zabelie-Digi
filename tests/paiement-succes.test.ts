@@ -186,3 +186,94 @@ test("S5 — l'escrow est dit sur la fiche produit, et PAS sur un fichier", () =
       "fichier — où la livraison est immédiate et où la phrase sèmerait un doute"
   );
 });
+
+/**
+ * ─────────── LE PANIER MIXTE ───────────
+ *
+ * Question laissée OUVERTE le 2026-08-27, et refermée par un précédent plutôt
+ * que par une invention : où dire « le vendeur n'est payé qu'après la remise »
+ * sur un panier qui mélange les types ? Par ligne, c'est du bruit ; en bas de
+ * page, c'est FAUX pour les fichiers.
+ *
+ * La convention des places de marché qui vendent physique ET numérique —
+ * Amazon sépare les envois des articles numériques, Etsy groupe par boutique —
+ * est : **grouper par mode de remise, et énoncer la garantie UNE fois, au
+ * niveau où elle est vraie.**
+ */
+
+const PANIER = "app/panier/page.tsx";
+const ACHATS = "app/mes-achats/page.tsx";
+
+test("S6 — le panier GROUPE par mode de remise, et l'escrow suit le groupe", () => {
+  const src = readFileSync(PANIER, "utf8");
+  /* La liaison, pas la présence : le drapeau `escrow` du groupe doit COMMANDER
+   * le rendu de `trust.2.b`. Chercher `trust.2.b` seul resterait vert si la
+   * phrase était rendue pour tout le panier — c'est-à-dire le défaut. */
+  assert.match(
+    src,
+    /\{g\.escrow && \([\s\S]{0,600}t\(lang, "trust\.2\.b"\)/,
+    "l'escrow n'est plus conditionné au groupe : il redevient soit absent, " +
+      "soit affirmé sur des fichiers dont la livraison est immédiate"
+  );
+  assert.match(
+    src,
+    /cle: "cart\.group\.download"[\s\S]{0,90}escrow: false[\s\S]{0,200}cle: "cart\.group\.handover"[\s\S]{0,90}escrow: true/,
+    "les deux groupes ne portent plus leur drapeau d'escrow : à télécharger " +
+      "sans, à remettre avec"
+  );
+  /* Un en-tête au-dessus d'un groupe unique est du bruit — personne n'écrit
+   * « Envoi 1 sur 1 ». */
+  /* ⚠️ CETTE ASSERTION A ÉTÉ RÉÉCRITE APRÈS AVOIR ÉCHOUÉ, et le motif compte
+   * plus que le correctif. Sa première version reliait la DÉCLARATION à
+   * l'USAGE par un intervalle de 900 caractères ; la distance réelle est de
+   * 1 059. C'est mot pour mot la « régression de proximité » de `CLAUDE.md` —
+   * un contrôle qui tient par la MISE EN PAGE, et que deux lignes de
+   * commentaire suffisent à faire basculer.
+   *
+   * ⚠️ ET LA RÈGLE DIT DE NE PAS ÉLARGIR LA FENÊTRE. Passer à 1 200 marcherait
+   * aujourd'hui et casserait au prochain commentaire. On ancre donc sur une
+   * adjacence RÉELLE : le garde et le `<h2>` qu'il commande se touchent. */
+  assert.match(
+    src,
+    /const montrerEntetes = groupes\.length > 1;/,
+    "le calcul `montrerEntetes` a disparu"
+  );
+  assert.match(
+    src,
+    /\{montrerEntetes && \(\s*<h2[^>]*>\s*\{t\(lang, g\.cle\)\}/,
+    "l'en-tête de groupe n'est plus commandé par `montrerEntetes` : un titre " +
+      "de section s'afficherait au-dessus d'un groupe unique — personne " +
+      "n'écrit « Envoi 1 sur 1 »"
+  );
+});
+
+test("S7 — plus AUCUN libellé de remise en dur : quatre langues, deux écrans", () => {
+  /* ⚠️ DÉFAUT MESURÉ le 2026-08-27 : `remiseLabel` rendait « Service · mise en
+   * relation » et « Remise à convenir avec le vendeur » EN FRANÇAIS EN DUR,
+   * dans une application kreyòl-first. Un acheteur kreyòl lisait du français
+   * sur SA page d'achats. */
+  const src = readFileSync(ACHATS, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\/\/[^\n]*/g, " ");
+  assert.ok(
+    !/"(Service · mise en relation|Remise à convenir avec le vendeur)"/.test(src),
+    "un libellé de remise est revenu en dur dans mes-achats"
+  );
+  assert.match(
+    src,
+    /service: "purchases\.mode\.service"[\s\S]{0,120}physical: "purchases\.mode\.physical"/,
+    "`remiseLabel` ne passe plus par les clés i18n"
+  );
+  /* Et le vocabulaire est PARTAGÉ : les quatre clés existent partout. */
+  for (const lang of LANGS) {
+    const d = DICT[lang] as Record<string, string>;
+    for (const k of [
+      "cart.group.download",
+      "cart.group.handover",
+      "purchases.mode.service",
+      "purchases.mode.physical",
+    ]) {
+      assert.ok(d[k] && d[k].trim().length > 0, `${k} manquante en ${lang}`);
+    }
+  }
+});
