@@ -336,6 +336,15 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
   (Klasyo vend déjà cours et PDF en MonCash). Même défaut que `\b` contre
   `vandè` : l'instrument qui ne voit que le français valide la langue qui
   compte le moins.
+- `docs/47-AUDIT-SEO.md` — audit de la surface indexable (2026-08-28).
+  Le fait qui commande : **2 produits publiés, 0 image** — aucun mot-clé ne se
+  classe là-dessus, le SEO n'est pas le goulot. Quatre défauts corrigés
+  (`fd14175`), et ⛔ **un arbitrage ouvert qui se paie plus cher chaque
+  semaine** : la langue vit dans un COOKIE, donc un produit kreyòl-first est
+  intégralement indexé en français — il n'existe aucune URL kreyòl à indexer.
+  83 points de contact mesurés pour la migration `/ht/` `/fr/`. ⚠️ Y est aussi
+  consigné que **`disallow` et `noindex` se défont l'un l'autre** : une URL
+  interdite au crawl n'est jamais lue, donc son `noindex` n'est jamais vu.
 - `docs/44-SURFACE-API.md` — inventaire de la surface d'API (2026-08-22) :
   ce qui existe, ce qui manque, et ⛔ **ce qu'il ne faut PAS construire**.
   ⚠️ Y est mesuré que les **neuf endpoints v1** de `lib/api/v1/schemas.ts`

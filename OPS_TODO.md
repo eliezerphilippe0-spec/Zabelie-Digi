@@ -3,6 +3,35 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 🟡 Vérifier `NEXT_PUBLIC_SITE_URL` en production — une minute
+
+Issu de l'audit SEO du 2026-08-28 (`docs/47` §2.3).
+
+Depuis `fd14175`, **une seule fonction** décide de l'origine du site :
+`siteUrl()` (`lib/site-url.ts`). Elle prend `NEXT_PUBLIC_SITE_URL`, puis l'URL
+injectée par Vercel, puis `localhost`.
+
+⚠️ **Si la variable n'est pas posée, le repli est l'URL du DÉPLOIEMENT**
+(`zabelie-xxxx.vercel.app`), pas le domaine public. Ce qui en dépend :
+les canoniques (`metadataBase`), le sitemap, `robots.txt`, les liens des
+e-mails transactionnels, le lien de partage de facture, et les URLs de retour
+Stripe.
+
+⚠️ **Et `robots.txt` est PRÉRENDU STATIQUEMENT** (`○` au build) : sa valeur est
+figée au moment du build, pas à la requête. Une variable posée après coup ne
+prend effet qu'au **redéploiement**.
+
+**Geste** — Vercel → Settings → Environment Variables, vérifier que
+`NEXT_PUBLIC_SITE_URL` vaut le domaine public **sans barre finale**, sur
+l'environnement Production. Puis redéployer si elle a été ajoutée.
+
+**Second geste, indépendant** — vérifier qu'une redirection **301 `www` → apex**
+(ou l'inverse, mais **une seule** version canonique) existe au niveau du
+domaine. Aucune redirection d'hôte n'existe dans le code : `proxy.ts` rafraîchit
+la session et pose le cookie d'affiliation, rien de plus.
+
+---
+
 ## 🟡 Vérifier `RESEND_API_KEY` en production — une minute
 
 Issu de l'inventaire d'API du 2026-08-22 (`docs/44` §3.3).
