@@ -11,6 +11,7 @@ import { isStripeEnabled } from "@/lib/stripe";
  * elle s'exécute contre des valeurs hostiles (`tests/moncash-mode-resolu` R9).
  * Un `try` peut être présent et n'attraper rien. */
 import { sondeMonCash } from "@/lib/moncash";
+import { sondeCheminArgent, alerteRequise } from "@/lib/money-path";
 import { verdictObjets, type ObjetRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
@@ -186,12 +187,50 @@ async function handle(req: Request) {
       console.info("[coherence] e-mail configuré (présence de la clé, pas sa validité)");
     }
 
+    /* ── LE CHEMIN D'ARGENT, LU DANS LES FAITS ─────────────────────────────
+     *
+     * ⚠️ `integrations.moncash` ci-dessus rapporte le mode CONFIGURÉ — ce que
+     * la variable annonce, maintenant. Ça n'a jamais suffi, et on en a la
+     * preuve : 7 tentatives d'achat par 3 acheteurs distincts entre le
+     * 2026-08-11 et le 2026-08-22, toutes parties en bac à sable, toutes
+     * expirées en `moncash_unknown_48h`. La huitième a échoué APRÈS que
+     * l'instrumentation eut commencé à inscrire le mode en base — la donnée
+     * était écrite, correcte, et personne ne la lisait.
+     *
+     * Cette sonde-ci lit la BASE. C'est le DÉSACCORD entre les deux qui porte
+     * l'information la plus chère : une variable posée sur `production`
+     * pendant que les paiements continuent de partir en bac à sable
+     * (déploiement non promu, mauvais environnement) est une panne
+     * qu'aucune des deux ne voit seule. */
+    const cheminArgent = await sondeCheminArgent(admin, sondeMonCash().mode);
+    if (alerteRequise(cheminArgent.verdict)) {
+      console.error(
+        `[coherence] CHEMIN D'ARGENT — ${cheminArgent.verdict} :`,
+        cheminArgent.explication,
+        JSON.stringify({
+          tentatives: cheminArgent.tentatives,
+          encaissementsReels: cheminArgent.encaissementsReels,
+          acheteursEnEchec: cheminArgent.acheteursEnEchec,
+          modesObserves: cheminArgent.modesObserves,
+          derniereTentative: cheminArgent.derniereTentative,
+        })
+      );
+    } else {
+      // Journalisé même au vert, et avec le compte : sinon « la sonde n'a pas
+      // tourné » et « le rail va bien » produisent le même silence.
+      console.info(
+        `[coherence] chemin d'argent — ${cheminArgent.verdict} ` +
+          `(${cheminArgent.encaissementsReels} encaissement(s) réel(s))`
+      );
+    }
+
     return NextResponse.json({
       ...data,
       arrondi,
       schemaRequis,
       indexRecherche,
       integrations,
+      cheminArgent,
     });
   } catch (e) {
     return NextResponse.json(
