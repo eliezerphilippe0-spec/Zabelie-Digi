@@ -10,7 +10,32 @@ import { formatHTG } from "@/lib/sample-data";
 import { PayInvoiceButton } from "@/components/business/pay-invoice-button";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Facture — Zabelie" };
+
+/**
+ * ⚠️ `noindex` — CONFIDENTIALITÉ AVANT RÉFÉRENCEMENT.
+ *
+ * Cette page rend la facture d'un client identifié : son numéro, son montant,
+ * le détail de ses lignes, le nom du professionnel. Elle était indexable.
+ *
+ * Le risque n'est PAS l'énumération : le jeton fait 24 caractères base64url
+ * (`estTokenFacture`, `lib/business.ts`), il ne se devine pas. Le risque est
+ * la PERMANENCE — un lien collé dans un groupe WhatsApp, un referrer qui
+ * fuit, un fil public, et la facture entre dans l'index pour des mois. Le
+ * jeton protège contre celui qui cherche ; il ne protège pas contre celui qui
+ * tombe dessus.
+ *
+ * ⚠️ ET CE N'EST PAS INTERCHANGEABLE AVEC UN `disallow` DANS `robots.txt` —
+ * c'est même l'inverse. Une URL interdite au crawl n'est jamais LUE, donc son
+ * `noindex` n'est jamais VU, et Google peut indexer l'adresse nue sur la
+ * seule foi d'un lien entrant. Pour être obéi, un `noindex` doit être
+ * atteignable. `/facture/` est donc délibérément ABSENT du `disallow` de
+ * `app/robots.ts`, et cette absence est load-bearing : la retirer d'un côté
+ * sans l'autre défait la protection en silence.
+ */
+export const metadata = {
+  title: "Facture — Zabelie",
+  robots: { index: false, follow: false },
+};
 
 type PortalItem = {
   label: string;

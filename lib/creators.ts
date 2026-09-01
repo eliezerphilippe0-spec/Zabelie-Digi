@@ -134,6 +134,25 @@ export async function getCreator(id: string): Promise<CreatorProfile | null> {
 }
 
 /**
+ * L'adresse publique d'un vendeur, SANS ses produits.
+ *
+ * ⚠️ Pourquoi une fonction de plus plutôt que `getCreator(id).boutikSlug` :
+ * `getCreator` passe par `versCreatorProfile`, qui appelle
+ * `getProductsBySeller` — il charge TOUT le catalogue du vendeur. Pour un
+ * sitemap qui ne veut qu'un slug par vendeur, ce serait N requêtes de
+ * catalogue complet pour N vendeurs. Ici, une seule lecture de fiche.
+ *
+ * Rend `null` sur tout échec — `0083`/`0084` pas appliquées, vendeur sans
+ * slug, incident. L'appelant retombe alors sur `/createur/<id>`, qui ne
+ * cesse jamais de répondre (`lib/boutique-href.ts`).
+ */
+export async function getBoutikSlug(id: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  const fiche = await fichePublique({ p_id: id, p_slug: null }).catch(() => null);
+  return fiche?.boutik_slug ?? null;
+}
+
+/**
  * Résout une adresse publique vers son profil.
  *
  * Rend `null` si `0084` n'est pas appliquée : `/boutik/x` répond alors 404,
