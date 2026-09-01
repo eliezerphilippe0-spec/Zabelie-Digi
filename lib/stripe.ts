@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { siteUrl } from "./site-url";
 
 /**
  * Client Stripe — rail carte pour la diaspora (docs/03-PAIEMENTS.md, V-10).
@@ -40,7 +41,7 @@ export async function createStripeCheckout({
   usdCents,
   productTitle,
 }: StripeCheckoutInput): Promise<{ redirectUrl: string; sessionId: string }> {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = siteUrl();
   const stripe = client();
 
   const session = await stripe.checkout.sessions.create({

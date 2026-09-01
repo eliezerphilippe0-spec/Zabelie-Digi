@@ -40,6 +40,7 @@ import {
   autoReceivedNoticeEmail,
 } from "./zabelie-email";
 import { lireLimiteRemise } from "./fulfillment";
+import { siteUrl } from "./site-url";
 
 /** Les trois valeurs de l'énumération SQL `fulfillment_notice_kind` (0043 §5). */
 export const GENRES_AVIS = ["shipped_buyer", "reminder_buyer", "auto_received"] as const;
@@ -134,7 +135,7 @@ export async function envoyerAvisDus(
   }
 
   const maxTentatives = await lireLimiteRemise(admin, "notice_max_attempts", 5);
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = siteUrl();
   const joursReception = await lireLimiteRemise(admin, "auto_receive_days", 7);
 
   const { data, error } = await admin

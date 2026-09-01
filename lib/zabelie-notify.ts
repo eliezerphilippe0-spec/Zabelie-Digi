@@ -17,6 +17,7 @@ import {
   buyerPurchaseEmail,
   sellerSaleEmail,
 } from "./zabelie-email";
+import { siteUrl } from "./site-url";
 
 function formatHtg(n: number): string {
   return `${new Intl.NumberFormat("fr-HT").format(n)} HTG`;
@@ -79,7 +80,7 @@ export async function notifyOrderPaid(
       | null;
     if (!product) return;
 
-    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const site = siteUrl();
 
     // Net vendeur réel = la ligne de crédit écrite par la fonction SQL
     // (jamais recalculé ici — la SQL reste le seul calculateur).
@@ -157,7 +158,11 @@ export async function renvoyerNotificationVente(
   orderId: string
 ): Promise<boolean> {
   if (!isEmailEnabled()) return false;
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  /* ⚠️ Ce repli valait `""` — donc `${site}/mes-achats` produisait
+   * `/mes-achats`, une URL RELATIVE dans un e-mail. Un lien relatif dans un
+   * courriel ne mène nulle part : ce n'était pas un défaut de référencement,
+   * c'était un lien mort envoyé à un client. */
+  const site = siteUrl();
 
   const { data: order } = await admin
     .from("orders")

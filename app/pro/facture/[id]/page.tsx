@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getProfessional } from "@/lib/business";
+import { siteUrl } from "@/lib/site-url";
 import { InvoiceEditor } from "@/components/business/invoice-editor";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,11 @@ export default async function InvoicePage({
       .maybeSingle(),
   ]);
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  /* Même défaut que `lib/zabelie-notify.ts` : le repli `""` fabriquait un
+   * lien de partage RELATIF (`/facture/<token>`), c'est-à-dire inutilisable
+   * dès qu'on le colle ailleurs — or partager ce lien est toute la raison
+   * d'être de cet écran. */
+  const origin = siteUrl();
   const shareUrl = `${origin}/facture/${invoice.public_token}`;
 
   return (

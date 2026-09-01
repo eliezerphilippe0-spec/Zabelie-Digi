@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isEmailEnabled, sendEmail } from "./zabelie-email";
+import { siteUrl } from "./site-url";
 
 /**
  * Prévenir le destinataire d'un message — BEST-EFFORT INTÉGRAL.
@@ -74,7 +75,7 @@ export async function notifierMessage(
   const to = u?.user?.email;
   if (!to) return;
 
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zabelie.com";
+  const base = siteUrl();
 
   /* ⚠️ LE CORPS DU MESSAGE N'EST PAS DANS LE COURRIEL, ET C'EST DÉLIBÉRÉ.
    *
