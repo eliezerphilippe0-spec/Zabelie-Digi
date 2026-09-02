@@ -12,6 +12,7 @@ import { isStripeEnabled } from "@/lib/stripe";
  * Un `try` peut être présent et n'attraper rien. */
 import { sondeMonCash } from "@/lib/moncash";
 import { sondeCheminArgent, alerteRequise } from "@/lib/money-path";
+import { alerterAdmins, corpsAlerte, type ResultatAlerte } from "@/lib/alertes";
 import { verdictObjets, type ObjetRequis } from "@/lib/schema-requis";
 
 export const runtime = "nodejs";
@@ -224,6 +225,39 @@ async function handle(req: Request) {
       );
     }
 
+    /* ── L'ALERTE SORT DU SYSTÈME — C2.3 de `docs/31` ─────────────────────
+     *
+     * Tout ce qui précède écrit dans `console.error`. C'est nécessaire et ça
+     * n'a jamais suffi : onze jours de silence entre le 11 et le 22 août
+     * pendant qu'un verdict `bac_a_sable` était calculable chaque nuit.
+     *
+     * Deux déclencheurs, les deux seuls qui touchent à l'argent :
+     *   • le chemin d'argent demande une alerte (`alerteRequise`) ;
+     *   • l'invariant du grand livre est rompu (`data.ok === false`).
+     * Le résultat de l'envoi sort DANS LA RÉPONSE : « envoyée », « e-mail non
+     * configuré », « aucun admin » — un échec d'alerte ne doit pas être, lui
+     * aussi, silencieux. */
+    let alerte: ResultatAlerte | { statut: "non_requise" } = { statut: "non_requise" };
+    const registreRompu = Boolean(data && data.ok === false);
+    if (alerteRequise(cheminArgent.verdict) || registreRompu) {
+      alerte = await alerterAdmins(
+        admin,
+        `[Zabelie] cohérence — ${registreRompu ? "ÉCART REGISTRE" : cheminArgent.verdict}`,
+        corpsAlerte("Le contrôle quotidien de cohérence a quelque chose à dire.", [
+          ["chemin d'argent", cheminArgent.verdict],
+          ["explication", cheminArgent.explication],
+          ["tentatives (90 j)", cheminArgent.tentatives],
+          ["encaissements réels", cheminArgent.encaissementsReels],
+          ["acheteurs en échec", cheminArgent.acheteursEnEchec],
+          ["registre", registreRompu ? `ÉCART ${data?.ecart_total_htg ?? "?"} HTG` : "ok"],
+          ["mode MonCash configuré", `${integrations.moncash.mode} (${integrations.moncash.source})`],
+        ])
+      );
+      if (alerte.statut !== "envoyee") {
+        console.error(`[coherence] ALERTE NON DÉLIVRÉE — ${alerte.statut} : ${alerte.detail}`);
+      }
+    }
+
     return NextResponse.json({
       ...data,
       arrondi,
@@ -231,6 +265,7 @@ async function handle(req: Request) {
       indexRecherche,
       integrations,
       cheminArgent,
+      alerte,
     });
   } catch (e) {
     return NextResponse.json(
