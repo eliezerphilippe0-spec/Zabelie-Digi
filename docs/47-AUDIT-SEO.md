@@ -241,8 +241,12 @@ Recommandation : **`/ht/` et `/fr/` indexées, `en` et `es` en cookie et
 de **positionnement** — `docs/25` §4, zone d'arrêt. Elle se propose, elle ne se
 prend pas.
 
-⚠️ **Le repli `"fr"` de `getLang()` est déjà une réponse implicite à cette
-question, et personne ne l'a jamais choisie.**
+~~⚠️ **Le repli `"fr"` de `getLang()` est déjà une réponse implicite à cette
+question, et personne ne l'a jamais choisie.**~~ **Choisie le 2026-09-02** :
+le porteur a tranché « Oui fr » — le français reste à la racine. Ce n'est
+plus un repli, c'est une décision (`lib/i18n-server.ts`, `docs/02`). Elle ne
+règle PAS la question de ce paragraphe : sans URL par langue, le kreyòl reste
+non indexable, quelle que soit la langue racine.
 
 **Dépendance, et elle n'est pas bloquante** : la répartition Haïti / diaspora
 détermine la langue racine. Construire la langue par défaut comme un
