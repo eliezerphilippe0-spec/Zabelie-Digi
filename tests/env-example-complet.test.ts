@@ -33,6 +33,11 @@ const FICHIER = ".env.example";
 const INJECTEES_PAR_VERCEL: Record<string, string> = {
   VERCEL_URL: "injectée par Vercel à chaque déploiement (hôte, sans protocole)",
   NEXT_PUBLIC_VERCEL_URL: "idem, exposée au navigateur",
+  // `production` · `preview` · `development` — lue par `garderProduction`
+  // (lib/moncash.ts) pour refuser un paiement en bac à sable UNIQUEMENT sur
+  // un déploiement de production. La poser à la main en local simulerait
+  // la production, ce qui est précisément ce qu'on ne veut pas.
+  VERCEL_ENV: "injectée par Vercel : production, preview ou development",
 };
 
 function fichiersSource(): string[] {

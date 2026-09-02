@@ -239,7 +239,6 @@ export function construireMenu(
   lang: Lang
 ): RayonMenu[] {
   const actifs = cats.filter((c) => c.active);
-  const parIdent = new Map(actifs.map((c) => [c.id, c]));
 
   /** Compte propre + descendants, quel que soit le nombre de niveaux. */
   const total = (id: string): number => {

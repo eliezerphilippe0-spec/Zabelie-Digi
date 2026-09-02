@@ -95,7 +95,8 @@ const INVENTAIRE: Record<string, string[]> = {
     "Chaque vente confirmée est créditée",
     "Mes données &amp; mon compte",
     "Téléchargez une copie de vos données ou supprime",
-    "Ventes récentes",
+    // « Ventes récentes » traduite le 2026-09-02 (dashboard.sales.recent),
+    // trouvée par le premier passage ESLint du dépôt.
     "politique de confidentialité",
   ],
   "components/account-actions.tsx": ["Exporter mes données"],

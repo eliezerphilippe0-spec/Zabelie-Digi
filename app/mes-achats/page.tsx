@@ -219,9 +219,9 @@ export default async function MesAchatsPage() {
     <Shell>
       {orders.length === 0 ? (
         <p className="mt-4 text-sm text-mist">
-          Aucun achat pour l'instant.{" "}
+          {t(lang, "purchases.empty")}{" "}
           <Link href="/catalogue" className="text-cloud underline">
-            Explorer le catalogue
+            {t(lang, "purchases.empty.cta")}
           </Link>
         </p>
       ) : (

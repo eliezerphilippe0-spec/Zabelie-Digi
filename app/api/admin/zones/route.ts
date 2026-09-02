@@ -25,8 +25,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const me = await getCurrentUser();
+  // 403, comme les quinze autres routes admin : l'appelant est identifié, il
+  // n'est pas autorisé. 401 dirait « inconnu », et un client qui le lit
+  // relancerait une connexion inutile.
   if (!me || me.role !== "admin") {
-    return erreurTraduite("api.access.denied", 401);
+    return erreurTraduite("api.access.denied", 403);
   }
 
   let body: {

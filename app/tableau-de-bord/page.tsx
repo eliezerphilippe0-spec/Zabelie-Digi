@@ -515,9 +515,9 @@ export default async function DashboardPage() {
 
       {/* Ventes récentes */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold">Ventes récentes</h2>
+        <h2 className="text-lg font-semibold">{t(lang, "dashboard.sales.recent")}</h2>
         {sales.length === 0 ? (
-          <p className="mt-3 text-sm text-mist">Aucune vente pour l'instant.</p>
+          <p className="mt-3 text-sm text-mist">{t(lang, "dashboard.sales.empty")}</p>
         ) : (
           <ul className="mt-4 space-y-2">
             {sales.map((o) => {
@@ -663,7 +663,7 @@ export default async function DashboardPage() {
       {/* Profil public */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Mon profil public</h2>
+          <h2 className="text-lg font-semibold">{t(lang, "dashboard.profile.public")}</h2>
           <Link
             href={hrefBoutique({ id: user.id, boutikSlug })}
             className="text-sm text-mist transition hover:text-cloud"

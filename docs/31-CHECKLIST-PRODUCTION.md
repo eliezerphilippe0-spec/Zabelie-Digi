@@ -50,10 +50,15 @@ policy**, donc aucune écriture de stockage n'avait jamais réussi — le kind
   `tests/secrets-hors-depot.test.ts` (sur `main`) et `docs/11-SECRETS.md` §4.
 - 🟡 C1.4 — le téléversement de couverture est prouvé ; le **dérivé OG dans un
   partage WhatsApp réel** ne l'est pas. À faire une fois, à la première fiche.
-- ☐ C1.5 — le **connu-négatif** manque : un acheteur non payé doit recevoir un
-  refus sur l'URL du livrable (sortie `curl` à consigner). Même famille que le
-  plafond de bucket posé le 2026-08-16 dont « l'APPLICATION n'est pas
-  éprouvée » (`OPS_TODO.md`) — les deux se prouvent dans la même séance.
+- 🟡 C1.5 — **connu-négatif STRUCTUREL posé le 2026-09-02** :
+  `tests/download-garde.test.ts` ancre le 403 sur la condition
+  `order.status !== "paid" && !== "delivered"`, la propriété (404) avant, le
+  401 avant tout, l'URL signée après tout — deux mutations rouges (403
+  inatteignable, propriété retirée). ☐ Reste le connu-négatif **en
+  production** : un `curl` avec la session d'un acheteur non payé, sortie à
+  consigner. Même famille que le plafond de bucket posé le 2026-08-16 dont
+  « l'APPLICATION n'est pas éprouvée » (`OPS_TODO.md`) — les deux se prouvent
+  dans la même séance.
 - 🔒 C1.6 — « cours du créole » attend **le fichier du vendeur**, en brouillon.
   Un PDF de substitution serait un livrable inventé (`OPS_TODO.md:58-61`).
   Geste vendeur, pas agent.
@@ -71,10 +76,16 @@ Le seul des six où presque tout reste à faire.
   `0060_cron_leases`, `0061_outbox_notifications`, `0067_garde_observation`
   existent et sont appliquées. Manque : logs structurés `request_id` sur les
   routes, corrélation.
-- ☐ C2.3 — aucune **alerte** ne sort du système : un échec MonCash ou un cron
-  mort se lit dans un journal que personne n'ouvre. C'est l'écart le plus
-  dangereux du dépôt aujourd'hui — « l'absence de signal doit être un signal »
-  vaut aussi pour l'exploitation.
+- 🟡 C2.3 — **une alerte SORT depuis le 2026-09-02** : `lib/alertes.ts`
+  envoie un e-mail aux profils `role = 'admin'` quand le chemin d'argent
+  demande une alerte (`bac_a_sable`, `divergence`, `aucun_encaissement`,
+  `indetermine`) ou quand l'invariant du grand livre est rompu. Le résultat de
+  l'envoi sort dans la réponse de `/api/admin/coherence` — un échec d'alerte
+  n'est plus silencieux non plus. Cadence : celle du cron, une fois par jour ;
+  un cran au-dessus de « jamais », pas de « tout de suite ». ☐ Reste : un cron
+  mort n'alerte toujours pas (il faudrait une sonde EXTERNE au système) — et
+  ⚠️ **rien ne part si `RESEND_API_KEY` n'est pas posée** (`OPS_TODO` §2).
+  Onze jours de silence entre le 11 et le 22 août : c'est ce que ça a coûté.
 - ☐ C2.4–C2.5 — sauvegardes : configuration jamais vérifiée, restauration
   jamais répétée. Un test de restauration daté sur projet jetable.
 - ✅ C2.6 — **FAIT le 2026-08-18** : `docs/38-RUNBOOK.md` (cinq pannes, RPO/RTO
@@ -95,9 +106,14 @@ Le seul des six où presque tout reste à faire.
       de colonne, absent de la demande, est celui qui a révélé quatre chemins morts
       en production. Ligne d'origine : la matrice n'existe pas. 80+ tables maintenant :
   elle se génère depuis `pg_policies`, elle ne s'écrit pas à la main.
-- ☐ C3.2 — les tentatives **vendeur A → données de B** ne sont pas
-  systématiques (l'existant couvre acheteur/commandes et le ledger). À
-  compléter : brouillons, wallet, KYC de B.
+- ✅ C3.2 — **FAIT le 2026-09-02** :
+  `supabase/tests/rls_vendeur_a_vers_b.test.sql`, sept cas à la place du
+  vendeur T contre les données du vendeur S — brouillon, portefeuille,
+  commande, prix d'un produit publié (lecture publique, écriture refusée),
+  insertion sous l'identité de S, suppression, **dossier KYC**. Connu-positif
+  d'abord (S voit ses propres données), sans quoi « zéro ligne » ne prouverait
+  rien. Même limite que `messagerie.test.sql` : `set local role` + claims est
+  le moteur de policies sous une identité choisie, pas la chaîne GoTrue.
 - ✅ C3.4 — **FAIT le 2026-08-18** : `supabase/tests/rls_toutes_tables.test.sql`,
       éprouvé sur table-témoin puis sur mutation (`alter table wallets disable row
       level security` → rouge en nommant `wallets`). Ligne d'origine : le garde

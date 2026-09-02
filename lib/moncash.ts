@@ -88,6 +88,41 @@ export function resolveMonCashMode(brut: string | undefined): {
   );
 }
 
+/**
+ * LE GARDE DE PRODUCTION — un acheteur réel ne part JAMAIS en bac à sable.
+ *
+ * ⚠️ Écrit le 2026-09-02, après la mesure qui a rendu l'audit NO-GO : sept
+ * tentatives d'achat, TROIS acheteurs distincts, cinq jours, toutes parties
+ * vers `sandbox.moncashbutton…` parce que `MONCASH_MODE` n'était pas posée.
+ * Le repli était sûr pour la sécurité et il l'est toujours ; il était une
+ * panne de revenu, et il l'est toujours — sauf qu'il n'est plus PRIS là où
+ * il coûte.
+ *
+ * Le commentaire au-dessus de `resolveMonCashMode` explique pourquoi
+ * l'absence ne lève pas : casser le local et les Preview pour se prémunir
+ * d'une suppression en production serait un mauvais échange. Ce garde tient
+ * les deux bouts : il ne regarde que `VERCEL_ENV === "production"` — PAS
+ * `NODE_ENV`, qui vaut aussi « production » sur un build de Preview. Le
+ * développement et les Preview gardent leur défaut ; la production, elle,
+ * refuse de créer un paiement dont le mode n'a pas été CHOISI.
+ *
+ * Refuser vaut mieux que router : un 502 renvoie l'acheteur à l'écran avec
+ * « opérateur indisponible » et relibère le stock ; un bac à sable lui fait
+ * croire qu'il a payé, puis expire 48 h plus tard en silence.
+ */
+export function garderProduction(
+  source: MonCashModeSource,
+  vercelEnv: string | undefined
+): void {
+  if (vercelEnv !== "production") return;
+  if (source === "explicite") return;
+  throw new Error(
+    `MonCash: MONCASH_MODE ${source} sur un déploiement de PRODUCTION — refus ` +
+      `de créer un paiement en bac à sable pour un acheteur réel. Poser ` +
+      `MONCASH_MODE=production dans Vercel, puis redéployer.`
+  );
+}
+
 /** Ce que le pré-vol du geste 5 (`docs/22`) rapporte. */
 export type SondeMonCash = {
   /** `sandbox` · `production` · `illisible`. */
@@ -168,7 +203,9 @@ function verdictBascule(
       raison:
         "MONCASH_MODE n'est pas posée : repli sandbox. Le repli est SÛR mais " +
         "il n'encaisse rien — c'est une panne de revenu, invisible depuis " +
-        "l'interface. Poser la variable, puis redéployer.",
+        "l'interface. Sur un déploiement de PRODUCTION, createPayment REFUSE " +
+        "(garderProduction) : aucun acheteur ne part en bac à sable, mais " +
+        "aucun ne peut payer non plus. Poser la variable, puis redéployer.",
     };
   }
   if (source === "vide") {
@@ -299,6 +336,15 @@ export async function createPayment(
   orderId: string,
   amountHTG: number
 ): Promise<CreatePaymentResult> {
+  /* Le garde vit ICI et pas dans `config()`, délibérément : `config()` sert
+   * aussi `retrieveOrderPayment`, donc le réconciliateur. Le poser là ferait
+   * lever la réconciliation des paiements déjà partis en bac à sable — qui
+   * doivent pouvoir expirer proprement, pas rester `pending` à jamais. Ce
+   * qu'on refuse, c'est d'en CRÉER un de plus. */
+  garderProduction(
+    resolveMonCashMode(process.env.MONCASH_MODE).source,
+    process.env.VERCEL_ENV
+  );
   const token = await getAccessToken();
   const { rest, gateway, mode } = config();
 
