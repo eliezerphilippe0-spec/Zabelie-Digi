@@ -36,6 +36,18 @@
   button {
     font-weight: 600;
   }
+  /* FOCUS CLAVIER — une seule règle, à la couleur de la marque.
+     Audit UX du 2026-09-02 (#2) : aucun `:focus-visible` dans le dépôt ; le
+     contour bleu du navigateur faisait le travail, à contre-palette, et
+     chaque composant qui posait `outline-none` devait ré-inventer son anneau
+     (`focus:ring-*`, 22 fois). Ici : visible au clavier seulement
+     (`:focus-visible`, pas `:focus` — un clic souris ne dessine rien),
+     2 px d'accent décollés de 2 px, dans les deux thèmes. Les `focus:ring`
+     existants restent valides ; ils n'ont plus besoin d'exister. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
   /* PAS de sélecteur universel * : on préserve le monospace des blocs
      techniques. body porte la sans ; code & co portent la mono. */
   code,

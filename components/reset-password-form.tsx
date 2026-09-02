@@ -153,7 +153,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
                 >
                   {loading ? labels.submitting : labels.submit}
                 </button>
