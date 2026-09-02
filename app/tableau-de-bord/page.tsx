@@ -668,11 +668,23 @@ export default async function DashboardPage() {
             href={hrefBoutique({ id: user.id, boutikSlug })}
             className="text-sm text-mist transition hover:text-cloud"
           >
-            Voir mon profil →
+            {t(lang, "dashboard.profile.view")}
           </Link>
         </div>
         <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-          <ProfileForm initial={profile} zones={zonesPourForm} zoneLabels={zoneLabels} />
+          <ProfileForm
+            initial={profile}
+            zones={zonesPourForm}
+            zoneLabels={zoneLabels}
+            labels={{
+              name: t(lang, "profile.name"),
+              avatar: t(lang, "profile.avatar"),
+              country: t(lang, "profile.country"),
+              department: t(lang, "profile.department"),
+              bio: t(lang, "profile.bio"),
+              optional: t(lang, "profile.optional"),
+            }}
+          />
         </div>
         {/* V-5 (docs/35) : coordonnées de livraison — table SÉPARÉE du profil
             public, masquée tant que 0076 n'est pas appliquée. */}

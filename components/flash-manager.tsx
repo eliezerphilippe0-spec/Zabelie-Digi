@@ -119,6 +119,7 @@ export function FlashManager({
               value={prix}
               onChange={(e) => setPrix(e.target.value.replace(/[^0-9]/g, ""))}
               placeholder={labels.pricePh}
+              aria-label={labels.pricePh}
               className="w-32 rounded-lg border border-line bg-transparent px-2 py-2 text-xs text-cloud"
             />
             <input
@@ -126,6 +127,7 @@ export function FlashManager({
               value={heures}
               onChange={(e) => setHeures(e.target.value.replace(/[^0-9]/g, ""))}
               placeholder={labels.hoursPh}
+              aria-label={labels.hoursPh}
               className="w-28 rounded-lg border border-line bg-transparent px-2 py-2 text-xs text-cloud"
             />
             <input
@@ -133,6 +135,7 @@ export function FlashManager({
               value={unites}
               onChange={(e) => setUnites(e.target.value.replace(/[^0-9]/g, ""))}
               placeholder={labels.unitsPh}
+              aria-label={labels.unitsPh}
               className="w-36 rounded-lg border border-line bg-transparent px-2 py-2 text-xs text-cloud"
             />
             <button
