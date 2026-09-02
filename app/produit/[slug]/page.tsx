@@ -329,7 +329,9 @@ export default async function ProductPage({
                 </p>
               )
             )}
-            <p className="numeric text-3xl font-extrabold text-gradient">
+            {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
+                l'achat ne se rend pas en dégradé transparent. */}
+            <p className="numeric text-3xl font-extrabold text-cloud">
               {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
               {usdHint(product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">

@@ -180,7 +180,7 @@ export default async function PanierPage() {
           ))}
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
-            <span className="numeric text-xl font-extrabold text-gradient">
+            <span className="numeric text-xl font-extrabold text-cloud">
               {formatHTG(total)}
             </span>
           </div>
