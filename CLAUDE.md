@@ -79,7 +79,10 @@ décision D-8 a atteint `main` ; re-greffée le 2026-08-18.)*
 4. **Base** : préfixe `zabelie_` pour tout nouvel objet · **RLS dès la
    création** · aucune fonction `SECURITY DEFINER` exposée à `anon` sans garde ·
    ledger **append-only** protégé par trigger · migrations à la suite
-   (dernière écrite : **`0086`**. **L'état ne se raconte plus, il s'interroge.**
+   (⚠️ **le dernier numéro ne s'écrit plus ici** — ce paragraphe a dit « 0086 »
+   pendant que le disque en portait 91, et un agent qui l'aurait cru aurait
+   numéroté par-dessus `0087`→`0091`. Le numéro suivant se lit :
+   `ls supabase/migrations | tail -1`. **L'état ne se raconte plus, il s'interroge.**
    Depuis `0062` puis `0063`, appliquées le **2026-08-12**, le registre est
    COMPLET — un fichier, une ligne — et chaque ligne porte deux colonnes :
    `statut` (`redigee` · `appliquee` · `abandonnee`) et **`preuve`**, qui dit
