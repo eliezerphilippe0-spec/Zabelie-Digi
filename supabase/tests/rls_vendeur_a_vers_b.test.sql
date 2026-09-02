@@ -45,6 +45,12 @@ insert into orders (id, buyer_id, product_id, amount_htg, status) values
   ('00000000-0000-0000-0000-00000000c3c1', '00000000-0000-0000-0000-00000000c3a1',
    '00000000-0000-0000-0000-00000000c3d1', 1000, 'paid');
 
+-- Dossier KYC de S (métadonnées seulement, 0079) — le cas que C3.2 nommait
+-- explicitement comme manquant.
+insert into zabelie_kyc_submissions (user_id, status) values
+  ('00000000-0000-0000-0000-00000000c3e1', 'pending')
+on conflict (user_id) do nothing;
+
 -- ───── 0. CONNU-POSITIF : S voit son brouillon, son portefeuille, sa vente ──
 do $$
 declare v_n integer;
@@ -154,6 +160,29 @@ begin
   reset role;
   if v_n <> 0 then raise exception 'C3.2-6 KO: T a supprimé un produit de S'; end if;
   raise notice 'C3.2-6 OK: suppression refusée';
+end $$;
+
+-- ───── 7. T ne LIT pas le dossier KYC de S — et S lit bien le sien ──────────
+-- Connu-positif et connu-négatif dans le même cas : sans le premier, un
+-- « zéro » pour T pourrait signifier que la table est vide pour tout le monde.
+do $$
+declare v_s integer; v_t integer;
+begin
+  set local role authenticated;
+  set local request.jwt.claim.sub = '00000000-0000-0000-0000-00000000c3e1';
+  select count(*) into v_s from zabelie_kyc_submissions
+   where user_id = '00000000-0000-0000-0000-00000000c3e1';
+  reset role;
+
+  set local role authenticated;
+  set local request.jwt.claim.sub = '00000000-0000-0000-0000-00000000c3e2';
+  select count(*) into v_t from zabelie_kyc_submissions
+   where user_id = '00000000-0000-0000-0000-00000000c3e1';
+  reset role;
+
+  if v_s <> 1 then raise exception 'C3.2-7 KO: S ne voit pas son propre dossier KYC (%)', v_s; end if;
+  if v_t <> 0 then raise exception 'C3.2-7 KO: T lit le dossier KYC de S (%)', v_t; end if;
+  raise notice 'C3.2-7 OK: le dossier KYC de S est visible de S seul';
 end $$;
 
 rollback;
