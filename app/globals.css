@@ -36,6 +36,18 @@
   button {
     font-weight: 600;
   }
+  /* FOCUS CLAVIER — une seule règle, à la couleur de la marque.
+     Audit UX du 2026-09-02 (#2) : aucun `:focus-visible` dans le dépôt ; le
+     contour bleu du navigateur faisait le travail, à contre-palette, et
+     chaque composant qui posait `outline-none` devait ré-inventer son anneau
+     (`focus:ring-*`, 22 fois). Ici : visible au clavier seulement
+     (`:focus-visible`, pas `:focus` — un clic souris ne dessine rien),
+     2 px d'accent décollés de 2 px, dans les deux thèmes. Les `focus:ring`
+     existants restent valides ; ils n'ont plus besoin d'exister. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
   /* PAS de sélecteur universel * : on préserve le monospace des blocs
      techniques. body porte la sans ; code & co portent la mono. */
   code,
@@ -118,15 +130,21 @@
     to   { opacity: 1; transform: none; }
   }
 
+  /* `.glass` — FOND PLEIN PAR DÉFAUT, flou seulement là où il ne coûte rien.
+     Audit UX 2026-09-02 (#16) : `backdrop-filter: blur(14px)` repeint en
+     continu au défilement, et il était posé sur 17 blocs — dont les
+     formulaires d'auth et le bloc de conversion — exactement sur la cible
+     du produit, l'Android d'entrée de gamme. Sur un écran à pointeur fin et
+     large (bureau), le flou revient : il n'y ralentit rien. */
   .glass {
-    background: color-mix(in srgb, var(--color-surface-maroon) 72%, transparent);
-    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--color-surface-maroon) 92%, transparent);
     border: 1px solid var(--color-line);
   }
-  .glow-ring {
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--color-accent) 40%, transparent),
-      0 20px 60px -20px color-mix(in srgb, var(--color-accent) 50%, transparent);
+  @media (hover: hover) and (min-width: 768px) {
+    .glass {
+      background: color-mix(in srgb, var(--color-surface-maroon) 72%, transparent);
+      backdrop-filter: blur(14px);
+    }
   }
   /* Grands chiffres (prix, revenus, compteurs) : chiffres tabulaires nets. */
   .numeric,

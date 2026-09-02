@@ -57,7 +57,7 @@ export function ProductCard({
   return (
     <Link
       href={`/produit/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-1 hover:border-violet/50"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-1 hover:border-accent/50"
     >
       <div
         className={`relative h-40 bg-gradient-to-br ${product.accent} opacity-90`}
@@ -128,7 +128,10 @@ export function ProductCard({
 
         <div className="mt-auto flex items-center justify-between pt-3">
           <span className="text-xs text-mist">{labels.by} {product.creator}</span>
-          <span className="numeric text-sm font-bold text-gradient">
+          {/* Prix en plein, pas en dégradé (audit UX #7) : sur un écran bon
+              marché, un texte rendu par background-clip perd du contraste et
+              du crénelage — sur le seul chiffre qui décide de l'achat. */}
+          <span className="numeric text-sm font-bold text-cloud">
             {formatHTG(product.priceHTG)}
           </span>
         </div>

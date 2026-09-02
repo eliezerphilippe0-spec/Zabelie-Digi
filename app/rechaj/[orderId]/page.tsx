@@ -60,9 +60,9 @@ export default async function RechajOrderPage({
     isZelleEnabled();
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-md px-5 py-16">
+      <main id="main" className="mx-auto max-w-md px-5 py-16">
         <p className="text-xs text-mist">
           {t(lang, "pay.order")} #{order.id.slice(0, 8)}
         </p>

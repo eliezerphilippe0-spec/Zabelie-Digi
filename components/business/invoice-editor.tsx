@@ -25,7 +25,7 @@ type Invoice = {
 };
 
 const input =
-  "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet";
+  "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
 
 export function InvoiceEditor({
   invoice,

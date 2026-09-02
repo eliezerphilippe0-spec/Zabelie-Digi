@@ -59,9 +59,9 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-5xl px-5 py-10">
+      <main id="main" className="mx-auto max-w-5xl px-5 py-10">
         {userName && (
           <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface/40 px-4 py-2.5">
             <MenuBadges actif={actif} />

@@ -190,35 +190,57 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
         </div>
 
         <form onSubmit={submit} className="space-y-3">
+          {/* ÉTIQUETTES VISIBLES — audit UX 2026-09-02 (#4), règle §4.6 du
+              skill : « jamais le placeholder comme étiquette ». Le placeholder
+              disparaît dès la première lettre ; sur un téléphone, l'utilisateur
+              ne sait plus quel champ il remplit. L'étiquette reste. Les mêmes
+              chaînes i18n servent : ce sont déjà des noms de champ, pas des
+              exemples. `aria-label` tombe — un <label htmlFor> le rend inutile. */}
           {mode === "signup" && (
-            <input
-              type="text"
-              placeholder={labels.namePh}
-              aria-label={labels.namePh}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
-            />
+            <div className="space-y-1">
+              <label htmlFor="auth-name" className="block text-sm text-mist">
+                {labels.namePh}
+              </label>
+              <input
+                id="auth-name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+              />
+            </div>
           )}
-          <input
-            type="email"
-            required
-            placeholder={labels.emailPh}
-            aria-label={labels.emailPh}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
-          />
-          <input
-            type="password"
-            required
-            minLength={6}
-            placeholder={labels.passwordPh}
-            aria-label={labels.passwordPh}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
-          />
+          <div className="space-y-1">
+            <label htmlFor="auth-email" className="block text-sm text-mist">
+              {labels.emailPh}
+            </label>
+            <input
+              id="auth-email"
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="auth-password" className="block text-sm text-mist">
+              {labels.passwordPh}
+            </label>
+            <input
+              id="auth-password"
+              type="password"
+              required
+              minLength={6}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+            />
+          </div>
           <button
             type="submit"
             disabled={loading}
@@ -257,7 +279,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
 
 export function ConnexionForm({ labels }: { labels: ConnexionLabels }) {
   return (
-    <div className="bg-grain flex min-h-screen items-center justify-center px-5">
+    <div className="bg-grain flex min-h-dvh items-center justify-center px-5">
       {/* useSearchParams exige une frontière Suspense (App Router). */}
       <Suspense fallback={null}>
         <ConnexionFormInner labels={labels} />

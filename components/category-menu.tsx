@@ -125,7 +125,7 @@ export function CategoryMenu({
         type="button"
         onClick={() => setOuvert((v) => !v)}
         aria-expanded={ouvert}
-        className="rounded-md px-3 py-2 text-sm text-mist transition hover:text-cloud"
+        className="rounded-lg px-3 py-2 text-sm text-mist transition hover:text-cloud"
       >
         {labels.title} <span aria-hidden="true">▾</span>
       </button>

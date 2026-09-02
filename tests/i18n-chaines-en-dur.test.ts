@@ -106,11 +106,8 @@ const INVENTAIRE: Record<string, string[]> = {
   "components/haiti-map.tsx": [
     "Intensité = nombre de talents (créateurs) par dé",
   ],
-  "components/hero-visual.tsx": [
-    "Encaissé via MonCash",
-    "Naïka Studio",
-    "Paiement confirmé",
-  ],
+  // `components/hero-visual.tsx` supprimé le 2026-09-02 (audit UX #9) :
+  // composant jamais rendu, faux écran produit, trois chaînes en dur.
   "components/payout-form.tsx": [
     "Espèces",
     "Montant versé (HTG)",

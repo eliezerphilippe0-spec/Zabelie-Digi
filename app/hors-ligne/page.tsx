@@ -25,8 +25,8 @@ export default async function HorsLignePage() {
   const lang = await getLang();
 
   return (
-    <div className="bg-grain flex min-h-screen flex-col">
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-16 text-center">
+    <div className="bg-grain flex min-h-dvh flex-col">
+      <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-16 text-center">
         <h1 className="text-2xl font-black tracking-tight">
           {t(lang, "offline.title")}
         </h1>

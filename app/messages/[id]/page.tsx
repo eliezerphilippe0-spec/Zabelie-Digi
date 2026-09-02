@@ -71,9 +71,9 @@ export default async function FilPage({
   await marquerLu(supabase, id, user.id);
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 pb-16 pt-10">
+      <main id="main" className="mx-auto max-w-3xl px-5 pb-16 pt-10">
         <Link
           href="/messages"
           className="inline-flex min-h-11 items-center text-sm text-mist hover:text-cloud"

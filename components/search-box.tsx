@@ -58,7 +58,7 @@ export function SearchBox({
           onChange={(e) => setSaisie(e.target.value)}
           placeholder={placeholder}
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
-          className={`min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 text-base outline-none focus:border-violet ${
+          className={`min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 text-base outline-none focus:border-accent ${
             compact ? "py-2" : "py-3"
           }`}
         />

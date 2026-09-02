@@ -100,8 +100,8 @@ export default async function FacturePortal({
   const payable = ["sent", "partially_paid", "overdue"].includes(inv.status);
 
   return (
-    <div className="bg-grain min-h-screen">
-      <main className="mx-auto max-w-lg px-5 py-12">
+    <div className="bg-grain min-h-dvh">
+      <main id="main" className="mx-auto max-w-lg px-5 py-12">
         {/* En-tête marque */}
         <div className="mb-8 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-brand text-lg font-extrabold text-on-brand">

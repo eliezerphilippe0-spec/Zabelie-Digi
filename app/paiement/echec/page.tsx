@@ -15,9 +15,9 @@ export default async function EchecPage({
     getLang(),
   ]);
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-md px-5 py-24 text-center">
+      <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger text-2xl text-ink">
           ✕
         </span>

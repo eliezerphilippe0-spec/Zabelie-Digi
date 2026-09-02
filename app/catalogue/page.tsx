@@ -168,7 +168,7 @@ export default async function CataloguePage({
   const sousHref = (slug: string | null) => hrefFor({ sous: slug ?? undefined, page: 1 });
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
 
       <section className="mx-auto max-w-6xl px-5 pb-10 pt-16">
@@ -233,7 +233,7 @@ export default async function CataloguePage({
             name="q"
             defaultValue={q ?? ""}
             placeholder={t(lang, "catalog.search.ph")}
-            className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+            className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
           />
           <button
             type="submit"
@@ -263,7 +263,7 @@ export default async function CataloguePage({
               name="zd"
               defaultValue={zd ?? ""}
               aria-label={t(lang, "zone.level.depatman")}
-              className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-violet"
+              className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-accent"
             >
               <option value="">{t(lang, "zone.filter.all")}</option>
               {depatmans.map((z) => (
@@ -277,7 +277,7 @@ export default async function CataloguePage({
                 name="zk"
                 defaultValue={zkValide ?? ""}
                 aria-label={t(lang, "zone.level.komin")}
-                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-violet"
+                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.komin")}</option>
                 {komins.map((z) => (
@@ -292,7 +292,7 @@ export default async function CataloguePage({
                 name="zq"
                 defaultValue={zqValide ?? ""}
                 aria-label={t(lang, "zone.level.katye")}
-                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-violet"
+                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.katye")}</option>
                 {katyes.map((z) => (
@@ -304,7 +304,7 @@ export default async function CataloguePage({
             )}
             <button
               type="submit"
-              className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-violet"
+              className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-accent"
             >
               {t(lang, "zone.filter.apply")}
             </button>
@@ -322,7 +322,7 @@ export default async function CataloguePage({
               className={`inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm transition ${
                 c === activeCat
                   ? "border-transparent bg-cloud text-ink"
-                  : "border-line text-mist hover:border-violet/50 hover:text-cloud"
+                  : "border-line text-mist hover:border-accent/50 hover:text-cloud"
               }`}
             >
               {c}
@@ -525,7 +525,7 @@ export default async function CataloguePage({
                 {page > 1 ? (
                   <Link
                     href={hrefFor({ page: page - 1 })}
-                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-violet/50"
+                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
                   >
                     {t(lang, "catalog.prev")}
                   </Link>
@@ -538,7 +538,7 @@ export default async function CataloguePage({
                 {hasMore ? (
                   <Link
                     href={hrefFor({ page: page + 1 })}
-                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-violet/50"
+                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
                   >
                     {t(lang, "catalog.more")}
                   </Link>

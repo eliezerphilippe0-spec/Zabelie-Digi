@@ -63,7 +63,7 @@ export function CartPayButton({
         type="button"
         onClick={payer}
         disabled={enCours}
-        className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {enCours ? labels.loading : labels.pay}
       </button>

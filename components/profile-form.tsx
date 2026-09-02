@@ -30,10 +30,22 @@ export type ZoneLabels = {
   reqErr: string;
 };
 
+/** Étiquettes des cinq champs de base — fournies par la page, en langue de
+ *  session. Elles étaient en français EN DUR ici (audit UX 2026-09-02, #4). */
+export type ProfileLabels = {
+  name: string;
+  avatar: string;
+  country: string;
+  department: string;
+  bio: string;
+  optional: string;
+};
+
 export function ProfileForm({
   initial,
   zones = [],
   zoneLabels,
+  labels,
 }: {
   initial: {
     display_name: string;
@@ -46,6 +58,7 @@ export function ProfileForm({
   };
   zones?: ZoneOption[];
   zoneLabels?: ZoneLabels;
+  labels: ProfileLabels;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
@@ -130,66 +143,97 @@ export function ProfileForm({
   }
 
   const input =
-    "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet";
+    "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <input
-        className={input}
-        placeholder="Nom d'affichage"
-        value={form.display_name}
-        onChange={(e) => set("display_name", e.target.value)}
-        required
-      />
-      <input
-        className={input}
-        placeholder="URL de l'avatar (optionnel)"
-        value={form.avatar_url}
-        onChange={(e) => set("avatar_url", e.target.value)}
-      />
-      <select
-        className={input}
-        value={form.country_code}
-        onChange={(e) => {
-          const country = e.target.value;
-          // Le département n'existe qu'en Haïti : on le réinitialise sinon.
-          setForm((f) => ({
-            ...f,
-            country_code: country,
-            region_code: country === "HT" ? f.region_code : "",
-          }));
-        }}
-        aria-label="Pays"
-      >
-        <option value="">Pays (optionnel)</option>
-        {COUNTRIES.map((c) => (
-          <option key={c.code} value={c.code}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      {form.country_code === "HT" && (
-        <select
+      {/* Étiquettes VISIBLES au-dessus de chaque champ (audit UX 2026-09-02,
+          #4 ; skill §4.6 « jamais le placeholder comme étiquette »), et en
+          langue de session : « Nom d'affichage », « Pays », « Bio — présente
+          ton talent » étaient en français en dur — un vendeur kreyòl
+          remplissait un formulaire qu'il ne pouvait pas lire. */}
+      <div className="space-y-1">
+        <label htmlFor="profil-nom" className="block text-sm text-mist">
+          {labels.name}
+        </label>
+        <input
+          id="profil-nom"
           className={input}
-          value={form.region_code}
-          onChange={(e) => set("region_code", e.target.value)}
-          aria-label="Département"
+          value={form.display_name}
+          onChange={(e) => set("display_name", e.target.value)}
+          required
+        />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="profil-avatar" className="block text-sm text-mist">
+          {labels.avatar}
+        </label>
+        <input
+          id="profil-avatar"
+          className={input}
+          inputMode="url"
+          value={form.avatar_url}
+          onChange={(e) => set("avatar_url", e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="profil-pays" className="block text-sm text-mist">
+          {labels.country} <span className="text-mist/80">({labels.optional})</span>
+        </label>
+        <select
+          id="profil-pays"
+          className={input}
+          value={form.country_code}
+          onChange={(e) => {
+            const country = e.target.value;
+            // Le département n'existe qu'en Haïti : on le réinitialise sinon.
+            setForm((f) => ({
+              ...f,
+              country_code: country,
+              region_code: country === "HT" ? f.region_code : "",
+            }));
+          }}
         >
-          <option value="">Département (optionnel)</option>
-          {HT_DEPARTMENTS.map((d) => (
-            <option key={d.code} value={d.code}>
-              {d.name}
+          <option value="">—</option>
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
             </option>
           ))}
         </select>
+      </div>
+      {form.country_code === "HT" && (
+        <div className="space-y-1">
+          <label htmlFor="profil-departement" className="block text-sm text-mist">
+            {labels.department} <span className="text-mist/80">({labels.optional})</span>
+          </label>
+          <select
+            id="profil-departement"
+            className={input}
+            value={form.region_code}
+            onChange={(e) => set("region_code", e.target.value)}
+          >
+            <option value="">—</option>
+            {HT_DEPARTMENTS.map((d) => (
+              <option key={d.code} value={d.code}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
-      <textarea
-        className={input}
-        rows={3}
-        placeholder="Bio — présente ton talent"
-        value={form.bio}
-        onChange={(e) => set("bio", e.target.value)}
-      />
+      <div className="space-y-1">
+        <label htmlFor="profil-bio" className="block text-sm text-mist">
+          {labels.bio}
+        </label>
+        <textarea
+          id="profil-bio"
+          className={input}
+          rows={3}
+          value={form.bio}
+          onChange={(e) => set("bio", e.target.value)}
+        />
+      </div>
 
       {/* « Ki kote ou ye ? » (PR-Z3) — visible seulement si la liste des
           zones est arrivée (0069 en base) ET les libellés fournis. */}
@@ -275,7 +319,7 @@ export function ProfileForm({
                   type="button"
                   onClick={demanderKatye}
                   disabled={reqBusy || reqNom.trim().length < 2}
-                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-violet disabled:opacity-60"
+                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
                 >
                   {reqBusy ? "…" : zoneLabels.reqBtn}
                 </button>

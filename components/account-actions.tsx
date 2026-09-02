@@ -43,19 +43,19 @@ export function AccountActions() {
       <div className="flex flex-wrap items-center gap-3">
         <a
           href="/api/account/export"
-          className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-violet"
+          className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent"
         >
           Exporter mes données
         </a>
         <button
           onClick={remove}
           disabled={busy}
-          className="rounded-xl border border-magenta/40 px-4 py-2.5 text-sm font-semibold text-magenta transition hover:bg-magenta/10 disabled:opacity-60"
+          className="rounded-xl border border-danger/40 px-4 py-2.5 text-sm font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-60"
         >
           {busy ? "Suppression…" : "Supprimer mon compte"}
         </button>
       </div>
-      {msg && <p className="text-xs text-magenta">{msg}</p>}
+      {msg && <p className="text-xs text-danger">{msg}</p>}
     </div>
   );
 }

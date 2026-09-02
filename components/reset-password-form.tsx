@@ -105,7 +105,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   }
 
   return (
-    <div className="bg-grain flex min-h-screen items-center justify-center px-5">
+    <div className="bg-grain flex min-h-dvh items-center justify-center px-5">
       <div className="w-full max-w-sm">
         <div className="glass rounded-3xl p-7">
           <h1 className="text-lg font-semibold">{labels.title}</h1>
@@ -138,7 +138,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
                   aria-label={labels.passwordPh}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
                 />
                 <input
                   type="password"
@@ -148,12 +148,12 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
                   aria-label={labels.confirmPh}
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
                 >
                   {loading ? labels.submitting : labels.submit}
                 </button>

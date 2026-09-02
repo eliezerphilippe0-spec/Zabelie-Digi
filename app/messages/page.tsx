@@ -36,9 +36,9 @@ export default async function MessagesPage() {
   const fils = await lireFils(supabase, user.id);
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 pb-16 pt-10">
+      <main id="main" className="mx-auto max-w-3xl px-5 pb-16 pt-10">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           {t(lang, "msg.title")}
         </h1>

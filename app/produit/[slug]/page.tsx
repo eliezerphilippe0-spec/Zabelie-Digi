@@ -198,7 +198,7 @@ export default async function ProductPage({
   );
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-2">
@@ -329,7 +329,9 @@ export default async function ProductPage({
                 </p>
               )
             )}
-            <p className="numeric text-3xl font-extrabold text-gradient">
+            {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
+                l'achat ne se rend pas en dégradé transparent. */}
+            <p className="numeric text-3xl font-extrabold text-cloud">
               {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
               {usdHint(product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">

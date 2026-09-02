@@ -54,7 +54,7 @@ export function DeliveryInfoForm({
   }
 
   const input =
-    "mt-1 w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet";
+    "mt-1 w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
 
   return (
     <form
@@ -95,7 +95,7 @@ export function DeliveryInfoForm({
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-cloud hover:border-violet disabled:opacity-50"
+        className="rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-cloud hover:border-accent disabled:opacity-50"
       >
         {busy ? labels.saving : labels.save}
       </button>

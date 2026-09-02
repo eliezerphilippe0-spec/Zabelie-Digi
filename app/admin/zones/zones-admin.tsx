@@ -69,12 +69,12 @@ export function ZonesAdmin({ zones, demandes }: { zones: ZoneRow[]; demandes: De
   const bouton =
     "rounded-lg border border-line px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50";
   const champ =
-    "rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-violet";
+    "rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-accent";
 
   return (
     <div className="mt-6 space-y-10">
       {msg && (
-        <p className="rounded-xl border border-magenta/40 px-4 py-3 text-xs text-magenta">{msg}</p>
+        <p className="rounded-xl border border-danger/40 px-4 py-3 text-xs text-danger">{msg}</p>
       )}
 
       {/* ── Demandes en attente — la file de modération (Z-C) ─────────────── */}
@@ -107,7 +107,7 @@ export function ZonesAdmin({ zones, demandes }: { zones: ZoneRow[]; demandes: De
                   onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))}
                 />
                 <button
-                  className={`${bouton} text-cloud hover:border-violet`}
+                  className={`${bouton} text-cloud hover:border-accent`}
                   disabled={busy !== null}
                   onClick={() =>
                     poste(
@@ -119,7 +119,7 @@ export function ZonesAdmin({ zones, demandes }: { zones: ZoneRow[]; demandes: De
                   {busy === d.id ? "…" : "Accepter — le katye naît"}
                 </button>
                 <button
-                  className={`${bouton} text-magenta hover:bg-magenta/10`}
+                  className={`${bouton} text-danger hover:bg-danger/10`}
                   disabled={busy !== null}
                   onClick={() =>
                     poste(
@@ -198,7 +198,7 @@ export function ZonesAdmin({ zones, demandes }: { zones: ZoneRow[]; demandes: De
             onChange={(e) => setCreation((c) => ({ ...c, labelFr: e.target.value }))}
           />
           <button
-            className={`${bouton} text-cloud hover:border-violet`}
+            className={`${bouton} text-cloud hover:border-accent`}
             disabled={busy !== null || !creation.parentId || !creation.labelKr || !creation.labelFr}
             onClick={() => {
               const parent = parId.get(creation.parentId);
@@ -252,7 +252,7 @@ function LigneZone({
         </span>
       </span>
       <button
-        className="rounded-lg border border-line px-2 py-0.5 text-xs text-mist transition hover:border-violet hover:text-cloud disabled:opacity-50"
+        className="rounded-lg border border-line px-2 py-0.5 text-xs text-mist transition hover:border-accent hover:text-cloud disabled:opacity-50"
         disabled={busy !== null}
         onClick={() =>
           onToggle({ action: "set_active", zoneId: zone.id, active: !zone.is_active }, zone.id)

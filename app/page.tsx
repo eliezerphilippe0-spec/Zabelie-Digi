@@ -182,6 +182,26 @@ export default async function HomePage() {
     .filter((p) => p.creatorId && promoSellers.has(p.creatorId))
     .slice(0, 3);
 
+  /* ── UN PRODUIT NE REMPLIT PAS DEUX RAILS ─────────────────────────────────
+   *
+   * Audit UX du 2026-09-02 (#10). Avec deux produits publiés, l'accueil
+   * montrait LES MÊMES deux cartes dans « Tendances », « Nouveautés » et
+   * « Services » — quatre fois le même produit, et la page se lisait comme
+   * une boutique vide qui insiste. Amazon et Jumia ne répètent jamais un
+   * article d'un rail à l'autre sur la même vue.
+   *
+   * Règle : un rail n'est rendu que s'il apporte au moins UN produit qu'aucun
+   * rail plus haut n'a montré. Un rail VIDE est laissé à HomeRow, qui décide
+   * seul (s'effacer, ou inviter à vendre — V-13). Le produit de la semaine
+   * compte comme déjà vu : il ouvre la page. */
+  const vus = new Set<string>(featured ? [featured.slug] : []);
+  const inedit = (items: typeof products): boolean => {
+    if (items.length === 0) return true;
+    if (!items.some((p) => !vus.has(p.slug))) return false;
+    for (const p of items) vus.add(p.slug);
+    return true;
+  };
+
   const categories = [...products.reduce((m, p) => {
     if (p.category) m.set(p.category, (m.get(p.category) ?? 0) + 1);
     return m;
@@ -495,7 +515,7 @@ export default async function HomePage() {
               <input
                 name="q"
                 placeholder={t(lang, "catalog.search.ph")}
-                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-violet"
+                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-accent"
               />
               {/* Libellé PROPRE (revue 2026-08-10, UX-06) : le capteur
                   affichait le même bouton que la recherche de l'en-tête,
@@ -516,10 +536,12 @@ export default async function HomePage() {
 
       {/* 1 bis. BANDEAU PAIEMENT (maquette : « PEYE FASIL AK ») */}
       <section className="mx-auto max-w-6xl px-5 pb-4">
+        {/* Le libellé « Payez avec » n'est plus une petite capitale espacée :
+            audit UX 2026-09-02 (#5), six eyebrows pour douze sections là où
+            le plafond mécanique est quatre. Même texte, même place, rendu
+            comme du texte. */}
         <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-line bg-surface/40 px-6 py-4">
-          <span className="text-xs font-semibold uppercase tracking-wider text-mist">
-            {t(lang, "home.pay")}
-          </span>
+          <span className="text-sm text-mist">{t(lang, "home.pay")}</span>
           <span className="rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-on-brand">
             MonCash
           </span>
@@ -542,9 +564,12 @@ export default async function HomePage() {
       {/* 1 ter. PRODUIT DE LA SEMAINE (maquette : « Pwodui semèn nan ») */}
       {featured && (
         <section className="mx-auto max-w-6xl px-5 py-8">
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+          {/* Eyebrow → titre de section (#5). Le h2 du produit reste dans la
+              carte : celui-ci est le titre de la SECTION, l'autre celui du
+              produit — deux niveaux, deux rôles. */}
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
             {t(lang, "sec.featured")}
-          </p>
+          </h2>
           <Link
             href={`/produit/${featured.slug}`}
             className="mt-4 grid gap-6 rounded-3xl border border-line bg-surface/60 p-6 transition hover:border-brand/60 sm:grid-cols-[220px_1fr] sm:p-8"
@@ -553,15 +578,17 @@ export default async function HomePage() {
               className={`aspect-[4/3] rounded-2xl bg-gradient-to-br sm:aspect-square ${featured.accent}`}
             />
             <div className="flex flex-col justify-center">
-              <p className="text-xs uppercase tracking-wider text-mist">
+              <p className="text-xs text-mist">
                 {featured.category} · {featured.creator}
               </p>
-              <h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              <h3 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
                 {featured.title}
-              </h2>
+              </h3>
               <p className="mt-2 max-w-xl text-sm text-mist">{featured.blurb}</p>
               <div className="mt-4 flex flex-wrap items-center gap-4">
-                <span className="numeric text-2xl font-extrabold text-gradient">
+                {/* Prix en PLEIN (#7) : le seul chiffre qui décide ne se lit
+                    pas en dégradé sur un écran bon marché. */}
+                <span className="numeric text-2xl font-extrabold text-cloud">
                   {formatHTG(featured.priceHTG)}
                 </span>
                 {featured.ratingAvg !== null && (
@@ -602,6 +629,7 @@ export default async function HomePage() {
       )}
 
       {/* 3. PRODUITS TENDANCE */}
+      {inedit(trending) && (
       <HomeRow
         title={t(lang, "home.trends")}
         sub={t(lang, "home.trends.sub")}
@@ -609,8 +637,10 @@ export default async function HomePage() {
         items={trending}
         cardLabels={cardLabels}
       />
+      )}
 
       {/* 4. NOUVEAUTÉS */}
+      {inedit(newest) && (
       <HomeRow
         title={t(lang, "sec.new")}
         sub={t(lang, "sec.new.sub")}
@@ -618,9 +648,11 @@ export default async function HomePage() {
         items={newest}
         cardLabels={cardLabels}
       />
+      )}
 
       {/* 4 bis. FICHIERS DIGITAUX — section demandée par le porteur
           (2026-08-10), VISIBLE MÊME VIDE via l'invitation de HomeRow. */}
+      {inedit(fichiers) && (
       <HomeRow
         title={t(lang, "sec.digital")}
         sub={t(lang, "sec.digital.sub")}
@@ -633,6 +665,7 @@ export default async function HomePage() {
           href: "/vendre",
         }}
       />
+      )}
 
       {/* Cible de « Talents » (nav ×2 + pied de page). Posée sur une balise du
           FLUX, jamais en prop de HomeRow : `HomeRow` s'efface à vide (V-13)
@@ -645,6 +678,7 @@ export default async function HomePage() {
       <div id="talents" className="scroll-mt-24" aria-hidden="true" />
 
       {/* 5. SERVICES POPULAIRES — visible même vide, même décision. */}
+      {inedit(services) && (
       <HomeRow
         title={t(lang, "sec.services")}
         sub={t(lang, "sec.services.sub")}
@@ -657,6 +691,7 @@ export default async function HomePage() {
           href: "/vendre",
         }}
       />
+      )}
 
       {/* 6. MEILLEURS VENDEURS */}
       {sellers.length > 0 && (
@@ -687,6 +722,7 @@ export default async function HomePage() {
       )}
 
       {/* 7. PRODUITS GRATUITS */}
+      {inedit(free) && (
       <HomeRow
         title={t(lang, "sec.free")}
         sub={t(lang, "sec.free.sub")}
@@ -694,8 +730,10 @@ export default async function HomePage() {
         items={free}
         cardLabels={cardLabels}
       />
+      )}
 
       {/* 8. EN PROMOTION (vendeurs à code promo actif) */}
+      {inedit(promo) && (
       <HomeRow
         title={t(lang, "sec.promo")}
         sub={t(lang, "sec.promo.sub")}
@@ -703,6 +741,7 @@ export default async function HomePage() {
         items={promo}
         cardLabels={cardLabels}
       />
+      )}
 
       {/* 9. AVIS CLIENTS — SECTION RETIRÉE (2026-08-01)
           Elle bouclait sur [1, 2, 3] en dur, imprimait ★★★★★ en dur, et tirait
@@ -778,32 +817,34 @@ export default async function HomePage() {
         <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
           {t(lang, "home.how")}
         </h2>
-        <p className="mt-8 text-xs font-semibold uppercase tracking-wider text-accent">
+        {/* Les deux sous-titres ne sont plus des eyebrows (#5), et les numéros
+            « 01 02 03 » en dégradé ont disparu (#6) : le chiffre n'informait
+            pas, et il attirait l'œil sur lui plutôt que sur le verbe. Les
+            titres SONT déjà des verbes (« Cherchez », « Payez »). */}
+        <h3 className="mt-8 text-base font-semibold text-accent">
           {t(lang, "home.how.buy")}
-        </p>
+        </h3>
         <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
           {stepsAcheteur.map((step) => (
             <div
               key={"b" + step.n}
               className="rounded-2xl border border-line bg-surface/40 p-6"
             >
-              <span className="text-3xl font-extrabold text-gradient">{step.n}</span>
-              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
+              <h4 className="text-lg font-semibold">{step.title}</h4>
               <p className="mt-2 text-sm text-mist">{step.body}</p>
             </div>
           ))}
         </div>
-        <p className="mt-8 text-xs font-semibold uppercase tracking-wider text-accent">
+        <h3 className="mt-8 text-base font-semibold text-accent">
           {t(lang, "home.how.sell")}
-        </p>
+        </h3>
         <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
           {stepsVendeur.map((step) => (
             <div
               key={"s" + step.n}
               className="rounded-2xl border border-line bg-surface/40 p-6"
             >
-              <span className="text-3xl font-extrabold text-gradient">{step.n}</span>
-              <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
+              <h4 className="text-lg font-semibold">{step.title}</h4>
               <p className="mt-2 text-sm text-mist">{step.body}</p>
             </div>
           ))}
@@ -852,7 +893,10 @@ export default async function HomePage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-5 py-16">
-        <div className="glass glow-ring relative overflow-hidden rounded-3xl px-8 py-14 text-center">
+        {/* `.glow-ring` (halo extérieur de 60 px) retiré (#8) : c'est la
+            signature « IA » posée précisément sur le bloc de conversion.
+            Une bordure d'accent à 40 % dit la même chose sans rayonner. */}
+        <div className="glass relative overflow-hidden rounded-3xl border border-accent/40 px-8 py-14 text-center">
           <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight sm:text-4xl">
             {t(lang, "home.final.a")}{" "}
             <span className="text-gradient">{t(lang, "home.final.b")}</span>.

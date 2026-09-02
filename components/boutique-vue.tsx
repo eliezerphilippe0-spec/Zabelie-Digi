@@ -37,7 +37,7 @@ export async function BoutiqueVue({
   const initials = creator.displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
 
       <section className="mx-auto max-w-6xl px-5 pb-10 pt-16">

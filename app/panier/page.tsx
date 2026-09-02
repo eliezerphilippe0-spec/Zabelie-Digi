@@ -180,7 +180,7 @@ export default async function PanierPage() {
           ))}
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
-            <span className="numeric text-xl font-extrabold text-gradient">
+            <span className="numeric text-xl font-extrabold text-cloud">
               {formatHTG(total)}
             </span>
           </div>
@@ -193,9 +193,9 @@ export default async function PanierPage() {
 
 function Coquille({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main id="main" className="mx-auto max-w-3xl px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{titre}</h1>
         {children}
       </main>

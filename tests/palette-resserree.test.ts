@@ -36,15 +36,12 @@ const { sombre, clair } = lirePalettes(CSS) as {
  * qui est la vraie leçon : ce n'est pas la faute de frappe qu'il faut éviter,
  * c'est qu'elle puisse ressembler à une réussite.
  */
-const FAMILLE_ACCENT = [
-  "accent",
-  "accent-strong",
-  "accent-gold",
-  "brand",
-  "gold",
-  "amber",
-  "violet",
-];
+/* `accent-gold`, `gold`, `amber`, `violet` (et `teal`, `magenta`) ont été
+ * SUPPRIMÉS du thème le 2026-09-02 (audit UX, #12) : alias de la palette
+ * abandonnée, zéro référence restante. Ce test exige que chaque token cité
+ * EXISTE (non-vacuité) — la liste suit donc le thème, pas l'inverse. Un
+ * alias qui reviendrait ici sans revenir dans le thème ferait rougir. */
+const FAMILLE_ACCENT = ["accent", "accent-strong", "brand"];
 
 for (const [nom, P] of [
   ["sombre", sombre],

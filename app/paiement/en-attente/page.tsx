@@ -14,14 +14,14 @@ export default async function EnAttentePage({
 }) {
   const [{ commande }, lang] = await Promise.all([searchParams, getLang()]);
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
       {/* BL-132 (FRONT-4) : quand l'orderId est connu (retour MonCash avec
           erreur transitoire à la confirmation), on poll au lieu de laisser
           l'acheteur planté sur une page statique — pattern /rechaj déjà en
           place. Invisible : ne change rien tant que rien n'est tranché. */}
       {commande && <OrderStatusPoll orderId={commande} />}
-      <main className="mx-auto max-w-md px-5 py-24 text-center">
+      <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-warning text-2xl text-ink">
           ⏳
         </span>

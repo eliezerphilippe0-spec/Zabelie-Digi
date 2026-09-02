@@ -81,6 +81,16 @@ export async function SiteNav() {
      * amélioration gratuite. Il se défait en un mot — remettre `sticky` au
      * lieu de `md:sticky`. */
     <header className="z-50 md:sticky md:top-0">
+      {/* LIEN D'ÉVITEMENT (audit UX 2026-09-02, #14). Invisible jusqu'au
+          premier Tab, puis un vrai bouton en haut à gauche : l'en-tête fait
+          250 px de haut sur mobile et se retraverse à chaque page au clavier.
+          Cible : `<main id="main">`, posé sur les 26 pages qui ont un <main>. */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-brand"
+      >
+        {t(lang, "a11y.skip")}
+      </a>
       {/* TOPBAR — une ligne : l'entrée vendeur, le contact humain, la langue.
           Le CTA vendeur vit ICI désormais : toujours présent, jamais dominant
           — le hero appartient à l'acheteur. */}

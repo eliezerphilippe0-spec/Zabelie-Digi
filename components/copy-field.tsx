@@ -33,7 +33,7 @@ export function CopyField({
       type="button"
       onClick={copy}
       aria-label={`${label} : ${value}`}
-      className="ml-2 rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-mist transition hover:border-accent hover:text-cloud"
+      className="ml-2 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-mist transition hover:border-accent hover:text-cloud"
     >
       {copied ? copiedLabel : label}
     </button>

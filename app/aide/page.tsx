@@ -31,7 +31,7 @@ export default async function AidePage() {
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL || null;
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
 
       <section className="mx-auto max-w-2xl px-5 pb-16 pt-12">

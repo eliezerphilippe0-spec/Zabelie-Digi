@@ -87,7 +87,7 @@ export function GeoMap({ rows }: { rows: GeoRow[] }) {
             onClick={() => setMetric(m.key)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               metric === m.key
-                ? "bg-violet text-white"
+                ? "bg-accent text-white"
                 : "text-mist hover:text-cloud"
             }`}
           >
@@ -105,7 +105,7 @@ export function GeoMap({ rows }: { rows: GeoRow[] }) {
         >
           <defs>
             <linearGradient id="bubble" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="var(--color-accent-gold)" />
+              <stop offset="0%" stopColor="var(--color-accent)" />
               <stop offset="100%" stopColor="var(--color-brand)" />
             </linearGradient>
           </defs>

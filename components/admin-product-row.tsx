@@ -91,7 +91,7 @@ export function AdminProductRow({
           value={value}
           disabled={saving}
           onChange={(e) => change(e.target.value)}
-          className="shrink-0 rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-violet disabled:opacity-60"
+          className="shrink-0 rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-accent disabled:opacity-60"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
