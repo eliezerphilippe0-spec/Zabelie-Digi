@@ -49,6 +49,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Audit du 2026-09-02, constat #7 : `next lint` était mort sous Next 16
+      # et aucun job ne lintait. Bloquant, comme le contraste — un contrôle qui
+      # ne bloque rien est un vœu.
+      - name: Lint
+        run: npm run lint
+
       # Bloquant depuis la revue 2026-08-10 (UI-04) : l'ancien QC mesurait la
       # palette abandonnée, sortait en 0 et n'était appelé nulle part — un
       # contrôle qui ne bloque rien est un vœu. Sortie ≠ 0 = paire sous le

@@ -43,6 +43,6 @@ export function usePoll({
       }
     }, intervalMs);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- resetKey est un déclencheur volontaire
+     
   }, [enabled, intervalMs, maxTicks, resetKey]);
 }
