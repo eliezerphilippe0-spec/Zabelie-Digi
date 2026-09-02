@@ -49,9 +49,9 @@ function Shell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main id="main" className="mx-auto max-w-3xl px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sales.title")}</h1>
         <p className="mt-2 text-sm text-mist">{t(lang, "sales.subtitle")}</p>
         {children}

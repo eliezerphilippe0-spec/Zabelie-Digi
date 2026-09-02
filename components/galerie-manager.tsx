@@ -221,7 +221,7 @@ export function GalerieManager({
           </div>
         )}
         {medias.length < max && (
-          <label className="inline-block cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-violet">
+          <label className="inline-block cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent">
             {busy ? labels.sending : labels.add}
             <input
               type="file"
@@ -254,7 +254,7 @@ export function GalerieManager({
             </button>
           </div>
         ) : (
-          <label className="inline-block cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-violet">
+          <label className="inline-block cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent">
             {busy ? labels.sending : labels.videoAdd}
             <input
               type="file"

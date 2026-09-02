@@ -114,7 +114,7 @@ export function AiDescriptionHelp({
   return (
     <div className="space-y-1.5">
       <input
-        className="w-full rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-violet"
+        className="w-full rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-accent"
         placeholder={labels.kwPh}
         aria-label={labels.kwPh}
         maxLength={300}
@@ -126,7 +126,7 @@ export function AiDescriptionHelp({
           type="button"
           onClick={() => demander()}
           disabled={busy || !pret}
-          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud transition hover:border-violet disabled:opacity-50"
+          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud transition hover:border-accent disabled:opacity-50"
         >
           {busy ? labels.loading : labels.button}
         </button>

@@ -61,9 +61,9 @@ export default async function InvoicePage({
   const shareUrl = `${origin}/facture/${invoice.public_token}`;
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-2xl px-5 py-16">
+      <main id="main" className="mx-auto max-w-2xl px-5 py-16">
         <Link href="/pro" className="text-sm text-mist hover:underline">
           ← Espace pro
         </Link>

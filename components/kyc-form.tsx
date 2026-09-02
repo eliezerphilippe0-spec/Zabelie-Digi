@@ -113,7 +113,7 @@ export function KycForm({
           {(["cin", "paspo", "selfie"] as KycType[]).map((k) => (
             <label
               key={k}
-              className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-violet"
+              className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent"
             >
               {busy === k ? labels.sending : `${labels.add} — ${libelle[k]}`}
               <input

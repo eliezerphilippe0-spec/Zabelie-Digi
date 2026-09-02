@@ -60,9 +60,9 @@ export default async function RechajPage() {
   ];
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-md px-5 py-14">
+      <main id="main" className="mx-auto max-w-md px-5 py-14">
         <h1 className="text-3xl font-extrabold tracking-tight">
           {t(lang, "topup.title")}
         </h1>

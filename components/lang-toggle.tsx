@@ -47,7 +47,7 @@ export function LangToggle({ current }: { current: Lang }) {
       onClick={() => set(lang)}
       title={title}
       aria-pressed={current === lang}
-      className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 transition ${
+      className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-3 transition ${
         current === lang ? "bg-cloud font-semibold text-ink" : "text-mist hover:text-cloud"
       }`}
     >

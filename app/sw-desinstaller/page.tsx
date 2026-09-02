@@ -31,8 +31,8 @@ export const metadata = {
  */
 export default function DesinstallerSWPage() {
   return (
-    <div className="bg-grain flex min-h-screen flex-col justify-center">
-      <main className="mx-auto w-full max-w-lg px-5 py-16">
+    <div className="bg-grain flex min-h-dvh flex-col justify-center">
+      <main id="main" className="mx-auto w-full max-w-lg px-5 py-16">
         <h1 className="text-2xl font-black tracking-tight">
           Désinstaller le service worker
         </h1>

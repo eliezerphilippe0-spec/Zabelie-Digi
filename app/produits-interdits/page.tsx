@@ -58,9 +58,9 @@ export default async function ProduitsInterditsPage() {
   const lang = await getLang();
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main id="main" className="mx-auto max-w-3xl px-5 py-16">
         <h1 className="text-3xl font-black tracking-tight">
           {t(lang, "policy.title")}
         </h1>

@@ -37,9 +37,9 @@ function Shell({
   subtitle?: string;
 }) {
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-lg px-5 py-16">
+      <main id="main" className="mx-auto max-w-lg px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sell.title")}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
         {/* Ces deux liens vivent dans le Shell : ils sont donc présents AUSSI

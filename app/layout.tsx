@@ -84,7 +84,7 @@ export default async function RootLayout({
     (await cookies()).get("zab_theme")?.value === "light" ? "light" : "dark";
   return (
     <html lang={lang} data-theme={theme} className={`${inter.variable} ${playfair.variable}`}>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-dvh antialiased">
         {/* Monté sur TOUTES les pages, parce qu'on ne sait pas d'avance où
             Supabase déposera l'utilisateur quand l'allowlist Auth ignore le
             `redirectTo` : il retombe sur le Site URL, quel qu'il soit. Ne rend

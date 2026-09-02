@@ -86,7 +86,7 @@ export function MessageForm({
            l'œil. `aria-label` le nomme pour le reste. */
         aria-label={labels.placeholder}
         rows={3}
-        className="min-h-11 w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-violet"
+        className="min-h-11 w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-accent"
       />
       <div className="mt-2 flex items-center justify-between gap-3">
         {/* Le compteur n'apparaît que près de la borne : affiché en

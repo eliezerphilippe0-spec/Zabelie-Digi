@@ -207,7 +207,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
                 autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+                className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
               />
             </div>
           )}
@@ -223,7 +223,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
               inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
             />
           </div>
           <div className="space-y-1">
@@ -238,7 +238,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet"
+              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
             />
           </div>
           <button
@@ -279,7 +279,7 @@ function ConnexionFormInner({ labels }: { labels: ConnexionLabels }) {
 
 export function ConnexionForm({ labels }: { labels: ConnexionLabels }) {
   return (
-    <div className="bg-grain flex min-h-screen items-center justify-center px-5">
+    <div className="bg-grain flex min-h-dvh items-center justify-center px-5">
       {/* useSearchParams exige une frontière Suspense (App Router). */}
       <Suspense fallback={null}>
         <ConnexionFormInner labels={labels} />

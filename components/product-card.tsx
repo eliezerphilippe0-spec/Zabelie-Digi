@@ -57,7 +57,7 @@ export function ProductCard({
   return (
     <Link
       href={`/produit/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-1 hover:border-violet/50"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-1 hover:border-accent/50"
     >
       <div
         className={`relative h-40 bg-gradient-to-br ${product.accent} opacity-90`}

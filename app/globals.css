@@ -130,10 +130,21 @@
     to   { opacity: 1; transform: none; }
   }
 
+  /* `.glass` — FOND PLEIN PAR DÉFAUT, flou seulement là où il ne coûte rien.
+     Audit UX 2026-09-02 (#16) : `backdrop-filter: blur(14px)` repeint en
+     continu au défilement, et il était posé sur 17 blocs — dont les
+     formulaires d'auth et le bloc de conversion — exactement sur la cible
+     du produit, l'Android d'entrée de gamme. Sur un écran à pointeur fin et
+     large (bureau), le flou revient : il n'y ralentit rien. */
   .glass {
-    background: color-mix(in srgb, var(--color-surface-maroon) 72%, transparent);
-    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--color-surface-maroon) 92%, transparent);
     border: 1px solid var(--color-line);
+  }
+  @media (hover: hover) and (min-width: 768px) {
+    .glass {
+      background: color-mix(in srgb, var(--color-surface-maroon) 72%, transparent);
+      backdrop-filter: blur(14px);
+    }
   }
   /* Grands chiffres (prix, revenus, compteurs) : chiffres tabulaires nets. */
   .numeric,

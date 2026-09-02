@@ -143,7 +143,7 @@ export function ProfileForm({
   }
 
   const input =
-    "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet";
+    "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
 
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -319,7 +319,7 @@ export function ProfileForm({
                   type="button"
                   onClick={demanderKatye}
                   disabled={reqBusy || reqNom.trim().length < 2}
-                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-violet disabled:opacity-60"
+                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
                 >
                   {reqBusy ? "…" : zoneLabels.reqBtn}
                 </button>

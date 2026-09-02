@@ -193,9 +193,9 @@ export default async function PanierPage() {
 
 function Coquille({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main id="main" className="mx-auto max-w-3xl px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{titre}</h1>
         {children}
       </main>

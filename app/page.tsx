@@ -515,7 +515,7 @@ export default async function HomePage() {
               <input
                 name="q"
                 placeholder={t(lang, "catalog.search.ph")}
-                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-violet"
+                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-accent"
               />
               {/* Libellé PROPRE (revue 2026-08-10, UX-06) : le capteur
                   affichait le même bouton que la recherche de l'en-tête,

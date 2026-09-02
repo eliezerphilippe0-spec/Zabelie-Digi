@@ -52,8 +52,8 @@ export default function GlobalError({
   const l = errLabels(lang);
 
   return (
-    <div className="bg-grain min-h-screen">
-      <main className="mx-auto max-w-md px-5 py-24 text-center">
+    <div className="bg-grain min-h-dvh">
+      <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger text-2xl text-ink">
           !
         </span>

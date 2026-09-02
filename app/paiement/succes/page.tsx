@@ -108,9 +108,9 @@ export default async function SuccesPage({
   const montrerEscrow = isProductKind(kind) && !isDownloadable(kind, "paiement/succes");
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-md px-5 py-24 text-center">
+      <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
         <span className="reveal-mark mx-auto grid h-16 w-16 place-items-center rounded-full bg-success text-2xl text-ink">
           ✓
         </span>

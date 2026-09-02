@@ -57,7 +57,7 @@ export function SkeletonGrid({ n = 6 }: { n?: number }) {
 /** Enveloppe de page : même `bg-grain` que les vraies pages, état annoncé. */
 export function SkeletonPage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-grain min-h-screen" aria-busy="true" aria-live="polite">
+    <div className="bg-grain min-h-dvh" aria-busy="true" aria-live="polite">
       {children}
     </div>
   );

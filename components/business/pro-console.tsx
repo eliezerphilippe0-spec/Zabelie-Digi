@@ -27,7 +27,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 const input =
-  "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-violet";
+  "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
 
 export function ProConsole({
   professional,

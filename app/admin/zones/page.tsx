@@ -59,7 +59,7 @@ export default async function AdminZonesPage() {
   return (
     <AdminShell title="Zones" actif="/admin/zones">
       {panne && (
-        <p className="mt-4 rounded-xl border border-magenta/40 px-4 py-3 text-xs text-magenta">
+        <p className="mt-4 rounded-xl border border-danger/40 px-4 py-3 text-xs text-danger">
           {panne}
         </p>
       )}

@@ -25,9 +25,9 @@ export const metadata = { title: "Vendre un produit — Zabelie" };
 export default async function VendrePhysiquePage() {
   if (!isSupabaseConfigured()) {
     return (
-      <div className="bg-grain min-h-screen">
+      <div className="bg-grain min-h-dvh">
         <SiteNav />
-        <main className="mx-auto max-w-xl px-5 py-16">
+        <main id="main" className="mx-auto max-w-xl px-5 py-16">
           <h1 className="text-3xl font-black tracking-tight">Vendre un produit</h1>
           <p className="mt-4 text-sm text-mist">Mode démo — Supabase non configuré.</p>
         </main>
@@ -84,9 +84,9 @@ export default async function VendrePhysiquePage() {
   };
 
   return (
-    <div className="bg-grain min-h-screen">
+    <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main className="mx-auto max-w-xl px-5 py-16">
+      <main id="main" className="mx-auto max-w-xl px-5 py-16">
         <h1 className="text-3xl font-black tracking-tight">Vendre un produit</h1>
         <p className="mt-2 text-sm text-cloud">
           Photo, prix, quantité — votre produit est en ligne en moins d&apos;une
