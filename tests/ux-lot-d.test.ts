@@ -29,10 +29,17 @@ test("UD1 — rayons : aucun cran hors échelle (md, sm, arbitraire)", () => {
   // Exception unique, documentée dans le thème : le drapeau haïtien (glyphe
   // 24 × 16, `aria-label="Haïti"`) garde `rounded-[3px]`. La ligne qui porte
   // l'aria-label est la seule tolérée — pas le fichier entier.
+  /* ⚠️ Réécrit après une mutation VERTE : `rounded-[7px]` sur la carte produit
+   * passait. La première forme, /\brounded-(md|sm|\[[^\]]+\])\b/, exigeait
+   * une frontière de mot APRÈS `]` — or `]` suivi d'un espace, ce sont deux
+   * non-mots côte à côte : pas de frontière, pas de correspondance. Le `\b`
+   * ne sait pas où finit un crochet. Les deux formes sont séparées : les
+   * crans nommés se terminent par (?![\w-]), le cran arbitraire par `]`. */
+  const HORS_ECHELLE = /\brounded-(?:md|sm)(?![\w-])|\brounded-\[[^\]]+\]/;
   const fautifs = SOURCES.filter((f) =>
     lire(f)
       .split("\n")
-      .some((l) => /\brounded-(md|sm|\[[^\]]+\])\b/.test(l) && !/aria-label="Haïti"/.test(l))
+      .some((l) => HORS_ECHELLE.test(l) && !/aria-label="Haïti"/.test(l))
   );
   assert.deepEqual(fautifs, [], "rayons hors de l'échelle documentée dans zabelie-theme.css");
   assert.match(lire("app/zabelie-theme.css"), /RÈGLE DES RAYONS[\s\S]{0,900}rounded-full\s+pills/, "la règle doit être écrite dans le thème");
