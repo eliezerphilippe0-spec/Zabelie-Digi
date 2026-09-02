@@ -39,6 +39,10 @@ qu'un seul projet Zabelie. → `docs/18-SPEC-BUILD-V1.md` §4.1.
 Next.js (App Router, TS, Tailwind) + Supabase (Postgres/Auth/Storage/RLS) +
 Vercel (dont crons). **Aucun service externe non listé sans validation** —
 notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
+Skill de goût frontend `design-taste-frontend` (taste-skill v2, MIT) installé
+dans `.claude/skills/` le 2026-09-02 — **son préambule Zabelie fait précédence
+sur son contenu** (périmètre, palette, tiret cadratin, dépendances), et
+`tests/skill-taste.test.ts` garde le préambule contre un remplacement en place.
 
 ## Règle zéro — la primauté de l'instruction directe
 
