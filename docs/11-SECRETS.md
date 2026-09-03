@@ -32,6 +32,13 @@ de gabarit, jamais de stockage :
 - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY`
 - `RECONCILE_SECRET` / `CRON_SECRET`
+- **Fournisseurs de connexion tiers (V-19)** — client ID / client secret
+  Google, Microsoft (Entra), Facebook, Apple. ⚠️ **Ils ne passent PAS par
+  Vercel** : ils se posent dans le tableau de bord Supabase (Authentication →
+  Providers), qui est le seul à les lire. Vercel ne porte que la liste
+  publique `NEXT_PUBLIC_AUTH_PROVIDERS` (des noms, aucun secret). Un client
+  secret Google collé dans Vercel ou dans `.env.local` serait un secret
+  posé là où rien ne le lit — et là où il finit par fuir.
 
 Seules les variables **préfixées `NEXT_PUBLIC_`** peuvent être vues par le
 navigateur — et donc seules des valeurs **publiques par nature** (URL du site,

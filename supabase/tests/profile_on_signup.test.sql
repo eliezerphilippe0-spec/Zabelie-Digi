@@ -16,6 +16,10 @@
 --   PS11. Le repli ne peut JAMAIS produire NULL ni chaîne vide sur une
 --         colonne NOT NULL — sinon le filtre recrée l'échec total qu'il
 --         devait éviter, cette fois sur le renommage aussi.
+--   PS12. Compte né par fournisseur tiers (0095) : les métadonnées portent
+--         `full_name`/`name`, pas `display_name`. Le nom est repris, filtré
+--         (usurpation refusée → repli e-mail), et `display_name` garde la
+--         priorité quand les deux existent.
 --
 -- PS7 retire le déclencheur DANS sa transaction : règle du dépôt, un garde se
 -- prouve sur un cas où il doit manquer, pas en raisonnant.
@@ -343,6 +347,54 @@ begin
 
   raise notice 'OK — PS11 aucun refus ne produit NULL ni chaîne vide '
                '(update garde l''ancien nom, insert retombe sur « Kont »)';
+end $$;
+
+rollback;
+
+-- ───────── PS12 : le compte né chez Google/Microsoft porte son nom (0095) ───
+-- Ce que Supabase pose pour un profil OAuth : `full_name`, `name`, `email`,
+-- `avatar_url`… et jamais `display_name`. Avant 0095, ces comptes tombaient
+-- sur le repli e-mail. Quatre cas, dont un connu-négatif.
+begin;
+insert into auth.users (id, email, raw_user_meta_data) values
+  -- (a) Google : full_name et name, pas de display_name.
+  ('00000000-0000-0000-0000-0000000a0060', 'marie.google@test.local',
+     '{"full_name": "Marie Dupont", "name": "Marie Dupont", "iss": "https://accounts.google.com"}'::jsonb),
+  -- (b) name seul (certains fournisseurs ne posent pas full_name).
+  ('00000000-0000-0000-0000-0000000a0061', 'jean.ms@test.local',
+     '{"name": "Jean Baptiste"}'::jsonb),
+  -- (c) CONNU-NÉGATIF : un compte Google nommé comme la plateforme.
+  ('00000000-0000-0000-0000-0000000a0062', 'faux.support@test.local',
+     '{"full_name": "Support Zabelie"}'::jsonb),
+  -- (d) display_name ET full_name : le formulaire garde la priorité.
+  ('00000000-0000-0000-0000-0000000a0063', 'deux@test.local',
+     '{"display_name": "Boutique Deux", "full_name": "Autre Nom"}'::jsonb);
+
+do $$
+declare v_nom text;
+begin
+  select display_name into v_nom from profiles where id = '00000000-0000-0000-0000-0000000a0060';
+  if v_nom <> 'Marie Dupont' then
+    raise exception 'PS12a : full_name Google perdu, obtenu « % »', v_nom;
+  end if;
+
+  select display_name into v_nom from profiles where id = '00000000-0000-0000-0000-0000000a0061';
+  if v_nom <> 'Jean Baptiste' then
+    raise exception 'PS12b : name seul perdu, obtenu « % »', v_nom;
+  end if;
+
+  select display_name into v_nom from profiles where id = '00000000-0000-0000-0000-0000000a0062';
+  if v_nom <> 'faux.support' then
+    raise exception 'PS12c : « Support Zabelie » venu d''un fournisseur ACCEPTÉ (« % »)', v_nom;
+  end if;
+
+  select display_name into v_nom from profiles where id = '00000000-0000-0000-0000-0000000a0063';
+  if v_nom <> 'Boutique Deux' then
+    raise exception 'PS12d : display_name du formulaire supplanté par full_name (« % »)', v_nom;
+  end if;
+
+  raise notice 'OK — PS12 nom OAuth repris (full_name, name), usurpation refusée, '
+               'display_name prioritaire';
 end $$;
 
 rollback;
