@@ -23,6 +23,21 @@ export async function GET(req: Request) {
      l'utilisateur atterrit déconnecté, sans erreur. → lib/site-origin.ts */
   const site = siteOrigin(url, process.env.NEXT_PUBLIC_SITE_URL);
 
+  /* V-19 — un fournisseur tiers qui refuse (ou un utilisateur qui annule chez
+     lui) revient SANS `code` et AVEC `error` + `error_description`. Avant, ce
+     cas tombait dans la redirection finale : l'utilisateur atterrissait sur
+     `next`, déconnecté, sans un mot. La description reste au journal — elle
+     nomme le fournisseur et la cause, et c'est la seule trace qui existe. */
+  const erreurFournisseur = url.searchParams.get("error");
+  if (erreurFournisseur) {
+    console.error(
+      "[auth/callback] fournisseur:",
+      erreurFournisseur,
+      url.searchParams.get("error_description") ?? ""
+    );
+    return NextResponse.redirect(`${site}/connexion?erreur=fournisseur`);
+  }
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);

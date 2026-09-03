@@ -511,6 +511,13 @@ const fr = {
   "auth.link.expired":
     "Ce lien de confirmation a expiré ou a déjà été utilisé. Connectez-vous, ou créez à nouveau votre compte pour recevoir un nouveau lien.",
   "auth.back.home": "← Retour à l'accueil",
+  "auth.oauth.or": "ou continuer avec",
+  "auth.oauth.google": "Continuer avec Google",
+  "auth.oauth.microsoft": "Continuer avec Microsoft",
+  "auth.oauth.facebook": "Continuer avec Facebook",
+  "auth.oauth.apple": "Continuer avec Apple",
+  "auth.err.provider":
+    "La connexion par ce service a échoué ou a été annulée. Réessayez, ou utilisez votre e-mail.",
 
   // Écrans d'erreur globaux (app/not-found.tsx). `app/error.tsx` ne peut PAS
   // les lire : c'est un composant client, et t() est serveur uniquement (règle
@@ -1210,6 +1217,13 @@ const ht: Record<I18nKey, string> = {
   "auth.link.expired":
     "Lyen konfimasyon sa a ekspire oswa li deja itilize. Konekte, oswa kreye kont ou ankò pou resevwa yon nouvo lyen.",
   "auth.back.home": "← Tounen sou paj akèy la",
+  "auth.oauth.or": "oswa kontinye ak",
+  "auth.oauth.google": "Kontinye ak Google",
+  "auth.oauth.microsoft": "Kontinye ak Microsoft",
+  "auth.oauth.facebook": "Kontinye ak Facebook",
+  "auth.oauth.apple": "Kontinye ak Apple",
+  "auth.err.provider":
+    "Koneksyon ak sèvis sa a echwe oswa li te anile. Eseye ankò, oswa sèvi ak imèl ou.",
 
   "sell.title": "Vann sou Zabelie",
   "sell.demo.subtitle": "Mòd demo — konekte Supabase pou pibliye vrè pwodui.",
@@ -1895,6 +1909,13 @@ const en = {
   "auth.link.expired":
     "This confirmation link has expired or has already been used. Sign in, or create your account again to receive a new link.",
   "auth.back.home": "← Back to home",
+  "auth.oauth.or": "or continue with",
+  "auth.oauth.google": "Continue with Google",
+  "auth.oauth.microsoft": "Continue with Microsoft",
+  "auth.oauth.facebook": "Continue with Facebook",
+  "auth.oauth.apple": "Continue with Apple",
+  "auth.err.provider":
+    "Sign-in with this service failed or was cancelled. Try again, or use your e-mail.",
 
   // Global error screens (app/not-found.tsx). `app/error.tsx` cannot read
   // these: it is a client component, and t() is server-only.
@@ -2589,6 +2610,13 @@ const es = {
   "auth.link.expired":
     "Este enlace de confirmación venció o ya fue usado. Inicia sesión, o vuelve a crear tu cuenta para recibir uno nuevo.",
   "auth.back.home": "← Volver al inicio",
+  "auth.oauth.or": "o continuar con",
+  "auth.oauth.google": "Continuar con Google",
+  "auth.oauth.microsoft": "Continuar con Microsoft",
+  "auth.oauth.facebook": "Continuar con Facebook",
+  "auth.oauth.apple": "Continuar con Apple",
+  "auth.err.provider":
+    "El inicio de sesión con este servicio falló o fue cancelado. Inténtalo de nuevo o usa tu correo.",
 
   // Pantallas de error globales
   "err.404.title": "Esta página no existe",

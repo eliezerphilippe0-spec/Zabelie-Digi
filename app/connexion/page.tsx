@@ -1,10 +1,27 @@
 import { ConnexionForm } from "@/components/connexion-form";
 import { LangToggle } from "@/components/lang-toggle";
 import { getLang } from "@/lib/i18n-server";
-import { t } from "@/lib/i18n";
+import { t, type I18nKey } from "@/lib/i18n";
+import { resolveAuthProviders, type AuthProviderId } from "@/lib/auth-providers";
+
+/* V-19 — un libellé par fournisseur, en clé LITTÉRALE : c'est ce que
+   `tests/i18n-cles-mortes.test.ts` croise. Une clé construite (`auth.oauth.${id}`)
+   compterait par préfixe et cacherait une traduction manquante. */
+const LIBELLES: Record<AuthProviderId, I18nKey> = {
+  google: "auth.oauth.google",
+  microsoft: "auth.oauth.microsoft",
+  facebook: "auth.oauth.facebook",
+  apple: "auth.oauth.apple",
+};
 
 export default async function ConnexionPage() {
   const lang = await getLang();
+  /* Lue côté SERVEUR, à la requête. La liste ne contient que ce que le
+     porteur a nommé APRÈS l'avoir activé chez Supabase (OPS_TODO) : absente
+     ou vide, aucun bouton — c'est l'état de production par défaut. */
+  const providers = resolveAuthProviders(process.env.NEXT_PUBLIC_AUTH_PROVIDERS).map(
+    (p) => ({ ...p, label: t(lang, LIBELLES[p.id]) })
+  );
   return (
     <>
       {/* BL-130 (FRONT-12a) : page sans SiteNav — le bouton FR/KR restait
@@ -39,7 +56,10 @@ export default async function ConnexionPage() {
           errDisabled: t(lang, "auth.err.disabled"),
           errEmail: t(lang, "auth.err.email"),
           errNetwork: t(lang, "auth.err.network"),
+          oauthOr: t(lang, "auth.oauth.or"),
+          errProvider: t(lang, "auth.err.provider"),
         }}
+        providers={providers}
       />
     </>
   );

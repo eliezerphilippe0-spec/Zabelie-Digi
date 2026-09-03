@@ -32,6 +32,53 @@ la session et pose le cookie d'affiliation, rien de plus.
 
 ---
 
+## 🟡 Connexion tierce (V-19) — activer Google, puis les autres — 15 minutes par fournisseur
+
+Décision porteur du 2026-09-03 (`docs/02` V-19). Le code est déployé et
+**n'affiche rien tant que ce runbook n'est pas fait** : c'est voulu. Un bouton
+vers un fournisseur non activé chez Supabase mène à une page d'erreur brute
+hors de l'interface, sans retour possible (`lib/auth-providers.ts`).
+
+**Ordre : le fournisseur d'abord, Supabase ensuite, Vercel en dernier.**
+Inverser les deux derniers montre le bouton avant qu'il ne marche.
+
+1. **Chez le fournisseur**, créer une application OAuth et relever son
+   client ID et son client secret. L'URL de rappel à déclarer chez lui est
+   TOUJOURS celle de Supabase, pas celle du site :
+   `https://ddditxykopuxxqzgkqwy.supabase.co/auth/v1/callback`.
+   - Google : console.cloud.google.com → APIs & Services → Credentials →
+     OAuth client ID (type « Web application »). Écran de consentement à
+     publier, sinon seuls les comptes de test passent.
+   - Microsoft : entra.microsoft.com → App registrations → New registration,
+     comptes « personnels + organisations » si on veut les Outlook/Hotmail.
+     Le secret se crée sous Certificates & secrets et **expire** (24 mois au
+     plus) : noter la date.
+   - Facebook : developers.facebook.com → app → Facebook Login → Valid OAuth
+     Redirect URIs. L'app doit passer en mode « Live » pour le public.
+   - Apple : exige un compte développeur payant et un Services ID ; à ne
+     faire que si la diaspora iPhone le demande.
+2. **Dans Supabase** → Authentication → Providers → le fournisseur : coller
+   client ID et secret, activer. ⚠️ Le secret vit LÀ et nulle part ailleurs
+   (`docs/11` §2). Puis Authentication → URL Configuration : `Site URL` =
+   `https://zabelie.com` et, dans Redirect URLs, `https://zabelie.com/auth/callback`
+   (ajouter la même ligne pour `www.` si le domaine le sert). Sans cette
+   liste blanche, Supabase renvoie sur le Site URL et ignore `next`.
+3. **Dans Vercel** → Environment Variables, Production **et** Preview :
+   `NEXT_PUBLIC_AUTH_PROVIDERS` = la liste, par exemple `google` puis
+   `google,microsoft`. Retaper, ne pas coller (docs/38 §4). **Redéployer.**
+4. **Vérifier** sur `/connexion` : le bouton apparaît, mène chez le
+   fournisseur, revient connecté sur la page d'où on est parti. Puis dans
+   Supabase → Authentication → Users : le compte porte le fournisseur, et
+   dans `profiles` son `display_name` est le vrai nom, pas la partie locale
+   de l'e-mail (`0095`). Un refus chez le fournisseur revient sur
+   `/connexion?erreur=fournisseur` avec un message, pas sur une page blanche.
+
+Ce qui reste hors code : **quels fournisseurs**. Google d'abord (tout Android
+en a un). Facebook ensuite, réseau dominant en Haïti. Microsoft et Apple
+servent surtout la diaspora.
+
+---
+
 ## 🟡 Vérifier `RESEND_API_KEY` en production — une minute
 
 Issu de l'inventaire d'API du 2026-08-22 (`docs/44` §3.3).
