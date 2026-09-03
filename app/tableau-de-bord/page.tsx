@@ -16,6 +16,7 @@ import { etapeVendeur, besoinDeGuidage, clesEtape } from "@/lib/vendeur-etape";
 import { VendeurPremierPas } from "@/components/vendeur-premier-pas";
 import { siteUrl } from "@/lib/site-url";
 import { hrefBoutique } from "@/lib/boutique-href";
+import { bornes, pageValide, nbPages, pageDansBornes } from "@/lib/pagination";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
 import { t, type I18nKey } from "@/lib/i18n";
@@ -27,6 +28,9 @@ import {
 } from "@/components/zabelie-coupon-manager";
 
 export const dynamic = "force-dynamic";
+
+/** Ventes par page. Huit tiennent dans un écran de 360 px sans défilement. */
+const PAGE_VENTES = 8;
 export const metadata = { title: "Tableau de bord — Zabelie" };
 
 function Shell({
@@ -66,7 +70,16 @@ type ProductRow = {
   cover_url: string | null;
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ ventes?: string }>;
+}) {
+  /* Les ventes se paginent (2026-08-17). Elles étaient plafonnées à 8 SANS
+     rien dire : un vendeur avec trente ventes en voyait huit et n'avait aucun
+     moyen de le savoir. C'est le registre de son argent — le même défaut que
+     les files admin, sur la personne à qui la plateforme doit quelque chose. */
+  const pageVentes = pageValide((await searchParams)?.ventes);
   if (!isSupabaseConfigured()) {
     return (
       <Shell title="Tableau de bord">
@@ -134,6 +147,10 @@ export default async function DashboardPage() {
   let nextMaturity: string | null = null;
   let products: ProductRow[] = [];
   let sales: Sale[] = [];
+  /* Compte RÉEL des ventes, pas la longueur de la page. `sales.length` est
+     plafonné à 8 par construction : s'en servir pour dire « 8 ventes » à
+     quelqu'un qui en a trente serait le défaut d'origine sous un autre nom. */
+  let ventesTotal = 0;
   let coupons: CouponItem[] = [];
   // V-5 : coordonnées de livraison — `undefined` = 0076 non appliquée (le
   // bloc ne se rend pas), sinon les valeurs (vides si jamais renseignées).
@@ -273,21 +290,25 @@ export default async function DashboardPage() {
       // on redemande sans elle (même motif que le catalogue).
       const first = await admin
         .from("orders")
-        .select("id, order_ref, amount_htg, created_at, status, product:products(title)")
+        .select("id, order_ref, amount_htg, created_at, status, product:products(title)",
+          { count: "exact" })
         .in("product_id", productIds)
         .in("status", ["paid", "delivered"])
         .order("created_at", { ascending: false })
-        .limit(8);
+        .range(...bornes(pageVentes, PAGE_VENTES));
       let rows = first.data;
+      ventesTotal = first.count ?? 0;
       if (isMissingColumn(first.error)) {
         const retry = await admin
           .from("orders")
-          .select("id, amount_htg, created_at, status, product:products(title)")
+          .select("id, amount_htg, created_at, status, product:products(title)",
+            { count: "exact" })
           .in("product_id", productIds)
           .in("status", ["paid", "delivered"])
           .order("created_at", { ascending: false })
-          .limit(8);
+          .range(...bornes(pageVentes, PAGE_VENTES));
         rows = (retry.data ?? []).map((o) => ({ ...o, order_ref: null }));
+        ventesTotal = retry.count ?? 0;
       }
       sales = (rows ?? []) as unknown as Sale[];
     }
@@ -347,6 +368,12 @@ export default async function DashboardPage() {
    * de l'argent. Et il ne s'affiche pas si le total est incomplet : une
    * moyenne calculée sur un numérateur amputé serait fausse sans le dire.
    */
+  /* Pagination des ventes : le nombre de pages se DÉDUIT du compte réel, et
+     la page demandée est ramenée dans les bornes. Deux sources donneraient
+     deux réponses le jour où l'une dérive. */
+  const ventesPages = nbPages(ventesTotal, PAGE_VENTES);
+  const ventesPage = pageDansBornes(pageVentes, ventesTotal, PAGE_VENTES);
+
   const panierMoyen =
     netComplet && totalSales > 0 ? Math.floor(netTotal / totalSales) : null;
 
@@ -514,8 +541,18 @@ export default async function DashboardPage() {
       </div>
 
       {/* Ventes récentes */}
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold">{t(lang, "dashboard.sales.recent")}</h2>
+      <section id="ventes" className="mt-10 scroll-mt-24">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-semibold">{t(lang, "dashboard.sales.recent")}</h2>
+          {/* Le compte RÉEL, pas la longueur de la page. Sans lui, « 8 » est
+              indiscernable de « 8 sur 30 » — et c'est le registre de son
+              argent que le vendeur regarde. */}
+          {ventesTotal > 0 && (
+            <span className="numeric text-xs text-mist">
+              {ventesTotal} {t(lang, "product.sales")}
+            </span>
+          )}
+        </div>
         {sales.length === 0 ? (
           <p className="mt-3 text-sm text-mist">{t(lang, "dashboard.sales.empty")}</p>
         ) : (
@@ -559,6 +596,35 @@ export default async function DashboardPage() {
               );
             })}
           </ul>
+        )}
+        {ventesPages > 1 && (
+          /* Liens GET, comme le catalogue et les files admin : le vendeur
+             consulte souvent depuis une connexion qui n'exécutera pas le
+             JavaScript. Et la page est ramenée dans les bornes — « page 99
+             sur 3 » dirait au vendeur qu'il s'est perdu sans lui dire où. */
+          <nav className="mt-4 flex items-center justify-center gap-3 text-sm">
+            {ventesPage > 1 ? (
+              <Link
+                href={`/tableau-de-bord?ventes=${ventesPage - 1}#ventes`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+              >
+                {t(lang, "catalog.prev")}
+              </Link>
+            ) : null}
+            <span className="numeric text-mist">
+              {t(lang, "catalog.pageOf")
+                .replace("{n}", String(ventesPage))
+                .replace("{total}", String(ventesPages))}
+            </span>
+            {ventesPage < ventesPages ? (
+              <Link
+                href={`/tableau-de-bord?ventes=${ventesPage + 1}#ventes`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+              >
+                {t(lang, "catalog.more")}
+              </Link>
+            ) : null}
+          </nav>
         )}
       </section>
 

@@ -23,6 +23,8 @@
  * changé d'échelle, seulement de nature.
  */
 
+import { bornes, pageValide, nbPages, pageDansBornes } from "@/lib/pagination";
+
 /** Lignes par page dans une file d'action. 25 se parcourt d'un écran. */
 export const PAGE_FILE = 25;
 
@@ -46,22 +48,21 @@ export type EtatFile = {
 /**
  * Bornes `range()` (inclusives des deux côtés) pour une page de file.
  *
- * ⚠️ `Math.max(1, NaN)` vaut **NaN**, pas 1 — la première version de cette
- * fonction laissait donc passer un `range(NaN, NaN)` sur une page absurde.
- * Attrapé par le test, pas à la relecture : la borne inférieure a l'air
- * gardée. Un `range` négatif ou NaN ne rend pas « rien », il rend une fenêtre
- * que personne n'a demandée — un écran plausible et faux.
+ * Délègue à `lib/pagination.ts` : la même arithmétique servait déjà au
+ * catalogue et sert maintenant aux ventes du vendeur. Trois copies, c'est se
+ * garantir qu'une correction de décalage n'atterrira que sur deux.
+ *
+ * ⚠️ La leçon reste écrite là-bas : `Math.max(1, NaN)` vaut NaN, pas 1 — la
+ * première version de cette fonction laissait passer un `range(NaN, NaN)`,
+ * attrapé par le test et pas par la relecture.
  */
 export function bornesFile(page: number): [number, number] {
-  const p = Number.isFinite(page) && page > 1 ? Math.floor(page) : 1;
-  const de = (p - 1) * PAGE_FILE;
-  return [de, de + PAGE_FILE - 1];
+  return bornes(page, PAGE_FILE);
 }
 
 /** Lit un `?zelle=2` d'URL sans jamais faire confiance à sa forme. */
 export function pageDepuisParam(brut: string | undefined): number {
-  const n = Number.parseInt(brut ?? "1", 10);
-  return Number.isFinite(n) && n > 0 ? n : 1;
+  return pageValide(brut);
 }
 
 /**
@@ -73,8 +74,7 @@ export function pageDepuisParam(brut: string | undefined): number {
  * la sonde qui regarde à côté — l'appelant est vérifié par test.
  */
 export function surveillerFile(nom: string, total: number, page: number): EtatFile {
-  // Même précaution que `bornesFile` : `Math.max(1, NaN)` vaut NaN.
-  const pages = Number.isFinite(total) && total > 0 ? Math.ceil(total / PAGE_FILE) : 1;
+  const pages = nbPages(total, PAGE_FILE);
   const alerte = total >= SEUIL_ALERTE;
 
   if (alerte) {
@@ -92,5 +92,9 @@ export function surveillerFile(nom: string, total: number, page: number): EtatFi
     );
   }
 
-  return { total, page: Math.min(Math.max(1, page), pages), pages, alerte };
+  /* ⚠️ `Math.min(Math.max(1, NaN), pages)` vaut NaN : le garde qui a été
+   * corrigé dans `bornesFile` survivait ICI, à trois lignes de son jumeau.
+   * Trouvé par le test qui croisait les deux modules, pas à la relecture —
+   * un même défaut recopié deux fois se corrige rarement deux fois. */
+  return { total, page: pageDansBornes(page, total, PAGE_FILE), pages, alerte };
 }
