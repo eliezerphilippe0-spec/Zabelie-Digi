@@ -7,12 +7,87 @@
 --   OR4. Collision FORCÉE persistante → erreur explicite après 5 essais.
 --   OR5. Collision forcée PUIS levée → le retry aboutit (pas d'échec prématuré).
 --   OR6. UPDATE du numéro → refusé (immuabilité).
+--   OR0. La panne du 2026-09-03 (0093 → 0094) : `search_path = public` SEUL
+--        doit faire échouer l'insert (pgcrypto vit dans `extensions`, pas dans
+--        `public`) ; `public, extensions` doit le laisser passer. Le cas
+--        connu-négatif garde AUSSI le harnais : s'il remet un jour pgcrypto
+--        dans `public`, l'insert réussit et OR0 rougit.
 --
 -- OR4/OR5 forcent la collision en REMPLAÇANT le générateur de candidats dans
 -- la transaction (annulée ensuite) — règle du dépôt : un garde se prouve sur
 -- un cas connu-négatif, pas en raisonnant.
 
 begin;
+
+-- ── OR0 — l'extension se résout par le search_path de la FONCTION ───────────
+-- Mesuré en production le 2026-09-03 : `0093` a épinglé `public` seul, et
+-- chaque `insert into orders` a levé 42883 dans le trigger — trois POST en
+-- 404 au premier achat réel. La CI était verte parce que pgcrypto y vivait
+-- dans `public`. Ce bloc ne peut être vert que si le harnais est fidèle.
+do $$
+declare v_avant text[];
+begin
+  select proconfig into v_avant
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'zabelie_order_ref_candidate';
+  if v_avant is null or not exists (
+    select 1 from unnest(v_avant) c where c = 'search_path=public, extensions'
+  ) then
+    raise exception 'OR0: zabelie_order_ref_candidate ne porte pas search_path = public, extensions (%)', v_avant;
+  end if;
+end $$;
+
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-00000000ff0a', 'oref0.seller@test.local'),
+  ('00000000-0000-0000-0000-00000000ff0b', 'oref0.buyer@test.local');
+delete from profiles where id in ('00000000-0000-0000-0000-00000000ff0a',
+                                  '00000000-0000-0000-0000-00000000ff0b');
+insert into profiles (id, display_name, role) values
+  ('00000000-0000-0000-0000-00000000ff0a', 'Vendeur OR0', 'creator'),
+  ('00000000-0000-0000-0000-00000000ff0b', 'Acheteur OR0', 'buyer');
+insert into products (id, seller_id, slug, title, price_htg, kind, status)
+values ('00000000-0000-0000-0000-00000000ff0c',
+        '00000000-0000-0000-0000-00000000ff0a',
+        'produit-oref0', 'Produit OR0', 1000, 'fichier', 'published');
+
+-- Connu-NÉGATIF : l'état de 0093, tel quel.
+alter function zabelie_order_ref_candidate(date) set search_path = public;
+do $$
+begin
+  begin
+    insert into orders (id, buyer_id, product_id, amount_htg, status)
+    values ('00000000-0000-0000-0000-00000000ff0d',
+            '00000000-0000-0000-0000-00000000ff0b',
+            '00000000-0000-0000-0000-00000000ff0c', 1000, 'pending');
+    raise exception 'OR0: l''insert a REUSSI avec search_path = public seul — '
+                    'pgcrypto est dans public ici (harnais infidele a la '
+                    'production) ou la fonction ne depend plus de l''extension';
+  exception
+    when undefined_function then
+      raise notice 'OK — OR0a search_path = public seul → gen_random_bytes introuvable (panne du 2026-09-03 reproduite)';
+  end;
+end $$;
+
+-- Connu-POSITIF : l'état de 0094.
+alter function zabelie_order_ref_candidate(date) set search_path = public, extensions;
+do $$
+declare v_ref text;
+begin
+  insert into orders (id, buyer_id, product_id, amount_htg, status)
+  values ('00000000-0000-0000-0000-00000000ff0e',
+          '00000000-0000-0000-0000-00000000ff0b',
+          '00000000-0000-0000-0000-00000000ff0c', 1000, 'pending');
+  select order_ref into v_ref from orders
+   where id = '00000000-0000-0000-0000-00000000ff0e';
+  if v_ref !~ '^ZB-[0-9]{6}-[2345679ACDEFGHJKMNPQRSTVWXYZ]{5}$' then
+    raise exception 'OR0: numero non conforme apres 0094 (%)', v_ref;
+  end if;
+  raise notice 'OK — OR0b search_path = public, extensions → commande créée (%)', v_ref;
+end $$;
+
+-- La commande d'OR0 s'efface : OR1 repart d'un jeu de profils qu'il refait
+-- lui-même, et une ligne d'`orders` retiendrait le profil par clé étrangère.
+delete from orders where id = '00000000-0000-0000-0000-00000000ff0e';
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000ff01', 'oref.seller@test.local'),
