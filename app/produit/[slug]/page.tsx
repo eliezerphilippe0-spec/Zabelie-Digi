@@ -30,6 +30,7 @@ import {
   isService,
   isDownloadable,
 } from "@/lib/product-kind";
+import { jsonLdProduit } from "@/lib/jsonld-produit";
 
 export const dynamic = "force-dynamic";
 
@@ -197,8 +198,21 @@ export default async function ProductPage({
     product.id
   );
 
+  /* JSON-LD Product + Offer (+ AggregateRating) — `docs/47` §2.1 #5.
+   * Les valeurs viennent des MÊMES sources que la page : prix flash s'il est
+   * actif, stock réel des variantes pour un physique. Aucun chiffre n'est
+   * dérivé une seconde fois pour le balisage. */
+  const jsonLd = jsonLdProduit(product, {
+    prixHtg: flash ? flash.prixFlashHtg : product.priceHTG,
+    disponible: physical ? physical.variants.some((v) => v.available > 0) : null,
+  });
+
   return (
     <div className="bg-grain min-h-dvh">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteNav />
 
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-2">
