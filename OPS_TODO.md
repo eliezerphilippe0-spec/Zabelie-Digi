@@ -1823,6 +1823,34 @@ React Router/ws/nanoid, ESLint 54 erreurs » — marketplace-hub, pas nous
       et prouve d'abord qu'il sait en voir une (S1, cas fabriqué). Trois
       mutations rouges avant de lui faire confiance.
 
+      ⚠️ **Et `0093` a coupé les commandes — 4 h 29 de panne totale, mesurée
+      le 2026-09-03.** `zabelie_order_ref_candidate` appelle `gen_random_bytes`
+      sans le qualifier ; sur Supabase pgcrypto vit dans `extensions`, et
+      `search_path = public` seul ne l'y trouve plus. Chaque `insert into
+      orders` levait 42883 dans le trigger. Le porteur l'a vu au premier achat
+      réel : trois `POST /rest/v1/orders → 404` à 17:40 UTC, « Création de la
+      commande impossible ». Corrigé par `0094` (`search_path = public,
+      extensions` sur cette seule fonction — la seule de `public` qui appelle
+      une fonction d'extension, mesuré par `prosrc`).
+
+      **Le fait qui compte n'est pas la régression, c'est que la CI était
+      verte.** `0001` crée pgcrypto sans schéma ; sur le Postgres nu du
+      harnais elle tombe dans `public`, donc `search_path = public` y résout
+      ce qu'il ne résout pas en production. `order_ref.test.sql` insérait bien
+      dans `orders` — et ne pouvait pas échouer. Mesuré sur un Postgres 16
+      local : harnais d'avant → 55 verts avec `pgcrypto@public` ; harnais
+      fidèle (`_bootstrap.sql` pose pgcrypto dans `extensions` + `search_path`
+      du rôle) sans `0094` → rouge dès `affiliation.test.sql` avec l'erreur
+      exacte de production ; avec `0094` → vert ; pgcrypto remis dans `public`
+      → `OR0` rouge. Ce dernier cas est le garde du harnais lui-même.
+
+      ⚠️ **Écart de convention au registre, non corrigé** : les lignes de
+      `0091` et `0092` portent dans `sha256` l'empreinte BRUTE du fichier
+      (inscrites par `0092` et `0093`), là où `0089`, `0090` et la ligne de
+      `0093` (par `0094`) portent l'empreinte CANONIQUE du script de `0041`.
+      Une passe de registre les réalignera ; `scripts/zabelie-migration-hash.
+      mjs --sql` sait produire les `update`.
+
 - [x] **`seller_is_active` est exécutable par `anon` en `security definer`** —
       même relevé. Peut être délibéré (elle sert l'affichage public d'une
       fiche vendeur), mais aucune trace ne le dit. À confirmer ou révoquer,

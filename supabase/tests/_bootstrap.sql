@@ -3,6 +3,37 @@
 -- migrations : schéma auth (users + uid()) et storage (buckets).
 -- En production Supabase, ces objets existent déjà — ce fichier n'y est PAS appliqué.
 
+-- ─────────────── Extensions : LÀ OÙ SUPABASE LES MET ────────────────────────
+-- SANS CECI, LE HARNAIS TESTE AUTRE CHOSE QUE LA PRODUCTION — deuxième fois
+-- que cette phrase s'écrit dans ce fichier, et pour la même raison.
+--
+-- Mesuré en production le 2026-09-03 (`pg_extension` joint à `pg_namespace`) :
+--   pgcrypto@extensions · uuid-ossp@extensions · pg_trgm@public
+-- et le `search_path` des rôles vaut `"$user", public, extensions`.
+--
+-- Sur un Postgres nu, `create extension if not exists "pgcrypto"` (`0001`)
+-- tombe dans `public`. Conséquence mesurée : `0093` a épinglé
+-- `search_path = public` sur `zabelie_order_ref_candidate`, dont le corps
+-- appelle `gen_random_bytes` sans le qualifier — en production, plus aucune
+-- commande ne pouvait naître (42883 dans le trigger `before insert` de
+-- `orders`) ; en CI, `order_ref.test.sql` insérait dans `orders` et restait
+-- VERT, parce qu'ici l'extension était dans `public`. Un instrument qui ne
+-- peut pas échouer n'a rien prouvé.
+--
+-- Les extensions sont donc posées AVANT les migrations, dans le schéma où la
+-- production les a, et le `search_path` de la base reproduit celui du rôle.
+-- `0001` et `0028` (`if not exists`) ne les déplacent pas. `pg_trgm` reste
+-- dans `public` : c'est là qu'elle est en production, et une fidélité
+-- sélective serait une infidélité de plus.
+create schema if not exists extensions;
+create extension if not exists pgcrypto    with schema extensions;
+create extension if not exists "uuid-ossp" with schema extensions;
+do $$
+begin
+  execute format('alter database %I set search_path = "$user", public, extensions',
+                 current_database());
+end $$;
+
 -- Rôles Supabase (référencés par les REVOKE des fonctions).
 do $$
 begin
@@ -10,6 +41,16 @@ begin
   if not exists (select from pg_roles where rolname = 'authenticated') then create role authenticated; end if;
   if not exists (select from pg_roles where rolname = 'service_role') then create role service_role; end if;
 end $$;
+
+-- Les rôles clients atteignent les extensions — mesuré en production le
+-- 2026-09-03 (`has_schema_privilege` / `has_function_privilege`) : `anon`,
+-- `authenticated` et `service_role` ont USAGE sur `extensions` et EXECUTE sur
+-- `extensions.gen_random_bytes(integer)`. Sans ces droits, un trigger
+-- non-`security definer` qui tourne sous `authenticated` (le `before insert`
+-- de `orders`) lèverait 42883 ici alors qu'il passe en production — et un
+-- test qui attend un refus RLS verrait un refus d'une autre nature.
+grant usage on schema extensions to anon, authenticated, service_role;
+grant execute on all functions in schema extensions to anon, authenticated, service_role;
 
 -- ─────────────── Droits par défaut : reproduire Supabase ────────────────────
 -- SANS CECI, LE HARNAIS TESTE AUTRE CHOSE QUE LA PRODUCTION.
