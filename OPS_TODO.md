@@ -1804,7 +1804,7 @@ React Router/ws/nanoid, ESLint 54 erreurs » — marketplace-hub, pas nous
       seul repère visible dans l'interface, et il désigne l'inverse de ce
       qu'on croit. À renommer, ou à archiver s'il ne sert plus.
 
-- [ ] **Quatre fonctions de `0042` ont un `search_path` mutable** —
+- [x] **Quatre fonctions de `0042` ont un `search_path` mutable** —
       `zabelie_order_ref_candidate`, `zabelie_assign_order_ref`,
       `zabelie_orders_ref_on_insert`, `zabelie_orders_ref_immutable`. Relevé
       par le linter Supabase (WARN), antérieur au 2026-08-09 et sans rapport
@@ -1812,13 +1812,47 @@ React Router/ws/nanoid, ESLint 54 erreurs » — marketplace-hub, pas nous
       tenue sur un lot. Correctif : une migration qui refait les quatre avec
       `set search_path = public`, rien d'autre.
 
-- [ ] **`seller_is_active` est exécutable par `anon` en `security definer`** —
+      **Résolu par `0093` (2026-09-03) — et le lot était de ONZE, pas quatre.**
+      Mesuré dans `pg_proc.proconfig` : sept autres gardes avaient le même
+      défaut, réparties sur `0055`, `0071`, `0073`, `0080`, `0081` ×2 et
+      `0090` — sept migrations successives, chacune relue. Un défaut qui
+      survit à sept revues ne se corrige pas en relisant mieux : il faut un
+      contrôle qui le voie à la migration suivante. Il est GÉNÉRAL, pas une
+      liste de onze noms : `supabase/tests/search_path_epingle.test.sql`
+      refuse toute fonction de `public` hors extension sans `search_path`,
+      et prouve d'abord qu'il sait en voir une (S1, cas fabriqué). Trois
+      mutations rouges avant de lui faire confiance.
+
+- [x] **`seller_is_active` est exécutable par `anon` en `security definer`** —
       même relevé. Peut être délibéré (elle sert l'affichage public d'une
       fiche vendeur), mais aucune trace ne le dit. À confirmer ou révoquer,
       comme `0049` et `0050` l'ont fait pour deux oublis du même genre.
-      `zabelie_biz_get_invoice_by_token` est dans le même cas et paraît, elle,
-      volontairement publique (facture consultable par jeton) — à écrire noir
-      sur blanc plutôt qu'à laisser deviner.
+
+      **Confirmé par `0093` (2026-09-03), et la raison n'est pas celle qu'on
+      croyait.** Elle ne sert pas « l'affichage d'une fiche » : elle est
+      appelée par la policy `products_public_read_published` (`0017:80`), et
+      une policy s'évalue sous le rôle du LECTEUR. Révoquer `anon` n'aurait
+      fermé aucune fuite — il aurait vidé le catalogue public pour tout
+      visiteur non connecté, en silence, puisque RLS filtre au lieu de lever.
+      La nécessité est écrite dans `comment on function` et ASSERTÉE par la
+      post-condition de `0093` et par S3 du test : une révocation future
+      échoue avec sa raison sous les yeux.
+
+- [ ] **`zabelie_biz_get_invoice_by_token` : le garde de débit est
+      contournable — arbitrage porteur.** Elle est volontairement publique
+      (`docs/13` §RPC, `docs/39` matrice : ✔ `anon`), et son seul appelant
+      dans le code est `app/facture/[token]/page.tsx:93`, qui la passe par le
+      client SERVICE derrière un `rateLimit(30/min par IP)`. Mesuré le
+      2026-09-03 : `has_function_privilege('anon', …) = true`. Un appel
+      direct à `/rest/v1/rpc/zabelie_biz_get_invoice_by_token` avec la clé
+      `anon` **ne passe par aucune limite de débit** — le garde de l'app ne
+      protège que l'app. Le jeton est opaque, la fenêtre est étroite, mais
+      elle existe et rien ne la mesure. Deux options, **à trancher, pas à
+      prendre** : (a) révoquer `anon` et `authenticated` — un `revoke` d'une
+      ligne, et `docs/13` + `docs/39` à mettre d'accord dans la même PR ;
+      (b) la garder publique et l'écrire comme telle avec sa raison. Le
+      cas est différent de `seller_is_active` : ici aucune policy ne
+      l'appelle, la révocation ne casserait rien de mesuré.
 
 - [ ] **Catégories sans `label_es`** — la garde de `0052` est un contrôle
       PONCTUEL : elle ne voit que les catégories existant à sa position dans
