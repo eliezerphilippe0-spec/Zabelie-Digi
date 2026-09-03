@@ -39,10 +39,15 @@ qu'un seul projet Zabelie. → `docs/18-SPEC-BUILD-V1.md` §4.1.
 Next.js (App Router, TS, Tailwind) + Supabase (Postgres/Auth/Storage/RLS) +
 Vercel (dont crons). **Aucun service externe non listé sans validation** —
 notamment **pas de fournisseur SMS**. Design : **Higgsfield** pour les visuels.
-Skill de goût frontend `design-taste-frontend` (taste-skill v2, MIT) installé
-dans `.claude/skills/` le 2026-09-02 — **son préambule Zabelie fait précédence
-sur son contenu** (périmètre, palette, tiret cadratin, dépendances), et
-`tests/skill-taste.test.ts` garde le préambule contre un remplacement en place.
+Deux skills de goût frontend (taste-skill, MIT) installés dans
+`.claude/skills/` le 2026-09-02 : `design-taste-frontend` (v2) et
+`redesign-existing-projects` — **leur préambule Zabelie fait précédence sur
+leur contenu** (périmètre, palette, tiret cadratin, dépendances, polices), et
+`tests/skill-taste.test.ts` garde chaque préambule contre un remplacement en
+place. ⚠️ **`npx skills add` remplace le fichier par un lien symbolique vers
+l'amont brut** — mesuré le 2026-09-02 ; la garde l'a vu, et refuse tout lien.
+Un troisième skill s'installe en le LISANT, en lui écrivant son préambule, et
+en l'ajoutant à la liste du test — jamais par la commande seule.
 
 ## Règle zéro — la primauté de l'instruction directe
 
