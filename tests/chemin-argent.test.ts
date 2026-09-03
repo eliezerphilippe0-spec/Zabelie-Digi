@@ -112,16 +112,62 @@ test("M3 — un encaissement réel rend « ok »", async () => {
  * marche » — une variable posée sur un seul environnement, un déploiement
  * partiel. Un chiffre vert y couvre une fuite.
  * ------------------------------------------------------------------------ */
-test("M4 — un encaissement réel n'efface pas un paiement parti en bac à sable", async () => {
+/* ⚠️ RÉÉCRIT le 2026-09-03, la veille de la première commande réelle.
+ *
+ * La première version disait « le bac à sable passe avant le succès » sans
+ * regarder QUAND. Mesuré : deux paiements sandbox du 21-22 août restent dans
+ * la fenêtre de 90 jours jusqu'au 20 novembre. Le porteur venait de poser
+ * MONCASH_MODE=production ; sa première gourde aurait laissé le verdict à
+ * `bac_a_sable` et l'alerte serait partie chaque nuit pendant onze semaines —
+ * une alarme qui sonne quand tout va bien est une alarme qu'on débranche.
+ *
+ * La règle qui distingue les deux cas est la RÉCENCE : les lignes sont
+ * triées du plus récent au plus ancien (created_at desc, comme la requête).
+ *   • un sandbox PLUS RÉCENT que le dernier paiement production = FUITE
+ *     (variable posée sur un seul environnement, déploiement partiel) ;
+ *   • un sandbox PLUS ANCIEN que le premier paiement production = HISTOIRE,
+ *     comptée, dite, jamais alertée. */
+test("M4 — une FUITE : un sandbox plus récent que la production alerte, même avec un encaissement", async () => {
   const s = await sondeCheminArgent(
     admin([
-      paiement({ status: "confirmed", mode: "production", montant: 300 }),
-      paiement({ status: "failed", mode: "sandbox", expire: true }),
+      paiement({ status: "failed", mode: "sandbox", expire: true, quand: "2026-09-10T10:00:00Z" }),
+      paiement({ status: "confirmed", mode: "production", montant: 300, quand: "2026-09-05T10:00:00Z" }),
     ]),
     "production"
   );
   assert.equal(s.encaissementsReels, 1, "l'encaissement est bien compté");
-  assert.equal(s.verdict, "bac_a_sable", "et il ne suffit pas à rendre le verdict vert");
+  assert.equal(s.verdict, "bac_a_sable", "un sandbox APRÈS la production est une fuite, pas de l'histoire");
+  assert.match(s.explication, /APRÈS/);
+});
+
+test("M4b — l'HISTOIRE : des sandbox plus anciens que la production ne font plus alerter", async () => {
+  const s = await sondeCheminArgent(
+    admin([
+      paiement({ status: "confirmed", mode: "production", montant: 300, quand: "2026-09-05T10:00:00Z" }),
+      paiement({ status: "failed", mode: "sandbox", expire: true, quand: "2026-08-22T20:03:07Z" }),
+      paiement({ status: "failed", mode: "sandbox", expire: true, quand: "2026-08-21T22:26:57Z" }),
+    ]),
+    "production"
+  );
+  assert.equal(s.verdict, "ok", "les sandbox d'avant la bascule sont de l'histoire");
+  assert.equal(s.modesObserves.sandbox, 2, "mais ils restent COMPTÉS");
+  assert.match(s.explication, /2 tentative\(s\) en bac à sable AVANT/, "et DITS dans l'explication");
+});
+
+test("M4c — la récence ne dépend pas de l'ordre reçu : mêmes lignes mélangées, même verdict", async () => {
+  // Les mêmes trois paiements que M4b, livrés dans le DÉSORDRE : si la sonde
+  // s'appuyait sur l'ordre implicite de la requête, un tri différent (ou une
+  // jointure qui réordonne) rendrait une fuite là où il n'y a que l'histoire.
+  const s = await sondeCheminArgent(
+    admin([
+      paiement({ status: "failed", mode: "sandbox", expire: true, quand: "2026-08-21T22:26:57Z" }),
+      paiement({ status: "confirmed", mode: "production", montant: 300, quand: "2026-09-05T10:00:00Z" }),
+      paiement({ status: "failed", mode: "sandbox", expire: true, quand: "2026-08-22T20:03:07Z" }),
+    ]),
+    "production"
+  );
+  assert.equal(s.verdict, "ok");
+  assert.equal(s.derniereTentative, "2026-09-05T10:00:00Z", "la dernière tentative est la plus récente, pas la première reçue");
 });
 
 test("M5 — annonce et constat qui divergent", async () => {

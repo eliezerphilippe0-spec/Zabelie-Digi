@@ -138,6 +138,10 @@ export async function sondeCheminArgent(
     return vide(`lecture impossible — ${e instanceof Error ? e.message : "erreur"}`);
   }
 
+  /* Du plus récent au plus ancien — la requête le demande déjà, mais la
+   * RÉCENCE est désormais ce qui décide du verdict (voir plus bas) : elle ne
+   * doit dépendre d'aucun ordre implicite. */
+  lignes.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
   const modeDe = (l: LignePaiement) => l.raw?.moncash_mode ?? null;
   const montantDe = (l: LignePaiement) => l.order?.amount_htg ?? 0;
 
@@ -164,24 +168,56 @@ export async function sondeCheminArgent(
     dernierEncaissementReel: reels[0]?.confirmed_at ?? null,
   };
 
-  /* ── L'ORDRE DES VERDICTS EST LA DÉCISION DE CE FICHIER ──────────────────
+  /* ── LA RÉCENCE DÉCIDE — réécrit le 2026-09-03, la veille de la première
+   *    commande réelle ───────────────────────────────────────────────────────
    *
-   * Le bac à sable passe AVANT le succès. Un encaissement réel n'annule pas
-   * le fait que des paiements partent en bac à sable : les deux peuvent
-   * coexister (variable posée sur un seul environnement, déploiement partiel),
-   * et c'est précisément le cas le plus dangereux — celui où un chiffre vert
-   * couvre une fuite. */
-  if (modesObserves.sandbox > 0) {
+   * La première version disait « le bac à sable passe avant le succès », sans
+   * regarder QUAND. Mesuré : deux paiements sandbox des 21-22 août restent
+   * dans la fenêtre de 90 jours jusqu'au 20 novembre. Le porteur venait de
+   * poser MONCASH_MODE=production ; sa première gourde aurait laissé le
+   * verdict à `bac_a_sable`, et l'alerte serait partie chaque nuit pendant
+   * onze semaines. Une alarme qui sonne quand tout va bien est une alarme
+   * qu'on débranche — et c'est LE jour où il ne faut pas la débrancher.
+   *
+   * Ce qui distingue les deux cas est l'ORDRE dans le temps :
+   *   • un sandbox PLUS RÉCENT que le dernier paiement production = FUITE.
+   *     Variable posée sur un seul environnement, déploiement partiel : le
+   *     rail encaisse ET laisse partir des acheteurs en bac à sable. C'est le
+   *     cas le plus dangereux, celui où un chiffre vert couvre une fuite. Il
+   *     alerte, quel que soit le nombre d'encaissements.
+   *   • un sandbox PLUS ANCIEN que le premier paiement production = HISTOIRE.
+   *     Compté, dit dans l'explication, jamais alerté.
+   *   • aucun paiement production du tout et des sandbox = le cas d'origine.
+   *
+   * `lignes` est trié du plus récent au plus ancien (ci-dessus) : l'index
+   * du premier `production` sépare l'avant de l'après. */
+  const iProduction = lignes.findIndex((l) => modeDe(l) === "production");
+  const sandboxApres = lignes.filter(
+    (l, i) => modeDe(l) === "sandbox" && (iProduction < 0 || i < iProduction)
+  ).length;
+  const sandboxAvant = modesObserves.sandbox - sandboxApres;
+
+  if (sandboxApres > 0) {
     return {
       ...s,
       verdict: "bac_a_sable",
       explication:
-        `${modesObserves.sandbox} paiement(s) sont partis vers le BAC À SABLE MonCash : ` +
-        `aucun argent réel ne pouvait bouger. Poser MONCASH_MODE=production et les ` +
-        `identifiants du compte marchand, puis REDÉPLOYER — une variable posée ne ` +
-        `s'applique qu'au déploiement suivant.`,
+        iProduction >= 0
+          ? `${sandboxApres} paiement(s) sont partis vers le BAC À SABLE MonCash APRÈS ` +
+            `un paiement en production : le rail fuit — variable posée sur un seul ` +
+            `environnement, ou déploiement partiel. Vérifier MONCASH_MODE sur CHAQUE ` +
+            `environnement Vercel, puis redéployer.`
+          : `${sandboxApres} paiement(s) sont partis vers le BAC À SABLE MonCash : ` +
+            `aucun argent réel ne pouvait bouger. Poser MONCASH_MODE=production et les ` +
+            `identifiants du compte marchand, puis REDÉPLOYER — une variable posée ne ` +
+            `s'applique qu'au déploiement suivant.`,
     };
   }
+  const histoire =
+    sandboxAvant > 0
+      ? ` ${sandboxAvant} tentative(s) en bac à sable AVANT la bascule restent dans la ` +
+        `fenêtre : comptées, pas alertées.`
+      : "";
   if (
     modeConfigure &&
     modesObserves.production > 0 &&
@@ -219,7 +255,8 @@ export async function sondeCheminArgent(
     ...s,
     verdict: "ok",
     explication:
-      `${s.encaissementsReels} encaissement(s) réel(s). Le chemin d'argent a fonctionné.`,
+      `${s.encaissementsReels} encaissement(s) réel(s). Le chemin d'argent a fonctionné.` +
+      histoire,
   };
 }
 
