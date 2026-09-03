@@ -20,9 +20,46 @@ import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Catalogue — Zabelie",
-};
+/**
+ * MÉTADONNÉES PAR VUE — audit SEO 2026-08-28 (`docs/47` §2.1, #6).
+ *
+ * Un `export const metadata` statique donnait le MÊME titre, la même
+ * description et AUCUNE canonique à toutes les combinaisons de sept
+ * paramètres (`q cat sous page zd zk zq`) : chaque URL filtrée se
+ * canonicalisait sur elle-même, et le moteur voyait des centaines de pages
+ * identiques. C'est le plus gros risque de contenu dupliqué du site.
+ *
+ * Règle, et elle est la convention des places de marché :
+ *   • un RAYON (`cat`, `sous`) est une page d'atterrissage : titre propre,
+ *     canonique sur le rayon seul (sans tri, sans zone, sans page) ;
+ *   • une RECHERCHE (`q`) ou une ZONE (`zd zk zq`) est une vue de travail :
+ *     `noindex, follow` — le moteur suit les fiches, n'indexe pas la vue ;
+ *   • la PAGINATION garde l'index (les fiches y sont) mais se canonicalise
+ *     sur la page 1 du même rayon.
+ *
+ * La langue vient du cookie, donc le titre est celui du visiteur — et pour
+ * un crawler, le français (V-18). C'est cohérent avec ce que la page rend.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; cat?: string; sous?: string; page?: string; zd?: string; zk?: string; zq?: string }>;
+}) {
+  const [{ q, cat, sous, zd, zk, zq }, lang] = await Promise.all([searchParams, getLang()]);
+  const rayon = cat && cat !== "Tout" ? cat : null;
+  const titre = rayon
+    ? `${rayon} — ${t(lang, "catalog.title")} — Zabelie`
+    : `${t(lang, "catalog.title")} — Zabelie`;
+  const vueDeTravail = Boolean((q && q.trim()) || zd || zk || zq);
+  const canonique = rayon
+    ? `/catalogue?cat=${encodeURIComponent(rayon)}${sous ? `&sous=${encodeURIComponent(sous)}` : ""}`
+    : "/catalogue";
+  return {
+    title: titre,
+    alternates: { canonical: canonique },
+    robots: vueDeTravail ? { index: false, follow: true } : undefined,
+  };
+}
 
 // Les puces viennent des produits RÉELLEMENT publiés, plus d'une liste en dur :
 // celle-ci ne connaissait que les six libellés digitaux, donc aucune ne pouvait
