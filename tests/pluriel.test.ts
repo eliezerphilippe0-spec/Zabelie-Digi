@@ -107,7 +107,9 @@ test("P4 — la carte choisit la forme, elle ne colle plus un mot fixe", () => {
   const accueil = readFileSync("app/page.tsx", "utf8");
   assert.match(
     accueil,
-    /\{s\.sales\}\s*\{tn\(lang,\s*s\.sales,/,
+    // Depuis l'accueil premium (Phase 3), le compte affiché est celui des
+    // ventes PAYÉES — et c'est le même qui décide de la forme.
+    /\{s\.ventesPayees\}\s*\{tn\(lang,\s*s\.ventesPayees,/,
     "la carte vendeur n'accorde plus « ventes » au nombre de ventes du vendeur"
   );
 });

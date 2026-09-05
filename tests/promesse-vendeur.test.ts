@@ -158,7 +158,9 @@ test("le détecteur voit la promesse retirée, et ne voit pas ce qui n'en est pa
 
 test("l'extracteur a lu le dictionnaire, et pas le vide", () => {
   assert.ok(segs.size >= 250, `clés lues : ${segs.size}`);
-  assert.ok(segs.get("home.h1")?.includes("Louvri"), "segment `home.h1` incomplet");
+  // `home.h1` a disparu avec le carrousel (accueil premium, Phase 3) ; l'ancre
+  // kreyòl est le h1 de la bannière.
+  assert.ok(segs.get("hero.s1.t")?.includes("Achte"), "segment `hero.s1.t` incomplet");
 });
 
 // ───────────────────────── Le contrôle ───────────────────────────────────────

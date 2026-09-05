@@ -1,29 +1,21 @@
 import Link from "next/link";
 import Image from "next/image";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { CategorySidebar } from "@/components/category-sidebar";
-import { DepartmentIcon } from "@/components/department-icons";
-import { HeroCarousel } from "@/components/hero-carousel";
-import { MetricA } from "@/components/metric-a";
-import { LANDING_SLIDES, secondGeste } from "@/lib/landing-slides";
-import { getMenuRayons } from "@/lib/taxonomy";
+import { TrustBar } from "@/components/trust-bar";
+import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { whatsappHref } from "@/lib/whatsapp";
-import {
-  getPublishedProducts,
-  isSupabaseConfigured,
-  type ProductView,
-} from "@/lib/products";
+import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t, tn } from "@/lib/i18n";
 import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
-import { FaqList } from "@/components/faq-list";
-import { TrustBar } from "@/components/trust-bar";
 import { siteUrl } from "@/lib/site-url";
+import { classesRangee, rangeeVisible, vendeursAffichables } from "@/lib/home-sections";
 
 export const dynamic = "force-dynamic";
 
@@ -35,84 +27,47 @@ export const metadata = {
 };
 
 /**
- * Icône du rail — un `<path>` dans un gabarit commun. Trois `<svg>` recopiés
- * divergeraient sur la taille au premier ajustement, et c'est une colonne où
- * l'alignement se voit.
+ * PHOTO DE LA BANNIÈRE — fournie par le porteur, jamais générée (brief §8.8).
+ * Tant qu'aucun fichier n'est posé à ce chemin, la bannière est un aplat de
+ * chrome : un état vide honnête, pas un décor. Spécification à fournir :
+ * JPEG/WebP 1600 × 900, ≤ 120 Ko, sujet dans le tiers médian, sans texte
+ * incrusté (`docs/home-premium/PLAN.md` §7). Vérifié au rendu, pas au build :
+ * la photo peut arriver sans redéploiement de code.
  */
-function RailIcone({ d, cercle }: { d: string; cercle?: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="mt-0.5 h-5 w-5 shrink-0 fill-none stroke-accent"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {cercle && <circle cx="12" cy="12" r="9" />}
-      <path d={d} />
-    </svg>
-  );
+const HERO_IMAGE = "/brand/hero-accueil.jpg";
+function heroImageDisponible(): boolean {
+  return existsSync(join(process.cwd(), "public", HERO_IMAGE));
 }
 
-/** Rangée de produits — masquée si vide (les sections vivent avec les données). */
+/**
+ * Rangée de produits — RÈGLE DES SEUILS (lib/home-sections, brief §4.3).
+ * Sous SEUIL_RANGEE items, la section n'existe pas ; entre 4 et 5, elle est
+ * masquée au-delà de `lg` ; jamais un titre au-dessus du néant.
+ * Grille : 2 colonnes mobile, 4 tablette, 6 desktop, gouttière 12 px (§4.4).
+ */
 function HomeRow({
   id,
   title,
-  sub,
   more,
   items,
   cardLabels,
-  empty,
 }: {
   id?: string;
   title: string;
-  sub: string;
   more: string;
   items: ProductView[];
   cardLabels: ProductCardLabels;
-  /**
-   * État vide EXPLICITE — décision porteur 2026-08-10, amendement à V-13.
-   * La règle reste « aucune étagère déserte » : une section vide ne montre
-   * jamais un titre au-dessus du néant. Mais une section qui porte cette prop
-   * affiche une INVITATION À VENDRE — un contenu honnête, pas une absence.
-   * Sans la prop, le comportement historique demeure : la section s'efface.
-   */
-  empty?: { body: string; cta: string; href: string };
 }) {
-  if (items.length === 0 && !empty) return null;
-  if (items.length === 0 && empty) {
-    return (
-      <section id={id} className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
-        <p className="mt-2 text-sm text-mist">{sub}</p>
-        <div className="mt-6 rounded-2xl border border-dashed border-line bg-surface/40 p-8 text-center">
-          <p className="text-sm text-mist">{empty.body}</p>
-          <Link
-            href={empty.href}
-            className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand transition hover:opacity-90"
-          >
-            {empty.cta}
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  if (!rangeeVisible(items.length)) return null;
   return (
-    <section id={id} className="mx-auto max-w-6xl px-5 py-12">
-      <div className="flex items-end justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
-          <p className="mt-2 text-sm text-mist">{sub}</p>
-        </div>
-        <Link
-          href="/catalogue"
-          className="hidden text-sm text-mist transition hover:text-cloud sm:block"
-        >
+    <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length)}`}>
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>
+        <Link href="/catalogue" className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
           {more}
         </Link>
       </div>
-      <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         {items.map((p) => (
           <ProductCard key={p.slug} product={p} labels={cardLabels} />
         ))}
@@ -121,7 +76,7 @@ function HomeRow({
   );
 }
 
-/** Vendeurs avec au moins un code promo actif (section 8) — vide en mode démo. */
+/** Vendeurs avec au moins un code promo actif — vide en mode démo. */
 async function promoSellerIds(): Promise<Set<string>> {
   if (!isSupabaseConfigured()) return new Set();
   try {
@@ -138,25 +93,35 @@ async function promoSellerIds(): Promise<Set<string>> {
   }
 }
 
+/**
+ * Produits ayant AU MOINS UNE commande PAYÉE — la seule vente qui compte pour
+ * « Meilleurs vendeurs » (brief §4.3). `sales_count` est un compteur
+ * applicatif ; une commande `paid` est un paiement confirmé serveur à serveur.
+ * Lecture seule, bornée, silencieuse en cas d'erreur (la section s'efface).
+ */
+async function produitsAvecVentePayee(): Promise<Map<string, number>> {
+  const compte = new Map<string, number>();
+  if (!isSupabaseConfigured()) return compte;
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin.from("orders").select("product_id").eq("status", "paid").limit(5000);
+    for (const o of data ?? []) compte.set(o.product_id, (compte.get(o.product_id) ?? 0) + 1);
+  } catch {
+    /* section masquée */
+  }
+  return compte;
+}
+
 export default async function HomePage() {
-  const [products, lang, promoSellers] = await Promise.all([
-    // Correctif audit : getPublishedProducts lève désormais en cas d'erreur
-    // Supabase (BL-116, pour empêcher un repli silencieux sur le catalogue
-    // vers des produits de démo inachetables) — mais l'accueil n'a pas cette
-    // page d'erreur, il n'y a AUCUN app/error.tsx dans le projet. Un incident
-    // transitoire faisait planter tout l'accueil. Ici, une liste vide est
-    // sans risque : toutes les sections se masquent déjà si vides.
+  const [products, lang, promoSellers, ventesPayees] = await Promise.all([
+    // getPublishedProducts lève en cas d'erreur Supabase (BL-116) ; l'accueil
+    // n'a pas de page d'erreur, et une liste vide y est sans risque : toutes
+    // les rangées s'effacent sous le seuil.
     getPublishedProducts().catch(() => []),
     getLang(),
     promoSellerIds(),
-    // `getCatalogueCategories()` a quitté cette page avec le bandeau qu'elle
-    // alimentait : les rayons non vides viennent de `getMenuRayons` dans
-    // l'en-tête (Phase 2), une seule source pour toutes les pages.
+    produitsAvecVentePayee(),
   ]);
-  // Les mêmes rayons que l'en-tête (RLS anon : actifs seulement) — la sidebar
-  // desktop et la grille de l'état vide en dérivent tous deux. Après le
-  // Promise.all : la requête dépend de `lang`.
-  const rayons = await getMenuRayons(lang);
 
   const cardLabels: ProductCardLabels = {
     kindFile: t(lang, "card.kind.file"),
@@ -168,80 +133,51 @@ export default async function HomePage() {
     lang,
   };
 
-  // Dérivations : une seule requête catalogue alimente toutes les sections.
+  // Une seule requête catalogue alimente toutes les rangées.
   const bySales = [...products].sort((a, b) => b.sales - a.sales);
-  const featured = bySales[0] ?? null; // « Pwodui semèn nan »
-  const trending = bySales.slice(0, 6);
-  const newest = products.slice(0, 3); // requête déjà triée par date desc
-  const services = bySales.filter((p) => isService(p.kind, p.id)).slice(0, 3);
-  const fichiers = bySales.filter((p) => isDownloadable(p.kind)).slice(0, 3);
-  const free = products.filter((p) => p.priceHTG === 0).slice(0, 3);
-  const promo = bySales
-    .filter((p) => p.creatorId && promoSellers.has(p.creatorId))
-    .slice(0, 3);
+  const principaux = bySales.slice(0, 12); // « Pwodui yo »
+  const newest = products.slice(0, 6); // requête déjà triée par date desc
+  const services = bySales.filter((p) => isService(p.kind, p.id)).slice(0, 6);
+  const fichiers = bySales.filter((p) => isDownloadable(p.kind)).slice(0, 6);
+  const free = products.filter((p) => p.priceHTG === 0).slice(0, 6);
+  const promo = bySales.filter((p) => p.creatorId && promoSellers.has(p.creatorId)).slice(0, 6);
 
-  /* ── UN PRODUIT NE REMPLIT PAS DEUX RAILS ─────────────────────────────────
-   *
-   * Audit UX du 2026-09-02 (#10). Avec deux produits publiés, l'accueil
-   * montrait LES MÊMES deux cartes dans « Tendances », « Nouveautés » et
-   * « Services » — quatre fois le même produit, et la page se lisait comme
-   * une boutique vide qui insiste. Amazon et Jumia ne répètent jamais un
-   * article d'un rail à l'autre sur la même vue.
-   *
-   * Règle : un rail n'est rendu que s'il apporte au moins UN produit qu'aucun
-   * rail plus haut n'a montré. Un rail VIDE est laissé à HomeRow, qui décide
-   * seul (s'effacer, ou inviter à vendre — V-13). Le produit de la semaine
-   * compte comme déjà vu : il ouvre la page. */
-  const vus = new Set<string>(featured ? [featured.slug] : []);
-  const inedit = (items: typeof products): boolean => {
-    if (items.length === 0) return true;
+  /* UN PRODUIT NE REMPLIT PAS DEUX RANGÉES (audit UX 2026-09-02, #10) : une
+   * rangée n'est rendue que si elle apporte au moins UN produit qu'aucune
+   * rangée plus haut n'a montré. La grille principale ouvre la page. */
+  const vus = new Set<string>();
+  const inedit = (items: ProductView[]): boolean => {
     if (!items.some((p) => !vus.has(p.slug))) return false;
     for (const p of items) vus.add(p.slug);
     return true;
   };
 
-  const categories = [...products.reduce((m, p) => {
-    if (p.category) m.set(p.category, (m.get(p.category) ?? 0) + 1);
-    return m;
-  }, new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 8);
-
-  const sellerMap = new Map<string, { name: string; id: string | null; sales: number; rSum: number; rN: number }>();
+  const sellerMap = new Map<
+    string,
+    { name: string; id: string | null; ventesPayees: number; rSum: number; rN: number }
+  >();
   for (const p of products) {
-    const s = sellerMap.get(p.creator) ?? { name: p.creator, id: p.creatorId, sales: 0, rSum: 0, rN: 0 };
-    s.sales += p.sales;
-    if (p.ratingAvg !== null) { s.rSum += p.ratingAvg * p.ratingCount; s.rN += p.ratingCount; }
+    const s = sellerMap.get(p.creator) ?? { name: p.creator, id: p.creatorId, ventesPayees: 0, rSum: 0, rN: 0 };
+    s.ventesPayees += ventesPayees.get(p.id) ?? 0;
+    if (p.ratingAvg !== null) {
+      s.rSum += p.ratingAvg * p.ratingCount;
+      s.rN += p.ratingCount;
+    }
     sellerMap.set(p.creator, s);
   }
-  const sellers = [...sellerMap.values()]
-    .sort((a, b) => b.sales - a.sales)
+  const sellers = vendeursAffichables([...sellerMap.values()])
+    .sort((a, b) => b.ventesPayees - a.ventesPayees)
     .slice(0, 4)
     .map((s) => ({ ...s, rating: s.rN > 0 ? Math.round((s.rSum / s.rN) * 10) / 10 : null }));
 
-  // Deux parcours en trois pas — l'acheteur d'abord (c'est sa page), le
-  // vendeur ensuite. Mêmes cartes, deux sous-titres.
-  const stepsAcheteur = [
-    { n: "01", title: t(lang, "home.b1.t"), body: t(lang, "home.b1.b") },
-    { n: "02", title: t(lang, "home.b2.t"), body: t(lang, "home.b2.b") },
-    { n: "03", title: t(lang, "home.b3.t"), body: t(lang, "home.b3.b") },
-  ];
-  const stepsVendeur = [
-    { n: "01", title: t(lang, "home.s1.t"), body: t(lang, "home.s1.b") },
-    { n: "02", title: t(lang, "home.s2.t"), body: t(lang, "home.s2.b") },
-    { n: "03", title: t(lang, "home.s3.t"), body: t(lang, "home.s3.b") },
-  ];
+  const wa = whatsappHref(t(lang, "wa.prefill"));
+  const heroImage = heroImageDisponible();
 
   // JSON-LD : Organization + WebSite avec SearchAction (sitelinks searchbox).
-  // La cible de recherche est le VRAI point d'entrée (/catalogue?q=), pas un
-  // endpoint inventé pour le balisage.
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "Organization",
-        name: "Zabelie",
-        url: siteUrl(),
-        logo: `${siteUrl()}/icon.svg`,
-      },
+      { "@type": "Organization", name: "Zabelie", url: siteUrl(), logo: `${siteUrl()}/icon.svg` },
       {
         "@type": "WebSite",
         name: "Zabelie",
@@ -257,623 +193,164 @@ export default async function HomePage() {
 
   return (
     <div className="bg-grain">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteNav />
 
-      {/* Le BANDEAU CATÉGORIES qui vivait ici (barre claire dérivée du
-          catalogue, V-13) est monté dans l'en-tête : `CategoryChips` porte
-          les mêmes rayons non vides, sous la recherche, sur toutes les pages
-          (accueil premium, Phase 2 — brief §4.1). Une seule source, une seule
-          rangée. */}
-
-      {/* HERO v2 — l'accueil appartient à l'ACHETEUR.
-          Le principe écrit ici depuis la v1 (« chaque pixel au-dessus de la
-          ligne de flottaison qui n'est ni un produit ni une recherche est
-          perdu ») devient appliqué : recherche (en-tête), rayons (sidebar /
-          menu), une proposition de valeur d'UNE ligne. Le parcours vendeur ne
-          disparaît pas — topbar, slide 3, rail, section finale — il cesse de
-          dominer. Tri-produit assumé : physique + digital + services. */}
-      <div className="mx-auto max-w-6xl px-5 pb-10 pt-6 lg:grid lg:grid-cols-[240px_1fr_210px] lg:items-start lg:gap-5">
-        {/* Colonne rayons — desktop seulement ; mobile passe par le tiroir. */}
-        <aside className="hidden lg:block">
-          <CategorySidebar
-            rayons={rayons}
-            labels={{
-              title: t(lang, "search.sugg"),
-              empty: t(lang, "menu.empty"),
-              all: t(lang, "menu.all"),
-            }}
-          />
-        </aside>
-
-        <div className="min-w-0">
-          <h1 className="text-center text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
-            {t(lang, "home.h1b")}
-          </h1>
-
-          <div className="mt-5">
-            <HeroCarousel
-              gotoLabel={t(lang, "hero.goto")}
-              slides={LANDING_SLIDES.map((sl) => ({
-                title: t(lang, sl.titleKey),
-                cta: t(lang, sl.ctaKey),
-                href: sl.href,
-                accent: sl.accent,
-                badge: sl.badgeKey ? t(lang, sl.badgeKey) : undefined,
-                // Le second geste n'existe que si le numéro est posé — la
-                // décision vit dans `secondGeste`, pas ici : en ligne dans un
-                // composant serveur, elle était hors de portée d'un test.
-                secondHref: secondGeste(sl, t(lang, "wa.prefill"), t(lang, "wa.chat"))?.href,
-                secondCta: secondGeste(sl, t(lang, "wa.prefill"), t(lang, "wa.chat"))?.cta,
-              }))}
-            />
-          </div>
-
-          {/* La ligne `badge.pay` qui vivait ici est SUPPRIMÉE (revue
-              2026-08-10, UI-02) : elle répétait mot pour mot `trust.1.t`, à
-              200 px du bandeau de confiance — troisième doublon d'affilée sur
-              cet écran. Le bandeau, remonté juste sous le hero, porte la même
-              phrase avec sa preuve. Verrouillé par le test de valeurs i18n
-              dupliquées (tests/accueil-maquette.test.ts). */}
-        </div>
-
-        {/* Rail — SANS DOUBLON (demande porteur 2026-08-10). Les rangées
-            « Aide » et « Vendez sur Zabelie » sont retirées : « Aide » vit déjà
-            dans l'en-tête, « Vendez sur Zabelie » en ligne 2 ET dans la carte
-            boutique juste dessous — trois fois la même destination dans le
-            premier écran, c'est une hésitation, pas une insistance. Ne reste
-            que ce que le rail est seul à porter : le contact WhatsApp (masqué
-            sans numéro — un bouton vers personne est pire que rien) et la
-            carte boutique. */}
-        <aside className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
-          {whatsappHref(t(lang, "wa.prefill")) && (
-            <div className="rounded-2xl border border-line bg-surface/40">
-            <MetricA
-              event="whatsapp_clicked"
-              href={whatsappHref(t(lang, "wa.prefill"))!}
-              className="flex items-start gap-3 p-4 transition hover:bg-black/20"
-            >
-              <RailIcone d="M4 5h16v11H9l-5 4V5z" />
-              <span className="min-w-0">
-              <span className="block font-semibold text-cloud">{t(lang, "wa.chat")}</span>
-              <span className="mt-0.5 block text-xs text-mist">{t(lang, "rail.wa.b")}</span>
-              {/* Le numéro en clair a été RETIRÉ (décision porteur
-                  2026-08-14) : le bouton ouvre la conversation, il ne
-                  publie plus le numéro. Voir lib/whatsapp.ts. */}
-              </span>
-            </MetricA>
-            </div>
-          )}
-
-          {/* Carte « ouvrez votre boutique » — l'accent de la maquette, avec le
-              numéro en pastille. Elle se masque entièrement si le numéro n'est
-              pas posé : une pastille de contact vide vaut moins que rien. */}
-          <div className="rounded-2xl border border-accent/40 bg-gradient-to-br from-surface-maroon to-surface p-4 text-center">
-            <p className="text-base font-bold leading-snug text-cloud">
-              {t(lang, "rail.shop.t")}
-            </p>
-            <p className="mt-2 inline-block rounded-lg bg-brand px-3 py-1 text-sm font-extrabold text-on-brand">
-              {t(lang, "rail.shop.free")}
-            </p>
-            {/* Le bouton WhatsApp de cette carte a été RETIRÉ (porteur,
-                2026-08-14) : depuis que le numéro est caché, il disait mot
-                pour mot la même chose que la carte contact juste au-dessus —
-                deux « Écrivez-nous sur WhatsApp » empilés. Le contact vit
-                dans SA carte ; celle-ci vend. */}
-            <Link
-              href="/vendre"
-              /* RES-01 — mesuré à 16 px de haut : `block` sur du `text-xs`
-                 (12 px) ne donne que la hauteur de ligne. C'était le plus
-                 PETIT élément cliquable de la page, et celui qui recrute
-                 les vendeurs. */
-              className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-accent transition hover:text-accent-strong"
-            >
-              {t(lang, "home.cta.sell")}
-            </Link>
-          </div>
-        </aside>
-      </div>
-
-      {/* BANDEAU DE CONFIANCE (maquette porteur 2026-08-09).
-          Cinq promesses TENUES — la maquette en proposait cinq autres, dont
-          « livraison rapide » et « vendeurs vérifiés », qui n'existent pas.
-          Le raisonnement complet est en tête de components/trust-bar.tsx.
-          REMONTÉ sous le hero (revue croisée 2026-08-10) : les deux audits
-          convergent — la réassurance pèse le plus AVANT que le visiteur ne
-          descende, pas après la grille des rayons. */}
-      <TrustBar
-        items={[
-          { t: t(lang, "trust.1.t"), b: t(lang, "trust.1.b"), icone: "bouclier" },
-          { t: t(lang, "trust.2.t"), b: t(lang, "trust.2.b"), icone: "coffre" },
-          { t: t(lang, "trust.3.t"), b: t(lang, "trust.3.b"), icone: "gourde" },
-          { t: t(lang, "trust.4.t"), b: t(lang, "trust.4.b"), icone: "mobile" },
-          { t: t(lang, "trust.5.t"), b: t(lang, "trust.5.b"), icone: "message" },
-        ]}
-      />
-
-      {/* ÉTAT B — catalogue vide : la page reste une marketplace NAVIGABLE.
-          La grille des rayons ouverts remplace les rangées de produits, et le
-          capteur de demande passe en première classe — chaque recherche vide
-          devient un signal de recrutement (lot S). Les cartes SONT cliquables,
-          y compris vides : arbitrage porteur de la landing v2, distinct de la
-          règle du menu (2026-08-02) — parce qu'ici la destination est honnête,
-          l'écran « rayon en ouverture » du catalogue, pas une impasse muette. */}
-      {rayons.length > 0 && (
-        <section id="kategori" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-8">
-          {/* Titre + « tout voir » sur la même ligne (maquette). La grille est
-              bornée à HUIT tuiles : au-delà elle cesse d'être un raccourci et
-              redevient un annuaire — la colonne de gauche et le menu portent
-              déjà la liste complète des rayons ouverts. */}
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              {t(lang, "sec.cats")}
-            </h2>
-            <Link
-              href="/catalogue"
-              className="shrink-0 text-sm font-semibold text-accent transition hover:text-accent-strong"
-            >
-              {t(lang, "home.all")}
-            </Link>
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {rayons.slice(0, 8).map((r) => (
-              <Link
-                key={r.slug}
-                href={r.href}
-                className="rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
-              >
-                <DepartmentIcon slug={r.slug} className="h-6 w-6 stroke-accent" />
-                <p className="mt-3 font-semibold text-cloud">
-                  {r.label}
-                  {/* Même marque que la colonne de gauche (revue 2026-08-10,
-                      UI-06) : deux surfaces montraient les mêmes rayons et une
-                      seule disait qu'ils sont vides — le clic sur la tuile
-                      arrivait sur un rayon en ouverture sans prévenir. */}
-                  {r.vide && (
-                    <span className="ml-2 text-xs font-normal text-mist">
-                      {t(lang, "menu.empty")}
-                    </span>
-                  )}
-                </p>
-                {/* Ligne TOUJOURS rendue (UI-09) : quatre tuiles avec
-                    sous-catégories et quatre sans donnaient des hauteurs
-                    inégales — l'espace est réservé, vide ou non. Le repli est
-                    un U+00A0 (insécable), PAS une espace ordinaire : seule
-                    dans un bloc, l'ordinaire est du blanc « collapsable » et
-                    la ligne disparaîtrait. */}
-                <p className="mt-1 truncate text-xs text-mist">
-                  {r.enfants.length > 0
-                    ? r.enfants.slice(0, 3).map((e) => e.label).join(" · ")
-                    : " "}
-                </p>
-              </Link>
-            ))}
-          </div>
-
-          {/* Capteur de demande — le formulaire mène au catalogue, dont
-              l'écran zéro-résultat journalise le manque (fingerprint salé,
-              zéro PII — lib/search-demand).
-
-              Il reste conditionné au catalogue VIDE, alors que la grille des
-              rayons est devenue permanente (maquette porteur 2026-08-09) :
-              demander « qu'est-ce qui vous manque ? » sous des rangées de
-              produits bien remplies serait une question déplacée. */}
-          {products.length === 0 && (
-          <div className="mt-8 rounded-2xl border border-line bg-surface/40 p-6 text-center">
-            <p className="text-base font-semibold text-cloud">
-              {t(lang, "home.demand.t")}
-            </p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-mist">
-              {t(lang, "home.demand.b")}
-            </p>
-            <form action="/catalogue" className="mx-auto mt-4 flex max-w-md gap-2">
-              <input
-                name="q"
-                placeholder={t(lang, "catalog.search.ph")}
-                className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-accent"
-              />
-              {/* Libellé PROPRE (revue 2026-08-10, UX-06) : le capteur
-                  affichait le même bouton que la recherche de l'en-tête,
-                  toujours visible juste au-dessus (sticky) — rien ne disait
-                  que ce geste-ci est une réponse à « qu'est-ce qui vous
-                  manque ? », pas une recherche de plus. */}
-              <button
-                type="submit"
-                className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
-              >
-                {t(lang, "home.demand.btn")}
-              </button>
-            </form>
-          </div>
-          )}
-        </section>
-      )}
-
-      {/* 1 bis. BANDEAU PAIEMENT (maquette : « PEYE FASIL AK ») */}
-      <section className="mx-auto max-w-6xl px-5 pb-4">
-        {/* Le libellé « Payez avec » n'est plus une petite capitale espacée :
-            audit UX 2026-09-02 (#5), six eyebrows pour douze sections là où
-            le plafond mécanique est quatre. Même texte, même place, rendu
-            comme du texte. */}
-        <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-line bg-surface/40 px-6 py-4">
-          <span className="text-sm text-mist">{t(lang, "home.pay")}</span>
-          <span className="rounded-full bg-brand px-4 py-1.5 text-sm font-bold text-on-brand">
-            MonCash
-          </span>
-          <span className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-sm font-bold text-cloud">
-            Zelle&nbsp;$
-          </span>
-          {/* `text-mist/60` mesurait 3,56:1 sur ce fond (mist #a6a6a6 à 60 %
-              donne rgb(103,103,103) sur rgb(7,7,7)) — sous le seuil WCAG AA de
-              4,5:1. L'opacité servait à dire « pas encore disponible », mais la
-              couleur ne doit jamais porter seule une information : le libellé
-              « — bientôt » l'énonce déjà, et le rail reste visuellement second
-              par sa bordure là où MonCash et Zelle sont pleins. Sans opacité :
-              8,28:1 (mesuré sur la page rendue, pas déduit du token). */}
-          <span className="rounded-full border border-line px-4 py-1.5 text-sm text-mist">
-            {t(lang, "footer.natcash")}
-          </span>
-        </div>
-      </section>
-
-      {/* 1 ter. PRODUIT DE LA SEMAINE (maquette : « Pwodui semèn nan ») */}
-      {featured && (
-        <section className="mx-auto max-w-6xl px-5 py-8">
-          {/* Eyebrow → titre de section (#5). Le h2 du produit reste dans la
-              carte : celui-ci est le titre de la SECTION, l'autre celui du
-              produit — deux niveaux, deux rôles. */}
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {t(lang, "sec.featured")}
-          </h2>
-          <Link
-            href={`/produit/${featured.slug}`}
-            className="mt-4 grid gap-6 rounded-3xl border border-line bg-surface/60 p-6 transition hover:border-brand/60 sm:grid-cols-[220px_1fr] sm:p-8"
+      {/* `<main id="main">` : cible du lien d'évitement de l'en-tête, et le
+          repère que Lighthouse réclamait (landmark-one-main) — l'accueil était
+          la seule page sans lui (Phase 0, mesuré). */}
+      <main id="main">
+        {/* BANNIÈRE — accueil premium §4.2 : UNE bannière, le h1 DEDANS, une
+            phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
+            carrousel : le premier écran appartient aux produits. La photo est
+            celle du porteur quand elle existe ; sinon un aplat de chrome. */}
+        <section className="mx-auto max-w-6xl px-3 pt-3">
+          <div
+            className="relative flex min-h-[180px] flex-col justify-end overflow-hidden rounded-2xl bg-chrome p-4 text-on-chrome sm:min-h-[240px] sm:p-6"
+            style={heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >
-            <div
-              className={`aspect-[4/3] rounded-2xl bg-gradient-to-br sm:aspect-square ${featured.accent}`}
-            />
-            <div className="flex flex-col justify-center">
-              <p className="text-xs text-mist">
-                {featured.category} · {featured.creator}
-              </p>
-              <h3 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                {featured.title}
-              </h3>
-              <p className="mt-2 max-w-xl text-sm text-mist">{featured.blurb}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-4">
-                {/* Prix en PLEIN (#7) : le seul chiffre qui décide ne se lit
-                    pas en dégradé sur un écran bon marché. */}
-                <span className="numeric text-2xl font-extrabold text-cloud">
-                  {formatHTG(featured.priceHTG)}
-                </span>
-                {featured.ratingAvg !== null && (
-                  <span className="text-sm text-mist">
-                    <span className="text-accent">★</span> {featured.ratingAvg} ({featured.ratingCount})
+            {heroImage && (
+              <Image
+                src={HERO_IMAGE}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1152px) 1152px, 100vw"
+                className="object-cover"
+              />
+            )}
+            {heroImage && <div className="absolute inset-0 bg-chrome/50" aria-hidden="true" />}
+            <div className="relative">
+              <h1 className="max-w-xl text-[26px] leading-tight tracking-tight sm:text-4xl">
+                {t(lang, "hero.s1.t")}
+              </h1>
+              <Link
+                href="/catalogue"
+                className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
+              >
+                {t(lang, "hero.s1.cta")}
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* CONFIANCE — quatre repères tenus, une ligne (§4.5). */}
+        <TrustBar
+          compact
+          items={[
+            { t: t(lang, "trust.c1"), icone: "bouclier" },
+            { t: t(lang, "trust.c2"), icone: "coffre" },
+            { t: t(lang, "trust.c3"), icone: "gourde" },
+            { t: t(lang, "trust.c4"), icone: "message" },
+          ]}
+        />
+
+        {/* PRODUITS — la première rangée doit tenir au-dessus de la ligne de
+            flottaison (A1). Sous le seuil, aucune rangée : l'accueil dit alors
+            honnêtement que le catalogue se remplit (bloc vendeur en bas). */}
+        {inedit(principaux) && (
+          <HomeRow title={t(lang, "home.products")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+        )}
+        {inedit(newest) && (
+          <HomeRow title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
+        )}
+        {inedit(fichiers) && (
+          <HomeRow title={t(lang, "sec.digital")} more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
+        )}
+        {/* Cible de « Talents » (menu compte + pied de page) : posée sur une
+            balise du FLUX, avant la rangée des services, jamais en prop d'une
+            rangée qui peut s'effacer. `scroll-mt-24` compense l'en-tête collant. */}
+        <div id="talents" className="scroll-mt-24" aria-hidden="true" />
+        {inedit(services) && (
+          <HomeRow title={t(lang, "sec.services")} more={t(lang, "home.all")} items={services} cardLabels={cardLabels} />
+        )}
+        {inedit(free) && (
+          <HomeRow title={t(lang, "sec.free")} more={t(lang, "home.all")} items={free} cardLabels={cardLabels} />
+        )}
+        {inedit(promo) && (
+          <HomeRow title={t(lang, "sec.promo")} more={t(lang, "home.all")} items={promo} cardLabels={cardLabels} />
+        )}
+
+        {/* MEILLEURS VENDEURS — ≥ 3 vendeurs avec ≥ 1 vente PAYÉE (§4.3). */}
+        {sellers.length > 0 && (
+          <section className="mx-auto max-w-6xl px-3 pt-8">
+            <h2 className="text-xl tracking-tight sm:text-2xl">{t(lang, "sec.sellers")}</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {sellers.map((s) => (
+                <Link
+                  key={s.name}
+                  href={s.id ? `/createur/${s.id}` : "/catalogue"}
+                  className="rounded-xl border border-line bg-surface p-4 transition active:scale-[0.97]"
+                >
+                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-chrome text-base font-extrabold text-on-chrome">
+                    {s.name.charAt(0)}
                   </span>
-                )}
-                <span className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand">
-                  {t(lang, "featured.cta")}
-                </span>
-              </div>
+                  <p className="mt-3 truncate font-semibold">{s.name}</p>
+                  <p className="mt-1 text-sm text-mist">
+                    {s.rating !== null && <>★ {s.rating} · </>}
+                    {s.ventesPayees} {tn(lang, s.ventesPayees, "sec.sellers.sales.one", "sec.sellers.sales")}
+                  </p>
+                </Link>
+              ))}
             </div>
-          </Link>
-        </section>
-      )}
+          </section>
+        )}
 
-      {/* 2. CATÉGORIES DU CATALOGUE — clé PROPRE (revue 2026-08-10, UI-03) :
-          elle partageait `sec.cats` avec la grille des rayons, et comme cette
-          section est conditionnée au catalogue non vide, le doublon de titre
-          serait apparu exactement le jour de la première vente réelle. */}
-      {categories.length > 0 && (
-        <section className="mx-auto max-w-6xl px-5 py-8">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {t(lang, "sec.cats.explore")}
-          </h2>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {categories.map(([cat, n]) => (
-              <Link
-                key={cat}
-                href={`/catalogue?cat=${encodeURIComponent(cat)}`}
-                className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface/60 px-4 py-2 text-sm text-cloud transition hover:border-brand/60"
-              >
-                {cat} <span className="text-mist">· {n}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 3. PRODUITS TENDANCE */}
-      {inedit(trending) && (
-      <HomeRow
-        title={t(lang, "home.trends")}
-        sub={t(lang, "home.trends.sub")}
-        more={t(lang, "home.all")}
-        items={trending}
-        cardLabels={cardLabels}
-      />
-      )}
-
-      {/* 4. NOUVEAUTÉS */}
-      {inedit(newest) && (
-      <HomeRow
-        title={t(lang, "sec.new")}
-        sub={t(lang, "sec.new.sub")}
-        more={t(lang, "home.all")}
-        items={newest}
-        cardLabels={cardLabels}
-      />
-      )}
-
-      {/* 4 bis. FICHIERS DIGITAUX — section demandée par le porteur
-          (2026-08-10), VISIBLE MÊME VIDE via l'invitation de HomeRow. */}
-      {inedit(fichiers) && (
-      <HomeRow
-        title={t(lang, "sec.digital")}
-        sub={t(lang, "sec.digital.sub")}
-        more={t(lang, "home.all")}
-        items={fichiers}
-        cardLabels={cardLabels}
-        empty={{
-          body: t(lang, "home.empty.digital"),
-          cta: t(lang, "home.cta.sell"),
-          href: "/vendre",
-        }}
-      />
-      )}
-
-      {/* Cible de « Talents » (nav ×2 + pied de page). Posée sur une balise du
-          FLUX, jamais en prop de HomeRow : `HomeRow` s'efface à vide (V-13)
-          et emporterait l'ancre avec elle. `scroll-mt-24` compense le bandeau
-          collant. DÉPLACÉE devant la section SERVICES (revue 2026-08-10,
-          UX-04) : elle était posée devant « Fichiers digitaux », et les trois
-          liens « Talents » déposaient le visiteur sur des fichiers
-          téléchargeables. Le test d'ancres vérifie désormais la POSITION, pas
-          seulement l'existence. */}
-      <div id="talents" className="scroll-mt-24" aria-hidden="true" />
-
-      {/* 5. SERVICES POPULAIRES — visible même vide, même décision. */}
-      {inedit(services) && (
-      <HomeRow
-        title={t(lang, "sec.services")}
-        sub={t(lang, "sec.services.sub")}
-        more={t(lang, "home.all")}
-        items={services}
-        cardLabels={cardLabels}
-        empty={{
-          body: t(lang, "home.empty.services"),
-          cta: t(lang, "home.cta.sell"),
-          href: "/vendre",
-        }}
-      />
-      )}
-
-      {/* 6. MEILLEURS VENDEURS */}
-      {sellers.length > 0 && (
-        <section className="mx-auto max-w-6xl px-5 py-12">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {t(lang, "sec.sellers")}
-          </h2>
-          <p className="mt-2 text-sm text-mist">{t(lang, "sec.sellers.sub")}</p>
-          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {sellers.map((s) => (
-              <Link
-                key={s.name}
-                href={s.id ? `/createur/${s.id}` : "/catalogue"}
-                className="rounded-2xl border border-line bg-surface/60 p-5 transition hover:border-brand/60"
-              >
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand text-lg font-extrabold text-on-brand">
-                  {s.name.charAt(0)}
-                </span>
-                <p className="mt-3 truncate font-semibold">{s.name}</p>
-                <p className="mt-1 text-xs text-mist">
-                  {s.rating !== null && <>★ {s.rating} · </>}
-                  {s.sales} {tn(lang, s.sales, "sec.sellers.sales.one", "sec.sellers.sales")}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 7. PRODUITS GRATUITS */}
-      {inedit(free) && (
-      <HomeRow
-        title={t(lang, "sec.free")}
-        sub={t(lang, "sec.free.sub")}
-        more={t(lang, "home.all")}
-        items={free}
-        cardLabels={cardLabels}
-      />
-      )}
-
-      {/* 8. EN PROMOTION (vendeurs à code promo actif) */}
-      {inedit(promo) && (
-      <HomeRow
-        title={t(lang, "sec.promo")}
-        sub={t(lang, "sec.promo.sub")}
-        more={t(lang, "home.all")}
-        items={promo}
-        cardLabels={cardLabels}
-      />
-      )}
-
-      {/* 9. AVIS CLIENTS — SECTION RETIRÉE (2026-08-01)
-          Elle bouclait sur [1, 2, 3] en dur, imprimait ★★★★★ en dur, et tirait
-          « Woodley P. », « Fabiola M. », « Ricardo S. » de chaînes i18n. Aucune
-          garde : elle se rendait TOUJOURS, y compris avec zéro commande en base
-          — l'état actuel de la production.
-
-          Ce n'était pas un résidu de vocabulaire comme les autres. Les autres
-          annonçaient le mauvais commerce ; celui-ci affirmait un fait faux sur
-          des personnes nommées, sous deux garanties de vérification :
-          « avis vérifiés uniquement » (sec.reviews.sub) et « seuls les
-          acheteurs ayant réellement payé peuvent noter — garanti par la base
-          de données » (why.2.b). Le texte invoquait la base comme preuve alors
-          que rien de ce bloc n'en venait.
-
-          Retirée plutôt que reformulée : tant qu'aucune commande n'existe, il
-          n'y a rien de vrai à afficher. `why.2` tombe avec elle — une garantie
-          de vérification sans avis à vérifier n'a pas d'objet.
-
-          Elle revient le jour où elle lit `reviews` en base, avec une garde de
-          vacuité comme toutes les autres sections (V-13). Les clés supprimées
-          sont dans l'historique git. */}
-
-      {/* 10. POURQUOI CHOISIR ZABELIE */}
-      <section className="mx-auto max-w-6xl px-5 py-12">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
-          {t(lang, "sec.why")}
-        </h2>
-        {/* `why.2` — « Avis 100 % vérifiés … garanti par la base de données »
-            — retiré avec la section Avis clients : la garantie n'avait plus
-            rien à garantir. Trois colonnes au lieu de quatre. */}
-        {/* SVG et non émojis (revue 2026-08-10, UI-08) : 🛡️ sortait BLEU
-            (couleur système, hors palette) et 🇭🇹 sortait « HT » — le repli
-            des drapeaux régionaux sur les plateformes qui ne les embarquent
-            pas, Windows en tête. Même gabarit de trait que le bandeau de
-            confiance. « lakay » = la maison, d'où le toit. */}
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {([
-            ["M12 2l7 4v6c0 4.4-3 8.4-7 10-4-1.6-7-5.6-7-10V6l7-4z", "why.1.t", "why.1.b"],
-            ["M3 11l9-8 9 8M5 9.5V21h14V9.5M10 21v-6h4v6", "why.3.t", "why.3.b"],
-            ["M13 2L4.5 13.5h6L9.5 22 19 10.5h-6L13 2z", "why.4.t", "why.4.b"],
-          ] as const).map(([d, tt, bb]) => (
-            <div key={tt} className="rounded-2xl border border-line bg-surface/40 p-6">
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                className="h-7 w-7 fill-none stroke-accent"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d={d} />
-              </svg>
-              <h3 className="mt-3 font-semibold">{t(lang, tt)}</h3>
-              <p className="mt-2 text-sm text-mist">{t(lang, bb)}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 11. FAQ */}
-      <section id="faq" className="mx-auto max-w-3xl scroll-mt-24 px-5 py-12">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
-          {t(lang, "sec.faq")}
-        </h2>
-        <div className="mt-8">
-          <FaqList lang={lang} />
-        </div>
-      </section>
-
-      {/* COMMENT ÇA MARCHE */}
-      <section id="comment" className="mx-auto max-w-6xl px-5 py-16">
-        <h2 className="text-center text-2xl font-bold tracking-tight sm:text-3xl">
-          {t(lang, "home.how")}
-        </h2>
-        {/* Les deux sous-titres ne sont plus des eyebrows (#5), et les numéros
-            « 01 02 03 » en dégradé ont disparu (#6) : le chiffre n'informait
-            pas, et il attirait l'œil sur lui plutôt que sur le verbe. Les
-            titres SONT déjà des verbes (« Cherchez », « Payez »). */}
-        <h3 className="mt-8 text-base font-semibold text-accent">
-          {t(lang, "home.how.buy")}
-        </h3>
-        <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {stepsAcheteur.map((step) => (
-            <div
-              key={"b" + step.n}
-              className="rounded-2xl border border-line bg-surface/40 p-6"
-            >
-              <h4 className="text-lg font-semibold">{step.title}</h4>
-              <p className="mt-2 text-sm text-mist">{step.body}</p>
-            </div>
-          ))}
-        </div>
-        <h3 className="mt-8 text-base font-semibold text-accent">
-          {t(lang, "home.how.sell")}
-        </h3>
-        <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {stepsVendeur.map((step) => (
-            <div
-              key={"s" + step.n}
-              className="rounded-2xl border border-line bg-surface/40 p-6"
-            >
-              <h4 className="text-lg font-semibold">{step.title}</h4>
-              <p className="mt-2 text-sm text-mist">{step.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FONDATEUR */}
-      <section className="mx-auto max-w-6xl px-5 py-16">
-        <div className="glass mx-auto flex max-w-3xl flex-col items-center gap-8 rounded-3xl p-8 sm:flex-row sm:p-10">
-          <div className="relative shrink-0">
+        {/* FONDATEUR — compact, en fin de page (§4.5). */}
+        <section className="mx-auto max-w-6xl px-3 pt-10">
+          <div className="flex items-start gap-4 rounded-2xl border border-line bg-surface p-4 sm:items-center sm:p-6">
             <Image
               src="/brand/eliezer-portrait.jpg"
               alt={t(lang, "founder.name")}
-              width={160}
-              height={160}
-              priority
-              className="h-40 w-40 rounded-2xl object-cover object-top ring-2 ring-accent/50"
+              width={72}
+              height={72}
+              className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover object-top"
             />
-            {/* Drapeau en SVG, pas en émoji : 🇭🇹 se replie sur « HT » là où
-                les drapeaux régionaux ne sont pas embarqués (Windows). Les
-                deux couleurs sont EN DUR à dessein — un drapeau national
-                n'est pas thémable, ce sont les bleu et rouge officiels. */}
-            <span className="absolute -bottom-2 -right-2 grid h-9 w-9 place-items-center rounded-xl bg-brand">
-              <svg viewBox="0 0 24 16" aria-label="Haïti" className="h-4 w-6 rounded-[3px]">
-                <rect width="24" height="8" fill="#00209f" />
-                <rect y="8" width="24" height="8" fill="#d21034" />
-              </svg>
-            </span>
+            <div className="min-w-0">
+              <blockquote className="text-sm leading-relaxed text-cloud sm:text-base">« {t(lang, "founder.quote")} »</blockquote>
+              <p className="mt-2 text-sm font-semibold">
+                {t(lang, "founder.name")}
+                <span className="ml-2 font-normal text-mist">{t(lang, "founder.role")}</span>
+              </p>
+            </div>
           </div>
-          <div className="text-center sm:text-left">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              {t(lang, "founder.title")}
-            </p>
-            <blockquote className="mt-3 text-lg leading-relaxed text-cloud">
-              « {t(lang, "founder.quote")} »
-            </blockquote>
-            <p className="mt-4 text-sm font-semibold">
-              {t(lang, "founder.name")}
-              <span className="ml-2 font-normal text-mist">
-                {t(lang, "founder.role")}
-              </span>
+        </section>
+
+        {/* VENDRE + COMMENT ÇA MARCHE — un seul bloc en fin de page (§4.2, §4.6) :
+            la carte « Ouvrez votre boutique » descendue ici, et « Comment ça
+            marche » réduit à deux liens vers /aide et /vendre, qui portent les
+            étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
+        <section id="comment" className="mx-auto max-w-6xl scroll-mt-24 px-3 pb-24 pt-10">
+          <div className="rounded-2xl border border-line bg-surface p-6 text-center sm:p-10">
+            <h2 className="mx-auto max-w-2xl text-2xl tracking-tight sm:text-3xl">{t(lang, "rail.shop.t")}</h2>
+            <p className="mx-auto mt-3 max-w-md text-sm text-mist">{t(lang, "home.final.sub")}</p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/vendre"
+                className="inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
+              >
+                {t(lang, "home.cta.sell")}
+              </Link>
+              {/* Texte ENCRE sur la teinte orange à 10 % : `text-accent` y
+                  mesurait 4,35:1 (Lighthouse, Phase 3) — sous le seuil. */}
+              <span className="rounded-lg bg-brand/10 px-3 py-1.5 text-sm font-bold text-cloud">{t(lang, "rail.shop.free")}</span>
+            </div>
+            <p className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+              <Link href="/aide#comment" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
+                {t(lang, "home.how.buy")}
+              </Link>
+              <Link href="/vendre#comment" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
+                {t(lang, "home.how.sell")}
+              </Link>
+              <Link href="/aide#faq" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
+                {t(lang, "sec.faq")}
+              </Link>
             </p>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-6xl px-5 py-16">
-        {/* `.glow-ring` (halo extérieur de 60 px) retiré (#8) : c'est la
-            signature « IA » posée précisément sur le bloc de conversion.
-            Une bordure d'accent à 40 % dit la même chose sans rayonner. */}
-        <div className="glass relative overflow-hidden rounded-3xl border border-accent/40 px-8 py-14 text-center">
-          <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight sm:text-4xl">
-            {t(lang, "home.final.a")}{" "}
-            <span className="text-gradient">{t(lang, "home.final.b")}</span>.
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-mist">
-            {t(lang, "home.final.sub")}
-          </p>
-          <Link
-            href="/vendre"
-            /* RES-01 : `inline-block` sur un texte de 14 px rendait 16 px de haut
-               — le lien qui recrute les vendeurs était le plus petit de la
-               page. `min-h-11` + centrage vertical le porte à 44 px. */
-            className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl bg-cloud px-7 text-sm font-semibold text-ink transition hover:opacity-90"
-          >
-            {t(lang, "home.final.cta")}
-          </Link>
-        </div>
-      </section>
-
+      <WhatsAppFab href={wa} label={t(lang, "wa.chat")} />
       <SiteFooter />
     </div>
   );

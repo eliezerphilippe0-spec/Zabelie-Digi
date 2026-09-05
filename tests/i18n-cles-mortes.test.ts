@@ -183,8 +183,10 @@ test("les extracteurs ont lu le dépôt, et pas le vide", () => {
   assert.ok(sources.length >= 40, `fichiers lus : ${sources.length}`);
   assert.ok(vus.size >= 200, `littéraux lus : ${vus.size}`);
   // Ancres nommées : si l'une saute, c'est l'extraction qui a bougé.
-  assert.ok(cles.includes("home.h1"), "`home.h1` absente des clés lues");
-  assert.ok(vus.has("home.cta.sell"), "`home.cta.sell` doit être appelée depuis le hero");
+  // `home.h1` a disparu avec le carrousel (accueil premium, Phase 3) ; l'ancre
+  // est désormais le h1 de la bannière.
+  assert.ok(cles.includes("hero.s1.t"), "`hero.s1.t` absente des clés lues");
+  assert.ok(vus.has("home.cta.sell"), "`home.cta.sell` doit être appelée depuis le bloc vendeur");
   assert.ok(prefixes.includes("topup.status."), `préfixes : ${prefixes.join(", ")}`);
 });
 

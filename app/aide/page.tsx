@@ -64,6 +64,28 @@ export default async function AidePage() {
           </div>
         )}
 
+        {/* COMMENT ACHETER — les trois pas que l'accueil portait jusqu'au
+            2026-09-04 (accueil premium §4.6) : l'accueil n'en garde qu'un
+            lien (`/aide#comment`), les étapes vivent ici, où l'on vient
+            pour comprendre. Les pas vendeur sont sur /vendre#comment. */}
+        <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+          {t(lang, "home.how.buy")}
+        </h2>
+        <ol className="mt-4 grid gap-3">
+          {(
+            [
+              ["home.b1.t", "home.b1.b"],
+              ["home.b2.t", "home.b2.b"],
+              ["home.b3.t", "home.b3.b"],
+            ] as const
+          ).map(([tt, bb]) => (
+            <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
+              <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
+              <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
+            </li>
+          ))}
+        </ol>
+
         <h2 id="faq" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
           {t(lang, "sec.faq")}
         </h2>
