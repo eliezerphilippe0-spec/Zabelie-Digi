@@ -94,15 +94,15 @@ test("le token de titre existe et pointe bien sur une famille", () => {
     "`font-heading` doit venir du token de titre, sinon la classe posée par " +
       "le contrôle ci-dessus ne change rien du tout."
   );
-  // Le repli DOIT être un serif : avec `display: swap`, un repli sans-serif
-  // fait sauter la forme ET la largeur du bloc au basculement.
-  assert.match(
-    theme,
-    /--font-heading:[^;]*(Georgia|(?<!sans-)serif)/,
-    "Le repli des titres doit rester un serif. ⚠️ La première version de " +
-      "cette assertion cherchait `serif` — que `sans-serif` CONTIENT. Elle " +
-      "restait donc verte sous la mutation qui remplaçait Georgia par " +
-      "`system-ui, sans-serif`, c'est-à-dire exactement la régression " +
-      "surveillée. Le harnais l'a dit ; l'attention ne l'aurait pas fait."
-  );
+  // Le repli DOIT être de la MÊME FAMILLE que la fonte chargée : avec
+  // `display: swap`, un repli d'une autre famille fait sauter la forme ET la
+  // largeur du bloc au basculement. Depuis la Phase 1 de l'accueil premium
+  // (2026-09-04), les titres sont Manrope, une grotesque : le repli est
+  // `system-ui … sans-serif`, et un serif (Georgia) y serait la régression.
+  // ⚠️ La version serif de cette assertion cherchait `(?<!sans-)serif` ; la
+  // forme inversée doit refuser Georgia EXPLICITEMENT, pas seulement exiger
+  // `sans-serif` — que la ligne pourrait porter à côté d'un serif.
+  const heading = /--font-heading:([^;]*);/.exec(theme)?.[1] ?? "";
+  assert.match(heading, /system-ui/, "le repli des titres doit être une grotesque système");
+  assert.doesNotMatch(heading, /Georgia|Times|(?<!sans-)serif/, "un serif dans le repli des titres Manrope");
 });

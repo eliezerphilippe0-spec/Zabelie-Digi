@@ -38,11 +38,10 @@ import { DICT, LANGS } from "@/lib/i18n";
  * PLATEFORME ; l'étendre à des gestes d'acteurs fabriquerait des faux positifs
  * qu'il faudrait exempter un à un, et la liste d'exemptions mangerait le garde.
  */
-const CLES_CONFIANCE = [
-  "trust.1.t", "trust.1.b", "trust.2.t", "trust.2.b", "trust.3.t",
-  "trust.3.b", "trust.4.t", "trust.4.b", "trust.5.t", "trust.5.b",
-  "why.1.t", "why.1.b", "why.3.t", "why.3.b", "why.4.t", "why.4.b",
-] as const;
+/* Accueil premium, Phase 3 (2026-09-04) : la barre est COMPACTE — quatre
+ * libellés courts (trust.c1→c4) — et « Pourquoi choisir Zabelie » a disparu
+ * (doublon de la confiance). `trust.2.b` reste : fiche produit, panier, succès. */
+const CLES_CONFIANCE = ["trust.c1", "trust.c2", "trust.c3", "trust.c4", "trust.2.b"] as const;
 
 /** Ce qu'aucun de ces dix libellés ne doit affirmer. */
 const PROMESSES_NON_TENUES =
@@ -167,8 +166,9 @@ test("le détecteur de doublons voit un doublon, et se tait sur des valeurs dist
 test("aucune paire de clés de l'accueil ne partage une valeur, hors exemptions vivantes", () => {
   const src = readFileSync("app/page.tsx", "utf8");
   const cles = clesRenduesParLAccueil(src);
-  assert.ok(cles.length >= 60, `extraction suspecte : ${cles.length} clés`);
-  assert.ok(cles.includes("why.1.b"), "clé de référence absente — l'extraction a bougé");
+  // Accueil premium, Phase 3 : la page rend ~25 clés (elle en rendait 60+).
+  assert.ok(cles.length >= 20, `extraction suspecte : ${cles.length} clés`);
+  assert.ok(cles.includes("trust.c1"), "clé de référence absente — l'extraction a bougé");
 
   const vivantes = new Set<string>();
   for (const lang of LANGS) {
@@ -194,61 +194,6 @@ test("aucune paire de clés de l'accueil ne partage une valeur, hors exemptions 
 });
 
 
-/**
- * LE SECOND GESTE DE LA BANNIÈRE — découvert non testé par une mutation.
- *
- * `secondGeste` décide si la bannière vendeur affiche le bouton WhatsApp. La
- * logique vivait en ligne dans `app/page.tsx`, donc dans un composant serveur,
- * donc hors de portée d'un test : retirer la garde du numéro ne faisait rougir
- * RIEN. Conséquence d'un tel oubli : un bouton de contact vers personne —
- * exactement ce que `lib/whatsapp.ts` s'engage à ne jamais produire.
- *
- * Elle a été extraite pour être éprouvable. C'est la mutation qui l'a exigé,
- * pas une relecture.
- */
-test("le geste WhatsApp de la bannière : les deux champs, ou aucun", async () => {
-  const { secondGeste, LANDING_SLIDES } = await import("@/lib/landing-slides");
-  const vendeur = LANDING_SLIDES.find((s) => s.whatsapp);
-  assert.ok(vendeur, "aucun slide ne porte le second geste — le contrôle est vide");
-  const sansWa = LANDING_SLIDES.find((s) => !s.whatsapp);
-  assert.ok(sansWa, "tous les slides portent WhatsApp — le connu-négatif est vide");
-
-  const avant = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  try {
-    // Numéro absent → AUCUN geste. C'est le cas que la mutation a révélé.
-    delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    assert.equal(secondGeste(vendeur!, "bonjou", "Pale ak nou"), null);
-
-    // Numéro tronqué → aucun geste non plus.
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "5093";
-    assert.equal(secondGeste(vendeur!, "bonjou", "Pale ak nou"), null);
-
-    // Numéro posé → les DEUX champs, jamais un seul.
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = "50937376615";
-    const g = secondGeste(vendeur!, "bonjou", "Pale ak nou");
-    assert.ok(g, "geste attendu avec un numéro valide");
-    assert.ok(g!.href.startsWith("https://wa.me/50937376615"), `href inattendu : ${g!.href}`);
-    // Le CTA est le LIBELLÉ traduit, plus jamais le numéro (2026-08-14).
-    assert.equal(g!.cta, "Pale ak nou");
-
-    // Un slide qui ne demande pas WhatsApp n'en reçoit pas, numéro ou non.
-    assert.equal(secondGeste(sansWa!, "bonjou", "Pale ak nou"), null);
-  } finally {
-    if (avant === undefined) delete process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-    else process.env.NEXT_PUBLIC_WHATSAPP_NUMBER = avant;
-  }
-});
-
-/**
- * LE MENU DES RAYONS SURVIT À `label_es` ABSENTE — la panne réelle du
- * 2026-08-10, mesurée en production : `0052` n'est pas appliquée, la requête
- * échouait en 42703, le menu revenait vide, et la colonne des rayons comme la
- * grille des catégories DISPARAISSAIENT de l'accueil. Les 16 rayons activés
- * en base ne se sont jamais affichés.
- *
- * Même règle que le repli `in_stock` de lib/products.ts : le code devance le
- * schéma, une requête se dégrade, elle ne tombe pas.
- */
 test("lireCategories rejoue sans label_es quand la colonne manque", async () => {
   const { lireCategories } = await import("@/lib/taxonomy");
 

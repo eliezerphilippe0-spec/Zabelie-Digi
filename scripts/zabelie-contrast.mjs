@@ -99,23 +99,31 @@ export function paires(T) {
   // deux thèmes), plus `ink` (qui bascule avec le chrome) : la paire suit le
   // token réellement employé par les composants.
   out.push(["--on-brand sur CTA --brand", T["on-brand"], T.brand, NORMAL]);
+  // En-tête (accueil premium, Phase 2) : texte et icônes `on-chrome` sur les
+  // TROIS arrêts du dégradé de marque — le dégradé référence ces tokens, donc
+  // ce qui est mesuré ici est ce qui est peint.
+  for (const arret of ["chrome", "chrome-2", "chrome-3"]) {
+    out.push([`--on-chrome sur ${arret}`, T["on-chrome"], T[arret], NORMAL]);
+  }
   return out;
 }
 
 /**
- * Depuis le mode clair (2026-08-15), le fichier de thème porte DEUX
- * palettes : les tokens @theme (sombre) puis un bloc [data-theme="light"]
- * qui en redéfinit une partie. `lireTokens` sur le fichier ENTIER écraserait
- * le sombre par le clair — mesuré : --ink sur --brand rendait 4,25:1, un
- * faux échec fabriqué par la collision. On découpe au bloc, et le clair
- * HÉRITE du sombre pour tout ce qu'il ne redéfinit pas — exactement la
- * cascade CSS.
+ * Le fichier de thème porte DEUX palettes. Depuis la Phase 1 de l'accueil
+ * premium (2026-09-04), les tokens @theme sont le CLAIR (défaut) et un bloc
+ * [data-theme="dark"] redéfinit une partie pour le sombre — l'inverse de
+ * 2026-08-15. `lireTokens` sur le fichier ENTIER écraserait le clair par le
+ * sombre — mesuré en 2026-08 dans l'autre sens : --ink sur --brand rendait
+ * 4,25:1, un faux échec fabriqué par la collision. On découpe au bloc, et le
+ * sombre HÉRITE du clair pour tout ce qu'il ne redéfinit pas — exactement la
+ * cascade CSS. Les clés `sombre`/`clair` gardent leur SENS (la palette
+ * nommée), pas leur position dans le fichier.
  */
 export function lirePalettes(css) {
-  const coupe = css.indexOf('[data-theme="light"]');
-  if (coupe === -1) return { sombre: lireTokens(css), clair: null };
-  const sombre = lireTokens(css.slice(0, coupe));
-  const clair = { ...sombre, ...lireTokens(css.slice(coupe)) };
+  const coupe = css.indexOf('[data-theme="dark"]');
+  if (coupe === -1) return { clair: lireTokens(css), sombre: null };
+  const clair = lireTokens(css.slice(0, coupe));
+  const sombre = { ...clair, ...lireTokens(css.slice(coupe)) };
   return { sombre, clair };
 }
 

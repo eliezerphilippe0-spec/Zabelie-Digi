@@ -113,13 +113,15 @@ test("plus AUCUN signOut client dans le dépôt — le faux-semblant est fermé"
 
 test("la déconnexion est atteignable sur MOBILE — le terrain visé", () => {
   /* Elle vivait uniquement en `sm:block`, donc invisible à 390 px : le
-   * cybercafé et l'Android partagé sont précisément ce format. */
-  const barreMobile = NAV.slice(NAV.indexOf("md:hidden"));
-  assert.match(
-    barreMobile,
-    /\{user && \(\s*\n\s*<SignOutButton/,
-    "la barre mobile doit porter la déconnexion, conditionnée à une session"
-  );
+   * cybercafé et l'Android partagé sont précisément ce format. Depuis
+   * l'en-tête compact (accueil premium, Phase 2), elle vit dans le MENU COMPTE,
+   * identique à toutes les largeurs : on vérifie qu'elle y est, conditionnée à
+   * une session, et qu'aucune classe ne la cache sous un point de rupture. */
+  const menu = NAV.slice(NAV.indexOf("<AccountMenu"));
+  assert.ok(menu.length > 100, "le menu compte doit exister dans l'en-tête");
+  const m = /\{user && \(\s*\n\s*<SignOutButton[\s\S]*?\/>/.exec(menu);
+  assert.ok(m, "le menu compte doit porter la déconnexion, conditionnée à une session");
+  assert.doesNotMatch(m![0], /\bhidden\b|\bsm:block\b|\bmd:block\b/, "la déconnexion est cachée sous un point de rupture");
 });
 
 test("le libellé passe par i18n dans les quatre langues, kreyòl compris", () => {

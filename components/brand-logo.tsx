@@ -40,7 +40,7 @@ export function BrandMark({
         width="46"
         height="46"
         rx="11"
-        fill="var(--color-ink)"
+        fill="var(--color-chrome)"
         stroke="var(--color-brand)"
         strokeOpacity="0.4"
         strokeWidth="2"
@@ -51,11 +51,28 @@ export function BrandMark({
   );
 }
 
-export function BrandLogo({ className = "" }: { className?: string }) {
+export function BrandLogo({
+  className = "",
+  nomMasqueSurMobile = false,
+}: {
+  className?: string;
+  /**
+   * En-tête compact (accueil premium §4.1) : sur un écran de 375 px, le mot
+   * « Zabelie » à côté du monogramme prend 70 px à la barre de recherche, qui
+   * est l'outil n°1. Le monogramme suffit sous `sm` ; le nom revient au-delà.
+   * Le pied de page garde le nom partout.
+   */
+  nomMasqueSurMobile?: boolean;
+}) {
   return (
     <Link href="/" className={`inline-flex min-h-11 items-center gap-2 ${className}`}>
       <BrandMark size={32} />
-      <span className="text-sm font-semibold tracking-tight">
+      {/* `sr-only` et non `hidden` sous sm : un `display: none` retirait le
+          nom au lecteur d'écran aussi, et le lien n'avait plus de nom
+          accessible (Lighthouse `link-name`, mesuré en Phase 3). */}
+      <span
+        className={`text-sm font-semibold tracking-tight ${nomMasqueSurMobile ? "sr-only sm:not-sr-only" : ""}`}
+      >
         Zabelie
       </span>
     </Link>

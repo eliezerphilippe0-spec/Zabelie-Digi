@@ -34,7 +34,10 @@ export default async function AidePage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
 
-      <section className="mx-auto max-w-2xl px-5 pb-16 pt-12">
+      {/* `<main id="main">` : cible du lien d'évitement de l'en-tête et repère
+          Lighthouse (`landmark-one-main`) — cette page était la seule surface
+          d'atterrissage sans lui (mesuré en Phase 5, accueil premium). */}
+      <main id="main" className="mx-auto max-w-2xl px-5 pb-16 pt-12">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           {t(lang, "aide.title")}
         </h1>
@@ -64,6 +67,28 @@ export default async function AidePage() {
           </div>
         )}
 
+        {/* COMMENT ACHETER — les trois pas que l'accueil portait jusqu'au
+            2026-09-04 (accueil premium §4.6) : l'accueil n'en garde qu'un
+            lien (`/aide#comment`), les étapes vivent ici, où l'on vient
+            pour comprendre. Les pas vendeur sont sur /vendre#comment. */}
+        <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+          {t(lang, "home.how.buy")}
+        </h2>
+        <ol className="mt-4 grid gap-3">
+          {(
+            [
+              ["home.b1.t", "home.b1.b"],
+              ["home.b2.t", "home.b2.b"],
+              ["home.b3.t", "home.b3.b"],
+            ] as const
+          ).map(([tt, bb]) => (
+            <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
+              <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
+              <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
+            </li>
+          ))}
+        </ol>
+
         <h2 id="faq" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
           {t(lang, "sec.faq")}
         </h2>
@@ -88,7 +113,7 @@ export default async function AidePage() {
             {t(lang, "policy.link")}
           </Link>
         </div>
-      </section>
+      </main>
 
       <SiteFooter />
     </div>

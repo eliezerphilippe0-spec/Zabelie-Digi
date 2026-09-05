@@ -65,6 +65,27 @@ function Shell({
           </Link>
         </div>
         <div className="mt-8">{children}</div>
+
+        {/* COMMENT VENDRE — les trois pas vendeur que l'accueil portait
+            jusqu'au 2026-09-04 (accueil premium §4.6). L'accueil garde un lien
+            (`/vendre#comment`) ; les pas acheteur sont sur /aide#comment. */}
+        <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+          {t(lang, "home.how.sell")}
+        </h2>
+        <ol className="mt-4 grid gap-3">
+          {(
+            [
+              ["home.s1.t", "home.s1.b"],
+              ["home.s2.t", "home.s2.b"],
+              ["home.s3.t", "home.s3.b"],
+            ] as const
+          ).map(([tt, bb]) => (
+            <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
+              <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
+              <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
+            </li>
+          ))}
+        </ol>
       </main>
       <SiteFooter />
     </div>

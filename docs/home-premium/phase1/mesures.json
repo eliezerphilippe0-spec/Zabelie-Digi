@@ -1,0 +1,277 @@
+{
+  "home-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/",
+    "headerHauteur": 250,
+    "headersDansDom": 1,
+    "h1": "Produits, services et fichiers digitaux — payez avec MonCash",
+    "h1Rect": {
+      "x": 20,
+      "y": 274,
+      "width": 335,
+      "height": 90,
+      "top": 274,
+      "right": 355,
+      "bottom": 364,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 10,
+    "h2": [
+      "Fichiers digitaux",
+      "Services populaires",
+      "Pourquoi choisir Zabelie",
+      "Questions fréquentes",
+      "Comment ça marche",
+      "Ce que vous vendez mérite d'être payé."
+    ],
+    "bientot": 2,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 142405,
+    "hauteurPage": 6477,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "home-desktop": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "url": "/",
+    "headerHauteur": 184,
+    "headersDansDom": 1,
+    "h1": "Produits, services et fichiers digitaux — payez avec MonCash",
+    "h1Rect": {
+      "x": 424,
+      "y": 208,
+      "width": 622,
+      "height": 75,
+      "top": 208,
+      "right": 1046,
+      "bottom": 283,
+      "left": 424
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 10,
+    "h2": [
+      "Fichiers digitaux",
+      "Services populaires",
+      "Pourquoi choisir Zabelie",
+      "Questions fréquentes",
+      "Comment ça marche",
+      "Ce que vous vendez mérite d'être payé."
+    ],
+    "bientot": 2,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 142405,
+    "hauteurPage": 4324,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "catalogue-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/catalogue",
+    "headerHauteur": null,
+    "headersDansDom": 0,
+    "h1": "Quelque chose s'est mal passé",
+    "h1Rect": {
+      "x": 20,
+      "y": 184,
+      "width": 335,
+      "height": 64,
+      "top": 184,
+      "right": 355,
+      "bottom": 248,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 0,
+    "h2": [],
+    "bientot": 0,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 133889,
+    "hauteurPage": 812,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "produit-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/produit/appel-ak873",
+    "headerHauteur": 250,
+    "headersDansDom": 1,
+    "h1": "Cette page n'existe pas",
+    "h1Rect": {
+      "x": 20,
+      "y": 434,
+      "width": 335,
+      "height": 32,
+      "top": 434,
+      "right": 355,
+      "bottom": 466,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 0,
+    "h2": [],
+    "bientot": 0,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 139961,
+    "hauteurPage": 812,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "vendre-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/vendre",
+    "headerHauteur": 250,
+    "headersDansDom": 1,
+    "h1": "Vendre sur Zabelie",
+    "h1Rect": {
+      "x": 20,
+      "y": 314,
+      "width": 335,
+      "height": 36,
+      "top": 314,
+      "right": 355,
+      "bottom": 350,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 0,
+    "h2": [],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 205764,
+    "hauteurPage": 1662,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "aide-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/aide",
+    "headerHauteur": 250,
+    "headersDansDom": 1,
+    "h1": "Comment pouvons-nous aider ?",
+    "h1Rect": {
+      "x": 20,
+      "y": 298,
+      "width": 335,
+      "height": 72,
+      "top": 298,
+      "right": 355,
+      "bottom": 370,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 1,
+    "h2": [
+      "Questions fréquentes",
+      "Pages légales"
+    ],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 136210,
+    "hauteurPage": 2098,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  }
+}

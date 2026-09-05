@@ -76,13 +76,13 @@ test("une icône maskable existe — sinon Android rogne la tuile", () => {
 
 test("les couleurs du manifeste sont celles du thème, pas une copie figée", () => {
   const css = readFileSync("app/zabelie-theme.css", "utf8");
-  const m = /--color-ink:\s*(#[0-9a-fA-F]{3,8})/.exec(css);
-  assert.ok(m, "`--color-ink` introuvable dans le thème");
+  const m = /--color-chrome:\s*(#[0-9a-fA-F]{3,8})/.exec(css);
+  assert.ok(m, "`--color-chrome` introuvable dans le thème");
   const ink = m![1].toLowerCase();
   assert.equal(
     BRAND_INK.toLowerCase(),
     ink,
-    "`BRAND_INK` de `lib/brand.ts` a divergé du token du thème. C'est " +
+    "`BRAND_INK` de `lib/brand.ts` a divergé du token `--color-chrome` du thème (l'encre du CHROME : en-tête, pied, barre d'adresse). C'est " +
       "exactement ce qui est arrivé au favicon, qui a gardé `#17123a` " +
       "pendant que `--color-ink` passait à `#0a0a0a`."
   );

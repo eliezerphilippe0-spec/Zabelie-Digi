@@ -1,6 +1,6 @@
-/* Typo AUTO-HÉBERGÉE via next/font (voir app/layout.tsx) : Playfair Display
-   600/700 (titres, serif) + Inter 400→800 (texte, boutons). Plus de requête
-   tierce bloquante vers Google Fonts — gain net sur 3G. */
+/* Typo AUTO-HÉBERGÉE via next/font (voir app/layout.tsx) : Manrope 700/800
+   (titres, prix, boutons) + Inter 400/500 (texte). Plus de requête tierce
+   bloquante vers Google Fonts — gain net sur 3G. */
 @import "tailwindcss";
 @import "./zabelie-theme.css"; /* SOURCE UNIQUE des design tokens */
 
@@ -18,11 +18,10 @@
     background-color: var(--color-brand);
     color: var(--color-on-brand); /* texte sombre : 5.79:1 (blanc sur brand = 2.66:1) — on-brand : sombre dans les DEUX thèmes */
   }
-  /* Titres → Playfair Display Bold (les utilitaires de poids explicites
-     gardent la priorité, mais la famille vient du token heading).
-     700 et non 800 : un serif à fort contraste épaissit les pleins bien plus
-     vite qu'une grotesque, et Manrope 800 transposé tel quel donnait des
-     titres empâtés. */
+  /* Titres → Manrope (brief accueil premium §3.2 : 700/800). Le h1 en 800,
+     les autres en 700 ; les utilitaires de poids explicites gardent la
+     priorité, la famille vient du token heading. Échelle mobile visée :
+     28 / 20 / 16 / 14 px, interligne 1,25 sur les titres, 1,5 sur le corps. */
   h1,
   h2,
   h3,
@@ -31,10 +30,18 @@
   h6 {
     font-family: var(--font-heading);
     font-weight: 700;
+    line-height: 1.25;
   }
-  /* Boutons → Inter SemiBold par défaut (surclassable par utilitaire). */
-  button {
-    font-weight: 600;
+  h1 {
+    font-weight: 800;
+  }
+  /* Boutons et prix → Manrope 700 (brief §3.2 : « titres, prix, libellés de
+     boutons »). `.numeric`/`.metric` portent les montants dans tout le dépôt. */
+  button,
+  .numeric,
+  .metric {
+    font-family: var(--font-heading);
+    font-weight: 700;
   }
   /* FOCUS CLAVIER — une seule règle, à la couleur de la marque.
      Audit UX du 2026-09-02 (#2) : aucun `:focus-visible` dans le dépôt ; le
@@ -72,27 +79,15 @@
     background-clip: text;
     color: transparent;
   }
-  /* Wrapper racine : dégradé chaud + halos. min-height 100dvh, et JAMAIS
-     background-attachment: fixed sur body (cassé sur iOS Safari). */
+  /* Wrapper racine : fond PLAT. min-height 100dvh, et JAMAIS
+     background-attachment: fixed sur body (cassé sur iOS Safari).
+     Il portait un lavis radial d'accent et un dégradé bg-1→bg-3 ; le brief
+     accueil premium (§3.1) interdit l'orange en fond de section et le dégradé
+     en fond de page. Le sol est calme : c'est ce qui fait ressortir le seul
+     élément orange, le bouton. `tests/palette-resserree` compte les lavis. */
   .bg-grain {
     min-height: 100dvh;
-    /* UN SEUL lavis, et discret. Il y en avait DEUX, à 13 % et 11 %, l'un
-       d'accent et l'autre de marque : sur le fond brun chaud ils se
-       cumulaient en un halo orange qui couvrait la moitié de l'écran. Un fond
-       teinté à ce point n'est plus un fond, c'est une quatrième couleur — et
-       il vole la vedette au seul élément qui doit être orange, le bouton. La
-       référence a un sol CALME : c'est ce qui fait ressortir l'accent. */
-    background-image: radial-gradient(
-        circle at 82% 0%,
-        color-mix(in srgb, var(--color-brand) 6%, transparent),
-        transparent 38%
-      ),
-      linear-gradient(
-        160deg,
-        var(--color-bg-1) 0%,
-        var(--color-bg-2) 45%,
-        var(--color-bg-3) 100%
-      );
+    background-color: var(--color-bg-1);
   }
   /* ── RÉVÉLATION DE CONFIRMATION ────────────────────────────────────────
      UNE seule apparition orchestrée, réservée au moment où l'argent vient de
@@ -110,13 +105,17 @@
 
      Aucune dépendance, aucun JavaScript : la page de succès reste un
      composant serveur. */
+  /* Durées par les TOKENS de mouvement (zabelie-theme.css) : 300 ms au plus,
+     c'est la borne du brief accueil premium (§3.3), et `--motion-*` vaut 0 ms
+     sous `prefers-reduced-motion: reduce` — la garde ci-dessous reste, par
+     ceinture et bretelles. */
   @media (prefers-reduced-motion: no-preference) {
     .reveal {
-      animation: zbReveal 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+      animation: zbReveal var(--motion-slow) var(--ease) both;
       animation-delay: var(--reveal-delay, 0ms);
     }
     .reveal-mark {
-      animation: zbMark 520ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+      animation: zbMark var(--motion-slow) var(--ease) both;
     }
   }
   @keyframes zbReveal {
@@ -145,6 +144,14 @@
       background: color-mix(in srgb, var(--color-surface-maroon) 72%, transparent);
       backdrop-filter: blur(14px);
     }
+  }
+  /* EN-TÊTE REPLIÉ (accueil premium §3.3, components/header-shell.tsx) :
+     après ~120 px de défilement, `data-compact` est posé sur le <header> et
+     tout ce qui porte `.header-fold` (logo, chips) disparaît — il ne reste que
+     la recherche et les icônes, collées en haut. Pas d'animation de hauteur :
+     le pli est instantané, la règle du brief ne permet que transform/opacity. */
+  header[data-compact] .header-fold {
+    display: none;
   }
   /* Grands chiffres (prix, revenus, compteurs) : chiffres tabulaires nets. */
   .numeric,
