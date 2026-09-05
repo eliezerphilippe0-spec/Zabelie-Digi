@@ -1,7 +1,9 @@
 /**
  * RÈGLE DES SEUILS de l'accueil — accueil premium, Phase 3 (brief §4.3).
  *
- * Une seule règle, côté serveur, partagée par toutes les sections : une
+ * La sélection principale montre les offres dès le premier produit (demande
+ * du porteur du 2026-09-05). Les seuils ci-dessous gardent les sections
+ * secondaires : une
  * rangée de produits ne s'affiche que si elle a de quoi remplir une ligne.
  * Sous le seuil, elle ne montre pas un titre au-dessus de deux cartes — elle
  * s'efface. Ce n'est pas une décoration : avec trois produits publiés (mesuré
@@ -24,13 +26,13 @@ export const SEUIL_RANGEE_DESKTOP = 6;
 /** « Meilleurs vendeurs » : trois vendeurs ayant chacun au moins une vente PAYÉE. */
 export const SEUIL_VENDEURS = 3;
 
-export function rangeeVisible(nombre: number): boolean {
-  return nombre >= SEUIL_RANGEE;
+export function rangeeVisible(nombre: number, primary = false): boolean {
+  return primary ? nombre > 0 : nombre >= SEUIL_RANGEE;
 }
 
 /** Classes à poser sur la section : masquée au-delà de `lg` sous six items. */
-export function classesRangee(nombre: number): string {
-  return nombre >= SEUIL_RANGEE_DESKTOP ? "" : "lg:hidden";
+export function classesRangee(nombre: number, primary = false): string {
+  return primary || nombre >= SEUIL_RANGEE_DESKTOP ? "" : "lg:hidden";
 }
 
 export type VendeurCompte = { ventesPayees: number };

@@ -59,6 +59,9 @@ const VENDEUR =
 type Classement = { colonne: string } | { horsSujet: string };
 
 const CLASSEMENT: Record<string, Classement> = {
+  "home.receipt.body": {
+    horsSujet: "Modalités à convenir avec le vendeur, sans engagement de qualité : le mot anglais agree est détecté comme agréé. Le texte précise que Zabelie ne stocke ni ne livre.",
+  },
   "policy.alcohol.items": {
     horsSujet:
       "Obligation DU vendeur, pas engagement de la plateforme : « le vendeur " +
@@ -160,7 +163,7 @@ test("l'extracteur a lu le dictionnaire, et pas le vide", () => {
   assert.ok(segs.size >= 250, `clés lues : ${segs.size}`);
   // `home.h1` a disparu avec le carrousel (accueil premium, Phase 3) ; l'ancre
   // kreyòl est le h1 de la bannière.
-  assert.ok(segs.get("hero.s1.t")?.includes("Achte"), "segment `hero.s1.t` incomplet");
+  assert.ok(segs.get("hero.s1.t")?.includes("Dekouvri"), "segment `hero.s1.t` incomplet");
 });
 
 // ───────────────────────── Le contrôle ───────────────────────────────────────

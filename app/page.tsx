@@ -41,7 +41,8 @@ function heroImageDisponible(): boolean {
 
 /**
  * Rangée de produits — RÈGLE DES SEUILS (lib/home-sections, brief §4.3).
- * Sous SEUIL_RANGEE items, la section n'existe pas ; entre 4 et 5, elle est
+ * La sélection principale montre chaque offre disponible. Les rangées
+ * secondaires gardent leur seuil ; entre 4 et 5, leur section est
  * masquée au-delà de `lg` ; jamais un titre au-dessus du néant.
  * Grille : 2 colonnes mobile, 4 tablette, 6 desktop, gouttière 12 px (§4.4).
  */
@@ -51,23 +52,25 @@ function HomeRow({
   more,
   items,
   cardLabels,
+  primary = false,
 }: {
   id?: string;
   title: string;
   more: string;
   items: ProductView[];
   cardLabels: ProductCardLabels;
+  primary?: boolean;
 }) {
-  if (!rangeeVisible(items.length)) return null;
+  if (!rangeeVisible(items.length, primary)) return null;
   return (
-    <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length)}`}>
+    <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length, primary)}`}>
       <div className="flex items-baseline justify-between gap-4">
         <h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>
         <Link href="/catalogue" className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
           {more}
         </Link>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+      <div className={`mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 ${primary && items.length < 4 ? "lg:max-w-3xl" : "md:grid-cols-4 lg:grid-cols-6"}`}>
         {items.map((p) => (
           <ProductCard key={p.slug} product={p} labels={cardLabels} />
         ))}
@@ -225,6 +228,9 @@ export default async function HomePage() {
               <h1 className="max-w-xl text-[26px] leading-tight tracking-tight sm:text-4xl">
                 {t(lang, "hero.s1.t")}
               </h1>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-on-chrome/90">
+                {t(lang, "hero.s1.b")}
+              </p>
               <Link
                 href="/catalogue"
                 className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
@@ -247,10 +253,10 @@ export default async function HomePage() {
         />
 
         {/* PRODUITS — la première rangée doit tenir au-dessus de la ligne de
-            flottaison (A1). Sous le seuil, aucune rangée : l'accueil dit alors
-            honnêtement que le catalogue se remplit (bloc vendeur en bas). */}
+            flottaison (A1). La sélection principale reste visible dès la première offre,
+            sur mobile comme sur ordinateur, sans inventer de produits. */}
         {inedit(principaux) && (
-          <HomeRow title={t(lang, "home.products")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+          <HomeRow primary title={t(lang, "home.products")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
         )}
         {inedit(newest) && (
           <HomeRow title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
@@ -296,6 +302,27 @@ export default async function HomePage() {
             </div>
           </section>
         )}
+
+        <section aria-labelledby="receipt-title" className="mx-auto max-w-6xl px-3 pt-8">
+          <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+            <h2 id="receipt-title" className="text-xl tracking-tight sm:text-2xl">{t(lang, "home.receipt.title")}</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
+            <ol className="mt-5 grid gap-4 sm:grid-cols-3">
+              {[
+                { title: t(lang, "home.b1.t"), body: t(lang, "home.b1.b") },
+                { title: t(lang, "home.b2.t"), body: t(lang, "home.b2.b") },
+                { title: t(lang, "home.b3.t"), body: t(lang, "home.b3.b") },
+              ].map((step, index) => (
+                <li key={step.title} className="border-t border-line pt-4">
+                  <span className="text-sm font-bold text-accent" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-mist">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+            <Link href="/aide#comment" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline underline-offset-4">{t(lang, "home.how.buy")}</Link>
+          </div>
+        </section>
 
         {/* FONDATEUR — compact, en fin de page (§4.5). */}
         <section className="mx-auto max-w-6xl px-3 pt-10">

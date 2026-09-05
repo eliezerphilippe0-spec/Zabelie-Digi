@@ -71,8 +71,8 @@ test("S3 — une carte n'affiche jamais une URL brute ni un titre vide, et le ma
 });
 
 test("S4 — la page applique le seuil à CHAQUE rangée, par le helper, pas à la main", () => {
-  assert.match(page, /if \(!rangeeVisible\(items\.length\)\) return null;/);
-  assert.match(page, /className=\{`mx-auto max-w-6xl px-3 pt-6 \$\{classesRangee\(items\.length\)\}`\}/);
+  assert.match(page, /if \(!rangeeVisible\(items\.length, primary\)\) return null;/);
+  assert.match(page, /className=\{`mx-auto max-w-6xl px-3 pt-6 \$\{classesRangee\(items\.length, primary\)\}`\}/);
   // Les vendeurs passent par le helper aussi, sur des ventes PAYÉES.
   assert.match(page, /vendeursAffichables\(\[\.\.\.sellerMap\.values\(\)\]\)/);
   assert.match(page, /\.eq\("status", "paid"\)/);
@@ -121,4 +121,16 @@ test("S8 — la barre de confiance compacte : quatre repères, aucun sous-texte,
   assert.match(bloc, /\bcompact\b/);
   assert.equal((bloc.match(/icone: "/g) ?? []).length, 4);
   assert.doesNotMatch(bloc, /\bb: /, "aucun sous-texte dans la forme compacte");
+});
+
+
+test("la sélection principale affiche de 1 à 5 produits sur tous les écrans, sans rangée vide", () => {
+  assert.equal(rangeeVisible(0, true), false);
+  for (const count of [1, 2, 3, 4, 5, 6, 12]) {
+    assert.equal(rangeeVisible(count, true), true);
+    assert.equal(classesRangee(count, true), "");
+  }
+  assert.equal(rangeeVisible(3), false);
+  assert.equal(classesRangee(4), "lg:hidden");
+  assert.match(page, /<HomeRow primary title=\{t\(lang, "home.products"\)\}/);
 });
