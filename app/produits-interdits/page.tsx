@@ -104,6 +104,26 @@ export default async function ProduitsInterditsPage() {
             </p>
           </div>
           <p>{t(lang, "policy.confusion.p")}</p>
+
+          {/* SECONDE PAIRE — recharge contre solde (v3, 2026-09-05, D-7).
+              La revente de solde MonCash/NatCash était déjà interdite plus
+              haut, dans la liste des services financiers ; mais la liste ne
+              disait pas ce qui reste PERMIS juste à côté — vendre du crédit
+              d'appel — et un vendeur honnête ne devinait pas la frontière.
+              Même forme que la paire armes / pièces auto : les deux côtés,
+              avec les mots que les gens emploient (« vann balans »,
+              « rechaj », « minit »), pas le vocabulaire juridique. Le critère
+              qui départage est écrit sous la paire : des minutes sur un
+              téléphone, ou de l'argent qu'on peut renvoyer. */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <p className="rounded-xl border border-danger/50 bg-surface/60 p-4 font-semibold text-danger-text">
+              {t(lang, "policy.confusion.rechaj.banned")}
+            </p>
+            <p className="rounded-xl border border-success/50 bg-surface/60 p-4 font-semibold text-success-text">
+              {t(lang, "policy.confusion.rechaj.allowed")}
+            </p>
+          </div>
+          <p>{t(lang, "policy.confusion.rechaj.p")}</p>
         </Section>
 
         <Section title={t(lang, "policy.tools.h")}>

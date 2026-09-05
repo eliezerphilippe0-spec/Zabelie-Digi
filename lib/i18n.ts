@@ -110,7 +110,7 @@ const fr = {
   "policy.accept.read": "Lire les règles",
   "policy.accept.required": "Vous devez accepter les règles de vente.",
   "policy.title": "Ce qui ne peut pas être vendu sur Zabelie",
-  "policy.date": "27 juillet 2026",
+  "policy.date": "5 septembre 2026",
   "policy.why.h": "Pourquoi ces règles",
   "policy.why.p":
     "Ce sont les règles de Zabelie. Elles sont plus strictes que la loi, et c'est volontaire : une règle large se comprend et s'applique sans discussion. En publiant une fiche, vous les acceptez.",
@@ -129,6 +129,12 @@ const fr = {
     "AUTORISÉ : pièces détachées pour véhicules, motos, machines et appareils.",
   "policy.confusion.p":
     "Le rayon automobile-moto est l'un des principaux rayons de Zabelie. Il reste entièrement ouvert.",
+  "policy.confusion.rechaj.banned":
+    "INTERDIT : revendre du solde MonCash ou NatCash — « m ap vann balans », agent de dépôt ou de retrait. C'est de la monnaie électronique, pas un produit.",
+  "policy.confusion.rechaj.allowed":
+    "AUTORISÉ : vendre du crédit d'appel Digicel ou Natcom — « rechaj », « minit ». Vous rechargez le numéro de l'acheteur après paiement, comme n'importe quel service.",
+  "policy.confusion.rechaj.p":
+    "La différence tient à une seule chose : l'acheteur reçoit-il des minutes sur son téléphone, ou de l'argent qu'il peut renvoyer à quelqu'un ? Le premier est un service. Le second est un transfert d'argent, et Zabelie n'en fait pas.",
   "policy.tools.h": "4. Outils tranchants : c'est la présentation qui décide",
   "policy.tools.p1":
     "Machettes, couteaux de cuisine, ciseaux, outils de travail : autorisés. La machette est un outil agricole, vendu partout dans le pays.",
@@ -810,7 +816,7 @@ const ht: Record<I18nKey, string> = {
   "policy.accept.read": "Li règ yo",
   "policy.accept.required": "Ou dwe aksepte règ vant yo.",
   "policy.title": "Sa ou pa gen dwa vann sou Zabelie",
-  "policy.date": "27 jiyè 2026",
+  "policy.date": "5 septanm 2026",
   "policy.why.h": "Poukisa règ sa yo",
   "policy.why.p":
     "Règ sa yo se règ Zabelie. Yo pi sevè pase lalwa, e se espre : yon règ ki laj se yon règ tout moun konprann, e nou ka aplike l san diskisyon. Lè ou pibliye yon fich, ou aksepte yo.",
@@ -828,6 +834,12 @@ const ht: Record<I18nKey, string> = {
     "OTORIZE : pyès detache pou machin, moto, machin travay ak aparèy.",
   "policy.confusion.p":
     "Rayon otomobil-moto a se youn nan pi gwo rayon Zabelie. Li rete louvri nèt.",
+  "policy.confusion.rechaj.banned":
+    "ENTÈDI : revann balans MonCash oswa NatCash — « m ap vann balans », ajan depo oswa retrè. Se lajan elektwonik, se pa yon pwodui.",
+  "policy.confusion.rechaj.allowed":
+    "OTORIZE : vann kredi apèl Digicel oswa Natcom — « rechaj », « minit ». Ou rechaje nimewo achtè a apre li fin peye, menm jan ak nenpòt lòt sèvis.",
+  "policy.confusion.rechaj.p":
+    "Diferans lan chita sou yon sèl bagay : èske achtè a resevwa minit sou telefòn li, oswa lajan li ka voye bay yon lòt moun ? Premye a se yon sèvis. Dezyèm lan se yon transfè lajan, e Zabelie pa fè sa.",
   "policy.tools.h": "4. Zouti file : se jan ou prezante l ki konte",
   "policy.tools.p1":
     "Manchèt, kouto kizin, sizo, zouti travay : yo otorize. Manchèt se yon zouti travay tè, li vann toupatou nan peyi a.",
@@ -1477,7 +1489,7 @@ const en = {
   "policy.accept.read": "Read the rules",
   "policy.accept.required": "You must accept the selling rules.",
   "policy.title": "What cannot be sold on Zabelie",
-  "policy.date": "July 27, 2026",
+  "policy.date": "September 5, 2026",
   "policy.why.h": "Why these rules",
   "policy.why.p":
     "These are Zabelie's rules. They are stricter than the law, and that is deliberate: a broad rule is understood and applied without argument. By publishing a listing, you accept them.",
@@ -1496,6 +1508,12 @@ const en = {
     "ALLOWED: spare parts for vehicles, motorcycles, machines and appliances.",
   "policy.confusion.p":
     "The auto and motorcycle department is one of Zabelie's main departments. It stays fully open.",
+  "policy.confusion.rechaj.banned":
+    "FORBIDDEN: reselling MonCash or NatCash balance — “m ap vann balans”, cash-in or cash-out agent. That is electronic money, not a product.",
+  "policy.confusion.rechaj.allowed":
+    "ALLOWED: selling Digicel or Natcom airtime — “rechaj”, “minit”. You top up the buyer's number after payment, like any other service.",
+  "policy.confusion.rechaj.p":
+    "The difference comes down to one thing: does the buyer receive minutes on their phone, or money they can send on to someone else? The first is a service. The second is a money transfer, and Zabelie does not do those.",
   "policy.tools.h": "4. Sharp tools: presentation decides",
   "policy.tools.p1":
     "Machetes, kitchen knives, scissors, work tools: allowed. The machete is a farming tool, sold everywhere in the country.",
@@ -2157,7 +2175,7 @@ const es = {
   "policy.accept.read": "Leer las reglas",
   "policy.accept.required": "Debes aceptar las reglas de venta.",
   "policy.title": "Lo que no se puede vender en Zabelie",
-  "policy.date": "27 de julio de 2026",
+  "policy.date": "5 de septiembre de 2026",
   "policy.why.h": "Por qué estas reglas",
   "policy.why.p":
     "Estas son las reglas de Zabelie. Son más estrictas que la ley, y es deliberado: una regla amplia se entiende y se aplica sin discusión. Al publicar un anuncio, las aceptas.",
@@ -2176,6 +2194,12 @@ const es = {
     "PERMITIDO: repuestos para vehículos, motos, máquinas y aparatos.",
   "policy.confusion.p":
     "La sección de auto y moto es una de las principales de Zabelie. Sigue completamente abierta.",
+  "policy.confusion.rechaj.banned":
+    "PROHIBIDO: revender saldo MonCash o NatCash — « m ap vann balans », agente de depósito o retiro. Es dinero electrónico, no un producto.",
+  "policy.confusion.rechaj.allowed":
+    "PERMITIDO: vender crédito de llamadas Digicel o Natcom — « rechaj », « minit ». Recargas el número del comprador después del pago, como cualquier otro servicio.",
+  "policy.confusion.rechaj.p":
+    "La diferencia se reduce a una sola cosa: ¿el comprador recibe minutos en su teléfono, o dinero que puede reenviar a otra persona? Lo primero es un servicio. Lo segundo es una transferencia de dinero, y Zabelie no las hace.",
   "policy.tools.h": "4. Herramientas cortantes: decide la presentación",
   "policy.tools.p1":
     "Machetes, cuchillos de cocina, tijeras, herramientas de trabajo: permitidos. El machete es una herramienta agrícola, vendida en todo el país.",
