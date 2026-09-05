@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
  *   C2  `line-clamp-2` retiré du nom                                   → rouge
  *   C3  prix : `text-accent` → `text-mist`                             → rouge
  *   C4  `titreCarte(product.title, …)` → `product.title`               → rouge
- *   C5  CardImage : `onLoad={() => setChargee(true)}` retiré           → rouge
+ *   C5  CardImage : `useState(false)` → `useState(true)` (invisible sans JS)  → rouge
  *   C6  `loading="lazy"` retiré                                        → rouge
  *   C7  `--default-transition-duration: var(--motion-base)` retiré     → rouge
  *   C8  `rounded-card` → `rounded-2xl` sur la carte                    → rouge
@@ -60,10 +60,15 @@ test("C4 — le titre passe par titreCarte : aucune URL brute, un repli traduit"
   assert.match(readFileSync("app/page.tsx", "utf8"), /titleFallback: t\(lang, "card\.title\.fallback"\)/);
 });
 
-test("C5 — fondu à l'arrivée : opacity commandée par onLoad, durée sur le token", () => {
-  assert.match(img, /const \[chargee, setChargee\] = useState\(false\);/);
-  assert.match(img, /onLoad=\{\(\) => setChargee\(true\)\}/);
-  assert.match(img, /style=\{\{ opacity: chargee \? 1 : 0, transitionDuration: "var\(--motion-base\)" \}\}/);
+test("C5 — fondu à l'arrivée : VISIBLE par défaut, masquée seulement si pas encore chargée au montage, révélée par onLoad", () => {
+  // La liaison qui compte : l'état initial est `false` (visible), le montage
+  // ne masque que `!img.complete`, et onLoad remet visible. Une version qui
+  // partirait de `true`/opacity 0 laisserait les images invisibles avant
+  // l'hydratation, et pour toujours si elles arrivent avant React.
+  assert.match(img, /const \[masquee, setMasquee\] = useState\(false\);/);
+  assert.match(img, /if \(img && !img\.complete\) setMasquee\(true\);/);
+  assert.match(img, /onLoad=\{\(\) => setMasquee\(false\)\}/);
+  assert.match(img, /style=\{\{ opacity: masquee \? 0 : 1, transitionDuration: "var\(--motion-base\)" \}\}/);
 });
 
 test("C6 — l'image est différée et décodée hors du fil principal", () => {
