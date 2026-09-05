@@ -1,0 +1,272 @@
+{
+  "home-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/",
+    "headerHauteur": 98,
+    "headersDansDom": 1,
+    "h1": "Achetez en sécurité avec MonCash",
+    "h1Rect": {
+      "x": 28,
+      "y": 153,
+      "width": 319,
+      "height": 65,
+      "top": 153,
+      "right": 347,
+      "bottom": 218,
+      "left": 28
+    },
+    "premiereCarteProduitTop": 417.5,
+    "sections": 5,
+    "h2": [
+      "Produits",
+      "Ouvrez votre boutique en ligne"
+    ],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 147438,
+    "hauteurPage": 2901,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "home-desktop": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "url": "/",
+    "headerHauteur": 98,
+    "headersDansDom": 1,
+    "h1": "Achetez en sécurité avec MonCash",
+    "h1Rect": {
+      "x": 180,
+      "y": 180,
+      "width": 576,
+      "height": 90,
+      "top": 180,
+      "right": 756,
+      "bottom": 270,
+      "left": 180
+    },
+    "premiereCarteProduitTop": 469,
+    "sections": 5,
+    "h2": [
+      "Produits",
+      "Ouvrez votre boutique en ligne"
+    ],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 147438,
+    "hauteurPage": 1924,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "catalogue-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/catalogue",
+    "headerHauteur": 98,
+    "headersDansDom": 1,
+    "h1": "Catalogue",
+    "h1Rect": {
+      "x": 20,
+      "y": 162,
+      "width": 335,
+      "height": 36,
+      "top": 162,
+      "right": 355,
+      "bottom": 198,
+      "left": 20
+    },
+    "premiereCarteProduitTop": 500,
+    "sections": 2,
+    "h2": [],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 139766,
+    "hauteurPage": 2326,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "produit-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/produit/appel-ak873",
+    "headerHauteur": 98,
+    "headersDansDom": 1,
+    "h1": "Cette page n'existe pas",
+    "h1Rect": {
+      "x": 20,
+      "y": 282,
+      "width": 335,
+      "height": 32,
+      "top": 282,
+      "right": 355,
+      "bottom": 314,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 0,
+    "h2": [],
+    "bientot": 0,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 139766,
+    "hauteurPage": 812,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "vendre-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/vendre",
+    "headerHauteur": 98,
+    "headersDansDom": 1,
+    "h1": "Vendre sur Zabelie",
+    "h1Rect": {
+      "x": 20,
+      "y": 162,
+      "width": 335,
+      "height": 36,
+      "top": 162,
+      "right": 355,
+      "bottom": 198,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 0,
+    "h2": [
+      "Pour vendre"
+    ],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 205393,
+    "hauteurPage": 2047,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  },
+  "aide-mobile": {
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "url": "/aide",
+    "headerHauteur": 98,
+    "headersDansDom": 1,
+    "h1": "Comment pouvons-nous aider ?",
+    "h1Rect": {
+      "x": 20,
+      "y": 146,
+      "width": 335,
+      "height": 72,
+      "top": 146,
+      "right": 355,
+      "bottom": 218,
+      "left": 20
+    },
+    "premiereCarteProduitTop": null,
+    "sections": 1,
+    "h2": [
+      "Pour acheter",
+      "Questions fréquentes",
+      "Pages légales"
+    ],
+    "bientot": 1,
+    "urlLabels": [],
+    "themeColor": "#17123a",
+    "lang": "fr",
+    "fonts": [
+      {
+        "url": "4c9affa5bc8f420e-s.p.woff2",
+        "octets": 24576
+      },
+      {
+        "url": "e4af272ccee01ff0-s.p.woff2",
+        "octets": 48432
+      }
+    ],
+    "fontsOctets": 73008,
+    "jsOctets": 135878,
+    "hauteurPage": 2396,
+    "fontFamilyH1": "Manrope, \"Manrope Fallback\", system-ui, -apple-system, \"Sego",
+    "fontFamilyBody": "Inter, \"Inter Fallback\", system-ui, -apple-system, \"Segoe UI",
+    "bgBody": "rgb(250, 248, 245)"
+  }
+}
