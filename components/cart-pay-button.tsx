@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { appelSession } from "@/lib/appel-session";
 
 /**
  * PAYER UNE LIGNE DU PANIER — la marche intermédiaire, dite comme telle.
@@ -32,29 +33,28 @@ export function CartPayButton({
   async function payer() {
     setEnCours(true);
     setMsg(null);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, rail: "moncash" }),
-      });
-      if (res.status === 401) {
-        window.location.href = `/connexion?next=${encodeURIComponent("/panier")}`;
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.redirectUrl) {
-        setMsg(data.error ?? labels.error);
-        setEnCours(false);
-        return;
-      }
-      // Redirection vers la passerelle MonCash — le retour est vérifié
-      // serveur-à-serveur par /api/moncash/return (invariant b).
-      window.location.href = data.redirectUrl;
-    } catch {
-      setMsg(labels.error);
-      setEnCours(false);
+    // Même porte que le bouton d'achat (`lib/appel-session.ts`) : ce composant
+    // faisait déjà la moitié du travail (`res.json().catch`), il partage
+    // maintenant la même lecture des quatre issues. `/panier` reste la
+    // destination de retour — c'est bien la page où l'on est.
+    const issue = await appelSession<{ redirectUrl?: string }>(
+      "/api/checkout",
+      { productId, rail: "moncash" },
+      "/panier",
+    );
+
+    if (issue.etat === "connexion") {
+      window.location.href = issue.vers;
+      return;
     }
+    if (issue.etat !== "ok" || !issue.data.redirectUrl) {
+      setMsg((issue.etat === "refus" ? issue.error : null) ?? labels.error);
+      setEnCours(false);
+      return;
+    }
+    // Redirection vers la passerelle MonCash — le retour est vérifié
+    // serveur-à-serveur par /api/moncash/return (invariant b).
+    window.location.href = issue.data.redirectUrl;
   }
 
   return (
