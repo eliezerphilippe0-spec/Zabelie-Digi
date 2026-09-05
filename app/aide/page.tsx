@@ -34,7 +34,10 @@ export default async function AidePage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
 
-      <section className="mx-auto max-w-2xl px-5 pb-16 pt-12">
+      {/* `<main id="main">` : cible du lien d'évitement de l'en-tête et repère
+          Lighthouse (`landmark-one-main`) — cette page était la seule surface
+          d'atterrissage sans lui (mesuré en Phase 5, accueil premium). */}
+      <main id="main" className="mx-auto max-w-2xl px-5 pb-16 pt-12">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           {t(lang, "aide.title")}
         </h1>
@@ -110,7 +113,7 @@ export default async function AidePage() {
             {t(lang, "policy.link")}
           </Link>
         </div>
-      </section>
+      </main>
 
       <SiteFooter />
     </div>
