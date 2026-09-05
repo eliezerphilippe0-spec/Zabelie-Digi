@@ -686,6 +686,7 @@ rend désormais `ZB065 — rejeu refuse`. Provoqué, pas supposé.
 | Date (UTC) | Geste | Avant | Après | Par |
 |---|---|---|---|---|
 | 2026-08-09 ~23:0xZ | Les **12 départements restants** passés `active` | 4/16 | **16/16** | connecteur, sur demande explicite du porteur |
+| _en attente de D-7_ | **« Recharge Digicel » et « Recharge Natcom »** semées DORMANTES sous 16.3 par `0097` — elles n'ouvrent rien | — | 0/2 actives | migration `0097`, porteur 2026-09-05 (« créer la section et on la laisse pour un futur proche ») |
 | 2026-09-05 11:50:06Z | **« Recharge téléphone »** (`rechaj-telefon`, niveau 2) passe `active = false` — V-17 avait fermé le commerce, pas le rayon | 10/74 au niveau 2 | **9/74** | migration `0096`, porteur (« arranger les », puis « Applique 0096 »), appliquée par agent via MCP |
 | 2026-09-05 11:50:06Z | Sept sous-catégories de niveau 3 **dormantes en double** retirées (`luil-mote`, `filtrasyon`, `frenaj-moto`, `marketing-rezo-sosyal`, `foto-videyo`, `pwoteksyon-sole`, `sewom`) ; index unique `(parent_id, label_fr)` | 499 au niveau 3, 45 actives | **492**, 45 actives | idem |
 
