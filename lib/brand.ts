@@ -29,4 +29,4 @@ export const SITE_DESCRIPTION =
 export const SITE_SHORT_NAME = "Zabelie";
 
 /** = `--color-ink` de `app/zabelie-theme.css`. Croisé par `tests/pwa-manifeste`. */
-export const BRAND_INK = "#100c09";
+export const BRAND_INK = "#17123a";

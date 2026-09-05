@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
 import { cookies } from "next/headers";
@@ -7,28 +7,27 @@ import { siteUrl } from "@/lib/site-url";
 import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK } from "@/lib/brand";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
 
-// Polices AUTO-HÉBERGÉES par Next (sous-ensemble latin, servies depuis notre
-// domaine) — supprime la requête tierce bloquante vers Google Fonts, gain net
-// sur 3G. `swap` : le texte s'affiche immédiatement en repli puis bascule.
+// Polices AUTO-HÉBERGÉES par Next (servies depuis notre domaine) — supprime la
+// requête tierce bloquante vers Google Fonts, gain net sur 3G. `swap` : le
+// texte s'affiche immédiatement en repli puis bascule.
+//
+// ACCUEIL PREMIUM, PHASE 1 (2026-09-04, docs/02 V-20) : Manrope 700/800 pour
+// les titres, prix et boutons, Inter pour le corps. Playfair Display (demande
+// porteur du 2026-08-11) est retirée par délégation du même porteur, brief §3.2.
+//
+// FONTES VARIABLES, et c'est mesuré : le dépôt pose `font-semibold`, `bold`
+// et `extrabold` sur des centaines d'éléments Inter. Deux graisses statiques
+// (400/500) laisseraient le navigateur SYNTHÉTISER le reste — un faux gras
+// qui empâte. Une variable couvre toutes les graisses dans UN fichier.
+// Sous-ensembles `latin` + `latin-ext` : è, ò, à, ç du kreyòl et du français,
+// exigés par le brief. Le poids total est mesuré dans la PR de Phase 1.
 const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-inter",
   display: "swap",
 });
-/* Titres — Playfair Display, serif de forte modulation (demande porteur
-   2026-08-11, d'après la carte de restaurant photographiée).
-   
-   FONTE VARIABLE, et c'est mesuré : la première version chargeait deux
-   graisses statiques (600/700). Le `h1` de l'accueil porte un utilitaire
-   `font-extrabold`, donc 800 — que le navigateur SYNTHÉTISAIT faute de
-   l'avoir. Un faux gras sur une grotesque passe inaperçu ; sur un serif à
-   forte modulation il épaissit les déliés autant que les pleins et détruit
-   le dessin de la lettre. La variable couvre 400→900 dans UN SEUL fichier :
-   plus léger que deux statiques, et aucune graisse inventée.
-   Sous-ensemble `latin` : couvre è, ò, é, ô, à, ç — français ET kreyòl. */
-const playfair = Playfair_Display({
-  subsets: ["latin"],
+const manrope = Manrope({
+  subsets: ["latin", "latin-ext"],
   variable: "--font-display",
   display: "swap",
 });
@@ -63,9 +62,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // #17123a était le violet de la palette ABANDONNÉE le 2026-07-25 : sur
-  // Chrome Android — le terrain principal — la barre d'adresse s'affichait
-  // violette au-dessus d'un site noir et orange. Aligné sur --color-bg-1.
+  // = --color-ink. L'indigo #17123a avait été abandonné le 2026-07-25 parce
+  // que la barre d'adresse Android s'affichait violette au-dessus d'un site
+  // NOIR et orange. Depuis la Phase 1 de l'accueil premium (2026-09-04), le
+  // chrome (en-tête, pied) est cet indigo sur une toile crème : la barre
+  // d'adresse prolonge l'en-tête. Croisé par tests/pwa-manifeste.
   themeColor: BRAND_INK,
 };
 
@@ -78,12 +79,13 @@ export default async function RootLayout({
   // sur "fr" auparavant, le Kreyòl était prononcé avec les règles du français.
   const lang = await getLang();
   // Thème : le cookie décide AU RENDU SERVEUR — la page arrive dans le bon
-  // thème, sans flash. Toute valeur autre que "light" rend le sombre : le
-  // sombre est l'identité par défaut, le clair un choix explicite.
+  // thème, sans flash. Toute valeur autre que "dark" rend le CLAIR : depuis
+  // la Phase 1 de l'accueil premium (2026-09-04, docs/02 V-20), la toile
+  // crème est l'identité par défaut, le sombre un choix explicite.
   const theme =
-    (await cookies()).get("zab_theme")?.value === "light" ? "light" : "dark";
+    (await cookies()).get("zab_theme")?.value === "dark" ? "dark" : "light";
   return (
-    <html lang={lang} data-theme={theme} className={`${inter.variable} ${playfair.variable}`}>
+    <html lang={lang} data-theme={theme} className={`${inter.variable} ${manrope.variable}`}>
       <body className="min-h-dvh antialiased">
         {/* Monté sur TOUTES les pages, parce qu'on ne sait pas d'avance où
             Supabase déposera l'utilisateur quand l'allowlist Auth ignore le

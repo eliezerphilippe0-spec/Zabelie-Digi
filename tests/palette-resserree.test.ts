@@ -154,14 +154,17 @@ test("les dégradés DÉCORATIFS restent dans la famille de l'accent", () => {
   assert.deepEqual(fautes, [], `\n${fautes.join("\n")}`);
 });
 
-test("le fond de page ne porte plus DEUX lavis d'accent", () => {
+test("le fond de page ne porte AUCUN lavis d'accent ni dégradé", () => {
   /* Deux radiaux à 13 % et 11 % se cumulaient en un halo qui couvrait la
    * moitié de l'écran : un fond teinté à ce point devient une couleur de
-   * plus, et il vole la vedette au seul élément qui doit être orange. */
+   * plus, et il vole la vedette au seul élément qui doit être orange. Le
+   * brief accueil premium (§3.1, 2026-09-04) va au bout : fond PLAT, aucun
+   * dégradé en fond de page. Le cliquet ne remonte plus. */
   const G = readFileSync("app/globals.css", "utf8");
-  const grain = G.slice(G.indexOf(".bg-grain"), G.indexOf(".glass"));
-  const radiaux = grain.split("radial-gradient").length - 1;
-  assert.equal(radiaux, 1, `${radiaux} lavis dans .bg-grain — un seul est voulu`);
+  const grain = G.slice(G.indexOf(".bg-grain"), G.indexOf(".reveal") > 0 ? G.indexOf("@media (prefers-reduced-motion") : G.indexOf(".glass"));
+  assert.ok(grain.length > 40, "bloc .bg-grain introuvable");
+  assert.equal(grain.split("gradient(").length - 1, 0, "un dégradé est revenu dans .bg-grain");
+  assert.match(grain, /background-color: var\(--color-bg-1\)/);
 });
 
 test("le dégradé de texte a DEUX arrêts, pas quatre", () => {
