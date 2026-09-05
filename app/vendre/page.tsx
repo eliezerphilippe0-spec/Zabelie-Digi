@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { PublishForm } from "@/components/publish-form";
 import { UploadAsset } from "@/components/upload-asset";
 import { createClient } from "@/lib/supabase/server";
-import { lireRayonsPublication } from "@/lib/product-categories";
+import { lireRayonsPublication, lireSousRayonsPublication } from "@/lib/product-categories";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { isPrefetch, logLanding } from "@/lib/metrics";
@@ -147,6 +147,8 @@ export default async function VendrePage() {
   // MÊME taxonomie que celle qu'affichent le menu, la colonne des rayons et
   // le catalogue (correctif 2026-08-11 — voir lib/product-categories).
   const rayonsPublication = await lireRayonsPublication(supabase, lang);
+  // 0098 : le second niveau, même source. Le formulaire filtre par département.
+  const sousRayonsPublication = await lireSousRayonsPublication(supabase, lang);
   // Le tarif du surplus IA, affiché D'EMBLÉE sous le bouton d'aide — lu en
   // base (quota et prix suivent un UPDATE sans redéploiement), absent tant
   // que l'aide est éteinte ou 0071 non appliquée.
@@ -245,6 +247,7 @@ export default async function VendrePage() {
           rateBpsEnVigueur={taux[tier]}
           aiActif={aiProviderDisponible() !== null}
           categories={rayonsPublication}
+          sousRayons={sousRayonsPublication}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
             kindAria: t(lang, "publish.kind.aria"),
@@ -252,6 +255,8 @@ export default async function VendrePage() {
             kindService: t(lang, "product.kind.service"),
             categoryAria: t(lang, "publish.category.aria"),
             categoryEmpty: t(lang, "publish.category.empty"),
+            subcategoryAria: t(lang, "publish.subcategory.aria"),
+            subcategoryEmpty: t(lang, "publish.subcategory.empty"),
             pricePh: t(lang, "publish.price.ph"),
             descriptionPh: t(lang, "publish.description.ph"),
             serviceHint: t(lang, "publish.service.hint"),

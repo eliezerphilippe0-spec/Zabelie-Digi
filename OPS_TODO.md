@@ -3,6 +3,19 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## ✅ `0097` — APPLIQUÉE le 2026-09-05 à 19:56:05Z
+
+**Signal** : « rajoute la section » du porteur (2026-09-05), sous l'autorisation
+permanente du 2026-08-17. **Ordre tenu** : CI verte → fusion de #216 dans
+`main` (`49e0f5d`) → application via MCP du fichier de `main`. Journal Supabase
+version `20260905195605`. **Empreinte croisée (méthode 0086)** : SHA-256 brut du
+fichier sans saut de ligne final = `statements[1]` = `e027cfcc…d92166`.
+Canonique `1a557024…cb64b5`. **Mesuré après** : 584 rayons, 2 enfants sous
+`rechaj-telefon`, **0 actif**, parent fermé, ligne de registre de `0096`
+inscrite. La ligne de registre de `0097` est portée par `0098`.
+
+---
+
 ## ✅ ~~Appliquer `0096`~~ — **APPLIQUÉE le 2026-09-05 à 11:50:06Z**
 
 **Signal** : « Applique 0096 », porteur, dans la session du 2026-09-05.
@@ -687,6 +700,7 @@ rend désormais `ZB065 — rejeu refuse`. Provoqué, pas supposé.
 |---|---|---|---|---|
 | 2026-08-09 ~23:0xZ | Les **12 départements restants** passés `active` | 4/16 | **16/16** | connecteur, sur demande explicite du porteur |
 | _en attente de D-7_ | **« Recharge Digicel » et « Recharge Natcom »** semées DORMANTES sous 16.3 par `0097` — elles n'ouvrent rien | — | 0/2 actives | migration `0097`, porteur 2026-09-05 (« créer la section et on la laisse pour un futur proche ») |
+| _en attente d'« applique 0098 »_ | **« Recharge téléphone » + « Recharge Digicel » + « Recharge Natcom »** passent `active = true` — D-7 tranchée dans son volet commercial ; retour arrière : `update zabelie_categories set active = false where slug in ('rechaj-telefon','rechaj-digicel','rechaj-natcom');` | 0/3 | 3/3 | migration `0098`, porteur 2026-09-05 (« rajoute la section, en cas d'interdit je vais l'enlever ») |
 | 2026-09-05 11:50:06Z | **« Recharge téléphone »** (`rechaj-telefon`, niveau 2) passe `active = false` — V-17 avait fermé le commerce, pas le rayon | 10/74 au niveau 2 | **9/74** | migration `0096`, porteur (« arranger les », puis « Applique 0096 »), appliquée par agent via MCP |
 | 2026-09-05 11:50:06Z | Sept sous-catégories de niveau 3 **dormantes en double** retirées (`luil-mote`, `filtrasyon`, `frenaj-moto`, `marketing-rezo-sosyal`, `foto-videyo`, `pwoteksyon-sole`, `sewom`) ; index unique `(parent_id, label_fr)` | 499 au niveau 3, 45 actives | **492**, 45 actives | idem |
 

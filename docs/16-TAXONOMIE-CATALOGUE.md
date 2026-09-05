@@ -12,7 +12,8 @@
 > | `0077` | tout le niveau 3 ci-dessous, **dormant** (`active = false`) | 2026-08-15 |
 > | `0078` | « Sacs de voyage », avalée par 0077 (collision de slug avec son parent) | ✅ |
 > | `0096` | retrait de 7 sous-catégories en double, index unique (parent, libellé), fermeture de 16.3 | 2026-09-05 11:50Z |
-> | `0097` | « Recharge Digicel » et « Recharge Natcom », semées **dormantes** sous 16.3 (D-7) | rédigée 2026-09-05 |
+> | `0097` | « Recharge Digicel » et « Recharge Natcom », semées **dormantes** sous 16.3 (D-7) | 2026-09-05 19:56Z |
+> | `0098` | `products.category_id` pour tout type, backfill du physique, **ouverture** des trois rayons de recharge | rédigée 2026-09-05 |
 >
 > **Mesuré en production le 2026-09-05, après `0096`** : niveau 1 **16/16**
 > actifs (décision porteur du 2026-08-09, journal `OPS_TODO`) · niveau 2
@@ -503,12 +504,14 @@ par les vendeurs)*
 > d'`UPDATE`, et suppose d'avoir tranché **D-7** (un vendeur vérifié peut-il
 > vendre du crédit télécom ?), qui reste ouverte.
 >
-> 🌱 **Deux sous-rayons semés DORMANTS par `0097` (2026-09-05)** — « Recharge
+> 🌱 **Deux sous-rayons semés par `0097` puis OUVERTS par `0098` (2026-09-05, décision porteur « rajoute la section, en cas d'interdit je vais l'enlever »)** — « Recharge
 > Digicel » et « Recharge Natcom », `active = false`. Ils préparent le modèle
 > réaffirmé par le porteur ce jour-là : *le vendeur crée sa boutique, Zabelie
 > prélève sa commission*. Ils n'autorisent RIEN — leur activation suppose D-7
-> tranchée, un avis juridique, et la ligne écrite entre « rechaj » (permis) et
-> « vann balans » (interdit, monnaie électronique).
+> tranchée dans son volet réglementaire — l'avis juridique et la ligne écrite
+> entre « rechaj » (permis) et « vann balans » (interdit, monnaie électronique)
+> restent dus, et le porteur les porte. `0098` donne aussi `products.category_id`
+> à TOUT type de produit : un service se range enfin dans un sous-rayon.
 
 ---
 

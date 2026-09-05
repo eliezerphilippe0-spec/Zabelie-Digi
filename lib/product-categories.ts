@@ -108,3 +108,110 @@ export async function normalizeCategory(
   }
   return (data as unknown as { label_fr: string }[] | null)?.[0]?.label_fr ?? null;
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// SOUS-RAYONS — le second niveau du formulaire, pour TOUT type de produit (0098)
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Un sous-rayon proposable à la publication : niveau 2 ou 3, actif, rattaché
+ * à un département dont on connaît le `label_fr` (la clé que le formulaire
+ * envoie déjà). Le libellé est déjà dans la langue du vendeur ; `chemin`
+ * porte « Parent › Enfant » pour qu'une feuille de niveau 3 se lise sans
+ * connaître l'arbre.
+ */
+export type OptionSousRayon = {
+  id: string;
+  /** `label_fr` du département (niveau 1) — la même clé que `OptionCategorie.value`. */
+  departement: string;
+  /** Libellé traduit, avec son parent pour un niveau 3. */
+  chemin: string;
+  level: 2 | 3;
+};
+
+type LigneSousRayon = {
+  id: string;
+  parent_id: string | null;
+  level: number;
+  position: number | null;
+  label_fr: string;
+  label_kr: string | null;
+  label_en: string | null;
+  label_es: string | null;
+};
+
+function libelle(r: LigneSousRayon, lang: Lang): string {
+  return (
+    (lang === "ht" ? r.label_kr : lang === "en" ? r.label_en : lang === "es" ? r.label_es : null) ||
+    r.label_fr
+  );
+}
+
+/**
+ * Tous les sous-rayons ACTIFS, groupables par département, dans la langue du
+ * vendeur. Pure après la lecture : `construireSousRayons` est exporté pour
+ * être éprouvé sans base.
+ *
+ * Pourquoi maintenant : jusqu'à 0098, le vendeur digital ne choisissait qu'un
+ * département. Les feuilles de service (0057) et de recharge (0097) existaient
+ * en base sans qu'aucune fiche puisse s'y ranger — une taxonomie que le
+ * catalogue affichait et que la publication ignorait.
+ */
+export async function lireSousRayonsPublication(
+  client: SupabaseClient,
+  lang: Lang
+): Promise<OptionSousRayon[]> {
+  const { data, error } = await lireCategories(
+    client,
+    "id, parent_id, level, position, label_fr, label_kr, label_en, label_es",
+    (q) => q.eq("active", true)
+  );
+  if (error || !data) {
+    console.error("[categories] sous-rayons indisponibles", error?.message ?? "réponse vide");
+    return [];
+  }
+  return construireSousRayons(data as unknown as LigneSousRayon[], lang);
+}
+
+export function construireSousRayons(lignes: LigneSousRayon[], lang: Lang): OptionSousRayon[] {
+  const parId = new Map(lignes.map((l) => [l.id, l]));
+  const out: OptionSousRayon[] = [];
+  for (const l of lignes) {
+    if (l.level !== 2 && l.level !== 3) continue;
+    const parent = l.parent_id ? parId.get(l.parent_id) : undefined;
+    if (!parent) continue; // parent inactif ou absent : la feuille ne remonte pas seule
+    const departement = l.level === 2 ? parent : parent.parent_id ? parId.get(parent.parent_id) : undefined;
+    if (!departement || departement.level !== 1) continue;
+    out.push({
+      id: l.id,
+      departement: departement.label_fr,
+      chemin: l.level === 3 ? `${libelle(parent, lang)} › ${libelle(l, lang)}` : libelle(l, lang),
+      level: l.level,
+    });
+  }
+  return out.sort(
+    (a, b) => a.departement.localeCompare(b.departement, "fr") || a.chemin.localeCompare(b.chemin, "fr")
+  );
+}
+
+/**
+ * Liste blanche SERVEUR du sous-rayon : l'identifiant reçu doit être un
+ * sous-rayon ACTIF dont le département est `departementLabelFr` — celui que
+ * `normalizeCategory` vient de valider. Rend l'identifiant, ou `null`.
+ *
+ * Un `categoryId` d'un AUTRE département est refusé, pas corrigé : la fiche
+ * porterait un rayon dans `category` et un autre dans `category_id`, et les
+ * facettes mentiraient. Absent ou vide → `null` sans erreur : le sous-rayon
+ * est facultatif, le département suffit.
+ */
+export async function normalizeSousRayon(
+  client: SupabaseClient,
+  input: unknown,
+  departementLabelFr: string
+): Promise<{ ok: true; id: string | null } | { ok: false }> {
+  if (input === undefined || input === null || input === "") return { ok: true, id: null };
+  if (typeof input !== "string") return { ok: false };
+  const options = await lireSousRayonsPublication(client, "fr");
+  const trouve = options.find((o) => o.id === input && o.departement === departementLabelFr);
+  return trouve ? { ok: true, id: trouve.id } : { ok: false };
+}

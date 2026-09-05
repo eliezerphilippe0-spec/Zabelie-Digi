@@ -18,6 +18,12 @@ import { readFileSync } from "node:fs";
  * La post-condition SQL le refuse à l'application ; ce croisement-ci le refuse
  * **avant**, en CI, quand le fichier n'a encore été appliqué nulle part.
  *
+ * ⚠️ Depuis `0098` (décision porteur du 2026-09-05, « rajoute la section, en
+ * cas d'interdit je vais l'enlever »), les trois rayons sont OUVERTS. Ce test
+ * garde toujours le FICHIER 0097 : une migration appliquée ne se réécrit pas,
+ * et 0097 doit rester ce qu'elle a été — un seed dormant. L'ouverture vit dans
+ * 0098, avec ses propres gardes (`tests/sous-rayon.test.ts` SR8).
+ *
  * Mutations éprouvées :
  *   RD1  le seed passe `false` → `true`                       → rouge
  *   RD2  un `set active = true` ajouté au fichier             → rouge
