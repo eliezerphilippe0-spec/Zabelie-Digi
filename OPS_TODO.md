@@ -21,7 +21,11 @@ dormantes (nommées ET revérifiées : niveau 3, inactives, sans enfant, sans
 produit, avec une jumelle active — compte final exigé à 7), pose un index
 unique `(parent_id, label_fr) nulls not distinct` pour qu'un prochain seed qui
 double échoue bruyamment, et inscrit au registre les lignes de `0094` et
-`0095` (appliquées le 2026-09-03, jamais inscrites). Éprouvée : harnais SQL
+`0095` (appliquées le 2026-09-03, jamais inscrites), et **ferme le rayon
+« Recharge téléphone »** (`rechaj-telefon`, niveau 2, actif depuis 0035 alors
+que V-17 a fermé la recharge first-party ; sans enfant ni produit ;
+`active = false`, rien de supprimé — demandé par le porteur le 2026-09-05,
+« arranger les »). Éprouvée : harnais SQL
 complet vert, trois mutations rouges (liste amputée → « 6 retirées » ;
 `delete` inatteignable → « 0 retirées » ; index rendu non unique → post-
 condition), l'index refuse un doublon de niveau 3 ET de niveau 1, accepte un
@@ -662,6 +666,7 @@ rend désormais `ZB065 — rejeu refuse`. Provoqué, pas supposé.
 | Date (UTC) | Geste | Avant | Après | Par |
 |---|---|---|---|---|
 | 2026-08-09 ~23:0xZ | Les **12 départements restants** passés `active` | 4/16 | **16/16** | connecteur, sur demande explicite du porteur |
+| _en attente d'« applique 0096 »_ | **« Recharge téléphone »** (`rechaj-telefon`, niveau 2) passe `active = false` — V-17 avait fermé le commerce, pas le rayon | 10/74 au niveau 2 | 9/74 | migration `0096`, porteur 2026-09-05 (« arranger les ») |
 
 **Ce qui a été dit avant de le faire, et assumé** : avec **0 produit publié**,
 seize rayons ouverts disent seize fois « rien ici » là où quatre en disaient

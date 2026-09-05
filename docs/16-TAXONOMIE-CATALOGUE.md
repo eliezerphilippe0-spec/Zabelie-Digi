@@ -1,8 +1,32 @@
-# Taxonomie catalogue Zabelie — proposition complète
+# Taxonomie catalogue Zabelie — le document qui fait foi pour les libellés
 
-> **Statut : PROPOSITION. Aucune migration, aucun seed écrit.** Chantier B (§5
-> de la spec V1) — présenté en avance à ta demande explicite.
-> Date : 2026-07-24.
+> **Statut : SEMÉE EN BASE, activation par vagues.** Rédigé le 2026-07-24
+> comme proposition (chantier B, §5 de la spec V1) ; depuis, tout ce qui
+> suit vit dans `zabelie_categories` :
+>
+> | Migration | Ce qu'elle a semé | Appliquée |
+> |---|---|---|
+> | `0035` | 16 départements, 74 catégories, 33 sous-catégories de vague 1 | 2026-07-26 |
+> | `0052` | `label_es` sur les niveaux 1 et 2 | ✅ (registre) |
+> | `0057` | 12 feuilles de services sous « Services professionnels » | 2026-08-11 |
+> | `0077` | tout le niveau 3 ci-dessous, **dormant** (`active = false`) | 2026-08-15 |
+> | `0078` | « Sacs de voyage », avalée par 0077 (collision de slug avec son parent) | ✅ |
+> | `0096` | retrait de 7 sous-catégories en double, index unique (parent, libellé), fermeture de 16.3 | rédigée 2026-09-05 |
+>
+> **Mesuré en production le 2026-09-05** : niveau 1 **16/16** actifs (décision
+> porteur du 2026-08-09, journal `OPS_TODO`) · niveau 2 **10/74** · niveau 3
+> **45/499** — soit exactement la vague 1 de la section suivante, plus les
+> services. L'ouverture d'un rayon est un `UPDATE … set active = true`,
+> jamais une migration ; chaque ouverture s'inscrit au journal d'`OPS_TODO`.
+> **L'état ne se lit pas ici, il s'interroge** :
+>
+> ```sql
+> select level, active, count(*) from zabelie_categories group by 1, 2 order by 1, 2;
+> ```
+>
+> Ce document reste la référence des **libellés français** (0077 les a
+> repris tels quels) ; le kreyòl et l'anglais du niveau 3 sont en base,
+> traduits par l'agent, **relecture native en attente**.
 
 ## Cadre
 
@@ -471,6 +495,13 @@ Photo & vidéo · Traduction · Cours particuliers · Comptabilité · Événeme
 **16.3** Digicel · Natcom *(alimenté par le catalogue Reloadly — non éditable
 par les vendeurs)*
 
+> ⛔ **Fermé par `0096` (2026-09-05).** V-17 (`docs/02`, 2026-08-01) a mis fin à
+> la vente de recharge par Zabelie elle-même ; le rayon restait pourtant actif
+> en base, sans enfant ni produit — une case ouverte pour un commerce qui
+> n'existe plus. `active = false`, la ligne reste. Le rouvrir est une ligne
+> d'`UPDATE`, et suppose d'avoir tranché **D-7** (un vendeur vérifié peut-il
+> vendre du crédit télécom ?), qui reste ouverte.
+
 ---
 
 ## Notes techniques (pour le chantier B, après `go`)
@@ -529,6 +560,13 @@ par les vendeurs)*
 | 5 | Périssables (dép. 9) | ⏸️ Sans objet en vague 1 (département inactif) |
 | 6 | Relecture Kreyòl par un locuteur natif | ❓ Ou accord pour publier avec la mention « traduction à valider », comme le reste de l'i18n |
 
-⛔ **Rappel de gel** : cette migration de seed ne sera pas écrite avant la levée
+> **Tableau périmé, gardé pour l'histoire.** Le seed a été écrit et appliqué
+> (`0035` le 2026-07-26, `0077` le 2026-08-15) ; le gel évoqué ci-dessous a été
+> levé par la décision d'identité du 2026-07-24 (`CLAUDE.md`). Ce qui reste
+> vrai dans ce tableau : la **politique de retour sur pièces** n'est toujours
+> pas écrite (bloquant pour ouvrir 1.1 et 1.3), et la **relecture kreyòl
+> native** n'a pas eu lieu.
+
+~~⛔ **Rappel de gel** : cette migration de seed ne sera pas écrite avant la levée
 du préalable juridique (`docs/17-DOSSIER-BRH-RETENTION.md`), qui bloque
-l'ensemble des chantiers.
+l'ensemble des chantiers.~~

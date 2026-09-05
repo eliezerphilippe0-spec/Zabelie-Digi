@@ -2,7 +2,8 @@ select zabelie_migration_garde('0096_taxonomie_doublons_registre_0094_0095.sql')
 
 -- ============================================================================
 -- 0096 — Sept sous-catégories en double sous le même parent, et la garde qui
---        empêche que ça se reproduise ; lignes de registre de 0094 et 0095
+--        empêche que ça se reproduise ; « Recharge téléphone » se ferme
+--        (V-17) ; lignes de registre de 0094 et 0095
 -- ============================================================================
 -- MESURÉ EN PRODUCTION le 2026-09-05, en lecture seule :
 --
@@ -48,7 +49,16 @@ select zabelie_migration_garde('0096_taxonomie_doublons_registre_0094_0095.sql')
 --   3. pose une contrainte d'unicité sur (parent_id, label_fr), `nulls not
 --      distinct` pour que deux départements homonymes soient refusés aussi.
 --      Le prochain seed qui double une ligne échouera BRUYAMMENT, au lieu de
---      laisser une jumelle dormir jusqu'à son activation.
+--      laisser une jumelle dormir jusqu'à son activation ;
+--   4. FERME le rayon « Recharge téléphone » (`rechaj-telefon`, niveau 2 sous
+--      Digital & services). Il était actif depuis 0035 alors que V-17
+--      (docs/02, 2026-08-01) a fermé la vente de recharge par Zabelie
+--      elle-même — un rayon ouvert pour un commerce qui n'existe plus. Il
+--      n'a aucun enfant (exclusion volontaire de 0077 : catalogue Reloadly)
+--      et aucun produit. `active = false`, rien de supprimé : si D-7 (un
+--      vendeur peut-il vendre du crédit ?) s'ouvre un jour, une ligne
+--      d'`UPDATE` le rouvre, comme tout rayon. Demandé par le porteur le
+--      2026-09-05 (« arranger les »), journalisé dans OPS_TODO.
 --
 -- CE QU'ELLE NE FAIT PAS : aucune ligne active n'est touchée ; aucun produit
 -- n'est rattaché aux sept lignes (mesuré : 0 référence dans
@@ -142,17 +152,50 @@ comment on index zabelie_categories_parent_label_fr_key is
   'Un seed qui double une ligne échoue ici, au lieu de laisser une jumelle '
   'dormante attendre son activation.';
 
+-- ── 4. « Recharge téléphone » se ferme (V-17) ────────────────────────────────
+-- Un `update`, pas un `delete` : la ligne, ses libellés en quatre langues et
+-- sa place sous Digital & services restent — seul l'affichage s'éteint. Les
+-- gardes disent ce qu'on accepte de fermer : un niveau 2 sans enfant et sans
+-- produit. Un rayon qui aurait gagné l'un ou l'autre depuis la mesure ne
+-- bouge pas, et la post-condition le dit.
+update zabelie_categories c
+   set active = false
+ where c.slug = 'rechaj-telefon'
+   and c.level = 2
+   and c.active
+   and not exists (select 1 from zabelie_categories e where e.parent_id = c.id)
+   and not exists (
+         select 1 from zabelie_physical_products pp where pp.category_id = c.id
+       )
+   and not exists (
+         select 1 from products p
+          where p.status = 'published' and p.category = c.label_fr
+       );
+
 -- ── Post-conditions ──────────────────────────────────────────────────────────
 -- Sur l'EFFET : aucun doublon (parent, label_fr) où que ce soit ; les sept
 -- jumelles ACTIVES sont toujours là ; l'index existe et est unique ; les deux
--- lignes de registre disent bien `appliquee` / `journal_supabase`.
+-- lignes de registre disent bien `appliquee` / `journal_supabase` ; « Recharge
+-- téléphone » existe encore et n'est plus active.
 do $$
 declare
   v_doublons  integer;
   v_jumelles  integer;
   v_index     boolean;
   v_registre  integer;
+  v_rechaj    boolean;
 begin
+  select active into v_rechaj
+    from zabelie_categories where slug = 'rechaj-telefon' and level = 2;
+  if v_rechaj is null then
+    raise exception '0096 KO: rechaj-telefon a disparu — ce devait etre un update, jamais un delete'
+      using errcode = 'ZB096';
+  end if;
+  if v_rechaj then
+    raise exception '0096 KO: rechaj-telefon est encore actif — enfant ou produit apparu depuis la mesure du 2026-09-05 ?'
+      using errcode = 'ZB096';
+  end if;
+
   select count(*) into v_doublons
     from (select parent_id, label_fr from zabelie_categories
            group by parent_id, label_fr having count(*) > 1) d;
@@ -194,5 +237,5 @@ begin
       using errcode = 'ZB096';
   end if;
 
-  raise notice '0096 OK: 7 doublons retires, 7 jumelles actives intactes, index unique pose, registre 0094/0095 inscrit';
+  raise notice '0096 OK: 7 doublons retires, 7 jumelles actives intactes, index unique pose, registre 0094/0095 inscrit, rechaj-telefon ferme';
 end $$;
