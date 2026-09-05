@@ -12,6 +12,7 @@
 > | `0077` | tout le niveau 3 ci-dessous, **dormant** (`active = false`) | 2026-08-15 |
 > | `0078` | « Sacs de voyage », avalée par 0077 (collision de slug avec son parent) | ✅ |
 > | `0096` | retrait de 7 sous-catégories en double, index unique (parent, libellé), fermeture de 16.3 | 2026-09-05 11:50Z |
+> | `0097` | « Recharge Digicel » et « Recharge Natcom », semées **dormantes** sous 16.3 (D-7) | rédigée 2026-09-05 |
 >
 > **Mesuré en production le 2026-09-05, après `0096`** : niveau 1 **16/16**
 > actifs (décision porteur du 2026-08-09, journal `OPS_TODO`) · niveau 2
@@ -495,12 +496,19 @@ Photo & vidéo · Traduction · Cours particuliers · Comptabilité · Événeme
 **16.3** Digicel · Natcom *(alimenté par le catalogue Reloadly — non éditable
 par les vendeurs)*
 
-> ⛔ **Fermé par `0096` (2026-09-05).** V-17 (`docs/02`, 2026-08-01) a mis fin à
+> ⛔ **Vente en propre fermée par `0096` (2026-09-05).** V-17 (`docs/02`, 2026-08-01) a mis fin à
 > la vente de recharge par Zabelie elle-même ; le rayon restait pourtant actif
 > en base, sans enfant ni produit — une case ouverte pour un commerce qui
 > n'existe plus. `active = false`, la ligne reste. Le rouvrir est une ligne
 > d'`UPDATE`, et suppose d'avoir tranché **D-7** (un vendeur vérifié peut-il
 > vendre du crédit télécom ?), qui reste ouverte.
+>
+> 🌱 **Deux sous-rayons semés DORMANTS par `0097` (2026-09-05)** — « Recharge
+> Digicel » et « Recharge Natcom », `active = false`. Ils préparent le modèle
+> réaffirmé par le porteur ce jour-là : *le vendeur crée sa boutique, Zabelie
+> prélève sa commission*. Ils n'autorisent RIEN — leur activation suppose D-7
+> tranchée, un avis juridique, et la ligne écrite entre « rechaj » (permis) et
+> « vann balans » (interdit, monnaie électronique).
 
 ---
 
