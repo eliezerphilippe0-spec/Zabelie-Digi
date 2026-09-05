@@ -186,7 +186,7 @@ const fr = {
   "home.b3.b": "Fichier livré immédiatement ; objet remis par le vendeur ; service planifié avec lui.",
   "catalog.cat0.t": "Ce rayon ouvre bientôt",
   "catalog.cat0.b": "Les premiers vendeurs s'installent. Vous vendez dans ce rayon ? La place est libre.",
-  "home.all": "Tout voir →",
+  "home.all": "Tout voir",
   "home.s1.t": "Publiez",
   "home.s1.b":
     "Mettez votre produit en ligne en quelques minutes.",
@@ -867,7 +867,7 @@ const ht: Record<I18nKey, string> = {
   "home.b3.b": "Fichye rive tousuit ; machandiz remèt pa machann nan ; sèvis planifye avè l.",
   "catalog.cat0.t": "Rayon sa a ap louvri talè",
   "catalog.cat0.b": "Premye machann yo ap enstale. Ou vann nan rayon sa a ? Plas la lib.",
-  "home.all": "Wè tout →",
+  "home.all": "Wè tout",
   "home.s1.t": "Pibliye",
   "home.s1.b": "Mete pwodwi ou an liy nan kèk minit.",
   "home.s2.t": "Resevwa lajan",
@@ -1519,7 +1519,7 @@ const en = {
   "home.b3.b": "Files arrive instantly; goods are handed over by the seller; services are scheduled with them.",
   "catalog.cat0.t": "This department opens soon",
   "catalog.cat0.b": "The first sellers are setting up. Do you sell here? The spot is open.",
-  "home.all": "See all →",
+  "home.all": "See all",
   "home.s1.t": "Publish",
   "home.s1.b":
     "Put your product online in a few minutes.",
@@ -2182,7 +2182,7 @@ const es = {
   "home.b3.b": "Los archivos llegan al instante; los objetos los entrega el vendedor; los servicios se agendan con él.",
   "catalog.cat0.t": "Este departamento abre pronto",
   "catalog.cat0.b": "Los primeros vendedores se están instalando. ¿Vendes aquí? El lugar está libre.",
-  "home.all": "Ver todo →",
+  "home.all": "Ver todo",
   "home.s1.t": "Publica",
   "home.s1.b":
     "Pon tu producto en línea en unos minutos.",
