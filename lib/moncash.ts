@@ -513,3 +513,217 @@ export function redactPayment(p: MonCashPayment): Record<string, unknown> {
   const { payer: _payer, ...rest } = p;
   return { ...rest, payer_present: Boolean(_payer) };
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// LA QUESTION POSÉE À MONCASH — sonde qui SORT du processus
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * `sondeMonCash()` ci-dessus lit `MONCASH_MODE` et rend un verdict sur la
+ * CONFIGURATION. Elle ne demande rien à MonCash. C'est utile et ce n'est pas
+ * la même question — exactement le rapport qu'entretiennent
+ * `integrations.email` (présence d'une clé) et `/api/admin/email-verify`
+ * (ce que le fournisseur répond).
+ *
+ * ─── POURQUOI CELLE-CI EXISTE ───────────────────────────────────────────────
+ * Mesuré en production le 2026-09-05 : quinze paiements, sept `failed` et sept
+ * `pending`, et **aucun ne porte de référence opérateur**. Autrement dit le
+ * rail n'a jamais abouti une seule fois depuis l'ouverture — et personne ne
+ * sait POURQUOI, parce que rien ne pose la question. Côté acheteur le symptôme
+ * est un « Création de la commande impossible » ; côté porteur, un 502 ; dans
+ * les deux cas, la cause reste invisible.
+ *
+ * Or les causes possibles sont peu nombreuses, elles s'excluent, et elles
+ * appellent des gestes DIFFÉRENTS :
+ *
+ *   `absente`                identifiants pas posés dans Vercel
+ *   `mode_ambigu`            MONCASH_MODE illisible : aucun paiement ne part
+ *   `injoignable`            MonCash n'a pas répondu — ne dit RIEN des clés
+ *   `identifiants_refuses`   MonCash a dit non (401/403). La cause la plus
+ *                            fréquente n'est pas « clé fausse » mais « clé du
+ *                            BAC À SABLE employée en production », les deux
+ *                            portails étant distincts
+ *   `bac_a_sable`            les identifiants passent, mais en mode sandbox :
+ *                            aucun paiement RÉEL ne partira jamais
+ *   `ok`                     jeton obtenu en production
+ *
+ * ⚠️ **Elle ne rend jamais un secret** — ni `MONCASH_CLIENT_SECRET`, ni le
+ * jeton obtenu, ni un aperçu, ni une longueur. `tests/moncash-verify.test.ts`
+ * l'assure sur le JSON SÉRIALISÉ, pas champ par champ : un champ ajouté
+ * demain « pour vérifier que c'est la bonne clé » passerait une assertion
+ * écrite champ par champ.
+ *
+ * ⚠️ **Elle ne crée aucun paiement.** Elle s'arrête au jeton
+ * `client_credentials`, qui est une lecture. Une sonde qui créerait une
+ * transaction d'essai pour « vraiment » vérifier laisserait des commandes
+ * fantômes en base — et ce dépôt en compte déjà quatorze.
+ */
+export type VerdictMonCash =
+  | "absente"
+  | "mode_ambigu"
+  | "injoignable"
+  | "identifiants_refuses"
+  | "bac_a_sable"
+  | "ok";
+
+export type RapportMonCash = {
+  verdict: VerdictMonCash;
+  /** `sandbox` | `production`, ou `null` si la variable est illisible. */
+  mode: MonCashMode | null;
+  /** D'où vient le mode : absente, vide, ou explicite. */
+  modeSource: MonCashModeSource | null;
+  identifiantsPresents: boolean;
+  /** L'hôte interrogé — utile pour distinguer les deux portails. */
+  hote: string | null;
+  /** Le code HTTP rendu par MonCash, ou `null` si la question n'a pas été posée. */
+  statutFournisseur: number | null;
+  /** Un jeton a-t-il été obtenu ? Le jeton lui-même ne sort JAMAIS. */
+  jetonObtenu: boolean;
+  explication: string;
+};
+
+export async function verifierMonCash(): Promise<RapportMonCash> {
+  const clientId = process.env.MONCASH_CLIENT_ID;
+  const clientSecret = process.env.MONCASH_CLIENT_SECRET;
+  const identifiantsPresents = Boolean(clientId && clientSecret);
+
+  // 1. Le mode d'abord : illisible, rien ne peut partir, et ça se dit avant
+  //    d'accuser les identifiants.
+  let mode: MonCashMode;
+  let modeSource: MonCashModeSource;
+  try {
+    ({ mode, source: modeSource } = resolveMonCashMode(process.env.MONCASH_MODE));
+  } catch (e) {
+    console.error("[moncash-verify] MONCASH_MODE illisible", e);
+    return {
+      verdict: "mode_ambigu",
+      mode: null,
+      modeSource: null,
+      identifiantsPresents,
+      hote: null,
+      statutFournisseur: null,
+      jetonObtenu: false,
+      explication:
+        "MONCASH_MODE ne vaut ni « sandbox » ni « production ». Toute création " +
+        "de paiement lève avant même d'atteindre MonCash. Corriger la variable " +
+        "dans Vercel, puis redéployer.",
+    };
+  }
+
+  const { rest } = bases(mode);
+  const hote = new URL(rest).host;
+
+  if (!identifiantsPresents) {
+    return {
+      verdict: "absente",
+      mode,
+      modeSource,
+      identifiantsPresents: false,
+      hote,
+      statutFournisseur: null,
+      jetonObtenu: false,
+      explication:
+        "MONCASH_CLIENT_ID et/ou MONCASH_CLIENT_SECRET ne sont pas posés dans " +
+        "Vercel. Le rail est masqué au checkout, aucun paiement ne peut naître.",
+    };
+  }
+
+  // 2. La question, posée à MonCash. `client_credentials` est une LECTURE :
+  //    aucune commande, aucun paiement, aucune trace côté acheteur.
+  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  let res: Response;
+  try {
+    res = await fetch(`${rest}/oauth/token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basic}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: "scope=read,write&grant_type=client_credentials",
+      cache: "no-store",
+    });
+  } catch (e) {
+    console.error("[moncash-verify] fournisseur injoignable", e);
+    return {
+      verdict: "injoignable",
+      mode,
+      modeSource,
+      identifiantsPresents: true,
+      hote,
+      statutFournisseur: null,
+      jetonObtenu: false,
+      explication:
+        `${hote} n'a pas répondu. Ce verdict ne dit RIEN des identifiants : ` +
+        "la question n'a pas pu être posée. Réessayer avant de conclure.",
+    };
+  }
+
+  if (!res.ok) {
+    return {
+      verdict: "identifiants_refuses",
+      mode,
+      modeSource,
+      identifiantsPresents: true,
+      hote,
+      statutFournisseur: res.status,
+      jetonObtenu: false,
+      explication:
+        `${hote} a refusé les identifiants (HTTP ${res.status}). La cause la ` +
+        "plus fréquente n'est pas une clé fausse mais une clé du MAUVAIS " +
+        "portail : le bac à sable et la production ont des identifiants " +
+        `distincts, et le mode courant est « ${mode} ». Relever les ` +
+        "identifiants sur le portail correspondant, les retaper dans Vercel " +
+        "(ne pas coller), puis redéployer.",
+    };
+  }
+
+  const data = (await res.json().catch(() => ({}))) as { access_token?: string };
+  const jetonObtenu = Boolean(data.access_token);
+
+  if (!jetonObtenu) {
+    return {
+      verdict: "identifiants_refuses",
+      mode,
+      modeSource,
+      identifiantsPresents: true,
+      hote,
+      statutFournisseur: res.status,
+      jetonObtenu: false,
+      explication:
+        `${hote} a répondu ${res.status} mais sans jeton d'accès. La réponse ` +
+        "est acceptée sans être exploitable — traiter comme un refus.",
+    };
+  }
+
+  if (mode !== "production") {
+    return {
+      verdict: "bac_a_sable",
+      mode,
+      modeSource,
+      identifiantsPresents: true,
+      hote,
+      statutFournisseur: res.status,
+      jetonObtenu: true,
+      explication:
+        "Les identifiants sont valides, mais le mode est « sandbox » : les " +
+        "paiements partent vers le bac à sable et AUCUNE gourde réelle ne " +
+        "circulera. Pour encaisser : identifiants du portail de PRODUCTION, " +
+        "MONCASH_MODE=production, puis redéployer.",
+    };
+  }
+
+  return {
+    verdict: "ok",
+    mode,
+    modeSource,
+    identifiantsPresents: true,
+    hote,
+    statutFournisseur: res.status,
+    jetonObtenu: true,
+    explication:
+      `Jeton obtenu sur ${hote} en mode production. Le rail peut encaisser. ` +
+      "Ce verdict ne présume pas de la suite d'un paiement, seulement que " +
+      "l'authentification aboutit.",
+  };
+}
