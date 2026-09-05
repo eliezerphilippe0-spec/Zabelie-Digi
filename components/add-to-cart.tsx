@@ -65,7 +65,13 @@ export function AddToCart({
   if (etat === "ajoute") {
     return (
       <div className="mt-3 text-center">
-        <p className="text-sm font-semibold text-success-text">✓ {labels.added}</p>
+        {/* La coche ARRIVE (brief §3.3) : `reveal-mark`, une pulsation d'échelle
+            en --motion-slow sur les tokens du thème, rien sous reduced-motion.
+            SVG plutôt que le glyphe ✓, dont le dessin dépend de la police. */}
+        <p className="reveal-mark inline-flex items-center gap-1.5 text-sm font-semibold text-success-text">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+          {labels.added}
+        </p>
         <a
           href="/panier"
           className="mt-2 inline-block rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60"

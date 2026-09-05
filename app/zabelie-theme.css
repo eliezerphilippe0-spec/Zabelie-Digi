@@ -138,6 +138,16 @@
   --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
 
   --radius-xl: 1.25rem;
+  /* Cartes produit : 12 px (brief accueil premium §4.4), un cran PROPRE de
+     l'échelle ci-dessous — `rounded-card` — et non un rayon arbitraire, que
+     `tests/ux-lot-d` refuse. */
+  --radius-card: 0.75rem;
+
+  /* ── Transitions par DÉFAUT sur les tokens de mouvement (brief §3.3) : tout
+     utilitaire `transition` du dépôt dure `--motion-base` avec `--ease`, et
+     tombe à 0 ms sous prefers-reduced-motion avec eux. */
+  --default-transition-duration: var(--motion-base);
+  --default-transition-timing-function: var(--ease);
 
   /* ── RÈGLE DES RAYONS — une échelle, quatre rôles (audit UX 2026-09-02, #11)
    *
@@ -147,7 +157,8 @@
    *
    *   rounded-lg    éléments de menu, petites pastilles, vignettes
    *   rounded-xl    boutons et champs de formulaire            (1.25rem, ci-dessus)
-   *   rounded-2xl   cartes (produit, section, état vide)
+   *   rounded-card  carte PRODUIT (0.75rem — brief accueil premium §4.4)
+   *   rounded-2xl   cartes de section, états vides, bannière
    *   rounded-3xl   grands panneaux : formulaires d'auth, produit vedette,
    *                 bloc de conversion, image principale de fiche
    *   rounded-full  pills, badges, avatars ronds

@@ -27,17 +27,17 @@ export function SkeletonCard() {
   return (
     <div
       aria-hidden="true"
-      className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface"
+      className="flex flex-col overflow-hidden rounded-card border border-line bg-surface"
     >
-      <SkeletonBlock className="h-40 rounded-none" />
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <SkeletonBlock className="h-3 w-16" />
+      {/* Même anatomie que la carte (accueil premium §4.4) : image carrée,
+          nom sur deux lignes, prix, vendeur — le squelette ne promet pas une
+          autre forme que celle qui arrive. */}
+      <SkeletonBlock className="aspect-square w-full rounded-none" />
+      <div className="flex flex-1 flex-col gap-1 p-2.5">
         <SkeletonBlock className="h-4 w-4/5" />
-        <SkeletonBlock className="h-3 w-full" />
-        <div className="mt-auto flex items-center justify-between pt-3">
-          <SkeletonBlock className="h-3 w-20" />
-          <SkeletonBlock className="h-4 w-14" />
-        </div>
+        <SkeletonBlock className="h-4 w-3/5" />
+        <SkeletonBlock className="h-4 w-14" />
+        <SkeletonBlock className="h-3 w-20" />
       </div>
     </div>
   );
@@ -46,7 +46,7 @@ export function SkeletonCard() {
 /** Grille de cartes fantômes, mêmes colonnes que le catalogue. */
 export function SkeletonGrid({ n = 6 }: { n?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {Array.from({ length: n }, (_, i) => (
         <SkeletonCard key={i} />
       ))}

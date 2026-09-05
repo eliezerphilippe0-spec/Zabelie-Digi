@@ -131,6 +131,7 @@ export default async function HomePage() {
     sales: t(lang, "product.sales"),
     salesOne: t(lang, "product.sales.one"),
     lang,
+    titleFallback: t(lang, "card.title.fallback"),
   };
 
   // Une seule requête catalogue alimente toutes les rangées.
