@@ -99,6 +99,12 @@ export function paires(T) {
   // deux thèmes), plus `ink` (qui bascule avec le chrome) : la paire suit le
   // token réellement employé par les composants.
   out.push(["--on-brand sur CTA --brand", T["on-brand"], T.brand, NORMAL]);
+  // En-tête (accueil premium, Phase 2) : texte et icônes `on-chrome` sur les
+  // TROIS arrêts du dégradé de marque — le dégradé référence ces tokens, donc
+  // ce qui est mesuré ici est ce qui est peint.
+  for (const arret of ["chrome", "chrome-2", "chrome-3"]) {
+    out.push([`--on-chrome sur ${arret}`, T["on-chrome"], T[arret], NORMAL]);
+  }
   return out;
 }
 

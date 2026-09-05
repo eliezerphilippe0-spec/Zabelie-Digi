@@ -11,7 +11,6 @@ import { LANDING_SLIDES, secondGeste } from "@/lib/landing-slides";
 import { getMenuRayons } from "@/lib/taxonomy";
 import { whatsappHref } from "@/lib/whatsapp";
 import {
-  getCatalogueCategories,
   getPublishedProducts,
   isSupabaseConfigured,
   type ProductView,
@@ -140,7 +139,7 @@ async function promoSellerIds(): Promise<Set<string>> {
 }
 
 export default async function HomePage() {
-  const [products, lang, promoSellers, catalogueCategories] = await Promise.all([
+  const [products, lang, promoSellers] = await Promise.all([
     // Correctif audit : getPublishedProducts lève désormais en cas d'erreur
     // Supabase (BL-116, pour empêcher un repli silencieux sur le catalogue
     // vers des produits de démo inachetables) — mais l'accueil n'a pas cette
@@ -150,10 +149,9 @@ export default async function HomePage() {
     getPublishedProducts().catch(() => []),
     getLang(),
     promoSellerIds(),
-    // Requête séparée plutôt que dérivée de `products` : celle-ci est bornée à
-    // 60 lignes, et une catégorie qui n'existerait qu'au-delà disparaîtrait de
-    // la barre sans que personne ne le voie.
-    getCatalogueCategories(),
+    // `getCatalogueCategories()` a quitté cette page avec le bandeau qu'elle
+    // alimentait : les rayons non vides viennent de `getMenuRayons` dans
+    // l'en-tête (Phase 2), une seule source pour toutes les pages.
   ]);
   // Les mêmes rayons que l'en-tête (RLS anon : actifs seulement) — la sidebar
   // desktop et la grille de l'état vide en dérivent tous deux. Après le
@@ -265,51 +263,11 @@ export default async function HomePage() {
       />
       <SiteNav />
 
-      {/* BANDEAU CATÉGORIES — barre claire, texte sombre (style Bloop,
-          décision porteur 2026-07-25). Fonctionne sans JS : simples liens GET
-          vers le catalogue filtré.
-
-          V-13 : la barre affichait SIX LIBELLÉS DIGITAUX EN DUR (Photo,
-          Business, Musique…) sous un titre qui promet des pièces auto. Elle
-          n'annonçait pas seulement des pages vides, elle annonçait le mauvais
-          commerce. La brancher telle quelle sur la taxonomie l'aurait fait
-          passer de six catégories fausses à seize catégories vides.
-          Elle est donc DÉRIVÉE DU CATALOGUE : une catégorie n'apparaît que si
-          un produit publié s'y trouve. À catalogue vide — l'état actuel — la
-          barre ne s'affiche pas du tout. */}
-      {catalogueCategories.length > 0 && (
-      <nav
-        aria-label="Catégories"
-        /* UI-02 — `bg-cloud` faisait de ce rail le SEUL fond clair de la
-             page (détection programmatique : un élément sur toute la page),
-             une bande de 53 px pleine largeur au milieu d'un thème sombre.
-             `surface-maroon` appartient au système et passe AA avec
-             `--cloud` (17,76:1) comme avec `--mist` (7,29:1). */
-          className="overflow-x-auto border-b border-line bg-surface-maroon"
-      >
-        <div className="mx-auto flex max-w-6xl items-center gap-1 px-3 py-2.5">
-          {catalogueCategories.map((c) => (
-            <Link
-              key={c}
-              // `cat` — c'est le paramètre que /catalogue lit (app/catalogue
-              // /page.tsx). `categorie` était ignoré en silence : le clic
-              // ouvrait le catalogue ENTIER sans jamais dire que le filtre
-              // n'avait pas pris.
-              href={`/catalogue?cat=${encodeURIComponent(c)}`}
-              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold text-cloud transition hover:bg-white/10"
-            >
-              {c}
-            </Link>
-          ))}
-          <Link
-            href="/catalogue"
-            className="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold text-cloud transition hover:bg-white/10"
-          >
-            {t(lang, "home.all")}
-          </Link>
-        </div>
-      </nav>
-      )}
+      {/* Le BANDEAU CATÉGORIES qui vivait ici (barre claire dérivée du
+          catalogue, V-13) est monté dans l'en-tête : `CategoryChips` porte
+          les mêmes rayons non vides, sous la recherche, sur toutes les pages
+          (accueil premium, Phase 2 — brief §4.1). Une seule source, une seule
+          rangée. */}
 
       {/* HERO v2 — l'accueil appartient à l'ACHETEUR.
           Le principe écrit ici depuis la v1 (« chaque pixel au-dessus de la

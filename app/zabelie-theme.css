@@ -90,6 +90,12 @@
      du 2026-08-15 le faisait. Le CHROME sombre (en-tête, pied, theme-color)
      a son propre token, `chrome`, qui est l'indigo du brief. */
   --color-chrome: #17123a;   /* en-tête, pied, barre d'adresse (theme-color), favicon */
+  /* Les deux autres arrêts du dégradé de marque, et le texte posé dessus.
+     Tokens (et pas des hex dans le dégradé) pour que la porte de contraste
+     mesure `on-chrome` sur CHAQUE arrêt : 17,7 · 12,8 · 12,9:1. */
+  --color-chrome-2: #2b3050;
+  --color-chrome-3: #4a2731;
+  --color-on-chrome: #fffdf9;
   --color-ink: #faf8f5;      /* surface claire des champs et boutons inverses */
   --color-ink-soft: #f2eee7;
   --color-cloud: #17123a;    /* texte principal = l'encre (16,73:1 sur crème) */
@@ -159,7 +165,12 @@
 :root {
   /* ── Dégradé de marque — en-tête et bannière hero SEULEMENT, jamais en
      fond de page (brief §3.1). Texte blanc dessus : 12,8:1 au plus clair. ── */
-  --brand-gradient: linear-gradient(135deg, #2b3050, #4a2731, #17123a);
+  --brand-gradient: linear-gradient(
+    135deg,
+    var(--color-chrome-2),
+    var(--color-chrome-3),
+    var(--color-chrome)
+  );
 
   /* ── Mouvement — invisible mais présent (brief §3.3) ──
      Animer UNIQUEMENT transform et opacity. Aucune durée au-delà de --motion-slow.
@@ -217,6 +228,9 @@
   --color-accent-strong: #f5934f;
 
   --color-chrome: #100c09;
+  --color-chrome-2: #1e1811;
+  --color-chrome-3: #221b14;
+  --color-on-chrome: #f7f2ec;
   --color-ink: #100c09;
   --color-ink-soft: #1b1610;
   --color-cloud: #f7f2ec;

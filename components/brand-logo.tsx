@@ -51,11 +51,25 @@ export function BrandMark({
   );
 }
 
-export function BrandLogo({ className = "" }: { className?: string }) {
+export function BrandLogo({
+  className = "",
+  nomMasqueSurMobile = false,
+}: {
+  className?: string;
+  /**
+   * En-tête compact (accueil premium §4.1) : sur un écran de 375 px, le mot
+   * « Zabelie » à côté du monogramme prend 70 px à la barre de recherche, qui
+   * est l'outil n°1. Le monogramme suffit sous `sm` ; le nom revient au-delà.
+   * Le pied de page garde le nom partout.
+   */
+  nomMasqueSurMobile?: boolean;
+}) {
   return (
     <Link href="/" className={`inline-flex min-h-11 items-center gap-2 ${className}`}>
       <BrandMark size={32} />
-      <span className="text-sm font-semibold tracking-tight">
+      <span
+        className={`text-sm font-semibold tracking-tight ${nomMasqueSurMobile ? "hidden sm:inline" : ""}`}
+      >
         Zabelie
       </span>
     </Link>
