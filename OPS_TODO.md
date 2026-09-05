@@ -3,6 +3,42 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 🟡 Appliquer `0096` — sept sous-catégories en double, dormantes — deux minutes
+
+Mesuré en production le 2026-09-05, en lecture seule, à la question « toutes
+les catégories et sous-catégories sont ok ? ». Structure saine (589 lignes, 0
+orphelin, 0 incohérence de niveau, KR/FR/EN partout), **mais sept
+sous-catégories existent deux fois sous le même parent** : une ligne active
+de la vague 1 (0035, 0057) et une ligne dormante semée par `0077` sous un
+autre slug — `luil-mote` à côté de `luil-motè`, `frenaj-moto` à côté de
+`fren-moto`, `foto-videyo` à côté de `foto-ak-videyo`, `filtrasyon`,
+`marketing-rezo-sosyal`, `pwoteksyon-sole`, `sewom`. Invisible aujourd'hui
+(rien ne lit un nœud inactif) ; **le jour où une branche s'ouvre pour la
+vague 2, l'acheteur voit deux fois « Huile moteur »**, avec deux comptes.
+
+`0096_taxonomie_doublons_registre_0094_0095.sql` : retire les sept lignes
+dormantes (nommées ET revérifiées : niveau 3, inactives, sans enfant, sans
+produit, avec une jumelle active — compte final exigé à 7), pose un index
+unique `(parent_id, label_fr) nulls not distinct` pour qu'un prochain seed qui
+double échoue bruyamment, et inscrit au registre les lignes de `0094` et
+`0095` (appliquées le 2026-09-03, jamais inscrites), et **ferme le rayon
+« Recharge téléphone »** (`rechaj-telefon`, niveau 2, actif depuis 0035 alors
+que V-17 a fermé la recharge first-party ; sans enfant ni produit ;
+`active = false`, rien de supprimé — demandé par le porteur le 2026-09-05,
+« arranger les »). Éprouvée : harnais SQL
+complet vert, trois mutations rouges (liste amputée → « 6 retirées » ;
+`delete` inatteignable → « 0 retirées » ; index rendu non unique → post-
+condition), l'index refuse un doublon de niveau 3 ET de niveau 1, accepte un
+libellé neuf. Le croisement des libellés vit dans `tests/taxonomie-seed.test.ts`.
+
+⚠️ **C'est une suppression de lignes en base** — des lignes de seed sans
+produit rattaché, pas des soldes ni des commandes, mais une suppression.
+Elle s'applique sur « applique 0096 » du porteur, puis la ligne de registre
+de `0096` s'inscrit par la migration suivante, comme d'habitude. Retour
+arrière : les sept tuples sont dans `0077`, rejouables un par un.
+
+---
+
 ## 🟡 Vérifier `NEXT_PUBLIC_SITE_URL` en production — une minute
 
 Issu de l'audit SEO du 2026-08-28 (`docs/47` §2.3).
@@ -630,6 +666,7 @@ rend désormais `ZB065 — rejeu refuse`. Provoqué, pas supposé.
 | Date (UTC) | Geste | Avant | Après | Par |
 |---|---|---|---|---|
 | 2026-08-09 ~23:0xZ | Les **12 départements restants** passés `active` | 4/16 | **16/16** | connecteur, sur demande explicite du porteur |
+| _en attente d'« applique 0096 »_ | **« Recharge téléphone »** (`rechaj-telefon`, niveau 2) passe `active = false` — V-17 avait fermé le commerce, pas le rayon | 10/74 au niveau 2 | 9/74 | migration `0096`, porteur 2026-09-05 (« arranger les ») |
 
 **Ce qui a été dit avant de le faire, et assumé** : avec **0 produit publié**,
 seize rayons ouverts disent seize fois « rien ici » là où quatre en disaient
