@@ -52,7 +52,38 @@ test("H3 — « bientôt » ne s'affiche plus ; une ligne discrète ne vient QUE
   assert.doesNotMatch(sansCommentaires(PAGE), /aria-label="Catégories"|catalogueCategories/);
 });
 
-test("H4 — Aide, Talents, langue, thème et déconnexion vivent dans le menu compte", () => {
+test("H4b — la LANGUE est une pastille de la barre, visible en permanence, et n'est PAS dupliquée dans le menu", () => {
+  /* Retourné le 2026-09-05, pas exempté. La Phase 2 rangeait le sélecteur au
+   * fond du menu compte pour tenir l'en-tête sous 100 px ; le compromis était
+   * payé au mauvais endroit — dans un produit kreyòl-first servi en français
+   * par défaut (V-18), rien à l'écran ne disait qu'on pouvait changer de
+   * langue, ni dans laquelle on se trouvait.
+   *
+   * Ce qui COMMANDE, et que ce test tient : la pastille est rendue AVANT le
+   * menu compte (donc dans la barre), et le menu ne la porte plus — deux
+   * endroits pour un même réglage valent moins qu'un seul bien placé. */
+  const nav = sansCommentaires(NAV);
+  const iMenu = nav.indexOf("<AccountMenu");
+  assert.ok(iMenu > 0, "menu compte introuvable");
+  const barre = nav.slice(0, iMenu);
+  const menu = nav.slice(iMenu);
+
+  assert.match(barre, /<LangToggle current=\{lang\} compact \/>/, "la pastille manque à la barre");
+  assert.doesNotMatch(menu, /<LangToggle/, "la langue est dupliquée dans le menu compte");
+
+  // La forme : `<details>` natif — le contrôle s'ouvre sans JavaScript, donc
+  // avant l'hydratation, ce qui compte sur les Android d'entrée de gamme.
+  const lt = sansCommentaires(readFileSync("components/lang-toggle.tsx", "utf8"));
+  assert.match(lt, /if \(compact\) \{[\s\S]{0,200}<details/);
+  // Elle affiche la langue COURANTE — c'est ce qui la sépare d'un globe, qui
+  // annonce la fonction sans dire où l'on est (Airbnb, Booking).
+  assert.match(lt, /\{ABBR\[current\]\}\s*<\/summary>/);
+  // Cible tactile de 44 px (A13), et largeur seulement : la hauteur de
+  // l'en-tête ne bouge pas (A2).
+  assert.match(lt, /<summary[\s\S]{0,200}min-h-11 min-w-11/);
+});
+
+test("H4 — Aide, Talents, thème et déconnexion vivent dans le menu compte", () => {
   // ⚠️ L'index se calcule sur la MÊME chaîne que la coupe : le retrait des
   // commentaires décale les positions, et une coupe faite à l'index de
   // l'original tombait APRÈS le menu — assertion rouge sur un fichier juste.
@@ -61,7 +92,6 @@ test("H4 — Aide, Talents, langue, thème et déconnexion vivent dans le menu c
   for (const [href, cle] of [["/aide", "nav.help"], ["/#talents", "nav.talents"], ["/vendre", "topbar.sell"], ["/connexion", "nav.login"], ["/messages", "msg.title"]]) {
     assert.match(menu, new RegExp(`href="${href.replace(/[/#]/g, "\\$&")}"[^>]*>\\s*\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\}`), `${href} manque au menu compte`);
   }
-  assert.match(menu, /<LangToggle current=\{lang\} \/>/);
   assert.match(menu, /<ThemeToggle\s*\n\s*labelToLight=/);
   // Le menu est un <details> natif : zéro JavaScript pour s'ouvrir.
   assert.match(sansCommentaires(MENU), /<details className="relative">\s*<summary/);

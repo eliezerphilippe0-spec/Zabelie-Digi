@@ -110,6 +110,14 @@ export async function SiteNav() {
             items={suggestionsDepuisRayons(rayons)}
           />
 
+          {/* LANGUE — pastille qui dit la langue COURANTE et l'ouvre en un
+              geste, comme Amazon et AliExpress. Elle était au fond du menu
+              compte depuis la Phase 2 : invisible, derrière une icône qui
+              n'annonce rien d'une langue, dans un produit kreyòl-first servi
+              en français par défaut. Elle ajoute de la largeur, jamais de la
+              hauteur — l'en-tête reste sous 100 px (A2). */}
+          <LangToggle current={lang} compact />
+
           {/* Panier — l'icône vit pour un compte connecté ; le badge n'apparaît
               qu'avec un contenu (un « 0 » n'informe pas). Client de session,
               jamais service role : le compteur est CELUI de l'appelant. */}
@@ -189,8 +197,11 @@ export async function SiteNav() {
               </MetricA>
             )}
             <div className="my-1 border-t border-line" />
+            {/* La LANGUE a quitté ce menu le 2026-09-05 : elle vit désormais en
+                pastille dans la barre (ligne 1), visible en permanence. Deux
+                endroits pour un même réglage valent moins qu'un seul bien
+                placé — voir components/lang-toggle.tsx. */}
             <div className="flex items-center justify-between gap-2 px-1">
-              <LangToggle current={lang} />
               <ThemeToggle
                 labelToLight={t(lang, "nav.theme.light")}
                 labelToDark={t(lang, "nav.theme.dark")}
