@@ -69,16 +69,16 @@ test("le favicon peint le Z avec la valeur réelle de --color-brand", () => {
   );
 });
 
-test("le favicon pose la tuile avec la valeur réelle de --color-ink", () => {
-  const ink = token("ink");
+test("le favicon pose la tuile avec la valeur réelle de --color-chrome", () => {
+  const ink = token("chrome");
   assert.ok(
     SVG.toLowerCase().includes(`fill="${ink}"`),
-    `La tuile du favicon doit valoir ${ink} (= --color-ink). Valeur trouvée : ` +
+    `La tuile du favicon doit valoir ${ink} (= --color-chrome, l'encre du chrome). Valeur trouvée : ` +
       `${(/fill="(#[0-9a-fA-F]+)"/.exec(SVG) ?? [, "aucune"])[1]}.`
   );
   assert.match(
     TSX,
-    /fill="var\(--color-ink\)"/,
+    /fill="var\(--color-chrome\)"/,
     "La tuile du composant doit venir du token, pas d'un hex."
   );
 });

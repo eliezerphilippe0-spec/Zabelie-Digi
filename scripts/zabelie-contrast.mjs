@@ -103,19 +103,21 @@ export function paires(T) {
 }
 
 /**
- * Depuis le mode clair (2026-08-15), le fichier de thème porte DEUX
- * palettes : les tokens @theme (sombre) puis un bloc [data-theme="light"]
- * qui en redéfinit une partie. `lireTokens` sur le fichier ENTIER écraserait
- * le sombre par le clair — mesuré : --ink sur --brand rendait 4,25:1, un
- * faux échec fabriqué par la collision. On découpe au bloc, et le clair
- * HÉRITE du sombre pour tout ce qu'il ne redéfinit pas — exactement la
- * cascade CSS.
+ * Le fichier de thème porte DEUX palettes. Depuis la Phase 1 de l'accueil
+ * premium (2026-09-04), les tokens @theme sont le CLAIR (défaut) et un bloc
+ * [data-theme="dark"] redéfinit une partie pour le sombre — l'inverse de
+ * 2026-08-15. `lireTokens` sur le fichier ENTIER écraserait le clair par le
+ * sombre — mesuré en 2026-08 dans l'autre sens : --ink sur --brand rendait
+ * 4,25:1, un faux échec fabriqué par la collision. On découpe au bloc, et le
+ * sombre HÉRITE du clair pour tout ce qu'il ne redéfinit pas — exactement la
+ * cascade CSS. Les clés `sombre`/`clair` gardent leur SENS (la palette
+ * nommée), pas leur position dans le fichier.
  */
 export function lirePalettes(css) {
-  const coupe = css.indexOf('[data-theme="light"]');
-  if (coupe === -1) return { sombre: lireTokens(css), clair: null };
-  const sombre = lireTokens(css.slice(0, coupe));
-  const clair = { ...sombre, ...lireTokens(css.slice(coupe)) };
+  const coupe = css.indexOf('[data-theme="dark"]');
+  if (coupe === -1) return { clair: lireTokens(css), sombre: null };
+  const clair = lireTokens(css.slice(0, coupe));
+  const sombre = { ...clair, ...lireTokens(css.slice(coupe)) };
   return { sombre, clair };
 }
 
