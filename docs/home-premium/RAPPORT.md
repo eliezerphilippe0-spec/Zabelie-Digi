@@ -10,7 +10,7 @@ Cinq PR empilées, aucune fusionnée par l'agent, aucune écriture en production
 | 2 — En-tête + chips | [#202](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/202) | `home-premium/1-tokens` |
 | 3 — Bannière, structure, seuils | [#203](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/203) | `home-premium/2-header` |
 | 4 — Cartes, squelettes, mouvement | [#204](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/204) | `home-premium/3-structure` |
-| 5 — Vérification (ce rapport) | #205 | `home-premium/4-cards-motion` |
+| 5 — Vérification (ce rapport) | [#205](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/205) | `home-premium/4-cards-motion` |
 
 Ordre de fusion : #201 → #202 → #203 → #204 → #205 dans `feat/home-premium`, puis
 `feat/home-premium` → `main`. #200 (documents seuls) peut se fusionner à tout
