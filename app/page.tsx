@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { HomeFeatured } from "@/components/home-featured";
+import "./home-discovery.css";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
@@ -53,6 +55,7 @@ function HomeRow({
   items,
   cardLabels,
   primary = false,
+  subtitle,
 }: {
   id?: string;
   title: string;
@@ -60,12 +63,13 @@ function HomeRow({
   items: ProductView[];
   cardLabels: ProductCardLabels;
   primary?: boolean;
+  subtitle?: string;
 }) {
   if (!rangeeVisible(items.length, primary)) return null;
   return (
-    <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length, primary)}`}>
+    <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>
+        <div><h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
         <Link href="/catalogue" className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
           {more}
         </Link>
@@ -116,15 +120,21 @@ async function produitsAvecVentePayee(): Promise<Map<string, number>> {
 }
 
 export default async function HomePage() {
-  const [products, lang, promoSellers, ventesPayees] = await Promise.all([
+  const [catalogue, lang, promoSellers, ventesPayees] = await Promise.all([
     // getPublishedProducts lève en cas d'erreur Supabase (BL-116) ; l'accueil
-    // n'a pas de page d'erreur, et une liste vide y est sans risque : toutes
-    // les rangées s'effacent sous le seuil.
-    getPublishedProducts().catch(() => []),
+    // distingue une panne du catalogue réellement vide.
+    getPublishedProducts().catch(() => {
+      console.warn("[accueil] catalogue indisponible");
+      return null;
+    }),
     getLang(),
     promoSellerIds(),
     produitsAvecVentePayee(),
   ]);
+
+  const products = catalogue ?? [];
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].slice(0, 6);
+  const featured = products.find((p) => p.coverUrl) ?? products[0];
 
   const cardLabels: ProductCardLabels = {
     kindFile: t(lang, "card.kind.file"),
@@ -135,6 +145,8 @@ export default async function HomePage() {
     salesOne: t(lang, "product.sales.one"),
     lang,
     titleFallback: t(lang, "card.title.fallback"),
+    photoMissing: t(lang, "home.photo.missing"),
+    detail: t(lang, "home.product.cta"),
   };
 
   // Une seule requête catalogue alimente toutes les rangées.
@@ -196,7 +208,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="bg-grain">
+    <div className="bg-grain home-discovery">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <SiteNav />
 
@@ -210,7 +222,7 @@ export default async function HomePage() {
             celle du porteur quand elle existe ; sinon un aplat de chrome. */}
         <section className="mx-auto max-w-6xl px-3 pt-3">
           <div
-            className="relative flex min-h-[180px] flex-col justify-end overflow-hidden rounded-2xl bg-chrome p-4 text-on-chrome sm:min-h-[240px] sm:p-6"
+            className="home-hero relative overflow-hidden rounded-2xl bg-chrome text-on-chrome"
             style={heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >
             {heroImage && (
@@ -224,8 +236,9 @@ export default async function HomePage() {
               />
             )}
             {heroImage && <div className="absolute inset-0 bg-chrome/50" aria-hidden="true" />}
-            <div className="relative">
-              <h1 className="max-w-xl text-[26px] leading-tight tracking-tight sm:text-4xl">
+            <div className="home-hero-copy relative">
+              <p className="home-kicker">{t(lang, "home.kicker")}</p>
+              <h1 className="home-headline max-w-xl">
                 {t(lang, "hero.s1.t")}
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-on-chrome/90">
@@ -235,9 +248,10 @@ export default async function HomePage() {
                 href="/catalogue"
                 className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
               >
-                {t(lang, "hero.s1.cta")}
+                {t(lang, "hero.s1.cta")}<span className="ml-6" aria-hidden="true">↗</span>
               </Link>
             </div>
+            {featured && <HomeFeatured product={featured} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
           </div>
         </section>
 
@@ -252,11 +266,27 @@ export default async function HomePage() {
           ]}
         />
 
+        {categories.length > 0 && (
+          <nav className="home-discovery-nav mx-auto max-w-6xl px-3" aria-label={t(lang, "home.explore")}>
+            <span className="home-eyebrow">{t(lang, "home.explore")}</span>
+            <div className="home-category-links">
+              {categories.map((category) => <Link key={category} href={`/catalogue?cat=${encodeURIComponent(category)}`}>{category}<span aria-hidden="true">↗</span></Link>)}
+            </div>
+          </nav>
+        )}
+        {products.length === 0 && (
+          <section className="home-catalogue-state mx-auto max-w-6xl px-3 py-8" aria-live="polite">
+            <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
+            <Link href={catalogue === null ? "/" : "/aide#comment"} className="mt-4 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
+          </section>
+        )}
+
         {/* PRODUITS — la première rangée doit tenir au-dessus de la ligne de
             flottaison (A1). La sélection principale reste visible dès la première offre,
             sur mobile comme sur ordinateur, sans inventer de produits. */}
         {inedit(principaux) && (
-          <HomeRow primary title={t(lang, "home.products")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+          <HomeRow primary title={t(lang, "home.products")} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
         )}
         {inedit(newest) && (
           <HomeRow title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
@@ -303,7 +333,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        <section aria-labelledby="receipt-title" className="mx-auto max-w-6xl px-3 pt-8">
+        <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-3 pt-8">
           <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <h2 id="receipt-title" className="text-xl tracking-tight sm:text-2xl">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
@@ -323,6 +353,11 @@ export default async function HomePage() {
             <Link href="/aide#comment" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline underline-offset-4">{t(lang, "home.how.buy")}</Link>
           </div>
         </section>
+
+        <aside className="home-help mx-auto max-w-6xl px-3 pt-8">
+          <div><h2>{t(lang, "home.support.title")}</h2><p>{t(lang, "home.support.body")}</p></div>
+          <Link href="/aide">{t(lang, "home.support.cta")}<span aria-hidden="true">↗</span></Link>
+        </aside>
 
         {/* FONDATEUR — compact, en fin de page (§4.5). */}
         <section className="mx-auto max-w-6xl px-3 pt-10">
