@@ -25,7 +25,7 @@ test("aucune rangée ne porte plus d'invitation à vide — la prop `empty` n'ex
 });
 
 test("la garde de vacuité de HomeRow est le seuil partagé, pas un `length === 0` local", () => {
-  assert.match(SOURCE, /if \(!rangeeVisible\(items\.length\)\) return null;/);
+  assert.match(SOURCE, /if \(!rangeeVisible\(items\.length, primary\)\) return null;/);
   assert.doesNotMatch(SOURCE, /items\.length\s*===?\s*0\s*&&/);
   assert.match(SOURCE, /from "@\/lib\/home-sections"/);
 });

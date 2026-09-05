@@ -17,6 +17,8 @@ export type ProductCardLabels = {
   lang: Lang;
   /** Repli quand le titre est vide ou n'est pas un titre (brief §4.3). */
   titleFallback?: string;
+  photoMissing?: string;
+  detail?: string;
 };
 
 const FALLBACK_LABELS: ProductCardLabels = {
@@ -74,6 +76,12 @@ export function ProductCard({
     >
       <div className="relative aspect-square w-full bg-line">
         {cover && <CardImage src={cover} alt={titre} size={COVER_WIDTHS.card} />}
+        {!cover && labels.photoMissing && (
+          <div className="home-photo-empty">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
+            <span>{labels.photoMissing}</span>
+          </div>
+        )}
         {kindLabel && (
           <span className="absolute left-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
             {kindLabel}
@@ -101,6 +109,7 @@ export function ProductCard({
         <span className="truncate text-sm text-mist">
           {labels.by} {product.creator}
         </span>
+        {labels.detail && <span className="home-card-cta">{labels.detail}<span aria-hidden="true">↗</span></span>}
       </div>
     </Link>
   );
