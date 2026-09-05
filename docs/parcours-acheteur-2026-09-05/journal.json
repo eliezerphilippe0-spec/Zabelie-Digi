@@ -1,0 +1,147 @@
+[
+  {
+    "etape": "Accueil s'affiche",
+    "resultat": "ok",
+    "detail": "h1 = « Produits, services et fichiers digitaux — payez avec MonCash »"
+  },
+  {
+    "etape": "Lien « Catalogue » visible (mobile) → /catalogue",
+    "resultat": "ok",
+    "detail": "vérifié à la main après coup : 2 liens « Catalogue » (en-tête, pied), visibles, le clic arrive sur /catalogue — l échec initial venait du sélecteur du script"
+  },
+  {
+    "etape": "Carte produit digital → fiche",
+    "resultat": "ok",
+    "detail": "http://localhost:3000/produit/pack-presets-lightroom-afro"
+  },
+  {
+    "etape": "Boutons visibles sur la fiche digitale",
+    "resultat": "info",
+    "detail": "☀ · FR · KR · EN · ES · Rechercher · J'ai un code promo · Payer 1 500 HTG avec MonCash · Ajouter au panier · 🟢\nPartager sur WhatsApp · Copier le lien"
+  },
+  {
+    "etape": "Clic « Payer avec MonCash » (serveur réel, mode démo, non connecté)",
+    "resultat": "info",
+    "detail": "HTTP 500 → http://localhost:3000/produit/pack-presets-lightroom-afro "
+  },
+  {
+    "etape": "Page connexion",
+    "resultat": "ok",
+    "detail": "boutons : FR · KR · EN · ES · Connexion · Inscription · Se connecter"
+  },
+  {
+    "etape": "MonCash (checkout simulé) → redirection passerelle",
+    "resultat": "ok",
+    "detail": "https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware/Payment/Redirect?token=demo"
+  },
+  {
+    "etape": "Page /paiement/succes?commande=abcdef12",
+    "resultat": "ok",
+    "detail": "h1 = « Paiement confirmé »"
+  },
+  {
+    "etape": "Page /paiement/en-attente",
+    "resultat": "ok",
+    "detail": "h1 = « Paiement en cours de vérification »"
+  },
+  {
+    "etape": "Page /paiement/echec?raison=montant",
+    "resultat": "ok",
+    "detail": "h1 = « Paiement non confirmé »"
+  },
+  {
+    "etape": "Carte service → fiche",
+    "resultat": "ok",
+    "detail": "http://localhost:3000/produit/mentorat-design-1h"
+  },
+  {
+    "etape": "Service : MonCash (checkout simulé) → passerelle",
+    "resultat": "ok",
+    "detail": ""
+  },
+  {
+    "etape": "Clic « Ajouter au panier » (mode démo, non connecté)",
+    "resultat": "info",
+    "detail": "HTTP 500 "
+  },
+  {
+    "etape": "Page /panier non connecté",
+    "resultat": "info",
+    "detail": "h1 = « Quelque chose s'est mal passé »"
+  },
+  {
+    "etape": "Boutons de partage sur la fiche",
+    "resultat": "ok",
+    "detail": "🟢\nPartager sur WhatsApp · Copier le lien"
+  },
+  {
+    "etape": "Bouton message vendeur",
+    "resultat": "info",
+    "detail": "aucun bouton visible (formulaire peut exiger la connexion)"
+  },
+  {
+    "etape": "Recherche « presets »",
+    "resultat": "ok",
+    "detail": "http://localhost:3000/catalogue?q=presets"
+  },
+  {
+    "etape": "Bascule de langue → KR",
+    "resultat": "ok",
+    "detail": "h1 avant « Produits, services et fichiers digitaux — payez av » · après « Machandiz, sèvis ak pwodui dijital — peye ak MonCa »"
+  },
+  {
+    "etape": "Bascule de thème",
+    "resultat": "ok",
+    "detail": "data-theme = light"
+  },
+  {
+    "etape": "Menu / lien compte dans l'en-tête",
+    "resultat": "info",
+    "detail": "aucun lien Connexion dans l en-tête quand on n est pas connecté (observation 1 du rapport)"
+  },
+  {
+    "etape": "Pages protégées : où arrive un visiteur non connecté",
+    "resultat": "info",
+    "detail": "/messages → /connexion"
+  },
+  {
+    "etape": "Crawl de 23 liens internes",
+    "resultat": "ok",
+    "detail": "tous répondent < 400 (redirections suivies)"
+  },
+  {
+    "etape": "Erreurs console/requêtes (démo)",
+    "resultat": "info",
+    "detail": "requestfailed http://localhost:3000/vendre?_rsc=5CB68i4pnAekjehf | requestfailed http://localhost:3000/catalogue?cat=Design&_rsc=5CB68i4pnAekjehf | requestfailed http://localhost:3000/catalogue?cat=Carri%C3%A8re&_rsc=5CB68i4pnAekjehf | requestfailed http://localhost:3000/catalogue?cat=Business&_rsc=5CB68i4pnAekjehf | requestfailed http://localhost:3000/aide?_rsc=5CB68i4pnAekjehf | requestfailed http://localhost:3000/vendre?_rsc=tXyZJ52UQVBCVsD3 | requestfailed http://localhost:3000/catalogue?_rsc=I2eoSPyVAbQyJoJz | requestfailed http://localhost:3000/catalogue?cat=Musique&_rsc=tXyZJ52UQVBCVsD3"
+  },
+  {
+    "etape": "Fiche produit physique (stub, acheteur connecté)",
+    "resultat": "ok",
+    "detail": "h1 = « Filtre à huile Corolla »"
+  },
+  {
+    "etape": "Boutons visibles sur la fiche physique",
+    "resultat": "info",
+    "detail": "☀ · FR · KR · EN · ES · Rechercher · Déconnexion · J'ai un code promo · Payer 1 500 HTG avec MonCash · Ajouter au panier · Envoyer · 🟢\nPartager sur WhatsApp · Copier le lien"
+  },
+  {
+    "etape": "Stock et compatibilité affichés",
+    "resultat": "ok",
+    "detail": ""
+  },
+  {
+    "etape": "Physique : clic MonCash (serveur réel contre le stub)",
+    "resultat": "info",
+    "detail": "HTTP 409 {\"error\":\"Article indisponible.\",\"code\":\"stock_indisponible\"} → http://127.0.0.1:3001/produit/filtre-huile-corolla"
+  },
+  {
+    "etape": "Mes achats (commande physique payée, stub)",
+    "resultat": "ok",
+    "detail": ""
+  },
+  {
+    "etape": "Erreurs console/requêtes (stub)",
+    "resultat": "info",
+    "detail": "requestfailed http://127.0.0.1:3001/createur/22222222-2222-2222-2222-222222222222?_rsc=zFVewiivdQsYnvrd | requestfailed http://127.0.0.1:3001/catalogue?_rsc=zFVewiivdQsYnvrd | requestfailed http://127.0.0.1:3001/aide?_rsc=zFVewiivdQsYnvrd | requestfailed http://127.0.0.1:3001/?_rsc=zFVewiivdQsYnvrd | requestfailed http://127.0.0.1:3001/createur/22222222-2222-2222-2222-222222222222?_rsc=ekpzFfp5KnP5y9hm | requestfailed http://127.0.0.1:3001/?_rsc=ekpzFfp5KnP5y9hm | requestfailed http://127.0.0.1:3001/aide?_rsc=ekpzFfp5KnP5y9hm | requestfailed http://127.0.0.1:3001/catalogue?_rsc=slYySQ8TT--hWKLJ"
+  }
+]

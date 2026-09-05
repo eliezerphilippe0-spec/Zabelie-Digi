@@ -1,0 +1,28 @@
+{
+  "liens": [
+    "/",
+    "/aide",
+    "/catalogue",
+    "/catalogue?cat=Business",
+    "/catalogue?cat=Carri%C3%A8re",
+    "/catalogue?cat=Design",
+    "/catalogue?cat=Marketing",
+    "/catalogue?cat=Musique",
+    "/catalogue?cat=Photo",
+    "/conditions",
+    "/confidentialite",
+    "/connexion",
+    "/mes-achats",
+    "/mot-de-passe-oublie",
+    "/produit/audit-instagram",
+    "/produit/beat-kompa-moderne",
+    "/produit/formation-moncash-business",
+    "/produit/mentorat-design-1h",
+    "/produit/pack-presets-lightroom-afro",
+    "/produit/template-cv-pro",
+    "/produits-interdits",
+    "/vendre",
+    "/vendre/physique"
+  ],
+  "casses": []
+}
