@@ -138,7 +138,10 @@ test("les dégradés DÉCORATIFS restent dans la famille de l'accent", () => {
    *
    * La variété vient du sens et des extrémités, pas de la teinte. */
   const AUTORISES = new Set(["brand", "accent", "surface-maroon", "surface-brown"]);
-  const fichiers = ["lib/products.ts", "lib/sample-data.ts", "lib/landing-slides.ts"];
+  // `lib/landing-slides.ts` a disparu avec le carrousel (accueil premium,
+  // Phase 3) : ses trois dégradés avec lui. Les douze qui restent suffisent
+  // au garde de non-vacuité.
+  const fichiers = ["lib/products.ts", "lib/sample-data.ts"];
   const fautes: string[] = [];
   let vus = 0;
   for (const f of fichiers) {
