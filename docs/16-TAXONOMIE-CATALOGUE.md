@@ -11,12 +11,12 @@
 > | `0057` | 12 feuilles de services sous « Services professionnels » | 2026-08-11 |
 > | `0077` | tout le niveau 3 ci-dessous, **dormant** (`active = false`) | 2026-08-15 |
 > | `0078` | « Sacs de voyage », avalée par 0077 (collision de slug avec son parent) | ✅ |
-> | `0096` | retrait de 7 sous-catégories en double, index unique (parent, libellé), fermeture de 16.3 | rédigée 2026-09-05 |
+> | `0096` | retrait de 7 sous-catégories en double, index unique (parent, libellé), fermeture de 16.3 | 2026-09-05 11:50Z |
 >
-> **Mesuré en production le 2026-09-05** : niveau 1 **16/16** actifs (décision
-> porteur du 2026-08-09, journal `OPS_TODO`) · niveau 2 **10/74** · niveau 3
-> **45/499** — soit exactement la vague 1 de la section suivante, plus les
-> services. L'ouverture d'un rayon est un `UPDATE … set active = true`,
+> **Mesuré en production le 2026-09-05, après `0096`** : niveau 1 **16/16**
+> actifs (décision porteur du 2026-08-09, journal `OPS_TODO`) · niveau 2
+> **9/74** · niveau 3 **45/492** — soit exactement la vague 1 de la section
+> suivante, plus les services. L'ouverture d'un rayon est un `UPDATE … set active = true`,
 > jamais une migration ; chaque ouverture s'inscrit au journal d'`OPS_TODO`.
 > **L'état ne se lit pas ici, il s'interroge** :
 >
