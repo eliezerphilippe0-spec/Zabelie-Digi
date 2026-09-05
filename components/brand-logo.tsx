@@ -67,8 +67,11 @@ export function BrandLogo({
   return (
     <Link href="/" className={`inline-flex min-h-11 items-center gap-2 ${className}`}>
       <BrandMark size={32} />
+      {/* `sr-only` et non `hidden` sous sm : un `display: none` retirait le
+          nom au lecteur d'écran aussi, et le lien n'avait plus de nom
+          accessible (Lighthouse `link-name`, mesuré en Phase 3). */}
       <span
-        className={`text-sm font-semibold tracking-tight ${nomMasqueSurMobile ? "hidden sm:inline" : ""}`}
+        className={`text-sm font-semibold tracking-tight ${nomMasqueSurMobile ? "sr-only sm:not-sr-only" : ""}`}
       >
         Zabelie
       </span>

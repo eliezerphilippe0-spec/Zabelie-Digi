@@ -48,15 +48,15 @@ export function vendeursAffichables<T extends VendeurCompte>(vendeurs: T[]): T[]
 /**
  * Titre d'une carte : jamais une URL brute, jamais une chaîne vide. Un titre
  * absent tombe sur le libellé neutre (« Produit »), et le manque est
- * JOURNALISÉ hors production — c'est un défaut de données à corriger, pas un
- * état à afficher. Les cartes de la Phase 4 passent par ici.
+ * JOURNALISÉ — en production aussi : c'est un défaut de données à corriger,
+ * et le journal Vercel est le seul endroit où il se lit (règle du dépôt :
+ * l'absence de signal doit être un signal). Les cartes de la Phase 4 passent
+ * par ici.
  */
 export function titreCarte(
   titre: string | null | undefined,
   repli: string,
-  journal: (m: string) => void = (m) => {
-    if (process.env.NODE_ENV !== "production") console.warn(m);
-  },
+  journal: (m: string) => void = (m) => console.warn(m),
   identifiant = "?"
 ): string {
   const propre = (titre ?? "").trim();

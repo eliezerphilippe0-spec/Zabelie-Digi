@@ -331,7 +331,9 @@ export default async function HomePage() {
               >
                 {t(lang, "home.cta.sell")}
               </Link>
-              <span className="rounded-lg bg-brand/10 px-3 py-1.5 text-sm font-bold text-accent">{t(lang, "rail.shop.free")}</span>
+              {/* Texte ENCRE sur la teinte orange à 10 % : `text-accent` y
+                  mesurait 4,35:1 (Lighthouse, Phase 3) — sous le seuil. */}
+              <span className="rounded-lg bg-brand/10 px-3 py-1.5 text-sm font-bold text-cloud">{t(lang, "rail.shop.free")}</span>
             </div>
             <p className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
               <Link href="/aide#comment" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
