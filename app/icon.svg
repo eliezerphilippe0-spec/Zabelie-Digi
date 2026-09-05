@@ -4,7 +4,7 @@
      que rien ne le signale : l'onglet du navigateur montrait un autre logo que
      l'en-tête. Les deux copies sont désormais croisées par
      `tests/logo-deux-copies.test.ts`.
-     brand #e0580f = --color-brand · ink #100c09 = --color-ink -->
+     brand #e0580f = --color-brand · chrome #17123a = --color-chrome -->
 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="1" y="1" width="46" height="46" rx="11" fill="#17123a" stroke="#e0580f" stroke-opacity="0.4" stroke-width="2"/>
   <path d="M14 15h20l-13 12h13l-2 6H13l13-12H14z" fill="#e0580f"/>

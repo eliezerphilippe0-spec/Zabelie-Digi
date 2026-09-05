@@ -28,5 +28,7 @@ export const SITE_DESCRIPTION =
  *  caractères sous l'icône de l'écran d'accueil. */
 export const SITE_SHORT_NAME = "Zabelie";
 
-/** = `--color-ink` de `app/zabelie-theme.css`. Croisé par `tests/pwa-manifeste`. */
+/** = `--color-chrome` de `app/zabelie-theme.css` — l'encre du CHROME (en-tête,
+ *  pied, barre d'adresse, favicon), pas `--color-ink` qui est la surface
+ *  claire des champs en mode clair. Croisé par `tests/pwa-manifeste`. */
 export const BRAND_INK = "#17123a";

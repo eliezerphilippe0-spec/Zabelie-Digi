@@ -19,15 +19,21 @@ import { RecoveryCatcher } from "@/components/recovery-catcher";
 // et `extrabold` sur des centaines d'éléments Inter. Deux graisses statiques
 // (400/500) laisseraient le navigateur SYNTHÉTISER le reste — un faux gras
 // qui empâte. Une variable couvre toutes les graisses dans UN fichier.
-// Sous-ensembles `latin` + `latin-ext` : è, ò, à, ç du kreyòl et du français,
-// exigés par le brief. Le poids total est mesuré dans la PR de Phase 1.
+// Sous-ensemble `latin` SEUL, et c'est mesuré contre le brief (qui demandait
+// `latin-ext` « pour les diacritiques kreyòl è/ò/à ») : ces lettres sont dans
+// `latin` (U+00C0–U+00FF), pas dans `latin-ext`. Et next/font PRÉCHARGE
+// chaque sous-ensemble déclaré : avec `latin-ext`, le build émettait quatre
+// fichiers préchargés pour 169 Ko — Inter latin-ext seul pesait 85 Ko, pour
+// des glyphes qu'aucune page n'affiche. Sans lui : Inter 48,4 Ko + Manrope
+// 24,6 Ko = 73 Ko, sous la cible A7 (≤ 90 Ko). `latin-ext` reviendrait
+// le jour où le catalogue porte des caractères qu'il couvre (Ș, Ő, Ă…).
 const inter = Inter({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
 });
 const manrope = Manrope({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
 });
@@ -62,7 +68,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // = --color-ink. L'indigo #17123a avait été abandonné le 2026-07-25 parce
+  // = --color-chrome. L'indigo #17123a avait été abandonné le 2026-07-25 parce
   // que la barre d'adresse Android s'affichait violette au-dessus d'un site
   // NOIR et orange. Depuis la Phase 1 de l'accueil premium (2026-09-04), le
   // chrome (en-tête, pied) est cet indigo sur une toile crème : la barre

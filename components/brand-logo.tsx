@@ -40,7 +40,7 @@ export function BrandMark({
         width="46"
         height="46"
         rx="11"
-        fill="var(--color-ink)"
+        fill="var(--color-chrome)"
         stroke="var(--color-brand)"
         strokeOpacity="0.4"
         strokeWidth="2"

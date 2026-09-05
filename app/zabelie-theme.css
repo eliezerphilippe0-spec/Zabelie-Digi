@@ -47,8 +47,9 @@
  *   --bg      → --color-bg-1/2/3 (les trois ÉGALES : « dégradé en fond de page
  *               interdit », le .bg-grain de globals.css est devenu plat)
  *   --surface → --color-surface, -neutral, -maroon, -brown (une seule valeur)
- *   --ink     → --color-ink (chrome, en-tête, pied) ET --color-cloud (texte
- *               principal) : en clair, l'encre est aussi le texte
+ *   --ink     → --color-chrome (en-tête, pied, theme-color, favicon) ET
+ *               --color-cloud (texte principal). PAS --color-ink : voir la
+ *               note du couple ink/cloud plus bas
  *   --ink-2   → --color-mist
  *   --line    → --color-line
  *   --accent  → --color-brand (fond des CTA) · --color-accent (prix, texte)
@@ -78,9 +79,19 @@
      l'encre indigo en clair comme en sombre (4,71 et 5,79). */
   --color-on-brand: #17123a;
 
-  /* ── Encre et texte ── */
-  --color-ink: #17123a;      /* chrome : en-tête, pied, boutons inverses */
-  --color-ink-soft: #221c4a;
+  /* ── Encre et texte ──
+     ⚠️ `ink` et `cloud` sont un COUPLE INVERSE, pas deux noms d'une couleur :
+     le dépôt écrit `bg-cloud text-ink` (bouton plein, texte inversé) 12 fois
+     et `bg-ink text-cloud` / `bg-ink/40` (champs, boutons inverses) 60 fois.
+     La première version de cette palette les avait posés tous deux à
+     #17123a — mesuré sur le rendu : pastille de langue et CTA du hero
+     illisibles, indigo sur indigo. En clair, `cloud` est donc le texte sombre
+     et `ink` la surface claire qui lui répond, exactement comme le mode clair
+     du 2026-08-15 le faisait. Le CHROME sombre (en-tête, pied, theme-color)
+     a son propre token, `chrome`, qui est l'indigo du brief. */
+  --color-chrome: #17123a;   /* en-tête, pied, barre d'adresse (theme-color), favicon */
+  --color-ink: #faf8f5;      /* surface claire des champs et boutons inverses */
+  --color-ink-soft: #f2eee7;
   --color-cloud: #17123a;    /* texte principal = l'encre (16,73:1 sur crème) */
   --color-mist: #5c5a57;     /* texte secondaire (6,48:1 sur crème) */
   --color-line: #e8e3dc;     /* bordures fines, 1 px */
@@ -205,6 +216,7 @@
   --color-accent: #f5934f;
   --color-accent-strong: #f5934f;
 
+  --color-chrome: #100c09;
   --color-ink: #100c09;
   --color-ink-soft: #1b1610;
   --color-cloud: #f7f2ec;
