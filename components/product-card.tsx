@@ -4,23 +4,19 @@ import type { ProductView } from "@/lib/products";
 import { pickByKind } from "@/lib/product-kind";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { estSingulier, type Lang } from "@/lib/i18n";
+import { titreCarte } from "@/lib/home-sections";
+import { CardImage } from "@/components/card-image";
 
 export type ProductCardLabels = {
   kindFile: string;
   kindService: string;
   kindPhysical: string;
   by: string;
-  /* LES DEUX FORMES DU MOT « VENTE », plus la langue qui décide laquelle.
-   *
-   * ⚠️ `lang` dans un sac nommé `labels` détonne, et c'est le moindre mal
-   * assumé : le compte n'est connu qu'ICI, par carte, alors que le sac est
-   * construit UNE fois pour toute la grille. L'alternative — descendre `lang`
-   * en prop jusqu'à `ProductCard` — traverse `HomeRow`, qui ne la porte pas et
-   * n'en a aucun autre usage. Un accord n'est pas un libellé, mais il n'a de
-   * sens qu'avec les libellés qu'il accorde. */
   sales: string;
   salesOne: string;
   lang: Lang;
+  /** Repli quand le titre est vide ou n'est pas un titre (brief §4.3). */
+  titleFallback?: string;
 };
 
 const FALLBACK_LABELS: ProductCardLabels = {
@@ -31,8 +27,28 @@ const FALLBACK_LABELS: ProductCardLabels = {
   sales: "ventes",
   salesOne: "vente",
   lang: "fr",
+  titleFallback: "Produit",
 };
 
+/**
+ * CARTE PRODUIT — accueil premium, Phase 4 (brief §4.4).
+ *
+ * Ordre imposé : image carrée → nom (2 lignes, ellipse) → prix (Manrope 700,
+ * orange de texte) → vendeur (14 px, secondaire). Fond surface, bordure
+ * `line` 1 px, rayon `card` (12 px, `--radius-card`), ombre au tap seulement
+ * (`active:scale-[0.97]`, pas d'ombre grise permanente). Toute la carte est
+ * la cible : ≥ 44 px par construction.
+ *
+ * Le titre passe par `titreCarte` : jamais une URL brute ni une chaîne vide à
+ * l'écran — un repli neutre et une ligne de journal.
+ *
+ * Ce qui reste de l'ancienne carte, et pourquoi : le badge du TYPE (fichier,
+ * service, physique) — c'est une information d'achat, pas une décoration ;
+ * et le badge note/ventes, dont la forme s'accorde au compte
+ * (`tests/pluriel` P4). Le dégradé de repli des produits sans photo est
+ * remplacé par un aplat neutre : la marchandise, c'est l'image ; sans image,
+ * un décor mentirait.
+ */
 export function ProductCard({
   product,
   labels = FALLBACK_LABELS,
@@ -40,74 +56,31 @@ export function ProductCard({
   product: ProductView;
   labels?: ProductCardLabels;
 }) {
+  const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
+  const titre = titreCarte(product.title, labels.titleFallback ?? "Produit", undefined, product.slug);
+
   // Type inconnu : aucun badge, plutôt qu'un badge « Fichier » sur une pièce
   // détachée (l'ancien `else` promettait un téléchargement).
-  const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
-
   const kindLabel = pickByKind(
     product.kind,
-    {
-      file: labels.kindFile,
-      service: labels.kindService,
-      physical: labels.kindPhysical,
-    },
+    { file: labels.kindFile, service: labels.kindService, physical: labels.kindPhysical },
     product.id
   );
 
   return (
     <Link
       href={`/produit/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-1 hover:border-accent/50"
+      className="group flex flex-col overflow-hidden rounded-card border border-line bg-surface transition active:scale-[0.97]"
     >
-      <div
-        className={`relative h-40 bg-gradient-to-br ${product.accent} opacity-90`}
-      >
-        {/* La photo du vendeur d'abord — le dégradé n'est que le repli.
-            Dimensionnée au CDN (lib/product-image) : `lazy` diffère, il ne
-            réduit aucun octet. `width`/`height` explicites = pas de saut de
-            mise en page pendant le chargement. `alt` porte le titre : c'est
-            ce que lit quelqu'un dont l'image ne charge pas — fréquent ici. */}
-        {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cover}
-            alt={product.title}
-            width={COVER_WIDTHS.card}
-            height={Math.round(COVER_WIDTHS.card * 0.625)}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-        {!cover && (
-        <svg
-          className="absolute inset-0 h-full w-full opacity-20"
-          aria-hidden="true"
-        >
-          <pattern
-            id={`chev-${product.slug}`}
-            width="18"
-            height="18"
-            patternUnits="userSpaceOnUse"
-            patternTransform="rotate(45)"
-          >
-            <path
-              d="M0 9 L9 0 L18 9"
-              stroke="var(--color-ink)"
-              strokeWidth="1.2"
-              fill="none"
-            />
-          </pattern>
-          <rect width="100%" height="100%" fill={`url(#chev-${product.slug})`} />
-        </svg>
-        )}
+      <div className="relative aspect-square w-full bg-line">
+        {cover && <CardImage src={cover} alt={titre} size={COVER_WIDTHS.card} />}
         {kindLabel && (
-          <span className="absolute left-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
+          <span className="absolute left-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
             {kindLabel}
           </span>
         )}
         {(product.ratingAvg !== null || product.sales > 0) && (
-          <span className="absolute right-3 top-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-cloud backdrop-blur">
+          <span className="absolute right-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
             {product.ratingAvg !== null
               ? `★ ${product.ratingAvg} (${product.ratingCount})`
               : `${product.sales} ${
@@ -119,22 +92,15 @@ export function ProductCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <p className="text-xs text-mist">{product.category}</p>
-        <h3 className="text-sm font-semibold leading-snug text-cloud">
-          {product.title}
-        </h3>
-        <p className="line-clamp-2 text-xs text-mist">{product.blurb}</p>
-
-        <div className="mt-auto flex items-center justify-between pt-3">
-          <span className="text-xs text-mist">{labels.by} {product.creator}</span>
-          {/* Prix en plein, pas en dégradé (audit UX #7) : sur un écran bon
-              marché, un texte rendu par background-clip perd du contraste et
-              du crénelage — sur le seul chiffre qui décide de l'achat. */}
-          <span className="numeric text-sm font-bold text-cloud">
-            {formatHTG(product.priceHTG)}
-          </span>
-        </div>
+      <div className="flex flex-1 flex-col gap-1 p-2.5">
+        <h3 className="line-clamp-2 text-sm font-normal leading-snug text-cloud">{titre}</h3>
+        {/* Prix en PLEIN, Manrope 700 (`.numeric`, globals.css), orange de
+            texte AA (`--color-accent`), même taille que le nom : le seul
+            chiffre qui décide de l'achat ne se lit jamais en petit gris. */}
+        <span className="numeric text-sm font-bold text-accent">{formatHTG(product.priceHTG)}</span>
+        <span className="truncate text-sm text-mist">
+          {labels.by} {product.creator}
+        </span>
       </div>
     </Link>
   );

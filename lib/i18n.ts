@@ -627,6 +627,7 @@ const fr = {
   "card.kind.file": "Fichier",
   "card.kind.service": "Service",
   "card.kind.physical": "Physique",
+  "card.title.fallback": "Produit",
 
   "status.draft": "Brouillon",
   "status.review": "En attente de revue",
@@ -1282,6 +1283,7 @@ const ht: Record<I18nKey, string> = {
   "card.kind.file": "Fichye",
   "card.kind.service": "Sèvis",
   "card.kind.physical": "Fizik",
+  "card.title.fallback": "Pwodui",
 
   "status.draft": "Poko pibliye",
   "status.review": "N ap tann revizyon",
@@ -1943,6 +1945,7 @@ const en = {
   "card.kind.file": "File",
   "card.kind.service": "Service",
   "card.kind.physical": "Physical",
+  "card.title.fallback": "Product",
 
   "status.draft": "Draft",
   "status.review": "Awaiting review",
@@ -2604,6 +2607,7 @@ const es = {
   "card.kind.file": "Archivo",
   "card.kind.service": "Servicio",
   "card.kind.physical": "Físico",
+  "card.title.fallback": "Producto",
 
   "status.draft": "Borrador",
   "status.review": "En espera de revisión",
