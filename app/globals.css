@@ -145,6 +145,14 @@
       backdrop-filter: blur(14px);
     }
   }
+  /* EN-TÊTE REPLIÉ (accueil premium §3.3, components/header-shell.tsx) :
+     après ~120 px de défilement, `data-compact` est posé sur le <header> et
+     tout ce qui porte `.header-fold` (logo, chips) disparaît — il ne reste que
+     la recherche et les icônes, collées en haut. Pas d'animation de hauteur :
+     le pli est instantané, la règle du brief ne permet que transform/opacity. */
+  header[data-compact] .header-fold {
+    display: none;
+  }
   /* Grands chiffres (prix, revenus, compteurs) : chiffres tabulaires nets. */
   .numeric,
   .metric {

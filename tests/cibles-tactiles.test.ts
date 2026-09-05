@@ -79,17 +79,24 @@ test("l'en-tête n'est collant qu'à partir de md — il fait 250 px sur mobile"
    *
    * ⚠️ Arbitrage assumé, pas amélioration gratuite : la recherche n'est plus
    * atteignable en permanence sur mobile. Il se défait en un mot. */
+  /* RETOURNÉ le 2026-09-04 (accueil premium, Phase 2), et c'est une mesure
+   * qui le retourne : l'en-tête ne fait plus 250 px mais une ligne et une
+   * rangée de chips (~100 px), et il se REPLIE au défilement (HeaderShell,
+   * `data-compact`) jusqu'à la seule barre de recherche. Collant partout, il
+   * rend à mobile la recherche permanente que l'arbitrage du 2026-08-22 avait
+   * dû sacrifier. Ce qu'on vérifie désormais : collant à toutes les largeurs,
+   * ET le mécanisme de pli présent — un `sticky` sans pli remettrait un
+   * en-tête entier au-dessus de chaque écran. */
   const src = readFileSync("components/site-nav.tsx", "utf8");
   assert.match(
     src,
-    /<header className="[^"]*md:sticky[^"]*">/,
-    "l'en-tête a perdu `md:sticky` — soit il n'est plus collant du tout, soit " +
-      "il l'est redevenu sur mobile, où il mange le tiers de l'écran"
+    /<HeaderShell className="[^"]*\bsticky top-0\b[^"]*">/,
+    "l'en-tête doit être collant (sticky top-0) via HeaderShell"
   );
-  assert.doesNotMatch(
-    src,
-    /<header className="(?:[^"]*\s)?sticky(?:\s[^"]*)?">/,
-    "l'en-tête porte `sticky` NU : il redevient collant sur mobile, où il " +
-      "occupe 250 px des 740 disponibles"
-  );
+  assert.doesNotMatch(src, /\bmd:sticky\b/, "`md:sticky` est revenu : la recherche disparaît au défilement sur mobile");
+  const shell = readFileSync("components/header-shell.tsx", "utf8");
+  assert.match(shell, /el\.toggleAttribute\("data-compact", compact\)/, "le pli doit poser data-compact");
+  assert.match(src, /className="header-fold[^"]*"/, "le logo doit porter header-fold pour se plier");
+  assert.match(readFileSync("components/category-chips.tsx", "utf8"), /className="header-fold/, "les chips doivent porter header-fold");
+  assert.match(readFileSync("app/globals.css", "utf8"), /header\[data-compact\] \.header-fold \{\s*display: none;/, "la règle CSS du pli manque");
 });
