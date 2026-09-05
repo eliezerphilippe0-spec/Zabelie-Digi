@@ -3,7 +3,25 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
-## 🟡 Appliquer `0096` — sept sous-catégories en double, dormantes — deux minutes
+## ✅ ~~Appliquer `0096`~~ — **APPLIQUÉE le 2026-09-05 à 11:50:06Z**
+
+**Signal** : « Applique 0096 », porteur, dans la session du 2026-09-05.
+**Ordre tenu** : CI verte (build · e2e · sql-tests) → fusion de
+[#206](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/206) dans
+`main` (`724c2e8`) → application via MCP du fichier de `main`, identique au
+local. **Empreinte croisée (méthode 0086)** : SHA-256 brut du fichier sans saut
+de ligne final = `statements[1]` du journal Supabase (version
+`20260905115006`) = `75a336f9…ccdadf`. Empreinte canonique
+`f5f91c9e…ef4bb6`. **Mesuré après** : 582 lignes (589 − 7), 70 actives,
+0 doublon `(parent, label_fr)`, 7 jumelles actives intactes, index
+`zabelie_categories_parent_label_fr_key` unique `NULLS NOT DISTINCT` présent,
+`rechaj-telefon` toujours là et inactif, lignes de registre `0094` et `0095`
+`appliquee / journal_supabase`. **Reste** : la ligne de registre de `0096`
+elle-même, à inscrire par la migration suivante (le connecteur SQL est en
+lecture seule — un `insert` direct a été refusé, `25006`, ce qui est la bonne
+réponse).
+
+<details><summary>Ce qui avait été proposé</summary>
 
 Mesuré en production le 2026-09-05, en lecture seule, à la question « toutes
 les catégories et sous-catégories sont ok ? ». Structure saine (589 lignes, 0
@@ -36,6 +54,8 @@ produit rattaché, pas des soldes ni des commandes, mais une suppression.
 Elle s'applique sur « applique 0096 » du porteur, puis la ligne de registre
 de `0096` s'inscrit par la migration suivante, comme d'habitude. Retour
 arrière : les sept tuples sont dans `0077`, rejouables un par un.
+
+</details>
 
 ---
 
@@ -666,7 +686,8 @@ rend désormais `ZB065 — rejeu refuse`. Provoqué, pas supposé.
 | Date (UTC) | Geste | Avant | Après | Par |
 |---|---|---|---|---|
 | 2026-08-09 ~23:0xZ | Les **12 départements restants** passés `active` | 4/16 | **16/16** | connecteur, sur demande explicite du porteur |
-| _en attente d'« applique 0096 »_ | **« Recharge téléphone »** (`rechaj-telefon`, niveau 2) passe `active = false` — V-17 avait fermé le commerce, pas le rayon | 10/74 au niveau 2 | 9/74 | migration `0096`, porteur 2026-09-05 (« arranger les ») |
+| 2026-09-05 11:50:06Z | **« Recharge téléphone »** (`rechaj-telefon`, niveau 2) passe `active = false` — V-17 avait fermé le commerce, pas le rayon | 10/74 au niveau 2 | **9/74** | migration `0096`, porteur (« arranger les », puis « Applique 0096 »), appliquée par agent via MCP |
+| 2026-09-05 11:50:06Z | Sept sous-catégories de niveau 3 **dormantes en double** retirées (`luil-mote`, `filtrasyon`, `frenaj-moto`, `marketing-rezo-sosyal`, `foto-videyo`, `pwoteksyon-sole`, `sewom`) ; index unique `(parent_id, label_fr)` | 499 au niveau 3, 45 actives | **492**, 45 actives | idem |
 
 **Ce qui a été dit avant de le faire, et assumé** : avec **0 produit publié**,
 seize rayons ouverts disent seize fois « rien ici » là où quatre en disaient
