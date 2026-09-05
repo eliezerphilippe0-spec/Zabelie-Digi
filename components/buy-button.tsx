@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { appelSession } from "@/lib/appel-session";
 
 export type BuyOption = {
   /**
@@ -93,82 +94,101 @@ export function BuyButton({
   const soldOut = Boolean(variants && variants.every((v) => v.available <= 0));
   const selectedOut = Boolean(selected && selected.available <= 0);
 
+  /* Même porte que l'achat. Ce chemin portait le même `res.json()` nu : un 500
+     y disait « code invalide », c'est-à-dire accusait la saisie de l'acheteur
+     d'une panne de serveur. Faute de libellé distinct pour le refus et le
+     réseau (le champ n'en a qu'un), les deux rendent « code invalide » — mais
+     un 401 mène désormais à la connexion au lieu de mentir. */
   async function applyCoupon() {
     if (!code.trim()) return;
     setChecking(true);
     setCouponError(false);
-    try {
-      const res = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, code }),
-      });
-      const data = await res.json();
-      if (data.valid) setApplied({ percent: data.percent, priceHtg: data.priceHtg });
-      else {
-        setApplied(null);
-        setCouponError(true);
-      }
-    } catch {
-      setCouponError(true);
-    } finally {
-      setChecking(false);
+    const issue = await appelSession<{ valid?: boolean; percent?: number; priceHtg?: number }>(
+      "/api/coupons/validate",
+      { productId, code },
+    );
+    setChecking(false);
+
+    if (issue.etat === "connexion") {
+      router.push(issue.vers);
+      return;
     }
+    if (issue.etat !== "ok" || !issue.data.valid) {
+      setApplied(null);
+      setCouponError(true);
+      return;
+    }
+    setApplied({ percent: issue.data.percent ?? 0, priceHtg: issue.data.priceHtg ?? 0 });
   }
 
+  /* Le chemin de l'argent passe par `appelSession` (lib/appel-session.ts), et
+     c'est CE bouton qui a motivé la porte : sa version précédente lisait
+     `await res.json()` sans garde, si bien qu'un 500 au corps non-JSON levait
+     et tombait dans le `catch` du réseau — l'acheteur lisait « Connexion
+     impossible » devant une panne SERVEUR, changeait de réseau, et
+     recommençait. Mesuré le 2026-09-05 (parcours acheteur). Les quatre issues
+     sont désormais distinctes, et `reseau` ne couvre plus que le cas où la
+     requête n'est jamais partie. */
   async function handleBuy(rail: string) {
     setLoadingRail(rail);
     setError(null);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId,
-          rail,
-          // Produit physique : la variante décide du stock réservé. Le serveur
-          // revérifie tout — c'est lui qui refuse si l'unité est partie.
-          variantId: variantId ?? undefined,
-          quantity: variantId ? 1 : undefined,
-          // Le code n'est transmis que s'il a été validé (le serveur revalide
-          // et consomme atomiquement — la vérité du prix reste en base).
-          couponCode: applied ? code : undefined,
-        }),
-      });
 
-      if (res.status === 401) {
-        // Préserve le contexte : retour automatique sur la page produit
-        // après connexion (le point de friction n°1 vs Gumroad).
-        router.push(`/connexion?next=${encodeURIComponent(window.location.pathname)}`);
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.code === "coupon_invalid" && coupon) {
-          // Bilingue (i18n) + retour à l'état sans remise : l'acheteur
-          // re-choisit en connaissance de cause, jamais de prix plein en douce.
-          setApplied(null);
-          setCouponError(true);
-          setError(coupon.invalid);
-          return;
-        }
-        setError(
-          data.code === "provider_unavailable" && errors
-            ? errors.provider
-            : (data.error ?? errors?.generic ?? "Une erreur est survenue.")
-        );
-        return;
-      }
-      // Redirection vers le rail (URL absolue opérateur ou page interne).
-      if (String(data.redirectUrl).startsWith("/")) {
-        router.push(data.redirectUrl);
+    const issue = await appelSession<{ redirectUrl?: string }>("/api/checkout", {
+      productId,
+      rail,
+      // Produit physique : la variante décide du stock réservé. Le serveur
+      // revérifie tout — c'est lui qui refuse si l'unité est partie.
+      variantId: variantId ?? undefined,
+      quantity: variantId ? 1 : undefined,
+      // Le code n'est transmis que s'il a été validé (le serveur revalide
+      // et consomme atomiquement — la vérité du prix reste en base).
+      couponCode: applied ? code : undefined,
+    });
+
+    if (issue.etat === "connexion") {
+      // Préserve le contexte : retour automatique sur la page produit
+      // après connexion (le point de friction n°1 vs Gumroad).
+      router.push(issue.vers);
+      return;
+    }
+
+    if (issue.etat === "refus") {
+      if (issue.code === "coupon_invalid" && coupon) {
+        // Bilingue (i18n) + retour à l'état sans remise : l'acheteur
+        // re-choisit en connaissance de cause, jamais de prix plein en douce.
+        setApplied(null);
+        setCouponError(true);
+        setError(coupon.invalid);
       } else {
-        window.location.href = data.redirectUrl;
+        setError(
+          issue.code === "provider_unavailable" && errors
+            ? errors.provider
+            : (issue.error ?? errors?.generic ?? "Une erreur est survenue.")
+        );
       }
-    } catch {
-      setError(errors?.network ?? "Connexion impossible. Réessayez.");
-    } finally {
       setLoadingRail(null);
+      return;
+    }
+
+    if (issue.etat === "reseau") {
+      setError(errors?.network ?? "Connexion impossible. Réessayez.");
+      setLoadingRail(null);
+      return;
+    }
+
+    // Redirection vers le rail (URL absolue opérateur ou page interne). Une
+    // réponse OK sans destination n'est pas une réussite : sans ce garde,
+    // `window.location.href` recevait la chaîne « undefined ».
+    const destination = String(issue.data.redirectUrl ?? "");
+    if (!destination) {
+      setError(errors?.generic ?? "Une erreur est survenue.");
+      setLoadingRail(null);
+      return;
+    }
+    if (destination.startsWith("/")) {
+      router.push(destination);
+    } else {
+      window.location.href = destination;
     }
   }
 

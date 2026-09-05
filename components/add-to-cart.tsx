@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { appelSession } from "@/lib/appel-session";
 
 /**
  * « Ajouter au panier » — le geste, pas le paiement.
@@ -36,30 +37,25 @@ export function AddToCart({
   async function ajouter() {
     setEtat("envoi");
     setMsg(null);
-    try {
-      const res = await fetch("/api/panier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
-      });
-      if (res.status === 401) {
-        // Pas de session : on emmène se connecter plutôt que d'échouer en
-        // silence, et on revient ici après.
-        router.push(`/connexion?next=${encodeURIComponent(window.location.pathname)}`);
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setMsg(data.error ?? labels.error);
-        setEtat("repos");
-        return;
-      }
-      setEtat("ajoute");
-      router.refresh();
-    } catch {
-      setMsg(labels.error);
-      setEtat("repos");
+    // Même porte que le bouton d'achat (`lib/appel-session.ts`). Le chemin de
+    // retour vient de `iciMeme()`, qui garde la query : l'ancienne version
+    // lisait `window.location.pathname` seul et ramenait `/catalogue?cat=Beauté`
+    // sur `/catalogue` nu après connexion.
+    const issue = await appelSession("/api/panier", { productId });
+
+    if (issue.etat === "connexion") {
+      // Pas de session : on emmène se connecter plutôt que d'échouer en
+      // silence, et on revient ici après.
+      router.push(issue.vers);
+      return;
     }
+    if (issue.etat !== "ok") {
+      setMsg((issue.etat === "refus" ? issue.error : null) ?? labels.error);
+      setEtat("repos");
+      return;
+    }
+    setEtat("ajoute");
+    router.refresh();
   }
 
   if (etat === "ajoute") {

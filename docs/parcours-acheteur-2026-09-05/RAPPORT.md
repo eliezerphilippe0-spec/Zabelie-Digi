@@ -64,12 +64,17 @@ Journal machine : `journal.json` · liens crawlés : `liens-internes.json`
    automatique) ou depuis « Écrire au vendeur ». Ça marche, mais c'est un
    détour. **L'accueil premium le règle** : le menu compte de l'en-tête porte
    le lien `/connexion` (`components/account-menu.tsx`, PR #202).
-2. **Le message d'erreur générique dit « Connexion impossible » pour une
-   erreur serveur.** `buy-button.tsx:145-169` : une réponse non-JSON (500)
-   tombe dans le `catch` réseau. En production, un vrai 500 (MonCash injoignable
-   sans le code `provider_unavailable`) afficherait donc « Connexion
-   impossible. Réessayez. » — vrai au sens large, trompeur au sens strict. Une
-   ligne à corriger : distinguer `res.ok` avant `res.json()`. Effort S.
+2. ~~**Le message d'erreur générique dit « Connexion impossible » pour une
+   erreur serveur.**~~ `buy-button.tsx:145-169` : une réponse non-JSON (500)
+   tombait dans le `catch` réseau. En production, un vrai 500 (MonCash
+   injoignable sans le code `provider_unavailable`) affichait donc « Connexion
+   impossible. Réessayez. » — vrai au sens large, trompeur au sens strict.
+   ✅ **CORRIGÉ le 2026-09-05** par `lib/appel-session.ts` : les quatre issues
+   d'un appel authentifié sont distinguées, et `reseau` ne couvre plus que le
+   cas où la requête n'est jamais partie. Revérifié dans le navigateur, mêmes
+   conditions que ci-dessus : 500 → « Une erreur est survenue », requête
+   avortée → « Connexion impossible », 401 → `/connexion?next=…`, 409 → le
+   motif du serveur.
 3. **`/panier` sans base rend la page d'erreur au lieu d'un panier vide.**
    Uniquement observable sans Supabase, donc jamais en production configurée.
    Le reste du site se dégrade proprement dans ce cas (catalogue, fiches) ;
