@@ -8,7 +8,7 @@ import {
   type DigitalKind,
 } from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
-import type { OptionCategorie } from "@/lib/product-categories";
+import type { OptionCategorie, OptionSousRayon } from "@/lib/product-categories";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import {
   AiDescriptionHelp,
@@ -25,6 +25,8 @@ export type PublishFormLabels = {
   kindService: string;
   categoryAria: string;
   categoryEmpty: string;
+  subcategoryAria: string;
+  subcategoryEmpty: string;
   pricePh: string;
   descriptionPh: string;
   serviceHint: string;
@@ -46,6 +48,7 @@ export type PublishFormLabels = {
 export function PublishForm({
   labels,
   categories,
+  sousRayons = [],
   tier = "standard",
   rateBpsEnVigueur,
   aiActif = false,
@@ -58,6 +61,13 @@ export function PublishForm({
    * deux vocabulaires parallèles.
    */
   categories: OptionCategorie[];
+  /**
+   * Les SOUS-RAYONS actifs de tous les départements (0098), lus en base côté
+   * serveur. Le second menu ne montre que ceux du département choisi, et ne
+   * s'affiche pas si ce département n'en a aucun — un menu à une seule
+   * option « — » n'est pas un choix.
+   */
+  sousRayons?: OptionSousRayon[];
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
@@ -79,6 +89,7 @@ export function PublishForm({
     // l'énumération, pour que `isService` s'applique sans conversion.
     kind: KIND_FILE as DigitalKind,
     category: "",
+    categoryId: "",
     priceHTG: "",
     description: "",
     deliveryDays: "",
@@ -101,6 +112,8 @@ export function PublishForm({
           title: form.title,
           kind: form.kind,
           category: form.category,
+          // 0098 : facultatif — vide = la fiche s'arrête au département.
+          categoryId: form.categoryId || undefined,
           description: form.description,
           priceHTG: Number(form.priceHTG),
           policyAccepted: policyOk,
@@ -159,7 +172,9 @@ export function PublishForm({
           className={input}
           aria-label={labels.categoryAria}
           value={form.category}
-          onChange={(e) => set("category", e.target.value)}
+          // Changer de département invalide le sous-rayon : il appartient au
+          // précédent, et le serveur le refuserait de toute façon.
+          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, categoryId: "" }))}
           required
         >
           <option value="">{labels.categoryEmpty}</option>
@@ -173,6 +188,30 @@ export function PublishForm({
           ))}
         </select>
       </div>
+      {/* SOUS-RAYON (0098) — le second niveau, pour tout type. Ne s'affiche que
+          si le département choisi en a : « Digital & services » propose ses
+          feuilles de services (0057) et de recharge (0097) ; un département
+          sans enfant actif n'affiche rien. Facultatif : un service peut rester
+          au niveau du département, et la route l'accepte tel quel. */}
+      {(() => {
+        const options = sousRayons.filter((s) => s.departement === form.category);
+        if (options.length === 0) return null;
+        return (
+          <select
+            className={input}
+            aria-label={labels.subcategoryAria}
+            value={form.categoryId}
+            onChange={(e) => set("categoryId", e.target.value)}
+          >
+            <option value="">{labels.subcategoryEmpty}</option>
+            {options.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.chemin}
+              </option>
+            ))}
+          </select>
+        );
+      })()}
       <div className="space-y-1.5">
         <input
           className={input}

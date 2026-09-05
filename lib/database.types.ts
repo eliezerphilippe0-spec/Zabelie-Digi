@@ -61,6 +61,8 @@ export type Product = {
   description: string | null;
   kind: ProductKind;
   category: string | null;
+  /** Sous-rayon (niveau 2 ou 3 de `zabelie_categories`), tout type — 0098. */
+  category_id: string | null;
   price_htg: number;
   cover_url: string | null;
   status: ProductStatus;

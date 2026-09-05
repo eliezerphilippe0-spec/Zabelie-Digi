@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
-import { normalizeCategory } from "@/lib/product-categories";
+import { normalizeCategory, normalizeSousRayon } from "@/lib/product-categories";
 import {
   isDigitalKind,
   isService,
@@ -51,6 +51,8 @@ export async function POST(req: Request) {
     description?: string;
     kind?: DigitalKind;
     category?: string;
+    /** Sous-rayon facultatif (0098) — identifiant `zabelie_categories`, revalidé. */
+    categoryId?: unknown;
     priceHTG?: number;
     deliveryDays?: number | null;
     serviceIncludes?: string[];
@@ -142,6 +144,18 @@ export async function POST(req: Request) {
   if (!categorieCanonique) {
     return NextResponse.json(
       { error: t(lang, "api.category.unknown") },
+      { status: 400 }
+    );
+  }
+  // 0098 : le sous-rayon est facultatif, mais s'il est fourni il doit être un
+  // sous-rayon ACTIF du département qu'on vient de valider. Un identifiant
+  // d'un autre département est REFUSÉ, pas corrigé — sinon `category` et
+  // `category_id` raconteraient deux rayons différents et les facettes
+  // mentiraient. Liste blanche serveur, jamais la valeur du client telle quelle.
+  const sousRayon = await normalizeSousRayon(supabase, body.categoryId, categorieCanonique);
+  if (!sousRayon.ok) {
+    return NextResponse.json(
+      { error: t(lang, "api.category.unknown"), code: "subcategory_invalid" },
       { status: 400 }
     );
   }
@@ -255,6 +269,9 @@ export async function POST(req: Request) {
       kind,
       // BL-105 : whitelist serveur — jamais de texte libre en base.
       category: categorieCanonique,
+      // 0098 : sous-rayon validé ci-dessus, ou null si le vendeur s'est arrêté
+      // au département.
+      category_id: sousRayon.id,
       price_htg: Math.round(price),
       delivery_days: deliveryDays,
       service_includes: serviceIncludes.length > 0 ? serviceIncludes : null,

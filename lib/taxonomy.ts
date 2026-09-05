@@ -89,14 +89,17 @@ export async function getCategoryFacets(
 
   const supabase = await createClient();
 
-  // Produits physiques PUBLIÉS et leur catégorie fine. Le filtre sur le
-  // statut est porté par la jointure : un brouillon ne doit pas peupler un
-  // rayon visible, sinon la barre annonce une offre qui n'existe pas encore.
+  // Produits PUBLIÉS du département et leur sous-rayon. Depuis 0098 la
+  // catégorie fine vit sur `products.category_id` pour TOUT type — le physique
+  // y est recopié (backfill 0098 + écriture à la création), le digital et le
+  // service la reçoivent du formulaire. Un brouillon ne peuple pas un rayon
+  // visible : la barre annoncerait une offre qui n'existe pas encore.
   const { data: liens, error } = await supabase
-    .from("zabelie_physical_products")
-    .select("category_id, products!inner(status, category)")
-    .eq("products.status", "published")
-    .eq("products.category", departmentLabel)
+    .from("products")
+    .select("category_id")
+    .eq("status", "published")
+    .eq("category", departmentLabel)
+    .not("category_id", "is", null)
     .limit(2000);
 
   if (error || !liens) {
@@ -182,14 +185,16 @@ export async function productIdsInCategory(slug: string): Promise<string[] | nul
 
   const ids = [parent, ...((enfants ?? []) as { id: string }[]).map((e) => e.id)];
 
+  // 0098 : la sous-catégorie est sur `products` pour tout type — un service
+  // rangé dans « Recharge Digicel » se filtre comme une pièce auto.
   const { data: liens, error } = await supabase
-    .from("zabelie_physical_products")
-    .select("product_id")
+    .from("products")
+    .select("id")
     .in("category_id", ids)
     .limit(2000);
 
   if (error || !liens) return null;
-  return (liens as unknown as { product_id: string }[]).map((l) => l.product_id);
+  return (liens as unknown as { id: string }[]).map((l) => l.id);
 }
 
 // ════════════ Menu déroulant des rayons (capture porteur, 2026-08-02) ═══════
@@ -333,12 +338,14 @@ async function getMenuRayonsNonMemoise(lang: Lang): Promise<RayonMenu[]> {
     return [];
   }
 
-  // Comptes par catégorie fine, produits PUBLIÉS seulement. Un brouillon ne
+  // Comptes par sous-rayon, produits PUBLIÉS seulement, tout type (0098 :
+  // `products.category_id`, backfillé depuis le physique). Un brouillon ne
   // doit pas décompter un rayon comme peuplé.
   const { data: liens } = await supabase
-    .from("zabelie_physical_products")
-    .select("category_id, products!inner(status)")
-    .eq("products.status", "published")
+    .from("products")
+    .select("category_id")
+    .eq("status", "published")
+    .not("category_id", "is", null)
     .limit(5000);
 
   const comptes = new Map<string, number>();
@@ -346,22 +353,26 @@ async function getMenuRayonsNonMemoise(lang: Lang): Promise<RayonMenu[]> {
     comptes.set(l.category_id, (comptes.get(l.category_id) ?? 0) + 1);
   }
 
-  /* PRODUITS NON PHYSIQUES — ils ne comptaient JAMAIS (correctif 2026-08-11).
+  /* PRODUITS SANS SOUS-RAYON — le repli par libellé (correctif 2026-08-11,
+   * conservé après 0098).
    *
-   * Le comptage ci-dessus ne lit que `zabelie_physical_products`. Un fichier
-   * ou un service n'y figure pas : son rattachement est le libellé français
-   * du rayon, porté par `products.category`. Résultat mesuré en production :
-   * deux produits publiés, et le badge « bientôt » qui ne pouvait pas
-   * s'éteindre — le porteur l'a lu comme un défaut de rafraîchissement.
+   * Un fichier ou un service publié AVANT 0098, ou publié au seul niveau du
+   * département, n'a pas de `category_id` : son rattachement est le libellé
+   * français du rayon, porté par `products.category`. Sans ce repli, les
+   * trois services publiés en production disparaîtraient du compte et le
+   * badge « bientôt » redeviendrait indélébile — le défaut mesuré en août.
    *
-   * L'exclusion du type PHYSIQUE est indispensable : un produit physique porte
-   * AUSSI son libellé de rayon dans `products.category`, et le compter deux
-   * fois gonflerait des rayons au hasard. */
+   * L'exclusion du type PHYSIQUE reste indispensable : un physique a toujours
+   * un `category_id` (colonne `not null` sur son extension, recopiée), donc
+   * il est déjà compté ci-dessus ; le compter par libellé le compterait deux
+   * fois. Et on ne prend que les produits SANS `category_id`, pour la même
+   * raison. */
   const { data: nonPhysiques } = await supabase
     .from("products")
     .select("category")
     .eq("status", "published")
     .neq("kind", KIND_PHYSICAL)
+    .is("category_id", null)
     .not("category", "is", null)
     .limit(5000);
 

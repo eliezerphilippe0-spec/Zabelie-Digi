@@ -335,6 +335,11 @@ export async function POST(req: Request) {
       // La publication redeviendra un geste explicite du porteur.
       status: "draft",
       category: departmentLabel,
+      // 0098 : la sous-catégorie vit aussi sur `products`, pour que facettes
+      // et comptes lisent UNE source quel que soit le type. L'extension
+      // physique garde la sienne (fitment, stock) ; les deux sont écrites
+      // ensemble et 0098 a recopié l'existant.
+      category_id: category.id,
     })
     .select("id, slug")
     .single();
