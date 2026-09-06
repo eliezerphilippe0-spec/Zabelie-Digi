@@ -26,11 +26,21 @@ import { join } from "node:path";
 const FICHIER = ".env.example";
 
 /**
- * Injectées par la plateforme de déploiement, jamais posées à la main.
+ * Posées par la PLATEFORME, jamais par l'exploitant.
  * Les documenter inviterait à les renseigner — ce qui écraserait la valeur
- * que Vercel calcule.
+ * calculée par le runtime ou par Vercel.
+ *
+ * ⚠️ Le nom disait « injectées par Vercel » jusqu'au 2026-09-06. `NODE_ENV`
+ * a montré la limite : elle relève de la même règle — jamais posée à la main —
+ * mais elle vient de Node, pas de Vercel. L'ajouter sous l'ancien nom aurait
+ * fait mentir la liste, et le message d'échec avec elle.
  */
-const INJECTEES_PAR_VERCEL: Record<string, string> = {
+const POSEES_PAR_LA_PLATEFORME: Record<string, string> = {
+  // Posée par Node et par Next : `development` sous `next dev`, `production`
+  // dès qu'un build est servi. Lue par `horsProduction` (lib/diagnostic.ts)
+  // pour n'afficher un indice technique QUE hors production. La poser à la
+  // main masquerait ou révélerait cet indice au mauvais endroit.
+  NODE_ENV: "posée par Node/Next : development, production ou test",
   VERCEL_URL: "injectée par Vercel à chaque déploiement (hôte, sans protocole)",
   NEXT_PUBLIC_VERCEL_URL: "idem, exposée au navigateur",
   // `production` · `preview` · `development` — lue par `garderProduction`
@@ -105,7 +115,7 @@ test("aucune clé en double dans .env.example", () => {
 test("toute variable lue par le code est documentée", () => {
   const dec = new Set(declarees());
   const manquantes = [...luesParLeCode().entries()]
-    .filter(([nom]) => !dec.has(nom) && !(nom in INJECTEES_PAR_VERCEL))
+    .filter(([nom]) => !dec.has(nom) && !(nom in POSEES_PAR_LA_PLATEFORME))
     .map(([nom, ou]) => `${nom}  (lue dans ${ou.slice(0, 2).join(", ")})`)
     .sort();
 
@@ -121,7 +131,7 @@ test("toute variable lue par le code est documentée", () => {
 test("toute variable documentée est réellement lue — l'exemption se périme aussi", () => {
   const lues = luesParLeCode();
   const mortes = declarees()
-    .filter((k) => !lues.has(k) && !(k in INJECTEES_PAR_VERCEL))
+    .filter((k) => !lues.has(k) && !(k in POSEES_PAR_LA_PLATEFORME))
     .sort();
 
   assert.deepEqual(
@@ -132,10 +142,10 @@ test("toute variable documentée est réellement lue — l'exemption se périme 
     )}\nOn la posera consciencieusement dans un nouvel environnement, elle ne servira à rien, et elle fera croire que le fichier est à jour. Retirez-la, ou dites où elle sert.`
   );
 
-  for (const [nom, raison] of Object.entries(INJECTEES_PAR_VERCEL)) {
+  for (const [nom, raison] of Object.entries(POSEES_PAR_LA_PLATEFORME)) {
     assert.ok(
       lues.has(nom),
-      `${nom} est déclarée « injectée par Vercel » mais plus aucun code ne la lit — retirez-la de INJECTEES_PAR_VERCEL (${raison})`
+      `${nom} est déclarée « posée par la plateforme » mais plus aucun code ne la lit — retirez-la de POSEES_PAR_LA_PLATEFORME (${raison})`
     );
   }
 });

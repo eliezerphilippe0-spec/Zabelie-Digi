@@ -17,6 +17,7 @@ import type { TauxCommission } from "@/lib/commission-config";
 import { CommissionAnnonce } from "@/components/commission-annonce";
 import { RATE_BPS } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
+import { horsProduction, signalerConfigAbsente } from "@/lib/diagnostic";
 import { aiProviderDisponible } from "@/lib/ai-description";
 import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -122,13 +123,26 @@ export default async function VendrePage() {
   if (!(await isPrefetch())) logLanding("sell_cta_clicked");
 
   if (!isSupabaseConfigured()) {
+    /* Une base absente n'est PAS un « mode démo » : en production c'est un
+     * incident, et il ne partait jusqu'ici aucun signal — la page rendait 200
+     * et l'écran paraissait normal. Le journal le dit maintenant, une fois par
+     * démarrage. L'utilisateur, lui, lit ce que ça veut dire POUR LUI ; le
+     * chemin du fichier de configuration ne l'aiderait pas, il n'y a pas accès. */
+    signalerConfigAbsente("supabase", { ecran: "/vendre" });
     return (
       <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")}>
         <div className="glass rounded-2xl p-6 text-sm text-mist">
-          {t(lang, "sell.demo.body.pre")}
-          <code className="mx-1 text-cloud">supabase/README.md</code>
-          {t(lang, "sell.demo.body.post")}
+          {t(lang, "sell.demo.body")}
         </div>
+        {/* L'indice technique n'existe qu'en dehors de la production. Un build
+            servi — même en local — ne le rend pas : dès qu'on sert un build, on
+            sert ce qu'un visiteur verrait. */}
+        {horsProduction() && (
+          <p className="mt-3 text-xs text-mist">
+            Développement : configurez Supabase —{" "}
+            <code className="text-cloud">supabase/README.md</code>
+          </p>
+        )}
       </Shell>
     );
   }
