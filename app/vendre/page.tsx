@@ -13,6 +13,9 @@ import type { ProductKind } from "@/lib/sample-data";
 import { isDownloadable, kindLabelKey } from "@/lib/product-kind";
 import { ROUNDING_IN_FORCE, type CreatorTier } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
+import type { TauxCommission } from "@/lib/commission-config";
+import { CommissionAnnonce } from "@/components/commission-annonce";
+import { RATE_BPS } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
 import { aiProviderDisponible } from "@/lib/ai-description";
 import { tarifSurplusAffiche } from "@/lib/ai-billing";
@@ -31,10 +34,13 @@ function Shell({
   children,
   lang,
   subtitle,
+  taux,
 }: {
   children: React.ReactNode;
   lang: Lang;
   subtitle?: string;
+  /** Taux LU EN BASE (0054/0066) — jamais une constante de libellé. */
+  taux: TauxCommission;
 }) {
   return (
     <div className="bg-grain min-h-dvh">
@@ -64,6 +70,21 @@ function Shell({
             {t(lang, "sell.physical.cta")}
           </Link>
         </div>
+        {/* LE TAUX DE COMMISSION — dans la Shell, donc sur les TROIS écrans :
+            démo, non connecté, connecté. C'est le point : la commission est ce
+            qui décide de s'inscrire, elle doit donc être lisible AVANT
+            l'inscription. Placée dans la branche authentifiée, elle serait
+            arrivée après la décision. */}
+        <CommissionAnnonce
+          taux={taux}
+          labels={{
+            title: t(lang, "sell.fee.title"),
+            ligne: t(lang, "sell.fee.line"),
+            exemple: t(lang, "sell.fee.example"),
+            gratuit: t(lang, "sell.fee.free"),
+          }}
+        />
+
         <div className="mt-8">{children}</div>
 
         {/* COMMENT VENDRE — les trois pas vendeur que l'accueil portait
@@ -102,7 +123,7 @@ export default async function VendrePage() {
 
   if (!isSupabaseConfigured()) {
     return (
-      <Shell lang={lang} subtitle={t(lang, "sell.demo.subtitle")}>
+      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")}>
         <div className="glass rounded-2xl p-6 text-sm text-mist">
           {t(lang, "sell.demo.body.pre")}
           <code className="mx-1 text-cloud">supabase/README.md</code>
@@ -117,9 +138,18 @@ export default async function VendrePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  /* Le taux RÉELLEMENT configuré (0054/0066), lu AVANT la branche « non
+   * connecté » : c'est justement le visiteur sans compte qui vient chercher la
+   * commission, et la lui montrer après l'inscription serait la lui montrer
+   * après la décision. Une seule lecture sert les deux écrans. Repli =
+   * constante compilée, identique au `coalesce` de la SQL. */
+  const { taux } = await lireTauxCommission(supabase, (c) =>
+    console.error("[commission] taux de repli utilisé", c),
+  );
+
   if (!user) {
     return (
-      <Shell lang={lang} subtitle={t(lang, "sell.login.subtitle")}>
+      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")}>
         <Link
           href="/connexion?next=/vendre"
           className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
@@ -155,11 +185,6 @@ export default async function VendrePage() {
   const aiTarif = aiProviderDisponible()
     ? await tarifSurplusAffiche(createAdminClient(), lang)
     : undefined;
-  // Le taux RÉELLEMENT configuré (0054/0066), pour que l'estimation suive
-  // un UPDATE d'exploitation sans redéploiement. Repli = constante compilée.
-  const { taux } = await lireTauxCommission(supabase, (c) =>
-    console.error("[commission] taux de repli utilisé", c),
-  );
 
   const { data: mineRaw } = await supabase
     .from("products")
@@ -239,7 +264,7 @@ export default async function VendrePage() {
   };
 
   return (
-    <Shell lang={lang} subtitle={t(lang, "sell.subtitle")}>
+    <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")}>
 
       <div className="glass rounded-2xl p-6">
         <PublishForm
