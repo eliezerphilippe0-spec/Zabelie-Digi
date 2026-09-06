@@ -3,6 +3,24 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## ⏳ `0099` — RÉDIGÉE, NON APPLIQUÉE — le numéro à recharger
+
+Le rayon « Recharge » est ouvert depuis `0098`, mais le chemin a été parcouru
+de bout en bout après coup, et il manquait un maillon : **`POST /api/checkout`
+prend `{ productId, rail }`** — un acheteur pouvait payer une recharge sans
+jamais dire quel numéro recharger. Le vendeur aurait reçu une commande **payée
+et indélivrable**.
+
+`0099` pose `zabelie_rechaj_cible` (une table, un numéro), sa RLS calquée sur
+`0076` — le vendeur ne lit qu'une commande **payée** — et
+`zabelie_est_rechaj()`, qui répond par l'ascendance du rayon.
+
+Rien à faire côté porteur : elle s'applique après la CI, au même titre que les
+précédentes. Retour arrière : `drop table zabelie_rechaj_cible;` — la table est
+vide tant qu'aucune recharge n'a été vendue.
+
+---
+
 ## ✅ `0098` — APPLIQUÉE le 2026-09-06 à 17:47:06Z
 
 **Signal** : « rajoute la section, en cas d'interdit je vais l'enlever »

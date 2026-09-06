@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { appelSession } from "@/lib/appel-session";
+import {
+  normaliserNumeroHaiti,
+  operateurDouteux,
+  type Operateur,
+} from "@/lib/rechaj";
 
 export type BuyOption = {
   /**
@@ -37,6 +42,21 @@ export type StockLabels = {
   variantOut: string;
 };
 
+/**
+ * Champ « numéro à recharger » (0099) — absent pour tout produit qui n'est pas
+ * une recharge. Deux saisies, comme chez tous les revendeurs : un chiffre faux
+ * est irrécupérable, et l'erreur ne se voit qu'après que le crédit est parti.
+ */
+export type RechajLabels = {
+  title: string;
+  placeholder: string;
+  confirm: string;
+  mismatch: string;
+  invalid: string;
+  warning: string; // contient {operateur}
+  hint: string;
+};
+
 export type CouponLabels = {
   have: string;
   placeholder: string;
@@ -62,6 +82,7 @@ export function BuyButton({
   othersLabel,
   loadingLabel = "Redirection…",
   coupon,
+  rechaj,
   errors,
 }: {
   productId: string;
@@ -74,6 +95,8 @@ export function BuyButton({
   loadingLabel?: string;
   /** Libellés i18n du champ code promo (absent = champ masqué). */
   coupon?: CouponLabels;
+  /** Recharge (0099) : absent = produit ordinaire, parcours inchangé. */
+  rechaj?: { labels: RechajLabels; operateur: Operateur | null };
   /** Libellés i18n des erreurs (BL-113 : l'échec aussi doit parler KR). */
   errors?: ErrorLabels;
 }) {
@@ -90,6 +113,22 @@ export function BuyButton({
   const [variantId, setVariantId] = useState<string | null>(
     () => variants?.find((v) => v.available > 0)?.id ?? variants?.[0]?.id ?? null
   );
+  /* Recharge (0099). Deux champs distincts, jamais un copier-coller de l'un
+     dans l'autre : c'est la double saisie qui attrape le chiffre faux, et
+     l'industrie entière la pratique parce que le crédit parti ne revient pas. */
+  const [numero, setNumero] = useState("");
+  const [numeroBis, setNumeroBis] = useState("");
+  const numeroOk = normaliserNumeroHaiti(numero);
+  const bisOk = normaliserNumeroHaiti(numeroBis);
+  const numeroConcorde = Boolean(numeroOk && bisOk && numeroOk === bisOk);
+  // Avertissement, jamais refus : les blocs d'opérateur viennent de résumés qui
+  // se contredisent, et la portabilité du numéro suffirait à rendre tout
+  // blocage faux (lib/rechaj.ts).
+  const douteux = Boolean(
+    numeroOk && rechaj && operateurDouteux(numeroOk, rechaj.operateur)
+  );
+  const rechajBloque = Boolean(rechaj) && !numeroConcorde;
+
   const selected = variants?.find((v) => v.id === variantId) ?? null;
   const soldOut = Boolean(variants && variants.every((v) => v.available <= 0));
   const selectedOut = Boolean(selected && selected.available <= 0);
@@ -143,6 +182,9 @@ export function BuyButton({
       // Le code n'est transmis que s'il a été validé (le serveur revalide
       // et consomme atomiquement — la vérité du prix reste en base).
       couponCode: applied ? code : undefined,
+      // Recharge : la forme NORMALISÉE, jamais la saisie brute. Le serveur
+      // renormalise de toute façon — il ne fait confiance à rien d'ici.
+      rechajNumero: numeroOk ?? undefined,
     });
 
     if (issue.etat === "connexion") {
@@ -262,6 +304,57 @@ export function BuyButton({
         </div>
       )}
 
+      {/* ── Numéro à recharger (0099) ───────────────────────────────────────
+          Placé AVANT le prix et le bouton, dans l'ordre que suivent tous les
+          revendeurs : opérateur (c'est le rayon), numéro, montant (c'est la
+          fiche). Deux saisies : la seconde n'est pas une politesse, c'est le
+          seul filet contre le chiffre faux — une fois le crédit envoyé,
+          personne ne le reprend, ni le vendeur ni l'opérateur. */}
+      {rechaj && (
+        <div className="mb-4 rounded-2xl border border-line bg-surface/60 p-4">
+          <p className="text-sm font-semibold text-cloud">{rechaj.labels.title}</p>
+          <div className="mt-3 grid gap-2">
+            <input
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              placeholder={rechaj.labels.placeholder}
+              aria-label={rechaj.labels.placeholder}
+              inputMode="tel"
+              autoComplete="tel-national"
+              maxLength={20}
+              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            />
+            <input
+              value={numeroBis}
+              onChange={(e) => setNumeroBis(e.target.value)}
+              placeholder={rechaj.labels.confirm}
+              aria-label={rechaj.labels.confirm}
+              inputMode="tel"
+              // Pas d'autocomplétion sur la confirmation : le navigateur
+              // remplirait les deux champs d'un coup et la double saisie ne
+              // vérifierait plus rien.
+              autoComplete="off"
+              maxLength={20}
+              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            />
+          </div>
+
+          {/* Un seul message à la fois, du plus bloquant au plus consultatif. */}
+          {numero.trim() !== "" && !numeroOk && (
+            <p className="mt-2 text-xs text-danger-text">{rechaj.labels.invalid}</p>
+          )}
+          {numeroOk && numeroBis.trim() !== "" && !numeroConcorde && (
+            <p className="mt-2 text-xs text-danger-text">{rechaj.labels.mismatch}</p>
+          )}
+          {numeroConcorde && douteux && rechaj.operateur && (
+            <p className="mt-2 text-xs text-warning-text">
+              {rechaj.labels.warning.replace("{operateur}", rechaj.operateur)}
+            </p>
+          )}
+          <p className="mt-2 text-xs text-mist">{rechaj.labels.hint}</p>
+        </div>
+      )}
+
       {/* Code promo (V-13) */}
       {coupon && !applied && !showCoupon && (
         <button
@@ -308,7 +401,7 @@ export function BuyButton({
 
       <button
         onClick={() => handleBuy(primary.rail)}
-        disabled={busy || soldOut || selectedOut}
+        disabled={busy || soldOut || selectedOut || rechajBloque}
         className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {soldOut || selectedOut
@@ -328,7 +421,7 @@ export function BuyButton({
               <button
                 key={o.rail}
                 onClick={() => handleBuy(o.rail)}
-                disabled={busy || soldOut || selectedOut}
+                disabled={busy || soldOut || selectedOut || rechajBloque}
                 className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
               >
                 {loadingRail === o.rail ? loadingLabel : o.label}

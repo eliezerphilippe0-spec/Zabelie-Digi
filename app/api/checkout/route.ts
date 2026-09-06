@@ -27,6 +27,7 @@ import {
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { offreFlashActive, flashEpuisee } from "@/lib/flash";
 import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
+import { normaliserNumeroHaiti } from "@/lib/rechaj";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
   let couponInput: unknown;
   let variantInput: unknown;
   let quantityInput: unknown;
+  let rechajInput: unknown;
   try {
     ({
       productId,
@@ -75,6 +77,7 @@ export async function POST(req: Request) {
       couponCode: couponInput,
       variantId: variantInput,
       quantity: quantityInput,
+      rechajNumero: rechajInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -127,13 +130,44 @@ export async function POST(req: Request) {
   // aller-retour séquentiel sur chaque checkout « fichier » — latence 3G).
   const { data: product, error: prodErr } = await admin
     .from("products")
-    .select("id, title, price_htg, status, seller_id, kind, product_assets(count)")
+    .select(
+      "id, title, price_htg, status, seller_id, kind, category_id, product_assets(count)"
+    )
     .eq("id", productId)
     .eq("status", "published")
     .single();
 
   if (prodErr || !product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
+  }
+
+  /* ── RECHARGE : le numéro, AVANT que la commande existe (0099) ───────────
+   *
+   * L'ordre importe plus que le contrôle lui-même. Refuser après la création
+   * de la commande laisserait une ligne `pending` orpheline à chaque saisie
+   * fautive ; refuser après le paiement serait le cas que cette table existe
+   * pour rendre impossible — de l'argent encaissé sur une recharge dont
+   * personne ne connaît la cible.
+   *
+   * `category_id` est nul sur l'immense majorité des fiches : l'aller-retour
+   * SQL n'a lieu que pour celles qui portent un sous-rayon. La question n'est
+   * pas posée au libellé mais à l'ASCENDANCE (`zabelie_est_rechaj`), sinon une
+   * fiche rangée trois niveaux plus bas y échapperait.
+   */
+  let rechajNumero: string | null = null;
+  if (product.category_id) {
+    const { data: estRechaj } = await admin.rpc("zabelie_est_rechaj", {
+      p_product: product.id,
+    });
+    if (estRechaj === true) {
+      rechajNumero = normaliserNumeroHaiti(rechajInput);
+      if (!rechajNumero) {
+        return NextResponse.json(
+          { error: t(lang, "api.rechaj.numero"), code: "rechaj_numero_invalide" },
+          { status: 422 }
+        );
+      }
+    }
   }
 
   // BL-103 (FRONT-2) : on ne vend JAMAIS un fichier sans livrable. Les
@@ -334,6 +368,34 @@ export async function POST(req: Request) {
       { error: t(lang, "api.order.failed") },
       { status: 500 }
     );
+  }
+
+  /* La cible de recharge, AVANT le paiement et sans best-effort (0099).
+   *
+   * Ce n'est pas l'affiliation : un cookie d'affiliation cassé fait perdre une
+   * commission, une cible manquante fait encaisser une commande indélivrable.
+   * Un échec ici retire donc la commande et rend une erreur, exactement comme
+   * l'échec d'insertion du paiement plus bas — et pour la même raison : rien
+   * ne doit survivre à mi-chemin.
+   *
+   * La contrainte `check` de la table est le second garde. Si elle refuse la
+   * valeur, c'est que `normaliserNumeroHaiti` a laissé passer quelque chose —
+   * on préfère le 500 bruyant au numéro faux écrit en silence. */
+  if (rechajNumero) {
+    const { error: cibleErr } = await admin
+      .from("zabelie_rechaj_cible")
+      .insert({ order_id: order.id, msisdn: rechajNumero });
+    if (cibleErr) {
+      await admin.from("orders").delete().eq("id", order.id);
+      console.error("[checkout] cible rechaj refusée", {
+        orderId: order.id,
+        code: cibleErr.code,
+      });
+      return NextResponse.json(
+        { error: t(lang, "api.order.failed") },
+        { status: 500 }
+      );
+    }
   }
 
   // Affiliation (0081) : attribution FIGÉE maintenant, jamais au paiement

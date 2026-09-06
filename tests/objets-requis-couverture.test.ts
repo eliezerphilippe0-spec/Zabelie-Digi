@@ -28,7 +28,38 @@ import { join } from "node:path";
  * première fausse alerte.
  */
 
-const MIGRATION = "supabase/migrations/0085_objets_requis_v2.sql";
+/**
+ * La migration qui porte la DERNIÈRE définition de la sonde — cherchée, jamais
+ * épinglée.
+ *
+ * Ce nom était `0085` en dur. `0099` a redéfini la fonction (`create or
+ * replace`) pour y ajouter `zabelie_est_rechaj`, et le test a continué de lire
+ * `0085` : il annonçait un objet non surveillé qui l'était. Le garde accusait
+ * juste, pour une raison fausse — et la fois suivante, quand la liste aurait
+ * vraiment été en retard, on aurait cherché l'erreur du mauvais côté.
+ *
+ * C'est le défaut que `CLAUDE.md` nomme en une phrase : **l'état ne se raconte
+ * pas, il s'interroge.** Un test qui vérifie l'état d'une fonction doit trouver
+ * où elle est définie, pas se souvenir d'où elle l'était.
+ */
+function migrationDeLaSonde(): string {
+  const dossier = "supabase/migrations";
+  const porteuses = readdirSync(dossier)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .filter((f) =>
+      readFileSync(`${dossier}/${f}`, "utf8").includes(
+        "create or replace function zabelie_objets_requis()"
+      )
+    );
+  assert.ok(
+    porteuses.length > 0,
+    "aucune migration ne définit zabelie_objets_requis() — la sonde a disparu, ou sa signature a changé"
+  );
+  return `${dossier}/${porteuses[porteuses.length - 1]}`;
+}
+
+const MIGRATION = migrationDeLaSonde();
 
 /**
  * Objets surveillés par la sonde mais appelés depuis **SQL**, pas depuis TS.

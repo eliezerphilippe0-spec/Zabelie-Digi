@@ -13,6 +13,7 @@ import { getProductReviews } from "@/lib/reviews";
 import { offreFlashActive } from "@/lib/flash";
 import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
+import { exigeNumero, operateurDuRayon } from "@/lib/rechaj";
 import { AddToCart } from "@/components/add-to-cart";
 import { getPhysicalView } from "@/lib/products-physical";
 import { isStripeEnabled } from "@/lib/stripe";
@@ -391,6 +392,27 @@ export default async function ProductPage({
                   applied: t(lang, "coupon.applied"),
                   invalid: t(lang, "coupon.invalid"),
                 }}
+                /* Recharge (0099) : le champ n'existe QUE pour une fiche
+                   rangée sous « Recharge téléphone ». Le serveur revérifie —
+                   il remonte l'ascendance du rayon en SQL — donc masquer le
+                   champ ne permet jamais de s'en passer, ça n'affiche rien
+                   d'inutile ailleurs. */
+                rechaj={
+                  exigeNumero(product.sousRayonSlug)
+                    ? {
+                        operateur: operateurDuRayon(product.sousRayonSlug),
+                        labels: {
+                          title: t(lang, "rechaj.title"),
+                          placeholder: t(lang, "rechaj.ph"),
+                          confirm: t(lang, "rechaj.confirm"),
+                          mismatch: t(lang, "rechaj.mismatch"),
+                          invalid: t(lang, "rechaj.invalid"),
+                          warning: t(lang, "rechaj.warning"),
+                          hint: t(lang, "rechaj.hint"),
+                        },
+                      }
+                    : undefined
+                }
                 errors={{
                   generic: t(lang, "error.generic"),
                   network: t(lang, "error.network"),

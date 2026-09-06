@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
 import { cleEtatRemise, estEtatRemise, type EtatRemise } from "@/lib/fulfillment";
+import { afficherNumero } from "@/lib/rechaj";
 import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
 
@@ -139,6 +140,23 @@ export default async function MesVentesPage() {
     }
   }
 
+  /* 0099 — le numéro à recharger. CLIENT DE SESSION, comme au-dessus : c'est
+   * `zabelie_rechaj_cible_seller_read` qui décide, et elle n'ouvre la ligne
+   * qu'une fois la commande PAYÉE. Un service-role ici rendrait la policy
+   * décorative. Table absente (0099 non appliquée) → map vide, rien ne
+   * s'affiche, et le reste de la page fonctionne. */
+  const orderIds = ventes.map((v) => v.order_id);
+  const cibleParCommande = new Map<string, string>();
+  if (orderIds.length > 0) {
+    const { data: cibles } = await supabase
+      .from("zabelie_rechaj_cible")
+      .select("order_id, msisdn")
+      .in("order_id", orderIds);
+    for (const c of cibles ?? []) {
+      cibleParCommande.set(c.order_id, c.msisdn);
+    }
+  }
+
   return (
     <Shell lang={lang}>
       {ventes.length === 0 ? (
@@ -172,6 +190,28 @@ export default async function MesVentesPage() {
                   )}
                 </p>
                 <p className="mt-1 text-xs text-mist">{t(lang, cleEtatRemise(v.status))}</p>
+
+                {/* 0099 — LE NUMÉRO À RECHARGER, en évidence et sélectionnable.
+                    C'est la donnée sans laquelle cette commande n'est pas
+                    délivrable : elle passe avant l'adresse, avant tout le
+                    reste. `select-all` parce que le vendeur va le recopier
+                    dans son application d'opérateur, sur un téléphone, et
+                    qu'un chiffre recopié de travers coûte la recharge. */}
+                {(() => {
+                  const cible = cibleParCommande.get(v.order_id);
+                  if (!cible) return null;
+                  return (
+                    <div className="mt-2 rounded-lg border border-brand/40 bg-brand/5 p-2 text-xs">
+                      <p className="font-semibold text-cloud">
+                        {t(lang, "sales.rechaj.title")}
+                      </p>
+                      <p className="numeric mt-0.5 select-all text-base font-bold tracking-wide text-cloud">
+                        {afficherNumero(cible)}
+                      </p>
+                      <p className="mt-1 text-mist">{t(lang, "sales.rechaj.hint")}</p>
+                    </div>
+                  );
+                })()}
                 {/* V-5 : les coordonnées de livraison — présentes UNIQUEMENT
                     si la policy 0076 les a laissées passer (commande payée),
                     en attente d'expédition. */}
