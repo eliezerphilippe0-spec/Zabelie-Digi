@@ -348,6 +348,15 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
   (Klasyo vend déjà cours et PDF en MonCash). Même défaut que `\b` contre
   `vandè` : l'instrument qui ne voit que le français valide la langue qui
   compte le moins.
+- `docs/49-ETAT-PRODUCTION-2026-09-06.md` — état de la production (2026-09-06).
+  ⚠️ **Aucune page du site ouverte** — proxy, scraper hors clé, hôte Supabase
+  bloqué : ce relevé dit ce que la BASE a à montrer, pas ce qu'un visiteur voit.
+  Trois faits : **14 paiements MonCash, tous échoués, aucun avec référence
+  opérateur** · **72 rayons actifs sur 73 sont vides** · le litige du 22 août
+  est ouvert depuis 15 jours, escrow gelé, personne prévenu (`RESEND_API_KEY`
+  absente). Et un fait POSITIF, rare : les 7 paiements `pending` du 5 septembre
+  sont passés à `failed` tout seuls — **preuve d'exécution** que
+  `/api/reconcile` tourne, ce qu'aucun croisement du dépôt ne pouvait établir.
 - `docs/47-AUDIT-SEO.md` — audit de la surface indexable (2026-08-28).
   Le fait qui commande : **2 produits publiés, 0 image** — aucun mot-clé ne se
   classe là-dessus, le SEO n'est pas le goulot. Quatre défauts corrigés

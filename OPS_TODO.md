@@ -3,6 +3,29 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## 📋 État de la production au 2026-09-06 — `docs/49`
+
+Relevé en lecture seule, consigné dans
+`docs/49-ETAT-PRODUCTION-2026-09-06.md`. ⚠️ **Aucune page du site n'a pu être
+ouverte** (proxy, scraper hors clé, hôte Supabase bloqué) : il décrit la base,
+pas le rendu.
+
+Quatre actions, dans l'ordre :
+
+| # | Action | Pourquoi maintenant |
+|---|---|---|
+| 1 | **Identifiants MonCash de production** — puis `/api/admin/moncash-verify` | 14 tentatives, 14 échecs, 0 référence opérateur. Rien d'autre ne compte. |
+| 2 | **Dépublier les deux fiches d'essai** (« fxccxfdf » 0 HTG, « appel » 10 HTG) | Il reste alors UNE offre publiée, « cours francisation » — et elle n'a pas de photo |
+| 3 | **Clore le litige du 22 août** + poser `RESEND_API_KEY` | `action_required` depuis 15 jours, escrow gelé, personne n'est prévenu |
+| 4 | **Trancher sur les rayons vides** — refermer ou remplir | 72 rayons actifs sur 73 n'ont aucun produit |
+
+Deux réglages Supabase, hors code : **activer la protection des mots de passe
+compromis** (Auth, désactivée aujourd'hui) et **examiner la garde de
+`seller_is_active`**, seule des quatre `SECURITY DEFINER` ouvertes à `anon` dont
+la garde n'a pas été vérifiée.
+
+---
+
 ## ✅ `0099` — APPLIQUÉE le 2026-09-06 à 18:26:37Z
 
 **Signal** : « Applique 0099 », porteur, 2026-09-06 — sous l'autorisation
