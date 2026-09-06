@@ -72,6 +72,39 @@ arrière : les sept tuples sont dans `0077`, rejouables un par un.
 
 ---
 
+## 🔴 MonCash — savoir POURQUOI il échoue, en un appel
+
+Mesuré en production le 2026-09-05 : **quinze paiements, sept `failed`, sept
+`pending`, et aucune référence opérateur**. Le rail n'a jamais abouti une
+seule fois depuis l'ouverture. Jusqu'ici personne ne savait pourquoi :
+l'acheteur voyait « Création de la commande impossible », vous voyiez un 502,
+et la cause restait invisible.
+
+**Geste — appeler `/api/admin/moncash-verify`** (réservé au rôle admin). Un
+seul appel, un verdict, et il interroge **MonCash**, pas seulement
+l'environnement. Il ne crée aucun paiement : il s'arrête au jeton
+`client_credentials`, qui est une lecture.
+
+| verdict | ce que ça veut dire, et le geste |
+| --- | --- |
+| `absente` | `MONCASH_CLIENT_ID` / `SECRET` pas posés dans Vercel |
+| `mode_ambigu` | `MONCASH_MODE` ne vaut ni `sandbox` ni `production` — rien ne peut partir |
+| `injoignable` | MonCash n'a pas répondu. ⚠️ Ne dit **rien** des identifiants — réessayer avant de conclure |
+| `identifiants_refuses` | MonCash a dit non. ⚠️ La cause la plus fréquente n'est **pas** une clé fausse mais une clé du **mauvais portail** : bac à sable et production ont des identifiants distincts |
+| `bac_a_sable` | Les clés passent, mais en mode sandbox : **aucune gourde réelle ne circulera** |
+| `ok` | Jeton obtenu en production. Le rail peut encaisser |
+
+⚠️ **Le verdict attendu aujourd'hui est `identifiants_refuses` ou
+`bac_a_sable`** — c'est ce que disent les quinze paiements sans référence
+opérateur. L'appel vous dira lequel des deux, et donc lequel des deux gestes
+faire : obtenir les identifiants du portail de production, ou basculer
+`MONCASH_MODE`.
+
+La sonde ne rend jamais le client secret ni le jeton obtenu
+(`tests/moncash-verify.test.ts` MV6 l'assure sur le JSON sérialisé).
+
+---
+
 ## 🟡 Vérifier `NEXT_PUBLIC_SITE_URL` en production — une minute
 
 Issu de l'audit SEO du 2026-08-28 (`docs/47` §2.3).
