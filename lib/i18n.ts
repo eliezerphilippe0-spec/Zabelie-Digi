@@ -326,7 +326,7 @@ const fr = {
   "api.delivery.days": "Délai de livraison : entre 0 (jour même) et 365 jours.",
   "api.price.invalid": "Champs requis : titre, type valide, prix valide (0 HTG accepté pour un produit gratuit, jamais négatif).",
   "api.free.physical": "Un article livrable ne peut pas être offert à 0 HTG : les frais de remise resteraient à la charge du vendeur.",
-  "api.free.closed": "L'acquisition gratuite n'est pas encore ouverte (migration 0087 non appliquée).",
+  "api.free.closed": "L'acquisition gratuite n'est pas encore ouverte. Réessayez plus tard.",
   "api.deliverable.missing": "Ce produit est un fichier et n'a aucun livrable téléversé. Publier reviendrait à le mettre en vente sans rien à remettre.",
   "api.deliverable.check": "Vérification du livrable impossible — réessayez.",
   "api.rail.unavailable": "Ce moyen de paiement n'est pas disponible.",
@@ -510,7 +510,7 @@ const fr = {
   "auth.signup.success":
     "Compte créé. Vérifiez votre e-mail pour confirmer, puis connectez-vous.",
   "auth.demo.mode":
-    "Mode démo : connectez le projet Supabase pour activer les comptes.",
+    "Les comptes ne sont pas disponibles pour le moment.",
   "auth.err.config":
     "La configuration du site est incorrecte. Ce n'est pas vous — contactez Zabelie.",
   "auth.link.expired":
@@ -534,9 +534,8 @@ const fr = {
   "err.404.catalog": "Voir le catalogue",
 
   "sell.title": "Vendre sur Zabelie",
-  "sell.demo.subtitle": "Mode démo — connecte Supabase pour publier de vrais produits.",
-  "sell.demo.body.pre": "La publication nécessite une base Supabase configurée (voir",
-  "sell.demo.body.post": ").",
+  "sell.demo.subtitle": "La publication n'est pas disponible pour le moment.",
+  "sell.demo.body": "Vous pouvez parcourir le catalogue en attendant. Réessayez dans quelques minutes.",
   "sell.login.subtitle": "Connecte-toi pour publier un produit.",
   "sell.subtitle": "Publie ton produit ou ta prestation.",
   "sell.mine.title": "Mes produits",
@@ -1044,7 +1043,7 @@ const ht: Record<I18nKey, string> = {
   "api.delivery.days": "Delè livrezon : ant 0 (menm jou a) ak 365 jou.",
   "api.price.invalid": "Chan obligatwa : tit, tip valab, pri valab (0 HTG bon pou yon pwodwi gratis, men pa janm negatif).",
   "api.free.physical": "Yon atik pou livre pa ka bay a 0 HTG : se vandè a ki t ap peye pou remèt li.",
-  "api.free.closed": "Jwenn gratis poko louvri (migrasyon 0087 poko aplike).",
+  "api.free.closed": "Jwenn gratis poko louvri. Eseye pita.",
   "api.deliverable.missing": "Pwodwi sa a se yon fichye e li pa gen anyen ki chaje. Pibliye l ta vle di vann yon bagay ou pa ka remèt.",
   "api.deliverable.check": "Nou pa ka verifye sa ki pou livre a — eseye ankò.",
   "api.rail.unavailable": "Mwayen peman sa a pa disponib.",
@@ -1217,7 +1216,7 @@ const ht: Record<I18nKey, string> = {
   "auth.signup.success":
     "Kont kreye. Tcheke imèl ou pou konfime, epi konekte.",
   "auth.demo.mode":
-    "Mòd demo : konekte pwojè Supabase pou aktive kont yo.",
+    "Kont yo pa disponib pou kounye a.",
   "auth.err.config":
     "Konfigirasyon sit la gen yon pwoblèm. Se pa ou — kontakte Zabelie.",
   "auth.link.expired":
@@ -1232,9 +1231,8 @@ const ht: Record<I18nKey, string> = {
     "Koneksyon ak sèvis sa a echwe oswa li te anile. Eseye ankò, oswa sèvi ak imèl ou.",
 
   "sell.title": "Vann sou Zabelie",
-  "sell.demo.subtitle": "Mòd demo — konekte Supabase pou pibliye vrè pwodui.",
-  "sell.demo.body.pre": "Pou pibliye, ou bezwen yon baz Supabase konfigire (gade",
-  "sell.demo.body.post": ").",
+  "sell.demo.subtitle": "Piblikasyon an pa disponib pou kounye a.",
+  "sell.demo.body": "Ou ka gade katalòg la pandan tan an. Eseye ankò nan kèk minit.",
   "sell.login.subtitle": "Konekte pou pibliye yon pwodui.",
   "sell.subtitle": "Pibliye pwodui ou oswa sèvis ou.",
   "sell.mine.title": "Pwodui mwen yo",
@@ -1736,7 +1734,7 @@ const en = {
   "api.delivery.days": "Delivery time: between 0 (same day) and 365 days.",
   "api.price.invalid": "Required: title, valid type, valid price (0 HTG allowed for a free product, never negative).",
   "api.free.physical": "A deliverable item cannot be free: the seller would bear the handover cost.",
-  "api.free.closed": "Free acquisition is not open yet (migration 0087 not applied).",
+  "api.free.closed": "Free acquisition is not open yet. Please try again later.",
   "api.deliverable.missing": "This product is a file with no uploaded deliverable. Publishing it would put it on sale with nothing to hand over.",
   "api.deliverable.check": "Cannot verify the deliverable — try again.",
   "api.rail.unavailable": "This payment method is unavailable.",
@@ -1910,7 +1908,7 @@ const en = {
   "auth.signup.success":
     "Account created. Check your email to confirm, then sign in.",
   "auth.demo.mode":
-    "Demo mode: connect the Supabase project to enable accounts.",
+    "Accounts are not available right now.",
   "auth.err.config":
     "The site configuration is incorrect. This is not your fault — contact Zabelie.",
   "auth.link.expired":
@@ -1933,9 +1931,8 @@ const en = {
   "err.404.catalog": "View the catalog",
 
   "sell.title": "Sell on Zabelie",
-  "sell.demo.subtitle": "Demo mode — connect Supabase to publish real products.",
-  "sell.demo.body.pre": "Publishing requires a configured Supabase database (see",
-  "sell.demo.body.post": ").",
+  "sell.demo.subtitle": "Publishing is not available right now.",
+  "sell.demo.body": "You can browse the catalogue meanwhile. Try again in a few minutes.",
   "sell.login.subtitle": "Sign in to publish a product.",
   "sell.subtitle": "Publish your product or your service.",
   "sell.mine.title": "My products",
@@ -2438,7 +2435,7 @@ const es = {
   "api.delivery.days": "Plazo de entrega: entre 0 (mismo día) y 365 días.",
   "api.price.invalid": "Campos requeridos: título, tipo válido, precio válido (0 HTG para un producto gratuito, nunca negativo).",
   "api.free.physical": "Un artículo entregable no puede ser gratis: el vendedor asumiría el costo de entrega.",
-  "api.free.closed": "La adquisición gratuita aún no está abierta (migración 0087 no aplicada).",
+  "api.free.closed": "La adquisición gratuita aún no está abierta. Inténtalo más tarde.",
   "api.deliverable.missing": "Este producto es un archivo sin entregable subido. Publicarlo sería venderlo sin nada que entregar.",
   "api.deliverable.check": "No se pudo verificar el entregable — inténtalo de nuevo.",
   "api.rail.unavailable": "Este método de pago no está disponible.",
@@ -2612,7 +2609,7 @@ const es = {
   "auth.signup.success":
     "Cuenta creada. Revisa tu correo para confirmar, y luego inicia sesión.",
   "auth.demo.mode":
-    "Modo demo: conecta el proyecto Supabase para activar las cuentas.",
+    "Las cuentas no están disponibles por ahora.",
   "auth.err.config":
     "La configuración del sitio es incorrecta. No es culpa tuya — contacta con Zabelie.",
   "auth.link.expired":
@@ -2634,9 +2631,8 @@ const es = {
   "err.404.catalog": "Ver el catálogo",
 
   "sell.title": "Vender en Zabelie",
-  "sell.demo.subtitle": "Modo demo — conecta Supabase para publicar productos reales.",
-  "sell.demo.body.pre": "Publicar requiere una base Supabase configurada (ver",
-  "sell.demo.body.post": ").",
+  "sell.demo.subtitle": "La publicación no está disponible por ahora.",
+  "sell.demo.body": "Puedes explorar el catálogo mientras tanto. Inténtalo en unos minutos.",
   "sell.login.subtitle": "Inicia sesión para publicar un producto.",
   "sell.subtitle": "Publica tu producto o tu servicio.",
   "sell.mine.title": "Mis productos",

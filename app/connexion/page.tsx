@@ -1,6 +1,8 @@
 import { ConnexionForm } from "@/components/connexion-form";
 import { LangToggle } from "@/components/lang-toggle";
 import { getLang } from "@/lib/i18n-server";
+import { isSupabaseConfigured } from "@/lib/products";
+import { signalerConfigAbsente } from "@/lib/diagnostic";
 import { t, type I18nKey } from "@/lib/i18n";
 import { resolveAuthProviders, type AuthProviderId } from "@/lib/auth-providers";
 
@@ -15,6 +17,10 @@ const LIBELLES: Record<AuthProviderId, I18nKey> = {
 };
 
 export default async function ConnexionPage() {
+  /* Même défaut que /vendre : l'écran dégradé ne signalait RIEN.
+   * En production, une base absente ici veut dire que PERSONNE ne peut
+   * se connecter — la panne la plus silencieuse possible. */
+  if (!isSupabaseConfigured()) signalerConfigAbsente("supabase", { ecran: "/connexion" });
   const lang = await getLang();
   /* Lue côté SERVEUR, à la requête. La liste ne contient que ce que le
      porteur a nommé APRÈS l'avoir activé chez Supabase (OPS_TODO) : absente
