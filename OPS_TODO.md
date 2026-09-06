@@ -3,21 +3,35 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
-## ⏳ `0099` — RÉDIGÉE, NON APPLIQUÉE — le numéro à recharger
+## ✅ `0099` — APPLIQUÉE le 2026-09-06 à 18:26:37Z
 
-Le rayon « Recharge » est ouvert depuis `0098`, mais le chemin a été parcouru
-de bout en bout après coup, et il manquait un maillon : **`POST /api/checkout`
-prend `{ productId, rail }`** — un acheteur pouvait payer une recharge sans
-jamais dire quel numéro recharger. Le vendeur aurait reçu une commande **payée
-et indélivrable**.
+**Signal** : « Applique 0099 », porteur, 2026-09-06 — sous l'autorisation
+permanente du 2026-08-17. **Ordre tenu** : CI verte (build · e2e · sql-tests,
+deux passages) → fusion de
+[#220](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/220) dans
+`main` (`049eb13`) → application via MCP du fichier de `main`. Journal Supabase
+version `20260906182637`.
 
-`0099` pose `zabelie_rechaj_cible` (une table, un numéro), sa RLS calquée sur
-`0076` — le vendeur ne lit qu'une commande **payée** — et
-`zabelie_est_rechaj()`, qui répond par l'ascendance du rayon.
+**Empreinte croisée (méthode 0086)** : SHA-256 **brut** du fichier de `main`
+sans saut de ligne final = `statements[1]` reçu par Supabase =
+`192719182edc814c635f5f1d902d2a179acf433e721e5d2f6394899d50837198`.
+Identiques. Le contrôle valait ici plus que d'habitude : la migration fait
+383 lignes, dont 164 recopiées mécaniquement depuis `0085`, et une
+transcription de mémoire aurait échoué **en silence**. Canonique
+`b4390a55…7881d`.
 
-Rien à faire côté porteur : elle s'applique après la CI, au même titre que les
-précédentes. Retour arrière : `drop table zabelie_rechaj_cible;` — la table est
-vide tant qu'aucune recharge n'a été vendue.
+**Mesuré après** : table posée, **RLS active**, **2 policies**,
+**0 droit d'écriture** restant pour `anon`/`authenticated`,
+`zabelie_est_rechaj` présente et **surveillée par la sonde de présence**,
+table vide (aucune recharge vendue), **98 lignes de registre pour 99 fichiers**
+— l'écart d'une ligne est la convention, celle de `0099` viendra avec `0100` —
+et la ligne de `0098` inscrite `appliquee` / `journal_supabase`.
+
+⚠️ **Retour arrière** : `drop table zabelie_rechaj_cible;` — sans risque tant
+que la table est vide. Il faudrait aussi retirer l'entrée de la sonde, sinon
+`/api/admin/coherence` signalerait un objet manquant, ce qui est **exactement
+le comportement voulu** : la fonction ne doit pas disparaître sans qu'on le
+voie.
 
 ---
 
