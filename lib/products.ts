@@ -26,6 +26,10 @@ export type ProductView = {
       téléversaient une photo qu'aucun acheteur ne voyait. */
   coverUrl: string | null;
   blurb: string;
+  /** Slug du sous-rayon (`products.category_id`, 0098). null = la fiche
+      s'arrête au département. Seule surface qui s'en sert aujourd'hui : la
+      recharge, qui exige un numéro (0099). */
+  sousRayonSlug: string | null;
   deliveryDays: number | null;    // 'service' uniquement — page Fiverr
   serviceIncludes: string[];      // 'service' uniquement — checklist « inclus »
 };
@@ -101,6 +105,9 @@ const sampleAsView = (): ProductView[] =>
     accent: p.accent,
     coverUrl: null,
     blurb: p.blurb,
+    // Aucune fixture de démonstration n'est une recharge : le champ « numéro »
+    // ne doit apparaître que sur une vraie fiche de rayon.
+    sousRayonSlug: null,
     deliveryDays: null,
     serviceIncludes: [],
   }));
@@ -121,6 +128,7 @@ type Row = {
   seller: { display_name: string } | { display_name: string }[] | null;
   delivery_days: number | null;
   service_includes: string[] | null;
+  sous_rayon: { slug: string } | { slug: string }[] | null;
 };
 
 function rowAsView(r: Row): ProductView {
@@ -143,13 +151,14 @@ function rowAsView(r: Row): ProductView {
     accent: accentFor(r.slug),
     coverUrl: r.cover_url,
     blurb: r.description ?? "",
+    sousRayonSlug: (Array.isArray(r.sous_rayon) ? r.sous_rayon[0] : r.sous_rayon)?.slug ?? null,
     deliveryDays: r.delivery_days,
     serviceIncludes: r.service_includes ?? [],
   };
 }
 
 const SELECT =
-  "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name)";
+  "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name), sous_rayon:zabelie_categories!products_category_id_fkey(slug)";
 
 export type ProductFilters = {
   q?: string;

@@ -23,6 +23,7 @@ const base = (sur: Partial<ProductView> = {}): ProductView => ({
   creator: "Marie Jacmel",
   creatorId: "s1",
   kind: "service",
+  sousRayonSlug: null,
   category: "Sèvis",
   priceHTG: 300,
   sales: 0,
