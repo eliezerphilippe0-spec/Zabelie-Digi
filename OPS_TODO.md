@@ -15,7 +15,7 @@ Quatre actions, dans l'ordre :
 | # | Action | Pourquoi maintenant |
 |---|---|---|
 | 1 | **Identifiants MonCash de production** — puis `/api/admin/moncash-verify` | 14 tentatives, 14 échecs, 0 référence opérateur. Rien d'autre ne compte. |
-| 2 | **Dépublier les deux fiches d'essai** (« fxccxfdf » 0 HTG, « appel » 10 HTG) | Il reste alors UNE offre publiée, « cours francisation » — et elle n'a pas de photo |
+| 2 | ✅ **Fait par `0100`** — les **trois** fiches publiées archivées | Le porteur : « c'est un compte de test ». Les trois appartiennent au compte d'essai Bebeto : Zabelie n'a **aucun vendeur réel**. Ce n'était pas « deux essais et une offre » |
 | 3 | **Clore le litige du 22 août** + poser `RESEND_API_KEY` | `action_required` depuis 15 jours, escrow gelé, personne n'est prévenu |
 | 4 | **Trancher sur les rayons vides** — refermer ou remplir | 72 rayons actifs sur 73 n'ont aucun produit |
 

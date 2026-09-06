@@ -168,9 +168,9 @@ constatée, c'est une vérification qui n'a pas été faite.
 
 1. **MonCash.** Rien d'autre ne compte tant qu'une gourde ne passe pas.
    `/api/admin/moncash-verify` attend les identifiants de production.
-2. **Nettoyer ce que le public voit.** Deux des trois fiches publiées sont des
-   essais (« fxccxfdf » 0 HTG, « appel » 10 HTG). Il reste alors **une** offre :
-   « cours francisation », 300 HTG — et elle n'a pas de photo.
+2. ~~**Nettoyer ce que le public voit.** Deux des trois fiches publiées sont
+   des essais. Il reste alors **une** offre : « cours francisation », 300 HTG.~~
+   **FAUX — corrigé le 2026-09-06 (voir §7).** Les TROIS sont des essais.
 3. **Clore le litige du 22 août**, et poser `RESEND_API_KEY` pour qu'un
    prochain reste moins de quinze jours sans être vu.
 4. **Décider des rayons vides** : les refermer, ou les remplir. La troisième
@@ -202,3 +202,57 @@ select c.level, count(*) as actifs,
 
 Les alertes de sécurité se relisent avec `get_advisors` (type `security`) sur
 le projet, ou depuis l'onglet *Advisors* du tableau de bord Supabase.
+
+---
+
+## 7. Correction du 2026-09-06 — il n'y a aucune offre réelle
+
+Le porteur, lisant ce relevé : « **c'est un compte de test** ». Mesuré aussitôt,
+en sous-requêtes scalaires (la première tentative, en jointures, multipliait les
+lignes et donnait « 27 fiches » à un vendeur qui en a 9 — le défaut que §
+« Comment lire » de `docs/48` décrit, commis en le décrivant) :
+
+| Compte | Créé | Fiches | Publiées | Commandes passées |
+|---|---|---|---|---|
+| Eliezer | 2026-07-09 | 1 | 0 | 2 |
+| **Bebeto** | 2026-08-04 | 9 | **3** | 3 |
+| **Ruby** | 2026-08-04 | 0 | 0 | **10** |
+| Eliezer Philippe | 2026-09-04 | 0 | 0 | 0 |
+
+Bebeto et Ruby sont créés **le même jour** : la paire vendeur/acheteur d'un
+essai. Les quatre comptes sont ceux du porteur.
+
+> ### Zabelie n'a aujourd'hui **aucun vendeur réel et aucun acheteur réel.**
+> Les trois fiches publiées appartiennent toutes à un compte d'essai.
+
+Trois conséquences que la §6 ne tirait pas :
+
+1. **Le bloc en vedette de l'accueil affiche un produit de test** à tout
+   visiteur, avec sa mention « Photo non fournie ».
+2. **Les 15 commandes et les 14 échecs MonCash sont le trafic du porteur.** Ce
+   n'est pas « des clients qui n'arrivent pas à payer » — c'est le propriétaire
+   qui n'y arrive pas. Le signal sur le rail reste entier, il est même plus net.
+3. **Rien ne sépare les données d'essai des données publiques.** Un compte de
+   test publie directement dans le catalogue en ligne et aucune marque ne le
+   distingue. C'est ce qui a fait lire des essais comme un inventaire.
+
+### Pourquoi les comptes n'ont PAS été supprimés
+
+Le porteur a autorisé la suppression. Deux verrous s'y sont opposés, tous deux
+délibérés, et la mesure a décidé de la forme du geste :
+
+* `orders.buyer_id` et `orders.product_id` sont en **`RESTRICT`** — aucun compte
+  ni aucune fiche portant une commande ne disparaît tant que la commande existe ;
+* `zabelie_wallet_ledger_immutable` est `BEFORE DELETE OR UPDATE` sur
+  `wallet_transactions` et lève **sans condition**. La chaîne
+  `profil → portefeuille → grand livre` fait donc échouer toute suppression du
+  compte vendeur d'essai. **La plateforme refuse d'effacer son propre livre de
+  comptes — y compris pour son propriétaire, y compris pour un test.**
+
+Et l'historique de paiement est **conservé à dessein** : les quatorze échecs
+MonCash sont la seule matière de diagnostic sur un rail qui n'a jamais
+fonctionné. Aucun visiteur ne les voit.
+
+Reste donc le seul geste qui change ce qu'un visiteur voit : `0100` archive les
+**trois** fiches. Le catalogue retombe sur son état vide — « Le catalogue prend
+forme » — mieux dessiné, et plus honnête, que trois fiches de test sans photo.
