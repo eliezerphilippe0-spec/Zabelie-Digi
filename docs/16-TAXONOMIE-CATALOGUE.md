@@ -13,7 +13,7 @@
 > | `0078` | « Sacs de voyage », avalée par 0077 (collision de slug avec son parent) | ✅ |
 > | `0096` | retrait de 7 sous-catégories en double, index unique (parent, libellé), fermeture de 16.3 | 2026-09-05 11:50Z |
 > | `0097` | « Recharge Digicel » et « Recharge Natcom », semées **dormantes** sous 16.3 (D-7) | 2026-09-05 19:56Z |
-> | `0098` | `products.category_id` pour tout type, backfill du physique, **ouverture** des trois rayons de recharge | rédigée 2026-09-05 |
+> | `0098` | `products.category_id` pour tout type, backfill du physique, **ouverture** des trois rayons de recharge | 2026-09-06 17:47Z |
 >
 > **Mesuré en production le 2026-09-05, après `0096`** : niveau 1 **16/16**
 > actifs (décision porteur du 2026-08-09, journal `OPS_TODO`) · niveau 2
@@ -494,24 +494,35 @@ Coffrets · Articles de mariage
 Photos & illustrations · Logiciels
 **16.2** Design graphique · Marketing & réseaux sociaux · Développement web ·
 Photo & vidéo · Traduction · Cours particuliers · Comptabilité · Événementiel
-**16.3** Digicel · Natcom *(alimenté par le catalogue Reloadly — non éditable
-par les vendeurs)*
+**16.3** Recharge Digicel · Recharge Natcom *(vendues par des VENDEURS, avec
+commission Zabelie — pas par Zabelie en propre)*
 
-> ⛔ **Vente en propre fermée par `0096` (2026-09-05).** V-17 (`docs/02`, 2026-08-01) a mis fin à
-> la vente de recharge par Zabelie elle-même ; le rayon restait pourtant actif
-> en base, sans enfant ni produit — une case ouverte pour un commerce qui
-> n'existe plus. `active = false`, la ligne reste. Le rouvrir est une ligne
-> d'`UPDATE`, et suppose d'avoir tranché **D-7** (un vendeur vérifié peut-il
-> vendre du crédit télécom ?), qui reste ouverte.
+> ⛔ **Vente en propre : toujours fermée.** V-17 (`docs/02`, 2026-08-01) a mis
+> fin à la vente de recharge par Zabelie elle-même, et rien de ce qui suit ne la
+> rouvre : `ZABELIE_TOPUP_FIRSTPARTY_ENABLED` est inchangé, `/rechaj` redirige
+> toujours. `0096` avait fermé le rayon lui-même (2026-09-05), qui restait actif
+> en base sans enfant ni produit — une case ouverte pour un commerce qui
+> n'existait plus.
 >
-> 🌱 **Deux sous-rayons semés par `0097` puis OUVERTS par `0098` (2026-09-05, décision porteur « rajoute la section, en cas d'interdit je vais l'enlever »)** — « Recharge
-> Digicel » et « Recharge Natcom », `active = false`. Ils préparent le modèle
-> réaffirmé par le porteur ce jour-là : *le vendeur crée sa boutique, Zabelie
-> prélève sa commission*. Ils n'autorisent RIEN — leur activation suppose D-7
-> tranchée dans son volet réglementaire — l'avis juridique et la ligne écrite
-> entre « rechaj » (permis) et « vann balans » (interdit, monnaie électronique)
-> restent dus, et le porteur les porte. `0098` donne aussi `products.category_id`
-> à TOUT type de produit : un service se range enfin dans un sous-rayon.
+> ✅ **Rayon rouvert pour les VENDEURS le 2026-09-06 (`0098`, 17:47:06Z).**
+> `0097` avait semé « Recharge Digicel » et « Recharge Natcom » dormantes ;
+> `0098` les a ouvertes avec leur parent — trois rayons actifs — sur la décision
+> du porteur, en toutes lettres : « rajoute la section, en cas d'interdit je
+> vais l'enlever », prise après deux mises en garde et réaffirmée. Le modèle est
+> celui de tout le reste du marketplace : *le vendeur crée sa boutique, Zabelie
+> prélève sa commission*.
+>
+> ⚠️ **D-7 n'est tranchée que dans son volet COMMERCIAL.** Le volet
+> réglementaire reste ouvert et le porteur le porte : l'avis juridique sur la
+> revente de crédit télécom par un tiers n'est pas rendu. La ligne entre
+> « rechaj » (permis) et « vann balans » (interdit — c'est de la monnaie
+> électronique) est rédigée et attend sa validation
+> ([#218](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/218)).
+> Retour arrière si l'avis dit non : trois `update … set active = false`, au
+> journal des rayons d'`OPS_TODO`.
+>
+> `0098` donne aussi `products.category_id` à TOUT type de produit : un service
+> se range enfin dans un sous-rayon — ce qui manquait depuis `0057`.
 
 ---
 
