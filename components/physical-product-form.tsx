@@ -19,7 +19,7 @@ import Link from "next/link";
 /**
  * Création d'un produit physique (chantier B — UI vendeur).
  *
- * Chemin nominal : PHOTO → PRIX → QUANTITÉ → PUBLIER, en moins d'une minute.
+ * Chemin nominal : photo, informations, création du brouillon, revue.
  * Tout le reste est un dépliage optionnel :
  *   - variantes (un filtre à huile n'a ni couleur ni capacité) ;
  *   - compatibilité véhicule (3 taps : marque → modèle → années), affichée
@@ -45,6 +45,7 @@ type Fitment = { modelId: string; yearStart: string; yearEnd: string };
 const CURRENT_YEAR = new Date().getFullYear();
 
 export function PhysicalProductForm({
+  listingLabels,
   tier = "standard",
   rateBpsEnVigueur,
   netLabels,
@@ -55,6 +56,21 @@ export function PhysicalProductForm({
   specsEtendues = false,
   specsLabels,
 }: {
+  listingLabels: {
+    description: string;
+    descriptionHint: string;
+    draft: string;
+    creating: string;
+    draftNote: string;
+    saved: string;
+    photoFailed: string;
+    photoRetry: string;
+    photoChoose: string;
+    photoPrepareError: string;
+    manage: string;
+    error: string;
+    network: string;
+  };
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
@@ -121,11 +137,20 @@ export function PhysicalProductForm({
 
   const [policyOk, setPolicyOk] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Once creation succeeds, retries must upload to this draft, never create another.
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    return () => { if (photoPreview) URL.revokeObjectURL(photoPreview); };
+  }, [photoPreview]);
+
+  useEffect(() => {
     fetch("/api/products/physical")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("categories-unavailable");
+        return r.json();
+      })
       .then((d) => {
         setCategories(d.categories ?? []);
         setModels(d.models ?? []);
@@ -166,10 +191,9 @@ export function PhysicalProductForm({
    * gain AVANT de valider, et l'attente se paie pendant qu'il remplit le
    * reste du formulaire plutôt qu'au moment critique de la soumission. */
   async function selectPhoto(f: File | null) {
-    setPhotoPreview((old) => {
-      if (old) URL.revokeObjectURL(old);
-      return null;
-    });
+    setPhotoPreview(null);
+    setPhoto(null);
+    setError(null);
     setCompression(null);
     if (!f) {
       setPhoto(null);
@@ -181,6 +205,8 @@ export function PhysicalProductForm({
       setPhoto(c.fichier);
       setCompression(c);
       setPhotoPreview(URL.createObjectURL(c.fichier));
+    } catch {
+      setError(listingLabels.photoPrepareError);
     } finally {
       setCompressing(false);
     }
@@ -188,6 +214,7 @@ export function PhysicalProductForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || compressing || createdProductId) return;
     setBusy(true);
     setError(null);
     try {
@@ -231,28 +258,72 @@ export function PhysicalProductForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Création échouée.");
+        setError(data.error ?? listingLabels.error);
         return;
       }
-      // La photo part maintenant (best-effort : le produit existe même si
-      // l'upload échoue — le vendeur peut la reprendre depuis sa fiche).
-      if (photo) {
-        const fd = new FormData();
-        fd.append("productId", data.productId);
-        fd.append("file", photo);
-        await fetch("/api/products/cover", { method: "POST", body: fd }).catch(
-          () => undefined
-        );
-      }
-      // La fiche naît en BROUILLON : `/produit/[slug]` ne sert que les
-      // produits publiés et renverrait le vendeur sur un 404 juste après sa
-      // saisie. Le tableau de bord vendeur, lui, liste les brouillons.
-      router.push("/vendre");
+      setCreatedProductId(data.productId);
+      // Keep the existing draft on upload failure and offer an explicit retry.
+      if (photo && !(await uploadPhoto(data.productId, photo))) return;
+      router.push(`/vendre#produit-${data.productId}`);
     } catch {
-      setError("Connexion impossible. Réessayez.");
+      setError(listingLabels.network);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function uploadPhoto(productId: string, file: File): Promise<boolean> {
+    try {
+      const fd = new FormData();
+      fd.append("productId", productId);
+      fd.append("file", file);
+      const response = await fetch("/api/products/cover", { method: "POST", body: fd });
+      if (!response.ok) throw new Error("cover-upload-failed");
+      return true;
+    } catch {
+      setError(listingLabels.photoFailed);
+      return false;
+    }
+  }
+
+  async function retryPhoto() {
+    if (!createdProductId || !photo || busy || compressing) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (await uploadPhoto(createdProductId, photo)) {
+        router.push(`/vendre#produit-${createdProductId}`);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (createdProductId) {
+    return (
+      <section className="space-y-4 rounded-2xl border border-line bg-surface/40 p-5" aria-labelledby="draft-saved">
+        <h2 id="draft-saved" className="font-semibold">{listingLabels.saved}</h2>
+        <p className="text-sm text-mist">{listingLabels.draftNote}</p>
+        {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
+        <label className="block text-sm font-semibold">
+          {listingLabels.photoChoose}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={busy || compressing}
+            onChange={(e) => selectPhoto(e.target.files?.[0] ?? null)}
+            className="mt-2 block w-full min-w-0 text-sm"
+          />
+        </label>
+        <button type="button" onClick={retryPhoto} disabled={busy || compressing || !photo}
+          className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand disabled:opacity-60">
+          {busy || compressing ? listingLabels.creating : listingLabels.photoRetry}
+        </button>
+        <Link href={`/vendre#produit-${createdProductId}`} className="flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+          {listingLabels.manage}
+        </Link>
+      </section>
+    );
   }
 
   if (loadError) {
@@ -277,7 +348,7 @@ export function PhysicalProductForm({
               className="h-24 w-24 rounded-xl border border-line object-cover"
             />
           ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-xl border border-dashed border-line text-3xl text-mist">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-line text-3xl text-mist">
               📷
             </div>
           )}
@@ -285,8 +356,9 @@ export function PhysicalProductForm({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             capture="environment"
+            disabled={busy || compressing}
             onChange={(e) => selectPhoto(e.target.files?.[0] ?? null)}
-            className="text-sm"
+            className="min-w-0 w-full text-sm"
           />
         </div>
         {/* Le vendeur doit COMPRENDRE que la plateforme travaille pour lui :
@@ -368,8 +440,9 @@ export function PhysicalProductForm({
 
       {/* ── 3. CATÉGORIE ─────────────────────────────────────────────── */}
       <label className="block">
-        <span className="text-sm font-semibold">Catégorie</span>
+        <span id="product-category-label" className="text-sm font-semibold">Catégorie</span>
         <select
+          aria-labelledby="product-category-label"
           value={categorySlug}
           onChange={(e) => setCategorySlug(e.target.value)}
           required
@@ -395,11 +468,14 @@ export function PhysicalProductForm({
       )}
 
       {/* ── DÉPLIAGES OPTIONNELS ─────────────────────────────────────── */}
-      <details className="rounded-xl border border-line bg-surface/40 p-4">
-        <summary className="cursor-pointer text-sm font-semibold text-cloud">
-          Description (optionnel)
-        </summary>
+      <div className="rounded-xl border border-line bg-surface/40 p-4">
+        <label htmlFor="product-description" className="text-sm font-semibold text-cloud">
+          {listingLabels.description}
+        </label>
+        <p id="description-hint" className="mt-2 text-sm text-mist">{listingLabels.descriptionHint}</p>
         <textarea
+          id="product-description"
+          aria-describedby="description-hint"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
@@ -417,7 +493,7 @@ export function PhysicalProductForm({
             onSuggestion={setDescription}
           />
         </div>
-      </details>
+      </div>
 
       {/* ── CARACTÉRISTIQUES (V-2, docs/35) — libellés traduits en props ── */}
       <details className="rounded-xl border border-line bg-surface/40 p-4">
@@ -562,7 +638,7 @@ export function PhysicalProductForm({
         </div>
       </details>
 
-      {error && <p className="text-sm text-danger-text">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
 
       {/* Attestation : obligatoire, jamais pré-cochée. Placée APRÈS le bouton
           serait invisible sur un écran de 360 px — elle vient donc avant. */}
@@ -585,12 +661,12 @@ export function PhysicalProductForm({
       {/* ── 4. PUBLIER ───────────────────────────────────────────────── */}
       <button
         type="submit"
-        disabled={busy || !categorySlug}
+        disabled={busy || compressing || !categorySlug}
         className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-on-brand disabled:opacity-60"
       >
-        {busy ? "Publication…" : "Publier le produit"}
+        {busy ? listingLabels.creating : listingLabels.draft}
       </button>
-
+      <p className="text-xs text-mist">{listingLabels.draftNote}</p>
     </form>
   );
 }

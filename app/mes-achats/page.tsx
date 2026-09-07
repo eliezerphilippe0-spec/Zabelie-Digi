@@ -47,13 +47,17 @@ type OrderRow = {
   product: { title: string; slug: string; kind: ProductKind } | null;
 };
 
-function Shell({ children }: { children: React.ReactNode }) {
+async function Shell({ children }: { children: React.ReactNode }) {
+  const lang = await getLang();
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">Mes achats</h1>
         {children}
+        <Link href="/aide#probleme" className="mt-6 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+          {t(lang, "aide.problem.title")}
+        </Link>
       </main>
       <SiteFooter />
     </div>

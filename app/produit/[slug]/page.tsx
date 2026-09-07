@@ -30,6 +30,7 @@ import {
   deliveryNoticeKey,
   isService,
   isDownloadable,
+  pickByKind,
 } from "@/lib/product-kind";
 import { jsonLdProduit } from "@/lib/jsonld-produit";
 
@@ -187,7 +188,9 @@ export default async function ProductPage({
   const visiteur = isSupabaseConfigured()
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
-  const peutEcrire = Boolean(visiteur) && visiteur!.id !== product.creatorId;
+  const estVendeur = visiteur?.id === product.creatorId;
+  const peutEcrire = Boolean(visiteur && product.creatorId) && !estVendeur;
+  const connexionVendeur = `/connexion?next=${encodeURIComponent(`/produit/${product.slug}#contacter-vendeur`)}`;
 
   const kindKey = kindLabelKey(product.kind, product.id);
   const deliveryBulletKey = bulletKey(product.kind, product.id);
@@ -370,6 +373,23 @@ export default async function ProductPage({
                   </>
                 )}
               </p>
+            )}
+            {pickByKind(product.kind, { file: false, service: false, physical: true }, product.id) && (
+              <section aria-labelledby="remise-avant-achat" className="mt-5 rounded-xl border border-line bg-ink/40 p-4">
+                <h2 id="remise-avant-achat" className="text-sm font-semibold">{t(lang, "product.handover.title")}</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-mist">
+                  <li>{t(lang, "product.handover.place")}</li>
+                  <li>{t(lang, "product.handover.time")}</li>
+                  <li>{t(lang, "product.handover.fees")}</li>
+                </ul>
+                <p className="mt-3 text-xs text-mist">{t(lang, "product.handover.note")}</p>
+                {product.creatorId && !estVendeur && (
+                  <Link href={visiteur ? "#contacter-vendeur" : connexionVendeur}
+                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline">
+                    {t(lang, "product.handover.contact")}
+                  </Link>
+                )}
+              </section>
             )}
             <div className="mt-5">
               <BuyButton
@@ -581,26 +601,31 @@ export default async function ProductPage({
               Il est placé APRÈS le bloc de confiance et AVANT le partage :
               la question vient quand l'acheteur hésite encore, pas quand il
               a déjà décidé de transmettre la fiche. */}
-          <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
-            <p className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</p>
-            {peutEcrire ? (
-              <MessageForm
-                productId={product.id}
-                labels={{
-                  placeholder: t(lang, "msg.placeholder"),
-                  send: t(lang, "msg.send"),
-                  sending: t(lang, "msg.sending"),
-                  sent: t(lang, "msg.sent"),
-                  warn: t(lang, "msg.warn"),
-                }}
-              />
-            ) : (
-              /* Le vendeur de la fiche voit ce bloc aussi, et n'y trouve pas de
-                 champ : lui cacher entièrement laisserait croire que ses
-                 acheteurs n'ont pas ce chemin. */
-              <p className="mt-2 text-sm text-mist">{t(lang, "msg.login")}</p>
-            )}
-          </div>
+          {product.creatorId && (
+            <div id="contacter-vendeur" className="mt-6 scroll-mt-24 rounded-2xl border border-line bg-surface/40 p-4">
+              <h2 className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</h2>
+              {peutEcrire ? (
+                <MessageForm
+                  productId={product.id}
+                  labels={{
+                    placeholder: t(lang, "msg.placeholder"),
+                    send: t(lang, "msg.send"),
+                    sending: t(lang, "msg.sending"),
+                    sent: t(lang, "msg.sent"),
+                    warn: t(lang, "msg.warn"),
+                  }}
+                />
+              ) : (
+                estVendeur ? (
+                  <p className="mt-2 text-sm text-mist">{t(lang, "msg.own")}</p>
+                ) : (
+                  <Link href={connexionVendeur} className="mt-2 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+                    {t(lang, "msg.login")}
+                  </Link>
+                )
+              )}
+            </div>
+          )}
 
           <div className="mt-6">
             <ShareButtons

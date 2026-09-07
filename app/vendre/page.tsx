@@ -347,7 +347,8 @@ export default async function VendrePage() {
             {mine.map((p, i) => (
               <li
                 key={p.slug}
-                className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
+                id={`produit-${p.id}`}
+                className="scroll-mt-24 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
               >
                 <div className="min-w-0">
                   {/* Correctif audit : un produit brouillon (BL-103, fichier

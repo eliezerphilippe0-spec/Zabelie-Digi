@@ -23,13 +23,14 @@ export const metadata = { title: "Vendre un produit — Zabelie" };
  * saisies ici, à la main, par le porteur lui-même.
  */
 export default async function VendrePhysiquePage() {
+  const lang = await getLang();
   if (!isSupabaseConfigured()) {
     return (
       <div className="bg-grain min-h-dvh">
         <SiteNav />
         <main id="main" className="mx-auto max-w-xl px-5 py-16">
-          <h1 className="text-3xl font-black tracking-tight">Vendre un produit</h1>
-          <p className="mt-4 text-sm text-mist">Mode démo — Supabase non configuré.</p>
+          <h1 className="text-3xl font-black tracking-tight">{t(lang, "sell.physical.title")}</h1>
+          <p className="mt-4 text-sm text-mist">{t(lang, "sell.demo.body")}</p>
         </main>
         <SiteFooter />
       </div>
@@ -42,7 +43,6 @@ export default async function VendrePhysiquePage() {
   const { taux } = await lireTauxCommission(await createClient(), (c) =>
     console.error("[commission] taux de repli utilisé", c),
   );
-  const lang = await getLang();
   // Marque/matière/état : montrés seulement si 0074 est appliquée (sonde).
   const specsEtendues = await specsEtenduesDisponibles(await createClient());
   const specsLabels = {
@@ -87,31 +87,52 @@ export default async function VendrePhysiquePage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-xl px-5 py-16">
-        <h1 className="text-3xl font-black tracking-tight">Vendre un produit</h1>
+        <h1 className="text-3xl font-black tracking-tight">{t(lang, "sell.physical.title")}</h1>
         <p className="mt-2 text-sm text-cloud">
-          Photo, prix, quantité — votre produit est en ligne en moins d&apos;une
-          minute. Vous vendez un fichier ou un service ?{" "}
-          <Link href="/vendre" className="underline">
-            C&apos;est par ici
-          </Link>
-          .
+          {t(lang, "sell.physical.intro")}
         </p>
+        <Link href="/vendre" className="mt-2 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+          {t(lang, "sell.physical.digital")}
+        </Link>
+        <section aria-labelledby="preparer" className="mt-6 rounded-2xl border border-line bg-surface/40 p-5">
+          <h2 id="preparer" className="font-semibold">{t(lang, "sell.physical.prepare.title")}</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-mist">
+            <li>{t(lang, "sell.physical.prepare.photo")}</li>
+            <li>{t(lang, "sell.physical.prepare.details")}</li>
+            <li>{t(lang, "sell.physical.prepare.stock")}</li>
+          </ul>
+        </section>
 
         {!user ? (
           <div className="mt-8 rounded-2xl border border-line bg-surface/60 p-6">
             <p className="text-sm text-cloud">
-              Connectez-vous pour publier un produit.
+              {t(lang, "sell.login.subtitle")}
             </p>
             <Link
-              href="/connexion?suivant=/vendre/physique"
+              href="/connexion?next=/vendre/physique"
               className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-on-brand"
             >
-              Se connecter
+              {t(lang, "auth.signin.cta")}
             </Link>
           </div>
         ) : (
           <div className="mt-8">
             <PhysicalProductForm
+              listingLabels={{
+                description: t(lang, "sell.physical.description"),
+                descriptionHint: t(lang, "sell.physical.description.hint"),
+                draft: t(lang, "sell.physical.draft"),
+                creating: t(lang, "sell.physical.creating"),
+                draftNote: t(lang, "sell.physical.draft.note"),
+                saved: t(lang, "sell.physical.saved"),
+                photoFailed: t(lang, "sell.physical.photo.failed"),
+                photoRetry: t(lang, "sell.physical.photo.retry"),
+                photoChoose: t(lang, "sell.physical.photo.choose"),
+                photoPrepareError: t(lang, "sell.physical.photo.prepareError"),
+                manage: t(lang, "sell.physical.manage"),
+                error: t(lang, "publish.error.generic"),
+                network: t(lang, "error.network"),
+              }}
               tier={user.tier}
               rateBpsEnVigueur={taux[user.tier]}
               netLabels={netLabels}
