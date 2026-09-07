@@ -59,6 +59,12 @@ const VENDEUR =
 type Classement = { colonne: string } | { horsSujet: string };
 
 const CLASSEMENT: Record<string, Classement> = {
+  "recipient.consent": {
+    horsSujet: "L'acheteur confirme avoir vérifié les coordonnées du destinataire et obtenu son accord pour les partager. Cela ne certifie pas le vendeur.",
+  },
+  "recipient.hint": {
+    horsSujet: "Modalités de remise à convenir avec le vendeur : agree en anglais désigne cet accord, pas un vendeur agréé. Zabelie ne stocke ni ne livre.",
+  },
   "universe.physical.body": {
     horsSujet: "Les modalités sont à convenir avec le vendeur. Agree en anglais désigne cet accord et non un vendeur agréé ou vérifié.",
   },
