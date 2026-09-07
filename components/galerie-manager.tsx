@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   MAX_VIDEO_BYTES,
@@ -63,6 +64,7 @@ export function GalerieManager({
   max: number;
   labels: GalerieLabels;
 }) {
+  const router = useRouter();
   const [medias, setMedias] = useState<MediaItem[]>(initial);
   const [video, setVideo] = useState<MediaItem | null>(initialVideo);
   const [busy, setBusy] = useState(false);
@@ -83,6 +85,7 @@ export function GalerieManager({
         return;
       }
       setMedias((m) => [...m, { id: data.id, url: data.url }]);
+      router.refresh();
     } catch {
       setError(labels.error);
     } finally {
@@ -181,6 +184,7 @@ export function GalerieManager({
         return;
       }
       setMedias((m) => m.filter((x) => x.id !== mediaId));
+      router.refresh();
     } catch {
       setError(labels.error);
     } finally {

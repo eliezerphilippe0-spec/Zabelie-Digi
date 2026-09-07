@@ -125,7 +125,7 @@ export default async function CataloguePage({
   // Rayons fins du département actif. Vide hors département, et vide tant
   // qu'aucun produit publié n'y est rangé (V-13 : jamais un rayon désert).
   const facettes =
-    activeCat !== "Tout" ? await getCategoryFacets(activeCat, lang) : [];
+    activeCat !== "Tout" ? await getCategoryFacets(activeCat, lang, selection?.kind) : [];
 
   // ── Couches 2 et 3 du capteur de demande (lot S) ─────────────────────────
   // Ordre voulu : la recherche littérale d'abord, le rattrapage ensuite, le

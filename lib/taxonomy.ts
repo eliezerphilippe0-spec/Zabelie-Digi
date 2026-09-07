@@ -1,3 +1,4 @@
+import type { ProductKind } from "@/lib/product-kind";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isMissingColumn } from "@/lib/products";
@@ -72,7 +73,8 @@ function labelFor(row: CategoryRow, lang: Lang): string {
  */
 export async function getCategoryFacets(
   departmentLabel: string,
-  lang: Lang
+  lang: Lang,
+  kind?: ProductKind
 ): Promise<Facette[]> {
   if (!isSupabaseConfigured() || !departmentLabel) return [];
 
@@ -83,13 +85,15 @@ export async function getCategoryFacets(
   // y est recopié (backfill 0098 + écriture à la création), le digital et le
   // service la reçoivent du formulaire. Un brouillon ne peuple pas un rayon
   // visible : la barre annoncerait une offre qui n'existe pas encore.
-  const { data: liens, error } = await supabase
+  let productsQuery = supabase
     .from("products")
     .select("category_id")
     .eq("status", "published")
     .eq("category", departmentLabel)
     .not("category_id", "is", null)
     .limit(2000);
+  if (kind) productsQuery = productsQuery.eq("kind", kind);
+  const { data: liens, error } = await productsQuery;
 
   if (error || !liens) {
     // Schéma en retard (`0036` non appliquée) ou incident : on dégrade vers

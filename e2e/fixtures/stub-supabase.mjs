@@ -104,10 +104,16 @@ const server = createServer((req, res) => {
   if (url.pathname === "/__ecritures") return send(200, ecritures);
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
+  const token = req.headers.authorization ?? "";
+  // Isolated scenarios: no mutable global mode between parallel tests.
+  const history = token.includes("historique-test");
+  const historyError = token.includes("historique-erreur");
+  const sellerPreparation = token.includes("vendeur-preparation");
+
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
     return send(200, {
-      id: BUYER_ID,
+      id: sellerPreparation ? SELLER_ID : BUYER_ID,
       aud: "authenticated",
       role: "authenticated",
       email: "achte@example.ht",
@@ -144,7 +150,34 @@ const server = createServer((req, res) => {
       });
     }
     const id = eq(url, "id");
-    const rows = id && id !== ORDER_ID ? [] : [ORDER];
+    if (historyError) return send(503, { code: "08006", message: "test unavailable" });
+    let rows = id && id !== ORDER_ID ? [] : [ORDER];
+    if (history || id?.startsWith("88888888-8888-8888-8888-")) {
+      const make = (n, title, kind, status) => ({ ...ORDER,
+        id: `88888888-8888-8888-8888-${String(n).padStart(12, "0")}`,
+        order_ref: `ZB-TEST-${n}`, status,
+        product: title ? { title, kind, slug: SLUG } : null,
+      });
+      rows = [
+        make(1, "Livre en attente", "fichier", "pending"),
+        make(2, "Guide remboursé", "fichier", "refunded"),
+        make(3, "Objet en litige", "physical", "disputed"),
+        make(4, "Prestation confirmée", "service", "paid"),
+        make(5, null, null, "cancelled"),
+        ...Array.from({ length: 24 }, (_, i) => make(i + 6, `Guide acquis ${i + 1}`, "fichier", "paid")),
+      ];
+      const buyer = eq(url, "buyer_id");
+      if (buyer && buyer !== BUYER_ID) rows = [];
+      const kind = eq(url, "product.kind");
+      if (kind) rows = rows.filter(row => row.product?.kind === kind);
+      if (id) rows = rows.filter(row => row.id === id);
+      // Respect filtering and pagination, like PostgREST (before rendering).
+      const status = url.searchParams.get("status");
+      if (status?.startsWith("in.(")) rows = rows.filter(row => status.slice(4, -1).split(",").includes(row.status));
+      const offset = Number(url.searchParams.get("offset") ?? 0);
+      const limit = Number(url.searchParams.get("limit") ?? rows.length);
+      rows = rows.slice(offset, offset + limit);
+    }
     return single(rows);
   }
 
@@ -175,7 +208,10 @@ const server = createServer((req, res) => {
     const slug = eq(url, "slug");
     const id = eq(url, "id");
     const status = eq(url, "status");
-    let rows = [PRODUCT];
+    let rows = sellerPreparation ? [
+      { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
+      { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
+    ] : [PRODUCT];
     if (slug && slug !== SLUG) rows = [];
     if (id && id !== PRODUCT_ID) rows = [];
     if (status && status !== PRODUCT.status) rows = [];

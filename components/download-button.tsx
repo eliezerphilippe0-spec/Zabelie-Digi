@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /** Récupère une URL signée via /api/download et ouvre le fichier. */
-export function DownloadButton({ orderId }: { orderId: string }) {
+export function DownloadButton({ orderId, labels }: { orderId: string; labels: { download: string; error: string; network: string } }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,12 +14,12 @@ export function DownloadButton({ orderId }: { orderId: string }) {
       const res = await fetch(`/api/download?orderId=${orderId}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Téléchargement indisponible.");
+        setError(labels.error);
         return;
       }
       window.location.href = data.url;
     } catch {
-      setError("Connexion impossible.");
+      setError(labels.network);
     } finally {
       setLoading(false);
     }
@@ -30,11 +30,11 @@ export function DownloadButton({ orderId }: { orderId: string }) {
       <button
         onClick={download}
         disabled={loading}
-        className="rounded-lg bg-cloud px-4 py-2 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="min-h-11 rounded-lg bg-cloud px-4 py-2 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
       >
-        {loading ? "…" : "Télécharger"}
+        {loading ? "…" : labels.download}
       </button>
-      {error && <p className="mt-1 text-xs text-danger-text">{error}</p>}
+      {error && <p role="alert" className="mt-1 text-xs text-danger-text">{error}</p>}
     </div>
   );
 }
