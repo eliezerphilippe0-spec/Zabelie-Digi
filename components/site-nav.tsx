@@ -156,6 +156,8 @@ export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
                 <Link href="/mes-achats" className={MENU_LINK}>
                   {t(lang, "pay.ok.cta")}
                 </Link>
+                <Link href="/favoris" className={MENU_LINK}>{t(lang, "collections.favorites")}</Link>
+                <Link href="/boutiques-suivies" className={MENU_LINK}>{t(lang, "collections.shops")}</Link>
                 <Link href="/mes-ventes" className={MENU_LINK}>
                   {t(lang, "sales.title")}
                 </Link>

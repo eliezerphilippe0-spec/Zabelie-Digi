@@ -36,6 +36,8 @@ export default function robots(): MetadataRoute.Robots {
         "/mes-achats",
         // Même raison que /mes-achats : page privée, propre à un compte.
         "/mes-ventes",
+        "/favoris",
+        "/boutiques-suivies",
         "/paiement/",
         // Ajoutés le 2026-08-28. Aucune de ces adresses n'est une porte
         // d'entrée : un visiteur anonyme n'y trouve qu'une invitation à se

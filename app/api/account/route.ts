@@ -1,3 +1,5 @@
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,6 +19,7 @@ export const dynamic = "force-dynamic";
  *      profil et on verrouille le compte, en préservant l'intégrité du registre.
  */
 export async function DELETE() {
+  const lang = await getLang();
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,6 +35,23 @@ export async function DELETE() {
   const { error: delErr } = await admin.auth.admin.deleteUser(user.id);
   if (!delErr) {
     return NextResponse.json({ ok: true, mode: "deleted" });
+  }
+
+  // Delete the new private collections and recipient contact data as well.
+  const removals = await Promise.all([
+    supabase.from("zabelie_favorites").delete().eq("user_id", user.id),
+    supabase.from("zabelie_shop_follows").delete().eq("user_id", user.id),
+  ]);
+  if (removals.some(r => r.error)) return NextResponse.json({ error: t(lang, "collections.error") }, { status: 503 });
+  // Paginate order IDs; do not silently leave contacts after PostgREST's cap.
+  for (let offset = 0; ; offset += 500) {
+    const { data: buyerOrders, error } = await admin.from("orders").select("id").eq("buyer_id", user.id).order("id").range(offset, offset + 499);
+    if (error) return NextResponse.json({ error: t(lang, "collections.error") }, { status: 503 });
+    if (buyerOrders?.length) {
+      const removed = await admin.from("zabelie_order_recipients").delete().in("order_id", buyerOrders.map(o => o.id));
+      if (removed.error) return NextResponse.json({ error: t(lang, "collections.error") }, { status: 503 });
+    }
+    if (!buyerOrders || buyerOrders.length < 500) break;
   }
 
   // 2. Anonymisation : on scrube les données personnelles du profil et on

@@ -1,10 +1,11 @@
+import { normalizeRecipient } from "@/lib/order-recipient";
 import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isDownloadable, isDigitalKind } from "@/lib/product-kind";
+import { isDownloadable, isDigitalKind, isTrackedStockKind } from "@/lib/product-kind";
 import { createPayment } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
   let variantInput: unknown;
   let quantityInput: unknown;
   let rechajInput: unknown;
+  let recipientInput: unknown;
   try {
     ({
       productId,
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
       variantId: variantInput,
       quantity: quantityInput,
       rechajNumero: rechajInput,
+      recipient: recipientInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -139,6 +142,11 @@ export async function POST(req: Request) {
 
   if (prodErr || !product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
+  }
+
+  const recipient = recipientInput == null ? null : normalizeRecipient(recipientInput);
+  if (recipientInput != null && (!recipient || !isTrackedStockKind(product.kind))) {
+    return NextResponse.json({ error: t(lang, "recipient.invalid"), code: "recipient_invalid" }, { status: 422 });
   }
 
   /* ── RECHARGE : le numéro, AVANT que la commande existe (0099) ───────────
@@ -368,6 +376,16 @@ export async function POST(req: Request) {
       { error: t(lang, "api.order.failed") },
       { status: 500 }
     );
+  }
+
+  // Fatal on failure: no payment may start without its recipient details.
+  if (recipient) {
+    const { error: recipientError } = await admin.from("zabelie_order_recipients").insert({ order_id: order.id, ...recipient });
+    if (recipientError) {
+      await admin.from("orders").delete().eq("id", order.id).eq("status", "pending");
+      console.error("[checkout] recipient save failed", { code: recipientError.code });
+      return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    }
   }
 
   /* La cible de recharge, AVANT le paiement et sans best-effort (0099).

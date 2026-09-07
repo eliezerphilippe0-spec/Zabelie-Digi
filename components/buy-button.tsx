@@ -1,4 +1,5 @@
 "use client";
+import { normalizeRecipient, type RecipientInput, type RecipientLabels } from "@/lib/order-recipient";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -83,6 +84,7 @@ export function BuyButton({
   loadingLabel = "Redirection…",
   coupon,
   rechaj,
+  recipient,
   errors,
 }: {
   productId: string;
@@ -99,8 +101,12 @@ export function BuyButton({
   rechaj?: { labels: RechajLabels; operateur: Operateur | null };
   /** Libellés i18n des erreurs (BL-113 : l'échec aussi doit parler KR). */
   errors?: ErrorLabels;
+  recipient?: RecipientLabels;
 }) {
   const router = useRouter();
+  const [forSomeone, setForSomeone] = useState(false);
+  const [recipientInput, setRecipientInput] = useState<RecipientInput>({ name: "", phone: "", locality: "", note: "", consent: false });
+  const recipientValue = forSomeone ? normalizeRecipient(recipientInput) : null;
   const [loadingRail, setLoadingRail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCoupon, setShowCoupon] = useState(false);
@@ -169,6 +175,7 @@ export function BuyButton({
      sont désormais distinctes, et `reseau` ne couvre plus que le cas où la
      requête n'est jamais partie. */
   async function handleBuy(rail: string) {
+    if (recipient && forSomeone && !recipientValue) { setError(recipient.invalid); return; }
     setLoadingRail(rail);
     setError(null);
 
@@ -185,6 +192,7 @@ export function BuyButton({
       // Recharge : la forme NORMALISÉE, jamais la saisie brute. Le serveur
       // renormalise de toute façon — il ne fait confiance à rien d'ici.
       rechajNumero: numeroOk ?? undefined,
+      recipient: recipient && forSomeone ? recipientInput : undefined,
     });
 
     if (issue.etat === "connexion") {
@@ -253,6 +261,21 @@ export function BuyButton({
 
   return (
     <div>
+      {recipient && <fieldset className="mb-5 rounded-xl border border-line p-4">
+        <legend className="sr-only">{recipient.toggle}</legend>
+        <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={forSomeone} onChange={e => setForSomeone(e.target.checked)} disabled={busy}/>{recipient.toggle}</label>
+        {forSomeone && <div className="mt-3 space-y-3">
+          <p className="text-xs text-mist">{recipient.hint}</p>
+          {(["name", "phone", "locality", "note"] as const).map(field => <label key={field} className="block text-sm">
+            <span>{recipient[field]}</span>
+            <input className="mt-1 min-h-11 w-full rounded-xl border border-line bg-ink/40 px-3" type={field === "phone" ? "tel" : "text"} autoComplete="off"
+              maxLength={field === "name" ? 100 : field === "phone" ? 30 : field === "locality" ? 160 : 500}
+              value={recipientInput[field]} disabled={busy} onChange={e => setRecipientInput(prev => ({ ...prev, [field]: e.target.value }))}/>
+          </label>)}
+          <label className="flex min-h-11 items-start gap-3 py-2 text-xs"><input type="checkbox" className="mt-1" checked={recipientInput.consent} disabled={busy} onChange={e => setRecipientInput(prev => ({ ...prev, consent: e.target.checked }))}/>{recipient.consent}</label>
+          {recipientValue && <p className="rounded-lg border border-line p-3 text-sm"><strong>{recipient.summary}</strong><br/>{recipientValue.full_name} · +509 {recipientValue.phone}<br/>{recipientValue.locality}</p>}
+        </div>}
+      </fieldset>}
       {/* ── Variantes (produit physique) ───────────────────────────────── */}
       {variants && variants.length > 0 && (
         <div className="mb-4">

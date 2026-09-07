@@ -1,3 +1,6 @@
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
+import { exportCollections } from "@/lib/collection-export";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,6 +15,7 @@ export const dynamic = "force-dynamic";
  * bornée à ses propres données (buyer_id / seller_id / owner_id = user.id).
  */
 export async function GET() {
+  const lang = await getLang();
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,7 +32,11 @@ export async function GET() {
     admin.from("wallets").select("*").eq("owner_id", user.id).maybeSingle(),
   ]);
 
+  let collections;
+  try { collections = await exportCollections(supabase, user.id); }
+  catch { return NextResponse.json({ error: t(lang, "collections.error") }, { status: 503 }); }
   const payload = {
+    ...collections,
     exported_at: new Date().toISOString(),
     account: { id: user.id, email: user.email },
     profile: profile.data ?? null,
