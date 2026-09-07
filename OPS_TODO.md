@@ -26,45 +26,54 @@ la garde n'a pas été vérifiée.
 
 ---
 
-## ⏳ `0101` — RÉDIGÉE, NON APPLIQUÉE — un compte d'essai peut tout faire, sauf être vu
+## ✅ `0101` — APPLIQUÉE le 2026-09-07 à 12:52:53Z — la cause est fermée
 
-La CAUSE laissée ouverte par `0100`. Un compte de test publiait directement
-dans le catalogue en ligne, sans aucune marque : c'est ce qui a fait lire trois
-essais comme un inventaire.
+**Signal** : « Fais le point 2 » puis « Fusionne applique » (porteur,
+2026-09-07), sous l'autorisation permanente du 2026-08-17. **Ordre tenu** :
+CI verte (7/7) → fusion de
+[#227](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/227) dans
+`main` (`1a63df0`) → application via MCP du fichier de `main`. Journal Supabase
+version `20260907125253`. **Empreinte croisée (méthode 0086)** : SHA-256 brut du
+fichier sans saut de ligne final = `statements[1]` reçu =
+`dd164cead50a828ea866b2d4d4d5c0f67aacf241e5b63906bf26706693ae0688`.
+Canonique `15abef86…ea6023`.
 
-**Ce que ça change** : `profiles.is_test`, et **un seul terme ajouté à la policy
-publique** de `products`. Aucune des 41 lectures de `products` ne change — la
-base refuse la ligne avant que le code la demande. Un filtre ajouté à chacune
-des 19 requêtes qui filtrent sur `published` aurait été oublié par la 42ᵉ,
-écrite dans six mois, sans que rien ne le signale.
+**Mesuré après** :
 
-⚠️ **Un compte d'essai n'est PAS bridé** : il publie, achète, remet — il
-n'apparaît simplement nulle part publiquement. Le premier réflexe, lui
-interdire de publier, aurait rendu le compte d'essai inutile pour tester… la
-publication.
+| Sonde | Résultat |
+|---|---|
+| `profiles.is_test` | présente |
+| Comptes d'essai marqués | **2** — Bebeto, Ruby |
+| Comptes ordinaires | 2 (les deux « Eliezer », intacts) |
+| `is_test` accordée à `anon`/`authenticated` | **0** — déclarée privée |
+| Registre / fichiers | **100 / 101** (la convention) |
+| Ligne de registre de `0100` | `appliquee` |
 
-**Marqués par `0101`** : Bebeto et Ruby (la paire vendeur/acheteur du 4 août).
-**Pas marqués** : les deux comptes portant votre nom — lequel est votre compte
-de connexion n'a pas été tranché, et marquer le mauvais rendrait vos futures
-fiches invisibles *sans qu'aucune erreur ne le dise*. Marquer trop peu se
-corrige par un `update` ; marquer trop se découvre par un silence.
+La policy publique porte bien ses **trois** termes :
 
-### Marquer ou démarquer un compte, plus tard
+```
+((status = 'published') AND seller_is_active(seller_id)
+   AND (NOT zabelie_vendeur_essai(seller_id)))
+```
+
+### Marquer ou démarquer un compte
 
 ```sql
--- Marquer : ses fiches disparaissent du public, il garde tout le reste
-update profiles set is_test = true  where id = '<uuid>';
--- Démarquer : ses fiches publiées redeviennent visibles immédiatement
-update profiles set is_test = false where id = '<uuid>';
--- Qui est marqué aujourd'hui
-select id, display_name from profiles where is_test;
+update profiles set is_test = true  where id = '<uuid>';  -- disparaît du public
+update profiles set is_test = false where id = '<uuid>';  -- revient aussitôt
+select id, display_name from profiles where is_test;      -- qui est marqué
 ```
 
 Aucune fiche n'est modifiée dans un sens ni dans l'autre : la marque vit sur le
-compte, `products` n'est pas touchée.
+compte, `products` n'est pas touchée. Un compte marqué **publie, achète et
+remet normalement** — il n'apparaît simplement nulle part publiquement.
 
-⛔ **Pas d'interrupteur dans `/admin`** — c'est du SQL pour l'instant, et c'est
-assumé : proposé, non construit.
+⚠️ **Vos deux comptes « Eliezer » ne sont PAS marqués** — lequel est votre
+compte de connexion n'a jamais été tranché, et marquer le mauvais rendrait vos
+futures fiches invisibles *sans qu'aucune erreur ne le dise*.
+
+⛔ **Pas d'interrupteur dans `/admin`** : c'est du SQL pour l'instant. Proposé,
+non construit.
 
 ---
 
