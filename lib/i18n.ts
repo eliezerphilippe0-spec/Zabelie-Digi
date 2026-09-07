@@ -99,6 +99,8 @@ const fr = {
   "footer.become": "Devenir vendeur",
   "footer.payment": "Paiement",
   "footer.natcash": "NatCash — bientôt",
+  "footer.stripe": "Stripe — carte (USD)",
+  "footer.stripe.pending": "Stripe — carte (USD), bientôt",
   "footer.rights": "Tous droits réservés.",
 
   // ── Politique produits interdits (v1) ────────────────────────────────────
@@ -853,6 +855,8 @@ const ht: Record<I18nKey, string> = {
   "footer.become": "Vin vandè",
   "footer.payment": "Peman",
   "footer.natcash": "NatCash — talè konsa",
+  "footer.stripe": "Stripe — kat (USD)",
+  "footer.stripe.pending": "Stripe — kat (USD), talè konsa",
   "footer.rights": "Tout dwa rezève.",
 
   // ── Politik pwodui entèdi (v1) ───────────────────────────────────────────
@@ -1575,6 +1579,8 @@ const en = {
   "footer.become": "Become a seller",
   "footer.payment": "Payment",
   "footer.natcash": "NatCash — coming soon",
+  "footer.stripe": "Stripe — card (USD)",
+  "footer.stripe.pending": "Stripe — card (USD), coming soon",
   "footer.rights": "All rights reserved.",
 
   // ── Prohibited items policy (v1) ─────────────────────────────────────────
@@ -2308,6 +2314,8 @@ const es = {
   "footer.become": "Ser vendedor",
   "footer.payment": "Pago",
   "footer.natcash": "NatCash — próximamente",
+  "footer.stripe": "Stripe — tarjeta (USD)",
+  "footer.stripe.pending": "Stripe — tarjeta (USD), próximamente",
   "footer.rights": "Todos los derechos reservados.",
 
   // Política de productos prohibidos (v2)

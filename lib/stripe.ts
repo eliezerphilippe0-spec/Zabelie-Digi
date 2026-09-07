@@ -15,9 +15,7 @@ import { siteUrl } from "./site-url";
  *     garde-fou p_usd_cents vérifié EN BASE).
  */
 
-export function isStripeEnabled(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
-}
+export { isStripeEnabled } from "./stripe-config";
 
 function client(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
