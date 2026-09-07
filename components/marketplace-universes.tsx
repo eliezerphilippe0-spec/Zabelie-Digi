@@ -4,7 +4,7 @@ import { CATALOGUE_UNIVERSES, universeHref, type CatalogueUniverse } from "@/lib
 
 export function MarketplaceUniverses({ lang }: { lang: Lang }) {
   return <section className="mx-auto max-w-6xl px-3 py-7" aria-labelledby="shop-universes">
-    <h2 id="shop-universes" className="mb-4 text-xl font-bold">{t(lang, "universe.heading")}</h2>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 id="shop-universes" className="text-xl font-bold">{t(lang, "universe.heading")}</h2><Link href="/categories" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.title")}</Link></div>
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
       {(Object.keys(CATALOGUE_UNIVERSES) as CatalogueUniverse[]).map((key, index) => <Link key={key} href={universeHref(key)} className="group flex flex-col bg-ink p-4 sm:p-5 transition hover:bg-surface-neutral">
         <span aria-hidden="true" className="mb-3 text-xs font-semibold text-mist">0{index + 1}</span>

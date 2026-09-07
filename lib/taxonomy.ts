@@ -6,24 +6,13 @@ import type { Lang } from "@/lib/i18n";
 import { KIND_PHYSICAL } from "@/lib/product-kind";
 
 /**
- * Navigation par rayon — les 74 catégories de `0035`, enfin lisibles.
- *
- * Elles existaient en base depuis des semaines sans qu'AUCUNE page ne les
- * lise : la seule lecture de `zabelie_categories` était le formulaire de
- * création. 123 rayons saisis, zéro rayon visité.
- *
- * DEUX NIVEAUX, DEUX COLONNES DIFFÉRENTES — c'est le piège de ce chantier :
- *   - le DÉPARTEMENT est écrit en clair dans `products.category`
- *     (« Auto & Moto », `api/products/physical:262`) : les puces dérivées du
- *     catalogue le filtrent déjà ;
- *   - la CATÉGORIE fine vit dans `zabelie_physical_products.category_id`
- *     (`0036:29`), donc uniquement pour les produits physiques.
- * Un produit digital n'a pas de catégorie fine, et n'en aura pas : sa
- * taxonomie est la liste fermée de `lib/product-categories.ts`.
- *
- * V-13 : on n'affiche JAMAIS un rayon vide. Une catégorie n'apparaît que si
- * un produit publié s'y trouve — sinon on remplacerait six libellés faux par
- * soixante-quatorze rayons déserts, ce que la décision interdit nommément.
+ * Taxonomie commune aux produits physiques, fichiers et services.
+ * `products.category` porte le libellé français du département ; depuis
+ * 0098, `products.category_id` porte le niveau 2 ou 3 pour tous les types.
+ * Les facettes commerciales suivent les offres publiées. Le répertoire
+ * /categories montre aussi les catégories actives encore sans offres,
+ * avec un état vide explicite. Les catégories inactives restent exclues
+ * par la politique RLS de la base.
  */
 
 export type Facette = {

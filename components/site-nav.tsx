@@ -225,6 +225,7 @@ export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
           rayons={rayons}
           activeHref={activeHref}
           links={[
+            { href: "/categories", label: t(lang, "directory.short") },
             { href: "/catalogue?univers=objets", label: t(lang, "universe.physical.short") },
             { href: "/catalogue?univers=numerique", label: t(lang, "universe.digital.short") },
             { href: "/catalogue?univers=services", label: t(lang, "universe.services") },

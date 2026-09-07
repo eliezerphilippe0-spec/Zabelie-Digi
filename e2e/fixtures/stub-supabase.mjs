@@ -148,6 +148,29 @@ const server = createServer((req, res) => {
     return single(rows);
   }
 
+  // Taxonomie de test : un département ouvert sans offres, trois niveaux,
+  // et une feuille inactive que la lecture publique ne doit jamais exposer.
+  if (url.pathname === "/rest/v1/zabelie_categories") {
+    const make = (id, parent_id, level, slug, label_fr, active = true) => ({
+      id, parent_id, level, slug, label_fr, active, position: 10,
+      label_kr: label_fr, label_en: label_fr, label_es: label_fr,
+    });
+    let rows = [
+      make("d1", null, 1, "mod-akseswa", "Mode & accessoires"),
+      make("c1", "d1", 2, "rad-fanm", "Vêtements femme"),
+      make("s1", "c1", 3, "wob", "Robes"),
+      make("s2", "c1", 3, "foula", "Écharpes"),
+      make("closed", "c1", 3, "ferme", "Rayon fermé", false),
+    ].filter(row => row.active);
+    for (const key of ["id", "parent_id", "slug", "level", "label_fr"]) {
+      const value = eq(url, key);
+      if (value !== null) rows = rows.filter(row => String(row[key]) === value);
+    }
+    const ids = url.searchParams.get("id");
+    if (ids?.startsWith("in.(")) rows = rows.filter(row => ids.slice(4, -1).split(",").includes(row.id));
+    return single(rows);
+  }
+
   if (url.pathname.startsWith("/rest/v1/products")) {
     const slug = eq(url, "slug");
     const id = eq(url, "id");

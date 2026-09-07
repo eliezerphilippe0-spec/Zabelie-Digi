@@ -40,6 +40,7 @@ export async function SiteFooter() {
             <Link href="/catalogue" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.catalog")}
             </Link>
+            <Link href="/categories" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "directory.title")}</Link>
             <Link href="/catalogue?univers=objets" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.physical")}</Link>
             <Link href="/catalogue?univers=numerique" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.digital")}</Link>
             <Link href="/catalogue?univers=services" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
