@@ -1,0 +1,44 @@
+name: Vérification après déploiement
+
+# Après chaque fusion dans `main`, Vercel déploie. Ce workflow attend que le
+# site réponde et que `/api/readyz` dise `ok: true` — sinon il rougit.
+#
+# ⚠️ Il ne remplace pas la CI : celle-ci prouve que le code est bon, celui-ci
+# prouve que le déploiement a ABOUTI. Les deux disent des choses différentes,
+# et jusqu'ici seule la première existait. `readyz` était en place depuis
+# `docs/30` et n'était appelé par personne.
+#
+# ⚠️ `ZABELIE_URL` est une VARIABLE de dépôt (Settings → Secrets and variables
+# → Actions → Variables), pas un secret : l'adresse publique du site n'a rien
+# à cacher. Si elle manque, le script ÉCHOUE — un contrôle qui saute faute de
+# configuration rassure sans rien vérifier.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Une seule vérification à la fois : deux fusions rapprochées ne doivent pas
+# se contrôler mutuellement dans le désordre. La plus récente gagne.
+concurrency:
+  group: post-deploy
+  cancel-in-progress: true
+
+jobs:
+  readyz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Laisse à Vercel le temps de commencer : sans cette pause, la première
+      # tentative frappe encore l'ancien déploiement et le vert ne prouve rien
+      # sur le nouveau.
+      - name: Laisser le déploiement démarrer
+        run: sleep 45
+
+      - name: /api/readyz doit répondre 200 avec ok:true
+        env:
+          ZABELIE_URL: ${{ vars.ZABELIE_URL }}
+        run: node scripts/verifier-deploiement.mjs
