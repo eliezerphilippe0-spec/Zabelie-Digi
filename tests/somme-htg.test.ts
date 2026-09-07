@@ -129,9 +129,53 @@ test("le cas ordinaire ne fait PAS de bruit — un lot, aucune trace", async () 
 
 // ── Les deux sites d'appel ─────────────────────────────────────────────────
 
-test("aucun total d'argent n'est plus calculé sur un .limit(1000)", async () => {
-  assert.ok(!/\.limit\(1000\)/.test(ADMIN), "GMV de /admin");
-  assert.ok(!/\.limit\(1000\)/.test(VENDEUR), "revenus nets du vendeur");
+/** Les colonnes qui portent de l'argent. Une somme tronquée sur l'une d'elles
+    est fausse VERS LE BAS, en silence — le défaut de 2026-08-16. */
+const COLONNES_ARGENT = ["amount_htg", "net_htg", "commission_htg", "balance_htg", "pending_htg", "gross_htg"];
+
+/** Au-delà de ce plafond, on ne pagine plus : on essaie de TOUT lire. */
+const PLAFOND_SUSPECT = 100;
+
+test("aucun total d'argent n'est calculé sur une lecture largement plafonnée", async () => {
+  /* ⚠️ CE GARDE A ÉTÉ AFFINÉ DEUX FOIS LE 2026-09-07, et les deux erreurs
+     valent d'être écrites.
+
+     1. Il portait sur la SOUS-CHAÎNE `.limit(1000)`, n'importe où dans le
+        fichier. Il a rougi sur une requête qui compte des FICHES — pas des
+        gourdes. Il avait raison sur ce qu'il cherchait, tort sur ce qu'il
+        voulait dire : l'assertion structurelle qui porte sur ce qui est
+        PRODUIT plutôt que sur ce qui COMMANDE (`CLAUDE.md`).
+
+     2. Reformulé en « colonne d'argent + `.limit(` », il a rougi sur la liste
+        des 15 dernières commandes — un AFFICHAGE, pas un total. Trop large
+        dans l'autre sens : il aurait interdit de montrer un montant à l'écran.
+
+     Ce qui distingue vraiment les deux, c'est la TAILLE du plafond. Un
+     affichage borne à 15, 20, 50 ; quelqu'un qui écrit `.limit(1000)` sur une
+     colonne d'argent essaie de tout lire, et sa somme sera fausse vers le bas
+     dès la 1001ᵉ ligne — sans rien signaler. C'est exactement le défaut de
+     2026-08-16, et il serait tout aussi faux à 5000. */
+  const limites = (src: string, colonne: string): number[] => {
+    const out: number[] = [];
+    const re = new RegExp(`\\.select\\("[^"]*${colonne}[^"]*"\\)([\\s\\S]{0,260}?)\\.limit\\((\\d+)\\)`, "g");
+    for (const m of src.matchAll(re)) {
+      // La fenêtre ne doit pas enjamber une autre requête : `.from(` entre les
+      // deux veut dire qu'on lit le plafond du VOISIN.
+      if (!m[1].includes(".from(")) out.push(Number(m[2]));
+    }
+    return out;
+  };
+
+  for (const [nom, src] of [["GMV de /admin", ADMIN], ["revenus nets du vendeur", VENDEUR]] as const) {
+    for (const colonne of COLONNES_ARGENT) {
+      for (const n of limites(src, colonne)) {
+        assert.ok(
+          n < PLAFOND_SUSPECT,
+          `${nom} : ${colonne} lue avec .limit(${n}) — au-delà de ${PLAFOND_SUSPECT}, une somme serait fausse vers le bas en silence. Passez par sommeHTG (par lots, avec .range).`,
+        );
+      }
+    }
+  }
 });
 
 test("le GMV vient de la somme par lots, sur les commandes PAYÉES", () => {

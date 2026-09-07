@@ -72,8 +72,12 @@ remet normalement** — il n'apparaît simplement nulle part publiquement.
 compte de connexion n'a jamais été tranché, et marquer le mauvais rendrait vos
 futures fiches invisibles *sans qu'aucune erreur ne le dise*.
 
-⛔ **Pas d'interrupteur dans `/admin`** : c'est du SQL pour l'instant. Proposé,
-non construit.
+✅ **L'interrupteur est dans `/admin`**, section « Comptes d'essai » — tous les
+rôles, pas seulement les vendeurs (le compte acheteur d'essai a le rôle
+`buyer` : une liste filtrée sur `creator` ne l'aurait jamais montré). La
+confirmation dit combien de fiches publiées vont disparaître ou réapparaître,
+et chaque bascule est écrite au **journal d'audit append-only**. Le SQL
+ci-dessus reste valable — il n'est simplement plus le seul chemin.
 
 ---
 
