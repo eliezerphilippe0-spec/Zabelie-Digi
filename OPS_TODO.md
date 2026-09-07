@@ -26,6 +26,53 @@ la garde n'a pas été vérifiée.
 
 ---
 
+## ✅ `0100` — APPLIQUÉE le 2026-09-06 à 19:42:20Z — la vitrine est nette
+
+**Signal** : « tu peux éliminer tous les faux comptes, je voulais juste tester »
+puis « Fusionne et applique » (porteur, 2026-09-06), sous l'autorisation
+permanente du 2026-08-17. **Ordre tenu** : CI verte → fusion de
+[#225](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/225) dans
+`main` (`7d2db72`) → application via MCP du fichier de `main`. Journal Supabase
+version `20260906194220`. **Empreinte croisée (méthode 0086)** : SHA-256 brut du
+fichier sans saut de ligne final = `statements[1]` reçu =
+`52a71ba0f9002436417cc00eae95ce5f52b8ef93ed0e7dac101fdc866e749938`.
+Canonique `9a19111a…f3bb54`.
+
+**Mesuré, avant → après** — et le rayon d'action est la moitié de la preuve :
+
+| | Avant | Après |
+|---|---|---|
+| Fiches publiées | 3 | **0** |
+| Fiches archivées | 0 | **3** |
+| Commandes | 15 | **15** |
+| Paiements | 15 | **15** |
+| Écritures de grand livre | 1 | **1** |
+| Profils | 4 | **4** |
+
+Invariant `0033` après : `Σ(écritures) = 0` et `soldes = 0` → **écart 0**.
+Registre : **99 lignes pour 100 fichiers** (la convention), ligne de `0099`
+inscrite `appliquee` / `journal_supabase`.
+
+⚠️ **Ce qui n'a PAS été fait, et pourquoi** — le porteur avait autorisé la
+suppression des comptes. Deux verrous délibérés s'y opposent :
+`orders.buyer_id`/`product_id` en `RESTRICT`, et surtout
+`zabelie_wallet_ledger_immutable` (`BEFORE DELETE OR UPDATE`, lève sans
+condition) qui, par la chaîne `profil → portefeuille → grand livre`, fait
+échouer toute suppression du compte d'essai. **La plateforme refuse d'effacer
+son propre livre de comptes.** Ce garde ne se contourne pas.
+
+L'historique de paiement est **conservé à dessein** : les 14 échecs MonCash
+sont la seule matière de diagnostic sur un rail qui n'a jamais fonctionné.
+
+⚠️ **Retour arrière** : `update products set status = 'published' where id in
+(…)`, ou depuis `/admin` — les trois statuts y sont acceptés.
+
+⛔ **La cause n'est pas traitée** : rien ne sépare les données d'essai des
+données publiques. Un compte de test publie directement dans le catalogue en
+ligne. Chantier proposé, non engagé.
+
+---
+
 ## ✅ `0099` — APPLIQUÉE le 2026-09-06 à 18:26:37Z
 
 **Signal** : « Applique 0099 », porteur, 2026-09-06 — sous l'autorisation
