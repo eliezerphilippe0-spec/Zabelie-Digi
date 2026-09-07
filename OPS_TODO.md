@@ -26,6 +26,48 @@ la garde n'a pas été vérifiée.
 
 ---
 
+## ⏳ `0101` — RÉDIGÉE, NON APPLIQUÉE — un compte d'essai peut tout faire, sauf être vu
+
+La CAUSE laissée ouverte par `0100`. Un compte de test publiait directement
+dans le catalogue en ligne, sans aucune marque : c'est ce qui a fait lire trois
+essais comme un inventaire.
+
+**Ce que ça change** : `profiles.is_test`, et **un seul terme ajouté à la policy
+publique** de `products`. Aucune des 41 lectures de `products` ne change — la
+base refuse la ligne avant que le code la demande. Un filtre ajouté à chacune
+des 19 requêtes qui filtrent sur `published` aurait été oublié par la 42ᵉ,
+écrite dans six mois, sans que rien ne le signale.
+
+⚠️ **Un compte d'essai n'est PAS bridé** : il publie, achète, remet — il
+n'apparaît simplement nulle part publiquement. Le premier réflexe, lui
+interdire de publier, aurait rendu le compte d'essai inutile pour tester… la
+publication.
+
+**Marqués par `0101`** : Bebeto et Ruby (la paire vendeur/acheteur du 4 août).
+**Pas marqués** : les deux comptes portant votre nom — lequel est votre compte
+de connexion n'a pas été tranché, et marquer le mauvais rendrait vos futures
+fiches invisibles *sans qu'aucune erreur ne le dise*. Marquer trop peu se
+corrige par un `update` ; marquer trop se découvre par un silence.
+
+### Marquer ou démarquer un compte, plus tard
+
+```sql
+-- Marquer : ses fiches disparaissent du public, il garde tout le reste
+update profiles set is_test = true  where id = '<uuid>';
+-- Démarquer : ses fiches publiées redeviennent visibles immédiatement
+update profiles set is_test = false where id = '<uuid>';
+-- Qui est marqué aujourd'hui
+select id, display_name from profiles where is_test;
+```
+
+Aucune fiche n'est modifiée dans un sens ni dans l'autre : la marque vit sur le
+compte, `products` n'est pas touchée.
+
+⛔ **Pas d'interrupteur dans `/admin`** — c'est du SQL pour l'instant, et c'est
+assumé : proposé, non construit.
+
+---
+
 ## ✅ `0100` — APPLIQUÉE le 2026-09-06 à 19:42:20Z — la vitrine est nette
 
 **Signal** : « tu peux éliminer tous les faux comptes, je voulais juste tester »
