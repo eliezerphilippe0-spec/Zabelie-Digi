@@ -3,6 +3,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { POLICY_PATH } from "@/lib/policy";
+import { isStripeEnabled } from "@/lib/stripe-config";
 
 export async function SiteFooter() {
   const lang = await getLang();
@@ -53,6 +54,9 @@ export async function SiteFooter() {
             <p className="font-semibold text-cloud">{t(lang, "footer.payment")}</p>
             <span className="text-mist">MonCash</span>
             <span className="text-mist">Zelle (USD)</span>
+            <span className="text-mist">
+              {isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}
+            </span>
             <span className="text-mist">{t(lang, "footer.natcash")}</span>
           </div>
           <div className="flex flex-col gap-2">
