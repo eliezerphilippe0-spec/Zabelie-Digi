@@ -359,26 +359,6 @@ export default async function HomePage() {
           <Link href="/aide">{t(lang, "home.support.cta")}<span aria-hidden="true">↗</span></Link>
         </aside>
 
-        {/* FONDATEUR — compact, en fin de page (§4.5). */}
-        <section className="mx-auto max-w-6xl px-3 pt-10">
-          <div className="flex items-start gap-4 rounded-2xl border border-line bg-surface p-4 sm:items-center sm:p-6">
-            <Image
-              src="/brand/eliezer-portrait.jpg"
-              alt={t(lang, "founder.name")}
-              width={72}
-              height={72}
-              className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover object-top"
-            />
-            <div className="min-w-0">
-              <blockquote className="text-sm leading-relaxed text-cloud sm:text-base">« {t(lang, "founder.quote")} »</blockquote>
-              <p className="mt-2 text-sm font-semibold">
-                {t(lang, "founder.name")}
-                <span className="ml-2 font-normal text-mist">{t(lang, "founder.role")}</span>
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* VENDRE + COMMENT ÇA MARCHE — un seul bloc en fin de page (§4.2, §4.6) :
             la carte « Ouvrez votre boutique » descendue ici, et « Comment ça
             marche » réduit à deux liens vers /aide et /vendre, qui portent les

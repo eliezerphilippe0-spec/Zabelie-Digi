@@ -20,6 +20,8 @@ export const LANG_COOKIE = "zabelie_lang";
 export const LANGS: Lang[] = ["fr", "ht", "en", "es"];
 
 const fr = {
+  "about.title": "À propos de Zabelie",
+  "about.intro": "Zabelie réunit vendeurs et acheteurs autour de leurs produits et services. Pour les produits physiques, les modalités de remise se conviennent avec le vendeur.",
   "sell.physical.title": "Préparer une fiche produit",
   "sell.physical.intro": "Ajoutez votre produit réel. La fiche sera créée en brouillon, puis examinée avant sa publication.",
   "sell.physical.digital": "Vendre un fichier ou un service",
@@ -773,6 +775,8 @@ const fr = {
 export type I18nKey = keyof typeof fr;
 
 const ht: Record<I18nKey, string> = {
+  "about.title": "Konsènan Zabelie",
+  "about.intro": "Zabelie mete vandè ak achtè an kontak pou pwodwi ak sèvis yo. Pou pwodwi fizik yo, achtè a antann li ak vandè a sou fason pou remèt yo.",
   "sell.physical.title": "Prepare yon fich pwodwi",
   "sell.physical.intro": "Ajoute pwodwi ou genyen toutbon an. Fich la ap rete kòm bouyon pandan n ap egzamine l anvan li parèt.",
   "sell.physical.digital": "Vann yon fichye oswa yon sèvis",
@@ -1492,6 +1496,8 @@ const ht: Record<I18nKey, string> = {
 };
 
 const en = {
+  "about.title": "About Zabelie",
+  "about.intro": "Zabelie connects sellers and buyers through their products and services. For physical products, handover arrangements are agreed with the seller.",
   "sell.physical.title": "Prepare a product listing",
   "sell.physical.intro": "Add your real product. The listing is saved as a draft and reviewed before publication.",
   "sell.physical.digital": "Sell a file or service",
@@ -2223,6 +2229,8 @@ const en = {
 } satisfies Record<I18nKey, string>;
 
 const es = {
+  "about.title": "Acerca de Zabelie",
+  "about.intro": "Zabelie conecta a vendedores y compradores a través de sus productos y servicios. Para los productos físicos, las condiciones de entrega se acuerdan con el vendedor.",
   "sell.physical.title": "Preparar una ficha de producto",
   "sell.physical.intro": "Añade tu producto real. La ficha se guarda como borrador y se revisa antes de publicarse.",
   "sell.physical.digital": "Vender un archivo o servicio",

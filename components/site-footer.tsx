@@ -13,6 +13,9 @@ export async function SiteFooter() {
         <div className="max-w-xs">
           <BrandLogo />
           <p className="mt-3 text-sm text-mist">{t(lang, "footer.tagline")}</p>
+          <Link href="/a-propos" className="mt-2 inline-flex min-h-11 items-center text-sm text-mist underline underline-offset-4 hover:text-cloud">
+            {t(lang, "about.title")}
+          </Link>
         </div>
 
         {/* ⚠️ LA COLONNE DES RAYONS A ÉTÉ RETIRÉE — demande porteur du
