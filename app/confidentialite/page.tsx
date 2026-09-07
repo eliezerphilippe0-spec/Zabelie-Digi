@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
@@ -13,7 +14,7 @@ export const metadata = {
 };
 
 // Dernière mise à jour de la politique (à actualiser à chaque changement).
-const LAST_UPDATE = "15 août 2026";
+const LAST_UPDATE = "7 septembre 2026";
 
 /**
  * `**gras**` et `*italique*` → JSX.
@@ -81,6 +82,10 @@ export default async function ConfidentialitePage() {
           </p>
         )}
 
+        <section className="mt-10">
+          <h2 className="text-xl font-bold">{t(lang, "collections.privacy.title")}</h2>
+          <p className="mt-3 leading-relaxed text-mist">{t(lang, "collections.privacy.body")}</p>
+        </section>
         {doc.sections.map((s) => (
           <Section key={s.titre} titre={s.titre} blocs={s.blocs} lang={lang} />
         ))}

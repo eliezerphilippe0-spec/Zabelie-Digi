@@ -58,6 +58,10 @@ const ORDER = {
 
 /** Écritures observées sur `orders` — la preuve que rien n'a été « livré ». */
 const ecritures = [];
+const collectionsBySession = new Map();
+const giftWrites = [];
+const GIFT_PRODUCT = "99999999-9999-9999-9999-999999999990";
+const GIFT_ORDER = "99999999-9999-9999-9999-999999999991";
 
 const eq = (url, key) => {
   const v = url.searchParams.get(key);
@@ -110,6 +114,36 @@ const server = createServer((req, res) => {
   const historyError = token.includes("historique-erreur");
   const sellerPreparation = token.includes("vendeur-preparation");
 
+  if (url.pathname === "/__gift-writes") return send(200, giftWrites);
+  if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
+  if (["/rest/v1/zabelie_favorites", "/rest/v1/zabelie_shop_follows"].includes(url.pathname)) {
+    const column = url.pathname.endsWith("zabelie_favorites") ? "product_id" : "seller_id";
+    const key = token + column;
+    if (!collectionsBySession.has(key)) collectionsBySession.set(key, new Set(token.includes("collections-list") ? [column === "product_id" ? PRODUCT_ID : SELLER_ID] : []));
+    const saved = collectionsBySession.get(key);
+    if (req.method === "POST") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        if (token.includes("collections-fail")) return send(503, { code: "08006" });
+        saved.add(JSON.parse(body)[column]); return send(201, []);
+      });
+    }
+    const id = eq(url, column);
+    if (req.method === "DELETE") { saved.delete(id); return send(200, []); }
+    let rows = [...saved].filter(value => !id || value === id).map(value => ({ [column]: value, created_at: "2026-09-07T00:00:00Z" }));
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+    rows = rows.slice(offset, offset + Number(url.searchParams.get("limit") ?? 100));
+    return single(rows);
+  }
+  if (url.pathname === "/rest/v1/zabelie_order_recipients" && req.method === "POST") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => { giftWrites.push({ step: "recipient", body: JSON.parse(body) }); send(503, { code: "08006" }); });
+  }
+  if (url.pathname === "/rest/v1/payments" && req.method === "POST") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => { if (JSON.parse(body).order_id === GIFT_ORDER) giftWrites.push({ step: "payment" }); send(201, []); });
+  }
+
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
     return send(200, {
@@ -145,6 +179,10 @@ const server = createServer((req, res) => {
       let body = "";
       req.on("data", (c) => (body += c));
       return req.on("end", () => {
+        if (req.method === "POST" && JSON.parse(body).product_id === GIFT_PRODUCT) {
+          giftWrites.push({ step: "order" }); return send(201, { id: GIFT_ORDER, amount_htg: 1500 });
+        }
+        if (eq(url, "id") === GIFT_ORDER) { giftWrites.push({ step: "cleanup" }); return send(200, []); }
         ecritures.push({ method: req.method, query: url.search, body });
         send(200, []);
       });
@@ -212,6 +250,7 @@ const server = createServer((req, res) => {
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
     if (slug && slug !== SLUG) rows = [];
     if (id && id !== PRODUCT_ID) rows = [];
     if (status && status !== PRODUCT.status) rows = [];

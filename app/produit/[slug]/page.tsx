@@ -1,3 +1,4 @@
+import { CollectionAction } from "@/components/collection-action";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -393,6 +394,10 @@ export default async function ProductPage({
             )}
             <div className="mt-5">
               <BuyButton
+                key={product.id}
+                recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {
+                  toggle: t(lang, "recipient.toggle"), name: t(lang, "recipient.name"), phone: t(lang, "recipient.phone"), locality: t(lang, "recipient.locality"), note: t(lang, "recipient.note"), consent: t(lang, "recipient.consent"), hint: t(lang, "recipient.hint"), invalid: t(lang, "recipient.invalid"), summary: t(lang, "recipient.summary"),
+                } : undefined}
                 productId={product.id}
                 variants={physical?.variants}
                 stockLabels={{
@@ -627,6 +632,7 @@ export default async function ProductPage({
             </div>
           )}
 
+          <div className="mt-6"><CollectionAction kind="favorites" id={product.id} lang={lang}/></div>
           <div className="mt-6">
             <ShareButtons
               path={`/produit/${product.slug}`}

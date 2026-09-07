@@ -1,3 +1,5 @@
+import { RecipientDetails } from "@/components/recipient-details";
+import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -146,6 +148,11 @@ export default async function MesVentesPage() {
    * décorative. Table absente (0099 non appliquée) → map vide, rien ne
    * s'affiche, et le reste de la page fonctionne. */
   const orderIds = ventes.map((v) => v.order_id);
+  const { data: recipients, error: recipientReadError } = orderIds.length
+    ? await supabase.from("zabelie_order_recipients").select("order_id,full_name,phone,locality,note").in("order_id", orderIds)
+    : { data: [], error: null };
+  const recipientByOrder = new Map((recipients ?? []).map(r => [r.order_id, r as OrderRecipient]));
+
   const cibleParCommande = new Map<string, string>();
   if (orderIds.length > 0) {
     const { data: cibles } = await supabase
@@ -215,7 +222,9 @@ export default async function MesVentesPage() {
                 {/* V-5 : les coordonnées de livraison — présentes UNIQUEMENT
                     si la policy 0076 les a laissées passer (commande payée),
                     en attente d'expédition. */}
-                {v.status === "awaiting_shipment" &&
+                {recipientByOrder.has(v.order_id) && <RecipientDetails recipient={recipientByOrder.get(v.order_id)!} lang={lang}/>}
+                {recipientReadError && <p className="mt-2 text-sm text-mist">{t(lang, "recipient.unavailable")}</p>}
+                {!recipientReadError && !recipientByOrder.has(v.order_id) && v.status === "awaiting_shipment" &&
                   (() => {
                     const liv = v.order
                       ? livParAcheteur.get(v.order.buyer_id)

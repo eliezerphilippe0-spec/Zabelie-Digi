@@ -1,3 +1,5 @@
+import { RecipientDetails } from "@/components/recipient-details";
+import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -135,6 +137,11 @@ export default async function MesAchatsPage({ searchParams }: {
   const orders = allRows.slice(0, PURCHASE_PAGE_SIZE);
   const reviewed = await getReviewedOrderIds(orders.filter((o) => purchaseIsConfirmed(o.status)).map((o) => o.id));
 
+  const { data: recipients, error: recipientReadError } = orders.length
+    ? await supabase.from("zabelie_order_recipients").select("order_id,full_name,phone,locality,note").in("order_id", orders.map(o => o.id))
+    : { data: [], error: null };
+  const recipientByOrder = new Map((recipients ?? []).map(r => [r.order_id, r as OrderRecipient]));
+
   /* ── Suivi de remise (0043) ───────────────────────────────────────────────
    * Lu avec le client de SESSION : la RLS de `zabelie_fulfillment` n'ouvre la
    * ligne qu'à l'acheteur de la commande et au vendeur du produit. Aucun
@@ -256,6 +263,8 @@ export default async function MesAchatsPage({ searchParams }: {
                   <p className="break-words font-semibold">{o.product?.title ?? t(lang, "purchases.product.unavailable")}</p>
                   <p className="numeric mt-2 text-sm text-mist">{formatHTG(o.amount_htg)}</p>
                   {o.product && <Link href={`/produit/${o.product.slug}#contacter-vendeur`} className="mt-2 inline-flex min-h-11 items-center text-sm underline">{t(lang, "purchases.product.open")}</Link>}
+                  {recipientByOrder.has(o.id) && <RecipientDetails recipient={recipientByOrder.get(o.id)!} lang={lang}/>}
+                  {recipientReadError && <p className="mt-2 text-xs text-mist">{t(lang, "recipient.unavailable")}</p>}
                   {o.status === "pending" && <p className="mt-2 max-w-lg text-sm text-mist">{t(lang, "purchases.pending.hint")}</p>}
                   <Link href="/aide#probleme" className="block w-fit py-3 text-xs text-mist underline">{t(lang, "purchases.help")}</Link>
                 </div>
