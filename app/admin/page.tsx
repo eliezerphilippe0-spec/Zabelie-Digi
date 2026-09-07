@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminProductRow } from "@/components/admin-product-row";
 import { AdminSellerRow } from "@/components/admin-seller-row";
+import { AdminTestAccountRow } from "@/components/admin-test-account-row";
 import { AdminRefundButton } from "@/components/admin-refund-button";
 import { AdminZelleConfirmButton } from "@/components/admin-zelle-confirm-button";
 import {
@@ -90,6 +91,18 @@ type SellerRow = {
   display_name: string;
   suspended_at: string | null;
   suspended_reason: string | null;
+};
+
+/* Comptes d'essai (0101). TOUS les rôles, pas seulement `creator` : Ruby, le
+   compte acheteur des essais, a le rôle `buyer` — la liste « Vendeurs » ne
+   l'aurait jamais montrée, et l'interrupteur aurait été inatteignable pour
+   elle. Une section qui ne peut pas atteindre la moitié de son sujet est une
+   section décorative. */
+type CompteRow = {
+  id: string;
+  display_name: string;
+  role: string;
+  is_test: boolean;
 };
 
 type PaymentRow = {
@@ -190,6 +203,8 @@ export default async function AdminPage({
     zelleCountRes,
     topupCountRes,
     { data: sellerRows },
+    { data: compteRows },
+    { data: publieesRows },
   ] = await Promise.all([
       admin
         .from("products")
@@ -281,10 +296,35 @@ export default async function AdminPage({
         .eq("role", "creator")
         .order("suspended_at", { ascending: false, nullsFirst: false })
         .limit(50),
+      /* Comptes d'essai : tous les rôles. `is_test` est une colonne PRIVÉE
+         (non accordée à anon/authenticated, 0101) — seul le client service-role
+         de cette page la lit, ce qui est exactement l'intention. */
+      admin
+        .from("profiles")
+        .select("id, display_name, role, is_test")
+        .order("is_test", { ascending: false })
+        .order("created_at", { ascending: true })
+        .limit(100),
+      /* Fiches PUBLIÉES par vendeur, pour dire à l'admin ce qui va disparaître.
+         Requête SÉPARÉE et sans jointure : une jointure profils×produits
+         multiplierait les lignes et gonflerait le compte — le défaut que
+         `docs/48` décrit, et que j'ai commis hier en le décrivant. */
+      admin
+        .from("products")
+        .select("seller_id")
+        .eq("status", "published")
+        .limit(1000),
     ]);
 
   const products = (prods ?? []) as ProductRow[];
   const sellers = (sellerRows ?? []) as SellerRow[];
+  const comptes = (compteRows ?? []) as CompteRow[];
+  /* Comptage en mémoire, à partir d'une liste plate : aucune jointure, donc
+     aucune multiplication de lignes possible. */
+  const publieesParVendeur = new Map<string, number>();
+  for (const r of (publieesRows ?? []) as { seller_id: string }[]) {
+    publieesParVendeur.set(r.seller_id, (publieesParVendeur.get(r.seller_id) ?? 0) + 1);
+  }
   const payments = (pays ?? []) as PaymentRow[];
   const orders = (recentOrders ?? []) as unknown as OrderRow[];
   const zelleQueue = (zellePendings ?? []) as unknown as ZellePendingRow[];
@@ -367,6 +407,35 @@ export default async function AdminPage({
                 name={s.display_name}
                 suspendedAt={s.suspended_at}
                 suspendedReason={s.suspended_reason}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Comptes d'essai (0101) — la marque qui sépare vos tests du public */}
+      <section id="essai" className="mt-10 scroll-mt-24">
+        <h2 className="text-lg font-semibold">Comptes d&apos;essai</h2>
+        <p className="mt-1 text-xs text-mist">
+          Un compte marqué <strong>publie, achète et remet normalement</strong> —
+          ses fiches sont simplement invisibles du catalogue public. Aucune fiche
+          n&apos;est modifiée : elles reviennent telles quelles si la marque
+          tombe. C&apos;est <strong>réversible en un clic</strong>, et chaque
+          bascule est écrite au journal d&apos;audit.
+        </p>
+        {comptes.length === 0 ? (
+          <p className="mt-3 text-sm text-mist">Aucun compte.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {comptes.map((c) => (
+              <AdminTestAccountRow
+                key={c.id}
+                id={c.id}
+                name={c.display_name}
+                role={c.role}
+                isTest={c.is_test}
+                publiees={publieesParVendeur.get(c.id) ?? 0}
+                cestVous={c.id === user?.id}
               />
             ))}
           </ul>
