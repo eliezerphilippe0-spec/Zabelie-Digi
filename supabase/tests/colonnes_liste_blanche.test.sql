@@ -58,7 +58,8 @@ insert into zabelie_colonnes_privees (nom_table, colonne, raison) values
   ('profiles', 'suspended_by',     'moderation — n''expose pas quel admin a agi'),
   ('profiles', 'zone_id',          '0084 : servi par zabelie_boutik_public pour les MARCHANDS seuls ; un grant l''ouvrirait aussi sur les acheteurs'),
   ('profiles', 'pwen_repe',        '0084 : idem — point de repere saisi par tout compte sur le formulaire de livraison'),
-  ('profiles', 'boutik_slug',      '0084 : idem — la resolution d''adresse passe par la fonction, pas par un filtre direct');
+  ('profiles', 'boutik_slug',      '0084 : idem — la resolution d''adresse passe par la fonction, pas par un filtre direct'),
+  ('profiles', 'is_test',          '0101 : marque de compte d''essai. Lue UNIQUEMENT par zabelie_vendeur_essai (SECURITY DEFINER), que la policy publique appelle. Aucun client n''a besoin de la lire, et l''accorder exposerait publiquement quels comptes sont des essais');
 
 -- Les tables sous liste blanche : grants de COLONNE présents, grant de TABLE
 -- absent. C'est la définition exacte d'« une liste blanche est en vigueur ».

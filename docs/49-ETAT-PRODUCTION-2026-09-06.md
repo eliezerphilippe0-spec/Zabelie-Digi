@@ -144,12 +144,29 @@ réutilise un mot de passe éventé donne l'accès à son registre de ventes.
 | `zabelie_boutik_public(uuid,text)` | point public **voulu** — la fiche d'une boutique (`0084`) |
 | `zabelie_biz_get_invoice_by_token(text)` | point public **voulu** — le jeton EST la garde |
 | `zabelie_vande_nan_zon(uuid[])` | point public **voulu** — les marchands d'une zone (`0084`) |
-| **`seller_is_active(uuid)`** | ⚠️ **à examiner** — quelle garde ? |
+| **`seller_is_active(uuid)`** | ✅ **examinée le 2026-09-06 — légitime** (voir ci-dessous) |
 
 La règle du dépôt dit : « aucune fonction `SECURITY DEFINER` exposée à `anon`
-**sans garde** ». Trois de ces quatre ont leur garde dans leur raison d'être ;
-la quatrième n'a pas été examinée sous cet angle. Ce n'est pas une faille
-constatée, c'est une vérification qui n'a pas été faite.
+**sans garde** ». Les quatre ont désormais été examinées.
+
+**`seller_is_active` — pourquoi elle DOIT être ainsi**, lu dans sa définition
+plutôt que supposé :
+
+```sql
+select exists (select 1 from profiles where id = p_seller and suspended_at is null);
+```
+
+Elle est appelée depuis la policy `products_public_read_published`. Or **une
+policy RLS s'évalue sous l'identité de l'appelant** : pour qu'`anon` puisse lire
+le catalogue, `anon` doit pouvoir exécuter la fonction — et la fonction doit
+franchir la RLS de `profiles` sans récursion, ce que seul `SECURITY DEFINER`
+permet. Sa garde est sa forme : elle prend un `uuid` et ne rend qu'un booléen
+**déjà impliqué** par ce que le catalogue montre (si les fiches d'un vendeur
+sont visibles, il n'est pas suspendu). `search_path` est épinglé.
+
+Ce n'était donc pas une faille : c'était une vérification non faite. Elle l'est.
+`zabelie_vendeur_essai` (`0101`) calque exactement cette forme, pour la même
+raison — et c'est en l'écrivant qu'on a lu celle-ci.
 
 ### 5.3 Le bruit, et pourquoi c'en est
 
