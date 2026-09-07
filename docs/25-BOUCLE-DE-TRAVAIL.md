@@ -169,6 +169,94 @@ Trancher entre les deux exige de fabriquer le défaut exprès et de vérifier qu
 
 ---
 
+## 7.2 — L'ordre de la bascule : le schéma part AVANT le code
+
+Écrit le 2026-09-07, en regardant ce que font les places de marché à grande
+échelle (Shopify, Mercado Libre) et en triant ce qui s'applique ici.
+
+**Le fait qui commande.** Vercel déploie le code fusionné en une minute. Les
+migrations, elles, sont appliquées **à la main, après**. Entre les deux, la
+production fait tourner du **code neuf sur un schéma ancien**.
+
+Ce n'est pas théorique : c'est l'incident `0055` du 2026-08-10, celui qui a
+produit la **règle dure n°5**. L'argument technique était précisément
+« supprimer la fenêtre où le code déployé appellerait une table inexistante ».
+
+### La règle
+
+> **Une migration s'applique AVANT que le code qui en dépend soit fusionné.**
+> Et le code écrit entre-temps se **dégrade** au lieu de tomber.
+
+Les deux moitiés comptent, et la seconde est celle qu'on oublie :
+
+* **l'ordre** — appliquer, puis fusionner. C'est ce qui a été fait pour `0101`
+  et son interrupteur `/admin`, mais **par la façon dont le travail s'est
+  enchaîné, pas par une règle**. De l'attention, donc, et l'attention ne se
+  transmet pas ;
+* **la dégradation** — le dépôt la pratique déjà sans l'avoir nommée :
+  `isMissingTable`, `isMissingColumn`, « table absente (`0076` non appliquée)
+  → map vide, rien ne s'affiche ». C'est l'*expand/contract* de l'industrie,
+  obtenu par prudence plutôt que par doctrine. Tout code qui lit un objet
+  fraîchement créé doit tenir si l'objet n'est pas encore là.
+
+### Pourquoi ce n'est PAS un contrôle mécanique, et il faut le dire
+
+La boucle exige des mécanismes plutôt que des règles. Celui-ci n'en a pas, et
+la raison est honnête : **la CI ne connaît pas l'état appliqué de la
+production**. Elle rejoue les migrations sur une base vierge — elle voit donc
+toujours un schéma complet, jamais la fenêtre. Vérifier l'ordre exigerait de
+lire `zabelie_schema_migrations` en production depuis la CI, ce qui suppose des
+identifiants de production dans GitHub : un risque plus grand que celui qu'on
+ferme.
+
+C'est donc une règle, assumée comme telle, avec son défaut : elle dépend de qui
+la lit. Le garde-fou réel est ailleurs — la **dégradation**, qui rend la fenêtre
+inoffensive au lieu d'essayer de la supprimer.
+
+---
+
+## 7.3 — Après la fusion : quelqu'un appelle la sonde
+
+Les géants font tourner un *canary* sur un pourcentage du trafic réel, avec
+retour arrière automatique sur métriques. À **zéro utilisateur**, il n'y a pas
+de trafic à découper : copier ça coûterait des semaines pour aucune sécurité.
+
+Ce qui s'applique, en revanche, tient en une phrase — et manquait :
+
+> `/api/readyz` existait depuis `docs/30`, sondait le chemin des ACHETEURS
+> (client anon, PostgREST, RLS), rendait 503 quand la base ne répond pas —
+> et **personne ne l'appelait**. Ni la CI, ni les huit crons.
+
+Le motif « code sans appelant », appliqué à la vérification du déploiement.
+Fermé par `.github/workflows/post-deploy.yml`, qui appelle
+`scripts/verifier-deploiement.mjs` après chaque fusion dans `main`.
+
+⚠️ **Les trois façons dont ce genre de contrôle ment**, toutes gardées et
+toutes éprouvées en ligne de commande (code de sortie réel, pas au travers d'un
+tube — `$?` après un `|` rend le code du DERNIER maillon, ce qui a bien failli
+faire lire trois échecs comme des succès) :
+
+| Piège | Ce que fait le script |
+|---|---|
+| URL absente → le contrôle « saute » et paraît vert | **échec** (sortie 1) |
+| réseau injoignable → l'erreur est avalée, les essais s'épuisent, sortie 0 | **échec** (sortie 1) |
+| page d'erreur servie en **200** | **échec** — `ok: true` est exigé dans le corps |
+| site sain | succès (sortie 0) |
+
+Le premier est le plus insidieux : **un contrôle qui ne s'exécute pas et sort
+en succès est pire que pas de contrôle — il rassure.**
+
+⚠️ Et ce que ce contrôle NE dit pas : que le déploiement sert le dernier
+commit. `readyz` n'expose ni version ni schéma, délibérément — il est public.
+Il dit « le site répond, et la base derrière lui aussi ».
+
+**Reste à faire, côté porteur** : poser la variable de dépôt `ZABELIE_URL`
+(Settings → Secrets and variables → Actions → **Variables**, pas Secrets :
+l'adresse publique du site n'a rien à cacher). Tant qu'elle manque, le workflow
+**rougit** — c'est voulu.
+
+---
+
 ## 8. Le coût
 
 Commencer petit et borné, élargir ensuite. Surveiller les premiers passages plutôt que de lancer large et découvrir la facture. Une boucle qui n'atteint jamais « terminé » brûle jusqu'à ce que l'arrêt ferme la coupe — c'est à ça qu'il sert.

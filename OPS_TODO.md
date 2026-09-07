@@ -3,6 +3,25 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## ⚙️ À poser : la variable `ZABELIE_URL` (une minute)
+
+Depuis le 2026-09-07, un workflow vérifie après **chaque fusion dans `main`**
+que le site déployé répond : il appelle `/api/readyz`, qui sonde le chemin des
+acheteurs (client anon → PostgREST → RLS) et rend 503 si la base ne suit pas.
+
+Cette sonde existait depuis `docs/30` et **personne ne l'appelait**.
+
+**Ce qu'il vous reste à faire** : GitHub → *Settings* → *Secrets and variables*
+→ *Actions* → onglet **Variables** (pas *Secrets* : l'adresse publique du site
+n'a rien à cacher) → `ZABELIE_URL` = `https://zabelie.com`.
+
+⚠️ **Tant qu'elle manque, le workflow ROUGIT** — et c'est voulu. Un contrôle
+qui saute faute de configuration et paraît vert est pire que pas de contrôle :
+il rassure. Vous verrez donc une croix rouge sur `main` jusqu'à ce que la
+variable soit posée.
+
+---
+
 ## 📋 État de la production au 2026-09-06 — `docs/49`
 
 Relevé en lecture seule, consigné dans
