@@ -26,12 +26,9 @@ import type { Lang } from "./i18n";
  * `label = le libellé traduit` (ce que le vendeur lit). Confondre les deux
  * rendrait les produits d'un vendeur kreyòl introuvables au filtre.
  *
- * ⚠️ Reste à faire, et c'est nommé : le vendeur ne choisit ici qu'un RAYON
- * (niveau 1). Les sous-catégories fines existent pour le physique
- * (`zabelie_physical_products.category_id`) mais pas pour le digital ni le
- * service — il leur manque une colonne. Tant qu'elle n'existe pas, les douze
- * feuilles de services de `0057` enrichissent la navigation, pas le
- * formulaire.
+ * Depuis 0098, les fichiers et services peuvent aussi choisir un niveau
+ * 2 ou 3 via `lireSousRayonsPublication`. L'identifiant est validé côté
+ * serveur contre le département actif avant écriture.
  */
 
 export type OptionCategorie = {

@@ -29,6 +29,7 @@ export type PublishFormLabels = {
   subcategoryEmpty: string;
   pricePh: string;
   descriptionPh: string;
+  digitalHint: string;
   serviceHint: string;
   deliveryDaysPh: string;
   includesPh: string;
@@ -235,9 +236,11 @@ export function PublishForm({
         rows={4}
         placeholder={labels.descriptionPh}
         aria-label={labels.descriptionPh}
+        aria-describedby={!isService(form.kind) ? "digital-description-guide" : undefined}
         value={form.description}
         onChange={(e) => set("description", e.target.value)}
       />
+      {!isService(form.kind) && <p id="digital-description-guide" className="text-xs leading-relaxed text-mist">{labels.digitalHint}</p>}
       <AiDescriptionHelp
         actif={aiActif}
         title={form.title}

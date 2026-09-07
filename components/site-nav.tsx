@@ -60,7 +60,7 @@ function suggestionsDepuisRayons(rayons: RayonMenu[]): SearchSuggestion[] {
  * `on-chrome`, paires vérifiées par scripts/zabelie-contrast.mjs sur les
  * trois arrêts du dégradé.
  */
-export async function SiteNav() {
+export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
   const [user, lang] = await Promise.all([getCurrentUser(), getLang()]);
   // Le menu vient de la BASE (`zabelie_categories`), jamais d'une liste écrite
   // en dur : les libellés sont traduits, les rayons vides sont marqués.
@@ -184,8 +184,8 @@ export async function SiteNav() {
             <Link href="/aide" className={MENU_LINK}>
               {t(lang, "nav.help")}
             </Link>
-            <Link href="/#talents" className={MENU_LINK}>
-              {t(lang, "nav.talents")}
+            <Link href="/catalogue?univers=services" className={MENU_LINK}>
+              {t(lang, "universe.services")}
             </Link>
             <Link href="/#comment" className={MENU_LINK}>
               {t(lang, "nav.how")}
@@ -219,10 +219,19 @@ export async function SiteNav() {
           </AccountMenu>
         </div>
 
-        {/* LIGNE 2 — chips des rayons NON vides, défilantes ; se plie au
+        {/* LIGNE 2 — univers permanents puis rayons non vides, défilants ; se plie au
             défilement avec le logo (HeaderShell). */}
         <CategoryChips
           rayons={rayons}
+          activeHref={activeHref}
+          links={[
+            { href: "/categories", label: t(lang, "directory.short") },
+            { href: "/catalogue?univers=objets", label: t(lang, "universe.physical.short") },
+            { href: "/catalogue?univers=numerique", label: t(lang, "universe.digital.short") },
+            { href: "/catalogue?univers=services", label: t(lang, "universe.services") },
+            { href: "/recharges", label: t(lang, "universe.recharges") },
+            { href: "/aide", label: t(lang, "nav.help") },
+          ]}
           labels={{
             all: t(lang, "nav.catalog"),
             more: t(lang, "home.chips.more"),

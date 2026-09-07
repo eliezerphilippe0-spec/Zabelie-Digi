@@ -34,8 +34,10 @@ function remiseLabel(kind: ProductKind | undefined, lang: Lang): string | null {
   return cle ? t(lang, cle) : null;
 }
 
+import { PURCHASE_PAGE_SIZE, PURCHASE_VIEWS, purchaseView, purchaseKind, purchasePage, purchaseHref, purchaseIsConfirmed, purchaseStatusKey, purchaseViewKeys } from "@/lib/purchase-center";
+
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mes achats — Zabelie" };
+export const metadata = { title: "Mes achats — Zabelie", robots: { index: false, follow: false } };
 
 type OrderRow = {
   id: string;
@@ -47,25 +49,36 @@ type OrderRow = {
   product: { title: string; slug: string; kind: ProductKind } | null;
 };
 
-function Shell({ children }: { children: React.ReactNode }) {
+async function Shell({ children }: { children: React.ReactNode }) {
+  const lang = await getLang();
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">Mes achats</h1>
+      <main id="main" className="mx-auto max-w-5xl px-5 py-16">
+        <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "purchases.title")}</h1>
+        <p className="mt-3 max-w-2xl text-sm text-mist">{t(lang, "purchases.intro")}</p>
         {children}
+        <Link href="/aide#probleme" className="mt-6 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+          {t(lang, "aide.problem.title")}
+        </Link>
       </main>
       <SiteFooter />
     </div>
   );
 }
 
-export default async function MesAchatsPage() {
+export default async function MesAchatsPage({ searchParams }: {
+  searchParams: Promise<{ vue?: string | string[]; page?: string | string[] }>;
+}) {
+  const [params, lang] = await Promise.all([searchParams, getLang()]);
+  const view = purchaseView(params.vue);
+  const page = purchasePage(params.page);
+  const kind = purchaseKind(view);
   if (!isSupabaseConfigured()) {
     return (
       <Shell>
         <p className="mt-4 text-sm text-mist">
-          Base non configurée (mode démo). Connecte Supabase pour voir tes achats.
+          {t(lang, "purchases.unavailable")}
         </p>
       </Shell>
     );
@@ -87,7 +100,7 @@ export default async function MesAchatsPage() {
       <Shell>
         <p className="mt-4 text-sm text-mist">{t(langAnon, "purchases.login.b")}</p>
         <Link
-          href="/connexion"
+          href={`/connexion?next=${encodeURIComponent(purchaseHref(view, page))}`}
           className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           {t(langAnon, "nav.login")}
@@ -96,33 +109,31 @@ export default async function MesAchatsPage() {
     );
   }
 
-  // 0042 pas encore appliquée → la colonne manque : on redemande sans elle.
-  // Règle du dépôt : le code devance le schéma, une requête se dégrade,
-  // elle ne tombe pas (même motif que le filtre de stock du catalogue).
-  const first = await supabase
-    .from("orders")
-    .select(
-      "id, order_ref, status, amount_htg, created_at, product:products(title, slug, kind)"
-    )
-    .eq("buyer_id", user.id)
-    .in("status", ["paid", "delivered"])
-    .order("created_at", { ascending: false });
-  let rows = first.data;
-  if (isMissingColumn(first.error)) {
-    const retry = await supabase
-      .from("orders")
-      .select(
-        "id, status, amount_htg, created_at, product:products(title, slug, kind)"
-      )
-      .eq("buyer_id", user.id)
-      .in("status", ["paid", "delivered"])
-      .order("created_at", { ascending: false });
-    rows = (retry.data ?? []).map((o) => ({ ...o, order_ref: null }));
+  // Session client + explicit buyer scope. Filter before pagination; keep
+  // archived/inaccessible product joins in the complete order history.
+  const buyerId = user.id;
+  function queryOrders(withReference: boolean) {
+    const relation = kind ? "product:products!inner(title, slug, kind)" : "product:products(title, slug, kind)";
+    let query = supabase.from("orders")
+      .select(`id, ${withReference ? "order_ref," : ""} status, amount_htg, created_at, ${relation}`)
+      .eq("buyer_id", buyerId);
+    if (kind) query = query.eq("product.kind", kind);
+    return query.order("created_at", { ascending: false }).order("id", { ascending: false })
+      .range((page - 1) * PURCHASE_PAGE_SIZE, page * PURCHASE_PAGE_SIZE);
   }
-
-  const orders = (rows ?? []) as unknown as OrderRow[];
-  const reviewed = await getReviewedOrderIds(orders.map((o) => o.id));
-  const lang = await getLang();
+  let result = await queryOrders(true);
+  if (isMissingColumn(result.error)) result = await queryOrders(false);
+  if (result.error) {
+    console.error("[purchases] order history unavailable", { code: result.error.code });
+    return <Shell><div role="alert" className="mt-6 rounded-2xl border border-line p-5">
+      <p>{t(lang, "purchases.load.error")}</p>
+      <Link href={purchaseHref(view, page)} className="mt-3 inline-flex min-h-11 items-center underline">{t(lang, "purchases.retry")}</Link>
+    </div></Shell>;
+  }
+  const allRows = (result.data ?? []) as unknown as OrderRow[];
+  const hasNext = allRows.length > PURCHASE_PAGE_SIZE;
+  const orders = allRows.slice(0, PURCHASE_PAGE_SIZE);
+  const reviewed = await getReviewedOrderIds(orders.filter((o) => purchaseIsConfirmed(o.status)).map((o) => o.id));
 
   /* ── Suivi de remise (0043) ───────────────────────────────────────────────
    * Lu avec le client de SESSION : la RLS de `zabelie_fulfillment` n'ouvre la
@@ -217,67 +228,59 @@ export default async function MesAchatsPage() {
 
   return (
     <Shell>
+      <nav aria-label={t(lang, "purchases.views")} className="mt-8 flex flex-wrap gap-2">
+        {PURCHASE_VIEWS.map((v) => <Link key={v} href={purchaseHref(v)} aria-current={v === view ? "page" : undefined}
+          className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold ${v === view ? "border-brand bg-brand text-on-brand" : "border-line text-mist hover:text-cloud"}`}>
+          {t(lang, purchaseViewKeys[v])}
+        </Link>)}
+      </nav>
+      {view === "numerique" && <p className="mt-4 text-sm text-mist">{t(lang, "purchases.library.hint")}</p>}
       {orders.length === 0 ? (
-        <p className="mt-4 text-sm text-mist">
-          {t(lang, "purchases.empty")}{" "}
-          <Link href="/catalogue" className="text-cloud underline">
-            {t(lang, "purchases.empty.cta")}
+        <div className="mt-6 rounded-2xl border border-line p-6">
+          <p className="text-sm text-mist">{t(lang, page > 1 ? "purchases.page.empty" : "purchases.empty")}</p>
+          <Link href={page > 1 ? purchaseHref(view) : "/catalogue"} className="mt-3 inline-flex min-h-11 items-center text-cloud underline">
+            {t(lang, page > 1 ? "purchases.first" : "purchases.empty.cta")}
           </Link>
-        </p>
+        </div>
       ) : (
-        <ul className="mt-6 space-y-3">
-          {orders.map((o) => (
-            <li
-              key={o.id}
-              className="flex items-start justify-between gap-4 rounded-2xl border border-line bg-surface/60 p-4"
-            >
-              <div>
-                <p className="text-sm font-semibold">
-                  {o.product?.title ?? "Produit"}
-                </p>
-                <p className="text-xs text-mist">
-                  {formatHTG(o.amount_htg)} ·{" "}
-                  {new Date(o.created_at).toLocaleDateString("fr-HT")}
-                  {/* Le numéro que l'acheteur lit au vendeur au téléphone. */}
-                  {o.order_ref && (
-                    <>
-                      {" · "}
-                      <span className="numeric select-all">{o.order_ref}</span>
-                    </>
-                  )}
-                </p>
+        <ul className="mt-6 space-y-4">
+          {orders.map((o) => {
+            const confirmed = purchaseIsConfirmed(o.status);
+            return <li key={o.id} className="rounded-2xl border border-line bg-surface/60 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3 text-xs text-mist">
+                <span>{new Date(o.created_at).toLocaleDateString(lang === "ht" ? "fr-HT" : lang)} · <span className="numeric select-all">{o.order_ref || o.id}</span></span>
+                <span className={`rounded-full border border-line px-3 py-1 font-semibold ${confirmed ? "text-success-text" : "text-mist"}`}>{t(lang, purchaseStatusKey(o.status))}</span>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                {/* Un bouton « Télécharger » s'affichait pour tout produit
-                    non-service — donc aussi pour une pièce détachée, et il
-                    menait à une erreur après paiement. Seul un `fichier` se
-                    télécharge ; les autres types disent où en est la remise,
-                    sans rien promettre au nom de Zabelie. */}
-                {o.product && isDownloadable(o.product.kind) ? (
-                  <DownloadButton orderId={o.id} />
-                ) : suivis.has(o.id) ? (
-                  // Un suivi existe : il DIT où en est la remise, et il rend
-                  // le libellé statique inutile — « remise à convenir » sous un
-                  // « le vendeur déclare avoir remis » serait une contradiction
-                  // affichée à l'acheteur.
-                  blocRemise(suivis.get(o.id), lang)
-                ) : (
-                  remiseLabel(o.product?.kind, lang) && (
-                    <span className="text-xs text-mist">
-                      {remiseLabel(o.product?.kind, lang)}
-                    </span>
-                  )
-                )}
-                {reviewed.has(o.id) ? (
-                  <span className="text-xs text-success-text">{t(lang, "order.reviewed")}</span>
-                ) : (
-                  <ReviewForm orderId={o.id} />
-                )}
+              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:justify-between">
+                <div className="min-w-0">
+                  <p className="break-words font-semibold">{o.product?.title ?? t(lang, "purchases.product.unavailable")}</p>
+                  <p className="numeric mt-2 text-sm text-mist">{formatHTG(o.amount_htg)}</p>
+                  {o.product && <Link href={`/produit/${o.product.slug}#contacter-vendeur`} className="mt-2 inline-flex min-h-11 items-center text-sm underline">{t(lang, "purchases.product.open")}</Link>}
+                  {o.status === "pending" && <p className="mt-2 max-w-lg text-sm text-mist">{t(lang, "purchases.pending.hint")}</p>}
+                  <Link href="/aide#probleme" className="block w-fit py-3 text-xs text-mist underline">{t(lang, "purchases.help")}</Link>
+                </div>
+                <div className="flex flex-col items-start gap-3 sm:items-end">
+                  {confirmed && (o.product && isDownloadable(o.product.kind) ? (
+                    <DownloadButton orderId={o.id} labels={{ download: t(lang, "purchases.download"), error: t(lang, "purchases.download.error"), network: t(lang, "error.network") }} />
+                  ) : suivis.has(o.id) ? blocRemise(suivis.get(o.id), lang) : remiseLabel(o.product?.kind, lang) && (
+                    <span className="text-sm text-mist">{remiseLabel(o.product?.kind, lang)}</span>
+                  ))}
+                  {confirmed && (reviewed.has(o.id) ? (
+                    <span className="text-xs text-success-text">{t(lang, "order.reviewed")}</span>
+                  ) : (
+                    <ReviewForm orderId={o.id} labels={{ cta: t(lang, "purchases.review"), success: t(lang, "purchases.review.success"), error: t(lang, "error.generic"), network: t(lang, "error.network"), stars: t(lang, "purchases.review.stars"), placeholder: t(lang, "purchases.review.placeholder"), submit: t(lang, "purchases.review.submit"), cancel: t(lang, "purchases.review.cancel") }} />
+                  ))}
+                </div>
               </div>
-            </li>
-          ))}
+            </li>;
+          })}
         </ul>
       )}
+      {(page > 1 || hasNext) && <nav aria-label={t(lang, "purchases.pages")} className="mt-6 flex items-center justify-between gap-4">
+        {page > 1 ? <Link href={purchaseHref(view, page - 1)} className="inline-flex min-h-11 items-center underline">{t(lang, "purchases.previous")}</Link> : <span />}
+        <span className="text-sm text-mist">{t(lang, "purchases.page", { page: String(page) })}</span>
+        {hasNext && <Link href={purchaseHref(view, page + 1)} className="inline-flex min-h-11 items-center underline">{t(lang, "purchases.next")}</Link>}
+      </nav>}
     </Shell>
   );
 }
