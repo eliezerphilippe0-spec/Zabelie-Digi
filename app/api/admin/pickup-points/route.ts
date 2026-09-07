@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { isMissingTable } from "@/lib/product-media";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  * Chaque acte est journalisé dans zabelie_admin_actions (0055).
  */
 export async function GET() {
-  const me = await getCurrentUser();
+  const me = await getAdminUser();
   if (!me || me.role !== "admin") {
     return erreurTraduite("api.access.denied", 401);
   }
@@ -42,7 +42,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const me = await getCurrentUser();
+  const me = await getAdminUser();
   if (!me || me.role !== "admin") {
     return erreurTraduite("api.access.denied", 401);
   }

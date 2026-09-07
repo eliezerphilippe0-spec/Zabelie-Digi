@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { PayoutForm } from "@/components/payout-form";
 import { PayoutQueue, type PayoutRequestRow } from "@/components/payout-queue";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
@@ -39,7 +39,7 @@ export default async function PaiementsVendeursPage() {
     );
   }
 
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return (
       <AdminShell title="Accès refusé" actif="/admin/paiements-vendeurs">

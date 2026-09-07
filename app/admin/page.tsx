@@ -12,7 +12,7 @@ import {
 } from "@/components/admin-topup-buttons";
 import { formatHaitiPhone } from "@/lib/zabelie-topup/phone";
 import { formatUsd, zelleMemo } from "@/lib/payment-utils";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
@@ -171,7 +171,7 @@ export default async function AdminPage({
     );
   }
 
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return (
       <AdminShell title="Administration" actif="/admin">

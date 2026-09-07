@@ -23,6 +23,7 @@ export type CheminSansCache = {
 };
 
 export const CHEMINS_JAMAIS_CACHES: CheminSansCache[] = [
+  { motif: "^/securite", raison: "Configuration MFA et session : jamais de réponse sensible en cache." },
   {
     motif: "^/api/",
     raison:

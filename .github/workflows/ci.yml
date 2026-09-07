@@ -46,6 +46,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Audit des dépendances de production
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Typecheck
         run: npm run typecheck
 

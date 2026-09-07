@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 
 /**
  * LE GARDE D'ADMINISTRATION — extrait de `app/api/admin/coherence/route.ts`
@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
  * Trois façons d'entrer, et elles ne se valent pas :
  *   • `CRON_SECRET` — Vercel appelle ses crons avec ce jeton ;
  *   • `RECONCILE_SECRET` — un exploitant en ligne de commande ;
- *   • une session dont le rôle est `admin`.
+ *   • une session MFA vérifiée dont le rôle en base est `admin`.
  *
  * ⚠️ EXTRAIT PLUTÔT QUE RECOPIÉ, et c'est la seule raison de ce fichier. Une
  * règle d'autorisation dupliquée diverge toujours, et c'est toujours la copie
@@ -37,6 +37,6 @@ export async function autoriserAdmin(req: Request): Promise<boolean> {
   if (cron && bearer === cron) return true;
   if (manual && (bearer === manual || req.headers.get("x-reconcile-secret") === manual))
     return true;
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   return user?.role === "admin";
 }

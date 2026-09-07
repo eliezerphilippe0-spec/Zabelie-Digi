@@ -1,5 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { ZonesAdmin, type DemandeRow, type ZoneRow } from "./zones-admin";
@@ -15,7 +15,7 @@ export const metadata = { title: "Zones — Admin Zabelie" };
  * `zabelie_admin_actions` (0055).
  */
 export default async function AdminZonesPage() {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return (
       <AdminShell title="Zones" actif="/admin/zones">

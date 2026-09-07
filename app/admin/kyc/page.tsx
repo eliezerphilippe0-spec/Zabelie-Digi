@@ -1,5 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { KycAdmin } from "./kyc-admin";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export const metadata = { title: "Vérifications — Admin Zabelie" };
  * route — sur un dossier d'identité, savoir qui a décidé est le minimum.
  */
 export default async function AdminKycPage() {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return (
       <AdminShell title="Vérifications" actif="/admin/kyc">

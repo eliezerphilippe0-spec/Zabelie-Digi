@@ -1,3 +1,4 @@
+import { readAdminSession } from "@/lib/admin-session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
@@ -57,6 +58,16 @@ export async function getSuspension(userId: string): Promise<Suspension | null> 
       .maybeSingle();
     if (!data?.suspended_at) return null;
     return { suspendedAt: data.suspended_at, reason: data.suspended_reason };
+  } catch {
+    return null;
+  }
+}
+
+/** Accès humain à l'administration : rôle en base ET session MFA vérifiée. */
+export async function getAdminUser(): Promise<CurrentUser | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    return await readAdminSession(await createClient());
   } catch {
     return null;
   }

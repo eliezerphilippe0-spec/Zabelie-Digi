@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -25,7 +25,7 @@ type PayoutMethod = (typeof METHODS)[number];
  * écriture au grand livre append-only.
  */
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }

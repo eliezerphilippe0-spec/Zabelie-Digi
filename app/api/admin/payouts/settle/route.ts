@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -19,7 +19,7 @@ const METHODS = ["moncash", "especes", "virement", "autre"] as const;
  *  • 'rejected' : le solde est restitué par ÉCRITURE COMPENSATOIRE en base.
  */
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }

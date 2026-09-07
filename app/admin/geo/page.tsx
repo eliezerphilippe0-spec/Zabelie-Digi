@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { GeoMap, type GeoRow } from "@/components/geo-map";
 import { HaitiMap, type HtRow } from "@/components/haiti-map";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
@@ -27,7 +27,7 @@ export default async function GeoPage() {
     );
   }
 
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return (
       <AdminShell title="Géo-localisation" actif="/admin/geo">

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { slugifierZone } from "@/lib/zones";
@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
  */
 
 export async function POST(req: Request) {
-  const me = await getCurrentUser();
+  const me = await getAdminUser();
   // 403, comme les quinze autres routes admin : l'appelant est identifié, il
   // n'est pas autorisé. 401 dirait « inconnu », et un client qui le lit
   // relancerait une connexion inutile.

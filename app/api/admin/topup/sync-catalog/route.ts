@@ -5,7 +5,7 @@ import {
   TOPUP_CLOSED_BODY,
   TOPUP_CLOSED_STATUS,
 } from "@/lib/topup-flag";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { reloadlyProvider, isReloadlyEnabled } from "@/lib/zabelie-topup/reloadly";
@@ -39,7 +39,7 @@ export async function POST() {
     return NextResponse.json(TOPUP_CLOSED_BODY, { status: TOPUP_CLOSED_STATUS });
   }
 
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }

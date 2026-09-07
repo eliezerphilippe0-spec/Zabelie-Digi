@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { exigerTraceAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  * disponible. Idempotent (refund_order renvoie 'already_reversed' au rejeu).
  */
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }
