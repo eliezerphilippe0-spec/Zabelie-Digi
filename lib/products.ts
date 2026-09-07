@@ -161,6 +161,7 @@ const SELECT =
   "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name), sous_rayon:zabelie_categories!products_category_id_fkey(slug)";
 
 export type ProductFilters = {
+  kind?: ProductKind;
   q?: string;
   category?: string;
   /**
@@ -251,6 +252,8 @@ function filterSample(
   filters?: ProductFilters
 ): ProductView[] {
   let out = items;
+  if (filters?.kind) out = out.filter((p) => p.kind === filters.kind);
+  if (filters?.productIds) out = out.filter((p) => filters.productIds!.includes(p.id));
   const cat = filters?.category;
   if (cat && cat !== "Tout") {
     out = out.filter((p) => p.category === cat);
@@ -284,6 +287,7 @@ export async function getPublishedProducts(
     // Les produits digitaux ont in_stock = true à vie (0040).
     if (withStockFilter) query = query.eq("in_stock", true);
 
+    if (filters?.kind) query = query.eq("kind", filters.kind);
     if (filters?.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
     }
@@ -339,12 +343,12 @@ export async function getPublishedProducts(
  * choisir de ce qui existe déjà, sinon la première faute d'orthographe
  * devient une catégorie.
  */
-export async function getCatalogueCategories(): Promise<string[]> {
+export async function getCatalogueCategories(kind?: ProductKind): Promise<string[]> {
   if (!isSupabaseConfigured()) {
-    return [...new Set(demoView().map((p) => p.category).filter(Boolean))].sort();
+    return [...new Set(demoView().filter((p) => !kind || p.kind === kind).map((p) => p.category).filter(Boolean))].sort();
   }
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
     .select("category")
     .eq("status", "published")
@@ -352,6 +356,8 @@ export async function getCatalogueCategories(): Promise<string[]> {
     // Borne : la barre n'a pas vocation à refléter un catalogue immense, et
     // une requête non bornée sur une page servie à chaque visite se paie.
     .limit(2000);
+  if (kind) query = query.eq("kind", kind);
+  const { data, error } = await query;
 
   if (error || !data) {
     // Dégrader, jamais casser : sans barre, le catalogue reste consultable.
@@ -471,6 +477,7 @@ export async function getPublishedProductsPage(
     // Les produits digitaux ont in_stock = true à vie (0040).
     if (withStockFilter) query = query.eq("in_stock", true);
 
+    if (filters.kind) query = query.eq("kind", filters.kind);
     if (filters.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
     }

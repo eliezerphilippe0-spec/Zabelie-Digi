@@ -196,7 +196,7 @@ test("N6 — le catalogue a un generateMetadata, canonique sur le rayon, noindex
     "robots.noindex doit être commandé par vueDeTravail (q + zones)"
   );
   // La canonique ne porte ni `page`, ni `q`, ni zone.
-  const iCanon = src.indexOf("const canonique = rayon");
+  const iCanon = src.indexOf("const baseCanonique = rayon");
   const canon = src.slice(iCanon, src.indexOf(";", iCanon));
   assert.ok(iCanon > 0, "canonique introuvable");
   assert.doesNotMatch(canon, /\bpage\b|\bq\b|\bzd\b|\bzk\b|\bzq\b/, "la canonique ne doit reprendre ni page, ni q, ni zone");

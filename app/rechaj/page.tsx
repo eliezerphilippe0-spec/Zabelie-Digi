@@ -25,10 +25,10 @@ export const metadata = { title: "Recharge téléphone — Zabelie" };
 export default async function RechajPage() {
   // Vente first-party close par decision du porteur (2026-08-01). Redirection
   // plutot que 404 : la page a ete annoncee, un lien externe peut exister, et
-  // /catalogue est ce que le visiteur cherchait — des produits a acheter.
+  // La page dédiée explique la suspension et distingue recharge et paiement.
   // `/rechaj/[orderId]` reste OUVERT : une commande deja payee doit rester
   // consultable et remboursable. Voir lib/topup-flag.ts.
-  if (!isTopupFirstPartyEnabled()) redirect("/catalogue");
+  if (!isTopupFirstPartyEnabled()) redirect("/recharges");
 
   const lang = await getLang();
 

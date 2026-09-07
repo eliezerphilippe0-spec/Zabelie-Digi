@@ -89,8 +89,8 @@ test("H4 — Aide, Talents, thème et déconnexion vivent dans le menu compte", 
   // l'original tombait APRÈS le menu — assertion rouge sur un fichier juste.
   const nav = sansCommentaires(NAV);
   const menu = nav.slice(nav.indexOf("<AccountMenu"));
-  for (const [href, cle] of [["/aide", "nav.help"], ["/#talents", "nav.talents"], ["/vendre", "topbar.sell"], ["/connexion", "nav.login"], ["/messages", "msg.title"]]) {
-    assert.match(menu, new RegExp(`href="${href.replace(/[/#]/g, "\\$&")}"[^>]*>\\s*\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\}`), `${href} manque au menu compte`);
+  for (const [href, cle] of [["/aide", "nav.help"], ["/catalogue?univers=services", "universe.services"], ["/vendre", "topbar.sell"], ["/connexion", "nav.login"], ["/messages", "msg.title"]]) {
+    assert.match(menu, new RegExp(`href="${href.replace(/[/#?]/g, "\\$&")}"[^>]*>\\s*\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\}`), `${href} manque au menu compte`);
   }
   assert.match(menu, /<ThemeToggle\s*\n\s*labelToLight=/);
   // Le menu est un <details> natif : zéro JavaScript pour s'ouvrir.
@@ -104,8 +104,8 @@ test("H5 — la variante en-tête rend un bouton loupe avec le libellé en aria-
 });
 
 test("H6 — chips, panier, compte, loupe : des cibles tactiles de 44 px sur le chrome", () => {
-  const chip = /<Link\s+href=\{r\.href\}\s+className="[^"]*\bmin-h-11\b[^"]*text-on-chrome/;
-  assert.match(sansCommentaires(CHIPS), chip);
+  assert.match(sansCommentaires(CHIPS), /min-h-11[^\n]*text-on-chrome/);
+  assert.match(sansCommentaires(CHIPS), /className=\{style\(r\.href\)\}/);
   assert.match(sansCommentaires(NAV), /href="\/panier"[\s\S]{0,200}?className="[^"]*\bmin-h-11 min-w-11\b/);
   assert.match(sansCommentaires(MENU), /<summary[\s\S]{0,120}?className="[^"]*\bmin-h-11 min-w-11\b/);
   assert.match(sansCommentaires(SEARCH), /aria-label=\{submitLabel\}[\s\S]{0,120}?className="[^"]*\bmin-h-11 min-w-11\b/);

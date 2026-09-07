@@ -1,3 +1,4 @@
+import { MarketplaceUniverses } from "@/components/marketplace-universes";
 import Link from "next/link";
 import Image from "next/image";
 import { existsSync } from "node:fs";
@@ -274,6 +275,7 @@ export default async function HomePage() {
             </div>
           </nav>
         )}
+        {products.length === 0 && <MarketplaceUniverses lang={lang} />}
         {products.length === 0 && (
           <section className="home-catalogue-state mx-auto max-w-6xl px-3 py-8" aria-live="polite">
             <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
@@ -294,6 +296,7 @@ export default async function HomePage() {
         {inedit(fichiers) && (
           <HomeRow title={t(lang, "sec.digital")} more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
         )}
+        {products.length > 0 && <MarketplaceUniverses lang={lang} />}
         {/* Cible de « Talents » (menu compte + pied de page) : posée sur une
             balise du FLUX, avant la rangée des services, jamais en prop d'une
             rangée qui peut s'effacer. `scroll-mt-24` compense l'en-tête collant. */}

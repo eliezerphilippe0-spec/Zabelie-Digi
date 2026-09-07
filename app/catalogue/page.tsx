@@ -1,3 +1,4 @@
+import { CATALOGUE_UNIVERSES, catalogueUniverse, universeHref } from "@/lib/catalogue-universes";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -43,20 +44,22 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; cat?: string; sous?: string; page?: string; zd?: string; zk?: string; zq?: string }>;
+  searchParams: Promise<{ q?: string; cat?: string; sous?: string; page?: string; zd?: string; zk?: string; zq?: string; univers?: string }>;
 }) {
-  const [{ q, cat, sous, zd, zk, zq }, lang] = await Promise.all([searchParams, getLang()]);
+  const [{ q, cat, sous, zd, zk, zq, univers }, lang] = await Promise.all([searchParams, getLang()]);
+  const universe = catalogueUniverse(univers);
+  const universeTitle = universe ? t(lang, CATALOGUE_UNIVERSES[universe].title) : t(lang, "catalog.title");
   const rayon = cat && cat !== "Tout" ? cat : null;
   const titre = rayon
     ? `${rayon} — ${t(lang, "catalog.title")} — Zabelie`
-    : `${t(lang, "catalog.title")} — Zabelie`;
+    : `${universeTitle} — Zabelie`;
   const vueDeTravail = Boolean((q && q.trim()) || zd || zk || zq);
-  const canonique = rayon
+  const baseCanonique = rayon
     ? `/catalogue?cat=${encodeURIComponent(rayon)}${sous ? `&sous=${encodeURIComponent(sous)}` : ""}`
     : "/catalogue";
   return {
     title: titre,
-    alternates: { canonical: canonique },
+    alternates: { canonical: universe ? `${baseCanonique}${baseCanonique.includes("?") ? "&" : "?"}univers=${universe}` : baseCanonique },
     robots: vueDeTravail ? { index: false, follow: true } : undefined,
   };
 }
@@ -70,6 +73,7 @@ export default async function CataloguePage({
   searchParams,
 }: {
   searchParams: Promise<{
+    univers?: string;
     q?: string;
     cat?: string;
     sous?: string;
@@ -79,12 +83,14 @@ export default async function CataloguePage({
     zq?: string;
   }>;
 }) {
-  const { q, cat, sous, page: pageRaw, zd, zk, zq } = await searchParams;
+  const { q, cat, sous, page: pageRaw, zd, zk, zq, univers } = await searchParams;
+  const universe = catalogueUniverse(univers);
+  const selection = universe ? CATALOGUE_UNIVERSES[universe] : undefined;
   const activeCat = cat ?? "Tout";
   const page = Math.max(1, Number.parseInt(pageRaw ?? "1", 10) || 1);
   const [lang, categories, zones] = await Promise.all([
     getLang(),
-    getCatalogueCategories(),
+    getCatalogueCategories(selection?.kind),
     isSupabaseConfigured() ? getZonesActives() : Promise.resolve([] as Zone[]),
   ]);
 
@@ -102,6 +108,7 @@ export default async function CataloguePage({
   const { items: products, hasMore, total, totalExact } = await getPublishedProductsPage({
     q,
     category: activeCat,
+    kind: selection?.kind,
     page,
     productIds: productIds ?? undefined,
     zoneId,
@@ -131,7 +138,7 @@ export default async function CataloguePage({
     const ids = await searchFuzzyProductIds(q);
     if (ids.length > 0) {
       approchants = (
-        await getPublishedProductsPage({ productIds: ids, page: 1 })
+        await getPublishedProductsPage({ productIds: productIds ? ids.filter((id) => productIds.includes(id)) : ids, category: activeCat, kind: selection?.kind, zoneId, page: 1 })
       ).items;
     }
     if (approchants.length === 0) {
@@ -169,11 +176,12 @@ export default async function CataloguePage({
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
   // opposées : reformuler d'un côté, publier de l'autre.
-  const filtre = Boolean(q) || activeCat !== "Tout";
+  const filtre = Boolean(q) || activeCat !== "Tout" || !!universe || !!zoneId;
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
   const hrefFor = (opts: { cat?: string; sous?: string | null; page?: number }) => {
     const params = new URLSearchParams();
+    if (universe) params.set("univers", universe);
     if (q) params.set("q", q);
     const c = opts.cat ?? activeCat;
     if (c !== "Tout") params.set("cat", c);
@@ -202,16 +210,27 @@ export default async function CataloguePage({
     lang,
   };
   const catHref = (c: string) => hrefFor({ cat: c, sous: null, page: 1 });
-  const sousHref = (slug: string | null) => hrefFor({ sous: slug ?? undefined, page: 1 });
+  const sousHref = (slug: string | null) => hrefFor({ sous: slug, page: 1 });
 
   return (
     <div className="bg-grain min-h-dvh">
-      <SiteNav />
+      <SiteNav activeHref={universe ? universeHref(universe) : "/catalogue"} />
 
-      <section className="mx-auto max-w-6xl px-5 pb-10 pt-16">
+      <main id="main">
+      <section className="mx-auto max-w-6xl px-5 pb-10 pt-8">
+        <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
+          <Link href="/" className="underline underline-offset-4">{t(lang, "nav.home")}</Link>
+          <span aria-hidden="true">/</span>
+          {selection ? <><Link href="/catalogue" className="underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
+        </nav>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-          {t(lang, "catalog.title")}
+          {selection ? t(lang, selection.title) : t(lang, "catalog.title")}
         </h1>
+        {selection && <p className="mt-3 max-w-2xl text-mist">{t(lang, selection.description)}</p>}
+        <nav aria-label={t(lang, "universe.nav")} className="mt-6 flex flex-wrap gap-2">
+          <Link href="/catalogue" aria-current={!universe ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${!universe ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, "nav.catalog")}</Link>
+          {(Object.keys(CATALOGUE_UNIVERSES) as (keyof typeof CATALOGUE_UNIVERSES)[]).map((key) => <Link key={key} href={universeHref(key)} aria-current={universe === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${universe === key ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, CATALOGUE_UNIVERSES[key].title)}</Link>)}
+        </nav>
         <p className="mt-2 text-sm text-mist">
           {totalExact ? total : `≥ ${total}`} {t(lang, "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
@@ -260,6 +279,7 @@ export default async function CataloguePage({
 
         {/* Recherche (GET, fonctionne sans JS) */}
         <form action="/catalogue" className="mt-6 flex gap-2">
+          {universe && <input type="hidden" name="univers" value={universe} />}
           {activeCat !== "Tout" && (
             <input type="hidden" name="cat" value={activeCat} />
           )}
@@ -268,6 +288,7 @@ export default async function CataloguePage({
           {zqValide && <input type="hidden" name="zq" value={zqValide} />}
           <input
             name="q"
+            aria-label={t(lang, "catalog.search.ph")}
             defaultValue={q ?? ""}
             placeholder={t(lang, "catalog.search.ph")}
             className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
@@ -289,6 +310,7 @@ export default async function CataloguePage({
             en base) — un sélecteur à une option n'est pas un filtre. */}
         {depatmans.length > 0 && (
           <form action="/catalogue" className="mt-4 flex flex-wrap items-center gap-2">
+            {universe && <input type="hidden" name="univers" value={universe} />}
             {q && <input type="hidden" name="q" value={q} />}
             {activeCat !== "Tout" && <input type="hidden" name="cat" value={activeCat} />}
             {sous && <input type="hidden" name="sous" value={sous} />}
@@ -459,7 +481,7 @@ export default async function CataloguePage({
                     {facettes.slice(0, 6).map((f) => (
                       <Link
                         key={f.slug}
-                        href={`/catalogue?cat=${encodeURIComponent(activeCat)}&sous=${f.slug}`}
+                        href={hrefFor({ sous: f.slug, page: 1 })}
                         className="rounded-full border border-line px-3 py-1 text-xs text-mist hover:text-cloud"
                       >
                         {f.label} {f.count}
@@ -490,7 +512,7 @@ export default async function CataloguePage({
                vide muet (landing v2). */
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : activeCat}
+                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}
               </p>
               <p className="mx-auto mt-2 max-w-md text-sm text-mist">
                 {t(lang, "catalog.cat0.b")}
@@ -585,6 +607,7 @@ export default async function CataloguePage({
           </>
         )}
       </section>
+      </main>
 
       <SiteFooter />
     </div>

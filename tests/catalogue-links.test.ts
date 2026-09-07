@@ -29,18 +29,18 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 /** Nom du paramètre catégorie tel que /catalogue le déstructure. */
-function readParamName(): string {
+function readParamNames(): string[] {
   const src = readFileSync(CATALOGUE_PAGE, "utf8");
   const m = src.match(/searchParams:\s*Promise<\{([^}]*)\}>/s);
   assert.ok(m, "signature searchParams introuvable dans " + CATALOGUE_PAGE);
   const keys = [...m[1].matchAll(/(\w+)\??\s*:/g)].map((k) => k[1]);
   const cat = keys.find((k) => k === "cat" || k === "categorie" || k === "category");
   assert.ok(cat, `aucun paramètre de catégorie dans ${CATALOGUE_PAGE} (vu : ${keys.join(", ")})`);
-  return cat;
+  return keys;
 }
 
 test("tout lien /catalogue filtrant emploie le paramètre que la page lit", () => {
-  const param = readParamName();
+  const params = readParamNames();
   const offenders: string[] = [];
 
   for (const f of ROOTS.flatMap((r) => walk(r))) {
@@ -52,8 +52,8 @@ test("tout lien /catalogue filtrant emploie le paramètre que la page lit", () =
         // recherche/pagination : filtre silencieusement ignoré.
         for (const m of line.matchAll(/\/catalogue\?(\w+)=/g)) {
           const used = m[1];
-          if (used !== param && used !== "q" && used !== "page") {
-            offenders.push(`${f}:${i + 1} → ?${used}= (attendu ?${param}=)`);
+          if (!params.includes(used)) {
+            offenders.push(`${f}:${i + 1} → ?${used}= (paramètres lus : ${params.join(", ")})`);
           }
         }
       });

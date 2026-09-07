@@ -40,8 +40,10 @@ export async function SiteFooter() {
             <Link href="/catalogue" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.catalog")}
             </Link>
-            <Link href="/#talents" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
-              {t(lang, "nav.talents")}
+            <Link href="/catalogue?univers=objets" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.physical")}</Link>
+            <Link href="/catalogue?univers=numerique" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.digital")}</Link>
+            <Link href="/catalogue?univers=services" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
+              {t(lang, "universe.services")}
             </Link>
           </div>
           <div className="flex flex-col gap-2">
@@ -55,6 +57,7 @@ export async function SiteFooter() {
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.payment")}</p>
+            <Link href="/recharges" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "recharges.title")}</Link>
             <span className="text-mist">MonCash</span>
             <span className="text-mist">Zelle (USD)</span>
             <span className="text-mist">
