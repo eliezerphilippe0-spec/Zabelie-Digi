@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { LANG_COOKIE, isLang, type Lang } from "@/lib/i18n";
 
 /**
@@ -16,6 +16,8 @@ import { LANG_COOKIE, isLang, type Lang } from "@/lib/i18n";
  * la seule façon d'indexer les deux — `docs/47` §3, toujours ouvert.
  */
 export async function getLang(): Promise<Lang> {
+  const guideLang = (await headers()).get("x-zabelie-guide-lang");
+  if (isLang(guideLang)) return guideLang;
   const store = await cookies();
   const v = store.get(LANG_COOKIE)?.value;
   return isLang(v) ? v : "fr";

@@ -1,3 +1,5 @@
+import { parseCatalogueSearch, catalogueCanonical, catalogueIsWorkingView, type CatalogueSearch } from "@/lib/catalogue-query";
+import { CATALOGUE_UNIVERSES, universeHref } from "@/lib/catalogue-universes";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -20,44 +22,24 @@ import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-/**
- * MÉTADONNÉES PAR VUE — audit SEO 2026-08-28 (`docs/47` §2.1, #6).
- *
- * Un `export const metadata` statique donnait le MÊME titre, la même
- * description et AUCUNE canonique à toutes les combinaisons de sept
- * paramètres (`q cat sous page zd zk zq`) : chaque URL filtrée se
- * canonicalisait sur elle-même, et le moteur voyait des centaines de pages
- * identiques. C'est le plus gros risque de contenu dupliqué du site.
- *
- * Règle, et elle est la convention des places de marché :
- *   • un RAYON (`cat`, `sous`) est une page d'atterrissage : titre propre,
- *     canonique sur le rayon seul (sans tri, sans zone, sans page) ;
- *   • une RECHERCHE (`q`) ou une ZONE (`zd zk zq`) est une vue de travail :
- *     `noindex, follow` — le moteur suit les fiches, n'indexe pas la vue ;
- *   • la PAGINATION garde l'index (les fiches y sont) mais se canonicalise
- *     sur la page 1 du même rayon.
- *
- * La langue vient du cookie, donc le titre est celui du visiteur — et pour
- * un crawler, le français (V-18). C'est cohérent avec ce que la page rend.
- */
-export async function generateMetadata({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string; cat?: string; sous?: string; page?: string; zd?: string; zk?: string; zq?: string }>;
-}) {
-  const [{ q, cat, sous, zd, zk, zq }, lang] = await Promise.all([searchParams, getLang()]);
-  const rayon = cat && cat !== "Tout" ? cat : null;
-  const titre = rayon
-    ? `${rayon} — ${t(lang, "catalog.title")} — Zabelie`
-    : `${t(lang, "catalog.title")} — Zabelie`;
-  const vueDeTravail = Boolean((q && q.trim()) || zd || zk || zq);
-  const canonique = rayon
-    ? `/catalogue?cat=${encodeURIComponent(rayon)}${sous ? `&sous=${encodeURIComponent(sous)}` : ""}`
-    : "/catalogue";
+/** Each results page keeps its own canonical; search, price and sort views are noindex. */
+export async function generateMetadata({ searchParams }: { searchParams: Promise<CatalogueSearch> }) {
+  const [raw, lang] = await Promise.all([searchParams, getLang()]);
+  const { univers, cat, sous, page } = parseCatalogueSearch(raw);
+  const titleKey = univers ? CATALOGUE_UNIVERSES[univers].title : "catalog.title";
+  const title = `${cat && cat !== "Tout" ? `${cat} — ` : ""}${t(lang, titleKey)} — Zabelie`;
+  const description = t(lang, univers === "objets" ? "catalog.seo.objects" : univers === "numerique" ? "catalog.seo.digital" : univers === "services" ? "catalog.seo.services" : "catalog.seo.all");
+  const canonical = catalogueCanonical(raw);
+  const workingView = catalogueIsWorkingView(raw);
+  const productIds = !workingView && sous ? await productIdsInCategory(sous) : null;
+  const result = workingView ? null : await getPublishedProductsPage({ category: cat ?? "Tout", kind: univers ? CATALOGUE_UNIVERSES[univers].kind : undefined, page, productIds: productIds ?? undefined, sort: "recent" }).catch(() => null);
+  const emptyPage = result !== null && result.items.length === 0;
   return {
-    title: titre,
-    alternates: { canonical: canonique },
-    robots: vueDeTravail ? { index: false, follow: true } : undefined,
+    title, description,
+    alternates: { canonical },
+    openGraph: { title, description, url: canonical },
+    twitter: { card: "summary_large_image" as const, title, description },
+    robots: catalogueIsWorkingView(raw) || emptyPage ? { index: false, follow: true } : undefined,
   };
 }
 
@@ -69,22 +51,14 @@ export async function generateMetadata({
 export default async function CataloguePage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    q?: string;
-    cat?: string;
-    sous?: string;
-    page?: string;
-    zd?: string;
-    zk?: string;
-    zq?: string;
-  }>;
+  searchParams: Promise<CatalogueSearch>;
 }) {
-  const { q, cat, sous, page: pageRaw, zd, zk, zq } = await searchParams;
+  const { q, cat, sous, page, zd, zk, zq, univers: universe, minPrice, maxPrice, sort, priceRangeInvalid } = parseCatalogueSearch(await searchParams);
+  const selection = universe ? CATALOGUE_UNIVERSES[universe] : undefined;
   const activeCat = cat ?? "Tout";
-  const page = Math.max(1, Number.parseInt(pageRaw ?? "1", 10) || 1);
   const [lang, categories, zones] = await Promise.all([
     getLang(),
-    getCatalogueCategories(),
+    getCatalogueCategories(selection?.kind),
     isSupabaseConfigured() ? getZonesActives() : Promise.resolve([] as Zone[]),
   ]);
 
@@ -102,9 +76,10 @@ export default async function CataloguePage({
   const { items: products, hasMore, total, totalExact } = await getPublishedProductsPage({
     q,
     category: activeCat,
+    kind: selection?.kind,
     page,
     productIds: productIds ?? undefined,
-    zoneId,
+    zoneId, minPrice, maxPrice, sort,
   });
 
   // Les trois étages du sélecteur, depuis la même liste (34 lignes au
@@ -118,7 +93,7 @@ export default async function CataloguePage({
   // Rayons fins du département actif. Vide hors département, et vide tant
   // qu'aucun produit publié n'y est rangé (V-13 : jamais un rayon désert).
   const facettes =
-    activeCat !== "Tout" ? await getCategoryFacets(activeCat, lang) : [];
+    activeCat !== "Tout" ? await getCategoryFacets(activeCat, lang, selection?.kind) : [];
 
   // ── Couches 2 et 3 du capteur de demande (lot S) ─────────────────────────
   // Ordre voulu : la recherche littérale d'abord, le rattrapage ensuite, le
@@ -127,14 +102,14 @@ export default async function CataloguePage({
   // produit qu'on a déjà, mal orthographié.
   let approchants: typeof products = [];
   let manque = false;
-  if (q && products.length === 0) {
+  if (q && page === 1 && products.length === 0 && !priceRangeInvalid) {
     const ids = await searchFuzzyProductIds(q);
     if (ids.length > 0) {
       approchants = (
-        await getPublishedProductsPage({ productIds: ids, page: 1 })
+        await getPublishedProductsPage({ productIds: productIds ? ids.filter((id) => productIds.includes(id)) : ids, category: activeCat, kind: selection?.kind, zoneId, minPrice, maxPrice, sort, page: 1 })
       ).items;
     }
-    if (approchants.length === 0) {
+    if (approchants.length === 0 && minPrice === undefined && maxPrice === undefined && !zoneId) {
       manque = true;
       // Sans poivre serveur, `sessionFingerprint` rend `null` et on
       // N'ENREGISTRE PAS : un journal ré-identifiable serait pire que pas de
@@ -169,12 +144,16 @@ export default async function CataloguePage({
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
   // opposées : reformuler d'un côté, publier de l'autre.
-  const filtre = Boolean(q) || activeCat !== "Tout";
+  const filtre = Boolean(q) || activeCat !== "Tout" || !!universe || !!zoneId || minPrice !== undefined || maxPrice !== undefined;
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
   const hrefFor = (opts: { cat?: string; sous?: string | null; page?: number }) => {
     const params = new URLSearchParams();
+    if (universe) params.set("univers", universe);
     if (q) params.set("q", q);
+    if (minPrice !== undefined) params.set("min", String(minPrice));
+    if (maxPrice !== undefined) params.set("max", String(maxPrice));
+    if (sort !== "recent") params.set("tri", sort);
     const c = opts.cat ?? activeCat;
     if (c !== "Tout") params.set("cat", c);
     // Changer de département invalide le rayon fin : `sous` appartient au
@@ -192,6 +171,8 @@ export default async function CataloguePage({
     const qs = params.toString();
     return qs ? `/catalogue?${qs}` : "/catalogue";
   };
+  const searchContext = Object.fromEntries(new URL(hrefFor({}), "https://zabelie.com").searchParams);
+  delete searchContext.q;
   const cardLabels = {
     kindFile: t(lang, "card.kind.file"),
     kindService: t(lang, "card.kind.service"),
@@ -202,16 +183,27 @@ export default async function CataloguePage({
     lang,
   };
   const catHref = (c: string) => hrefFor({ cat: c, sous: null, page: 1 });
-  const sousHref = (slug: string | null) => hrefFor({ sous: slug ?? undefined, page: 1 });
+  const sousHref = (slug: string | null) => hrefFor({ sous: slug, page: 1 });
 
   return (
     <div className="bg-grain min-h-dvh">
-      <SiteNav />
+      <SiteNav activeHref={universe ? universeHref(universe) : "/catalogue"} searchContext={{ query: q, filters: searchContext }} />
 
-      <section className="mx-auto max-w-6xl px-5 pb-10 pt-16">
+      <main id="main">
+      <section className="mx-auto max-w-6xl px-5 pb-10 pt-8">
+        <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
+          <Link href="/" className="underline underline-offset-4">{t(lang, "nav.home")}</Link>
+          <span aria-hidden="true">/</span>
+          {selection ? <><Link href="/catalogue" className="underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
+        </nav>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-          {t(lang, "catalog.title")}
+          {selection ? t(lang, selection.title) : t(lang, "catalog.title")}
         </h1>
+        {selection && <p className="mt-3 max-w-2xl text-mist">{t(lang, selection.description)}</p>}
+        <nav aria-label={t(lang, "universe.nav")} className="mt-6 flex flex-wrap gap-2">
+          <Link href="/catalogue" aria-current={!universe ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${!universe ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, "nav.catalog")}</Link>
+          {(Object.keys(CATALOGUE_UNIVERSES) as (keyof typeof CATALOGUE_UNIVERSES)[]).map((key) => <Link key={key} href={universeHref(key)} aria-current={universe === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${universe === key ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, CATALOGUE_UNIVERSES[key].title)}</Link>)}
+        </nav>
         <p className="mt-2 text-sm text-mist">
           {totalExact ? total : `≥ ${total}`} {t(lang, "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
@@ -258,40 +250,44 @@ export default async function CataloguePage({
           </p>
         )}
 
-        {/* Recherche (GET, fonctionne sans JS) */}
-        <form action="/catalogue" className="mt-6 flex gap-2">
-          {activeCat !== "Tout" && (
-            <input type="hidden" name="cat" value={activeCat} />
-          )}
-          {zd && <input type="hidden" name="zd" value={zd} />}
-          {zkValide && <input type="hidden" name="zk" value={zkValide} />}
-          {zqValide && <input type="hidden" name="zq" value={zqValide} />}
-          <input
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder={t(lang, "catalog.search.ph")}
-            className="min-w-0 flex-1 rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
-          />
-          <button
-            type="submit"
-            /* PRIMAIRE : c'est l'action de CETTE page. Le crème filled
-               était un troisième style de bouton pour une action de premier
-               plan — ni l'accent, ni un contour. */
-            className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
-          >
-            {t(lang, "catalog.search.btn")}
-          </button>
+        <form action="/catalogue" className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-4" aria-label={t(lang, "catalog.filters")}>
+          {Object.entries(searchContext).filter(([key]) => !["min", "max", "tri"].includes(key)).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
+          {q && <input type="hidden" name="q" value={q} />}
+          <label className="grid gap-2 text-sm text-mist">
+            {t(lang, "catalog.min")}
+            <input name="min" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={minPrice ?? ""} className="min-h-11 w-36 rounded-xl border border-line bg-surface px-3 text-base text-cloud" />
+          </label>
+          <label className="grid gap-2 text-sm text-mist">
+            {t(lang, "catalog.max")}
+            <input name="max" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={maxPrice ?? ""} className="min-h-11 w-36 rounded-xl border border-line bg-surface px-3 text-base text-cloud" />
+          </label>
+          <label className="grid flex-1 gap-2 text-sm text-mist">
+            {t(lang, "catalog.sort")}
+            <select name="tri" defaultValue={sort} className="min-h-11 min-w-44 rounded-xl border border-line bg-surface px-3 text-base text-cloud">
+              <option value="recent">{t(lang, "catalog.sort.recent")}</option>
+              <option value="prix-croissant">{t(lang, "catalog.sort.asc")}</option>
+              <option value="prix-decroissant">{t(lang, "catalog.sort.desc")}</option>
+              <option value="ventes">{t(lang, "catalog.sort.sales")}</option>
+            </select>
+          </label>
+          <button type="submit" className="min-h-11 rounded-xl bg-brand px-5 text-sm font-semibold text-on-brand hover:opacity-90">{t(lang, "zone.filter.apply")}</button>
+          {filtre && <Link href={universe ? universeHref(universe) : "/catalogue"} className="inline-flex min-h-11 items-center px-2 text-sm underline underline-offset-4">{t(lang, "catalog.reset")}</Link>}
+          {priceRangeInvalid && <p role="alert" className="w-full text-sm text-danger-text">{t(lang, "catalog.price.invalid")}</p>}
         </form>
 
         {/* Filtre par zone (PR-Z3, docs/33 §4) — GET, cascade SANS JS :
             choisir un étage recharge la page et révèle le suivant. Masqué
             tant que la table des zones est vide (démo, ou 0069 pas encore
             en base) — un sélecteur à une option n'est pas un filtre. */}
-        {depatmans.length > 0 && (
+        {universe !== "numerique" && depatmans.length > 0 && (
           <form action="/catalogue" className="mt-4 flex flex-wrap items-center gap-2">
+            {universe && <input type="hidden" name="univers" value={universe} />}
             {q && <input type="hidden" name="q" value={q} />}
             {activeCat !== "Tout" && <input type="hidden" name="cat" value={activeCat} />}
             {sous && <input type="hidden" name="sous" value={sous} />}
+            {minPrice !== undefined && <input type="hidden" name="min" value={minPrice} />}
+            {maxPrice !== undefined && <input type="hidden" name="max" value={maxPrice} />}
+            {sort !== "recent" && <input type="hidden" name="tri" value={sort} />}
             <label className="text-sm text-mist" htmlFor="zone-zd">
               {t(lang, "zone.filter.title")}
             </label>
@@ -459,7 +455,7 @@ export default async function CataloguePage({
                     {facettes.slice(0, 6).map((f) => (
                       <Link
                         key={f.slug}
-                        href={`/catalogue?cat=${encodeURIComponent(activeCat)}&sous=${f.slug}`}
+                        href={hrefFor({ sous: f.slug, page: 1 })}
                         className="rounded-full border border-line px-3 py-1 text-xs text-mist hover:text-cloud"
                       >
                         {f.label} {f.count}
@@ -481,6 +477,11 @@ export default async function CataloguePage({
                 {t(lang, "catalog.miss.share")}
               </a>
             </div>
+          ) : minPrice !== undefined || maxPrice !== undefined || !!zoneId ? (
+            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+              <p>{t(lang, "catalog.none")}</p>
+              <Link href={universe ? universeHref(universe) : "/catalogue"} className="mt-4 inline-flex min-h-11 items-center text-accent underline">{t(lang, "catalog.reset")}</Link>
+            </div>
           ) : filtre && !q ? (
             /* Rayon filtré, AUCUNE recherche : c'est l'atterrissage des cartes
                de la grille d'accueil et des liens du menu. « Aucun résultat +
@@ -490,7 +491,7 @@ export default async function CataloguePage({
                vide muet (landing v2). */
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : activeCat}
+                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}
               </p>
               <p className="mx-auto mt-2 max-w-md text-sm text-mist">
                 {t(lang, "catalog.cat0.b")}
@@ -585,6 +586,7 @@ export default async function CataloguePage({
           </>
         )}
       </section>
+      </main>
 
       <SiteFooter />
     </div>

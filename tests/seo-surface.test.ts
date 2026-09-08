@@ -186,21 +186,12 @@ test("N4 — aucune lecture directe de NEXT_PUBLIC_SITE_URL hors des exemptés",
  * ET des trois paramètres de zone, et c'est LUI qui pilote `robots`. Une
  * canonique qui reprendrait `page` ou `q` recréerait la duplication.
  * ------------------------------------------------------------------------ */
-test("N6 — le catalogue a un generateMetadata, canonique sur le rayon, noindex piloté par la vue de travail", () => {
+test("N6 — catalogue metadata uses tested URL normalization and working-view noindex", () => {
   const src = lire("app/catalogue/page.tsx");
-  assert.doesNotMatch(src, /export const metadata\s*=/, "le metadata statique doit avoir disparu");
-  assert.match(src, /export async function generateMetadata\(/);
-  assert.match(
-    src,
-    /const vueDeTravail = Boolean\(\(q && q\.trim\(\)\) \|\| zd \|\| zk \|\| zq\);[\s\S]{0,400}?robots: vueDeTravail \? \{ index: false, follow: true \} : undefined/,
-    "robots.noindex doit être commandé par vueDeTravail (q + zones)"
-  );
-  // La canonique ne porte ni `page`, ni `q`, ni zone.
-  const iCanon = src.indexOf("const canonique = rayon");
-  const canon = src.slice(iCanon, src.indexOf(";", iCanon));
-  assert.ok(iCanon > 0, "canonique introuvable");
-  assert.doesNotMatch(canon, /\bpage\b|\bq\b|\bzd\b|\bzk\b|\bzq\b/, "la canonique ne doit reprendre ni page, ni q, ni zone");
-  assert.match(canon, /encodeURIComponent\(rayon\)/);
+  assert.match(src, /export async function generateMetadata/);
+  assert.match(src, /const canonical = catalogueCanonical\(raw\)/);
+  assert.match(src, /robots: catalogueIsWorkingView\(raw\)/);
+  assert.doesNotMatch(SITEMAP, /lastModified: now|"\/connexion"/);
 });
 
 test("N5 — le sitemap construit l'URL vendeur par hrefBoutique, jamais en dur", () => {

@@ -20,11 +20,13 @@ export function AdminProductRow({
   title,
   seller,
   status,
+  children,
 }: {
   id: string;
   title: string;
   seller: string;
   status: string;
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(status);
@@ -101,6 +103,7 @@ export function AdminProductRow({
         </select>
       </div>
 
+      {children}
       {erreur && (
         <p
           role="alert"

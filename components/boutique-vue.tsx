@@ -1,3 +1,4 @@
+import { CollectionAction } from "@/components/collection-action";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
@@ -64,6 +65,7 @@ export async function BoutiqueVue({
           </div>
         </div>
 
+        <div className="mt-5"><CollectionAction kind="shops" id={creator.id} lang={lang}/></div>
         {creator.bio && (
           <p className="mt-6 max-w-2xl text-mist">{creator.bio}</p>
         )}

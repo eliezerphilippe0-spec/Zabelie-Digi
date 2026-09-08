@@ -1,3 +1,4 @@
+import { MarketplaceUniverses } from "@/components/marketplace-universes";
 import Link from "next/link";
 import Image from "next/image";
 import { existsSync } from "node:fs";
@@ -222,6 +223,7 @@ export default async function HomePage() {
             celle du porteur quand elle existe ; sinon un aplat de chrome. */}
         <section className="mx-auto max-w-6xl px-3 pt-3">
           <div
+            data-has-featured={Boolean(featured)}
             className="home-hero relative overflow-hidden rounded-2xl bg-chrome text-on-chrome"
             style={heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >
@@ -274,6 +276,7 @@ export default async function HomePage() {
             </div>
           </nav>
         )}
+        {products.length === 0 && <MarketplaceUniverses lang={lang} />}
         {products.length === 0 && (
           <section className="home-catalogue-state mx-auto max-w-6xl px-3 py-8" aria-live="polite">
             <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
@@ -294,6 +297,7 @@ export default async function HomePage() {
         {inedit(fichiers) && (
           <HomeRow title={t(lang, "sec.digital")} more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
         )}
+        {products.length > 0 && <MarketplaceUniverses lang={lang} />}
         {/* Cible de « Talents » (menu compte + pied de page) : posée sur une
             balise du FLUX, avant la rangée des services, jamais en prop d'une
             rangée qui peut s'effacer. `scroll-mt-24` compense l'en-tête collant. */}
@@ -358,26 +362,6 @@ export default async function HomePage() {
           <div><h2>{t(lang, "home.support.title")}</h2><p>{t(lang, "home.support.body")}</p></div>
           <Link href="/aide">{t(lang, "home.support.cta")}<span aria-hidden="true">↗</span></Link>
         </aside>
-
-        {/* FONDATEUR — compact, en fin de page (§4.5). */}
-        <section className="mx-auto max-w-6xl px-3 pt-10">
-          <div className="flex items-start gap-4 rounded-2xl border border-line bg-surface p-4 sm:items-center sm:p-6">
-            <Image
-              src="/brand/eliezer-portrait.jpg"
-              alt={t(lang, "founder.name")}
-              width={72}
-              height={72}
-              className="h-[72px] w-[72px] shrink-0 rounded-xl object-cover object-top"
-            />
-            <div className="min-w-0">
-              <blockquote className="text-sm leading-relaxed text-cloud sm:text-base">« {t(lang, "founder.quote")} »</blockquote>
-              <p className="mt-2 text-sm font-semibold">
-                {t(lang, "founder.name")}
-                <span className="ml-2 font-normal text-mist">{t(lang, "founder.role")}</span>
-              </p>
-            </div>
-          </div>
-        </section>
 
         {/* VENDRE + COMMENT ÇA MARCHE — un seul bloc en fin de page (§4.2, §4.6) :
             la carte « Ouvrez votre boutique » descendue ici, et « Comment ça

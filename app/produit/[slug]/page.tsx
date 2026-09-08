@@ -1,3 +1,6 @@
+import { getDigitalDetails } from "@/lib/digital-details-server";
+import { DIGITAL_DETAIL_FIELDS } from "@/lib/digital-details";
+import { CollectionAction } from "@/components/collection-action";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,6 +33,7 @@ import {
   deliveryNoticeKey,
   isService,
   isDownloadable,
+  pickByKind,
 } from "@/lib/product-kind";
 import { jsonLdProduit } from "@/lib/jsonld-produit";
 
@@ -164,6 +168,7 @@ export default async function ProductPage({
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
   if (!product) notFound();
 
+  const digital = isDownloadable(product.kind) ? (await getDigitalDetails([product.id]))?.get(product.id) : undefined;
   const [reviews, physical, medias, compareHtg, flash] = await Promise.all([
     product.creatorId ? getProductReviews(product.id) : Promise.resolve([]),
     getPhysicalView(product.id),
@@ -187,7 +192,9 @@ export default async function ProductPage({
   const visiteur = isSupabaseConfigured()
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
-  const peutEcrire = Boolean(visiteur) && visiteur!.id !== product.creatorId;
+  const estVendeur = visiteur?.id === product.creatorId;
+  const peutEcrire = Boolean(visiteur && product.creatorId) && !estVendeur;
+  const connexionVendeur = `/connexion?next=${encodeURIComponent(`/produit/${product.slug}#contacter-vendeur`)}`;
 
   const kindKey = kindLabelKey(product.kind, product.id);
   const deliveryBulletKey = bulletKey(product.kind, product.id);
@@ -277,7 +284,7 @@ export default async function ProductPage({
           <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight">
             {product.title}
           </h1>
-          <p className="mt-3 text-mist">{product.blurb}</p>
+          <p className="mt-3 whitespace-pre-line text-base leading-7 text-mist">{product.blurb}</p>
 
           {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
             <div className="mt-4 rounded-2xl border border-line bg-surface/40 p-4">
@@ -319,6 +326,108 @@ export default async function ProductPage({
             )}
           </div>
 
+          {/* Compatibilité véhicule — décisif sur une pièce détachée :
+              l'acheteur a déjà payé quand il découvre l'erreur de référence.
+              Bloc À PART, juste sous le prix : ce n'est pas une ligne de
+              réassurance, c'est un fait qui décide l'achat. Il était imbriqué
+              dans un <li> de la liste ci-dessous, avec le texte de livraison
+              coupé en deux autour — balisage invalide (un <ul> dans un <li>
+              d'une autre liste) et ordre de lecture faux. */}
+          {physical && physical.fitment.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
+              <p className="text-sm font-semibold">Compatible avec</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {physical.fitment.map((f, i) => (
+                  <li
+                    key={i}
+                    className="rounded-full border border-line px-3 py-1 text-sm text-cloud"
+                  >
+                    {f.kind === "moto" ? "🏍 " : "🚗 "}
+                    {f.make} {f.model} · {f.yearStart}
+                    {f.yearEnd ? `–${f.yearEnd}` : "+"}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-sm text-mist">
+                Vérifiez votre modèle avant d&apos;acheter. En cas de doute,
+                contactez le vendeur.
+              </p>
+            </div>
+          )}
+
+          {/* ── Caractéristiques (V-2, docs/35) — seulement ce qui est
+                 RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
+          {physical?.specs && (
+            <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
+              <h2 className="text-sm font-semibold text-cloud">
+                {t(lang, "product.specs.title")}
+              </h2>
+              <dl className="mt-2 space-y-1 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-mist">{t(lang, "product.specs.weight")}</dt>
+                  <dd>{physical.specs.weightGrams} g</dd>
+                </div>
+                {physical.specs.lengthMm &&
+                  physical.specs.widthMm &&
+                  physical.specs.heightMm && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-mist">{t(lang, "product.specs.dims")}</dt>
+                      <dd>
+                        {Math.round(physical.specs.lengthMm / 10)} ×{" "}
+                        {Math.round(physical.specs.widthMm / 10)} ×{" "}
+                        {Math.round(physical.specs.heightMm / 10)} cm
+                      </dd>
+                    </div>
+                  )}
+                {physical.specs.brand && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "sell.specs.brand")}</dt>
+                    <dd>{physical.specs.brand}</dd>
+                  </div>
+                )}
+                {physical.specs.material && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "sell.specs.material")}</dt>
+                    <dd>{physical.specs.material}</dd>
+                  </div>
+                )}
+                {physical.specs.condition && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "sell.specs.condition")}</dt>
+                    <dd>
+                      {t(
+                        lang,
+                        physical.specs.condition === "nef"
+                          ? "specs.condition.nef"
+                          : "specs.condition.dezyem"
+                      )}
+                    </dd>
+                  </div>
+                )}
+                {physical.specs.fragile && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "product.specs.fragile")}</dt>
+                    <dd>✓</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
+
+          {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
+            <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>
+            {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                {DIGITAL_DETAIL_FIELDS.filter((key) => digital[key]).map((key) => <div key={key} className={key === "contents" || key === "license" ? "sm:col-span-2" : ""}>
+                  <dt className="text-sm font-semibold text-mist">{t(lang, `digital.${key}`)}</dt>
+                  <dd className="mt-1 whitespace-pre-line break-words text-base">{digital[key]}</dd>
+                </div>)}
+              </dl>
+              <p className="mt-4 text-sm text-mist">{t(lang, "digital.source")}</p>
+            </>}
+            {(!digital?.formats || !digital?.compatibility || !digital?.license) && <p className="mt-3 text-sm text-mist">{t(lang, "digital.check")}</p>}
+            <p className="mt-3 text-sm text-mist">{t(lang, "digital.access")}</p>
+          </section>}
           <div id="acheter" className="mt-8 scroll-mt-24 rounded-2xl border border-line bg-surface/60 p-6">
             {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
                 pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
@@ -371,8 +480,29 @@ export default async function ProductPage({
                 )}
               </p>
             )}
+            {pickByKind(product.kind, { file: false, service: false, physical: true }, product.id) && (
+              <section aria-labelledby="remise-avant-achat" className="mt-5 rounded-xl border border-line bg-ink/40 p-4">
+                <h2 id="remise-avant-achat" className="text-sm font-semibold">{t(lang, "product.handover.title")}</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-mist">
+                  <li>{t(lang, "product.handover.place")}</li>
+                  <li>{t(lang, "product.handover.time")}</li>
+                  <li>{t(lang, "product.handover.fees")}</li>
+                </ul>
+                <p className="mt-3 text-xs text-mist">{t(lang, "product.handover.note")}</p>
+                {product.creatorId && !estVendeur && (
+                  <Link href={visiteur ? "#contacter-vendeur" : connexionVendeur}
+                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline">
+                    {t(lang, "product.handover.contact")}
+                  </Link>
+                )}
+              </section>
+            )}
             <div className="mt-5">
               <BuyButton
+                key={product.id}
+                recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {
+                  toggle: t(lang, "recipient.toggle"), name: t(lang, "recipient.name"), phone: t(lang, "recipient.phone"), locality: t(lang, "recipient.locality"), note: t(lang, "recipient.note"), consent: t(lang, "recipient.consent"), hint: t(lang, "recipient.hint"), invalid: t(lang, "recipient.invalid"), summary: t(lang, "recipient.summary"),
+                } : undefined}
                 productId={product.id}
                 variants={physical?.variants}
                 stockLabels={{
@@ -475,94 +605,6 @@ export default async function ProductPage({
             )}
           </div>
 
-          {/* Compatibilité véhicule — décisif sur une pièce détachée :
-              l'acheteur a déjà payé quand il découvre l'erreur de référence.
-              Bloc À PART, juste sous le prix : ce n'est pas une ligne de
-              réassurance, c'est un fait qui décide l'achat. Il était imbriqué
-              dans un <li> de la liste ci-dessous, avec le texte de livraison
-              coupé en deux autour — balisage invalide (un <ul> dans un <li>
-              d'une autre liste) et ordre de lecture faux. */}
-          {physical && physical.fitment.length > 0 && (
-            <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
-              <p className="text-sm font-semibold">Compatible avec</p>
-              <ul className="mt-2 flex flex-wrap gap-2">
-                {physical.fitment.map((f, i) => (
-                  <li
-                    key={i}
-                    className="rounded-full border border-line px-3 py-1 text-sm text-cloud"
-                  >
-                    {f.kind === "moto" ? "🏍 " : "🚗 "}
-                    {f.make} {f.model} · {f.yearStart}
-                    {f.yearEnd ? `–${f.yearEnd}` : "+"}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-sm text-mist">
-                Vérifiez votre modèle avant d&apos;acheter. En cas de doute,
-                contactez le vendeur.
-              </p>
-            </div>
-          )}
-
-          {/* ── Caractéristiques (V-2, docs/35) — seulement ce qui est
-                 RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
-          {physical?.specs && (
-            <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
-              <h2 className="text-sm font-semibold text-cloud">
-                {t(lang, "product.specs.title")}
-              </h2>
-              <dl className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-mist">{t(lang, "product.specs.weight")}</dt>
-                  <dd>{physical.specs.weightGrams} g</dd>
-                </div>
-                {physical.specs.lengthMm &&
-                  physical.specs.widthMm &&
-                  physical.specs.heightMm && (
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-mist">{t(lang, "product.specs.dims")}</dt>
-                      <dd>
-                        {Math.round(physical.specs.lengthMm / 10)} ×{" "}
-                        {Math.round(physical.specs.widthMm / 10)} ×{" "}
-                        {Math.round(physical.specs.heightMm / 10)} cm
-                      </dd>
-                    </div>
-                  )}
-                {physical.specs.brand && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "sell.specs.brand")}</dt>
-                    <dd>{physical.specs.brand}</dd>
-                  </div>
-                )}
-                {physical.specs.material && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "sell.specs.material")}</dt>
-                    <dd>{physical.specs.material}</dd>
-                  </div>
-                )}
-                {physical.specs.condition && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "sell.specs.condition")}</dt>
-                    <dd>
-                      {t(
-                        lang,
-                        physical.specs.condition === "nef"
-                          ? "specs.condition.nef"
-                          : "specs.condition.dezyem"
-                      )}
-                    </dd>
-                  </div>
-                )}
-                {physical.specs.fragile && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "product.specs.fragile")}</dt>
-                    <dd>✓</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          )}
-
           <ul className="mt-6 space-y-2 text-sm text-mist">
             <li>{t(lang, "product.secure")}</li>
             {/* Ligne de mode de remise. Absente sur un produit physique : la
@@ -581,27 +623,33 @@ export default async function ProductPage({
               Il est placé APRÈS le bloc de confiance et AVANT le partage :
               la question vient quand l'acheteur hésite encore, pas quand il
               a déjà décidé de transmettre la fiche. */}
-          <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
-            <p className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</p>
-            {peutEcrire ? (
-              <MessageForm
-                productId={product.id}
-                labels={{
-                  placeholder: t(lang, "msg.placeholder"),
-                  send: t(lang, "msg.send"),
-                  sending: t(lang, "msg.sending"),
-                  sent: t(lang, "msg.sent"),
-                  warn: t(lang, "msg.warn"),
-                }}
-              />
-            ) : (
-              /* Le vendeur de la fiche voit ce bloc aussi, et n'y trouve pas de
-                 champ : lui cacher entièrement laisserait croire que ses
-                 acheteurs n'ont pas ce chemin. */
-              <p className="mt-2 text-sm text-mist">{t(lang, "msg.login")}</p>
-            )}
-          </div>
+          {product.creatorId && (
+            <div id="contacter-vendeur" className="mt-6 scroll-mt-24 rounded-2xl border border-line bg-surface/40 p-4">
+              <h2 className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</h2>
+              {peutEcrire ? (
+                <MessageForm
+                  productId={product.id}
+                  labels={{
+                    placeholder: t(lang, "msg.placeholder"),
+                    send: t(lang, "msg.send"),
+                    sending: t(lang, "msg.sending"),
+                    sent: t(lang, "msg.sent"),
+                    warn: t(lang, "msg.warn"),
+                  }}
+                />
+              ) : (
+                estVendeur ? (
+                  <p className="mt-2 text-sm text-mist">{t(lang, "msg.own")}</p>
+                ) : (
+                  <Link href={connexionVendeur} className="mt-2 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+                    {t(lang, "msg.login")}
+                  </Link>
+                )
+              )}
+            </div>
+          )}
 
+          <div className="mt-6"><CollectionAction kind="favorites" id={product.id} lang={lang}/></div>
           <div className="mt-6">
             <ShareButtons
               path={`/produit/${product.slug}`}

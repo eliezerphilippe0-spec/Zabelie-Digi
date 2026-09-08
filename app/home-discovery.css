@@ -114,3 +114,13 @@
 }
 .home-discovery > footer { margin-top: 16px; }
 .home-receipt h2 { text-wrap: balance; }
+
+/* A launch with no featured offer needs no empty second column. */
+.home-discovery .home-hero[data-has-featured="false"] { grid-template-columns: minmax(0, 1fr); padding-block: 32px; }
+.home-hero[data-has-featured="false"] .home-hero-copy { max-width: 900px; }
+.home-hero[data-has-featured="false"] .home-headline { max-width: 25ch; }
+.home-hero[data-has-featured="false"] .home-hero-copy > p:not(.home-kicker) { max-width: 70ch; }
+@media (min-width: 1024px) {
+  .home-hero-copy > p:not(.home-kicker), .home-receipt li p, .home-help p { font-size: 16px; }
+  .home-help > a, .home-category-links a, .home-card-cta { font-size: 14px; }
+}

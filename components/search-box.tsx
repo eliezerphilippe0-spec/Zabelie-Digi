@@ -28,9 +28,13 @@ export function SearchBox({
   submitLabel,
   suggestionsLabel,
   items,
+  initialQuery = "",
+  filters = {},
   compact = false,
   variant = "default",
 }: {
+  initialQuery?: string;
+  filters?: Record<string, string>;
   placeholder: string;
   submitLabel: string;
   /** Titre du groupe de suggestions, ex. « Kategori yo ». */
@@ -45,7 +49,7 @@ export function SearchBox({
    */
   variant?: "default" | "header";
 }) {
-  const [saisie, setSaisie] = useState("");
+  const [saisie, setSaisie] = useState(initialQuery);
   const groupeId = useId();
 
   const suggestions = useMemo(() => {
@@ -59,6 +63,7 @@ export function SearchBox({
   return (
     <div className="relative min-w-0 flex-1">
       <form action="/catalogue" className="flex gap-2">
+        {Object.entries(filters).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <input
           name="q"
           value={saisie}

@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { CatalogueSort } from "@/lib/catalogue-query";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSellerIdsInZone } from "@/lib/zones";
@@ -161,6 +163,10 @@ const SELECT =
   "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name), sous_rayon:zabelie_categories!products_category_id_fkey(slug)";
 
 export type ProductFilters = {
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: CatalogueSort;
+  kind?: ProductKind;
   q?: string;
   category?: string;
   /**
@@ -251,6 +257,8 @@ function filterSample(
   filters?: ProductFilters
 ): ProductView[] {
   let out = items;
+  if (filters?.kind) out = out.filter((p) => p.kind === filters.kind);
+  if (filters?.productIds) out = out.filter((p) => filters.productIds!.includes(p.id));
   const cat = filters?.category;
   if (cat && cat !== "Tout") {
     out = out.filter((p) => p.category === cat);
@@ -263,6 +271,15 @@ function filterSample(
         .toLowerCase()
         .includes(q)
     );
+  }
+  if (filters?.minPrice !== undefined) out = out.filter((p) => p.priceHTG >= filters.minPrice!);
+  if (filters?.maxPrice !== undefined) out = out.filter((p) => p.priceHTG <= filters.maxPrice!);
+  if (filters?.sort && filters.sort !== "recent") {
+    out = [...out].sort((a, b) => {
+      const delta = filters.sort === "ventes" ? b.sales - a.sales
+        : filters.sort === "prix-decroissant" ? b.priceHTG - a.priceHTG : a.priceHTG - b.priceHTG;
+      return delta || a.id.localeCompare(b.id);
+    });
   }
   return out;
 }
@@ -284,6 +301,7 @@ export async function getPublishedProducts(
     // Les produits digitaux ont in_stock = true à vie (0040).
     if (withStockFilter) query = query.eq("in_stock", true);
 
+    if (filters?.kind) query = query.eq("kind", filters.kind);
     if (filters?.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
     }
@@ -339,12 +357,12 @@ export async function getPublishedProducts(
  * choisir de ce qui existe déjà, sinon la première faute d'orthographe
  * devient une catégorie.
  */
-export async function getCatalogueCategories(): Promise<string[]> {
+export async function getCatalogueCategories(kind?: ProductKind): Promise<string[]> {
   if (!isSupabaseConfigured()) {
-    return [...new Set(demoView().map((p) => p.category).filter(Boolean))].sort();
+    return [...new Set(demoView().filter((p) => !kind || p.kind === kind).map((p) => p.category).filter(Boolean))].sort();
   }
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
     .select("category")
     .eq("status", "published")
@@ -352,6 +370,8 @@ export async function getCatalogueCategories(): Promise<string[]> {
     // Borne : la barre n'a pas vocation à refléter un catalogue immense, et
     // une requête non bornée sur une page servie à chaque visite se paie.
     .limit(2000);
+  if (kind) query = query.eq("kind", kind);
+  const { data, error } = await query;
 
   if (error || !data) {
     // Dégrader, jamais casser : sans barre, le catalogue reste consultable.
@@ -413,9 +433,13 @@ export async function recordSearchMiss(input: {
   }
 }
 
-export async function getPublishedProductsPage(
-  filters: ProductFilters & { page?: number }
-): Promise<ProductPage> {
+export async function getPublishedProductsPage(filters: ProductFilters & { page?: number }): Promise<ProductPage> {
+  // React cache is scoped to this render: metadata and HTML share one query,
+  // never a cross-user cache containing session-bound reads.
+  return publishedPageForRender(JSON.stringify(Object.fromEntries(Object.entries(filters).sort(([a], [b]) => a.localeCompare(b)))));
+}
+const publishedPageForRender = cache(async (serialized: string): Promise<ProductPage> => {
+  const filters = JSON.parse(serialized) as ProductFilters & { page?: number };
   const page = Math.max(1, filters.page ?? 1);
   const offset = (page - 1) * CATALOGUE_PAGE_SIZE;
 
@@ -471,6 +495,7 @@ export async function getPublishedProductsPage(
     // Les produits digitaux ont in_stock = true à vie (0040).
     if (withStockFilter) query = query.eq("in_stock", true);
 
+    if (filters.kind) query = query.eq("kind", filters.kind);
     if (filters.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
     }
@@ -496,10 +521,19 @@ export async function getPublishedProductsPage(
       query = query.or(clauses.join(","));
     }
 
+    if (filters.minPrice !== undefined) query = query.gte("price_htg", filters.minPrice);
+    if (filters.maxPrice !== undefined) query = query.lte("price_htg", filters.maxPrice);
+    if (filters.sort === "prix-croissant" || filters.sort === "prix-decroissant") {
+      query = query.order("price_htg", { ascending: filters.sort === "prix-croissant" });
+    } else if (filters.sort === "ventes") {
+      query = query.order("sales_count", { ascending: false });
+    }
+
     // Une ligne de plus que la page demandée : sait s'il y a une suite sans
     // requête COUNT séparée (range() est inclusif aux deux bornes).
     return query
       .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
       .range(offset, offset + CATALOGUE_PAGE_SIZE) as unknown as PromiseLike<{
       data: Row[] | null;
       error: { code?: string; message?: string } | null;
@@ -525,7 +559,7 @@ export async function getPublishedProductsPage(
     total: count ?? offset + items.length,
     totalExact: count != null,
   };
-}
+});
 
 export async function getProductView(
   slug: string

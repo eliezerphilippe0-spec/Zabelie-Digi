@@ -1,6 +1,9 @@
+import { DigitalDetailsEditor } from "@/components/digital-details-editor";
+import { getDigitalDetails } from "@/lib/digital-details-server";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { sellerReadiness, type ReadinessProduct } from "@/lib/seller-readiness";
 import { PublishForm } from "@/components/publish-form";
 import { UploadAsset } from "@/components/upload-asset";
 import { createClient } from "@/lib/supabase/server";
@@ -46,7 +49,7 @@ function Shell({
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main id="main" className="mx-auto max-w-lg px-5 py-16">
+      <main id="main" className="mx-auto max-w-4xl px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sell.title")}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
         {/* Ces deux liens vivent dans le Shell : ils sont donc présents AUSSI
@@ -200,13 +203,13 @@ export default async function VendrePage() {
     ? await tarifSurplusAffiche(createAdminClient(), lang)
     : undefined;
 
-  const { data: mineRaw } = await supabase
+  const { data: mineRaw, error: mineError } = await supabase
     .from("products")
-    .select("id, slug, title, status, kind, price_htg, product_assets(id)")
+    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, product_assets(id)")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
-  type MineRow = {
+  type MineRow = ReadinessProduct & {
     id: string;
     slug: string;
     title: string;
@@ -216,6 +219,7 @@ export default async function VendrePage() {
     product_assets: { id: string }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  const digitalDetails = await getDigitalDetails(mine.filter((p) => isDownloadable(p.kind)).map((p) => p.id));
 
   // Galerie V-1A (docs/35) : l'état initial de chaque gestionnaire vient du
   // serveur — [] tant que 0073 n'est pas appliquée, et le gestionnaire
@@ -280,7 +284,14 @@ export default async function VendrePage() {
   return (
     <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")}>
 
-      <div className="glass rounded-2xl p-6">
+      <nav aria-label={t(lang, "seller.workspace")} className="mb-6 flex flex-wrap gap-2">
+        {[["#mes-produits", "sell.mine.title"], ["/mes-ventes", "seller.orders"], ["/tableau-de-bord", "nav.dashboard"], ["/messages", "seller.messages"]].map(([href, key]) => (
+          <Link key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm">{t(lang, key as import("@/lib/i18n").I18nKey)}</Link>
+        ))}
+      </nav>
+      <details open={mine.length === 0} className="glass rounded-2xl p-6">
+        <summary className="cursor-pointer text-lg font-semibold leading-11">{t(lang, "seller.new")}</summary>
+        <div className="mt-4 max-w-xl">
         <PublishForm
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
@@ -298,6 +309,7 @@ export default async function VendrePage() {
             subcategoryEmpty: t(lang, "publish.subcategory.empty"),
             pricePh: t(lang, "publish.price.ph"),
             descriptionPh: t(lang, "publish.description.ph"),
+            digitalHint: t(lang, "seller.digital.guide"),
             serviceHint: t(lang, "publish.service.hint"),
             deliveryDaysPh: t(lang, "publish.deliveryDays.ph"),
             includesPh: t(lang, "publish.includes.ph"),
@@ -335,8 +347,11 @@ export default async function VendrePage() {
             },
           }}
         />
-      </div>
+        </div>
+      </details>
 
+      <div id="mes-produits" className="scroll-mt-24">
+      {mineError && <p role="alert" className="mt-6 text-sm text-danger-text">{t(lang, "seller.load.error")}</p>}
       {mine.length > 0 && (
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-cloud">{t(lang, "sell.mine.title")}</h2>
@@ -347,7 +362,8 @@ export default async function VendrePage() {
             {mine.map((p, i) => (
               <li
                 key={p.slug}
-                className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm"
+                id={`produit-${p.id}`}
+                className="scroll-mt-24 flex flex-col items-stretch gap-4 rounded-2xl border border-line bg-surface/60 p-5 text-sm"
               >
                 <div className="min-w-0">
                   {/* Correctif audit : un produit brouillon (BL-103, fichier
@@ -373,6 +389,19 @@ export default async function VendrePage() {
                   >
                     {statusLabel(p.status)}
                   </span>
+                  <div className="my-4 rounded-xl border border-line p-4">
+                    <h3 className="font-semibold">{t(lang, "seller.ready.title")}</h3>
+                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {sellerReadiness({ ...p, digitalDetails: digitalDetails?.get(p.id) }, (galeries[i] ?? []).some((m) => m.kind === "image")).map((check) => (
+                        <li key={check.key} className="flex items-start gap-2 text-xs">
+                          <span aria-hidden="true" className={check.complete ? "text-success-text" : "text-warning-text"}>{check.complete ? "✓" : "○"}</span>
+                          <span>{t(lang, check.key)} · {t(lang, check.complete ? "seller.ready.present" : "seller.ready.missing")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-xs text-mist">{t(lang, "seller.ready.note")}</p>
+                    {isDownloadable(p.kind) && <p className="mt-2 text-xs text-mist">{t(lang, "seller.digital.guide")}</p>}
+                  </div>
                   <GalerieManager
                     productId={p.id}
                     initial={(galeries[i] ?? [])
@@ -387,6 +416,7 @@ export default async function VendrePage() {
                     max={MAX_IMAGES_PER_PRODUCT}
                     labels={galerieLabels}
                   />
+                  {p.status === "published" && <>
                   <RabaisManager
                     productId={p.id}
                     prixHtg={p.price_htg}
@@ -399,11 +429,19 @@ export default async function VendrePage() {
                     offre={offresFlash.get(p.id) ?? null}
                     labels={flashLabels}
                   />
+                  </>}
                 </div>
                 {/* L'upload de livrable n'a de sens que pour un fichier. Le
                     `else` étiquetait « Service » tout le reste — un produit
                     physique s'affichait donc comme un service dans le
                     tableau de bord de son propre vendeur. */}
+                {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails !== null && <DigitalDetailsEditor productId={p.id} initial={digitalDetails?.get(p.id)} labels={{
+                  title: t(lang, "digital.edit.title"), hint: t(lang, "digital.edit.hint"),
+                  formats: t(lang, "digital.formats"), language: t(lang, "digital.language"), compatibility: t(lang, "digital.compatibility"),
+                  license: t(lang, "digital.license"), contents: t(lang, "digital.contents"), updates: t(lang, "digital.updates"),
+                  save: t(lang, "digital.save"), saving: t(lang, "digital.saving"), saved: t(lang, "digital.saved"), error: t(lang, "digital.save.error"),
+                }} />}
+                {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails === null && <p role="alert" className="text-sm text-danger-text">{t(lang, "digital.save.error")}</p>}
                 {isDownloadable(p.kind, p.id) ? (
                   <UploadAsset
                     productId={p.id}
@@ -422,6 +460,7 @@ export default async function VendrePage() {
           </ul>
         </div>
       )}
+      </div>
     </Shell>
   );
 }

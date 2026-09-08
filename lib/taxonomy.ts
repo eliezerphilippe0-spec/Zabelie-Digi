@@ -1,3 +1,4 @@
+import type { ProductKind } from "@/lib/product-kind";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isMissingColumn } from "@/lib/products";
@@ -6,24 +7,13 @@ import type { Lang } from "@/lib/i18n";
 import { KIND_PHYSICAL } from "@/lib/product-kind";
 
 /**
- * Navigation par rayon — les 74 catégories de `0035`, enfin lisibles.
- *
- * Elles existaient en base depuis des semaines sans qu'AUCUNE page ne les
- * lise : la seule lecture de `zabelie_categories` était le formulaire de
- * création. 123 rayons saisis, zéro rayon visité.
- *
- * DEUX NIVEAUX, DEUX COLONNES DIFFÉRENTES — c'est le piège de ce chantier :
- *   - le DÉPARTEMENT est écrit en clair dans `products.category`
- *     (« Auto & Moto », `api/products/physical:262`) : les puces dérivées du
- *     catalogue le filtrent déjà ;
- *   - la CATÉGORIE fine vit dans `zabelie_physical_products.category_id`
- *     (`0036:29`), donc uniquement pour les produits physiques.
- * Un produit digital n'a pas de catégorie fine, et n'en aura pas : sa
- * taxonomie est la liste fermée de `lib/product-categories.ts`.
- *
- * V-13 : on n'affiche JAMAIS un rayon vide. Une catégorie n'apparaît que si
- * un produit publié s'y trouve — sinon on remplacerait six libellés faux par
- * soixante-quatorze rayons déserts, ce que la décision interdit nommément.
+ * Taxonomie commune aux produits physiques, fichiers et services.
+ * `products.category` porte le libellé français du département ; depuis
+ * 0098, `products.category_id` porte le niveau 2 ou 3 pour tous les types.
+ * Les facettes commerciales suivent les offres publiées. Le répertoire
+ * /categories montre aussi les catégories actives encore sans offres,
+ * avec un état vide explicite. Les catégories inactives restent exclues
+ * par la politique RLS de la base.
  */
 
 export type Facette = {
@@ -83,7 +73,8 @@ function labelFor(row: CategoryRow, lang: Lang): string {
  */
 export async function getCategoryFacets(
   departmentLabel: string,
-  lang: Lang
+  lang: Lang,
+  kind?: ProductKind
 ): Promise<Facette[]> {
   if (!isSupabaseConfigured() || !departmentLabel) return [];
 
@@ -94,13 +85,15 @@ export async function getCategoryFacets(
   // y est recopié (backfill 0098 + écriture à la création), le digital et le
   // service la reçoivent du formulaire. Un brouillon ne peuple pas un rayon
   // visible : la barre annoncerait une offre qui n'existe pas encore.
-  const { data: liens, error } = await supabase
+  let productsQuery = supabase
     .from("products")
     .select("category_id")
     .eq("status", "published")
     .eq("category", departmentLabel)
     .not("category_id", "is", null)
     .limit(2000);
+  if (kind) productsQuery = productsQuery.eq("kind", kind);
+  const { data: liens, error } = await productsQuery;
 
   if (error || !liens) {
     // Schéma en retard (`0036` non appliquée) ou incident : on dégrade vers

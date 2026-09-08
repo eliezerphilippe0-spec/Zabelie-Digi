@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /** Dépôt d'un avis vérifié (1 par commande payée). */
-export function ReviewForm({ orderId }: { orderId: string }) {
+export function ReviewForm({ orderId, labels }: { orderId: string; labels: {
+  cta: string; success: string; error: string; network: string; stars: string;
+  placeholder: string; submit: string; cancel: string;
+} }) {
   const router = useRouter();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -22,16 +25,15 @@ export function ReviewForm({ orderId }: { orderId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, rating, comment }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setMsg(data.error ?? "Échec.");
+        setMsg(labels.error);
         return;
       }
-      setMsg("Merci pour votre avis !");
+      setMsg(labels.success);
       setOpen(false);
       router.refresh();
     } catch {
-      setMsg("Connexion impossible.");
+      setMsg(labels.network);
     } finally {
       setLoading(false);
     }
@@ -44,7 +46,7 @@ export function ReviewForm({ orderId }: { orderId: string }) {
           onClick={() => setOpen(true)}
           className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50"
         >
-          Laisser un avis
+          {labels.cta}
         </button>
         {msg && <p className="mt-1 text-xs text-mist">{msg}</p>}
       </div>
@@ -59,8 +61,9 @@ export function ReviewForm({ orderId }: { orderId: string }) {
             key={n}
             type="button"
             onClick={() => setRating(n)}
-            aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
-            className={`text-lg transition ${
+            aria-label={labels.stars.replace("{n}", String(n))}
+            aria-pressed={n === rating}
+            className={`min-h-11 min-w-11 text-lg transition ${
               n <= rating ? "text-accent" : "text-mist"
             }`}
           >
@@ -71,7 +74,8 @@ export function ReviewForm({ orderId }: { orderId: string }) {
       <textarea
         rows={2}
         maxLength={1000}
-        placeholder="Votre expérience (optionnel)"
+        aria-label={labels.placeholder}
+        placeholder={labels.placeholder}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         className="w-full rounded-xl border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-accent"
@@ -80,16 +84,16 @@ export function ReviewForm({ orderId }: { orderId: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-60"
+          className="min-h-11 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-60"
         >
-          {loading ? "…" : "Publier"}
+          {loading ? "…" : labels.submit}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-mist hover:text-cloud"
+          className="min-h-11 text-xs text-mist hover:text-cloud"
         >
-          Annuler
+          {labels.cancel}
         </button>
       </div>
       {msg && <p className="text-xs text-danger-text">{msg}</p>}

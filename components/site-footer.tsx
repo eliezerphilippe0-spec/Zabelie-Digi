@@ -1,8 +1,10 @@
+import { guideHref } from "@/lib/buying-guides";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { POLICY_PATH } from "@/lib/policy";
+import { isStripeEnabled } from "@/lib/stripe-config";
 
 export async function SiteFooter() {
   const lang = await getLang();
@@ -13,6 +15,9 @@ export async function SiteFooter() {
         <div className="max-w-xs">
           <BrandLogo />
           <p className="mt-3 text-sm text-mist">{t(lang, "footer.tagline")}</p>
+          <Link href="/a-propos" className="mt-2 inline-flex min-h-11 items-center text-sm text-mist underline underline-offset-4 hover:text-cloud">
+            {t(lang, "about.title")}
+          </Link>
         </div>
 
         {/* ⚠️ LA COLONNE DES RAYONS A ÉTÉ RETIRÉE — demande porteur du
@@ -36,8 +41,12 @@ export async function SiteFooter() {
             <Link href="/catalogue" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.catalog")}
             </Link>
-            <Link href="/#talents" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
-              {t(lang, "nav.talents")}
+            <Link href={guideHref(lang)} className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "guides.title")}</Link>
+            <Link href="/categories" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "directory.title")}</Link>
+            <Link href="/catalogue?univers=objets" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.physical")}</Link>
+            <Link href="/catalogue?univers=numerique" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.digital")}</Link>
+            <Link href="/catalogue?univers=services" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
+              {t(lang, "universe.services")}
             </Link>
           </div>
           <div className="flex flex-col gap-2">
@@ -51,8 +60,12 @@ export async function SiteFooter() {
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.payment")}</p>
+            <Link href="/recharges" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "recharges.title")}</Link>
             <span className="text-mist">MonCash</span>
             <span className="text-mist">Zelle (USD)</span>
+            <span className="text-mist">
+              {isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}
+            </span>
             <span className="text-mist">{t(lang, "footer.natcash")}</span>
           </div>
           <div className="flex flex-col gap-2">

@@ -1,3 +1,4 @@
+import { DocumentLanguage } from "@/components/document-language";
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
@@ -53,6 +54,16 @@ export const metadata: Metadata = {
   // sans NEXT_PUBLIC_SITE_URL pointait ses aperçus vers localhost → lien nu
   // sur WhatsApp. Voir lib/site-url.ts.
   metadataBase: new URL(siteUrl()),
+  // Stable raster URLs for search engines and browsers, generated from
+  // app/icon.svg: the same mark and colours as the site header.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32 48x48 96x96 256x256" },
+      { url: "/favicon.png", type: "image/png", sizes: "96x96" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+  },
   openGraph: {
     title,
     description,
@@ -97,6 +108,7 @@ export default async function RootLayout({
             Supabase déposera l'utilisateur quand l'allowlist Auth ignore le
             `redirectTo` : il retombe sur le Site URL, quel qu'il soit. Ne rend
             rien et ne se déclenche que sur `type=recovery`. */}
+        <DocumentLanguage />
         <RecoveryCatcher />
         {children}
       </body>
