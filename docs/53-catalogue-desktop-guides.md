@@ -10,6 +10,7 @@ Date : 8 septembre 2026. Branche : `feat/catalogue-desktop-seo`.
 - Les fichiers numériques ignorent les anciennes zones de remise. Les produits physiques conservent la remise organisée par leur vendeur.
 - Caractéristiques physiques existantes déplacées avant la décision d’achat. Six caractéristiques numériques publiques sont éditables sur les brouillons : formats, langue, compatibilité, licence, contenu, version/mises à jour. Les champs vides ne sont pas inventés. Une lecture en échec ne permet pas d’écraser des données inconnues.
 - Migration additive `0103_digital_details.sql` : table dédiée sans URL de fichier, RLS lecture publique seulement pour les produits publiés, lecture privée du brouillon par son propriétaire. Écriture par l’API authentifiée, avec contrôle du propriétaire, suspension et cadence. Le trigger verrouille le produit et refuse une édition après publication ou sur un autre type de produit.
+- Modération : les six caractéristiques sont aussi consultables dans la liste administrateur avant publication, après contrôle du rôle.
 - Accueil sans offre vedette : suppression de la colonne vide, meilleure lisibilité sur ordinateur, polices et palette existantes conservées.
 - SEO : description par univers, pagination avec sa propre canonique, `noindex` des vues de recherche/tri/prix et des pages sans résultat. La requête du catalogue est partagée entre métadonnées et rendu, uniquement pour la requête courante.
 - Sitemap sans connexion ni dates de modification inventées ; exclusion des univers et rayons sans offres connues.

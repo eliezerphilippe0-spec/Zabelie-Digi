@@ -59,6 +59,13 @@ const VENDEUR =
 type Classement = { colonne: string } | { horsSujet: string };
 
 const CLASSEMENT: Record<string, Classement> = {
+  "digital.check": { horsSujet: "Conseil à l’acheteur : vérifier format, compatibilité et licence. Ne qualifie pas le vendeur de vérifié." },
+  "guides.diaspora.prepare.body": { horsSujet: "Le destinataire et l’acheteur vérifient les coordonnées ; les modalités sont à convenir avec le vendeur. Aucun badge ni contrôle vendeur promis." },
+  "guides.digital.check.body": { horsSujet: "L’acheteur vérifie les caractéristiques déclarées et demande un aperçu. Il ne s’agit pas d’une certification de ces caractéristiques par Zabelie." },
+  "guides.digital.intro": { horsSujet: "Invitation à vérifier contenu, outils et usages autorisés avant achat. La vérification incombe au lecteur, sans promesse sur le vendeur." },
+  "guides.objects.check.body": { horsSujet: "Conseils de contrôle du produit par l’acheteur, avec invitation à questionner le vendeur en cas d’information absente. Aucune certification vendeur." },
+  "guides.objects.handover.body": { horsSujet: "Agree désigne un accord de remise entre acheteur et vendeur ; il ne signifie pas vendeur agréé. Aucune livraison Zabelie annoncée." },
+
   "recipient.consent": {
     horsSujet: "L'acheteur confirme avoir vérifié les coordonnées du destinataire et obtenu son accord pour les partager. Cela ne certifie pas le vendeur.",
   },
