@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UUID_RE } from "@/lib/digital-studio";
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (user?.role !== "admin") return NextResponse.json({ code: "forbidden" }, { status: 403 });
   const params = new URL(req.url).searchParams;
   const productId = params.get("productId") ?? ""; const assetId = params.get("assetId") ?? "";

@@ -1,3 +1,4 @@
+import { editorialAlternates } from "@/lib/editorial-routing";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -7,7 +8,7 @@ import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
 
 export async function generateMetadata() {
   const lang = await getLang();
-  return { title: t(lang, "recharges.title"), description: t(lang, "recharges.intro"), alternates: { canonical: "/recharges" } };
+  return { title: t(lang, "recharges.title"), description: t(lang, "recharges.intro"), alternates: editorialAlternates("/recharges", lang) };
 }
 
 export default async function RechargesPage() {

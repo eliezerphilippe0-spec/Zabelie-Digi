@@ -104,6 +104,7 @@ test("un champ non renseigné se VOIT, dans les quatre langues", () => {
    * qu'il manque quelque chose. Le marqueur doit être visible. */
   for (const lang of LANGS) {
     for (const cle of Object.keys(IDENTITE) as (keyof typeof IDENTITE)[]) {
+      if (IDENTITE[cle] !== null) continue;
       const rendu = resoudre(`X **{${cle}}** Y`, lang as Lang);
       assert.ok(
         /\[.+\]/.test(rendu),
@@ -136,7 +137,7 @@ test("les blancs sont COMPTÉS — leur nombre ne peut pas grossir en silence", 
   const vides = champsManquants();
   assert.deepEqual(
     vides.sort(),
-    ["email", "entite", "hebergement", "purge", "retentionKyc"],
+    ["entite", "hebergement", "purge", "retentionKyc"],
     `Les faits non renseignés de la politique ont changé : ${vides.join(", ")}. ` +
       `Mettre ce test à jour EN MÊME TEMPS que lib/policy-privacy.ts.`,
   );

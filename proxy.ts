@@ -1,3 +1,4 @@
+import { editorialLangFromPath } from "@/lib/editorial-routing";
 import { guideLangFromPath } from "@/lib/guide-routing";
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -6,9 +7,9 @@ import { updateSession } from "@/lib/supabase/middleware";
 // Supabase à chaque requête. Comportement inchangé — simple renommage du point
 // d'entrée (le helper updateSession reste dans lib/supabase/middleware.ts).
 export async function proxy(request: NextRequest) {
-  // Strip caller-supplied language headers; only an explicit guide URL wins over the cookie.
+  // Strip caller-supplied language headers; only an explicit localized public URL wins over the cookie.
   request.headers.delete("x-zabelie-guide-lang");
-  const guideLang = guideLangFromPath(request.nextUrl.pathname);
+  const guideLang = guideLangFromPath(request.nextUrl.pathname) ?? editorialLangFromPath(request.nextUrl.pathname);
   if (guideLang) request.headers.set("x-zabelie-guide-lang", guideLang);
   const response = await updateSession(request);
 

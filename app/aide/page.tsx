@@ -1,3 +1,4 @@
+import { editorialAlternates } from "@/lib/editorial-routing";
 import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -9,9 +10,10 @@ import { POLICY_PATH } from "@/lib/policy";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-export const metadata = {
-  title: "Aide — Zabelie",
-};
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: t(lang, "aide.title"), description: t(lang, "aide.sub"), alternates: editorialAlternates("/aide", lang) };
+}
 
 /**
  * /aide — le point d'entrée « un humain peut m'aider ».

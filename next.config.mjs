@@ -1,4 +1,5 @@
 import withSerwistInit from "@serwist/next";
+import { releaseIdForCommit } from "./lib/deployment-release.mjs";
 
 /** @type {import('next').NextConfig} */
 
@@ -68,6 +69,10 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // Figé dans le bundle au build, pas recalculé au démarrage du serveur.
+  env: {
+    ZABELIE_RELEASE_ID: releaseIdForCommit(process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA),
+  },
   images: {
     // Pas de générique "**" : next/image proxie le fetch côté serveur, un
     // hostname illimité en ferait un SSRF-as-a-service. Scindé au strict

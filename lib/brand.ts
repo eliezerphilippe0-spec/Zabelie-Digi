@@ -22,7 +22,7 @@
 export const SITE_TITLE = "Zabelie — La marketplace haïtienne";
 
 export const SITE_DESCRIPTION =
-  "Achetez et vendez en Haïti : produits, talents, recharge téléphonique. Paiement mobile money, pensé pour la 3G.";
+  "Achetez et vendez en Haïti : produits physiques, fichiers numériques, formations et services. Découvrez les offres et boutiques des vendeurs Zabelie.";
 
 /** Nom court — contrainte de plateforme : Android tronque au-delà de ~12
  *  caractères sous l'icône de l'écran d'accueil. */

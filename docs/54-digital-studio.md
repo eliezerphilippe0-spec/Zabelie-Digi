@@ -26,3 +26,9 @@ Le contrôle local complet sous Windows présente des écarts connus de chemins/
 ## Déploiement
 
 Appliquer uniquement `0104_digital_studio.sql` après CI verte, vérifier le journal Supabase et enregistrer son empreinte dans `zabelie_schema_migrations`, puis fusionner la PR. Ne pas rejouer les migrations anciennes, notamment 0056 gelée. Autorisation permanente du porteur du 2026-08-17. Aucune commande, aucun paiement ni publication fictive à créer en production pour valider ces écrans.
+
+## Application vérifiée le 8 septembre 2026
+
+Migration 0104 appliquée à 17:50:09 UTC sur `ddditxykopuxxqzgkqwy`, après CI 34238343907 réussie sur `f331c5a65062dc3a70c22d9dc6da4f01474fe73e` (PR 239). Journal Supabase `20260908175009`. Empreinte canonique `94e8e0d4ce8e125be095f293e246d9f0e745da434f5b103f9325f2982d80bc0c` inscrite au registre ; empreinte brute du SQL du journal `b8b6b5ef0b03cee0fba2784f5762660bc770d4fc80d2ec6365ff9cea19235c5e`, identique au fichier transmis. Douze objets numériques requis présents. Tests `digital_studio.test.sql` exécutés sans erreur avec ROLLBACK ; aucun utilisateur de test restant, aucune offre publiée ni ressource créée par ces tests.
+
+Le lot d'audit impose également MFA à `/api/admin/digital-preview`, pour maintenir le même contrat que les autres routes administrateur.

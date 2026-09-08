@@ -69,6 +69,7 @@ export function SearchBox({
           value={saisie}
           onChange={(e) => setSaisie(e.target.value)}
           placeholder={placeholder}
+          aria-label={placeholder}
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
           className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base outline-none focus:border-accent ${
             variant === "header"

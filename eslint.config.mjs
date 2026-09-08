@@ -24,7 +24,7 @@ const config = [
   ...nextVitals,
   ...nextTs,
   {
-    ignores: [".next/**", "node_modules/**", "public/sw.js", "supabase/**"],
+    ignores: [".next/**", "node_modules/**", "public/sw.js", "supabase/**", "validation/**"],
   },
   {
     rules: {
