@@ -6,7 +6,7 @@ import { SkeletonBlock, SkeletonGrid, SkeletonPage } from "@/components/skeleton
 export default function Loading() {
   return (
     <SkeletonPage>
-      <SiteNav />
+      <SiteNav searchPending />
       <section className="mx-auto max-w-6xl px-5 py-12">
         <SkeletonBlock className="mx-auto h-8 w-3/4 max-w-xl" />
         <SkeletonBlock className="mx-auto mt-4 h-4 w-1/2 max-w-md" />

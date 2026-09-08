@@ -4,16 +4,16 @@ import { KIND_FILE } from "../lib/product-kind";
 
 test("desktop filters apply to all results, sort by real price and preserve the universe", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/catalogue?univers=numerique&min=0&max=2000&tri=prix-croissant");
+  await page.goto("/catalogue?univers=numerique&min=0&max=2000&tri=prix-croissant", { waitUntil: "networkidle" });
   const expected = PRODUCTS.filter((p) => p.kind === KIND_FILE && p.priceHTG <= 2000).sort((a, b) => a.priceHTG - b.priceHTG || a.slug.localeCompare(b.slug));
   const hrefs = await page.locator('main a[href^="/produit/"]').evaluateAll((links) => links.map((a) => a.getAttribute("href")));
   expect(hrefs).toEqual(expected.map((p) => `/produit/${p.slug}`));
   await expect(page.locator('input[name="q"]:visible')).toHaveCount(1);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-  await expect(page.locator('header a[href="/panier"]')).toBeVisible();
-  await expect(page.locator('header a[href="/mes-achats"]').first()).toBeVisible();
-  await page.locator('header input[name="q"]').fill("Lightroom");
-  await page.locator('header form button[type="submit"]').click();
+  await expect(page.locator('header:visible a[href="/panier"]')).toBeVisible();
+  await expect(page.locator('header:visible a[href="/mes-achats"]').first()).toBeVisible();
+  await page.locator('header:visible input[name="q"]').fill("Lightroom");
+  await page.locator('header:visible form button[type="submit"]').click();
   await expect(page).toHaveURL(/q=Lightroom/);
   const url = new URL(page.url());
   expect(url.searchParams.get("max")).toBe("2000"); expect(url.searchParams.get("tri")).toBe("prix-croissant");

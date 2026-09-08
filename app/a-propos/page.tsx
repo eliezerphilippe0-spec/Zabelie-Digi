@@ -1,3 +1,4 @@
+import { editorialAlternates } from "@/lib/editorial-routing";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -10,7 +11,7 @@ export async function generateMetadata() {
   return {
     title: t(lang, "about.title"),
     description: t(lang, "about.intro"),
-    alternates: { canonical: "/a-propos" },
+    alternates: editorialAlternates("/a-propos", lang),
   };
 }
 

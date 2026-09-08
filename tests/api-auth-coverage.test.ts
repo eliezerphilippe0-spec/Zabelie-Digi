@@ -91,6 +91,8 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // Le vecteur restant serait une déconnexion forcée par `<img src>` — fermé
   // par l'absence de tout export GET, vérifiée dans tests/deconnexion.test.ts.
   "auth/signout/route.ts": /cookieStore\.getAll\(\)/,
+  // Lecture publique sans mutation : empreinte opaque figée au build, jamais un secret.
+  "deployment/route.ts": /const valid = \/\^\[a-f0-9\]\{64\}\$\/\.test\(release\)/,
   "health/route.ts": /never lies|ne ment jamais/,
   "readyz/route.ts": /Promise\.race/,
 };

@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     .eq("id", productId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.code === "23514" ? t(lang, "studio.fileLimit") + " " + t(lang, "studio.error") : t(lang, "error.generic") }, { status: error.code === "23514" ? 422 : 500 });
   }
   await journaliserActeAdmin(admin, {
     actorId: user.id,

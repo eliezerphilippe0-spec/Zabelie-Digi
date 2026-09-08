@@ -16,6 +16,8 @@ const LIBELLES: Record<AuthProviderId, I18nKey> = {
   apple: "auth.oauth.apple",
 };
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function ConnexionPage() {
   /* Même défaut que /vendre : l'écran dégradé ne signalait RIEN.
    * En production, une base absente ici veut dire que PERSONNE ne peut

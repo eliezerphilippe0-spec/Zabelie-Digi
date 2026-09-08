@@ -115,11 +115,22 @@ jobs:
       - name: E2E (money path)
         run: npm run test:e2e
 
+      # Même check requis e2e, nouveau build isolé : les variables publiques
+      # doivent être présentes à la compilation du client navigateur.
+      - name: Build avec le client Auth configuré
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54323
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: cle-anon-de-test
+          SUPABASE_SERVICE_ROLE_KEY: cle-service-de-test
+        run: npm run build
+      - name: Connexion et inscription dans le navigateur
+        run: npx playwright test --config=playwright.auth.config.ts
+
   sql-tests:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres

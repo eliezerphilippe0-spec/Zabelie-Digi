@@ -1,14 +1,20 @@
+import { editorialLangFromPath } from "@/lib/editorial-routing";
 import { guideLangFromPath } from "@/lib/guide-routing";
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 // Next 16 : convention « proxy » (ex-« middleware »). Rafraîchit la session
 // Supabase à chaque requête. Comportement inchangé — simple renommage du point
 // d'entrée (le helper updateSession reste dans lib/supabase/middleware.ts).
 export async function proxy(request: NextRequest) {
-  // Strip caller-supplied language headers; only an explicit guide URL wins over the cookie.
+  // Strip caller-supplied language headers; only an explicit localized public URL wins over the cookie.
   request.headers.delete("x-zabelie-guide-lang");
-  const guideLang = guideLangFromPath(request.nextUrl.pathname);
+  // Un notFound() tardif après le début du streaming rendrait HTTP 200.
+  const editorialSegment = /^\/([^/]+)\/(aide|a-propos|recharges)\/?$/.test(request.nextUrl.pathname);
+  if (editorialSegment && !editorialLangFromPath(request.nextUrl.pathname)) {
+    return NextResponse.rewrite(new URL("/404", request.url), { status: 404 });
+  }
+  const guideLang = guideLangFromPath(request.nextUrl.pathname) ?? editorialLangFromPath(request.nextUrl.pathname);
   if (guideLang) request.headers.set("x-zabelie-guide-lang", guideLang);
   const response = await updateSession(request);
 

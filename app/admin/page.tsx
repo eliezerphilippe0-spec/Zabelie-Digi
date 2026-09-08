@@ -1,3 +1,4 @@
+import { DigitalModeration } from "@/components/digital-moderation";
 import { DIGITAL_DETAIL_FIELDS, type DigitalDetails } from "@/lib/digital-details";
 import { t } from "@/lib/i18n";
 import Link from "next/link";
@@ -472,6 +473,7 @@ export default async function AdminPage({
                     <dd className="whitespace-pre-line break-words text-mist">{digitalByProduct.get(p.id)![key]}</dd>
                   </div>)}</dl>
                 </details>}
+                <DigitalModeration productId={p.id}/>
               </AdminProductRow>
             ))}
           </ul>

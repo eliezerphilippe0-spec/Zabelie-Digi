@@ -1,3 +1,5 @@
+import { resolveDigitalRelease } from "@/lib/digital-studio-server";
+import { UUID_RE } from "@/lib/digital-studio";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,8 +16,11 @@ const BUCKET = "product-files"; // bucket privé Supabase Storage
  * appartient au demandeur ET qu'elle est payée. Le fichier n'est jamais public.
  */
 export async function GET(req: Request) {
-  const orderId = new URL(req.url).searchParams.get("orderId");
-  if (!orderId) {
+  const params = new URL(req.url).searchParams;
+  const orderId = params.get("orderId");
+  const releaseId = params.get("releaseId") ?? undefined;
+  const assetId = params.get("assetId");
+  if (!orderId || !UUID_RE.test(orderId) || (releaseId && !UUID_RE.test(releaseId)) || (assetId && !UUID_RE.test(assetId))) {
     return NextResponse.json({ error: "orderId requis" }, { status: 400 });
   }
 
@@ -63,13 +68,9 @@ export async function GET(req: Request) {
     );
   }
 
-  // Livrable du produit.
-  const { data: asset } = await admin
-    .from("product_assets")
-    .select("storage_path, file_name")
-    .eq("product_id", order.product_id)
-    .limit(1)
-    .single();
+  const access = await resolveDigitalRelease(admin, order.id, releaseId);
+  // Never substitute the mutable current file for the acquired snapshot.
+  const asset = access?.release.payload.files.find(f => !assetId || f.id === assetId);
 
   if (!asset) {
     return NextResponse.json(
@@ -93,7 +94,8 @@ export async function GET(req: Request) {
   }
 
   // Marque la commande comme livrée (best-effort, idempotent).
-  await admin.from("orders").update({ status: "delivered" }).eq("id", order.id);
+  await admin.from("orders").update({ status: "delivered" }).eq("id", order.id).eq("buyer_id", user.id).eq("status", "paid");
+  if (access) await admin.from("zabelie_digital_accesses").upsert({ order_id: order.id, release_id: access.release.id, asset_id: asset.id }, { onConflict: "order_id,release_id,asset_id", ignoreDuplicates: true });
 
-  return NextResponse.json({ url: signed.signedUrl });
+  return NextResponse.json({ url: signed.signedUrl }, { headers: { "Cache-Control": "private, no-store" } });
 }

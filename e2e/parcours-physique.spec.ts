@@ -120,7 +120,12 @@ test.describe("Parcours produit physique", () => {
     // `delivered` pour une remise qui n'a jamais eu lieu.
     const ecritures = await (await request.get(`${STUB}/__ecritures`)).json();
     expect(
-      ecritures,
+      ecritures.filter((entry: { query: string }) => {
+        const target = new URLSearchParams(entry.query).get("id");
+        // Keep untargeted writes: a global UPDATE must still fail this test.
+        // Other paid digital orders are exercised concurrently by the suite.
+        return !target || target === `eq.${ORDER_ID}`;
+      }),
       "la route a écrit sur orders alors qu'elle aurait dû refuser"
     ).toEqual([]);
   });

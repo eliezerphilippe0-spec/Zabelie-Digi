@@ -255,6 +255,7 @@ function ConnexionFormInner({
       </Link>
 
       <div className="glass rounded-3xl p-7">
+        <h1 className="mb-5 text-2xl font-bold">{mode === "signin" ? labels.tabSignin : labels.tabSignup}</h1>
         <div className="mb-6 flex rounded-xl border border-line p-1 text-sm">
           <button
             onClick={() => setMode("signin")}
@@ -375,7 +376,7 @@ function ConnexionFormInner({
           </p>
         )}
 
-        {msg && <p className="mt-4 text-center text-xs text-mist">{msg}</p>}
+        {msg && <p role="status" aria-live="polite" className="mt-4 text-center text-xs text-mist">{msg}</p>}
       </div>
 
       <p className="mt-6 text-center text-xs text-mist">

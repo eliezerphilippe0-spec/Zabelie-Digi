@@ -51,7 +51,7 @@ export const IDENTITE: Record<
   string | null
 > = {
   entite: null,
-  email: null,
+  email: "contact@zabelie.com",
   purge: null,
   hebergement: null,
   retentionKyc: null,

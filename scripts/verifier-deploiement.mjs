@@ -1,120 +1,87 @@
 #!/usr/bin/env node
-/**
- * LE DÉPLOIEMENT A-T-IL VRAIMENT ABOUTI ? — contrôle d'après-fusion.
- *
- * Pourquoi ce script existe. `/api/readyz` sonde le chemin des ACHETEURS —
- * client anon, PostgREST, RLS — et rend 503 quand la base ne répond pas. Il
- * était en place depuis `docs/30`, correct, publiquement exposé… et **personne
- * ne l'appelait**. Ni la CI, ni les huit crons, ni un contrôle après
- * déploiement. C'est le motif « code sans appelant » de `CLAUDE.md` appliqué à
- * la vérification du déploiement : l'instrument existe, il n'a jamais servi.
- *
- * Les géants font tourner un *canary* sur un pourcentage du trafic réel. À 0
- * utilisateur il n'y a pas de trafic à découper — la version utile ici tient en
- * une phrase : **après chaque fusion, quelqu'un appelle la sonde et crie si
- * elle ne répond pas.**
- *
- * ─── LES TROIS FAÇONS DONT CE GENRE DE CONTRÔLE MENT ────────────────────────
- * Chacune produit un vert qui ne veut rien dire, et chacune est gardée ici :
- *
- *   1. **L'URL manquante lue comme un succès.** Un contrôle qui « saute » faute
- *      de configuration est PIRE que pas de contrôle : il rassure. Ici,
- *      l'absence d'URL est un ÉCHEC.
- *   2. **Le réseau injoignable lu comme un succès.** Un `try/catch` qui avale
- *      l'erreur, épuise ses essais et sort en 0 dit « tout va bien » alors que
- *      rien n'a répondu. Ici, l'épuisement est un ÉCHEC.
- *   3. **Le 200 pris pour argent comptant.** Une page d'erreur servie en 200
- *      passerait. On exige donc `ok: true` DANS le corps — c'est le contrat de
- *      `readyz`, et il coûte une ligne à vérifier.
- *
- * ⚠️ Ce que ce contrôle NE dit pas : que le déploiement sert le dernier
- * commit. `readyz` n'expose ni version ni schéma — délibérément, il est public.
- * Il dit « le site répond et la base derrière lui aussi ». C'est déjà tout ce
- * qui manquait.
- */
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { releaseIdForCommit } from "../lib/deployment-release.mjs";
 
-/** Budget par défaut : Vercel déploie en général sous une minute. */
-export const ESSAIS_PAR_DEFAUT = 10;
-export const ATTENTE_MS_PAR_DEFAUT = 6000;
+export const ESSAIS_PAR_DEFAUT = 60;
+export const ATTENTE_MS_PAR_DEFAUT = 10000;
+
+/** Chaque requête, lecture du corps comprise, possède son propre délai. */
+async function lireJson(fetchFn, url, timeoutMs) {
+  const controller = new AbortController();
+  let timer;
+  try {
+    return await Promise.race([
+      (async () => {
+        const response = await fetchFn(url, {
+          cache: "no-store", redirect: "error", signal: controller.signal,
+          headers: { "Cache-Control": "no-cache" },
+        });
+        return { status: response.status, body: await response.json() };
+      })(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new Error("délai réseau dépassé"));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
 
 /**
- * @param {{url?: string, fetchFn?: typeof fetch, essais?: number,
- *          attendreMs?: number, dormir?: (ms: number) => Promise<void>,
- *          journal?: (ligne: string) => void}} options
- * @returns {Promise<{ok: boolean, motif: string, tentatives: number}>}
+ * Exige LA livraison attendue ET une base accessible par le chemin acheteur.
+ * @param {{url?: string, expectedCommit?: string, fetchFn?: typeof fetch, essais?: number,
+ * attendreMs?: number, timeoutMs?: number, dormir?: (ms: number) => Promise<void>,
+ * journal?: (ligne: string) => void}} options
  */
 export async function verifierDeploiement({
-  url,
-  fetchFn = fetch,
-  essais = ESSAIS_PAR_DEFAUT,
-  attendreMs = ATTENTE_MS_PAR_DEFAUT,
-  dormir = (ms) => new Promise((r) => setTimeout(r, ms)),
-  journal = () => {},
+  url, expectedCommit, fetchFn = fetch, essais = ESSAIS_PAR_DEFAUT,
+  attendreMs = ATTENTE_MS_PAR_DEFAUT, timeoutMs = 8000,
+  dormir = (ms) => new Promise((r) => setTimeout(r, ms)), journal = () => {},
 } = {}) {
-  // (1) Pas d'URL : ÉCHEC, jamais un saut silencieux.
-  const base = (url ?? "").trim();
-  if (!base) {
-    return {
-      ok: false,
-      motif:
-        "URL absente — posez ZABELIE_URL. Un contrôle qui saute faute de configuration rassure sans rien vérifier.",
-      tentatives: 0,
-    };
+  let base;
+  try {
+    base = new URL((url ?? "").trim());
+    if (!/^https?:$/.test(base.protocol) || base.username || base.password || base.search || base.hash || base.pathname !== "/") throw new Error();
+  } catch {
+    return { ok: false, motif: "ZABELIE_URL absente ou invalide (origine HTTP(S) requise)", tentatives: 0 };
   }
-
-  const cible = `${base.replace(/\/+$/, "")}/api/readyz`;
+  const expectedRelease = releaseIdForCommit(expectedCommit);
+  if (!expectedRelease) return { ok: false, motif: "ZABELIE_EXPECTED_COMMIT absent ou invalide (SHA Git complet requis)", tentatives: 0 };
+  if (!Number.isInteger(essais) || essais < 1 || !Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return { ok: false, motif: "Budget de vérification invalide", tentatives: 0 };
+  }
   let dernier = "aucune tentative";
-
   for (let n = 1; n <= essais; n++) {
     try {
-      const res = await fetchFn(cible, {
-        headers: { "Cache-Control": "no-cache" },
-      });
-      let corps = null;
-      try {
-        corps = await res.json();
-      } catch {
-        corps = null;
+      const deployed = await lireJson(fetchFn, new URL("/api/deployment", base).href, timeoutMs);
+      if (deployed.status !== 200 || deployed.body?.release !== expectedRelease) {
+        dernier = `livraison attendue absente (HTTP ${deployed.status})`;
+      } else {
+        const ready = await lireJson(fetchFn, new URL("/api/readyz", base).href, timeoutMs);
+        if (ready.status === 200 && ready.body?.ok === true) {
+          journal(`✓ Livraison attendue et readyz 200 ok:true (tentative ${n})`);
+          return { ok: true, motif: `livraison attendue, 200 ok:true en ${n} tentative(s)`, tentatives: n };
+        }
+        dernier = `readyz non sain (HTTP ${ready.status})`;
       }
-
-      // (3) Le corps décide, pas seulement le code.
-      if (res.status === 200 && corps && corps.ok === true) {
-        journal(`✓ ${cible} — 200, ok:true (tentative ${n}, ${corps.latencyMs ?? "?"} ms côté base)`);
-        return { ok: true, motif: `200 ok:true en ${n} tentative(s)`, tentatives: n };
-      }
-      dernier = `HTTP ${res.status}, corps ${corps ? JSON.stringify(corps) : "illisible"}`;
-    } catch (e) {
-      dernier = `injoignable : ${e instanceof Error ? e.message : String(e)}`;
+    } catch (error) {
+      dernier = error instanceof Error ? error.message : "erreur réseau";
     }
-
     journal(`… tentative ${n}/${essais} — ${dernier}`);
     if (n < essais) await dormir(attendreMs);
   }
-
-  // (2) Essais épuisés : ÉCHEC. Le silence n'est pas un succès.
-  return {
-    ok: false,
-    motif: `${essais} tentative(s) sans réponse saine. Dernière : ${dernier}`,
-    tentatives: essais,
-  };
+  return { ok: false, motif: `${essais} tentative(s) sans livraison saine. Dernière : ${dernier}`, tentatives: essais };
 }
 
-/* Exécution directe : la sortie non nulle fait rougir le workflow.
- *
- * Enveloppé dans une fonction async — PAS de `await` de haut niveau : le
- * fichier est importé par `tests/verifier-deploiement.test.ts`, et un
- * top-level await casse la transformation du lanceur de tests. Un script
- * qu'on ne peut pas importer est un script qu'on ne peut pas éprouver. */
-if (import.meta.url === `file://${process.argv[1]}`) {
-  (async () => {
-    const r = await verifierDeploiement({
-      url: process.env.ZABELIE_URL ?? process.argv[2],
-      journal: (l) => console.log(l),
-    });
-    if (!r.ok) {
-      console.error(`✗ Déploiement NON vérifié — ${r.motif}`);
-      process.exit(1);
-    }
-    console.log(`✓ Déploiement vérifié — ${r.motif}`);
-  })();
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  verifierDeploiement({
+    url: process.env.ZABELIE_URL ?? process.argv[2],
+    expectedCommit: process.env.ZABELIE_EXPECTED_COMMIT,
+    journal: (line) => console.log(line),
+  }).then((result) => {
+    console.log(`${result.ok ? "✓" : "✗"} Déploiement ${result.ok ? "vérifié" : "NON vérifié"} — ${result.motif}`);
+    process.exitCode = result.ok ? 0 : 1;
+  }).catch(() => { console.error("✗ Vérification interrompue"); process.exitCode = 1; });
 }

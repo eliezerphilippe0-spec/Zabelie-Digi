@@ -29,11 +29,14 @@ export function SearchBox({
   suggestionsLabel,
   items,
   initialQuery = "",
+  pending = false,
   filters = {},
   compact = false,
   variant = "default",
 }: {
   initialQuery?: string;
+  /** Le contenu en cours de chargement ne connaît pas encore les filtres. */
+  pending?: boolean;
   filters?: Record<string, string>;
   placeholder: string;
   submitLabel: string;
@@ -62,13 +65,15 @@ export function SearchBox({
 
   return (
     <div className="relative min-w-0 flex-1">
-      <form action="/catalogue" className="flex gap-2">
+      <form action="/catalogue" aria-busy={pending} className="flex gap-2">
         {Object.entries(filters).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <input
+          disabled={pending}
           name="q"
           value={saisie}
           onChange={(e) => setSaisie(e.target.value)}
           placeholder={placeholder}
+          aria-label={placeholder}
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
           className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base outline-none focus:border-accent ${
             variant === "header"
@@ -80,6 +85,7 @@ export function SearchBox({
           <button
             type="submit"
             aria-label={submitLabel}
+            disabled={pending}
             title={submitLabel}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-on-chrome transition hover:bg-on-chrome/10 active:scale-[0.97]"
           >
@@ -96,6 +102,7 @@ export function SearchBox({
           </button>
         ) : (
         <button
+          disabled={pending}
           type="submit"
           /* SECONDAIRE, et c'est une règle : le CHROME ne porte jamais
              l'accent primaire. Cette barre est collante, donc présente sur

@@ -30,7 +30,8 @@ test("UA1 — chaque surface d'atterrissage a un loading.tsx qui rend le squelet
     const src = lire(f);
     assert.match(src, /from "@\/components\/skeleton"/, `${f} n'importe pas le squelette partagé`);
     assert.match(src, /<SkeletonPage>/, `${f} doit envelopper dans <SkeletonPage> (aria-busy)`);
-    assert.match(src, /<SiteNav \/>/, `${f} doit garder la vraie barre : l'utilisateur peut naviguer pendant l'attente`);
+    const searchPending = f === "app/loading.tsx" || f === "app/catalogue/loading.tsx";
+    assert.match(src, searchPending ? /<SiteNav searchPending \/>/ : /<SiteNav \/>/, `${f} garde les liens de navigation ; la recherche attend ses filtres si le catalogue n’est pas encore rendu`);
   }
 });
 

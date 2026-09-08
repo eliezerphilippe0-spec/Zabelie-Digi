@@ -181,27 +181,17 @@ test("le garde de publication est fail-closed", () => {
   );
 });
 
-test("le remplacement d'un livrable insère AVANT de supprimer", () => {
-  const iInsert = UPLOAD.indexOf('.from("product_assets").insert(');
-  const iDelete = UPLOAD.indexOf('.from("product_assets")\n      .delete()');
-  assert.ok(iInsert > 0, "insertion du livrable introuvable");
-  assert.ok(iDelete > 0, "suppression de l'ancien livrable introuvable");
-  assert.ok(
-    iInsert < iDelete,
-    "L'ordre `delete` puis `insert` détruit le livrable existant quand " +
-      "l'insertion échoue : le vendeur croit remplacer son fichier et le perd, " +
-      "et un produit publié devient indélivrable en silence."
-  );
+test("l’ajout de fichiers ne détruit aucun ancien livrable", () => {
+  assert.match(UPLOAD, /from\("product_assets"\)\.insert\(/);
+  assert.doesNotMatch(UPLOAD, /\.delete\(/);
+  assert.doesNotMatch(UPLOAD, /remove\(\[oldAsset/);
+  assert.match(UPLOAD, /product\.status !== "draft"/);
 });
 
-test("la suppression de l'ancien livrable est ciblée, pas globale", () => {
-  assert.doesNotMatch(
-    UPLOAD,
-    /\.from\("product_assets"\)\s*\.delete\(\)\s*\.eq\("product_id"/,
-    "Supprimer PAR `product_id` efface aussi la ligne qu'on vient d'insérer. " +
-      "La suppression doit viser l'ancien identifiant."
-  );
-  assert.match(UPLOAD, /\.delete\(\)\s*\.eq\("id", oldAsset\.id\)/);
+test("le retrait de brouillon est ciblé et préserve les objets versionnés", () => {
+  const studio = readFileSync("app/api/products/digital-studio/route.ts", "utf8");
+  assert.match(studio, /\.delete\(\)\.eq\("id", String\(body\.assetId\)\)\.eq\("product_id", productId\)/);
+  assert.doesNotMatch(studio, /storage[\s\S]*remove\(/);
 });
 
 test("le filet digital est appelé par le cron déclaré", () => {

@@ -1,3 +1,4 @@
+import { EDITORIAL_PATHS, editorialAlternates } from "@/lib/editorial-routing";
 import { CATALOGUE_UNIVERSES, catalogueUniverse } from "@/lib/catalogue-universes";
 import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
 import { LANGS } from "@/lib/i18n";
@@ -26,10 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/catalogue?univers=objets",
     "/catalogue?univers=numerique",
     "/catalogue?univers=services",
-    "/recharges",
     "/vendre",
-    "/aide",
-    "/a-propos",
   ].filter((path) => {
     if (!path.startsWith("/catalogue")) return true;
     const universe = catalogueUniverse(new URL(path, base).searchParams.get("univers"));
@@ -93,5 +91,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${base}${guideHref(lang, slug)}`,
     alternates: { languages: Object.fromEntries(LANGS.map((l) => [l, `${base}${guideHref(l, slug)}`])) },
   })));
-  return [...staticRoutes, ...rayonRoutes, ...productRoutes, ...creatorRoutes, ...guideRoutes];
+  const editorialRoutes: MetadataRoute.Sitemap = EDITORIAL_PATHS.flatMap((path) => LANGS.map((lang) => ({
+    url: `${base}/${lang}${path}`,
+    alternates: { languages: Object.fromEntries(Object.entries(editorialAlternates(path, lang).languages).map(([key, href]) => [key, `${base}${href}`])) },
+  })));
+  return [...editorialRoutes, ...staticRoutes, ...rayonRoutes, ...productRoutes, ...creatorRoutes, ...guideRoutes];
 }

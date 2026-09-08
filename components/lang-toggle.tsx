@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { guideLanguagePath } from "@/lib/guide-routing";
+import { editorialLanguagePath, editorialLangFromPath } from "@/lib/editorial-routing";
+import { guideLanguagePath, guideLangFromPath } from "@/lib/guide-routing";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 
 /**
@@ -20,6 +21,10 @@ const NOM: Record<Lang, string> = {
   en: "English",
   es: "Español",
 };
+
+// Conservé pendant une navigation cliente qui remonte la page et son en-tête.
+// N'est renseigné que par un clic utilisateur dans le navigateur.
+const LANGUAGE_FOCUS_KEY = "zabelie-language-focus";
 
 function closeMenu(menu: HTMLDetailsElement | null, restoreFocus = false) {
   if (!menu) return;
@@ -88,6 +93,17 @@ export function LangToggle({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    const routeLang = guideLangFromPath(pathname) ?? editorialLangFromPath(pathname);
+    if (!compact || isPending || current !== routeLang) return;
+    try { if (sessionStorage.getItem(LANGUAGE_FOCUS_KEY) !== pathname) return; } catch { return; }
+    const frame = requestAnimationFrame(() => {
+      menuRef.current?.querySelector("summary")?.focus({ preventScroll: true });
+      try { sessionStorage.removeItem(LANGUAGE_FOCUS_KEY); } catch { /* Stockage indisponible : aucun effet sur la langue. */ }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [compact, pathname, current, isPending]);
+
+  useEffect(() => {
     if (!compact) return;
     function dismissOutside(event: PointerEvent) {
       const menu = menuRef.current;
@@ -113,9 +129,12 @@ export function LangToggle({
     closeMenu(menuRef.current, true);
     if (lang === current || isPending) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
-    const guidePath = guideLanguagePath(pathname, lang);
+    const guidePath = guideLanguagePath(pathname, lang) ?? (editorialLangFromPath(pathname) ? editorialLanguagePath(pathname, lang) : null);
+    if (compact && guidePath) {
+      try { sessionStorage.setItem(LANGUAGE_FOCUS_KEY, guidePath); } catch { /* La navigation reste disponible sans stockage. */ }
+    }
     startTransition(() => {
-      if (guidePath) router.push(guidePath);
+      if (guidePath) router.push(guidePath + window.location.search + window.location.hash, { scroll: false });
       else router.refresh();
     });
   }
