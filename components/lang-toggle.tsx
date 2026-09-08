@@ -3,7 +3,7 @@
 import { useEffect, useRef, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { editorialLanguagePath, editorialLangFromPath } from "@/lib/editorial-routing";
-import { guideLanguagePath } from "@/lib/guide-routing";
+import { guideLanguagePath, guideLangFromPath } from "@/lib/guide-routing";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 
 /**
@@ -93,14 +93,15 @@ export function LangToggle({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!compact) return;
+    const routeLang = guideLangFromPath(pathname) ?? editorialLangFromPath(pathname);
+    if (!compact || isPending || current !== routeLang) return;
     try { if (sessionStorage.getItem(LANGUAGE_FOCUS_KEY) !== pathname) return; } catch { return; }
     const frame = requestAnimationFrame(() => {
       menuRef.current?.querySelector("summary")?.focus({ preventScroll: true });
       try { sessionStorage.removeItem(LANGUAGE_FOCUS_KEY); } catch { /* Stockage indisponible : aucun effet sur la langue. */ }
     });
     return () => cancelAnimationFrame(frame);
-  }, [compact, pathname, current]);
+  }, [compact, pathname, current, isPending]);
 
   useEffect(() => {
     if (!compact) return;
