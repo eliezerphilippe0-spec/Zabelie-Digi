@@ -26,7 +26,6 @@ const BUCKET = "product-files";
  */
 export function UploadAsset({
   productId,
-  hasAsset,
   labels,
 }: {
   productId: string;
@@ -41,6 +40,7 @@ export function UploadAsset({
   async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size === 0 || file.size > 50 * 1024 * 1024) { setMsg(labels.error); e.target.value = ""; return; }
     setLoading(true);
     setMsg(null);
     try {
@@ -104,7 +104,7 @@ export function UploadAsset({
         disabled={loading}
         className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50 disabled:opacity-60"
       >
-        {loading ? labels.sending : hasAsset ? labels.replace : labels.add}
+        {loading ? labels.sending : labels.add}
       </button>
       {msg && <p className="mt-1 text-xs text-mist">{msg}</p>}
     </div>

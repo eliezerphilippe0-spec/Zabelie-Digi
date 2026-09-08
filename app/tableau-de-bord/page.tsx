@@ -1,3 +1,4 @@
+import { DigitalSellerMetrics } from "@/components/digital-seller-metrics";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -515,6 +516,8 @@ export default async function DashboardPage({
           </div>
         ))}
       </div>
+
+      <DigitalSellerMetrics sellerId={user.id} lang={lang}/>
 
       <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
         <p className="text-sm text-mist">
