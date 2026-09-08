@@ -46,6 +46,18 @@ export default defineConfig({
   use: { trace: "on-first-retry", launchOptions },
   webServer: [
     {
+      command: "node e2e/fixtures/stub-mfa.mjs",
+      url: "http://127.0.0.1:54322/__sante",
+      reuseExistingServer: RECYCLER,
+    },
+    {
+      command: "npm run start",
+      url: "http://127.0.0.1:3002",
+      env: { ...STUB_ENV, NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54322", PORT: "3002" },
+      reuseExistingServer: RECYCLER,
+      timeout: 120_000,
+    },
+    {
       command: "npm run start",
       // Le projet `chromium` tourne SANS Supabase : son catalogue est celui de
       // `lib/sample-data.ts`. Depuis que les fixtures sont un OPT-IN explicite
@@ -80,8 +92,13 @@ export default defineConfig({
   ],
   projects: [
     {
+      name: "admin-mfa",
+      testMatch: /admin-mfa/,
+      use: { ...devices["Desktop Chrome"], baseURL: "http://127.0.0.1:3002" },
+    },
+    {
       name: "chromium",
-      testIgnore: /parcours-physique/,
+      testIgnore: /parcours-physique|admin-mfa/,
       use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3000" },
     },
     {

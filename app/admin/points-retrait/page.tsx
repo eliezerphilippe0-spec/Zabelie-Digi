@@ -1,5 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { PickupAdmin } from "./pickup-admin";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export const metadata = { title: "Points de retrait — Admin Zabelie" };
  * les points ouverts (RLS `actif`).
  */
 export default async function AdminPickupPage() {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return (
       <AdminShell title="Points de retrait" actif="/admin/points-retrait">

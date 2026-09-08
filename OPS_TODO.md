@@ -689,7 +689,7 @@ lui-même ; le produit l'attend en brouillon.
 | ✅ ~~Branche par défaut GitHub~~ — **FAIT 2026-08-03**, réglée sur `main`. | — | Résolu. |
 | ✅ ~~Protection de `main`~~ — **FAIT 2026-08-03.** `build` · `e2e` · `sql-tests` exigés. | — | Résolu. ⚠️ Le premier réglage visait **toutes** les branches et bloquait toute poussée — les contrôles s'exécutant AU push, aucune branche ne pouvait naître (`GH013`). Corrigé pour ne viser que la branche par défaut. À savoir si la règle est un jour recréée. |
 | ✅ ~~D-4 — sens de l'arrondi~~ — **CLOSE le 2026-08-03 : `floor`.** `0044` appliquée en base et au registre, PR #61 fusionnée, sonde à `accord`. Vérifié en base : 25 HTG → commission 2, net vendeur 23 ; les deux copies de la règle appellent le helper unique. | — | Résolu. La première vente réelle n'a plus de préalable décisionnel. |
-| ✅ ~~Signature datée du réexamen `sharp`~~ — **SIGNÉE 2026-08-03, réexamen au 2026-11-03.** | — | Résolu. Deux événements rouvrent le dossier, le premier qui arrive gagne : la date, ou le premier téléversement vendeur. |
+| ✅ ~~Réexamen `sharp`~~ — **Correction préparée le 2026-09-07.** | — | Next 16.3.4 / sharp 0.35.4 ; audit npm sans vulnérabilité. Fusion et déploiement à vérifier. |
 | **🔴 `Site URL` Supabase + `NEXT_PUBLIC_SITE_URL` Vercel** | 2026-08-04 | **La première commande réelle.** Le lien de confirmation renvoie vers `localhost:3000` — un vendeur qui s'inscrit croit que ça a échoué. Et sans `NEXT_PUBLIC_SITE_URL`, l'aperçu WhatsApp fige le mauvais domaine, avec un cache persistant : à poser **avant** tout partage. |
 | ✅ ~~**Appliquer `0051` (clairin)**~~ — **APPLIQUÉE le 2026-08-21 22:55:07Z**, `preuve = journal_supabase`, sur signal direct « applique 0051 ». Post-conditions : **K1** une seule ligne `klerin` (ni zéro — le piège de l'`insert … select` qui n'insère rien en silence — ni deux) · **K2** rattachée à `pwodwi-lokal`, niveau 3 · **K3** **INACTIVE** · **K4** connu-négatif du rejeu : réappliquer avec `active = true` ne crée pas de doublon **et ne réactive pas** le rayon. Mesuré après : 589 catégories, **45 actives au niveau 3 — inchangé**. ⚠️ **Ce que l'application n'a PAS fait** : ouvrir le rayon. Le clairin est un spiritueux, Zabelie ne vérifie pas l'âge et ne livre pas ; le contrôle a lieu à la remise, en main propre, et il appartient au vendeur. **L'ouverture reste un second geste, délibérément séparé** — c'est lui qui engage. ⚠️ **En-tête de la migration périmé, corrigé ici** : il affirmait « `zabelie_policy_acceptances` est vide ». Mesuré à l'application : **une** acceptation, en **`v2`** (2026-08-11 01:46:34Z) — donc la version qui contient déjà la section « Alcool », et `POLICY_VERSION = "v2"` est déjà dans le code déployé. La conclusion de l'en-tête tient, sa prémisse non. | 2026-08-01 | Résolu côté base. Le rayon produits locaux existe, invisible. **Reste une décision, pas un geste technique** : ouvrir ou non le rayon — `update zabelie_categories set active = true where slug in ('klerin','pwodwi-lokal', …)`. C'est une zone d'arrêt (positionnement + engagement produit), pas une application de migration. |
 | ✅ ~~**Appliquer `0053` (rétention 90 j)**~~ — **appliquée**, constaté au registre le 2026-08-21. | 2026-08-03 | Résolu. La conservation des termes de recherche en clair est bornée. |
@@ -1850,64 +1850,15 @@ jamais franchement, qu'on saute une semaine chargée, puis deux.
       lieu tant qu'elles ne sont pas levées **ou explicitement acceptées par
       écrit** — l'accepter est un choix légitime, l'oublier ne l'est pas.
 
-- [ ] **`sharp` — risque ACCEPTÉ le 2026-08-02, à revoir avant le premier
-      téléversement vendeur.**
-
-      **Accepté sur un fait mesuré, pas sur une impression** : la base contient
-      **0 produit**. Aucune image vendeur n'a jamais été téléversée, donc
-      l'entrée non fiable qui atteindrait libvips **n'existe pas encore**. Le
-      risque est réel mais entièrement FUTUR.
-
-      `sharp@0.34.5` — version de l'arbre **INSTALLÉ**, pas de `package.json` :
-      elle n'y figure pas, elle arrive par `next@16.2.10`. Avis
-      GHSA-f88m-g3jw-g9cj, quatre CVE dans libvips, corrigé en `>= 0.35.0`.
-
-      **Pourquoi ça n'a pas été corrigé.** `npm audit fix --force` proposerait
-      un RECUL de `next` 16.2.10 → 14.2.35, incompatible avec React 19 —
-      vérifié en `--dry-run`, jamais exécuté. Et forcer `sharp` par un
-      `overrides` que Next n'a pas validé échangerait un risque futur contre un
-      risque de rendu sur les photos produit, c'est-à-dire sur l'actif qu'on
-      n'a pas encore.
-
-      **Moment d'activation identifiable** : le PREMIER téléversement vendeur.
-      Avant d'ouvrir cette surface, revérifier `sharp`.
-
-      **Surveillance en place, sans rien à relire** :
-      `tests/sharp-avis-securite.test.ts` est un test **INVERSÉ** — il échoue
-      le jour où `sharp >= 0.35` apparaît dans l'arbre installé, et son message
-      dit quoi faire. Une ligne de suivi demande qu'on pense à la relire ; ce
-      test ne demande rien.
-
-      ---
-
-      ### ✍️ Signature — acceptation datée
-
-      > **Réexamen fixé au 2026-11-03.** Accepté par **eliezerphilippe0-spec**
-      > (porteur), le 2026-08-03.
-      >
-      > **Ce n'est pas une acceptation, c'est un report avec une échéance.** La
-      > différence n'est pas rhétorique : une acceptation ne demande plus rien à
-      > personne, un report a une date à laquelle quelqu'un doit revenir. Sans
-      > cette date, l'avis GHSA-f88m-g3jw-g9cj cesse d'exister le jour où cette
-      > ligne descend dans le fichier.
-      >
-      > **Deux événements rouvrent le dossier, et le premier qui arrive gagne :**
-      >
-      > 1. **Le 2026-11-03**, quelle que soit l'activité de la plateforme.
-      > 2. **Le premier téléversement vendeur**, même s'il arrive demain — c'est
-      >    lui qui crée l'entrée non fiable vers libvips, donc le risque réel.
-      >
-      > **Ce qu'il faudra refaire ce jour-là**, et pas seulement relire : mesurer
-      > la version de `sharp` dans l'arbre **installé**
-      > (`node -p "require('./node_modules/sharp/package.json').version"`, pas
-      > `package.json`, où elle ne figure pas), vérifier si `next` a rattrapé
-      > `sharp >= 0.35`, et refaire un `npm audit fix --force --dry-run` pour
-      > voir si le recul de `next` 16 → 14 est toujours le prix à payer.
-      >
-      > ⚠️ **Si la date passe sans que personne ne revienne, ce fichier ne le
-      > dira pas.** Une date écrite dans un markdown n'est pas un mécanisme —
-      > c'est la limite connue de cette signature, et elle est écrite ici plutôt
-      > que découverte en novembre.
+- [x] **`sharp` — correction préparée le 2026-09-07.** Next 16.3.4 embarque
+      sharp 0.35.4, corrigé pour GHSA-f88m-g3jw-g9cj. Browserslist 4.28.9 et
+      nanoid 3.3.18 corrigent les autres avis détectés. `npm audit` : zéro
+      vulnérabilité dans l'arbre installé. Le test surveille maintenant la
+      version corrigée et le décodage/redimensionnement d'une image.
+      L'audit de production devient bloquant en CI. Ce constat porte sur la
+      branche de correction ; la mise en production reste à vérifier après fusion.
+      L'acceptation du 2026-08-02 et son réexamen daté sont remplacés par cette
+      correction ; l'historique reste consultable dans Git.
 
 ## ⚠️ Risque de FUSION — la promesse de livraison corrigée sur DEUX branches
 
@@ -2144,8 +2095,8 @@ via /api/download, aucun client ne touche le bucket. « 400 sur in_stock /
 label_es » — déjà documenté ici même : `label_es` corrigé (PR #80),
 `in_stock` attend B2. « Source map publique, CSP unsafe-inline, npm audit
 React Router/ws/nanoid, ESLint 54 erreurs » — marketplace-hub, pas nous
-(notre npm audit : 3 high, toutes `sharp`/libvips, dossier signé jusqu'au
-2026-11-03).
+(constat historique : 3 high, toutes `sharp`/libvips ; correction préparée
+le 2026-09-07, voir le suivi ci-dessus).
 
 - [ ] **`/mes-achats` est encore à moitié en français en dur** — le bloc de
       remise ajouté par le lot « surfaces » passe par `lib/i18n.ts` (quatre

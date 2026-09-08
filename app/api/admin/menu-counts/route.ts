@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * l'est pas : une route API avec la garde rôle des routes admin existantes
  * fait le même travail, sans migration à faire appliquer par le porteur —
  * le lot fonctionne dès la fusion. La sécurité est identique : rôle vérifié
- * côté serveur (`getCurrentUser`), service role jamais exposé, un non-admin
+ * côté serveur (`getAdminUser`), service role jamais exposé, un non-admin
  * reçoit une erreur, jamais des données.
  *
  * [DÉCISION AGENT — à valider] Les quatre compteurs demandés étaient
@@ -36,7 +36,7 @@ export const dynamic = "force-dynamic";
  * qu'une page admin cassée par son propre décor.
  */
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }

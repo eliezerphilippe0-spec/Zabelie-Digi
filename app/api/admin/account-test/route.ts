@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -43,7 +43,7 @@ export const dynamic = "force-dynamic";
  * « pourquoi mes fiches ont-elles disparu ? » a toujours une réponse datée.
  */
 export async function POST(req: Request) {
-  const me = await getCurrentUser();
+  const me = await getAdminUser();
   if (!me || me.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }

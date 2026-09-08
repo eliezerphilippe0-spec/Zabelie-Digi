@@ -17,6 +17,7 @@ const API_ROOT = join(__dirname, "..", "app", "api");
 // Gardes reconnus dans le code source d'une route.
 const AUTH_GUARDS = [
   /\.auth\.getUser\(\)/, // session Supabase validée côté serveur
+  /getAdminUser\(/, // identité + rôle + MFA vérifiés (admin-mfa.test.ts)
   /getCurrentUser\(/, //    idem + rôle depuis profiles
   /authorize\(req\)/, //    secret Bearer (routes cron)
   /verifyStripeWebhook/, // signature webhook Stripe

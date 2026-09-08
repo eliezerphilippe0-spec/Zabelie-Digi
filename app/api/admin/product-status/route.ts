@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDownloadable, type ProductKind } from "@/lib/product-kind";
@@ -17,7 +17,7 @@ const ALLOWED = ["draft", "published", "archived"] as const;
  */
 export async function POST(req: Request) {
   const lang = await getLang();
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: t(lang, "api.access.denied") }, { status: 403 });
   }

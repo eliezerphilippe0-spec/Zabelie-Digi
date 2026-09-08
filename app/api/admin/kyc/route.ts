@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { isMissingTable } from "@/lib/product-media";
@@ -23,7 +23,7 @@ const SIGNATURE_SECONDES = 300;
  * un dossier d'identité, savoir QUI a décidé est le minimum.
  */
 export async function GET() {
-  const me = await getCurrentUser();
+  const me = await getAdminUser();
   if (!me || me.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }
@@ -75,7 +75,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const me = await getCurrentUser();
+  const me = await getAdminUser();
   if (!me || me.role !== "admin") {
     return erreurTraduite("api.access.denied", 403);
   }

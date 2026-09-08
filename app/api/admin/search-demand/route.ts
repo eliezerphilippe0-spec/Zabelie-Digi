@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
-import { getCurrentUser } from "@/lib/auth";
+import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureActive, messageSourcing, type TermeDemande } from "@/lib/search-demand";
 
@@ -28,7 +28,7 @@ async function authorize(req: Request): Promise<boolean> {
   if (cron && bearer === cron) return true;
   if (manual && (bearer === manual || req.headers.get("x-reconcile-secret") === manual))
     return true;
-  const user = await getCurrentUser();
+  const user = await getAdminUser();
   return user?.role === "admin";
 }
 
