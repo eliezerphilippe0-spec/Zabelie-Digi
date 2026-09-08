@@ -19,6 +19,18 @@ import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.STUB_PORT ?? 54321);
 const digitalFacts = new Map();
+const digitalStudios = new Map();
+const digitalProgress = new Map();
+const HISTORY_ID = "88888888-8888-8888-8888-000000000100";
+const HISTORY_ERROR_ID = "88888888-8888-8888-8888-000000000101";
+const DIGITAL_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001";
+const RELEASE_1 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa011";
+const RELEASE_2 = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa012";
+const ASSET_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa021";
+const LESSON_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa031";
+const digitalFile = { id: ASSET_ID, storage_path: "studio/private.pdf", file_name: "guide.pdf", size_bytes: 1024 };
+const digitalLessons = [{ id: LESSON_ID, chapter: "Démarrer", title: "Méthode complète", body: "PRIVATE_SECRET: votre méthode achetée", assetId: ASSET_ID, free: false }, { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa032", chapter: "Démarrer", title: "Découverte", body: "FREE_SAMPLE: extrait consultable", assetId: "", free: true }];
+const digitalReleases = [1, 2].map(version => ({ id: version === 1 ? RELEASE_1 : RELEASE_2, product_id: DIGITAL_ID, version, title: `Formation version ${version}`, created_at: "2026-09-08T00:00:00Z", details: { license: version === 1 ? "Licence originale conservée" : "Nouvelle licence" }, manifest: { mode: "course", preview: "Un extrait avant votre achat", outcomes: "Construire son premier projet", prerequisites: "Un navigateur", include_updates: version === 1, faq: [{ question: "Où lire les leçons ?", answer: "Dans votre bibliothèque." }], files: [{ id: ASSET_ID, file_name: "guide.pdf", size_bytes: 1024 }], lessons: digitalLessons.map(l => ({ id: l.id, chapter: l.chapter, title: l.title, body: l.free ? l.body : "", free: l.free })) }, payload: { files: [digitalFile], lessons: digitalLessons } }));
 
 export const BUYER_ID = "11111111-1111-1111-1111-111111111111";
 export const SELLER_ID = "22222222-2222-2222-2222-222222222222";
@@ -111,8 +123,8 @@ const server = createServer((req, res) => {
 
   const token = req.headers.authorization ?? "";
   // Isolated scenarios: no mutable global mode between parallel tests.
-  const history = token.includes("historique-test");
-  const historyError = token.includes("historique-erreur");
+  const history = token.includes("historique-test") || eq(url, "buyer_id") === HISTORY_ID;
+  const historyError = token.includes("historique-erreur") || eq(url, "buyer_id") === HISTORY_ERROR_ID;
   const sellerPreparation = token.includes("vendeur-preparation");
 
   if (url.pathname === "/__gift-writes") return send(200, giftWrites);
@@ -148,7 +160,7 @@ const server = createServer((req, res) => {
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
     return send(200, {
-      id: sellerPreparation ? SELLER_ID : BUYER_ID,
+      id: sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID,
       aud: "authenticated",
       role: "authenticated",
       email: "achte@example.ht",
@@ -158,6 +170,32 @@ const server = createServer((req, res) => {
     });
   }
   if (url.pathname.startsWith("/auth/v1/")) return send(200, {});
+
+  if (url.pathname === "/rest/v1/zabelie_digital_studio") {
+    if (req.method === "POST") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => { const input = JSON.parse(body); digitalStudios.set(input.product_id, input); return single([input]); });
+    }
+    return single([...digitalStudios.values()].filter(row => url.searchParams.get("product_id")?.includes(row.product_id)));
+  }
+  if (url.pathname === "/rest/v1/zabelie_digital_releases") {
+    let rows = digitalReleases.filter(r => (!eq(url, "id") || r.id === eq(url, "id")) && (!eq(url, "product_id") || r.product_id === eq(url, "product_id")));
+    if (url.searchParams.get("order")?.includes("desc")) rows = rows.toSorted((a, b) => b.version - a.version);
+    if (url.searchParams.has("limit")) rows = rows.slice(0, Number(url.searchParams.get("limit")));
+    return single(rows);
+  }
+  if (url.pathname === "/rest/v1/zabelie_digital_entitlements") {
+    const id = eq(url, "order_id");
+    return single(id?.startsWith("aaaaaaaa-") ? [{ order_id: id, release_id: id.endsWith("105") ? RELEASE_2 : RELEASE_1 }] : []);
+  }
+  if (url.pathname === "/rest/v1/zabelie_digital_progress") {
+    if (req.method === "POST") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => { const v = JSON.parse(body); digitalProgress.set(`${v.order_id}:${v.release_id}:${v.lesson_id}`, v); return single([v]); });
+    }
+    return single([...digitalProgress.values()].filter(p => p.order_id === eq(url, "order_id") && p.release_id === eq(url, "release_id")));
+  }
+  if (url.pathname.startsWith("/storage/v1/object/sign/product-files/")) return send(200, { signedURL: "/object/sign/product-files/studio/private.pdf?token=test-signed" });
 
   // ── PostgREST ───────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/rest/v1/orders")) {
@@ -189,11 +227,12 @@ const server = createServer((req, res) => {
       });
     }
     const id = eq(url, "id");
+    if (id?.startsWith("aaaaaaaa-")) return single([{ ...ORDER, id, product_id: DIGITAL_ID, buyer_id: id.endsWith("104") ? SELLER_ID : BUYER_ID, status: id.endsWith("102") ? "pending" : id.endsWith("103") ? "refunded" : "paid", product: { title: "Formation achetée", slug: "formation-studio-test", kind: "fichier" } }]);
     if (historyError) return send(503, { code: "08006", message: "test unavailable" });
     let rows = id && id !== ORDER_ID ? [] : [ORDER];
     if (history || id?.startsWith("88888888-8888-8888-8888-")) {
       const make = (n, title, kind, status) => ({ ...ORDER,
-        id: `88888888-8888-8888-8888-${String(n).padStart(12, "0")}`,
+        id: `88888888-8888-8888-8888-${String(n).padStart(12, "0")}`, buyer_id: HISTORY_ID,
         order_ref: `ZB-TEST-${n}`, status,
         product: title ? { title, kind, slug: SLUG } : null,
       });
@@ -206,7 +245,7 @@ const server = createServer((req, res) => {
         ...Array.from({ length: 24 }, (_, i) => make(i + 6, `Guide acquis ${i + 1}`, "fichier", "paid")),
       ];
       const buyer = eq(url, "buyer_id");
-      if (buyer && buyer !== BUYER_ID) rows = [];
+      if (buyer && buyer !== HISTORY_ID) rows = [];
       const kind = eq(url, "product.kind");
       if (kind) rows = rows.filter(row => row.product?.kind === kind);
       if (id) rows = rows.filter(row => row.id === id);
@@ -251,6 +290,7 @@ const server = createServer((req, res) => {
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    if (id === DIGITAL_ID || slug === "formation-studio-test") return single([{ ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", kind: "fichier", product_assets: [{ id: ASSET_ID }], seller_id: SELLER_ID }]);
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
     if (slug) rows = rows.filter((row) => row.slug === slug);
     if (id) rows = rows.filter((row) => row.id === id);

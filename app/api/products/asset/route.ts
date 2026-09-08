@@ -1,3 +1,8 @@
+import { isDownloadable } from "@/lib/product-kind";
+import { UUID_RE, MAX_DIGITAL_FILES } from "@/lib/digital-studio";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
+import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
@@ -57,6 +62,7 @@ const ALLOWED_EXTENSIONS = new Set([
  * Les deux méritaient d'être dits séparément.
  */
 export async function POST(req: Request) {
+  const lang = await getLang();
   const supabase = await createClient();
   const {
     data: { user },
@@ -83,7 +89,7 @@ export async function POST(req: Request) {
 
   const productId = typeof body.productId === "string" ? body.productId : "";
   const step = body.step === "demande" || body.step === "confirme" ? body.step : null;
-  if (!productId || !step) {
+  if (!UUID_RE.test(productId) || !step) {
     return NextResponse.json({ error: "productId et step requis" }, { status: 400 });
   }
 
@@ -91,7 +97,7 @@ export async function POST(req: Request) {
   // sert JAMAIS à construire le chemin de stockage — voir plus bas.
   const safeName = String(body.fileName ?? "").replace(/[^a-zA-Z0-9._-]/g, "_");
   const ext = safeName.split(".").pop()?.toLowerCase() ?? "";
-  if (!safeName || !ALLOWED_EXTENSIONS.has(ext)) {
+  if (!safeName || safeName.length > 200 || !ALLOWED_EXTENSIONS.has(ext)) {
     return NextResponse.json(
       {
         error:
@@ -113,15 +119,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
   }
 
+  if (!isDownloadable(product.kind) || product.status !== "draft") {
+    return NextResponse.json({ error: t(lang, "studio.draftRequired") }, { status: 409 });
+  }
+  if (!(await rateLimit(admin, `digital-upload:${user.id}`, 30))) return NextResponse.json({ error: t(lang, "studio.error") }, { status: 429 });
   if (step === "demande") {
+    const { count, error: countError } = await admin.from("product_assets").select("id", { count: "exact", head: true }).eq("product_id", productId);
+    if (countError || (count ?? 0) >= MAX_DIGITAL_FILES) return NextResponse.json({ error: t(lang, "studio.fileLimit") }, { status: 422 });
     /* Chemin SERVEUR, et un UUID plutôt que le nom du fichier.
      *
      * Deux raisons. Le lien signé ne vaut que pour ce chemin précis : un
      * chemin choisi par le client permettrait d'écrire ailleurs que sous son
      * propre produit. Et BL-138 (C-12) disparaît au passage — l'ancien chemin
      * dépendait du NOM, donc un remplacement sous un autre nom laissait un
-     * objet orphelin. Deux UUID distincts ne collident jamais, et l'ancien
-     * objet est retiré explicitement à la confirmation. */
+     * objet orphelin. Deux UUID distincts ne collident jamais, et les anciennes
+     * versions restent conservées après la confirmation. */
     const path = `${user.id}/${product.id}/liv-${crypto.randomUUID()}.${ext}`;
     const { data, error } = await admin.storage
       .from(BUCKET)
@@ -167,78 +179,15 @@ export async function POST(req: Request) {
     );
   }
 
-  // BL-138 (C-12) : on retient l'ancien livrable pour le retirer une fois le
-  // nouveau en place.
-  const { data: oldAsset } = await admin
-    .from("product_assets")
-    .select("id, storage_path")
-    .eq("product_id", product.id)
-    .maybeSingle();
-
-  /* REMPLACER SANS DÉTRUIRE — l'ordre compte, et il était inversé.
-   *
-   * La séquence était `delete` PUIS `insert`. Un `insert` en échec laissait
-   * donc le produit avec ZÉRO livrable : le vendeur croyait remplacer son
-   * fichier, il le perdait, et si le produit était publié il devenait
-   * indélivrable en silence. Une commande passée là-dessus suit exactement le
-   * chemin décrit en tête de `0059` — payée, jamais remise, vendeur payé.
-   *
-   * Il n'y a pas d'unicité sur `product_id` : insérer avant de supprimer est
-   * donc possible, et pendant l'instant où deux lignes coexistent le
-   * téléchargement reste servi — par l'ancien fichier, qui fonctionne. */
+  const { data: existing } = await admin.from("product_assets").select("id").eq("storage_path", path).maybeSingle();
+  if (existing) return NextResponse.json({ ok: true, file_name: safeName });
   const { error: insErr } = await admin.from("product_assets").insert({
-    product_id: product.id,
-    storage_path: path,
-    file_name: safeName,
-    size_bytes: taille,
+    product_id: productId, storage_path: path, file_name: safeName, size_bytes: taille,
   });
-  if (insErr) {
-    // L'ancien livrable est INTACT : le vendeur n'a rien perdu. On retire en
-    // revanche l'objet qui vient d'arriver et que plus rien n'adresse.
-    await admin.storage.from(BUCKET).remove([path]);
-    return NextResponse.json({ error: insErr.message }, { status: 500 });
+  if (insErr && insErr.code !== "23505") {
+    // Preserve objects on ambiguous/concurrent confirmation failures. A cleanup
+    // must prove the object is absent from every draft AND immutable release.
+    return NextResponse.json({ error: t(lang, "studio.error") }, { status: 409 });
   }
-
-  if (oldAsset?.id) {
-    const { error: delErr } = await admin
-      .from("product_assets")
-      .delete()
-      .eq("id", oldAsset.id);
-    // Deux lignes qui survivent sont une gêne, zéro ligne est une panne : on
-    // ne fait pas échouer le téléversement là-dessus, on le journalise.
-    if (delErr) {
-      console.log(
-        "[livrable]",
-        JSON.stringify({
-          at: new Date().toISOString(),
-          issue: "ancien_livrable_non_retire",
-          productId: product.id,
-          message: delErr.message,
-        })
-      );
-    }
-  }
-
-  // Nettoyage best-effort de l'ancien objet (chemin différent uniquement) —
-  // une erreur ici ne doit jamais faire échouer un remplacement déjà réussi.
-  if (oldAsset?.storage_path && oldAsset.storage_path !== path) {
-    await admin.storage.from(BUCKET).remove([oldAsset.storage_path]).catch(() => undefined);
-  }
-
-  // BL-103 disait : le livrable est là → le brouillon devient publiable. Il
-  // se publiait en fait TOUT SEUL, sans qu'aucun humain ne voie la fiche —
-  // le même trou que `service: "published"`, en plus discret. « Publiable »
-  // et « publié » ne sont pas le même mot : la fiche reste en brouillon et
-  // attend `/api/admin/product-status`.
-  //
-  // ⚠️ CORRIGÉ 2026-08-11 — cette ligne affirmait que l'invariant BL-103 (pas
-  // de vente d'un fichier sans livrable) était « préservé par le brouillon
-  // lui-même, puisque /produit/[slug] ne sert que published ». C'était faux, et
-  // mesuré faux : le brouillon ne garde que CE chemin-ci. Rien n'empêchait
-  // `/api/admin/product-status` de publier un fichier à zéro livrable, et la
-  // production en portait un — « cours du créole », publié, indélivrable.
-  // L'invariant est désormais tenu par le garde de cette route-là ; ici, le
-  // brouillon ne fait que retarder la question, il ne la tranche pas.
-
   return NextResponse.json({ ok: true, file_name: safeName });
 }

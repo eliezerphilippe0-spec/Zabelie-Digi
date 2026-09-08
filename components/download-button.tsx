@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /** Récupère une URL signée via /api/download et ouvre le fichier. */
-export function DownloadButton({ orderId, labels }: { orderId: string; labels: { download: string; error: string; network: string } }) {
+export function DownloadButton({ orderId, releaseId, assetId, labels }: { orderId: string; releaseId?: string; assetId?: string; labels: { download: string; error: string; network: string } }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -11,7 +11,10 @@ export function DownloadButton({ orderId, labels }: { orderId: string; labels: {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/download?orderId=${orderId}`);
+      const params = new URLSearchParams({ orderId });
+      if (releaseId) params.set("releaseId", releaseId);
+      if (assetId) params.set("assetId", assetId);
+      const res = await fetch(`/api/download?${params}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) {
         setError(labels.error);

@@ -1,3 +1,5 @@
+import { getPublicDigitalRelease } from "@/lib/digital-studio-server";
+import { DigitalOfferPreview } from "@/components/digital-offer-preview";
 import { getDigitalDetails } from "@/lib/digital-details-server";
 import { DIGITAL_DETAIL_FIELDS } from "@/lib/digital-details";
 import { CollectionAction } from "@/components/collection-action";
@@ -168,6 +170,7 @@ export default async function ProductPage({
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
   if (!product) notFound();
 
+  const digitalRelease = isDownloadable(product.kind) ? await getPublicDigitalRelease(product.id) : null;
   const digital = isDownloadable(product.kind) ? (await getDigitalDetails([product.id]))?.get(product.id) : undefined;
   const [reviews, physical, medias, compareHtg, flash] = await Promise.all([
     product.creatorId ? getProductReviews(product.id) : Promise.resolve([]),
@@ -414,6 +417,7 @@ export default async function ProductPage({
             </div>
           )}
 
+          {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
           {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
             <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>
             {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>

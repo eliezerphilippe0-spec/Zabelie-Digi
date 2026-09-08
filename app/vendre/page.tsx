@@ -1,3 +1,6 @@
+import { DigitalStudioEditor, DigitalDraftAction } from "@/components/digital-studio-editor";
+import { studioLabels } from "@/lib/digital-studio-labels";
+import type { DigitalStudio } from "@/lib/digital-studio";
 import { DigitalDetailsEditor } from "@/components/digital-details-editor";
 import { getDigitalDetails } from "@/lib/digital-details-server";
 import Link from "next/link";
@@ -205,20 +208,23 @@ export default async function VendrePage() {
 
   const { data: mineRaw, error: mineError } = await supabase
     .from("products")
-    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, product_assets(id)")
+    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, product_assets(id,file_name,size_bytes)")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
-  type MineRow = ReadinessProduct & {
+  type MineRow = Omit<ReadinessProduct, "product_assets"> & {
     id: string;
     slug: string;
     title: string;
     status: string;
     kind: ProductKind;
     price_htg: number;
-    product_assets: { id: string }[];
+    product_assets: { id: string; file_name: string; size_bytes: number }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  const { data: studioRows, error: studioError } = mine.length ? await supabase.from("zabelie_digital_studio").select("*").in("product_id", mine.map(p => p.id)) : { data: [], error: null };
+  const studios = new Map((studioRows ?? []).map(row => [row.product_id, row as DigitalStudio]));
+  const studioText = studioLabels(lang);
   const digitalDetails = await getDigitalDetails(mine.filter((p) => isDownloadable(p.kind)).map((p) => p.id));
 
   // Galerie V-1A (docs/35) : l'état initial de chaque gestionnaire vient du
@@ -442,7 +448,12 @@ export default async function VendrePage() {
                   save: t(lang, "digital.save"), saving: t(lang, "digital.saving"), saved: t(lang, "digital.saved"), error: t(lang, "digital.save.error"),
                 }} />}
                 {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails === null && <p role="alert" className="text-sm text-danger-text">{t(lang, "digital.save.error")}</p>}
-                {isDownloadable(p.kind, p.id) ? (
+                {isDownloadable(p.kind, p.id) && p.status === "draft" && <>
+                  {studioError ? <p role="alert" className="text-danger-text">{studioText.error}</p> : <DigitalStudioEditor productId={p.id} initial={studios.get(p.id)} assets={p.product_assets} labels={studioText}/>}
+                  <section className="rounded-xl border border-line p-4"><h3 className="font-semibold">{studioText.files}</h3><p className="mt-2 text-sm text-mist">{studioText.fileLimit}</p><ul className="mt-3 space-y-2">{p.product_assets.map(a => <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-2"><span className="break-all">{a.file_name}</span><DigitalDraftAction productId={p.id} assetId={a.id} labels={studioText}/></li>)}</ul></section>
+                </>}
+                {isDownloadable(p.kind, p.id) && p.status === "published" && <DigitalDraftAction productId={p.id} labels={studioText}/>}
+                {isDownloadable(p.kind, p.id) && p.status === "draft" ? (
                   <UploadAsset
                     productId={p.id}
                     hasAsset={p.product_assets.length > 0}

@@ -3,7 +3,6 @@ import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { DownloadButton } from "@/components/download-button";
 import { ReviewForm } from "@/components/review-form";
 import { FulfillmentAction } from "@/components/fulfillment-actions";
 import { getReviewedOrderIds } from "@/lib/reviews";
@@ -114,9 +113,12 @@ export default async function MesAchatsPage({ searchParams }: {
   // Session client + explicit buyer scope. Filter before pagination; keep
   // archived/inaccessible product joins in the complete order history.
   const buyerId = user.id;
+  // Archived/draft products must remain visible inside the authenticated buyer’s history.
+  // Every service-role query below is explicitly scoped to this verified buyer id.
+  const orderReader = createAdminClient();
   function queryOrders(withReference: boolean) {
     const relation = kind ? "product:products!inner(title, slug, kind)" : "product:products(title, slug, kind)";
-    let query = supabase.from("orders")
+    let query = orderReader.from("orders")
       .select(`id, ${withReference ? "order_ref," : ""} status, amount_htg, created_at, ${relation}`)
       .eq("buyer_id", buyerId);
     if (kind) query = query.eq("product.kind", kind);
@@ -270,7 +272,7 @@ export default async function MesAchatsPage({ searchParams }: {
                 </div>
                 <div className="flex flex-col items-start gap-3 sm:items-end">
                   {confirmed && (o.product && isDownloadable(o.product.kind) ? (
-                    <DownloadButton orderId={o.id} labels={{ download: t(lang, "purchases.download"), error: t(lang, "purchases.download.error"), network: t(lang, "error.network") }} />
+                    <Link href={`/mes-achats/${o.id}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2 font-semibold text-on-brand">{t(lang, "studio.open")}</Link>
                   ) : suivis.has(o.id) ? blocRemise(suivis.get(o.id), lang) : remiseLabel(o.product?.kind, lang) && (
                     <span className="text-sm text-mist">{remiseLabel(o.product?.kind, lang)}</span>
                   ))}

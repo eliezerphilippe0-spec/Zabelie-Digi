@@ -1,3 +1,4 @@
+import { DigitalSellerMetrics } from "@/components/digital-seller-metrics";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -812,6 +813,7 @@ export default async function DashboardPage({
           <AccountActions />
         </div>
       </section>
+      <DigitalSellerMetrics sellerId={user.id} lang={lang}/>
     </Shell>
   );
 }

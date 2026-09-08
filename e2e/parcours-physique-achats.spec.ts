@@ -54,7 +54,7 @@ test("bibliothèque : filtrage avant pagination et lien conservé entre les page
   await expect(page.getByText("Objet en litige", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Prestation confirmée", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Chaque lien", { exact: false })).toBeVisible();
-  await expect(page.locator("main > ul > li").filter({ hasText: "Guide acquis 1" }).first().getByRole("button", { name: "Télécharger" })).toBeVisible();
+  await expect(page.locator("main > ul > li").filter({ hasText: "Guide acquis 1" }).first().getByRole("link", { name: "Ouvrir mon contenu" })).toBeVisible();
   await page.getByRole("link", { name: "Suivante", exact: true }).click();
   await expect(page).toHaveURL(/vue=numerique&page=2/);
   await expect(page.locator("main > ul > li")).toHaveCount(6);

@@ -1,0 +1,4 @@
+import { t, type Lang } from "@/lib/i18n";
+export const STUDIO_KEYS = ["title", "intro", "mode", "file", "bundle", "course", "preview", "outcomes", "prerequisites", "updates", "updatesHint", "updatesIncluded", "originalOnly", "lessons", "lesson", "chapter", "body", "resource", "none", "free", "freeHint", "addLesson", "up", "down", "remove", "faq", "question", "answer", "addFaq", "files", "fileLimit", "save", "saving", "saved", "error", "draftRequired", "revise", "reviseHint", "open", "version", "acquired", "newVersion", "versions", "unavailable", "complete", "completed", "progress", "stats", "started", "confirmed", "pending", "conversion", "accessed", "gross", "statsHint", "statsUnavailable"] as const;
+export type StudioLabels = Record<typeof STUDIO_KEYS[number], string>;
+export function studioLabels(lang: Lang): StudioLabels { return Object.fromEntries(STUDIO_KEYS.map(k => [k, t(lang, `studio.${k}`)])) as StudioLabels; }
