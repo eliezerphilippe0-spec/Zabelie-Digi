@@ -24,7 +24,7 @@ const NOM: Record<Lang, string> = {
 
 // Conservé pendant une navigation cliente qui remonte la page et son en-tête.
 // N'est renseigné que par un clic utilisateur dans le navigateur.
-let languageFocusPath: string | null = null;
+const LANGUAGE_FOCUS_KEY = "zabelie-language-focus";
 
 function closeMenu(menu: HTMLDetailsElement | null, restoreFocus = false) {
   if (!menu) return;
@@ -93,10 +93,11 @@ export function LangToggle({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!compact || languageFocusPath !== pathname) return;
+    if (!compact) return;
+    try { if (sessionStorage.getItem(LANGUAGE_FOCUS_KEY) !== pathname) return; } catch { return; }
     const frame = requestAnimationFrame(() => {
       menuRef.current?.querySelector("summary")?.focus({ preventScroll: true });
-      languageFocusPath = null;
+      try { sessionStorage.removeItem(LANGUAGE_FOCUS_KEY); } catch { /* Stockage indisponible : aucun effet sur la langue. */ }
     });
     return () => cancelAnimationFrame(frame);
   }, [compact, pathname, current]);
@@ -128,7 +129,9 @@ export function LangToggle({
     if (lang === current || isPending) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
     const guidePath = guideLanguagePath(pathname, lang) ?? (editorialLangFromPath(pathname) ? editorialLanguagePath(pathname, lang) : null);
-    if (compact && guidePath) languageFocusPath = guidePath;
+    if (compact && guidePath) {
+      try { sessionStorage.setItem(LANGUAGE_FOCUS_KEY, guidePath); } catch { /* La navigation reste disponible sans stockage. */ }
+    }
     startTransition(() => {
       if (guidePath) router.push(guidePath + window.location.search + window.location.hash, { scroll: false });
       else router.refresh();
