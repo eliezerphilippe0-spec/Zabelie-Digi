@@ -43,15 +43,21 @@ test("digital public preview exposes free text but never the paid lesson or priv
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-test("private course preserves original license and progress across reloads", async ({ page }) => {
+test("private course preserves original license and progress across reloads", async ({ page }, testInfo) => {
+  const orderId = ORDER.slice(0, -3) + String(200 + testInfo.retry);
   await connecte(page, "digital-studio-buyer");
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`/mes-achats/${ORDER}`, { waitUntil: "networkidle" });
+  await page.goto(`/mes-achats/${orderId}`, { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { name: "Formation version 1" })).toBeVisible();
   await expect(page.getByText("Licence originale conservée", { exact: true })).toBeVisible();
   await expect(page.getByText("PRIVATE_SECRET: votre méthode achetée", { exact: true })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  const mutation = page.waitForResponse(res => res.url().endsWith("/api/digital/progress") && res.request().method() === "PUT");
   await page.getByRole("button", { name: "Marquer comme terminée", exact: true }).first().click();
+  const response = await mutation;
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({ ok: true });
+  await expect(page.getByRole("progressbar")).toHaveAttribute("value", "1");
   await expect(page.getByText("1 / 2 leçons terminées", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByText("1 / 2 leçons terminées", { exact: true })).toBeVisible();
