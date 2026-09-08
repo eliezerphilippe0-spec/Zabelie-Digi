@@ -36,16 +36,17 @@ test("a digital URL ignores handover zones and page two keeps its canonical", as
 });
 test("guides have URL-controlled language, reciprocal alternates and an accessible language switch", async ({ page, context }) => {
   await context.addCookies([{ name: "zabelie_lang", value: "fr", domain: "localhost", path: "/" }]);
-  await page.goto("/guides/ht/produits-numeriques");
+  await page.goto("/guides/ht/produits-numeriques", { waitUntil: "networkidle" });
   await expect(page.locator("html")).toHaveAttribute("lang", "ht");
   await expect(page.locator("h1")).toHaveText("Chwazi epi jwenn yon fichye dijital");
   await expect(page.locator('link[rel="alternate"][hreflang]')).toHaveCount(5);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/guides\/ht\/produits-numeriques$/);
-  await page.locator('header summary[aria-label="Kreyòl ayisyen"]').click();
+  await page.locator('header:visible summary[aria-label="Kreyòl ayisyen"]').click();
   await page.getByRole("button", { name: "English EN", exact: true }).click();
   await expect(page).toHaveURL(/\/guides\/en\/produits-numeriques$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("h1")).toHaveText("Choosing and accessing a digital file");
+  await expect(page.locator('header:visible details[open] summary[aria-label="English"]')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("main")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
