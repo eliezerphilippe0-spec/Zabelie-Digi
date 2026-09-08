@@ -102,9 +102,9 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
           <BrandLogo nomMasqueSurMobile className="header-fold shrink-0 text-on-chrome" />
 
           <SearchBox
-            pending={searchPending}
             compact
             variant="header"
+            pending={searchPending}
             key={searchContext?.query ?? ""}
             initialQuery={searchContext?.query}
             filters={searchContext?.filters}

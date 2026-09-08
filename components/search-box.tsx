@@ -83,9 +83,9 @@ export function SearchBox({
         />
         {variant === "header" ? (
           <button
-            disabled={pending}
             type="submit"
             aria-label={submitLabel}
+            disabled={pending}
             title={submitLabel}
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-on-chrome transition hover:bg-on-chrome/10 active:scale-[0.97]"
           >
