@@ -86,6 +86,7 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `OPENAI_MODEL` | nom du modèle |
 | `GEMINI_MODEL` | nom du modèle |
 | `ZABELIE_TOPUP_FIRSTPARTY_ENABLED` | rouvre la vente de recharge en propre — fermée par V-17 |
+| `ZABELIE_RELEASE_ID` | générée au build depuis le commit Git, jamais saisie manuellement ; empreinte non secrète rendue par la sonde publique de livraison |
 | `ZABELIE_DEMO_FIXTURES` | ⛔ **jamais en production** : sert le catalogue de démonstration à de vrais acheteurs |
 
 ### 2.3 — Publiques par nature (`NEXT_PUBLIC_`, lisibles dans le navigateur)

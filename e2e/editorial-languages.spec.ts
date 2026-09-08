@@ -16,3 +16,14 @@ for (const lang of ["fr", "ht", "en", "es"] as Lang[]) {
 test("une langue inexistante rend 404",async ({request})=>{
   expect((await request.get("/zz/aide")).status()).toBe(404);
 });
+
+test("changer la langue d’une URL traduite conserve le focus et ferme le menu",async({page})=>{
+  await page.goto("/en/recharges?source=test",{waitUntil:"networkidle"});
+  const menu=page.locator("header:visible details").filter({has:page.locator("button[aria-pressed]")});
+  await menu.locator("summary").click();
+  await menu.getByRole("button",{name:"Español ES",exact:true}).click();
+  await expect(page).toHaveURL(/\/es\/recharges\?source=test$/);
+  await expect(page.getByRole("heading",{level:1,name:t("es","recharges.title")})).toBeVisible();
+  await expect(menu).not.toHaveAttribute("open","");
+  await expect(menu.locator("summary")).toBeFocused();
+});

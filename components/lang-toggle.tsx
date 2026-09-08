@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { editorialLanguagePath } from "@/lib/editorial-routing";
+import { editorialLanguagePath, editorialLangFromPath } from "@/lib/editorial-routing";
 import { guideLanguagePath } from "@/lib/guide-routing";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 
@@ -114,9 +114,9 @@ export function LangToggle({
     closeMenu(menuRef.current, true);
     if (lang === current || isPending) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
-    const guidePath = guideLanguagePath(pathname, lang) ?? editorialLanguagePath(pathname, lang);
+    const guidePath = guideLanguagePath(pathname, lang) ?? (editorialLangFromPath(pathname) ? editorialLanguagePath(pathname, lang) : null);
     startTransition(() => {
-      if (guidePath) router.push(guidePath);
+      if (guidePath) router.push(guidePath + window.location.search + window.location.hash, { scroll: false });
       else router.refresh();
     });
   }

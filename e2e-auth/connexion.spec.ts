@@ -21,7 +21,7 @@ test("connexion réussie : session transmise au serveur et conservée après rec
   await fill(page,"buyer@example.test");
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/mes-achats$/);
-  expect((await context.cookies()).some((c)=>c.name.startsWith("sb-127-auth-token"))).toBe(true);
+  expect((await context.cookies()).some((c)=>/^sb-127-auth-token(?:\.\d+)?$/.test(c.name))).toBe(true);
   await page.reload();
   await expect(page).toHaveURL(/\/mes-achats$/);
   await expect(page.locator('a[href^="/connexion?next="]')).toHaveCount(0);
@@ -36,7 +36,7 @@ test("inscription avec confirmation : métadonnées envoyées, aucune fausse ses
   await page.locator('button[type="submit"]').click();
   expect((await request).postDataJSON().data.display_name).toBe("Créateur test");
   await expect(page.locator('[role="status"]')).toBeVisible();
-  expect((await context.cookies()).some((c)=>c.name.startsWith("sb-127-auth-token"))).toBe(false);
+  expect((await context.cookies()).some((c)=>/^sb-127-auth-token(?:\.\d+)?$/.test(c.name))).toBe(false);
 });
 
 test("adresse déjà inscrite : bascule vers Connexion sans bouton bloqué", async ({ page }) => {
