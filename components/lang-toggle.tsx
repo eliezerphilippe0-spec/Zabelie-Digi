@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { guideLanguagePath } from "@/lib/guide-routing";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 
 /**
@@ -75,11 +76,14 @@ export function LangToggle({
   compact?: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   function set(lang: Lang) {
     if (lang === current) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
-    router.refresh();
+    const guidePath = guideLanguagePath(pathname, lang);
+    if (guidePath) router.push(guidePath);
+    else router.refresh();
   }
 
   if (compact) {

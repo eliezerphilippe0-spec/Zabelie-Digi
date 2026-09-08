@@ -60,7 +60,7 @@ function suggestionsDepuisRayons(rayons: RayonMenu[]): SearchSuggestion[] {
  * `on-chrome`, paires vérifiées par scripts/zabelie-contrast.mjs sur les
  * trois arrêts du dégradé.
  */
-export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
+export async function SiteNav({ activeHref, searchContext }: { activeHref?: string; searchContext?: { query?: string; filters: Record<string, string> } } = {}) {
   const [user, lang] = await Promise.all([getCurrentUser(), getLang()]);
   // Le menu vient de la BASE (`zabelie_categories`), jamais d'une liste écrite
   // en dur : les libellés sont traduits, les rayons vides sont marqués.
@@ -104,6 +104,9 @@ export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
           <SearchBox
             compact
             variant="header"
+            key={searchContext?.query ?? ""}
+            initialQuery={searchContext?.query}
+            filters={searchContext?.filters}
             placeholder={t(lang, "catalog.search.ph")}
             submitLabel={t(lang, "catalog.search.btn")}
             suggestionsLabel={t(lang, "search.sugg")}
@@ -118,14 +121,14 @@ export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
               hauteur — l'en-tête reste sous 100 px (A2). */}
           <LangToggle current={lang} compact />
 
-          {/* Panier — l'icône vit pour un compte connecté ; le badge n'apparaît
+          {/* Panier — accessible aussi aux visiteurs ; le badge n'apparaît
               qu'avec un contenu (un « 0 » n'informe pas). Client de session,
               jamais service role : le compteur est CELUI de l'appelant. */}
-          {articlesPanier !== null && (
+          {(
             <Link
               href="/panier"
-              aria-label={`${t(lang, "cart.title")}${articlesPanier > 0 ? ` (${articlesPanier})` : ""}`}
-              className="relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-on-chrome transition hover:bg-on-chrome/10"
+              aria-label={`${t(lang, "cart.title")}${articlesPanier !== null && articlesPanier > 0 ? ` (${articlesPanier})` : ""}`}
+              className="relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl lg:px-2 text-on-chrome transition hover:bg-on-chrome/10"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -139,7 +142,8 @@ export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
                 <circle cx="10" cy="19" r="1.4" />
                 <circle cx="17" cy="19" r="1.4" />
               </svg>
-              {articlesPanier > 0 && (
+              <span className="hidden text-sm font-semibold lg:inline">{t(lang, "cart.title")}</span>
+              {articlesPanier !== null && articlesPanier > 0 && (
                 <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-on-brand">
                   {articlesPanier}
                 </span>
@@ -147,6 +151,7 @@ export async function SiteNav({ activeHref }: { activeHref?: string } = {}) {
             </Link>
           )}
 
+          <Link href="/mes-achats" className="hidden min-h-11 shrink-0 items-center rounded-xl px-2 text-sm font-semibold hover:bg-on-chrome/10 lg:inline-flex">{t(lang, "purchases.title")}</Link>
           <AccountMenu label={t(lang, "nav.account")}>
             {user ? (
               <>

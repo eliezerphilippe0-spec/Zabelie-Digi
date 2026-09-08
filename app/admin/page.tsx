@@ -1,3 +1,5 @@
+import { DIGITAL_DETAIL_FIELDS, type DigitalDetails } from "@/lib/digital-details";
+import { t } from "@/lib/i18n";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminProductRow } from "@/components/admin-product-row";
@@ -317,6 +319,11 @@ export default async function AdminPage({
     ]);
 
   const products = (prods ?? []) as ProductRow[];
+  // After the administrator gate, one bounded read for the moderation list.
+  const { data: digitalRows, error: digitalReadError } = products.length
+    ? await admin.from("zabelie_digital_details").select(`product_id,${DIGITAL_DETAIL_FIELDS.join(",")}`).in("product_id", products.map((p) => p.id))
+    : { data: [], error: null };
+  const digitalByProduct = new Map(((digitalRows ?? []) as unknown as (DigitalDetails & { product_id: string })[]).map((details) => [details.product_id, details]));
   const sellers = (sellerRows ?? []) as SellerRow[];
   const comptes = (compteRows ?? []) as CompteRow[];
   /* Comptage en mémoire, à partir d'une liste plate : aucune jointure, donc
@@ -445,6 +452,7 @@ export default async function AdminPage({
       {/* Modération produits */}
       <section id="produits" className="mt-10 scroll-mt-24">
         <h2 className="text-lg font-semibold">Modération des produits</h2>
+        {digitalReadError && <p role="alert" className="mt-3 text-sm text-danger-text">{t("fr", "error.generic")}</p>}
         {products.length === 0 ? (
           <p className="mt-3 text-sm text-mist">Aucun produit.</p>
         ) : (
@@ -456,7 +464,15 @@ export default async function AdminPage({
                 title={p.title}
                 seller={one(p.seller)?.display_name ?? "—"}
                 status={p.status}
-              />
+              >
+                {digitalByProduct.has(p.id) && <details className="mt-3 rounded-xl border border-line p-3">
+                  <summary className="min-h-11 cursor-pointer font-semibold">{t("fr", "digital.edit.title")}</summary>
+                  <dl className="mt-3 space-y-3">{DIGITAL_DETAIL_FIELDS.filter((key) => digitalByProduct.get(p.id)![key]).map((key) => <div key={key}>
+                    <dt className="font-semibold">{t("fr", `digital.${key}`)}</dt>
+                    <dd className="whitespace-pre-line break-words text-mist">{digitalByProduct.get(p.id)![key]}</dd>
+                  </div>)}</dl>
+                </details>}
+              </AdminProductRow>
             ))}
           </ul>
         )}

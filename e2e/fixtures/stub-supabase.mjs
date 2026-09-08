@@ -18,6 +18,7 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.STUB_PORT ?? 54321);
+const digitalFacts = new Map();
 
 export const BUYER_ID = "11111111-1111-1111-1111-111111111111";
 export const SELLER_ID = "22222222-2222-2222-2222-222222222222";
@@ -251,13 +252,24 @@ const server = createServer((req, res) => {
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
-    if (slug && slug !== SLUG) rows = [];
-    if (id && id !== PRODUCT_ID) rows = [];
-    if (status && status !== PRODUCT.status) rows = [];
+    if (slug) rows = rows.filter((row) => row.slug === slug);
+    if (id) rows = rows.filter((row) => row.id === id);
+    if (status) rows = rows.filter((row) => row.status === status);
+    const sellerId = eq(url, "seller_id");
+    if (sellerId) rows = rows.filter((row) => row.seller_id === sellerId);
     return single(rows);
   }
 
   // Un produit physique n'a AUCUN livrable — c'est le cœur du sujet.
+  if (url.pathname === "/rest/v1/zabelie_digital_details") {
+    if (req.method === "POST") {
+      let text = "";
+      req.on("data", (chunk) => text += chunk);
+      req.on("end", () => { const input = JSON.parse(text || "{}"); digitalFacts.set(input.product_id, input); single([input]); });
+      return;
+    }
+    return single([...digitalFacts.values()].filter((row) => url.searchParams.get("product_id")?.includes(row.product_id)));
+  }
   if (url.pathname.startsWith("/rest/v1/product_assets")) return single([]);
 
   if (url.pathname.startsWith("/rest/v1/zabelie_product_variants")) {

@@ -1,3 +1,4 @@
+import { DocumentLanguage } from "@/components/document-language";
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
@@ -107,6 +108,7 @@ export default async function RootLayout({
             Supabase déposera l'utilisateur quand l'allowlist Auth ignore le
             `redirectTo` : il retombe sur le Site URL, quel qu'il soit. Ne rend
             rien et ne se déclenche que sur `type=recovery`. */}
+        <DocumentLanguage />
         <RecoveryCatcher />
         {children}
       </body>

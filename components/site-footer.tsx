@@ -1,3 +1,4 @@
+import { guideHref } from "@/lib/buying-guides";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
@@ -40,6 +41,7 @@ export async function SiteFooter() {
             <Link href="/catalogue" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">
               {t(lang, "nav.catalog")}
             </Link>
+            <Link href={guideHref(lang)} className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "guides.title")}</Link>
             <Link href="/categories" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "directory.title")}</Link>
             <Link href="/catalogue?univers=objets" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.physical")}</Link>
             <Link href="/catalogue?univers=numerique" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "universe.digital")}</Link>
