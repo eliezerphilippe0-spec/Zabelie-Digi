@@ -29,6 +29,8 @@ begin
  assert (select is_test and display_name = 'Nom modifié' from profiles where id = '00000000-0000-0000-0000-000000001051');
  assert (select display_name is distinct from 'Autre modifié' from profiles where id = '00000000-0000-0000-0000-000000001052');
 end $$;
+set local request.jwt.claim.sub = '';
+set local request.jwt.claim.role = 'anon';
 set local role anon;
 do $$ begin
  assert not exists(select 1 from products where id = '00000000-0000-0000-0000-000000001054'), 'Une tentative de démarquage a exposé la fiche';
@@ -38,6 +40,7 @@ reset role;
 -- Le rôle métier admin n'est pas une autorisation SQL : l'API MFA/service reste obligatoire.
 update profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000001051';
 set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000001051';
 do $$ begin
  begin
   update profiles set is_test = false where id = '00000000-0000-0000-0000-000000001051';
@@ -77,6 +80,8 @@ reset role;
 set local role service_role;
 update profiles set is_test = false where id = '00000000-0000-0000-0000-000000001051';
 reset role;
+set local request.jwt.claim.sub = '';
+set local request.jwt.claim.role = 'anon';
 set local role anon;
 do $$ begin
  assert exists(select 1 from products where id = '00000000-0000-0000-0000-000000001054'), 'Le démarquage serveur ne restaure pas la visibilité';
