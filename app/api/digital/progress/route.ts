@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { NextResponse } from "next/server";
@@ -16,5 +17,7 @@ export async function PUT(req: Request) {
   const admin = createAdminClient();
   if (!(await rateLimit(admin, `digital-progress:${user.id}`, 60))) return NextResponse.json({ code: "rate_limited" }, { status: 429 });
   const { error } = await admin.from("zabelie_digital_progress").upsert({ order_id: body.orderId, release_id: body.releaseId, lesson_id: body.lessonId, completed: body.completed, updated_at: new Date().toISOString() });
-  return error ? NextResponse.json({ code: "unavailable" }, { status: 503 }) : NextResponse.json({ ok: true });
+  if (error) return NextResponse.json({ code: "unavailable" }, { status: 503 });
+  revalidatePath(`/mes-achats/${body.orderId}`);
+  return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } });
 }

@@ -10,6 +10,7 @@ import { UUID_RE, releaseAllowed, formatDigitalSize, type DigitalRelease } from 
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 export const metadata = { title: "Bibliothèque — Zabelie", robots: { index: false, follow: false } };
 export default async function DigitalLibraryPage({ params, searchParams }: { params: Promise<{ orderId: string }>; searchParams: Promise<{ version?: string }> }) {
   const [{ orderId }, query, lang] = await Promise.all([params, searchParams, getLang()]);
