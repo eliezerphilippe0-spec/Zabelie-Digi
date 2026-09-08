@@ -90,7 +90,7 @@ test("seller composes a course preview and lesson, saves and recovers it", async
   const row = page.locator("#produit-77777777-7777-7777-7777-777777777777");
   const editor = row.locator("details").filter({ has: page.locator("summary", { hasText: "Atelier numérique" }) });
   await editor.locator("summary").first().click();
-  await editor.getByLabel("Type de contenu", { exact: true }).selectOption("course");
+  await editor.getByRole("combobox", { name: "Type de contenu", exact: true }).selectOption("course");
   await editor.getByLabel("Aperçu gratuit", { exact: true }).fill("Essayez ce premier extrait.");
   await editor.getByRole("button", { name: "Ajouter une leçon", exact: true }).click();
   await editor.getByLabel("Titre de la leçon", { exact: true }).fill("Premiers pas");

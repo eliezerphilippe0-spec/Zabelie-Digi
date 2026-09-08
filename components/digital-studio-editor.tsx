@@ -8,14 +8,19 @@ const button = "min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-se
 export function DigitalStudioEditor({ productId, initial, assets, labels }: { productId: string; initial?: DigitalStudio; assets: { id: string; file_name: string }[]; labels: StudioLabels }) {
   const [value, setValue] = useState(initial ?? EMPTY_DIGITAL_STUDIO);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "saved" | "error">("idle");
   const router = useRouter();
   function change(next: DigitalStudio) { setValue(next); setState("idle"); }
   async function save(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setState("idle");
+    e.preventDefault(); setBusy(true); setState("idle"); setError(null);
     try {
       const response = await fetch("/api/products/digital-studio", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, studio: { ...value, lessons: value.mode === "course" ? value.lessons : [] } }) });
-      if (!response.ok) { setState("error"); return; }
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setError(typeof body?.error === "string" ? body.error : labels.error);
+        setState("error"); return;
+      }
       setState("saved"); router.refresh();
     } catch { setState("error"); } finally { setBusy(false); }
   }
@@ -49,7 +54,7 @@ export function DigitalStudioEditor({ productId, initial, assets, labels }: { pr
         <button type="submit" className="min-h-11 rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{busy ? labels.saving : labels.save}</button>
       </fieldset>
       {state === "saved" && <p role="status" className="mt-3 text-success-text">{labels.saved}</p>}
-      {state === "error" && <p role="alert" className="mt-3 text-danger-text">{labels.error}</p>}
+      {state === "error" && <p role="alert" className="mt-3 text-danger-text">{error ?? labels.error}</p>}
     </form>
   </details>;
 }
