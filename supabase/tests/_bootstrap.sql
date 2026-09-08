@@ -42,6 +42,13 @@ begin
   if not exists (select from pg_roles where rolname = 'service_role') then create role service_role; end if;
 end $$;
 
+-- Vérifié en production le 2026-09-08 : le service possède les droits DML
+-- et contourne la RLS. Reproduire aussi ce rôle, sans quoi le chemin serveur
+-- échoue ici par manque de privilège au lieu de tester les triggers.
+alter role service_role bypassrls;
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to service_role;
+
 -- Les rôles clients atteignent les extensions — mesuré en production le
 -- 2026-09-03 (`has_schema_privilege` / `has_function_privilege`) : `anon`,
 -- `authenticated` et `service_role` ont USAGE sur `extensions` et EXECUTE sur

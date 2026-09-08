@@ -22,6 +22,10 @@ const NOM: Record<Lang, string> = {
   es: "Español",
 };
 
+// Conservé pendant une navigation cliente qui remonte la page et son en-tête.
+// N'est renseigné que par un clic utilisateur dans le navigateur.
+let languageFocusPath: string | null = null;
+
 function closeMenu(menu: HTMLDetailsElement | null, restoreFocus = false) {
   if (!menu) return;
   menu.open = false;
@@ -89,6 +93,15 @@ export function LangToggle({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (!compact || languageFocusPath !== pathname) return;
+    const frame = requestAnimationFrame(() => {
+      menuRef.current?.querySelector("summary")?.focus({ preventScroll: true });
+      languageFocusPath = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [compact, pathname, current]);
+
+  useEffect(() => {
     if (!compact) return;
     function dismissOutside(event: PointerEvent) {
       const menu = menuRef.current;
@@ -115,6 +128,7 @@ export function LangToggle({
     if (lang === current || isPending) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
     const guidePath = guideLanguagePath(pathname, lang) ?? (editorialLangFromPath(pathname) ? editorialLanguagePath(pathname, lang) : null);
+    if (compact && guidePath) languageFocusPath = guidePath;
     startTransition(() => {
       if (guidePath) router.push(guidePath + window.location.search + window.location.hash, { scroll: false });
       else router.refresh();
