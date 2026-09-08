@@ -9,6 +9,7 @@
 - Auth navigateur : phase dédiée du check CI `e2e` qui reconstruit le bundle avec les variables publiques du serveur Auth de test. Les noms des checks requis restent inchangés. Vérifie requête réelle du navigateur, échec récupérable, session persistée, inscription avec confirmation et erreurs traduites. Ce stub ne certifie pas la configuration du service Auth réel ni l’envoi d’e-mails.
 - SEO : URLs FR/HT/EN/ES, canonical, hreflang réciproques et sitemap pour aide, à-propos et recharges. La langue de l’URL prévaut sur le cookie. Les autres pages conservent leur fonctionnement actuel. Le catalogue vide reste volontairement non indexé.
 - Description de marque corrigée : suppression de la promesse de recharge téléphonique alors que le service est suspendu. Connexion et administration exclues de l’indexation. Champ recherche nommé pour les lecteurs d’écran ; titre et annonce des messages de connexion.
+- Recherche pendant le chargement : les champs et boutons du squelette restent indisponibles jusqu’à réception du contexte serveur, pour conserver le filtre numérique lors d’une recherche rapide.
 - Contact de confidentialité renseigné avec l’adresse publique existante `contact@zabelie.com`.
 - Tests SQL sur PostgreSQL 17, version majeure utilisée en production.
 

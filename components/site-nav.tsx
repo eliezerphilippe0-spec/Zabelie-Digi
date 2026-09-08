@@ -60,7 +60,7 @@ function suggestionsDepuisRayons(rayons: RayonMenu[]): SearchSuggestion[] {
  * `on-chrome`, paires vérifiées par scripts/zabelie-contrast.mjs sur les
  * trois arrêts du dégradé.
  */
-export async function SiteNav({ activeHref, searchContext }: { activeHref?: string; searchContext?: { query?: string; filters: Record<string, string> } } = {}) {
+export async function SiteNav({ activeHref, searchContext, searchPending = false }: { searchPending?: boolean; activeHref?: string; searchContext?: { query?: string; filters: Record<string, string> } } = {}) {
   const [user, lang] = await Promise.all([getCurrentUser(), getLang()]);
   // Le menu vient de la BASE (`zabelie_categories`), jamais d'une liste écrite
   // en dur : les libellés sont traduits, les rayons vides sont marqués.
@@ -102,6 +102,7 @@ export async function SiteNav({ activeHref, searchContext }: { activeHref?: stri
           <BrandLogo nomMasqueSurMobile className="header-fold shrink-0 text-on-chrome" />
 
           <SearchBox
+            pending={searchPending}
             compact
             variant="header"
             key={searchContext?.query ?? ""}

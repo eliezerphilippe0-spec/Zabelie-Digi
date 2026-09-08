@@ -29,11 +29,14 @@ export function SearchBox({
   suggestionsLabel,
   items,
   initialQuery = "",
+  pending = false,
   filters = {},
   compact = false,
   variant = "default",
 }: {
   initialQuery?: string;
+  /** Le contenu en cours de chargement ne connaît pas encore les filtres. */
+  pending?: boolean;
   filters?: Record<string, string>;
   placeholder: string;
   submitLabel: string;
@@ -62,9 +65,10 @@ export function SearchBox({
 
   return (
     <div className="relative min-w-0 flex-1">
-      <form action="/catalogue" className="flex gap-2">
+      <form action="/catalogue" aria-busy={pending} className="flex gap-2">
         {Object.entries(filters).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <input
+          disabled={pending}
           name="q"
           value={saisie}
           onChange={(e) => setSaisie(e.target.value)}
@@ -79,6 +83,7 @@ export function SearchBox({
         />
         {variant === "header" ? (
           <button
+            disabled={pending}
             type="submit"
             aria-label={submitLabel}
             title={submitLabel}
@@ -97,6 +102,7 @@ export function SearchBox({
           </button>
         ) : (
         <button
+          disabled={pending}
           type="submit"
           /* SECONDAIRE, et c'est une règle : le CHROME ne porte jamais
              l'accent primaire. Cette barre est collante, donc présente sur
