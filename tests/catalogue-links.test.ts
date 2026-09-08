@@ -31,9 +31,11 @@ function walk(dir: string, out: string[] = []): string[] {
 /** Nom du paramètre catégorie tel que /catalogue le déstructure. */
 function readParamNames(): string[] {
   const src = readFileSync(CATALOGUE_PAGE, "utf8");
-  const m = src.match(/searchParams:\s*Promise<\{([^}]*)\}>/s);
-  assert.ok(m, "signature searchParams introuvable dans " + CATALOGUE_PAGE);
-  const keys = [...m[1].matchAll(/(\w+)\??\s*:/g)].map((k) => k[1]);
+  assert.match(src, /parseCatalogueSearch\(await searchParams\)/);
+  const query = readFileSync("lib/catalogue-query.ts", "utf8");
+  const m = query.match(/export type CatalogueSearch = Partial<Record<([^>]+), string \| string\[\]>>/);
+  assert.ok(m, "typed catalogue search contract missing");
+  const keys = [...m[1].matchAll(/"(\w+)"/g)].map((match) => match[1]);
   const cat = keys.find((k) => k === "cat" || k === "categorie" || k === "category");
   assert.ok(cat, `aucun paramètre de catégorie dans ${CATALOGUE_PAGE} (vu : ${keys.join(", ")})`);
   return keys;

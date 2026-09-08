@@ -21,8 +21,8 @@ test("purchase filters reject repeated/invalid URL inputs and keep universe in p
 });
 test("seller preparation uses saved content and separates physical, file and service requirements", () => {
   const base = { description: " ", cover_url: null, product_assets: [], delivery_days: null, service_includes: [] };
-  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE }, false).map(c => c.complete), [false, false, false]);
-  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE, description: "PDF", product_assets: [{ id: "asset" }] }, true).map(c => c.complete), [true, true, true]);
+  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE }, false).map(c => c.complete), [false, false, false, false]);
+  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE, description: "PDF", product_assets: [{ id: "asset" }] }, true).map(c => c.complete), [true, true, true, false]);
   const service = sellerReadiness({ ...base, kind: KIND_SERVICE, delivery_days: 0, service_includes: ["Consultation"] }, false);
   assert.equal(service.find(c => c.key === "seller.ready.delay")?.complete, true);
   assert.equal(service.some(c => c.key === "seller.ready.asset"), false);

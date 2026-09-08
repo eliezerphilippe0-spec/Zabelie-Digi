@@ -1,3 +1,5 @@
+import { DigitalDetailsEditor } from "@/components/digital-details-editor";
+import { getDigitalDetails } from "@/lib/digital-details-server";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -217,6 +219,7 @@ export default async function VendrePage() {
     product_assets: { id: string }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  const digitalDetails = await getDigitalDetails(mine.filter((p) => isDownloadable(p.kind)).map((p) => p.id));
 
   // Galerie V-1A (docs/35) : l'état initial de chaque gestionnaire vient du
   // serveur — [] tant que 0073 n'est pas appliquée, et le gestionnaire
@@ -389,7 +392,7 @@ export default async function VendrePage() {
                   <div className="my-4 rounded-xl border border-line p-4">
                     <h3 className="font-semibold">{t(lang, "seller.ready.title")}</h3>
                     <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                      {sellerReadiness(p, (galeries[i] ?? []).some((m) => m.kind === "image")).map((check) => (
+                      {sellerReadiness({ ...p, digitalDetails: digitalDetails?.get(p.id) }, (galeries[i] ?? []).some((m) => m.kind === "image")).map((check) => (
                         <li key={check.key} className="flex items-start gap-2 text-xs">
                           <span aria-hidden="true" className={check.complete ? "text-success-text" : "text-warning-text"}>{check.complete ? "✓" : "○"}</span>
                           <span>{t(lang, check.key)} · {t(lang, check.complete ? "seller.ready.present" : "seller.ready.missing")}</span>
@@ -432,6 +435,13 @@ export default async function VendrePage() {
                     `else` étiquetait « Service » tout le reste — un produit
                     physique s'affichait donc comme un service dans le
                     tableau de bord de son propre vendeur. */}
+                {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails !== null && <DigitalDetailsEditor productId={p.id} initial={digitalDetails?.get(p.id)} labels={{
+                  title: t(lang, "digital.edit.title"), hint: t(lang, "digital.edit.hint"),
+                  formats: t(lang, "digital.formats"), language: t(lang, "digital.language"), compatibility: t(lang, "digital.compatibility"),
+                  license: t(lang, "digital.license"), contents: t(lang, "digital.contents"), updates: t(lang, "digital.updates"),
+                  save: t(lang, "digital.save"), saving: t(lang, "digital.saving"), saved: t(lang, "digital.saved"), error: t(lang, "digital.save.error"),
+                }} />}
+                {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails === null && <p role="alert" className="text-sm text-danger-text">{t(lang, "digital.save.error")}</p>}
                 {isDownloadable(p.kind, p.id) ? (
                   <UploadAsset
                     productId={p.id}

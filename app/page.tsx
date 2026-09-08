@@ -223,6 +223,7 @@ export default async function HomePage() {
             celle du porteur quand elle existe ; sinon un aplat de chrome. */}
         <section className="mx-auto max-w-6xl px-3 pt-3">
           <div
+            data-has-featured={Boolean(featured)}
             className="home-hero relative overflow-hidden rounded-2xl bg-chrome text-on-chrome"
             style={heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >

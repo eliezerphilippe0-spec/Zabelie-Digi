@@ -1,3 +1,6 @@
+import { CATALOGUE_UNIVERSES, catalogueUniverse } from "@/lib/catalogue-universes";
+import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
+import { LANGS } from "@/lib/i18n";
 import type { MetadataRoute } from "next";
 import { getProductsForSitemap } from "@/lib/products";
 import { getBoutikSlug } from "@/lib/creators";
@@ -14,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
    * différemment : un sitemap pouvait annoncer un domaine que les canoniques
    * ne confirmaient pas. Une seule fonction décide désormais. */
   const base = siteUrl();
-  const now = new Date();
+  const products = await getProductsForSitemap().catch(() => []);
 
   const staticRoutes: MetadataRoute.Sitemap = [
     "",
@@ -25,12 +28,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/catalogue?univers=services",
     "/recharges",
     "/vendre",
-    "/connexion",
     "/aide",
     "/a-propos",
-  ].map((path) => ({
+  ].filter((path) => {
+    if (!path.startsWith("/catalogue")) return true;
+    const universe = catalogueUniverse(new URL(path, base).searchParams.get("univers"));
+    return universe ? products.some((p) => p.kind === CATALOGUE_UNIVERSES[universe].kind) : products.length > 0;
+  }).map((path) => ({
     url: `${base}${path}`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: path === "" ? 1 : 0.7,
   }));
@@ -38,11 +43,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Correctif audit : un incident Supabase transitoire ne doit pas faire
   // échouer le sitemap entier (500 sur chaque crawl) — les routes statiques
   // restent utiles même sans les routes produit/créateur ce coup-ci.
-  const products = await getProductsForSitemap().catch(() => []);
 
   const productRoutes: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${base}/produit/${p.slug}`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.8,
   }));
@@ -74,21 +77,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
   const creatorRoutes: MetadataRoute.Sitemap = creators.map((c) => ({
     url: `${base}${hrefBoutique(c)}`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.6,
   }));
 
-  // Les rayons ACTIFS — chacun est une page d'atterrissage réelle, y compris
-  // vide (écran « rayon ouvre bientôt » + recrutement). La langue des libellés
-  // n'importe pas ici : le href filtre par label_fr, indépendant de la langue.
+  // Only stocked departments belong in the discovery sitemap. No invented lastModified dates.
   const rayons = await getMenuRayons("fr").catch(() => []);
-  const rayonRoutes: MetadataRoute.Sitemap = rayons.map((r) => ({
+  const rayonRoutes: MetadataRoute.Sitemap = rayons.filter((r) => !r.vide).map((r) => ({
     url: `${base}${r.href}`,
-    lastModified: now,
     changeFrequency: "weekly",
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...rayonRoutes, ...productRoutes, ...creatorRoutes];
+  const guideRoutes: MetadataRoute.Sitemap = LANGS.flatMap((lang) => [undefined, ...BUYING_GUIDES.map((guide) => guide.slug)].map((slug) => ({
+    url: `${base}${guideHref(lang, slug)}`,
+    alternates: { languages: Object.fromEntries(LANGS.map((l) => [l, `${base}${guideHref(l, slug)}`])) },
+  })));
+  return [...staticRoutes, ...rayonRoutes, ...productRoutes, ...creatorRoutes, ...guideRoutes];
 }

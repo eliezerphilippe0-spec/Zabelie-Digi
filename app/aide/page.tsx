@@ -1,3 +1,4 @@
+import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -114,6 +115,10 @@ export default async function AidePage() {
           </ol>
         </section>
 
+        <section className="mt-10 rounded-2xl border border-line bg-surface p-6">
+          <h2 className="text-xl font-bold">{t(lang, "guides.title")}</h2>
+          <ul className="mt-3">{BUYING_GUIDES.map((guide) => <li key={guide.slug}><Link href={guideHref(lang, guide.slug)} className="inline-flex min-h-11 items-center text-base underline underline-offset-4">{t(lang, guide.title)}</Link></li>)}</ul>
+        </section>
         <h2 id="faq" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
           {t(lang, "sec.faq")}
         </h2>

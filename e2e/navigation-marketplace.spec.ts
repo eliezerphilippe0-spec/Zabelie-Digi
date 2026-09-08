@@ -23,7 +23,7 @@ test("la recherche GET conserve l'univers digital", async ({ browser, baseURL })
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(`${baseURL}/catalogue?univers=numerique`);
-  const form = page.locator('main form[action="/catalogue"]').first();
+  const form = page.locator('header form[action="/catalogue"]').first();
   await form.locator('input[name="q"]').fill("Lightroom");
   await Promise.all([page.waitForURL(/q=Lightroom/), form.locator('button[type="submit"]').click()]);
   expect(new URL(page.url()).searchParams.get("univers")).toBe("numerique");
