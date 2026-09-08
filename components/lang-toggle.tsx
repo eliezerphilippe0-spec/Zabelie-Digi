@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { guideLanguagePath } from "@/lib/guide-routing";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
@@ -19,6 +20,12 @@ const NOM: Record<Lang, string> = {
   en: "English",
   es: "Español",
 };
+
+function closeMenu(menu: HTMLDetailsElement | null, restoreFocus = false) {
+  if (!menu) return;
+  menu.open = false;
+  if (restoreFocus) menu.querySelector("summary")?.focus({ preventScroll: true });
+}
 
 /**
  * Sélecteur FR / Kreyòl / EN — cookie 1 an, puis re-rendu serveur.
@@ -77,28 +84,59 @@ export function LangToggle({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const menuRef = useRef<HTMLDetailsElement>(null);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!compact) return;
+    function dismissOutside(event: PointerEvent) {
+      const menu = menuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) closeMenu(menu);
+    }
+    function dismissEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && menuRef.current?.open) {
+        event.preventDefault();
+        closeMenu(menuRef.current, true);
+      }
+    }
+    document.addEventListener("pointerdown", dismissOutside, true);
+    document.addEventListener("keydown", dismissEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside, true);
+      document.removeEventListener("keydown", dismissEscape);
+    };
+  }, [compact]);
 
   function set(lang: Lang) {
-    if (lang === current) return;
+    // router.refresh() preserves native <details> state. Close it immediately,
+    // even for the current language, and restore keyboard focus outside the list.
+    closeMenu(menuRef.current, true);
+    if (lang === current || isPending) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
     const guidePath = guideLanguagePath(pathname, lang);
-    if (guidePath) router.push(guidePath);
-    else router.refresh();
+    startTransition(() => {
+      if (guidePath) router.push(guidePath);
+      else router.refresh();
+    });
   }
 
   if (compact) {
     return (
-      <details className="relative shrink-0 [&[open]>summary+div]:block">
+      <details ref={menuRef} className="relative shrink-0 [&[open]>summary+div]:block">
         <summary
           aria-label={NOM[current]}
-          className="inline-flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-xl text-sm font-semibold text-on-chrome transition marker:content-none hover:bg-on-chrome/10 [&::-webkit-details-marker]:hidden"
+          className="inline-flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-1 rounded-xl text-sm font-semibold text-on-chrome transition marker:content-none hover:bg-on-chrome/10 [&::-webkit-details-marker]:hidden"
+          aria-busy={isPending}
         >
+          {isPending && <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 motion-safe:animate-spin fill-none stroke-current" strokeWidth="2"><path d="M12 3a9 9 0 1 1-9 9" /></svg>}
           {ABBR[current]}
         </summary>
         <div className="absolute right-0 z-50 mt-1 hidden w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
           {LANGS.map((l) => (
             <button
               key={l}
+              type="button"
+              disabled={isPending}
               onClick={() => set(l)}
               aria-pressed={current === l}
               className={`flex min-h-11 w-full items-center justify-between gap-2 px-3 text-left text-sm transition ${
@@ -123,6 +161,9 @@ export function LangToggle({
   const btn = (lang: Lang, label: string, title: string) => (
     <button
       key={lang}
+      type="button"
+      disabled={isPending}
+      aria-busy={isPending}
       onClick={() => set(lang)}
       title={title}
       aria-pressed={current === lang}
