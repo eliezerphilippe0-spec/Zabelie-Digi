@@ -75,4 +75,17 @@ do $$ begin if exists(select 1 from public.zabelie_digital_studio where product_
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000a10401',true);
 do $$ begin if not exists(select 1 from public.zabelie_digital_studio where product_id='00000000-0000-0000-0000-000000a10410') then raise exception 'seller cannot see own studio'; end if; end $$;
 reset role;
+-- New guards must not prevent deletion of an unsold product/account.
+insert into public.products(id,seller_id,slug,title,kind,price_htg,status) values
+ ('00000000-0000-0000-0000-000000a10411','00000000-0000-0000-0000-000000a10401','studio-unsold-test','Unsold','fichier',100,'draft');
+insert into public.product_assets(id,product_id,storage_path,file_name,size_bytes) values
+ ('00000000-0000-0000-0000-000000a10422','00000000-0000-0000-0000-000000a10411','studio-test/unsold.pdf','unsold.pdf',1024);
+update public.products set status='published' where id='00000000-0000-0000-0000-000000a10411';
+delete from public.products where id='00000000-0000-0000-0000-000000a10411';
+do $$ begin
+ if exists(select 1 from public.zabelie_digital_releases where product_id='00000000-0000-0000-0000-000000a10411') then raise exception 'unsold product cannot be removed'; end if;
+ begin
+  delete from public.products where id='00000000-0000-0000-0000-000000a10410'; raise exception 'purchased product was removed';
+ exception when foreign_key_violation then null; end;
+end $$;
 rollback;

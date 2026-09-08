@@ -24,7 +24,7 @@ for each row execute function public.zabelie_digital_details_draft_guard();
 
 create table public.zabelie_digital_releases (
   id uuid primary key default gen_random_uuid(),
-  product_id uuid not null references public.products(id) on delete restrict,
+  product_id uuid not null references public.products(id) on delete cascade,
   version integer not null check (version > 0),
   title text not null,
   details jsonb not null,
@@ -48,7 +48,14 @@ grant select, insert on public.zabelie_digital_entitlements to service_role;
 
 create function public.zabelie_digital_immutable() returns trigger
 language plpgsql security invoker set search_path = public, pg_temp as $$
-begin raise exception 'digital_purchase_snapshot_immutable' using errcode = '23514'; end;
+begin
+  -- Deleting an unsold product/account can cascade. A purchased product is
+  -- already protected by orders.product_id RESTRICT and entitlement FKs.
+  if tg_table_name='zabelie_digital_releases' and tg_op='DELETE' then
+    if not exists(select 1 from public.products where id=old.product_id) then return old; end if;
+  end if;
+  raise exception 'digital_purchase_snapshot_immutable' using errcode = '23514';
+end;
 $$;
 revoke all on function public.zabelie_digital_immutable() from public, anon, authenticated;
 grant execute on function public.zabelie_digital_immutable() to service_role;
@@ -66,7 +73,11 @@ declare v_id uuid; v_kind public.product_kind; v_status public.product_status;
 begin
   v_id := case when tg_op = 'DELETE' then old.product_id else new.product_id end;
   select kind,status into v_kind,v_status from public.products where id=v_id for update;
-  if v_kind <> 'fichier' or v_status <> 'draft' or not found then
+  if not found then
+    if tg_op='DELETE' then return old; end if;
+    raise exception 'digital_asset_product_required' using errcode='23514';
+  end if;
+  if v_kind <> 'fichier' or v_status <> 'draft' then
     raise exception 'digital_asset_draft_required' using errcode='23514';
   end if;
   if tg_op = 'UPDATE' then raise exception 'digital_asset_immutable' using errcode='23514'; end if;
