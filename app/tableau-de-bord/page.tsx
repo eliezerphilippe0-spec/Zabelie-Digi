@@ -517,6 +517,8 @@ export default async function DashboardPage({
         ))}
       </div>
 
+      <DigitalSellerMetrics sellerId={user.id} lang={lang}/>
+
       <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
         <p className="text-sm text-mist">
           Chaque vente confirmée est créditée <strong>en attente</strong> et
@@ -813,7 +815,6 @@ export default async function DashboardPage({
           <AccountActions />
         </div>
       </section>
-      <DigitalSellerMetrics sellerId={user.id} lang={lang}/>
     </Shell>
   );
 }

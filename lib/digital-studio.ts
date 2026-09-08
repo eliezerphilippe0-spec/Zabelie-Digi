@@ -42,3 +42,11 @@ export function releaseAllowed(original: Pick<DigitalRelease, "id" | "product_id
   return candidate.id === original.id || (original.manifest.include_updates && candidate.product_id === original.product_id && candidate.version > original.version);
 }
 export function conversionPercent(confirmed: number, started: number): number | null { return started > 0 ? Math.round(confirmed / started * 1000) / 10 : null; }
+
+/** Show small resources accurately instead of rounding a real file to 0.0 MB. */
+export function formatDigitalSize(bytes: number | null, lang: string): string {
+  if (bytes === null || !Number.isFinite(bytes) || bytes <= 0) return "—";
+  const divisor = bytes >= 1_000_000 ? 1_000_000 : bytes >= 1000 ? 1000 : 1;
+  const unit = divisor === 1_000_000 ? "megabyte" : divisor === 1000 ? "kilobyte" : "byte";
+  return new Intl.NumberFormat(lang === "ht" ? "fr-HT" : lang, { style: "unit", unit, maximumFractionDigits: 1 }).format(bytes / divisor);
+}

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseDigitalStudio, EMPTY_DIGITAL_STUDIO, digitalAccessAllowed, releaseAllowed, conversionPercent, type DigitalRelease } from "../lib/digital-studio";
+import { parseDigitalStudio, EMPTY_DIGITAL_STUDIO, digitalAccessAllowed, releaseAllowed, conversionPercent, formatDigitalSize, type DigitalRelease } from "../lib/digital-studio";
 import { t, LANGS } from "../lib/i18n";
 import { STUDIO_KEYS } from "../lib/digital-studio-labels";
 const lesson = { id: "00000000-0000-0000-0000-000000000001", chapter: "Intro", title: "First lesson", body: "Private content", assetId: "", free: false };
@@ -42,4 +42,11 @@ test("metrics distinguish no sample from a real zero conversion rate", () => {
 });
 test("every new control has a translation in all four languages", () => {
   for (const lang of LANGS) for (const key of STUDIO_KEYS) assert.notEqual(t(lang, `studio.${key}`), `studio.${key}`);
+});
+
+test("small file sizes are not presented as empty downloads", () => {
+  assert.equal(formatDigitalSize(null, "fr"), "—");
+  assert.equal(formatDigitalSize(0, "en"), "—");
+  assert.match(formatDigitalSize(1024, "en"), /1/);
+  assert.match(formatDigitalSize(2000000, "fr"), /2/);
 });
