@@ -4,6 +4,7 @@ import {
   SITE_SHORT_NAME,
   SITE_DESCRIPTION,
   BRAND_INK,
+  brandIconUrl,
 } from "@/lib/brand";
 
 /**
@@ -53,16 +54,16 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: "ltr",
     categories: ["shopping", "business"],
     icons: [
-      { src: "/favicon.png", sizes: "96x96", type: "image/png", purpose: "any" },
+      { src: brandIconUrl("/favicon.png"), sizes: "96x96", type: "image/png", purpose: "any" },
       // `any` : la tuile telle qu'elle apparaît dans l'en-tête et l'onglet.
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: brandIconUrl("/icons/icon-192.png"), sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: brandIconUrl("/icons/icon-512.png"), sizes: "512x512", type: "image/png", purpose: "any" },
       // `maskable` : Android applique SON masque (cercle, goutte, carré selon
       // le constructeur) et rogne jusqu'à 20 % de chaque bord. Sans variante
       // dédiée, le système prend l'icône `any` et coupe les angles de la
       // tuile — ou pire, ajoute lui-même un fond blanc autour. Celle-ci porte
       // un fond pleine surface et le monogramme réduit en zone sûre.
-      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: brandIconUrl("/icons/maskable-512.png"), sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

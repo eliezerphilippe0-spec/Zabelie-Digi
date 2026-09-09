@@ -30,11 +30,12 @@ import { BRAND_INK } from "../lib/brand";
  */
 
 const M = manifest();
+const iconFile = (src: string) => `public${new URL(src, "https://zabelie.com").pathname}`;
 
 test("chaque icône déclarée existe vraiment sur le disque", async () => {
   assert.ok(M.icons && M.icons.length > 0, "aucune icône déclarée");
   for (const icone of M.icons!) {
-    const chemin = `public${icone.src}`;
+    const chemin = iconFile(icone.src);
     assert.ok(
       existsSync(chemin),
       `Le manifeste déclare \`${icone.src}\` et le fichier \`${chemin}\` ` +
@@ -46,7 +47,7 @@ test("chaque icône déclarée existe vraiment sur le disque", async () => {
 test("les dimensions déclarées sont celles du fichier, pas une promesse", async () => {
   for (const icone of M.icons!) {
     const [l, h] = String(icone.sizes).split("x").map(Number);
-    const meta = await sharp(`public${icone.src}`).metadata();
+    const meta = await sharp(iconFile(icone.src)).metadata();
     assert.equal(
       `${meta.width}x${meta.height}`,
       `${l}x${h}`,
@@ -105,4 +106,19 @@ test("le nom court tient sous une icône Android", () => {
     `\`short_name\` fait ${M.short_name!.length} caractères ; Android tronque ` +
       `au-delà de ~12 sous l'icône de l'écran d'accueil.`
   );
+});
+
+// Safari peut chercher ces noms directement, sans suivre le manifeste.
+test("les icônes Apple à la racine sont le logo officiel, opaque et en 180 px", async () => {
+  const svg = readFileSync("app/icon.svg");
+  const expected = await sharp(svg, { density: 270 }).resize(180, 180)
+    .flatten({ background: BRAND_INK }).png().toBuffer();
+  for (const file of ["public/apple-touch-icon.png", "public/apple-touch-icon-precomposed.png", "public/icons/apple-touch-icon.png"]) {
+    const actual = readFileSync(file);
+    assert.deepEqual(actual, expected, `${file} doit reprendre le symbole Zabelie`);
+    const meta = await sharp(actual).metadata();
+    assert.equal(meta.width, 180);
+    assert.equal(meta.height, 180);
+    assert.equal(meta.hasAlpha, false);
+  }
 });

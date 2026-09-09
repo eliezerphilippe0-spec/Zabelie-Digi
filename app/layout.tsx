@@ -5,7 +5,7 @@ import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
 import { cookies } from "next/headers";
 import { siteUrl } from "@/lib/site-url";
-import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK } from "@/lib/brand";
+import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK, brandIconUrl } from "@/lib/brand";
 import { ThemeProvider } from "@/components/theme-provider";
 import { THEME_COOKIE, THEME_INIT_SCRIPT, readThemePreference, resolveTheme } from "@/lib/theme";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
@@ -60,11 +60,11 @@ export const metadata: Metadata = {
   // app/icon.svg: the same mark and colours as the site header.
   icons: {
     icon: [
-      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32 48x48 96x96 256x256" },
-      { url: "/favicon.png", type: "image/png", sizes: "96x96" },
+      { url: brandIconUrl("/favicon.ico"), type: "image/x-icon", sizes: "16x16 32x32 48x48 96x96 256x256" },
+      { url: brandIconUrl("/favicon.png"), type: "image/png", sizes: "96x96" },
     ],
-    shortcut: "/favicon.ico",
-    apple: [{ url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: brandIconUrl("/favicon.ico"),
+    apple: [{ url: brandIconUrl("/apple-touch-icon.png"), type: "image/png", sizes: "180x180" }],
   },
   openGraph: {
     title,
