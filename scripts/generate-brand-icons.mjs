@@ -20,8 +20,14 @@ for (const [path, size] of [
 ]) await save(path, await png(svg, size));
 
 // iOS applies its own rounded mask; supply an opaque background.
-await save("public/icons/apple-touch-icon.png", await sharp(svg, { density: 270 })
-  .resize(180, 180).flatten({ background }).png().toBuffer());
+const appleIcon = await sharp(svg, { density: 270 })
+  .resize(180, 180).flatten({ background }).png().toBuffer();
+// Root names are also discovered automatically by Safari and older Web Clips.
+for (const path of [
+  "public/apple-touch-icon.png",
+  "public/apple-touch-icon-precomposed.png",
+  "public/icons/apple-touch-icon.png",
+]) await save(path, appleIcon);
 // The original Z lies entirely inside the central 80% safe circle.
 const maskable = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="${background}"/>${mark}</svg>`);
 await save("public/icons/maskable-512.png", await png(maskable, 512));

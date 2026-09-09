@@ -32,3 +32,9 @@ export const SITE_SHORT_NAME = "Zabelie";
  *  pied, barre d'adresse, favicon), pas `--color-ink` qui est la surface
  *  claire des champs en mode clair. Croisé par `tests/pwa-manifeste`. */
 export const BRAND_INK = "#17123a";
+
+/** Révision fixe des icônes : renouvelle les anciennes entrées de cache mobile.
+ * Ne pas la changer à chaque build : les moteurs ont besoin d'URL stables. */
+export function brandIconUrl(path: string): string {
+  return `${path}?v=zabelie-20260909`;
+}
