@@ -543,6 +543,8 @@ export function redactPayment(p: MonCashPayment): Record<string, unknown> {
  *                            fréquente n'est pas « clé fausse » mais « clé du
  *                            BAC À SABLE employée en production », les deux
  *                            portails étant distincts
+ *   `fournisseur_indisponible` panne HTTP ou limitation de débit, clés non vérifiées
+ *   `reponse_invalide`       réponse inattendue ou jeton inexploitable
  *   `bac_a_sable`            les identifiants passent, mais en mode sandbox :
  *                            aucun paiement RÉEL ne partira jamais
  *   `ok`                     jeton obtenu en production
@@ -563,6 +565,8 @@ export type VerdictMonCash =
   | "mode_ambigu"
   | "injoignable"
   | "identifiants_refuses"
+  | "fournisseur_indisponible"
+  | "reponse_invalide"
   | "bac_a_sable"
   | "ok";
 
@@ -582,27 +586,22 @@ export type RapportMonCash = {
   explication: string;
 };
 
-export async function verifierMonCash(): Promise<RapportMonCash> {
+/** Le délai couvre la réponse HTTP ET la lecture de son corps. */
+export async function verifierMonCash({ timeoutMs = 8000 }: { timeoutMs?: number } = {}): Promise<RapportMonCash> {
   const clientId = process.env.MONCASH_CLIENT_ID;
   const clientSecret = process.env.MONCASH_CLIENT_SECRET;
   const identifiantsPresents = Boolean(clientId && clientSecret);
 
-  // 1. Le mode d'abord : illisible, rien ne peut partir, et ça se dit avant
-  //    d'accuser les identifiants.
   let mode: MonCashMode;
   let modeSource: MonCashModeSource;
   try {
     ({ mode, source: modeSource } = resolveMonCashMode(process.env.MONCASH_MODE));
-  } catch (e) {
-    console.error("[moncash-verify] MONCASH_MODE illisible", e);
+  } catch {
+    // La valeur mal saisie peut elle-même contenir un secret : ne pas la logger.
+    console.error("[moncash-verify] MONCASH_MODE illisible");
     return {
-      verdict: "mode_ambigu",
-      mode: null,
-      modeSource: null,
-      identifiantsPresents,
-      hote: null,
-      statutFournisseur: null,
-      jetonObtenu: false,
+      verdict: "mode_ambigu", mode: null, modeSource: null, identifiantsPresents,
+      hote: null, statutFournisseur: null, jetonObtenu: false,
       explication:
         "MONCASH_MODE ne vaut ni « sandbox » ni « production ». Toute création " +
         "de paiement lève avant même d'atteindre MonCash. Corriger la variable " +
@@ -612,28 +611,27 @@ export async function verifierMonCash(): Promise<RapportMonCash> {
 
   const { rest } = bases(mode);
   const hote = new URL(rest).host;
-
   if (!identifiantsPresents) {
     return {
-      verdict: "absente",
-      mode,
-      modeSource,
-      identifiantsPresents: false,
-      hote,
-      statutFournisseur: null,
-      jetonObtenu: false,
+      verdict: "absente", mode, modeSource, identifiantsPresents: false,
+      hote, statutFournisseur: null, jetonObtenu: false,
       explication:
         "MONCASH_CLIENT_ID et/ou MONCASH_CLIENT_SECRET ne sont pas posés dans " +
         "Vercel. Le rail est masqué au checkout, aucun paiement ne peut naître.",
     };
   }
 
-  // 2. La question, posée à MonCash. `client_credentials` est une LECTURE :
-  //    aucune commande, aucun paiement, aucune trace côté acheteur.
-  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-  let res: Response;
+  let statutFournisseur: number | null = null;
+  const rapport = (verdict: VerdictMonCash, explication: string, jetonObtenu = false): RapportMonCash => ({
+    verdict, mode, modeSource, identifiantsPresents, hote,
+    statutFournisseur, jetonObtenu, explication,
+  });
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    res = await fetch(`${rest}/oauth/token`, {
+    // Aucun CreatePayment : le jeton sert seulement à vérifier l'authentification.
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+    const res = await fetch(`${rest}/oauth/token`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${basic}`,
@@ -642,88 +640,65 @@ export async function verifierMonCash(): Promise<RapportMonCash> {
       },
       body: "scope=read,write&grant_type=client_credentials",
       cache: "no-store",
+      signal: controller.signal,
     });
-  } catch (e) {
-    console.error("[moncash-verify] fournisseur injoignable", e);
-    return {
-      verdict: "injoignable",
-      mode,
-      modeSource,
-      identifiantsPresents: true,
-      hote,
-      statutFournisseur: null,
-      jetonObtenu: false,
-      explication:
-        `${hote} n'a pas répondu. Ce verdict ne dit RIEN des identifiants : ` +
-        "la question n'a pas pu être posée. Réessayer avant de conclure.",
-    };
+    statutFournisseur = res.status;
+
+    if (res.status === 401 || res.status === 403) {
+      return rapport("identifiants_refuses",
+        `${hote} a refusé l'authentification (HTTP ${res.status}). Vérifier ` +
+        "l'autorisation du compte marchand et les identifiants du portail " +
+        `correspondant au mode « ${mode} » : bac à sable et production utilisent ` +
+        "des identifiants distincts. Ne jamais transmettre les secrets dans un message.");
+    }
+    if (res.status === 408 || res.status === 429 || res.status >= 500) {
+      return rapport("fournisseur_indisponible",
+        `${hote} est temporairement indisponible ou limite les requêtes (HTTP ${res.status}). ` +
+        "Ce résultat ne valide ni ne réfute les identifiants. Réessayer plus tard ; " +
+        "ne pas remplacer les clés sur cette seule réponse.");
+    }
+    if (!res.ok) {
+      return rapport("reponse_invalide",
+        `${hote} a répondu avec un statut inattendu (HTTP ${res.status}). ` +
+        "L'authentification ne peut pas être validée. Vérifier l'accès à l'API avec MonCash.");
+    }
+
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      if (controller.signal.aborted) throw new Error("MonCash probe timed out");
+      return rapport("reponse_invalide",
+        `${hote} a répondu ${res.status}, mais la réponse est illisible ou incomplète. ` +
+        "Cela ne prouve pas un refus des identifiants. Réessayer avant de conclure.");
+    }
+    const token = data !== null && typeof data === "object" && !Array.isArray(data)
+      ? (data as { access_token?: unknown }).access_token : undefined;
+    if (typeof token !== "string" || token.trim().length === 0) {
+      return rapport("reponse_invalide",
+        `${hote} a répondu ${res.status} sans jeton d'accès exploitable. ` +
+        "L'authentification reste non vérifiée ; faire contrôler la réponse par MonCash.");
+    }
+
+    if (mode !== "production") {
+      return rapport("bac_a_sable",
+        "Authentification réussie dans le bac à sable. Aucune gourde réelle ne peut être encaissée. " +
+        "Terminer les essais sandbox puis demander l'activation et les identifiants de production " +
+        "à l'équipe MonCash Business. Conserver le bac à sable tant que cette activation n'est pas confirmée.", true);
+    }
+    return rapport("ok",
+      `Authentification réussie sur ${hote} en production. ` +
+      "Ce résultat ne confirme aucun encaissement, aucune réception de produit ni aucun versement vendeur. " +
+      "Le parcours de paiement complet reste à valider.", true);
+  } catch {
+    // Une exception de transport peut contenir l'en-tête Authorization : ni
+    // l'objet d'erreur ni son message ne doivent rejoindre les journaux.
+    const expired = controller.signal.aborted;
+    console.error(expired ? "[moncash-verify] délai dépassé" : "[moncash-verify] fournisseur injoignable");
+    return rapport("injoignable",
+      `${hote} ${expired ? "n'a pas terminé sa réponse dans le délai prévu" : "n'a pas répondu"}. ` +
+      "Ce verdict ne dit RIEN des identifiants : la question n'a pas pu être menée à terme. Réessayer avant de conclure.");
+  } finally {
+    clearTimeout(deadline);
   }
-
-  if (!res.ok) {
-    return {
-      verdict: "identifiants_refuses",
-      mode,
-      modeSource,
-      identifiantsPresents: true,
-      hote,
-      statutFournisseur: res.status,
-      jetonObtenu: false,
-      explication:
-        `${hote} a refusé les identifiants (HTTP ${res.status}). La cause la ` +
-        "plus fréquente n'est pas une clé fausse mais une clé du MAUVAIS " +
-        "portail : le bac à sable et la production ont des identifiants " +
-        `distincts, et le mode courant est « ${mode} ». Relever les ` +
-        "identifiants sur le portail correspondant, les retaper dans Vercel " +
-        "(ne pas coller), puis redéployer.",
-    };
-  }
-
-  const data = (await res.json().catch(() => ({}))) as { access_token?: string };
-  const jetonObtenu = Boolean(data.access_token);
-
-  if (!jetonObtenu) {
-    return {
-      verdict: "identifiants_refuses",
-      mode,
-      modeSource,
-      identifiantsPresents: true,
-      hote,
-      statutFournisseur: res.status,
-      jetonObtenu: false,
-      explication:
-        `${hote} a répondu ${res.status} mais sans jeton d'accès. La réponse ` +
-        "est acceptée sans être exploitable — traiter comme un refus.",
-    };
-  }
-
-  if (mode !== "production") {
-    return {
-      verdict: "bac_a_sable",
-      mode,
-      modeSource,
-      identifiantsPresents: true,
-      hote,
-      statutFournisseur: res.status,
-      jetonObtenu: true,
-      explication:
-        "Les identifiants sont valides, mais le mode est « sandbox » : les " +
-        "paiements partent vers le bac à sable et AUCUNE gourde réelle ne " +
-        "circulera. Pour encaisser : identifiants du portail de PRODUCTION, " +
-        "MONCASH_MODE=production, puis redéployer.",
-    };
-  }
-
-  return {
-    verdict: "ok",
-    mode,
-    modeSource,
-    identifiantsPresents: true,
-    hote,
-    statutFournisseur: res.status,
-    jetonObtenu: true,
-    explication:
-      `Jeton obtenu sur ${hote} en mode production. Le rail peut encaisser. ` +
-      "Ce verdict ne présume pas de la suite d'un paiement, seulement que " +
-      "l'authentification aboutit.",
-  };
 }

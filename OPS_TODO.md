@@ -3,6 +3,12 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## MonCash — bac à sable confirmé le 9 septembre 2026
+
+Le porteur confirme : « Non, nous sommes encore en bac à sable ». La priorité est de terminer un paiement sandbox avec un payeur de test fonctionnel, puis d'obtenir l'activation et les identifiants de production auprès de MonCash Business. Ne pas convertir les échecs historiques en preuve de refus des clés.
+
+Le [dossier de passage en production](docs/56-passage-moncash-production.md) fournit l'ordre des opérations, les URL du projet et les preuves attendues. Un [message à MonCash Business](docs/demande-moncash-business.md) est prêt, mais n'a pas été envoyé. Aucun changement de mode, de secret ni de compte marchand effectué.
+
 ## ⚙️ À poser : la variable `ZABELIE_URL` (une minute)
 
 Depuis le 2026-09-07, un workflow vérifie après **chaque fusion dans `main`**
