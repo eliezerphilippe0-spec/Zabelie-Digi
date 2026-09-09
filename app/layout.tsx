@@ -6,6 +6,8 @@ import { getLang } from "@/lib/i18n-server";
 import { cookies } from "next/headers";
 import { siteUrl } from "@/lib/site-url";
 import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK } from "@/lib/brand";
+import { ThemeProvider } from "@/components/theme-provider";
+import { THEME_COOKIE, THEME_INIT_SCRIPT, readThemePreference, resolveTheme } from "@/lib/theme";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
 
 // Polices AUTO-HÉBERGÉES par Next (servies depuis notre domaine) — supprime la
@@ -95,15 +97,14 @@ export default async function RootLayout({
   // BL-112 : lang suit la langue de session (lecteurs d'écran + SEO) — figé
   // sur "fr" auparavant, le Kreyòl était prononcé avec les règles du français.
   const lang = await getLang();
-  // Thème : le cookie décide AU RENDU SERVEUR — la page arrive dans le bon
-  // thème, sans flash. Toute valeur autre que "dark" rend le CLAIR : depuis
-  // la Phase 1 de l'accueil premium (2026-09-04, docs/02 V-20), la toile
-  // crème est l'identité par défaut, le sombre un choix explicite.
-  const theme =
-    (await cookies()).get("zab_theme")?.value === "dark" ? "dark" : "light";
+  // Light remains the default; "system" is an explicit, remembered choice.
+  const preference = readThemePreference((await cookies()).get(THEME_COOKIE)?.value);
+  const theme = resolveTheme(preference, false);
   return (
-    <html lang={lang} data-theme={theme} className={`${inter.variable} ${manrope.variable}`}>
+    <html lang={lang} data-theme={theme} data-theme-preference={preference} suppressHydrationWarning className={`${inter.variable} ${manrope.variable}`}>
+      <head><script id="zabelie-theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head>
       <body className="min-h-dvh antialiased">
+        <ThemeProvider initialPreference={preference}>
         {/* Monté sur TOUTES les pages, parce qu'on ne sait pas d'avance où
             Supabase déposera l'utilisateur quand l'allowlist Auth ignore le
             `redirectTo` : il retombe sur le Site URL, quel qu'il soit. Ne rend
@@ -111,6 +112,7 @@ export default async function RootLayout({
         <DocumentLanguage />
         <RecoveryCatcher />
         {children}
+        </ThemeProvider>
       </body>
     </html>
   );

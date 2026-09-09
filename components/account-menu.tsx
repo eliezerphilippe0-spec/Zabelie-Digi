@@ -3,8 +3,9 @@
  *
  * Brief accueil premium §4.1 : l'en-tête ne garde qu'une ligne (logo,
  * recherche, panier, compte). Tout ce que la barre portait ailleurs — Aide,
- * Talents, Vendre, Tableau de bord, Messages, langue, thème, déconnexion —
- * vit ici, derrière une icône. `<details>` s'ouvre et se ferme sans
+ * Talents, Vendre, Tableau de bord, Messages, déconnexion —
+ * vit ici, derrière une icône. Langue et apparence sont dans la barre.
+ * `<details>` s'ouvre et se ferme sans
  * hydratation, donc AVANT que le JS n'arrive sur 3G, et se ferme au clic
  * hors du panneau grâce à `name`-less behaviour du navigateur… non : il ne se
  * ferme pas seul, et c'est accepté — une navigation recharge la page.

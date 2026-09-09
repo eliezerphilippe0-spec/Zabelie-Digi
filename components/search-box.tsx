@@ -64,8 +64,8 @@ export function SearchBox({
   }, [saisie, items]);
 
   return (
-    <div className="relative min-w-0 flex-1">
-      <form action="/catalogue" aria-busy={pending} className="flex gap-2">
+    <div className={`relative min-w-0 flex-1 ${variant === "header" ? "order-last basis-full min-[360px]:order-none min-[360px]:basis-auto" : ""}`}>
+      <form action="/catalogue" aria-busy={pending} className="relative flex gap-2">
         {Object.entries(filters).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <input
           disabled={pending}
@@ -77,7 +77,7 @@ export function SearchBox({
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
           className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base outline-none focus:border-accent ${
             variant === "header"
-              ? "border-transparent bg-surface text-cloud placeholder:text-mist"
+              ? "border-transparent bg-surface text-cloud placeholder:text-mist pr-12"
               : "border-line bg-ink/40"
           } ${compact ? "py-2" : "py-3"}`}
         />
@@ -87,7 +87,7 @@ export function SearchBox({
             aria-label={submitLabel}
             disabled={pending}
             title={submitLabel}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-on-chrome transition hover:bg-on-chrome/10 active:scale-[0.97]"
+            className="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-cloud transition hover:bg-brand/10 active:scale-[0.97]"
           >
             <svg
               viewBox="0 0 24 24"

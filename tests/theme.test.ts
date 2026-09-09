@@ -1,49 +1,45 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { THEME_COOKIE } from "../components/theme-toggle";
-
-/**
- * Mode clair / sombre — ce qui doit rester vrai.
- *
- * Depuis la Phase 1 de l'accueil premium (2026-09-04, docs/02 V-20), le CLAIR
- * est le défaut et le SOMBRE un choix explicite — l'inverse du 2026-08-15. Le
- * thème est décidé au RENDU SERVEUR par le cookie : aucun flash de mauvais
- * thème. `--color-on-brand` ne bascule jamais — c'est le texte posé sur
- * l'orange, l'encre indigo dans les deux mondes (blanc sur orange = 2,66:1).
- *
- * Mutations éprouvées : `=== "dark" ? "dark" : "light"` → `"light" : "dark"`
- * rougit T1 ; `--color-on-brand` recopié dans le bloc sombre rougit T4 ; un
- * token ajouté au bloc sombre sans base claire rougit T5.
- */
+import { runInNewContext } from "node:vm";
+import { THEME_COOKIE, THEME_INIT_SCRIPT, readThemePreference, resolveTheme } from "../lib/theme";
 
 const LAYOUT = readFileSync("app/layout.tsx", "utf8");
 const THEME = readFileSync("app/zabelie-theme.css", "utf8");
-const TOGGLE = readFileSync("components/theme-toggle.tsx", "utf8");
 const NAV = readFileSync("components/site-nav.tsx", "utf8");
 
-test("T1 — layout : le cookie COMMANDE data-theme, au rendu serveur, et le CLAIR est le défaut", () => {
-  // La liaison : la valeur lue du cookie décide, et toute autre valeur rend
-  // le clair — le sombre est un choix explicite, jamais un défaut.
-  assert.match(
-    LAYOUT,
-    /cookies\(\)\)\.get\("zab_theme"\)\?\.value === "dark" \? "dark" : "light"/
-  );
-  assert.match(LAYOUT, /<html lang=\{lang\} data-theme=\{theme\}/);
-});
-
-test("T2 — le nom du cookie n'a pas divergé entre le toggle et le layout", () => {
+test("T1 — les anciennes préférences restent valides, le défaut reste clair", () => {
+  for (const value of [undefined, "", "invalid", "DARK"]) assert.equal(readThemePreference(value), "light");
+  for (const value of ["light", "dark", "system"] as const) assert.equal(readThemePreference(value), value);
   assert.equal(THEME_COOKIE, "zab_theme");
-  assert.match(LAYOUT, /get\("zab_theme"\)/);
+  assert.match(LAYOUT, /readThemePreference\(\(await cookies\(\)\)\.get\(THEME_COOKIE\)\?\.value\)/);
+  assert.match(LAYOUT, /<ThemeProvider initialPreference=\{preference\}>/);
 });
 
-test("T3 — toggle : un clic pose L'ATTRIBUT ET LE COOKIE — jamais l'un sans l'autre", () => {
-  // L'attribut seul : le prochain rendu serveur reviendrait au défaut.
-  // Le cookie seul : rien ne change à l'écran avant navigation.
-  assert.match(
-    TOGGLE,
-    /document\.documentElement\.dataset\.theme = prochain;\s*\n\s*document\.cookie = `\$\{THEME_COOKIE\}=\$\{prochain\}/
-  );
+test("T2 — seul Automatique suit le système", () => {
+  for (const systemDark of [false, true]) {
+    assert.equal(resolveTheme("light", systemDark), "light");
+    assert.equal(resolveTheme("dark", systemDark), "dark");
+    assert.equal(resolveTheme("system", systemDark), systemDark ? "dark" : "light");
+  }
+});
+
+test("T3 — le script exécuté avant le contenu résout le système sans modifier un choix explicite", () => {
+  assert.ok(LAYOUT.indexOf('__html: THEME_INIT_SCRIPT') < LAYOUT.indexOf('<body'));
+  for (const preference of ["light", "dark", "system"] as const) {
+    for (const systemDark of [false, true]) {
+      const dataset = { themePreference: preference, theme: resolveTheme(preference, false) };
+      runInNewContext(THEME_INIT_SCRIPT, {
+        document: { documentElement: { dataset } },
+        window: { matchMedia: (query: string) => {
+          assert.equal(query, "(prefers-color-scheme: dark)");
+          return { matches: systemDark };
+        } },
+      });
+      assert.equal(dataset.theme, resolveTheme(preference, systemDark));
+      assert.equal(dataset.themePreference, preference);
+    }
+  }
 });
 
 test("T4 — on-brand ne bascule JAMAIS : présent dans @theme, absent du bloc sombre", () => {
@@ -73,8 +69,10 @@ test("T5 — le bloc sombre redéfinit des tokens que le clair pose — pas d'or
   }
 });
 
-test("T6 — la bascule est montée dans la barre, avec ses libellés i18n", () => {
-  assert.match(NAV, /<ThemeToggle\s*\n\s*labelToLight=\{t\(lang, "nav\.theme\.light"\)\}/);
+test("T6 — un seul sélecteur visible dans la barre, hors du menu compte, avec ses traductions", () => {
+  assert.equal((NAV.match(/<ThemeToggle/g) ?? []).length, 1);
+  assert.ok(NAV.indexOf("<ThemeToggle") < NAV.indexOf("<AccountMenu"));
+  for (const key of ["label", "light", "dark", "system"]) assert.ok(NAV.includes(`t(lang, "nav.theme.${key}")`));
 });
 
 test("T7 — color-scheme suit le thème — champs natifs et ascenseurs compris", () => {

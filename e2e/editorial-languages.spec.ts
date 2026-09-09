@@ -19,7 +19,7 @@ test("une langue inexistante rend 404",async ({request})=>{
 
 test("changer la langue d’une URL traduite conserve le focus et ferme le menu",async({page})=>{
   await page.goto("/en/recharges?source=test",{waitUntil:"networkidle"});
-  const menu=page.locator("header:visible details").filter({has:page.locator("button[aria-pressed]")});
+  const menu=page.locator("header:visible details").filter({has:page.getByRole("button", { name: "Français FR", exact: true, includeHidden: true })});
   await menu.locator("summary").click();
   await menu.getByRole("button",{name:"Español ES",exact:true}).click();
   await expect(page).toHaveURL(/\/es\/recharges\?source=test$/);
