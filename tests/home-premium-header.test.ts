@@ -83,7 +83,7 @@ test("H4b — la LANGUE est une pastille de la barre, visible en permanence, et 
   assert.match(lt, /<summary[\s\S]{0,200}min-h-11 min-w-11/);
 });
 
-test("H4 — Aide, Talents, thème et déconnexion vivent dans le menu compte", () => {
+test("H4 — Aide, Talents et déconnexion vivent dans le menu compte", () => {
   // ⚠️ L'index se calcule sur la MÊME chaîne que la coupe : le retrait des
   // commentaires décale les positions, et une coupe faite à l'index de
   // l'original tombait APRÈS le menu — assertion rouge sur un fichier juste.
@@ -92,7 +92,7 @@ test("H4 — Aide, Talents, thème et déconnexion vivent dans le menu compte", 
   for (const [href, cle] of [["/aide", "nav.help"], ["/catalogue?univers=services", "universe.services"], ["/vendre", "topbar.sell"], ["/connexion", "nav.login"], ["/messages", "msg.title"]]) {
     assert.match(menu, new RegExp(`href="${href.replace(/[/#?]/g, "\\$&")}"[^>]*>\\s*\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\}`), `${href} manque au menu compte`);
   }
-  assert.match(menu, /<ThemeToggle\s*\n\s*labelToLight=/);
+  assert.doesNotMatch(menu, /<ThemeToggle/);
   // Le menu est un <details> natif : zéro JavaScript pour s'ouvrir.
   assert.match(sansCommentaires(MENU), /<details className="relative">\s*<summary/);
 });

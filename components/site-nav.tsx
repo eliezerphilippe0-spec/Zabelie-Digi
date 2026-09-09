@@ -42,7 +42,7 @@ function suggestionsDepuisRayons(rayons: RayonMenu[]): SearchSuggestion[] {
  * l'écran, `docs/home-premium/before/mesures.json`) ; cible A2 : ≤ 100 px.
  *
  * Ce qui a quitté la barre, et où c'est allé :
- *   • topbar (thème, langue, WhatsApp) → menu compte ;
+ *   • WhatsApp → menu compte ; langue et apparence dans la barre ;
  *   • « Rayons · Catalogue · Talents · Aide » → chips (rayons non vides),
  *     menu compte (Aide, Talents, Comment ça marche), pied de page ;
  *   • « Vendez sur Zabelie », « Voir mes achats », Tableau de bord, Messages,
@@ -98,8 +98,8 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
 
       <div className="mx-auto max-w-6xl px-3">
         {/* LIGNE 1 — logo · recherche · panier · compte */}
-        <div className="flex min-h-12 items-center gap-2">
-          <BrandLogo nomMasqueSurMobile className="header-fold shrink-0 text-on-chrome" />
+        <div className="flex min-h-12 flex-wrap items-center gap-2 min-[360px]:flex-nowrap">
+          <BrandLogo nomMasqueSurMobile className="header-fold shrink-0 text-on-chrome max-[359px]:mr-auto" />
 
           <SearchBox
             compact
@@ -121,6 +121,14 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
               en français par défaut. Elle ajoute de la largeur, jamais de la
               hauteur — l'en-tête reste sous 100 px (A2). */}
           <LangToggle current={lang} compact />
+          <ThemeToggle
+            label={t(lang, "nav.theme.label")}
+            labels={{
+              light: t(lang, "nav.theme.light"),
+              dark: t(lang, "nav.theme.dark"),
+              system: t(lang, "nav.theme.system"),
+            }}
+          />
 
           {/* Panier — accessible aussi aux visiteurs ; le badge n'apparaît
               qu'avec un contenu (un « 0 » n'informe pas). Client de session,
@@ -205,16 +213,6 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
               </MetricA>
             )}
             <div className="my-1 border-t border-line" />
-            {/* La LANGUE a quitté ce menu le 2026-09-05 : elle vit désormais en
-                pastille dans la barre (ligne 1), visible en permanence. Deux
-                endroits pour un même réglage valent moins qu'un seul bien
-                placé — voir components/lang-toggle.tsx. */}
-            <div className="flex items-center justify-between gap-2 px-1">
-              <ThemeToggle
-                labelToLight={t(lang, "nav.theme.light")}
-                labelToDark={t(lang, "nav.theme.dark")}
-              />
-            </div>
             {/* La déconnexion est dans le MÊME menu à toutes les largeurs :
                 Android partagé, cybercafé — c'est exactement là qu'elle compte.
                 Un formulaire, donc aucun JS requis. */}

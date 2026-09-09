@@ -6,7 +6,7 @@ for (const mobile of [false, true]) {
 
     test("selection closes the menu, translates the page and persists all four languages", async ({ page, context }) => {
       await page.goto("/recharges", { waitUntil: "networkidle" });
-      const menu = page.locator("header:visible details").filter({ has: page.locator('button[aria-pressed]') });
+      const menu = page.locator("header:visible details").filter({ has: page.getByRole('button', { name: 'Français FR', exact: true, includeHidden: true }) });
       const summary = menu.locator("summary");
       for (const [lang, name, title] of [
         ["fr", "Français FR", "Recharges et paiements"],
@@ -32,7 +32,7 @@ for (const mobile of [false, true]) {
 
     test("the menu dismisses outside and with Escape without changing the language", async ({ page }) => {
       await page.goto("/recharges", { waitUntil: "networkidle" });
-      const menu = page.locator("header:visible details").filter({ has: page.locator('button[aria-pressed]') });
+      const menu = page.locator("header:visible details").filter({ has: page.getByRole('button', { name: 'Français FR', exact: true, includeHidden: true }) });
       const summary = menu.locator("summary");
       await summary.click();
       if (mobile) await page.locator("h1").tap({ position: { x: 2, y: 2 } });
@@ -54,7 +54,7 @@ for (const mobile of [false, true]) {
         if (route.request().headers().rsc === "1") await responseGate;
         await route.continue();
       });
-      const menu = page.locator("header:visible details").filter({ has: page.locator('button[aria-pressed]') });
+      const menu = page.locator("header:visible details").filter({ has: page.getByRole('button', { name: 'Français FR', exact: true, includeHidden: true }) });
       const summary = menu.locator("summary");
       await summary.click();
       try {
