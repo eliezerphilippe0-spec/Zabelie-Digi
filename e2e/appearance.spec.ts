@@ -8,12 +8,12 @@ for (const width of [320, 390, 1440]) {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/", { waitUntil: "networkidle" });
     const root = page.locator("html");
-    const trigger = page.locator('header summary[aria-label="Apparence"]');
-    const menu = page.getByRole("group", { name: "Apparence", exact: true });
+    const trigger = page.locator('header:visible summary[aria-label="Apparence"]');
+    const menu = page.locator("header:visible").getByRole("group", { name: "Apparence", exact: true });
     await expect(trigger).toBeVisible();
     await expect(root).toHaveAttribute("data-theme", "light");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const search = page.locator('header input[name="q"]');
+    const search = page.locator('header:visible input[name="q"]');
     expect((await search.boundingBox())!.width).toBeGreaterThan(80);
     const box = await trigger.boundingBox();
     expect(box!.width).toBeGreaterThanOrEqual(44);
@@ -41,7 +41,7 @@ for (const width of [320, 390, 1440]) {
     }
     await page.emulateMedia({ colorScheme: "light" });
     await expect(root).toHaveAttribute("data-theme", "light");
-    await page.locator("header").getByRole("link", { name: "Digital", exact: true }).click();
+    await page.locator("header:visible").getByRole("link", { name: "Digital", exact: true }).click();
     await expect(page).toHaveURL(/univers=numerique/);
     await page.emulateMedia({ colorScheme: "dark" });
     await expect(root).toHaveAttribute("data-theme", "dark");
@@ -58,8 +58,8 @@ test("appearance menu supports keyboard, outside dismissal and all four language
   for (const [lang, label, automatic] of [["fr", "Apparence", "Automatique"], ["ht", "Aparans", "Otomatik"], ["en", "Appearance", "Automatic"], ["es", "Apariencia", "Automático"]]) {
     await context.addCookies([{ name: "zabelie_lang", value: lang, url: "http://localhost:3000" }]);
     await page.goto("/recharges", { waitUntil: "networkidle" });
-    const trigger = page.locator(`header summary[aria-label="${label}"]`);
-    const menu = page.getByRole("group", { name: label, exact: true });
+    const trigger = page.locator(`header:visible summary[aria-label="${label}"]`);
+    const menu = page.locator("header:visible").getByRole("group", { name: label, exact: true });
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(menu).toBeVisible();
