@@ -178,3 +178,68 @@ test("MV8 — la route est réservée à l'administration et journalise dans les
   assert.match(src, /verdict === "ok"[\s\S]{0,120}console\.info/);
   assert.match(src, /\} else \{[\s\S]{0,120}console\.error/);
 });
+
+
+test("MV9 — une panne HTTP ou une limitation de débit ne constitue pas un refus des clés", async () => {
+  for (const status of [408, 429, 500, 502, 503, 504]) {
+    const { valeur } = await sous({ ...IDENTIFIANTS, MONCASH_MODE: "production" }, async () => reponse(status, {}), verifierMonCash);
+    assert.equal(valeur.verdict, "fournisseur_indisponible", `HTTP ${status}`);
+    assert.equal(valeur.statutFournisseur, status);
+    assert.equal(valeur.jetonObtenu, false);
+  }
+});
+
+test("MV10 — une réponse OAuth inattendue reste indéterminée, jamais une authentification réussie", async () => {
+  const cases: typeof fetch[] = [
+    async () => reponse(404, {}),
+    async () => reponse(200, null),
+    async () => reponse(200, []),
+    async () => reponse(200, {}),
+    async () => reponse(200, { access_token: 123 }),
+    async () => reponse(200, { access_token: "   " }),
+    async () => ({ ...reponse(200, {}), json: async () => { throw new SyntaxError("Invalid JSON"); } }) as Response,
+  ];
+  for (const response of cases) {
+    const { valeur } = await sous({ ...IDENTIFIANTS, MONCASH_MODE: "production" }, response, verifierMonCash);
+    assert.equal(valeur.verdict, "reponse_invalide");
+    assert.equal(valeur.jetonObtenu, false);
+  }
+});
+
+test("MV11 — les exceptions réseau et valeurs de configuration ne divulguent aucun secret", async () => {
+  const secret = IDENTIFIANTS.MONCASH_CLIENT_SECRET;
+  for (const mode of ["production", secret]) {
+    const { valeur, journal } = await sous({ ...IDENTIFIANTS, MONCASH_MODE: mode }, async () => {
+      throw new Error(`Network error containing ${secret}`);
+    }, verifierMonCash);
+    assert.ok(!JSON.stringify({ valeur, journal }).includes(secret));
+  }
+});
+
+
+for (const phase of ["headers", "body"] as const) {
+  test(`MV12 — le délai annule la requête pendant ${phase} et rend un diagnostic lisible`, async () => {
+    let signal: AbortSignal | null = null;
+    const { valeur } = await sous({ ...IDENTIFIANTS, MONCASH_MODE: "production" }, async (_url, init) => {
+      signal = init?.signal ?? null;
+      const wait = () => new Promise<never>((_resolve, reject) => {
+        if (!signal) { reject(new Error("missing signal")); return; }
+        signal.addEventListener("abort", () => reject(signal!.reason), { once: true });
+      });
+      if (phase === "headers") return wait();
+      return { ...reponse(200, {}), json: wait } as Response;
+    }, () => verifierMonCash({ timeoutMs: 20 }));
+    assert.ok(signal, "la requête doit recevoir le signal d'annulation");
+    assert.equal((signal as AbortSignal).aborted, true);
+    assert.equal(valeur.verdict, "injoignable");
+    assert.equal(valeur.statutFournisseur, phase === "body" ? 200 : null);
+    assert.equal(valeur.jetonObtenu, false);
+    assert.match(valeur.explication, /délai/);
+  });
+}
+
+test("MV13 — le succès de la sonde n'annonce pas un encaissement validé", async () => {
+  const { valeur } = await sous({ ...IDENTIFIANTS, MONCASH_MODE: "production" }, async () => reponse(200, { access_token: "j" }), verifierMonCash);
+  assert.equal(valeur.verdict, "ok");
+  assert.match(valeur.explication, /ne confirme aucun encaissement/);
+});
