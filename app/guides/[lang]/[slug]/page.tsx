@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
@@ -24,7 +25,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
   const url = `${siteUrl()}${guideHref(lang, guide.slug)}`;
   const jsonLd = { "@context": "https://schema.org", "@type": "WebPage", name: t(lang, guide.title), description: t(lang, guide.intro), url, inLanguage: lang, isPartOf: { "@type": "WebSite", name: "Zabelie", url: siteUrl() } };
   return <div className="min-h-dvh bg-grain"><SiteNav /><main id="main" className="mx-auto max-w-6xl px-5 py-10">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+    <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
     <nav aria-label={t(lang, "nav.breadcrumb")} className="flex flex-wrap gap-2 text-sm text-mist"><Link href="/" className="underline">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><Link href={guideHref(lang)} className="underline">{t(lang, "guides.title")}</Link></nav>
     <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
       <article lang={lang} className="max-w-3xl">

@@ -2,21 +2,32 @@ import { editorialLangFromPath } from "@/lib/editorial-routing";
 import { guideLangFromPath } from "@/lib/guide-routing";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { contentSecurityPolicy } from "@/lib/content-security-policy";
+import { configPublique } from "@/lib/supabase/config";
 
 // Next 16 : convention « proxy » (ex-« middleware »). Rafraîchit la session
 // Supabase à chaque requête. Comportement inchangé — simple renommage du point
 // d'entrée (le helper updateSession reste dans lib/supabase/middleware.ts).
 export async function proxy(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  let backendUrl: string | undefined;
+  try { backendUrl = configPublique().url; } catch { /* Public demo has no backend. */ }
+  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV !== "production", backendUrl);
+  request.headers.set("x-zabelie-nonce", nonce);
+  request.headers.set("Content-Security-Policy", policy);
   // Strip caller-supplied language headers; only an explicit localized public URL wins over the cookie.
   request.headers.delete("x-zabelie-guide-lang");
   // Un notFound() tardif après le début du streaming rendrait HTTP 200.
   const editorialSegment = /^\/([^/]+)\/(aide|a-propos|recharges)\/?$/.test(request.nextUrl.pathname);
   if (editorialSegment && !editorialLangFromPath(request.nextUrl.pathname)) {
-    return NextResponse.rewrite(new URL("/404", request.url), { status: 404 });
+    const response = NextResponse.rewrite(new URL("/404", request.url), { status: 404, request: { headers: request.headers } });
+    response.headers.set("Content-Security-Policy", policy);
+    return response;
   }
   const guideLang = guideLangFromPath(request.nextUrl.pathname) ?? editorialLangFromPath(request.nextUrl.pathname);
   if (guideLang) request.headers.set("x-zabelie-guide-lang", guideLang);
   const response = await updateSession(request);
+  response.headers.set("Content-Security-Policy", policy);
 
   // Affiliation (0081) : un lien partagé porte ?ref=<code>. Le cookie vit
   // 7 jours (fenêtre Jumia — docs/37 §A) ; l'attribution réelle est décidée
@@ -30,6 +41,7 @@ export async function proxy(request: NextRequest) {
       path: "/",
       sameSite: "lax",
       httpOnly: true,
+      secure: request.nextUrl.protocol === "https:",
     });
   }
   return response;

@@ -45,7 +45,7 @@ test("l'encadrement en iframe est interdit — par les DEUX mécanismes", async 
   assert.equal(valeur(l, "X-Frame-Options"), "DENY");
 });
 
-test("la CSP ne contient QUE `frame-ancestors`", async () => {
+test("la CSP des assets reste indépendante du nonce de rendu", async () => {
   // Le jour où quelqu'un ajoute `script-src` ici sans nonce, la page casse ou
   // la politique devient décorative. Ce test force à en parler.
   const l = await entetes();

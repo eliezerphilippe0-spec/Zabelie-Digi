@@ -1,3 +1,4 @@
+import { digitalProductIsClean } from "@/lib/digital-file-security";
 import { normalizeRecipient } from "@/lib/order-recipient";
 import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
@@ -197,6 +198,12 @@ export async function POST(req: Request) {
           code: "produit_incomplet",
         },
         { status: 409 }
+      );
+    }
+    if (!(await digitalProductIsClean(admin, product.id))) {
+      return NextResponse.json(
+        { error: t(lang, "security.filePending"), code: "file_security_pending" },
+        { status: 503, headers: { "Cache-Control": "private, no-store", "Retry-After": "300" } }
       );
     }
   }

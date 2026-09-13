@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { siteUrl } from "@/lib/site-url";
 import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK, brandIconUrl } from "@/lib/brand";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -97,12 +97,13 @@ export default async function RootLayout({
   // BL-112 : lang suit la langue de session (lecteurs d'écran + SEO) — figé
   // sur "fr" auparavant, le Kreyòl était prononcé avec les règles du français.
   const lang = await getLang();
+  const nonce = (await headers()).get("x-zabelie-nonce") ?? undefined;
   // Light remains the default; "system" is an explicit, remembered choice.
   const preference = readThemePreference((await cookies()).get(THEME_COOKIE)?.value);
   const theme = resolveTheme(preference, false);
   return (
     <html lang={lang} data-theme={theme} data-theme-preference={preference} suppressHydrationWarning className={`${inter.variable} ${manrope.variable}`}>
-      <head><script id="zabelie-theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head>
+      <head><script nonce={nonce} id="zabelie-theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head>
       <body className="min-h-dvh antialiased">
         <ThemeProvider initialPreference={preference}>
         {/* Monté sur TOUTES les pages, parce qu'on ne sait pas d'avance où

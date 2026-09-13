@@ -97,7 +97,7 @@ test("J6 — /produit/[slug] calcule le JSON-LD depuis flash et physical, et le 
   );
   assert.match(
     page,
-    /<script\s+type="application\/ld\+json"\s+dangerouslySetInnerHTML=\{\{ __html: JSON\.stringify\(jsonLd\) \}\}/,
+    /<script\s+nonce=\{\(await headers\(\)\)\.get\("x-zabelie-nonce"\) \?\? undefined\}\s+type="application\/ld\+json"\s+dangerouslySetInnerHTML=\{\{ __html: JSON\.stringify\(jsonLd\)\.replace\(\/<\/g, "\\\\u003c"\) \}\}/,
     "le balisage doit être RENDU, pas seulement calculé"
   );
 });

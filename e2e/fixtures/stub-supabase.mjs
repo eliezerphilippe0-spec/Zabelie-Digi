@@ -94,6 +94,9 @@ const server = createServer((req, res) => {
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
 
+  // The real limiter returns a boolean; an empty PostgREST result is an error.
+  if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
+
   // RPC : expiration des réservations. Renvoie 0 — le cas « rien à libérer »,
   // celui où le journal d'exécution est justement indispensable.
   if (url.pathname === "/rest/v1/rpc/zabelie_expire_stock_reservations") {
@@ -195,6 +198,8 @@ const server = createServer((req, res) => {
     }
     return single([...digitalProgress.values()].filter(p => p.order_id === eq(url, "order_id") && p.release_id === eq(url, "release_id")));
   }
+  if (url.pathname.startsWith("/storage/v1/object/info/product-files/")) return send(200, { id: "test-object", version: "test-version", size: 1024 });
+  if (url.pathname.startsWith("/storage/v1/object/product-files/_security/")) return send(200, { schema: 1, objectId: "test-object", objectVersion: "test-version", sha256: "a".repeat(64), verdict: "clean", scannedAt: new Date(Date.now() - 1000).toISOString(), engine: "ClamAV fixture" });
   if (url.pathname.startsWith("/storage/v1/object/sign/product-files/")) return send(200, { signedURL: "/object/sign/product-files/studio/private.pdf?token=test-signed" });
 
   // ── PostgREST ───────────────────────────────────────────────────────────

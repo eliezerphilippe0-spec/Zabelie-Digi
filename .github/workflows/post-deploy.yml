@@ -25,3 +25,7 @@ jobs:
           ZABELIE_URL: ${{ vars.ZABELIE_URL }}
           ZABELIE_EXPECTED_COMMIT: ${{ github.sha }}
         run: node scripts/verifier-deploiement.mjs
+      - name: Vérifier les protections publiques effectives
+        env:
+          ZABELIE_URL: ${{ vars.ZABELIE_URL }}
+        run: node scripts/verifier-securite-publique.mjs

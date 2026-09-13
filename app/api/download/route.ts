@@ -1,3 +1,6 @@
+import { digitalFileIsClean } from "@/lib/digital-file-security";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { resolveDigitalRelease } from "@/lib/digital-studio-server";
 import { UUID_RE } from "@/lib/digital-studio";
 import { NextResponse } from "next/server";
@@ -79,6 +82,9 @@ export async function GET(req: Request) {
     );
   }
 
+  if (!(await digitalFileIsClean(admin, asset.storage_path))) {
+    return NextResponse.json({ error: t(await getLang(), "security.filePending"), code: "file_security_pending" }, { status: 503, headers: { "Cache-Control": "private, no-store", "Retry-After": "300" } });
+  }
   // URL signée 5 min.
   const { data: signed, error: signErr } = await admin.storage
     .from(BUCKET)
