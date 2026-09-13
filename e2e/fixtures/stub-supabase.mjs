@@ -94,6 +94,9 @@ const server = createServer((req, res) => {
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
 
+  // The real limiter returns a boolean; an empty PostgREST result is an error.
+  if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
+
   // RPC : expiration des réservations. Renvoie 0 — le cas « rien à libérer »,
   // celui où le journal d'exécution est justement indispensable.
   if (url.pathname === "/rest/v1/rpc/zabelie_expire_stock_reservations") {
