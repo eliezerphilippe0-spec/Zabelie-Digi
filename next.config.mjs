@@ -1,34 +1,8 @@
 import withSerwistInit from "@serwist/next";
 import { releaseIdForCommit } from "./lib/deployment-release.mjs";
 
-/** @type {import('next').NextConfig} */
-
-/**
- * En-têtes de sécurité — SEC-02 de `docs/REVUE-2026-08-01.md`.
- *
- * Le constat : ce fichier ne contenait que `reactStrictMode` et
- * `images.remotePatterns`. Aucun en-tête. Le site était donc **intégrable dans
- * une iframe tierce**, et c'est le seul risque de la revue exploitable sans
- * rien d'autre qu'un nom de domaine : encadrer `/connexion`, superposer son
- * propre formulaire, récolter des identifiants sous l'apparence de Zabelie.
- * Sur un marché où la confiance se construit encore, ça coûte plus que des
- * comptes volés.
- *
- * CE QUI N'EST PAS ICI, ET POURQUOI
- * ---------------------------------
- * **Pas de CSP complète.** Une politique `script-src` sur Next.js demande soit
- * un nonce propagé à chaque rendu, soit `unsafe-inline` — le premier est un
- * chantier, le second est une CSP décorative. Poser une CSP qui casse la page,
- * ou qui ne protège rien, serait pire que son absence : elle donnerait le
- * sentiment que le sujet est traité. Ce qui EST posé ici, `frame-ancestors`,
- * est une directive indépendante : elle ne touche ni script, ni style, ni
- * image, et ne peut donc pas casser un rendu.
- *
- * **Pas de `preload` sur HSTS.** C'est une **porte à sens unique** : une fois
- * le domaine inscrit dans la liste des navigateurs, le retrait prend des mois.
- * Zabelie n'a pas encore son domaine définitif — `preload` s'ajoutera quand il
- * sera fixé, pas avant.
- */
+/** Base policy for assets and API responses. The proxy sets a strict nonce
+ * policy for rendered pages; root layout reads request headers (dynamic SSR). */
 const securityHeaders = [
   // Anti-encadrement, version moderne. Une CSP réduite à cette seule directive
   // n'affecte aucune ressource : ni script, ni style, ni image.
@@ -69,6 +43,7 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   // Figé dans le bundle au build, pas recalculé au démarrage du serveur.
   env: {
     ZABELIE_RELEASE_ID: releaseIdForCommit(process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA),

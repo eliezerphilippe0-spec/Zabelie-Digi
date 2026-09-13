@@ -7,7 +7,7 @@ import { configPublique } from "@/lib/supabase/config";
  * No-op si Supabase n'est pas configuré (démo sans base).
  */
 export async function updateSession(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  let response = NextResponse.next({ request });
 
   // Même lecture centralisée que les trois autres clients. Le NO-OP est
   // préservé — et ÉLARGI en connaissance : absente OU invalide, le middleware
@@ -34,6 +34,9 @@ export async function updateSession(request: NextRequest) {
           options?: Record<string, unknown>;
         }[]
       ) {
+        // Forward refreshed cookies to this render as well as to the browser.
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );

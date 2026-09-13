@@ -3,6 +3,10 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## Fondations de sécurité — 13 septembre 2026
+
+Les corrections et procédures sont détaillées dans [docs/57-fondations-securite.md](docs/57-fondations-securite.md). À terminer côté exploitation : serveur privé ClamAV et attestation réelle des fichiers, enrôlement MFA du titulaire sur /securite, protection Supabase des mots de passe compromis (forfait à vérifier), sauvegarde indépendante et restauration isolée, validation des paiements avec Digicel. Un fichier sans analyse valide reste bloqué ; ne pas supprimer la garde pour le publier.
+
 ## MonCash — bac à sable confirmé le 9 septembre 2026
 
 Le porteur confirme : « Non, nous sommes encore en bac à sable ». La priorité est de terminer un paiement sandbox avec un payeur de test fonctionnel, puis d'obtenir l'activation et les identifiants de production auprès de MonCash Business. Ne pas convertir les échecs historiques en preuve de refus des clés.

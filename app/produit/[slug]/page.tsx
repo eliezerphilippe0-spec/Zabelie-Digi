@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { getPublicDigitalRelease } from "@/lib/digital-studio-server";
 import { DigitalOfferPreview } from "@/components/digital-offer-preview";
 import { getDigitalDetails } from "@/lib/digital-details-server";
@@ -220,9 +221,9 @@ export default async function ProductPage({
 
   return (
     <div className="bg-grain min-h-dvh">
-      <script
+      <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined}
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <SiteNav />
 

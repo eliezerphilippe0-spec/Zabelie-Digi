@@ -4,10 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Limitation de débit (audit sécurité §6) — compteur à fenêtre fixe en
  * Postgres (zabelie_rate_limit, migration 0019), fiable en serverless.
  *
- * FAIL-OPEN assumé : si l'appel échoue (base injoignable), on laisse passer.
- * Dans ce scénario la requête échouera de toute façon deux lignes plus loin
- * sur son premier accès base — et une panne d'infra ne doit jamais bloquer
- * les ventes en silence.
+ * Une erreur, un délai dépassé ou une réponse indécidable ferme l’accès.
+ * Les journaux ne contiennent ni clé, ni IP, ni message fournisseur.
  */
 export async function rateLimit(
   admin: SupabaseClient,
@@ -15,16 +13,25 @@ export async function rateLimit(
   limit: number,
   windowSeconds = 60
 ): Promise<boolean> {
+  if (!key || !Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(windowSeconds) || windowSeconds < 1) return false;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
   try {
     const { data, error } = await admin.rpc("zabelie_rate_limit", {
       p_key: key,
       p_limit: limit,
       p_window_seconds: windowSeconds,
-    });
-    if (error) return true;
-    return data !== false;
+    }).abortSignal(controller.signal);
+    if (error || typeof data !== "boolean") {
+      console.warn("[rate-limit] verification_unavailable");
+      return false;
+    }
+    return data === true;
   } catch {
-    return true;
+    console.warn("[rate-limit] verification_unavailable");
+    return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

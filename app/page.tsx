@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { MarketplaceUniverses } from "@/components/marketplace-universes";
 import Link from "next/link";
 import Image from "next/image";
@@ -210,7 +211,7 @@ export default async function HomePage() {
 
   return (
     <div className="bg-grain home-discovery">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <SiteNav />
 
       {/* `<main id="main">` : cible du lien d'évitement de l'en-tête, et le

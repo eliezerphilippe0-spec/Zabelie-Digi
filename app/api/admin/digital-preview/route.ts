@@ -1,3 +1,6 @@
+import { digitalFileIsClean } from "@/lib/digital-file-security";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,6 +15,9 @@ export async function GET(req: Request) {
   const admin = createAdminClient();
   const { data: asset } = await admin.from("product_assets").select("storage_path,file_name").eq("id", assetId).eq("product_id", productId).maybeSingle();
   if (!asset) return NextResponse.json({ code: "not_found" }, { status: 404 });
+  if (!(await digitalFileIsClean(admin, asset.storage_path))) {
+    return NextResponse.json({ error: t(await getLang(), "security.filePending"), code: "file_security_pending" }, { status: 503, headers: { "Cache-Control": "private, no-store", "Retry-After": "300" } });
+  }
   const { data } = await admin.storage.from("product-files").createSignedUrl(asset.storage_path, 60 * 5, { download: asset.file_name });
   if (!data) return NextResponse.json({ code: "unavailable" }, { status: 503 });
   const response = NextResponse.redirect(data.signedUrl, 303); response.headers.set("Cache-Control", "private, no-store"); response.headers.set("Referrer-Policy", "no-referrer"); return response;
