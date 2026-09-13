@@ -25,7 +25,7 @@ export function receiptAllowsFile(receipt: unknown, object: { id: string; versio
 export async function digitalFileIsClean(admin: SupabaseClient, path: string): Promise<boolean> {
   try {
     const bucket = admin.storage.from(DIGITAL_BUCKET);
-    const [object, proof] = await Promise.all([bucket.info(path), bucket.download(scanReceiptPath(path))]);
+    const [object, proof] = await Promise.all([bucket.info(path), bucket.download(scanReceiptPath(path), {}, { cache: "no-store" })]);
     if (object.error || !object.data || proof.error || !proof.data || proof.data.size > 8192) return false;
     return receiptAllowsFile(JSON.parse(await proof.data.text()), object.data);
   } catch { return false; }
@@ -43,7 +43,7 @@ export async function scanDigitalObject(admin: SupabaseClient, path: string, sca
   const bucket = admin.storage.from(DIGITAL_BUCKET);
   const before = await bucket.info(path);
   if (before.error || !before.data?.id || !before.data.version || !before.data.size || before.data.size > MAX_SCAN_BYTES) throw new Error("Object unavailable for scan");
-  const file = await bucket.download(path);
+  const file = await bucket.download(path, {}, { cache: "no-store" });
   if (file.error || !file.data || file.data.size !== before.data.size || file.data.size > MAX_SCAN_BYTES) throw new Error("Object download failed");
   const bytes = new Uint8Array(await file.data.arrayBuffer());
   const result = await scan(bytes);

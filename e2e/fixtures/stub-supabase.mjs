@@ -199,7 +199,7 @@ const server = createServer((req, res) => {
     return single([...digitalProgress.values()].filter(p => p.order_id === eq(url, "order_id") && p.release_id === eq(url, "release_id")));
   }
   if (url.pathname.startsWith("/storage/v1/object/info/product-files/")) return send(200, { id: "test-object", version: "test-version", size: 1024 });
-  if (url.pathname.startsWith("/storage/v1/object/authenticated/product-files/_security/")) return send(200, { schema: 1, objectId: "test-object", objectVersion: "test-version", sha256: "a".repeat(64), verdict: "clean", scannedAt: new Date(Date.now() - 1000).toISOString(), engine: "ClamAV fixture" });
+  if (url.pathname.startsWith("/storage/v1/object/product-files/_security/")) return send(200, { schema: 1, objectId: "test-object", objectVersion: "test-version", sha256: "a".repeat(64), verdict: "clean", scannedAt: new Date(Date.now() - 1000).toISOString(), engine: "ClamAV fixture" });
   if (url.pathname.startsWith("/storage/v1/object/sign/product-files/")) return send(200, { signedURL: "/object/sign/product-files/studio/private.pdf?token=test-signed" });
 
   // ── PostgREST ───────────────────────────────────────────────────────────
