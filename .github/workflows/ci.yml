@@ -151,3 +151,18 @@ jobs:
 
       - name: SQL money-path tests (migrations + assertions)
         run: bash supabase/tests/run.sh
+
+  antivirus-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install ClamAV engine
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clamav
+      - name: Verify real engine with a synthetic signature
+        run: node --import tsx --test tests/clamav.integration.ts
