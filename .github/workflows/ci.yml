@@ -74,6 +74,9 @@ jobs:
       - name: Verify real engine with a synthetic signature
         run: node --import tsx --test tests/clamav.integration.ts
 
+      - name: Verify private scanner service on Linux
+        run: bash scripts/test-scanner-service.sh
+
       - name: Build
         run: npm run build
 

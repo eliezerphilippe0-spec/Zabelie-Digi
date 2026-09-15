@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule Zabelie private file scans
+
+[Timer]
+OnCalendar=*-*-* *:00,30:00
+RandomizedDelaySec=60
+AccuracySec=1min
+Persistent=true
+Unit=zabelie-scanner.service
+
+[Install]
+WantedBy=timers.target
