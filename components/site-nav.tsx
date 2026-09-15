@@ -5,6 +5,7 @@ import { LangToggle } from "@/components/lang-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SearchBox, type SearchSuggestion } from "@/components/search-box";
 import { MetricA } from "@/components/metric-a";
+import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
 import { HeaderShell } from "@/components/header-shell";
 import { CategoryChips } from "@/components/category-chips";
 import { AccountMenu, MENU_LINK } from "@/components/account-menu";
@@ -33,32 +34,9 @@ function suggestionsDepuisRayons(rayons: RayonMenu[]): SearchSuggestion[] {
   return plat;
 }
 
-/**
- * EN-TÊTE COMPACT — accueil premium, Phase 2 (brief §4.1, 2026-09-04).
- *
- * Une ligne : logo 32 px · recherche pleine largeur (loupe, plus de bouton
- * texte) · panier · compte. Dessous : les CHIPS des rayons qui ont des
- * produits, défilantes. C'est tout. Mesuré avant : 250 px sur 812 (31 % de
- * l'écran, `docs/home-premium/before/mesures.json`) ; cible A2 : ≤ 100 px.
- *
- * Ce qui a quitté la barre, et où c'est allé :
- *   • WhatsApp → menu compte ; langue et apparence dans la barre ;
- *   • « Rayons · Catalogue · Talents · Aide » → chips (rayons non vides),
- *     menu compte (Aide, Talents, Comment ça marche), pied de page ;
- *   • « Vendez sur Zabelie », « Voir mes achats », Tableau de bord, Messages,
- *     Facturation, Mes ventes, Admin, Déconnexion → menu compte.
- * Rien n'a disparu du produit ; tout a cessé d'être au-dessus du premier
- * produit.
- *
- * COLLANT PARTOUT, et c'est un retour mesuré sur l'arbitrage du 2026-08-22
- * (collant à partir de la largeur `md` seulement, parce que 250 px collés
- * mangeaient le tiers d'un écran de 740 px). À ~100 px au repos et ~56 px replié (`HeaderShell`), la
- * recherche redevient atteignable en permanence sur mobile — ce que cet
- * arbitrage avait dû sacrifier.
- *
- * Fond : `--brand-gradient` (posé par HeaderShell), texte et icônes
- * `on-chrome`, paires vérifiées par scripts/zabelie-contrast.mjs sur les
- * trois arrêts du dégradé.
+/** Recherche pleine largeur sous les raccourcis sur mobile et tablette.
+ * Sur ordinateur, une seule ligne ; les rayons restent en dessous.
+ * Au défilement, logo et rayons se replient, les réglages restent accessibles.
  */
 export async function SiteNav({ activeHref, searchContext, searchPending = false }: { searchPending?: boolean; activeHref?: string; searchContext?: { query?: string; filters: Record<string, string> } } = {}) {
   const [user, lang] = await Promise.all([getCurrentUser(), getLang()]);
@@ -98,8 +76,8 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
 
       <div className="mx-auto max-w-6xl px-3">
         {/* LIGNE 1 — logo · recherche · panier · compte */}
-        <div className="flex min-h-12 flex-wrap items-center gap-2 min-[360px]:flex-nowrap">
-          <BrandLogo nomMasqueSurMobile className="header-fold shrink-0 text-on-chrome max-[359px]:mr-auto" />
+        <div className="marketplace-header-row">
+          <BrandLogo className="header-fold marketplace-header-brand shrink-0 text-on-chrome" />
 
           <SearchBox
             compact
@@ -114,12 +92,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
             items={suggestionsDepuisRayons(rayons)}
           />
 
-          {/* LANGUE — pastille qui dit la langue COURANTE et l'ouvre en un
-              geste, comme Amazon et AliExpress. Elle était au fond du menu
-              compte depuis la Phase 2 : invisible, derrière une icône qui
-              n'annonce rien d'une langue, dans un produit kreyòl-first servi
-              en français par défaut. Elle ajoute de la largeur, jamais de la
-              hauteur — l'en-tête reste sous 100 px (A2). */}
+          {/* Langue et apparence restent accessibles au défilement. */}
           <LangToggle current={lang} compact />
           <ThemeToggle
             label={t(lang, "nav.theme.label")}
@@ -235,7 +208,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
             { href: "/catalogue?univers=objets", label: t(lang, "universe.physical.short") },
             { href: "/catalogue?univers=numerique", label: t(lang, "universe.digital.short") },
             { href: "/catalogue?univers=services", label: t(lang, "universe.services") },
-            { href: "/recharges", label: t(lang, "universe.recharges") },
+            { href: "/recharges", label: t(lang, "universe.recharges"), note: isTopupFirstPartyEnabled() ? undefined : t(lang, "availability.paused") },
             { href: "/aide", label: t(lang, "nav.help") },
           ]}
           labels={{

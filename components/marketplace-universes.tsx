@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
 import { t, type Lang } from "@/lib/i18n";
 import { CATALOGUE_UNIVERSES, universeHref, type CatalogueUniverse } from "@/lib/catalogue-universes";
 
@@ -15,6 +16,7 @@ export function MarketplaceUniverses({ lang }: { lang: Lang }) {
         <span aria-hidden="true" className="mb-3 text-xs font-semibold text-mist">04</span>
         <span className="flex items-center justify-between gap-3 text-sm font-bold sm:text-base">{t(lang, "universe.recharges")}<span aria-hidden="true" className="transition group-hover:translate-x-1">↗</span></span>
         <span className="mt-2 text-xs leading-relaxed sm:text-sm text-mist">{t(lang, "universe.recharges.body")}</span>
+        {!isTopupFirstPartyEnabled() && <span className="mt-4 text-xs font-semibold text-mist">{t(lang, "availability.topup.paused")}</span>}
       </Link>
     </div>
   </section>;

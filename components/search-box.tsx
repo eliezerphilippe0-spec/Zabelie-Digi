@@ -64,7 +64,7 @@ export function SearchBox({
   }, [saisie, items]);
 
   return (
-    <div className={`relative min-w-0 flex-1 ${variant === "header" ? "order-last basis-full min-[360px]:order-none min-[360px]:basis-auto" : ""}`}>
+    <div className={`relative min-w-0 flex-1 ${variant === "header" ? "marketplace-header-search" : ""}`}>
       <form action="/catalogue" aria-busy={pending} className="relative flex gap-2">
         {Object.entries(filters).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <input

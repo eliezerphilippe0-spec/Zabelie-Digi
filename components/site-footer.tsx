@@ -4,6 +4,8 @@ import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { POLICY_PATH } from "@/lib/policy";
+import { getMonCashAvailability, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
+import { isZelleEnabled } from "@/lib/zelle";
 import { isStripeEnabled } from "@/lib/stripe-config";
 
 export async function SiteFooter() {
@@ -61,8 +63,8 @@ export async function SiteFooter() {
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.payment")}</p>
             <Link href="/recharges" className="inline-flex min-h-11 items-center text-mist hover:text-cloud">{t(lang, "recharges.title")}</Link>
-            <span className="text-mist">MonCash</span>
-            <span className="text-mist">Zelle (USD)</span>
+            <span className="text-mist">{t(lang, MONCASH_AVAILABILITY_LABELS[getMonCashAvailability()])}</span>
+            <span className="text-mist">{t(lang, isZelleEnabled() ? "availability.zelle" : "availability.zelle.unavailable")}</span>
             <span className="text-mist">
               {isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}
             </span>

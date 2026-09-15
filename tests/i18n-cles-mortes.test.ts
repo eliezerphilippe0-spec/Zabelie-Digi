@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 /**
  * UNE CLÉ DE `lib/i18n.ts` SANS SITE D'APPEL EST UN DÉFAUT MÉCANIQUEMENT
@@ -140,7 +140,7 @@ function croiser(
 
 const cles = clesDeclarees(readFileSync(I18N, "utf8"));
 const sources = ROOTS.flatMap((r) => walk(r))
-  .filter((f) => !EXCLUS.includes(f))
+  .filter((f) => !EXCLUS.includes(f.split(sep).join("/")))
   .map((f) => sansCommentaires(readFileSync(f, "utf8")));
 const vus = new Set(sources.flatMap(litteraux));
 const prefixes = [...new Set(sources.flatMap(prefixesDynamiques))];
