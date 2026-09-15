@@ -3,6 +3,11 @@
 set -euo pipefail
 [[ "${GITHUB_ACTIONS:-}" == "true" && "${RUNNER_OS:-}" == "Linux" ]]
 [[ -d /run/systemd/system ]]
+# setup-node installs in the hosted tool cache; provision the documented host path.
+node22=$(command -v node)
+[[ "$("$node22" -p 'process.versions.node.split(".")[0]')" == "22" ]]
+if [[ ! -e /usr/bin/node ]]; then sudo ln -s "$node22" /usr/bin/node; fi
+[[ "$(/usr/bin/node -p 'process.versions.node.split(".")[0]')" == "22" ]]
 [[ ! -e /opt/zabelie-scanner && ! -e /etc/zabelie-scanner && ! -e /var/lib/zabelie-scanner ]]
 if id zabelie-scanner >/dev/null 2>&1; then exit 1; fi
 for unit in zabelie-scanner.service zabelie-scanner-inventory.service zabelie-scanner.timer; do
@@ -50,6 +55,9 @@ OnCalendar=
 OnActiveSec=30min
 UNIT
 cleanup() {
+  if [[ "$?" -ne 0 ]]; then
+    sudo journalctl -u zabelie-scanner.service -u zabelie-scanner-inventory.service -n 35 --no-pager || true
+  fi
   sudo systemctl disable --now zabelie-scanner.timer >/dev/null 2>&1 || true
   sudo systemctl stop zabelie-scanner.service zabelie-scanner-inventory.service >/dev/null 2>&1 || true
 }
