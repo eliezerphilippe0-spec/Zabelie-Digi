@@ -14,6 +14,8 @@ Le worker est prêt dans scripts/scanner-fichiers.ts. Aucun service antivirus n'
 
 Les attestations sont stockées sous _security/scans/ dans le bucket privé product-files. Elles ne sont ni publiées ni envoyées au navigateur. La clé service-role peut les écrire ; les vendeurs ne reçoivent que des jetons d'upload pour un chemin liv-UUID individuel. Ne jamais ajouter une policy donnant aux utilisateurs l'accès à _security/ ni un droit d'écrasement des objets livrés. Cette protection est applicative : une personne possédant la clé service-role demeure privilégiée et doit être strictement contrôlée.
 
+Le paquet d’installation Linux et son contrôle de santé sont préparés dans [ops/antivirus/README.md](../ops/antivirus/README.md). Il reste à les activer sur le serveur retenu ; la présence de ces fichiers ne prouve pas un service en fonctionnement.
+
 Sur le serveur privé retenu :
 
 1. Installer Node.js 22, les dépendances du dépôt et ClamAV avec freshclam. Restreindre l'accès administrateur au serveur. Injecter NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY depuis un gestionnaire de secrets ; ne jamais les commiter, les mettre dans une URL ou un journal.
