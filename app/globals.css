@@ -2,6 +2,7 @@
    (titres, prix, boutons) + Inter 400/500 (texte). Plus de requête tierce
    bloquante vers Google Fonts — gain net sur 3G. */
 @import "tailwindcss";
+@import "./marketplace-header.css";
 @import "./zabelie-theme.css"; /* SOURCE UNIQUE des design tokens */
 
 @layer base {

@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { MarketplaceStatus } from "@/components/marketplace-status";
 import { MarketplaceUniverses } from "@/components/marketplace-universes";
 import Link from "next/link";
 import Image from "next/image";
@@ -218,6 +219,7 @@ export default async function HomePage() {
           repère que Lighthouse réclamait (landmark-one-main) — l'accueil était
           la seule page sans lui (Phase 0, mesuré). */}
       <main id="main">
+        <MarketplaceStatus lang={lang} />
         {/* BANNIÈRE — accueil premium §4.2 : UNE bannière, le h1 DEDANS, une
             phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
             carrousel : le premier écran appartient aux produits. La photo est
@@ -282,7 +284,10 @@ export default async function HomePage() {
           <section className="home-catalogue-state mx-auto max-w-6xl px-3 py-8" aria-live="polite">
             <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
-            <Link href={catalogue === null ? "/" : "/aide#comment"} className="mt-4 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
+            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+              <Link href={catalogue === null ? "/" : "/aide#comment"} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
+              {catalogue !== null && <Link href="/vendre" className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 font-semibold hover:border-accent">{t(lang, "home.cta.sell")}</Link>}
+            </div>
           </section>
         )}
 

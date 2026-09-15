@@ -8,7 +8,7 @@ import type { RayonMenu } from "@/lib/taxonomy";
 export function CategoryChips({ rayons, labels, links, activeHref }: {
   rayons: RayonMenu[];
   labels: { all: string; more: string; nav: string };
-  links: { href: string; label: string }[];
+  links: { href: string; label: string; note?: string }[];
   activeHref?: string;
 }) {
   const pleins = rayons.filter((r) => !r.vide);
@@ -17,7 +17,7 @@ export function CategoryChips({ rayons, labels, links, activeHref }: {
   return <nav aria-label={labels.nav} className="header-fold -mx-3 overflow-x-auto px-3 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
     <ul className="flex items-center gap-2 whitespace-nowrap">
       <li><Link href="/catalogue" aria-current={activeHref === "/catalogue" ? "page" : undefined} className={style("/catalogue")}>{labels.all}</Link></li>
-      {links.map((link) => <li key={link.href}><Link href={link.href} aria-current={activeHref === link.href ? "page" : undefined} className={style(link.href)}>{link.label}</Link></li>)}
+      {links.map((link) => <li key={link.href}><Link href={link.href} aria-current={activeHref === link.href ? "page" : undefined} className={style(link.href)}>{link.label}{link.note && <span className="border-l border-on-chrome/25 pl-1.5 text-xs">{link.note}</span>}</Link></li>)}
       {pleins.map((r) => (
         <li key={r.slug}><Link href={r.href} className={style(r.href)}><DepartmentIcon slug={r.slug} className="h-4 w-4 stroke-on-chrome" />{r.label}</Link></li>
       ))}

@@ -8,7 +8,8 @@ import { useEffect, useRef } from "react";
  * Au repos : logo, recherche, chips des rayons — ~100 px. Après ~120 px de
  * défilement, l'attribut `data-compact` est posé sur le <header> et
  * `app/globals.css` masque tout ce qui porte `.header-fold` (logo, chips) :
- * il ne reste que la barre de recherche et les deux icônes, collées en haut.
+ * la recherche et les raccourcis restent collés en haut. Sur mobile,
+ * la recherche conserve sa propre ligne pour rester lisible.
  *
  * ⚠️ AUCUNE animation de hauteur — la règle du brief est « transform et
  * opacity seulement ». Le pli est instantané (`display: none`), ce qui coûte

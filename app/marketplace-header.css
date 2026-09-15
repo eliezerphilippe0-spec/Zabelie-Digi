@@ -1,0 +1,19 @@
+/* Une recherche complète sur mobile, les raccourcis sur leur propre ligne. */
+.marketplace-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding-block: 4px 8px;
+}
+.marketplace-header-brand { margin-right: auto; }
+.marketplace-header-search { order: 1; flex-basis: 100%; }
+@media (max-width: 359px) {
+  .marketplace-header-brand > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (min-width: 1024px) {
+  .marketplace-header-row { flex-wrap: nowrap; padding-block: 2px; }
+  .marketplace-header-brand { margin-right: 0; }
+  .marketplace-header-search { order: 0; flex-basis: auto; }
+}

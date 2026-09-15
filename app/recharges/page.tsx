@@ -4,6 +4,9 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { getMonCashAvailability, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
+import { isZelleEnabled } from "@/lib/zelle";
+import { isStripeEnabled } from "@/lib/stripe-config";
 import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
 
 export async function generateMetadata() {
@@ -37,9 +40,15 @@ export default async function RechargesPage() {
             <h2 className="text-xl">{t(lang, "recharges.wallet")}</h2>
             <p className="mt-3 leading-relaxed text-mist">{t(lang, "recharges.wallet.body")}</p>
           </section>
-          <section className="pt-7">
+          <section id="paiements" className="scroll-mt-40 pt-7">
             <h2 className="text-xl">{t(lang, "recharges.pay")}</h2>
             <p className="mt-3 leading-relaxed text-mist">{t(lang, "recharges.pay.body")}</p>
+            <ul className="mt-4 space-y-3 rounded-xl border border-line bg-surface p-4 text-sm" aria-label={t(lang, "availability.details")}>
+              <li>{t(lang, MONCASH_AVAILABILITY_LABELS[getMonCashAvailability()])}</li>
+              <li>{t(lang, isZelleEnabled() ? "availability.zelle" : "availability.zelle.unavailable")}</li>
+              <li>{isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}</li>
+              <li>{t(lang, "footer.natcash")}</li>
+            </ul>
             <Link href="/aide#comment" className="mt-3 inline-flex min-h-11 items-center underline underline-offset-4">{t(lang, "recharges.help")}</Link>
           </section>
         </div>
