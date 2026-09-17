@@ -39,6 +39,8 @@
 | `RELOADLY_CLIENT_SECRET` | idem |
 | `STRIPE_SECRET_KEY` | mouvements de fonds, remboursements |
 | `STRIPE_WEBHOOK_SECRET` | forger une confirmation de paiement |
+| `KOBARA_SECRET_KEY` | encaisser NatCash/MonCash au nom de Zabelie |
+| `KOBARA_WEBHOOK_SECRET` | ⚠️ **forger une confirmation de paiement** — donc obtenir des livraisons sans payer |
 | `RESEND_API_KEY` | envoyer du courriel au nom du domaine |
 | `RECONCILE_SECRET` | déclencher la réconciliation à volonté |
 | `CRON_SECRET` | déclencher toutes les tâches planifiées |
@@ -83,6 +85,9 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `EMAIL_FROM` | expéditeur des courriels ⚠️ **inséparable de `RESEND_API_KEY`** : sans elle, tout part dans le bac à sable de Resend |
 | `ZELLE_RECIPIENT` | destinataire Zelle, montré à l'acheteur diaspora |
 | `ZELLE_RECIPIENT_NAME` | titulaire affiché |
+| `KOBARA_MODE` | bac à sable ou encaissement réel ⚠️ toute valeur non reconnue retombe en `test`, jamais en `live` |
+| `KOBARA_API_BASE` | hôte de l'API ; vide = `https://api.kobara.app` |
+| `KOBARA_MONCASH` | `true` ajoute le bouton « MonCash via Kobara » ⚠️ **paramètre commercial** : la passerelle prélève 2,9–4 % que le rail MonCash direct ne prélève pas |
 | `OPENAI_MODEL` | nom du modèle |
 | `GEMINI_MODEL` | nom du modèle |
 | `ZABELIE_TOPUP_FIRSTPARTY_ENABLED` | rouvre la vente de recharge en propre — fermée par V-17 |

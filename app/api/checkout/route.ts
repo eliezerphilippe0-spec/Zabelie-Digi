@@ -11,7 +11,13 @@ import { createPayment } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import {
-  withinRailCap,
+  createKobaraPayment,
+  isKobaraEnabled,
+  isKobaraProvider,
+  kobaraCap,
+  type KobaraProvider,
+} from "@/lib/kobara";
+import {
   railCap,
   usdCentsFromHtg,
   railCountry,
@@ -44,7 +50,7 @@ export const dynamic = "force-dynamic";
  * est figé ici (expected_usd_cents) et vérifié en base à la confirmation.
  */
 
-const RAILS = ["moncash", "stripe", "zelle"] as const;
+const RAILS = ["moncash", "stripe", "zelle", "kobara"] as const;
 
 /**
  * RAIL GRATUIT (`0087`) — jamais choisi par le client, toujours DÉDUIT du prix
@@ -61,6 +67,19 @@ type Rail = (typeof RAILS)[number];
 function railEnabled(rail: Rail): boolean {
   if (rail === "stripe") return isStripeEnabled();
   if (rail === "zelle") return isZelleEnabled();
+  /* ⚠️ C'EST ICI QUE LE RAIL KOBARA EXISTE OU N'EXISTE PAS.
+   *
+   * Tant que `KOBARA_SECRET_KEY` et `KOBARA_WEBHOOK_SECRET` sont absentes de
+   * l'environnement, un appelant qui réclame `rail: "kobara"` reçoit 422 —
+   * exactement comme aujourd'hui, avant que ce code existe. Fusionner ce lot
+   * n'ouvre donc rien : c'est la pose des variables dans Vercel qui ouvre,
+   * et elle appartient au porteur (règle dure n°5).
+   *
+   * L'étape 0 de `docs/03` §9.1 reste incomplète sur deux points juridiques
+   * (statut BRH, détention des fonds). Ce garde est ce qui rend le lot
+   * fusionnable malgré cela, et il ne doit pas être affaibli en un
+   * `return true` « en attendant ». */
+  if (rail === "kobara") return isKobaraEnabled();
   return true; // moncash = rail MVP, toujours proposé
 }
 
@@ -73,6 +92,7 @@ export async function POST(req: Request) {
   let quantityInput: unknown;
   let rechajInput: unknown;
   let recipientInput: unknown;
+  let providerInput: unknown;
   try {
     ({
       productId,
@@ -82,6 +102,7 @@ export async function POST(req: Request) {
       quantity: quantityInput,
       rechajNumero: rechajInput,
       recipient: recipientInput,
+      kobaraProvider: providerInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -98,6 +119,30 @@ export async function POST(req: Request) {
       { error: t(lang, "api.rail.unavailable") },
       { status: 422 }
     );
+  }
+
+  /* KOBARA — l'opérateur derrière la passerelle, validé AVANT toute création.
+   *
+   * ⚠️ Liste FERMÉE (`isKobaraProvider`), jamais un `String(x)` transmis tel
+   * quel. Ce champ part vers un tiers dans le corps d'une requête POST : une
+   * valeur libre y serait une injection de paramètre chez un prestataire dont
+   * on ne contrôle pas la validation. Ce qui n'est pas dans la liste n'existe
+   * pas.
+   *
+   * Le défaut est `natcash` parce que c'est la seule chose que ce rail apporte
+   * qui n'existe pas déjà : MonCash a son rail DIRECT ici, sans intermédiaire
+   * et sans frais de passerelle (`docs/03` §9.1). Router MonCash par Kobara
+   * reste possible — le porteur l'a demandé explicitement — mais ce n'est pas
+   * ce qui arrive quand personne ne choisit. */
+  let kobaraProvider: KobaraProvider = "natcash";
+  if (rail === "kobara") {
+    if (providerInput !== undefined && !isKobaraProvider(providerInput)) {
+      return NextResponse.json(
+        { error: t(lang, "api.rail.unavailable"), code: "kobara_provider_invalide" },
+        { status: 422 }
+      );
+    }
+    if (providerInput !== undefined) kobaraProvider = providerInput as KobaraProvider;
   }
 
   // Acheteur authentifié.
@@ -331,10 +376,28 @@ export async function POST(req: Request) {
 
   // Plafond du rail : on bloque AVANT de créer la commande (message clair plutôt
   // qu'un échec brutal côté opérateur). Pas de plafond connu pour Stripe/Zelle.
-  if (!withinRailCap(finalPriceHtg, rail)) {
+  /* UN SEUL PLAFOND S'APPLIQUE, et lequel dépend du rail.
+   *
+   * ⚠️ Deux contrôles empilés se contredisaient dans ma première écriture :
+   * `RAIL_CAPS.kobara` vaut 20 000 (le plus bas des deux opérateurs), donc un
+   * paiement MonCash de 22 000 HTG via la passerelle était refusé par le
+   * contrôle de rail AVANT que le contrôle de provider, plus permissif, ait pu
+   * l'admettre. Le second n'aurait jamais rien élargi — il aurait seulement
+   * donné l'illusion d'une borne exacte.
+   *
+   * Pour `kobara`, la borne qui fait foi est donc celle de l'OPÉRATEUR choisi,
+   * et elle est la seule consultée. `RAIL_CAPS.kobara` reste défini pour les
+   * appelants qui raisonnent par rail sans connaître le provider (et il est
+   * volontairement conservateur), mais ce chemin-ci n'en dépend pas.
+   *
+   * Le libellé nommait par ailleurs « MonCash » en dur — sans conséquence tant
+   * que MonCash était le seul rail plafonné, faux dès qu'un second en a un. */
+  const plafond = rail === "kobara" ? kobaraCap(kobaraProvider) : railCap(rail);
+  const operateurPlafonne = rail === "kobara" ? kobaraProvider : rail;
+  if (plafond !== null && finalPriceHtg > plafond) {
     return NextResponse.json(
       {
-        error: `Montant supérieur au plafond MonCash (${railCap(rail)} HTG) par transaction.`,
+        error: `Montant supérieur au plafond ${operateurPlafonne} (${plafond} HTG) par transaction.`,
       },
       { status: 422 }
     );
@@ -625,6 +688,43 @@ export async function POST(req: Request) {
         redirectUrl: `/paiement/zelle/${order.id}`,
         orderId: order.id,
       });
+    }
+
+    if (rail === "kobara") {
+      /* Passerelle tierce : session créée avec `Idempotency-Key = order.id`,
+       * confirmation par webhook SIGNÉ uniquement (`/api/kobara/webhook`).
+       * Le montant envoyé est `order.amount_htg` relu en base — jamais un
+       * montant venu du client. */
+      const session = await createKobaraPayment({
+        orderId: order.id,
+        amountHtg: order.amount_htg,
+        provider: kobaraProvider,
+        description: product.title,
+      });
+      /* Le MODE et sa SOURCE sont inscrits en base, pas seulement journalisés.
+       *
+       * C'est la leçon de MonCash reprise telle quelle : cinq paiements ont
+       * échoué du 2026-08-11 au 2026-08-14 sans que rien en base ne permette
+       * de distinguer « le rail encaissait en bac à sable » de « l'acheteur a
+       * renoncé ». Il avait fallu qu'un humain clique et lise la barre
+       * d'adresse. `mode_source = "invalide"` dit en plus qu'une valeur
+       * malformée a été écrite dans Vercel — un espace de fin collé depuis un
+       * presse-papier, par exemple.
+       *
+       *   select raw->>'kobara_mode', raw->>'kobara_mode_source', count(*)
+       *     from payments where rail = 'kobara' group by 1, 2; */
+      await admin
+        .from("payments")
+        .update({
+          raw: {
+            kobara_payment_id: session.id,
+            kobara_provider: kobaraProvider,
+            kobara_mode: session.mode,
+            kobara_mode_source: session.modeSource,
+          },
+        })
+        .eq("order_id", order.id);
+      return NextResponse.json({ redirectUrl: session.redirectUrl, orderId: order.id });
     }
 
     // MonCash. orderId envoyé = notre order.id (clé de rapprochement).

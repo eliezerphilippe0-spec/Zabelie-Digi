@@ -51,6 +51,13 @@ export function amountMatches(
 export const RAIL_CAPS: Record<string, number> = {
   moncash: 25000,
   natcash: 20000,
+  /* `kobara` route vers NatCash OU MonCash selon le `provider` choisi. Le
+   * plafond retenu ici est le plus BAS des deux, parce qu'un plafond de rail
+   * est franchi avant que le provider soit connu du contrôle. Le plafond
+   * exact du provider est vérifié ensuite dans le checkout
+   * (`lib/kobara.ts::kobaraCap`) — les deux contrôles ne font pas double
+   * emploi : celui-ci protège l'ordre des opérations, l'autre la précision. */
+  kobara: 20000,
 };
 
 export function railCap(rail: string): number | null {
@@ -72,6 +79,9 @@ export function withinRailCap(amountHTG: number, rail: string): boolean {
 export const RAIL_COUNTRY: Record<string, string> = {
   moncash: "HT",
   natcash: "HT",
+  // Kobara n'encaisse que du mobile money haïtien : le signal de pays est
+  // aussi fort que pour MonCash en direct.
+  kobara: "HT",
 };
 
 export function railCountry(rail: string): string | null {

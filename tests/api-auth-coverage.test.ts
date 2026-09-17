@@ -21,6 +21,11 @@ const AUTH_GUARDS = [
   /getCurrentUser\(/, //    idem + rôle depuis profiles
   /authorize\(req\)/, //    secret Bearer (routes cron)
   /verifyStripeWebhook/, // signature webhook Stripe
+  /* Signature webhook Kobara (0106). Le motif ancre le REFUS, pas l'appel :
+   * `verdict` est lié au retour du garde, puis testé. Une route qui appellerait
+   * `autoriserWebhookKobara` en jetant son résultat ne satisferait pas ce
+   * motif — même raison que la négation exigée pour `autoriserAdmin`. */
+  /const verdict = autoriserWebhookKobara\([\s\S]{0,200}if \(!verdict\.ok\)/,
   /!\(await autoriserAdmin\(/, // garde PARTAGÉ (lib/admin-gate.ts) — voir ci-dessous
 ];
 

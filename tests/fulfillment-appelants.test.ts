@@ -116,12 +116,20 @@ test("l'extracteur a lu le dépôt, et pas le vide", () => {
   // `ouvrirSuiviLivraison`, et c'est ce fichier qui l'a dit. Élargir la liste
   // sans avoir corrigé l'omission aurait transformé un garde en formalité —
   // l'ordre compte, et il a été respecté.
+  //
+  // ⚠️ SIXIÈME ET SEPTIÈME ENTRÉES AJOUTÉES LE 2026-09-17 : le rail Kobara
+  // (`0106`) confirme par DEUX chemins, comme MonCash — le webhook signé et la
+  // passe du réconciliateur. Les deux appellent `ouvrirSuiviLivraison` depuis
+  // leur première écriture : la liste est élargie APRÈS que le contrôle
+  // `manquants` soit resté vide, jamais pour le faire taire.
   assert.deepEqual(confirmateurs, [
     "app/api/admin/confirm-zelle/route.ts",
     "app/api/checkout/route.ts",
+    "app/api/kobara/webhook/route.ts",
     "app/api/moncash/return/route.ts",
     "app/api/reconcile/route.ts",
     "app/api/stripe/webhook/route.ts",
+    "lib/kobara-reconcile.ts",
   ]);
 });
 

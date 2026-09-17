@@ -364,7 +364,7 @@ pas l'écart NatCash — elle en comble un autre, peut-être plus large.
 | Htipay (htipay.com) | ⚠️ Existe, API non confirmée | Contact direct requis ; ne pas confondre avec HaitiPay |
 | HaitiPay (haitipay.com) | ⚠️ Portail dev public (`devportal.haitipay.com`, « Acceptor API ») | Non demandé par le porteur à ce stade |
 | ⚠️ **Htipay — ERREUR DE CATÉGORIE, corrigée le 2026-08-24** | — | **Htipay n'est pas qu'une passerelle : c'est AUSSI une marketplace multi-vendeurs**, ouverte aux marchands depuis août 2020 (`support.htipay.com`). Ce tableau ne le classait que comme fournisseur. Adopter son rail ferait transiter les paiements de Zabelie par un **concurrent direct**, qui verrait passer volumes, prix et vendeurs. Pas rédhibitoire — mais c'est une donnée qui manquait à la fiche. → `docs/45` §2 bis |
-| **Kobara (kobara.app)** | ⚠️ **Fiche OUVERTE le 2026-08-23, 1 case sur 6** | Passerelle MonCash **et NatCash**. Voir §9.1 ci-dessous. |
+| **Kobara (kobara.app)** | ⚠️ **4 cases sur 6** — les DEUX manquantes sont juridiques (statut BRH, détention des fonds). **Code construit le 2026-09-17 sur instruction directe, rail ÉTEINT tant que les secrets ne sont pas posés** | Passerelle MonCash **et NatCash**. Voir §9.1 ci-dessous. |
 | **NATCOM S.A.** (NatCash, voie DIRECTE) | ⭐ **À OUVRIR — priorité 1** | **FSP agréé BRH** (§9.0). Aucun dépositaire ajouté, aucun frais d'intermédiaire. Même démarche que MonCash/Digicel, que Zabelie sait déjà mener |
 | **Sogebank — SogePay / MAGO** | ⭐ **À OUVRIR — priorité 2** | Banque, **FSP agréé** pour MAGO. SogePay = passerelle carte **avec API**. ⚠️ Hypothèse à vérifier : lève-t-elle le prérequis d'**entité étrangère** qui bloque Stripe ET Zelle ? Si oui, elle vaut plus que NatCash |
 | **Kiskeya Technologies Group S.A.** (KashPaw) | ⚠️ **FSP agréé**, capacités inconnues | Aucune documentation d'API trouvée. Pétion-Ville |
@@ -508,3 +508,74 @@ la rouvrira, dans cet ordre :
    intermédiaire ;
 3. un **compte Kobara en bac à sable** avec un aller-retour réel : c'est ce qui
    ferait passer les trois cases de « documenté » à « testé ».
+
+#### 2026-09-17 — LE CODE EXISTE, LE RAIL EST ÉTEINT
+
+> ⚠️ **Aucune des trois conditions ci-dessus n'a été remplie.** Ce qui suit
+> n'est pas une réouverture de la fiche : c'est l'exécution d'une **instruction
+> directe du porteur**, donnée le 2026-09-17 après que les deux cases bloquantes
+> lui aient été exposées une première fois et qu'il ait maintenu sa demande
+> (« je veux simplement ajouter l'api de Kobara dans les environnements vercel
+> comme moyen de paiement sur le site »). Règle zéro de `CLAUDE.md` :
+> l'instruction directe prime, l'agent s'arrête et demande — il l'a fait, il a
+> reçu sa réponse.
+
+**État des trois conditions, mesuré le 2026-09-17 :**
+
+| Condition | État |
+|---|---|
+| 1 — première gourde réelle sur MonCash | ❌ `moncash` : 14 paiements, **14 `failed`**, 0 référence opérateur. Seul `confirmed` du dépôt : un `gratis` à 0 HTG |
+| 2 — réponse HDIT / Cabinet Volmar | ❌ aucune. ⚠️ L'échéance d'écriture du **2026-09-11** est passée sans être consignée |
+| 3 — bac à sable Kobara | ❌ aucun compte, **aucun appel jamais émis vers `api.kobara.app`** |
+
+**Ce qui a été construit** (PR du 2026-09-17) :
+
+- `0106_rail_kobara.sql` — une valeur d'énumération, rien d'autre ;
+- `lib/kobara.ts` — session, signature HMAC, consultation S2S, minimisation ;
+- `app/api/kobara/webhook/route.ts` — confirmation signée, fail-closed ;
+- `lib/kobara-reconcile.ts` + branchement au réconciliateur (étape 5) ;
+- checkout, UI fiche produit, FR/HT/EN/ES, `.env.example`, `docs/11`.
+
+**⛔ CE QUE CETTE FUSION N'OUVRE PAS, et c'est la propriété qui la rend
+acceptable malgré l'étape 0 incomplète :** `isKobaraEnabled()` exige
+`KOBARA_SECRET_KEY` **et** `KOBARA_WEBHOOK_SECRET`. Absentes, le rail
+n'existe pas. **Mesuré sur un serveur réel**, build de production, sans les
+variables :
+
+```
+POST /api/checkout {"rail":"kobara"}   → 422 « Ce moyen de paiement n'est pas disponible. »
+POST /api/checkout {"rail":"moncash"}  → 401  ← le contrôle : la route marche
+POST /api/kobara/webhook               → 404 {"code":"rail_absent"}
+```
+
+Avec deux secrets **factices** posés, le 404 devient une vérification de
+signature — et la preuve qui compte est le contraste entre les deux dernières
+lignes, où seul l'horodatage change :
+
+```
+sans en-tête                    → 400 signature_invalide
+signature bidon                 → 400 signature_invalide
+signature VALIDE mais périmée   → 400 signature_invalide   ← l'anti-rejeu mord
+signature VALIDE et fraîche     → passe, atteint confirm_payment
+payment.failed                  → 200 ignoré, jamais la branche qui livre
+```
+
+**⚠️ CE QUI RESTE FAUX DE DIRE.** Le code est éprouvé ; **le rail ne l'est
+pas**. Aucun octet n'a jamais circulé entre ce dépôt et la passerelle. Le
+format de signature, les noms de champs, les codes de statut et la politique
+de rejeu sont **transcrits d'une documentation**, pas observés. Ce dépôt a
+déjà payé cette confusion : cinq paiements MonCash ont échoué contre un hôte
+qui répondait exactement comme sa documentation l'annonçait. La première chose
+à faire avant d'encaisser une gourde réelle reste un **aller-retour en bac à
+sable**.
+
+**⚠️ ET LES DEUX CASES JURIDIQUES SONT INTACTES.** Statut BRH de l'entité et
+détention des fonds : toujours rien. Poser les variables dans Vercel est le
+geste qui engage — il appartient au porteur, et il ne se délègue pas.
+
+**MonCash reste en DIRECT par défaut.** Le bouton « MonCash via Kobara »
+n'apparaît que si `KOBARA_MONCASH=true` est posée explicitement. Le porteur a
+demandé les deux opérateurs, la capacité est là ; mais router MonCash par la
+passerelle coûte 2,9 à 4 % qui n'existent pas aujourd'hui et ajoute un
+dépositaire au montage examiné par le conseil. Ce n'est pas ce qui arrive
+quand personne ne choisit.
