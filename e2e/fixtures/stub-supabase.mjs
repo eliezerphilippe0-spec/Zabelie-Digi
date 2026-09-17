@@ -134,6 +134,7 @@ const server = createServer((req, res) => {
   }
 
   if (url.pathname === "/__ecritures") return send(200, ecritures);
+  if (url.pathname === "/__partner") { res.writeHead(200, { "content-type": "text/html" }); return res.end("<title>Partner test</title>"); }
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
   const token = req.headers.authorization ?? "";
@@ -314,6 +315,11 @@ const server = createServer((req, res) => {
     if (status) rows = rows.filter((row) => row.status === status);
     const sellerId = eq(url, "seller_id");
     if (sellerId) rows = rows.filter((row) => row.seller_id === sellerId);
+    // API v1 validates RFC UUIDs; legacy UI fixtures use mnemonic identifiers.
+    const projection = url.searchParams.get("select") ?? "";
+    if (projection.includes("in_stock") && projection.includes("created_at") && !projection.includes(":")) {
+      rows = rows.map(row => ({ ...row, id: "44444444-4444-4444-8444-444444444444", seller_id: "22222222-2222-4222-8222-222222222222", created_at: "2026-07-20T10:00:00Z" }));
+    }
     return single(rows);
   }
 

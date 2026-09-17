@@ -45,6 +45,7 @@ import {
   isTrackedStockKind,
 } from "@/lib/product-kind";
 import type {
+  ListCategoriesInput,
   CheckInventoryInput,
   CompareProductsInput,
   GetDeliveryTermsInput,
@@ -681,7 +682,28 @@ export async function getUserOrders(
  * n'avaient jamais répondu. Le croisement échoue dans les DEUX directions,
  * parce qu'une liste qui ne sait que grandir devient une conformité par usure.
  */
+/** Active taxonomy, bounded keyset pagination; no invented product counts. */
+export async function listCategories(input: z.infer<typeof ListCategoriesInput>, ctx: Contexte) {
+  let q = ctx.supabase.from("zabelie_categories")
+    .select("id,slug,parent_id,level,label_fr,label_kr,label_en,label_es")
+    .eq("active", true).order("id", { ascending: true }).limit(input.limit + 1);
+  if (input.cursor) q = q.gt("id", input.cursor);
+  const { data, error } = await q;
+  if (error) throw new ErreurApi("internal", "Lecture des catégories échouée.");
+  const rows = (data ?? []) as { id: string; slug: string; parent_id: string | null; level: number; label_fr: string; label_kr: string | null; label_en: string | null; label_es: string | null }[];
+  const page = rows.slice(0, input.limit);
+  return {
+    type: "category_list" as const,
+    categories: page.map(r => ({ id: r.id, slug: r.slug, parentId: r.parent_id, level: r.level,
+      label: (input.language === "ht" ? r.label_kr : input.language === "en" ? r.label_en : input.language === "es" ? r.label_es : r.label_fr) || r.label_fr,
+      departmentFilter: r.level === 1 ? r.label_fr : null,
+    })),
+    nextCursor: rows.length > input.limit ? page[page.length - 1].id : null,
+  };
+}
+
 export const V1_HANDLERS = {
+  list_categories: listCategories,
   search_products: searchProducts,
   get_product: getProduct,
   compare_products: compareProducts,
