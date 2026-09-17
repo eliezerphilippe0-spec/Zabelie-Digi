@@ -121,6 +121,11 @@ function apiBase(base: string | undefined = process.env.KOBARA_API_BASE): string
 function secretKey(): string {
   const k = process.env.KOBARA_SECRET_KEY?.trim();
   if (!k) throw new Error("Kobara : KOBARA_SECRET_KEY manquante.");
+  const { mode } = resolveKobaraMode(process.env.KOBARA_MODE);
+  if (!k.startsWith(`kbr_sk_${mode}_`)) throw new Error("Kobara : cle et mode incompatibles.");
+  if (new URL(apiBase()).hostname === "api.kobara.app" && mode !== "live") {
+    throw new Error("Kobara : API publique reservee au mode live.");
+  }
   return k;
 }
 
@@ -152,7 +157,7 @@ export async function createKobaraPayment(input: {
   const site = siteUrl();
   const doFetch = input.fetchFn ?? fetch;
 
-  const res = await doFetch(`${apiBase()}/api/v1/payments`, {
+  const res = await doFetch(`${apiBase()}/v1/payments`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${secretKey()}`,
@@ -164,10 +169,9 @@ export async function createKobaraPayment(input: {
       currency: "HTG",
       provider: input.provider,
       description: input.description,
-      reference: input.orderId, // clé de rapprochement, comme l'orderId MonCash
       metadata: { order_id: input.orderId },
-      callback_url: `${site}/api/kobara/webhook`,
-      return_url: `${site}/mes-achats?commande=${input.orderId}`,
+      success_url: `${site}/mes-achats?commande=${encodeURIComponent(input.orderId)}`,
+      cancel_url: `${site}/panier`,
     }),
   });
 
@@ -178,13 +182,21 @@ export async function createKobaraPayment(input: {
     throw new Error(`Kobara ${res.status} : ${corps.slice(0, 300)}`);
   }
 
-  const data = (await res.json()) as {
+  const envelope = (await res.json()) as { data?: {
     id?: string;
     checkout_url?: string;
     status?: string;
-  };
-  if (!data.id || !data.checkout_url) {
+    environment?: string;
+  } };
+  const data = envelope.data;
+  if (!data?.id || !data.checkout_url) {
     throw new Error("Kobara : réponse sans id ou checkout_url.");
+  }
+  if (data.environment !== mode) throw new Error("Kobara : environnement de reponse incompatible.");
+  const checkout = new URL(data.checkout_url);
+  if (checkout.protocol !== "https:" || checkout.username || checkout.password ||
+      !(checkout.hostname === "kobara.app" || checkout.hostname.endsWith(".kobara.app"))) {
+    throw new Error("Kobara : URL de paiement inattendue.");
   }
   return {
     id: data.id,
@@ -226,13 +238,20 @@ export async function retrieveKobaraPayment(
   paymentId: string,
   fetchFn: typeof fetch = fetch
 ): Promise<KobaraPayment | null> {
-  const res = await fetchFn(`${apiBase()}/api/v1/payments/${encodeURIComponent(paymentId)}`, {
+  const res = await fetchFn(`${apiBase()}/v1/payments/${encodeURIComponent(paymentId)}`, {
     headers: { Authorization: `Bearer ${secretKey()}` },
   });
-  if (res.status === 404) return null;
+  // GET is not documented by the current public API. A missing route must
+  // not be mistaken for a missing payment and expire a paid order.
+  if (res.status === 404) throw new Error("Kobara : consultation indisponible (404), paiement non verifie.");
   if (!res.ok) throw new Error(`Kobara ${res.status} à la consultation.`);
   const data = (await res.json()) as Record<string, unknown>;
-  return normaliserPaiement(data);
+  if (!data.data || typeof data.data !== "object") throw new Error("Kobara : reponse de consultation invalide.");
+  const payment = data.data as Record<string, unknown>;
+  if (payment.environment !== resolveKobaraMode(process.env.KOBARA_MODE).mode) {
+    throw new Error("Kobara : environnement de consultation incompatible.");
+  }
+  return normaliserPaiement(payment);
 }
 
 /**

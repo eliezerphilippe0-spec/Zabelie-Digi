@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { autoriserWebhookKobara, isKobaraEnabled } from "@/lib/kobara";
+import { autoriserWebhookKobara, isKobaraEnabled, resolveKobaraMode } from "@/lib/kobara";
+
+import { readKobaraWebhook } from "@/lib/kobara-webhook";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,65 +58,53 @@ export async function POST(req: Request) {
     return NextResponse.json({ code: "signature_invalide" }, { status: 400 });
   }
 
-  let event: { type?: string; data?: Record<string, unknown> };
+  let event: unknown;
   try {
     event = JSON.parse(corpsBrut);
   } catch {
     return NextResponse.json({ code: "corps_illisible" }, { status: 400 });
   }
 
-  // Liste FERMÉE d'événements qui accordent. Tout le reste est accusé
-  // réception sans effet — un `payment.failed` ou un type ajouté demain ne
-  // doit jamais tomber dans la branche qui livre.
-  if (event.type !== "payment.succeeded") {
-    return NextResponse.json({ received: true, ignored: event.type ?? "sans_type" });
+  const parsed = readKobaraWebhook(event, req.headers.get("kobara-environment"), resolveKobaraMode(process.env.KOBARA_MODE).mode);
+  if (!parsed.ok) {
+    return NextResponse.json({ code: parsed.code }, { status: parsed.ignored ? 200 : 400 });
   }
-
-  const paiement = (event.data ?? {}) as Record<string, unknown>;
-  const metadata = (paiement.metadata ?? {}) as Record<string, unknown>;
-  const orderId =
-    typeof metadata.order_id === "string"
-      ? metadata.order_id
-      : typeof paiement.reference === "string"
-        ? paiement.reference
-        : null;
-  if (!orderId) {
-    return NextResponse.json({ code: "order_id_absent" }, { status: 400 });
-  }
-
-  const montant = Number(paiement.amount);
-  if (!Number.isFinite(montant)) {
-    return NextResponse.json({ code: "montant_illisible" }, { status: 400 });
-  }
-  // La devise est vérifiée ICI parce que ce rail est natif HTG : une charge en
-  // USD dont le nombre coïnciderait passerait sinon le contrôle d'égalité en
-  // base tout en valant cent fois moins.
-  if (typeof paiement.currency === "string" && paiement.currency.toUpperCase() !== "HTG") {
-    return NextResponse.json({ code: "devise_inattendue" }, { status: 400 });
-  }
-
+  const paiement = parsed.payment;
   const admin = createAdminClient();
+  // The provider reference belongs to Kobara, not to our order namespace.
+  // Match the payment ID saved by checkout, even when metadata is omitted.
+  const { data: stored, error: lookupError } = await admin.from("payments")
+    .select("order_id, idempotency_key, raw")
+    .eq("rail", "kobara")
+    .eq("raw->>kobara_payment_id", paiement.id)
+    .maybeSingle();
+  if (lookupError || !stored) {
+    // May race checkout's persistence: return a retryable response.
+    return NextResponse.json({ code: "paiement_non_rapproche" }, { status: 503 });
+  }
+  const orderId = stored.order_id;
+  if ((paiement.orderId && paiement.orderId !== orderId) ||
+      stored.raw?.kobara_mode !== paiement.environment) {
+    return NextResponse.json({ code: "paiement_incompatible" }, { status: 400 });
+  }
+
   const { data, error } = await admin.rpc("confirm_payment", {
-    p_idempotency_key: orderId, // = order.id = Idempotency-Key envoyée à Kobara
-    p_provider_ref:
-      typeof paiement.provider_reference === "string"
-        ? paiement.provider_reference
-        : typeof paiement.id === "string"
-          ? paiement.id
-          : orderId,
+    p_idempotency_key: stored.idempotency_key,
+    p_provider_ref: paiement.providerRef,
     p_raw: {
-      kobara_payment_id: typeof paiement.id === "string" ? paiement.id : null,
-      kobara_provider: typeof paiement.provider === "string" ? paiement.provider : null,
-      status: typeof paiement.status === "string" ? paiement.status : null,
-      amount: montant,
-      currency: typeof paiement.currency === "string" ? paiement.currency : null,
+      kobara_payment_id: paiement.id,
+      kobara_provider: paiement.provider,
+      kobara_mode: paiement.environment,
+      status: "succeeded",
+      amount: paiement.amount,
+      currency: paiement.currency,
     },
-    p_amount: Math.round(montant),
+    p_amount: paiement.amount,
   });
 
   if (error) {
     // 500 → la passerelle réessaiera ; `confirm_payment` est idempotent, c'est sûr.
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ code: "confirmation_echouee" }, { status: 500 });
   }
   if (data?.status === "confirmed") {
     // Suivi de remise d'abord (l'escrow doit être gelé avant qu'on rende 200),

@@ -3,6 +3,14 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## Activation Kobara et recharges — diagnostic du 17 septembre 2026
+
+Correctif du contrat API et des confirmations prepare sur `fix/kobara-activation`.
+L'activation en production attend l'acces Vercel et les comptes fournisseurs.
+Voir [le diagnostic et la procedure](docs/58-kobara-activation.md).
+Les instructions plus anciennes ci-dessous ne prouvent pas que l'API actuelle
+accepte le sandbox sur son hote public, ni qu'un GET de reconciliation existe.
+
 ## Fondations de sécurité — 13 septembre 2026
 
 Les corrections et procédures sont détaillées dans [docs/57-fondations-securite.md](docs/57-fondations-securite.md). À terminer côté exploitation : serveur privé ClamAV et attestation réelle des fichiers, enrôlement MFA du titulaire sur /securite, protection Supabase des mots de passe compromis (forfait à vérifier), sauvegarde indépendante et restauration isolée, validation des paiements avec Digicel. Un fichier sans analyse valide reste bloqué ; ne pas supprimer la garde pour le publier.

@@ -4,7 +4,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
-import { getMonCashAvailability, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
+import { getMonCashAvailability, getNatCashAvailabilityKey, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
 import { isZelleEnabled } from "@/lib/zelle";
 import { isStripeEnabled } from "@/lib/stripe-config";
 import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
@@ -47,7 +47,7 @@ export default async function RechargesPage() {
               <li>{t(lang, MONCASH_AVAILABILITY_LABELS[getMonCashAvailability()])}</li>
               <li>{t(lang, isZelleEnabled() ? "availability.zelle" : "availability.zelle.unavailable")}</li>
               <li>{isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}</li>
-              <li>{t(lang, "footer.natcash")}</li>
+              <li>{t(lang, getNatCashAvailabilityKey())}</li>
             </ul>
             <Link href="/aide#comment" className="mt-3 inline-flex min-h-11 items-center underline underline-offset-4">{t(lang, "recharges.help")}</Link>
           </section>
