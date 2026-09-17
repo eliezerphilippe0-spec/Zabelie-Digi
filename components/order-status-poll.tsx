@@ -18,14 +18,15 @@ export function OrderStatusPoll({ orderId }: { orderId: string }) {
     intervalMs: 10000,
     maxTicks: 24,
     resetKey: orderId,
-    onTick: async () => {
+    onTick: async (signal) => {
       const supabase = createClient();
       const { data } = await supabase
         .from("orders")
         .select("status, products(slug)")
         .eq("id", orderId)
+        .abortSignal(signal)
         .maybeSingle();
-      if (!data) return false;
+      if (signal.aborted || !data) return false;
       if (data.status === "paid" || data.status === "delivered") {
         router.push(`/paiement/succes?commande=${orderId}`);
         return true;

@@ -1,3 +1,5 @@
+import { OfflineMarketplace } from "@/components/offline-marketplace";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { BoutonReessayer } from "@/components/bouton-reessayer";
@@ -42,6 +44,7 @@ export default async function HorsLignePage() {
             {t(lang, "offline.home")}
           </Link>
         </div>
+        <OfflineMarketplace labels={marketplaceCopy(lang)} locale={lang === "ht" ? "fr-HT" : lang}/>
       </main>
       <SiteFooter />
     </div>
