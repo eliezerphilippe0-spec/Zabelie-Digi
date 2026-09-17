@@ -13,6 +13,70 @@ Le porteur confirme : « Non, nous sommes encore en bac à sable ». La priorit�
 
 Le [dossier de passage en production](docs/56-passage-moncash-production.md) fournit l'ordre des opérations, les URL du projet et les preuves attendues. Un [message à MonCash Business](docs/demande-moncash-business.md) est prêt, mais n'a pas été envoyé. Aucun changement de mode, de secret ni de compte marchand effectué.
 
+## 💳 Rail Kobara — le code est là, le rail est ÉTEINT (2026-09-17)
+
+Sur votre instruction directe du 2026-09-17, la passerelle **Kobara**
+(NatCash + MonCash) est construite de bout en bout : migration `0106`,
+adaptateur, webhook signé, réconciliateur, checkout, fiche produit en quatre
+langues. Détail et mesures : `docs/03-PAIEMENTS.md` §9.1.
+
+**Fusionner ce lot n'ajoute AUCUN moyen de paiement sur le site.** Mesuré sur
+un serveur de production sans les variables : `/api/checkout` avec
+`rail: "kobara"` rend **422**, et `/api/kobara/webhook` rend **404**. C'est
+vous qui allumez le rail, en posant ces variables dans **Vercel → Settings →
+Environment Variables** :
+
+| Variable | Valeur | Obligatoire |
+|---|---|---|
+| `KOBARA_SECRET_KEY` | la clé secrète du tableau de bord Kobara (`kbr_sk_…`) | ✅ |
+| `KOBARA_WEBHOOK_SECRET` | le secret du point de terminaison (`whsec_…`) | ✅ |
+| `KOBARA_MODE` | `test` d'abord, `live` seulement après un aller-retour réussi | recommandé |
+| `KOBARA_MONCASH` | `true` **seulement** si vous voulez aussi le bouton « MonCash via Kobara » | non |
+
+⚠️ **Les deux premières vont ensemble.** Une clé d'API sans secret de webhook
+donnerait un rail qui encaisse et ne sait pas confirmer — de l'argent pris
+sans livraison. Le code refuse cette moitié : il exige les deux.
+
+⚠️ **Et un geste côté Kobara** : déclarer l'URL de rappel
+`https://zabelie.com/api/kobara/webhook`, événement `payment.succeeded`.
+Sans elle, les paiements resteraient `pending` jusqu'à ce que le
+réconciliateur les rattrape.
+
+**Ce qui n'est PAS résolu, et qu'aucune ligne de code ne résout :**
+
+1. **Statut BRH de Kobara** — la circulaire 121 impose l'autorisation *avant*
+   de fournir un service de paiement électronique. Aucun numéro d'agrément
+   trouvé, ni par l'agent ni par vous. La question tient en une phrase à leur
+   poser : *« quel est votre numéro d'agrément FSPE auprès de la BRH ? »*
+2. **Qui détient les fonds** entre l'encaissement et votre retrait, sur quel
+   compte, cantonné ou non. C'est la question la plus lourde pour le dossier
+   `docs/17`, et aucune page technique n'y répondra.
+3. **Aucun octet n'a jamais circulé** entre ce dépôt et `api.kobara.app`. Le
+   format de signature et les noms de champs sont transcrits de leur
+   documentation. **Faites un paiement en bac à sable avant d'encaisser une
+   gourde réelle** — c'est le seul geste qui transforme « documenté » en
+   « testé ».
+
+---
+
+## ⏰ Deux échéances d'écriture sont passées sans que personne ne revienne
+
+`docs/42` §3.1 fixait deux dates. Elles sont dépassées au 2026-09-17, et le
+fichier ne l'a pas dit — exactement ce que son propre avertissement annonçait :
+« une date écrite dans un markdown n'est pas un mécanisme ».
+
+| Échéance | Date | État |
+|---|---|---|
+| Silence de **Digicel MFS** et de **HDIT / Cabinet Volmar** après 3 semaines | 2026-09-11 | ⬜ **non consigné — 6 jours de retard** |
+| Silence sur la **question 7** (montant minimal `CreatePayment`) | 2026-09-12 | ⬜ **non consigné — 5 jours de retard** |
+
+Ce n'est pas une date d'abandon, c'est une date d'écriture : « le cabinet n'a
+pas répondu en trois semaines » est un fait qui oriente la suite, et il vaut
+d'être écrit comme une réponse. Il commande directement la condition 2 de la
+fiche Kobara ci-dessus.
+
+---
+
 ## ⚙️ À poser : la variable `ZABELIE_URL` (une minute)
 
 Depuis le 2026-09-07, un workflow vérifie après **chaque fusion dans `main`**

@@ -24,6 +24,7 @@ import { AddToCart } from "@/components/add-to-cart";
 import { getPhysicalView } from "@/lib/products-physical";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
+import { isKobaraEnabled } from "@/lib/kobara";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
 import { MessageForm } from "@/components/message-form";
@@ -130,6 +131,31 @@ function buildBuyOptions(lang: Lang, priceHTG: number): BuyOption[] {
   const options: BuyOption[] = [
     { rail: "moncash", label: t(lang, "product.pay", { price: formatHTG(priceHTG) }) },
   ];
+  /* KOBARA (0106) — NatCash d'abord, et en HTG : c'est un rail HAÏTIEN, il se
+   * place donc au-dessus des rails diaspora en USD, pas à leur suite.
+   *
+   * ⚠️ MonCash via la passerelle n'apparaît QUE si `KOBARA_MONCASH=true`. Le
+   * rail MonCash DIRECT existe déjà, il est le bouton principal, et il ne
+   * coûte ni frais de passerelle (2,9 % à 4 %) ni maillon de détention
+   * supplémentaire (`docs/03` §9.1). Afficher deux boutons MonCash par défaut
+   * ferait payer plus cher à l'acheteur qui clique au hasard, sans qu'il
+   * puisse le savoir. Le porteur a demandé les deux opérateurs : la capacité
+   * est là, son affichage est un geste explicite. */
+  if (isKobaraEnabled()) {
+    options.push({
+      rail: "kobara",
+      kobaraProvider: "natcash",
+      label: t(lang, "product.pay.natcash", { price: formatHTG(priceHTG) }),
+    });
+    if (process.env.KOBARA_MONCASH?.trim() === "true") {
+      options.push({
+        rail: "kobara",
+        kobaraProvider: "moncash",
+        label: t(lang, "product.pay.kobara.moncash", { price: formatHTG(priceHTG) }),
+      });
+    }
+  }
+
   const rate = Number(process.env.USD_HTG_RATE);
   if (Number.isFinite(rate) && rate > 0) {
     const usd = formatUsd(usdCentsFromHtg(priceHTG, rate));

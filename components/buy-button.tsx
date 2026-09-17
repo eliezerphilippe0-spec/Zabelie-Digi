@@ -17,9 +17,22 @@ export type BuyOption = {
    * relu en base — donc l'envoyer ne donne aucun pouvoir au client. Il figure
    * ici pour que le bouton porte le bon libellé et le bon état de chargement.
    */
-  rail: "moncash" | "stripe" | "zelle" | "gratis";
+  rail: "moncash" | "stripe" | "zelle" | "gratis" | "kobara";
   label: string;
+  /**
+   * `kobara` (0106) est une PASSERELLE, pas un opérateur : le même rail
+   * encaisse NatCash ou MonCash selon ce champ. Deux options peuvent donc
+   * partager `rail: "kobara"` en ne différant que par là — c'est pourquoi
+   * l'état de chargement est indexé sur `cleOption()` et non sur `rail`, sans
+   * quoi cliquer « NatCash » allumerait aussi le bouton « MonCash ».
+   */
+  kobaraProvider?: "natcash" | "moncash" | "kobara";
 };
+
+/** Identité d'une option à l'écran — `rail` seul ne suffit plus (voir ci-dessus). */
+export function cleOption(o: BuyOption): string {
+  return o.kobaraProvider ? `${o.rail}:${o.kobaraProvider}` : o.rail;
+}
 
 export type ErrorLabels = {
   generic: string;
@@ -174,14 +187,17 @@ export function BuyButton({
      recommençait. Mesuré le 2026-09-05 (parcours acheteur). Les quatre issues
      sont désormais distinctes, et `reseau` ne couvre plus que le cas où la
      requête n'est jamais partie. */
-  async function handleBuy(rail: string) {
+  async function handleBuy(option: BuyOption) {
     if (recipient && forSomeone && !recipientValue) { setError(recipient.invalid); return; }
-    setLoadingRail(rail);
+    setLoadingRail(cleOption(option));
     setError(null);
 
     const issue = await appelSession<{ redirectUrl?: string }>("/api/checkout", {
       productId,
-      rail,
+      rail: option.rail,
+      // Passerelle Kobara : l'opérateur derrière le rail. Le serveur le
+      // revalide contre une liste fermée — ce champ ne donne aucun pouvoir.
+      kobaraProvider: option.kobaraProvider,
       // Produit physique : la variante décide du stock réservé. Le serveur
       // revérifie tout — c'est lui qui refuse si l'unité est partie.
       variantId: variantId ?? undefined,
@@ -423,13 +439,13 @@ export function BuyButton({
       )}
 
       <button
-        onClick={() => handleBuy(primary.rail)}
+        onClick={() => handleBuy(primary)}
         disabled={busy || soldOut || selectedOut || rechajBloque}
         className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {soldOut || selectedOut
           ? (stockLabels?.variantOut ?? "Indisponible")
-          : loadingRail === primary.rail
+          : loadingRail === cleOption(primary)
             ? loadingLabel
             : primary.label}
       </button>
@@ -442,12 +458,12 @@ export function BuyButton({
           <div className="mt-2 grid gap-2">
             {others.map((o) => (
               <button
-                key={o.rail}
-                onClick={() => handleBuy(o.rail)}
+                key={cleOption(o)}
+                onClick={() => handleBuy(o)}
                 disabled={busy || soldOut || selectedOut || rechajBloque}
                 className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
               >
-                {loadingRail === o.rail ? loadingLabel : o.label}
+                {loadingRail === cleOption(o) ? loadingLabel : o.label}
               </button>
             ))}
           </div>
