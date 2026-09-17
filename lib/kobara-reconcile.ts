@@ -101,6 +101,10 @@ export async function reconcileKobara(
 
       const paiement = await deps.retrieve(paymentId);
 
+      if (paiement && (paiement.id !== paymentId || paiement.currency !== "HTG" ||
+          !Number.isSafeInteger(paiement.amount) || paiement.amount <= 0)) {
+        throw new Error("Kobara : identite, devise ou montant de consultation invalide.");
+      }
       if (kobaraEstPaye(paiement) && paiement) {
         /* Le montant transmis est celui rapporté par la passerelle, et c'est
          * `confirm_payment` qui le compare à `orders.amount_htg` EN BASE. On

@@ -713,7 +713,7 @@ export async function POST(req: Request) {
        *
        *   select raw->>'kobara_mode', raw->>'kobara_mode_source', count(*)
        *     from payments where rail = 'kobara' group by 1, 2; */
-      await admin
+      const { error: persistenceError } = await admin
         .from("payments")
         .update({
           raw: {
@@ -724,6 +724,7 @@ export async function POST(req: Request) {
           },
         })
         .eq("order_id", order.id);
+      if (persistenceError) throw new Error("Kobara : session non enregistree.");
       return NextResponse.json({ redirectUrl: session.redirectUrl, orderId: order.id });
     }
 
