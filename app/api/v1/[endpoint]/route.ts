@@ -1,3 +1,5 @@
+import { apiHeaders, createPublicApiClient, isPublicEndpoint, readApiBody } from "@/lib/api/v1/transport";
+import { openApiDocument } from "@/lib/api/v1/openapi";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
@@ -82,7 +84,7 @@ function erreur(code: string, message: string, field?: string): NextResponse {
   return NextResponse.json(v.data, { status: CODE_HTTP[code] ?? 500 });
 }
 
-export async function POST(
+async function executePost(
   req: Request,
   { params }: { params: Promise<{ endpoint: string }> }
 ) {
@@ -99,10 +101,9 @@ export async function POST(
   // entrées n'ont que des champs optionnels.
   let brut: unknown;
   try {
-    const texte = await req.text();
-    brut = texte.trim() === "" ? {} : JSON.parse(texte);
+    brut = await readApiBody(req);
   } catch {
-    return erreur("invalid_input", "Corps JSON illisible.");
+    return erreur("invalid_input", "Corps JSON illisible ou supérieur à 16 Kio.");
   }
 
   // 3 — Entrée. Le premier champ fautif est nommé : une erreur de validation
@@ -133,10 +134,13 @@ export async function POST(
   let admin: ReturnType<typeof createAdminClient>;
   let user: { id: string } | null;
   try {
-    supabase = await createClient();
+    supabase = isPublicEndpoint(nom) ? createPublicApiClient() : await createClient();
     admin = createAdminClient();
-    const { data } = await supabase.auth.getUser();
-    user = data.user ? { id: data.user.id } : null;
+    if (isPublicEndpoint(nom)) { user = null; }
+    else {
+      const { data } = await supabase.auth.getUser();
+      user = data.user ? { id: data.user.id } : null;
+    }
   } catch (e) {
     console.error(
       "[api/v1] CLIENT SUPABASE INDISPONIBLE — variables d'environnement absentes ?",
@@ -199,5 +203,28 @@ export async function POST(
     // Lecture seule, données publiques ou personnelles selon l'endpoint : on ne
     // met RIEN en cache partagé. `get_order` en cache serait une fuite.
     headers: { "Cache-Control": "no-store" },
+  });
+}
+
+
+export async function POST(req: Request, context: { params: Promise<{ endpoint: string }> }) {
+  const { endpoint } = await context.params;
+  const response = await executePost(req, context);
+  for (const [key, value] of Object.entries(apiHeaders(isPublicEndpoint(endpoint)))) response.headers.set(key, value);
+  if (response.status === 429) response.headers.set("Retry-After", "60");
+  return response;
+}
+export async function OPTIONS(_req: Request, { params }: { params: Promise<{ endpoint: string }> }) {
+  const { endpoint } = await params;
+  const allowed = isPublicEndpoint(endpoint);
+  return new NextResponse(null, { status: allowed ? 204 : 403, headers: apiHeaders(allowed) });
+}
+export async function GET(_req: Request, { params }: { params: Promise<{ endpoint: string }> }) {
+  const { endpoint } = await params;
+  if (endpoint === "openapi.json") return NextResponse.json(openApiDocument(), {
+    headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300", "X-Content-Type-Options": "nosniff" },
+  });
+  return NextResponse.json({ type: "error", code: "invalid_input", message: "Utilisez POST avec un corps JSON." }, {
+    status: 405, headers: { ...apiHeaders(isPublicEndpoint(endpoint)), Allow: "POST, OPTIONS" },
   });
 }

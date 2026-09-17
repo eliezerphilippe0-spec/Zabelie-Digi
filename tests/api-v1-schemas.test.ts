@@ -443,8 +443,9 @@ test("check_inventory : `null` (non suivi) et `0` (épuisé) ne se confondent pa
 
 // ══════════════════════════ Le registre ═════════════════════════════════════
 
-test("les neuf endpoints du brief sont tous inscrits au registre", () => {
+test("les endpoints de lecture sont tous inscrits au registre", () => {
   const attendus = [
+    "list_categories",
     "search_products",
     "get_product",
     "compare_products",
