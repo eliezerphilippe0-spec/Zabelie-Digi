@@ -5,7 +5,7 @@ import { LangToggle } from "@/components/lang-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SearchBox, type SearchSuggestion } from "@/components/search-box";
 import { MetricA } from "@/components/metric-a";
-import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
+import { getTopupAvailability } from "@/lib/topup-availability";
 import { HeaderShell } from "@/components/header-shell";
 import { CategoryChips } from "@/components/category-chips";
 import { AccountMenu, MENU_LINK } from "@/components/account-menu";
@@ -208,7 +208,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
             { href: "/catalogue?univers=objets", label: t(lang, "universe.physical.short") },
             { href: "/catalogue?univers=numerique", label: t(lang, "universe.digital.short") },
             { href: "/catalogue?univers=services", label: t(lang, "universe.services") },
-            { href: "/recharges", label: t(lang, "universe.recharges"), note: isTopupFirstPartyEnabled() ? undefined : t(lang, "availability.paused") },
+            { href: "/recharges", label: t(lang, "universe.recharges"), note: (await getTopupAvailability()) === "configured" ? undefined : t(lang, "availability.paused") },
             { href: "/aide", label: t(lang, "nav.help") },
           ]}
           labels={{

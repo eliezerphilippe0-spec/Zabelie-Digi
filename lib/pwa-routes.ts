@@ -23,6 +23,7 @@ export type CheminSansCache = {
 };
 
 export const CHEMINS_JAMAIS_CACHES: CheminSansCache[] = [
+  { motif: "^/(paiement|rechaj|messages|vendre|pro|facture|favoris|boutiques-suivies)(/|$)", raison: "Paiements, messages et espaces privés : jamais de copie HTML persistante sur l’appareil." },
   { motif: "^/securite", raison: "Configuration MFA et session : jamais de réponse sensible en cache." },
   {
     motif: "^/api/",

@@ -1,3 +1,7 @@
+import { RememberPublicListing } from "@/components/offline-marketplace";
+import { ProductCommitmentDetails } from "@/components/product-commitment-details";
+import { getProductCommitments } from "@/lib/product-commitments-server";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { headers } from "next/headers";
 import { getPublicDigitalRelease } from "@/lib/digital-studio-server";
 import { DigitalOfferPreview } from "@/components/digital-offer-preview";
@@ -226,6 +230,9 @@ export default async function ProductPage({
   const peutEcrire = Boolean(visiteur && product.creatorId) && !estVendeur;
   const connexionVendeur = `/connexion?next=${encodeURIComponent(`/produit/${product.slug}#contacter-vendeur`)}`;
 
+  const commitmentApplicable = pickByKind(product.kind, { file: false, service: true, physical: true });
+  const commitments = commitmentApplicable ? await getProductCommitments([product.id]) : null;
+  const trustLabels = marketplaceCopy(lang);
   const kindKey = kindLabelKey(product.kind, product.id);
   const deliveryBulletKey = bulletKey(product.kind, product.id);
   // La zone de livraison n'a pas encore de colonne : seul le repli « à
@@ -247,6 +254,7 @@ export default async function ProductPage({
 
   return (
     <div className="bg-grain min-h-dvh">
+      <RememberPublicListing slug={product.slug} title={product.title} priceHTG={flash ? flash.prixFlashHtg : product.priceHTG}/>
       <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined}
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
@@ -528,9 +536,12 @@ export default async function ProductPage({
                 )}
               </section>
             )}
+            {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
             <div className="mt-5">
               <BuyButton
                 key={product.id}
+                draftScope={visiteur?.id}
+                trustLabels={trustLabels}
                 recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {
                   toggle: t(lang, "recipient.toggle"), name: t(lang, "recipient.name"), phone: t(lang, "recipient.phone"), locality: t(lang, "recipient.locality"), note: t(lang, "recipient.note"), consent: t(lang, "recipient.consent"), hint: t(lang, "recipient.hint"), invalid: t(lang, "recipient.invalid"), summary: t(lang, "recipient.summary"),
                 } : undefined}

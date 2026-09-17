@@ -1,3 +1,5 @@
+import { ConnectivityNotice } from "@/components/connectivity-notice";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { DocumentLanguage } from "@/components/document-language";
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
@@ -112,6 +114,7 @@ export default async function RootLayout({
             rien et ne se déclenche que sur `type=recovery`. */}
         <DocumentLanguage />
         <RecoveryCatcher />
+        <ConnectivityNotice labels={(() => { const { disconnected, reconnect, offlineLink, resume } = marketplaceCopy(lang); return { disconnected, reconnect, offlineLink, resume }; })()}/>
         {children}
         </ThemeProvider>
       </body>

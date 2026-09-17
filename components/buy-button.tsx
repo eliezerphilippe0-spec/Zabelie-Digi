@@ -2,6 +2,9 @@
 import { normalizeRecipient, type RecipientInput, type RecipientLabels } from "@/lib/order-recipient";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useSessionDraft } from "@/lib/use-session-draft";
+import type { MarketplaceCopy } from "@/lib/marketplace-copy";
 import { useRouter } from "next/navigation";
 import { appelSession } from "@/lib/appel-session";
 import {
@@ -90,6 +93,8 @@ const fmtHtg = (n: number) => `${new Intl.NumberFormat("fr-HT").format(n)} HTG`;
  */
 export function BuyButton({
   productId,
+  draftScope,
+  trustLabels,
   options,
   variants,
   stockLabels,
@@ -101,6 +106,8 @@ export function BuyButton({
   errors,
 }: {
   productId: string;
+  draftScope?: string;
+  trustLabels?: Pick<MarketplaceCopy, "resume" | "draft" | "reconnect">;
   options: BuyOption[];
   /** Variantes physiques. Absent = produit digital, parcours inchangé. */
   variants?: VariantChoice[];
@@ -118,7 +125,12 @@ export function BuyButton({
 }) {
   const router = useRouter();
   const [forSomeone, setForSomeone] = useState(false);
-  const [recipientInput, setRecipientInput] = useState<RecipientInput>({ name: "", phone: "", locality: "", note: "", consent: false });
+  const [recipientFields, setRecipientFields, clearDraft] = useSessionDraft<Omit<RecipientInput, "consent">>(draftScope ? `zabelie:recipient:${draftScope}:${productId}` : undefined,
+    { name: "", phone: "", locality: "", note: "" },
+    (v): v is Omit<RecipientInput, "consent"> => Boolean(v && typeof v === "object" && ["name", "phone", "locality", "note"].every(k => typeof (v as Record<string, unknown>)[k] === "string" && String((v as Record<string, unknown>)[k]).length <= 500)));
+  const [consent, setConsent] = useState(false);
+  const recipientInput = { ...recipientFields, consent };
+  const [uncertain, setUncertain] = useSessionDraft<boolean>(draftScope ? `zabelie:checkout-review:${draftScope}:${productId}` : undefined, false, (v): v is boolean => typeof v === "boolean");
   const recipientValue = forSomeone ? normalizeRecipient(recipientInput) : null;
   const [loadingRail, setLoadingRail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -188,6 +200,8 @@ export function BuyButton({
      sont désormais distinctes, et `reseau` ne couvre plus que le cas où la
      requête n'est jamais partie. */
   async function handleBuy(option: BuyOption) {
+    if (loadingRail || uncertain) return;
+    if (!navigator.onLine) { setError(errors?.network ?? "Connexion impossible."); return; }
     if (recipient && forSomeone && !recipientValue) { setError(recipient.invalid); return; }
     setLoadingRail(cleOption(option));
     setError(null);
@@ -238,6 +252,7 @@ export function BuyButton({
 
     if (issue.etat === "reseau") {
       setError(errors?.network ?? "Connexion impossible. Réessayez.");
+      setUncertain(true);
       setLoadingRail(null);
       return;
     }
@@ -247,10 +262,12 @@ export function BuyButton({
     // `window.location.href` recevait la chaîne « undefined ».
     const destination = String(issue.data.redirectUrl ?? "");
     if (!destination) {
+      setUncertain(true);
       setError(errors?.generic ?? "Une erreur est survenue.");
       setLoadingRail(null);
       return;
     }
+    clearDraft();
     if (destination.startsWith("/")) {
       router.push(destination);
     } else {
@@ -259,7 +276,7 @@ export function BuyButton({
   }
 
   const [primary, ...others] = options;
-  const busy = loadingRail !== null;
+  const busy = loadingRail !== null || uncertain;
 
   const stockBadge = (n: number) => {
     if (!stockLabels) return null;
@@ -277,18 +294,20 @@ export function BuyButton({
 
   return (
     <div>
+      {uncertain && <p role="alert" className="mb-4 text-sm">{trustLabels?.reconnect}<Link href="/mes-achats" className="ml-2 inline-flex min-h-11 items-center underline">{trustLabels?.resume ?? "Mes achats"}</Link></p>}
       {recipient && <fieldset className="mb-5 rounded-xl border border-line p-4">
         <legend className="sr-only">{recipient.toggle}</legend>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={forSomeone} onChange={e => setForSomeone(e.target.checked)} disabled={busy}/>{recipient.toggle}</label>
         {forSomeone && <div className="mt-3 space-y-3">
           <p className="text-xs text-mist">{recipient.hint}</p>
+          {draftScope && trustLabels && <p className="text-xs text-mist">{trustLabels.draft}</p>}
           {(["name", "phone", "locality", "note"] as const).map(field => <label key={field} className="block text-sm">
             <span>{recipient[field]}</span>
             <input className="mt-1 min-h-11 w-full rounded-xl border border-line bg-ink/40 px-3" type={field === "phone" ? "tel" : "text"} autoComplete="off"
               maxLength={field === "name" ? 100 : field === "phone" ? 30 : field === "locality" ? 160 : 500}
-              value={recipientInput[field]} disabled={busy} onChange={e => setRecipientInput(prev => ({ ...prev, [field]: e.target.value }))}/>
+              value={recipientInput[field]} disabled={busy} onChange={e => setRecipientFields(prev => ({ ...prev, [field]: e.target.value }))}/>
           </label>)}
-          <label className="flex min-h-11 items-start gap-3 py-2 text-xs"><input type="checkbox" className="mt-1" checked={recipientInput.consent} disabled={busy} onChange={e => setRecipientInput(prev => ({ ...prev, consent: e.target.checked }))}/>{recipient.consent}</label>
+          <label className="flex min-h-11 items-start gap-3 py-2 text-xs"><input type="checkbox" className="mt-1" checked={recipientInput.consent} disabled={busy} onChange={e => setConsent(e.target.checked)}/>{recipient.consent}</label>
           {recipientValue && <p className="rounded-lg border border-line p-3 text-sm"><strong>{recipient.summary}</strong><br/>{recipientValue.full_name} · +509 {recipientValue.phone}<br/>{recipientValue.locality}</p>}
         </div>}
       </fieldset>}

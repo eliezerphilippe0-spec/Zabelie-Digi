@@ -37,36 +37,12 @@ test("l'en-tête porte un lien vers le panier, avec son compteur", () => {
   );
 });
 
-test("chaque ligne du panier mène à un paiement", () => {
+test("chaque ligne du panier mène à la vérification des variantes et de la remise avant paiement", () => {
   const src = readFileSync("app/panier/page.tsx", "utf8");
-  /* ⚠️ `includes("CartPayButton")` NE SUFFIT PAS, et la mutation l'a prouvé :
-   * renommer l'élément en `CartPayButtonOff` laissait l'assertion verte,
-   * puisque le nom fautif CONTIENT le nom attendu. Un préfixe partagé suffit
-   * à aveugler un test de sous-chaîne — c'est la version « nom » du piège de
-   * frontière `\b` que ce dépôt documente pour les accents.
-   * D'où la frontière explicite : le nom doit être suivi d'une espace ou de
-   * `>`, c'est-à-dire être l'élément lui-même et pas son préfixe. */
-  assert.match(
-    src,
-    /<CartPayButton[\s>]/,
-    "aucun bouton de paiement dans le panier — la page reste une impasse"
-  );
-  const btn = readFileSync("components/cart-pay-button.tsx", "utf8");
-  assert.ok(btn.includes('"/api/checkout"'), "le bouton ne vise pas le checkout existant");
-  // Le montant ne part JAMAIS du client (règle dure n°3).
-  assert.ok(
-    !/amount|montant|price/i.test(btn.replace(/\/\*[\s\S]*?\*\//g, "")),
-    "le bouton transmet un montant — le prix se lit en base, jamais du navigateur"
-  );
-});
-
-test("les libellés du paiement au panier existent dans les quatre langues", () => {
-  for (const lang of LANGS) {
-    for (const cle of ["cart.pay", "cart.paying", "cart.title"] as const) {
-      const v = (DICT[lang] as Record<string, string>)[cle];
-      assert.ok(v && v.trim().length > 0, `${cle} vide en ${lang}`);
-    }
-  }
+  assert.match(src, /href=\{`\/produit\/\$\{l.product!\.slug\}`\}/);
+  assert.match(src, /trustLabels.checkPay/);
+  assert.doesNotMatch(src, /<CartPayButton[\s>]/);
+  assert.doesNotMatch(src, /\/api\/checkout/);
 });
 
 /**

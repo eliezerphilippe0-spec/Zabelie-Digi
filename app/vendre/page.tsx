@@ -1,3 +1,7 @@
+import { ProductCommitmentEditor } from "@/components/product-commitment-editor";
+import { getProductCommitments } from "@/lib/product-commitments-server";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
+import { KIND_SERVICE as COMMITMENT_SERVICE, KIND_PHYSICAL as COMMITMENT_PHYSICAL } from "@/lib/product-kind";
 import { DigitalStudioEditor, DigitalDraftAction } from "@/components/digital-studio-editor";
 import { studioLabels } from "@/lib/digital-studio-labels";
 import type { DigitalStudio } from "@/lib/digital-studio";
@@ -222,6 +226,8 @@ export default async function VendrePage() {
     product_assets: { id: string; file_name: string; size_bytes: number }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  const commitments = await getProductCommitments(mine.filter(p => p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL).map(p => p.id));
+  const trustLabels = marketplaceCopy(lang);
   const { data: studioRows, error: studioError } = mine.length ? await supabase.from("zabelie_digital_studio").select("*").in("product_id", mine.map(p => p.id)) : { data: [], error: null };
   const studios = new Map((studioRows ?? []).map(row => [row.product_id, row as DigitalStudio]));
   const studioText = studioLabels(lang);
@@ -408,6 +414,7 @@ export default async function VendrePage() {
                     <p className="mt-3 text-xs text-mist">{t(lang, "seller.ready.note")}</p>
                     {isDownloadable(p.kind) && <p className="mt-2 text-xs text-mist">{t(lang, "seller.digital.guide")}</p>}
                   </div>
+                  {(p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL) && (commitments === null ? <p role="status" className="mt-4 text-sm text-mist">{trustLabels.missing}</p> : <ProductCommitmentEditor productId={p.id} initial={commitments.get(p.id)} labels={trustLabels} service={p.kind === COMMITMENT_SERVICE}/>)}
                   <GalerieManager
                     productId={p.id}
                     initial={(galeries[i] ?? [])

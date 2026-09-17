@@ -66,12 +66,13 @@ const ORDER = {
   status: "paid",
   amount_htg: 1500,
   created_at: "2026-07-20T10:00:00Z",
-  product: { title: PRODUCT.title, slug: SLUG, kind: "physical" },
+  product: { id: PRODUCT_ID, title: PRODUCT.title, slug: SLUG, kind: "physical" },
 };
 
 /** Écritures observées sur `orders` — la preuve que rien n'a été « livré ». */
 const ecritures = [];
 const collectionsBySession = new Map();
+const commitments = new Map();
 const giftWrites = [];
 const GIFT_PRODUCT = "99999999-9999-9999-9999-999999999990";
 const GIFT_ORDER = "99999999-9999-9999-9999-999999999991";
@@ -101,6 +102,17 @@ const server = createServer((req, res) => {
   // celui où le journal d'exécution est justement indispensable.
   if (url.pathname === "/rest/v1/rpc/zabelie_expire_stock_reservations") {
     return send(200, 0);
+  }
+
+  if (url.pathname === "/rest/v1/zabelie_product_commitments") return single([...commitments.values()].filter(row => url.searchParams.get("product_id")?.includes(row.product_id)));
+  if (url.pathname === "/rest/v1/rpc/zabelie_save_product_commitment") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      const p = JSON.parse(body);
+      const old = commitments.get(p.p_product);
+      const row = { product_id: p.p_product, zones: p.p_zones, pickup: p.p_pickup, delivery_days: p.p_days, fees: p.p_fees, next_available: p.p_next, availability_confirmed_at: p.p_confirm ? new Date().toISOString() : old?.availability_confirmed_at ?? null };
+      commitments.set(p.p_product, row); return single([row]);
+    });
   }
 
   // Photo produit. `STUB_COVER` permet d'éprouver les cas de DÉFAILLANCE de la

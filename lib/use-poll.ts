@@ -23,26 +23,35 @@ export function usePoll({
   /** Changement de valeur → compteur remis à zéro, intervalle relancé. */
   resetKey?: unknown;
   /** Renvoyer true pour arrêter le polling (état terminal atteint). */
-  onTick: () => Promise<boolean>;
+  onTick: (signal: AbortSignal) => Promise<boolean>;
 }) {
   // Ref : le callback peut capturer un state frais à chaque rendu sans
   // redémarrer l'intervalle (qui ne dépend que du cadencement).
   const tickRef = useRef(onTick);
-  tickRef.current = onTick;
+  useEffect(() => { tickRef.current = onTick; }, [onTick]);
 
   useEffect(() => {
     if (!enabled) return;
     let ticks = 0;
-    const timer = setInterval(async () => {
-      ticks += 1;
-      if (ticks > maxTicks) return clearInterval(timer);
-      try {
-        if (await tickRef.current()) clearInterval(timer);
-      } catch {
-        /* réseau instable : on retentera au tick suivant */
-      }
-    }, intervalMs);
-    return () => clearInterval(timer);
+    let stopped = false;
+    let inFlight = false;
+    let pending: AbortController | null = null;
+    const tick = async () => {
+      if (stopped || inFlight || !navigator.onLine || document.visibilityState === "hidden") return;
+      if (++ticks > maxTicks) { stopped = true; clearInterval(timer); return; }
+      inFlight = true;
+      pending = new AbortController();
+      const timeout = setTimeout(() => pending?.abort(), intervalMs);
+      try { if (await tickRef.current(pending.signal)) { stopped = true; clearInterval(timer); } }
+      catch { /* Retry after transient network failure. */ }
+      finally { clearTimeout(timeout); pending = null; inFlight = false; }
+    };
+    const timer = setInterval(tick, intervalMs);
+    const resume = () => { void tick(); };
+    window.addEventListener("online", resume);
+    document.addEventListener("visibilitychange", resume);
+    void tick();
+    return () => { stopped = true; pending?.abort(); clearInterval(timer); window.removeEventListener("online", resume); document.removeEventListener("visibilitychange", resume); };
      
   }, [enabled, intervalMs, maxTicks, resetKey]);
 }

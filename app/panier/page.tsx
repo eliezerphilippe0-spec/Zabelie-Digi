@@ -1,7 +1,9 @@
+import { ProductCommitmentDetails } from "@/components/product-commitment-details";
+import { getProductCommitments } from "@/lib/product-commitments-server";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { CartPayButton } from "@/components/cart-pay-button";
 import { RemoveFromCart } from "@/components/remove-from-cart";
 import { createClient } from "@/lib/supabase/server";
 import { formatHTG } from "@/lib/sample-data";
@@ -91,6 +93,8 @@ export default async function PanierPage() {
     (l) => isProductKind(l.product!.kind) && isDownloadable(l.product!.kind, l.product_id)
   );
   const aRemettre = items.filter((l) => !aTelecharger.includes(l));
+  const commitments = await getProductCommitments(aRemettre.map(l => l.product_id));
+  const trustLabels = marketplaceCopy(lang);
   const groupes = [
     { cle: "cart.group.download" as const, lignes: aTelecharger, escrow: false },
     { cle: "cart.group.handover" as const, lignes: aRemettre, escrow: true },
@@ -161,14 +165,8 @@ export default async function PanierPage() {
                     <span className="numeric shrink-0 font-bold text-cloud">
                       {formatHTG(l.product!.price_htg)}
                     </span>
-                    <CartPayButton
-                      productId={l.product_id}
-                      labels={{
-                        pay: t(lang, "cart.pay"),
-                        loading: t(lang, "cart.paying"),
-                        error: t(lang, "error.generic"),
-                      }}
-                    />
+                    <Link href={`/produit/${l.product!.slug}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
+                    {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
                     <RemoveFromCart
                       productId={l.product_id}
                       label={t(lang, "cart.remove")}

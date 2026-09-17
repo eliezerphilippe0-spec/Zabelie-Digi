@@ -17,10 +17,12 @@ import { MESSAGE_MAX } from "@/lib/messagerie";
  */
 export function MessageForm({
   productId,
+  initialText = "",
   conversationId,
   labels,
 }: {
   productId?: string;
+  initialText?: string;
   conversationId?: string;
   labels: {
     placeholder: string;
@@ -31,7 +33,7 @@ export function MessageForm({
   };
 }) {
   const router = useRouter();
-  const [texte, setTexte] = useState("");
+  const [texte, setTexte] = useState(initialText);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoye, setEnvoye] = useState(false);

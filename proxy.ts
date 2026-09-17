@@ -26,7 +26,9 @@ export async function proxy(request: NextRequest) {
   }
   const guideLang = guideLangFromPath(request.nextUrl.pathname) ?? editorialLangFromPath(request.nextUrl.pathname);
   if (guideLang) request.headers.set("x-zabelie-guide-lang", guideLang);
-  const response = await updateSession(request);
+  const response = request.nextUrl.pathname === "/hors-ligne"
+    ? NextResponse.next({ request })
+    : await updateSession(request);
   response.headers.set("Content-Security-Policy", policy);
 
   // Affiliation (0081) : un lien partagé porte ?ref=<code>. Le cookie vit
