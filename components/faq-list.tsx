@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { t, type Lang } from "@/lib/i18n";
 import { ROUNDING_IN_FORCE } from "@/lib/commission";
 
@@ -32,6 +33,14 @@ export function FaqList({ lang }: { lang: Lang }) {
                 : (`faq.a${i}` as Parameters<typeof t>[1]),
             )}
           </p>
+          {i === 1 && (
+            <Link
+              href="/recharges#paiements"
+              className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline underline-offset-4"
+            >
+              {t(lang, "availability.details")}
+            </Link>
+          )}
         </details>
       ))}
     </div>

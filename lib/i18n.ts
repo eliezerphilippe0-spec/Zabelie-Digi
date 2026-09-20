@@ -737,7 +737,7 @@ const fr = {
   // non tenues (vendeurs « vérifiés »), et le garde couvre désormais why.*.
   "sec.faq": "Questions fréquentes",
   "faq.q1": "Comment acheter un produit ?",
-  "faq.a1": "Choisissez un produit, cliquez « Payer avec MonCash » et confirmez sur votre téléphone. La diaspora peut payer en USD via Zelle.",
+  "faq.a1": "Choisissez un produit, puis vérifiez sur sa fiche les moyens de paiement disponibles et le montant total avant de confirmer votre achat.",
   "faq.q2": "Quand est-ce que je reçois mon achat ?",
   "faq.a2":
     "Cela dépend du produit. Un fichier est disponible immédiatement dans « Mes achats », avec un e-mail contenant le lien. Pour une prestation, le vendeur vous contacte après paiement. Un produit physique est expédié par le vendeur.",
@@ -1730,7 +1730,7 @@ const ht: Record<I18nKey, string> = {
   "sec.promo": "An pwomosyon",
   "sec.faq": "Kesyon moun poze souvan",
   "faq.q1": "Kijan pou m achte yon pwodui ?",
-  "faq.a1": "Chwazi yon pwodui, klike « Peye ak MonCash » epi konfime sou telefòn ou. Dyaspora a ka peye an USD ak Zelle.",
+  "faq.a1": "Chwazi yon pwodui, epi verifye sou paj li ki mwayen peman ki disponib ak montan total la anvan ou konfime acha ou.",
   "faq.q2": "Kilè m ap resevwa acha m ?",
   "faq.a2":
     "Sa depann de pwodui a. Yon fichye disponib touswit nan « Acha mwen yo », ak yon imèl ki gen lyen an. Pou yon sèvis, vandè a kontakte w apre peman an. Yon pwodui fizik, se vandè a k ap voye l apre peman an konfime.",
@@ -2704,7 +2704,7 @@ const en = {
   "sec.promo": "On promotion",
   "sec.faq": "Frequently asked questions",
   "faq.q1": "How do I buy a product?",
-  "faq.a1": "Pick a product, tap « Pay with MonCash » and confirm on your phone. The diaspora can pay in USD via Zelle.",
+  "faq.a1": "Choose a product, then check the available payment methods and total amount on its page before confirming your purchase.",
   "faq.q2": "When do I receive my purchase?",
   "faq.a2":
     "It depends on the product. A file is available immediately under « My purchases », with an email containing the link. For a service, the seller contacts you after payment. A physical product is shipped by the seller.",
@@ -3688,7 +3688,7 @@ const es = {
   "sec.promo": "En promoción",
   "sec.faq": "Preguntas frecuentes",
   "faq.q1": "¿Cómo compro un producto?",
-  "faq.a1": "Elige un producto, pulsa « Pagar con MonCash » y confirma en tu teléfono. La diáspora puede pagar en USD por Zelle.",
+  "faq.a1": "Elige un producto y comprueba en su ficha los métodos de pago disponibles y el importe total antes de confirmar tu compra.",
   "faq.q2": "¿Cuándo recibo mi compra?",
   "faq.a2":
     "Depende del producto. Un archivo está disponible de inmediato en « Mis compras », con un correo que incluye el enlace. Para un servicio, el vendedor te contacta tras el pago. Un producto físico lo envía el vendedor.",
