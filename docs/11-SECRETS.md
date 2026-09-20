@@ -46,6 +46,7 @@
 | `CRON_SECRET` | déclencher toutes les tâches planifiées |
 | `OPENAI_API_KEY` | **facturable** — dépenser sur le compte du projet |
 | `GEMINI_API_KEY` | **facturable** — idem |
+| `TYPESAFE_API_KEY` | **facturable** — appels Jev ; serveur uniquement |
 | `SEARCH_FINGERPRINT_SALT` | ré-identifier les empreintes de recherche |
 
 ⚠️ **`SUPABASE_SERVICE_ROLE_KEY` n'est pas un secret parmi d'autres, c'est la
