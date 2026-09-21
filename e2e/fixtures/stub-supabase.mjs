@@ -60,6 +60,55 @@ const PRODUCT = {
 };
 
 
+
+const OFFER_SOURCE = "44444444-4444-4444-4444-444444444444";
+const OFFER_TARGETS = ["66666666-6666-6666-6666-666666666661","66666666-6666-6666-6666-666666666662","66666666-6666-6666-6666-666666666663"];
+const OFFER_IDS = ["77777777-7777-7777-7777-777777777771","77777777-7777-7777-7777-777777777772","77777777-7777-7777-7777-777777777773"];
+const offerProducts = [
+ { ...PRODUCT, id: OFFER_SOURCE, price_htg: 1200, title: "Kit de départ", slug: "kit-depart", cover_url: null },
+ ...OFFER_TARGETS.map((id,i) => ({ ...PRODUCT,id,title:["Kit complet","Accessoire pratique","Kit économique"][i],slug:["kit-complet","accessoire-pratique","kit-economique"][i],price_htg:[2400,700,600][i],cover_url:null })),
+];
+let linkedOffers = [];
+const offerOrders = [];
+let offerOrderStatus = "paid";
+function offersFixture(req,url,send,single) {
+ const publicRows = (source) => linkedOffers.filter(o=>o.source_product_id===source).map(o => {
+   const p=offerProducts.find(p=>p.id===o.target_product_id);return {...o,title:p.title,slug:p.slug,price_htg:p.price_htg,product_kind:p.kind};
+ });
+ const body = callback => { let value="";req.on("data",c=>value+=c);req.on("end",()=>callback(JSON.parse(value||"{}"))); };
+ if(url.pathname==="/__offers-reset"){linkedOffers=[];offerOrders.length=0;offerOrderStatus="paid";send(200,{});return true;}
+ if(url.pathname==="/__offers-orders"){send(200,offerOrders);return true;}
+ if(url.pathname==="/__offers-status"){body(p=>{offerOrderStatus=p.status;send(200,{});});return true;}
+ if(url.pathname==="/rest/v1/products"){
+   const id=eq(url,"id"),slug=eq(url,"slug"),seller=eq(url,"seller_id");
+   single(offerProducts.filter(p=>(!id||p.id===id)&&(!slug||p.slug===slug)&&(!seller||p.seller_id===seller)));return true;
+ }
+ if(url.pathname==="/rest/v1/zabelie_product_offers"){send(200,linkedOffers);return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_offer_stats"){send(200,linkedOffers.map(o=>({offer_id:o.id,confirmed:0})));return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_offers_public"){body(p=>send(200,publicRows(p.p_product_id)));return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_save_product_offers"){
+   body(p=>{
+     const source=offerProducts.find(x=>x.id===p.p_product_id);
+     if(p.p_user_id!==SELLER_ID||!source)return send(200,{ok:false,reason:"not_owner"});
+     const kinds=["upsell","cross_sell","downsell"],targets=Object.values(p.p_targets).filter(Boolean);
+     if(new Set(targets).size!==targets.length||targets.some(id=>!OFFER_TARGETS.includes(id)))return send(200,{ok:false,reason:"invalid"});
+     linkedOffers=linkedOffers.filter(o=>o.source_product_id!==source.id).concat(kinds.flatMap((kind,i)=>p.p_targets[kind]?[{id:OFFER_IDS[i],source_product_id:source.id,target_product_id:p.p_targets[kind],offer_kind:kind,active:true}]:[]));
+     return send(200,{ok:true});
+   });return true;
+ }
+ if(url.pathname==="/rest/v1/zabelie_product_variants"){
+   const product=eq(url,"product_id"),id=eq(url,"id");
+   send(200,offerProducts.map((p,i)=>({id:"88888888-8888-8888-8888-88888888888"+i,product_id:p.id,price_htg:p.price_htg,options:{},active:true,position:0,zabelie_stock:{quantity_available:4}})).filter(v=>(!product||v.product_id===product)&&(!id||v.id===id)));return true;
+ }
+ if(url.pathname==="/rest/v1/rpc/zabelie_reserve_stock"){send(200,{ok:true});return true;}
+ if(url.pathname==="/rest/v1/orders"){
+   if(req.method==="POST"){body(p=>{const offer=linkedOffers.find(o=>o.id===p.zabelie_offer_id&&o.target_product_id===p.product_id);const row={id:ORDER_ID,...p,zabelie_offer_id:offer?.id??null};offerOrders.push(row);single([row]);});return true;}
+   if(req.method==="GET"){const buyer=eq(url,"buyer_id"),id=eq(url,"id");
+     return single(id===ORDER_ID&&(!buyer||buyer===BUYER_ID)?[{...ORDER,status:offerOrderStatus,product_id:OFFER_SOURCE,buyer_id:BUYER_ID}]:[]),true;}
+ }
+ return false;
+}
+
 const discountOrders = [];
 const discountVariants = [
   { id: "55555555-5555-5555-5555-555555555555", options: { variante: "M" }, price_htg: 2000, compare_at_htg: null, position: 0 },
@@ -149,6 +198,8 @@ const server = createServer((req, res) => {
   if (url.pathname === "/__ecritures") return send(200, ecritures);
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
+
+  if (process.env.OFFERS_FIXTURE === "true" && offersFixture(req,url,send,single)) return;
 
   if (process.env.PRICING_FIXTURE === "true") {
     if (url.pathname === "/rest/v1/zabelie_seller_pricing_config") return single([{

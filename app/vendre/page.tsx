@@ -1,3 +1,8 @@
+import { formatHTG } from "@/lib/sample-data";
+import { ProductOffersEditor } from "@/components/product-offers-editor";
+import { sellerOffers } from "@/lib/product-offers-server";
+import { offerCopy } from "@/lib/product-offer-copy";
+import { OFFER_KINDS, EMPTY_OFFERS, eligibleOffer, type OfferKind } from "@/lib/product-offers";
 import { readSellerPricing, readSellerLaunch } from "@/lib/seller-pricing-server";
 import { SellerLaunchPanel } from "@/components/seller-pricing-panel";
 import type { SellerPricing } from "@/lib/seller-pricing";
@@ -236,6 +241,8 @@ export default async function VendrePage() {
     product_assets: { id: string; file_name: string; size_bytes: number }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  const related = mine.length ? await sellerOffers(supabase, user.id) : null;
+  const offerText = offerCopy(lang);
   const commitments = await getProductCommitments(mine.filter(p => p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL).map(p => p.id));
   const trustLabels = marketplaceCopy(lang);
   const { data: studioRows, error: studioError } = mine.length ? await supabase.from("zabelie_digital_studio").select("*").in("product_id", mine.map(p => p.id)) : { data: [], error: null };
@@ -459,6 +466,14 @@ export default async function VendrePage() {
                     compareHtg={compares.get(p.id) ?? null}
                     labels={rabaisLabels}
                   />}
+                  {related ? (() => {
+                    const rows = related.offers.filter(o => o.source_product_id === p.id);
+                    const initial = { ...EMPTY_OFFERS };
+                    const confirmed = { upsell: 0, cross_sell: 0, downsell: 0 };
+                    for (const row of rows) { initial[row.offer_kind] = row.target_product_id; confirmed[row.offer_kind] = related.stats.get(row.id) ?? 0; }
+                    const choices = Object.fromEntries(OFFER_KINDS.map(kind => [kind, mine.filter(target => eligibleOffer(p, target, kind)).map(target => ({ id: target.id, label: target.title + " · " + formatHTG(target.price_htg) }))])) as Record<OfferKind, { id: string; label: string }[]>;
+                    return <ProductOffersEditor key={p.id} productId={p.id} initial={initial} choices={choices} confirmed={confirmed} copy={offerText}/>;
+                  })() : <p className="mt-4 text-sm text-mist">{offerText.unavailable}</p>}
                   <FlashManager
                     productId={p.id}
                     prixHtg={p.price_htg}

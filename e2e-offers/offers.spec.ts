@@ -1,0 +1,68 @@
+import { test, expect, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+const source="44444444-4444-4444-4444-444444444444";
+const targets=["66666666-6666-6666-6666-666666666661","66666666-6666-6666-6666-666666666662","66666666-6666-6666-6666-666666666663"];
+async function connect(page: Page, seller=true) {
+ const value="base64-"+Buffer.from(JSON.stringify({access_token:seller?"vendeur-preparation-offers":"acheteur-offers",refresh_token:"refresh-test",token_type:"bearer",expires_in:3600,expires_at:4102444800,user:{id:seller?"22222222-2222-2222-2222-222222222222":"11111111-1111-1111-1111-111111111111",aud:"authenticated",role:"authenticated",email:"offers@example.ht",app_metadata:{},user_metadata:{},created_at:"2026-01-01T00:00:00Z"}})).toString("base64url");
+ await page.context().addCookies([{name:"sb-127-auth-token",value,domain:"127.0.0.1",path:"/"}]);
+}
+test.beforeEach(async({request})=>{await request.post("http://127.0.0.1:54328/__offers-reset");});
+for(const width of [390,1280]) test("seller configures three offers and buyer explicitly chooses at "+width+"px",async({page,request})=>{
+ await page.setViewportSize({width,height:950});
+ const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+ await connect(page);await page.goto("/vendre");await expect(page).toHaveTitle(/Vendre/);
+ const editor=page.locator("details").filter({has:page.locator("summary",{hasText:"Offres associées"})}).first();
+ await editor.locator("summary").click();
+ await editor.getByLabel("Version supérieure",{exact:true}).selectOption(targets[0]);
+ await editor.getByLabel("Produit complémentaire",{exact:true}).selectOption(targets[1]);
+ await editor.getByLabel("Alternative économique",{exact:true}).selectOption(targets[2]);
+ const refreshed=page.waitForResponse(r=>r.url().includes("/vendre") && r.request().headers().rsc==="1");
+ const saved=page.waitForResponse(r=>r.url().endsWith("/api/products/offers"));
+ await editor.getByRole("button",{name:"Enregistrer les offres"}).click();expect((await saved).status()).toBe(200);
+ await expect(editor.getByRole("status")).toHaveText("Offres enregistrées.");
+ await refreshed;
+ await page.reload();await editor.locator("summary").click();await expect(editor.getByLabel("Version supérieure",{exact:true})).toHaveValue(targets[0]);
+ const invalid=await page.request.put("/api/products/offers",{data:{productId:source,offers:{upsell:targets[0],cross_sell:targets[0]}}});expect(invalid.status()).toBe(400);
+ await connect(page,false);await page.goto("/produit/kit-depart");await expect(page).toHaveTitle(/Kit de départ/);
+ const offers=page.getByRole("region",{name:"À découvrir dans cette boutique"});
+ await expect(offers.getByRole("heading",{name:"Kit complet",exact:true})).toBeVisible();
+ await expect(offers.getByText("Ce complément se commande séparément.")).toBeVisible();
+ await expect(offers.getByRole("heading",{name:"Kit économique",exact:true})).not.toBeVisible();
+ await offers.locator("summary").click();await expect(offers.getByRole("heading",{name:"Kit économique",exact:true})).toBeVisible();
+ expect(await (await request.get("http://127.0.0.1:54328/__offers-orders")).json()).toEqual([]);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const dir=process.env.OFFERS_QA_DIR||join(tmpdir(),"zabelie-offers-qa");await mkdir(dir,{recursive:true});
+ await offers.evaluate(node=>{document.documentElement.style.scrollBehavior="auto";window.scrollTo(0,window.scrollY+node.getBoundingClientRect().top-140);});
+ await offers.screenshot({path:join(dir,"offers-"+width+".png")});
+ await offers.locator("article").filter({has:page.getByRole("heading",{name:"Kit complet",exact:true})}).getByRole("link",{name:"Voir cette offre"}).click();
+ await expect(page).toHaveURL(/kit-complet\?offre=/);
+ await expect(page.getByRole("button",{name:/Payer.*2.?400.*MonCash/})).toBeVisible();
+ expect(await (await request.get("http://127.0.0.1:54328/__offers-orders")).json()).toEqual([]);
+ const checkout=page.waitForResponse(r=>r.url().endsWith("/api/checkout"));
+ await page.getByRole("button",{name:/Payer.*2.?400.*MonCash/}).click();
+ expect((await checkout).status()).toBe(502); // No provider credentials, no external payment.
+ const orders=await (await request.get("http://127.0.0.1:54328/__offers-orders")).json();
+ expect(orders).toHaveLength(1);expect(orders[0].amount_htg).toBe(2400);expect(orders[0].zabelie_offer_id).toBe("77777777-7777-7777-7777-777777777771");
+ expect(errors).toEqual([]);
+});
+test("post-purchase complement requires a confirmed order belonging to the buyer",async({page,request})=>{
+ await connect(page);
+ await page.request.put("/api/products/offers",{data:{productId:source,offers:{upsell:targets[0],cross_sell:targets[1],downsell:targets[2]}}});
+ await connect(page,false);
+ const url="/paiement/succes?commande=33333333-3333-3333-3333-333333333333";
+ await request.post("http://127.0.0.1:54328/__offers-status",{data:{status:"pending"}});
+ await page.goto(url);await expect(page.getByRole("region",{name:"Pour compléter votre achat"})).toHaveCount(0);
+ await request.post("http://127.0.0.1:54328/__offers-status",{data:{status:"paid"}});
+ await page.reload();const offers=page.getByRole("region",{name:"Pour compléter votre achat"});
+ await expect(offers.getByRole("heading",{name:"Accessoire pratique"})).toBeVisible();
+ await expect(offers.getByRole("heading",{name:"Kit complet"})).toHaveCount(0);
+ await connect(page);await page.reload();await expect(page.getByRole("region",{name:"Pour compléter votre achat"})).toHaveCount(0);
+});
+test("offer removal is persisted and the public card disappears",async({page})=>{
+ await connect(page);
+ await page.request.put("/api/products/offers",{data:{productId:source,offers:{upsell:targets[0]}}});
+ await page.request.put("/api/products/offers",{data:{productId:source,offers:{}}});
+ await connect(page,false);await page.goto("/produit/kit-depart");await expect(page.getByRole("region",{name:"À découvrir dans cette boutique"})).toHaveCount(0);
+});

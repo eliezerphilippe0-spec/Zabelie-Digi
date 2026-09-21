@@ -1,3 +1,4 @@
+import { offerAttribution } from "@/lib/product-offers-server";
 import { getKobaraAvailability } from "@/lib/payment-availability";
 import { cookies } from "next/headers";
 import { readSellerPricing } from "@/lib/seller-pricing-server";
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
   let rechajInput: unknown;
   let recipientInput: unknown;
   let providerInput: unknown;
+  let offerInput: unknown;
   try {
     ({
       productId,
@@ -109,6 +111,7 @@ export async function POST(req: Request) {
       rechajNumero: rechajInput,
       recipient: recipientInput,
       kobaraProvider: providerInput,
+      offerId: offerInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -452,6 +455,7 @@ export async function POST(req: Request) {
     .insert({
       buyer_id: user.id,
       product_id: product.id,
+      ...offerAttribution(offerInput),
       ...(source ? {
         zabelie_sale_source: source,
         zabelie_payment_is_live: rail === "moncash" ? resolveMonCashMode(process.env.MONCASH_MODE).mode === "production"
