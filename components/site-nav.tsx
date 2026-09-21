@@ -44,6 +44,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
   // en dur : les libellés sont traduits, les rayons vides sont marqués.
   const rayons = await getMenuRayons(lang);
   const wa = whatsappHref(t(lang, "wa.prefill"));
+  const topupAvailability = await getTopupAvailability();
 
   /* Compteur du panier — lu avec le client de SESSION : la RLS de 0058 ne
    * rend que le panier de l'appelant, donc aucun filtre applicatif à écrire
@@ -208,7 +209,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
             { href: "/catalogue?univers=objets", label: t(lang, "universe.physical.short") },
             { href: "/catalogue?univers=numerique", label: t(lang, "universe.digital.short") },
             { href: "/catalogue?univers=services", label: t(lang, "universe.services") },
-            { href: "/recharges", label: t(lang, "universe.recharges"), note: (await getTopupAvailability()) === "configured" ? undefined : t(lang, "availability.paused") },
+            { href: "/recharges", label: t(lang, "universe.recharges"), note: topupAvailability === "configured" ? undefined : t(lang, topupAvailability === "sandbox" ? "availability.testing" : "availability.paused") },
             { href: "/aide", label: t(lang, "nav.help") },
           ]}
           labels={{
