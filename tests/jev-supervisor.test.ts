@@ -105,6 +105,35 @@ test("une sonde d’accès indisponible n’est pas présentée comme une faille
   }
 });
 
+test("un refus d’intermédiaire n’atteste pas le contrôle d’accès de Zabelie", async () => {
+  // Un proxy, un WAF ou la protection de déploiement répond 401/403 sans que la
+  // requête atteigne jamais Zabelie. Mesuré le 2026-09-21 : le proxy d’une
+  // session agent rendait 403 et la sonde concluait « pass ».
+  for (const response of [
+    () => new Response("<html><body>Forbidden by gateway</body></html>", { status: 403 }),
+    () => new Response("<html><body>Unauthorized</body></html>", { status: 401 }),
+    () => Response.json({ message: "blocked" }, { status: 403 }),
+    () => Response.json({ error: "   " }, { status: 403 }),
+    () => Response.json({ error: 403 }, { status: 403 }),
+  ]) {
+    const { fetcher } = fixture({ "/api/admin/jev": response });
+    const report = await supervise({ fetcher, now: () => instant, key: "test" });
+    assert.equal(report.checks.find((c) => c.id === "access")?.status, "unknown");
+    assert.equal(report.priority, "P2");
+  }
+});
+
+test("un refus applicatif authentique reste un succès, quelle que soit la langue", async () => {
+  // Le message d’erreur est TRADUIT par erreurTraduite : la sonde porte sur la
+  // forme du corps, jamais sur son texte. Les quatre langues doivent passer.
+  for (const message of ["Accès refusé", "Aksè refize", "Access denied", "Acceso denegado"]) {
+    const { fetcher } = fixture({ "/api/admin/jev": () => Response.json({ error: message }, { status: 403 }) });
+    const report = await supervise({ fetcher, now: () => instant, key: "test" });
+    assert.equal(report.checks.find((c) => c.id === "access")?.status, "pass");
+    assert.equal(report.priority, "P3");
+  }
+});
+
 test("une alerte relevée par Jev ne conseille pas de ne rien faire", async () => {
   const { fetcher } = fixture({ "/v1/systemone": () => Response.json(jevReply("P1", "observe")) });
   const report = await supervise({ fetcher, now: () => instant, key: "test" });

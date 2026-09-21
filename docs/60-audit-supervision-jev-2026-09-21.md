@@ -108,10 +108,40 @@ C'est le motif « un objet vérifié n'est pas le bon objet » de `CLAUDE.md` :
 la sonde ne ment pas, elle regarde à côté, et son « pass » se lit comme une
 preuve.
 
-**Correctif proposé, non appliqué** : n'accorder `pass` que sur une preuve
-positive d'origine Zabelie — corps d'erreur applicatif attendu, ou en-tête
-propre à l'application — et rendre `unknown` sinon. `unknown` existe déjà dans
-le vocabulaire de la sonde et ne déclenche aucune fausse alarme.
+### Correctif appliqué le 2026-09-21
+
+`pass` n'est désormais accordé que sur une **preuve positive d'origine
+applicative** : un corps JSON de la forme `{ error: "<chaîne non vide>" }`,
+c'est-à-dire ce que rend `erreurTraduite()` — le contrat réel de la route,
+lu dans `lib/api-erreur.ts:33`, pas supposé. Tout le reste devient `unknown`,
+un verdict qui existait déjà dans le vocabulaire de la sonde et ne déclenche
+aucune fausse alarme.
+
+⚠️ **L'assertion porte sur la FORME du corps, jamais sur son texte.** Le
+message d'erreur est traduit selon le cookie de langue ; un motif sur le
+libellé serait aveugle en kreyòl exactement comme `\b` l'est contre `vandè`.
+Le test couvre les quatre langues pour que cette propriété soit gardée et non
+seulement écrite.
+
+Résultat après correctif, mêmes trois cas :
+
+| Cas | Avant | Après |
+|---|---|---|
+| Zabelie sain, 401/403 applicatif *(connu-positif)* | `pass` | `pass` ✅ |
+| Accès réellement ouvert, 200 *(connu-négatif)* | `fail` → P0 | `fail` → P0 ✅ |
+| Intermédiaire 403, rien n'atteint Zabelie | **`pass`** ⚠️ | **`unknown`** → P2 ✅ |
+
+**L'instrument a été éprouvé, pas seulement écrit.** Les deux mutations du
+garde ont été passées, post-condition assurée avant lecture :
+
+| Mutation | Résultat |
+|---|---|
+| garde **supprimé** (`&& refusApplicatif(…)` retiré) | test #7 rouge, 16/17 |
+| garde rendu **inatteignable** (`refusApplicatif` → `return true`) | test #7 rouge, 16/17 |
+
+Les deux formes échouent, et seul le test visé rougit — l'assertion isole le
+défaut au lieu de l'entourer. Validation : `tsc --noEmit` propre, lint à
+0 erreur, **suite complète 1141/1141 verte**.
 
 ## 4. Ce qui est sain, et qui mérite d'être dit
 

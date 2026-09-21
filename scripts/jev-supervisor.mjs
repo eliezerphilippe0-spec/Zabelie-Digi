@@ -55,8 +55,20 @@ async function request(url, { fetcher, headers = {}, method = "GET", body, json 
   } finally { clearTimeout(timer); }
 }
 
+// A 401/403 alone proves nothing: a proxy, WAF, edge firewall or deployment
+// protection answers the same way without the request ever reaching Zabelie.
+// Only an application-shaped refusal counts — the {error: "…"} body that
+// erreurTraduite() renders. The message itself is TRANSLATED, so never match
+// its text; assert the shape. Anything else stays inconclusive, never a pass.
+function refusApplicatif(texte) {
+  try {
+    const corps = JSON.parse(texte);
+    return typeof corps?.error === "string" && corps.error.trim().length > 0;
+  } catch { return false; }
+}
+
 function validProbe(probe, response, now) {
-  if (probe.kind === "denied") return [401, 403].includes(response.status);
+  if (probe.kind === "denied") return [401, 403].includes(response.status) && refusApplicatif(response.data);
   if (response.status !== 200) return false;
   const data = response.data;
   if (probe.kind === "html") return /<html[\s>]/i.test(data) && /zabelie/i.test(data);

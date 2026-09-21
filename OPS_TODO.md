@@ -14,10 +14,11 @@ pris : (1) variable `JEV_SUPERVISION_ENABLED=true`, (2) secret `TYPESAFE_API_KEY
 clé dédiée, (3) accepter ~24 appels TypeSafe/jour. GitHub → Settings → Secrets and
 variables → **Actions**. Une variable Vercel ne configure pas Actions.
 
-Également relevé, non corrigé : la sonde `access` conclut `pass` sur un 403 d'intermédiaire
-qui n'a jamais atteint Zabelie — elle atteste une autorisation qu'elle n'a pas vue. Portée
-bornée (le rapport global sort en P1, pas en vert), mais la ligne est fausse.
-Voir [l'audit](docs/60-audit-supervision-jev-2026-09-21.md).
+Également relevé, **corrigé le 21 septembre** : la sonde `access` concluait `pass` sur un 403
+d'intermédiaire qui n'avait jamais atteint Zabelie — elle attestait une autorisation qu'elle
+n'avait pas vue. Elle exige désormais un refus applicatif (`{ error: "…" }`) et rend `unknown`
+sinon ; garde éprouvé sur ses deux mutations, suite complète 1141/1141 verte. Aucune action
+porteur sur ce point. Voir [l'audit](docs/60-audit-supervision-jev-2026-09-21.md).
 
 
 ## Ma boutique — parcours vendeur du 21 septembre 2026
