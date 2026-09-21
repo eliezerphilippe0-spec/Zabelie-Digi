@@ -1,3 +1,6 @@
+import { ProductOffers } from "@/components/product-offers";
+import { publicOffers } from "@/lib/product-offers-server";
+import { offerCopy } from "@/lib/product-offer-copy";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { createClient } from "@/lib/supabase/server";
@@ -33,21 +36,26 @@ import { isProductKind, pickByKind, isDownloadable } from "@/lib/product-kind";
  */
 async function detailsCommande(
   orderId: string
-): Promise<{ ref: string | null; kind: string | null }> {
-  const vide = { ref: null, kind: null };
+): Promise<{ ref: string | null; kind: string | null; productId: string | null; buyerId: string | null }> {
+  const vide = { ref: null, kind: null, productId: null, buyerId: null };
   if (!isSupabaseConfigured()) return vide;
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return vide;
     const { data, error } = await supabase
       .from("orders")
-      .select("order_ref, product:products(kind)")
+      .select("order_ref,product_id,buyer_id,status,product:products(kind)")
+      .eq("buyer_id", user.id)
       .eq("id", orderId)
       .maybeSingle();
     if (error && !isMissingColumn(error)) return vide;
     const ligne = data as
-      | { order_ref?: string | null; product?: { kind?: string | null } | null }
+      | { order_ref?: string | null; product_id: string; buyer_id: string; status: string; product?: { kind?: string | null } | null }
       | null;
     return {
+      productId: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.product_id : null,
+      buyerId: user.id,
       ref: ligne?.order_ref ?? null,
       kind: ligne?.product?.kind ?? null,
     };
@@ -96,9 +104,10 @@ export default async function SuccesPage({
   searchParams: Promise<{ commande?: string }>;
 }) {
   const [{ commande }, lang] = await Promise.all([searchParams, getLang()]);
-  const { ref, kind } = commande
+  const { ref, kind, productId, buyerId } = commande
     ? await detailsCommande(commande)
-    : { ref: null, kind: null };
+    : { ref: null, kind: null, productId: null, buyerId: null };
+  const offers = productId && buyerId ? await publicOffers(productId, buyerId) : [];
 
   /* L'escrow ne se dit que là où il veut dire quelque chose : sur une
    * prestation ou un bien physique, l'acheteur vient de payer pour une chose
@@ -172,6 +181,7 @@ export default async function SuccesPage({
             {t(lang, "pay.back")}
           </Link>
         </div>
+        <ProductOffers offers={offers} copy={offerCopy(lang)} afterPurchase/>
       </main>
     </div>
   );

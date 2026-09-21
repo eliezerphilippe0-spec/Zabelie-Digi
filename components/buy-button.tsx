@@ -94,7 +94,7 @@ const fmtHtg = (n: number) => `${new Intl.NumberFormat("fr-HT").format(n)} HTG`;
  * une seule option = bouton simple (parcours MVP inchangé).
  */
 export function BuyButton({
-  productId,
+  productId, offerId,
   draftScope,
   trustLabels,
   options,
@@ -108,6 +108,7 @@ export function BuyButton({
   errors,
 }: {
   productId: string;
+  offerId?: string;
   draftScope?: string;
   trustLabels?: Pick<MarketplaceCopy, "resume" | "draft" | "reconnect">;
   options: BuyOption[];
@@ -209,7 +210,7 @@ export function BuyButton({
     setError(null);
 
     const issue = await appelSession<{ redirectUrl?: string }>("/api/checkout", {
-      productId,
+      productId, offerId,
       rail: option.rail,
       // Passerelle Kobara : l'opérateur derrière le rail. Le serveur le
       // revalide contre une liste fermée — ce champ ne donne aucun pouvoir.

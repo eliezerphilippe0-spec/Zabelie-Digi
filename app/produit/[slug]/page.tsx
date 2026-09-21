@@ -1,3 +1,7 @@
+import { ProductOffers } from "@/components/product-offers";
+import { publicOffers } from "@/lib/product-offers-server";
+import { offerCopy } from "@/lib/product-offer-copy";
+import { OFFER_UUID } from "@/lib/product-offers";
 import { RememberPublicListing } from "@/components/offline-marketplace";
 import { ProductCommitmentDetails } from "@/components/product-commitment-details";
 import { getProductCommitments } from "@/lib/product-commitments-server";
@@ -193,9 +197,10 @@ function Stars({ value }: { value: number }) {
 }
 
 export default async function ProductPage({
-  params,
+  params, searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ offre?: string }>;
 }) {
   const { slug } = await params;
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
@@ -227,6 +232,9 @@ export default async function ProductPage({
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
   const estVendeur = visiteur?.id === product.creatorId;
+  const relatedOffers = estVendeur ? [] : await publicOffers(product.id, visiteur?.id);
+  const offerParam = (await searchParams).offre;
+  const selectedOfferId = typeof offerParam === "string" && OFFER_UUID.test(offerParam) ? offerParam : undefined;
   const peutEcrire = Boolean(visiteur && product.creatorId) && !estVendeur;
   const connexionVendeur = `/connexion?next=${encodeURIComponent(`/produit/${product.slug}#contacter-vendeur`)}`;
 
@@ -526,6 +534,7 @@ export default async function ProductPage({
             <div className="mt-5">
               <BuyButton
                 key={product.id}
+                offerId={selectedOfferId}
                 draftScope={visiteur?.id}
                 trustLabels={trustLabels}
                 recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {
@@ -637,6 +646,7 @@ export default async function ProductPage({
             )}
           </div>
 
+          <ProductOffers offers={relatedOffers} copy={offerCopy(lang)}/>
           {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
           {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
             <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>

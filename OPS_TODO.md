@@ -1,5 +1,9 @@
 # OPS_TODO — Zabelie
 
+## Offres associées — 21 septembre 2026
+
+Éditeur vendeur pour version supérieure, complément et alternative économique. Associations explicites entre produits publiés d’une même boutique, sans doublons, sans débit automatique et sans modification des commissions. Parcours produit et complément après achat confirmé ; statistiques des ventes confirmées par lien. Migration additive 0110 à appliquer après CI SQL, avant l’application. Détails : `docs/offres-associees.md`.
+
 ## Rabais par taille ou modèle — 21 septembre 2026
 
 Le gestionnaire Rabais existant accepte une variante physique : ancien prix conservé par la base, baisse stricte, retrait du barré sans hausse. Le paiement et les coupons lisent le prix de la variante active appartenant au produit. Le bouton affiche ce même prix ; une variante non remisée reste inchangée. Aucun tarif vendeur ni paramètre fournisseur modifié.

@@ -133,6 +133,9 @@ jobs:
       - name: Variant discounts and purchase price
         run: npx playwright test --config=playwright.rabais.config.ts
 
+      - name: Seller offers and explicit purchase choice
+        run: npx playwright test --config=playwright.offers.config.ts
+
       - name: Sandbox top-ups cannot accept payment
         run: npx playwright test --config=playwright.topup.config.ts
 
