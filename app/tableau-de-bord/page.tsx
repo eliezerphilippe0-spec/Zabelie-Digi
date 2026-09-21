@@ -1,3 +1,5 @@
+import { readSellerPricing, readSellerLaunch } from "@/lib/seller-pricing-server";
+import { SellerLaunchPanel } from "@/components/seller-pricing-panel";
 import { DigitalSellerMetrics } from "@/components/digital-seller-metrics";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -344,6 +346,9 @@ export default async function DashboardPage({
   /* La langue est résolue AVANT les métriques : elles traduisent désormais
      leurs libellés, et `t()` est réservé au serveur (règle de lib/i18n.ts). */
   const lang = await getLang();
+  const pricingClient = createAdminClient();
+  const sellerPricing = await readSellerPricing(pricingClient);
+  const sellerLaunch = sellerPricing ? await readSellerLaunch(pricingClient, user.id, sellerPricing, user.createdAt) : null;
 
   const metriquePrincipale = {
     label: t(lang, "tb.dispo"),
@@ -473,6 +478,7 @@ export default async function DashboardPage({
 
   return (
     <Shell title={`Bonjour, ${user.displayName}`}>
+      <SellerLaunchPanel launch={sellerLaunch} lang={lang} now={sellerLaunch?.observed_at ?? 0} />
       {premierPas && (
         <VendeurPremierPas
           etape={premierPas.etape}

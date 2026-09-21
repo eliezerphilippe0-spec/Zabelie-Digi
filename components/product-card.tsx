@@ -53,9 +53,11 @@ const FALLBACK_LABELS: ProductCardLabels = {
  */
 export function ProductCard({
   product,
+  discovery = false,
   labels = FALLBACK_LABELS,
 }: {
   product: ProductView;
+  discovery?: boolean;
   labels?: ProductCardLabels;
 }) {
   const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
@@ -71,7 +73,8 @@ export function ProductCard({
 
   return (
     <Link
-      href={`/produit/${product.slug}`}
+      href={discovery ? `/decouvrir/${product.slug}` : `/produit/${product.slug}`}
+      prefetch={discovery ? false : undefined}
       className="group flex flex-col overflow-hidden rounded-card border border-line bg-surface transition active:scale-[0.97]"
     >
       <div className="relative aspect-square w-full bg-line">

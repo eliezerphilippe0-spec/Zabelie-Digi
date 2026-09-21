@@ -1,5 +1,8 @@
 "use client";
 
+import { sellerFeeHTG, type SellerPricing } from "@/lib/seller-pricing";
+import { sellerPricingCopy } from "@/lib/seller-pricing-copy";
+import type { Lang } from "@/lib/i18n";
 import { commissionAuTaux, rateBps, type CreatorTier } from "@/lib/commission";
 
 /**
@@ -47,6 +50,8 @@ export function NetEstimate({
   tier = "standard",
   rateBpsEnVigueur,
   labels,
+  pricing,
+  lang = "fr",
 }: {
   priceHTG: string | number;
   tier?: CreatorTier;
@@ -57,6 +62,8 @@ export function NetEstimate({
    */
   rateBpsEnVigueur?: number;
   labels: NetEstimateLabels;
+  pricing?: SellerPricing | null;
+  lang?: Lang;
 }) {
   const raw = typeof priceHTG === "string" ? priceHTG.trim() : priceHTG;
   if (raw === "") return null;
@@ -64,9 +71,18 @@ export function NetEstimate({
   const gross = Math.floor(Number(raw));
   // Prix vide, non numérique, nul ou négatif : rien à annoncer. Un produit
   // gratuit (0 HTG) existe sur le catalogue — il n'a pas de net à afficher.
-  if (!Number.isFinite(gross) || gross <= 0) return null;
+  if (!Number.isSafeInteger(gross) || gross <= 0) return null;
 
   // Le taux VENU DE LA BASE prime ; la constante n'est que le repli.
+  if (pricing) {
+    const copy = sellerPricingCopy(lang);
+    return <div className="text-xs text-mist" aria-live="polite">
+      {(["direct", "discovery"] as const).map(source => <p key={source}>
+        {copy[source]} : <strong className="text-cloud">{labels.youReceive} {htg(gross - sellerFeeHTG(gross, source, pricing))}</strong>
+      </p>)}
+      <p className="mt-1">{copy.estimate}</p>
+    </div>;
+  }
   const bps = Number.isInteger(rateBpsEnVigueur)
     ? (rateBpsEnVigueur as number)
     : rateBps(tier);

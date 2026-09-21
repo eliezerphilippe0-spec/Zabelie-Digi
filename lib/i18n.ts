@@ -743,8 +743,8 @@ const fr = {
   "faq.a2":
     "Cela dépend du produit. Un fichier est disponible immédiatement dans « Mes achats », avec un e-mail contenant le lien. Pour une prestation, le vendeur vous contacte après paiement. Un produit physique est expédié par le vendeur.",
   "faq.q3": "Comment vendre sur Zabelie ?",
-  "faq.a3": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente, arrondis à la gourde la plus proche.",
-  "faq.a3.floor": "Créez un compte, publiez votre produit en quelques minutes. C'est gratuit — la plateforme prélève 10 % par vente. L'arrondi est toujours en votre faveur.",
+  "faq.a3": "Créez un compte et préparez votre offre. L’inscription et la boutique sont sans abonnement. Consultez les frais et les conditions de lancement dans l’espace Vendre.",
+  "faq.a3.floor": "Créez un compte et préparez votre offre. L’inscription et la boutique sont sans abonnement. Consultez les frais et les conditions de lancement dans l’espace Vendre. L’arrondi de la commission est en votre faveur.",
   "faq.q4": "Quand le vendeur reçoit-il son argent ?",
   "faq.a4": "Le net est crédité immédiatement « en attente », puis devient disponible 7 jours après la vente (protection anti-fraude).",
   "faq.q5": "Et si quelque chose se passe mal ?",
@@ -1737,8 +1737,8 @@ const ht: Record<I18nKey, string> = {
   "faq.a2":
     "Sa depann de pwodui a. Yon fichye disponib touswit nan « Acha mwen yo », ak yon imèl ki gen lyen an. Pou yon sèvis, vandè a kontakte w apre peman an. Yon pwodui fizik, se vandè a k ap voye l apre peman an konfime.",
   "faq.q3": "Kijan pou m vann sou Zabelie ?",
-  "faq.a3": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant, awondi nan goud ki pi pre a.",
-  "faq.a3.floor": "Kreye yon kont, pibliye pwodui ou an kèk minit. Li gratis — platfòm nan pran 10 % sou chak vant. Awondi a toujou an favè w.",
+  "faq.a3": "Kreye yon kont epi prepare òf ou. Enskripsyon ak boutik la pa gen abònman. Gade frè ak kondisyon kòmansman yo nan espas Vann lan.",
+  "faq.a3.floor": "Kreye yon kont epi prepare òf ou. Enskripsyon ak boutik la pa gen abònman. Gade frè ak kondisyon kòmansman yo nan espas Vann lan. Awondi komisyon an an favè w.",
   "faq.q4": "Kilè vandè a resevwa lajan li ?",
   "faq.a4": "Nèt la antre touswit « an atant », epi li vin disponib 7 jou apre vant lan (pwoteksyon kont fwod).",
   "faq.q5": "E si yon bagay pase mal ?",
@@ -2712,8 +2712,8 @@ const en = {
   "faq.a2":
     "It depends on the product. A file is available immediately under « My purchases », with an email containing the link. For a service, the seller contacts you after payment. A physical product is shipped by the seller.",
   "faq.q3": "How do I sell on Zabelie?",
-  "faq.a3": "Create an account, publish your product in a few minutes. It's free — the platform takes 10% per sale, rounded to the nearest gourde.",
-  "faq.a3.floor": "Create an account, publish your product in a few minutes. It's free — the platform takes 10% per sale. Rounding is always in your favor.",
+  "faq.a3": "Create an account and prepare your offer. Signup and your storefront have no subscription. See fees and launch terms in the Sell workspace.",
+  "faq.a3.floor": "Create an account and prepare your offer. Signup and your storefront have no subscription. See fees and launch terms in the Sell workspace. Commission rounding is in your favour.",
   "faq.q4": "When does the seller get their money?",
   "faq.a4": "The net amount is credited immediately as « pending », then becomes available 7 days after the sale (fraud protection).",
   "faq.q5": "What if something goes wrong?",
@@ -3697,8 +3697,8 @@ const es = {
   "faq.a2":
     "Depende del producto. Un archivo está disponible de inmediato en « Mis compras », con un correo que incluye el enlace. Para un servicio, el vendedor te contacta tras el pago. Un producto físico lo envía el vendedor.",
   "faq.q3": "¿Cómo vendo en Zabelie?",
-  "faq.a3": "Crea una cuenta y publica tu producto en unos minutos. Es gratis — la plataforma cobra un 10 % por venta, redondeado a la gourde más cercana.",
-  "faq.a3.floor": "Crea una cuenta y publica tu producto en unos minutos. Es gratis — la plataforma cobra un 10 % por venta. El redondeo siempre es a tu favor.",
+  "faq.a3": "Crea una cuenta y prepara tu oferta. El registro y tu tienda no tienen suscripción. Consulta las tarifas y condiciones de lanzamiento en Vender.",
+  "faq.a3.floor": "Crea una cuenta y prepara tu oferta. El registro y tu tienda no tienen suscripción. Consulta las tarifas y condiciones de lanzamiento en Vender. El redondeo de la comisión es a tu favor.",
   "faq.q4": "¿Cuándo recibe su dinero el vendedor?",
   "faq.a4": "El neto se acredita de inmediato como « pendiente », y queda disponible 7 días después de la venta (protección antifraude).",
   "faq.q5": "¿Y si algo sale mal?",

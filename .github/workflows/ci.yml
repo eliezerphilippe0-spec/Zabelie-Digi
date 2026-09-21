@@ -124,6 +124,9 @@ jobs:
       - name: E2E (money path)
         run: npm run test:e2e
 
+      - name: Seller pricing and launch in the browser
+        run: npx playwright test --config=playwright.pricing.config.ts
+
       - name: Sandbox top-ups cannot accept payment
         run: npx playwright test --config=playwright.topup.config.ts
 

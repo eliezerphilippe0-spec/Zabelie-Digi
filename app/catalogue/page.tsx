@@ -1,3 +1,5 @@
+import { readSellerPricing } from "@/lib/seller-pricing-server";
+import { createClient as pricingClient } from "@/lib/supabase/server";
 import { parseCatalogueSearch, catalogueCanonical, catalogueIsWorkingView, type CatalogueSearch } from "@/lib/catalogue-query";
 import { CATALOGUE_UNIVERSES, universeHref } from "@/lib/catalogue-universes";
 import Link from "next/link";
@@ -56,6 +58,7 @@ export default async function CataloguePage({
   const { q, cat, sous, page, zd, zk, zq, univers: universe, minPrice, maxPrice, sort, priceRangeInvalid } = parseCatalogueSearch(await searchParams);
   const selection = universe ? CATALOGUE_UNIVERSES[universe] : undefined;
   const activeCat = cat ?? "Tout";
+  const discovery = isSupabaseConfigured() && Boolean(await readSellerPricing(await pricingClient()));
   const [lang, categories, zones] = await Promise.all([
     getLang(),
     getCatalogueCategories(selection?.kind),
@@ -406,7 +409,7 @@ export default async function CataloguePage({
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {approchants.map((p) => (
-                <ProductCard key={p.slug} product={p} labels={cardLabels} />
+                <ProductCard discovery={discovery} key={p.slug} product={p} labels={cardLabels} />
               ))}
             </div>
           </>
@@ -539,7 +542,7 @@ export default async function CataloguePage({
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {products.map((p) => (
-                <ProductCard
+                <ProductCard discovery={discovery}
                   key={p.slug}
                   product={p}
                   labels={{

@@ -136,6 +136,22 @@ const server = createServer((req, res) => {
   if (url.pathname === "/__ecritures") return send(200, ecritures);
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
+
+  if (process.env.PRICING_FIXTURE === "true") {
+    if (url.pathname === "/rest/v1/zabelie_seller_pricing_config") return single([{
+      id: true, enabled: true, direct_rate_bps: 1000, direct_fixed_usd_cents: 50,
+      discovery_rate_bps: 3000, usd_htg_micros: 132000000, launch_days: 30, submission_days: 7,
+      launch_sales_limit: 3, launch_discount_bps: 5000, payments_ready: true, attribution_days: 7,
+    }]);
+    if (url.pathname === "/rest/v1/zabelie_seller_launch") {
+      const now = Date.now(), date = n => new Date(now + n * 86400000).toISOString();
+      return single(eq(url, "seller_id") === SELLER_ID ? [{
+        seller_id: SELLER_ID, submitted_at: date(-3), submission_deadline: date(3), published_at: date(-2),
+        eligible: true, starts_at: date(-2), ends_at: date(28), used_sales: 1, sales_limit: 3,
+      }] : []);
+    }
+  }
+
   const token = req.headers.authorization ?? "";
   // Isolated scenarios: no mutable global mode between parallel tests.
   const history = token.includes("historique-test") || eq(url, "buyer_id") === HISTORY_ID;
@@ -240,6 +256,7 @@ const server = createServer((req, res) => {
         }
         if (eq(url, "id") === GIFT_ORDER) { giftWrites.push({ step: "cleanup" }); return send(200, []); }
         ecritures.push({ method: req.method, query: url.search, body });
+        if (process.env.PRICING_FIXTURE === "true" && req.method === "POST") return send(503, { code: "08006", message: "pricing fixture stops before payment" });
         send(200, []);
       });
     }

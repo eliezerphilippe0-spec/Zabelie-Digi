@@ -1,3 +1,6 @@
+import { readSellerPricing, readSellerLaunch } from "@/lib/seller-pricing-server";
+import { SellerLaunchPanel } from "@/components/seller-pricing-panel";
+import type { SellerPricing } from "@/lib/seller-pricing";
 import { ProductCommitmentEditor } from "@/components/product-commitment-editor";
 import { getProductCommitments } from "@/lib/product-commitments-server";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
@@ -46,12 +49,14 @@ function Shell({
   lang,
   subtitle,
   taux,
+  pricing,
 }: {
   children: React.ReactNode;
   lang: Lang;
   subtitle?: string;
   /** Taux LU EN BASE (0054/0066) — jamais une constante de libellé. */
   taux: TauxCommission;
+  pricing?: SellerPricing | null;
 }) {
   return (
     <div className="bg-grain min-h-dvh">
@@ -88,6 +93,8 @@ function Shell({
             arrivée après la décision. */}
         <CommissionAnnonce
           taux={taux}
+          pricing={pricing}
+          lang={lang}
           labels={{
             title: t(lang, "sell.fee.title"),
             ligne: t(lang, "sell.fee.line"),
@@ -171,9 +178,12 @@ export default async function VendrePage() {
     console.error("[commission] taux de repli utilisé", c),
   );
 
+  const pricing = await readSellerPricing(supabase);
+  const launch = user && pricing ? await readSellerLaunch(supabase, user.id, pricing, user.created_at) : null;
+
   if (!user) {
     return (
-      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")}>
+      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} pricing={pricing}>
         <Link
           href="/connexion?next=/vendre"
           className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
@@ -294,7 +304,8 @@ export default async function VendrePage() {
   };
 
   return (
-    <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")}>
+    <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")} pricing={pricing}>
+      <SellerLaunchPanel launch={launch} lang={lang} now={launch?.observed_at ?? 0} />
 
       <nav aria-label={t(lang, "seller.workspace")} className="mb-6 flex flex-wrap gap-2">
         {[["#mes-produits", "sell.mine.title"], ["/mes-ventes", "seller.orders"], ["/tableau-de-bord", "nav.dashboard"], ["/messages", "seller.messages"]].map(([href, key]) => (
@@ -307,6 +318,8 @@ export default async function VendrePage() {
         <PublishForm
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
+          pricing={pricing}
+          lang={lang}
           aiActif={aiProviderDisponible() !== null}
           categories={rayonsPublication}
           sousRayons={sousRayonsPublication}
