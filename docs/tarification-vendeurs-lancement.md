@@ -29,6 +29,7 @@ La migration 0108 est additive et désactivée par défaut : enabled=false, paym
 La revue commerciale, les tests SQL et la validation de l'interface doivent précéder son activation.
 Ordre : appliquer la migration testée, déployer l'application, renseigner le taux USD/HTG vérifié et les paramètres approuvés, puis activer.
 Le taux USD/HTG s'exprime en millionièmes : 132 HTG/USD correspond à 132000000 ; ceci est un exemple de test, pas un cours imposé.
+Le taux doit être cohérent avec USD_HTG_RATE utilisé pour les paiements en dollars ; ne pas modifier l'un sans vérifier l'autre.
 payments_ready=true exige un paiement réel vérifié et ne découle jamais de la seule présence des clés.
 Ne pas utiliser un ancien déploiement applicatif après activation : il ne porte pas l'origine des ventes.
 Retour arrière : enabled=false arrête les nouveaux contrats ; les commandes déjà figées se règlent à leurs conditions enregistrées. Aucun effacement de ledger.
@@ -37,7 +38,10 @@ Retour arrière : enabled=false arrête les nouveaux contrats ; les commandes d�
 
 Les tests SQL exécutent le vrai confirm_payment, puis vérifient les écritures platform_earnings / escrow, les remboursements, les droits et l'immuabilité.
 Les tests TypeScript vérifient les estimations entières, les bornes exactes, les signatures, l'expiration et les erreurs de configuration.
-Le parcours navigateur couvre les tarifs avant inscription, le lancement connecté, la saisie du prix et l'attribution du catalogue.
+Le parcours navigateur couvre les tarifs avant inscription, le lancement connecté, la saisie du prix pour fichier/service/produit physique et l'attribution du catalogue. Les captures à 390 et 1280 px ont été vérifiées ; aucune erreur JavaScript de page sur les parcours vendeurs.
+La suite concurrente lance quatre confirmations dans quatre sessions PostgreSQL : une seule peut utiliser le dernier avantage disponible.
+
+Contrôles locaux du 21 septembre : compilation et lint réussis (7 avertissements existants), 39 tests ciblés et 4 parcours Chrome réussis. La CI Linux exécute la suite complète et les migrations PostgreSQL 17. Les échecs locaux de la suite globale liés aux chemins Windows/CRLF ne sont pas assimilés à une validation ; le contrôle Linux reste requis.
 
 Pour mesurer la stratégie, compter par cohorte d'inscription Auth :
 1. première fiche soumise sous 7 jours ;

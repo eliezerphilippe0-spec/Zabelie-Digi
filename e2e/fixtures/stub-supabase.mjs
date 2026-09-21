@@ -256,6 +256,7 @@ const server = createServer((req, res) => {
         }
         if (eq(url, "id") === GIFT_ORDER) { giftWrites.push({ step: "cleanup" }); return send(200, []); }
         ecritures.push({ method: req.method, query: url.search, body });
+        if (process.env.PRICING_FIXTURE === "true" && req.method === "POST") return send(503, { code: "08006", message: "pricing fixture stops before payment" });
         send(200, []);
       });
     }

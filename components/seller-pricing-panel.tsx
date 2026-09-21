@@ -6,7 +6,7 @@ import { pricingText, sellerPricingCopy } from "@/lib/seller-pricing-copy";
 export function SellerPricingPanel({ pricing, lang }: { pricing: SellerPricing; lang: Lang }) {
   const c = sellerPricingCopy(lang);
   const fmt = (n: number) => new Intl.NumberFormat(lang === "ht" ? "fr-HT" : lang).format(n);
-  return <section className="mt-5 rounded-2xl border border-line bg-surface/40 p-5" aria-label={c.title}>
+  return <section className="mt-5 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-5" aria-label={c.title}>
     <h2 className="text-lg font-semibold">{c.title}</h2>
     <p className="mt-2 text-sm text-mist">{c.free}</p>
     <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -20,13 +20,16 @@ export function SellerPricingPanel({ pricing, lang }: { pricing: SellerPricing; 
       </div>)}
     </dl>
     <p className="mt-4 text-xs text-mist">{pricingText(c.fixed, { usd: fmt(pricing.direct_fixed_usd_cents / 100), rate: fmt(pricing.usd_htg_micros / 1_000_000) })}</p>
-    <p className="mt-2 text-xs text-mist">{pricingText(c.attribution, { days: pricing.attribution_days })}</p>
-    <p className="mt-2 text-xs text-mist">{c.estimate}</p>
+    <details className="mt-3 text-xs text-mist">
+      <summary className="cursor-pointer py-2 underline">{c.details}</summary>
+      <p className="mt-2">{pricingText(c.attribution, { days: pricing.attribution_days })}</p>
+      <p className="mt-2">{c.estimate}</p>
+      <p className="mt-2">{c.discountRule}</p>
+    </details>
     <div className="mt-5 border-t border-line pt-4">
       <h3 className="font-semibold">{c.launch}</h3>
       <p className="mt-2 text-sm">{pricingText(c.offer, { submit: pricing.submission_days, days: pricing.launch_days, sales: pricing.launch_sales_limit, discount: fmt(pricing.launch_discount_bps / 100) + " %" })}</p>
       <p className="mt-2 text-sm text-mist">{c.clock}</p>
-      <p className="mt-2 text-xs text-mist">{c.discountRule}</p>
     </div>
   </section>;
 }

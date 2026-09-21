@@ -261,7 +261,7 @@ export default async function HomePage() {
                 {t(lang, "hero.s1.cta")}<span className="ml-6" aria-hidden="true">↗</span>
               </Link>
             </div>
-            {featured && <HomeFeatured product={featured} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
+            {featured && <HomeFeatured product={featured} discovery={discovery} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
           </div>
         </section>
 
@@ -300,7 +300,7 @@ export default async function HomePage() {
             flottaison (A1). La sélection principale reste visible dès la première offre,
             sur mobile comme sur ordinateur, sans inventer de produits. */}
         {inedit(principaux) && (
-          <HomeRow discovery={discovery} primary title={t(lang, "home.products")} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+          <HomeRow primary title={t(lang, "home.products")} discovery={discovery} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
         )}
         {inedit(newest) && (
           <HomeRow discovery={discovery} title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />

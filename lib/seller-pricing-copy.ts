@@ -1,5 +1,6 @@
 import type { Lang } from "./i18n";
 const fr = {
+  details: "Calcul des frais et conditions de lancement",
   title: "Tarifs vendeurs", direct: "Vos liens et votre boutique", discovery: "Ventes apportées par Zabelie",
   free: "Inscription et boutique sans abonnement. Frais prélevés uniquement sur les ventes.",
   fixed: "Le montant fixe correspond à {usd} $US, convertis en gourdes au taux Zabelie de {rate} HTG pour 1 $US. Ce taux est figé à la commande.",
@@ -20,6 +21,7 @@ const fr = {
 };
 type Copy = { [K in keyof typeof fr]: string };
 const ht: Copy = {
+  details: "Kalkil frè ak kondisyon kòmansman",
   title: "Pri pou vandè", direct: "Lyen pa ou ak boutik ou", discovery: "Lavant Zabelie pote",
   free: "Enskripsyon ak boutik san abònman. Frè yo soti sèlman sou lavant yo.",
   fixed: "Montan fiks la se {usd} $US, konvèti an goud ak to Zabelie {rate} HTG pou 1 $US. To sa a fiks lè kòmand lan fèt.",
@@ -39,6 +41,7 @@ const ht: Copy = {
   discountRule: "Se peman konfime ki sèvi ak kota a. Pwodui gratis, peman ki echwe ak acha pwòp pwodui ou pa bay avantaj la. Ranbousman pa retabli kota a.",
 };
 const en: Copy = {
+  details: "Fee calculation and launch terms",
   title: "Seller pricing", direct: "Your links and storefront", discovery: "Sales brought by Zabelie",
   free: "Free signup and storefront, no subscription. Fees apply only to sales.",
   fixed: "The fixed fee equals {usd} USD, converted to gourdes at the Zabelie rate of {rate} HTG per 1 USD, fixed when the order is created.",
@@ -58,6 +61,7 @@ const en: Copy = {
   discountRule: "The quota is used on confirmed payment. Free products, failed payments and purchases of your own products do not qualify. Refunds do not restore the quota.",
 };
 const es: Copy = {
+  details: "Cálculo de tarifas y condiciones de lanzamiento",
   title: "Tarifas para vendedores", direct: "Tus enlaces y tu tienda", discovery: "Ventas aportadas por Zabelie",
   free: "Registro y tienda sin suscripción. Las tarifas se aplican solo a las ventas.",
   fixed: "La tarifa fija equivale a {usd} US$, convertidos a gourdes al tipo Zabelie de {rate} HTG por 1 US$, fijado al crear el pedido.",

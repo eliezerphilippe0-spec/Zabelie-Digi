@@ -35,7 +35,7 @@ for (const width of [1280, 390]) {
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: "Vos liens et votre boutique" })).toContainText("834 HTG");
     const dir = process.env.PRICING_QA_DIR || join(tmpdir(), "zabelie-pricing-qa");
     await mkdir(dir, { recursive: true });
-    await fees.scrollIntoViewIfNeeded();
+    await fees.evaluate(el => el.scrollIntoView({ block: "start" }));
     await page.screenshot({ path: join(dir, "vendeur-" + width + ".png"), fullPage: false });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(errors).toEqual([]);
@@ -51,6 +51,8 @@ test("catalogue click is attributed; direct URLs and prefetch are not", async ({
   expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
   await page.request.get("/decouvrir/filtre-huile-corolla", { headers: { "next-router-prefetch": "1" } });
   expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
+  await page.goto("/");
+  await expect(page.locator(".home-featured")).toHaveAttribute("href", "/decouvrir/filtre-huile-corolla");
   await page.goto("/catalogue");
   await page.locator('a[href="/decouvrir/filtre-huile-corolla"]').first().click();
   await expect(page).toHaveURL(/\/produit\/filtre-huile-corolla$/);
@@ -63,12 +65,12 @@ test("checkout ignores a forged source and respects the signed catalogue visit",
   await login(page, "pricing-buyer");
   const data = { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", source: "discovery" };
   // The stub records inserts but deliberately refuses creating a payable order.
-  await page.request.post("/api/checkout", { data });
+  expect((await page.request.post("/api/checkout", { data })).status()).toBe(500);
   const writes = async () => (await (await page.request.get("http://127.0.0.1:54325/__ecritures")).json()).filter((e: { method: string }) => e.method === "POST");
   let rows = await writes();
   expect(JSON.parse(rows.at(-1).body)).toMatchObject({ zabelie_sale_source: "direct", zabelie_payment_is_live: false });
   await page.request.get("/decouvrir/filtre-huile-corolla");
-  await page.request.post("/api/checkout", { data: { ...data, source: "direct" } });
+  expect((await page.request.post("/api/checkout", { data: { ...data, source: "direct" } })).status()).toBe(500);
   rows = await writes();
   expect(JSON.parse(rows.at(-1).body)).toMatchObject({ zabelie_sale_source: "discovery", zabelie_payment_is_live: false });
 });
