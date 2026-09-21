@@ -480,6 +480,7 @@ export default async function ProductPage({
             {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
                 l'achat ne se rend pas en dégradé transparent. */}
             <p className="numeric text-3xl font-extrabold text-cloud">
+              {physical && physical.variants.length > 1 && !flash ? <span className="mr-2 text-sm font-normal">{t(lang, "product.price.from")}{" "}</span> : null}
               {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
               {usdHint(product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">
@@ -531,7 +532,11 @@ export default async function ProductPage({
                   toggle: t(lang, "recipient.toggle"), name: t(lang, "recipient.name"), phone: t(lang, "recipient.phone"), locality: t(lang, "recipient.locality"), note: t(lang, "recipient.note"), consent: t(lang, "recipient.consent"), hint: t(lang, "recipient.hint"), invalid: t(lang, "recipient.invalid"), summary: t(lang, "recipient.summary"),
                 } : undefined}
                 productId={product.id}
-                variants={physical?.variants}
+                variants={physical?.variants.map(v => ({ ...v,
+                  priceHTG: flash ? flash.prixFlashHtg : v.priceHTG,
+                  compareHTG: flash ? v.priceHTG : v.compareHTG,
+                  options: buildBuyOptions(lang, flash ? flash.prixFlashHtg : v.priceHTG),
+                }))}
                 stockLabels={{
                   chooseVariant: "Choisir",
                   outOfStock: "Rupture de stock",
@@ -539,7 +544,7 @@ export default async function ProductPage({
                   inStock: "{n} en stock",
                   variantOut: "Indisponible",
                 }}
-                options={buildBuyOptions(lang, product.priceHTG)}
+                options={buildBuyOptions(lang, flash ? flash.prixFlashHtg : product.priceHTG)}
                 othersLabel={t(lang, "pay.other")}
                 loadingLabel={t(lang, "pay.redirect")}
                 coupon={{

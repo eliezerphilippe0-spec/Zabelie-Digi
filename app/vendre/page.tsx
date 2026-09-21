@@ -36,7 +36,7 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listerMedias, MAX_IMAGES_PER_PRODUCT } from "@/lib/product-media";
 import { GalerieManager } from "@/components/galerie-manager";
-import { lireCompares } from "@/lib/product-discount";
+import { lireCompares, lireVariantesRabais } from "@/lib/product-discount";
 import { RabaisManager } from "@/components/rabais-manager";
 import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
@@ -251,6 +251,7 @@ export default async function VendrePage() {
   );
   // Rabais V-4 : map vide tant que 0075 n'est pas appliquée.
   const compares = await lireCompares(supabase, user.id);
+  const variantsRabais = await lireVariantesRabais(supabase, mine.filter(p => p.kind === COMMITMENT_PHYSICAL).map(p => p.id));
   const offresFlash = await lireOffresVivantes(supabase, user.id);
   const flashLabels = {
     title: t(lang, "sell.flash.title"),
@@ -265,6 +266,7 @@ export default async function VendrePage() {
   };
   const rabaisLabels = {
     title: t(lang, "sell.rabais.title"),
+    flashActive: t(lang, "sell.rabais.flashActive"),
     newPh: t(lang, "sell.rabais.newPh"),
     apply: t(lang, "sell.rabais.apply"),
     remove: t(lang, "sell.rabais.remove"),
@@ -443,12 +445,20 @@ export default async function VendrePage() {
                     labels={galerieLabels}
                   />
                   {p.status === "published" && <>
-                  <RabaisManager
+                  {(variantsRabais.get(p.id)?.length ?? 0) > 1 ? <div className="mt-4 space-y-3">
+                    <h4 className="text-sm font-semibold">{t(lang, "sell.rabais.variants")}</h4>
+                    {variantsRabais.get(p.id)!.map(v => <div key={v.id}>
+                      <p className="text-sm">{v.options?.variante || Object.values(v.options ?? {}).join(" · ") || t(lang, "sell.rabais.standard")}</p>
+                      <RabaisManager key={v.id + ":" + v.price_htg + ":" + v.compare_at_htg} productId={p.id} variantId={v.id}
+                        prixHtg={v.price_htg} compareHtg={v.compare_at_htg ?? null} labels={rabaisLabels}/>
+                    </div>)}
+                  </div> : <RabaisManager
+                    key={p.id + ":" + p.price_htg + ":" + compares.get(p.id)}
                     productId={p.id}
                     prixHtg={p.price_htg}
                     compareHtg={compares.get(p.id) ?? null}
                     labels={rabaisLabels}
-                  />
+                  />}
                   <FlashManager
                     productId={p.id}
                     prixHtg={p.price_htg}

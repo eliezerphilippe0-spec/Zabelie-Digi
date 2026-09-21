@@ -1,5 +1,11 @@
 # OPS_TODO — Zabelie
 
+## Rabais par taille ou modèle — 21 septembre 2026
+
+Le gestionnaire Rabais existant accepte une variante physique : ancien prix conservé par la base, baisse stricte, retrait du barré sans hausse. Le paiement et les coupons lisent le prix de la variante active appartenant au produit. Le bouton affiche ce même prix ; une variante non remisée reste inchangée. Aucun tarif vendeur ni paramètre fournisseur modifié.
+
+Migration additive `0109_rabais_variantes.sql` à appliquer après validation PostgreSQL en CI, avant le déploiement. Elle conserve les rabais classiques et refuse une modification de variante pendant une vente flash. Tests unitaires, SQL et parcours Chrome mobile/ordinateur ajoutés ; preuves finales dans la PR.
+
 ## Supervision Jev — l'agent n'a jamais tourné, audit du 21 septembre 2026
 
 ⚠️ Mesuré par l'API GitHub Actions : le workflow « Zabelie - Supervision Jev » comptait

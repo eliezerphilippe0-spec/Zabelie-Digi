@@ -59,6 +59,13 @@ const PRODUCT = {
   seller: { display_name: "Garaj Petyonvil" },
 };
 
+
+const discountOrders = [];
+const discountVariants = [
+  { id: "55555555-5555-5555-5555-555555555555", options: { variante: "M" }, price_htg: 2000, compare_at_htg: null, position: 0 },
+  { id: "55555555-5555-5555-5555-555555555556", options: { variante: "L" }, price_htg: 2500, compare_at_htg: null, position: 1 },
+].map(v => ({ ...v, product_id: PRODUCT_ID, active: true, zabelie_stock: { quantity_available: 4 } }));
+
 const SHOP_PRODUCTS = [
   { ...PRODUCT, cover_url: "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64") },
   { ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", description: "Apprenez à préparer votre première offre avec un guide et des leçons.", kind: "fichier", cover_url: null, product_assets: [{ id: ASSET_ID }] },
@@ -155,6 +162,49 @@ const server = createServer((req, res) => {
         seller_id: SELLER_ID, submitted_at: date(-3), submission_deadline: date(3), published_at: date(-2),
         eligible: true, starts_at: date(-2), ends_at: date(28), used_sales: 1, sales_limit: 3,
       }] : []);
+    }
+  }
+
+
+  if (process.env.DISCOUNT_FIXTURE === "true") {
+    const variants = discountVariants;
+    if (url.pathname === "/__discount-reset") {
+      variants.forEach((v, i) => { v.price_htg = i ? 2500 : 2000; v.compare_at_htg = null; });
+      discountOrders.length = 0;
+      return send(200, { ok: true });
+    }
+    if (url.pathname === "/__discount-orders") return send(200, discountOrders);
+    if (url.pathname === "/rest/v1/rpc/zabelie_reserve_stock") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        const input = JSON.parse(body), variant = variants.find(v => v.id === input.p_variant_id);
+        return send(200, { ok: Boolean(variant && input.p_order_id === ORDER_ID && input.p_quantity > 0 && input.p_quantity <= variant.zabelie_stock.quantity_available) });
+      });
+    }
+
+    if (url.pathname === "/rest/v1/products") {
+      const row = { ...PRODUCT, price_htg: Math.min(...variants.map(v => v.price_htg)), compare_at_htg: null, cover_url: null };
+      const id = eq(url, "id"), slug = eq(url, "slug"), seller = eq(url, "seller_id");
+      return single((id && id !== PRODUCT_ID) || (slug && slug !== PRODUCT.slug) || (seller && seller !== SELLER_ID) ? [] : [row]);
+    }
+    if (url.pathname === "/rest/v1/zabelie_product_variants") {
+      const id = eq(url, "id"), product = eq(url, "product_id");
+      return send(200, variants.filter(v => (!id || v.id === id) && (!product || product === PRODUCT_ID)));
+    }
+    if (url.pathname === "/rest/v1/rpc/zabelie_set_variant_discount" || url.pathname === "/rest/v1/rpc/zabelie_clear_variant_discount") {
+      let text = ""; req.on("data", c => text += c);
+      return req.on("end", () => {
+        const input = JSON.parse(text), v = variants.find(v => v.id === input.p_variant_id);
+        if (!v || input.p_product_id !== PRODUCT_ID || input.p_user_id !== SELLER_ID) return send(200, { ok: false, reason: "introuvable" });
+        if (url.pathname.endsWith("clear_variant_discount")) { v.compare_at_htg = null; return send(200, { ok: true, prix_htg: v.price_htg }); }
+        if (input.p_new_price_htg >= v.price_htg) return send(200, { ok: false, reason: "pas_une_baisse" });
+        v.compare_at_htg ??= v.price_htg; v.price_htg = input.p_new_price_htg;
+        return send(200, { ok: true, ancien_htg: v.compare_at_htg, nouveau_htg: v.price_htg });
+      });
+    }
+    if (url.pathname === "/rest/v1/orders" && req.method === "POST") {
+      let text = ""; req.on("data", c => text += c);
+      return req.on("end", () => { const row = { id: ORDER_ID, ...JSON.parse(text) }; discountOrders.push(row); return single([row]); });
     }
   }
 
