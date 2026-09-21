@@ -5,7 +5,7 @@ test("test mode is visible without offering a real purchase", async ({ page }) =
   page.on("pageerror", error => browserErrors.push(error.message));
   await page.goto("/recharges");
   await expect(page).toHaveTitle(/Recharges/);
-  await expect(page.locator('header a[href="/recharges"]')).toContainText("En test");
+  await expect(page.getByRole("banner").first().getByRole("link", { name: "Recharges En test", exact: true })).toBeVisible();
   await expect(page.getByRole("main")).toContainText("Recharges en test : aucun crédit réel");
   await expect(page.getByRole("main").locator('a[href="/rechaj"]')).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath("sandbox-desktop.png"), fullPage: true });
