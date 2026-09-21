@@ -11,7 +11,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BUCKET = "product-covers";
+import { MEDIA_BUCKET as BUCKET } from "@/lib/storage-buckets";
 const ALLOWED = new Set(["jpg", "jpeg", "png", "webp"]);
 
 /* ─── LE SERVEUR EST UN PLAFOND, PAS LE MÉCANISME ──────────────────────────

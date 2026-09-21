@@ -11,7 +11,8 @@ import { isDownloadable } from "@/lib/product-kind";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BUCKET = "product-files"; // bucket privé Supabase Storage
+// bucket privé Supabase Storage — nom en source unique (lib/storage-buckets)
+import { DIGITAL_BUCKET as BUCKET } from "@/lib/storage-buckets";
 
 /**
  * GET /api/download?orderId=...

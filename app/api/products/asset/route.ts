@@ -11,7 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BUCKET = "product-files";
+import { DIGITAL_BUCKET as BUCKET } from "@/lib/storage-buckets";
 const MAX_BYTES = 50 * 1024 * 1024; // 50 Mo
 
 // Liste blanche des livrables numériques (audit sécurité §8.1). Le bucket est

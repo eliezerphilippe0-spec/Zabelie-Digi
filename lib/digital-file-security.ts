@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const DIGITAL_BUCKET = "product-files";
+import { DIGITAL_BUCKET } from "@/lib/storage-buckets";
+export { DIGITAL_BUCKET };
 export const MAX_SCAN_BYTES = 50 * 1024 * 1024;
 export const MAX_SCAN_AGE_MS = 7 * 86400_000;
 export type ScanVerdict = "clean" | "infected" | "error";

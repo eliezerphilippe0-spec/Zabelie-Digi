@@ -13,7 +13,7 @@ export type UploadAssetLabels = {
   errorNetwork: string;
 };
 
-const BUCKET = "product-files";
+import { DIGITAL_BUCKET as BUCKET } from "@/lib/storage-buckets";
 
 /**
  * Envoie le fichier livrable d'un produit — en DEUX TEMPS.
