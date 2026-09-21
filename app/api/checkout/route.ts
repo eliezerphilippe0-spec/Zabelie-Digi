@@ -1,3 +1,8 @@
+import { getKobaraAvailability } from "@/lib/payment-availability";
+import { cookies } from "next/headers";
+import { readSellerPricing } from "@/lib/seller-pricing-server";
+import { attributedSource, SALE_SOURCE_COOKIE } from "@/lib/sale-attribution";
+import { configService } from "@/lib/supabase/config";
 import { digitalProductIsClean } from "@/lib/digital-file-security";
 import { normalizeRecipient } from "@/lib/order-recipient";
 import { NextResponse } from "next/server";
@@ -7,7 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDownloadable, isDigitalKind, isTrackedStockKind } from "@/lib/product-kind";
-import { createPayment } from "@/lib/moncash";
+import { createPayment, resolveMonCashMode } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import {
@@ -426,12 +431,27 @@ export async function POST(req: Request) {
     }
   }
 
+  // Only signed server attribution selects marketplace pricing.
+  // Omit the column before migration for rolling deployment compatibility.
+  let pricing;
+  try { pricing = await readSellerPricing(admin); } catch {
+    return NextResponse.json({ error: t(lang, "api.order.failed"), code: "pricing_unavailable" }, { status: 503 });
+  }
+  const source = pricing ? attributedSource((await cookies()).get(SALE_SOURCE_COOKIE)?.value, product.id, configService().key) : null;
+
   // Commande (pending).
   const { data: order, error: orderErr } = await admin
     .from("orders")
     .insert({
       buyer_id: user.id,
       product_id: product.id,
+      ...(source ? {
+        zabelie_sale_source: source,
+        zabelie_payment_is_live: rail === "moncash" ? resolveMonCashMode(process.env.MONCASH_MODE).mode === "production"
+          : rail === "kobara" ? getKobaraAvailability() === "production"
+          : rail === "stripe" ? Boolean(process.env.STRIPE_SECRET_KEY?.trim().startsWith("sk_live_"))
+          : isZelleEnabled(),
+      } : {}),
       amount_htg: finalPriceHtg, // prix remisé figé — tous les garde-fous s'y appliquent
       coupon_code: couponCode,
       coupon_id: couponId, // BL-133 : consommé par confirm_payment, pas ici

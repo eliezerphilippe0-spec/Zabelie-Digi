@@ -1,5 +1,7 @@
 "use client";
 
+import type { SellerPricing } from "@/lib/seller-pricing";
+import type { Lang } from "@/lib/i18n";
 import { useState } from "react";
 import {
   isService,
@@ -52,6 +54,8 @@ export function PublishForm({
   sousRayons = [],
   tier = "standard",
   rateBpsEnVigueur,
+  pricing,
+  lang = "fr",
   aiActif = false,
 }: {
   labels: PublishFormLabels;
@@ -73,6 +77,8 @@ export function PublishForm({
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
   rateBpsEnVigueur?: number;
+  pricing?: SellerPricing | null;
+  lang?: Lang;
   /**
    * Aide IA à la rédaction — décidé au SERVEUR (`aiProviderDisponible()`),
    * jamais ici : pas de clé fournisseur posée → pas de bouton.
@@ -225,6 +231,8 @@ export function PublishForm({
           required
         />
         <NetEstimate
+          pricing={pricing}
+          lang={lang}
           priceHTG={form.priceHTG}
           tier={tier}
           rateBpsEnVigueur={rateBpsEnVigueur}

@@ -406,7 +406,7 @@ export default async function CataloguePage({
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {approchants.map((p) => (
-                <ProductCard key={p.slug} product={p} labels={cardLabels} />
+                <ProductCard discovery key={p.slug} product={p} labels={cardLabels} />
               ))}
             </div>
           </>
@@ -539,7 +539,7 @@ export default async function CataloguePage({
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {products.map((p) => (
-                <ProductCard
+                <ProductCard discovery
                   key={p.slug}
                   product={p}
                   labels={{

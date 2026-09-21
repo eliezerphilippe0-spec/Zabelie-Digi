@@ -1,5 +1,8 @@
 "use client";
 
+import type { SellerPricing } from "@/lib/seller-pricing";
+import type { Lang } from "@/lib/i18n";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
@@ -48,6 +51,8 @@ export function PhysicalProductForm({
   listingLabels,
   tier = "standard",
   rateBpsEnVigueur,
+  pricing,
+  lang = "fr",
   netLabels,
   policyAccept,
   policyRead,
@@ -75,6 +80,8 @@ export function PhysicalProductForm({
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
   rateBpsEnVigueur?: number;
+  pricing?: SellerPricing | null;
+  lang?: Lang;
   /**
    * Libellés de l'estimation, traduits côté serveur. Le reste de ce
    * formulaire est encore en français en dur (dette connue, OPS_TODO) — ce
@@ -413,6 +420,8 @@ export function PhysicalProductForm({
           {!showVariants && (
             <div className="mt-1.5">
               <NetEstimate
+          pricing={pricing}
+          lang={lang}
                 priceHTG={price}
                 tier={tier}
                 rateBpsEnVigueur={rateBpsEnVigueur}

@@ -1,5 +1,13 @@
 # OPS_TODO — Zabelie
 
+## Tarification vendeurs — proposition du 21 septembre 2026
+
+Implémentation demandée : tarifs inspirés de Gumroad et lancement de 30 jours.
+La migration 0108 reste désactivée. Choix en attente : les deux tarifs ou un tarif unique,
+réduction de moitié ou gratuité des frais sur trois ventes. Avant activation : taux USD/HTG
+validé et paiement réel vérifié. Voir [le dossier](docs/tarification-vendeurs-lancement.md).
+
+
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 

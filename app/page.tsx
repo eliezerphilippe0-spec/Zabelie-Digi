@@ -79,7 +79,7 @@ function HomeRow({
       </div>
       <div className={`mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 ${primary && items.length < 4 ? "lg:max-w-3xl" : "md:grid-cols-4 lg:grid-cols-6"}`}>
         {items.map((p) => (
-          <ProductCard key={p.slug} product={p} labels={cardLabels} />
+          <ProductCard discovery key={p.slug} product={p} labels={cardLabels} />
         ))}
       </div>
     </section>

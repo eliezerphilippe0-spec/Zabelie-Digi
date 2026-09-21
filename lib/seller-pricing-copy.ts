@@ -1,0 +1,83 @@
+import type { Lang } from "./i18n";
+const fr = {
+  title: "Tarifs vendeurs", direct: "Vos liens et votre boutique", discovery: "Ventes apportées par Zabelie",
+  free: "Inscription et boutique sans abonnement. Frais prélevés uniquement sur les ventes.",
+  fixed: "Le montant fixe correspond à {usd} $US, convertis en gourdes au taux affiché lors de la commande.",
+  example: "Sur {gross}, vous recevez environ {net} après frais Zabelie.",
+  attribution: "Une visite depuis le catalogue ou les recommandations Zabelie attribue ce produit à la marketplace pendant {days} jours sur ce navigateur. Sans cette attribution, le tarif direct s’applique.",
+  launch: "Votre lancement sur Zabelie",
+  offer: "Soumettez votre première offre sous {submit} jours après l’inscription : {discount} de réduction sur les frais Zabelie, pour {sales} ventes maximum pendant {days} jours.",
+  clock: "Les jours commencent à la publication, une fois les paiements réels prêts. À la fin, le tarif habituel reprend et votre boutique reste ouverte.",
+  submit: "Créez votre première fiche avant le {date}. Vous pourrez compléter ses photos et ses détails dans votre espace vendeur.",
+  waiting: "Votre première offre est enregistrée. Le délai de lancement attend sa publication et la disponibilité des paiements réels.",
+  active: "Avantage disponible jusqu’au {date} : {remaining} vente(s) restante(s).",
+  expired: "Les avantages de lancement sont terminés. Votre boutique reste ouverte au tarif habituel.",
+  exhausted: "Vous avez utilisé vos ventes de lancement. Votre boutique reste ouverte au tarif habituel.",
+  ineligible: "Votre boutique reste ouverte au tarif habituel. Le délai pour obtenir l’offre de lancement est passé.",
+  manage: "Préparer mes offres", share: "Après publication, partagez le lien de votre boutique ou de votre produit sur WhatsApp.",
+  estimate: "Estimation au tarif habituel, hors réduction de lancement et affiliation. Les frais ne dépassent jamais le montant de la vente.",
+  discountRule: "Le quota est utilisé au paiement confirmé. Les produits gratuits, paiements échoués et achats de vos propres produits ne donnent pas droit à l’avantage. Un remboursement ne rétablit pas le quota.",
+};
+type Copy = { [K in keyof typeof fr]: string };
+const ht: Copy = {
+  title: "Pri pou vandè", direct: "Lyen pa ou ak boutik ou", discovery: "Lavant Zabelie pote",
+  free: "Enskripsyon ak boutik san abònman. Frè yo soti sèlman sou lavant yo.",
+  fixed: "Montan fiks la se {usd} $US, konvèti an goud ak to ki parèt lè kòmand lan fèt.",
+  example: "Sou {gross}, ou resevwa anviwon {net} apre frè Zabelie.",
+  attribution: "Yon vizit nan katalòg oswa rekòmandasyon Zabelie atribye pwodui sa a ak marketplace la pandan {days} jou sou navigatè sa a. San atribisyon sa a, se pri dirèk la ki aplike.",
+  launch: "Kòmanse sou Zabelie",
+  offer: "Soumèt premye òf ou nan {submit} jou apre enskripsyon : {discount} rabè sou frè Zabelie pou jiska {sales} lavant pandan {days} jou.",
+  clock: "Jou yo kòmanse lè òf la pibliye epi peman reyèl yo pare. Apre sa, frè nòmal yo retounen epi boutik ou rete ouvè.",
+  submit: "Kreye premye fich ou anvan {date}. Ou ka konplete foto ak detay yo nan espas vandè ou.",
+  waiting: "Premye òf ou anrejistre. Peryòd la ap tann piblikasyon ak peman reyèl yo.",
+  active: "Avantaj la disponib jiska {date} : {remaining} lavant ki rete.",
+  expired: "Avantaj kòmansman yo fini. Boutik ou rete ouvè ak frè nòmal yo.",
+  exhausted: "Ou itilize lavant kòmansman ou yo. Boutik ou rete ouvè ak frè nòmal yo.",
+  ineligible: "Boutik ou rete ouvè ak frè nòmal yo. Delè pou òf kòmansman an pase.",
+  manage: "Prepare òf mwen yo", share: "Apre piblikasyon, pataje lyen boutik oswa pwodui ou sou WhatsApp.",
+  estimate: "Estimasyon ak frè nòmal yo, san rabè kòmansman ak afilyasyon. Frè yo pa janm depase montan lavant lan.",
+  discountRule: "Se peman konfime ki sèvi ak kota a. Pwodui gratis, peman ki echwe ak acha pwòp pwodui ou pa bay avantaj la. Ranbousman pa retabli kota a.",
+};
+const en: Copy = {
+  title: "Seller pricing", direct: "Your links and storefront", discovery: "Sales brought by Zabelie",
+  free: "Free signup and storefront, no subscription. Fees apply only to sales.",
+  fixed: "The fixed fee equals {usd} USD, converted to gourdes at the rate shown when the order is created.",
+  example: "On {gross}, you receive approximately {net} after Zabelie fees.",
+  attribution: "A visit from the Zabelie catalog or recommendations attributes this product to the marketplace for {days} days in this browser. Without this attribution, direct pricing applies.",
+  launch: "Your Zabelie launch",
+  offer: "Submit your first offer within {submit} days of signup: {discount} off Zabelie fees for up to {sales} sales over {days} days.",
+  clock: "The clock starts after publication once real payments are ready. Regular pricing resumes afterwards and your storefront stays open.",
+  submit: "Create your first listing before {date}. Complete its photos and details in your seller workspace.",
+  waiting: "Your first offer is recorded. Your launch period is waiting for publication and real payments.",
+  active: "Benefit available until {date}: {remaining} sale(s) left.",
+  expired: "Launch benefits have ended. Your storefront stays open at regular pricing.",
+  exhausted: "You have used your launch sales. Your storefront stays open at regular pricing.",
+  ineligible: "Your storefront stays open at regular pricing. The launch eligibility deadline has passed.",
+  manage: "Prepare my offers", share: "Once published, share your storefront or product link on WhatsApp.",
+  estimate: "Estimate at regular pricing, excluding launch discounts and affiliate fees. Fees never exceed the sale amount.",
+  discountRule: "The quota is used on confirmed payment. Free products, failed payments and purchases of your own products do not qualify. Refunds do not restore the quota.",
+};
+const es: Copy = {
+  title: "Tarifas para vendedores", direct: "Tus enlaces y tu tienda", discovery: "Ventas aportadas por Zabelie",
+  free: "Registro y tienda sin suscripción. Las tarifas se aplican solo a las ventas.",
+  fixed: "La tarifa fija equivale a {usd} US$, convertidos a gourdes al tipo mostrado al crear el pedido.",
+  example: "Sobre {gross}, recibes aproximadamente {net} después de las tarifas de Zabelie.",
+  attribution: "Una visita desde el catálogo o recomendaciones de Zabelie atribuye este producto al marketplace durante {days} días en este navegador. Sin esta atribución se aplica la tarifa directa.",
+  launch: "Tu lanzamiento en Zabelie",
+  offer: "Envía tu primera oferta en los {submit} días posteriores al registro: {discount} de descuento en las tarifas de Zabelie para un máximo de {sales} ventas durante {days} días.",
+  clock: "El plazo comienza después de la publicación y cuando los pagos reales estén listos. Después vuelven las tarifas habituales y tu tienda sigue abierta.",
+  submit: "Crea tu primera ficha antes del {date}. Completa las fotos y detalles en tu espacio de vendedor.",
+  waiting: "Tu primera oferta está registrada. El plazo espera su publicación y la disponibilidad de pagos reales.",
+  active: "Ventaja disponible hasta el {date}: quedan {remaining} venta(s).",
+  expired: "Las ventajas de lanzamiento han terminado. Tu tienda sigue abierta con las tarifas habituales.",
+  exhausted: "Has utilizado tus ventas de lanzamiento. Tu tienda sigue abierta con las tarifas habituales.",
+  ineligible: "Tu tienda sigue abierta con las tarifas habituales. El plazo para obtener la oferta ha pasado.",
+  manage: "Preparar mis ofertas", share: "Tras la publicación, comparte el enlace de tu tienda o producto por WhatsApp.",
+  estimate: "Estimación con tarifas habituales, sin descuento de lanzamiento ni afiliación. Las tarifas nunca superan el importe de la venta.",
+  discountRule: "El cupo se usa con el pago confirmado. Los productos gratuitos, pagos fallidos y compras de tus propios productos no dan derecho a la ventaja. Los reembolsos no restablecen el cupo.",
+};
+export function sellerPricingCopy(lang: Lang): Copy { return { fr, ht, en, es }[lang]; }
+export function pricingText(text: string, values: Record<string, string | number>) {
+  return text.replace(/\{(\w+)\}/g, (match, key: string) => String(values[key] ?? match));
+}
+

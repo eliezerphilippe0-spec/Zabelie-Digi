@@ -1,3 +1,5 @@
+import { readSellerPricing, readSellerLaunch } from "@/lib/seller-pricing-server";
+import { SellerPricingPanel, SellerLaunchPanel } from "@/components/seller-pricing-panel";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -38,6 +40,9 @@ export default async function VendrePhysiquePage() {
   }
 
   const user = await getCurrentUser();
+  const pricingClient = await createClient();
+  const pricing = await readSellerPricing(pricingClient);
+  const launch = user && pricing ? await readSellerLaunch(pricingClient, user.id, pricing, user.createdAt) : null;
   // Le taux RÉELLEMENT configuré (0054/0066) : l'estimation suit un UPDATE
   // d'exploitation sans redéploiement. Repli = constante compilée.
   const { taux } = await lireTauxCommission(await createClient(), (c) =>
@@ -103,6 +108,8 @@ export default async function VendrePhysiquePage() {
           </ul>
         </section>
 
+        {pricing && <SellerPricingPanel pricing={pricing} lang={lang} />}
+        <SellerLaunchPanel launch={launch} lang={lang} now={launch?.observed_at ?? 0} />
         {!user ? (
           <div className="mt-8 rounded-2xl border border-line bg-surface/60 p-6">
             <p className="text-sm text-cloud">
@@ -133,6 +140,8 @@ export default async function VendrePhysiquePage() {
                 error: t(lang, "publish.error.generic"),
                 network: t(lang, "error.network"),
               }}
+              pricing={pricing}
+              lang={lang}
               tier={user.tier}
               rateBpsEnVigueur={taux[user.tier]}
               netLabels={netLabels}
