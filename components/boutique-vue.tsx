@@ -41,22 +41,24 @@ export async function BoutiqueVue({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
 
-      <section className="mx-auto max-w-6xl px-5 pb-10 pt-16">
-        <div className="flex items-center gap-5">
+      <section className="mx-auto max-w-6xl px-5 pb-8 pt-8 sm:pt-12" aria-labelledby="boutique-title">
+        <div className="flex items-center gap-4 sm:gap-5">
           {creator.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={creator.avatarUrl}
               alt={creator.displayName}
-              className="h-20 w-20 rounded-2xl object-cover"
+              width={80}
+              height={80}
+              className="h-16 w-16 shrink-0 rounded-2xl object-cover sm:h-20 sm:w-20"
             />
           ) : (
-            <span className="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-accent to-brand text-2xl font-extrabold text-on-brand">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-brand text-2xl font-extrabold text-on-brand sm:h-20 sm:w-20">
               {initials}
             </span>
           )}
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
+          <div className="min-w-0">
+            <h1 id="boutique-title" className="break-words text-2xl font-extrabold tracking-tight sm:text-3xl">
               {creator.displayName}
             </h1>
             <p className="mt-1 text-sm text-mist">
@@ -65,9 +67,8 @@ export async function BoutiqueVue({
           </div>
         </div>
 
-        <div className="mt-5"><CollectionAction kind="shops" id={creator.id} lang={lang}/></div>
         {creator.bio && (
-          <p className="mt-6 max-w-2xl text-mist">{creator.bio}</p>
+          <p className="mt-5 max-w-2xl whitespace-pre-line break-words text-sm leading-relaxed text-mist sm:text-base">{creator.bio}</p>
         )}
 
         {/* Zone déclarée (PR-Z3, docs/33 §4) : « Katye, Komin — Depatman »
@@ -87,7 +88,8 @@ export async function BoutiqueVue({
         )}
 
         {/* Boutique en un lien : se partage sur WhatsApp comme une vitrine */}
-        <div className="mt-6">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <CollectionAction kind="shops" id={creator.id} lang={lang}/>
           <ShareButtons
             path={partageHref}
             text={t(lang, "creator.share.text", { name: creator.displayName })}
@@ -98,15 +100,17 @@ export async function BoutiqueVue({
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 pb-16">
+      <section className="mx-auto max-w-6xl px-5 pb-16" aria-labelledby="boutique-offers">
+        <h2 id="boutique-offers" className="mb-4 border-t border-line pt-6 text-lg font-semibold">{t(lang, "creator.offers")}</h2>
         {creator.products.length === 0 ? (
           <p className="text-sm text-mist">{t(lang, "creator.empty")}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             {creator.products.map((p) => (
               <ProductCard
                 key={p.slug}
                 product={p}
+                boutique
                 labels={{
                   kindFile: t(lang, "card.kind.file"),
                   kindService: t(lang, "card.kind.service"),
@@ -114,6 +118,8 @@ export async function BoutiqueVue({
                   by: t(lang, "product.by"),
                   sales: t(lang, "product.sales"),
                   salesOne: t(lang, "product.sales.one"),
+                  photoMissing: t(lang, "home.photo.missing"),
+                  detail: t(lang, "creator.offer.open"),
                   lang,
                 }}
               />

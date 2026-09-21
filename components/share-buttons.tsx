@@ -42,7 +42,7 @@ export function ShareButtons({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={shareWhatsApp}
         className="flex items-center gap-1.5 inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-success/60"

@@ -452,22 +452,7 @@ export default async function ProductPage({
             </div>
           )}
 
-          {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
-          {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
-            <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>
-            {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>
-              <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                {DIGITAL_DETAIL_FIELDS.filter((key) => digital[key]).map((key) => <div key={key} className={key === "contents" || key === "license" ? "sm:col-span-2" : ""}>
-                  <dt className="text-sm font-semibold text-mist">{t(lang, `digital.${key}`)}</dt>
-                  <dd className="mt-1 whitespace-pre-line break-words text-base">{digital[key]}</dd>
-                </div>)}
-              </dl>
-              <p className="mt-4 text-sm text-mist">{t(lang, "digital.source")}</p>
-            </>}
-            {(!digital?.formats || !digital?.compatibility || !digital?.license) && <p className="mt-3 text-sm text-mist">{t(lang, "digital.check")}</p>}
-            <p className="mt-3 text-sm text-mist">{t(lang, "digital.access")}</p>
-          </section>}
-          <div id="acheter" className="mt-8 scroll-mt-24 rounded-2xl border border-line bg-surface/60 p-6">
+          <div id="acheter" className="mt-8 scroll-mt-44 rounded-2xl border border-line bg-surface/60 p-6">
             {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
                 pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
             {/* Vente flash (0080) : prime sur le rabais — deux barrés
@@ -646,6 +631,27 @@ export default async function ProductPage({
               </p>
             )}
           </div>
+
+          {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
+          {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
+            <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>
+            {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                {DIGITAL_DETAIL_FIELDS.filter((key) => digital[key]).map((key) => <div key={key} className={key === "contents" || key === "license" ? "sm:col-span-2" : ""}>
+                  <dt className="text-sm font-semibold text-mist">{t(lang, `digital.${key}`)}</dt>
+                  <dd className="mt-1 whitespace-pre-line break-words text-base">{digital[key]}</dd>
+                </div>)}
+              </dl>
+              <p className="mt-4 text-sm text-mist">{t(lang, "digital.source")}</p>
+            </>}
+            {(!digital?.formats || !digital?.compatibility || !digital?.license) && <p className="mt-3 text-sm text-mist">{t(lang, "digital.check")}</p>}
+            <p className="mt-3 text-sm text-mist">{t(lang, "digital.access")}</p>
+          </section>}
+          {isDownloadable(product.kind) && (
+            <a href="#acheter" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-brand px-5 py-3 text-sm font-semibold text-cloud">
+              {t(lang, "product.cta.bottom", { price: formatHTG(flash ? flash.prixFlashHtg : product.priceHTG) })}
+            </a>
+          )}
 
           <ul className="mt-6 space-y-2 text-sm text-mist">
             <li>{t(lang, "product.secure")}</li>

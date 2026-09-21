@@ -4,6 +4,7 @@ import { DigitalSellerMetrics } from "@/components/digital-seller-metrics";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { ShareButtons } from "@/components/share-buttons";
 import { getCurrentUser, getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
@@ -488,6 +489,22 @@ export default async function DashboardPage({
         />
       )}
 
+      <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-8 scroll-mt-28 rounded-2xl border border-line bg-surface p-5">
+        <h2 id="ma-boutique-title" className="text-lg font-semibold">{t(lang, "shop.manage")}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
+        <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
+          {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
+        </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
+          <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
+        </div>
+        <div className="mt-4 border-t border-line pt-4">
+          <ShareButtons path={hrefBoutique({ id: user.id, boutikSlug })} text={t(lang, "creator.share.text", { name: profile.display_name })}
+            waLabel={t(lang, "share.wa")} copyLabel={t(lang, "share.copy")} copiedLabel={t(lang, "share.copied")} />
+        </div>
+      </section>
+
       {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
           largeur, et SEULE à porter le dégradé de la marque. */}
       <div className="mt-8 rounded-2xl border border-line bg-surface-maroon/70 p-6">
@@ -736,7 +753,7 @@ export default async function DashboardPage({
       )}
 
       {/* Profil public */}
-      <section className="mt-10">
+      <section id="profil-public" className="mt-10 scroll-mt-28">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t(lang, "dashboard.profile.public")}</h2>
           <Link

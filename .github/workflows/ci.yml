@@ -127,6 +127,9 @@ jobs:
       - name: Seller pricing and launch in the browser
         run: npx playwright test --config=playwright.pricing.config.ts
 
+      - name: Boutique and digital purchase journey
+        run: npx playwright test --config=playwright.boutique.config.ts
+
       - name: Sandbox top-ups cannot accept payment
         run: npx playwright test --config=playwright.topup.config.ts
 

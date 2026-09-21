@@ -1,5 +1,16 @@
 # OPS_TODO — Zabelie
 
+## Ma boutique — parcours vendeur du 21 septembre 2026
+
+Accès « Ma boutique » pour tout compte connecté, depuis le menu et le tableau de bord, avec le lien public,
+la modification du profil existant et le partage WhatsApp. Les boutiques réutilisent les
+routes actuelles et des offres lisibles sur mobile ; la fiche digitale place l'achat avant
+le programme détaillé. Traductions FR, HT, EN et ES. Aucun nouveau modèle de données.
+Validation locale : compilation, lint, contraste, tests ciblés et quatre parcours Chrome
+(boutique mobile/ordinateur, espace vendeur, ancien lien et créole). Le partage et les
+paiements sont simulés dans ces parcours ; aucun achat réel n'a été effectué.
+
+
 ## Tarification vendeurs — proposition du 21 septembre 2026
 
 Implémentation demandée : tarifs inspirés de Gumroad et lancement de 30 jours.

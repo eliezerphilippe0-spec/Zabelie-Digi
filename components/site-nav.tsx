@@ -141,6 +141,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
                 <Link href="/tableau-de-bord" className={MENU_LINK}>
                   {t(lang, "nav.dashboard")}
                 </Link>
+                <Link href="/tableau-de-bord#ma-boutique" className={MENU_LINK}>{t(lang, "shop.manage")}</Link>
                 <Link href="/mes-achats" className={MENU_LINK}>
                   {t(lang, "pay.ok.cta")}
                 </Link>
