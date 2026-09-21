@@ -41,6 +41,9 @@ yarn-error.log*
 /playwright-report
 /playwright/.cache
 
+# Rapports locaux du superviseur : artefacts, jamais des sources.
+/agent-reports/
+
 # Scripts d'outillage de session (audits Playwright jetables)
 .zabelie-*.tmp.mjs
 
