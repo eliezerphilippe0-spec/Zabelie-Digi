@@ -1,5 +1,25 @@
 # OPS_TODO — Zabelie
 
+## Supervision Jev — l'agent n'a jamais tourné, audit du 21 septembre 2026
+
+⚠️ Mesuré par l'API GitHub Actions : le workflow « Zabelie - Supervision Jev » compte
+**deux exécutions, toutes deux `skipped`**, zéro seconde de travail. Aucune sonde tirée,
+aucun appel TypeSafe émis, aucun rapport produit depuis la fusion de #255/#256. Cause :
+la **variable** `JEV_SUPERVISION_ENABLED` n'est pas posée ; la garde du workflow tombe
+avant même le secret. Un run `skipped` ne s'affiche pas en rouge — la supervision paraît
+installée et ne surveille rien.
+
+Trois gestes porteur, **tous en zone d'arrêt** (variable, secret, dépense) — aucun n'a été
+pris : (1) variable `JEV_SUPERVISION_ENABLED=true`, (2) secret `TYPESAFE_API_KEY` sur une
+clé dédiée, (3) accepter ~24 appels TypeSafe/jour. GitHub → Settings → Secrets and
+variables → **Actions**. Une variable Vercel ne configure pas Actions.
+
+Également relevé, non corrigé : la sonde `access` conclut `pass` sur un 403 d'intermédiaire
+qui n'a jamais atteint Zabelie — elle atteste une autorisation qu'elle n'a pas vue. Portée
+bornée (le rapport global sort en P1, pas en vert), mais la ligne est fausse.
+Voir [l'audit](docs/60-audit-supervision-jev-2026-09-21.md).
+
+
 ## Ma boutique — parcours vendeur du 21 septembre 2026
 
 Accès « Ma boutique » pour tout compte connecté, depuis le menu et le tableau de bord, avec le lien public,
