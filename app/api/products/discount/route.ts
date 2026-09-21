@@ -1,3 +1,4 @@
+import { erreurTraduite } from "@/lib/api-erreur";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSuspension } from "@/lib/auth";
@@ -28,7 +29,6 @@ async function session() {
 const RAISONS: Record<string, string> = {
   introuvable: "Produit introuvable",
   prix_invalide: "Prix invalide (entier positif en HTG).",
-  flash_active: "Annulez la vente flash en cours avant de modifier le prix.",
   pas_une_baisse: "Un rabais BAISSE le prix — saisissez un prix inférieur au prix actuel.",
   variantes_multiples:
     "Choisissez la taille ou le modèle dont vous voulez réduire le prix.",
@@ -79,6 +79,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Rabais impossible" }, { status: 500 });
   }
   if (!data?.ok) {
+    if (data?.reason === "flash_active") return erreurTraduite("sell.rabais.flashActive", 422, { code: data.reason });
     return NextResponse.json(
       { error: RAISONS[data?.reason as string] ?? "Rabais refusé.", code: data?.reason },
       { status: 422 }
@@ -97,7 +98,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  if (await getSuspension(user.id)) return NextResponse.json({ error: "Compte suspendu — action non autorisée." }, { status: 403 });
+  if (await getSuspension(user.id)) return erreurTraduite("api.suspended", 403);
 
   let body: { productId?: string; variantId?: string };
   try {
