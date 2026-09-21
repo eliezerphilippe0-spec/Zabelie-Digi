@@ -18,6 +18,7 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.STUB_PORT ?? 54321);
+const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
 const digitalFacts = new Map();
 const digitalStudios = new Map();
 const digitalProgress = new Map();
@@ -58,6 +59,11 @@ const PRODUCT = {
   seller: { display_name: "Garaj Petyonvil" },
 };
 
+const SHOP_PRODUCTS = [
+  { ...PRODUCT, cover_url: "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64") },
+  { ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", description: "Apprenez à préparer votre première offre avec un guide et des leçons.", kind: "fichier", cover_url: null, product_assets: [{ id: ASSET_ID }] },
+  { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-boutique-test", title: "Conseil pour votre projet", description: "Une consultation pour organiser vos prochaines étapes.", kind: "service", cover_url: null, delivery_days: 2, service_includes: ["Une consultation"] },
+].map(product => ({ ...product, seller: { display_name: "Atelye Lakay" } }));
 const ORDER = {
   id: ORDER_ID,
   order_ref: "ZB-260720-TESTX",
@@ -159,7 +165,14 @@ const server = createServer((req, res) => {
   const sellerPreparation = token.includes("vendeur-preparation");
 
   if (url.pathname === "/__gift-writes") return send(200, giftWrites);
-  if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
+  if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") {
+    if (!BOUTIQUE_FIXTURE) return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      const empty = JSON.parse(body || "{}").p_slug === "boutique-vide";
+      send(200, { id: empty ? "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" : SELLER_ID, display_name: "Atelye Lakay", bio: "Des ressources pour apprendre et préparer votre projet.\nBoutique de démonstration pour les tests.", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: empty ? "boutique-vide" : "atelye-lakay" });
+    });
+  }
   if (["/rest/v1/zabelie_favorites", "/rest/v1/zabelie_shop_follows"].includes(url.pathname)) {
     const column = url.pathname.endsWith("zabelie_favorites") ? "product_id" : "seller_id";
     const key = token + column;
@@ -320,10 +333,11 @@ const server = createServer((req, res) => {
     const slug = eq(url, "slug");
     const id = eq(url, "id");
     const status = eq(url, "status");
-    let rows = sellerPreparation ? [
+    let rows = BOUTIQUE_FIXTURE ? SHOP_PRODUCTS : sellerPreparation ? [
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    if (BOUTIQUE_FIXTURE && (id === DIGITAL_ID || slug === "formation-studio-test")) return single([SHOP_PRODUCTS[1]]);
     if (id === DIGITAL_ID || slug === "formation-studio-test") return single([{ ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", kind: "fichier", product_assets: [{ id: ASSET_ID }], seller_id: SELLER_ID }]);
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
     if (slug) rows = rows.filter((row) => row.slug === slug);
@@ -347,6 +361,7 @@ const server = createServer((req, res) => {
   if (url.pathname.startsWith("/rest/v1/product_assets")) return single([]);
 
   if (url.pathname.startsWith("/rest/v1/zabelie_product_variants")) {
+    if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);
     return send(200, [
       {
         id: "55555555-5555-5555-5555-555555555555",
@@ -358,6 +373,7 @@ const server = createServer((req, res) => {
     ]);
   }
   if (url.pathname.startsWith("/rest/v1/zabelie_product_fitment")) {
+    if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);
     return send(200, [
       {
         year_start: 2008,
@@ -367,6 +383,10 @@ const server = createServer((req, res) => {
     ]);
   }
   if (url.pathname.startsWith("/rest/v1/profiles")) {
+    if (BOUTIQUE_FIXTURE) {
+      const ownShop = eq(url, "id") === SELLER_ID;
+      return single([{ id: ownShop ? SELLER_ID : BUYER_ID, display_name: ownShop ? "Atelye Lakay" : "Acheteur test", role: ownShop ? "creator" : "buyer", boutik_slug: ownShop ? "atelye-lakay" : null }]);
+    }
     return single([{ id: SELLER_ID, display_name: "Garaj Petyonvil", role: "creator" }]);
   }
 
