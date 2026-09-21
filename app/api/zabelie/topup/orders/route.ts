@@ -101,11 +101,11 @@ export async function POST(req: Request) {
   // Produit actif — prix/coût figés côté serveur.
   const { data: product } = await admin
     .from("zabelie_topup_products")
-    .select("id, operator, face_value_htg, cost_htg, price_htg, active")
+    .select("id, operator, face_value_htg, cost_htg, price_htg, active, provider_product_id")
     .eq("id", body.productId)
     .eq("active", true)
     .single();
-  if (!product) {
+  if (!product || !String(product.provider_product_id ?? "").trim()) {
     return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
   }
 

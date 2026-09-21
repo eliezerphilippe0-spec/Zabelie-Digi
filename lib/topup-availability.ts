@@ -2,8 +2,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { cache } from "react";
 export type TopupAvailability = "unavailable" | "sandbox" | "configured";
 export function topupConfiguration(env: Partial<NodeJS.ProcessEnv> = process.env): TopupAvailability {
-  if (env.ZABELIE_TOPUP_FIRSTPARTY_ENABLED !== "true" || !env.RELOADLY_CLIENT_ID?.trim() || !env.RELOADLY_CLIENT_SECRET?.trim()) return "unavailable";
+  if (!env.RELOADLY_CLIENT_ID?.trim() || !env.RELOADLY_CLIENT_SECRET?.trim()) return "unavailable";
+  // Report test configuration without opening sales or claiming real delivery.
   if (env.RELOADLY_MODE === "sandbox") return "sandbox";
+  if (env.ZABELIE_TOPUP_FIRSTPARTY_ENABLED !== "true") return "unavailable";
   return env.RELOADLY_MODE === "production" ? "configured" : "unavailable";
 }
 export const getTopupAvailability = cache(async (): Promise<TopupAvailability> => {

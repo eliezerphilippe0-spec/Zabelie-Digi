@@ -49,6 +49,8 @@ test("top-up configuration is fail-closed and follows the provider production mo
   const env = { ZABELIE_TOPUP_FIRSTPARTY_ENABLED: "true", RELOADLY_CLIENT_ID: "id", RELOADLY_CLIENT_SECRET: "secret", RELOADLY_MODE: "production" };
   assert.equal(topupConfiguration(env), "configured");
   assert.equal(topupConfiguration({ ...env, RELOADLY_MODE: "sandbox" }), "sandbox");
+  assert.equal(topupConfiguration({ ...env, RELOADLY_MODE: "sandbox", ZABELIE_TOPUP_FIRSTPARTY_ENABLED: undefined }), "sandbox");
+  assert.equal(topupConfiguration({ ...env, RELOADLY_MODE: "sandbox", RELOADLY_CLIENT_SECRET: " " }), "unavailable");
   for (const change of [{ RELOADLY_MODE: "live" }, { RELOADLY_MODE: "" }, { RELOADLY_CLIENT_SECRET: " " }, { ZABELIE_TOPUP_FIRSTPARTY_ENABLED: "false" }]) assert.equal(topupConfiguration({ ...env, ...change }), "unavailable");
 });
 test("all four languages cover every new customer-facing label", () => {
