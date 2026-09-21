@@ -420,8 +420,8 @@ export function PhysicalProductForm({
           {!showVariants && (
             <div className="mt-1.5">
               <NetEstimate
-          pricing={pricing}
-          lang={lang}
+                pricing={pricing}
+                lang={lang}
                 priceHTG={price}
                 tier={tier}
                 rateBpsEnVigueur={rateBpsEnVigueur}

@@ -71,7 +71,7 @@ export function NetEstimate({
   const gross = Math.floor(Number(raw));
   // Prix vide, non numérique, nul ou négatif : rien à annoncer. Un produit
   // gratuit (0 HTG) existe sur le catalogue — il n'a pas de net à afficher.
-  if (!Number.isFinite(gross) || gross <= 0) return null;
+  if (!Number.isSafeInteger(gross) || gross <= 0) return null;
 
   // Le taux VENU DE LA BASE prime ; la constante n'est que le repli.
   if (pricing) {

@@ -2,7 +2,7 @@ import type { Lang } from "./i18n";
 const fr = {
   title: "Tarifs vendeurs", direct: "Vos liens et votre boutique", discovery: "Ventes apportées par Zabelie",
   free: "Inscription et boutique sans abonnement. Frais prélevés uniquement sur les ventes.",
-  fixed: "Le montant fixe correspond à {usd} $US, convertis en gourdes au taux affiché lors de la commande.",
+  fixed: "Le montant fixe correspond à {usd} $US, convertis en gourdes au taux Zabelie de {rate} HTG pour 1 $US. Ce taux est figé à la commande.",
   example: "Sur {gross}, vous recevez environ {net} après frais Zabelie.",
   attribution: "Une visite depuis le catalogue ou les recommandations Zabelie attribue ce produit à la marketplace pendant {days} jours sur ce navigateur. Sans cette attribution, le tarif direct s’applique.",
   launch: "Votre lancement sur Zabelie",
@@ -22,7 +22,7 @@ type Copy = { [K in keyof typeof fr]: string };
 const ht: Copy = {
   title: "Pri pou vandè", direct: "Lyen pa ou ak boutik ou", discovery: "Lavant Zabelie pote",
   free: "Enskripsyon ak boutik san abònman. Frè yo soti sèlman sou lavant yo.",
-  fixed: "Montan fiks la se {usd} $US, konvèti an goud ak to ki parèt lè kòmand lan fèt.",
+  fixed: "Montan fiks la se {usd} $US, konvèti an goud ak to Zabelie {rate} HTG pou 1 $US. To sa a fiks lè kòmand lan fèt.",
   example: "Sou {gross}, ou resevwa anviwon {net} apre frè Zabelie.",
   attribution: "Yon vizit nan katalòg oswa rekòmandasyon Zabelie atribye pwodui sa a ak marketplace la pandan {days} jou sou navigatè sa a. San atribisyon sa a, se pri dirèk la ki aplike.",
   launch: "Kòmanse sou Zabelie",
@@ -41,7 +41,7 @@ const ht: Copy = {
 const en: Copy = {
   title: "Seller pricing", direct: "Your links and storefront", discovery: "Sales brought by Zabelie",
   free: "Free signup and storefront, no subscription. Fees apply only to sales.",
-  fixed: "The fixed fee equals {usd} USD, converted to gourdes at the rate shown when the order is created.",
+  fixed: "The fixed fee equals {usd} USD, converted to gourdes at the Zabelie rate of {rate} HTG per 1 USD, fixed when the order is created.",
   example: "On {gross}, you receive approximately {net} after Zabelie fees.",
   attribution: "A visit from the Zabelie catalog or recommendations attributes this product to the marketplace for {days} days in this browser. Without this attribution, direct pricing applies.",
   launch: "Your Zabelie launch",
@@ -60,7 +60,7 @@ const en: Copy = {
 const es: Copy = {
   title: "Tarifas para vendedores", direct: "Tus enlaces y tu tienda", discovery: "Ventas aportadas por Zabelie",
   free: "Registro y tienda sin suscripción. Las tarifas se aplican solo a las ventas.",
-  fixed: "La tarifa fija equivale a {usd} US$, convertidos a gourdes al tipo mostrado al crear el pedido.",
+  fixed: "La tarifa fija equivale a {usd} US$, convertidos a gourdes al tipo Zabelie de {rate} HTG por 1 US$, fijado al crear el pedido.",
   example: "Sobre {gross}, recibes aproximadamente {net} después de las tarifas de Zabelie.",
   attribution: "Una visita desde el catálogo o recomendaciones de Zabelie atribuye este producto al marketplace durante {days} días en este navegador. Sin esta atribución se aplica la tarifa directa.",
   launch: "Tu lanzamiento en Zabelie",

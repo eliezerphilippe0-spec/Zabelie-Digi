@@ -19,7 +19,7 @@ test("Gumroad-shaped fees: direct, discovery, free and launch discount in intege
   assert.throws(()=>sellerFeeHTG(-1,"direct",pricing));
   assert.throws(()=>sellerFeeHTG(0.5,"direct",pricing));
 });
-test("a full fee waiver and a single-rate policy are configurable", () => {
+test("a full fee waiver is configurable", () => {
   assert.equal(sellerFeeHTG(1000,"direct",{...pricing,launch_discount_bps:10000},true),0);
 });
 const now = Date.parse("2026-09-21T12:00:00Z");

@@ -19,7 +19,7 @@ export function SellerPricingPanel({ pricing, lang }: { pricing: SellerPricing; 
         <dd className="mt-2 text-sm">{pricingText(c.example, { gross: fmt(1000) + " HTG", net: fmt(1000 - sellerFeeHTG(1000, source, pricing)) + " HTG" })}</dd>
       </div>)}
     </dl>
-    <p className="mt-4 text-xs text-mist">{pricingText(c.fixed, { usd: fmt(pricing.direct_fixed_usd_cents / 100) })}</p>
+    <p className="mt-4 text-xs text-mist">{pricingText(c.fixed, { usd: fmt(pricing.direct_fixed_usd_cents / 100), rate: fmt(pricing.usd_htg_micros / 1_000_000) })}</p>
     <p className="mt-2 text-xs text-mist">{pricingText(c.attribution, { days: pricing.attribution_days })}</p>
     <p className="mt-2 text-xs text-mist">{c.estimate}</p>
     <div className="mt-5 border-t border-line pt-4">
