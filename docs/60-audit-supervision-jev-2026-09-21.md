@@ -48,10 +48,15 @@ par sa propre documentation, et il est actif depuis la fusion de #255/#256.
 
 C'est exactement la classe nommée dans `CLAUDE.md` : *le code sans appelant*, et
 son corollaire *un appelant n'est pas une exécution*. Ici le workflow existe, il
-est déclenché, il est même planifié — et il ne s'exécute pas. Les tests
-(`tests/jev-supervisor.test.ts:180`) vérifient que la garde est **écrite** ;
-aucun ne vérifie qu'elle **laisse passer**. Un test structurel de plus qui
-porte sur le texte et non sur ce qui commande.
+est déclenché, il est même planifié — et il ne s'exécute pas. Le test qui
+gardait ce point vérifiait que la garde était **écrite** ; aucun ne vérifiait
+qu'elle **laisse passer**. Un test structurel de plus qui porte sur le texte et
+non sur ce qui commande.
+
+→ **Corrigé le 2026-09-21, §7.** L'activation ne garde plus le job : le script
+la lit et rapporte `inactive` en sortant en échec. Le silence était le défaut,
+il n'est plus possible. **Poser la variable et le secret reste ton geste (§6) —
+la correction rend l'absence visible, elle ne la comble pas.**
 
 ## 2. Le chemin de sonde est impraticable depuis une session agent
 
@@ -197,3 +202,58 @@ que le premier rapport porte `jev: ok`. **Un run `skipped` n'est pas une
 réussite** — c'est l'état actuel.
 
 Une variable Vercel ou un `.env.local` ne configure pas GitHub Actions.
+
+## 7. Le silence supprimé — correctif du 2026-09-21
+
+Le défaut de §1 n'est pas que la variable manque : c'est que **son absence ne
+produisait aucun signal**. GitHub rendait un `skipped`, qui ne s'affiche pas en
+rouge, et `docs/JEV-SUPERVISION.md:46` promettait pourtant « Aucun succès
+silencieux ». **C'est la garde elle-même qui défaisait la promesse de sa doc.**
+
+L'activation a donc été déplacée du `if:` du job vers le script :
+
+```diff
+-    if: … && github.ref == 'refs/heads/main' && vars.JEV_SUPERVISION_ENABLED == 'true'
++    if: … && github.ref == 'refs/heads/main'
+         env:
++          JEV_SUPERVISION_ENABLED: ${{ vars.JEV_SUPERVISION_ENABLED }}
+```
+
+Le job tourne désormais toujours. Sans activation, `main()` écrit un rapport
+`status: "inactive"` portant une seule ligne — `activation: fail` — avec la
+bannière « ⛔ SUPERVISION INACTIVE — aucune sonde n'a été tirée », et sort en
+**code 2**, ce qui rougit l'étape.
+
+**L'opt-in du porteur est intact, et c'est le point qui compte** : sans
+activation, aucune sonde n'est tirée, aucun appel TypeSafe n'est émis, rien
+n'est facturé. La correction rend l'absence *visible*, elle ne la *comble* pas.
+Les trois gestes du §6 restent entiers et restent les tiens.
+
+⚠️ **Conséquence à connaître** : tant que la variable n'est pas posée, le run
+horaire est **rouge** au lieu d'être sauté. C'est l'intention — un agent de
+supervision inerte doit se voir — mais c'est une notification par heure. Si le
+bruit est excessif avant activation, désactiver le workflow dans Actions est la
+bonne réponse ; ne pas remettre la garde dans le `if:`, qui ramènerait le
+silence.
+
+La même règle vaut en local : `JEV_SUPERVISION_ENABLED=true` est désormais
+requis pour sonder. Une règle unique évite le piège d'un comportement qui
+diffère entre local et CI.
+
+### Instrument éprouvé
+
+| Mutation | Tests rouges |
+|---|---|
+| garde d'activation **supprimée** (`supervise()` toujours appelé) | #17, #18 |
+| bannière d'inactivité rendue **inatteignable** | #17, #19 |
+| garde **remise dans le `if:` du job** *(la régression d'origine)* | #20 |
+
+Les trois échouent, chacune sur les tests qui la visent. La troisième est la
+plus importante : elle garde exactement la faute mesurée aujourd'hui, de sorte
+qu'un retour à l'ancienne forme rougisse au lieu de repasser inaperçu.
+
+Le test #17 exerce le **vrai chemin du CLI** en sous-processus, pas seulement
+`supervise()` : il assure que `report.checks` ne porte **que** `activation` —
+sept entrées signifieraient que le site a été sondé sans opt-in.
+
+Validation : `tsc --noEmit` propre, lint 0 erreur, suite complète verte.

@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { supervise, probeSite, inspectCI, evaluateWithJev, renderReport } from "../scripts/jev-supervisor.mjs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { supervise, probeSite, inspectCI, evaluateWithJev, renderReport, rapportInactif } from "../scripts/jev-supervisor.mjs";
 
 const commit = "a".repeat(40);
 const release = createHash("sha256").update(commit).digest("hex");
@@ -202,11 +205,60 @@ test("faible confiance : le classement Jev est conservé mais pas appliqué", as
   assert.match(renderReport(result), /non exécutée/);
 });
 
+test("sans activation : rapport « inactive », sortie non nulle, aucune sonde tirée", () => {
+  // Le chemin réel du CLI, pas seulement supervise(). Mesuré le 2026-09-21 :
+  // la garde vivait dans le `if:` du job et rendait un `skipped` muet.
+  const dossier = mkdtempSync(join(tmpdir(), "jev-inactif-"));
+  try {
+    const run = spawnSync(process.execPath, ["scripts/jev-supervisor.mjs", "--output-dir", dossier], {
+      env: { ...process.env, JEV_SUPERVISION_ENABLED: "", TYPESAFE_API_KEY: "", GITHUB_TOKEN: "", GITHUB_STEP_SUMMARY: "" },
+      encoding: "utf8",
+    });
+    assert.equal(run.status, 2, "l’absence d’activation doit faire échouer l’étape");
+    const report = JSON.parse(readFileSync(join(dossier, "report.json"), "utf8"));
+    assert.equal(report.status, "inactive");
+    // AUCUNE sonde : la liste ne porte que l’activation. Sept entrées voudraient
+    // dire que le site a été sondé sans que le porteur l’ait demandé.
+    assert.deepEqual(report.checks.map((c: { id: string }) => c.id), ["activation"]);
+    assert.equal(report.jev.status, "not_configured");
+    assert.equal(report.mutationsPerformed, 0);
+    assert.match(readFileSync(join(dossier, "report.md"), "utf8"), /SUPERVISION INACTIVE/);
+  } finally {
+    rmSync(dossier, { recursive: true, force: true });
+  }
+});
+
+test("une activation approximative ne vaut pas activation", () => {
+  for (const valeur of ["false", "True", "1", "yes", " "]) {
+    const dossier = mkdtempSync(join(tmpdir(), "jev-approx-"));
+    try {
+      const run = spawnSync(process.execPath, ["scripts/jev-supervisor.mjs", "--output-dir", dossier], {
+        env: { ...process.env, JEV_SUPERVISION_ENABLED: valeur, TYPESAFE_API_KEY: "", GITHUB_TOKEN: "", GITHUB_STEP_SUMMARY: "" },
+        encoding: "utf8",
+      });
+      assert.equal(run.status, 2, `« ${valeur} » ne doit pas activer la supervision`);
+      assert.equal(JSON.parse(readFileSync(join(dossier, "report.json"), "utf8")).status, "inactive");
+    } finally {
+      rmSync(dossier, { recursive: true, force: true });
+    }
+  }
+});
+
+test("la bannière d’inactivité ne s’affiche QUE sur un rapport inactif", async () => {
+  assert.match(renderReport(rapportInactif(() => instant)), /SUPERVISION INACTIVE/);
+  const { fetcher } = fixture();
+  const sain = await supervise({ fetcher, now: () => instant, key: "test" });
+  assert.doesNotMatch(renderReport(sain), /SUPERVISION INACTIVE/);
+});
+
 test("workflow : activation explicite, main uniquement, jeton lecture seule, zéro installation avec secrets", () => {
   const src = readFileSync(".github/workflows/jev-supervision.yml", "utf8");
   assert.match(src, /cron: "17 \* \* \* \*"/);
   assert.match(src, /github.ref == 'refs\/heads\/main'/);
-  assert.match(src, /vars.JEV_SUPERVISION_ENABLED == 'true'/);
+  // L’activation ne doit PAS garder le job : un `skipped` passe pour un vert.
+  // Elle est lue par le script, qui rapporte « inactive » et sort en échec.
+  assert.doesNotMatch(src, /if:[^\n]*JEV_SUPERVISION_ENABLED/);
+  assert.match(src, /JEV_SUPERVISION_ENABLED: \$\{\{ vars\.JEV_SUPERVISION_ENABLED \}\}/);
   assert.match(src, /contents: read/);
   assert.match(src, /actions: read/);
   assert.match(src, /persist-credentials: false/);

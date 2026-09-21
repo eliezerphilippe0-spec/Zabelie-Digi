@@ -2,12 +2,19 @@
 
 ## Supervision Jev — l'agent n'a jamais tourné, audit du 21 septembre 2026
 
-⚠️ Mesuré par l'API GitHub Actions : le workflow « Zabelie - Supervision Jev » compte
+⚠️ Mesuré par l'API GitHub Actions : le workflow « Zabelie - Supervision Jev » comptait
 **deux exécutions, toutes deux `skipped`**, zéro seconde de travail. Aucune sonde tirée,
 aucun appel TypeSafe émis, aucun rapport produit depuis la fusion de #255/#256. Cause :
-la **variable** `JEV_SUPERVISION_ENABLED` n'est pas posée ; la garde du workflow tombe
-avant même le secret. Un run `skipped` ne s'affiche pas en rouge — la supervision paraît
-installée et ne surveille rien.
+la **variable** `JEV_SUPERVISION_ENABLED` n'est pas posée ; la garde du workflow tombait
+avant même le secret. Un run `skipped` ne s'affiche pas en rouge — la supervision paraissait
+installée et ne surveillait rien.
+
+**Le silence a été supprimé le 21 septembre** : l'activation ne garde plus le job, elle est
+lue par le script, qui écrit un rapport `inactive` et **sort en échec**. Le job tourne
+toujours, mais sans activation il ne tire aucune sonde et ne facture rien — l'opt-in est
+intact. ⚠️ Conséquence : **tant que la variable n'est pas posée, le run horaire est rouge**
+au lieu d'être sauté. C'est l'intention. Si le bruit gêne avant activation, désactiver le
+workflow dans Actions ; ne pas remettre la garde dans le `if:`, ce qui ramènerait le silence.
 
 Trois gestes porteur, **tous en zone d'arrêt** (variable, secret, dépense) — aucun n'a été
 pris : (1) variable `JEV_SUPERVISION_ENABLED=true`, (2) secret `TYPESAFE_API_KEY` sur une

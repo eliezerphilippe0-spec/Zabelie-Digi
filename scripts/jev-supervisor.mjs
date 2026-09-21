@@ -190,15 +190,51 @@ export async function supervise({ fetcher = fetch, key = "", githubToken = "", n
   };
 }
 
+/**
+ * ABSENCE D'ACTIVATION = ÉTAT RAPPORTÉ, JAMAIS SILENCE.
+ *
+ * La garde vivait dans le `if:` du job : sans la variable, GitHub rendait un
+ * run `skipped` — indiscernable d'un vert dans l'onglet Actions. Mesuré le
+ * 2026-09-21 : deux runs, deux `skipped`, zéro sonde tirée depuis #255, et
+ * personne ne l'a vu. docs/JEV-SUPERVISION.md promettait pourtant « Aucun
+ * succès silencieux » ; c'est la garde elle-même qui le défaisait.
+ *
+ * La garde vit désormais ICI : le job tourne toujours, et sans activation il
+ * produit un rapport « inactive » et sort en échec. L'opt-in du porteur est
+ * intact — aucune sonde n'est tirée, aucun appel facturable n'est émis.
+ */
+export function rapportInactif(now = Date.now) {
+  return {
+    schemaVersion: 1, generatedAt: new Date(now()).toISOString(), durationMs: 0,
+    mode: "observe_and_recommend", priority: "P2", status: "inactive",
+    checks: [{ id: "activation", status: "fail", httpStatus: null, attempts: 0, durationMs: 0, runbook: "agent" }],
+    jev: { status: "not_configured" },
+    recommendations: [{ id: "agent", text: RUNBOOKS.agent, requiresHumanApproval: true }],
+    mutationsPerformed: 0,
+    limitations: [
+      "AUCUNE SONDE N’A ÉTÉ TIRÉE : ce rapport ne dit RIEN sur la santé de Zabelie.",
+      "Poser la variable JEV_SUPERVISION_ENABLED=true et le secret TYPESAFE_API_KEY dans GitHub → Settings → Secrets and variables → Actions.",
+      "Une variable Vercel ou un fichier local ne configure pas GitHub Actions.",
+    ],
+  };
+}
+
 export function renderReport(report) {
   const rows = report.checks.map((c) => `| ${c.id} | ${c.status} | ${c.httpStatus ?? "—"} |`).join("\n");
-  return `# Zabelie — supervision Jev\n\nExécution : ${report.generatedAt}\n\nÉtat : **${report.status}** · Priorité : **${report.priority}** · Jev : **${report.jev.status}**\n\n| Contrôle | Résultat | HTTP |\n|---|---|---|\n${rows}\n\n## Maintenance proposée (non exécutée)\n\n${report.recommendations.map((r) => `- ${r.text}`).join("\n")}\n\n## Limites\n\n${report.limitations.map((l) => `- ${l}`).join("\n")}\n\nAucune modification de production. Une alerte n’est pas une preuve de cause racine.\n`;
+  const banniere = report.status === "inactive"
+    ? "\n> ⛔ **SUPERVISION INACTIVE — aucune sonde n’a été tirée.**\n> Un run vert ou sauté n’atteste rien. Voir les limites ci-dessous.\n"
+    : "";
+  return `# Zabelie — supervision Jev\n${banniere}\nExécution : ${report.generatedAt}\n\nÉtat : **${report.status}** · Priorité : **${report.priority}** · Jev : **${report.jev.status}**\n\n| Contrôle | Résultat | HTTP |\n|---|---|---|\n${rows}\n\n## Maintenance proposée (non exécutée)\n\n${report.recommendations.map((r) => `- ${r.text}`).join("\n")}\n\n## Limites\n\n${report.limitations.map((l) => `- ${l}`).join("\n")}\n\nAucune modification de production. Une alerte n’est pas une preuve de cause racine.\n`;
 }
 
 async function main() {
   const outputArg = process.argv.indexOf("--output-dir");
   const output = resolve(outputArg >= 0 && process.argv[outputArg + 1] ? process.argv[outputArg + 1] : "agent-reports");
-  const report = await supervise({ key: process.env.TYPESAFE_API_KEY ?? "", githubToken: process.env.GITHUB_TOKEN ?? "" });
+  // Sans activation : aucune sonde, aucun appel facturable — mais un rapport
+  // écrit et un code de sortie non nul. Le silence est le seul état interdit.
+  const report = (process.env.JEV_SUPERVISION_ENABLED ?? "").trim() === "true"
+    ? await supervise({ key: process.env.TYPESAFE_API_KEY ?? "", githubToken: process.env.GITHUB_TOKEN ?? "" })
+    : rapportInactif();
   await mkdir(output, { recursive: true, mode: 0o700 });
   await writeFile(join(output, "report.json"), JSON.stringify(report, null, 2) + "\n", { mode: 0o600 });
   await writeFile(join(output, "report.md"), renderReport(report), { mode: 0o600 });
