@@ -17,7 +17,7 @@ Il s'agit des frais Zabelie, pas d'une intégration avec Gumroad ni de son statu
 
 ## Avantage de lancement préparé
 
-Le montant de l'avantage et les deux variantes tarifaires ont été soumis au porteur pour clarification dans cette tâche ; aucune réponse reçue au moment de la rédaction. Valeurs préparées pour revue : réduction de 50 % de l'ensemble des frais Zabelie, 3 ventes maximum sur 30 jours. Ne pas présenter ces valeurs proposées comme une décision déjà confirmée.
+Décision confirmée par le porteur le 21 septembre 2026 (« go » en réponse au récapitulatif de la PR 257) : deux tarifs, direct à 10 % + 0,50 USD convertis en HTG et découverte à 30 %. Avantage : réduction de 50 % de l'ensemble des frais Zabelie, 3 ventes maximum sur 30 jours, première fiche créée sous 7 jours. Autorisation de fusion, déploiement et activation de ces paramètres.
 
 La première fiche doit être créée dans les 7 jours de l'inscription Auth. La date modifiable du profil n'est jamais la preuve d'éligibilité. Le délai de modération n'est pas décompté. Le premier passage à « publié » démarre les 30 jours uniquement lorsque les paiements réels sont déclarés prêts. Une publication en attente des paiements commence lors de leur activation.
 
