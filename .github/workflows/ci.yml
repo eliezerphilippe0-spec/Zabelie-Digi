@@ -124,6 +124,9 @@ jobs:
       - name: E2E (money path)
         run: npm run test:e2e
 
+      - name: Sandbox top-ups cannot accept payment
+        run: npx playwright test --config=playwright.topup.config.ts
+
       # Même check requis e2e, nouveau build isolé : les variables publiques
       # doivent être présentes à la compilation du client navigateur.
       - name: Build avec le client Auth configuré

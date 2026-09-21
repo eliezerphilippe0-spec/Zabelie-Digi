@@ -16,11 +16,13 @@ import { reloadlyProvider, isReloadlyEnabled } from "./reloadly";
 import { fulfillmentBackoffMs } from "./limits";
 
 export function getTopupProvider(): TopupProvider | null {
-  return isReloadlyEnabled() ? reloadlyProvider : null;
+  return isTopupEnabled() ? reloadlyProvider : null;
 }
 
 export function isTopupEnabled(): boolean {
-  return isReloadlyEnabled();
+  // A paid order must never be fulfilled by a simulated Sandbox top-up.
+  // Independent of the sales flag: existing paid orders still need service.
+  return process.env.RELOADLY_MODE === "production" && isReloadlyEnabled();
 }
 
 type TopupOrderRow = {
