@@ -2,7 +2,7 @@
 
 ## Ma boutique — parcours vendeur du 21 septembre 2026
 
-Accès « Ma boutique » depuis le compte vendeur et le tableau de bord, avec le lien public,
+Accès « Ma boutique » pour tout compte connecté, depuis le menu et le tableau de bord, avec le lien public,
 la modification du profil existant et le partage WhatsApp. Les boutiques réutilisent les
 routes actuelles et des offres lisibles sur mobile ; la fiche digitale place l'achat avant
 le programme détaillé. Traductions FR, HT, EN et ES. Aucun nouveau modèle de données.

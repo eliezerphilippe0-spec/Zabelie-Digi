@@ -3,11 +3,11 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { mkdir } from "node:fs/promises";
 
-async function connectSeller(page: Page) {
+async function connectAccount(page: Page, seller = true) {
   const value = "base64-" + Buffer.from(JSON.stringify({
-    access_token: "vendeur-preparation-boutique", refresh_token: "refresh-test", token_type: "bearer",
+    access_token: seller ? "vendeur-preparation-boutique" : "acheteur-boutique", refresh_token: "refresh-test", token_type: "bearer",
     expires_in: 3600, expires_at: 4102444800,
-    user: { id: "22222222-2222-2222-2222-222222222222", aud: "authenticated", role: "authenticated",
+    user: { id: seller ? "22222222-2222-2222-2222-222222222222" : "11111111-1111-1111-1111-111111111111", aud: "authenticated", role: "authenticated",
       email: "vendeur@example.ht", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" },
   })).toString("base64url");
   await page.context().addCookies([{ name: "sb-127-auth-token", value, domain: "127.0.0.1", path: "/" }]);
@@ -70,7 +70,7 @@ for (const width of [390, 1280]) {
 }
 
 test("seller can open, edit and share the same public shop", async ({ page }) => {
-  await connectSeller(page);
+  await connectAccount(page);
   await page.setViewportSize({ width: 390, height: 900 });
   const shared: string[] = [];
   await page.exposeFunction("recordShopShare", (value: string) => shared.push(value));
@@ -117,4 +117,15 @@ test("legacy shop link, empty shop and Haitian Creole stay usable", async ({ pag
   await page.goto("/boutik/boutique-vide");
   await expect(page.getByText("Poko gen pwodui pibliye.", { exact: true })).toBeVisible();
   await expect(page.locator('a[href*="/produit/"]')).toHaveCount(0);
+});
+
+
+test("a buyer without products can prepare the shop from the same account", async ({ page }) => {
+  await connectAccount(page, false);
+  await page.goto("/tableau-de-bord");
+  const shop = page.getByRole("region", { name: "Ma boutique" });
+  await expect(shop).toBeVisible();
+  await expect(shop.getByRole("link", { name: "Voir ma boutique", exact: true })).toHaveAttribute("href", "/createur/11111111-1111-1111-1111-111111111111");
+  await page.locator('summary[aria-label="Mon compte"]').click();
+  await expect(page.getByRole("link", { name: "Ma boutique", exact: true })).toBeVisible();
 });
