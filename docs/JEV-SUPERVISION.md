@@ -7,8 +7,16 @@ reste indépendant : lui envoyer un message ne lance pas ce superviseur.
 ## Fonctionnement
 
 GitHub Actions exécute `scripts/jev-supervisor.mjs` chaque heure à la minute 17
-UTC, une fois le workflow fusionné sur `main` ET la variable d’activation posée.
-Un lancement manuel est possible depuis Actions. Une seule exécution à la fois.
+UTC, une fois le workflow fusionné sur `main`. Un lancement manuel est possible
+depuis Actions. Une seule exécution à la fois.
+
+⚠️ **L’activation n’est pas une garde de job.** Elle l’a été jusqu’au
+2026-09-21, et le résultat mesuré fut : deux runs, deux `skipped`, zéro sonde
+tirée depuis la fusion — un `skipped` ne s’affichant pas en rouge, la
+supervision paraissait installée et ne surveillait rien. Le job tourne
+désormais toujours ; c’est le script qui lit `JEV_SUPERVISION_ENABLED` et, en
+son absence, écrit un rapport `inactive` et **sort en échec**. L’opt-in reste
+entier : sans activation, aucune sonde n’est tirée et rien n’est facturé.
 
 1. Vérifier l’accueil, la sonde de vie, la disponibilité de la base via sa sonde
    publique, l’empreinte de livraison et le refus d’un appel Jev sans session.
@@ -39,8 +47,9 @@ Le workflow n’a besoin d’aucun jeton Vercel, clé Supabase ou accès aux pai
 Son jeton GitHub est fourni automatiquement et est en lecture seule.
 
 Puis Actions → **Zabelie - Supervision Jev** → Run workflow → main.
-Vérifier le premier rapport et le statut `jev: ok`. Un workflow « skipped »
-signifie que l’agent n’a pas tourné, pas que le site est sain.
+Vérifier le premier rapport et le statut `jev: ok`. Tant que la variable n’est
+pas posée, le run est **rouge** avec un rapport `inactive` et la bannière
+« SUPERVISION INACTIVE » — c’est le comportement attendu, pas une panne.
 
 Sans clé ou avec une erreur Jev, les sondes fonctionnent encore mais le rapport
 est explicitement dégradé et le workflow échoue. Aucun succès silencieux.
@@ -49,21 +58,30 @@ Actions du compte. Aucun email, WhatsApp ou SMS personnalisé n’est configuré
 
 ## Usage local
 
+⚠️ **La même règle s’applique en local qu’en CI** : pas d’activation, pas de
+sonde. C’est volontaire — une règle unique évite le piège d’un comportement qui
+diffère entre les deux, et empêche de sonder la production sans l’avoir demandé.
+
 Sans Jev (vérification des sondes uniquement) :
 
 ```bash
-node scripts/jev-supervisor.mjs
+JEV_SUPERVISION_ENABLED=true node scripts/jev-supervisor.mjs
 ```
 
 Avec une clé déjà enregistrée dans le fichier local ignoré :
 
 ```bash
-node --env-file=.env.local scripts/jev-supervisor.mjs
+JEV_SUPERVISION_ENABLED=true node --env-file=.env.local scripts/jev-supervisor.mjs
 ```
+
+⚠️ **Depuis une session agent, les sondes sont impraticables** : le proxy
+sortant refuse `zabelie.com:443` (403 sur CONNECT). Le superviseur rend alors un
+faux `incident / P1` dont les échecs sont ceux du proxy. Ne jamais recopier cette
+sortie comme un état de production. → `docs/60-audit-supervision-jev-2026-09-21.md` §2.
 
 Les rapports locaux sont dans `agent-reports/`, ignoré par Git.
 Codes de sortie : 0 = sondes et Jev opérationnels ; 1 = incident ;
-2 = couverture dégradée, configuration absente, état inconnu ou transitoire.
+2 = couverture dégradée, **supervision inactive**, état inconnu ou transitoire.
 Une CI en attente est « pending », jamais assimilée à un succès.
 
 ## Garde-fous et limites
