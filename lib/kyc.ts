@@ -8,7 +8,8 @@ import { isMissingTable } from "@/lib/product-media";
  * toute surface se tait. On n'annonce pas une vérification qui n'existe pas.
  */
 
-export const KYC_BUCKET = "kyc-documents";
+import { KYC_BUCKET } from "@/lib/storage-buckets";
+export { KYC_BUCKET };
 /** Arbitrage porteur 2026-08-15 : CIN ou passeport. `selfie` complète la paire. */
 export const KYC_TYPES = ["cin", "paspo", "selfie"] as const;
 export type KycType = (typeof KYC_TYPES)[number];
