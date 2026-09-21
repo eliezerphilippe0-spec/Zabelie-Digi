@@ -48,6 +48,8 @@ export type VariantChoice = {
   id: string;
   label: string | null;
   priceHTG: number;
+  compareHTG?: number | null;
+  options?: BuyOption[];
   available: number;
 };
 
@@ -175,7 +177,7 @@ export function BuyButton({
     setCouponError(false);
     const issue = await appelSession<{ valid?: boolean; percent?: number; priceHtg?: number }>(
       "/api/coupons/validate",
-      { productId, code },
+      { productId, code, variantId: variantId ?? undefined },
     );
     setChecking(false);
 
@@ -275,7 +277,7 @@ export function BuyButton({
     }
   }
 
-  const [primary, ...others] = options;
+  const [primary, ...others] = selected?.options ?? options;
   const busy = loadingRail !== null || uncertain;
 
   const stockBadge = (n: number) => {
@@ -330,15 +332,17 @@ export function BuyButton({
                       key={v.id}
                       type="button"
                       disabled={out}
-                      onClick={() => setVariantId(v.id)}
+                      aria-pressed={active}
+                      onClick={() => { setVariantId(v.id); setApplied(null); setCouponError(false); }}
                       className={`rounded-xl border px-3 py-2 text-sm transition ${
                         active
                           ? "border-brand bg-brand/10 text-cloud"
                           : "border-line text-mist hover:border-brand/50"
                       } ${out ? "cursor-not-allowed line-through opacity-50" : ""}`}
                     >
-                      {v.label ?? "Standard"}
+                      {v.label ?? "Standard"}{" "}
                       <span className="ml-2 text-xs opacity-80">
+                        {v.compareHTG && v.compareHTG > v.priceHTG ? <><s className="mr-2">{fmtHtg(v.compareHTG)}</s>{" "}</> : null}
                         {fmtHtg(v.priceHTG)}
                       </span>
                     </button>

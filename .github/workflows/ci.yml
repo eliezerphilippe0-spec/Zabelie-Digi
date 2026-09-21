@@ -130,6 +130,9 @@ jobs:
       - name: Boutique and digital purchase journey
         run: npx playwright test --config=playwright.boutique.config.ts
 
+      - name: Variant discounts and purchase price
+        run: npx playwright test --config=playwright.rabais.config.ts
+
       - name: Sandbox top-ups cannot accept payment
         run: npx playwright test --config=playwright.topup.config.ts
 

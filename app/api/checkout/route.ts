@@ -5,6 +5,7 @@ import { attributedSource, SALE_SOURCE_COOKIE } from "@/lib/sale-attribution";
 import { configService } from "@/lib/supabase/config";
 import { digitalProductIsClean } from "@/lib/digital-file-security";
 import { normalizeRecipient } from "@/lib/order-recipient";
+import { readPurchasePrice } from "@/lib/purchase-price";
 import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -318,7 +319,13 @@ export async function POST(req: Request) {
     }
   }
 
-  let finalPriceHtg = product.price_htg;
+  const purchase = await readPurchasePrice(admin, product, variantInput, quantityInput);
+  if (!purchase.ok) {
+    return NextResponse.json({ error: t(lang, "api.variant.invalid"), code: purchase.code }, { status: purchase.code === "price_unavailable" ? 503 : 422 });
+  }
+  const variantId = purchase.variantId;
+  const currentPriceHtg = purchase.priceHTG;
+  let finalPriceHtg = currentPriceHtg;
   let couponCode: string | null = null;
   let couponId: string | null = null;
   let discountHtg = 0;
@@ -348,8 +355,8 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
-    finalPriceHtg = flash.prixFlashHtg;
-    discountHtg = product.price_htg - flash.prixFlashHtg;
+    finalPriceHtg = flash.prixFlashHtg * purchase.quantity;
+    discountHtg = currentPriceHtg - finalPriceHtg;
   }
 
   if (!flash && typeof couponInput === "string" && couponInput.trim()) {
@@ -373,8 +380,8 @@ export async function POST(req: Request) {
       return rejected();
     }
 
-    finalPriceHtg = discountedPriceHtg(product.price_htg, coupon.percent);
-    discountHtg = product.price_htg - finalPriceHtg;
+    finalPriceHtg = discountedPriceHtg(currentPriceHtg, coupon.percent);
+    discountHtg = currentPriceHtg - finalPriceHtg;
     couponCode = code;
     couponId = coupon.id;
   }
@@ -589,9 +596,8 @@ export async function POST(req: Request) {
   // ici, à la commande — pas à la livraison : deux acheteurs ne peuvent pas
   // acheter la même unité. La réservation expire seule (TTL 30 min) si le
   // paiement n'aboutit pas.
-  const variantId = typeof variantInput === "string" ? variantInput : null;
   if (variantId) {
-    const qty = Number.isInteger(quantityInput) ? (quantityInput as number) : 1;
+    const qty = purchase.quantity;
     const { data: reservation, error: resErr } = await admin.rpc(
       "zabelie_reserve_stock",
       { p_variant_id: variantId, p_order_id: order.id, p_quantity: qty }
