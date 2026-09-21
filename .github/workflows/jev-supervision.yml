@@ -1,0 +1,43 @@
+name: Zabelie - Supervision Jev
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Off-peak minute; GitHub schedules are best-effort, not a real-time SLA.
+    - cron: "17 * * * *"
+
+# No repository writes, PR creation, deployments or database credentials.
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: zabelie-jev-supervision
+  cancel-in-progress: false
+
+jobs:
+  supervise:
+    if: github.repository == 'eliezerphilippe0-spec/Zabelie-Digi' && github.ref == 'refs/heads/main' && vars.JEV_SUPERVISION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Node built-ins only: no npm install or third-party lifecycle scripts with secrets.
+      - name: Vérifier et proposer la maintenance
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/jev-supervisor.mjs --output-dir "$RUNNER_TEMP/jev-report"
+      - name: Conserver le rapport même en cas d’alerte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jev-supervision-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/jev-report/
+          if-no-files-found: error
+          retention-days: 14
