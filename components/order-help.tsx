@@ -1,18 +1,20 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { MessageForm } from "@/components/message-form";
 import type { MarketplaceCopy } from "@/lib/marketplace-copy";
 
-export function OrderHelp({ orderId, orderRef, productId, labels, messageLabels, supportUrl }: {
+export function OrderHelp({ orderId, orderRef, productId, labels, messageLabels, supportUrl, caseLabel }: {
   orderId: string; orderRef: string; productId?: string; labels: MarketplaceCopy;
   messageLabels: { placeholder: string; send: string; sending: string; sent: string; warn: string };
-  supportUrl: string | null;
+  supportUrl: string | null; caseLabel: string;
 }) {
   const [reason, setReason] = useState<"debited" | "notReceived" | "wrong">("debited");
   const [copied, setCopied] = useState(false);
   const text = `${labels.order}: ${orderRef}\nID: ${orderId}\n${labels[reason]}\n`;
   return <details className="mt-3 max-w-lg rounded-xl border border-line p-3">
     <summary className="min-h-11 cursor-pointer text-sm font-semibold">{labels.help}</summary>
+    <Link href={`/assistance/commande/${orderId}`} className="inline-flex min-h-11 items-center text-sm font-semibold underline">{caseLabel}</Link>
     <label className="mt-2 block text-sm">{labels.help}<select className="mt-2 w-full rounded-xl border border-line bg-surface p-3" value={reason}
       onChange={e => { setReason(e.target.value as typeof reason); setCopied(false); }}>
       {(["debited", "notReceived", "wrong"] as const).map(r => <option key={r} value={r}>{labels[r]}</option>)}

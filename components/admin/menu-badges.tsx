@@ -20,6 +20,7 @@ type Counts = { produits: number; zelle: number; rechaj: number; litiges: number
 
 /** Entrées de navigation : libellé (admin = fr, convention existante), cible, clé de compteur. */
 export const MENU_ADMIN: { label: string; href: string; cle: keyof Counts | null }[] = [
+  { label: "Opérations", href: "/admin/operations", cle: null },
   { label: "Back-office", href: "/admin", cle: null },
   { label: "Produits", href: "/admin#produits", cle: "produits" },
   { label: "Zelle", href: "/admin#zelle", cle: "zelle" },

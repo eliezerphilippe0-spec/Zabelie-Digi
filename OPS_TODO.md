@@ -1,5 +1,10 @@
 # OPS_TODO — Zabelie
 
+## Opérations marketplace Haïti — 22 septembre 2026
+
+PR 268 empilée sur 267. Migration 0113 après 0112, avant déploiement. Dossiers acheteur/vendeur, file administrateur MFA, retour effectif des fonds documenté, rotation des paiements et contrôle Stripe, mesures HTG par zone. Recette automatisée et répétition de restauration fictive ajoutées. La recette financière réelle, la restauration d’une sauvegarde réelle et la preuve du scanner en production restent à consigner : voir docs/operations-haiti.md. Aucun rail supplémentaire activé.
+
+
 ## Protections backend - 22 septembre 2026
 
 Migration 0112 a appliquer avant le deploiement de ces corrections, apres validation CI : garde transactionnel des vendeurs suspendus, boutique publique masquee et echecs Stripe differes idempotents. Le serveur refuse un statut de compte indetermine et nettoie les coordonnees a la fermeture. Evenements Stripe requis sur le webhook existant : checkout.session.completed, checkout.session.async_payment_succeeded et checkout.session.async_payment_failed. Aucun paiement reel necessaire aux tests. Production inchangee a ce stade.

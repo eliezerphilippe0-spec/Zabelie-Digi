@@ -1,3 +1,5 @@
+import { getAdminUser } from "@/lib/auth";
+import { exigerTraceAdmin } from "@/lib/admin-audit";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { retrieveOrderPayment, redactPayment } from "@/lib/moncash";
@@ -19,7 +21,7 @@ export const dynamic = "force-dynamic";
  * La logique d'orchestration vit dans lib/reconcile.ts (testée unitairement).
  */
 
-function authorize(req: Request): boolean {
+async function authorize(req: Request): Promise<boolean> {
   const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
   const cronSecret = process.env.CRON_SECRET;
   const reconcileSecret = process.env.RECONCILE_SECRET;
@@ -29,6 +31,12 @@ function authorize(req: Request): boolean {
     if (bearer === reconcileSecret) return true;
     if (req.headers.get("x-reconcile-secret") === reconcileSecret) return true;
   }
+  if (req.method === "POST" && req.headers.get("content-type")?.startsWith("application/json")) {
+    const user = await getAdminUser();
+    if (user?.role === "admin") return exigerTraceAdmin(createAdminClient(), {
+      actorId:user.id,action:"payments.reconcile",targetType:"payments",
+    });
+  }
   return false;
 }
 
@@ -36,15 +44,7 @@ function liveDeps(): ReconcileDeps {
   const admin = createAdminClient();
   return {
     listPending: async () => {
-      // MonCash UNIQUEMENT : Stripe se confirme par webhook signé, Zelle par
-      // l'admin. Interroger MonCash pour ces rails serait toujours « pending ».
-      const { data, error } = await admin
-        .from("payments")
-        .select("idempotency_key, order_id, created_at")
-        .eq("status", "pending")
-        .eq("rail", "moncash")
-        .order("created_at", { ascending: true })
-        .limit(50);
+      const { data, error } = await admin.rpc("zabelie_claim_pending_payments", { p_rail: "moncash" });
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -101,7 +101,7 @@ function journal(champs: Record<string, unknown>) {
 
 async function handle(req: Request) {
   const debut = Date.now();
-  if (!authorize(req)) {
+  if (!(await authorize(req))) {
     journal({ issue: "non_autorise", secretConfigure: Boolean(process.env.CRON_SECRET) });
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
@@ -123,7 +123,7 @@ async function handle(req: Request) {
       "reconcile",
       `reconcile-${debut}`,
       async () => {
-        const result = await reconcilePayments(liveDeps());
+        const result = await reconcilePayments(liveDeps()).catch(() => ({ errors: ["moncash_queue_unavailable"] }));
         // Recharges téléphoniques (V-11) — même cron (Hobby = 2 crons max).
         const { reconcileTopups } = await import("@/lib/zabelie-topup/reconcile");
         const topup = await reconcileTopups(admin).catch((e) => ({
@@ -152,7 +152,13 @@ async function handle(req: Request) {
             error: e instanceof Error ? e.message : "Erreur kobara",
           }));
         }
-        return { result, topup, kobara };
+        const { isStripeEnabled } = await import("@/lib/stripe-config");
+        let stripe: unknown = { ignore: "rail_non_configure" };
+        if (isStripeEnabled()) {
+          const { reconcileStripe, liveStripeDeps } = await import("@/lib/stripe-reconcile");
+          stripe = await reconcileStripe(liveStripeDeps(admin)).catch(() => ({ error: "stripe_reconcile_unavailable" }));
+        }
+        return { result, topup, kobara, stripe };
       },
       { journal: (champs) => journal({ issue: "bail", ...champs }) }
     );
@@ -160,15 +166,15 @@ async function handle(req: Request) {
       journal({ issue: "ignore_bail_tenu", dureeMs: Date.now() - debut });
       return NextResponse.json({ ignore: "bail_tenu" }, { status: 200 });
     }
-    const { result, topup, kobara } = resultat!;
+    const { result, topup, kobara, stripe } = resultat!;
     journal({
       issue: "termine",
       ...result,
       topupErreur: (topup as { error?: string }).error ?? null,
-      kobara,
+      kobara, stripe,
       dureeMs: Date.now() - debut,
     });
-    return NextResponse.json({ ...result, topup, kobara });
+    return NextResponse.json({ ...result, topup, kobara, stripe });
   } catch (e) {
     journal({ issue: "exception", message: e instanceof Error ? e.message : "Erreur", dureeMs: Date.now() - debut });
     return NextResponse.json(

@@ -1,3 +1,4 @@
+import { supportCopy } from "@/lib/support-copy";
 import { ProductOffers } from "@/components/product-offers";
 import { publicOffers } from "@/lib/product-offers-server";
 import { offerCopy } from "@/lib/product-offer-copy";
@@ -533,6 +534,12 @@ export default async function ProductPage({
               </section>
             )}
             {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
+            <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="achat-confiance">
+              <h2 id="achat-confiance" className="text-sm font-semibold">{supportCopy(lang).trustTitle}</h2>
+              <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustLocal}</p>
+              {commitmentApplicable && commitments?.get(product.id)?.fees !== "included" && <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustFees}</p>}
+              <Link href="/aide#probleme" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).trustReturn}</Link>
+            </section>
             <div className="mt-5">
               <BuyButton
                 key={product.id}
