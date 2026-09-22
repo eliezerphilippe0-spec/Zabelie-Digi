@@ -1,0 +1,42 @@
+import {test,expect} from "@playwright/test";
+const fixture="http://127.0.0.1:54329";
+test.beforeEach(async({request})=>{await request.get(fixture+"/__reset");});
+for(const width of [390,1280])test("order support preserves the message across a failed request at "+width+"px",async({page,request})=>{
+ const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));await page.setViewportSize({width,height:900});
+ await page.goto(fixture+"/__login?role=buyer&lang=fr");
+ await expect(page.getByRole("heading",{level:1,name:"Aide pour cette commande"})).toBeVisible();
+ const message=page.getByRole("textbox",{name:"Expliquez ce qui s’est passé"});
+ await message.fill("Mon paiement MonCash est passé, merci de vérifier.");
+ await page.getByRole("combobox").last().selectOption("not_received");
+ await page.route("**/api/support/cases",route=>route.abort("failed"));
+ await page.getByRole("button",{name:"Enregistrer dans le dossier"}).click();
+ await expect(page.getByRole("status")).toContainText("n’a pas pu être confirmée");
+ await page.reload();
+ await expect(message).toHaveValue("Mon paiement MonCash est passé, merci de vérifier.");
+ await expect(page.getByRole("combobox").last()).toHaveValue("not_received");
+ await page.unroute("**/api/support/cases");
+ await page.getByRole("button",{name:"Enregistrer dans le dossier"}).click();
+ await expect(page.getByText("Mon paiement MonCash est passé, merci de vérifier.",{exact:true})).toBeVisible();
+ await expect(message).toHaveValue("");
+ const saved=await (await request.get(fixture+"/__messages")).json();expect(saved).toHaveLength(1);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
+ await page.screenshot({path:test.info().outputPath("support-"+width+".png"),fullPage:true});
+});
+test("Haitian Creole copy and foreign account refusal",async({page})=>{
+ await page.goto(fixture+"/__login?role=buyer&lang=ht");
+ await expect(page.getByRole("heading",{name:"Èd pou kòmann sa a"})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Anrejistre nan dosye a"})).toBeVisible();
+ await page.goto(fixture+"/__login?role=foreign&lang=fr");
+ await expect(page.getByRole("textbox",{name:"Expliquez ce qui s’est passé"})).toHaveCount(0);
+});
+test("MFA administrator sees Haitian market operations and can answer",async({page})=>{
+ await page.goto(fixture+"/__login?role=admin");
+ await expect(page.getByRole("heading",{name:"Ventes à suivre en Haïti"})).toBeVisible();
+ await expect(page.getByRole("cell",{name:"Petyonvil"})).toBeVisible();
+ await page.getByRole("link",{name:"Consulter et suivre"}).click();
+ await page.getByRole("combobox").last().selectOption("waiting_seller");
+ await page.getByRole("textbox",{name:"Expliquez ce qui s’est passé"}).fill("Veuillez confirmer le lieu de remise au client.");
+ await page.getByRole("button",{name:"Enregistrer dans le dossier"}).click();
+ await expect(page.locator("p").filter({hasText:/^Réponse du vendeur attendue$/})).toBeVisible();
+ await expect(page.getByText("Veuillez confirmer le lieu de remise au client.",{exact:true})).toBeVisible();
+});

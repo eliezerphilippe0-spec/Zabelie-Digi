@@ -1,7 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+const subscribe=()=>()=>undefined;
+const clientReady=()=>true;
+const serverReady=()=>false;
 export function ReconcileAction(){
+ const ready=useSyncExternalStore(subscribe,clientReady,serverReady);
  const router=useRouter();const [busy,setBusy]=useState(false);const [message,setMessage]=useState("");const lock=useRef(false);
  async function run(){if(lock.current)return;lock.current=true;setBusy(true);setMessage("");
   try{
@@ -13,9 +17,10 @@ export function ReconcileAction(){
    router.refresh();
   }catch{setMessage("Résultat non confirmé. Rechargez la file avant de réessayer.");}finally{lock.current=false;setBusy(false);}
  }
- return <div><button type="button" disabled={busy} onClick={run} className="min-h-11 rounded-xl bg-cloud px-4 py-3 text-sm font-semibold text-ink disabled:opacity-60">{busy?"Consultation des opérateurs…":"Vérifier les paiements en attente"}</button><p role="status" className="mt-2 max-w-xl text-sm text-mist">{message}</p></div>;
+ return <div><button type="button" disabled={busy||!ready} onClick={run} className="min-h-11 rounded-xl bg-cloud px-4 py-3 text-sm font-semibold text-ink disabled:opacity-60">{busy?"Consultation des opérateurs…":"Vérifier les paiements en attente"}</button><p role="status" className="mt-2 max-w-xl text-sm text-mist">{message}</p></div>;
 }
 export function RefundReceiptForm({orderId}:{orderId:string}){
+ const ready=useSyncExternalStore(subscribe,clientReady,serverReady);
  const router=useRouter();const [busy,setBusy]=useState(false);const [notice,setNotice]=useState("");
  async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();if(busy)return;const form=e.currentTarget;const fields=new FormData(form);setBusy(true);setNotice("");
  try{
@@ -28,6 +33,6 @@ export function RefundReceiptForm({orderId}:{orderId:string}){
  <label className="block">Référence opérateur ou reçu<input name="reference" required minLength={5} maxLength={120} className="mt-1 min-h-11 w-full rounded-xl border border-line bg-surface p-2"/></label>
  <label className="block">Date du retour des fonds<input name="date" type="date" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2"/></label>
  <label className="flex min-h-11 items-center gap-3"><input name="confirm" type="checkbox" required/>J’ai vérifié le justificatif du retour des fonds.</label>
- <button disabled={busy} className="min-h-11 rounded-xl border border-line px-4 py-2">Enregistrer la référence</button><p role="status">{notice}</p>
+ <button disabled={busy||!ready} className="min-h-11 rounded-xl border border-line px-4 py-2">Enregistrer la référence</button><p role="status">{notice}</p>
  </form></details>;
 }

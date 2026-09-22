@@ -92,7 +92,7 @@ grant select,insert on public.zabelie_support_messages to service_role;
 create policy zabelie_support_messages_read on public.zabelie_support_messages for select to authenticated
  using(exists(select 1 from zabelie_support_cases c where c.id=case_id and public.zabelie_order_participant(c.order_id)));
 
-create function public.zabelie_support_message_immutable() returns trigger language plpgsql as $$
+create function public.zabelie_support_message_immutable() returns trigger language plpgsql set search_path=public as $$
 begin raise exception 'Support history is append-only' using errcode='42501'; end $$;
 revoke all on function public.zabelie_support_message_immutable() from public,anon,authenticated;
 create trigger zabelie_support_message_immutable before update or delete on public.zabelie_support_messages
@@ -273,9 +273,9 @@ as $$
       ('zabelie_claim_pending_payments(payment_rail)', 'la rotation des paiements en attente'),
       ('zabelie_order_participant(uuid)', 'la verification de propriete des dossiers'),
       ('zabelie_submit_support(uuid,uuid,uuid,text,text,text)', 'les demandes et reponses du support'),
-      ('zabelie_record_refund_receipt(uuid,uuid,text,text,timestamp with time zone)', 'la preuve de retour des fonds'),
-      ('zabelie_operations_queue(integer,integer)', 'la file des ventes a traiter'),
-      ('zabelie_market_metrics(integer)', 'les mesures du marche haitien'),
+      ('zabelie_record_refund_receipt(uuid,uuid,text,text,timestamp with time zone)', 'sans elle, le retour effectif des fonds ne peut plus etre documente'),
+      ('zabelie_operations_queue(integer,integer)', 'sans elle, les commandes bloquees disparaissent du suivi administrateur'),
+      ('zabelie_market_metrics(integer)', 'sans elle, les ventes reelles par zone et categorie ne sont plus mesurables'),
       ('zabelie_stripe_payment_failed(uuid,text,text)', 'libere le stock apres un echec Stripe differe'),
       ('confirm_payment(text,text,jsonb,integer,integer)',
        'la confirmation serveur-à-serveur (invariant b) : absente, un paiement encaissé ne crée ni commande payée ni escrow'),

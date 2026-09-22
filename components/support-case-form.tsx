@@ -1,10 +1,13 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { caseStatuses, supportReasons } from "@/lib/support-case";
 import { useSessionDraft } from "@/lib/use-session-draft";
 import type { SupportCopy } from "@/lib/support-copy";
 type Draft = { message: string; requestId: string; reason: typeof supportReasons[number]; status: typeof caseStatuses[number] };
+const subscribe=()=>()=>undefined;
+const clientReady=()=>true;
+const serverReady=()=>false;
 const empty: Draft = {message:"",requestId:"",reason:"debited",status:"open"};
 function validDraft(v: unknown): v is Draft {
  if (!v || typeof v !== "object") return false;
@@ -15,6 +18,7 @@ function validDraft(v: unknown): v is Draft {
 }
 export function SupportCaseForm({orderId, actorId, labels, isAdmin=false}: {orderId:string;actorId:string;labels:SupportCopy;isAdmin?:boolean}) {
  const router=useRouter();
+ const ready=useSyncExternalStore(subscribe,clientReady,serverReady);
  const [draft,setDraft,clear]=useSessionDraft<Draft>("zabelie:case:"+actorId+":"+orderId,empty,validDraft);
  const [busy,setBusy]=useState(false); const locked=useRef(false);
  const [notice,setNotice]=useState("");
@@ -35,12 +39,12 @@ export function SupportCaseForm({orderId, actorId, labels, isAdmin=false}: {orde
  }
  return <form onSubmit={send} className="mt-6 space-y-4 rounded-2xl border border-line p-5">
    <label className="block text-sm font-semibold">{isAdmin?labels.status:labels.reason}
-     {isAdmin?<select className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface p-3" disabled={busy} value={draft.status} onChange={e=>setDraft({...draft,status:e.target.value as Draft["status"],requestId:""})}>{caseStatuses.map(s=><option key={s} value={s}>{labels[s]}</option>)}</select>:
-     <select className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface p-3" disabled={busy} value={draft.reason} onChange={e=>setDraft({...draft,reason:e.target.value as Draft["reason"],requestId:""})}>{supportReasons.map(r=><option key={r} value={r}>{labels[r]}</option>)}</select>}
+     {isAdmin?<select className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface p-3" disabled={busy||!ready} value={draft.status} onChange={e=>setDraft({...draft,status:e.target.value as Draft["status"],requestId:""})}>{caseStatuses.map(s=><option key={s} value={s}>{labels[s]}</option>)}</select>:
+     <select className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface p-3" disabled={busy||!ready} value={draft.reason} onChange={e=>setDraft({...draft,reason:e.target.value as Draft["reason"],requestId:""})}>{supportReasons.map(r=><option key={r} value={r}>{labels[r]}</option>)}</select>}
    </label>
-   <label className="block text-sm font-semibold">{labels.message}<textarea required minLength={10} maxLength={2000} rows={5} disabled={busy} value={draft.message} onChange={e=>setDraft({...draft,message:e.target.value,requestId:""})} className="mt-2 w-full rounded-xl border border-line bg-surface p-3"/></label>
+   <label className="block text-sm font-semibold">{labels.message}<textarea required minLength={10} maxLength={2000} rows={5} disabled={busy||!ready} value={draft.message} onChange={e=>setDraft({...draft,message:e.target.value,requestId:""})} className="mt-2 w-full rounded-xl border border-line bg-surface p-3"/></label>
    <p className="text-xs text-mist">{labels.hint}</p><p className="text-xs text-mist">{labels.noAuto}</p>
-   <button disabled={busy} className="min-h-11 rounded-xl bg-cloud px-5 py-3 text-sm font-semibold text-ink disabled:opacity-60">{busy?labels.sending:labels.send}</button>
+   <button disabled={busy||!ready} className="min-h-11 rounded-xl bg-cloud px-5 py-3 text-sm font-semibold text-ink disabled:opacity-60">{busy?labels.sending:labels.send}</button>
    <p role="status" className="text-sm">{notice}</p>
  </form>;
 }
