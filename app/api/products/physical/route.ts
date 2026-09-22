@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/payment-utils";
 import { KIND_PHYSICAL } from "@/lib/product-kind";
@@ -46,12 +46,8 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   const admin = createAdminClient();
   if (!(await rateLimit(admin, `product_physical:${user.id}`, 10))) {

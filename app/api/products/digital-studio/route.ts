@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -15,7 +15,8 @@ async function handle(req: Request, action: "save" | "revise" | "remove") {
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return fail(401, "authentication_required");
-  if (await getSuspension(user.id)) return fail(403, "suspended");
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
   const raw = await req.text();
   if (raw.length > 200000) return fail(413, "too_large");
   let body: Record<string, unknown>;

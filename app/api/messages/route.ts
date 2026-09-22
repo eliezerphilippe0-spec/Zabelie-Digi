@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
 import { erreurAvecLangue } from "@/lib/api-erreur";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { isMissingTable } from "@/lib/product-media";
 import { MESSAGE_MAX } from "@/lib/messagerie";
@@ -76,9 +76,8 @@ export async function POST(req: Request) {
     return erreurAvecLangue(lang, "api.unavailable", 503);
   }
   if (!user) return erreurAvecLangue(lang, "api.auth.required", 401);
-  if (await getSuspension(user.id)) {
-    return erreurAvecLangue(lang, "api.suspended", 403);
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let corps: { productId?: string; conversationId?: string; body?: string };
   try {

@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDownloadable, isDigitalKind, isTrackedStockKind } from "@/lib/product-kind";
 import { createPayment, resolveMonCashMode } from "@/lib/moncash";
@@ -168,12 +168,8 @@ export async function POST(req: Request) {
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: t(lang, "api.suspended") },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   const admin = createAdminClient();
 
@@ -201,6 +197,9 @@ export async function POST(req: Request) {
   if (prodErr || !product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
+
+  const sellerRefusal = await requireActiveAccount(product.seller_id);
+  if (sellerRefusal) return sellerRefusal;
 
   const recipient = recipientInput == null ? null : normalizeRecipient(recipientInput);
   if (recipientInput != null && (!recipient || !isTrackedStockKind(product.kind))) {
@@ -475,6 +474,9 @@ export async function POST(req: Request) {
     .select("id, amount_htg")
     .single();
 
+  if (orderErr?.code === "ZB112") {
+    return NextResponse.json({ error: t(lang, "api.product.notfound"), code: "seller_unavailable" }, { status: 409 });
+  }
   if (orderErr || !order) {
     return NextResponse.json(
       { error: t(lang, "api.order.failed") },

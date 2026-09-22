@@ -1,7 +1,7 @@
 import { erreurTraduite } from "@/lib/api-erreur";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingFunction } from "@/lib/pg-errors";
 
@@ -39,12 +39,8 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: { productId?: string; newPriceHTG?: number; variantId?: string };
   try {
@@ -98,7 +94,8 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  if (await getSuspension(user.id)) return erreurTraduite("api.suspended", 403);
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: { productId?: string; variantId?: string };
   try {

@@ -1,5 +1,9 @@
 # OPS_TODO — Zabelie
 
+## Protections backend - 22 septembre 2026
+
+Migration 0112 a appliquer avant le deploiement de ces corrections, apres validation CI : garde transactionnel des vendeurs suspendus, boutique publique masquee et echecs Stripe differes idempotents. Le serveur refuse un statut de compte indetermine et nettoie les coordonnees a la fermeture. Evenements Stripe requis sur le webhook existant : checkout.session.completed, checkout.session.async_payment_succeeded et checkout.session.async_payment_failed. Aucun paiement reel necessaire aux tests. Production inchangee a ce stade.
+
 ## Recommandations par achats — 22 septembre 2026
 
 Extension du bloc Offres associées : priorité aux choix vendeurs, suggestions de la même boutique fondées sur des achats réels confirmés, seuils de pertinence, absence de doublons et trois cartes maximum. Préférence vendeur et compteur d’attribution ajoutés. Migration 0111 à appliquer après CI verte, avant déploiement ; preuve finale et empreintes dans la PR. Aucun historique ni achat réel créé. Voir `docs/offres-associees.md`.
