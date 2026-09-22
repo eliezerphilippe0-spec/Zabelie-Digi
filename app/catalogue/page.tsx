@@ -186,7 +186,7 @@ export default async function CataloguePage({
   const sousHref = (slug: string | null) => hrefFor({ sous: slug, page: 1 });
 
   return (
-    <div className="bg-grain min-h-dvh">
+    <div className="bg-grain min-h-dvh editorial-page editorial-catalogue">
       <SiteNav activeHref={universe ? universeHref(universe) : "/catalogue"} searchContext={{ query: q, filters: searchContext }} />
 
       <main id="main">
@@ -250,6 +250,7 @@ export default async function CataloguePage({
           </p>
         )}
 
+        <details className="catalogue-filter-panel" open={minPrice !== undefined || maxPrice !== undefined || sort !== "recent" || priceRangeInvalid || Boolean(zoneId)}><summary>{t(lang, "catalog.filters")}<span aria-hidden="true">+</span></summary>
         <form action="/catalogue" className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-4" aria-label={t(lang, "catalog.filters")}>
           {Object.entries(searchContext).filter(([key]) => !["min", "max", "tri"].includes(key)).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
           {q && <input type="hidden" name="q" value={q} />}
@@ -343,6 +344,8 @@ export default async function CataloguePage({
             </button>
           </form>
         )}
+
+        </details>
 
         {/* Filtres catégories — masqués tant qu'il n'y a rien à filtrer :
             une seule puce « Tout » n'est pas un filtre, c'est du décor. */}
@@ -520,13 +523,13 @@ export default async function CataloguePage({
                qu'on touche à la barre de catégories. Un « aucun résultat »
                suivi d'un lien « réinitialiser » n'a aucun sens ici : il n'y a
                rien à réinitialiser, et la seule action utile est de publier. */
-            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
-              <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.empty.title")}
-              </p>
+            <div className="catalogue-welcome">
+              <svg className="empty-shop" viewBox="0 0 120 100" width="120" height="100" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 43h90l-12-25H27L15 43Z M22 43v43h76V43 M48 86V60h24v26 M8 86h104 M37 18l-5 25 M60 18v25 M83 18l5 25"/><path d="M15 43c0 12 17 12 17 0 0 12 28 12 28 0 0 12 28 12 28 0 0 12 17 12 17 0"/></svg>
+              <h2>{t(lang, "catalog.empty.title")}</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-mist">
                 {t(lang, "catalog.empty.body")}
               </p>
+              <Link href="/aide#comment" className="editorial-link">{t(lang, "home.how.buy")}<span aria-hidden="true">→</span></Link>
               <Link
                 href="/vendre"
                 className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"

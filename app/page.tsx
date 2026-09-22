@@ -191,6 +191,7 @@ export default async function HomePage() {
 
   const wa = whatsappHref(t(lang, "wa.prefill"));
   const heroImage = heroImageDisponible();
+  const opening = catalogue !== null && products.length === 0;
 
   // JSON-LD : Organization + WebSite avec SearchAction (sitelinks searchbox).
   const jsonLd = {
@@ -211,7 +212,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="bg-grain home-discovery">
+    <div className="bg-grain home-discovery editorial-page">
       <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <SiteNav />
 
@@ -227,10 +228,10 @@ export default async function HomePage() {
         <section className="mx-auto max-w-6xl px-3 pt-3">
           <div
             data-has-featured={Boolean(featured)}
-            className="home-hero relative overflow-hidden rounded-2xl bg-chrome text-on-chrome"
-            style={heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
+            className={`home-hero relative overflow-hidden rounded-2xl ${opening ? "launch-hero" : "bg-chrome text-on-chrome"}`}
+            style={opening || heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >
-            {heroImage && (
+            {heroImage && !opening && (
               <Image
                 src={HERO_IMAGE}
                 alt=""
@@ -240,22 +241,27 @@ export default async function HomePage() {
                 className="object-cover"
               />
             )}
-            {heroImage && <div className="absolute inset-0 bg-chrome/50" aria-hidden="true" />}
+            {heroImage && !opening && <div className="absolute inset-0 bg-chrome/50" aria-hidden="true" />}
             <div className="home-hero-copy relative">
               <p className="home-kicker">{t(lang, "home.kicker")}</p>
               <h1 className="home-headline max-w-xl">
-                {t(lang, "hero.s1.t")}
+                {t(lang, opening ? "launch.title" : "hero.s1.t")}
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-on-chrome/90">
-                {t(lang, "hero.s1.b")}
+                {t(lang, opening ? "launch.body" : "hero.s1.b")}
               </p>
-              <Link
-                href="/catalogue"
-                className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
-              >
-                {t(lang, "hero.s1.cta")}<span className="ml-6" aria-hidden="true">↗</span>
-              </Link>
+              <div className="launch-actions">
+                <Link href={opening ? "/vendre" : "/catalogue"} className="editorial-button">
+                  {t(lang, opening ? "launch.cta" : "hero.s1.cta")}<span aria-hidden="true">↗</span>
+                </Link>
+                {opening && <Link href="/catalogue" className="editorial-link">{t(lang, "hero.s1.cta")}<span aria-hidden="true">→</span></Link>}
+              </div>
+              {opening && <p className="launch-note">{t(lang, "launch.note")}</p>}
             </div>
+            {opening && <figure className="launch-portrait">
+              <Image src="/brand/eliezer-portrait.jpg" alt={t(lang, "founder.name")} width={900} height={1200} priority sizes="(max-width: 767px) 88vw, 360px" />
+              <figcaption><span>{t(lang, "founder.name")}</span><span>{t(lang, "founder.role")}</span><Link href="/a-propos" className="editorial-link">{t(lang, "launch.story")}<span aria-hidden="true">↗</span></Link></figcaption>
+            </figure>}
             {featured && <HomeFeatured product={featured} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
           </div>
         </section>

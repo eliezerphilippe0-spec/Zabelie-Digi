@@ -3,6 +3,10 @@
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## Refonte éditoriale — 22 septembre 2026
+
+Branche `feat/design-editorial` : accueil adapté au catalogue vide avec portrait réel du fondateur, page vendeur avec commission calculée avant inscription, catalogue avec filtres repliables. Textes FR/HT/EN/ES. Références de composition : 21st.dev (hero, navigation, cards), Etsy (découverte), Shopify (bénéfices vendeur). Pas de nouvelle dépendance ni de copie de composant externe. Aperçu local et captures vérifiés ; aucun changement de base ou de mode de paiement. À relire avant fusion et mise en ligne.
+
 ## Fondations de sécurité — 13 septembre 2026
 
 Les corrections et procédures sont détaillées dans [docs/57-fondations-securite.md](docs/57-fondations-securite.md). À terminer côté exploitation : serveur privé ClamAV et attestation réelle des fichiers, enrôlement MFA du titulaire sur /securite, protection Supabase des mots de passe compromis (forfait à vérifier), sauvegarde indépendante et restauration isolée, validation des paiements avec Digicel. Un fichier sans analyse valide reste bloqué ; ne pas supprimer la garde pour le publier.

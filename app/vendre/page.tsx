@@ -42,13 +42,38 @@ function Shell({
   lang,
   subtitle,
   taux,
+  marketing = false,
 }: {
+  marketing?: boolean;
   children: React.ReactNode;
   lang: Lang;
   subtitle?: string;
   /** Taux LU EN BASE (0054/0066) — jamais une constante de libellé. */
   taux: TauxCommission;
 }) {
+  if (marketing) return (
+    <div className="bg-grain min-h-dvh editorial-page">
+      <SiteNav />
+      <main id="main" className="seller-landing mx-auto max-w-6xl px-5">
+        <div className="seller-intro"><h1>{t(lang, "sell.landing.title")}</h1><p>{t(lang, "sell.landing.body")}</p></div>
+        <div className="seller-layout">
+          <section aria-labelledby="comment">
+            <h2 id="comment" className="scroll-mt-24">{t(lang, "home.how.sell")}</h2>
+            <ol className="seller-steps">{([
+              ["home.s1.t", "home.s1.b"], ["home.s2.t", "home.s2.b"], ["home.s3.t", "home.s3.b"],
+            ] as const).map(([title, body], index) => <li key={title}><span className="step-number" aria-hidden="true">0{index + 1}</span><div><h3>{t(lang, title)}</h3><p>{t(lang, body)}</p></div></li>)}</ol>
+            <div className="seller-physical"><p>{t(lang, "sell.physical.q")}</p><Link href="/vendre/physique" className="editorial-link">{t(lang, "sell.physical.cta")}<span aria-hidden="true">↗</span></Link></div>
+            <Link href={POLICY_PATH} className="editorial-link seller-policy">{t(lang, "policy.link")}</Link>
+          </section>
+          <aside className="seller-decision">
+            <CommissionAnnonce taux={taux} labels={{ title: t(lang, "sell.fee.title"), ligne: t(lang, "sell.fee.line"), exemple: t(lang, "sell.fee.example"), gratuit: t(lang, "sell.fee.free") }} />
+            <div className="seller-entry">{children}</div>
+          </aside>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
@@ -136,7 +161,7 @@ export default async function VendrePage() {
      * chemin du fichier de configuration ne l'aiderait pas, il n'y a pas accès. */
     signalerConfigAbsente("supabase", { ecran: "/vendre" });
     return (
-      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")}>
+      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")} marketing>
         <div className="glass rounded-2xl p-6 text-sm text-mist">
           {t(lang, "sell.demo.body")}
         </div>
@@ -169,13 +194,9 @@ export default async function VendrePage() {
 
   if (!user) {
     return (
-      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")}>
-        <Link
-          href="/connexion?next=/vendre"
-          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-        >
-          {t(lang, "auth.signin.cta")}
-        </Link>
+      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} marketing>
+        <Link href="/connexion?mode=signup&next=/vendre" className="editorial-button">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
+        <Link href="/connexion?next=/vendre" className="editorial-link">{t(lang, "sell.existing")}<span aria-hidden="true">→</span></Link>
       </Shell>
     );
   }
