@@ -141,7 +141,7 @@ export function LangToggle({
 
   if (compact) {
     return (
-      <details ref={menuRef} className="relative shrink-0 [&[open]>summary+div]:block">
+      <details data-header-menu name="header-menu" ref={menuRef} className="relative shrink-0 [&[open]>summary+div]:block">
         <summary
           aria-label={NOM[current]}
           className="inline-flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-1 rounded-xl text-sm font-semibold text-on-chrome transition marker:content-none hover:bg-on-chrome/10 [&::-webkit-details-marker]:hidden"
@@ -150,7 +150,7 @@ export function LangToggle({
           {isPending && <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 motion-safe:animate-spin fill-none stroke-current" strokeWidth="2"><path d="M12 3a9 9 0 1 1-9 9" /></svg>}
           {ABBR[current]}
         </summary>
-        <div className="absolute right-0 z-50 mt-1 hidden w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
+        <div className="header-menu-panel absolute right-0 z-50 mt-1 hidden w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
           {LANGS.map((l) => (
             <button
               key={l}

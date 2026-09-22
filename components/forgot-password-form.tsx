@@ -56,7 +56,7 @@ export function ForgotPasswordForm({ labels }: { labels: ForgotPasswordLabels })
   }
 
   return (
-    <div className="bg-grain flex min-h-dvh items-center justify-center px-5">
+    <main id="main" className="bg-grain flex min-h-dvh items-center justify-center px-5">
       <div className="w-full max-w-sm">
         <div className="glass rounded-3xl p-7">
           <h1 className="text-lg font-semibold">{labels.title}</h1>
@@ -99,6 +99,6 @@ export function ForgotPasswordForm({ labels }: { labels: ForgotPasswordLabels })
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

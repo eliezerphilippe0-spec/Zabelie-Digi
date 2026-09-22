@@ -1,19 +1,4 @@
-/**
- * Menu compte de l'en-tête — un `<details>` natif, ZÉRO JavaScript.
- *
- * Brief accueil premium §4.1 : l'en-tête ne garde qu'une ligne (logo,
- * recherche, panier, compte). Tout ce que la barre portait ailleurs — Aide,
- * Talents, Vendre, Tableau de bord, Messages, déconnexion —
- * vit ici, derrière une icône. Langue et apparence sont dans la barre.
- * `<details>` s'ouvre et se ferme sans
- * hydratation, donc AVANT que le JS n'arrive sur 3G, et se ferme au clic
- * hors du panneau grâce à `name`-less behaviour du navigateur… non : il ne se
- * ferme pas seul, et c'est accepté — une navigation recharge la page.
- *
- * Le panneau est une surface claire (`bg-surface text-cloud`) posée SUR le
- * chrome sombre : ses liens gardent les couleurs de texte du corps, pas
- * celles de l'en-tête.
- */
+/** Menu natif : ouverture sans JavaScript, fermeture et cadrage via HeaderShell. */
 export function AccountMenu({
   label,
   children,
@@ -22,7 +7,7 @@ export function AccountMenu({
   children: React.ReactNode;
 }) {
   return (
-    <details className="relative">
+    <details className="relative shrink-0" data-header-menu name="header-menu">
       <summary
         aria-label={label}
         title={label}
@@ -41,7 +26,7 @@ export function AccountMenu({
         </svg>
         <span className="hidden text-sm font-semibold lg:inline">{label}</span>
       </summary>
-      <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-surface p-2 text-cloud shadow-xl">
+      <div className="header-menu-panel absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-surface p-2 text-cloud shadow-xl">
         {children}
       </div>
     </details>

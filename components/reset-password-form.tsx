@@ -105,7 +105,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   }
 
   return (
-    <div className="bg-grain flex min-h-dvh items-center justify-center px-5">
+    <main id="main" className="bg-grain flex min-h-dvh items-center justify-center px-5">
       <div className="w-full max-w-sm">
         <div className="glass rounded-3xl p-7">
           <h1 className="text-lg font-semibold">{labels.title}</h1>
@@ -163,6 +163,6 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

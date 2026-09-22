@@ -396,11 +396,11 @@ export function ConnexionForm({
   providers?: ConnexionProvider[];
 }) {
   return (
-    <div className="bg-grain flex min-h-dvh items-center justify-center px-5">
+    <main id="main" className="bg-grain flex min-h-dvh items-center justify-center px-5">
       {/* useSearchParams exige une frontière Suspense (App Router). */}
       <Suspense fallback={null}>
         <ConnexionFormInner labels={labels} providers={providers} />
       </Suspense>
-    </div>
+    </main>
   );
 }
