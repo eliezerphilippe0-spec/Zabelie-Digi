@@ -397,16 +397,22 @@ export async function getCatalogueCategories(kind?: ProductKind): Promise<string
  */
 export async function searchFuzzyProductIds(q: string): Promise<string[]> {
   if (!isSupabaseConfigured() || q.trim().length < 3) return [];
-  const admin = createAdminClient();
-  const { data, error } = await admin.rpc("zabelie_search_fuzzy", {
-    p_raw: q,
-    p_limit: 24,
-  });
-  if (error || !data) {
-    console.warn("[recherche] rattrapage indisponible", error?.message ?? "réponse vide");
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc("zabelie_search_fuzzy", {
+      p_raw: q,
+      p_limit: 24,
+    });
+    if (error || !data) {
+      console.warn("[recherche] rattrapage indisponible", error?.message ?? "réponse vide");
+      return [];
+    }
+    return [...new Set((data as { product_id: string }[]).map((r) => r.product_id))];
+  } catch {
+    // An unavailable optional fallback must not turn a valid search into a 500.
+    console.warn("[recherche] rattrapage indisponible");
     return [];
   }
-  return (data as { product_id: string }[]).map((r) => r.product_id);
 }
 
 /**

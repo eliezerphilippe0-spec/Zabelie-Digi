@@ -1,6 +1,6 @@
 import { readSellerPricing } from "@/lib/seller-pricing-server";
 import { createClient as pricingClient } from "@/lib/supabase/server";
-import { parseCatalogueSearch, catalogueCanonical, catalogueIsWorkingView, type CatalogueSearch } from "@/lib/catalogue-query";
+import { parseCatalogueSearch, catalogueHref, catalogueCanonical, catalogueIsWorkingView, type CatalogueSearch } from "@/lib/catalogue-query";
 import { CATALOGUE_UNIVERSES, universeHref } from "@/lib/catalogue-universes";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -150,30 +150,16 @@ export default async function CataloguePage({
   const filtre = Boolean(q) || activeCat !== "Tout" || !!universe || !!zoneId || minPrice !== undefined || maxPrice !== undefined;
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
-  const hrefFor = (opts: { cat?: string; sous?: string | null; page?: number }) => {
-    const params = new URLSearchParams();
-    if (universe) params.set("univers", universe);
-    if (q) params.set("q", q);
-    if (minPrice !== undefined) params.set("min", String(minPrice));
-    if (maxPrice !== undefined) params.set("max", String(maxPrice));
-    if (sort !== "recent") params.set("tri", sort);
-    const c = opts.cat ?? activeCat;
-    if (c !== "Tout") params.set("cat", c);
-    // Changer de département invalide le rayon fin : `sous` appartient au
-    // département courant, le garder afficherait un filtre impossible.
-    const s2 = opts.sous === null ? undefined : (opts.sous ?? (opts.cat ? undefined : sous));
-    if (s2) params.set("sous", s2);
-    // La zone survit à la pagination et au changement de rayon : la perdre
-    // en tournant la page serait un filtre qui se défait en silence. On ne
-    // propage que les étages VALIDÉS — un enfant périmé meurt ici.
-    if (zd) params.set("zd", zd);
-    if (zkValide) params.set("zk", zkValide);
-    if (zqValide) params.set("zq", zqValide);
-    const p = opts.page ?? 1;
-    if (p > 1) params.set("page", String(p));
-    const qs = params.toString();
-    return qs ? `/catalogue?${qs}` : "/catalogue";
-  };
+  const hrefFor = (opts: { cat?: string; sous?: string | null; page?: number; q?: string | null }) => catalogueHref({
+    univers: universe, q, cat: activeCat, sous,
+    zd, zk: zkValide, zq: zqValide,
+    min: minPrice === undefined ? undefined : String(minPrice),
+    max: maxPrice === undefined ? undefined : String(maxPrice), tri: sort,
+  }, {
+    ...opts,
+    sous: opts.sous === null ? null : (opts.sous ?? (opts.cat ? null : sous)),
+    page: opts.page ?? 1,
+  });
   const searchContext = Object.fromEntries(new URL(hrefFor({}), "https://zabelie.com").searchParams);
   delete searchContext.q;
   const cardLabels = {
@@ -458,7 +444,7 @@ export default async function CataloguePage({
                     {facettes.slice(0, 6).map((f) => (
                       <Link
                         key={f.slug}
-                        href={hrefFor({ sous: f.slug, page: 1 })}
+                        href={hrefFor({ sous: f.slug, q: null, page: 1 })}
                         className="rounded-full border border-line px-3 py-1 text-xs text-mist hover:text-cloud"
                       >
                         {f.label} {f.count}
@@ -468,6 +454,9 @@ export default async function CataloguePage({
                 </div>
               )}
 
+              <Link href={hrefFor({ q: null, page: 1 })} className="mt-5 inline-flex min-h-11 items-center text-accent underline">
+                {t(lang, "catalog.resetSearch")}
+              </Link>
               <p className="mt-6 text-sm text-cloud">{t(lang, "catalog.miss.know")}</p>
               <a
                 href={`https://wa.me/?text=${encodeURIComponent(
@@ -483,7 +472,7 @@ export default async function CataloguePage({
           ) : minPrice !== undefined || maxPrice !== undefined || !!zoneId ? (
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
               <p>{t(lang, "catalog.none")}</p>
-              <Link href={universe ? universeHref(universe) : "/catalogue"} className="mt-4 inline-flex min-h-11 items-center text-accent underline">{t(lang, "catalog.reset")}</Link>
+              <Link href={q ? hrefFor({ q: null, page: 1 }) : universe ? universeHref(universe) : "/catalogue"} className="mt-4 inline-flex min-h-11 items-center text-accent underline">{t(lang, q ? "catalog.resetSearch" : "catalog.reset")}</Link>
             </div>
           ) : filtre && !q ? (
             /* Rayon filtré, AUCUNE recherche : c'est l'atterrissage des cartes

@@ -1,5 +1,10 @@
 # OPS_TODO — Zabelie
 
+## Découverte sans doublons — 22 septembre 2026
+
+Lot prêt à relire sur feat/decouverte-sans-doublons : allocation unique des offres, liens de rubriques, recherche conservant les filtres, retrait des promotions non démontrées. Audit complet et reports motivés : docs/decouverte-sans-doublons.md. Aucune migration ni publication en production. La suite garde les mêmes 17 échecs que le commit de base sous Windows ; compilation et sept tests Chrome réussis. Les vrais classements de nouveautés/tendances/ventes restent conditionnés aux données décrites dans l’audit.
+
+
 ## Offres associées — 21 septembre 2026
 
 Éditeur vendeur pour version supérieure, complément et alternative économique. Associations explicites entre produits publiés d’une même boutique, sans doublons, sans débit automatique et sans modification des commissions. Parcours produit et complément après achat confirmé ; statistiques des ventes confirmées par lien. Migration additive 0110 à appliquer après CI SQL, avant l’application. Détails : `docs/offres-associees.md`.

@@ -22,7 +22,7 @@ import { t, tn } from "@/lib/i18n";
 import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { siteUrl } from "@/lib/site-url";
-import { classesRangee, rangeeVisible, vendeursAffichables } from "@/lib/home-sections";
+import { allocateHomeRows, classesRangee, rangeeVisible, vendeursAffichables } from "@/lib/home-sections";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +57,7 @@ function HomeRow({
   id,
   title,
   more,
+  href = "/catalogue",
   items,
   cardLabels,
   primary = false,
@@ -66,6 +67,7 @@ function HomeRow({
   id?: string;
   title: string;
   more: string;
+  href?: string;
   items: ProductView[];
   cardLabels: ProductCardLabels;
   primary?: boolean;
@@ -77,7 +79,7 @@ function HomeRow({
     <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
         <div><h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
-        <Link href="/catalogue" className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
+        <Link href={href} className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
           {more}
         </Link>
       </div>
@@ -88,23 +90,6 @@ function HomeRow({
       </div>
     </section>
   );
-}
-
-/** Vendeurs avec au moins un code promo actif — vide en mode démo. */
-async function promoSellerIds(): Promise<Set<string>> {
-  if (!isSupabaseConfigured()) return new Set();
-  try {
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from("zabelie_coupons")
-      .select("seller_id")
-      .eq("active", true)
-      .or("expires_at.is.null,expires_at.gt.now()")
-      .limit(200);
-    return new Set((data ?? []).map((c) => c.seller_id));
-  } catch {
-    return new Set();
-  }
 }
 
 /**
@@ -118,7 +103,11 @@ async function produitsAvecVentePayee(): Promise<Map<string, number>> {
   if (!isSupabaseConfigured()) return compte;
   try {
     const admin = createAdminClient();
-    const { data } = await admin.from("orders").select("product_id").eq("status", "paid").limit(5000);
+    const { data, error, count } = await admin.from("orders")
+      .select("product_id, buyer:profiles!orders_buyer_id_fkey!inner(is_test)", { count: "exact" })
+      .eq("status", "paid").eq("buyer.is_test", false).limit(5000);
+    // Do not turn an incomplete response into exact public counts.
+    if (error || !data || count === null || count !== data.length) return compte;
     for (const o of data ?? []) compte.set(o.product_id, (compte.get(o.product_id) ?? 0) + 1);
   } catch {
     /* section masquée */
@@ -128,7 +117,7 @@ async function produitsAvecVentePayee(): Promise<Map<string, number>> {
 
 export default async function HomePage() {
   const discovery = isSupabaseConfigured() && Boolean(await readSellerPricing(await pricingClient()));
-  const [catalogue, lang, promoSellers, ventesPayees] = await Promise.all([
+  const [catalogue, lang, ventesPayees] = await Promise.all([
     // getPublishedProducts lève en cas d'erreur Supabase (BL-116) ; l'accueil
     // distingue une panne du catalogue réellement vide.
     getPublishedProducts().catch(() => {
@@ -136,13 +125,13 @@ export default async function HomePage() {
       return null;
     }),
     getLang(),
-    promoSellerIds(),
     produitsAvecVentePayee(),
   ]);
 
   const products = catalogue ?? [];
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].slice(0, 6);
-  const featured = products.find((p) => p.coverUrl) ?? products[0];
+  // A single offer stays in the main grid; the hero never repeats it.
+  const featured = products.length > 1 ? products.find((p) => p.coverUrl) ?? products[0] : undefined;
 
   const cardLabels: ProductCardLabels = {
     kindFile: t(lang, "card.kind.file"),
@@ -157,37 +146,28 @@ export default async function HomePage() {
     detail: t(lang, "home.product.cta"),
   };
 
-  // Une seule requête catalogue alimente toutes les rangées.
-  const bySales = [...products].sort((a, b) => b.sales - a.sales);
-  const principaux = bySales.slice(0, 12); // « Pwodui yo »
-  const newest = products.slice(0, 6); // requête déjà triée par date desc
-  const services = bySales.filter((p) => isService(p.kind, p.id)).slice(0, 6);
-  const fichiers = bySales.filter((p) => isDownloadable(p.kind)).slice(0, 6);
-  const free = products.filter((p) => p.priceHTG === 0).slice(0, 6);
-  const promo = bySales.filter((p) => p.creatorId && promoSellers.has(p.creatorId)).slice(0, 6);
-
-  /* UN PRODUIT NE REMPLIT PAS DEUX RANGÉES (audit UX 2026-09-02, #10) : une
-   * rangée n'est rendue que si elle apporte au moins UN produit qu'aucune
-   * rangée plus haut n'a montré. La grille principale ouvre la page. */
-  const vus = new Set<string>();
-  const inedit = (items: ProductView[]): boolean => {
-    if (!items.some((p) => !vus.has(p.slug))) return false;
-    for (const p of items) vus.add(p.slug);
-    return true;
-  };
+  // Source ordered by creation date. No popularity or trend is inferred.
+  const { principaux, newest, fichiers, services, free } = allocateHomeRows([
+    { key: "principaux", items: products, limit: 12, primary: true },
+    { key: "newest", items: products, limit: 6 },
+    { key: "fichiers", items: products.filter((p) => isDownloadable(p.kind)), limit: 6 },
+    { key: "services", items: products.filter((p) => isService(p.kind, p.id)), limit: 6 },
+    { key: "free", items: products.filter((p) => p.priceHTG === 0), limit: 6 },
+  ], featured ? [featured.id] : []);
 
   const sellerMap = new Map<
     string,
     { name: string; id: string | null; ventesPayees: number; rSum: number; rN: number }
   >();
   for (const p of products) {
-    const s = sellerMap.get(p.creator) ?? { name: p.creator, id: p.creatorId, ventesPayees: 0, rSum: 0, rN: 0 };
+    if (!p.creatorId) continue;
+    const s = sellerMap.get(p.creatorId) ?? { name: p.creator, id: p.creatorId, ventesPayees: 0, rSum: 0, rN: 0 };
     s.ventesPayees += ventesPayees.get(p.id) ?? 0;
     if (p.ratingAvg !== null) {
       s.rSum += p.ratingAvg * p.ratingCount;
       s.rN += p.ratingCount;
     }
-    sellerMap.set(p.creator, s);
+    sellerMap.set(p.creatorId, s);
   }
   const sellers = vendeursAffichables([...sellerMap.values()])
     .sort((a, b) => b.ventesPayees - a.ventesPayees)
@@ -299,29 +279,27 @@ export default async function HomePage() {
         {/* PRODUITS — la première rangée doit tenir au-dessus de la ligne de
             flottaison (A1). La sélection principale reste visible dès la première offre,
             sur mobile comme sur ordinateur, sans inventer de produits. */}
-        {inedit(principaux) && (
+        {principaux.length > 0 && (
           <HomeRow primary title={t(lang, "home.products")} discovery={discovery} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
         )}
-        {inedit(newest) && (
-          <HomeRow discovery={discovery} title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
+        {newest.length > 0 && (
+          <HomeRow discovery={discovery} title={t(lang, "sec.new")} href="/catalogue?tri=recent" more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
         )}
-        {inedit(fichiers) && (
-          <HomeRow discovery={discovery} title={t(lang, "sec.digital")} more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
+        {fichiers.length > 0 && (
+          <HomeRow discovery={discovery} title={t(lang, "sec.digital")} href="/catalogue?univers=numerique" more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
         )}
         {products.length > 0 && <MarketplaceUniverses lang={lang} />}
         {/* Cible de « Talents » (menu compte + pied de page) : posée sur une
             balise du FLUX, avant la rangée des services, jamais en prop d'une
             rangée qui peut s'effacer. `scroll-mt-24` compense l'en-tête collant. */}
         <div id="talents" className="scroll-mt-24" aria-hidden="true" />
-        {inedit(services) && (
-          <HomeRow discovery={discovery} title={t(lang, "sec.services")} more={t(lang, "home.all")} items={services} cardLabels={cardLabels} />
+        {services.length > 0 && (
+          <HomeRow discovery={discovery} title={t(lang, "sec.services")} href="/catalogue?univers=services" more={t(lang, "home.all")} items={services} cardLabels={cardLabels} />
         )}
-        {inedit(free) && (
-          <HomeRow discovery={discovery} title={t(lang, "sec.free")} more={t(lang, "home.all")} items={free} cardLabels={cardLabels} />
+        {free.length > 0 && (
+          <HomeRow discovery={discovery} title={t(lang, "sec.free")} href="/catalogue?max=0" more={t(lang, "home.all")} items={free} cardLabels={cardLabels} />
         )}
-        {inedit(promo) && (
-          <HomeRow discovery={discovery} title={t(lang, "sec.promo")} more={t(lang, "home.all")} items={promo} cardLabels={cardLabels} />
-        )}
+
 
         {/* MEILLEURS VENDEURS — ≥ 3 vendeurs avec ≥ 1 vente PAYÉE (§4.3). */}
         {sellers.length > 0 && (
@@ -330,7 +308,7 @@ export default async function HomePage() {
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
               {sellers.map((s) => (
                 <Link
-                  key={s.name}
+                  key={s.id}
                   href={s.id ? `/createur/${s.id}` : "/catalogue"}
                   className="rounded-xl border border-line bg-surface p-4 transition active:scale-[0.97]"
                 >

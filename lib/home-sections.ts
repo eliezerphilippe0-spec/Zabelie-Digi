@@ -68,3 +68,29 @@ export function titreCarte(
   }
   return propre;
 }
+
+/** Allocate visible rows in display order. Hidden rows consume no products.
+ * Product IDs keep distinct sellers' offers separate, even with identical titles.
+ * Six items per secondary row keeps allocation identical across screen sizes.
+ */
+export function allocateHomeRows<T extends { id: string }>(
+  rows: { key: string; items: readonly T[]; limit: number; primary?: boolean }[],
+  reserved: readonly string[] = [],
+): Record<string, T[]> {
+  const seen = new Set(reserved);
+  const result: Record<string, T[]> = {};
+  for (const row of rows) {
+    const local = new Set(seen);
+    const items: T[] = [];
+    for (const item of row.items) {
+      if (items.length >= row.limit) break;
+      if (!item.id || local.has(item.id)) continue;
+      local.add(item.id);
+      items.push(item);
+    }
+    const visible = row.primary ? items.length > 0 : items.length >= SEUIL_RANGEE_DESKTOP;
+    result[row.key] = visible ? items : [];
+    if (visible) for (const item of items) seen.add(item.id);
+  }
+  return result;
+}
