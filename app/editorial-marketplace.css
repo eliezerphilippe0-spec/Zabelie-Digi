@@ -84,3 +84,5 @@
 .editorial-page > header nav.header-fold a { border-radius: 0; border-color: transparent; padding-inline: 10px; }
 .editorial-page > header nav.header-fold a[aria-current="page"] { border-bottom-color: var(--color-brand); background: transparent; }
 @media (hover:hover) { .editorial-page > header nav.header-fold a:hover { border-bottom-color: var(--color-on-chrome); } }
+
+.seller-decision > section:first-child { margin: 0; padding: 0; border: 0; background: transparent; }

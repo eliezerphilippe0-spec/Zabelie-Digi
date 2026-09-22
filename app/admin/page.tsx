@@ -1,3 +1,6 @@
+import { SearchDemandPanel } from "@/components/admin/search-demand-panel";
+import { sourcingCopy } from "@/lib/sourcing-copy";
+import { getLang } from "@/lib/i18n-server";
 import { DigitalModeration } from "@/components/digital-moderation";
 import { DIGITAL_DETAIL_FIELDS, type DigitalDetails } from "@/lib/digital-details";
 import { t } from "@/lib/i18n";
@@ -395,6 +398,7 @@ export default async function AdminPage({
         ))}
       </div>
 
+      <SearchDemandPanel labels={sourcingCopy(await getLang())}/>
       {/* Modération vendeurs : suspension réversible */}
       <section className="mt-10">
         <h2 className="text-lg font-semibold">Vendeurs</h2>

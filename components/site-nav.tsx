@@ -5,7 +5,7 @@ import { LangToggle } from "@/components/lang-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SearchBox, type SearchSuggestion } from "@/components/search-box";
 import { MetricA } from "@/components/metric-a";
-import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
+import { getTopupAvailability } from "@/lib/topup-availability";
 import { HeaderShell } from "@/components/header-shell";
 import { CategoryChips } from "@/components/category-chips";
 import { AccountMenu, MENU_LINK } from "@/components/account-menu";
@@ -44,6 +44,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
   // en dur : les libellés sont traduits, les rayons vides sont marqués.
   const rayons = await getMenuRayons(lang);
   const wa = whatsappHref(t(lang, "wa.prefill"));
+  const topupAvailability = await getTopupAvailability();
 
   /* Compteur du panier — lu avec le client de SESSION : la RLS de 0058 ne
    * rend que le panier de l'appelant, donc aucun filtre applicatif à écrire
@@ -140,6 +141,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
                 <Link href="/tableau-de-bord" className={MENU_LINK}>
                   {t(lang, "nav.dashboard")}
                 </Link>
+                <Link href="/tableau-de-bord#ma-boutique" className={MENU_LINK}>{t(lang, "shop.manage")}</Link>
                 <Link href="/mes-achats" className={MENU_LINK}>
                   {t(lang, "pay.ok.cta")}
                 </Link>
@@ -208,7 +210,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
             { href: "/catalogue?univers=objets", label: t(lang, "universe.physical.short") },
             { href: "/catalogue?univers=numerique", label: t(lang, "universe.digital.short") },
             { href: "/catalogue?univers=services", label: t(lang, "universe.services") },
-            { href: "/recharges", label: t(lang, "universe.recharges"), note: isTopupFirstPartyEnabled() ? undefined : t(lang, "availability.paused") },
+            { href: "/recharges", label: t(lang, "universe.recharges"), note: topupAvailability === "configured" ? undefined : t(lang, topupAvailability === "sandbox" ? "availability.testing" : "availability.paused") },
             { href: "/aide", label: t(lang, "nav.help") },
           ]}
           labels={{

@@ -29,7 +29,7 @@ const card = sansCommentaires(CARD);
 const img = sansCommentaires(IMG);
 
 test("C1 — l'image de la carte est un carré réservé (aspect-square) sur fond neutre", () => {
-  assert.match(card, /<div className="relative aspect-square w-full bg-line">/);
+  assert.match(card, /<div className=\{`relative aspect-square w-full overflow-hidden bg-line /);
   // Et l'image remplit ce carré sans le déformer.
   assert.match(img, /className="absolute inset-0 h-full w-full object-cover transition-opacity"/);
   assert.match(img, /width=\{size\}\s+height=\{size\}/, "largeur = hauteur : le carré est réservé avant l'image");
@@ -41,8 +41,8 @@ test("C2 — ordre : image → nom (2 lignes) → prix → vendeur, avec les bon
   const iPrix = card.indexOf("formatHTG(product.priceHTG)");
   const iVendeur = card.indexOf("{labels.by} {product.creator}");
   assert.ok(iImg > 0 && iImg < iNom && iNom < iPrix && iPrix < iVendeur, "ordre attendu : image, nom, prix, vendeur");
-  assert.match(card, /<h3 className="line-clamp-2 text-sm[^"]*">\{titre\}<\/h3>/);
-  assert.match(card, /<span className="numeric text-sm font-bold text-accent">\{formatHTG\(product\.priceHTG\)\}<\/span>/);
+  assert.match(card, /<h3 className=\{`line-clamp-2 break-words leading-snug text-cloud \$\{boutique \? "text-base font-semibold" : "text-sm font-normal"\}`\}>\{titre\}<\/h3>/);
+  assert.match(card, /<span className=\{`numeric font-bold text-accent \$\{boutique \? "text-base" : "text-sm"\}`\}>\{formatHTG\(product\.priceHTG\)\}<\/span>/);
   assert.match(card, /<span className="truncate text-sm text-mist">/);
 });
 
@@ -79,7 +79,7 @@ test("C6 — l'image est différée et décodée hors du fil principal", () => {
 test("C7 — mouvement : transitions par défaut sur les tokens, tap à 0,97, squelette pulsé", () => {
   assert.match(THEME, /--default-transition-duration: var\(--motion-base\);/);
   assert.match(THEME, /--default-transition-timing-function: var\(--ease\);/);
-  assert.match(card, /className="group flex flex-col overflow-hidden rounded-card border border-line bg-surface transition active:scale-\[0\.97\]"/);
+  assert.match(card, /: "group flex flex-col overflow-hidden rounded-card border border-line bg-surface transition active:scale-\[0\.97\]"/);
   assert.match(SKEL, /animate-pulse motion-reduce:animate-none/);
   assert.match(SKEL, /<SkeletonBlock className="aspect-square w-full rounded-none" \/>/);
   // La coche du panier arrive par la révélation du thème (--motion-slow).
@@ -93,8 +93,8 @@ test("C8 — rayon des cartes : `rounded-card` (12 px), un cran de l'échelle, p
   assert.doesNotMatch(card, /rounded-\[/);
 });
 
-test("C9 — grilles : 2 colonnes mobile, gouttière 12 px, partout où la carte vit", () => {
-  for (const f of ["app/page.tsx", "app/catalogue/page.tsx", "components/boutique-vue.tsx", "components/skeleton.tsx"]) {
+test("C9 — accueil et catalogue gardent leurs grilles ; la boutique choisit ses cartes lisibles", () => {
+  for (const f of ["app/page.tsx", "app/catalogue/page.tsx", "components/skeleton.tsx"]) {
     assert.match(readFileSync(f, "utf8"), /grid grid-cols-2 gap-3 sm:grid-cols-[346]/, `${f} n'a pas la grille à deux colonnes`);
   }
 });

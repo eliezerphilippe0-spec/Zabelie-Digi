@@ -129,7 +129,30 @@ async function handle(req: Request) {
         const topup = await reconcileTopups(admin).catch((e) => ({
           error: e instanceof Error ? e.message : "Erreur topup",
         }));
-        return { result, topup };
+        /* Rail Kobara (0106) — passe SÉPARÉE, et non un élargissement du
+         * `listPending` ci-dessus.
+         *
+         * `reconcilePayments` est typé sur `MonCashPayment` de bout en bout et
+         * porte le chemin d'argent le plus éprouvé du dépôt. Le généraliser
+         * pour accueillir un second rail toucherait le code qui confirme les
+         * paiements MonCash réels — un risque pris pour un rail qui n'a
+         * jamais encaissé une gourde. La passe Kobara vit donc à côté, comme
+         * `reconcileTopups`, selon le même motif.
+         *
+         * ⚠️ N'est appelée que si le rail est configuré : sans secrets,
+         * `retrieveKobaraPayment` lèverait à chaque passage et noierait le
+         * journal du réconciliateur d'erreurs pour un rail que personne
+         * n'utilise. `scanned: 0` serait par ailleurs trompeur — c'est
+         * « rail éteint », pas « rien à réconcilier ». */
+        const { isKobaraEnabled } = await import("@/lib/kobara");
+        let kobara: unknown = { ignore: "rail_non_configure" };
+        if (isKobaraEnabled()) {
+          const { reconcileKobara, liveKobaraDeps } = await import("@/lib/kobara-reconcile");
+          kobara = await reconcileKobara(liveKobaraDeps(admin)).catch((e) => ({
+            error: e instanceof Error ? e.message : "Erreur kobara",
+          }));
+        }
+        return { result, topup, kobara };
       },
       { journal: (champs) => journal({ issue: "bail", ...champs }) }
     );
@@ -137,9 +160,15 @@ async function handle(req: Request) {
       journal({ issue: "ignore_bail_tenu", dureeMs: Date.now() - debut });
       return NextResponse.json({ ignore: "bail_tenu" }, { status: 200 });
     }
-    const { result, topup } = resultat!;
-    journal({ issue: "termine", ...result, topupErreur: (topup as { error?: string }).error ?? null, dureeMs: Date.now() - debut });
-    return NextResponse.json({ ...result, topup });
+    const { result, topup, kobara } = resultat!;
+    journal({
+      issue: "termine",
+      ...result,
+      topupErreur: (topup as { error?: string }).error ?? null,
+      kobara,
+      dureeMs: Date.now() - debut,
+    });
+    return NextResponse.json({ ...result, topup, kobara });
   } catch (e) {
     journal({ issue: "exception", message: e instanceof Error ? e.message : "Erreur", dureeMs: Date.now() - debut });
     return NextResponse.json(

@@ -18,6 +18,7 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 
 const PORT = Number(process.env.STUB_PORT ?? 54321);
+const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
 const digitalFacts = new Map();
 const digitalStudios = new Map();
 const digitalProgress = new Map();
@@ -58,6 +59,77 @@ const PRODUCT = {
   seller: { display_name: "Garaj Petyonvil" },
 };
 
+
+
+const OFFER_SOURCE = "44444444-4444-4444-4444-444444444444";
+const OFFER_TARGETS = ["66666666-6666-6666-6666-666666666661","66666666-6666-6666-6666-666666666662","66666666-6666-6666-6666-666666666663"];
+const OFFER_IDS = ["77777777-7777-7777-7777-777777777771","77777777-7777-7777-7777-777777777772","77777777-7777-7777-7777-777777777773"];
+const offerProducts = [
+ { ...PRODUCT, id: OFFER_SOURCE, price_htg: 1200, title: "Kit de départ", slug: "kit-depart", cover_url: null },
+ ...OFFER_TARGETS.map((id,i) => ({ ...PRODUCT,id,title:["Kit complet","Accessoire pratique","Kit économique"][i],slug:["kit-complet","accessoire-pratique","kit-economique"][i],price_htg:[2400,700,600][i],cover_url:null })),
+];
+let linkedOffers = [];
+const offerOrders = [];
+let offerOrderStatus = "paid";
+let recommendationHistory = false;
+const automaticPreferences = new Map();
+function offersFixture(req,url,send,single) {
+ const publicRows = (source) => linkedOffers.filter(o=>o.source_product_id===source).map(o => {
+   const p=offerProducts.find(p=>p.id===o.target_product_id);return {...o,title:p.title,slug:p.slug,price_htg:p.price_htg,product_kind:p.kind};
+ });
+ const automaticRows = source => recommendationHistory && automaticPreferences.get(source)!==false && source===OFFER_SOURCE
+   ? OFFER_TARGETS.filter(id=>!linkedOffers.some(o=>o.source_product_id===source&&o.target_product_id===id)).map(id=>{
+     const p=offerProducts.find(x=>x.id===id);return {id:null,source_product_id:source,target_product_id:id,offer_kind:"cross_sell",origin:"purchases",title:p.title,slug:p.slug,price_htg:p.price_htg,product_kind:p.kind};
+   }) : [];
+ const body = callback => { let value="";req.on("data",c=>value+=c);req.on("end",()=>callback(JSON.parse(value||"{}"))); };
+ if(url.pathname==="/__offers-reset"){linkedOffers=[];offerOrders.length=0;offerOrderStatus="paid";recommendationHistory=false;automaticPreferences.clear();send(200,{});return true;}
+ if(url.pathname==="/__recommendations-history"){body(p=>{recommendationHistory=p.enough===true;send(200,{});});return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_product_recommendations"){body(p=>send(200,automaticRows(p.p_product_id)));return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_recommendation_stats"){send(200,[]);return true;}
+ if(url.pathname==="/__offers-orders"){send(200,offerOrders);return true;}
+ if(url.pathname==="/__offers-status"){body(p=>{offerOrderStatus=p.status;send(200,{});});return true;}
+ if(url.pathname==="/rest/v1/products"){
+   const id=eq(url,"id"),slug=eq(url,"slug"),seller=eq(url,"seller_id");
+   single(offerProducts.filter(p=>(!id||p.id===id)&&(!slug||p.slug===slug)&&(!seller||p.seller_id===seller)).map(p=>({...p,zabelie_auto_recommendations:automaticPreferences.get(p.id)??true})));return true;
+ }
+ if(url.pathname==="/rest/v1/zabelie_product_offers"){send(200,linkedOffers);return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_offer_stats"){send(200,linkedOffers.map(o=>({offer_id:o.id,confirmed:0})));return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_offers_public"){body(p=>send(200,publicRows(p.p_product_id)));return true;}
+ if(["/rest/v1/rpc/zabelie_save_product_offers","/rest/v1/rpc/zabelie_configure_product_offers"].includes(url.pathname)){
+   body(p=>{
+     const source=offerProducts.find(x=>x.id===p.p_product_id);
+     if(p.p_user_id!==SELLER_ID||!source)return send(200,{ok:false,reason:"not_owner"});
+     const kinds=["upsell","cross_sell","downsell"],targets=Object.values(p.p_targets).filter(Boolean);
+     if(new Set(targets).size!==targets.length||targets.some(id=>!OFFER_TARGETS.includes(id)))return send(200,{ok:false,reason:"invalid"});
+     if(typeof p.p_recommendations_enabled==="boolean")automaticPreferences.set(source.id,p.p_recommendations_enabled);
+     linkedOffers=linkedOffers.filter(o=>o.source_product_id!==source.id).concat(kinds.flatMap((kind,i)=>p.p_targets[kind]?[{id:OFFER_IDS[i],source_product_id:source.id,target_product_id:p.p_targets[kind],offer_kind:kind,active:true}]:[]));
+     return send(200,{ok:true});
+   });return true;
+ }
+ if(url.pathname==="/rest/v1/zabelie_product_variants"){
+   const product=eq(url,"product_id"),id=eq(url,"id");
+   send(200,offerProducts.map((p,i)=>({id:"88888888-8888-8888-8888-88888888888"+i,product_id:p.id,price_htg:p.price_htg,options:{},active:true,position:0,zabelie_stock:{quantity_available:4}})).filter(v=>(!product||v.product_id===product)&&(!id||v.id===id)));return true;
+ }
+ if(url.pathname==="/rest/v1/rpc/zabelie_reserve_stock"){send(200,{ok:true});return true;}
+ if(url.pathname==="/rest/v1/orders"){
+   if(req.method==="POST"){body(p=>{const offer=linkedOffers.find(o=>o.id===p.zabelie_offer_id&&o.target_product_id===p.product_id);const source=!offer&&automaticRows(p.zabelie_recommendation_source_id).some(o=>o.target_product_id===p.product_id)?p.zabelie_recommendation_source_id:null;const row={id:ORDER_ID,...p,zabelie_offer_id:offer?.id??null,zabelie_recommendation_source_id:source};offerOrders.push(row);single([row]);});return true;}
+   if(req.method==="GET"){const buyer=eq(url,"buyer_id"),id=eq(url,"id");
+     return single(id===ORDER_ID&&(!buyer||buyer===BUYER_ID)?[{...ORDER,status:offerOrderStatus,product_id:OFFER_SOURCE,buyer_id:BUYER_ID}]:[]),true;}
+ }
+ return false;
+}
+
+const discountOrders = [];
+const discountVariants = [
+  { id: "55555555-5555-5555-5555-555555555555", options: { variante: "M" }, price_htg: 2000, compare_at_htg: null, position: 0 },
+  { id: "55555555-5555-5555-5555-555555555556", options: { variante: "L" }, price_htg: 2500, compare_at_htg: null, position: 1 },
+].map(v => ({ ...v, product_id: PRODUCT_ID, active: true, zabelie_stock: { quantity_available: 4 } }));
+
+const SHOP_PRODUCTS = [
+  { ...PRODUCT, cover_url: "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64") },
+  { ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", description: "Apprenez à préparer votre première offre avec un guide et des leçons.", kind: "fichier", cover_url: null, product_assets: [{ id: ASSET_ID }] },
+  { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-boutique-test", title: "Conseil pour votre projet", description: "Une consultation pour organiser vos prochaines étapes.", kind: "service", cover_url: null, delivery_days: 2, service_includes: ["Une consultation"] },
+].map(product => ({ ...product, seller: { display_name: "Atelye Lakay" } }));
 const ORDER = {
   id: ORDER_ID,
   order_ref: "ZB-260720-TESTX",
@@ -66,12 +138,13 @@ const ORDER = {
   status: "paid",
   amount_htg: 1500,
   created_at: "2026-07-20T10:00:00Z",
-  product: { title: PRODUCT.title, slug: SLUG, kind: "physical" },
+  product: { id: PRODUCT_ID, title: PRODUCT.title, slug: SLUG, kind: "physical" },
 };
 
 /** Écritures observées sur `orders` — la preuve que rien n'a été « livré ». */
 const ecritures = [];
 const collectionsBySession = new Map();
+const commitments = new Map();
 const giftWrites = [];
 const GIFT_PRODUCT = "99999999-9999-9999-9999-999999999990";
 const GIFT_ORDER = "99999999-9999-9999-9999-999999999991";
@@ -103,6 +176,17 @@ const server = createServer((req, res) => {
     return send(200, 0);
   }
 
+  if (url.pathname === "/rest/v1/zabelie_product_commitments") return single([...commitments.values()].filter(row => url.searchParams.get("product_id")?.includes(row.product_id)));
+  if (url.pathname === "/rest/v1/rpc/zabelie_save_product_commitment") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      const p = JSON.parse(body);
+      const old = commitments.get(p.p_product);
+      const row = { product_id: p.p_product, zones: p.p_zones, pickup: p.p_pickup, delivery_days: p.p_days, fees: p.p_fees, next_available: p.p_next, availability_confirmed_at: p.p_confirm ? new Date().toISOString() : old?.availability_confirmed_at ?? null };
+      commitments.set(p.p_product, row); return single([row]);
+    });
+  }
+
   // Photo produit. `STUB_COVER` permet d'éprouver les cas de DÉFAILLANCE de la
   // carte de partage — la surface où un échec coûte le plus cher, puisque
   // WhatsApp fige l'aperçu obtenu :
@@ -124,6 +208,67 @@ const server = createServer((req, res) => {
   if (url.pathname === "/__ecritures") return send(200, ecritures);
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
+
+  if (process.env.OFFERS_FIXTURE === "true" && offersFixture(req,url,send,single)) return;
+
+  if (process.env.PRICING_FIXTURE === "true") {
+    if (url.pathname === "/rest/v1/zabelie_seller_pricing_config") return single([{
+      id: true, enabled: true, direct_rate_bps: 1000, direct_fixed_usd_cents: 50,
+      discovery_rate_bps: 3000, usd_htg_micros: 132000000, launch_days: 30, submission_days: 7,
+      launch_sales_limit: 3, launch_discount_bps: 5000, payments_ready: true, attribution_days: 7,
+    }]);
+    if (url.pathname === "/rest/v1/zabelie_seller_launch") {
+      const now = Date.now(), date = n => new Date(now + n * 86400000).toISOString();
+      return single(eq(url, "seller_id") === SELLER_ID ? [{
+        seller_id: SELLER_ID, submitted_at: date(-3), submission_deadline: date(3), published_at: date(-2),
+        eligible: true, starts_at: date(-2), ends_at: date(28), used_sales: 1, sales_limit: 3,
+      }] : []);
+    }
+  }
+
+
+  if (process.env.DISCOUNT_FIXTURE === "true") {
+    const variants = discountVariants;
+    if (url.pathname === "/__discount-reset") {
+      variants.forEach((v, i) => { v.price_htg = i ? 2500 : 2000; v.compare_at_htg = null; });
+      discountOrders.length = 0;
+      return send(200, { ok: true });
+    }
+    if (url.pathname === "/__discount-orders") return send(200, discountOrders);
+    if (url.pathname === "/rest/v1/rpc/zabelie_reserve_stock") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        const input = JSON.parse(body), variant = variants.find(v => v.id === input.p_variant_id);
+        return send(200, { ok: Boolean(variant && input.p_order_id === ORDER_ID && input.p_quantity > 0 && input.p_quantity <= variant.zabelie_stock.quantity_available) });
+      });
+    }
+
+    if (url.pathname === "/rest/v1/products") {
+      const row = { ...PRODUCT, price_htg: Math.min(...variants.map(v => v.price_htg)), compare_at_htg: null, cover_url: null };
+      const id = eq(url, "id"), slug = eq(url, "slug"), seller = eq(url, "seller_id");
+      return single((id && id !== PRODUCT_ID) || (slug && slug !== PRODUCT.slug) || (seller && seller !== SELLER_ID) ? [] : [row]);
+    }
+    if (url.pathname === "/rest/v1/zabelie_product_variants") {
+      const id = eq(url, "id"), product = eq(url, "product_id");
+      return send(200, variants.filter(v => (!id || v.id === id) && (!product || product === PRODUCT_ID)));
+    }
+    if (url.pathname === "/rest/v1/rpc/zabelie_set_variant_discount" || url.pathname === "/rest/v1/rpc/zabelie_clear_variant_discount") {
+      let text = ""; req.on("data", c => text += c);
+      return req.on("end", () => {
+        const input = JSON.parse(text), v = variants.find(v => v.id === input.p_variant_id);
+        if (!v || input.p_product_id !== PRODUCT_ID || input.p_user_id !== SELLER_ID) return send(200, { ok: false, reason: "introuvable" });
+        if (url.pathname.endsWith("clear_variant_discount")) { v.compare_at_htg = null; return send(200, { ok: true, prix_htg: v.price_htg }); }
+        if (input.p_new_price_htg >= v.price_htg) return send(200, { ok: false, reason: "pas_une_baisse" });
+        v.compare_at_htg ??= v.price_htg; v.price_htg = input.p_new_price_htg;
+        return send(200, { ok: true, ancien_htg: v.compare_at_htg, nouveau_htg: v.price_htg });
+      });
+    }
+    if (url.pathname === "/rest/v1/orders" && req.method === "POST") {
+      let text = ""; req.on("data", c => text += c);
+      return req.on("end", () => { const row = { id: ORDER_ID, ...JSON.parse(text) }; discountOrders.push(row); return single([row]); });
+    }
+  }
+
   const token = req.headers.authorization ?? "";
   // Isolated scenarios: no mutable global mode between parallel tests.
   const history = token.includes("historique-test") || eq(url, "buyer_id") === HISTORY_ID;
@@ -131,7 +276,14 @@ const server = createServer((req, res) => {
   const sellerPreparation = token.includes("vendeur-preparation");
 
   if (url.pathname === "/__gift-writes") return send(200, giftWrites);
-  if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
+  if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") {
+    if (!BOUTIQUE_FIXTURE) return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      const empty = JSON.parse(body || "{}").p_slug === "boutique-vide";
+      send(200, { id: empty ? "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" : SELLER_ID, display_name: "Atelye Lakay", bio: "Des ressources pour apprendre et préparer votre projet.\nBoutique de démonstration pour les tests.", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: empty ? "boutique-vide" : "atelye-lakay" });
+    });
+  }
   if (["/rest/v1/zabelie_favorites", "/rest/v1/zabelie_shop_follows"].includes(url.pathname)) {
     const column = url.pathname.endsWith("zabelie_favorites") ? "product_id" : "seller_id";
     const key = token + column;
@@ -228,6 +380,7 @@ const server = createServer((req, res) => {
         }
         if (eq(url, "id") === GIFT_ORDER) { giftWrites.push({ step: "cleanup" }); return send(200, []); }
         ecritures.push({ method: req.method, query: url.search, body });
+        if (process.env.PRICING_FIXTURE === "true" && req.method === "POST") return send(503, { code: "08006", message: "pricing fixture stops before payment" });
         send(200, []);
       });
     }
@@ -291,10 +444,11 @@ const server = createServer((req, res) => {
     const slug = eq(url, "slug");
     const id = eq(url, "id");
     const status = eq(url, "status");
-    let rows = sellerPreparation ? [
+    let rows = BOUTIQUE_FIXTURE ? SHOP_PRODUCTS : sellerPreparation ? [
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    if (BOUTIQUE_FIXTURE && (id === DIGITAL_ID || slug === "formation-studio-test")) return single([SHOP_PRODUCTS[1]]);
     if (id === DIGITAL_ID || slug === "formation-studio-test") return single([{ ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", kind: "fichier", product_assets: [{ id: ASSET_ID }], seller_id: SELLER_ID }]);
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
     if (slug) rows = rows.filter((row) => row.slug === slug);
@@ -318,6 +472,7 @@ const server = createServer((req, res) => {
   if (url.pathname.startsWith("/rest/v1/product_assets")) return single([]);
 
   if (url.pathname.startsWith("/rest/v1/zabelie_product_variants")) {
+    if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);
     return send(200, [
       {
         id: "55555555-5555-5555-5555-555555555555",
@@ -329,6 +484,7 @@ const server = createServer((req, res) => {
     ]);
   }
   if (url.pathname.startsWith("/rest/v1/zabelie_product_fitment")) {
+    if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);
     return send(200, [
       {
         year_start: 2008,
@@ -338,6 +494,10 @@ const server = createServer((req, res) => {
     ]);
   }
   if (url.pathname.startsWith("/rest/v1/profiles")) {
+    if (BOUTIQUE_FIXTURE) {
+      const ownShop = eq(url, "id") === SELLER_ID;
+      return single([{ id: ownShop ? SELLER_ID : BUYER_ID, display_name: ownShop ? "Atelye Lakay" : "Acheteur test", role: ownShop ? "creator" : "buyer", boutik_slug: ownShop ? "atelye-lakay" : null }]);
+    }
     return single([{ id: SELLER_ID, display_name: "Garaj Petyonvil", role: "creator" }]);
   }
 

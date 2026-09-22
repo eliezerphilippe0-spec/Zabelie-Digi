@@ -28,7 +28,7 @@ export default async function RechajPage() {
   // La page dédiée explique la suspension et distingue recharge et paiement.
   // `/rechaj/[orderId]` reste OUVERT : une commande deja payee doit rester
   // consultable et remboursable. Voir lib/topup-flag.ts.
-  if (!isTopupFirstPartyEnabled()) redirect("/recharges");
+  if (!isTopupFirstPartyEnabled() || !isTopupEnabled()) redirect("/recharges");
 
   const lang = await getLang();
 

@@ -26,12 +26,14 @@ export function ZabelieTopupStatus({
     intervalMs: 5000,
     maxTicks: 120,
     resetKey: `${orderId}:${status}`,
-    onTick: async () => {
+    onTick: async (signal) => {
       const res = await fetch(`/api/zabelie/topup/orders/${orderId}`, {
         cache: "no-store",
+        signal,
       });
       if (!res.ok) return false;
       const data = await res.json();
+      if (signal.aborted) return false;
       if (data.status && data.status !== status) setStatus(data.status);
       return terminal.includes(data.status);
     },

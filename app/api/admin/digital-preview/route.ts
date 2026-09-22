@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UUID_RE } from "@/lib/digital-studio";
+import { DIGITAL_BUCKET } from "@/lib/storage-buckets";
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const user = await getAdminUser();
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   if (!(await digitalFileIsClean(admin, asset.storage_path))) {
     return NextResponse.json({ error: t(await getLang(), "security.filePending"), code: "file_security_pending" }, { status: 503, headers: { "Cache-Control": "private, no-store", "Retry-After": "300" } });
   }
-  const { data } = await admin.storage.from("product-files").createSignedUrl(asset.storage_path, 60 * 5, { download: asset.file_name });
+  const { data } = await admin.storage.from(DIGITAL_BUCKET).createSignedUrl(asset.storage_path, 60 * 5, { download: asset.file_name });
   if (!data) return NextResponse.json({ code: "unavailable" }, { status: 503 });
   const response = NextResponse.redirect(data.signedUrl, 303); response.headers.set("Cache-Control", "private, no-store"); response.headers.set("Referrer-Policy", "no-referrer"); return response;
 }

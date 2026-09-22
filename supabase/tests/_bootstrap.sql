@@ -93,6 +93,8 @@ create table if not exists auth.users (
 -- vraie table Supabase les porte ; le stub doit les porter aussi, sinon le
 -- déclencheur passerait les tests sans jamais exercer son chemin nominal.
 alter table auth.users add column if not exists raw_user_meta_data jsonb;
+-- Signup eligibility reads the authoritative Auth timestamp, never profiles.
+alter table auth.users add column if not exists created_at timestamptz not null default now();
 -- `auth.uid()` — stub fidèle au comportement Supabase : la vraie fonction lit
 -- la revendication `sub` du JWT porté par la requête. Le stub lit le même
 -- réglage de session, ce qui permet à un test d'incarner un utilisateur :

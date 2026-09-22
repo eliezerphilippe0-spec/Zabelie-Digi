@@ -54,3 +54,14 @@ export function pourcentageRabais(compare: number, prix: number): number {
   if (compare <= 0 || prix >= compare) return 0;
   return Math.round(((compare - prix) / compare) * 100);
 }
+
+export type DiscountVariant = { id: string; product_id: string; options: Record<string, string> | null; price_htg: number; compare_at_htg?: number | null };
+
+export async function lireVariantesRabais(client: SupabaseClient, productIds: string[]): Promise<Map<string, DiscountVariant[]>> {
+  const result = new Map<string, DiscountVariant[]>();
+  if (!productIds.length) return result;
+  const { data, error } = await client.from("zabelie_product_variants").select("*").in("product_id", productIds).eq("active", true).order("position");
+  if (error) throw new Error("variant_prices_unavailable");
+  for (const row of (data ?? []) as DiscountVariant[]) result.set(row.product_id, [...(result.get(row.product_id) ?? []), row]);
+  return result;
+}

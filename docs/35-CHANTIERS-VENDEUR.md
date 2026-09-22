@@ -83,6 +83,12 @@ son prix courant qui devient l'ancien prix, jamais une saisie libre (le
 retirer le rabais rend le prix courant sans barré. Tout calcul reste serveur
 (règle dure n°3). Migration + formulaire + affichage barré catalogue/fiche.
 
+### Extension par variante (0109)
+
+Dans Mes produits, un produit physique à plusieurs tailles ou modèles expose un Rabais pour chaque variante. Le vendeur saisit uniquement le nouveau prix. La base préserve le premier prix réellement pratiqué, laisse les autres variantes intactes et actualise le prix minimum du produit. La fiche indique « À partir de » ; chaque option affiche son propre ancien prix barré et le montant du bouton de paiement suit la sélection. Le serveur relit ce prix, y compris pour un coupon et une quantité supérieure à un.
+
+Retirer le rabais enlève uniquement le barré. Une vente flash active doit être annulée avant une nouvelle baisse par variante. Le chemin classique des produits digitaux, services et produits sans choix de variante reste disponible.
+
 ## V-5 — Nom + adresse à l'inscription, adresse au moment de l'expédition
 
 Carnet d'adresses acheteur (rue, ville, département — réutilise les ZONES de

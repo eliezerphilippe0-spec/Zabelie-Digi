@@ -72,6 +72,11 @@ const serwist = new Serwist({
   runtimeCaching: [
     ...reglesSansCache,
     {
+      // Session-aware pages remain network-only; failed navigations reach the offline library.
+      matcher: ({ request }) => request.mode === "navigate",
+      handler: new NetworkOnly(),
+    },
+    {
       // La page de secours qui DÉSINSTALLE doit rester joignable même si un
       // service worker défectueux est déployé : c'est la seule sortie.
       matcher: ({ url }) => url.pathname.startsWith(PAGE_DESINSTALLATION),

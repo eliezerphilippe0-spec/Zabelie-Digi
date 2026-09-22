@@ -15,7 +15,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * une URL en base se périme au premier changement de domaine de stockage.
  */
 
-export const MEDIA_BUCKET = "product-covers";
+import { MEDIA_BUCKET } from "@/lib/storage-buckets";
+export { MEDIA_BUCKET };
 export const MAX_IMAGES_PER_PRODUCT = 6;
 
 /** Arbitrages porteur du 2026-08-15 (« 60s et 50 Mo ok ») — V-1B, docs/35. */

@@ -32,6 +32,7 @@ import { readFileSync } from "node:fs";
 
 /** Préfixes de clés, assemblés pour que CE fichier ne matche pas lui-même. */
 const PREFIXES: { nom: string; motif: string }[] = [
+  { nom: "TypeSafe Jev", motif: "api" + "key_[a-f0-9]{32,}_[a-f0-9]{32,}" },
   { nom: "Supabase (clé secrète, contourne la RLS)", motif: "sb_" + "secret_[A-Za-z0-9_-]{10,}" },
   { nom: "Stripe (clé live)", motif: "sk_" + "live_[A-Za-z0-9]{10,}" },
   { nom: "Stripe (clé test)", motif: "sk_" + "test_[A-Za-z0-9]{10,}" },
@@ -105,6 +106,9 @@ test("le détecteur reconnaît chaque forme de clé, et se tait sur un gabarit",
   for (const [nom, faux] of echantillons) {
     assert.ok(DETECTEUR.test(faux), `NON DÉTECTÉ : ${nom}`);
   }
+
+  assert.ok(DETECTEUR.test("api" + "key_" + "a".repeat(36) + "_" + "b".repeat(64)));
+  assert.ok(!DETECTEUR.test("TYPESAFE_API_KEY="));
 
   // Connu-négatif : ce qu'un dépôt sain contient légitimement.
   const innocents = [

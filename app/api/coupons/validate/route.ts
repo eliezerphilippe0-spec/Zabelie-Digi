@@ -1,3 +1,4 @@
+import { readPurchasePrice } from "@/lib/purchase-price";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
  * binaire (valid + prix) : n'expose ni plafond, ni compteur, ni expiration.
  */
 export async function POST(req: Request) {
-  let body: { productId?: string; code?: string };
+  let body: { productId?: string; code?: string; variantId?: string };
   try {
     body = await req.json();
   } catch {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
   }
   const { data: product } = await admin
     .from("products")
-    .select("id, price_htg, seller_id")
+    .select("id, price_htg, seller_id, kind")
     .eq("id", body.productId)
     .eq("status", "published")
     .maybeSingle();
@@ -55,11 +56,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false });
   }
 
-  const discounted = discountedPriceHtg(product.price_htg, coupon.percent);
+  const purchase = await readPurchasePrice(admin, product, body.variantId);
+  if (!purchase.ok) return NextResponse.json({ valid: false });
+  const discounted = discountedPriceHtg(purchase.priceHTG, coupon.percent);
   return NextResponse.json({
     valid: true,
     percent: coupon.percent,
     priceHtg: discounted,
-    originalHtg: product.price_htg,
+    originalHtg: purchase.priceHTG,
   });
 }

@@ -25,4 +25,6 @@ for t in $(ls "$ROOT"/supabase/tests/*.test.sql | sort); do
   "${PSQL[@]}" -f "$t"
 done
 
+bash "$ROOT/supabase/tests/seller_pricing_concurrent.sh"
+
 echo "✓ tests SQL money-path OK"

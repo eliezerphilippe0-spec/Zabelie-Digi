@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatHTG } from "@/lib/sample-data";
 
 export type RabaisLabels = {
@@ -11,6 +12,7 @@ export type RabaisLabels = {
   /** La règle d'honnêteté, dite au vendeur : le barré = son prix actuel. */
   hint: string;
   error: string;
+  flashActive: string;
 };
 
 /**
@@ -22,15 +24,18 @@ export type RabaisLabels = {
  */
 export function RabaisManager({
   productId,
+  variantId,
   prixHtg,
   compareHtg,
   labels,
 }: {
   productId: string;
+  variantId?: string;
   prixHtg: number;
   compareHtg: number | null;
   labels: RabaisLabels;
 }) {
+  const router = useRouter();
   const [prix, setPrix] = useState(prixHtg);
   const [compare, setCompare] = useState<number | null>(compareHtg);
   const [nouveau, setNouveau] = useState("");
@@ -46,16 +51,17 @@ export function RabaisManager({
       const res = await fetch("/api/products/discount", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, newPriceHTG: v }),
+        body: JSON.stringify({ productId, variantId, newPriceHTG: v }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : labels.error);
+        setError(data.code === "flash_active" ? labels.flashActive : typeof data.error === "string" ? data.error : labels.error);
         return;
       }
       setCompare(data.ancienHtg);
       setPrix(data.nouveauHtg);
       setNouveau("");
+      router.refresh();
     } catch {
       setError(labels.error);
     } finally {
@@ -70,13 +76,14 @@ export function RabaisManager({
       const res = await fetch("/api/products/discount", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({ productId, variantId }),
       });
       if (!res.ok) {
         setError(labels.error);
         return;
       }
       setCompare(null);
+      router.refresh();
     } catch {
       setError(labels.error);
     } finally {
@@ -92,7 +99,7 @@ export function RabaisManager({
       </summary>
       <div className="mt-2 space-y-2">
         <p className="text-xs text-mist">{labels.hint}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             type="number"
             min={1}

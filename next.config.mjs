@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import withSerwistInit from "@serwist/next";
 import { releaseIdForCommit } from "./lib/deployment-release.mjs";
 
@@ -79,6 +80,8 @@ const nextConfig = {
  */
 const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
+  // Fallbacks configure routing, but Serwist requires explicit precaching.
+  additionalPrecacheEntries: [{ url: "/hors-ligne", revision: randomUUID() }],
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
   reloadOnOnline: false,

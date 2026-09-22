@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/products";
 export type CurrentUser = {
   id: string;
   email: string | null;
+  createdAt?: string;
   displayName: string;
   role: string;
   /** Palier de commission (0005). Sert à l'affichage, jamais au calcul. */
@@ -34,6 +35,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return {
     id: user.id,
     email: user.email ?? null,
+    createdAt: user.created_at,
     displayName: profile?.display_name ?? user.email?.split("@")[0] ?? "Compte",
     role: profile?.role ?? "buyer",
     tier: profile?.tier === "elite" ? "elite" : "standard",

@@ -124,6 +124,21 @@ jobs:
       - name: E2E (money path)
         run: npm run test:e2e
 
+      - name: Seller pricing and launch in the browser
+        run: npx playwright test --config=playwright.pricing.config.ts
+
+      - name: Boutique and digital purchase journey
+        run: npx playwright test --config=playwright.boutique.config.ts
+
+      - name: Variant discounts and purchase price
+        run: npx playwright test --config=playwright.rabais.config.ts
+
+      - name: Seller offers and explicit purchase choice
+        run: npx playwright test --config=playwright.offers.config.ts
+
+      - name: Sandbox top-ups cannot accept payment
+        run: npx playwright test --config=playwright.topup.config.ts
+
       # Même check requis e2e, nouveau build isolé : les variables publiques
       # doivent être présentes à la compilation du client navigateur.
       - name: Build avec le client Auth configuré

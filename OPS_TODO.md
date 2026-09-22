@@ -1,11 +1,82 @@
 # OPS_TODO — Zabelie
 
+## Recommandations par achats — 22 septembre 2026
+
+Extension du bloc Offres associées : priorité aux choix vendeurs, suggestions de la même boutique fondées sur des achats réels confirmés, seuils de pertinence, absence de doublons et trois cartes maximum. Préférence vendeur et compteur d’attribution ajoutés. Migration 0111 à appliquer après CI verte, avant déploiement ; preuve finale et empreintes dans la PR. Aucun historique ni achat réel créé. Voir `docs/offres-associees.md`.
+
+
+## Offres associées — 21 septembre 2026
+
+Éditeur vendeur pour version supérieure, complément et alternative économique. Associations explicites entre produits publiés d’une même boutique, sans doublons, sans débit automatique et sans modification des commissions. Parcours produit et complément après achat confirmé ; statistiques des ventes confirmées par lien. Migration additive 0110 à appliquer après CI SQL, avant l’application. Détails : `docs/offres-associees.md`.
+
+## Rabais par taille ou modèle — 21 septembre 2026
+
+Le gestionnaire Rabais existant accepte une variante physique : ancien prix conservé par la base, baisse stricte, retrait du barré sans hausse. Le paiement et les coupons lisent le prix de la variante active appartenant au produit. Le bouton affiche ce même prix ; une variante non remisée reste inchangée. Aucun tarif vendeur ni paramètre fournisseur modifié.
+
+Migration additive `0109_rabais_variantes.sql` à appliquer après validation PostgreSQL en CI, avant le déploiement. Elle conserve les rabais classiques et refuse une modification de variante pendant une vente flash. Tests unitaires, SQL et parcours Chrome mobile/ordinateur ajoutés ; preuves finales dans la PR.
+
+## Supervision Jev — l'agent n'a jamais tourné, audit du 21 septembre 2026
+
+⚠️ Mesuré par l'API GitHub Actions : le workflow « Zabelie - Supervision Jev » comptait
+**deux exécutions, toutes deux `skipped`**, zéro seconde de travail. Aucune sonde tirée,
+aucun appel TypeSafe émis, aucun rapport produit depuis la fusion de #255/#256. Cause :
+la **variable** `JEV_SUPERVISION_ENABLED` n'est pas posée ; la garde du workflow tombait
+avant même le secret. Un run `skipped` ne s'affiche pas en rouge — la supervision paraissait
+installée et ne surveillait rien.
+
+**Le silence a été supprimé le 21 septembre** : l'activation ne garde plus le job, elle est
+lue par le script, qui écrit un rapport `inactive` et **sort en échec**. Le job tourne
+toujours, mais sans activation il ne tire aucune sonde et ne facture rien — l'opt-in est
+intact. ⚠️ Conséquence : **tant que la variable n'est pas posée, le run horaire est rouge**
+au lieu d'être sauté. C'est l'intention. Si le bruit gêne avant activation, désactiver le
+workflow dans Actions ; ne pas remettre la garde dans le `if:`, ce qui ramènerait le silence.
+
+Trois gestes porteur, **tous en zone d'arrêt** (variable, secret, dépense) — aucun n'a été
+pris : (1) variable `JEV_SUPERVISION_ENABLED=true`, (2) secret `TYPESAFE_API_KEY` sur une
+clé dédiée, (3) accepter ~24 appels TypeSafe/jour. GitHub → Settings → Secrets and
+variables → **Actions**. Une variable Vercel ne configure pas Actions.
+
+Également relevé, **corrigé le 21 septembre** : la sonde `access` concluait `pass` sur un 403
+d'intermédiaire qui n'avait jamais atteint Zabelie — elle attestait une autorisation qu'elle
+n'avait pas vue. Elle exige désormais un refus applicatif (`{ error: "…" }`) et rend `unknown`
+sinon ; garde éprouvé sur ses deux mutations, suite complète 1141/1141 verte. Aucune action
+porteur sur ce point. Voir [l'audit](docs/60-audit-supervision-jev-2026-09-21.md).
+
+
+## Ma boutique — parcours vendeur du 21 septembre 2026
+
+Accès « Ma boutique » pour tout compte connecté, depuis le menu et le tableau de bord, avec le lien public,
+la modification du profil existant et le partage WhatsApp. Les boutiques réutilisent les
+routes actuelles et des offres lisibles sur mobile ; la fiche digitale place l'achat avant
+le programme détaillé. Traductions FR, HT, EN et ES. Aucun nouveau modèle de données.
+Validation locale : compilation, lint, contraste, tests ciblés et quatre parcours Chrome
+(boutique mobile/ordinateur, espace vendeur, ancien lien et créole). Le partage et les
+paiements sont simulés dans ces parcours ; aucun achat réel n'a été effectué.
+
+
+## Tarification vendeurs — proposition du 21 septembre 2026
+
+Implémentation demandée : tarifs inspirés de Gumroad et lancement de 30 jours.
+Le porteur a validé le 21 septembre (« go ») les deux tarifs et la réduction de 50 % sur
+3 ventes au maximum pendant 30 jours. Fusion, déploiement et activation autorisés.
+Le compteur de lancement attend un paiement réel vérifié ; le taux fixe doit reprendre
+le taux de conversion opérationnel Vercel. Voir [le dossier](docs/tarification-vendeurs-lancement.md).
+
+
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
 ## Refonte éditoriale — 22 septembre 2026
 
 Branche `feat/design-editorial` : accueil adapté au catalogue vide avec portrait réel du fondateur, page vendeur avec commission calculée avant inscription, catalogue avec filtres repliables. Textes FR/HT/EN/ES. Références de composition : 21st.dev (hero, navigation, cards), Etsy (découverte), Shopify (bénéfices vendeur). Pas de nouvelle dépendance ni de copie de composant externe. Aperçu local et captures vérifiés ; aucun changement de base ou de mode de paiement. À relire avant fusion et mise en ligne.
+
+## Activation Kobara et recharges — diagnostic du 17 septembre 2026
+
+Correctif du contrat API et des confirmations prepare sur `fix/kobara-activation`.
+L'activation en production attend l'acces Vercel et les comptes fournisseurs.
+Voir [le diagnostic et la procedure](docs/58-kobara-activation.md).
+Les instructions plus anciennes ci-dessous ne prouvent pas que l'API actuelle
+accepte le sandbox sur son hote public, ni qu'un GET de reconciliation existe.
 
 ## Fondations de sécurité — 13 septembre 2026
 
@@ -16,6 +87,70 @@ Les corrections et procédures sont détaillées dans [docs/57-fondations-securi
 Le porteur confirme : « Non, nous sommes encore en bac à sable ». La priorité est de terminer un paiement sandbox avec un payeur de test fonctionnel, puis d'obtenir l'activation et les identifiants de production auprès de MonCash Business. Ne pas convertir les échecs historiques en preuve de refus des clés.
 
 Le [dossier de passage en production](docs/56-passage-moncash-production.md) fournit l'ordre des opérations, les URL du projet et les preuves attendues. Un [message à MonCash Business](docs/demande-moncash-business.md) est prêt, mais n'a pas été envoyé. Aucun changement de mode, de secret ni de compte marchand effectué.
+
+## 💳 Rail Kobara — le code est là, le rail est ÉTEINT (2026-09-17)
+
+Sur votre instruction directe du 2026-09-17, la passerelle **Kobara**
+(NatCash + MonCash) est construite de bout en bout : migration `0106`,
+adaptateur, webhook signé, réconciliateur, checkout, fiche produit en quatre
+langues. Détail et mesures : `docs/03-PAIEMENTS.md` §9.1.
+
+**Fusionner ce lot n'ajoute AUCUN moyen de paiement sur le site.** Mesuré sur
+un serveur de production sans les variables : `/api/checkout` avec
+`rail: "kobara"` rend **422**, et `/api/kobara/webhook` rend **404**. C'est
+vous qui allumez le rail, en posant ces variables dans **Vercel → Settings →
+Environment Variables** :
+
+| Variable | Valeur | Obligatoire |
+|---|---|---|
+| `KOBARA_SECRET_KEY` | la clé secrète du tableau de bord Kobara (`kbr_sk_…`) | ✅ |
+| `KOBARA_WEBHOOK_SECRET` | le secret du point de terminaison (`whsec_…`) | ✅ |
+| `KOBARA_MODE` | `test` d'abord, `live` seulement après un aller-retour réussi | recommandé |
+| `KOBARA_MONCASH` | `true` **seulement** si vous voulez aussi le bouton « MonCash via Kobara » | non |
+
+⚠️ **Les deux premières vont ensemble.** Une clé d'API sans secret de webhook
+donnerait un rail qui encaisse et ne sait pas confirmer — de l'argent pris
+sans livraison. Le code refuse cette moitié : il exige les deux.
+
+⚠️ **Et un geste côté Kobara** : déclarer l'URL de rappel
+`https://zabelie.com/api/kobara/webhook`, événement `payment.succeeded`.
+Sans elle, les paiements resteraient `pending` jusqu'à ce que le
+réconciliateur les rattrape.
+
+**Ce qui n'est PAS résolu, et qu'aucune ligne de code ne résout :**
+
+1. **Statut BRH de Kobara** — la circulaire 121 impose l'autorisation *avant*
+   de fournir un service de paiement électronique. Aucun numéro d'agrément
+   trouvé, ni par l'agent ni par vous. La question tient en une phrase à leur
+   poser : *« quel est votre numéro d'agrément FSPE auprès de la BRH ? »*
+2. **Qui détient les fonds** entre l'encaissement et votre retrait, sur quel
+   compte, cantonné ou non. C'est la question la plus lourde pour le dossier
+   `docs/17`, et aucune page technique n'y répondra.
+3. **Aucun octet n'a jamais circulé** entre ce dépôt et `api.kobara.app`. Le
+   format de signature et les noms de champs sont transcrits de leur
+   documentation. **Faites un paiement en bac à sable avant d'encaisser une
+   gourde réelle** — c'est le seul geste qui transforme « documenté » en
+   « testé ».
+
+---
+
+## ⏰ Deux échéances d'écriture sont passées sans que personne ne revienne
+
+`docs/42` §3.1 fixait deux dates. Elles sont dépassées au 2026-09-17, et le
+fichier ne l'a pas dit — exactement ce que son propre avertissement annonçait :
+« une date écrite dans un markdown n'est pas un mécanisme ».
+
+| Échéance | Date | État |
+|---|---|---|
+| Silence de **Digicel MFS** et de **HDIT / Cabinet Volmar** après 3 semaines | 2026-09-11 | ⬜ **non consigné — 6 jours de retard** |
+| Silence sur la **question 7** (montant minimal `CreatePayment`) | 2026-09-12 | ⬜ **non consigné — 5 jours de retard** |
+
+Ce n'est pas une date d'abandon, c'est une date d'écriture : « le cabinet n'a
+pas répondu en trois semaines » est un fait qui oriente la suite, et il vaut
+d'être écrit comme une réponse. Il commande directement la condition 2 de la
+fiche Kobara ci-dessus.
+
+---
 
 ## ⚙️ À poser : la variable `ZABELIE_URL` (une minute)
 

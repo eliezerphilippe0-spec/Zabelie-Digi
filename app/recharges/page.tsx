@@ -1,13 +1,14 @@
+import { getTopupAvailability } from "@/lib/topup-availability";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { editorialAlternates } from "@/lib/editorial-routing";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
-import { getMonCashAvailability, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
+import { getMonCashAvailability, getNatCashAvailabilityKey, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
 import { isZelleEnabled } from "@/lib/zelle";
 import { isStripeEnabled } from "@/lib/stripe-config";
-import { isTopupFirstPartyEnabled } from "@/lib/topup-flag";
 
 export async function generateMetadata() {
   const lang = await getLang();
@@ -16,7 +17,9 @@ export async function generateMetadata() {
 
 export default async function RechargesPage() {
   const lang = await getLang();
-  const enabled = isTopupFirstPartyEnabled();
+  const availability = await getTopupAvailability();
+  const enabled = availability === "configured";
+  const trustLabels = marketplaceCopy(lang);
   return <div className="bg-grain min-h-dvh">
     <SiteNav activeHref="/recharges" />
     <main id="main" className="mx-auto max-w-6xl px-5 py-8">
@@ -29,9 +32,9 @@ export default async function RechargesPage() {
         <section className="rounded-2xl border border-line bg-ink p-6 sm:p-8">
           <h2 className="text-2xl">{t(lang, "recharges.phone")}</h2>
           <p className="mt-3 text-mist">{t(lang, "recharges.phone.body")}</p>
-          <p className="mt-6 font-semibold">{t(lang, enabled ? "recharges.enabled" : "recharges.paused")}</p>
+          <p className="mt-6 font-semibold">{enabled ? trustLabels.topupReady : availability === "sandbox" ? trustLabels.topupTest : trustLabels.topupClosed}</p>
           {enabled ? <Link href="/rechaj" className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "recharges.open")}</Link> : <>
-            <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "recharges.paused.body")}</p>
+            <p className="mt-2 text-sm leading-relaxed text-mist">{trustLabels.topupWhy}</p>
             <Link href="/catalogue" className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
           </>}
         </section>
@@ -47,8 +50,9 @@ export default async function RechargesPage() {
               <li>{t(lang, MONCASH_AVAILABILITY_LABELS[getMonCashAvailability()])}</li>
               <li>{t(lang, isZelleEnabled() ? "availability.zelle" : "availability.zelle.unavailable")}</li>
               <li>{isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}</li>
-              <li>{t(lang, "footer.natcash")}</li>
+              <li>{t(lang, getNatCashAvailabilityKey())}</li>
             </ul>
+            <p className="mt-3 text-xs text-mist">{trustLabels.statusNote}</p>
             <Link href="/aide#comment" className="mt-3 inline-flex min-h-11 items-center underline underline-offset-4">{t(lang, "recharges.help")}</Link>
           </section>
         </div>

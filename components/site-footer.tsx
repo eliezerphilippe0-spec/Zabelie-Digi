@@ -4,7 +4,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { POLICY_PATH } from "@/lib/policy";
-import { getMonCashAvailability, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
+import { getMonCashAvailability, getNatCashAvailabilityKey, MONCASH_AVAILABILITY_LABELS } from "@/lib/payment-availability";
 import { isZelleEnabled } from "@/lib/zelle";
 import { isStripeEnabled } from "@/lib/stripe-config";
 
@@ -68,7 +68,7 @@ export async function SiteFooter() {
             <span className="text-mist">
               {isStripeEnabled() ? t(lang, "footer.stripe") : t(lang, "footer.stripe.pending")}
             </span>
-            <span className="text-mist">{t(lang, "footer.natcash")}</span>
+            <span className="text-mist">{t(lang, getNatCashAvailabilityKey())}</span>
           </div>
           <div className="flex flex-col gap-2">
             <p className="font-semibold text-cloud">{t(lang, "footer.help")}</p>
