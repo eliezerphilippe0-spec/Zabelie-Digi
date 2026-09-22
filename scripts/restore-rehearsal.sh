@@ -11,7 +11,7 @@ node --input-type=module -e '
 export PGDATABASE="$RESTORE_DATABASE_URL"
 count="$(psql -X -At -v ON_ERROR_STOP=1 -c "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname not in ('pg_catalog','information_schema') and n.nspname not like 'pg_toast%' and c.relkind in ('r','p','v','m','S');")"
 [[ "$count" == "0" ]] || { echo "Restore refused: target is not empty."; exit 1; }
-pg_restore --exit-on-error --single-transaction --no-owner --no-acl --dbname="$PGDATABASE" "$BACKUP_DUMP"
+pg_restore --exit-on-error --single-transaction --no-owner --dbname="$PGDATABASE" "$BACKUP_DUMP"
 psql -X -v ON_ERROR_STOP=1 -c "select count(*) as missing_required_objects from zabelie_objets_requis() where not present;"
 psql -X -v ON_ERROR_STOP=1 -c "do \$\$ begin if exists(select 1 from zabelie_objets_requis() where not present and objet<>'zabelie_purge_sent_notices(integer)') then raise exception 'Required restore objects missing'; end if; end \$\$;"
 echo "Database restored in isolation. Complete Storage verification and application smoke tests before certifying recovery."

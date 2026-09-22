@@ -7,11 +7,16 @@ export type StripeReconcileDeps = {
   listPending: () => Promise<StripePending[]>;
   retrieve: (sessionId: string) => Promise<Stripe.Checkout.Session>;
   confirm: (order: StripePending, session: Stripe.Checkout.Session) => Promise<{ status?: string; error?: string }>;
-  expire: (order: StripePending, session: Stripe.Checkout.Session) => Promise<{ error?: string }>;
+  expire: (order: StripePending, session: Stripe.Checkout.Session) => Promise<{ status?: string; error?: string }>;
+  now?: () => number;
+  budgetMs?: number;
 };
 export async function reconcileStripe(deps: StripeReconcileDeps) {
-  const result = { scanned: 0, confirmed: 0, pending: 0, expired: 0, missingSession: 0, errors: [] as string[] };
-  for (const order of await deps.listPending()) {
+  const now=deps.now??Date.now; const started=now();
+  const result = { deferred: 0, scanned: 0, confirmed: 0, pending: 0, expired: 0, missingSession: 0, errors: [] as string[] };
+  const orders=await deps.listPending();
+  for (const order of orders) {
+    if(now()-started >= (deps.budgetMs??60000)){result.deferred=orders.length-result.scanned;break;}
     result.scanned++;
     try {
       const id = order.raw?.stripe_session_id;
@@ -30,7 +35,9 @@ export async function reconcileStripe(deps: StripeReconcileDeps) {
         // Only a formal provider expiry permits cancellation. Age/network errors do not.
         const out = await deps.expire(order, session);
         if (out.error) throw new Error("stripe_expiry_failed");
-        result.expired++;
+        if(out.status==="confirmed") result.confirmed++;
+        else if(out.status==="failed") result.expired++;
+        else throw new Error("stripe_expiry_unconfirmed");
       } else result.pending++;
     } catch { result.errors.push(order.order_id); }
   }
@@ -61,10 +68,10 @@ export function liveStripeDeps(admin: SupabaseClient): StripeReconcileDeps {
       return { status: data?.status };
     },
     expire: async (order, session) => {
-      const { error } = await admin.rpc("zabelie_stripe_payment_failed", {
+      const { data, error } = await admin.rpc("zabelie_stripe_payment_failed", {
         p_order_id: order.order_id, p_session_id: session.id, p_event_id: "reconcile_expired:" + session.id,
       });
-      return error ? { error: "expiry_unavailable" } : {};
+      return error ? { error: "expiry_unavailable" } : {status:data};
     },
   };
 }

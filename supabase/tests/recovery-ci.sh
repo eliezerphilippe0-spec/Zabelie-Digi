@@ -6,7 +6,7 @@ set -euo pipefail
 [[ "$POSTGRES_CONTAINER" =~ ^[a-f0-9]{64}$ ]] || exit 1
 [[ "$(docker inspect --format '{{.Config.Image}}' "$POSTGRES_CONTAINER")" == "postgres:17" ]] || exit 1
 # Keep the validated synthetic orders, conversations and refund receipt for the dump.
-sed 's/^rollback;$/commit;/' supabase/tests/haiti_operations.test.sql | docker exec -i "$POSTGRES_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q
+docker exec -i "$POSTGRES_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q < supabase/tests/recovery-fixture.sql
 archive="${RUNNER_TEMP:?}/zabelie-recovery.dump"
 docker exec "$POSTGRES_CONTAINER" pg_dump -U postgres --format=custom postgres > "$archive"
 # createdb refuses an existing target. There is no DROP, --clean or overwrite path.

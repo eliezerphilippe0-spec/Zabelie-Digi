@@ -12,7 +12,7 @@ export function ReconcileAction(){
    const r=await fetch("/api/reconcile",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}",signal:AbortSignal.timeout(250000)});
    if(!r.ok)throw new Error("unavailable");
    const data=await r.json();
-   const errors=(data.errors?.length??0)+(data.topup?.error?1:0)+(data.kobara?.error?1:0)+(data.kobara?.errors?.length??0)+(data.stripe?.error?1:0)+(data.stripe?.errors?.length??0);
+   const errors=(data.errors?.length??0)+(data.topup?.error?1:0)+(data.kobara?.error?1:0)+(data.kobara?.errors?.length??0)+(data.stripe?.error?1:0)+(data.stripe?.errors?.length??0)+(data.stripe?.missingSession??0)+(data.kobara?.sansIdentifiant??0)+(data.stripe?.deferred??0);
    setMessage(data.ignore?"Une vérification est déjà en cours.":errors?"Vérification partielle : certains opérateurs restent à vérifier.":"Vérification terminée. Les statuts reflètent les réponses des opérateurs.");
    router.refresh();
   }catch{setMessage("Résultat non confirmé. Rechargez la file avant de réessayer.");}finally{lock.current=false;setBusy(false);}

@@ -8,7 +8,7 @@ function fixture(session: Partial<Stripe.Checkout.Session> = {}, fail?: string) 
   listPending:async()=>[{order_id:"order",idempotency_key:"order",raw:{stripe_session_id:"cs_saved"}}],
   retrieve:async()=>{if(fail==="network") throw Error("offline");return {id:"cs_saved",metadata:{order_id:"order"},mode:"payment",currency:"usd",amount_total:1250,payment_status:"paid",status:"complete",...session} as Stripe.Checkout.Session;},
   confirm:async()=>{calls.push("confirm");return fail==="confirm"?{status:"failed"}:{status:"confirmed"};},
-  expire:async()=>{calls.push("expire");return fail==="expire"?{error:"unavailable"}:{};},
+  expire:async()=>{calls.push("expire");return fail==="expire"?{error:"unavailable"}:{status:"failed"};},
  };
  return {deps,calls};
 }
@@ -34,4 +34,15 @@ test("a rejected amount in SQL is not reported as confirmed",async()=>{
 });
 test("a missing session is explicit and leaves the order intact",async()=>{
  const f=fixture();f.deps.listPending=async()=>[{order_id:"order",idempotency_key:"order",raw:null}];const r=await reconcileStripe(f.deps);assert.equal(r.missingSession,1);assert.deepEqual(f.calls,[]);
+});
+
+test("a concurrent successful webhook is not reported as an expired payment",async()=>{
+ const f=fixture({status:"expired",payment_status:"unpaid"});f.deps.expire=async()=>({status:"confirmed"});
+ const r=await reconcileStripe(f.deps);assert.equal(r.expired,0);assert.equal(r.confirmed,1);
+});
+test("a slow provider leaves unexamined payments for a later rotation",async()=>{
+ const f=fixture();let time=0;f.deps.now=()=>time;f.deps.budgetMs=100;
+ f.deps.listPending=async()=>Array.from({length:3},()=>({order_id:"order",idempotency_key:"order",raw:{stripe_session_id:"cs_saved"}}));
+ const retrieve=f.deps.retrieve;f.deps.retrieve=async id=>{time+=100;return retrieve(id);};
+ const r=await reconcileStripe(f.deps);assert.equal(r.scanned,1);assert.equal(r.deferred,2);assert.equal(r.confirmed,1);
 });
