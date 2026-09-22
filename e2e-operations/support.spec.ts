@@ -22,6 +22,9 @@ for(const width of [390,1280])test("order support preserves the message across a
  const saved=await (await request.get(fixture+"/__messages")).json();expect(saved).toHaveLength(1);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
  await page.screenshot({path:test.info().outputPath("support-"+width+".png"),fullPage:true});
+ await page.getByRole("link",{name:"Mes dossiers Zabelie",exact:true}).click();
+ await expect(page.getByRole("heading",{name:"Mes dossiers Zabelie"})).toBeVisible();
+ await expect(page.getByRole("link",{name:/ZB-RECETTE/})).toBeVisible();
 });
 test("Haitian Creole copy and foreign account refusal",async({page})=>{
  await page.goto(fixture+"/__login?role=buyer&lang=ht");

@@ -167,6 +167,7 @@ export default async function MesVentesPage() {
 
   return (
     <Shell lang={lang}>
+      <Link href="/assistance" className="mt-4 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).cases}</Link>
       {ventes.length === 0 ? (
         <p className="mt-6 text-sm text-mist">{t(lang, "sales.empty")}</p>
       ) : (

@@ -5,7 +5,7 @@ Ce lot dépend des corrections backend de la PR 267. Appliquer 0112 puis 0113 av
 ## Parcours livré
 
 - **Acheteur** : Mes achats → ouvrir le dossier de la commande. Le vendeur concerné et l’administration voient le même historique. Une nouvelle réponse rouvre un dossier clos.
-- **Vendeur** : Mes ventes → dossier. L’accès reste limité aux commandes de ses propres produits, même si la fiche a été retirée.
+- **Vendeur** : Mes ventes → Mes dossiers Zabelie (/assistance), y compris les dossiers de produits numériques ; ou dossier sur une ligne de vente. L’accès reste limité aux commandes de ses propres produits, même si la fiche a été retirée.
 - **Administration avec MFA** : /admin/operations. File paginée des paiements anciens, incohérences paiement/commande, remises contestées, dossiers ouverts, remboursements à justifier et versements en attente.
 - Les délais affichés sont des cibles internes, pas une promesse de remboursement. Les messages sont immuables et les décisions administratives sont journalisées.
 - Le signalement de non-réception par l’acheteur appelle le mécanisme de contestation existant. Il ne crée ni remboursement automatique ni nouvelle libération d’argent.

@@ -42,7 +42,7 @@ export default async function OrderSupportPage({params,searchParams}:{params:Pro
  }
  const date=(s:string)=>new Intl.DateTimeFormat(lang==="ht"?"fr-HT":lang,{dateStyle:"medium",timeStyle:"short",timeZone:"America/Port-au-Prince"}).format(new Date(s));
  return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-3xl px-5 py-10">
-  <Link href={isAdmin?"/admin/operations":"/mes-achats"} className="inline-flex min-h-11 items-center text-sm underline">{isAdmin?"Administration":labels.back}</Link>
+  <Link href={isAdmin?"/admin/operations":"/assistance"} className="inline-flex min-h-11 items-center text-sm underline">{isAdmin?"Administration":labels.cases}</Link>
   <h1 className="mt-4 text-3xl font-extrabold">{labels.title}</h1><p className="mt-2 break-all text-sm text-mist">{order.order_ref??order.id} · {formatHTG(order.amount_htg)}</p>
   {dossier?<div className="mt-5 rounded-xl border border-line p-4"><p className="font-semibold">{labels[dossier.status]}</p><p className="mt-2 text-sm">{labels.review}: {date(dossier.response_due_at)}</p><p className="mt-2 text-xs text-mist">{labels.reviewNote}</p></div>:<p className="mt-5 text-mist">{labels.empty}</p>}
   {order.status==="refunded"&&<p className="mt-4 rounded-xl border border-line p-4 text-sm">{receiptResult.data?labels.refundRecorded:labels.refundPending}</p>}

@@ -26,7 +26,7 @@ const server=createServer(async(req,res)=>{
  if(u.pathname==="/rest/v1/rpc/zabelie_order_participant"){const b=await body();return send(b.p_order_id===order&&role!=="foreign");}
  if(u.pathname==="/rest/v1/rpc/zabelie_rate_limit")return send(true);
  if(u.pathname==="/rest/v1/orders")return single([{id:order,order_ref:"ZB-RECETTE",amount_htg:1500,status:"paid"}]);
- if(u.pathname==="/rest/v1/zabelie_support_cases")return single(messages.length?[{id:caseId,order_id:order,status,response_due_at:"2026-09-24T16:00:00Z",created_at:"2026-09-22T16:00:00Z"}]:[]);
+ if(u.pathname==="/rest/v1/zabelie_support_cases")return single(messages.length&&role!=="foreign"?[{id:caseId,order_id:order,order:{order_ref:"ZB-RECETTE"},status,response_due_at:"2026-09-24T16:00:00Z",created_at:"2026-09-22T16:00:00Z"}]:[]);
  if(u.pathname==="/rest/v1/zabelie_support_messages")return send(messages.toReversed());
  if(u.pathname==="/rest/v1/zabelie_refund_receipts")return single([]);
  if(u.pathname==="/rest/v1/rpc/zabelie_submit_support"){

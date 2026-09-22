@@ -1,5 +1,6 @@
 import type { Lang } from "./i18n";
 const fr = {
+ cases: "Mes dossiers Zabelie", casesEmpty: "Aucun dossier pour vos achats ou vos ventes.",
  title: "Aide pour cette commande", back: "Mes achats", amount: "Montant de la commande",
  reason: "Quel est le problème ?", debited: "L’argent a été débité, la commande attend", not_received: "Je n’ai pas reçu ma commande",
  wrong: "L’article reçu ne correspond pas", digital: "Le fichier ou l’accès ne fonctionne pas", other: "Autre question",
@@ -19,6 +20,7 @@ const fr = {
 };
 export type SupportCopy = typeof fr;
 const ht: SupportCopy = {
+ cases: "Dosye Zabelie mwen yo", casesEmpty: "Pa gen dosye pou acha oswa lavant ou yo.",
  title:"Èd pou kòmann sa a",back:"Acha mwen",amount:"Montan kòmann nan",reason:"Ki pwoblèm nan?",
  debited:"Lajan soti, kòmann nan poko konfime",not_received:"Mwen pa resevwa kòmann mwen",wrong:"Atik mwen resevwa a pa koresponn",digital:"Fichye a oswa aksè a pa mache",other:"Yon lòt kesyon",
  message:"Esplike sa ki pase a",hint:"Bay dat, kote oswa referans operatè ki itil la. Pa janm voye PIN, modpas oswa nimewo kat ou. Achtè a, vandè a ak Zabelie ka wè dosye sa a.",
@@ -34,6 +36,7 @@ const ht: SupportCopy = {
  trustReturn:"Yon pwoblèm apre acha a? Jwenn kòmann nan nan Acha mwen epi louvri yon dosye. Yon demann pa garanti ranbousman.",
 };
 const en: SupportCopy = {
+ cases: "My Zabelie cases", casesEmpty: "No cases for your purchases or sales.",
  title:"Help with this order",back:"My purchases",amount:"Order amount",reason:"What happened?",debited:"Money was debited, order still pending",not_received:"Order not received",wrong:"Item does not match",digital:"File or access does not work",other:"Another question",
  message:"Describe what happened",hint:"Include a useful date, location or provider reference. Never send your PIN, password or card number. The buyer, seller and Zabelie can see this case.",
  send:"Save to the case",sending:"Saving…",error:"We could not confirm the request. Your text is preserved; retry the same request.",saved:"Your message is saved.",empty:"No case opened for this order.",history:"Case history",buyer:"Buyer",seller:"Seller",admin:"Zabelie team",open:"Awaiting review",waiting_buyer:"Awaiting buyer reply",waiting_seller:"Awaiting seller reply",resolved:"Case closed",status:"Case status",older:"Earlier messages",newer:"Recent messages",review:"Follow-up target",reviewNote:"An internal follow-up target, not a promised refund date.",
@@ -42,6 +45,7 @@ const en: SupportCopy = {
  helpLink:"Open or follow my Zabelie case",trustTitle:"Before you pay",trustLocal:"Product price in gourdes. Choose an available payment method at the next step.",trustFees:"Handover fees to agree with the seller are not included in this total. Confirm them before paying.",trustReturn:"A problem after purchase? Find the order in My purchases and open a case. A request does not guarantee a refund.",
 };
 const es: SupportCopy = {
+ cases: "Mis casos Zabelie", casesEmpty: "No hay casos para tus compras o ventas.",
  title:"Ayuda con este pedido",back:"Mis compras",amount:"Importe del pedido",reason:"¿Qué ocurrió?",debited:"Dinero descontado, pedido pendiente",not_received:"No recibí el pedido",wrong:"El artículo no corresponde",digital:"El archivo o acceso no funciona",other:"Otra pregunta",
  message:"Explica lo ocurrido",hint:"Incluye fecha, lugar o referencia del operador. Nunca envíes PIN, contraseña ni número de tarjeta. El comprador, vendedor y Zabelie pueden ver el caso.",
  send:"Guardar en el caso",sending:"Guardando…",error:"No pudimos confirmar la solicitud. Conservamos el texto; reintenta la misma solicitud.",saved:"Mensaje guardado.",empty:"No hay un caso abierto para este pedido.",history:"Historial del caso",buyer:"Comprador",seller:"Vendedor",admin:"Equipo Zabelie",open:"Pendiente de revisión",waiting_buyer:"Esperando al comprador",waiting_seller:"Esperando al vendedor",resolved:"Caso cerrado",status:"Estado del caso",older:"Mensajes anteriores",newer:"Mensajes recientes",review:"Fecha objetivo de seguimiento",reviewNote:"Fecha interna de seguimiento, no una fecha garantizada de reembolso.",
