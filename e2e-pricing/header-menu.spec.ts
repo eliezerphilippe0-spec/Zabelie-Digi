@@ -50,9 +50,14 @@ for (const [width, height] of [[1440, 600], [390, 600], [320, 568]]) {
     expect(languageBox!.x).toBeGreaterThanOrEqual(8);
     await page.keyboard.press("Escape");
     await trigger.click();
-    await page.evaluate(() => window.scrollTo(0, 400));
+    // The site scrolls smoothly: reopening before scrollend closes the menu again.
+    await page.evaluate(() => new Promise<void>(resolve => {
+      document.addEventListener("scrollend", () => resolve(), { once: true });
+      window.scrollTo({ top: 400, behavior: "smooth" });
+    }));
     await expect(menu).not.toHaveAttribute("open", "");
     await trigger.click();
+    await expect(menu).toHaveAttribute("open", "");
     await menu.getByRole("link", { name: "Aide", exact: true }).click();
     await expect(page).toHaveURL(/\/aide$/);
     await expect(page.locator("header details[open]")).toHaveCount(0);
