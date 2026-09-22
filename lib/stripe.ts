@@ -20,7 +20,7 @@ export { isStripeEnabled } from "./stripe-config";
 function client(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe: STRIPE_SECRET_KEY manquant.");
-  return new Stripe(key);
+  return new Stripe(key, { timeout: 10000, maxNetworkRetries: 1 });
 }
 
 export type StripeCheckoutInput = {
@@ -77,4 +77,9 @@ export function verifyStripeWebhook(
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) throw new Error("Stripe: STRIPE_WEBHOOK_SECRET manquant.");
   return client().webhooks.constructEvent(payload, signature, secret);
+}
+
+/** Provider read only: never creates a session or charge. */
+export async function retrieveStripeSession(id: string): Promise<Stripe.Checkout.Session> {
+  return client().checkout.sessions.retrieve(id);
 }

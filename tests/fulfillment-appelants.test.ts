@@ -130,6 +130,7 @@ test("l'extracteur a lu le dépôt, et pas le vide", () => {
     "app/api/reconcile/route.ts",
     "app/api/stripe/webhook/route.ts",
     "lib/kobara-reconcile.ts",
+    "lib/stripe-reconcile.ts",
   ]);
 });
 

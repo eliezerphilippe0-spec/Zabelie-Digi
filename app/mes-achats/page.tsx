@@ -1,3 +1,4 @@
+import { supportCopy } from "@/lib/support-copy";
 import { OrderHelp } from "@/components/order-help";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { whatsappHref } from "@/lib/whatsapp";
@@ -271,7 +272,7 @@ export default async function MesAchatsPage({ searchParams }: {
                   {recipientByOrder.has(o.id) && <RecipientDetails recipient={recipientByOrder.get(o.id)!} lang={lang}/>}
                   {recipientReadError && <p className="mt-2 text-xs text-mist">{t(lang, "recipient.unavailable")}</p>}
                   {o.status === "pending" && <p className="mt-2 max-w-lg text-sm text-mist">{t(lang, "purchases.pending.hint")}</p>}
-                  <OrderHelp orderId={o.id} orderRef={o.order_ref || o.id} productId={o.product?.id} labels={marketplaceCopy(lang)} supportUrl={whatsappHref()} messageLabels={{ placeholder: t(lang, "msg.placeholder"), send: t(lang, "msg.send"), sending: t(lang, "msg.sending"), sent: t(lang, "msg.sent"), warn: t(lang, "msg.warn") }}/>
+                  <OrderHelp caseLabel={supportCopy(lang).helpLink} orderId={o.id} orderRef={o.order_ref || o.id} productId={o.product?.id} labels={marketplaceCopy(lang)} supportUrl={whatsappHref()} messageLabels={{ placeholder: t(lang, "msg.placeholder"), send: t(lang, "msg.send"), sending: t(lang, "msg.sending"), sent: t(lang, "msg.sent"), warn: t(lang, "msg.warn") }}/>
                   {o.status === "pending" && <Link className="inline-flex min-h-11 items-center text-sm underline" href={`/paiement/en-attente?commande=${o.id}`}>{marketplaceCopy(lang).resume}</Link>}
                 </div>
                 <div className="flex flex-col items-start gap-3 sm:items-end">

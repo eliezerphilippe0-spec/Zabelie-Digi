@@ -144,13 +144,7 @@ export async function reconcileKobara(
 export function liveKobaraDeps(admin: SupabaseClient): KobaraReconcileDeps {
   return {
     listPending: async () => {
-      const { data, error } = await admin
-        .from("payments")
-        .select("idempotency_key, order_id, created_at, raw")
-        .eq("status", "pending")
-        .eq("rail", "kobara")
-        .order("created_at", { ascending: true })
-        .limit(50);
+      const { data, error } = await admin.rpc("zabelie_claim_pending_payments", { p_rail: "kobara" });
       if (error) throw new Error(error.message);
       return (data ?? []) as PendingKobara[];
     },
