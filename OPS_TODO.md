@@ -1,5 +1,10 @@
 # OPS_TODO — Zabelie
 
+## Recommandations par achats — 22 septembre 2026
+
+Extension du bloc Offres associées : priorité aux choix vendeurs, suggestions de la même boutique fondées sur des achats réels confirmés, seuils de pertinence, absence de doublons et trois cartes maximum. Préférence vendeur et compteur d’attribution ajoutés. Migration 0111 à appliquer après CI verte, avant déploiement ; preuve finale et empreintes dans la PR. Aucun historique ni achat réel créé. Voir `docs/offres-associees.md`.
+
+
 ## Offres associées — 21 septembre 2026
 
 Éditeur vendeur pour version supérieure, complément et alternative économique. Associations explicites entre produits publiés d’une même boutique, sans doublons, sans débit automatique et sans modification des commissions. Parcours produit et complément après achat confirmé ; statistiques des ventes confirmées par lien. Migration additive 0110 à appliquer après CI SQL, avant l’application. Détails : `docs/offres-associees.md`.
