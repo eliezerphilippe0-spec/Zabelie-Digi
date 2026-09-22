@@ -45,9 +45,16 @@ begin
  assert (zabelie_market_metrics(30)->>'paid')::int=0,'test profile counted';
  update profiles set is_test=false where id=buyer;
 
- out:=zabelie_submit_support(oid,buyer,rid,'debited','Vérifiez mon paiement, merci.');
+ perform zabelie_open_fulfillment(oid);
+ select count(*) into n from wallet_transactions;
+ out:=zabelie_submit_support(oid,buyer,rid,'not_received','Je ne vois pas ma commande livrée.');
  assert (out->>'ok')::boolean;
- out:=zabelie_submit_support(oid,buyer,rid,'debited','Vérifiez mon paiement, merci.');
+ assert (out->>'delivery_hold')::boolean,'non-receipt did not engage existing hold';
+ assert (select status from zabelie_fulfillment where order_id=oid)='disputed_by_buyer';
+ assert (select status from orders where id=oid)='disputed';
+ assert (select bool_and(gated_on_delivery) from escrow_entries where order_id=oid),'funds no longer gated';
+ assert (select count(*) from wallet_transactions)=n,'opening a case transferred funds';
+ out:=zabelie_submit_support(oid,buyer,rid,'not_received','Je ne vois pas ma commande livrée.');
  assert (out->>'duplicate')::boolean,'retry duplicated support';
  assert (select count(*) from zabelie_support_messages)=1;
  begin
@@ -69,6 +76,7 @@ begin
  perform zabelie_submit_support(oid,seller,gen_random_uuid(),'other','Réponse du vendeur au client.');
  perform zabelie_submit_support(oid,adm,gen_random_uuid(),'other','Nous attendons la réponse du vendeur.','waiting_seller');
  assert (select status from zabelie_support_cases where order_id=oid)='waiting_seller';
+ assert (select bool_and(gated_on_delivery) from escrow_entries where order_id=oid),'admin reply released funds';
  assert exists(select 1 from zabelie_admin_actions where actor_id=adm and action='support.reply');
  begin
   update zabelie_support_messages set body='Une preuve falsifiée ensuite.';

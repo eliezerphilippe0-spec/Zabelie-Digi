@@ -20,11 +20,9 @@ import {
  * nous, et c'est exactement le trou que le réconciliateur MonCash a été écrit
  * pour fermer.
  *
- * Stripe est confirmé par webhook signé ET N'EST PAS réconcilié — c'est
- * assumé et justifié dans `app/api/reconcile/route.ts` : Stripe rejoue ses
- * événements pendant 72 h. La documentation de Kobara lue le 2026-08-24
- * n'annonce **aucune politique de rejeu**. En l'absence de cette garantie, on
- * ne peut pas emprunter la justification de Stripe : on interroge.
+ * Stripe dispose désormais aussi de sa passe de réconciliation dédiée dans
+ * lib/stripe-reconcile.ts. Chaque rail consulte son opérateur et conserve
+ * ses propres règles de confirmation, de devise et d'expiration.
  *
  * ⚠️ NON ÉPROUVÉ CONTRE L'HÔTE RÉEL. Aucun appel n'a jamais été émis vers
  * `api.kobara.app` (EGRESS_BLOCKED, aucun compte). Les tests de ce module
