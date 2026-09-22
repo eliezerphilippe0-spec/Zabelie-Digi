@@ -228,8 +228,8 @@ export default async function HomePage() {
         <MarketplaceStatus lang={lang} />
         {/* BANNIÈRE — accueil premium §4.2 : UNE bannière, le h1 DEDANS, une
             phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
-            carrousel : le premier écran appartient aux produits. La photo est
-            celle du porteur quand elle existe ; sinon un aplat de chrome. */}
+            carrousel : le premier écran appartient aux produits. Le visuel de
+            marque reste facultatif ; sinon un aplat de chrome. */}
         <section className="mx-auto max-w-6xl px-3 pt-3">
           <div
             data-has-featured={Boolean(featured)}
@@ -263,10 +263,6 @@ export default async function HomePage() {
               </div>
               {opening && <p className="launch-note">{t(lang, "launch.note")}</p>}
             </div>
-            {opening && <figure className="launch-portrait">
-              <Image src="/brand/eliezer-portrait.jpg" alt={t(lang, "founder.name")} width={900} height={1200} priority sizes="(max-width: 767px) 88vw, 360px" />
-              <figcaption><span>{t(lang, "founder.name")}</span><span>{t(lang, "founder.role")}</span><Link href="/a-propos" className="editorial-link">{t(lang, "launch.story")}<span aria-hidden="true">↗</span></Link></figcaption>
-            </figure>}
             {featured && <HomeFeatured product={featured} discovery={discovery} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
           </div>
         </section>
