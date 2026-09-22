@@ -101,7 +101,7 @@ function offersFixture(req,url,send,single) {
      if(p.p_user_id!==SELLER_ID||!source)return send(200,{ok:false,reason:"not_owner"});
      const kinds=["upsell","cross_sell","downsell"],targets=Object.values(p.p_targets).filter(Boolean);
      if(new Set(targets).size!==targets.length||targets.some(id=>!OFFER_TARGETS.includes(id)))return send(200,{ok:false,reason:"invalid"});
-     if(typeof p.p_automatic==="boolean")automaticPreferences.set(source.id,p.p_automatic);
+     if(typeof p.p_recommendations_enabled==="boolean")automaticPreferences.set(source.id,p.p_recommendations_enabled);
      linkedOffers=linkedOffers.filter(o=>o.source_product_id!==source.id).concat(kinds.flatMap((kind,i)=>p.p_targets[kind]?[{id:OFFER_IDS[i],source_product_id:source.id,target_product_id:p.p_targets[kind],offer_kind:kind,active:true}]:[]));
      return send(200,{ok:true});
    });return true;

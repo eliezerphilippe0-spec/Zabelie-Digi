@@ -23,7 +23,7 @@ export async function PUT(req: Request) {
   const params = { p_user_id: user.id, p_product_id: productId, p_targets: selection };
   const { data, error } = automatic === undefined
     ? await admin.rpc("zabelie_save_product_offers", params)
-    : await admin.rpc("zabelie_configure_product_offers", { ...params, p_automatic: automatic });
+    : await admin.rpc("zabelie_configure_product_offers", { ...params, p_recommendations_enabled: automatic });
   if (error) return NextResponse.json({ error: copy.unavailable }, { status: 503 });
   if (!data?.ok) return NextResponse.json({ error: copy.invalid, code: data?.reason }, { status: data?.reason === "not_owner" ? 403 : 422 });
   return NextResponse.json({ ok: true });

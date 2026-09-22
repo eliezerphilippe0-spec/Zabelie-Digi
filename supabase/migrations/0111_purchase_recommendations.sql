@@ -105,14 +105,14 @@ revoke all on function public.zabelie_product_recommendations(uuid,uuid) from pu
 grant execute on function public.zabelie_product_recommendations(uuid,uuid) to service_role;
 
 -- Le formulaire existant conserve ses trois emplacements. Préférence + offres = même transaction.
-create function public.zabelie_configure_product_offers(p_user_id uuid,p_product_id uuid,p_targets jsonb,p_automatic boolean)
+create function public.zabelie_configure_product_offers(p_user_id uuid,p_product_id uuid,p_targets jsonb,p_recommendations_enabled boolean)
 returns jsonb language plpgsql security definer set search_path=public as $$
 declare result jsonb;
 begin
-  if p_automatic is null then return jsonb_build_object('ok',false,'reason','invalid'); end if;
+  if p_recommendations_enabled is null then return jsonb_build_object('ok',false,'reason','invalid'); end if;
   result:=zabelie_save_product_offers(p_user_id,p_product_id,p_targets);
   if result->>'ok'='true' then
-    update products set zabelie_auto_recommendations=p_automatic where id=p_product_id and seller_id=p_user_id;
+    update products set zabelie_auto_recommendations=p_recommendations_enabled where id=p_product_id and seller_id=p_user_id;
   end if;
   return result;
 end;
