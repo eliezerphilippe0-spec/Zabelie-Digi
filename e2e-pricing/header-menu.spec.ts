@@ -38,7 +38,8 @@ for (const [width, height] of [[1440, 600], [390, 600], [320, 568]]) {
     await expect(menu).not.toHaveAttribute("open", "");
     await expect(trigger).toBeFocused();
     await trigger.click();
-    await page.locator("h1").click();
+    // The heading can be covered by the dropdown on mobile; use the free page margin.
+    await page.mouse.click(4, Math.round(height / 2));
     await expect(menu).not.toHaveAttribute("open", "");
     await trigger.click();
     // Keyboard users can move to another header control without overlapping panels.
@@ -50,14 +51,16 @@ for (const [width, height] of [[1440, 600], [390, 600], [320, 568]]) {
     expect(languageBox!.x).toBeGreaterThanOrEqual(8);
     await page.keyboard.press("Escape");
     await trigger.click();
-    // The site scrolls smoothly: reopening before scrollend closes the menu again.
+    // Scrolling or following an anchor must not detach or unexpectedly dismiss the menu.
     await page.evaluate(() => new Promise<void>(resolve => {
       document.addEventListener("scrollend", () => resolve(), { once: true });
       window.scrollTo({ top: 400, behavior: "smooth" });
     }));
-    await expect(menu).not.toHaveAttribute("open", "");
-    await trigger.click();
     await expect(menu).toHaveAttribute("open", "");
+    const scrolledPanel = await panel.boundingBox();
+    const scrolledTrigger = await trigger.boundingBox();
+    expect(Math.abs(scrolledPanel!.y - (scrolledTrigger!.y + scrolledTrigger!.height))).toBeLessThanOrEqual(8);
+    expect(scrolledPanel!.y + scrolledPanel!.height).toBeLessThanOrEqual(height - 8);
     await menu.getByRole("link", { name: "Aide", exact: true }).click();
     await expect(page).toHaveURL(/\/aide$/);
     await expect(page.locator("header details[open]")).toHaveCount(0);

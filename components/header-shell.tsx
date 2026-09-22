@@ -54,9 +54,7 @@ export function HeaderShell({
     if (!header) return;
     const openMenus = () => header.querySelectorAll<HTMLDetailsElement>("details[data-header-menu][open]");
     const closeMenus = () => openMenus().forEach(menu => { menu.open = false; });
-    function onToggle(event: Event) {
-      const menu = event.target;
-      if (!(menu instanceof HTMLDetailsElement) || !menu.open || !menu.hasAttribute("data-header-menu")) return;
+    function positionMenu(menu: HTMLDetailsElement) {
       const panel = menu.querySelector<HTMLElement>(":scope > .header-menu-panel");
       if (!panel) return;
       panel.style.setProperty("--header-menu-shift", "0px");
@@ -64,6 +62,18 @@ export function HeaderShell({
       const shift = Math.max(12 - box.left, Math.min(0, window.innerWidth - 12 - box.right));
       panel.style.setProperty("--header-menu-shift", shift + "px");
       panel.style.setProperty("--header-menu-top", box.top + "px");
+    }
+    function onToggle(event: Event) {
+      const menu = event.target;
+      if (menu instanceof HTMLDetailsElement && menu.open && menu.hasAttribute("data-header-menu")) positionMenu(menu);
+    }
+    let frame = 0;
+    function followScroll() {
+      if (frame || !openMenus().length) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        openMenus().forEach(positionMenu);
+      });
     }
     function outside(event: Event) {
       if (!(event.target instanceof Node)) return;
@@ -86,7 +96,7 @@ export function HeaderShell({
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("focusin", outside);
     document.addEventListener("keydown", escape);
-    window.addEventListener("scroll", closeMenus, { passive: true });
+    window.addEventListener("scroll", followScroll, { passive: true });
     window.addEventListener("resize", closeMenus);
     return () => {
       header.removeEventListener("toggle", onToggle, true);
@@ -94,7 +104,8 @@ export function HeaderShell({
       document.removeEventListener("pointerdown", outside, true);
       document.removeEventListener("focusin", outside);
       document.removeEventListener("keydown", escape);
-      window.removeEventListener("scroll", closeMenus);
+      window.removeEventListener("scroll", followScroll);
+      cancelAnimationFrame(frame);
       window.removeEventListener("resize", closeMenus);
     };
   }, []);

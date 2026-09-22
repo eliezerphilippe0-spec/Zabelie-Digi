@@ -95,7 +95,7 @@ test("seller can open, edit and share the same public shop", async ({ page }) =>
   await page.locator('summary[aria-label="Mon compte"]').click();
   await page.getByRole("link", { name: "Ma boutique", exact: true }).click();
   await expect(page).toHaveURL(/#ma-boutique$/);
-  await page.locator('summary[aria-label="Mon compte"]').click();
+  await expect(page.locator('summary[aria-label="Mon compte"]').locator("..")).not.toHaveAttribute("open", "");
   await expect.poll(async () => {
     const title = await page.locator("#ma-boutique-title").boundingBox();
     const header = await page.locator("header").boundingBox();
