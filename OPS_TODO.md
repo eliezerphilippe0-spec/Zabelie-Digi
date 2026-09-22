@@ -66,6 +66,10 @@ le taux de conversion opérationnel Vercel. Voir [le dossier](docs/tarification-
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
 
+## Refonte éditoriale — 22 septembre 2026
+
+Branche `feat/design-editorial` : accueil adapté au catalogue vide avec portrait réel du fondateur, page vendeur avec commission calculée avant inscription, catalogue avec filtres repliables. Textes FR/HT/EN/ES. Références de composition : 21st.dev (hero, navigation, cards), Etsy (découverte), Shopify (bénéfices vendeur). Pas de nouvelle dépendance ni de copie de composant externe. Aperçu local et captures vérifiés ; aucun changement de base ou de mode de paiement. À relire avant fusion et mise en ligne.
+
 ## Activation Kobara et recharges — diagnostic du 17 septembre 2026
 
 Correctif du contrat API et des confirmations prepare sur `fix/kobara-activation`.
