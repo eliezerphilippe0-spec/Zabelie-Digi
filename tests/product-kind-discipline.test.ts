@@ -40,7 +40,7 @@ const KINDS = ["fichier", "service", "physical"];
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     if (entry === "node_modules" || entry.startsWith(".")) continue;
-    const full = join(dir, entry);
+    const full = join(dir, entry).replace(/\\/g, "/");
     if (statSync(full).isDirectory()) walk(full, out);
     else if (entry.endsWith(".ts") || entry.endsWith(".tsx")) out.push(full);
   }

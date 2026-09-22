@@ -10,7 +10,7 @@ import {
 } from "@/lib/product-kind";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/payment-utils";
 import {
@@ -39,12 +39,8 @@ export async function POST(req: Request) {
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: t(lang, "api.suspended") },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: {
     title?: string;
