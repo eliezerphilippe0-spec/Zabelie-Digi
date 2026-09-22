@@ -39,7 +39,7 @@ type Fichier = { chemin: string; source: string };
 
 function tousLesModules(racine: string, acc: Fichier[] = []): Fichier[] {
   for (const nom of readdirSync(racine)) {
-    const chemin = join(racine, nom);
+    const chemin = join(racine, nom).replace(/\\/g, "/");
     if (statSync(chemin).isDirectory()) tousLesModules(chemin, acc);
     else if (/\.tsx?$/.test(chemin)) acc.push({ chemin, source: readFileSync(chemin, "utf8") });
   }
@@ -189,7 +189,7 @@ test("aucune route n'expose p_auto : la réception système ne vient pas du clie
  * absence est silencieuse — d'où ce contrôle.
  */
 test("la page des ventes filtre sur seller_id, en plus de la RLS", () => {
-  const page = modules.find((f) => f.chemin === join("app", "mes-ventes", "page.tsx"));
+  const page = modules.find((f) => f.chemin === "app/mes-ventes/page.tsx");
   assert.ok(page, "app/mes-ventes/page.tsx introuvable — la page a été déplacée");
   assert.ok(
     /zabelie_fulfillment/.test(page!.source),
