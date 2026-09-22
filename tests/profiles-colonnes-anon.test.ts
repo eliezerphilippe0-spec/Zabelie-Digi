@@ -184,6 +184,7 @@ function colonnesLues(chaine: string): string[] {
  * de LIAISON séparée sur son appelant — voir le test dédié plus bas.
  */
 const CLIENT_INJECTE: Record<string, string> = {
+  "lib/account-suspension.ts": "client de service injecte par getSuspension, liaison verifiee ci-dessous",
   "lib/boutik-slug-attribution.ts":
     "client passé en paramètre ; l'appelant unique est app/api/profile/route.ts, dont la liaison est assertée ci-dessous",
   "lib/geo/country-backfill.ts":
@@ -256,6 +257,7 @@ test("la liaison — TOUT appelant d'un module à client injecté passe le clien
      Les appelants sont donc énumérés mécaniquement, pas nommés. L'assertion
      porte sur ce qui COMMANDE : le premier argument de chaque appel. */
   const MODULES: { fonction: string; pourquoi: string }[] = [
+    { fonction: "readSuspension", pourquoi: "les colonnes de suspension sont reservees au service_role" },
     {
       fonction: "attribuerSlug",
       pourquoi:

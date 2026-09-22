@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { getLang } from "@/lib/i18n-server";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { offerCopy } from "@/lib/product-offer-copy";
@@ -11,7 +11,8 @@ export async function PUT(req: Request) {
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) return erreurTraduite("api.auth.required", 401);
-  if (await getSuspension(user.id)) return erreurTraduite("api.suspended", 403);
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
   const copy = offerCopy(await getLang());
   let body: unknown;
   try { body = await req.json(); } catch { return erreurTraduite("api.json.invalid", 400); }

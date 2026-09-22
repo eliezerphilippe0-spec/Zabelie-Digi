@@ -43,6 +43,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   reactStrictMode: true,
   poweredByHeader: false,
   // Figé dans le bundle au build, pas recalculé au démarrage du serveur.

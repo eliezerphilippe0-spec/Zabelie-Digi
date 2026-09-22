@@ -136,6 +136,9 @@ jobs:
       - name: Seller offers and explicit purchase choice
         run: npx playwright test --config=playwright.offers.config.ts
 
+      - name: Haiti operations and support on mobile
+        run: npx playwright test --config=playwright.operations.config.ts
+
       - name: Sandbox top-ups cannot accept payment
         run: npx playwright test --config=playwright.topup.config.ts
 
@@ -175,3 +178,9 @@ jobs:
 
       - name: SQL money-path tests (migrations + assertions)
         run: bash supabase/tests/run.sh
+
+
+      - name: Restore synthetic orders and support in an isolated database
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash supabase/tests/recovery-ci.sh

@@ -235,7 +235,7 @@ test("les variables Supabase ne se lisent QUE via lib/supabase/config.ts", () =>
   const walk = (d: string, out: string[] = []): string[] => {
     for (const e of readdirSync(d)) {
       if (e === "node_modules" || e.startsWith(".")) continue;
-      const f = join(d, e);
+      const f = join(d, e).replace(/\\/g, "/");
       if (statSync(f).isDirectory()) walk(f, out);
       else if (/\.tsx?$/.test(e)) out.push(f);
     }

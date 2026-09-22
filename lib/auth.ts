@@ -1,3 +1,5 @@
+import { readSuspension, type Suspension } from "@/lib/account-suspension";
+import { erreurTraduite } from "@/lib/api-erreur";
 import { readAdminSession } from "@/lib/admin-session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -42,26 +44,17 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   };
 }
 
-export type Suspension = { suspendedAt: string; reason: string | null };
-
-/**
- * Suspension de modération du compte, ou null si actif. Lecture via service
- * role : suspended_* est invisible aux clients (grants colonne, 0017). En cas
- * d'erreur (clé absente…), on renvoie null — la suspension reste garantie par
- * le ban auth + le masquage catalogue côté base.
- */
+/** Throws when the account status cannot be established. */
 export async function getSuspension(userId: string): Promise<Suspension | null> {
+  return readSuspension(createAdminClient(), userId);
+}
+
+/** API guard: preserve the distinction between a suspension and an outage. */
+export async function requireActiveAccount(userId: string) {
   try {
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from("profiles")
-      .select("suspended_at, suspended_reason")
-      .eq("id", userId)
-      .maybeSingle();
-    if (!data?.suspended_at) return null;
-    return { suspendedAt: data.suspended_at, reason: data.suspended_reason };
+    return await getSuspension(userId) ? erreurTraduite("api.suspended", 403, { code: "suspended" }) : null;
   } catch {
-    return null;
+    return erreurTraduite("api.unavailable", 503, { code: "account_status_unavailable" });
   }
 }
 

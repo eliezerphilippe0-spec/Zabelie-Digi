@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { getLang } from "@/lib/i18n-server";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { parseCommitment } from "@/lib/product-commitments";
@@ -22,7 +22,8 @@ export async function PUT(req: Request) {
     const db = await createClient();
     const { data: { user } } = await db.auth.getUser();
     if (!user) return fail(401);
-    if (await getSuspension(user.id)) return fail(403);
+    const accountRefusal = await requireActiveAccount(user.id);
+    if (accountRefusal) return accountRefusal;
     const { data: product, error } = await db.from("products").select("id,kind").eq("id", body.productId).eq("seller_id", user.id).maybeSingle();
     if (error) return fail(503);
     if (!product) return fail(404);
