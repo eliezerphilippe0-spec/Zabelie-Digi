@@ -3,11 +3,12 @@ import { useState, useId, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { OFFER_KINDS, type OfferSelection, type OfferKind } from "@/lib/product-offers";
 import type { OfferCopy } from "@/lib/product-offer-copy";
-export function ProductOffersEditor({ productId, initial, choices, confirmed, copy }: {
-  productId: string; initial: OfferSelection;
+export function ProductOffersEditor({ productId, initial, choices, confirmed, automatic = true, automaticSales = null, copy }: {
+  productId: string; initial: OfferSelection; automatic?: boolean; automaticSales?: number | null;
   choices: Record<OfferKind, { id: string; label: string }[]>; confirmed: Record<OfferKind, number>; copy: OfferCopy;
 }) {
   const [value, setValue] = useState(initial);
+  const [allowAutomatic, setAllowAutomatic] = useState(automatic);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const router = useRouter(), formId = useId();
@@ -15,7 +16,7 @@ export function ProductOffersEditor({ productId, initial, choices, confirmed, co
     event.preventDefault(); if (busy) return;
     setBusy(true); setMessage("");
     try {
-      const response = await fetch("/api/products/offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, offers: value }) });
+      const response = await fetch("/api/products/offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, offers: value, automatic: allowAutomatic }) });
       const result = await response.json().catch(() => null);
       setMessage(response.ok ? copy.saved : (result?.error ?? copy.unavailable));
       if (response.ok) router.refresh();
@@ -36,6 +37,13 @@ export function ProductOffersEditor({ productId, initial, choices, confirmed, co
           </select>
           <p className="mt-1 text-xs text-mist">{copy.sales} : {value[kind] === initial[kind] ? confirmed[kind] : "—"}</p>
         </div>)}
+        <label className="flex min-h-11 items-start gap-3 text-sm">
+          <input type="checkbox" checked={allowAutomatic} onChange={e => { setAllowAutomatic(e.target.checked); setMessage(""); }}
+            className="mt-1 size-5 shrink-0 accent-brand" />
+          <span>{copy.automatic}</span>
+        </label>
+        <p className="text-xs text-mist">{copy.automaticHint}</p>
+        <p className="text-xs text-mist">{copy.automaticSales} : {automaticSales ?? "—"}</p>
         <p className="text-xs text-mist">{copy.rules}</p>
         <p className="text-xs text-mist">{copy.salesHint}</p>
         {!choices.cross_sell.length && <p className="text-sm text-mist">{copy.empty}</p>}

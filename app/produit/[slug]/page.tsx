@@ -200,7 +200,7 @@ export default async function ProductPage({
   params, searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ offre?: string }>;
+  searchParams: Promise<{ offre?: string; recommande?: string }>;
 }) {
   const { slug } = await params;
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
@@ -233,7 +233,9 @@ export default async function ProductPage({
     : null;
   const estVendeur = visiteur?.id === product.creatorId;
   const relatedOffers = estVendeur ? [] : await publicOffers(product.id, visiteur?.id);
-  const offerParam = (await searchParams).offre;
+  const query = await searchParams;
+  const offerParam = query.offre;
+  const recommendationSource = typeof query.recommande === "string" && OFFER_UUID.test(query.recommande) ? query.recommande : undefined;
   const selectedOfferId = typeof offerParam === "string" && OFFER_UUID.test(offerParam) ? offerParam : undefined;
   const peutEcrire = Boolean(visiteur && product.creatorId) && !estVendeur;
   const connexionVendeur = `/connexion?next=${encodeURIComponent(`/produit/${product.slug}#contacter-vendeur`)}`;
@@ -535,6 +537,7 @@ export default async function ProductPage({
               <BuyButton
                 key={product.id}
                 offerId={selectedOfferId}
+                recommendationSource={recommendationSource}
                 draftScope={visiteur?.id}
                 trustLabels={trustLabels}
                 recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {

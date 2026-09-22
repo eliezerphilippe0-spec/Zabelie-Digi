@@ -71,27 +71,37 @@ const offerProducts = [
 let linkedOffers = [];
 const offerOrders = [];
 let offerOrderStatus = "paid";
+let recommendationHistory = false;
+const automaticPreferences = new Map();
 function offersFixture(req,url,send,single) {
  const publicRows = (source) => linkedOffers.filter(o=>o.source_product_id===source).map(o => {
    const p=offerProducts.find(p=>p.id===o.target_product_id);return {...o,title:p.title,slug:p.slug,price_htg:p.price_htg,product_kind:p.kind};
  });
+ const automaticRows = source => recommendationHistory && automaticPreferences.get(source)!==false && source===OFFER_SOURCE
+   ? OFFER_TARGETS.filter(id=>!linkedOffers.some(o=>o.source_product_id===source&&o.target_product_id===id)).map(id=>{
+     const p=offerProducts.find(x=>x.id===id);return {id:null,source_product_id:source,target_product_id:id,offer_kind:"cross_sell",origin:"purchases",title:p.title,slug:p.slug,price_htg:p.price_htg,product_kind:p.kind};
+   }) : [];
  const body = callback => { let value="";req.on("data",c=>value+=c);req.on("end",()=>callback(JSON.parse(value||"{}"))); };
- if(url.pathname==="/__offers-reset"){linkedOffers=[];offerOrders.length=0;offerOrderStatus="paid";send(200,{});return true;}
+ if(url.pathname==="/__offers-reset"){linkedOffers=[];offerOrders.length=0;offerOrderStatus="paid";recommendationHistory=false;automaticPreferences.clear();send(200,{});return true;}
+ if(url.pathname==="/__recommendations-history"){body(p=>{recommendationHistory=p.enough===true;send(200,{});});return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_product_recommendations"){body(p=>send(200,automaticRows(p.p_product_id)));return true;}
+ if(url.pathname==="/rest/v1/rpc/zabelie_recommendation_stats"){send(200,[]);return true;}
  if(url.pathname==="/__offers-orders"){send(200,offerOrders);return true;}
  if(url.pathname==="/__offers-status"){body(p=>{offerOrderStatus=p.status;send(200,{});});return true;}
  if(url.pathname==="/rest/v1/products"){
    const id=eq(url,"id"),slug=eq(url,"slug"),seller=eq(url,"seller_id");
-   single(offerProducts.filter(p=>(!id||p.id===id)&&(!slug||p.slug===slug)&&(!seller||p.seller_id===seller)));return true;
+   single(offerProducts.filter(p=>(!id||p.id===id)&&(!slug||p.slug===slug)&&(!seller||p.seller_id===seller)).map(p=>({...p,zabelie_auto_recommendations:automaticPreferences.get(p.id)??true})));return true;
  }
  if(url.pathname==="/rest/v1/zabelie_product_offers"){send(200,linkedOffers);return true;}
  if(url.pathname==="/rest/v1/rpc/zabelie_offer_stats"){send(200,linkedOffers.map(o=>({offer_id:o.id,confirmed:0})));return true;}
  if(url.pathname==="/rest/v1/rpc/zabelie_offers_public"){body(p=>send(200,publicRows(p.p_product_id)));return true;}
- if(url.pathname==="/rest/v1/rpc/zabelie_save_product_offers"){
+ if(["/rest/v1/rpc/zabelie_save_product_offers","/rest/v1/rpc/zabelie_configure_product_offers"].includes(url.pathname)){
    body(p=>{
      const source=offerProducts.find(x=>x.id===p.p_product_id);
      if(p.p_user_id!==SELLER_ID||!source)return send(200,{ok:false,reason:"not_owner"});
      const kinds=["upsell","cross_sell","downsell"],targets=Object.values(p.p_targets).filter(Boolean);
      if(new Set(targets).size!==targets.length||targets.some(id=>!OFFER_TARGETS.includes(id)))return send(200,{ok:false,reason:"invalid"});
+     if(typeof p.p_recommendations_enabled==="boolean")automaticPreferences.set(source.id,p.p_recommendations_enabled);
      linkedOffers=linkedOffers.filter(o=>o.source_product_id!==source.id).concat(kinds.flatMap((kind,i)=>p.p_targets[kind]?[{id:OFFER_IDS[i],source_product_id:source.id,target_product_id:p.p_targets[kind],offer_kind:kind,active:true}]:[]));
      return send(200,{ok:true});
    });return true;
@@ -102,7 +112,7 @@ function offersFixture(req,url,send,single) {
  }
  if(url.pathname==="/rest/v1/rpc/zabelie_reserve_stock"){send(200,{ok:true});return true;}
  if(url.pathname==="/rest/v1/orders"){
-   if(req.method==="POST"){body(p=>{const offer=linkedOffers.find(o=>o.id===p.zabelie_offer_id&&o.target_product_id===p.product_id);const row={id:ORDER_ID,...p,zabelie_offer_id:offer?.id??null};offerOrders.push(row);single([row]);});return true;}
+   if(req.method==="POST"){body(p=>{const offer=linkedOffers.find(o=>o.id===p.zabelie_offer_id&&o.target_product_id===p.product_id);const source=!offer&&automaticRows(p.zabelie_recommendation_source_id).some(o=>o.target_product_id===p.product_id)?p.zabelie_recommendation_source_id:null;const row={id:ORDER_ID,...p,zabelie_offer_id:offer?.id??null,zabelie_recommendation_source_id:source};offerOrders.push(row);single([row]);});return true;}
    if(req.method==="GET"){const buyer=eq(url,"buyer_id"),id=eq(url,"id");
      return single(id===ORDER_ID&&(!buyer||buyer===BUYER_ID)?[{...ORDER,status:offerOrderStatus,product_id:OFFER_SOURCE,buyer_id:BUYER_ID}]:[]),true;}
  }

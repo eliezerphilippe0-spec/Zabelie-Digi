@@ -227,11 +227,12 @@ export default async function VendrePage() {
 
   const { data: mineRaw, error: mineError } = await supabase
     .from("products")
-    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, product_assets(id,file_name,size_bytes)")
+    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, zabelie_auto_recommendations, product_assets(id,file_name,size_bytes)")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
   type MineRow = Omit<ReadinessProduct, "product_assets"> & {
+    zabelie_auto_recommendations: boolean;
     id: string;
     slug: string;
     title: string;
@@ -472,7 +473,7 @@ export default async function VendrePage() {
                     const confirmed = { upsell: 0, cross_sell: 0, downsell: 0 };
                     for (const row of rows) { initial[row.offer_kind] = row.target_product_id; confirmed[row.offer_kind] = related.stats.get(row.id) ?? 0; }
                     const choices = Object.fromEntries(OFFER_KINDS.map(kind => [kind, mine.filter(target => eligibleOffer(p, target, kind)).map(target => ({ id: target.id, label: target.title + " · " + formatHTG(target.price_htg) }))])) as Record<OfferKind, { id: string; label: string }[]>;
-                    return <ProductOffersEditor key={p.id} productId={p.id} initial={initial} choices={choices} confirmed={confirmed} copy={offerText}/>;
+                    return <ProductOffersEditor key={p.id} productId={p.id} initial={initial} choices={choices} confirmed={confirmed} automatic={p.zabelie_auto_recommendations} automaticSales={related.recommendations?.get(p.id) ?? (related.recommendations ? 0 : null)} copy={offerText}/>;
                   })() : <p className="mt-4 text-sm text-mist">{offerText.unavailable}</p>}
                   <FlashManager
                     productId={p.id}

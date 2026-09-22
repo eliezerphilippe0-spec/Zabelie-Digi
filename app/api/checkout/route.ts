@@ -1,3 +1,4 @@
+import { recommendationAttribution } from "@/lib/product-offers";
 import { offerAttribution } from "@/lib/product-offers-server";
 import { getKobaraAvailability } from "@/lib/payment-availability";
 import { cookies } from "next/headers";
@@ -101,6 +102,7 @@ export async function POST(req: Request) {
   let recipientInput: unknown;
   let providerInput: unknown;
   let offerInput: unknown;
+  let recommendationInput: unknown;
   try {
     ({
       productId,
@@ -112,6 +114,7 @@ export async function POST(req: Request) {
       recipient: recipientInput,
       kobaraProvider: providerInput,
       offerId: offerInput,
+      recommendationSource: recommendationInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -456,13 +459,13 @@ export async function POST(req: Request) {
       buyer_id: user.id,
       product_id: product.id,
       ...offerAttribution(offerInput),
-      ...(source ? {
-        zabelie_sale_source: source,
-        zabelie_payment_is_live: rail === "moncash" ? resolveMonCashMode(process.env.MONCASH_MODE).mode === "production"
+      ...recommendationAttribution(recommendationInput),
+      ...(source ? { zabelie_sale_source: source } : {}),
+      // Le signal réel/sandbox ne dépend pas de l'activation de la tarification vendeur.
+      zabelie_payment_is_live: rail === "moncash" ? resolveMonCashMode(process.env.MONCASH_MODE).mode === "production"
           : rail === "kobara" ? getKobaraAvailability() === "production"
           : rail === "stripe" ? Boolean(process.env.STRIPE_SECRET_KEY?.trim().startsWith("sk_live_"))
           : isZelleEnabled(),
-      } : {}),
       amount_htg: finalPriceHtg, // prix remisé figé — tous les garde-fous s'y appliquent
       coupon_code: couponCode,
       coupon_id: couponId, // BL-133 : consommé par confirm_payment, pas ici
