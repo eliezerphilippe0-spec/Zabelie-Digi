@@ -24,7 +24,7 @@ export default async function CasesPage({searchParams}:{searchParams:Promise<{pa
   <h1 className="text-3xl font-extrabold">{labels.cases}</h1>
   {!data?.length?<p className="mt-5 text-mist">{labels.casesEmpty}</p>:<ul className="mt-6 space-y-3">{data.slice(0,30).map(row=>{
    const order=Array.isArray(row.order)?row.order[0]:row.order;
-   return <li key={row.id}><Link className="block min-h-11 rounded-xl border border-line p-4" href={"/assistance/commande/"+row.order_id}>
+   return <li key={row.id}><Link className="block min-h-11 rounded-xl border border-line p-4" href={`/assistance/commande/${row.order_id}`}>
     <span className="block break-all font-semibold">{order?.order_ref??row.order_id}</span>
     <span className="mt-2 block text-sm text-mist">{labels[row.status as SupportCase["status"]]}</span>
    </Link></li>;
