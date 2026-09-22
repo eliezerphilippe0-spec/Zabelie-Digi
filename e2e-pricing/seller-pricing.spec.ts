@@ -46,21 +46,27 @@ for (const width of [1280, 390]) {
     await expect(page.getByText(/Avantage disponible jusqu’au/)).toContainText("2 vente(s) restante(s)");
   });
 }
-test("catalogue click is attributed; direct URLs and prefetch are not", async ({ page }) => {
-  await page.goto("/produit/filtre-huile-corolla");
-  expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
-  await page.request.get("/decouvrir/filtre-huile-corolla", { headers: { "next-router-prefetch": "1" } });
-  expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
-  await page.goto("/");
-  await expect(page.locator(".home-featured")).toHaveAttribute("href", "/decouvrir/filtre-huile-corolla");
-  await page.goto("/catalogue");
-  await page.locator('a[href="/decouvrir/filtre-huile-corolla"]').first().click();
-  await expect(page).toHaveURL(/\/produit\/filtre-huile-corolla$/);
-  const cookie = (await page.context().cookies()).find(c => c.name === "zabelie_sale_sources");
-  expect(cookie?.httpOnly).toBe(true);
-  expect(cookie?.sameSite).toBe("Lax");
-  await expect(page.getByRole("heading", { name: "Filtre à huile Corolla", exact: true })).toBeVisible();
-});
+for (const discoveryPage of ["/", "/catalogue"]) {
+  test(`${discoveryPage} click is attributed; direct URLs and prefetch are not`, async ({ page }) => {
+    await page.goto("/produit/filtre-huile-corolla");
+    expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
+    await page.request.get("/decouvrir/filtre-huile-corolla", { headers: { "next-router-prefetch": "1" } });
+    expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
+    await page.goto(discoveryPage);
+    // This fixture publishes one product: discovery must show it exactly once.
+    const product = page.locator('a[href="/decouvrir/filtre-huile-corolla"]');
+    await expect(product).toHaveCount(1);
+    await expect(product).toBeVisible();
+    expect((await page.context().cookies()).some(c => c.name === "zabelie_sale_sources")).toBe(false);
+    await product.click();
+    await expect(page).toHaveURL(/\/produit\/filtre-huile-corolla$/);
+    const cookie = (await page.context().cookies()).find(c => c.name === "zabelie_sale_sources");
+    expect(cookie?.httpOnly).toBe(true);
+    expect(cookie?.sameSite).toBe("Lax");
+    await expect(page.getByRole("heading", { name: "Filtre à huile Corolla", exact: true })).toBeVisible();
+  });
+}
+
 test("checkout ignores a forged source and respects the signed catalogue visit", async ({ page }) => {
   await login(page, "pricing-buyer");
   const data = { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", source: "discovery" };

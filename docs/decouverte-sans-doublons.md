@@ -52,6 +52,12 @@ Travail isolé dans la branche feat/decouverte-sans-doublons. Aucune modificatio
 - Limites : données de démonstration exclusivement locales ; pas de validation de commande, livraison ou paiement réel. La jointure de comptage vendeur n’a pas été exécutée sur la base distante faute de configuration locale ; elle masque la section en cas d’erreur ou de réponse incomplète.
 - Artefacts locaux : C:/Users/Philippe/output/zabelie-decouverte/ (journaux, captures, comparaison baseline).
 
+## Correction du contrôle e2e de la PR #263
+
+Le test de tarification attendait une bannière `.home-featured` même lorsque la fixture ne publie qu’un produit. Cette hypothèse contredisait la règle anti-doublons : ce produit apparaît une seule fois dans la grille principale. Le test vérifie désormais un lien de découverte unique et visible, puis un véritable clic, séparément depuis l’accueil et le catalogue. Les contrôles des accès directs, du préchargement, du cookie signé et de la source de commande restent présents.
+
+Validation locale : les cinq scénarios de `playwright.pricing.config.ts` passent avec Chrome. Les contrôles GitHub du commit précédent avaient déjà validé la compilation, les tests unitaires, les tests SQL et le parcours de paiement ; l’échec se situait uniquement dans cette assertion de présentation.
+
 ## Retour arrière
 
 Revenir au commit de base suffit : aucune migration, aucun nouveau service ni variable de production. Aucun déploiement n'est réalisé dans cette mission.
