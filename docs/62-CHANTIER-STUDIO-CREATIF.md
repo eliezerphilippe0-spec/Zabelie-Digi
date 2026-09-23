@@ -44,7 +44,7 @@ est la seule qui ne coûte rien à attendre.
    « test de confinement de rôle, sur le modèle d'Entelijan » (invariant 5)
    n'a donc **pas de modèle à suivre**. Le seul précédent réel est celui du
    triage Jev : confinement **par le code**, prouvé par test, plus privilèges
-   SQL restreints (`0114`, PR #269, pas encore sur `main`).
+   SQL restreints (`0117`, PR #269, pas encore sur `main`).
 2. **Le texte intégral de R-STUDIO-01 n'est pas dans le dépôt**, et le prompt
    n'en donne qu'un résumé (§2). Le prompt demande de le placer dans
    `docs/NN-RULE-R-STUDIO-01.md` : **je ne peux pas l'écrire sans l'inventer**.
@@ -85,13 +85,16 @@ est la seule qui ne coûte rien à attendre.
 | Thème | `app/zabelie-theme.css` source unique, contraste bloquant en CI (`app/zabelie-theme.css:1-8`) | oui |
 | Masquage de texte avant tiers | `lib/jev/redact.ts` (#269) | oui, pour les pages de référence envoyées au LLM |
 | Migrations | garde `zabelie_migration_garde` en tête (`tests/migration-garde-rejeu.test.ts`), empreinte canonique `scripts/zabelie-migration-hash.mjs`, suite contiguë (`tests/migrations-suite.test.ts`) | oui |
-| Journal append-only | modèle `0113` (support) et `0114` (#269) : trigger `before update or delete` + `before truncate`, et **`revoke … from service_role` avant `grant`** (défaut mesuré en #269 : les privilèges par défaut ouvrent la réécriture) | oui |
+| Journal append-only | modèle `0113` (support) et `0117` (#269) : trigger `before update or delete` + `before truncate`, et **`revoke … from service_role` avant `grant`** (défaut mesuré en #269 : les privilèges par défaut ouvrent la réécriture) | oui |
 | Stockage des visuels | `storage.objects` : **1 objet** en tout. `CLAUDE.md` consigne des buckets RLS sans policy au 2026-08-11 | **à vérifier** avant tout stockage de visuels générés |
 | Fetch sécurisé (SSRF) | **aucun** module de fetch d'URL arbitraire côté serveur | tout est à écrire |
 
-**Prochain numéro de migration** : `main` s'arrête à `0113`. La PR #269
-ajoute `0114`. Le Studio prendrait donc **`0115`** si #269 est fusionnée
-d'abord ; sinon il y aurait collision. Le numéro se relira au moment d'écrire.
+**Prochain numéro de migration** — ⚠️ corrigé le 2026-09-23 : ce paragraphe
+annonçait `0115`, et c'est exactement le piège que `CLAUDE.md` décrit. Entre
+l'écriture et la relecture, `main` a reçu `0114`→`0116` (clairin, #273 et #274),
+et la PR #269 a dû renuméroter son journal en `0117`. Le Studio prendrait donc
+**`0118`** si #269 est fusionnée d'abord. **Le numéro ne s'écrit pas ici, il se
+lit au moment d'écrire la migration** : `ls supabase/migrations | tail -1`.
 
 ## 3. Documentation externe : tout est `NON VÉRIFIÉ`
 
@@ -134,11 +137,11 @@ Sources secondaires : [docs.higgsfield.ai](https://docs.higgsfield.ai/docs)
 5. **SSRF.** Un fetch d'URL fournie par l'utilisateur est la surface d'attaque
    la plus classique d'un serveur ; le contrat §3.1 du prompt est le bon, et
    il doit être éprouvé avant d'exister en production.
-6. **Dépendance à la PR #269** (transport Jev, masquage, numéro `0114`).
+6. **Dépendance à la PR #269** (transport Jev, masquage, journal `0117`).
 
 ## 5. Schéma de tables proposé (non écrit)
 
-Une seule table au départ, sur le modèle de `0114` :
+Une seule table au départ, sur le modèle de `0117` (#269) :
 
 `zabelie_creative_generations` — journal append-only, une ligne par
 génération : `id`, `seller_id` → `profiles`, `product_id` → `products`,
@@ -166,7 +169,7 @@ commande, paiement, escrow, ledger, retrait, KYC ou recharge.
 |---|---|---|
 | 1 | R-STUDIO-01 en code : enums, défauts, Prompt Builder pur, tests | **texte intégral de R-STUDIO-01** |
 | 2 | Providers + mocks, fetch SSRF, tests d'injection | doc Higgsfield / Firecrawl / LLM lue (§3) |
-| 3 | `0115`, RLS, journal d'événements, routes, garde vendeur, quotas | arbitrages 1 à 5 (§7) ; #269 fusionnée |
+| 3 | migration (numéro lu au moment d'écrire), RLS, journal d'événements, routes, garde vendeur, quotas | arbitrages 1 à 5 (§7) ; #269 fusionnée |
 | 4 | Interface kreyòl-first | Phase 3 |
 | 5 | Banc d'essai (20 pubs, 20 briefs, 80 générations) | clés fournisseurs, dépense acceptée, **produits avec photo** |
 
