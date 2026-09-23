@@ -58,16 +58,16 @@ test("PR2 — les trois clés existent dans les QUATRE langues, et le kreyòl em
   }
 });
 
-test("PR3 — la règle a changé, donc la version a changé : v3, datée, et le texte de v2 n'est pas réécrit", () => {
-  assert.equal(POLICY_VERSION, "v3");
+test("PR3 — la règle a changé, donc la version a changé : v3 au moins, datée, et le texte de v2 n'est pas réécrit", () => {
+  // `v4` (2026-09-23, âge minimum de l'alcool) a suivi : la version ne
+  // redescend jamais sous celle qui a introduit la frontière rechaj / balans.
+  assert.ok(Number(POLICY_VERSION.slice(1)) >= 3, `POLICY_VERSION = ${POLICY_VERSION}, v3 au moins`);
   const src = readFileSync("lib/policy.ts", "utf8");
   assert.match(src, /\/\/ v3 \(2026-09-05\)/, "le journal des versions doit porter v3 et sa date");
   // v2 reste racontée : un registre append-only ne réécrit pas l'histoire.
   assert.match(src, /\/\/ v2 \(2026-08-02\)/);
-  // La date affichée suit, dans les quatre langues.
-  for (const d of ["5 septembre 2026", "5 septanm 2026", "September 5, 2026", "5 de septiembre de 2026"]) {
-    assert.ok(I18N.includes(`"policy.date": "${d}"`), `policy.date « ${d} » manquante`);
-  }
+  // La date affichée suit la DERNIÈRE version : elle est gardée par
+  // `tests/age-minimum.test.ts`, qui porte v4.
 });
 
 test("PR4 — le critère qui départage est écrit : des minutes sur un téléphone, ou de l'argent qu'on renvoie", () => {

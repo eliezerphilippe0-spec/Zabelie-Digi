@@ -392,7 +392,7 @@ const fr = {
   "policy.accept.read": "Lire les règles",
   "policy.accept.required": "Vous devez accepter les règles de vente.",
   "policy.title": "Ce qui ne peut pas être vendu sur Zabelie",
-  "policy.date": "5 septembre 2026",
+  "policy.date": "23 septembre 2026",
   "policy.why.h": "Pourquoi ces règles",
   "policy.why.p":
     "Ce sont les règles de Zabelie. Elles sont plus strictes que la loi, et c'est volontaire : une règle large se comprend et s'applique sans discussion. En publiant une fiche, vous les acceptez.",
@@ -439,13 +439,13 @@ const fr = {
   "policy.digital.items":
     "logiciels piratés, activateurs, clés de licence non authentiques ;\nmusique, films, livres, cours ou tout contenu que vous n'avez pas le droit de vendre ;\ncomptes revendus : streaming, réseaux sociaux, jeux ;\nlistes de données personnelles : numéros de téléphone, adresses e-mail, contacts.",
   "policy.sanctions.h": "7. Sanctions",
-  "policy.alcohol.h": "9. Alcool — autorisé, sous la responsabilité du vendeur",
+  "policy.alcohol.h": "9. Alcool — réservé aux 18 ans et plus",
   "policy.alcohol.p1":
     "Les spiritueux et boissons alcoolisées produits en Haïti — clairin, rhum, liqueurs artisanales — peuvent être vendus sur Zabelie. La v1 de ces règles n'en disait rien : un silence n'est ni une autorisation ni une règle opposable, d'où cette section.",
   "policy.alcohol.items":
-    "le vendeur garantit qu'il a le droit de vendre ce qu'il met en ligne, et que le produit est propre à la consommation ;\nla remise à un mineur est interdite — c'est le vendeur qui remet la marchandise, donc c'est lui qui vérifie ;\nl'alcool frelaté ou reconditionné dans un contenant d'une autre marque relève de la contrefaçon (§2) ;\naucune promesse d'effet sur la santé.",
+    "le vendeur garantit qu'il a le droit de vendre ce qu'il met en ligne, et que le produit est propre à la consommation ;\nla vente et la remise aux moins de 18 ans sont interdites ;\nà la remise, le vendeur vérifie une pièce d'identité avec photo et refuse de remettre si l'acheteur a moins de 18 ans ou ne peut pas prouver son âge ;\nl'alcool frelaté ou reconditionné dans un contenant d'une autre marque relève de la contrefaçon (§2) ;\naucune promesse d'effet sur la santé.",
   "policy.alcohol.p2":
-    "⚠️ Zabelie ne vérifie pas l'âge de l'acheteur et ne livre pas. La plateforme met en relation ; le contrôle a lieu au moment de la remise, en main propre, et il appartient au vendeur. Si une vérification d'âge devient obligatoire, cette section changera de version.",
+    "À l'achat, l'acheteur atteste avoir 18 ans ou plus : sans cette déclaration, la commande n'est pas créée, et la déclaration est conservée avec la commande. Zabelie ne livre pas et ne voit pas l'acheteur : la vérification de la pièce d'identité a lieu à la remise, en main propre, et elle appartient au vendeur. Un vendeur qui remet de l'alcool à un mineur s'expose aux sanctions du §7.",
   "policy.sanctions.p1":
     "En cas de violation : retrait immédiat de la fiche, suspension du compte, conservation des éléments.",
   "policy.sanctions.p2":
@@ -611,6 +611,9 @@ const fr = {
   "api.flash.exhausted": "Offre flash épuisée — le prix normal s'applique de nouveau.",
   "api.order.failed": "Création de la commande impossible. Réessayez.",
   "api.rechaj.numero": "Numéro à recharger invalide. Huit chiffres, un portable Digicel ou Natcom.",
+  "api.age.required": "Ce produit est réservé aux {age} ans et plus. Confirmez votre âge sur la page du produit avant de payer.",
+  "age.badge": "Réservé aux {age} ans et plus",
+  "age.attest": "J'ai {age} ans ou plus. Je présenterai une pièce d'identité avec photo à la remise.",
   "rechaj.title": "Quel numéro faut-il recharger ?",
   "rechaj.ph": "Numéro (ex. 3412 3456)",
   "rechaj.confirm": "Retapez le numéro",
@@ -1415,7 +1418,7 @@ const ht: Record<I18nKey, string> = {
   "policy.accept.read": "Li règ yo",
   "policy.accept.required": "Ou dwe aksepte règ vant yo.",
   "policy.title": "Sa ou pa gen dwa vann sou Zabelie",
-  "policy.date": "5 septanm 2026",
+  "policy.date": "23 septanm 2026",
   "policy.why.h": "Poukisa règ sa yo",
   "policy.why.p":
     "Règ sa yo se règ Zabelie. Yo pi sevè pase lalwa, e se espre : yon règ ki laj se yon règ tout moun konprann, e nou ka aplike l san diskisyon. Lè ou pibliye yon fich, ou aksepte yo.",
@@ -1461,13 +1464,13 @@ const ht: Record<I18nKey, string> = {
   "policy.digital.items":
     "lojisyèl pirat, aktivatè, kle lisans ki pa otantik ;\nmizik, fim, liv, kou oswa nenpòt kontni ou pa gen dwa vann ;\nkont ou revann : streaming, rezo sosyal, jwèt ;\nlis done pèsonèl : nimewo telefòn, adrès imel, kontak moun.",
   "policy.sanctions.h": "7. Sanksyon",
-  "policy.alcohol.h": "9. Alkòl — otorize, sou responsablite machann nan",
+  "policy.alcohol.h": "9. Alkòl — sèlman pou moun ki gen 18 an oswa plis",
   "policy.alcohol.p1":
     "Bweson ki gen alkòl ki fèt an Ayiti — klerin, wonm, likè atizanal — ka vann sou Zabelie. Vèsyon 1 règ sa yo pa t di anyen sou sa : yon silans se ni yon otorizasyon ni yon règ ou ka aplike, se poutèt sa seksyon sa a la.",
   "policy.alcohol.items":
-    "machann nan garanti li gen dwa vann sa l ap mete an liy, epi pwodwi a bon pou moun bwè ;\nentèdi bay yon minè — se machann nan ki lage machandiz la, donk se li ki verifye ;\nalkòl ki melanje oswa mete nan yon boutèy yon lòt mak se kontrefason (§2) ;\npa gen okenn pwomès sou sante.",
+    "machann nan garanti li gen dwa vann sa l ap mete an liy, epi pwodwi a bon pou moun bwè ;\nentèdi vann oswa bay moun ki poko gen 18 an ;\nlè l ap lage machandiz la, machann nan verifye yon pyès idantite ak foto, epi li refize bay si moun nan poko gen 18 an oswa si li pa ka pwouve laj li ;\nalkòl ki melanje oswa mete nan yon boutèy yon lòt mak se kontrefason (§2) ;\npa gen okenn pwomès sou sante.",
   "policy.alcohol.p2":
-    "⚠️ Zabelie pa verifye laj moun k ap achte a epi li pa livre. Platfòm nan mete moun an kontak ; kontwòl la fèt lè machandiz la lage, an men pwòp, epi se responsablite machann nan. Si yon verifikasyon laj vin obligatwa, seksyon sa a ap chanje vèsyon.",
+    "Lè l ap achte, moun nan deklare li gen 18 an oswa plis : san deklarasyon sa a, kòmand lan pa kreye, epi deklarasyon an konsève ak kòmand lan. Zabelie pa livre epi li pa wè moun k ap achte a : verifikasyon pyès idantite a fèt lè machandiz la lage, an men pwòp, epi se responsablite machann nan. Yon machann ki bay yon minè alkòl ap sibi sanksyon §7 yo.",
   "policy.sanctions.p1":
     "Si yon fich vyole règ sa yo : nou retire fich la lapoula, nou sispann kont lan, e nou konsève eleman yo.",
   "policy.sanctions.p2":
@@ -1632,6 +1635,9 @@ const ht: Record<I18nKey, string> = {
   "api.flash.exhausted": "Òf flash la fini — pri nòmal la tounen.",
   "api.order.failed": "Nou pa ka kreye kòmand lan. Eseye ankò.",
   "api.rechaj.numero": "Nimewo pou rechaje a pa bon. Wit chif, yon selilè Digicel oswa Natcom.",
+  "api.age.required": "Pwodwi sa a se pou moun ki gen {age} an oswa plis sèlman. Konfime laj ou sou paj pwodwi a anvan ou peye.",
+  "age.badge": "Pou moun ki gen {age} an oswa plis sèlman",
+  "age.attest": "Mwen gen {age} an oswa plis. M ap montre yon pyès idantite ak foto lè m ap resevwa machandiz la.",
   "rechaj.title": "Ki nimewo pou nou rechaje ?",
   "rechaj.ph": "Nimewo (egzanp 3412 3456)",
   "rechaj.confirm": "Retape nimewo a",
@@ -2407,7 +2413,7 @@ const en = {
   "policy.accept.read": "Read the rules",
   "policy.accept.required": "You must accept the selling rules.",
   "policy.title": "What cannot be sold on Zabelie",
-  "policy.date": "September 5, 2026",
+  "policy.date": "September 23, 2026",
   "policy.why.h": "Why these rules",
   "policy.why.p":
     "These are Zabelie's rules. They are stricter than the law, and that is deliberate: a broad rule is understood and applied without argument. By publishing a listing, you accept them.",
@@ -2454,13 +2460,13 @@ const en = {
   "policy.digital.items":
     "pirated software, activators, non-authentic license keys;\nmusic, films, books, courses or any content you do not have the right to sell;\nresold accounts: streaming, social media, games;\npersonal data lists: phone numbers, email addresses, contacts.",
   "policy.sanctions.h": "7. Enforcement",
-  "policy.alcohol.h": "9. Alcohol — allowed, under the seller's responsibility",
+  "policy.alcohol.h": "9. Alcohol — restricted to ages 18 and over",
   "policy.alcohol.p1":
     "Spirits and alcoholic drinks produced in Haiti — clairin, rum, artisanal liqueurs — may be sold on Zabelie. Version 1 of these rules said nothing about alcohol: silence is neither permission nor an enforceable rule, hence this section.",
   "policy.alcohol.items":
-    "the seller warrants they have the right to sell what they list, and that the product is fit for consumption;\nhanding over to a minor is prohibited — the seller delivers the goods, so the seller checks;\nadulterated alcohol, or alcohol repackaged in another brand's container, is counterfeiting (§2);\nno health claims.",
+    "the seller warrants they have the right to sell what they list, and that the product is fit for consumption;\nsale and hand-over to anyone under 18 are prohibited;\nat hand-over, the seller checks photo ID and refuses to hand over if the buyer is under 18 or cannot prove their age;\nadulterated alcohol, or alcohol repackaged in another brand's container, is counterfeiting (§2);\nno health claims.",
   "policy.alcohol.p2":
-    "⚠️ Zabelie does not verify the buyer's age and does not deliver. The platform introduces the parties; the check happens at hand-over and belongs to the seller. If age verification becomes mandatory, this section will change version.",
+    "At purchase, the buyer declares they are 18 or older: without this declaration the order is not created, and the declaration is kept with the order. Zabelie does not deliver and never sees the buyer: the ID check happens at hand-over, in person, and belongs to the seller. A seller who hands alcohol to a minor faces the sanctions in §7.",
   "policy.sanctions.p1":
     "In case of violation: immediate removal of the listing, account suspension, retention of the evidence.",
   "policy.sanctions.p2":
@@ -2625,6 +2631,9 @@ const en = {
   "api.flash.exhausted": "Flash offer sold out — the normal price applies again.",
   "api.order.failed": "Could not create the order. Try again.",
   "api.rechaj.numero": "Invalid number to top up. Eight digits, a Digicel or Natcom mobile.",
+  "api.age.required": "This product is restricted to buyers aged {age} and over. Confirm your age on the product page before paying.",
+  "age.badge": "Restricted to ages {age} and over",
+  "age.attest": "I am {age} or older. I will show photo ID at hand-over.",
   "rechaj.title": "Which number should be topped up?",
   "rechaj.ph": "Number (e.g. 3412 3456)",
   "rechaj.confirm": "Type the number again",
@@ -3410,7 +3419,7 @@ const es = {
   "policy.accept.read": "Leer las reglas",
   "policy.accept.required": "Debes aceptar las reglas de venta.",
   "policy.title": "Lo que no se puede vender en Zabelie",
-  "policy.date": "5 de septiembre de 2026",
+  "policy.date": "23 de septiembre de 2026",
   "policy.why.h": "Por qué estas reglas",
   "policy.why.p":
     "Estas son las reglas de Zabelie. Son más estrictas que la ley, y es deliberado: una regla amplia se entiende y se aplica sin discusión. Al publicar un anuncio, las aceptas.",
@@ -3456,13 +3465,13 @@ const es = {
   "policy.digital.h": "6. Archivos y contenidos digitales",
   "policy.digital.items":
     "software pirata, activadores, claves de licencia no auténticas;\nmúsica, películas, libros, cursos o cualquier contenido que no tengas derecho a vender;\ncuentas revendidas: streaming, redes sociales, juegos;\nlistas de datos personales: números de teléfono, correos, contactos.",
-  "policy.alcohol.h": "9. Alcohol — permitido, bajo la responsabilidad del vendedor",
+  "policy.alcohol.h": "9. Alcohol — solo para mayores de 18 años",
   "policy.alcohol.p1":
     "Los destilados y bebidas alcohólicas producidos en Haití — clairin, ron, licores artesanales — pueden venderse en Zabelie. La versión 1 de estas reglas no decía nada al respecto: un silencio no es ni una autorización ni una regla exigible, de ahí esta sección.",
   "policy.alcohol.items":
-    "el vendedor garantiza que tiene derecho a vender lo que publica, y que el producto es apto para el consumo;\nla entrega a un menor está prohibida — el vendedor entrega la mercancía, así que él verifica;\nel alcohol adulterado o reenvasado en un recipiente de otra marca es falsificación (§2);\nninguna promesa de efecto sobre la salud.",
+    "el vendedor garantiza que tiene derecho a vender lo que publica, y que el producto es apto para el consumo;\nla venta y la entrega a menores de 18 años están prohibidas;\nen la entrega, el vendedor verifica un documento de identidad con foto y se niega a entregar si el comprador es menor de 18 años o no puede probar su edad;\nel alcohol adulterado o reenvasado en un recipiente de otra marca es falsificación (§2);\nninguna promesa de efecto sobre la salud.",
   "policy.alcohol.p2":
-    "⚠️ Zabelie no verifica la edad del comprador y no entrega. La plataforma pone en contacto; el control ocurre en el momento de la entrega, en mano, y corresponde al vendedor. Si la verificación de edad se vuelve obligatoria, esta sección cambiará de versión.",
+    "Al comprar, el comprador declara tener 18 años o más: sin esta declaración el pedido no se crea, y la declaración se conserva con el pedido. Zabelie no entrega y no ve al comprador: la verificación del documento de identidad ocurre en la entrega, en mano, y corresponde al vendedor. Un vendedor que entrega alcohol a un menor se expone a las sanciones del §7.",
   "policy.sanctions.h": "7. Sanciones",
   "policy.sanctions.p1":
     "En caso de infracción: retirada inmediata del anuncio, suspensión de la cuenta, conservación de las pruebas.",
@@ -3628,6 +3637,9 @@ const es = {
   "api.flash.exhausted": "Oferta flash agotada — vuelve el precio normal.",
   "api.order.failed": "No se pudo crear el pedido. Inténtalo de nuevo.",
   "api.rechaj.numero": "Número a recargar inválido. Ocho dígitos, un móvil Digicel o Natcom.",
+  "api.age.required": "Este producto está reservado a mayores de {age} años. Confirma tu edad en la página del producto antes de pagar.",
+  "age.badge": "Solo para mayores de {age} años",
+  "age.attest": "Tengo {age} años o más. Mostraré un documento de identidad con foto en la entrega.",
   "rechaj.title": "¿Qué número hay que recargar?",
   "rechaj.ph": "Número (ej. 3412 3456)",
   "rechaj.confirm": "Escribe el número otra vez",
