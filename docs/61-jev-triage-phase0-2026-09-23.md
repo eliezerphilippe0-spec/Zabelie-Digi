@@ -195,3 +195,98 @@ séparées** de l'intention, comme dans la demande. Hors taxonomie : la recharge
 * **Point d'entrée de la Phase 2** (§1, options A/B/C).
 
 Stop. Rien de la Phase 1 n'est commencé.
+
+---
+
+## 7. Phase 1 — harnais d'évaluation livré (2026-09-23, après « go »)
+
+Transport retenu : **TypeSafe direct** (le porteur a un compte). Rien n'est
+branché en production : aucune route, aucune migration, aucune base.
+
+⚠️ **Écart avec le §0.2, assumé** : `lib/jev.ts` n'a PAS été modifié. Le
+paramétrer aurait touché la route admin en production, hors du périmètre
+« script local » de la Phase 1. Le harnais porte donc son propre transport
+(~60 lignes, même forme). La fusion dans `lib/jev/` est le premier geste de la
+Phase 2, si elle est décidée — pas avant.
+
+| Fichier | Rôle |
+|---|---|
+| `scripts/jev-eval/taxonomy.ts` | la taxonomie du §4, **seul endroit** où elle vit |
+| `scripts/jev-eval/csv.ts` | lecteur `message,entansyon,eskalade,ijans`, fail-closed avec numéro de ligne |
+| `scripts/jev-eval/redact.ts` | masquage du texte libre ; le client refuse tout objet qui n'en sort pas |
+| `scripts/jev-eval/jev-client.ts` | un appel par message, trois questions groupées, relance ≤ 2 sur 429/529 |
+| `scripts/jev-eval/metrics.ts`, `report.ts` | métriques pures et rapport Markdown |
+| `scripts/jev-eval/run.ts` | CLI |
+| `tests/jev-eval.test.ts` | 17 tests, aucun réseau |
+
+### Lancer
+
+1. Mettre le CSV étiqueté dans `jev-eval-data/` (ignoré par Git ; le script
+   **refuse** un CSV du dépôt qui ne l'est pas).
+2. Clé dans `.env.local` : `TYPESAFE_API_KEY=…` (jamais dans une conversation).
+3. Vérifier sans appel ni clé :
+   `JEV_EVAL_CSV=jev-eval-data/messages.csv node --import tsx scripts/jev-eval/run.ts --dry-run`
+   — affiche le nombre de masquages et le corps exact d'une requête.
+4. Passage réel :
+   `JEV_EVAL_CSV=jev-eval-data/messages.csv node --env-file=.env.local --import tsx scripts/jev-eval/run.ts`
+   → `agent-reports/jev-eval/rapport-<date>.md` (+ JSON brut), ignorés par Git.
+
+Variables optionnelles : `JEV_BASE_URL` (URL **complète** de l'endpoint, pour
+basculer vers OpenRouter `…/api/alpha/decisions` sans changer le code),
+`JEV_MODEL` (`typesafe/jev-latest` côté OpenRouter), `JEV_TIMEOUT_MS`
+(défaut 8000), `JEV_EVAL_MAX` (plafond d'appels facturables, défaut 250).
+
+⚠️ **Depuis une session agent, le passage réel est impossible** :
+`api.typesafe.ai` est refusé par le proxy (403 sur CONNECT, mesuré le
+2026-09-23). Il se lance sur la machine du porteur.
+
+### Choix qui changent les chiffres, écrits pour ne pas être découverts
+
+* Un **échec d'appel** compte comme erreur d'intention, et comme « wi » pour
+  `eskalade`/`ijans` (échec sûr : file humaine). Le rapport isole ces
+  rattrapages dans une colonne, pour qu'ils ne se lisent pas comme du mérite.
+* `eskalade` et `ijans` sont des questions **`noul`** : `score` n'est vu dans
+  aucun client existant et son schéma n'a pas pu être vérifié (§3).
+* Les seuils de décision 0,3 / 0,5 / 0,7 sont **affichés côte à côte**. Aucun
+  seuil d'acceptation n'est appliqué.
+* Délai ou erreur réseau : **pas de relance** (l'appel a pu être facturé).
+* Coût : additionné si la réponse porte `usage.cost` ; sinon le rapport dit
+  « coût non rendu » et renvoie au tableau de bord, jamais « 0 ».
+
+### Éprouvé, pas seulement écrit
+
+**Trou trouvé par le test lui-même** : la première version marquait l'objet
+redacté d'un symbole privé. `{ ...redactForJev("x"), text: brut }` copie ce
+symbole avec le spread, et **un texte brut serait parti chez Jev**. Le test
+de contrefaçon a rougi ; la marque est devenue un registre `WeakSet` des
+objets réellement émis, qu'aucune copie ne rejoint.
+
+Douze mutations, post-condition assurée avant lecture, fichier restauré et
+comparé après chacune : **les douze rougissent**, chacune sur le test visé.
+
+| Mutation | Test rouge |
+|---|---|
+| garde de redaction rendue inatteignable (`return true`) | refus d'un état non redacté |
+| registre jamais alimenté | 4 tests client |
+| **source** du `state` changée, contrôle gardé | texte redacté envoyé |
+| 500 ajouté aux relances · relances portées à 5 | relance bornée |
+| `choice` non restreint à la taxonomie | réponse hors schéma |
+| échec compté comme non escaladé | métriques sur jeu connu |
+| motif téléphone affaibli (`\d{9,}`) | 3 tests (redaction, client, rapport) |
+| rapport lisant le message brut | rapport |
+| import Supabase ajouté au harnais | confinement |
+| garde du jeu non ignoré désactivée (`if (false)`) | jeu commitable refusé |
+| étiquette non validée (`if (false && …)`) | CSV |
+
+Passage de bout en bout du CLI sur un CSV fictif de 4 messages avec transport
+simulé : `--dry-run` correct, CSV suivi par Git refusé (sortie 1), clé
+absente refusée (sortie 1), rapport généré, **chaque chiffre recalculé à la
+main et conforme**. Validation : `tsc --noEmit` propre, lint propre, suite
+complète **1219/1219**.
+
+### Non vérifié
+
+* Le schéma réel de TypeSafe (§3) : le premier passage réel le tranchera. Un
+  écart rend `invalid_response` sur tous les messages, pas des chiffres faux.
+* La redaction des **noms** hors formule de présentation (§2) : le CSV doit
+  arriver anonymisé.

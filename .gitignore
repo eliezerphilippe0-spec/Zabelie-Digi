@@ -44,6 +44,11 @@ yarn-error.log*
 # Rapports locaux du superviseur : artefacts, jamais des sources.
 /agent-reports/
 
+# Évaluation Jev (docs/61) : le jeu de messages clients étiquetés ne va JAMAIS
+# dans le dépôt. `scripts/jev-eval/run.ts` refuse un CSV du dépôt non ignoré.
+/jev-eval-data/
+scripts/jev-eval/**/*.csv
+
 # Scripts d'outillage de session (audits Playwright jetables)
 .zabelie-*.tmp.mjs
 
