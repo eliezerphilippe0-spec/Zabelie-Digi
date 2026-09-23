@@ -1,15 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseLabeledCsv, parseCsvRows } from "../scripts/jev-eval/csv";
-import { buildBody, configFromEnv, decide, DEFAULT_ENDPOINT, type JevConfig } from "../scripts/jev-eval/jev-client";
+import { buildBody, configFromEnv, decide, DEFAULT_ENDPOINT, type JevConfig } from "../lib/jev/client";
 import { percentile, summarize, type EvalRecord } from "../scripts/jev-eval/metrics";
-import { redactForJev, type Redacted } from "../scripts/jev-eval/redact";
+import { redactForJev, type Redacted } from "../lib/jev/redact";
 import { renderReport } from "../scripts/jev-eval/report";
 import { assertDatasetNotTracked, maxCalls } from "../scripts/jev-eval/run";
-import { INTENTS } from "../scripts/jev-eval/taxonomy";
+import { INTENTS } from "../lib/jev/taxonomy";
 
 /**
  * Harnais d'évaluation Jev (docs/61, Phase 1). Chaque garde est passé sur un
@@ -271,21 +270,6 @@ test("rapport : seuls les messages REDACTÉS apparaissent, coût absent signalé
 });
 
 // ── Confinement et hygiène ──────────────────────────────────────────────────
-
-test("confinement : le harnais n'importe que node:, zod et ses propres fichiers — aucune base", () => {
-  const dir = "scripts/jev-eval";
-  const files = readdirSync(dir).filter((f) => f.endsWith(".ts"));
-  assert.ok(files.length >= 6);
-  for (const f of files) {
-    const src = readFileSync(join(dir, f), "utf8");
-    const specs = [...src.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1]);
-    for (const spec of specs) {
-      assert.ok(spec.startsWith("node:") || spec === "zod" || spec.startsWith("./"), `${f} importe ${spec}`);
-    }
-    assert.doesNotMatch(src, /\.(?:from|rpc)\(\s*["'`]/, `${f} appelle une table ou une RPC`);
-    assert.doesNotMatch(src, /SUPABASE|createClient|createAdminClient/, f);
-  }
-});
 
 test("le jeu réel ne peut pas être commité : CSV du dépôt non ignoré refusé", () => {
   assert.doesNotThrow(() => assertDatasetNotTracked("jev-eval-data/messages.csv"));

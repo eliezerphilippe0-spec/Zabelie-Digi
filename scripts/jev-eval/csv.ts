@@ -1,4 +1,4 @@
-import { isBinary, isIntent, type Binary, type Intent } from "./taxonomy";
+import { isBinary, isIntent, type Binary, type Intent } from "../../lib/jev/taxonomy";
 
 /**
  * Lecteur du jeu étiqueté par le porteur : `message,entansyon,eskalade,ijans`.

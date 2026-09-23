@@ -20,9 +20,9 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseLabeledCsv } from "./csv";
-import { buildBody, configFromEnv, decide } from "./jev-client";
+import { buildBody, configFromEnv, decide } from "../../lib/jev/client";
 import { summarize, type EvalRecord } from "./metrics";
-import { redactForJev } from "./redact";
+import { redactForJev } from "../../lib/jev/redact";
 import { renderReport } from "./report";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");

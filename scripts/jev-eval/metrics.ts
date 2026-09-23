@@ -1,6 +1,6 @@
 import type { LabeledMessage } from "./csv";
-import type { JevDecision, JevFailure } from "./jev-client";
-import { INTENTS, WI, type Intent } from "./taxonomy";
+import type { JevDecision, JevFailure } from "../../lib/jev/client";
+import { INTENTS, WI, type Intent } from "../../lib/jev/taxonomy";
 
 /**
  * Métriques — fonctions pures, aucun appel réseau, aucun seuil d'acceptation.

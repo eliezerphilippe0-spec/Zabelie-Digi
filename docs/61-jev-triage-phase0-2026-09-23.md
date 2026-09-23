@@ -211,10 +211,10 @@ Phase 2, si elle est décidée — pas avant.
 
 | Fichier | Rôle |
 |---|---|
-| `scripts/jev-eval/taxonomy.ts` | la taxonomie du §4, **seul endroit** où elle vit |
+| `lib/jev/taxonomy.ts` *(déplacé en Phase 2)* | la taxonomie du §4, **seul endroit** où elle vit côté TS |
 | `scripts/jev-eval/csv.ts` | lecteur `message,entansyon,eskalade,ijans`, fail-closed avec numéro de ligne |
-| `scripts/jev-eval/redact.ts` | masquage du texte libre ; le client refuse tout objet qui n'en sort pas |
-| `scripts/jev-eval/jev-client.ts` | un appel par message, trois questions groupées, relance ≤ 2 sur 429/529 |
+| `lib/jev/redact.ts` *(déplacé en Phase 2)* | masquage du texte libre ; le client refuse tout objet qui n'en sort pas |
+| `lib/jev/client.ts` *(déplacé en Phase 2)* | un appel par message, trois questions groupées, relance ≤ 2 sur 429/529 |
 | `scripts/jev-eval/metrics.ts`, `report.ts` | métriques pures et rapport Markdown |
 | `scripts/jev-eval/run.ts` | CLI |
 | `tests/jev-eval.test.ts` | 17 tests, aucun réseau |
@@ -290,3 +290,98 @@ complète **1219/1219**.
   écart rend `invalid_response` sur tous les messages, pas des chiffres faux.
 * La redaction des **noms** hors formule de présentation (§2) : le CSV doit
   arriver anonymisé.
+
+---
+
+## 8. Phase 2 — triage en OBSERVATION (2026-09-23, « go » puis « fais le meilleur choix »)
+
+Le porteur a délégué les quatre arbitrages. Choix faits, et pourquoi :
+
+| Arbitrage | Choix | Raison |
+|---|---|---|
+| Portée | **observation seule** | Jev n'a été mesuré sur aucun message kreyòl (la Phase 1 n'a pas tourné). Lui confier un routage serait le retenir sans chiffres, contre la condition « seulement si retenu » du prompt. |
+| Point d'entrée | **A — support dans l'app** (`app/api/support/cases`) | B (Meta Cloud) est une dépense et un délai externe : zone d'arrêt, pas un choix d'agent. C ne trie rien. |
+| Seuil | **aucun** | En observation, rien n'est routé ; le journal donne au porteur les chiffres pour le fixer. |
+| Journal | **table dédiée `zabelie_jev_decisions` (`0114`)** | L'audit admin (`zabelie_admin_actions`) enregistre des ordres humains ; y mêler des décisions automatiques brouillerait les deux. |
+
+⚠️ **Le prompt disait « point d'entrée WhatsApp ».** Il n'en existe aucun (§1).
+Le branchement est fait sur le support dans l'app, ce qui ne trie PAS les
+conversations WhatsApp. Et **la base compte aujourd'hui 0 dossier de support**
+(§4) : tant que personne n'en ouvre, le journal restera vide, et ce vide
+voudra dire « aucun passage », pas « rien à signaler ».
+
+### Ce qui est livré
+
+| Fichier | Rôle |
+|---|---|
+| `lib/jev/client.ts`, `redact.ts`, `taxonomy.ts` | le cœur du harnais, déplacé : **ce qui est mesuré est ce qui tourne**, un seul transport |
+| `lib/jev/triage.ts` | triage pur, env et journal injectés ; rend toujours `file_humaine` |
+| `lib/jev/triage-server.ts` | `server-only`, lit l'environnement, n'écrit que le journal |
+| `app/api/support/cases/route.ts` | appel **après** la réponse (`after()`), sous drapeau, jamais sur un rejeu |
+| `supabase/migrations/0114_jev_triage_journal.sql` | journal append-only, RLS, aucun texte — **rédigée, NON appliquée** |
+| `supabase/tests/jev_decisions.test.sql` | J1 à J5 |
+| `tests/jev-triage.test.ts`, `tests/support-route.test.ts` | 11 + 3 tests |
+
+`lib/jev.ts` (outil admin `/api/admin/jev`) n'est **pas** porté sur ce
+transport : il toucherait une route déployée pour un gain nul. Chantier à part.
+
+### Garanties, et la preuve de chacune
+
+| Garantie | Preuve |
+|---|---|
+| Drapeau fermé = comportement actuel inchangé | `jevTriageEnabled` n'accepte que `"true"` exact (`lib/jev/triage.ts`) · tests « drapeau fermé » (8 valeurs refusées) et « off by default » sur la route réelle |
+| Échec sûr : jamais d'exception, toujours `file_humaine` | tests « échec sûr » (config, délai, 529 ×3, 401, réponse invalide) et « journal indisponible » |
+| Jev ne décide jamais de ne pas escalader | test « même sûr de lui » : p(eskalade) = 0 → `file_humaine` |
+| Jev ne déclenche aucune action | le triage n'a accès qu'à `journal` ; aucune RPC, aucun envoi, aucune mutation de dossier (test de confinement) |
+| Redaction obligatoire | le client refuse un objet non émis par `redactForJev` (registre `WeakSet`) · test « ce qui part chez Jev est la version masquée » |
+| Journal sans texte | liste exacte des colonnes (test TS) · J5 en SQL · aucun fragment du message dans la ligne |
+| Confinement DB | `lib/jev/` : aucun `.rpc(`, `.from()` limité à `JOURNAL_TABLE`, aucune table financière nommée · SQL J4 : anon/authenticated sans accès, `service_role` en `select, insert` seulement |
+| Taxonomie alignée TS ↔ SQL | croisement `0114` ↔ `INTENTS` (artefact adressé par chaîne) |
+
+⚠️ **Confinement : par le code, pas par un rôle Postgres.** Le serveur écrit
+avec la clé de service, qui peut tout. Le test prouve que le code n'utilise
+qu'une table ; un rôle dédié exigerait une clé distincte, hors périmètre.
+
+### Éprouvé — deux défauts trouvés par les tests eux-mêmes
+
+1. **`service_role` pouvait réécrire le journal.** Les privilèges par défaut
+   du schéma lui accordent tout ; `grant select, insert` n'enlevait rien. J4
+   a rougi ; `0114` révoque désormais `service_role` avant d'accorder.
+2. **J3a rougissait pour une autre raison que la sienne.** Sans le trigger,
+   l'`update` échouait sur la contrainte de cohérence, pas sur l'absence de
+   trigger. Le test porte maintenant sur une colonne neutre ; chaque trigger
+   supprimé fait rougir son propre cas (`J3a`, `J3c`).
+
+Quatorze mutations TS (douze sur les modules, deux comportementales sur la
+route réelle) et deux SQL (chaque trigger supprimé), toutes rouges sur le test
+visé (drapeau ouvert par
+défaut, insensible à la casse, garde inatteignable, route « auto » si Jev est
+sûr, texte brut dans le journal, source du texte changée, journal qui lève,
+triage avant le contrôle d'erreur, sur rejeu, sans drapeau, avant la réponse
+au lieu d'`after()`, lecture d'une table en plus, taxonomie SQL désalignée).
+Une mutation **n'avait pas muté** (« source changée » réécrivait le même
+texte) : remplacée par une vraie, qui rougit.
+
+Validation : suite SQL complète sur base neuve (Postgres 16, toutes migrations
+dont `0114`) **verte** · `tsc` propre · lint propre · `npm test` **1232/1232**.
+
+### `0114` — empreinte et état
+
+* Empreinte canonique (`scripts/zabelie-migration-hash.mjs`) :
+  `6ddb603ee1480b3580f6362959b58e362084ba056d0b9754afc613c5aefed20b`
+* **Rédigée, NON appliquée.** Je ne l'applique pas : le prompt interdit toute
+  écriture en production, et l'autorisation permanente du 2026-08-17 ne
+  prévaut pas sur une interdiction explicite donnée pour ce chantier.
+
+### Pour activer, dans l'ordre — tous des gestes porteur
+
+1. Avis du **Cabinet Volmar** sur la rétention chez TypeSafe (messages clients).
+2. Fusionner la PR ; appliquer `0114` ; l'inscrire au registre avec son empreinte.
+3. Poser `TYPESAFE_API_KEY` (clé renouvelée) dans Vercel.
+4. Poser `ZABELIE_JEV_TRIAGE_ENABLED=true`.
+5. Lire le journal après quelques dossiers :
+   `select outcome, entansyon, count(*), avg(confidence) from zabelie_jev_decisions group by 1, 2;`
+
+Aucun seuil de routage n'existe encore. Le fixer, et passer d'observation à
+routage, est une décision porteur, à prendre sur ces chiffres et sur le
+rapport de la Phase 1.

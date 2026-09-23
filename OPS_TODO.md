@@ -1,5 +1,9 @@
 # OPS_TODO — Zabelie
 
+## Jev — triage support en OBSERVATION, Phase 2 livrée (23 septembre 2026)
+
+Branché sur le support dans l'app (pas WhatsApp : aucun point d'entrée serveur), **drapeau fermé**, Jev étiquette et journalise, ne route rien. Migration `0114_jev_triage_journal.sql` **rédigée, NON appliquée** — empreinte `6ddb603e…aefed20b`. Pour activer, gestes porteur dans l'ordre : avis Volmar sur la rétention → fusion → appliquer `0114` → clé TypeSafe renouvelée dans Vercel → `ZABELIE_JEV_TRIAGE_ENABLED=true`. ⚠️ 0 dossier de support en base aujourd'hui : un journal vide voudra dire « aucun passage ». Voir `docs/61` §8.
+
 ## Jev — évaluation kreyòl, Phase 1 livrée (23 septembre 2026)
 
 Harnais local `scripts/jev-eval/`, hors production (aucune route, aucune migration, aucune base). Il attend trois gestes porteur : (1) le CSV de 150 à 200 messages WhatsApp réels anonymisés et étiquetés, dans `jev-eval-data/` ; (2) une clé TypeSafe **renouvelée** dans `.env.local` ; (3) le passage sur ta machine, le proxy des sessions agent bloquant `api.typesafe.ai`. Taxonomie du §4 toujours à valider (`plent`, `akse_nimerik`, `kont`). Aucun seuil fixé : le rapport présente les chiffres, tu décides si Jev est retenu. Voir `docs/61-jev-triage-phase0-2026-09-23.md` §7.

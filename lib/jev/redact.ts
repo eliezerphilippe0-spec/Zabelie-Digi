@@ -3,7 +3,8 @@
  *
  * `redactPayment()` (lib/moncash.ts:512) ne s'applique pas : il retire un
  * champ d'un OBJET MonCash, il ne lit pas de texte libre. Aucun masquage de
- * texte n'existait dans le dépôt (docs/61 §2) — d'où ce module.
+ * texte n'existait dans le dépôt (docs/61 §2) — d'où ce module, partagé par le
+ * harnais d'évaluation et le triage.
  *
  * Le client (`jev-client.ts`) REFUSE tout état qui n'est pas sorti d'ici : le
  * résultat est inscrit dans un registre privé à ce module, vérifié à

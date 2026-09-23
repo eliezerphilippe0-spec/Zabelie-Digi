@@ -3,12 +3,13 @@ import { isRedacted, type Redacted } from "./redact";
 import { INTENTS, INTENT_CRITERIA, type Intent } from "./taxonomy";
 
 /**
- * Client d'ÉVALUATION Jev — hors production, aucune route, aucune base.
+ * Client Jev du triage — partagé par le harnais d'évaluation
+ * (`scripts/jev-eval/`) et le triage en observation (`lib/jev/triage.ts`) :
+ * ce qui est mesuré est exactement ce qui tourne. Aucune base ici.
  *
- * ⚠️ Pas de doublon caché : `lib/jev.ts` reste le client de la route admin, et
- * il ne se réutilise pas ici tel quel — ses questions sont fixées dans le code
- * (catégories françaises, une seule question `noul`) et son URL aussi. La
- * Phase 2, si elle est décidée, fusionne les deux dans `lib/jev/` (docs/61).
+ * ⚠️ `lib/jev.ts` reste le client de l'outil admin `/api/admin/jev` (questions
+ * françaises figées, une seule question `noul`). Le porter sur ce transport
+ * est un chantier à part : il toucherait une route déjà déployée (docs/61 §8).
  *
  * Forme du protocole : celle du client existant (`lib/jev.ts:21-39`), écrit
  * d'après https://docs.typesafe.ai/introduction/quickstart. La doc n'a PAS pu
