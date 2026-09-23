@@ -135,9 +135,19 @@ Il existe **déjà deux taxonomies**, et elles ne se recouvrent pas :
   `wrong`, `digital`, `other` (`lib/support-case.ts:2`,
   `0113_haiti_marketplace_operations.sql:60`).
 
-Aucun message réel n'a pu être lu pour fonder la proposition : le MCP Supabase
-de cette session ne voit **aucun projet** (`list_projects` renvoie `[]`), et
-les messages WhatsApp ne sont pas en base (§1). La proposition part donc des
+Aucun message réel n'a pu fonder la proposition, **parce qu'il n'en existe
+aucun en base**. Mesuré le 2026-09-23 en lecture seule sur le projet
+`ddditxykopuxxqzgkqwy` (⚠️ `list_projects` renvoie `[]`, mais l'accès direct
+par identifiant fonctionne : le premier constat « aucun projet visible » était
+faux) :
+
+```
+zabelie_support_cases      0     zabelie_messages (0090)       0
+zabelie_support_messages   0     product_reviews avec texte    0
+orders                    15     profiles                      4
+```
+
+Les seuls textes clients de Zabelie sont donc dans WhatsApp Business (§1). La proposition part donc des
 deux listes existantes et de celle de la demande :
 
 | Proposé | Existant Jev | Existant support | Note |
