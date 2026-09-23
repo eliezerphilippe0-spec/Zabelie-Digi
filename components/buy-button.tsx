@@ -104,6 +104,7 @@ export function BuyButton({
   loadingLabel = "Redirection…",
   coupon,
   rechaj,
+  ageMinimum,
   recipient,
   errors,
 }: {
@@ -123,6 +124,8 @@ export function BuyButton({
   coupon?: CouponLabels;
   /** Recharge (0099) : absent = produit ordinaire, parcours inchangé. */
   rechaj?: { labels: RechajLabels; operateur: Operateur | null };
+  /** Âge minimum (0115) : absent = aucune restriction, parcours inchangé. */
+  ageMinimum?: { age: number; label: string };
   /** Libellés i18n des erreurs (BL-113 : l'échec aussi doit parler KR). */
   errors?: ErrorLabels;
   recipient?: RecipientLabels;
@@ -163,6 +166,12 @@ export function BuyButton({
     numeroOk && rechaj && operateurDouteux(numeroOk, rechaj.operateur)
   );
   const rechajBloque = Boolean(rechaj) && !numeroConcorde;
+  /* Âge minimum (0115). La case n'est pas une formalité d'interface : le
+     serveur refuse la commande sans elle et garde la déclaration. Jamais
+     pré-cochée — une attestation qu'on n'a pas donnée n'en est pas une. */
+  const [ageAtteste, setAgeAtteste] = useState(false);
+  const ageBloque = Boolean(ageMinimum) && !ageAtteste;
+  const achatBloque = rechajBloque || ageBloque;
 
   const selected = variants?.find((v) => v.id === variantId) ?? null;
   const soldOut = Boolean(variants && variants.every((v) => v.available <= 0));
@@ -226,6 +235,9 @@ export function BuyButton({
       // Recharge : la forme NORMALISÉE, jamais la saisie brute. Le serveur
       // renormalise de toute façon — il ne fait confiance à rien d'ici.
       rechajNumero: numeroOk ?? undefined,
+      // Âge (0115) : un booléen exact, envoyé seulement pour une fiche
+      // restreinte. Le serveur relit le seuil en base et exige `true`.
+      ageAttestation: ageMinimum ? ageAtteste : undefined,
       recipient: recipient && forSomeone ? recipientInput : undefined,
     });
 
@@ -419,6 +431,19 @@ export function BuyButton({
         </div>
       )}
 
+      {ageMinimum && (
+        <label className="mb-4 flex min-h-11 items-start gap-3 rounded-2xl border border-line bg-surface/60 p-4 text-sm text-cloud">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={ageAtteste}
+            disabled={busy}
+            onChange={(e) => setAgeAtteste(e.target.checked)}
+          />
+          <span>{ageMinimum.label}</span>
+        </label>
+      )}
+
       {/* Code promo (V-13) */}
       {coupon && !applied && !showCoupon && (
         <button
@@ -465,7 +490,7 @@ export function BuyButton({
 
       <button
         onClick={() => handleBuy(primary)}
-        disabled={busy || soldOut || selectedOut || rechajBloque}
+        disabled={busy || soldOut || selectedOut || achatBloque}
         className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
       >
         {soldOut || selectedOut
@@ -485,7 +510,7 @@ export function BuyButton({
               <button
                 key={cleOption(o)}
                 onClick={() => handleBuy(o)}
-                disabled={busy || soldOut || selectedOut || rechajBloque}
+                disabled={busy || soldOut || selectedOut || achatBloque}
                 className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
               >
                 {loadingRail === cleOption(o) ? loadingLabel : o.label}

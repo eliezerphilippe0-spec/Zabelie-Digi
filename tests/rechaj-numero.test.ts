@@ -178,7 +178,10 @@ test("RN7 — le bouton reste bloqué tant que les deux saisies ne concordent pa
   assert.match(code, /const rechajBloque = Boolean\(rechaj\) && !numeroConcorde/);
   // Les DEUX boutons (rail principal et rails secondaires) sont gardés : un
   // seul des deux laisserait la diaspora payer sans numéro.
-  const gardes = code.match(/disabled=\{busy \|\| soldOut \|\| selectedOut \|\| rechajBloque\}/g) ?? [];
+  // Depuis 0115, les boutons portent `achatBloque`, qui DOIT inclure
+  // `rechajBloque` : on ancre la liaison, pas seulement le nom.
+  assert.match(code, /const achatBloque = rechajBloque \|\| ageBloque;/);
+  const gardes = code.match(/disabled=\{busy \|\| soldOut \|\| selectedOut \|\| achatBloque\}/g) ?? [];
   assert.equal(gardes.length, 2, `${gardes.length} bouton(s) gardé(s), 2 attendus`);
   // C'est la forme normalisée qui part au serveur, jamais la saisie brute.
   assert.match(code, /rechajNumero: numeroOk \?\? undefined/);
