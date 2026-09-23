@@ -302,7 +302,7 @@ Le porteur a délégué les quatre arbitrages. Choix faits, et pourquoi :
 | Portée | **observation seule** | Jev n'a été mesuré sur aucun message kreyòl (la Phase 1 n'a pas tourné). Lui confier un routage serait le retenir sans chiffres, contre la condition « seulement si retenu » du prompt. |
 | Point d'entrée | **A — support dans l'app** (`app/api/support/cases`) | B (Meta Cloud) est une dépense et un délai externe : zone d'arrêt, pas un choix d'agent. C ne trie rien. |
 | Seuil | **aucun** | En observation, rien n'est routé ; le journal donne au porteur les chiffres pour le fixer. |
-| Journal | **table dédiée `zabelie_jev_decisions` (`0114`)** | L'audit admin (`zabelie_admin_actions`) enregistre des ordres humains ; y mêler des décisions automatiques brouillerait les deux. |
+| Journal | **table dédiée `zabelie_jev_decisions` (`0117`)** | L'audit admin (`zabelie_admin_actions`) enregistre des ordres humains ; y mêler des décisions automatiques brouillerait les deux. |
 
 ⚠️ **Le prompt disait « point d'entrée WhatsApp ».** Il n'en existe aucun (§1).
 Le branchement est fait sur le support dans l'app, ce qui ne trie PAS les
@@ -318,7 +318,7 @@ voudra dire « aucun passage », pas « rien à signaler ».
 | `lib/jev/triage.ts` | triage pur, env et journal injectés ; rend toujours `file_humaine` |
 | `lib/jev/triage-server.ts` | `server-only`, lit l'environnement, n'écrit que le journal |
 | `app/api/support/cases/route.ts` | appel **après** la réponse (`after()`), sous drapeau, jamais sur un rejeu |
-| `supabase/migrations/0114_jev_triage_journal.sql` | journal append-only, RLS, aucun texte — **rédigée, NON appliquée** |
+| `supabase/migrations/0117_jev_triage_journal.sql` | journal append-only, RLS, aucun texte — **rédigée, NON appliquée** |
 | `supabase/tests/jev_decisions.test.sql` | J1 à J5 |
 | `tests/jev-triage.test.ts`, `tests/support-route.test.ts` | 11 + 3 tests |
 
@@ -336,7 +336,7 @@ transport : il toucherait une route déployée pour un gain nul. Chantier à par
 | Redaction obligatoire | le client refuse un objet non émis par `redactForJev` (registre `WeakSet`) · test « ce qui part chez Jev est la version masquée » |
 | Journal sans texte | liste exacte des colonnes (test TS) · J5 en SQL · aucun fragment du message dans la ligne |
 | Confinement DB | `lib/jev/` : aucun `.rpc(`, `.from()` limité à `JOURNAL_TABLE`, aucune table financière nommée · SQL J4 : anon/authenticated sans accès, `service_role` en `select, insert` seulement |
-| Taxonomie alignée TS ↔ SQL | croisement `0114` ↔ `INTENTS` (artefact adressé par chaîne) |
+| Taxonomie alignée TS ↔ SQL | croisement `0117` ↔ `INTENTS` (artefact adressé par chaîne) |
 
 ⚠️ **Confinement : par le code, pas par un rôle Postgres.** Le serveur écrit
 avec la clé de service, qui peut tout. Le test prouve que le code n'utilise
@@ -346,7 +346,7 @@ qu'une table ; un rôle dédié exigerait une clé distincte, hors périmètre.
 
 1. **`service_role` pouvait réécrire le journal.** Les privilèges par défaut
    du schéma lui accordent tout ; `grant select, insert` n'enlevait rien. J4
-   a rougi ; `0114` révoque désormais `service_role` avant d'accorder.
+   a rougi ; `0117` révoque désormais `service_role` avant d'accorder.
 2. **J3a rougissait pour une autre raison que la sienne.** Sans le trigger,
    l'`update` échouait sur la contrainte de cohérence, pas sur l'absence de
    trigger. Le test porte maintenant sur une colonne neutre ; chaque trigger
@@ -363,12 +363,12 @@ Une mutation **n'avait pas muté** (« source changée » réécrivait le même
 texte) : remplacée par une vraie, qui rougit.
 
 Validation : suite SQL complète sur base neuve (Postgres 16, toutes migrations
-dont `0114`) **verte** · `tsc` propre · lint propre · `npm test` **1232/1232**.
+dont `0117`) **verte** · `tsc` propre · lint propre · `npm test` **1232/1232**.
 
-### `0114` — empreinte et état
+### `0117` — empreinte et état
 
 * Empreinte canonique (`scripts/zabelie-migration-hash.mjs`) :
-  `6ddb603ee1480b3580f6362959b58e362084ba056d0b9754afc613c5aefed20b`
+  `a90296e4043a14816d4f211da1406012906d2eb37a647c924d6eb9df0ca9b91a`
 * **Rédigée, NON appliquée.** Je ne l'applique pas : le prompt interdit toute
   écriture en production, et l'autorisation permanente du 2026-08-17 ne
   prévaut pas sur une interdiction explicite donnée pour ce chantier.
@@ -376,7 +376,7 @@ dont `0114`) **verte** · `tsc` propre · lint propre · `npm test` **1232/1232*
 ### Pour activer, dans l'ordre — tous des gestes porteur
 
 1. Avis du **Cabinet Volmar** sur la rétention chez TypeSafe (messages clients).
-2. Fusionner la PR ; appliquer `0114` ; l'inscrire au registre avec son empreinte.
+2. Fusionner la PR ; appliquer `0117` ; l'inscrire au registre avec son empreinte.
 3. Poser `TYPESAFE_API_KEY` (clé renouvelée) dans Vercel.
 4. Poser `ZABELIE_JEV_TRIAGE_ENABLED=true`.
 5. Lire le journal après quelques dossiers :

@@ -197,10 +197,10 @@ test("le harnais d'évaluation n'importe que node:, zod, ses fichiers et le cœu
 
 // ── Croisement TS ↔ SQL : la taxonomie est adressée par chaîne ───────────────
 
-test("la contrainte SQL de 0114 porte exactement la taxonomie de lib/jev/taxonomy.ts", () => {
-  const sql = readFileSync("supabase/migrations/0114_jev_triage_journal.sql", "utf8");
+test("la contrainte SQL de 0117 porte exactement la taxonomie de lib/jev/taxonomy.ts", () => {
+  const sql = readFileSync("supabase/migrations/0117_jev_triage_journal.sql", "utf8");
   const block = /entansyon text check\(entansyon is null or entansyon in\(([^)]*)\)\)/.exec(sql);
-  assert.ok(block, "contrainte d'intention introuvable dans 0114");
+  assert.ok(block, "contrainte d'intention introuvable dans 0117");
   const sqlIntents = [...block[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
   assert.deepEqual(sqlIntents, [...INTENTS]);
 });

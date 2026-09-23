@@ -1,4 +1,4 @@
--- Journal du triage Jev en observation (0114, docs/61 §8).
+-- Journal du triage Jev en observation (0117, docs/61 §8).
 -- Usage : psql "$DATABASE_URL" -f supabase/tests/jev_decisions.test.sql
 --
 --   J1. Connu-positif : une décision entière et un échec nommé s'inscrivent.

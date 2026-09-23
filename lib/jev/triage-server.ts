@@ -5,7 +5,7 @@ import { JOURNAL_TABLE, jevTriageEnabled, triageSupportMessage, type TriageEnv, 
 /**
  * Câblage serveur du triage Jev en observation. Lectures d'environnement
  * EXPLICITES (inventaire `.env.example`) ; le seul accès base est l'insertion
- * dans le journal `zabelie_jev_decisions` (0114).
+ * dans le journal `zabelie_jev_decisions` (0117).
  */
 function env(): TriageEnv {
   return {
