@@ -84,12 +84,6 @@ const CLASSEMENT: Record<string, Classement> = {
       "garantit qu'il a le droit de vendre ce qu'il met en ligne ». C'est le " +
       "vendeur qui s'engage, l'acheteur ne reçoit aucune garantie de Zabelie.",
   },
-  "policy.alcohol.p2": {
-    horsSujet:
-      "NÉGATION explicite : « Zabelie ne vérifie pas l'âge de l'acheteur et " +
-      "ne livre pas ». La phrase dit exactement le contraire d'une promesse — " +
-      "c'est le genre de formulation qu'on veut protéger, pas interdire.",
-  },
 };
 
 // ────────────────────────── Extraction ───────────────────────────────────────
