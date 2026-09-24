@@ -82,10 +82,10 @@ test("S4 — la page applique le seuil à CHAQUE rangée, par le helper, pas à 
   assert.doesNotMatch(page, /menu\.empty|sec\.cats|home\.demand/);
 });
 
-test("S5 — un seul h1, dans la bannière, un seul CTA, et un <main id=\"main\">", () => {
+test("S5 — un seul h1, dans la bannière, un CTA principal, et un <main id=\"main\">", () => {
   const h1 = page.match(/<h1\b/g) ?? [];
   assert.equal(h1.length, 1, "la bannière porte le SEUL h1");
-  assert.match(page, /<h1 className="[^"]*">\s*\{t\(lang, "hero\.s1\.t"\)\}/);
+  assert.match(page, /<h1 className="[^"]*">\s*\{t\(lang, opening \? "launch\.title" : "hero\.s1\.t"\)\}/);
   assert.match(page, /<main id="main">/);
   // Plus de carrousel, plus de titre séparé, plus de rail ni de bandeau paiement.
   assert.doesNotMatch(page, /HeroCarousel|LANDING_SLIDES|home\.h1b|home\.pay|CategorySidebar/);
@@ -101,8 +101,8 @@ test("S5 — un seul h1, dans la bannière, un seul CTA, et un <main id=\"main\"
 test("S6 — l'image de la bannière n'est rendue que si le fichier du porteur existe (jamais générée)", () => {
   assert.match(page, /function heroImageDisponible\(\): boolean \{\s*return existsSync\(join\(process\.cwd\(\), "public", HERO_IMAGE\)\);/);
   assert.match(page, /const heroImage = heroImageDisponible\(\);/);
-  assert.match(page, /\{heroImage && \(\s*<Image\s+src=\{HERO_IMAGE\}[\s\S]{0,120}priority/);
-  assert.match(page, /style=\{heroImage \? undefined : \{ backgroundImage: "var\(--brand-gradient\)" \}\}/);
+  assert.match(page, /\{heroImage && !opening && \(\s*<Image\s+src=\{HERO_IMAGE\}[\s\S]{0,120}priority/);
+  assert.match(page, /style=\{opening \|\| heroImage \? undefined : \{ backgroundImage: "var\(--brand-gradient\)" \}\}/);
 });
 
 test("S7 — le bouton WhatsApp flottant : 48 px, bas droite, absent sans numéro", () => {

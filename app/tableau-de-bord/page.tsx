@@ -1,7 +1,10 @@
+import { readSellerPricing, readSellerLaunch } from "@/lib/seller-pricing-server";
+import { SellerLaunchPanel } from "@/components/seller-pricing-panel";
 import { DigitalSellerMetrics } from "@/components/digital-seller-metrics";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { ShareButtons } from "@/components/share-buttons";
 import { getCurrentUser, getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
@@ -20,6 +23,7 @@ import { hrefBoutique } from "@/lib/boutique-href";
 import { bornes, pageValide, nbPages, pageDansBornes } from "@/lib/pagination";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
+import { studioProvider } from "@/lib/studio-server";
 import { t, type I18nKey } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
 import { PayoutRequest } from "@/components/payout-request";
@@ -344,6 +348,9 @@ export default async function DashboardPage({
   /* La langue est résolue AVANT les métriques : elles traduisent désormais
      leurs libellés, et `t()` est réservé au serveur (règle de lib/i18n.ts). */
   const lang = await getLang();
+  const pricingClient = createAdminClient();
+  const sellerPricing = await readSellerPricing(pricingClient);
+  const sellerLaunch = sellerPricing ? await readSellerLaunch(pricingClient, user.id, sellerPricing, user.createdAt) : null;
 
   const metriquePrincipale = {
     label: t(lang, "tb.dispo"),
@@ -473,6 +480,7 @@ export default async function DashboardPage({
 
   return (
     <Shell title={`Bonjour, ${user.displayName}`}>
+      <SellerLaunchPanel launch={sellerLaunch} lang={lang} now={sellerLaunch?.observed_at ?? 0} />
       {premierPas && (
         <VendeurPremierPas
           etape={premierPas.etape}
@@ -481,6 +489,26 @@ export default async function DashboardPage({
           lienBoutique={premierPas.lienBoutique}
         />
       )}
+
+      <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-8 scroll-mt-28 rounded-2xl border border-line bg-surface p-5">
+        <h2 id="ma-boutique-title" className="text-lg font-semibold">{t(lang, "shop.manage")}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
+        <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
+          {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
+        </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
+          <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
+          {/* Le lien n'existe que si le Studio est allumé ET configuré : même prédicat que la page et les routes. */}
+          {studioProvider() && (
+            <Link href="/tableau-de-bord/studio" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "estidyo.lien")}</Link>
+          )}
+        </div>
+        <div className="mt-4 border-t border-line pt-4">
+          <ShareButtons path={hrefBoutique({ id: user.id, boutikSlug })} text={t(lang, "creator.share.text", { name: profile.display_name })}
+            waLabel={t(lang, "share.wa")} copyLabel={t(lang, "share.copy")} copiedLabel={t(lang, "share.copied")} />
+        </div>
+      </section>
 
       {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
           largeur, et SEULE à porter le dégradé de la marque. */}
@@ -730,7 +758,7 @@ export default async function DashboardPage({
       )}
 
       {/* Profil public */}
-      <section className="mt-10">
+      <section id="profil-public" className="mt-10 scroll-mt-28">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t(lang, "dashboard.profile.public")}</h2>
           <Link

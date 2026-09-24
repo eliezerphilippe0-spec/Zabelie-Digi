@@ -83,6 +83,12 @@ son prix courant qui devient l'ancien prix, jamais une saisie libre (le
 retirer le rabais rend le prix courant sans barré. Tout calcul reste serveur
 (règle dure n°3). Migration + formulaire + affichage barré catalogue/fiche.
 
+### Extension par variante (0109)
+
+Dans Mes produits, un produit physique à plusieurs tailles ou modèles expose un Rabais pour chaque variante. Le vendeur saisit uniquement le nouveau prix. La base préserve le premier prix réellement pratiqué, laisse les autres variantes intactes et actualise le prix minimum du produit. La fiche indique « À partir de » ; chaque option affiche son propre ancien prix barré et le montant du bouton de paiement suit la sélection. Le serveur relit ce prix, y compris pour un coupon et une quantité supérieure à un.
+
+Retirer le rabais enlève uniquement le barré. Une vente flash active doit être annulée avant une nouvelle baisse par variante. Le chemin classique des produits digitaux, services et produits sans choix de variante reste disponible.
+
 ## V-5 — Nom + adresse à l'inscription, adresse au moment de l'expédition
 
 Carnet d'adresses acheteur (rue, ville, département — réutilise les ZONES de
@@ -148,3 +154,12 @@ sans exiger de posséder deux titres. Le nombre requis vit en config
 V-1A (en cours) → V-2 → V-4 → V-5 → V-1B (après arbitrages) → V-3 (après
 arbitrage vagues) → V-6 (après arbitrages KYC). Les arbitrages de V-3/V-6
 peuvent être rendus à tout moment et remonter leur chantier dans la file.
+
+## Mise à jour du 2026-09-24 — la vidéo n'avait jamais pu fonctionner
+
+Mesuré en production : `product-covers` est plafonné à **1,5 Mo** (réglage
+posé à la main pour les couvertures, absent des migrations). Toute vidéo réelle
+était refusée par le stockage avant la confirmation serveur : **0 vidéo en
+base** depuis la livraison de V-1B. `0120` crée un bucket `product-videos`
+(50 Mo, types vidéo) ; route, écran, lecture et suppression y sont repointés
+(`tests/bucket-videos.test.ts`). Les arbitrages 60 s / 50 Mo sont conservés.

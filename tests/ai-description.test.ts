@@ -205,7 +205,7 @@ test("route : kill-switch — pas de fournisseur → 503, PREMIÈRE garde de la 
 
 test("route : auth requise (401), suspension bloquée (403)", () => {
   assert.match(ROUTE, /if \(!user\)[\s\S]{0,200}status: 401/);
-  assert.match(ROUTE, /getSuspension\(user\.id\)[\s\S]{0,300}status: 403/);
+  assert.match(ROUTE, /await requireActiveAccount\(user\.id\);\s*if \(accountRefusal\) return accountRefusal;/);
 });
 
 test("route : débit borné par utilisateur — rafale, quota du jour (config, repli 50), plafond dur", () => {

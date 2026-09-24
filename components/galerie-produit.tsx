@@ -16,6 +16,7 @@ export function GalerieProduit({
   couverture,
   medias,
   video = null,
+  videoLabel,
   alt,
 }: {
   /** L'URL de la couverture (déjà dimensionnée par l'appelant), ou null. */
@@ -24,6 +25,11 @@ export function GalerieProduit({
   medias: string[];
   /** L'URL de la vidéo (une seule, V-1B), ou null. */
   video?: string | null;
+  /**
+   * « Videyo machann nan » : la vidéo est celle du VENDEUR, jamais un avis
+   * client (docs/66 §6.2). Toujours visible sous la vidéo et sur sa vignette.
+   */
+  videoLabel: string;
   alt: string;
 }) {
   const images = [couverture, ...medias].filter((u): u is string => Boolean(u));
@@ -49,12 +55,16 @@ export function GalerieProduit({
           className="aspect-[4/3] w-full rounded-3xl border border-line object-cover"
         />
       ) : (
-        <video
-          src={actif.url}
-          controls
-          preload="none"
-          className="aspect-[4/3] w-full rounded-3xl border border-line bg-ink object-contain"
-        />
+        <figure className="space-y-1.5">
+          <video
+            src={actif.url}
+            controls
+            preload="none"
+            aria-label={videoLabel}
+            className="aspect-[4/3] w-full rounded-3xl border border-line bg-ink object-contain"
+          />
+          <figcaption className="text-xs text-mist">{videoLabel}</figcaption>
+        </figure>
       )}
       {items.length > 1 && (
         <div className="flex gap-2 overflow-x-auto">
@@ -79,8 +89,9 @@ export function GalerieProduit({
                   className="aspect-[4/3] w-18 object-cover"
                 />
               ) : (
-                <span className="flex aspect-[4/3] w-18 items-center justify-center bg-ink text-lg">
-                  ▶
+                <span className="flex aspect-[4/3] w-18 items-center justify-center bg-ink text-lg" title={videoLabel}>
+                  <span aria-hidden="true">▶</span>
+                  <span className="sr-only">{videoLabel}</span>
                 </span>
               )}
             </button>

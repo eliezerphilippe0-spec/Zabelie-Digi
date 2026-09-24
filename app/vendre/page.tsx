@@ -1,3 +1,11 @@
+import { formatHTG } from "@/lib/sample-data";
+import { ProductOffersEditor } from "@/components/product-offers-editor";
+import { sellerOffers } from "@/lib/product-offers-server";
+import { offerCopy } from "@/lib/product-offer-copy";
+import { OFFER_KINDS, EMPTY_OFFERS, eligibleOffer, type OfferKind } from "@/lib/product-offers";
+import { readSellerPricing, readSellerLaunch } from "@/lib/seller-pricing-server";
+import { SellerLaunchPanel } from "@/components/seller-pricing-panel";
+import type { SellerPricing } from "@/lib/seller-pricing";
 import { ProductCommitmentEditor } from "@/components/product-commitment-editor";
 import { getProductCommitments } from "@/lib/product-commitments-server";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
@@ -33,7 +41,7 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listerMedias, MAX_IMAGES_PER_PRODUCT } from "@/lib/product-media";
 import { GalerieManager } from "@/components/galerie-manager";
-import { lireCompares } from "@/lib/product-discount";
+import { lireCompares, lireVariantesRabais } from "@/lib/product-discount";
 import { RabaisManager } from "@/components/rabais-manager";
 import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
@@ -46,13 +54,40 @@ function Shell({
   lang,
   subtitle,
   taux,
+  marketing = false,
+  pricing,
 }: {
+  marketing?: boolean;
   children: React.ReactNode;
   lang: Lang;
   subtitle?: string;
   /** Taux LU EN BASE (0054/0066) — jamais une constante de libellé. */
   taux: TauxCommission;
+  pricing?: SellerPricing | null;
 }) {
+  if (marketing) return (
+    <div className="bg-grain min-h-dvh editorial-page">
+      <SiteNav />
+      <main id="main" className="seller-landing mx-auto max-w-6xl px-5">
+        <div className="seller-intro"><h1>{t(lang, "sell.landing.title")}</h1><p>{t(lang, "sell.landing.body")}</p></div>
+        <div className="seller-layout">
+          <section aria-labelledby="comment">
+            <h2 id="comment" className="scroll-mt-24">{t(lang, "home.how.sell")}</h2>
+            <ol className="seller-steps">{([
+              ["home.s1.t", "home.s1.b"], ["home.s2.t", "home.s2.b"], ["home.s3.t", "home.s3.b"],
+            ] as const).map(([title, body], index) => <li key={title}><span className="step-number" aria-hidden="true">0{index + 1}</span><div><h3>{t(lang, title)}</h3><p>{t(lang, body)}</p></div></li>)}</ol>
+            <div className="seller-physical"><p>{t(lang, "sell.physical.q")}</p><Link href="/vendre/physique" className="editorial-link">{t(lang, "sell.physical.cta")}<span aria-hidden="true">↗</span></Link></div>
+            <Link href={POLICY_PATH} className="editorial-link seller-policy">{t(lang, "policy.link")}</Link>
+          </section>
+          <aside className="seller-decision">
+            <CommissionAnnonce taux={taux} pricing={pricing} lang={lang} labels={{ title: t(lang, "sell.fee.title"), ligne: t(lang, "sell.fee.line"), exemple: t(lang, "sell.fee.example"), gratuit: t(lang, "sell.fee.free") }} />
+            <div className="seller-entry">{children}</div>
+          </aside>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
@@ -88,6 +123,8 @@ function Shell({
             arrivée après la décision. */}
         <CommissionAnnonce
           taux={taux}
+          pricing={pricing}
+          lang={lang}
           labels={{
             title: t(lang, "sell.fee.title"),
             ligne: t(lang, "sell.fee.line"),
@@ -140,7 +177,7 @@ export default async function VendrePage() {
      * chemin du fichier de configuration ne l'aiderait pas, il n'y a pas accès. */
     signalerConfigAbsente("supabase", { ecran: "/vendre" });
     return (
-      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")}>
+      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")} marketing>
         <div className="glass rounded-2xl p-6 text-sm text-mist">
           {t(lang, "sell.demo.body")}
         </div>
@@ -171,15 +208,14 @@ export default async function VendrePage() {
     console.error("[commission] taux de repli utilisé", c),
   );
 
+  const pricing = await readSellerPricing(supabase);
+  const launch = user && pricing ? await readSellerLaunch(supabase, user.id, pricing, user.created_at) : null;
+
   if (!user) {
     return (
-      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")}>
-        <Link
-          href="/connexion?next=/vendre"
-          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-        >
-          {t(lang, "auth.signin.cta")}
-        </Link>
+      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} pricing={pricing} marketing>
+        <Link href="/connexion?mode=signup&next=/vendre" className="editorial-button">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
+        <Link href="/connexion?next=/vendre" className="editorial-link">{t(lang, "sell.existing")}<span aria-hidden="true">→</span></Link>
       </Shell>
     );
   }
@@ -212,11 +248,12 @@ export default async function VendrePage() {
 
   const { data: mineRaw, error: mineError } = await supabase
     .from("products")
-    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, product_assets(id,file_name,size_bytes)")
+    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, zabelie_auto_recommendations, product_assets(id,file_name,size_bytes)")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
   type MineRow = Omit<ReadinessProduct, "product_assets"> & {
+    zabelie_auto_recommendations: boolean;
     id: string;
     slug: string;
     title: string;
@@ -226,6 +263,8 @@ export default async function VendrePage() {
     product_assets: { id: string; file_name: string; size_bytes: number }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  const related = mine.length ? await sellerOffers(supabase, user.id) : null;
+  const offerText = offerCopy(lang);
   const commitments = await getProductCommitments(mine.filter(p => p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL).map(p => p.id));
   const trustLabels = marketplaceCopy(lang);
   const { data: studioRows, error: studioError } = mine.length ? await supabase.from("zabelie_digital_studio").select("*").in("product_id", mine.map(p => p.id)) : { data: [], error: null };
@@ -241,6 +280,7 @@ export default async function VendrePage() {
   );
   // Rabais V-4 : map vide tant que 0075 n'est pas appliquée.
   const compares = await lireCompares(supabase, user.id);
+  const variantsRabais = await lireVariantesRabais(supabase, mine.filter(p => p.kind === COMMITMENT_PHYSICAL).map(p => p.id));
   const offresFlash = await lireOffresVivantes(supabase, user.id);
   const flashLabels = {
     title: t(lang, "sell.flash.title"),
@@ -255,6 +295,7 @@ export default async function VendrePage() {
   };
   const rabaisLabels = {
     title: t(lang, "sell.rabais.title"),
+    flashActive: t(lang, "sell.rabais.flashActive"),
     newPh: t(lang, "sell.rabais.newPh"),
     apply: t(lang, "sell.rabais.apply"),
     remove: t(lang, "sell.rabais.remove"),
@@ -294,7 +335,8 @@ export default async function VendrePage() {
   };
 
   return (
-    <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")}>
+    <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")} pricing={pricing}>
+      <SellerLaunchPanel launch={launch} lang={lang} now={launch?.observed_at ?? 0} />
 
       <nav aria-label={t(lang, "seller.workspace")} className="mb-6 flex flex-wrap gap-2">
         {[["#mes-produits", "sell.mine.title"], ["/mes-ventes", "seller.orders"], ["/tableau-de-bord", "nav.dashboard"], ["/messages", "seller.messages"]].map(([href, key]) => (
@@ -307,6 +349,8 @@ export default async function VendrePage() {
         <PublishForm
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
+          pricing={pricing}
+          lang={lang}
           aiActif={aiProviderDisponible() !== null}
           categories={rayonsPublication}
           sousRayons={sousRayonsPublication}
@@ -430,12 +474,28 @@ export default async function VendrePage() {
                     labels={galerieLabels}
                   />
                   {p.status === "published" && <>
-                  <RabaisManager
+                  {(variantsRabais.get(p.id)?.length ?? 0) > 1 ? <div className="mt-4 space-y-3">
+                    <h4 className="text-sm font-semibold">{t(lang, "sell.rabais.variants")}</h4>
+                    {variantsRabais.get(p.id)!.map(v => <div key={v.id}>
+                      <p className="text-sm">{v.options?.variante || Object.values(v.options ?? {}).join(" · ") || t(lang, "sell.rabais.standard")}</p>
+                      <RabaisManager key={v.id + ":" + v.price_htg + ":" + v.compare_at_htg} productId={p.id} variantId={v.id}
+                        prixHtg={v.price_htg} compareHtg={v.compare_at_htg ?? null} labels={rabaisLabels}/>
+                    </div>)}
+                  </div> : <RabaisManager
+                    key={p.id + ":" + p.price_htg + ":" + compares.get(p.id)}
                     productId={p.id}
                     prixHtg={p.price_htg}
                     compareHtg={compares.get(p.id) ?? null}
                     labels={rabaisLabels}
-                  />
+                  />}
+                  {related ? (() => {
+                    const rows = related.offers.filter(o => o.source_product_id === p.id);
+                    const initial = { ...EMPTY_OFFERS };
+                    const confirmed = { upsell: 0, cross_sell: 0, downsell: 0 };
+                    for (const row of rows) { initial[row.offer_kind] = row.target_product_id; confirmed[row.offer_kind] = related.stats.get(row.id) ?? 0; }
+                    const choices = Object.fromEntries(OFFER_KINDS.map(kind => [kind, mine.filter(target => eligibleOffer(p, target, kind)).map(target => ({ id: target.id, label: target.title + " · " + formatHTG(target.price_htg) }))])) as Record<OfferKind, { id: string; label: string }[]>;
+                    return <ProductOffersEditor key={p.id} productId={p.id} initial={initial} choices={choices} confirmed={confirmed} automatic={p.zabelie_auto_recommendations} automaticSales={related.recommendations?.get(p.id) ?? (related.recommendations ? 0 : null)} copy={offerText}/>;
+                  })() : <p className="mt-4 text-sm text-mist">{offerText.unavailable}</p>}
                   <FlashManager
                     productId={p.id}
                     prixHtg={p.price_htg}

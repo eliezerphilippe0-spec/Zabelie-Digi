@@ -5,13 +5,13 @@ import { t } from "@/lib/i18n";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const BUCKET = "product-files";
+import { DIGITAL_BUCKET as BUCKET } from "@/lib/storage-buckets";
 const MAX_BYTES = 50 * 1024 * 1024; // 50 Mo
 
 // Liste blanche des livrables numériques (audit sécurité §8.1). Le bucket est
@@ -73,12 +73,8 @@ export async function POST(req: Request) {
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: { productId?: unknown; step?: unknown; path?: unknown; fileName?: unknown };
   try {

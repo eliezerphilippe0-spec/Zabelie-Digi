@@ -1,3 +1,6 @@
+import { SellerPricingPanel } from "@/components/seller-pricing-panel";
+import type { SellerPricing } from "@/lib/seller-pricing";
+import type { Lang } from "@/lib/i18n";
 import { commissionAuTaux, type CreatorTier } from "@/lib/commission";
 import type { TauxCommission } from "@/lib/commission-config";
 
@@ -59,12 +62,17 @@ export function CommissionAnnonce({
   taux,
   tier = "standard",
   labels,
+  pricing,
+  lang = "fr",
 }: {
   taux: TauxCommission;
   /** Le palier ANNONCÉ. `standard` : c'est celui de tout nouveau vendeur. */
   tier?: CreatorTier;
   labels: CommissionLabels;
+  pricing?: SellerPricing | null;
+  lang?: Lang;
 }) {
+  if (pricing) return <SellerPricingPanel pricing={pricing} lang={lang} />;
   const bps = taux[tier];
   const net = EXEMPLE_HTG - commissionAuTaux(EXEMPLE_HTG, bps);
 

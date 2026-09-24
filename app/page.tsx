@@ -1,3 +1,5 @@
+import { readSellerPricing } from "@/lib/seller-pricing-server";
+import { createClient as pricingClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { MarketplaceStatus } from "@/components/marketplace-status";
 import { MarketplaceUniverses } from "@/components/marketplace-universes";
@@ -59,6 +61,7 @@ function HomeRow({
   cardLabels,
   primary = false,
   subtitle,
+  discovery,
 }: {
   id?: string;
   title: string;
@@ -67,6 +70,7 @@ function HomeRow({
   cardLabels: ProductCardLabels;
   primary?: boolean;
   subtitle?: string;
+  discovery: boolean;
 }) {
   if (!rangeeVisible(items.length, primary)) return null;
   return (
@@ -79,7 +83,7 @@ function HomeRow({
       </div>
       <div className={`mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 ${primary && items.length < 4 ? "lg:max-w-3xl" : "md:grid-cols-4 lg:grid-cols-6"}`}>
         {items.map((p) => (
-          <ProductCard key={p.slug} product={p} labels={cardLabels} />
+          <ProductCard discovery={discovery} key={p.slug} product={p} labels={cardLabels} />
         ))}
       </div>
     </section>
@@ -123,6 +127,7 @@ async function produitsAvecVentePayee(): Promise<Map<string, number>> {
 }
 
 export default async function HomePage() {
+  const discovery = isSupabaseConfigured() && Boolean(await readSellerPricing(await pricingClient()));
   const [catalogue, lang, promoSellers, ventesPayees] = await Promise.all([
     // getPublishedProducts lève en cas d'erreur Supabase (BL-116) ; l'accueil
     // distingue une panne du catalogue réellement vide.
@@ -191,6 +196,7 @@ export default async function HomePage() {
 
   const wa = whatsappHref(t(lang, "wa.prefill"));
   const heroImage = heroImageDisponible();
+  const opening = catalogue !== null && products.length === 0;
 
   // JSON-LD : Organization + WebSite avec SearchAction (sitelinks searchbox).
   const jsonLd = {
@@ -211,7 +217,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="bg-grain home-discovery">
+    <div className="bg-grain home-discovery editorial-page">
       <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <SiteNav />
 
@@ -222,15 +228,15 @@ export default async function HomePage() {
         <MarketplaceStatus lang={lang} />
         {/* BANNIÈRE — accueil premium §4.2 : UNE bannière, le h1 DEDANS, une
             phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
-            carrousel : le premier écran appartient aux produits. La photo est
-            celle du porteur quand elle existe ; sinon un aplat de chrome. */}
+            carrousel : le premier écran appartient aux produits. Le visuel de
+            marque reste facultatif ; sinon un aplat de chrome. */}
         <section className="mx-auto max-w-6xl px-3 pt-3">
           <div
             data-has-featured={Boolean(featured)}
-            className="home-hero relative overflow-hidden rounded-2xl bg-chrome text-on-chrome"
-            style={heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
+            className={`home-hero relative overflow-hidden rounded-2xl ${opening ? "launch-hero" : "bg-chrome text-on-chrome"}`}
+            style={opening || heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >
-            {heroImage && (
+            {heroImage && !opening && (
               <Image
                 src={HERO_IMAGE}
                 alt=""
@@ -240,23 +246,24 @@ export default async function HomePage() {
                 className="object-cover"
               />
             )}
-            {heroImage && <div className="absolute inset-0 bg-chrome/50" aria-hidden="true" />}
+            {heroImage && !opening && <div className="absolute inset-0 bg-chrome/50" aria-hidden="true" />}
             <div className="home-hero-copy relative">
               <p className="home-kicker">{t(lang, "home.kicker")}</p>
               <h1 className="home-headline max-w-xl">
-                {t(lang, "hero.s1.t")}
+                {t(lang, opening ? "launch.title" : "hero.s1.t")}
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-on-chrome/90">
-                {t(lang, "hero.s1.b")}
+                {t(lang, opening ? "launch.body" : "hero.s1.b")}
               </p>
-              <Link
-                href="/catalogue"
-                className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
-              >
-                {t(lang, "hero.s1.cta")}<span className="ml-6" aria-hidden="true">↗</span>
-              </Link>
+              <div className="launch-actions">
+                <Link href={opening ? "/vendre" : "/catalogue"} className="editorial-button">
+                  {t(lang, opening ? "launch.cta" : "hero.s1.cta")}<span aria-hidden="true">↗</span>
+                </Link>
+                {opening && <Link href="/catalogue" className="editorial-link">{t(lang, "hero.s1.cta")}<span aria-hidden="true">→</span></Link>}
+              </div>
+              {opening && <p className="launch-note">{t(lang, "launch.note")}</p>}
             </div>
-            {featured && <HomeFeatured product={featured} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
+            {featured && <HomeFeatured product={featured} discovery={discovery} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
           </div>
         </section>
 
@@ -295,13 +302,13 @@ export default async function HomePage() {
             flottaison (A1). La sélection principale reste visible dès la première offre,
             sur mobile comme sur ordinateur, sans inventer de produits. */}
         {inedit(principaux) && (
-          <HomeRow primary title={t(lang, "home.products")} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+          <HomeRow primary title={t(lang, "home.products")} discovery={discovery} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
         )}
         {inedit(newest) && (
-          <HomeRow title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
+          <HomeRow discovery={discovery} title={t(lang, "sec.new")} more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />
         )}
         {inedit(fichiers) && (
-          <HomeRow title={t(lang, "sec.digital")} more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
+          <HomeRow discovery={discovery} title={t(lang, "sec.digital")} more={t(lang, "home.all")} items={fichiers} cardLabels={cardLabels} />
         )}
         {products.length > 0 && <MarketplaceUniverses lang={lang} />}
         {/* Cible de « Talents » (menu compte + pied de page) : posée sur une
@@ -309,13 +316,13 @@ export default async function HomePage() {
             rangée qui peut s'effacer. `scroll-mt-24` compense l'en-tête collant. */}
         <div id="talents" className="scroll-mt-24" aria-hidden="true" />
         {inedit(services) && (
-          <HomeRow title={t(lang, "sec.services")} more={t(lang, "home.all")} items={services} cardLabels={cardLabels} />
+          <HomeRow discovery={discovery} title={t(lang, "sec.services")} more={t(lang, "home.all")} items={services} cardLabels={cardLabels} />
         )}
         {inedit(free) && (
-          <HomeRow title={t(lang, "sec.free")} more={t(lang, "home.all")} items={free} cardLabels={cardLabels} />
+          <HomeRow discovery={discovery} title={t(lang, "sec.free")} more={t(lang, "home.all")} items={free} cardLabels={cardLabels} />
         )}
         {inedit(promo) && (
-          <HomeRow title={t(lang, "sec.promo")} more={t(lang, "home.all")} items={promo} cardLabels={cardLabels} />
+          <HomeRow discovery={discovery} title={t(lang, "sec.promo")} more={t(lang, "home.all")} items={promo} cardLabels={cardLabels} />
         )}
 
         {/* MEILLEURS VENDEURS — ≥ 3 vendeurs avec ≥ 1 vente PAYÉE (§4.3). */}

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   MAX_VIDEO_BYTES,
-  MEDIA_BUCKET,
+  VIDEO_BUCKET,
   cheminVideoValide,
   isMissingTable,
 } from "@/lib/product-media";
@@ -36,12 +36,8 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: { productId?: string; step?: string; ext?: string; path?: string };
   try {
@@ -90,7 +86,7 @@ export async function POST(req: Request) {
     // Nom SERVEUR — le lien signé ne vaut que pour ce chemin précis.
     const path = `${product.id}/galerie/vid-${crypto.randomUUID()}.${ext}`;
     const { data, error } = await admin.storage
-      .from(MEDIA_BUCKET)
+      .from(VIDEO_BUCKET)
       .createSignedUploadUrl(path);
     if (error || !data) {
       return NextResponse.json({ error: "Lien d'envoi indisponible" }, { status: 502 });
@@ -107,7 +103,7 @@ export async function POST(req: Request) {
     const dossier = path.slice(0, path.lastIndexOf("/"));
     const nom = path.slice(path.lastIndexOf("/") + 1);
     const { data: objets, error: listErr } = await admin.storage
-      .from(MEDIA_BUCKET)
+      .from(VIDEO_BUCKET)
       .list(dossier, { search: nom });
     const objet = (objets ?? []).find((o) => o.name === nom);
     if (listErr || !objet) {
@@ -119,7 +115,7 @@ export async function POST(req: Request) {
     if (taille <= 0 || taille > MAX_VIDEO_BYTES || !type.startsWith("video/")) {
       // Un client menteur perd son objet — jamais de ligne pour un fichier
       // hors contrat.
-      await admin.storage.from(MEDIA_BUCKET).remove([path]);
+      await admin.storage.from(VIDEO_BUCKET).remove([path]);
       return NextResponse.json(
         { error: "Vidéo refusée : 50 Mo maximum, format vidéo requis." },
         { status: 422 }
@@ -132,10 +128,10 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (insErr || !ligne) {
-      await admin.storage.from(MEDIA_BUCKET).remove([path]);
+      await admin.storage.from(VIDEO_BUCKET).remove([path]);
       return NextResponse.json({ error: "Enregistrement échoué" }, { status: 500 });
     }
-    const { data: pub } = admin.storage.from(MEDIA_BUCKET).getPublicUrl(path);
+    const { data: pub } = admin.storage.from(VIDEO_BUCKET).getPublicUrl(path);
     return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl });
   }
 

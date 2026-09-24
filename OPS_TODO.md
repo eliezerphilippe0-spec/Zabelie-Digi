@@ -1,7 +1,95 @@
 # OPS_TODO — Zabelie
 
+## Studio Créatif — Phases 2-3 fusionnées, facturation par déduction (24 septembre 2026)
+
+Provider Higgsfield (#277), routes + journal (#278, `0118`) fusionnés ; facturation (#279, `0119`) fusionnée. **Studio éteint** (`ZABELIE_STUDIO_ENABLED` absent → routes 404). Décision porteur « oui déduction » : 3 images gratuites/jour, puis **10 HTG** avec consentement au prix, dette prélevée au prochain retrait par le rail du surplus IA (aucun solde prépayé). ✅ **`0118` et `0119` APPLIQUÉES le 2026-09-24** (14:36:59Z et 14:42:28Z), autorisation permanente du 2026-08-17 + décisions porteur « oui déduction » et « appliquer ce que dit la loi » (docs/17 §2.7 : aucun cash-in, donc aucun crédit prépayé). SQL reçu identique au fichier (sha256 brut `3e9efc46…` et `4518aaeb…` des deux côtés), inscrites au registre (`journal_supabase`) : **119 fichiers, 119 lignes**. Note : `list_projects` du connecteur Supabase rend une liste vide, mais le projet répond par son identifiant. ✅ Ligne CGU rédigée le 2026-09-24 (§9 « Services optionnels payants », 4 langues : Studio, prestataire Higgsfield, facturation à la livraison, revue et conservation), à faire relire par le conseil avec le reste du gabarit. Reste au porteur : (1) clés Higgsfield **neuves** dans Vercel (Sensitive, jamais `NEXT_PUBLIC_`) ; (2) `ZABELIE_STUDIO_ENABLED=true`. ⚠️ La liste des sous-traitants de la politique de confidentialité (§6) est incomplète : ni OpenAI/Gemini, ni Resend, ni Stripe, ni TypeSafe, ni Higgsfield. ⚠️ Préexistant, non corrigé ici : un vendeur qui a une dette IA ou Studio ne peut pas supprimer son compte (`zabelie_ai_surplus.seller_id` sans cascade, 0071). Voir `docs/62` §9-§10.
+
+## Jev — triage support en OBSERVATION, Phase 2 livrée (23 septembre 2026)
+
+Branché sur le support dans l'app (pas WhatsApp : aucun point d'entrée serveur), **drapeau fermé**, Jev étiquette et journalise, ne route rien. ✅ **Fusionnée (#269, `94b77ea`) et `0117` APPLIQUÉE le 2026-09-24 05:12:23Z** sur confirmation explicite du porteur (« oui je confirme ») — SQL reçu identique au fichier (sha256 brut `9dd9bb44…` des deux côtés), empreinte canonique `a90296e4…df0ca9b91a`, inscrite au registre (`preuve = journal_supabase`). Le même jour, `0114`→`0116` (clairin), appliquées sans ligne au registre, y ont été inscrites après la même vérification : **117 fichiers, 117 lignes**. Reste au porteur pour activer : avis Volmar sur la rétention → clé TypeSafe renouvelée dans Vercel → `ZABELIE_JEV_TRIAGE_ENABLED=true`. ⚠️ 0 dossier de support en base aujourd'hui : un journal vide voudra dire « aucun passage ». Voir `docs/61` §8.
+
+## Jev — évaluation kreyòl, Phase 1 livrée (23 septembre 2026)
+
+Harnais local `scripts/jev-eval/`, hors production (aucune route, aucune migration, aucune base). Il attend trois gestes porteur : (1) le CSV de 150 à 200 messages WhatsApp réels anonymisés et étiquetés, dans `jev-eval-data/` ; (2) une clé TypeSafe **renouvelée** dans `.env.local` ; (3) le passage sur ta machine, le proxy des sessions agent bloquant `api.typesafe.ai`. Taxonomie du §4 toujours à valider (`plent`, `akse_nimerik`, `kont`). Aucun seuil fixé : le rapport présente les chiffres, tu décides si Jev est retenu. Voir `docs/61-jev-triage-phase0-2026-09-23.md` §7.
+
+## Opérations marketplace Haïti — 22 septembre 2026
+
+PR 268 empilée sur 267. Migration 0113 après 0112, avant déploiement. Dossiers acheteur/vendeur, file administrateur MFA, retour effectif des fonds documenté, rotation des paiements et contrôle Stripe, mesures HTG par zone. Recette automatisée et répétition de restauration fictive ajoutées. La recette financière réelle, la restauration d’une sauvegarde réelle et la preuve du scanner en production restent à consigner : voir docs/operations-haiti.md. Aucun rail supplémentaire activé.
+
+
+## Protections backend - 22 septembre 2026
+
+Migration 0112 a appliquer avant le deploiement de ces corrections, apres validation CI : garde transactionnel des vendeurs suspendus, boutique publique masquee et echecs Stripe differes idempotents. Le serveur refuse un statut de compte indetermine et nettoie les coordonnees a la fermeture. Evenements Stripe requis sur le webhook existant : checkout.session.completed, checkout.session.async_payment_succeeded et checkout.session.async_payment_failed. Aucun paiement reel necessaire aux tests. Production inchangee a ce stade.
+
+## Recommandations par achats — 22 septembre 2026
+
+Extension du bloc Offres associées : priorité aux choix vendeurs, suggestions de la même boutique fondées sur des achats réels confirmés, seuils de pertinence, absence de doublons et trois cartes maximum. Préférence vendeur et compteur d’attribution ajoutés. Migration 0111 à appliquer après CI verte, avant déploiement ; preuve finale et empreintes dans la PR. Aucun historique ni achat réel créé. Voir `docs/offres-associees.md`.
+
+
+## Offres associées — 21 septembre 2026
+
+Éditeur vendeur pour version supérieure, complément et alternative économique. Associations explicites entre produits publiés d’une même boutique, sans doublons, sans débit automatique et sans modification des commissions. Parcours produit et complément après achat confirmé ; statistiques des ventes confirmées par lien. Migration additive 0110 à appliquer après CI SQL, avant l’application. Détails : `docs/offres-associees.md`.
+
+## Rabais par taille ou modèle — 21 septembre 2026
+
+Le gestionnaire Rabais existant accepte une variante physique : ancien prix conservé par la base, baisse stricte, retrait du barré sans hausse. Le paiement et les coupons lisent le prix de la variante active appartenant au produit. Le bouton affiche ce même prix ; une variante non remisée reste inchangée. Aucun tarif vendeur ni paramètre fournisseur modifié.
+
+Migration additive `0109_rabais_variantes.sql` à appliquer après validation PostgreSQL en CI, avant le déploiement. Elle conserve les rabais classiques et refuse une modification de variante pendant une vente flash. Tests unitaires, SQL et parcours Chrome mobile/ordinateur ajoutés ; preuves finales dans la PR.
+
+## Supervision Jev — l'agent n'a jamais tourné, audit du 21 septembre 2026
+
+⚠️ Mesuré par l'API GitHub Actions : le workflow « Zabelie - Supervision Jev » comptait
+**deux exécutions, toutes deux `skipped`**, zéro seconde de travail. Aucune sonde tirée,
+aucun appel TypeSafe émis, aucun rapport produit depuis la fusion de #255/#256. Cause :
+la **variable** `JEV_SUPERVISION_ENABLED` n'est pas posée ; la garde du workflow tombait
+avant même le secret. Un run `skipped` ne s'affiche pas en rouge — la supervision paraissait
+installée et ne surveillait rien.
+
+**Le silence a été supprimé le 21 septembre** : l'activation ne garde plus le job, elle est
+lue par le script, qui écrit un rapport `inactive` et **sort en échec**. Le job tourne
+toujours, mais sans activation il ne tire aucune sonde et ne facture rien — l'opt-in est
+intact. ⚠️ Conséquence : **tant que la variable n'est pas posée, le run horaire est rouge**
+au lieu d'être sauté. C'est l'intention. Si le bruit gêne avant activation, désactiver le
+workflow dans Actions ; ne pas remettre la garde dans le `if:`, ce qui ramènerait le silence.
+
+Trois gestes porteur, **tous en zone d'arrêt** (variable, secret, dépense) — aucun n'a été
+pris : (1) variable `JEV_SUPERVISION_ENABLED=true`, (2) secret `TYPESAFE_API_KEY` sur une
+clé dédiée, (3) accepter ~24 appels TypeSafe/jour. GitHub → Settings → Secrets and
+variables → **Actions**. Une variable Vercel ne configure pas Actions.
+
+Également relevé, **corrigé le 21 septembre** : la sonde `access` concluait `pass` sur un 403
+d'intermédiaire qui n'avait jamais atteint Zabelie — elle attestait une autorisation qu'elle
+n'avait pas vue. Elle exige désormais un refus applicatif (`{ error: "…" }`) et rend `unknown`
+sinon ; garde éprouvé sur ses deux mutations, suite complète 1141/1141 verte. Aucune action
+porteur sur ce point. Voir [l'audit](docs/60-audit-supervision-jev-2026-09-21.md).
+
+
+## Ma boutique — parcours vendeur du 21 septembre 2026
+
+Accès « Ma boutique » pour tout compte connecté, depuis le menu et le tableau de bord, avec le lien public,
+la modification du profil existant et le partage WhatsApp. Les boutiques réutilisent les
+routes actuelles et des offres lisibles sur mobile ; la fiche digitale place l'achat avant
+le programme détaillé. Traductions FR, HT, EN et ES. Aucun nouveau modèle de données.
+Validation locale : compilation, lint, contraste, tests ciblés et quatre parcours Chrome
+(boutique mobile/ordinateur, espace vendeur, ancien lien et créole). Le partage et les
+paiements sont simulés dans ces parcours ; aucun achat réel n'a été effectué.
+
+
+## Tarification vendeurs — proposition du 21 septembre 2026
+
+Implémentation demandée : tarifs inspirés de Gumroad et lancement de 30 jours.
+Le porteur a validé le 21 septembre (« go ») les deux tarifs et la réduction de 50 % sur
+3 ventes au maximum pendant 30 jours. Fusion, déploiement et activation autorisés.
+Le compteur de lancement attend un paiement réel vérifié ; le taux fixe doit reprendre
+le taux de conversion opérationnel Vercel. Voir [le dossier](docs/tarification-vendeurs-lancement.md).
+
+
 Actions opérationnelles côté porteur (aucune n'est du code). Les écarts de
 réconciliation topup détectés par le cron doivent aussi être consignés ici.
+
+## Refonte éditoriale — 22 septembre 2026
+
+Branche `feat/design-editorial` : accueil adapté au catalogue vide, centré sur la marketplace sans portrait ni nom du fondateur (demande du porteur du 22 septembre 2026), page vendeur avec commission calculée avant inscription, catalogue avec filtres repliables. Textes FR/HT/EN/ES. Références de composition : 21st.dev (hero, navigation, cards), Etsy (découverte), Shopify (bénéfices vendeur). Pas de nouvelle dépendance ni de copie de composant externe. Aperçu local et captures vérifiés ; aucun changement de base ou de mode de paiement. À relire avant fusion et mise en ligne.
 
 ## Activation Kobara et recharges — diagnostic du 17 septembre 2026
 

@@ -53,9 +53,13 @@ const FALLBACK_LABELS: ProductCardLabels = {
  */
 export function ProductCard({
   product,
+  discovery = false,
+  boutique = false,
   labels = FALLBACK_LABELS,
 }: {
   product: ProductView;
+  discovery?: boolean;
+  boutique?: boolean;
   labels?: ProductCardLabels;
 }) {
   const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
@@ -71,23 +75,26 @@ export function ProductCard({
 
   return (
     <Link
-      href={`/produit/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-card border border-line bg-surface transition active:scale-[0.97]"
+      href={discovery ? `/decouvrir/${product.slug}` : `/produit/${product.slug}`}
+      prefetch={discovery ? false : undefined}
+      className={boutique
+        ? "group grid grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-4 rounded-card border border-line bg-surface p-4 transition hover:border-accent active:scale-[0.99] sm:grid-cols-[8rem_minmax(0,1fr)]"
+        : "group flex flex-col overflow-hidden rounded-card border border-line bg-surface transition active:scale-[0.97]"}
     >
-      <div className="relative aspect-square w-full bg-line">
+      <div className={`relative aspect-square w-full overflow-hidden bg-line ${boutique ? "rounded-lg" : ""}`}>
         {cover && <CardImage src={cover} alt={titre} size={COVER_WIDTHS.card} />}
         {!cover && labels.photoMissing && (
-          <div className="home-photo-empty">
-            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
+          <div className={boutique ? "flex h-full flex-col items-center justify-center gap-2 px-1 text-center text-[10px] text-mist" : "home-photo-empty"}>
+            <svg className={boutique ? "h-6 w-6 shrink-0" : undefined} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
             <span>{labels.photoMissing}</span>
           </div>
         )}
-        {kindLabel && (
+        {!boutique && kindLabel && (
           <span className="absolute left-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
             {kindLabel}
           </span>
         )}
-        {(product.ratingAvg !== null || product.sales > 0) && (
+        {!boutique && (product.ratingAvg !== null || product.sales > 0) && (
           <span className="absolute right-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
             {product.ratingAvg !== null
               ? `★ ${product.ratingAvg} (${product.ratingCount})`
@@ -100,16 +107,21 @@ export function ProductCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-2.5">
-        <h3 className="line-clamp-2 text-sm font-normal leading-snug text-cloud">{titre}</h3>
+      <div className={boutique ? "flex min-w-0 flex-col gap-2" : "flex flex-1 flex-col gap-1 p-2.5"}>
+        {boutique && kindLabel && <span className="text-xs text-mist">{kindLabel}</span>}
+        <h3 className={`line-clamp-2 break-words leading-snug text-cloud ${boutique ? "text-base font-semibold" : "text-sm font-normal"}`}>{titre}</h3>
+        {boutique && product.blurb && <p className="line-clamp-2 break-words text-sm leading-relaxed text-mist">{product.blurb}</p>}
         {/* Prix en PLEIN, Manrope 700 (`.numeric`, globals.css), orange de
             texte AA (`--color-accent`), même taille que le nom : le seul
             chiffre qui décide de l'achat ne se lit jamais en petit gris. */}
-        <span className="numeric text-sm font-bold text-accent">{formatHTG(product.priceHTG)}</span>
-        <span className="truncate text-sm text-mist">
+        <span className={`numeric font-bold text-accent ${boutique ? "text-base" : "text-sm"}`}>{formatHTG(product.priceHTG)}</span>
+        {boutique && (product.ratingAvg !== null || product.sales > 0) && <span className="text-sm text-mist">
+          {product.ratingAvg !== null ? `★ ${product.ratingAvg} (${product.ratingCount})` : `${product.sales} ${estSingulier(labels.lang, product.sales) ? labels.salesOne : labels.sales}`}
+        </span>}
+        {!boutique && <span className="truncate text-sm text-mist">
           {labels.by} {product.creator}
-        </span>
-        {labels.detail && <span className="home-card-cta">{labels.detail}<span aria-hidden="true">↗</span></span>}
+        </span>}
+        {labels.detail && <span className={boutique ? "inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-cloud" : "home-card-cta"}>{labels.detail}<span aria-hidden="true">↗</span></span>}
       </div>
     </Link>
   );

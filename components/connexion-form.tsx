@@ -94,7 +94,7 @@ function ConnexionFormInner({
   // V-19 : ?erreur=fournisseur quand un fournisseur tiers a refusé ou que
   // l'utilisateur a annulé chez lui — même principe, la cause est nommée.
   const erreur = searchParams.get("erreur");
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>(() => searchParams.get("mode") === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");

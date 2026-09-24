@@ -6,13 +6,13 @@ import { titreCarte } from "@/lib/home-sections";
 import type { ProductView } from "@/lib/products";
 
 /** Une offre publiée, sans recommandation personnalisée ni preuve inventée. */
-export function HomeFeatured({ product, label, cta, missing, fallback }: {
-  product: ProductView; label: string; cta: string; missing: string; fallback: string;
+export function HomeFeatured({ product, label, cta, missing, fallback, discovery = false }: {
+  discovery?: boolean; product: ProductView; label: string; cta: string; missing: string; fallback: string;
 }) {
   const cover = coverUrlAt(product.coverUrl, COVER_WIDTHS.card);
   const title = titreCarte(product.title, fallback, undefined, product.slug);
   return (
-    <Link href={`/produit/${product.slug}`} className="home-featured">
+    <Link href={`${discovery ? "/decouvrir" : "/produit"}/${product.slug}`} prefetch={discovery ? false : undefined} className="home-featured">
       <div className="home-featured-media">
         {cover ? <CardImage src={cover} alt={title} size={COVER_WIDTHS.card} /> : (
           <div className="home-photo-empty">

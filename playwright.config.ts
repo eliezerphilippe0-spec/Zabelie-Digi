@@ -98,7 +98,7 @@ export default defineConfig({
     },
     {
       name: "chromium",
-      testIgnore: /parcours-physique|admin-mfa/,
+      testIgnore: /parcours-physique|admin-mfa|topup-sandbox/,
       use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:3000" },
     },
     {

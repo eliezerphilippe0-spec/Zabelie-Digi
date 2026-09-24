@@ -15,6 +15,7 @@ export type VariantView = {
   id: string;
   label: string | null; // null = variante implicite (produit sans déclinaison)
   priceHTG: number;
+  compareHTG?: number | null;
   available: number;
 };
 
@@ -58,6 +59,7 @@ type VariantRow = {
   id: string;
   options: Record<string, string> | null;
   price_htg: number;
+  compare_at_htg?: number | null;
   position: number;
   zabelie_stock: { quantity_available: number } | { quantity_available: number }[] | null;
 };
@@ -106,7 +108,7 @@ export async function getPhysicalView(
   const [{ data: variants }, { data: fitment }, { data: physRow }] = await Promise.all([
     supabase
       .from("zabelie_product_variants")
-      .select("id, options, price_htg, position, zabelie_stock(quantity_available)")
+      .select("*, zabelie_stock(quantity_available)")
       .eq("product_id", productId)
       .eq("active", true)
       .order("position"),
@@ -130,6 +132,7 @@ export async function getPhysicalView(
     id: v.id,
     label: (v.options && v.options.variante) || null,
     priceHTG: v.price_htg,
+    compareHTG: v.compare_at_htg && v.compare_at_htg > v.price_htg ? v.compare_at_htg : null,
     available: one(v.zabelie_stock)?.quantity_available ?? 0,
   }));
 
