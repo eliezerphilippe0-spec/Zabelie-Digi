@@ -116,7 +116,14 @@ Conséquence, dans l'ordre :
    construire quand il y aura des commandes payées : aujourd'hui, il n'y a
    rien à quoi le rattacher.
 
-Propositions pour B1, **à trancher** (le stockage est une dépense) :
+✅ **B1 livrée le 2026-09-24** : la vidéo du vendeur existait déjà (V-1B,
+docs/35) mais était refusée par le plafond de 1,5 Mo de `product-covers`.
+`0120` (appliquée le 2026-09-24 15:45:21Z) lui donne son bucket
+`product-videos` ; la fiche affiche « Videyo machann nan » (#285).
+**Décision porteur du 2026-09-24 : « garde 60 s et 50 Mo »**, les arbitrages
+du 2026-08-15. Le tableau ci-dessous est la proposition, **non retenue** :
+
+Propositions initiales pour B1 (non retenues) :
 
 | Paramètre | Proposition | Pourquoi |
 |---|---|---|
