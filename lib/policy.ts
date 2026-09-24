@@ -27,7 +27,15 @@
 // restent telles quelles (registre append-only) ; la prochaine publication de
 // ces vendeurs enregistrera `v3`, parce que la version part du serveur à
 // chaque fiche (`app/api/products/*`), jamais du client.
-export const POLICY_VERSION = "v3";
+// v4 (2026-09-23) — la section « Alcool » fixe l'âge : 18 ans, décision du
+// porteur (« oui 18 ans »), lecture de la loi haïtienne faite sur des résumés,
+// aucun article lu. Deux obligations nouvelles : l'acheteur ATTESTE à l'achat
+// (refus serveur sinon, `0115`), le vendeur vérifie une pièce d'identité à la
+// remise. La v2/v3 disait « Zabelie ne vérifie pas l'âge » et annonçait un
+// changement de version le jour où une vérification deviendrait obligatoire :
+// c'est ce jour. Les acceptations `v3` restent (append-only) ; la prochaine
+// publication de ces vendeurs enregistre `v4`.
+export const POLICY_VERSION = "v4";
 
 /** Chemin public de la politique — cité par le pied de page et les formulaires. */
 export const POLICY_PATH = "/produits-interdits";

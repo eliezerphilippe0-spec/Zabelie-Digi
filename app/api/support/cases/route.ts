@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { supportInput } from "@/lib/support-case";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { jevTriageActive, triageSupportInBackground } from "@/lib/jev/triage-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
@@ -22,5 +23,13 @@ export async function POST(req: Request) {
    p_order_id:body.data.orderId,p_actor:user.id,p_request_id:body.data.requestId,p_reason:body.data.reason,p_body:body.data.message,
  });
  if (error) return erreurTraduite(error.code === "42501" ? "api.access.denied" : "api.unavailable",error.code === "42501" ? 403 : 503);
+ // Triage Jev en OBSERVATION (docs/61 §8) : après la réponse, drapeau fermé par
+ // défaut, jamais sur un rejeu. Il étiquette et journalise ; il ne change ni le
+ // dossier, ni la file, ni la réponse rendue ici.
+ const saved = data as { id?: unknown; duplicate?: unknown } | null;
+ if (jevTriageActive() && typeof saved?.id === "string" && saved.duplicate !== true) {
+   const caseId = saved.id;
+   after(() => triageSupportInBackground({ caseId, requestId: body.data.requestId, body: body.data.message }));
+ }
  return NextResponse.json(data,{headers:{"Cache-Control":"no-store"}});
 }

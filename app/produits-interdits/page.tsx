@@ -147,7 +147,9 @@ export default async function ProduitsInterditsPage() {
         {/* Ajoutée en v2 (2026-08-02) à l'ouverture du rayon « Produits
             locaux ». Le clairin est un spiritueux : la politique v1 n'en
             disait RIEN, ni pour l'autoriser ni pour l'interdire. Un silence
-            n'est pas une autorisation, et il n'est pas non plus opposable. */}
+            n'est pas une autorisation, et il n'est pas non plus opposable.
+            v4 (2026-09-23) : 18 ans, attestation de l'acheteur (0115),
+            pièce d'identité vérifiée par le vendeur à la remise. */}
         <Section title={t(lang, "policy.alcohol.h")}>
           <p>{t(lang, "policy.alcohol.p1")}</p>
           <List lang={lang} k="policy.alcohol.items" />

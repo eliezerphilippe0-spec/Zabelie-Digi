@@ -44,6 +44,7 @@ import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { offreFlashActive, flashEpuisee } from "@/lib/flash";
 import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 import { normaliserNumeroHaiti } from "@/lib/rechaj";
+import { attestationAgeValide, lireAgeMinimum } from "@/lib/age-minimum";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
   let providerInput: unknown;
   let offerInput: unknown;
   let recommendationInput: unknown;
+  let ageAttestationInput: unknown;
   try {
     ({
       productId,
@@ -115,6 +117,7 @@ export async function POST(req: Request) {
       kobaraProvider: providerInput,
       offerId: offerInput,
       recommendationSource: recommendationInput,
+      ageAttestation: ageAttestationInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -233,6 +236,37 @@ export async function POST(req: Request) {
         );
       }
     }
+  }
+
+  /* ── ÂGE MINIMUM (0115) : l'attestation, AVANT que la commande existe ─────
+   *
+   * Décision porteur du 2026-09-23 : 18 ans pour le clairin. Le seuil est lu
+   * en base par l'ascendance du rayon, jamais déduit d'un slug ici. Même ordre
+   * que la recharge, pour la même raison : refuser après la création laisserait
+   * une commande `pending` orpheline à chaque case oubliée.
+   *
+   * Fail-closed : une base qui ne répond pas n'autorise pas la vente (503).
+   * L'attestation est une DÉCLARATION de l'acheteur ; la vérification réelle
+   * est celle du vendeur à la remise, pièce d'identité à l'appui (politique
+   * §9). Ce garde garantit que la question a été posée et la réponse gardée.
+   */
+  const lectureAge = await lireAgeMinimum(admin, product.id, Boolean(product.category_id));
+  if (!lectureAge.ok) {
+    return NextResponse.json(
+      { error: t(lang, "api.order.failed"), code: "age_indisponible" },
+      { status: 503, headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
+  const ageMinimum = lectureAge.age;
+  if (ageMinimum > 0 && !attestationAgeValide(ageAttestationInput)) {
+    return NextResponse.json(
+      {
+        error: t(lang, "api.age.required").replace("{age}", String(ageMinimum)),
+        code: "age_attestation_requise",
+        ageMinimum,
+      },
+      { status: 422 }
+    );
   }
 
   // BL-103 (FRONT-2) : on ne vend JAMAIS un fichier sans livrable. Les
@@ -514,6 +548,28 @@ export async function POST(req: Request) {
       console.error("[checkout] cible rechaj refusée", {
         orderId: order.id,
         code: cibleErr.code,
+      });
+      return NextResponse.json(
+        { error: t(lang, "api.order.failed") },
+        { status: 500 }
+      );
+    }
+  }
+
+  /* L'attestation d'âge, AVANT le paiement et sans best-effort (0115).
+   *
+   * Une commande restreinte sans trace de l'attestation serait une vente dont
+   * personne ne peut dire que la question a été posée. Même traitement que la
+   * cible de recharge : l'échec retire la commande. */
+  if (ageMinimum > 0) {
+    const { error: ageErr } = await admin
+      .from("zabelie_order_age_attestations")
+      .insert({ order_id: order.id, age_minimum: ageMinimum });
+    if (ageErr) {
+      await admin.from("orders").delete().eq("id", order.id);
+      console.error("[checkout] attestation d'age refusee", {
+        orderId: order.id,
+        code: ageErr.code,
       });
       return NextResponse.json(
         { error: t(lang, "api.order.failed") },
