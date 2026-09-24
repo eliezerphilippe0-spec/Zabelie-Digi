@@ -154,3 +154,12 @@ sans exiger de posséder deux titres. Le nombre requis vit en config
 V-1A (en cours) → V-2 → V-4 → V-5 → V-1B (après arbitrages) → V-3 (après
 arbitrage vagues) → V-6 (après arbitrages KYC). Les arbitrages de V-3/V-6
 peuvent être rendus à tout moment et remonter leur chantier dans la file.
+
+## Mise à jour du 2026-09-24 — la vidéo n'avait jamais pu fonctionner
+
+Mesuré en production : `product-covers` est plafonné à **1,5 Mo** (réglage
+posé à la main pour les couvertures, absent des migrations). Toute vidéo réelle
+était refusée par le stockage avant la confirmation serveur : **0 vidéo en
+base** depuis la livraison de V-1B. `0120` crée un bucket `product-videos`
+(50 Mo, types vidéo) ; route, écran, lecture et suppression y sont repointés
+(`tests/bucket-videos.test.ts`). Les arbitrages 60 s / 50 Mo sont conservés.

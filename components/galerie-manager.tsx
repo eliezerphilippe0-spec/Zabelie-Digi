@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   MAX_VIDEO_BYTES,
   MAX_VIDEO_SECONDS,
-  MEDIA_BUCKET,
+  VIDEO_BUCKET,
 } from "@/lib/product-media";
 
 export type GalerieLabels = {
@@ -122,7 +122,7 @@ export function GalerieManager({
       }
       // Direct au stockage — une route serverless ne porte pas 50 Mo.
       const { error: upErr } = await createClient()
-        .storage.from(MEDIA_BUCKET)
+        .storage.from(VIDEO_BUCKET)
         .uploadToSignedUrl(lien.path, lien.token, file, {
           contentType: file.type || "video/mp4",
         });
