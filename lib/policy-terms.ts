@@ -140,7 +140,7 @@ const fr: Politique = {
       titre: "9. Services optionnels payants",
       blocs: [
         {
-          p: "Zabelie propose aux vendeurs des services optionnels payants — aujourd'hui, l'aide à la rédaction de descriptions de produits au-delà d'un quota gratuit quotidien. Aucun service payant n'est déclenché sans votre consentement explicite : le prix par utilisation est affiché au moment où vous choisissez de continuer, et c'est ce prix affiché qui fait foi.",
+          p: "Zabelie propose aux vendeurs des services optionnels payants — aujourd'hui, l'aide à la rédaction de descriptions de produits et la création d'images publicitaires (Studio), chacune au-delà d'un quota gratuit quotidien. Aucun service payant n'est déclenché sans votre consentement explicite : le prix par utilisation est affiché au moment où vous choisissez de continuer, et c'est ce prix affiché qui fait foi.",
         },
         {
           ul: [
@@ -148,7 +148,9 @@ const fr: Politique = {
             "au-delà, chaque utilisation est facturée au prix affiché à l'écran de consentement, en gourdes (HTG) ;",
             "les frais consentis sont déduits de votre prochain règlement vendeur et enregistrés comme une écriture distincte ;",
             "un service consommé reste dû : si une demande de retrait est rejetée, le montant du retrait est restitué, mais les frais de services déjà consommés ne le sont pas ;",
-            "toute modification de prix ne s'applique qu'aux utilisations futures, jamais rétroactivement.",
+            "toute modification de prix ne s'applique qu'aux utilisations futures, jamais rétroactivement ;",
+            "Studio : l'image est créée par un prestataire externe (Higgsfield) à partir de la photo de votre produit, qui lui est transmise à cette seule fin ; seule une image effectivement livrée est facturée, une création qui échoue ne l'est pas ;",
+            "vous vérifiez chaque image avant de la publier et vous en êtes responsable : elle doit montrer votre produit tel qu'il est, sans texte, logo ni marque d'un tiers ; Zabelie ne garantit pas la conservation des images créées : téléchargez celles que vous souhaitez garder.",
           ],
         },
       ],
@@ -310,7 +312,7 @@ const ht: Politique = {
       titre: "9. Sèvis opsyonèl peyan",
       blocs: [
         {
-          p: "Zabelie ofri vandè yo sèvis opsyonèl peyan — jodi a, èd pou ekri deskripsyon pwodui lè ou depase yon kantite gratis chak jou. Okenn sèvis peyan pa janm lanse san konsantman klè ou : pri chak itilizasyon parèt nan moman ou chwazi kontinye a, e se pri ki parèt la ki konte.",
+          p: "Zabelie ofri vandè yo sèvis opsyonèl peyan — jodi a, èd pou ekri deskripsyon pwodui ak kreyasyon imaj piblisite (Estidyo), chak lè ou depase yon kantite gratis chak jou. Okenn sèvis peyan pa janm lanse san konsantman klè ou : pri chak itilizasyon parèt nan moman ou chwazi kontinye a, e se pri ki parèt la ki konte.",
         },
         {
           ul: [
@@ -318,7 +320,9 @@ const ht: Politique = {
             "apre sa, chak itilizasyon peye pri ki parèt sou ekran konsantman an, an goud (HTG) ;",
             "frè ou konsanti yo ap dedwi nan pwochen règleman vandè w, e yo anrejistre kòm yon liy apa ;",
             "yon sèvis ou deja itilize rete dèt : si yo rejte yon demann retrè, y ap remèt ou montan retrè a, men yo p ap remèt frè sèvis ou deja konsome yo ;",
-            "si pri a chanje, se sèlman pou itilizasyon k ap vini yo, jamè pou sa ki fèt deja.",
+            "si pri a chanje, se sèlman pou itilizasyon k ap vini yo, jamè pou sa ki fèt deja ;",
+            "Estidyo : se yon prestatè deyò (Higgsfield) ki kreye imaj la apati foto pwodui w la, nou voye foto a ba li pou sa sèlman ; se sèlman yon imaj ki rive fèt ou peye, si kreyasyon an echwe ou pa peye ;",
+            "ou verifye chak imaj anvan ou pibliye l, e se ou ki responsab li : li dwe montre pwodui w la jan li ye, san tèks, logo ni mak lòt moun ; Zabelie pa garanti l ap kenbe imaj yo : telechaje sa ou vle kenbe yo.",
           ],
         },
       ],
@@ -480,7 +484,7 @@ const en: Politique = {
       titre: "9. Optional paid services",
       blocs: [
         {
-          p: "Zabelie offers sellers optional paid services — currently, help writing product descriptions beyond a free daily quota. No paid service is ever triggered without your explicit consent: the price per use is displayed at the moment you choose to continue, and that displayed price is what applies.",
+          p: "Zabelie offers sellers optional paid services — currently, help writing product descriptions and the creation of advertising images (Studio), each beyond a free daily quota. No paid service is ever triggered without your explicit consent: the price per use is displayed at the moment you choose to continue, and that displayed price is what applies.",
         },
         {
           ul: [
@@ -488,7 +492,9 @@ const en: Politique = {
             "beyond it, each use is billed at the price shown on the consent screen, in gourdes (HTG);",
             "consented fees are deducted from your next seller settlement and recorded as a separate entry;",
             "a consumed service remains due: if a withdrawal request is rejected, the withdrawal amount is returned, but fees for services already consumed are not;",
-            "any price change applies to future uses only, never retroactively.",
+            "any price change applies to future uses only, never retroactively;",
+            "Studio: the image is created by an external provider (Higgsfield) from your product photo, which is sent to it for that sole purpose; only an image actually delivered is charged, a creation that fails is not;",
+            "you check each image before publishing it and you are responsible for it: it must show your product as it really is, with no text, logo or third-party brand; Zabelie does not guarantee that created images are kept: download the ones you want to keep.",
           ],
         },
       ],
@@ -650,7 +656,7 @@ const es: Politique = {
       titre: "9. Servicios opcionales de pago",
       blocs: [
         {
-          p: "Zabelie ofrece a los vendedores servicios opcionales de pago — actualmente, ayuda para redactar descripciones de productos más allá de una cuota gratuita diaria. Ningún servicio de pago se activa sin su consentimiento explícito: el precio por uso se muestra en el momento en que usted decide continuar, y ese precio mostrado es el que rige.",
+          p: "Zabelie ofrece a los vendedores servicios opcionales de pago — actualmente, ayuda para redactar descripciones de productos y la creación de imágenes publicitarias (Estudio), cada una más allá de una cuota gratuita diaria. Ningún servicio de pago se activa sin su consentimiento explícito: el precio por uso se muestra en el momento en que usted decide continuar, y ese precio mostrado es el que rige.",
         },
         {
           ul: [
@@ -658,7 +664,9 @@ const es: Politique = {
             "más allá de ella, cada uso se factura al precio mostrado en la pantalla de consentimiento, en gourdes (HTG);",
             "las tarifas consentidas se deducen de su próxima liquidación de vendedor y se registran como una línea separada;",
             "un servicio consumido sigue siendo debido: si una solicitud de retiro es rechazada, se devuelve el monto del retiro, pero no las tarifas de servicios ya consumidos;",
-            "cualquier cambio de precio se aplica solo a usos futuros, nunca retroactivamente.",
+            "cualquier cambio de precio se aplica solo a usos futuros, nunca retroactivamente;",
+            "Estudio: la imagen la crea un proveedor externo (Higgsfield) a partir de la foto de su producto, que se le envía solo con ese fin; solo se cobra una imagen efectivamente entregada, una creación que falla no se cobra;",
+            "usted revisa cada imagen antes de publicarla y es responsable de ella: debe mostrar su producto tal como es, sin texto, logotipo ni marca de terceros; Zabelie no garantiza la conservación de las imágenes creadas: descargue las que desee conservar.",
           ],
         },
       ],
