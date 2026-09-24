@@ -115,9 +115,9 @@ test("chaque audience produit son propre segment, le marché diaspora est nommé
 
 test("ordre de priorité R-STUDIO-01 respecté dans le prompt", () => {
   const params = parametresSchema.parse({ profil_personnages: "femme" });
-  const s = segments(params, "en_situation", "4:5", { composition: "centree", palette: "chaude" });
+  const s = segments(params, "en_situation", "3:4", { composition: "centree", palette: "chaude" });
   const b = ok(buildBriefs(PRODUIT, { profil_personnages: "femme" }, { composition: "centree", palette: "chaude" }))
-    .find((x) => x.format === "4:5" && x.prompt.includes("real, well-kept"))!;
+    .find((x) => x.format === "3:4" && x.prompt.includes("real, well-kept"))!;
   const positions = PRIORITE.filter((k) => s[k]).map((k) => b.prompt.indexOf(s[k]!));
   assert.ok(positions.every((p) => p >= 0), "segment manquant");
   assert.deepEqual(positions, [...positions].sort((a, z) => a - z));
