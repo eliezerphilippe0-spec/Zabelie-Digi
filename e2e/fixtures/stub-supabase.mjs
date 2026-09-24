@@ -206,6 +206,7 @@ const server = createServer((req, res) => {
   }
 
   if (url.pathname === "/__ecritures") return send(200, ecritures);
+  if (url.pathname === "/__partner") { res.writeHead(200, { "content-type": "text/html" }); return res.end("<title>Partner test</title>"); }
   if (url.pathname === "/__sante") return send(200, { ok: true });
 
 
@@ -456,6 +457,11 @@ const server = createServer((req, res) => {
     if (status) rows = rows.filter((row) => row.status === status);
     const sellerId = eq(url, "seller_id");
     if (sellerId) rows = rows.filter((row) => row.seller_id === sellerId);
+    // API v1 validates RFC UUIDs; legacy UI fixtures use mnemonic identifiers.
+    const projection = url.searchParams.get("select") ?? "";
+    if (projection.includes("in_stock") && projection.includes("created_at") && !projection.includes(":")) {
+      rows = rows.map(row => ({ ...row, id: "44444444-4444-4444-8444-444444444444", seller_id: "22222222-2222-4222-8222-222222222222", created_at: "2026-07-20T10:00:00Z" }));
+    }
     return single(rows);
   }
 
@@ -504,4 +510,21 @@ const server = createServer((req, res) => {
   return single([]);
 });
 
+// Les ports des stubs (54321–54329) tombent dans la plage ÉPHÉMÈRE de Linux
+// (32768–60999) : une connexion sortante encore ouverte de la suite
+// précédente peut détenir le port local par hasard, et `listen` échoue en
+// EADDRINUSE avant qu'aucun test ne tourne (vu sur #263, #251, #272). On
+// réessaie quelques secondes — le temps que la connexion se ferme — au lieu
+// de mourir. Au-delà, l'échec reste bruyant.
+const ESSAIS_MAX = 50;
+const ATTENTE_MS = 200;
+let essais = 0;
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE" && ++essais < ESSAIS_MAX) {
+    console.log(`stub Supabase : port ${PORT} occupé, nouvel essai ${essais}/${ESSAIS_MAX}`);
+    setTimeout(() => server.listen(PORT), ATTENTE_MS);
+    return;
+  }
+  throw err;
+});
 server.listen(PORT, () => console.log(`stub Supabase sur :${PORT}`));

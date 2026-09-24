@@ -1,7 +1,6 @@
 # API v1 — contrats de lecture « tool-ready »
 
-> **Statut : en construction.** Commit 1/7 (contrats) et la preuve d'isolation
-> RLS sont faits ; aucun handler n'existe encore sous `app/api/v1/`.
+> **Statut : routes servies.** Guide public : `/developpeurs`. Spécification générée depuis les contrats : `/api/v1/openapi.json`. Huit fonctions publiques, deux fonctions de commandes réservées à la session Zabelie.
 >
 > ⚠️ **Écart de nommage assumé.** Le brief demandait `docs/08-API-V1.md` ;
 > `docs/08-INSPIRATION-P1.md` occupe déjà ce numéro. Renommer si le porteur
@@ -28,7 +27,7 @@ la route disparaît.
 ### Comment on l'appelle
 
 ```bash
-curl -X POST https://<hôte>/api/v1/search_products \
+curl -X POST https://zabelie.com/api/v1/search_products \
      -H 'content-type: application/json' \
      -d '{"query":"preset","limit":5}'
 ```
@@ -271,3 +270,16 @@ non conforme produit `internal` **et un journal nommant l'endpoint et les
 toujours un écart base ↔ contrat : colonne disparue, valeur d'énumération
 ajoutée, migration non appliquée. C'est un signal d'exploitation, pas un bogue
 de sérialisation.
+
+
+## Publication pour les partenaires — septembre 2026
+
+Le guide `/developpeurs` existe en FR/HT/EN/ES selon la langue du site. OpenAPI 3.1 est généré depuis les schémas Zod effectivement utilisés par la route. Les contraintes conditionnelles de `get_product` et les identifiants uniques de comparaison y sont déclarés ; la relation minPriceHtg <= maxPriceHtg reste vérifiée au serveur.
+
+Les huit fonctions publiques répondent aux requêtes CORS avec `Access-Control-Allow-Origin: *`, sans credentials. Elles utilisent systématiquement un client anonyme : aucun cookie ou Authorization du partenaire n'est transféré vers Supabase. La session conserve les deux endpoints de commandes privés, sans CORS. La v1 ne fournit ni jeton partenaire, ni authentification Bearer pour application mobile, ni endpoint d'écriture.
+
+`list_categories` reçoit `{language?: "fr"|"ht"|"en"|"es", limit?: 1..20, cursor?: uuid}`. Il rend les catégories actives, triées par identifiant, avec `nextCursor`, y compris les catégories sans offre. `departmentFilter` contient le libellé canonique utilisable dans `search_products.category` uniquement pour le niveau 1. Les traductions absentes retombent sur le français.
+
+Corps JSON limité à 16 Kio effectivement lus (y compris sans Content-Length). Les erreurs sont aussi `no-store`. Réponse 429 avec `Retry-After: 60`. Le quota public actuel demeure partagé : 60 appels par minute et par endpoint pour l'ensemble des anonymes ; ce n'est pas un quota par partenaire. Les limites historiques de la recherche et de `get_delivery_terms` sont explicites dans le guide.
+
+Tests : contrats OpenAPI, erreurs JSON, corps en flux, CORS navigateur depuis une autre origine, refus des commandes anonymes, projection publique et pagination des catégories. Aucun schéma ou secret supplémentaire requis.

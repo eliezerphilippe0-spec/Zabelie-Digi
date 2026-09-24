@@ -436,7 +436,23 @@ export const ApiErrorOutput = z.object({
  * endpoint sans l'inscrire ici le laisserait hors de toute vérification, et
  * c'est exactement le trou qu'on ferme en le centralisant.
  */
+export const ListCategoriesInput = z.object({
+  language: z.enum(["fr", "ht", "en", "es"]).default("fr"),
+  limit: z.number().int().min(1).max(SEARCH_MAX_LIMIT).default(SEARCH_MAX_LIMIT),
+  cursor: UuidSchema.optional(),
+});
+export const ListCategoriesOutput = z.object({
+  type: z.literal("category_list"),
+  categories: z.array(z.object({
+    id: UuidSchema, slug: SlugSchema, parentId: UuidSchema.nullable(),
+    level: z.number().int().min(1).max(3), label: z.string(),
+    departmentFilter: z.string().nullable(),
+  })).max(SEARCH_MAX_LIMIT),
+  nextCursor: UuidSchema.nullable(),
+});
+
 export const V1_ENDPOINTS = {
+  list_categories: { input: ListCategoriesInput, output: ListCategoriesOutput },
   search_products: { input: SearchProductsInput, output: SearchProductsOutput },
   get_product: { input: GetProductInput, output: GetProductOutput },
   compare_products: { input: CompareProductsInput, output: CompareProductsOutput },

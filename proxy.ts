@@ -26,10 +26,13 @@ export async function proxy(request: NextRequest) {
   }
   const guideLang = guideLangFromPath(request.nextUrl.pathname) ?? editorialLangFromPath(request.nextUrl.pathname);
   if (guideLang) request.headers.set("x-zabelie-guide-lang", guideLang);
-  const response = request.nextUrl.pathname === "/hors-ligne"
+  // API handlers own authentication; public reads must not refresh caller cookies.
+  const publicApi = request.nextUrl.pathname.startsWith("/api/v1/");
+  const response = request.nextUrl.pathname === "/hors-ligne" || publicApi
     ? NextResponse.next({ request })
     : await updateSession(request);
   response.headers.set("Content-Security-Policy", policy);
+  if (publicApi) return response;
 
   // Affiliation (0081) : un lien partagé porte ?ref=<code>. Le cookie vit
   // 7 jours (fenêtre Jumia — docs/37 §A) ; l'attribution réelle est décidée
