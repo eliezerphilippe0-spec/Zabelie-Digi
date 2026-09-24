@@ -94,7 +94,7 @@ test("H4 — Aide, Talents et déconnexion vivent dans le menu compte", () => {
   }
   assert.doesNotMatch(menu, /<ThemeToggle/);
   // Le menu est un <details> natif : zéro JavaScript pour s'ouvrir.
-  assert.match(sansCommentaires(MENU), /<details className="relative">\s*<summary/);
+  assert.match(sansCommentaires(MENU), /<details[^>]*data-header-menu[^>]*>\s*<summary/);
 });
 
 test("H5 — la variante en-tête rend un bouton loupe avec le libellé en aria-label", () => {

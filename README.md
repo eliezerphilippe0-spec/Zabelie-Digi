@@ -1,15 +1,12 @@
 # Zabelie
 
-Marketplace de **produits digitaux et talents haïtiens** (inspirée de Chariow et
-Talent gn). Paiement mobile money haïtien (MonCash), livraison digitale instantanée,
-wallet vendeur.
+Marketplace haïtienne de **produits physiques, produits numériques et services**, pour les acheteurs en Haïti et dans la diaspora. Les vendeurs organisent la remise des articles physiques ; les fichiers numériques sont accessibles après confirmation du paiement.
 
-> ⚠️ **Projet n°2** de la famille Zabelie. À ne pas confondre avec **Zabelie**
-> (projet 1), la marketplace de produits **physiques**.
+Ce dépôt, dont le nom historique est **Zabelie-Digi**, porte le site **https://zabelie.com/**. Il ne désigne pas un second projet numérique indépendant. Voir les décisions d’identité actualisées dans `CLAUDE.md`.
 
 ## Stack
 
-- **Next.js** 15 (App Router, TypeScript)
+- **Next.js** 16 (App Router, TypeScript)
 - **Tailwind CSS** 4
 - **Supabase** (Postgres, Auth, Storage, RLS)
 

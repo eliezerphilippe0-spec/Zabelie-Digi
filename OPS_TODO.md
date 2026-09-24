@@ -25,6 +25,10 @@ Migration 0112 a appliquer avant le deploiement de ces corrections, apres valida
 
 Extension du bloc Offres associées : priorité aux choix vendeurs, suggestions de la même boutique fondées sur des achats réels confirmés, seuils de pertinence, absence de doublons et trois cartes maximum. Préférence vendeur et compteur d’attribution ajoutés. Migration 0111 à appliquer après CI verte, avant déploiement ; preuve finale et empreintes dans la PR. Aucun historique ni achat réel créé. Voir `docs/offres-associees.md`.
 
+## Découverte sans doublons — 22 septembre 2026
+
+Lot prêt à relire sur feat/decouverte-sans-doublons : allocation unique des offres, liens de rubriques, recherche conservant les filtres, retrait des promotions non démontrées. Audit complet et reports motivés : docs/decouverte-sans-doublons.md. Aucune migration ni publication en production. La suite garde les mêmes 17 échecs que le commit de base sous Windows ; compilation et sept tests Chrome réussis. Les vrais classements de nouveautés/tendances/ventes restent conditionnés aux données décrites dans l’audit.
+
 
 ## Offres associées — 21 septembre 2026
 

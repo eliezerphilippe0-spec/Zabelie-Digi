@@ -66,23 +66,12 @@ test("UB5 — le composant mort au faux écran produit n'existe plus", () => {
   assert.doesNotMatch(PAGE, /HeroVisual/);
 });
 
-test("UB6 — un produit ne remplit pas deux rails : la règle est définie ET appliquée", () => {
-  // Définition, avec sa liaison : le filtre porte sur `vus.has(p.slug)`.
-  assert.match(
-    PAGE,
-    /const inedit = \(items: ProductView\[\]\): boolean => \{[\s\S]{0,200}?if \(!items\.some\(\(p\) => !vus\.has\(p\.slug\)\)\) return false;/,
-    "inedit() doit refuser un rail dont TOUS les produits ont déjà été vus"
-  );
-  // Le produit de la semaine ouvre la page : il compte comme vu.
-  // Plus de « produit de la semaine » (Phase 3) : la grille principale ouvre
-  // la page, et l'ensemble des vus part vide.
-  assert.match(PAGE, /const vus = new Set<string>\(\);/);
-  // Application : les six rails, chacun gardé par son propre appel.
-  for (const v of ["principaux", "newest", "fichiers", "services", "free", "promo"]) {
-    assert.match(PAGE, new RegExp(`\\{inedit\\(${v}\\) && \\(\\s*<HomeRow`), `le rail ${v} n'est pas gardé`);
+test("UB6 — all home rows use the shared allocation including the featured product", () => {
+  assert.match(PAGE, /allocateHomeRows\(\[/);
+  assert.match(PAGE, /featured \? \[featured\.id\] : \[\]/);
+  assert.doesNotMatch(PAGE, /const inedit/);
+  for (const name of ["principaux", "newest", "fichiers", "services", "free"]) {
+    assert.ok(PAGE.includes(name + ".length > 0"));
+    assert.ok(PAGE.includes("items={" + name + "}"));
   }
-  // Un rail vide reste l'affaire de HomeRow (V-13) : inedit([]) est vrai.
-  // Une rangée vide ne « consomme » rien et n'est pas rendue : c'est le seuil
-  // (lib/home-sections) qui l'efface, pas inedit().
-  assert.doesNotMatch(PAGE, /if \(items\.length === 0\) return true;/);
 });

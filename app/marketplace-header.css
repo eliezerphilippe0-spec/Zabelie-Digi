@@ -17,3 +17,12 @@
   .marketplace-header-brand { margin-right: 0; }
   .marketplace-header-search { order: 0; flex-basis: auto; }
 }
+
+/* Menus anchored to their trigger, with every item reachable on short screens. */
+.header-menu-panel {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - var(--header-menu-top, 9rem) - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  translate: var(--header-menu-shift, 0px) 0;
+}

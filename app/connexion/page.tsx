@@ -16,7 +16,10 @@ const LIBELLES: Record<AuthProviderId, I18nKey> = {
   apple: "auth.oauth.apple",
 };
 
-export const metadata = { robots: { index: false, follow: false } };
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "auth.tab.signin")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 export default async function ConnexionPage() {
   /* Même défaut que /vendre : l'écran dégradé ne signalait RIEN.
