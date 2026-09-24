@@ -47,6 +47,8 @@
 | `OPENAI_API_KEY` | **facturable** — dépenser sur le compte du projet |
 | `GEMINI_API_KEY` | **facturable** — idem |
 | `TYPESAFE_API_KEY` | **facturable** — appels Jev ; serveur uniquement |
+| `HF_API_KEY_ID` | **facturable** — identifiant de clé Higgsfield (Studio Créatif) ; serveur uniquement |
+| `HF_API_KEY_SECRET` | **facturable** — secret de clé Higgsfield, inséparable de `HF_API_KEY_ID` ; serveur uniquement |
 | `SEARCH_FINGERPRINT_SALT` | ré-identifier les empreintes de recherche |
 
 ⚠️ **`SUPABASE_SERVICE_ROLE_KEY` n'est pas un secret parmi d'autres, c'est la
@@ -98,6 +100,8 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `JEV_BASE_URL` | URL complète de l'endpoint de décision Jev ; vide = TypeSafe direct |
 | `JEV_MODEL` | nom du modèle Jev ; vide = `jev-latest` |
 | `JEV_TIMEOUT_MS` | délai par appel Jev, 1000 à 30000 ms ; vide = 8000 |
+| `ZABELIE_STUDIO_ENABLED` | `true` (valeur exacte) ouvre `/api/studio/generations` (docs/62) ⚠️ **dépense** : chaque image est payée à Higgsfield — ne pas poser avant l'application de `0118` et l'arbitrage des quotas (`zabelie_studio_config`) |
+| `HF_TIMEOUT_MS` | délai par appel Higgsfield, 1000 à 60000 ms ; vide = 15000 |
 
 ### 2.3 — Publiques par nature (`NEXT_PUBLIC_`, lisibles dans le navigateur)
 

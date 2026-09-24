@@ -210,3 +210,36 @@ que sa doc ne prouve pas qu'il juge des images (§3).
    produits publiés avec photo (§0) ?
 
 Stop. Aucun code écrit ; la Phase 1 attend un « go ».
+
+## 9. Phase 3 — faite le 2026-09-24, et les choix pris par défaut
+
+Le porteur a dit « go » sans trancher les arbitrages du §7. Chacun a donc reçu
+la valeur **la plus prudente**, et tout est **réversible sans code** : le
+Studio reste éteint tant que `ZABELIE_STUDIO_ENABLED` ne vaut pas `true`, et
+l'allumer (clés Higgsfield comprises) est une **dépense**, donc un geste du
+porteur.
+
+| Arbitrage (§7) | Choix par défaut | Où le changer |
+|---|---|---|
+| 1. Liens de référence | **aucun en v1** : la route n'en accepte pas | Phase ultérieure (le fetch SSRF de la Phase 2 est prêt, sans appelant) |
+| 2. Quotas | **3 images/vendeur/jour**, **30/jour pour la plateforme** (≈ 0,32 $/jour au prix console, docs/65 §2) | `zabelie_studio_config` (règle dure 3) |
+| 3. Conservation | Zabelie ne **copie** aucune image : le journal garde l'URL rendue par Higgsfield. Leur rétention reste NON VÉRIFIÉE (docs/65 §6) | à revoir quand `/docs/concepts/requests` sera lue |
+| 4. Contrôle des images | **revue vendeur seule** ; les interdits sont écrits dans le prompt, faute de champ négatif | Phase 4 (interface) |
+| 5. Qui paie | la plateforme, **bornée par le quota global** | décision porteur avant allumage |
+
+Ce qui est construit :
+
+- `0118_studio_creatif.sql` : une ligne figée par génération et une ligne par
+  transition, toutes deux append-only. L'idempotence (unique vendeur + clé),
+  les quotas (jour civil haïtien, sous verrou) et l'ordre des transitions sont
+  gardés **en base**. Une suppression de compte ou de produit emporte ses
+  générations. Rédigée, **non appliquée**.
+- `POST /api/studio/generations` : la ligne est inscrite **avant** l'appel
+  payant, et une clé rejouée ne soumet rien.
+- `GET /api/studio/generations/[id]` : un sondage par lecture. Au-delà de
+  5 min sans soumission constatée, la génération est `soumission_perdue` ;
+  au-delà de 15 min de génération, `delai_depasse`. Jamais de relance.
+- Prompt Builder : le portrait passe de `4:5` à **`3:4`** (docs/65 §3.2).
+
+Reste, dans l'ordre : appliquer `0118` · la Phase 4 (interface kreyòl-first) ·
+l'allumage, qui est au porteur (clés dans Vercel, drapeau, quotas confirmés).

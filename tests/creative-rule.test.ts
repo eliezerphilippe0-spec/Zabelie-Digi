@@ -168,7 +168,7 @@ test("prix de surcouche : HTG/USD selon l'audience, calcul du checkout, jamais i
 test("lib/creative est pur : ni réseau, ni base, ni environnement", () => {
   const dir = "lib/creative";
   const files = readdirSync(dir).filter((f) => f.endsWith(".ts"));
-  assert.deepEqual(files.sort(), ["overlay.ts", "prompt-builder.ts", "rule.ts"]);
+  assert.deepEqual(files.sort(), ["overlay.ts", "prompt-builder.ts", "rule.ts", "studio.ts"]);
   for (const f of files) {
     const src = readFileSync(join(dir, f), "utf8");
     for (const m of src.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)) {
