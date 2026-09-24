@@ -23,6 +23,7 @@ import { hrefBoutique } from "@/lib/boutique-href";
 import { bornes, pageValide, nbPages, pageDansBornes } from "@/lib/pagination";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
+import { studioProvider } from "@/lib/studio-server";
 import { t, type I18nKey } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
 import { PayoutRequest } from "@/components/payout-request";
@@ -498,6 +499,10 @@ export default async function DashboardPage({
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
           <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
+          {/* Le lien n'existe que si le Studio est allumé ET configuré : même prédicat que la page et les routes. */}
+          {studioProvider() && (
+            <Link href="/tableau-de-bord/studio" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "estidyo.lien")}</Link>
+          )}
         </div>
         <div className="mt-4 border-t border-line pt-4">
           <ShareButtons path={hrefBoutique({ id: user.id, boutikSlug })} text={t(lang, "creator.share.text", { name: profile.display_name })}

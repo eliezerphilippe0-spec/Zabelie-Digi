@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PROPOSITION } from "./rule";
+import { PROPOSITION, type Cadrage, type Format } from "./rule";
 
 /**
  * Studio Créatif, Phase 3 — logique PURE des routes (docs/62 §6).
@@ -17,6 +17,18 @@ export function studioEnabled(env: { ZABELIE_STUDIO_ENABLED?: string }): boolean
 
 /** 3 cadrages × 3 formats (rule.ts, PROPOSITION). */
 export const NOMBRE_BRIEFS = PROPOSITION.cadrages.length * PROPOSITION.formats.length;
+
+/**
+ * Position du brief (cadrage, format) dans la liste de `buildBriefs`, qui
+ * boucle sur les cadrages PUIS sur les formats. L'écran choisit un cadrage et
+ * un format ; la route reçoit l'index. Le test croise les deux ordres.
+ */
+export function indexBrief(cadrage: Cadrage, format: Format): number {
+  const c = PROPOSITION.cadrages.indexOf(cadrage);
+  const f = PROPOSITION.formats.indexOf(format);
+  if (c < 0 || f < 0) throw new Error("brief_inconnu");
+  return c * PROPOSITION.formats.length + f;
+}
 
 export const demandeSchema = z.object({
   productId: z.string().uuid(),
@@ -94,4 +106,36 @@ export function refusInsertion(error: { code?: string; message?: string } | null
   if (error?.message === "studio_quota_global") return "quota_global";
   if (error?.message === "studio_paiement_requis") return "paiement_requis";
   return "indisponible";
+}
+
+// ── Côté écran (Phase 4) : ce que le client envoie et comment il lit la réponse ──
+
+/**
+ * Le corps de POST /api/studio/generations. Aucun texte libre : un produit,
+ * une clé, un INDEX de brief. Le prix n'y figure que s'il a été consenti.
+ */
+export function corpsDemande(productId: string, idempotencyKey: string, cadrage: Cadrage, format: Format, prixConsentiHtg?: number) {
+  return {
+    productId,
+    idempotencyKey,
+    briefIndex: indexBrief(cadrage, format),
+    ...(prixConsentiHtg === undefined ? {} : { prixConsentiHtg }),
+  };
+}
+
+export type LectureEcran =
+  | { k: "payant"; prix: number }
+  | { k: "pret"; url: string }
+  | { k: "echec" }
+  | { k: "suivre"; id: string }
+  | { k: "erreur"; message: string | null };
+
+/** Traduit une réponse de la route en ce que l'écran doit faire. Rien d'implicite. */
+export function lireReponse(status: number, data: unknown): LectureEcran {
+  const d = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  if (status === 402 && typeof d.prixHtg === "number" && Number.isInteger(d.prixHtg) && d.prixHtg >= 0) return { k: "payant", prix: d.prixHtg };
+  if (d.state === "completed" && typeof d.imageUrl === "string" && d.imageUrl.startsWith("https://")) return { k: "pret", url: d.imageUrl };
+  if (d.state === "failed") return { k: "echec" };
+  if ((status === 202 || status === 200) && typeof d.id === "string") return { k: "suivre", id: d.id };
+  return { k: "erreur", message: typeof d.error === "string" ? d.error : null };
 }

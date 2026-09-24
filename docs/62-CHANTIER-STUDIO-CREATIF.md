@@ -275,3 +275,30 @@ gratuit et du plafond du jour. C'est le sens prudent pour la dépense.
 Libellé : au grand livre et dans la réponse du retrait, la dette Studio est
 comptée avec les « frais IA » (`frais_ia_htg`), parce qu'elle passe par le
 même registre.
+
+## 11. Phase 4 — l'écran vendeur (2026-09-24)
+
+`/tableau-de-bord/studio`, en ht · fr · en · es (clés `estidyo.*`) :
+
+1. le vendeur choisit **un de ses produits avec photo**, un **cadrage** et un
+   **format**. Seul l'**index** du brief part au serveur (`indexBrief`, croisé
+   avec l'ordre de `buildBriefs`), qui compose le prompt : aucun texte libre ;
+2. le **tarif** (gratuit du jour, prix) s'affiche d'emblée, lu dans
+   `zabelie_studio_config`, jamais codé ;
+3. au-delà du gratuit, la route rend **402** : l'écran affiche le prix, et
+   seul le bouton qui le montre renvoie la demande avec `prixConsentiHtg`,
+   **avec la même clé d'idempotence** ;
+4. l'écran suit la génération (un sondage toutes les 3 s, 5 min au plus) et
+   montre l'image avec le rappel de **revue par le vendeur** (§9, arbitrage 4).
+
+Studio éteint : ni page (404) ni lien dans le tableau de bord.
+
+Limites connues :
+
+- **Aucun historique** : une image se voit dans la session qui l'a lancée.
+  L'URL est celle de Higgsfield, dont la conservation n'est pas vérifiée
+  (docs/65 §6) ; le vendeur doit la télécharger.
+- **Pas de surcouche prix/CTA sur l'image** : `overlay.ts` existe, sans
+  appelant côté écran.
+- Le 2026-09-24, **1 produit sur 10** en base a une photo : c'est le seul que
+  le Studio peut servir aujourd'hui.
