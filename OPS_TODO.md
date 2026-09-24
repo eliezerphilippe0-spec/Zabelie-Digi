@@ -2,7 +2,7 @@
 
 ## Jev — triage support en OBSERVATION, Phase 2 livrée (23 septembre 2026)
 
-Branché sur le support dans l'app (pas WhatsApp : aucun point d'entrée serveur), **drapeau fermé**, Jev étiquette et journalise, ne route rien. Migration `0117_jev_triage_journal.sql` **rédigée, NON appliquée** — empreinte `a90296e4…df0ca9b91a`. Pour activer, gestes porteur dans l'ordre : avis Volmar sur la rétention → fusion → appliquer `0117` → clé TypeSafe renouvelée dans Vercel → `ZABELIE_JEV_TRIAGE_ENABLED=true`. ⚠️ 0 dossier de support en base aujourd'hui : un journal vide voudra dire « aucun passage ». Voir `docs/61` §8.
+Branché sur le support dans l'app (pas WhatsApp : aucun point d'entrée serveur), **drapeau fermé**, Jev étiquette et journalise, ne route rien. ✅ **Fusionnée (#269, `94b77ea`) et `0117` APPLIQUÉE le 2026-09-24 05:12:23Z** sur confirmation explicite du porteur (« oui je confirme ») — SQL reçu identique au fichier (sha256 brut `9dd9bb44…` des deux côtés), empreinte canonique `a90296e4…df0ca9b91a`, inscrite au registre (`preuve = journal_supabase`). Le même jour, `0114`→`0116` (clairin), appliquées sans ligne au registre, y ont été inscrites après la même vérification : **117 fichiers, 117 lignes**. Reste au porteur pour activer : avis Volmar sur la rétention → clé TypeSafe renouvelée dans Vercel → `ZABELIE_JEV_TRIAGE_ENABLED=true`. ⚠️ 0 dossier de support en base aujourd'hui : un journal vide voudra dire « aucun passage ». Voir `docs/61` §8.
 
 ## Jev — évaluation kreyòl, Phase 1 livrée (23 septembre 2026)
 

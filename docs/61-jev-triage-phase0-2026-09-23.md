@@ -318,7 +318,7 @@ voudra dire « aucun passage », pas « rien à signaler ».
 | `lib/jev/triage.ts` | triage pur, env et journal injectés ; rend toujours `file_humaine` |
 | `lib/jev/triage-server.ts` | `server-only`, lit l'environnement, n'écrit que le journal |
 | `app/api/support/cases/route.ts` | appel **après** la réponse (`after()`), sous drapeau, jamais sur un rejeu |
-| `supabase/migrations/0117_jev_triage_journal.sql` | journal append-only, RLS, aucun texte — **rédigée, NON appliquée** |
+| `supabase/migrations/0117_jev_triage_journal.sql` | journal append-only, RLS, aucun texte — **appliquée le 2026-09-24** (voir plus bas) |
 | `supabase/tests/jev_decisions.test.sql` | J1 à J5 |
 | `tests/jev-triage.test.ts`, `tests/support-route.test.ts` | 11 + 3 tests |
 
@@ -369,14 +369,18 @@ dont `0117`) **verte** · `tsc` propre · lint propre · `npm test` **1232/1232*
 
 * Empreinte canonique (`scripts/zabelie-migration-hash.mjs`) :
   `a90296e4043a14816d4f211da1406012906d2eb37a647c924d6eb9df0ca9b91a`
-* **Rédigée, NON appliquée.** Je ne l'applique pas : le prompt interdit toute
-  écriture en production, et l'autorisation permanente du 2026-08-17 ne
-  prévaut pas sur une interdiction explicite donnée pour ce chantier.
+* **APPLIQUÉE le 2026-09-24 à 05:12:23Z** (journal Supabase `20260924051223`),
+  sur confirmation explicite du porteur (« oui je confirme » : fusionner et
+  mettre en ligne), qui a levé pour ce geste l'interdiction du prompt.
+  Preuve croisée : le SQL reçu par Supabase et le fichier ont le même SHA-256
+  brut (`9dd9bb44…`, 4 492 caractères). Contrôlé en production : RLS active,
+  anon/authenticated sans accès, `service_role` en `select, insert` seulement,
+  2 triggers, table vide. Inscrite au registre, `preuve = journal_supabase`.
 
 ### Pour activer, dans l'ordre — tous des gestes porteur
 
 1. Avis du **Cabinet Volmar** sur la rétention chez TypeSafe (messages clients).
-2. Fusionner la PR ; appliquer `0117` ; l'inscrire au registre avec son empreinte.
+2. ~~Fusionner la PR ; appliquer `0117` ; l'inscrire au registre~~ — **fait le 2026-09-24.**
 3. Poser `TYPESAFE_API_KEY` (clé renouvelée) dans Vercel.
 4. Poser `ZABELIE_JEV_TRIAGE_ENABLED=true`.
 5. Lire le journal après quelques dossiers :
