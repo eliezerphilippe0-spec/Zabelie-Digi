@@ -80,10 +80,64 @@ Pages de la doc Higgsfield à copier (le proxy bloque leur lecture) :
   (`DELAI_GENERATION_MS`) seront revus sur la doc.
 - **CGU** : la §9 nomme déjà le Studio ; il faudra y ajouter la vidéo.
 
-## 6. Ce qui est rendu au porteur
+## 6. Décision porteur du 2026-09-24 : « UGC », les deux voies
 
-1. Les **pages de doc** du §4, copiées comme pour Marketing Studio Image.
-2. Le **prix** et les **plafonds** du §3 (ou « d'accord avec la proposition »).
-3. Le **modèle** : Kling 2.5 par défaut, ou un autre du §2.
+Réponse à la question « UGC IA signalée, vraie UGC, ou les deux ? » : **les
+deux.** Le faux témoignage reste exclu (§1) dans les deux voies.
 
-Stop. La Phase 1 attend ces trois réponses.
+### 6.1 Voie A — UGC générée par l'IA, signalée
+
+Une personne **fictive** présente le produit face caméra, ne dit que les faits
+donnés par le vendeur, et la vidéo porte la mention « kontni IA / contenu IA ».
+Jamais « mwen te achte l ».
+
+Bloquants, en plus du §4 :
+
+1. **La page du modèle Higgsfield qui fait parler un personnage** (avatar,
+   lip-sync). Son existence même n'est pas vérifiée.
+2. **Le kreyòl parlé.** Une voix de synthèse qui ne parle que français ou
+   anglais rate le public qui compte le plus. C'est à vérifier avant tout
+   engagement : **une UGC IA sans kreyòl ne vaut sans doute pas son prix.**
+3. Le prix : voix et personnage coûteront plus que les 0,18 $ du §2.
+
+### 6.2 Voie B — vraie UGC, filmée par de vrais gens
+
+Mesuré en production le 2026-09-24 : **0 avis, 0 commande payée** (15
+commandes, aucune payée), et **aucun stockage vidéo** (trois espaces de
+stockage : photos produit à 1,5 Mo max, fichiers digitaux, KYC).
+
+Conséquence, dans l'ordre :
+
+1. **B1 — la vidéo du vendeur** sur sa fiche produit : il se filme avec son
+   téléphone et montre son produit. Libellée « videyo machann nan », jamais
+   « avis client ». Faisable tout de suite : aucune API externe.
+2. **B2 — l'avis vidéo d'un client**, rattaché à une commande **payée** et
+   livrée (`product_reviews.order_id` existe déjà, unique par commande). À
+   construire quand il y aura des commandes payées : aujourd'hui, il n'y a
+   rien à quoi le rattacher.
+
+Propositions pour B1, **à trancher** (le stockage est une dépense) :
+
+| Paramètre | Proposition | Pourquoi |
+|---|---|---|
+| Durée max | 30 s | un statut WhatsApp, pas un film |
+| Taille max | 20 Mo | ≈ 30 s en 720p ; au-delà, le téléversement échoue sur les réseaux lents d'Haïti |
+| Vidéos par produit | 1 | borne le stockage |
+| Lecture | jamais automatique, image d'aperçu d'abord | forfaits data des acheteurs sur Android d'entrée de gamme |
+| Contrôle | même porte de publication que la fiche | pas de circuit de modération nouveau |
+
+⚠️ **Coût de stockage** : l'offre Supabase gratuite inclut 1 Go de stockage de
+fichiers (à vérifier sur le compte). À 20 Mo par vidéo, **une cinquantaine de
+vidéos le remplissent.** Au-delà, il faut une offre payante : décision porteur.
+
+## 7. Ce qui est rendu au porteur
+
+1. **Voie B1** (vidéo du vendeur) : accord ou correction sur les limites du
+   §6.2, et sur le coût de stockage. C'est la seule voie qui peut démarrer
+   tout de suite.
+2. **Vidéo produit et voie A** : les pages de doc du §4 et du §6.1, dont la
+   question du kreyòl parlé.
+3. Le **prix** et les **plafonds** du §3, et le prix de la voie A.
+4. Le **modèle** : Kling 2.5 par défaut, ou un autre du §2.
+
+Stop. Chaque voie démarre sur sa réponse.
