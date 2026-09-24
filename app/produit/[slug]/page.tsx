@@ -305,6 +305,7 @@ export default async function ProductPage({
               couverture={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)}
               medias={medias.filter((m) => m.kind === "image").map((m) => m.url)}
               video={medias.find((m) => m.kind === "video")?.url ?? null}
+              videoLabel={t(lang, "product.video.seller")}
               alt={product.title}
             />
           ) : (
