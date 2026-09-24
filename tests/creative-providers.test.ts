@@ -247,12 +247,20 @@ test("sondage borné : jamais infini, délai dépassé non relançable, échecs 
 test("fournisseurs : ni base, ni environnement, ni clé ; aucun appel réseau réel écrit", () => {
   const dir = "lib/creative/providers";
   const files = readdirSync(dir).filter((f) => f.endsWith(".ts"));
-  assert.deepEqual(files.sort(), ["ad-analysis.ts", "creative.ts", "decision.ts", "safe-fetch.ts"]);
+  assert.deepEqual(files.sort(), ["ad-analysis.ts", "creative.ts", "decision.ts", "higgsfield.ts", "safe-fetch.ts"]);
   for (const f of files) {
     const src = readFileSync(join(dir, f), "utf8");
     for (const m of src.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)) {
-      assert.ok(["zod", "node:net", "../prompt-builder"].includes(m[1]), `${f} importe ${m[1]}`);
+      assert.ok(["zod", "node:net", "../prompt-builder", "./creative"].includes(m[1]), `${f} importe ${m[1]}`);
     }
-    assert.doesNotMatch(src, /process\.env|fetch\(|\.from\(|\.rpc\(|createClient|createAdminClient|https:\/\/api\./, f);
+    assert.doesNotMatch(src, /process\.env|\.from\(|\.rpc\(|createClient|createAdminClient/, f);
+    // Seul le provider Higgsfield parle au réseau : UN appel `fetch(`, UNE
+    // adresse d'API, et c'est celle de la doc vérifiée (docs/65 §1).
+    if (f === "higgsfield.ts") {
+      assert.equal(src.match(/fetch\(/g)?.length, 1, f);
+      assert.deepEqual(src.match(/https:\/\/api\.[^"'`\s]*/g), ["https://api.higgsfield.ai"], f);
+    } else {
+      assert.doesNotMatch(src, /fetch\(|https:\/\/api\./, f);
+    }
   }
 });

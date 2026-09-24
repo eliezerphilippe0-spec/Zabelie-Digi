@@ -34,7 +34,7 @@ reste.
 |---|---|---|
 | **Photo produit obligatoire** : sans photo, aucun brief | `prompt-builder.ts`, `buildBriefs` | conséquence directe de « fidélité produit » en priorité n°1 : un moteur ne peut pas être fidèle à un produit qu'il n'a pas vu |
 | **Aucun texte libre dans le prompt image** (ni titre, ni catégorie saisie, ni phrase de référence) | `prompt-builder.ts` | un moteur recopie le texte (interdit « texte dans l'image ») ; un titre peut porter une marque ; une page de référence peut porter une injection |
-| Axes de variation des briefs : 3 formats (`1:1`, `4:5`, `9:16`) × 3 cadrages (gros plan, en situation, en usage) = **9 briefs** | `rule.ts`, `PROPOSITION` | l'extrait fixe 8 à 10 briefs sans dire sur quoi ils varient |
+| Axes de variation des briefs : 3 formats (`1:1`, `3:4`, `9:16` ; `3:4` remplace `4:5`, absent chez Higgsfield, docs/65 §3.2) × 3 cadrages (gros plan, en situation, en usage) = **9 briefs** | `rule.ts`, `PROPOSITION` | l'extrait fixe 8 à 10 briefs sans dire sur quoi ils varient |
 | Zone texte : **haut en `9:16`**, bas sinon | `prompt-builder.ts`, `zoneTexte` | en format vertical, le bas est couvert par l'interface des statuts et stories |
 | Valeurs d'analyse **énumérées** (composition : centrée, règle des tiers, symétrique, diagonale ; palette : chaude, froide, neutre, vive, pastel) | `prompt-builder.ts` | seul moyen de garantir qu'aucun mot d'une pub de référence n'atteigne le moteur |
 | Devises : `haiti` → HTG · `diaspora`, `international` → USD · `haiti_diaspora` → les deux | `overlay.ts`, `devisesPour` | lecture de « HTG, USD ou les deux selon l'audience » |

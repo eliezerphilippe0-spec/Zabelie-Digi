@@ -91,8 +91,12 @@ export function parametresParDefaut(): Parametres {
  * remplacés d'un seul geste quand le texte intégral arrivera.
  */
 export const PROPOSITION = Object.freeze({
-  /** Carré (fil), portrait (fil), vertical (stories/statuts WhatsApp). */
-  formats: Object.freeze(["1:1", "4:5", "9:16"] as const),
+  /**
+   * Carré (fil), portrait (fil), vertical (stories/statuts WhatsApp).
+   * `3:4` et non `4:5` : Marketing Studio Image n'offre pas `4:5`
+   * (docs/65 §3.1) ; `3:4` est le portrait le plus proche.
+   */
+  formats: Object.freeze(["1:1", "3:4", "9:16"] as const),
   cadrages: Object.freeze(["gros_plan", "en_situation", "en_usage"] as const),
 });
 export type Format = (typeof PROPOSITION.formats)[number];
