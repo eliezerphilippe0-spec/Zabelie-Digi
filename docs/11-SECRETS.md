@@ -94,6 +94,10 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `ZABELIE_TOPUP_FIRSTPARTY_ENABLED` | rouvre la vente de recharge en propre — fermée par V-17 |
 | `ZABELIE_RELEASE_ID` | générée au build depuis le commit Git, jamais saisie manuellement ; empreinte non secrète rendue par la sonde publique de livraison |
 | `ZABELIE_DEMO_FIXTURES` | ⛔ **jamais en production** : sert le catalogue de démonstration à de vrais acheteurs |
+| `ZABELIE_JEV_TRIAGE_ENABLED` | `true` (valeur exacte) envoie chaque message de support à Jev en **observation** (docs/61 §8) ⚠️ **données clients vers un tiers** : ne pas poser avant l'avis du Cabinet Volmar sur la rétention, ni avant l'application de `0117` |
+| `JEV_BASE_URL` | URL complète de l'endpoint de décision Jev ; vide = TypeSafe direct |
+| `JEV_MODEL` | nom du modèle Jev ; vide = `jev-latest` |
+| `JEV_TIMEOUT_MS` | délai par appel Jev, 1000 à 30000 ms ; vide = 8000 |
 
 ### 2.3 — Publiques par nature (`NEXT_PUBLIC_`, lisibles dans le navigateur)
 
