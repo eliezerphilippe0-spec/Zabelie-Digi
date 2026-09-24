@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { studioProvider } from "@/lib/studio-server";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { buildBriefs } from "@/lib/creative/prompt-builder";
-import { EVENTS_TABLE, GENERATIONS_TABLE, demandeSchema, etatCourant, etatVisible, refusInsertion } from "@/lib/creative/studio";
+import { CONFIG_TABLE, EVENTS_TABLE, GENERATIONS_TABLE, demandeSchema, etatCourant, etatVisible, refusInsertion } from "@/lib/creative/studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   try { raw = await req.json(); } catch { return erreurTraduite("api.json.invalid", 400); }
   const demande = demandeSchema.safeParse(raw);
   if (!demande.success) return erreurTraduite("api.params.invalid", 400);
-  const { productId, idempotencyKey, briefIndex, params } = demande.data;
+  const { productId, idempotencyKey, briefIndex, params, prixConsentiHtg } = demande.data;
 
   const admin = createAdminClient();
   if (!(await rateLimit(admin, `studio:${user.id}`, 5, 60))) {
@@ -68,7 +68,10 @@ export async function POST(req: Request) {
     prompt: brief.prompt,
     rule_version: brief.rule_version,
     provider: provider.name,
-  }).select("id").single();
+    // Au-delà du gratuit, la base exige le prix du moment ; en deçà, elle le
+    // remet à 0 : une gratuite n'est jamais facturée (0119).
+    prix_htg: prixConsentiHtg ?? 0,
+  }).select("id,prix_htg").single();
 
   if (insertion || !ligne) {
     const motif = refusInsertion(insertion);
@@ -82,6 +85,13 @@ export async function POST(req: Request) {
     }
     if (motif === "quota_vendeur") return erreurTraduite("api.studio.quota.vendeur", 429, { code: motif });
     if (motif === "quota_global") return erreurTraduite("api.studio.quota.global", 429, { code: motif });
+    if (motif === "paiement_requis") {
+      // Le prix est servi pour être AFFICHÉ ; seule une nouvelle requête qui
+      // le porte dans `prixConsentiHtg` sera inscrite. Rien n'est facturé ici.
+      const { data: cfg } = await admin.from(CONFIG_TABLE).select("prix_image_htg").maybeSingle();
+      if (typeof cfg?.prix_image_htg !== "number") return erreurTraduite("api.unavailable", 503);
+      return erreurTraduite("api.studio.payant", 402, { code: motif, prixHtg: cfg.prix_image_htg });
+    }
     return erreurTraduite("api.unavailable", 503);
   }
 
@@ -101,6 +111,6 @@ export async function POST(req: Request) {
     console.error("[studio] evenement_non_inscrit", ligne.id, evenement.etat);
   }
   if (!soumis.ok) return erreurTraduite("api.studio.failed", 502, { id: ligne.id, state: "failed", detail: soumis.error });
-  return NextResponse.json({ id: ligne.id, state: "generating" }, { status: 202 });
+  return NextResponse.json({ id: ligne.id, state: "generating", prixHtg: ligne.prix_htg }, { status: 202 });
 }
 

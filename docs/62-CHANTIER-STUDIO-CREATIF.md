@@ -225,7 +225,7 @@ porteur.
 | 2. Quotas | **3 images/vendeur/jour**, **30/jour pour la plateforme** (≈ 0,32 $/jour au prix console, docs/65 §2) | `zabelie_studio_config` (règle dure 3) |
 | 3. Conservation | Zabelie ne **copie** aucune image : le journal garde l'URL rendue par Higgsfield. Leur rétention reste NON VÉRIFIÉE (docs/65 §6) | à revoir quand `/docs/concepts/requests` sera lue |
 | 4. Contrôle des images | **revue vendeur seule** ; les interdits sont écrits dans le prompt, faute de champ négatif | Phase 4 (interface) |
-| 5. Qui paie | la plateforme, **bornée par le quota global** | décision porteur avant allumage |
+| 5. Qui paie | ~~la plateforme~~ → **le vendeur, par déduction au retrait** (décision porteur, §10) | `zabelie_studio_config` |
 
 Ce qui est construit :
 
@@ -243,3 +243,35 @@ Ce qui est construit :
 
 Reste, dans l'ordre : appliquer `0118` · la Phase 4 (interface kreyòl-first) ·
 l'allumage, qui est au porteur (clés dans Vercel, drapeau, quotas confirmés).
+
+## 10. Facturation — décision porteur du 2026-09-24 : « oui déduction »
+
+Le vendeur paie ses images au-delà du gratuit, **par le rail du surplus IA**
+(docs/34, `0071`/`0072`) : chaque image payante devient une ligne de
+`zabelie_ai_surplus` (motif `studio_image`), que la demande de retrait
+(`zabelie_request_payout`, version `0079`) somme et prélève déjà. Le retrait
+n'est pas modifié. **Aucun crédit prépayé** : un solde tenu d'avance par
+Zabelie ressemblerait à de la monnaie électronique (Circulaire 121).
+
+| Paramètre (`zabelie_studio_config`) | Défaut `0119` |
+|---|---|
+| `gratuit_jour` | 3 images par vendeur et par jour civil haïtien |
+| `prix_image_htg` | 10 HTG (coût Higgsfield ≈ 1,4 HTG) |
+| `quota_vendeur_jour` | 20, gratuites comprises (plafond dur) |
+| `quota_global_jour` | 200 pour la plateforme (coût borné à ≈ 2 $/jour) |
+
+Règles gardées **en base** (`0119`, tests F1–F6, 8 mutations rouges) :
+
+1. une gratuite n'est **jamais** facturée, même si un prix est envoyé ;
+2. au-delà, la génération n'est inscrite qu'au **prix exact du moment**
+   (`prixConsentiHtg`) ; sinon la route répond **402** avec le prix à afficher ;
+3. la dette naît **avec la livraison** (`completed`), dans la même
+   transaction : un échec ne coûte rien ;
+4. une image n'est facturée **qu'une fois** (index unique sur la référence).
+
+Limite assumée : une génération échouée consomme quand même une place du
+gratuit et du plafond du jour. C'est le sens prudent pour la dépense.
+
+Libellé : au grand livre et dans la réponse du retrait, la dette Studio est
+comptée avec les « frais IA » (`frais_ia_htg`), parce qu'elle passe par le
+même registre.

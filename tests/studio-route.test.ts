@@ -51,7 +51,7 @@ function fixture(o: Opts = {}) {
     if (q.table === "products") return { data: { id: PRODUCT, seller_id: o.owner ?? SELLER, price_htg: 1000, cover_url: o.photo === undefined ? PHOTO : o.photo }, error: null };
     if (q.table === studio.GENERATIONS_TABLE && inserted) {
       order.push("insert_generation");
-      return o.insertError ? { data: null, error: o.insertError } : { data: { id: GEN }, error: null };
+      return o.insertError ? { data: null, error: o.insertError } : { data: { id: GEN, prix_htg: inserted.prix_htg }, error: null };
     }
     if (q.table === studio.GENERATIONS_TABLE) {
       const owner = q.steps.find(([m, a]) => m === "eq" && a[0] === "seller_id")?.[1][1];
@@ -63,6 +63,7 @@ function fixture(o: Opts = {}) {
       return { error: null };
     }
     if (q.table === studio.EVENTS_TABLE) return { data: events, error: null };
+    if (q.table === studio.CONFIG_TABLE) return { data: { prix_image_htg: 10 }, error: null };
     throw new Error(`table inattendue ${q.table}`);
   });
   const deps = {
@@ -114,13 +115,14 @@ test("parcours nominal : inscription AVANT la dépense, vendeur de la session, b
   const f = fixture();
   const r = await f.post();
   assert.equal(r.status, 202);
-  assert.deepEqual(await json(r), { id: GEN, state: "generating" });
+  assert.deepEqual(await json(r), { id: GEN, state: "generating", prixHtg: 0 });
   assert.deepEqual(f.order, ["insert_generation", "submit", "event_generating"]);
   const ligne = f.db.queries.find((q) => q.table === studio.GENERATIONS_TABLE)!.steps[0][1][0] as Record<string, unknown>;
   const built = buildBriefs({ id: PRODUCT, price_htg: 1000, imageUrl: PHOTO }, undefined);
   assert.ok(built.ok);
   const brief = built.briefs[1];
   assert.equal(ligne.seller_id, SELLER);
+  assert.equal(ligne.prix_htg, 0, "sans consentement, aucun prix n'est envoyé");
   assert.equal(ligne.prompt, brief.prompt);
   assert.equal(ligne.format, brief.format);
   assert.equal((f.submitted[0] as { referenceImageUrl: string }).referenceImageUrl, PHOTO);
@@ -145,6 +147,25 @@ test("quotas : 429 nommé, aucune dépense ; autre erreur : 503, jamais un succ�
     assert.equal(r.status, status);
     assert.equal((await json(r)).code, code);
     assert.deepEqual(f.order, ["insert_generation"]);
+  }
+});
+
+test("au-delà du gratuit : 402 avec le prix du moment, rien de soumis ; le consentement porte le prix", async () => {
+  const f = fixture({ insertError: { code: "P0001", message: "studio_paiement_requis" } });
+  const r = await f.post();
+  assert.equal(r.status, 402);
+  assert.deepEqual(await json(r), { error: "api.studio.payant", code: "paiement_requis", prixHtg: 10 });
+  assert.deepEqual(f.order, ["insert_generation"]);
+  const c = fixture();
+  const ok = await c.post({ productId: PRODUCT, idempotencyKey: KEY, briefIndex: 1, prixConsentiHtg: 10 });
+  assert.equal(ok.status, 202);
+  assert.equal((await json(ok)).prixHtg, 10);
+  const ligne = c.db.queries.find((q) => q.table === studio.GENERATIONS_TABLE)!.steps[0][1][0] as Record<string, unknown>;
+  assert.equal(ligne.prix_htg, 10);
+  for (const prix of [-1, 1.5, 5000, "10"]) {
+    const bad = fixture();
+    assert.equal((await bad.post({ productId: PRODUCT, idempotencyKey: KEY, briefIndex: 1, prixConsentiHtg: prix })).status, 400, String(prix));
+    assert.deepEqual(bad.order, []);
   }
 });
 
