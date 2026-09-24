@@ -8,6 +8,7 @@ import { PROPOSITION } from "./rule";
 
 export const GENERATIONS_TABLE = "zabelie_creative_generations";
 export const EVENTS_TABLE = "zabelie_creative_events";
+export const CONFIG_TABLE = "zabelie_studio_config";
 
 /** Le drapeau doit valoir exactement `"true"` : toute autre valeur éteint. */
 export function studioEnabled(env: { ZABELIE_STUDIO_ENABLED?: string }): boolean {
@@ -24,6 +25,12 @@ export const demandeSchema = z.object({
   briefIndex: z.number().int().min(0).max(NOMBRE_BRIEFS - 1),
   /** Validés par `parametresSchema` dans le Prompt Builder. */
   params: z.unknown().optional(),
+  /**
+   * Prix (HTG) que le vendeur a vu et accepté pour une image au-delà du
+   * gratuit (0119). La base le compare au prix du moment : un prix périmé est
+   * refusé, jamais ajusté. Absent = aucun consentement.
+   */
+  prixConsentiHtg: z.number().int().min(0).max(1000).optional(),
 }).strict();
 
 export type EtatLu =
@@ -74,7 +81,7 @@ export function etatVisible(e: EtatLu): { state: EtatLu["state"]; imageUrl?: str
   }
 }
 
-export type RefusInsertion = "doublon" | "quota_vendeur" | "quota_global" | "indisponible";
+export type RefusInsertion = "doublon" | "quota_vendeur" | "quota_global" | "paiement_requis" | "indisponible";
 
 /**
  * Traduit l'erreur d'insertion (0118). La clé d'idempotence rejouée est
@@ -85,5 +92,6 @@ export function refusInsertion(error: { code?: string; message?: string } | null
   if (error?.code === "23505") return "doublon";
   if (error?.message === "studio_quota_vendeur") return "quota_vendeur";
   if (error?.message === "studio_quota_global") return "quota_global";
+  if (error?.message === "studio_paiement_requis") return "paiement_requis";
   return "indisponible";
 }
