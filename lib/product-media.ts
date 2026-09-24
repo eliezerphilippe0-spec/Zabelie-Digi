@@ -15,8 +15,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * une URL en base se périme au premier changement de domaine de stockage.
  */
 
-import { MEDIA_BUCKET } from "@/lib/storage-buckets";
-export { MEDIA_BUCKET };
+import { MEDIA_BUCKET, VIDEO_BUCKET } from "@/lib/storage-buckets";
+export { MEDIA_BUCKET, VIDEO_BUCKET };
+
+/** Le bucket d'un média se déduit de son type : une vidéo ne vit jamais avec les couvertures. */
+export function bucketDuMedia(kind: string): string {
+  return kind === "video" ? VIDEO_BUCKET : MEDIA_BUCKET;
+}
 export const MAX_IMAGES_PER_PRODUCT = 6;
 
 /** Arbitrages porteur du 2026-08-15 (« 60s et 50 Mo ok ») — V-1B, docs/35. */
@@ -69,7 +74,7 @@ export async function listerMedias(
   return (data ?? []).map((m) => ({
     id: m.id,
     kind: m.kind as "image" | "video",
-    url: supabase.storage.from(MEDIA_BUCKET).getPublicUrl(m.storage_path).data
+    url: supabase.storage.from(bucketDuMedia(m.kind)).getPublicUrl(m.storage_path).data
       .publicUrl,
     position: m.position,
   }));

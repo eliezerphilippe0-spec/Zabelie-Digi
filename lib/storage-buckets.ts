@@ -33,5 +33,13 @@ export const DIGITAL_BUCKET = "product-files";
 /** Couvertures et galerie produit. Public — l'URL se dérive du chemin. */
 export const MEDIA_BUCKET = "product-covers";
 
+/**
+ * Vidéos produit. Public — l'URL se dérive du chemin. SÉPARÉ des couvertures
+ * (0120) : `product-covers` est plafonné à 1,5 Mo en production, ce qui
+ * refusait toute vidéo réelle — 0 vidéo téléversée depuis la livraison de
+ * V-1B, mesuré le 2026-09-24.
+ */
+export const VIDEO_BUCKET = "product-videos";
+
 /** Pièces d'identité vendeur. Privé — le titulaire seul lit son dossier. */
 export const KYC_BUCKET = "kyc-documents";

@@ -133,6 +133,10 @@ create table if not exists storage.buckets (
   name   text,
   public boolean
 );
+-- Colonnes du vrai schéma Supabase, lues par 0120 (plafond et types d'un bucket).
+alter table storage.buckets
+  add column if not exists file_size_limit bigint,
+  add column if not exists allowed_mime_types text[];
 create table if not exists storage.objects (
   id        uuid primary key default gen_random_uuid(),
   bucket_id text,
