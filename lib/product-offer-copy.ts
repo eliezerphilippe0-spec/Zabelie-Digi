@@ -1,5 +1,9 @@
 import type { Lang } from "@/lib/i18n";
 const fr = {
+  alsoBought: "Également achetés dans cette boutique",
+  automatic: "Autoriser les suggestions basées sur les achats",
+  automaticHint: "Vos choix restent prioritaires. Zabelie complète les places libres avec des produits de votre boutique quand plusieurs achats réels justifient la suggestion. Trois offres maximum.",
+  automaticSales: "Achats confirmés depuis les suggestions automatiques",
   title: "Offres associées", intro: "Choisissez jusqu’à trois offres de votre boutique. Chaque achat reste un choix explicite.",
   upsell: "Version supérieure", cross_sell: "Produit complémentaire", downsell: "Alternative économique",
   none: "Aucune", save: "Enregistrer les offres", saving: "Enregistrement…", saved: "Offres enregistrées.",
@@ -12,6 +16,10 @@ const fr = {
 };
 export type OfferCopy = typeof fr;
 const ht: OfferCopy = {
+  alsoBought: "Kliyan achte yo tou nan boutik sa a",
+  automatic: "Pèmèt sijesyon ki baze sou acha yo",
+  automaticHint: "Chwa ou yo toujou pase an premye. Zabelie ranpli plas ki vid yo ak pwodui nan boutik ou lè plizyè acha reyèl jistifye sijesyon an. Twa òf pou pi plis.",
+  automaticSales: "Acha konfime ki soti nan sijesyon otomatik yo",
   title: "Òf ki mache ansanm", intro: "Chwazi jiska twa òf nan boutik ou. Achtè a dwe chwazi chak acha.",
   upsell: "Vèsyon ki pi konplè", cross_sell: "Pwodui konplemantè", downsell: "Opsyon ki pi bon mache",
   none: "Okenn", save: "Anrejistre òf yo", saving: "Ap anrejistre…", saved: "Òf yo anrejistre.",
@@ -23,6 +31,10 @@ const ht: OfferCopy = {
   after: "Pou konplete acha ou", from: "Apati", empty: "Pibliye yon lòt òf pou ou ka asosye li.",
 };
 const en: OfferCopy = {
+  alsoBought: "Also bought from this shop",
+  automatic: "Allow suggestions based on purchases",
+  automaticHint: "Your choices take priority. Zabelie fills remaining spaces with products from your shop when several real purchases support the suggestion. Up to three offers.",
+  automaticSales: "Confirmed purchases from automatic suggestions",
   title: "Related offers", intro: "Choose up to three offers from your shop. Every purchase remains an explicit choice.",
   upsell: "Upgraded version", cross_sell: "Complementary product", downsell: "Lower-cost alternative",
   none: "None", save: "Save offers", saving: "Saving…", saved: "Offers saved.",
@@ -34,6 +46,10 @@ const en: OfferCopy = {
   after: "Complement your purchase", from: "From", empty: "Publish another offer to link it here.",
 };
 const es: OfferCopy = {
+  alsoBought: "También comprados en esta tienda",
+  automatic: "Permitir sugerencias basadas en compras",
+  automaticHint: "Tus elecciones tienen prioridad. Zabelie completa los espacios disponibles con productos de tu tienda cuando varias compras reales respaldan la sugerencia. Máximo tres ofertas.",
+  automaticSales: "Compras confirmadas desde sugerencias automáticas",
   title: "Ofertas relacionadas", intro: "Elige hasta tres ofertas de tu tienda. Cada compra requiere una elección explícita.",
   upsell: "Versión superior", cross_sell: "Producto complementario", downsell: "Alternativa económica",
   none: "Ninguna", save: "Guardar ofertas", saving: "Guardando…", saved: "Ofertas guardadas.",

@@ -18,7 +18,7 @@ export function SearchDemandPanel({ labels }: { labels: Labels }) {
     } catch { setError(true); }
     finally { setBusy(false); }
   }
-  return <details className="mt-8 rounded-2xl border border-line p-5">
+  return <details id="demande" className="mt-8 rounded-2xl border border-line p-5">
     <summary className="min-h-11 cursor-pointer text-lg font-semibold">{labels.title}</summary>
     <p className="mt-3 text-sm text-mist">{labels.intro}</p>
     <button type="button" onClick={load} disabled={busy} className="mt-3 min-h-11 rounded-xl border border-line px-4 text-sm">{busy ? labels.loading : labels.load}</button>

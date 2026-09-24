@@ -66,3 +66,48 @@ test("offer removal is persisted and the public card disappears",async({page})=>
  await page.request.put("/api/products/offers",{data:{productId:source,offers:{}}});
  await connect(page,false);await page.goto("/produit/kit-depart");await expect(page.getByRole("region",{name:"À découvrir dans cette boutique"})).toHaveCount(0);
 });
+
+for (const width of [390,1280]) test("automatic suggestions require evidence and preserve explicit purchase at "+width+"px",async({page,request})=>{
+ await page.setViewportSize({width,height:950});
+ const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
+ await connect(page,false);await page.goto("/produit/kit-depart");await expect(page).toHaveTitle(/Kit de départ/);
+ const offers=page.getByRole("region",{name:"À découvrir dans cette boutique"});
+ await expect(offers).toHaveCount(0);
+ await request.post("http://127.0.0.1:54328/__recommendations-history",{data:{enough:true}});
+ await page.reload();await expect(offers.locator("article")).toHaveCount(3);
+ await expect(offers.getByText("Également achetés dans cette boutique",{exact:true})).toHaveCount(3);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const dir=process.env.OFFERS_QA_DIR||join(tmpdir(),"zabelie-offers-qa");await mkdir(dir,{recursive:true});
+ await offers.evaluate(node=>{document.documentElement.style.scrollBehavior="auto";window.scrollTo(0,window.scrollY+node.getBoundingClientRect().top-140);});
+ await offers.screenshot({path:join(dir,"recommendations-"+width+".png")});
+ expect(await (await request.get("http://127.0.0.1:54328/__offers-orders")).json()).toEqual([]);
+ await offers.getByRole("link",{name:"Voir cette offre"}).first().click();
+ await expect(page).toHaveURL(new RegExp("kit-complet\\?recommande="+source));
+ const checkout=page.waitForResponse(r=>r.url().endsWith("/api/checkout"));
+ await page.getByRole("button",{name:/Payer.*2.?400.*MonCash/}).click();expect((await checkout).status()).toBe(502);
+ const orders=await(await request.get("http://127.0.0.1:54328/__offers-orders")).json();
+ expect(orders).toHaveLength(1);expect(orders[0].amount_htg).toBe(2400);
+ expect(orders[0].zabelie_recommendation_source_id).toBe(source);expect(orders[0].zabelie_offer_id).toBeNull();
+ expect(orders[0].zabelie_payment_is_live).toBe(false);expect(errors).toEqual([]);
+});
+test("seller choices take priority and disabling automatic suggestions keeps manual offers",async({page,request})=>{
+ await request.post("http://127.0.0.1:54328/__recommendations-history",{data:{enough:true}});
+ await connect(page);await page.request.put("/api/products/offers",{data:{productId:source,offers:{upsell:targets[0]}}});
+ await connect(page,false);await page.goto("/produit/kit-depart");
+ const offers=page.getByRole("region",{name:"À découvrir dans cette boutique"});
+ await expect(offers.locator("article")).toHaveCount(3);await expect(offers.getByText("Version supérieure",{exact:true})).toHaveCount(1);
+ await expect(offers.getByRole("heading",{name:"Kit complet",exact:true})).toHaveCount(1);
+ await connect(page);await page.goto("/vendre");
+ const editor=page.locator("details").filter({has:page.locator("summary",{hasText:"Offres associées"})}).first();
+ await editor.locator("summary").click();
+ await expect(editor.getByRole("checkbox",{name:"Autoriser les suggestions basées sur les achats"})).toBeChecked();
+ await editor.getByRole("checkbox",{name:"Autoriser les suggestions basées sur les achats"}).uncheck();
+ const saved=page.waitForResponse(r=>r.url().endsWith("/api/products/offers"));
+ await editor.getByRole("button",{name:"Enregistrer les offres"}).click();expect((await saved).status()).toBe(200);
+ await expect(editor.getByRole("status")).toHaveText("Offres enregistrées.");
+ await page.reload();await editor.locator("summary").click();
+ await expect(editor.getByRole("checkbox",{name:"Autoriser les suggestions basées sur les achats"})).not.toBeChecked();
+ await connect(page,false);await page.goto("/produit/kit-depart");
+ await expect(offers.locator("article")).toHaveCount(1);
+ await expect(offers.getByText("Également achetés dans cette boutique",{exact:true})).toHaveCount(0);
+});

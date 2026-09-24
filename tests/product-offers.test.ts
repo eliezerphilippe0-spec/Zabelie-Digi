@@ -1,3 +1,4 @@
+import { mergeOffers, recommendationAttribution, type PublicOffer } from "@/lib/product-offers";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseOfferSelection, eligibleOffer, offerHref, EMPTY_OFFERS } from "../lib/product-offers";
@@ -28,4 +29,18 @@ test("offer links stay on the marketplace and preserve attribution",()=>{
 test("every offer control is translated in all four marketplace languages",()=>{
   for(const lang of ["fr","ht","en","es"] as const) for(const value of Object.values(offerCopy(lang))) assert.ok(value.trim());
   assert.notEqual(offerCopy("ht").save,offerCopy("fr").save);
+});
+
+
+test("automatic suggestions fill only free slots without repeating seller choices",()=>{
+  const make=(target_product_id:string,origin?: "purchases"):PublicOffer=>({id:origin?null:target_product_id,source_product_id:id,origin,offer_kind:"cross_sell",target_product_id,title:"Produit",slug:"produit",price_htg:500,product_kind:KIND_FILE});
+  const manual=[make("a"),make("b")],automatic=[make("a","purchases"),make("c","purchases"),make("d","purchases")];
+  assert.deepEqual(mergeOffers(manual,automatic).map(o=>o.target_product_id),["a","b","c"]);
+  assert.equal(mergeOffers([],automatic).length,3);
+  assert.deepEqual(mergeOffers(manual,[]),manual);
+});
+test("automatic links use their source and malformed attribution is ignored",()=>{
+  assert.equal(offerHref({id:null,slug:"guide-kreyol",source_product_id:id,origin:"purchases"}),"/produit/guide-kreyol?recommande="+id);
+  assert.deepEqual(recommendationAttribution(id),{zabelie_recommendation_source_id:id});
+  for(const bad of [null,{},123,"../../other","bad-id"]) assert.deepEqual(recommendationAttribution(bad),{});
 });

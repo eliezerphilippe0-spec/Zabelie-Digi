@@ -1,3 +1,4 @@
+import { supportCopy } from "@/lib/support-copy";
 import { ProductOffers } from "@/components/product-offers";
 import { publicOffers } from "@/lib/product-offers-server";
 import { offerCopy } from "@/lib/product-offer-copy";
@@ -28,6 +29,8 @@ import { offreFlashActive } from "@/lib/flash";
 import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
 import { exigeNumero, operateurDuRayon } from "@/lib/rechaj";
+import { lireAgeMinimum } from "@/lib/age-minimum";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { AddToCart } from "@/components/add-to-cart";
 import { getPhysicalView } from "@/lib/products-physical";
 import { isStripeEnabled } from "@/lib/stripe";
@@ -200,7 +203,7 @@ export default async function ProductPage({
   params, searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ offre?: string }>;
+  searchParams: Promise<{ offre?: string; recommande?: string }>;
 }) {
   const { slug } = await params;
   const [product, lang] = await Promise.all([getProductView(slug), getLang()]);
@@ -225,6 +228,20 @@ export default async function ProductPage({
       : Promise.resolve(null),
   ]);
 
+  /* Âge minimum (0115) — lu en base par l'ascendance du rayon, jamais déduit
+   * du slug ici. Une lecture en échec rend 0 : la fiche n'affiche alors ni
+   * mention ni case, et c'est le checkout qui refuse (503, fail-closed). La
+   * fiche informe ; seul le serveur décide. */
+  let ageMinimum = 0;
+  if (isSupabaseConfigured() && product.sousRayonSlug !== null) {
+    try {
+      const lectureAge = await lireAgeMinimum(createAdminClient(), product.id, true);
+      ageMinimum = lectureAge.ok ? lectureAge.age : 0;
+    } catch (e) {
+      console.error("[fiche] age minimum illisible", { productId: product.id, e: String(e) });
+    }
+  }
+
   /* Qui regarde ? Uniquement pour décider du point d'entrée de la messagerie :
    * un vendeur ne s'écrit pas à lui-même, un visiteur non connecté doit se
    * connecter d'abord. Aucune donnée personnelle n'entre dans le rendu. */
@@ -233,7 +250,9 @@ export default async function ProductPage({
     : null;
   const estVendeur = visiteur?.id === product.creatorId;
   const relatedOffers = estVendeur ? [] : await publicOffers(product.id, visiteur?.id);
-  const offerParam = (await searchParams).offre;
+  const query = await searchParams;
+  const offerParam = query.offre;
+  const recommendationSource = typeof query.recommande === "string" && OFFER_UUID.test(query.recommande) ? query.recommande : undefined;
   const selectedOfferId = typeof offerParam === "string" && OFFER_UUID.test(offerParam) ? offerParam : undefined;
   const peutEcrire = Boolean(visiteur && product.creatorId) && !estVendeur;
   const connexionVendeur = `/connexion?next=${encodeURIComponent(`/produit/${product.slug}#contacter-vendeur`)}`;
@@ -286,6 +305,7 @@ export default async function ProductPage({
               couverture={coverUrlAt(product.coverUrl, COVER_WIDTHS.detail)}
               medias={medias.filter((m) => m.kind === "image").map((m) => m.url)}
               video={medias.find((m) => m.kind === "video")?.url ?? null}
+              videoLabel={t(lang, "product.video.seller")}
               alt={product.title}
             />
           ) : (
@@ -330,6 +350,12 @@ export default async function ProductPage({
           <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight">
             {product.title}
           </h1>
+          {ageMinimum > 0 && (
+            <p className="mt-3 inline-flex min-h-8 items-center gap-2 rounded-full border border-line px-3 text-sm font-semibold text-warning-text">
+              <span aria-hidden="true">{ageMinimum}+</span>
+              {t(lang, "age.badge").replace("{age}", String(ageMinimum))}
+            </p>
+          )}
           <p className="mt-3 whitespace-pre-line text-base leading-7 text-mist">{product.blurb}</p>
 
           {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
@@ -531,10 +557,17 @@ export default async function ProductPage({
               </section>
             )}
             {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
+            <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="achat-confiance">
+              <h2 id="achat-confiance" className="text-sm font-semibold">{supportCopy(lang).trustTitle}</h2>
+              <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustLocal}</p>
+              {commitmentApplicable && commitments?.get(product.id)?.fees !== "included" && <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustFees}</p>}
+              <Link href="/aide#probleme" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).trustReturn}</Link>
+            </section>
             <div className="mt-5">
               <BuyButton
                 key={product.id}
                 offerId={selectedOfferId}
+                recommendationSource={recommendationSource}
                 draftScope={visiteur?.id}
                 trustLabels={trustLabels}
                 recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {
@@ -582,6 +615,14 @@ export default async function ProductPage({
                           hint: t(lang, "rechaj.hint"),
                         },
                       }
+                    : undefined
+                }
+                /* Âge minimum (0115) : la case n'existe que pour une fiche
+                   restreinte. Le serveur relit le seuil et refuse sans elle —
+                   la masquer ne permet jamais de s'en passer. */
+                ageMinimum={
+                  ageMinimum > 0
+                    ? { age: ageMinimum, label: t(lang, "age.attest").replace("{age}", String(ageMinimum)) }
                     : undefined
                 }
                 errors={{

@@ -3,6 +3,7 @@
    bloquante vers Google Fonts — gain net sur 3G. */
 @import "tailwindcss";
 @import "./marketplace-header.css";
+@import "./editorial-marketplace.css";
 @import "./zabelie-theme.css"; /* SOURCE UNIQUE des design tokens */
 
 @layer base {

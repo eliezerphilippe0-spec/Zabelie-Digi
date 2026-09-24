@@ -1,3 +1,4 @@
+import { recommendationAttribution } from "@/lib/product-offers";
 import { offerAttribution } from "@/lib/product-offers-server";
 import { getKobaraAvailability } from "@/lib/payment-availability";
 import { cookies } from "next/headers";
@@ -11,7 +12,7 @@ import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDownloadable, isDigitalKind, isTrackedStockKind } from "@/lib/product-kind";
 import { createPayment, resolveMonCashMode } from "@/lib/moncash";
@@ -43,6 +44,7 @@ import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { offreFlashActive, flashEpuisee } from "@/lib/flash";
 import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 import { normaliserNumeroHaiti } from "@/lib/rechaj";
+import { attestationAgeValide, lireAgeMinimum } from "@/lib/age-minimum";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -101,6 +103,8 @@ export async function POST(req: Request) {
   let recipientInput: unknown;
   let providerInput: unknown;
   let offerInput: unknown;
+  let recommendationInput: unknown;
+  let ageAttestationInput: unknown;
   try {
     ({
       productId,
@@ -112,6 +116,8 @@ export async function POST(req: Request) {
       recipient: recipientInput,
       kobaraProvider: providerInput,
       offerId: offerInput,
+      recommendationSource: recommendationInput,
+      ageAttestation: ageAttestationInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -165,12 +171,8 @@ export async function POST(req: Request) {
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: t(lang, "api.suspended") },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   const admin = createAdminClient();
 
@@ -198,6 +200,9 @@ export async function POST(req: Request) {
   if (prodErr || !product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
+
+  const sellerRefusal = await requireActiveAccount(product.seller_id);
+  if (sellerRefusal) return sellerRefusal;
 
   const recipient = recipientInput == null ? null : normalizeRecipient(recipientInput);
   if (recipientInput != null && (!recipient || !isTrackedStockKind(product.kind))) {
@@ -231,6 +236,37 @@ export async function POST(req: Request) {
         );
       }
     }
+  }
+
+  /* ── ÂGE MINIMUM (0115) : l'attestation, AVANT que la commande existe ─────
+   *
+   * Décision porteur du 2026-09-23 : 18 ans pour le clairin. Le seuil est lu
+   * en base par l'ascendance du rayon, jamais déduit d'un slug ici. Même ordre
+   * que la recharge, pour la même raison : refuser après la création laisserait
+   * une commande `pending` orpheline à chaque case oubliée.
+   *
+   * Fail-closed : une base qui ne répond pas n'autorise pas la vente (503).
+   * L'attestation est une DÉCLARATION de l'acheteur ; la vérification réelle
+   * est celle du vendeur à la remise, pièce d'identité à l'appui (politique
+   * §9). Ce garde garantit que la question a été posée et la réponse gardée.
+   */
+  const lectureAge = await lireAgeMinimum(admin, product.id, Boolean(product.category_id));
+  if (!lectureAge.ok) {
+    return NextResponse.json(
+      { error: t(lang, "api.order.failed"), code: "age_indisponible" },
+      { status: 503, headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
+  const ageMinimum = lectureAge.age;
+  if (ageMinimum > 0 && !attestationAgeValide(ageAttestationInput)) {
+    return NextResponse.json(
+      {
+        error: t(lang, "api.age.required").replace("{age}", String(ageMinimum)),
+        code: "age_attestation_requise",
+        ageMinimum,
+      },
+      { status: 422 }
+    );
   }
 
   // BL-103 (FRONT-2) : on ne vend JAMAIS un fichier sans livrable. Les
@@ -456,13 +492,13 @@ export async function POST(req: Request) {
       buyer_id: user.id,
       product_id: product.id,
       ...offerAttribution(offerInput),
-      ...(source ? {
-        zabelie_sale_source: source,
-        zabelie_payment_is_live: rail === "moncash" ? resolveMonCashMode(process.env.MONCASH_MODE).mode === "production"
+      ...recommendationAttribution(recommendationInput),
+      ...(source ? { zabelie_sale_source: source } : {}),
+      // Le signal réel/sandbox ne dépend pas de l'activation de la tarification vendeur.
+      zabelie_payment_is_live: rail === "moncash" ? resolveMonCashMode(process.env.MONCASH_MODE).mode === "production"
           : rail === "kobara" ? getKobaraAvailability() === "production"
           : rail === "stripe" ? Boolean(process.env.STRIPE_SECRET_KEY?.trim().startsWith("sk_live_"))
           : isZelleEnabled(),
-      } : {}),
       amount_htg: finalPriceHtg, // prix remisé figé — tous les garde-fous s'y appliquent
       coupon_code: couponCode,
       coupon_id: couponId, // BL-133 : consommé par confirm_payment, pas ici
@@ -472,6 +508,9 @@ export async function POST(req: Request) {
     .select("id, amount_htg")
     .single();
 
+  if (orderErr?.code === "ZB112") {
+    return NextResponse.json({ error: t(lang, "api.product.notfound"), code: "seller_unavailable" }, { status: 409 });
+  }
   if (orderErr || !order) {
     return NextResponse.json(
       { error: t(lang, "api.order.failed") },
@@ -509,6 +548,28 @@ export async function POST(req: Request) {
       console.error("[checkout] cible rechaj refusée", {
         orderId: order.id,
         code: cibleErr.code,
+      });
+      return NextResponse.json(
+        { error: t(lang, "api.order.failed") },
+        { status: 500 }
+      );
+    }
+  }
+
+  /* L'attestation d'âge, AVANT le paiement et sans best-effort (0115).
+   *
+   * Une commande restreinte sans trace de l'attestation serait une vente dont
+   * personne ne peut dire que la question a été posée. Même traitement que la
+   * cible de recharge : l'échec retire la commande. */
+  if (ageMinimum > 0) {
+    const { error: ageErr } = await admin
+      .from("zabelie_order_age_attestations")
+      .insert({ order_id: order.id, age_minimum: ageMinimum });
+    if (ageErr) {
+      await admin.from("orders").delete().eq("id", order.id);
+      console.error("[checkout] attestation d'age refusee", {
+        orderId: order.id,
+        code: ageErr.code,
       });
       return NextResponse.json(
         { error: t(lang, "api.order.failed") },

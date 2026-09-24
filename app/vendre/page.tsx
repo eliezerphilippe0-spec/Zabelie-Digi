@@ -54,8 +54,10 @@ function Shell({
   lang,
   subtitle,
   taux,
+  marketing = false,
   pricing,
 }: {
+  marketing?: boolean;
   children: React.ReactNode;
   lang: Lang;
   subtitle?: string;
@@ -63,6 +65,29 @@ function Shell({
   taux: TauxCommission;
   pricing?: SellerPricing | null;
 }) {
+  if (marketing) return (
+    <div className="bg-grain min-h-dvh editorial-page">
+      <SiteNav />
+      <main id="main" className="seller-landing mx-auto max-w-6xl px-5">
+        <div className="seller-intro"><h1>{t(lang, "sell.landing.title")}</h1><p>{t(lang, "sell.landing.body")}</p></div>
+        <div className="seller-layout">
+          <section aria-labelledby="comment">
+            <h2 id="comment" className="scroll-mt-24">{t(lang, "home.how.sell")}</h2>
+            <ol className="seller-steps">{([
+              ["home.s1.t", "home.s1.b"], ["home.s2.t", "home.s2.b"], ["home.s3.t", "home.s3.b"],
+            ] as const).map(([title, body], index) => <li key={title}><span className="step-number" aria-hidden="true">0{index + 1}</span><div><h3>{t(lang, title)}</h3><p>{t(lang, body)}</p></div></li>)}</ol>
+            <div className="seller-physical"><p>{t(lang, "sell.physical.q")}</p><Link href="/vendre/physique" className="editorial-link">{t(lang, "sell.physical.cta")}<span aria-hidden="true">↗</span></Link></div>
+            <Link href={POLICY_PATH} className="editorial-link seller-policy">{t(lang, "policy.link")}</Link>
+          </section>
+          <aside className="seller-decision">
+            <CommissionAnnonce taux={taux} pricing={pricing} lang={lang} labels={{ title: t(lang, "sell.fee.title"), ligne: t(lang, "sell.fee.line"), exemple: t(lang, "sell.fee.example"), gratuit: t(lang, "sell.fee.free") }} />
+            <div className="seller-entry">{children}</div>
+          </aside>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
@@ -152,7 +177,7 @@ export default async function VendrePage() {
      * chemin du fichier de configuration ne l'aiderait pas, il n'y a pas accès. */
     signalerConfigAbsente("supabase", { ecran: "/vendre" });
     return (
-      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")}>
+      <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")} marketing>
         <div className="glass rounded-2xl p-6 text-sm text-mist">
           {t(lang, "sell.demo.body")}
         </div>
@@ -188,13 +213,9 @@ export default async function VendrePage() {
 
   if (!user) {
     return (
-      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} pricing={pricing}>
-        <Link
-          href="/connexion?next=/vendre"
-          className="inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-        >
-          {t(lang, "auth.signin.cta")}
-        </Link>
+      <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} pricing={pricing} marketing>
+        <Link href="/connexion?mode=signup&next=/vendre" className="editorial-button">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
+        <Link href="/connexion?next=/vendre" className="editorial-link">{t(lang, "sell.existing")}<span aria-hidden="true">→</span></Link>
       </Shell>
     );
   }
@@ -227,11 +248,12 @@ export default async function VendrePage() {
 
   const { data: mineRaw, error: mineError } = await supabase
     .from("products")
-    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, product_assets(id,file_name,size_bytes)")
+    .select("id, slug, title, status, kind, price_htg, description, cover_url, delivery_days, service_includes, zabelie_auto_recommendations, product_assets(id,file_name,size_bytes)")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
 
   type MineRow = Omit<ReadinessProduct, "product_assets"> & {
+    zabelie_auto_recommendations: boolean;
     id: string;
     slug: string;
     title: string;
@@ -472,7 +494,7 @@ export default async function VendrePage() {
                     const confirmed = { upsell: 0, cross_sell: 0, downsell: 0 };
                     for (const row of rows) { initial[row.offer_kind] = row.target_product_id; confirmed[row.offer_kind] = related.stats.get(row.id) ?? 0; }
                     const choices = Object.fromEntries(OFFER_KINDS.map(kind => [kind, mine.filter(target => eligibleOffer(p, target, kind)).map(target => ({ id: target.id, label: target.title + " · " + formatHTG(target.price_htg) }))])) as Record<OfferKind, { id: string; label: string }[]>;
-                    return <ProductOffersEditor key={p.id} productId={p.id} initial={initial} choices={choices} confirmed={confirmed} copy={offerText}/>;
+                    return <ProductOffersEditor key={p.id} productId={p.id} initial={initial} choices={choices} confirmed={confirmed} automatic={p.zabelie_auto_recommendations} automaticSales={related.recommendations?.get(p.id) ?? (related.recommendations ? 0 : null)} copy={offerText}/>;
                   })() : <p className="mt-4 text-sm text-mist">{offerText.unavailable}</p>}
                   <FlashManager
                     productId={p.id}

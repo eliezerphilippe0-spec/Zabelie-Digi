@@ -49,7 +49,7 @@ const EXCLUS = /app\/(admin|sw-desinstaller|api)(\/|$)/;
 
 function fichiersTsx(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {
-    const f = join(dir, e);
+    const f = join(dir, e).replace(/\\/g, "/");
     if (statSync(f).isDirectory()) {
       if (!EXCLUS.test(f) && e !== "node_modules") fichiersTsx(f, out);
     } else if (/\.tsx$/.test(e)) out.push(f);

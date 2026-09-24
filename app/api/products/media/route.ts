@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSuspension } from "@/lib/auth";
+import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   MAX_IMAGES_PER_PRODUCT,
   MEDIA_BUCKET,
+  bucketDuMedia,
   isMissingTable,
 } from "@/lib/product-media";
 
@@ -46,12 +47,8 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
-  if (await getSuspension(user.id)) {
-    return NextResponse.json(
-      { error: "Compte suspendu — action non autorisée." },
-      { status: 403 }
-    );
-  }
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let form: FormData;
   try {
@@ -163,7 +160,7 @@ export async function DELETE(req: Request) {
   // La ligne d'abord (elle porte le chemin), le stockage ensuite.
   const { data: media, error: readErr } = await admin
     .from("zabelie_product_media")
-    .select("id, storage_path")
+    .select("id, kind, storage_path")
     .eq("id", body.mediaId)
     .eq("product_id", product.id)
     .single();
@@ -179,7 +176,8 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Suppression échouée" }, { status: 500 });
   }
   // Best-effort : un objet orphelin au stockage est un déchet, pas une faille.
-  await admin.storage.from(MEDIA_BUCKET).remove([media.storage_path]);
+  // Le bucket se déduit du type : une vidéo vit dans `product-videos` (0120).
+  await admin.storage.from(bucketDuMedia(media.kind)).remove([media.storage_path]);
 
   return NextResponse.json({ ok: true });
 }

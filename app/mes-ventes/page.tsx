@@ -1,3 +1,4 @@
+import { supportCopy } from "@/lib/support-copy";
 import { RecipientDetails } from "@/components/recipient-details";
 import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
@@ -166,6 +167,7 @@ export default async function MesVentesPage() {
 
   return (
     <Shell lang={lang}>
+      <Link href="/assistance" className="mt-4 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).cases}</Link>
       {ventes.length === 0 ? (
         <p className="mt-6 text-sm text-mist">{t(lang, "sales.empty")}</p>
       ) : (
@@ -256,6 +258,7 @@ export default async function MesVentesPage() {
               </div>
 
               <div className="shrink-0">
+                <Link href={`/assistance/commande/${v.order_id}`} className="mb-2 flex min-h-11 items-center text-sm underline">{supportCopy(lang).helpLink}</Link>
                 {v.status === "awaiting_shipment" ? (
                   <FulfillmentAction
                     orderId={v.order_id}

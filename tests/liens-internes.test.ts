@@ -31,7 +31,7 @@ function routesExistantes(): string[] {
   const out: string[] = [];
   const parcourir = (d: string) => {
     for (const n of readdirSync(d)) {
-      const p = join(d, n);
+      const p = join(d, n).replace(/\\/g, "/");
       if (statSync(p).isDirectory()) parcourir(p);
       else if (n === "page.tsx") {
         const r = "/" + p.replace(/^app\/?/, "").replace(/\/?page\.tsx$/, "");
@@ -112,7 +112,7 @@ const liens = new Map<string, string>(); // lien → premier fichier qui le port
 for (const racine of RACINES_LIENS) {
   const parcourir = (d: string) => {
     for (const n of readdirSync(d)) {
-      const p = join(d, n);
+      const p = join(d, n).replace(/\\/g, "/");
       if (statSync(p).isDirectory()) parcourir(p);
       else if (/\.tsx?$/.test(p)) {
         for (const l of liensDuFichier(readFileSync(p, "utf8"))) {

@@ -109,7 +109,7 @@ test("les deux routes de retour passent par siteOrigin — et aucune autre ne re
   while (pile.length) {
     const d = pile.pop()!;
     for (const e of readdirSync(d)) {
-      const p = join(d, e);
+      const p = join(d, e).replace(/\\/g, "/");
       if (statSync(p).isDirectory()) {
         if (e !== "node_modules" && e !== ".next") pile.push(p);
       } else if (/\.(ts|tsx)$/.test(e)) vus.push(p);
