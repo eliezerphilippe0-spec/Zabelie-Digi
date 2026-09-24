@@ -16,7 +16,7 @@ n'a encore été fait.
 |---|---|---|---|
 | Adresse de base | VÉRIFIÉ | `https://api.higgsfield.ai` | docs « How the API works » (copiée le 2026-09-23) |
 | Cycle de requête | VÉRIFIÉ | asynchrone : soumettre du JSON à l'endpoint du modèle → garder `request_id` → interroger `status_url` **ou** attendre un webhook → télécharger quand l'état vaut `completed` | idem |
-| Authentification | partiel | côté serveur uniquement ; **format de l'en-tête NON VÉRIFIÉ** (page `/docs/authentication` pas encore lue) | idem |
+| Authentification | VÉRIFIÉ | côté serveur uniquement ; en-tête `Authorization: Key ${HF_API_KEY_ID}:${HF_API_KEY_SECRET}` | exemple `curl` de la page « Marketing Studio Image — 2.0 Alpha API » (copiée le 2026-09-24) |
 | États possibles, annulation, **conservation** | NON VÉRIFIÉ | page `/docs/concepts/requests` à lire | — |
 | Erreurs, 429 | NON VÉRIFIÉ | page `/docs/concepts/errors` à lire | — |
 | Webhooks | NON VÉRIFIÉ | page `/docs/how-to/webhooks` à lire | — |
@@ -45,22 +45,53 @@ pas un tarif contractuel.
 
 | Version | Endpoint | Statut |
 |---|---|---|
-| 2.0 Alpha — « generate and edit » | `POST /marketing-studio/image` | endpoint VÉRIFIÉ ; champs NON VÉRIFIÉS |
+| 2.0 Alpha — « generate and edit » | `POST /marketing-studio/image` | endpoint et champs VÉRIFIÉS (§3.1) |
 | 2.5 Flare | `POST /marketing-studio/image/flare` | endpoint VÉRIFIÉ ; champs NON VÉRIFIÉS |
 | 2.5 Sunburst | `POST /marketing-studio/image/sunburst` | endpoint VÉRIFIÉ ; champs NON VÉRIFIÉS |
 
-Il existe aussi une liste de **presets** (« List Marketing Studio presets »,
-rattachée à 2.0 Alpha) : non lue.
+### 3.1 2.0 Alpha — schéma d'entrée
 
-⚠️ « Alpha » laisse penser à une **préversion** : à confirmer sur sa page avant
-de s'y engager en production.
+Source : page « Marketing Studio Image — 2.0 Alpha API », copiée par le porteur
+le 2026-09-24. La page parle de « current production mappings » ; « Alpha »
+reste dans le nom, et l'accès avec le compte du porteur n'est pas encore vérifié.
 
-**Critère éliminatoire, NON VÉRIFIÉ à ce jour :** accepter la **photo du
-produit** en entrée (« edit »). Sans lui, pas de fidélité au produit, donc pas de
-Studio (R-STUDIO-01, priorité n°1).
+| Champ | Valeurs | Défaut |
+|---|---|---|
+| `prompt` (obligatoire) | texte, 1 à 5 000 caractères | — |
+| `image_urls` | 0 à 16 URL (JPEG, PNG, WebP) | aucune → texte vers image |
+| `enhance_prompt` | booléen | `false` |
+| `preset_id` | uuid d'un preset existant | — |
+| `quality` | `low` · `medium` · `high` | `high` |
+| `resolution` | `1k` · `2k` · `4k` | `2k` |
+| `aspect_ratio` | `auto` · `1:1` · `3:2` · `2:3` · `4:3` · `3:4` · `16:9` · `9:16` · `21:9` | — |
+| `moderation` | `auto` · `low` | — |
 
-Critères suivants, NON VÉRIFIÉS : prompt négatif · ratios `1:1`, `4:5`, `9:16` ·
-possibilité d'**empêcher le texte dans l'image** · idempotence.
+`additionalProperties: false` : un champ inconnu est refusé, jamais ignoré.
+
+Règles d'usage de la page :
+* **sans** `enhance_prompt` : jusqu'à 16 images, pour **éditer** ;
+* **avec** `enhance_prompt=true` : `preset_id` obligatoire, 1 ou 2 images
+  (produit en premier, personne ou mannequin en second), et la qualité doit
+  valoir `high`.
+
+Presets : `GET /marketing-studio/image/presets`, avec les paramètres `search`,
+`size` (≤ 100) et `cursor`.
+
+Réponse : `{"status":"queued","request_id","status_url","cancel_url"}`, puis,
+une fois terminé, `{"status":"completed","request_id","images":[{"url"}]}`.
+**Il existe une annulation** (`cancel_url`).
+
+### 3.2 Confrontation à R-STUDIO-01
+
+| Critère | Verdict | Conséquence |
+|---|---|---|
+| **Photo du produit en entrée** (éliminatoire) | ✅ **REMPLI** — `image_urls`, mode édition | le Studio est faisable sur ce modèle |
+| Prompt négatif | ❌ **aucun champ** | les 7 exclusions de `NEGATIF_SYSTEMATIQUE` doivent passer en **contraintes écrites dans le prompt positif** (« no text, no logo… ») — moins sûr, à mesurer |
+| Ratio `4:5` | ❌ **absent** | le plus proche est `3:4` ; `1:1` et `9:16` existent. À arbitrer : `3:4` ou recadrage côté Zabelie |
+| Empêcher le texte dans l'image | ❌ aucun paramètre | idem prompt négatif : consigne dans le prompt, et contrôle a posteriori |
+| `enhance_prompt` / presets | ⚠️ **réécrit le prompt** | contraire au contrôle voulu par R-STUDIO-01 (aucun texte libre, exclusions) → **rester à `enhance_prompt=false`** tant qu'aucune mesure ne dit le contraire |
+| Idempotence | NON VÉRIFIÉ | aucune clé visible sur cette page ; à chercher dans `/docs/concepts/requests` |
+| `moderation` | à arbitrer | recommandation : `auto` (la valeur la plus stricte des deux) |
 
 ## 4. Vidéo — hors périmètre v1, prix relevés pour mémoire
 
@@ -74,14 +105,13 @@ chantier distinct.
 
 `lib/creative/providers/creative.ts` suppose : soumission → référence
 fournisseur → sondage borné jusqu'à un état final. **Compatible** avec le cycle
-vérifié au §1 (`request_id` ↔ `providerRef`, `status_url` ↔ `status()`). Écarts
+vérifié au §1 (`request_id` ↔ `providerRef`, `status_url` ↔ `status()`, `cancel_url` disponible pour un délai dépassé). Écarts
 à trancher une fois la page `requests` lue : noms exacts des états, et si
 Higgsfield offre une clé d'idempotence (sinon, l'idempotence reste gardée côté
 Zabelie par le journal, Phase 3).
 
 ## 6. Reste à lire, dans l'ordre
 
-1. `/docs/models/marketing-studio-image/generate-and-edit.md` (2.0 Alpha)
-2. `/docs/models/marketing-studio-image/flare.md` et `sunburst.md`
-3. `/docs/authentication.md`
-4. `/docs/concepts/requests.md`, `errors.md`, `how-to/webhooks.md`
+1. `/docs/models/marketing-studio-image/flare.md` et `sunburst.md` (négatif ? `4:5` ?)
+2. `/docs/concepts/requests.md` : états exacts, **conservation des images**, idempotence
+3. `/docs/concepts/errors.md` (429), `/docs/how-to/webhooks.md`
