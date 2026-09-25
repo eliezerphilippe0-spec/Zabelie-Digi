@@ -1,5 +1,7 @@
 # Agent de supervision Zabelie + Jev (v1)
 
+> ⏸️ Sur demande du porteur, le déclenchement planifié de `.github/workflows/jev-supervision.yml` est retiré : sans clé TypeSafe ni variable `JEV_SUPERVISION_ENABLED`, il échouait quatre fois par jour en rapportant « inactive ». Le lancement manuel reste possible (et échoue toujours bruyamment tant que rien n'est configuré). Réactiver : poser la clé et la variable, puis rétablir le bloc `schedule` commenté dans le workflow et la vérification du cron dans `tests/jev-supervisor.test.ts`.
+
 Cet agent **observe, évalue et propose**. Il ne corrige pas le code, ne déploie
 pas et ne modifie aucune donnée métier. Le connecteur de support `/api/admin/jev`
 reste indépendant : lui envoyer un message ne lance pas ce superviseur.

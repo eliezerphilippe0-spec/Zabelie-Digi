@@ -253,7 +253,11 @@ test("la bannière d’inactivité ne s’affiche QUE sur un rapport inactif", a
 
 test("workflow : activation explicite, main uniquement, jeton lecture seule, zéro installation avec secrets", () => {
   const src = readFileSync(".github/workflows/jev-supervision.yml", "utf8");
-  assert.match(src, /cron: "17 \* \* \* \*"/);
+  // EN VEILLE (2026-09-25, demande porteur) : aucun déclenchement planifié
+  // actif, lancement manuel conservé. Réactiver = rétablir `schedule:` et
+  // remplacer ces deux lignes par la vérification du cron.
+  assert.doesNotMatch(src.replace(/^\s*#.*$/gm, ""), /schedule:/);
+  assert.match(src, /^  workflow_dispatch:$/m);
   assert.match(src, /github.ref == 'refs\/heads\/main'/);
   // L’activation ne doit PAS garder le job : un `skipped` passe pour un vert.
   // Elle est lue par le script, qui rapporte « inactive » et sort en échec.
