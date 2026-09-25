@@ -2,9 +2,14 @@ name: Zabelie - Supervision Jev
 
 on:
   workflow_dispatch:
-  schedule:
-    # Off-peak minute; GitHub schedules are best-effort, not a real-time SLA.
-    - cron: "17 * * * *"
+  # EN VEILLE depuis le 2026-09-25, sur demande du porteur (« mets la
+  # supervision Jev en veille ») : sans clé TypeSafe ni variable
+  # JEV_SUPERVISION_ENABLED, chaque passage planifié échouait (« inactive »),
+  # quatre fois par jour. Le lancement MANUEL reste possible, et échoue
+  # toujours bruyamment tant que rien n'est configuré.
+  # Pour réactiver : poser la clé et la variable, puis rétablir ces lignes —
+  #   schedule:
+  #     - cron: "17 * * * *"
 
 # No repository writes, PR creation, deployments or database credentials.
 permissions:
