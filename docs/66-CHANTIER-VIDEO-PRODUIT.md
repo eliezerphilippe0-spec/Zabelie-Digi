@@ -100,6 +100,40 @@ Bloquants, en plus du §4 :
    engagement : **une UGC IA sans kreyòl ne vaut sans doute pas son prix.**
 3. Le prix : voix et personnage coûteront plus que les 0,18 $ du §2.
 
+#### Relevé du 2026-09-25 — connecteur Higgsfield, lecture seule, 0 crédit
+
+Consulté par le connecteur MCP Higgsfield (`models_explore`, `list_voices`,
+workflow `ugc-review-video`). **Aucune génération lancée.**
+
+* **Bloquant 1 — levé.** Le modèle existe : **Seedance 2.5** (`seedance_2_5`)
+  en mode `omni_reference` produit un personnage face caméra **qui parle, avec
+  sa voix native** (`generate_audio: true`). Il prend la photo produit comme
+  référence. Durée de 4 à 30 s, 9:16, jusqu'à 1080p. Le workflow UGC de
+  Higgsfield est construit dessus. `marketing_studio_video` (12–15 s, avatars)
+  existe aussi.
+* **Le workflow de Higgsfield impose déjà nos règles** : pas de faux
+  témoignage (« a generated creator is a host or demonstrator, never a real
+  customer »), seules les allégations fournies mot pour mot, et une mention
+  « contenu sponsorisé / démo » à la publication. C'est le §1 et la mention
+  « kontni IA », du côté du fournisseur.
+* **Bloquant 2 — NON levé, et plutôt défavorable.**
+  * Aucune liste de langues n'est publiée pour Seedance 2.5.
+  * Le workflow parle **anglais par défaut** (« English speech with an
+    American accent unless explicitly changed »).
+  * Les moteurs de synthèse vocale qui publient leurs langues n'ont **pas le
+    kreyòl** : Qwen (zh, en, fr, de, ja, ko, ru, pt, th, id, vi, it, ms) et
+    Inworld (fr oui, ht non).
+  * Les voix préréglées (plus de 120) ne portent aucun attribut de langue.
+  * Le **français** est disponible. Le **kreyòl** n'est prouvé nulle part.
+  * Le workflow note lui-même que l'accent imposé par le seul texte « ne prend
+    qu'une fois sur trois ». Il faut un **échantillon audio de 5 à 10 s** en
+    référence.
+* **Ce qui trancherait**, et coûte des crédits (donc à autoriser) : **une**
+  génération Seedance 2.5 de 5 s, avec un texte kreyòl court et un échantillon
+  de voix kreyòl en référence. Un locuteur l'écoute : compréhensible et naturel,
+  ou non. Tant que ce n'est pas fait, la voie A reste gelée sur le kreyòl ; une
+  version **française** seule est possible mais rate le public du §6.1.
+
 ### 6.2 Voie B — vraie UGC, filmée par de vrais gens
 
 Mesuré en production le 2026-09-24 : **0 avis, 0 commande payée** (15
