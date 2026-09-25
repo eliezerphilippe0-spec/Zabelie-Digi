@@ -134,6 +134,33 @@ workflow `ugc-review-video`). **Aucune génération lancée.**
   ou non. Tant que ce n'est pas fait, la voie A reste gelée sur le kreyòl ; une
   version **française** seule est possible mais rate le public du §6.1.
 
+#### Essai du 2026-09-25 — le kreyòl passe, avec réserve
+
+Autorisé par le porteur (« oui lance le test de 5s »). Le compte Higgsfield
+n'avait que 10 crédits, alors que Seedance 2.5 en coûte 35 (et 12 même en
+480p sur 4 s). Le porteur a choisi **Wan 2.7** (`wan2_7`) : 5 s, 9:16, 720p,
+**7,5 crédits**, texte seul, sans échantillon de voix. Réplique demandée :
+« Bonjou tout moun! Sa se yon tès pou Zabelie. Mwen pale kreyòl ayisyen. »
+
+**Verdict du porteur, locuteur kreyòl** : *c'est du kreyòl, plutôt naturel et
+compréhensible.* Mais **« kreyòl » et « ayisyen » sont mal prononcés**, peut-être
+faute de temps (trois phrases en 5 s).
+
+Ce que ça établit, et pas plus :
+
+* **Le bloquant 2 tombe en principe.** Une IA vidéo de Higgsfield produit du
+  kreyòl reconnaissable, sur un seul essai, sans échantillon audio.
+* **Pas pour Seedance 2.5**, le modèle retenu au §6.1 : il reste non essayé.
+* **Les mots propres au kreyòl sont le point faible**, justement ceux qui
+  identifient la langue. Pistes, non éprouvées :
+  * moins de mots par seconde (le workflow Higgsfield vise 12 à 20 mots pour
+    10 s ; l'essai en portait 13 pour 5 s) ;
+  * un échantillon de voix kreyòl de 5 à 10 s en référence ;
+  * éviter en fin de phrase les mots à prononciation difficile.
+* **Un seul essai n'est pas une mesure.** Le prochain, sur Seedance 2.5, avec
+  un débit réduit et un échantillon de voix, dira si le défaut est le temps ou
+  le modèle. Il demande une recharge de crédits (≥ 35).
+
 ### 6.2 Voie B — vraie UGC, filmée par de vrais gens
 
 Mesuré en production le 2026-09-24 : **0 avis, 0 commande payée** (15
