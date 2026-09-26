@@ -399,6 +399,10 @@ en forme de bouton visible :
   vouloir dire « la sonde ne voit rien ».
 - **Aucun lien en forme de bouton sans `.bouton`** trouvé à l'exécution sur
   ces six pages : le contrôle statique et le rendu disent la même chose.
+- **Octets de police : inchangés**, mesuré — 76 664 sur les six pages, avec
+  `.bouton` et sans (classe neutralisée avant tout rendu) : les deux mêmes
+  fichiers préchargés. Manrope l'était déjà partout, pour les titres et les
+  boutons.
 - Le moteur nomme la police « Manrope ExtraLight » : c'est le nom de
   l'instance par défaut du fichier variable (axe `wght` 200 → 800, défaut
   200). La graisse dessinée est celle du style calculé.
