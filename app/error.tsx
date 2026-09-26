@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LANG_COOKIE, isLang, type Lang } from "@/lib/i18n";
 import { errLabels } from "@/lib/i18n-erreur";
+import { estEchecDeChargement, rechargerUneFois, stockageSession } from "@/lib/rechargement-chunk";
 
 /**
  * Frontière d'erreur globale. Composant CLIENT — Next.js l'exige.
@@ -49,6 +50,14 @@ export default function GlobalError({
     console.error("[zabelie] frontière d'erreur", error.digest ?? "", error);
   }, [error]);
 
+  // Fichier de l'application introuvable ou coupé (déploiement, 3G) : `reset()`
+  // re-rendrait avec les MÊMES fichiers. Un rechargement, une seule fois
+  // (lib/rechargement-chunk.ts).
+  const echecDeChargement = estEchecDeChargement(error);
+  useEffect(() => {
+    if (echecDeChargement) rechargerUneFois(stockageSession(), Date.now(), () => window.location.reload());
+  }, [echecDeChargement]);
+
   const l = errLabels(lang);
 
   return (
@@ -69,7 +78,7 @@ export default function GlobalError({
         <div className="mt-8 flex flex-col gap-3">
           <button
             type="button"
-            onClick={reset}
+            onClick={echecDeChargement ? () => window.location.reload() : reset}
             className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
           >
             {l.retry}
