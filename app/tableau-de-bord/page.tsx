@@ -710,7 +710,7 @@ export default async function DashboardPage({
                      Et il dit ce qui manque — c'est la première chose qu'un
                      acheteur remarquera. */
                   <span
-                    className="grid h-12 w-12 place-items-center rounded-lg border border-line bg-ink/40 text-[10px] leading-tight text-mist"
+                    className="grid h-12 w-12 place-items-center rounded-lg border border-line bg-ink/40 text-xs leading-tight text-mist"
                     title="Aucune photo"
                   >
                     ⊘

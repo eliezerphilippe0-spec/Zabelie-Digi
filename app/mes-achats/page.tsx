@@ -199,12 +199,12 @@ export default async function MesAchatsPage({ searchParams }: {
       <div className="mt-1 flex flex-col items-end gap-1">
         <span className="text-xs text-mist">{t(lg, cleEtatRemise(suivi.status))}</span>
         {suivi.shipment_note && (
-          <span className="max-w-xs text-right text-[11px] text-mist">
+          <span className="max-w-xs text-right text-xs text-mist">
             {t(lg, "ship.note", { note: suivi.shipment_note })}
           </span>
         )}
         {echeance && (
-          <span className="max-w-xs text-right text-[11px] text-mist">
+          <span className="max-w-xs text-right text-xs text-mist">
             {t(lg, "ship.deadline", { date: echeance })}
           </span>
         )}
