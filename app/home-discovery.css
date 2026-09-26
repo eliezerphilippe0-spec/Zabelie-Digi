@@ -83,12 +83,12 @@
      rangée) passent devant ; le reste suit dans l'ordre du document. Tous les
      blocs s'espacent par padding : rien ne dépend de la fusion des marges, que
      le flex supprime. `width: 100%` parce qu'un `mx-auto` en colonne flex se
-     réduirait à son contenu. La carte vedette disparaît : elle répète un
-     produit de la rangée, qui est désormais juste en dessous. */
+     réduirait à son contenu. La carte vedette RESTE : `allocateHomeRows`
+     l'exclut de toutes les rangées, la masquer retirerait ce produit de
+     l'accueil mobile (tests/home-premier-ecran P3). */
   .home-discovery #main { display: flex; flex-direction: column; }
   .home-discovery #main > * { width: 100%; }
   .home-discovery #main > .home-premier-ecran { order: -1; }
-  .home-hero .home-featured { display: none; }
   .home-discovery .home-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px; }
   .home-kicker { margin-bottom: 12px; }
   .home-headline { font-size: 31px; max-width: 19ch; }

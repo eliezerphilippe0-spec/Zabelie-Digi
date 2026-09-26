@@ -64,22 +64,31 @@ en 375 × 812. Ce qui passait devant : en-tête 167 px (A2 visait ≤ 100),
 
 Choix fait par délégation (« fait le meilleur choix ») : **mobile seulement**,
 la première rangée passe juste sous la bannière, avant la confiance et
-« Eksplore òf yo » ; la carte vedette est masquée (elle répète un produit de
-la rangée). L'ordre du document ne change pas ; en-tête, bandeau des
+« Eksplore òf yo ». L'ordre du document ne change pas ; en-tête, bandeau des
 paiements et ordinateur non touchés.
 
-| Écran | Première carte, avant | Après |
+⚠️ **Première version fausse, corrigée avant fusion.** Elle masquait aussi la
+carte vedette sur mobile, en la croyant redondante avec la rangée. C'est faux :
+`allocateHomeRows` exclut le produit vedette de toutes les rangées — masqué, il
+disparaissait de l'accueil mobile. L'e2e `decouverte-sans-doublons` l'a révélé
+en CI ; reproduit localement (390 px rouge, 1 440 vert), puis corrigé.
+`tests/home-premier-ecran.test.ts` P3 interdit désormais ce masquage.
+
+| Écran | Première carte de la rangée, avant | Après |
 |---|---|---|
-| 375 × 812 | y = 1 055 | **y = 684** (128 px de carte visibles) |
-| 390 × 844 | y = 1 013 | **y = 641** (203 px visibles) |
+| 375 × 812 | y = 1 055 | y = 869 (toujours sous l'écran) |
+| 390 × 844 | y = 1 013 | y = 827 (17 px visibles) |
 | 1 440 × 900 | y = 939 | y = 939 (identique, bloc par bloc) |
 
-⚠️ **A1 reste partiel** : les cartes font ~350 px de haut, la rangée
-**entière** ne tiendra pas sous 812 tant que l'en-tête (167) et le bandeau des
-paiements (119) occupent 286 px. Sur ordinateur, la première carte commence
-aussi sous l'écran (y = 939 sur 900). Ces deux leviers restent au porteur.
-Captures : `a1-2026-09-26/avant-390.png`, `a1-2026-09-26/apres-390.png`.
-Garde : `tests/home-premier-ecran.test.ts` (six mutations, six rouges).
+Dans les deux cas, **un produit est visible au premier écran : la carte
+vedette** (y = 568 → 729 en 375 × 812), comme avant ce lot. Le gain réel est
+donc modeste : la rangée remonte de 186 px, juste sous la bannière.
+
+⚠️ **A1 reste non tenu pour la rangée.** Les cartes font ~350 px de haut ;
+en-tête (167) et bandeau des paiements (119) occupent 286 px. Sur ordinateur
+aussi, la rangée commence sous l'écran (y = 939 sur 900). Ces leviers restent
+au porteur. Captures : `a1-2026-09-26/avant-390.png`,
+`a1-2026-09-26/apres-390.png`.
 
 ## Avant / après
 

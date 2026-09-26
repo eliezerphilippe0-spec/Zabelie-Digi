@@ -9,9 +9,13 @@ import { readFileSync } from "node:fs";
  * commençait à y = 1 055 en 375 × 812 — en-tête, état des paiements, bannière
  * avec carte vedette, barre de confiance et « Eksplore òf yo » passaient devant.
  * Sur mobile, trois blocs marqués `.home-premier-ecran` (état des paiements,
- * bannière, première rangée) passent devant le reste ; la carte vedette, qui
- * répète un produit de la rangée, est masquée. Après : y = 684. L'ordre du
- * DOCUMENT ne bouge pas (lecteurs d'écran, ordinateur, test S8).
+ * bannière, première rangée) passent devant le reste. L'ordre du DOCUMENT ne
+ * bouge pas (lecteurs d'écran, ordinateur, test S8).
+ *
+ * ⚠️ La carte vedette n'est PAS masquée. Une première version le faisait, en
+ * la croyant redondante avec la rangée : c'était faux — `allocateHomeRows`
+ * l'exclut de toutes les rangées. Masquée, ce produit disparaissait de
+ * l'accueil mobile ; c'est l'e2e `decouverte-sans-doublons` qui l'a révélé.
  */
 
 const page = readFileSync("app/page.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
@@ -40,7 +44,12 @@ test("P2 — les règles qui remontent la rangée vivent DANS la requête mobile
   assert.match(m, /\.home-discovery #main\s*\{\s*display:\s*flex;\s*flex-direction:\s*column;\s*\}/);
   assert.match(m, /\.home-discovery #main > \*\s*\{\s*width:\s*100%;\s*\}/, "sans largeur, un `mx-auto` en colonne flex se réduit à son contenu");
   assert.match(m, /\.home-discovery #main > \.home-premier-ecran\s*\{\s*order:\s*-1;\s*\}/);
-  assert.match(m, /\.home-hero \.home-featured\s*\{\s*display:\s*none;\s*\}/);
   const horsMobile = css.replace(m, "");
   assert.doesNotMatch(horsMobile, /\.home-premier-ecran|#main\b/, "une règle du premier écran hors de la requête mobile toucherait l'ordinateur");
+});
+
+test("P3 — la carte vedette n'est masquée nulle part : son produit n'est dans aucune rangée", () => {
+  const src = readFileSync("app/page.tsx", "utf8");
+  assert.match(src, /allocateHomeRows\([\s\S]{0,900}\], featured \? \[featured\.id\] : \[\]\)/, "le produit vedette est exclu des rangées");
+  assert.doesNotMatch(css, /\.home-featured[^{]*\{[^}]*display:\s*none/, "masquer la carte vedette retirerait son produit de l'accueil");
 });
