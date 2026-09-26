@@ -38,7 +38,7 @@ export default async function PanierPage() {
         <p className="mt-4 text-sm text-mist">{t(lang, "purchases.login.b")}</p>
         <Link
           href={`/connexion?next=${encodeURIComponent("/panier")}`}
-          className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           {t(lang, "nav.login")}
         </Link>
@@ -114,7 +114,7 @@ export default async function PanierPage() {
           <p className="text-sm text-mist">{t(lang, "cart.empty")}</p>
           <Link
             href="/catalogue"
-            className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+            className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
           >
             {t(lang, "nav.catalog")}
           </Link>
@@ -165,7 +165,7 @@ export default async function PanierPage() {
                     <span className="numeric shrink-0 font-bold text-cloud">
                       {formatHTG(l.product!.price_htg)}
                     </span>
-                    <Link href={`/produit/${l.product!.slug}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
+                    <Link href={`/produit/${l.product!.slug}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
                     {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
                     <RemoveFromCart
                       productId={l.product_id}

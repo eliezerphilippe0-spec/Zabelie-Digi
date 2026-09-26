@@ -62,7 +62,7 @@ function AlerteFile({ etat }: { etat: EtatFile }) {
 function PiedFile({ etat, href }: { etat: EtatFile; href: (p: number) => string }) {
   if (etat.pages <= 1) return null;
   const lien =
-    "inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50";
+    "inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 bouton";
   return (
     <nav className="mt-4 flex items-center justify-center gap-3">
       {etat.page > 1 ? (

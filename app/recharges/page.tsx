@@ -33,9 +33,9 @@ export default async function RechargesPage() {
           <h2 className="text-2xl">{t(lang, "recharges.phone")}</h2>
           <p className="mt-3 text-mist">{t(lang, "recharges.phone.body")}</p>
           <p className="mt-6 font-semibold">{enabled ? trustLabels.topupReady : availability === "sandbox" ? trustLabels.topupTest : trustLabels.topupClosed}</p>
-          {enabled ? <Link href="/rechaj" className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "recharges.open")}</Link> : <>
+          {enabled ? <Link href="/rechaj" className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "recharges.open")}</Link> : <>
             <p className="mt-2 text-sm leading-relaxed text-mist">{trustLabels.topupWhy}</p>
-            <Link href="/catalogue" className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
+            <Link href="/catalogue" className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
           </>}
         </section>
         <div className="divide-y divide-line">

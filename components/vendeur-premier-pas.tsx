@@ -68,7 +68,7 @@ export function VendeurPremierPas({
       <Link
         href={wa ?? href}
         {...(wa ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-        className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand transition hover:opacity-90"
+        className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand transition hover:opacity-90"
       >
         {labels.cta}
       </Link>

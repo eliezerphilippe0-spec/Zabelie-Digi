@@ -106,7 +106,7 @@ export default async function MesAchatsPage({ searchParams }: {
         <p className="mt-4 text-sm text-mist">{t(langAnon, "purchases.login.b")}</p>
         <Link
           href={`/connexion?next=${encodeURIComponent(purchaseHref(view, page))}`}
-          className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           {t(langAnon, "nav.login")}
         </Link>
@@ -277,7 +277,7 @@ export default async function MesAchatsPage({ searchParams }: {
                 </div>
                 <div className="flex flex-col items-start gap-3 sm:items-end">
                   {confirmed && (o.product && isDownloadable(o.product.kind) ? (
-                    <Link href={`/mes-achats/${o.id}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2 font-semibold text-on-brand">{t(lang, "studio.open")}</Link>
+                    <Link href={`/mes-achats/${o.id}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2 font-semibold text-on-brand">{t(lang, "studio.open")}</Link>
                   ) : suivis.has(o.id) ? blocRemise(suivis.get(o.id), lang) : remiseLabel(o.product?.kind, lang) && (
                     <span className="text-sm text-mist">{remiseLabel(o.product?.kind, lang)}</span>
                   ))}

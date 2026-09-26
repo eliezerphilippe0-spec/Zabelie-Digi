@@ -35,7 +35,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
       </article>
       <aside className="rounded-2xl border border-line bg-surface p-5 lg:sticky lg:top-28">
         <h2 className="font-bold">{t(lang, "guides.related")}</h2>
-        <Link href={guide.catalogue} className="mt-4 flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
+        <Link href={guide.catalogue} className="bouton mt-4 flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
         <Link href="/mes-achats" className="mt-3 flex min-h-11 items-center text-sm underline">{t(lang, "purchases.title")}</Link>
         <Link href="/aide" className="flex min-h-11 items-center text-sm underline">{t(lang, "nav.help")}</Link>
         <nav aria-label={t(lang, "guides.languages")} className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">{LANGS.map((l) => <Link key={l} href={guideHref(l, guide.slug)} hrefLang={l} lang={l} aria-current={l === lang ? "page" : undefined} className="inline-flex min-h-11 items-center text-sm underline">{l.toUpperCase()}</Link>)}</nav>

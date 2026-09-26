@@ -76,7 +76,7 @@ export default function GlobalError({
           </button>
           <Link
             href="/"
-            className="rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
+            className="bouton rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
           >
             {l.home}
           </Link>

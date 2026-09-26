@@ -43,7 +43,7 @@ export function AccountActions() {
       <div className="flex flex-wrap items-center gap-3">
         <a
           href="/api/account/export"
-          className="rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent"
+          className="bouton rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent"
         >
           Exporter mes données
         </a>

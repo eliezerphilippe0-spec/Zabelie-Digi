@@ -273,7 +273,7 @@ export default async function HomePage() {
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
               <Link href={catalogue === null ? "/" : "/aide#comment"} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
-              {catalogue !== null && <Link href="/vendre" className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 font-semibold hover:border-accent">{t(lang, "home.cta.sell")}</Link>}
+              {catalogue !== null && <Link href="/vendre" className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 font-semibold hover:border-accent">{t(lang, "home.cta.sell")}</Link>}
             </div>
           </section>
         )}
@@ -365,7 +365,7 @@ export default async function HomePage() {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/vendre"
-                className="inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
+                className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
               >
                 {t(lang, "home.cta.sell")}
               </Link>

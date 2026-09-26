@@ -34,13 +34,13 @@ export default async function NotFound() {
         <div className="mt-8 flex flex-col gap-3">
           <Link
             href="/"
-            className="rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+            className="bouton rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
           >
             {t(lang, "err.404.home")}
           </Link>
           <Link
             href="/catalogue"
-            className="rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
+            className="bouton rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
           >
             {t(lang, "err.404.catalog")}
           </Link>

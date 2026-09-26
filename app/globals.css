@@ -38,7 +38,19 @@
     font-weight: 800;
   }
   /* Boutons et prix → Manrope 700 (brief §3.2 : « titres, prix, libellés de
-     boutons »). `.numeric`/`.metric` portent les montants dans tout le dépôt. */
+     boutons »). `.numeric`/`.metric` portent les montants dans tout le dépôt.
+
+     `.bouton` — LE RÔLE, PAS L'ÉLÉMENT (audit typographique 2026-09-26, UI-01).
+     Cette règle ne visait que l'élément `button` : tout lien HABILLÉ en bouton
+     lui échappait et restait en Inter. Mesuré : 43 liens habillés en bouton,
+     tous en Inter, à côté de `<button>` en Manrope — deux pastilles orange
+     identiques, côte à côte, dans deux polices. Un lien qui a l'apparence
+     d'un bouton porte donc
+     `.bouton`, et il la reçoit ICI, dans la même déclaration que `button` :
+     les deux ne peuvent pas diverger. Même couche (`base`) que `button`, donc
+     les `font-semibold`/`font-bold` posés à côté l'emportent de la même façon
+     sur un lien et sur un bouton. `tests/boutons-typographie.test.ts` garde. */
+  .bouton,
   button,
   .numeric,
   .metric {

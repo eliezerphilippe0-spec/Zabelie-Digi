@@ -102,7 +102,7 @@ export default async function DashboardPage({
         <p className="mt-4 text-sm text-mist">Connecte-toi pour accéder à ton tableau de bord.</p>
         <Link
           href="/connexion"
-          className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
           Se connecter
         </Link>
@@ -497,7 +497,7 @@ export default async function DashboardPage({
           {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
         </Link>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
+          <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
           <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
           {/* Le lien n'existe que si le Studio est allumé ET configuré : même prédicat que la page et les routes. */}
           {studioProvider() && (
@@ -637,7 +637,7 @@ export default async function DashboardPage({
             {ventesPage > 1 ? (
               <Link
                 href={`/tableau-de-bord?ventes=${ventesPage - 1}#ventes`}
-                className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
               >
                 {t(lang, "catalog.prev")}
               </Link>
@@ -650,7 +650,7 @@ export default async function DashboardPage({
             {ventesPage < ventesPages ? (
               <Link
                 href={`/tableau-de-bord?ventes=${ventesPage + 1}#ventes`}
-                className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
               >
                 {t(lang, "catalog.more")}
               </Link>
