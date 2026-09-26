@@ -1,4 +1,6 @@
 import { SearchDemandPanel } from "@/components/admin/search-demand-panel";
+import { EntonnoirSemaine } from "@/components/admin/entonnoir-semaine";
+import { chargerEntonnoir, type ClientComptage } from "@/lib/entonnoir";
 import { sourcingCopy } from "@/lib/sourcing-copy";
 import { getLang } from "@/lib/i18n-server";
 import { DigitalModeration } from "@/components/digital-moderation";
@@ -367,6 +369,8 @@ export default async function AdminPage({
   const gmvAffiche = gmvSomme.complet ? gmv : `≥ ${gmv}`;
   const pendingPayments = pendingRes.count ?? 0;
 
+  const entonnoir = await chargerEntonnoir(admin as unknown as ClientComptage, new Date());
+
   const stats = [
     { label: "Produits", value: String(products.length) },
     {
@@ -398,6 +402,7 @@ export default async function AdminPage({
         ))}
       </div>
 
+      <EntonnoirSemaine lignes={entonnoir} lang={await getLang()}/>
       <SearchDemandPanel labels={sourcingCopy(await getLang())}/>
       {/* Modération vendeurs : suspension réversible */}
       <section className="mt-10">
