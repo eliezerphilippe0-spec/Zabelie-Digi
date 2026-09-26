@@ -46,6 +46,12 @@ const nextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   reactStrictMode: true,
   poweredByHeader: false,
+  // `next dev` APPEND sinon, à chaque démarrage, un bloc de consignes générique
+  // à la fin de `CLAUDE.md` (et crée `AGENTS.md`) — mesuré le 2026-09-26 :
+  // dix lignes ajoutées à la constitution du dépôt, qui demandaient d'être
+  // commitées. `CLAUDE.md` ne s'écrit qu'à la main, sur décision du porteur.
+  // `tests/next-config-agent-rules.test.ts` garde.
+  agentRules: false,
   // Figé dans le bundle au build, pas recalculé au démarrage du serveur.
   env: {
     ZABELIE_RELEASE_ID: releaseIdForCommit(process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA),
