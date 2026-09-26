@@ -464,6 +464,111 @@ l'irrésolu échoue (B3) au lieu de passer.
 
 ---
 
+## Suite donnée — 2026-09-26 : UI-05 et UI-06
+
+Signal : « Prépare le PR pour UI-05 et UI-06 ». **Les deux sont corrigés.** La
+partie accueil d'UI-06 est un commit d'**arbitrage** séparé (voir plus bas).
+
+### UI-05 — les boutons de partage prennent le gabarit de leur voisin
+
+- **Constat précisé.** `components/share-buttons.tsx` s'affiche sur trois
+  pages : tableau de bord, fiche produit, page boutique. Sur les deux
+  dernières, il est voisin du bouton favoris / « Swiv boutik sa a »
+  (`components/collection-toggle.tsx`) — sur la **même rangée** côté boutique.
+  Mesuré avant : partage en 12 px / 500 / rayon 8 px, voisin en 14 px / 600 /
+  rayon 20 px.
+- **Geste** : le gabarit du voisin — `rounded-xl … px-4 py-2 text-sm
+  font-semibold`, `min-h-11` gardé. Couleurs inchangées (le vert de WhatsApp,
+  le gris du lien à copier).
+- **Mesuré après** : les trois boutons en Manrope 14 px / 600 / rayon 20 px, sur
+  la fiche produit et sur la boutique
+  (`revue-typographie-2026-09-26/avant-partage.png` →
+  `apres-partage.png`).
+- **Effet de bord, mesuré** : sur le tableau de bord à 390 px, les deux boutons,
+  plus larges (202 et 125 px au lieu de 167 et 103), ne tiennent plus sur une
+  ligne et passent l'un sous l'autre (+52 px). C'est le repli prévu par
+  `flex-wrap`. Sur la fiche produit et la boutique, ils restent côte à côte.
+- **Hors UI-05, vu en mesurant** : 16 autres `<button>` du site sont en
+  `text-xs` — 14 au rayon `rounded-lg`, 2 sans rayon : une famille cohérente de
+  boutons **compacts** (actions d'admin, « copier » dans un champ, télécharger,
+  retirer du panier). Aucun n'est voisin d'un bouton standard qui le
+  contredise, et tous respectent le plancher de 12 px : non touchés. Cinq sont
+  en 500, sous la graisse des boutons (600–700) — à trancher si l'on veut une
+  seule graisse.
+
+### UI-06 — plus aucun texte sous 12 px
+
+- **Inventaire.** L'audit listait les sites de son périmètre (catalogue,
+  tableau de bord). Le contrôle écrit pour garder la règle, lui, lit tout le
+  site : **15 déclarations sous 12 px** — 9 dans le TSX, compteur du panier
+  compris, et 6 dans `app/home-discovery.css` : 8, 9, 10 et 11 px sur
+  l'accueil, posées par le porteur le 2026-09-05.
+- **Geste, en deux commits :**
+  1. les 8 valeurs arbitraires du TSX → `text-xs` (12 px) : pastilles et
+     libellé « sans photo » des cartes produit, carré « sans photo » du
+     tableau de bord, barre de confiance (11 px sur mobile), notes
+     d'expédition de `/mes-achats`, indication de `fulfillment-actions`. Seul
+     reste le **compteur du panier** (11 px dans une pastille de 20 px) :
+     exception nommée, comme l'audit le proposait ;
+  2. ⚖️ **arbitrage — la feuille de l'accueil** (`app/home-discovery.css`) :
+     les six tailles → 12 px. Annulé seul, ce commit remet les six exceptions
+     nommées, et le contrôle reste vert.
+- **Mesuré après.** Accueil, jeu d'essai à 12 cartes (le mode du rapport de
+  l'accueil), 390 px : textes rendus sous 12 px **24 → 0**. Catalogue,
+  tableau de bord, fiche produit, boutique (stub) : **0**.
+- **Ce que l'arbitrage coûte** : le titre de la carte vedette (« Dekouvri sa
+  vandè nou yo ofri », en capitales) tenait sur une ligne en 8 px ; en 12 px
+  il en prend deux, **équilibrées** (`text-wrap: balance`) pour ne pas laisser
+  « OFRI » seul. La carte passe de 136 à 161 px, la première carte produit
+  descend de 31 px. Sur ordinateur (1 440 px), le titre tient toujours sur une
+  ligne. Captures : `avant-accueil-vedette.png` → `apres-accueil-vedette.png`.
+  Sur la capture d'avant, à 8 px, l'accent de « VANDÈ » ne se distingue plus —
+  capture à densité 1 ; un téléphone plus dense le dessinerait mieux, sans le
+  rendre lisible pour autant.
+
+### Constat préexistant, hors typographie — le critère A1 de l'accueil n'est plus tenu
+
+« Première rangée de produits visible sans défiler », en 375 × 812, était
+validé dans `docs/home-premium/RAPPORT.md` (première carte à y = 418, mesure du
+2026-09-05 à 05:42 UTC). Mesuré aujourd'hui sur `main`, même jeu d'essai,
+**avant** ce lot : première carte à **y = 1 024**, soit 212 px sous la ligne de
+flottaison. La carte vedette de l'accueil est arrivée après cette mesure, le
+même jour (0a71357) ; ce qui a repoussé la rangée n'est pas établi ici. Ce lot
+y ajoute 31 px. Non traité : c'est un choix de mise en page de l'accueil.
+
+### Ce qui le garde
+
+- `tests/tailles-texte.test.ts` — tout le site : valeurs arbitraires Tailwind
+  des `.tsx` (variantes comprises, px et rem) et `font-size` des feuilles de
+  style de `app/` (un niveau de `@media`, commentaires ignorés).
+  - **T1** éprouve l'instrument à chaque exécution, sur des cas connus positifs
+    et négatifs ;
+  - **T2** refuse toute taille sous 12 px hors exception nommée, avec un témoin
+    (46 tailles lues au 2026-09-26 — le premier seuil, 60, avait été écrit de
+    tête ; un décompte indépendant a donné 18 + 27 + 1 = 46) ;
+  - **T3** périme une exception relevée ou disparue ;
+  - **T4** refuse une taille relative (`em`, `%`), qu'il ne saurait juger.
+
+  Une exception désigne sa cible précisément : en CSS le sélecteur **exact**
+  (`.home-photo-empty` ne couvre pas `.home-photo-empty-bis`), en TSX un
+  fragment de la classe.
+- **B5** (`tests/boutons-typographie.test.ts`) — le gabarit des boutons de
+  partage (taille, graisse, rayon, rembourrage, hauteur) égale celui du voisin.
+  La dérive se voit des deux côtés, et la couleur, qui distingue légitimement
+  les deux, n'est pas comparée.
+- Quinze mutations au premier commit, quatorze rejouées sur l'état final,
+  chacune vérifiée appliquée et affichée avant lecture : toutes rouges sur le
+  bon test, sauf les deux **témoins qui doivent rester verts** et le restent
+  (une taille dans un commentaire CSS ; une couleur changée sur un bouton de
+  partage). Une **attente** de la batterie finale était fausse, pas le
+  contrôle : « lecteur CSS aveuglé » rougit T1 et T2, mais plus T3 — sans
+  exception CSS restante, T3 n'a plus de témoin de ce côté ; T1 et le décompte
+  de T2 le couvrent.
+- **Non couvert**, et dit dans le test : le texte SVG (`fontSize=` des cartes,
+  en unités du `viewBox`, pas en px CSS).
+
+---
+
 ## Annexe — Couverture
 
 ### Vérifié
