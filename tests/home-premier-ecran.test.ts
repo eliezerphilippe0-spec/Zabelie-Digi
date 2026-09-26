@@ -53,3 +53,16 @@ test("P3 — la carte vedette n'est masquée nulle part : son produit n'est dans
   assert.match(src, /allocateHomeRows\([\s\S]{0,900}\], featured \? \[featured\.id\] : \[\]\)/, "le produit vedette est exclu des rangées");
   assert.doesNotMatch(css, /\.home-featured[^{]*\{[^}]*display:\s*none/, "masquer la carte vedette retirerait son produit de l'accueil");
 });
+
+test("P4 — l'en-tête compact ne vise que l'accueil, et seulement sur mobile (A2)", () => {
+  const m = mobile();
+  // La barre de rubriques de l'accueil prend l'état « défilé » dès le chargement…
+  assert.match(m, /\.home-discovery > header nav\.header-fold\s*\{\s*display:\s*none;\s*\}/);
+  assert.match(m, /\.home-discovery > header \.marketplace-header-row\s*\{\s*row-gap:\s*4px;\s*padding-block:\s*4px;\s*\}/);
+  // … sans toucher au logo (même classe `header-fold`, mais pas un `nav`) :
+  assert.doesNotMatch(css, /\.home-discovery > header \.header-fold\b/, "masquer `.header-fold` sans `nav` retirerait aussi le logo");
+  // … ni aux autres pages, ni à l'ordinateur :
+  assert.doesNotMatch(css.replace(m, ""), /> header/, "une règle d'en-tête hors de la requête mobile toucherait l'ordinateur");
+  const pages = readFileSync("app/page.tsx", "utf8");
+  assert.match(pages, /className="bg-grain home-discovery editorial-page"/, "le sélecteur `.home-discovery` n'est porté que par l'accueil");
+});

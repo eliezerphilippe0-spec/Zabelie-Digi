@@ -41,7 +41,13 @@ for (const width of [320, 390, 1440]) {
     }
     await page.emulateMedia({ colorScheme: "light" });
     await expect(root).toHaveAttribute("data-theme", "light");
-    await page.locator("header:visible").getByRole("link", { name: "Digital", exact: true }).click();
+    // Sur l'accueil MOBILE, la barre de rubriques de l'en-tête est repliée dès le
+    // chargement (critère A2, app/home-discovery.css) : on y va par le lien
+    // Digital de l'accueil (« Kisa w ap chèche? »). Sur ordinateur, par l'en-tête.
+    const digital = width < 768
+      ? page.locator('main a[href*="univers=numerique"]').first()
+      : page.locator("header:visible").getByRole("link", { name: "Digital", exact: true });
+    await digital.click();
     await expect(page).toHaveURL(/univers=numerique/);
     await page.emulateMedia({ colorScheme: "dark" });
     await expect(root).toHaveAttribute("data-theme", "dark");

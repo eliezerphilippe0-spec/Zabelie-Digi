@@ -89,6 +89,15 @@
   .home-discovery #main { display: flex; flex-direction: column; }
   .home-discovery #main > * { width: 100%; }
   .home-discovery #main > .home-premier-ecran { order: -1; }
+  /* EN-TÊTE COMPACT, ACCUEIL MOBILE SEULEMENT (critère A2 du brief : ≤ 100 px).
+     La barre de rubriques prend dès le chargement l'état qu'elle a déjà au
+     défilement (HeaderShell) : masquée. L'accueil porte sa propre navigation
+     vers les rubriques (« Eksplore òf yo », « Kisa w ap chèche? »), les autres
+     pages gardent la leur. Logo, langue, thème, panier, compte et la recherche
+     PLEINE LARGEUR (choix du porteur, 2026-09-15) restent. Mesuré avant :
+     167 px ; deux rangées de cibles de 44 px + 3 × 4 px = 100 px. */
+  .home-discovery > header nav.header-fold { display: none; }
+  .home-discovery > header .marketplace-header-row { row-gap: 4px; padding-block: 4px; }
   .home-discovery .home-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px; }
   .home-kicker { margin-bottom: 12px; }
   .home-headline { font-size: 31px; max-width: 19ch; }
