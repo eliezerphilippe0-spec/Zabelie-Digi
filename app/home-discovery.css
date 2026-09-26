@@ -78,6 +78,17 @@
   .home-category-links a:hover, .home-discovery [data-home-selection] .group:hover { border-color: var(--color-accent); }
 }
 @media (max-width: 767px) {
+  /* PREMIER ÉCRAN (critère A1 du brief) — mobile seulement. Les trois blocs
+     marqués `.home-premier-ecran` (état des paiements, bannière, première
+     rangée) passent devant ; le reste suit dans l'ordre du document. Tous les
+     blocs s'espacent par padding : rien ne dépend de la fusion des marges, que
+     le flex supprime. `width: 100%` parce qu'un `mx-auto` en colonne flex se
+     réduirait à son contenu. La carte vedette disparaît : elle répète un
+     produit de la rangée, qui est désormais juste en dessous. */
+  .home-discovery #main { display: flex; flex-direction: column; }
+  .home-discovery #main > * { width: 100%; }
+  .home-discovery #main > .home-premier-ecran { order: -1; }
+  .home-hero .home-featured { display: none; }
   .home-discovery .home-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px; }
   .home-kicker { margin-bottom: 12px; }
   .home-headline { font-size: 31px; max-width: 19ch; }
