@@ -205,12 +205,12 @@ export default async function HomePage() {
           repère que Lighthouse réclamait (landmark-one-main) — l'accueil était
           la seule page sans lui (Phase 0, mesuré). */}
       <main id="main">
-        <MarketplaceStatus lang={lang} />
+        <div className="home-premier-ecran"><MarketplaceStatus lang={lang} /></div>
         {/* BANNIÈRE — accueil premium §4.2 : UNE bannière, le h1 DEDANS, une
             phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
             carrousel : le premier écran appartient aux produits. Le visuel de
             marque reste facultatif ; sinon un aplat de chrome. */}
-        <section className="mx-auto max-w-6xl px-3 pt-3">
+        <section className="home-premier-ecran mx-auto max-w-6xl px-3 pt-3">
           <div
             data-has-featured={Boolean(featured)}
             className={`home-hero relative overflow-hidden rounded-2xl ${opening ? "launch-hero" : "bg-chrome text-on-chrome"}`}
@@ -278,11 +278,16 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* PRODUITS — la première rangée doit tenir au-dessus de la ligne de
-            flottaison (A1). La sélection principale reste visible dès la première offre,
-            sur mobile comme sur ordinateur, sans inventer de produits. */}
+        {/* PRODUITS — la première rangée doit commencer dans le premier écran
+            (A1). Sur MOBILE, `.home-premier-ecran` la remonte juste sous la
+            bannière, avant la confiance et « Eksplore òf yo » (home-discovery.css) :
+            mesuré le 2026-09-26, elle commençait à y = 1 055 en 375 × 812. L'ORDRE
+            DU DOCUMENT ne change pas — lecteurs d'écran et ordinateur gardent
+            bannière → confiance → produits (tests/home-premium-structure S8). */}
         {principaux.length > 0 && (
-          <HomeRow primary title={t(lang, "home.products")} discovery={discovery} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+          <div className="home-premier-ecran">
+            <HomeRow primary title={t(lang, "home.products")} discovery={discovery} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
+          </div>
         )}
         {newest.length > 0 && (
           <HomeRow discovery={discovery} title={t(lang, "sec.new")} href="/catalogue?tri=recent" more={t(lang, "home.all")} items={newest} cardLabels={cardLabels} />

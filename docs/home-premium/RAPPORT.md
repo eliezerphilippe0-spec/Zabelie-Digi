@@ -54,6 +54,42 @@ Ce qui exige le vrai domaine est marqué ⚠️ dans le tableau.
 **Bilan : 12 critères tenus, 1 non tenu (A3), 2 partiels et dits (A10 : un
 mot en zone d'arrêt ; A14 : deux pages non mesurables hors ligne).**
 
+### A1 revu — 2026-09-26 (mobile)
+
+A1 n'était plus tenu sur `main` : mesuré avec le même jeu d'essai
+(`ZABELIE_DEMO_FIXTURES=true`), la première carte commençait à **y = 1 055**
+en 375 × 812. Ce qui passait devant : en-tête 167 px (A2 visait ≤ 100),
+état des paiements 119, bannière 467 dont carte vedette 161, confiance 66,
+« Eksplore òf yo » 112, titre de rangée 116.
+
+Choix fait par délégation (« fait le meilleur choix ») : **mobile seulement**,
+la première rangée passe juste sous la bannière, avant la confiance et
+« Eksplore òf yo ». L'ordre du document ne change pas ; en-tête, bandeau des
+paiements et ordinateur non touchés.
+
+⚠️ **Première version fausse, corrigée avant fusion.** Elle masquait aussi la
+carte vedette sur mobile, en la croyant redondante avec la rangée. C'est faux :
+`allocateHomeRows` exclut le produit vedette de toutes les rangées — masqué, il
+disparaissait de l'accueil mobile. L'e2e `decouverte-sans-doublons` l'a révélé
+en CI ; reproduit localement (390 px rouge, 1 440 vert), puis corrigé.
+`tests/home-premier-ecran.test.ts` P3 interdit désormais ce masquage.
+
+| Écran | Première carte de la rangée, avant | Après |
+|---|---|---|
+| 375 × 812 | y = 1 055 | y = 869 (toujours sous l'écran) |
+| 390 × 844 | y = 1 013 | y = 827 (17 px visibles) |
+| 1 440 × 900 | y = 939 | y = 939 (identique, bloc par bloc) |
+
+Dans les deux cas, **un produit est visible au premier écran : la carte
+vedette** (y = 568 → 729 en 375 × 812), comme avant ce lot. Le gain réel est
+donc modeste : la rangée remonte de 186 px, juste sous la bannière.
+
+⚠️ **A1 reste non tenu pour la rangée.** Les cartes font ~350 px de haut ;
+en-tête (167) et bandeau des paiements (119) occupent 286 px. Sur ordinateur
+aussi, la rangée commence sous l'écran (y = 939 sur 900). Ces leviers restent
+au porteur. Captures : `a1-2026-09-26/avant-390.png`,
+`a1-2026-09-26/apres-390.png`.
+
 ## Avant / après
 
 | Mesure (mobile 375×812) | Phase 0 | Phase 5 |
