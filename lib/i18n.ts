@@ -133,8 +133,8 @@ const fr = {
   "catalog.sort.desc": "Prix décroissant",
   "catalog.sort.sales": "Les plus vendus",
   "catalog.price.invalid": "Le prix minimum doit être inférieur ou égal au prix maximum.",
-  "catalog.seo.objects": "Explorez les produits physiques des vendeurs Zabelie en Haïti. Comparez les prix en gourdes et convenez de la remise directement avec le vendeur.",
-  "catalog.seo.digital": "Découvrez les fichiers numériques sur Zabelie. Comparez les offres, vérifiez leur contenu et retrouvez vos téléchargements dans Mes achats après validation.",
+  "catalog.seo.objects": "Produits physiques des vendeurs Zabelie en Haïti : prix en gourdes, remise à convenir directement avec le vendeur.",
+  "catalog.seo.digital": "Fichiers numériques vendus sur Zabelie : contenu décrit avant l'achat, téléchargement dans Mes achats après validation.",
   "catalog.seo.services": "Trouvez un service proposé sur Zabelie. Consultez les prestations incluses, les délais annoncés et contactez le prestataire avant de commander.",
   "catalog.seo.all": "Parcourez la marketplace Zabelie : produits physiques, fichiers numériques et services. Recherchez par catégorie et comparez les prix en gourdes.",
 
@@ -145,7 +145,7 @@ const fr = {
   "collections.favorites": "Mes favoris",
   "collections.shops": "Boutiques suivies",
   "collections.favorites.hint": "Gardez vos produits préférés dans votre compte et retrouvez-les sur vos appareils.",
-  "collections.shops.hint": "Retrouvez les boutiques que vous suivez et ouvrez leur catalogue pour découvrir leurs offres.",
+  "collections.shops.hint": "Les boutiques que vous suivez. Ouvrez leur catalogue pour voir leurs offres.",
   "collections.favorite.add": "Ajouter aux favoris",
   "collections.favorite.remove": "Retirer des favoris",
   "collections.shop.add": "Suivre cette boutique",
@@ -257,7 +257,7 @@ const fr = {
   // Nav / footer
   "directory.title": "Toutes les catégories",
   "directory.short": "Catégories",
-  "directory.intro": "Explorez les familles et sous-catégories ouvertes sur Zabelie. Une catégorie peut être ouverte sans contenir encore d’offres publiées.",
+  "directory.intro": "Les familles et sous-catégories ouvertes sur Zabelie. Une catégorie ouverte peut ne contenir encore aucune offre publiée.",
   "directory.search": "Rechercher une catégorie…",
   "directory.reset": "Afficher toutes les catégories",
   "directory.empty": "Aucune offre publiée pour le moment",
@@ -299,7 +299,7 @@ const fr = {
   "nav.pro": "Facturation",
   "nav.logout": "Déconnexion",
   "footer.tagline":
-    "La marketplace haïtienne. Paiement mobile money, pensé pour le contexte local.",
+    "La marketplace haïtienne. Paiement par mobile money.",
   "footer.explore": "Explorer",
   "footer.sell": "Vendre",
   "footer.become": "Devenir vendeur",
@@ -381,7 +381,7 @@ const fr = {
   "catalog.miss.share": "Partager sur WhatsApp",
   "catalog.fuzzy": "Aucun résultat exact. Résultats approchants :",
   "catalog.empty.title": "Les premières boutiques se préparent.",
-  "catalog.empty.body": "Aucune offre n’est publiée pour le moment. Découvrez comment fonctionnent les achats, ou préparez votre propre boutique.",
+  "catalog.empty.body": "Aucune offre n’est publiée pour le moment. Voyez comment fonctionnent les achats, ou préparez votre propre boutique.",
   "catalog.empty.cta": "Préparer ma boutique",
   "sell.physical.q": "Vous vendez un produit physique — pièces, vêtements, alimentation ?",
   "sell.fee.title": "Des frais clairs, dès le départ",
@@ -462,16 +462,16 @@ const fr = {
   // Accueil
   "home.badge": "La marketplace haïtienne",
   "home.cta.sell": "Commencer à vendre",
-  "hero.s1.t": "Découvrez les offres des vendeurs haïtiens",
-  "hero.s1.b": "Explorez les produits, les fichiers numériques et les services proposés par les vendeurs haïtiens.",
+  "hero.s1.t": "Les offres des vendeurs haïtiens",
+  "hero.s1.b": "Produits, fichiers numériques et services, avec le prix en gourdes et le nom du vendeur.",
   "home.kicker": "Vive Haïti chérie",
-  "home.featured": "À découvrir chez nos vendeurs",
+  "home.featured": "Une offre de nos vendeurs",
   "home.explore": "Explorer les offres",
   "home.product.cta": "Voir le produit",
   "home.photo.missing": "Photo non fournie",
   "home.selection.sub": "Choisissez votre prochain coup de cœur.",
   "home.empty.title": "Le catalogue prend forme",
-  "home.empty.body": "Les vendeurs préparent leurs premières offres. Vous pouvez découvrir comment acheter ou ouvrir votre boutique.",
+  "home.empty.body": "Les vendeurs préparent leurs premières offres. Vous pouvez voir comment acheter ou ouvrir votre boutique.",
   "home.error.title": "Le catalogue est momentanément indisponible",
   "home.error.body": "Réessayez dans un instant. Notre équipe reste joignable pour vous aider.",
   "home.retry": "Réessayer",
@@ -713,7 +713,7 @@ const fr = {
   // Recharge téléphonique (V-11)
   "topup.title": "Recharge téléphone",
   "topup.sub":
-    "Rechargez n'importe quel téléphone Digicel ou Natcom en quelques secondes. Payez avec MonCash — ou par Zelle depuis la diaspora.",
+    "Rechargez un téléphone Digicel ou Natcom. Payez avec MonCash — ou par Zelle depuis la diaspora.",
   "topup.operator": "Opérateur",
   "topup.phone.label": "Numéro à recharger",
   "topup.phone.ph": "Ex. 37 12 34 56",
@@ -735,14 +735,14 @@ const fr = {
   "topup.status.refunded":
     "Remboursé via votre moyen de paiement d'origine.",
   "topup.disabled":
-    "Le service de recharge arrive bientôt. Revenez très vite !",
+    "Le service de recharge arrive bientôt.",
   "topup.legal":
     "Zabelie est revendeur de recharge télécom : paiement puis livraison immédiate — aucun solde n'est stocké sur votre compte.",
 
   // Accueil V2 (12 sections — maquette porteur)
   "sec.new": "Autres ajouts au catalogue",
   "sec.services": "Services populaires",
-  "sec.sellers": "Vendeurs à découvrir",
+  "sec.sellers": "Vendeurs qui ont déjà vendu",
   "sec.sellers.sales": "ventes",
   "sec.sellers.sales.one": "vente",
   "sec.free": "Produits gratuits",
@@ -964,7 +964,7 @@ const fr = {
   "upload.error": "Envoi échoué.",
 
   "creator.products.label": "produit(s) en ligne",
-  "creator.share.text": "Découvre la boutique de {name} sur Zabelie :",
+  "creator.share.text": "La boutique de {name} sur Zabelie :",
   "creator.empty": "Aucun produit publié pour l'instant.",
   "creator.offers": "Les offres de cette boutique",
   "creator.offer.open": "Voir l’offre",
@@ -1192,8 +1192,8 @@ const ht: Record<I18nKey, string> = {
   "catalog.sort.desc": "Pri ki pi wo an premye",
   "catalog.sort.sales": "Sa ki vann plis",
   "catalog.price.invalid": "Pri minimòm nan dwe pi piti oswa egal ak pri maksimòm nan.",
-  "catalog.seo.objects": "Dekouvri atik fizik vandè Zabelie yo ann Ayiti. Konpare pri an goud epi mete w dakò ak vandè a pou remiz la.",
-  "catalog.seo.digital": "Dekouvri fichye dijital sou Zabelie. Konpare òf yo, verifye sa yo genyen epi jwenn telechajman ou yo nan Acha mwen apre validasyon.",
+  "catalog.seo.objects": "Atik fizik vandè Zabelie yo ann Ayiti : pri an goud, remiz la ou fè aranjman dirèkteman ak vandè a.",
+  "catalog.seo.digital": "Fichye dijital ki vann sou Zabelie : sa yo genyen dekri anvan acha a, telechajman nan Acha mwen apre validasyon.",
   "catalog.seo.services": "Jwenn yon sèvis sou Zabelie. Gade sa ki ladan l, delè yo anonse a epi kontakte moun k ap bay sèvis la anvan ou kòmande.",
   "catalog.seo.all": "Vizite marketplace Zabelie: atik fizik, fichye dijital ak sèvis. Chèche pa kategori epi konpare pri an goud.",
 
@@ -1204,7 +1204,7 @@ const ht: Record<I18nKey, string> = {
   "collections.favorites": "Favori mwen",
   "collections.shops": "Boutik mwen swiv",
   "collections.favorites.hint": "Kenbe pwodwi ou renmen yo nan kont ou pou jwenn yo sou aparèy ou yo.",
-  "collections.shops.hint": "Jwenn boutik ou swiv yo epi ouvri katalòg yo pou dekouvri òf yo.",
+  "collections.shops.hint": "Boutik ou swiv yo. Ouvri katalòg yo pou wè òf yo.",
   "collections.favorite.add": "Ajoute nan favori",
   "collections.favorite.remove": "Retire nan favori",
   "collections.shop.add": "Swiv boutik sa a",
@@ -1315,7 +1315,7 @@ const ht: Record<I18nKey, string> = {
   "aide.problem.orders": "Louvri acha mwen yo",
   "directory.title": "Tout kategori yo",
   "directory.short": "Kategori",
-  "directory.intro": "Eksplore fanmi ak soukategori ki ouvè sou Zabelie. Yon kategori ka ouvè san okenn òf pibliye ladan l ankò.",
+  "directory.intro": "Fanmi ak soukategori ki ouvè sou Zabelie. Yon kategori ka ouvè san okenn òf pibliye ladan l ankò.",
   "directory.search": "Chèche yon kategori…",
   "directory.reset": "Montre tout kategori yo",
   "directory.empty": "Pa gen òf pibliye pou kounye a",
@@ -1357,7 +1357,7 @@ const ht: Record<I18nKey, string> = {
   "nav.pro": "Fè m peye",
   "nav.logout": "Dekonekte",
   "footer.tagline":
-    "Makètplas ayisyen an. Peman mobile money, panse pou reyalite lokal la.",
+    "Makètplas ayisyen an. Peman pa mobile money.",
   "footer.explore": "Eksplore",
   "footer.sell": "Vann",
   "footer.become": "Vin vandè",
@@ -1517,10 +1517,10 @@ const ht: Record<I18nKey, string> = {
 
   "home.badge": "Makètplas ayisyen an",
   "home.cta.sell": "Kòmanse vann",
-  "hero.s1.t": "Dekouvri òf vandè ayisyen yo",
-  "hero.s1.b": "Eksplore pwodui, fichye dijital ak sèvis vandè ayisyen yo pwopoze.",
+  "hero.s1.t": "Òf vandè ayisyen yo",
+  "hero.s1.b": "Pwodui, fichye dijital ak sèvis, ak pri a an goud ak non vandè a.",
   "home.kicker": "Viv Ayiti cheri",
-  "home.featured": "Dekouvri sa vandè nou yo ofri",
+  "home.featured": "Yon òf nan men vandè nou yo",
   "home.explore": "Eksplore òf yo",
   "home.product.cta": "Gade pwodui a",
   "home.photo.missing": "Pa gen foto",
@@ -1766,7 +1766,7 @@ const ht: Record<I18nKey, string> = {
 
   "topup.title": "Rechaj telefòn",
   "topup.sub":
-    "Rechaje nenpòt telefòn Digicel oswa Natcom an kèk segonn. Peye ak MonCash — oswa ak Zelle depi dyaspora a.",
+    "Rechaje yon telefòn Digicel oswa Natcom. Peye ak MonCash — oswa ak Zelle depi dyaspora a.",
   "topup.operator": "Operatè",
   "topup.phone.label": "Nimewo pou rechaje a",
   "topup.phone.ph": "Egz. 37 12 34 56",
@@ -1787,13 +1787,13 @@ const ht: Record<I18nKey, string> = {
     "Rechaj la pa t pase apre peman an : n ap prepare ranbousman an sou menm mwayen peman ou te itilize a.",
   "topup.status.refunded":
     "Ranbouse sou menm mwayen peman ou te itilize a.",
-  "topup.disabled": "Sèvis rechaj la ap vini talè konsa. Tounen vit !",
+  "topup.disabled": "Sèvis rechaj la ap vini talè konsa.",
   "topup.legal":
     "Zabelie se revandè rechaj telekòm : ou peye, rechaj la pati nan menm moman — nou pa janm kenbe okenn balans sou kont ou.",
 
   "sec.new": "Lòt atik nan katalòg la",
   "sec.services": "Sèvis popilè yo",
-  "sec.sellers": "Vandè pou dekouvri",
+  "sec.sellers": "Vandè ki deja vann",
   "sec.sellers.sales": "vant",
   "sec.sellers.sales.one": "vant",
   "sec.free": "Pwodui gratis",
@@ -1996,7 +1996,7 @@ const ht: Record<I18nKey, string> = {
   "upload.error": "Anvwa a echwe.",
 
   "creator.products.label": "pwodui an liy",
-  "creator.share.text": "Dekouvri boutik {name} sou Zabelie :",
+  "creator.share.text": "Boutik {name} sou Zabelie :",
   "creator.empty": "Poko gen pwodui pibliye.",
   "creator.offers": "Òf boutik sa a",
   "creator.offer.open": "Gade òf la",
@@ -2217,8 +2217,8 @@ const en = {
   "catalog.sort.desc": "Price: high to low",
   "catalog.sort.sales": "Best selling",
   "catalog.price.invalid": "The minimum price must not exceed the maximum price.",
-  "catalog.seo.objects": "Explore physical products from Zabelie sellers in Haiti. Compare prices in gourdes and arrange handover directly with the seller.",
-  "catalog.seo.digital": "Discover digital files on Zabelie. Compare offers, check what is included and find your downloads in My purchases after confirmation.",
+  "catalog.seo.objects": "Physical products from Zabelie sellers in Haiti: prices in gourdes, handover arranged directly with the seller.",
+  "catalog.seo.digital": "Digital files sold on Zabelie: contents described before purchase, downloads in My purchases after confirmation.",
   "catalog.seo.services": "Find a service on Zabelie. Review what is included, the stated turnaround time and contact the provider before ordering.",
   "catalog.seo.all": "Browse the Zabelie marketplace: physical products, digital files and services. Search by category and compare prices in gourdes.",
 
@@ -2229,7 +2229,7 @@ const en = {
   "collections.favorites": "My favorites",
   "collections.shops": "Followed shops",
   "collections.favorites.hint": "Save your favorite products in your account and find them across your devices.",
-  "collections.shops.hint": "Find the shops you follow and open their catalogs to explore their offers.",
+  "collections.shops.hint": "The shops you follow. Open their catalogs to see their offers.",
   "collections.favorite.add": "Save to favorites",
   "collections.favorite.remove": "Remove from favorites",
   "collections.shop.add": "Follow this shop",
@@ -2341,7 +2341,7 @@ const en = {
   // Nav / footer
   "directory.title": "All categories",
   "directory.short": "Categories",
-  "directory.intro": "Explore the departments and subcategories open on Zabelie. An open category may not have any published listings yet.",
+  "directory.intro": "Departments and subcategories open on Zabelie. An open category may not have any published listings yet.",
   "directory.search": "Search categories…",
   "directory.reset": "Show all categories",
   "directory.empty": "No published listings yet",
@@ -2383,7 +2383,7 @@ const en = {
   "nav.pro": "Invoicing",
   "nav.logout": "Sign out",
   "footer.tagline":
-    "The Haitian marketplace. Mobile money payments, built for local conditions.",
+    "The Haitian marketplace. Mobile money payments.",
   "footer.explore": "Explore",
   "footer.sell": "Sell",
   "footer.become": "Become a seller",
@@ -2464,7 +2464,7 @@ const en = {
   "catalog.miss.share": "Share on WhatsApp",
   "catalog.fuzzy": "No exact match. Closest results:",
   "catalog.empty.title": "The first shops are taking shape.",
-  "catalog.empty.body": "No offers are published yet. Discover how buying works, or prepare your own shop.",
+  "catalog.empty.body": "No offers are published yet. See how buying works, or prepare your own shop.",
   "catalog.empty.cta": "Prepare my shop",
   "sell.physical.q": "Selling a physical product — parts, clothing, food?",
   "sell.fee.title": "Clear fees from the start",
@@ -2545,10 +2545,10 @@ const en = {
   // Home
   "home.badge": "The Haitian marketplace",
   "home.cta.sell": "Start selling",
-  "hero.s1.t": "Discover offers from Haitian sellers",
-  "hero.s1.b": "Explore products, digital files and services from Haitian sellers.",
+  "hero.s1.t": "Offers from Haitian sellers",
+  "hero.s1.b": "Products, digital files and services, with the price in gourdes and the seller's name.",
   "home.kicker": "Long live beloved Haiti",
-  "home.featured": "Discover our sellers’ offers",
+  "home.featured": "An offer from our sellers",
   "home.explore": "Explore the offers",
   "home.product.cta": "View product",
   "home.photo.missing": "No photo provided",
@@ -2568,7 +2568,7 @@ const en = {
   "home.how.buy": "To buy",
   "home.how.sell": "To sell",
   "home.b1.t": "Search",
-  "home.b1.b": "By department or keyword — the catalogue is built for phones.",
+  "home.b1.b": "By department or keyword — the catalogue is made for phones.",
   "home.b2.t": "Check payment options",
   "home.b2.b": "Check the available payment methods and total on the product page before confirming your purchase.",
   "home.b3.t": "Receive",
@@ -2791,7 +2791,7 @@ const en = {
   // Phone top-up (V-11)
   "topup.title": "Phone top-up",
   "topup.sub":
-    "Top up any Digicel or Natcom phone in seconds. Pay with MonCash — or by Zelle from the diaspora.",
+    "Top up a Digicel or Natcom phone. Pay with MonCash — or by Zelle from the diaspora.",
   "topup.operator": "Carrier",
   "topup.phone.label": "Number to top up",
   "topup.phone.ph": "e.g. 37 12 34 56",
@@ -2813,14 +2813,14 @@ const en = {
   "topup.status.refunded":
     "Refunded to your original payment method.",
   "topup.disabled":
-    "The top-up service is coming soon. Check back shortly!",
+    "The top-up service is coming soon.",
   "topup.legal":
     "Zabelie is a telecom top-up reseller: payment then immediate delivery — no balance is stored on your account.",
 
   // Home V2 (12 sections)
   "sec.new": "More catalogue additions",
   "sec.services": "Popular services",
-  "sec.sellers": "Discover sellers",
+  "sec.sellers": "Sellers with sales",
   "sec.sellers.sales": "sales",
   "sec.sellers.sales.one": "sale",
   "sec.free": "Free products",
@@ -3032,7 +3032,7 @@ const en = {
   "upload.error": "Upload failed.",
 
   "creator.products.label": "product(s) online",
-  "creator.share.text": "Check out {name}'s shop on Zabelie:",
+  "creator.share.text": "{name}'s shop on Zabelie:",
   "creator.empty": "No products published yet.",
   "creator.offers": "Offers from this shop",
   "creator.offer.open": "View offer",
@@ -3254,10 +3254,10 @@ const es = {
   "catalog.sort.desc": "Precio: de mayor a menor",
   "catalog.sort.sales": "Más vendidos",
   "catalog.price.invalid": "El precio mínimo no debe superar el precio máximo.",
-  "catalog.seo.objects": "Explora productos físicos de vendedores Zabelie en Haití. Compara precios en gourdes y acuerda la entrega con el vendedor.",
-  "catalog.seo.digital": "Descubre archivos digitales en Zabelie. Compara ofertas, revisa su contenido y encuentra tus descargas en Mis compras tras la confirmación.",
+  "catalog.seo.objects": "Productos físicos de vendedores Zabelie en Haití: precios en gourdes, entrega acordada directamente con el vendedor.",
+  "catalog.seo.digital": "Archivos digitales vendidos en Zabelie: contenido descrito antes de la compra, descargas en Mis compras tras la confirmación.",
   "catalog.seo.services": "Encuentra un servicio en Zabelie. Revisa lo que incluye, el plazo anunciado y contacta al profesional antes de comprar.",
-  "catalog.seo.all": "Explora Zabelie: productos físicos, archivos digitales y servicios. Busca por categoría y compara precios en gourdes.",
+  "catalog.seo.all": "Zabelie: productos físicos, archivos digitales y servicios. Busca por categoría y compara precios en gourdes.",
 
   "collections.privacy.title": "Favoritos, tiendas seguidas y destinatarios",
   "collections.privacy.body": "Tus favoritos y tiendas seguidas son privados y están vinculados a tu cuenta. Puedes quitarlos desde tus listas. Al comprar para otra persona, su nombre, teléfono, localidad y tus notas se guardan con el pedido, con su permiso. El vendedor correspondiente accede a estos datos tras confirmar el pago para organizar la entrega. El comprador puede consultarlos en sus compras y exportación de datos. La eliminación de la cuenta también borra estas listas y datos de contacto, conservando el registro de pedidos.",
@@ -3266,7 +3266,7 @@ const es = {
   "collections.favorites": "Mis favoritos",
   "collections.shops": "Tiendas seguidas",
   "collections.favorites.hint": "Guarda tus productos favoritos en tu cuenta y consúltalos en tus dispositivos.",
-  "collections.shops.hint": "Encuentra las tiendas que sigues y abre sus catálogos para descubrir sus ofertas.",
+  "collections.shops.hint": "Las tiendas que sigues. Abre sus catálogos para ver sus ofertas.",
   "collections.favorite.add": "Añadir a favoritos",
   "collections.favorite.remove": "Quitar de favoritos",
   "collections.shop.add": "Seguir esta tienda",
@@ -3378,7 +3378,7 @@ const es = {
   // Nav / footer
   "directory.title": "Todas las categorías",
   "directory.short": "Categorías",
-  "directory.intro": "Explora las familias y subcategorías abiertas en Zabelie. Una categoría abierta puede no tener ofertas publicadas todavía.",
+  "directory.intro": "Familias y subcategorías abiertas en Zabelie. Una categoría abierta puede no tener ofertas publicadas todavía.",
   "directory.search": "Buscar una categoría…",
   "directory.reset": "Mostrar todas las categorías",
   "directory.empty": "Aún no hay ofertas publicadas",
@@ -3420,7 +3420,7 @@ const es = {
   "nav.pro": "Facturación",
   "nav.logout": "Cerrar sesión",
   "footer.tagline":
-    "El marketplace haitiano. Pago por dinero móvil, pensado para el contexto local.",
+    "El marketplace haitiano. Pago con dinero móvil.",
   "footer.explore": "Explorar",
   "footer.sell": "Vender",
   "footer.become": "Ser vendedor",
@@ -3501,7 +3501,7 @@ const es = {
   "catalog.miss.share": "Compartir por WhatsApp",
   "catalog.fuzzy": "Sin resultados exactos. Resultados aproximados:",
   "catalog.empty.title": "Las primeras tiendas se preparan.",
-  "catalog.empty.body": "Todavía no hay ofertas publicadas. Descubre cómo funcionan las compras o prepara tu propia tienda.",
+  "catalog.empty.body": "Todavía no hay ofertas publicadas. Mira cómo funcionan las compras o prepara tu propia tienda.",
   "catalog.empty.cta": "Preparar mi tienda",
   "sell.physical.q": "¿Vendes un producto físico — repuestos, ropa, alimentos?",
   "sell.fee.title": "Tarifas claras desde el principio",
@@ -3582,16 +3582,16 @@ const es = {
   // Inicio
   "home.badge": "El marketplace haitiano",
   "home.cta.sell": "Empezar a vender",
-  "hero.s1.t": "Descubre ofertas de vendedores haitianos",
-  "hero.s1.b": "Explora productos, archivos digitales y servicios de vendedores haitianos.",
+  "hero.s1.t": "Ofertas de vendedores haitianos",
+  "hero.s1.b": "Productos, archivos digitales y servicios, con el precio en gourdes y el nombre del vendedor.",
   "home.kicker": "Viva Haití querido",
-  "home.featured": "Descubre las ofertas de nuestros vendedores",
+  "home.featured": "Una oferta de nuestros vendedores",
   "home.explore": "Explorar ofertas",
   "home.product.cta": "Ver producto",
   "home.photo.missing": "Sin foto disponible",
   "home.selection.sub": "Encuentra tu próximo favorito.",
   "home.empty.title": "El catálogo está tomando forma",
-  "home.empty.body": "Los vendedores están preparando sus primeras ofertas. Descubre cómo comprar o abre tu tienda.",
+  "home.empty.body": "Los vendedores están preparando sus primeras ofertas. Mira cómo comprar o abre tu tienda.",
   "home.error.title": "El catálogo no está disponible temporalmente",
   "home.error.body": "Vuelve a intentarlo en un momento. Nuestro equipo está aquí para ayudarte.",
   "home.retry": "Reintentar",
@@ -3828,7 +3828,7 @@ const es = {
   // Recarga telefónica (V-11)
   "topup.title": "Recarga de teléfono",
   "topup.sub":
-    "Recarga cualquier teléfono Digicel o Natcom en segundos. Paga con MonCash — o por Zelle desde la diáspora.",
+    "Recarga un teléfono Digicel o Natcom. Paga con MonCash — o por Zelle desde la diáspora.",
   "topup.operator": "Operador",
   "topup.phone.label": "Número a recargar",
   "topup.phone.ph": "Ej. 37 12 34 56",
@@ -3850,14 +3850,14 @@ const es = {
   "topup.status.refunded":
     "Reembolsado a tu medio de pago original.",
   "topup.disabled":
-    "El servicio de recarga llega pronto. ¡Vuelve muy pronto!",
+    "El servicio de recarga llega pronto.",
   "topup.legal":
     "Zabelie es revendedor de recarga telefónica: pago y entrega inmediata — no se guarda ningún saldo en tu cuenta.",
 
   // Inicio V2
   "sec.new": "Más artículos del catálogo",
   "sec.services": "Servicios populares",
-  "sec.sellers": "Descubre vendedores",
+  "sec.sellers": "Vendedores con ventas",
   "sec.sellers.sales": "ventas",
   "sec.sellers.sales.one": "venta",
   "sec.free": "Productos gratuitos",
@@ -4068,7 +4068,7 @@ const es = {
   "upload.error": "El envío falló.",
 
   "creator.products.label": "producto(s) en línea",
-  "creator.share.text": "Descubre la tienda de {name} en Zabelie:",
+  "creator.share.text": "La tienda de {name} en Zabelie:",
   "creator.empty": "Todavía no hay productos publicados.",
   "creator.offers": "Ofertas de esta tienda",
   "creator.offer.open": "Ver oferta",
