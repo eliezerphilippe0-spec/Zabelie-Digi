@@ -90,6 +90,28 @@ aussi, la rangée commence sous l'écran (y = 939 sur 900). Ces leviers restent
 au porteur. Captures : `a1-2026-09-26/avant-390.png`,
 `a1-2026-09-26/apres-390.png`.
 
+### A2 revu — 2026-09-26 (en-tête, accueil mobile)
+
+L'en-tête mobile mesurait **167 px** (A2 : ≤ 100 ; 98 le 2026-09-05). Trois
+rangées : logo + icônes, recherche pleine largeur (choix du porteur du
+2026-09-15, gardé), rubriques. Choix fait par délégation : **sur l'accueil
+mobile seulement**, la barre de rubriques prend dès le chargement l'état
+qu'elle a déjà au défilement (masquée) ; l'accueil a sa propre navigation vers
+les rubriques. CSS seul, dans `app/home-discovery.css`.
+
+| Page / largeur | Avant | Après |
+|---|---|---|
+| Accueil 320 → 767 px | 167 px | **101 px** |
+| Accueil ≥ 768 px, `/catalogue`, `/aide` | 167 / 115 / 158 px | inchangé |
+| Première carte de la rangée, 375 × 812 | y = 869 | **y = 803** |
+| Première carte de la rangée, 390 × 844 | y = 827 | **y = 761** |
+
+Un e2e dépendait de la rubrique « Digital » de l'en-tête mobile
+(`e2e/appearance.spec.ts`) : sur mobile il suit désormais le lien Digital de
+l'accueil, sur ordinateur toujours celui de l'en-tête. Garde :
+`tests/home-premier-ecran.test.ts` P4 (trois mutations, trois rouges).
+Captures : `a2-2026-09-26/avant-390.png`, `a2-2026-09-26/apres-390.png`.
+
 ## Avant / après
 
 | Mesure (mobile 375×812) | Phase 0 | Phase 5 |
