@@ -39,3 +39,10 @@ export function getNatCashAvailabilityKey(env: NodeJS.ProcessEnv = process.env):
   return state === "production" ? "availability.natcash.production" :
     state === "sandbox" ? "availability.natcash.sandbox" : "footer.natcash";
 }
+
+export type EtatPaiement = "active" | "test" | "soon" | "off";
+
+/** Pastille du pied de page. « Actif » UNIQUEMENT en production — jamais par défaut. */
+export function etatDisponibilite(d: MonCashAvailability, sinon: "soon" | "off"): EtatPaiement {
+  return d === "production" ? "active" : d === "sandbox" ? "test" : sinon;
+}
