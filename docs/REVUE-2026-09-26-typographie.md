@@ -80,6 +80,8 @@ Aucun.
   **22 fichiers**, contre **34 `<button>`** au même habillage. Visible en haut
   de `revue-typographie-2026-09-26/planche-comparative.png` : les deux
   boutons « Pataje sou WhatsApp » de la ligne « Aujourd'hui » diffèrent.
+  *(Décompte corrigé à la correction : **43** liens-boutons, et non 36 — celui-ci
+  comptait aussi des puces de filtre. Voir « Suite donnée — UI-01 » ci-dessous.)*
 - **Correctif proposé** : porter la famille et la graisse par une **classe de
   rôle** (ou un composant `Bouton`) appliquée aux deux éléments, plutôt que
   par le sélecteur `button`. Le cas échéant, un test qui croise les deux
@@ -335,6 +337,130 @@ UI-01, UI-05 et UI-06 restent ouverts.
   (« PROMO5… ») — `components/zabelie-coupon-manager.tsx`, trois champs sur une
   ligne. Déjà le cas avant ce lot : même largeur, même troncature sur la
   capture d'origine.
+
+---
+
+## Suite donnée — 2026-09-26 : UI-01, la PR des boutons
+
+Signal : « Prépare le PR des boutons ». **UI-01 est corrigé.** UI-05 et UI-06
+restent ouverts.
+
+### Ce qui a été fait
+
+- `app/globals.css` : la règle qui donne Manrope 700 vise désormais
+  `.bouton, button, .numeric, .metric` — **une seule déclaration**, dans la
+  couche `base`. Un `font-semibold` posé à côté l'emporte donc de la même façon
+  sur un lien et sur un bouton.
+- `bouton` ajouté aux **43 liens habillés en bouton**, dans 26 fichiers : 40
+  en classe littérale, et **3 cachés derrière une expression** — la condition
+  de `app/paiement/echec/page.tsx` (lien principal ou secondaire selon le cas)
+  et la constante `lien` de `app/admin/page.tsx` (deux liens). Un contrôle qui
+  ne lirait que `className="…"` aurait été vert sur ces trois-là.
+
+### Écart au plan, assumé
+
+Le plan (ordre 2) disait « retirer la règle sur l'élément `button` ». **Elle est
+gardée**, à dessein. Retirée, chaque `<button>` du site devrait porter
+`.bouton`, et le premier oublié retomberait en Inter sans que rien ne le
+signale : le défaut d'origine, déplacé de l'autre côté. Gardée dans la même
+déclaration que `.bouton`, elle ne peut plus s'en séparer — c'est ce que
+vérifie B1.
+
+### Décompte corrigé
+
+L'audit annonçait **36** liens-boutons « à fond plein ». Ce décompte retenait
+tout lien portant un fond : huit n'étaient pas des boutons — six puces de
+filtre ou onglets (`rounded-full`), une entrée de menu (`rounded-lg`), le lien
+d'évitement (`focus:bg-brand`) — et il laissait de côté les liens-boutons à
+**contour**. Trié par la règle des rayons déjà écrite dans
+`app/zabelie-theme.css` (`rounded-xl` = boutons et champs, `rounded-full` =
+puces, `rounded-lg` = entrées de menu) : **43** — 28 pleins et 12 à contour
+en classe littérale, plus les 3 cachés. Aucun des 43 ne portait de famille
+explicite : tous étaient en Inter.
+
+### Mesuré après, au moteur de rendu
+
+Build de production de la branche, stub Supabase, kreyòl, 390 px. Police
+**effectivement dessinée** (`CSS.getPlatformFontsForNode`) sur chaque lien
+en forme de bouton visible :
+
+| Page | Liens-boutons visibles | Dessinés en |
+|---|---|---|
+| `/` | « Kòmanse vann » | Manrope 700 |
+| `/tableau-de-bord` (vendeur) | « Pataje sou WhatsApp », « Gade boutik mwen », « Exporter mes données » | Manrope 600 |
+| `/panier` | « Konekte » | Manrope 600 |
+| `/paiement/echec` | « Tounen nan katalòg la » | Manrope 600 |
+| page 404 | « Ale nan akèy la », « Wè katalòg la » | Manrope 600 |
+| `/catalogue` | aucun : ses six liens-boutons n'apparaissent qu'en page hors limites, recherche sans résultat, rayon vide, catalogue vide ou pagination — des états que le stub (un seul produit) ne produit pas ; B2 les couvre | — |
+
+- **Témoin négatif, sur chacune des cinq pages** : le premier de ces liens,
+  privé de `.bouton` dans la page, retombe en **Inter**, à la même graisse et
+  au même nombre de glyphes. Sans ce témoin, « tout est Manrope » pourrait
+  vouloir dire « la sonde ne voit rien ».
+- **Aucun lien en forme de bouton sans `.bouton`** trouvé à l'exécution sur
+  ces six pages : le contrôle statique et le rendu disent la même chose.
+- **Octets de police : inchangés**, mesuré — 76 664 sur les six pages, avec
+  `.bouton` et sans (classe neutralisée avant tout rendu) : les deux mêmes
+  fichiers préchargés. Manrope l'était déjà partout, pour les titres et les
+  boutons.
+- Le moteur nomme la police « Manrope ExtraLight » : c'est le nom de
+  l'instance par défaut du fichier variable (axe `wght` 200 → 800, défaut
+  200). La graisse dessinée est celle du style calculé.
+- **La graisse ne bouge pas** : un lien en `font-semibold` reste à 600, comme
+  un bouton en `font-semibold`. Ce qui séparait un lien-bouton d'un bouton,
+  c'était la famille ; ce qui reste, ce sont les utilitaires de taille et de
+  graisse posés sur chacun — c'est UI-05 : sur le tableau de bord, le
+  `<button>` « 🟢 Pataje sou WhatsApp » est en 500, à côté du lien
+  « Pataje sou WhatsApp » en 600.
+- **À l'œil**, un même composant (`components/account-actions.tsx`), un lien
+  et un bouton côte à côte, tous deux en 600 :
+  `revue-typographie-2026-09-26/avant-liens-boutons.png` — « Exporter mes
+  données » (lien, Inter) paraît plus gras que « Supprimer mon compte »
+  (bouton, Manrope) ; `apres-liens-boutons.png` — les deux identiques. L'avant
+  est la même page, `.bouton` retiré dans le DOM : pour la famille, c'est
+  exactement l'état d'avant cette PR, la règle `button` n'ayant pas changé.
+
+### Ce qui le garde
+
+`tests/boutons-typographie.test.ts` :
+
+- **B1** — `button` et `.bouton` dans le **même** sélecteur, qui donne la
+  famille des titres. Les commentaires sont retirés avant lecture : un
+  sélecteur cité dans un commentaire ne compte pas.
+- **B2** — chaque `<Link>`/`<a>` en forme de bouton porte `.bouton`. Les
+  classes sont **résolues** : littéraux, constantes (celle du fichier d'abord ;
+  une constante importée seulement si son nom est unique), chaînes d'une
+  condition, fonctions fléchées rendant un gabarit. Deux témoins : au moins 43
+  liens-boutons vus, dont au moins 3 derrière une expression — un motif devenu
+  aveugle échoue au lieu de passer.
+- **B3** — une classe que le test ne sait pas lire échoue, sauf exception
+  **nommée** avec sa raison ; l'exception se périme dans les deux sens.
+- **B4** — `components/metric-a.tsx` rend un `<a>` avec la classe que lui passe
+  son appelant : ses appelants sont vérifiés un par un.
+
+Onze mutations, chacune vérifiée appliquée et affichée avant lecture, chacune
+rouge sur le bon test : `.bouton` retiré du sélecteur CSS (B1) · retiré d'un
+lien littéral, de la constante de l'admin, d'une branche de la condition de la
+page d'échec, ou absent d'un nouveau lien (B2) · une classe composée
+irrésoluble, une exception périmée, un nom importé ambigu (B3) · un appelant
+de `MetricA` en forme de bouton (B4) · le détecteur aveuglé par une faute dans
+le motif (B2, témoin) · un homonyme (B2, ci-dessous).
+
+**Une a d'abord été VERTE.** La table des constantes était « le dernier défini
+gagne », et le dépôt a des homonymes (`input`, `TEXT`, `BG`…). Mutation : la
+constante `lien` de l'admin privée de `bouton`, plus un
+`export const lien = "text-sm"` ajouté dans `lib/`. Le lien d'admin cessait
+d'être vu comme un bouton : **B2 vert**. Et le premier essai de cette mutation
+avait bien rougi — mais **par le témoin** (41 liens vus au lieu de 43), pas par
+la faute : il a fallu rendre au témoin, avec trois liens conformes, ce que
+l'homonyme lui prenait, pour voir le test mentir. Corrigé : la constante du
+fichier d'abord ; ailleurs, seulement si le nom n'y est défini qu'une fois,
+sinon irrésolue et B3 échoue. Rejouée : B2 rouge, et la faute nommée est la
+bonne (`app/admin/page.tsx:69` et `:77`).
+
+⚠️ Ce contrôle lit du **texte**, pas du rendu : une classe composée à
+l'exécution d'une façon qu'il ne résout pas lui échappe. C'est pourquoi
+l'irrésolu échoue (B3) au lieu de passer.
 
 ---
 

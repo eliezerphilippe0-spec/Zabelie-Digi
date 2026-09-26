@@ -51,7 +51,7 @@ export default async function MessagesPage() {
             <p className="mt-2 text-sm text-mist">{t(lang, "msg.empty.hint")}</p>
             <Link
               href="/catalogue"
-              className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+              className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
             >
               {t(lang, "nav.catalog")}
             </Link>

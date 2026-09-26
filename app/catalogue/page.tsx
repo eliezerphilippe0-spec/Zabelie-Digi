@@ -420,7 +420,7 @@ export default async function CataloguePage({
               </p>
               <Link
                 href={hrefFor({ page: 1 })}
-                className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand"
+                className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.page404.cta")}
               </Link>
@@ -467,7 +467,7 @@ export default async function CataloguePage({
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.miss.share")}
               </a>
@@ -493,7 +493,7 @@ export default async function CataloguePage({
               </p>
               <Link
                 href="/vendre"
-                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
@@ -524,7 +524,7 @@ export default async function CataloguePage({
               <Link href="/aide#comment" className="editorial-link">{t(lang, "home.how.buy")}<span aria-hidden="true">→</span></Link>
               <Link
                 href="/vendre"
-                className="mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
@@ -558,7 +558,7 @@ export default async function CataloguePage({
                 {page > 1 ? (
                   <Link
                     href={hrefFor({ page: page - 1 })}
-                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                    className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
                   >
                     {t(lang, "catalog.prev")}
                   </Link>
@@ -571,7 +571,7 @@ export default async function CataloguePage({
                 {hasMore ? (
                   <Link
                     href={hrefFor({ page: page + 1 })}
-                    className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                    className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
                   >
                     {t(lang, "catalog.more")}
                   </Link>

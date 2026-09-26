@@ -25,7 +25,7 @@ export async function CollectionPage({ kind, pageParam }: { kind: CollectionKind
   if (!isSupabaseConfigured()) return shell(<p>{t(lang, "collections.error")}</p>);
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
-  if (!user) return shell(<Link href={`/connexion?next=${encodeURIComponent(config.href)}`} className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-on-brand">{t(lang, "nav.login")}</Link>);
+  if (!user) return shell(<Link href={`/connexion?next=${encodeURIComponent(config.href)}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-on-brand">{t(lang, "nav.login")}</Link>);
   const { data, error } = await client.from(config.table).select(`${config.column},created_at`).eq("user_id", user.id)
     .order("created_at", { ascending: false }).order(config.column).range((page - 1) * 20, page * 20);
   if (error) return shell(<p role="alert">{t(lang, "collections.error")}</p>);

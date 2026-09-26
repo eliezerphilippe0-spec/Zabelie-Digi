@@ -32,7 +32,7 @@ export default async function EnAttentePage({
         <div className="mt-8 flex flex-col gap-3">
           <Link
             href="/mes-achats"
-            className="rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-semibold text-cloud"
+            className="bouton rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-semibold text-cloud"
           >
             {t(lang, "pay.wait.cta")}
           </Link>
