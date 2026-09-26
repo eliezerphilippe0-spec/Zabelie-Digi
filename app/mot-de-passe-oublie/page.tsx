@@ -4,7 +4,7 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { signalerConfigAbsente } from "@/lib/diagnostic";
 import { t } from "@/lib/i18n";
 
-export const metadata = { title: "Mot de passe oublié — Zabelie" };
+export const metadata = { title: "Mot de passe oublié — Zabelie", robots: { index: false, follow: true } };
 
 export default async function ForgotPasswordPage() {
   /* Même défaut que /vendre : l'écran dégradé ne signalait RIEN.

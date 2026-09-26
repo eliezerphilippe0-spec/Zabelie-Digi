@@ -8,6 +8,8 @@ import { t } from "@/lib/i18n";
 
 export const metadata = {
   title: "Hors réseau — Zabelie",
+  // Page de secours affichée sans connexion : utile au visiteur, pas aux moteurs.
+  robots: { index: false, follow: true },
 };
 
 /**

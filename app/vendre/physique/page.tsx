@@ -17,7 +17,12 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Vendre un produit — Zabelie" };
+export const metadata = {
+  title: "Vendre un produit — Zabelie",
+  description:
+    "Créez la fiche d'un produit réel sur Zabelie : photos, prix et description. La fiche reste en brouillon, puis elle est examinée avant sa publication.",
+  alternates: { canonical: "/vendre/physique" },
+};
 
 /**
  * Chantier B — création d'un produit PHYSIQUE.

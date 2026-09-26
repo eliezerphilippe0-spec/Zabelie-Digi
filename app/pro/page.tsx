@@ -8,7 +8,12 @@ import { getProfessional } from "@/lib/business";
 import { ProConsole } from "@/components/business/pro-console";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Espace pro — Zabelie" };
+export const metadata = {
+  title: "Espace pro — Zabelie",
+  description:
+    "Espace pro de Zabelie : préparez des factures pour vos clients et envoyez-les par lien. Réservé aux comptes connectés.",
+  alternates: { canonical: "/pro" },
+};
 
 function Shell({
   children,
