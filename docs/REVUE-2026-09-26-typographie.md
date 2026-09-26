@@ -1,0 +1,340 @@
+# Rapport de revue — Zabelie — 2026-09-26 — Typographie
+
+**Mode** : CIBLÉ (axe UI, typographie seule) · **Périmètre** : `/catalogue` et
+`/tableau-de-bord`, plus ce qu'ils partagent (`app/layout.tsx`,
+`app/globals.css`, `app/zabelie-theme.css`) · **Stack** : Next.js 16 (App
+Router, `next/font/google`), Tailwind v4 · **Base** : `main` à `6f76eac`
+
+> ⚠️ **`zabelie.com` n'a pas été ouvert** : le site est bloqué par le proxy de
+> sortie de la session (`EGRESS_BLOCKED`). Tout ce qui suit est mesuré sur un
+> **build de production** de `main`, servi localement et rendu dans Chromium,
+> adossé au stub Supabase des tests E2E (`e2e/fixtures/stub-supabase.mjs`),
+> en kreyòl, à 390 px et 1 440 px. Le code est le même que celui déployé ;
+> les **données** sont celles du stub.
+
+---
+
+## Résumé exécutif
+
+Le socle technique est **bon, et mesuré comme tel** : 73 008 octets de police
+par page et pas un de plus, **aucun décalage de mise en page** au chargement
+(CLS 0,0000), couverture **complète** du kreyòl, du français et de l'espagnol,
+polices variables sans faux gras. Le défaut n'est pas le choix des polices —
+c'est leur **application**, qui s'est dispersée. Les trois constats qui
+comptent :
+
+1. **Les appels à l'action sont coupés en deux polices** : 36 liens stylés en
+   bouton sortent en Inter, 34 vrais boutons en Manrope. Deux pastilles
+   orange identiques, côte à côte, n'ont pas la même typographie (UI-01).
+2. **Les titres de section du tableau de bord ont trois tailles et deux
+   graisses** ; deux d'entre eux sont indiscernables d'un libellé de bouton
+   (UI-02).
+3. **Les symboles d'interface ne sont pas dans la police** : `✓` ×51,
+   `←` ×16, `→` ×12, `★` ×7, `⚠` ×4… sont dessinés par la police du
+   téléphone, parce que l'Inter servie par Google est amputée (UI-03, UI-04).
+
+**Recommandation « meilleure police »** : garder Inter — c'est la bonne — mais
+dans sa **version 4.1 complète, auto-hébergée et découpée pour Zabelie**
+(50 876 octets, mesuré). Elle corrige UI-03 et UI-04 d'un coup. Remplacer
+aussi Manrope par elle est un choix de marque, chiffré plus bas.
+
+## Tableau de bord par axe
+
+| Axe | Posture | Constats (🔴/🟠/🟡/🔵) |
+|-----|---------|------------------------|
+| Sécurité | hors périmètre | — |
+| UX | hors périmètre | — |
+| **UI — typographie** | **Correcte** : socle solide, application incohérente | 0 / 0 / 3 / 4 |
+| Responsivité | hors périmètre (CLS mesuré : 0) | — |
+
+---
+
+## Constats détaillés
+
+### 🔴 Critiques
+
+Aucun. Rien n'est cassé : les polices se chargent, couvrent les quatre
+langues, et ne font rien bouger.
+
+### 🟠 Élevés
+
+Aucun.
+
+### 🟡 Moyens
+
+#### [UI-01] Les liens-boutons sont en Inter, les boutons en Manrope
+
+- **Axe** : UI
+- **Emplacement** : `app/globals.css:42-47`
+- **Constat** : la règle qui donne Manrope 700 aux « libellés de boutons »
+  (brief accueil premium §3.2) cible l'**élément** `button`, pas le **rôle**.
+  Tout `<Link>` ou `<a>` habillé en bouton lui échappe et reste en Inter.
+- **Impact** : sur un même écran, deux boutons visuellement identiques n'ont
+  pas la même police. C'est le signe le plus visible d'un produit « assemblé »
+  plutôt que dessiné.
+- **Preuve** : mesure du moteur de rendu (CDP) sur `/tableau-de-bord` —
+  « Pataje sou WhatsApp », « Gade boutik mwen », « Exporter mes données » sont
+  des `<a>` en **Inter 600**, pendant que « Dekonekte », « Demander un
+  retrait » sont des `<button>` en **Manrope 700**. Décompte statique sur tout
+  le site : **36 liens** à fond plein + coins arrondis + rembourrage, dans
+  **22 fichiers**, contre **34 `<button>`** au même habillage. Visible en haut
+  de `revue-typographie-2026-09-26/planche-comparative.png` : les deux
+  boutons « Pataje sou WhatsApp » de la ligne « Aujourd'hui » diffèrent.
+- **Correctif proposé** : porter la famille et la graisse par une **classe de
+  rôle** (ou un composant `Bouton`) appliquée aux deux éléments, plutôt que
+  par le sélecteur `button`. Le cas échéant, un test qui croise les deux
+  familles d'éléments — c'est la même classe de défaut que le « piège de
+  sous-chaîne » de `CLAUDE.md` : la règle vise ce qui est **présent**, pas ce
+  qui **commande** l'apparence.
+- **Effort** : M
+
+#### [UI-02] Titres de section du tableau de bord : trois tailles, deux graisses
+
+- **Axe** : UI
+- **Emplacement** : `app/tableau-de-bord/page.tsx:494,577,665,748,763,833`
+  (`text-lg font-semibold`) · `components/vendeur-premier-pas.tsx:53`
+  (`text-xl font-semibold`) · `components/digital-seller-metrics.tsx:10` ·
+  `components/kyc-form.tsx:84` et `components/delivery-info-form.tsx:64`
+  (`text-sm font-semibold`) · `components/seller-pricing-panel.tsx:10,44`
+- **Constat** : dix `h2` de même niveau, sur la même page, en quatre styles.
+  La base (`app/globals.css:32-36`) les veut en Manrope **700** ; chaque
+  composant l'écrase en `font-semibold` (600) et choisit sa taille.
+- **Impact** : la hiérarchie se lit mal ; les deux `h2` en 14 px ont
+  **exactement** le rendu d'un libellé de bouton (« Enregistrer » : 14 px,
+  600) et ne se distinguent plus comme titres.
+- **Preuve** (styles calculés, 390 px) :
+
+  | Titre | Taille | Graisse |
+  |---|---|---|
+  | « Pèfòmans pwodui dijital yo » | 20 px | 700 |
+  | « Boutik ou louvri » | 20 px | 600 |
+  | « Boutik mwen », « Dènye vant yo », « Mes produits », « Codes promo »… | 18 px | 600 |
+  | « Verifikasyon idantite w », « Livrezon — non, telefòn, adrès » | **14 px** | 600 |
+
+- **Correctif proposé** : une taille et une graisse uniques pour le titre de
+  section (par exemple 18 px / 700), portées par une classe partagée ; retirer
+  les `font-semibold` qui annulent la règle de base.
+- **Effort** : S
+
+#### [UI-03] Les symboles d'interface sont dessinés par la police du téléphone
+
+- **Axe** : UI
+- **Emplacement** : partout où un symbole Unicode sert d'icône — par exemple
+  `app/produit/[slug]/page.tsx:196-197` (étoiles de notation `★`),
+  `app/catalogue/page.tsx:197` (`≥`), `lib/i18n.ts:2088` (`→` de « Gade pwofil
+  mwen → »)
+- **Constat** : le sous-ensemble `latin` d'Inter servi par Google **ne contient
+  aucun** de ces symboles. Chaque appareil les dessine avec sa propre police.
+- **Impact** : épaisseur, taille et alignement qui changent d'un symbole à
+  l'autre ; sur Android, `⚠` s'affiche fréquemment en **emoji couleur**. Les
+  étoiles de notation — un signal de confiance sur la fiche produit — sont
+  dans ce cas.
+- **Preuve** :
+  - moteur de rendu : glyphes dessinés par **DejaVu Sans (système)** sur les
+    deux pages (`≥` au catalogue, `→` au tableau de bord) ;
+  - `fontTools` sur le fichier servi : `→ ← ✓ ★ ≥ ≈ ↗ ✕ ⚠` **absents** ;
+  - décompte dans le code qui atteint l'écran (commentaires exclus) : `✓` ×51
+    (11 fichiers), `←` ×16, `→` ×12, `↗` ×9, `★` ×7, `≈` ×5, `⚠` ×4, `✕` ×4,
+    `≥` ×3.
+- **Correctif proposé** : auto-héberger **Inter 4.1** découpée pour Zabelie
+  (voir la recommandation) — elle contient tous ces symboles sauf `✕`, à
+  remplacer par `×` (U+00D7). Alternative : icônes SVG.
+- **Effort** : M
+
+### 🔵 Faibles
+
+#### [UI-04] L'Inter servie par Google n'a ni zéro barré ni `l` distinct
+
+- **Axe** : UI
+- **Emplacement** : `app/layout.tsx:35-39`
+- **Constat** : fonctionnalités OpenType présentes dans le fichier servi :
+  `calt ccmp dnom frac locl numr pnum tnum`. Absentes : `zero` (zéro barré),
+  `cv05` (`l` à queue), `case`.
+- **Impact** : `0`/`O` et `l`/`I`/`1` se confondent là où l'on recopie des
+  caractères. ⚠️ **Portée réelle limitée, et c'est mesuré** : les références de
+  commande sont **déjà protégées** — l'alphabet de `zabelie_order_ref_candidate`
+  exclut `0 1 8 B I L O U` (`supabase/migrations/0042_order_ref.sql:49`). Le
+  cas exposé est le **code promo**, composé librement par le vendeur
+  (`lib/zabelie-coupons.ts:10` : `[A-Z0-9-]`, donc `PROMO50` et `PR0MO50`
+  coexistent).
+- **Preuve** : `fontTools` (liste ci-dessus) ; planche comparative, ligne
+  « MonCash 3701 0O10 · Il1| O0 ».
+- **Correctif proposé** : même geste que UI-03, puis
+  `font-feature-settings: "zero", "cv05"` sur les codes affichés.
+- **Effort** : S (une fois UI-03 fait)
+
+#### [UI-05] Boutons secondaires en 12 px / 500
+
+- **Emplacement** : `components/share-buttons.tsx:48,54`
+- **Constat** : « Pataje sou WhatsApp » (secondaire) et « Kopye lyen an » en
+  `text-xs font-medium` ; ailleurs les boutons sont en 14 px / 600–700. Trois
+  styles de bouton coexistent (14/700, 14/600, 12/500).
+- **Correctif proposé** : aligner sur la classe de rôle de UI-01.
+- **Effort** : S
+
+#### [UI-06] Tailles arbitraires de 10 et 11 px
+
+- **Emplacement** : `components/product-card.tsx:87` (10 px, libellé « photo
+  manquante » en mode boutique), `components/product-card.tsx:93,98` (11 px, pastilles « Fizik »
+  sur l'image), `app/tableau-de-bord/page.tsx:713` (10 px),
+  `components/site-nav.tsx:130` (11 px, compteur du panier)
+- **Constat** : hors échelle Tailwind ; mesuré une fois sous 12 px au
+  catalogue (« Fizik », 11 px). Le compteur du panier est un cas légitime
+  (chiffre dans une pastille). Contraste non en cause : le gris secondaire
+  `#5c5a57` fait **6,48:1** sur crème (`app/zabelie-theme.css:102`).
+- **Correctif proposé** : 12 px minimum pour le texte courant ; garder
+  l'exception du compteur, la nommer.
+- **Effort** : S
+
+#### [UI-07] Deux commentaires décrivent une configuration qui n'existe plus
+
+- **Emplacement** : `app/zabelie-theme.css:131` et `app/globals.css:1-2`
+- **Constat** : le premier annonce « sous-ensembles latin + latin-ext » —
+  `app/layout.tsx:36,41` ne déclare que `latin`, et `layout.tsx:27-34` explique
+  pourquoi. Le second annonce « Inter 400/500 » — la police est variable,
+  100 à 900.
+- **Impact** : nul à l'écran ; mais un agent qui croirait le commentaire
+  « rajouterait » `latin-ext` — soit **100 512 octets** de plus, préchargés sur
+  chaque page (Inter 85 272 + Manrope 15 240, mesurés dans le build).
+- **Correctif proposé** : corriger les deux commentaires.
+- **Effort** : S
+
+---
+
+## Plan d'action priorisé
+
+| Ordre | Constat | Action concrète | Sévérité | Effort |
+|-------|---------|-----------------|----------|--------|
+| 1 | UI-02 | Définir une classe unique de titre de section (18 px / 700) et remplacer les dix `className` de `h2` du tableau de bord | 🟡 | S |
+| 2 | UI-01 | Porter la typographie des boutons par une classe de rôle appliquée aux `<button>` **et** aux liens-boutons ; retirer la règle sur l'élément `button` | 🟡 | M |
+| 3 | UI-03 | Auto-héberger Inter 4.1 découpée pour Zabelie via `next/font/local`, avec `LICENSE.txt` (OFL 1.1) et la commande de découpe versionnée ; remplacer `✕` par `×` | 🟡 | M |
+| 4 | UI-04 | Activer `zero` et `cv05` sur les codes promo affichés | 🔵 | S |
+| 5 | UI-07 | Corriger les commentaires de `zabelie-theme.css:131` et `globals.css:1-2` | 🔵 | S |
+| 6 | UI-05 | Aligner les boutons secondaires de partage sur la classe de rôle | 🔵 | S |
+| 7 | UI-06 | Relever les tailles 10–11 px à 12 px (sauf compteur du panier) | 🔵 | S |
+
+**Par quoi commencer** : UI-02 — trente minutes, et c'est le constat le plus
+visible du tableau de bord. **Premier point de contrôle humain** : la décision
+Manrope ci-dessous, **avant** l'étape 3, parce qu'elle détermine si l'on
+auto-héberge une police ou deux. Aucune de ces actions ne touche la base ni
+l'argent.
+
+## Quick wins (< 30 min chacun)
+
+- UI-02 — une classe, dix `className`.
+- UI-07 — deux commentaires.
+- UI-06 — cinq tailles.
+
+---
+
+## Recommandation — la meilleure police pour Zabelie
+
+**Garder Inter. Changer de version, pas de police.**
+
+Inter est la bonne réponse aux contraintes de Zabelie, et c'est mesuré :
+
+- **hauteur d'x de 0,546 em** — parmi les plus grandes qui existent ; c'est
+  ce qui garde un texte lisible à 12–14 px sur un écran Android d'entrée de
+  gamme ;
+- **couverture intégrale** du kreyòl, du français et de l'espagnol, y compris
+  le kreyòl saisi en forme décomposée (`o` + accent combinant) — vérifié glyphe
+  par glyphe ;
+- **chiffres tabulaires** (`tnum`) : les colonnes de prix s'alignent ;
+- **variable** : toutes les graisses dans un seul fichier.
+
+Ce qui ne va pas, c'est la **version Google** : elle est amputée des
+symboles et des variantes qui comptent ici. **Inter 4.1** (licence SIL OFL
+1.1, auto-hébergement et découpe permis) les a, plus un axe de **taille
+optique** qui contient sa propre version « titrage ».
+
+Découpée pour Zabelie — latin, accent combinant, symboles d'interface,
+fonctionnalités `tnum zero cv05 case frac` — et **pesée** :
+
+| Option | Fichiers préchargés | Octets | vs aujourd'hui |
+|---|---|---|---|
+| Aujourd'hui — Inter (Google) + Manrope | 2 | 73 008 | — |
+| **1.** Inter 4.1 Zabelie + Manrope conservée | 2 | 75 452 | +3 % |
+| **2.** Inter 4.1 Zabelie seule, graisse seule | **1** | **50 876** | **−30 %** |
+| 3. Inter 4.1 Zabelie seule, graisse + taille optique | 1 | 78 140 | +7 % |
+
+Les options 2 et 3 sont **quasi indiscernables à taille mobile** (planche
+`revue-typographie-2026-09-26/planche-comparative.png`) : la 3 coûte 27 Ko de
+plus pour une finesse que l'écran visé ne rend pas.
+
+**Ma recommandation : l'option 1 tout de suite, l'option 2 si vous acceptez
+de perdre Manrope.**
+
+- **L'option 1 est un gain pur** : +2 444 octets pour des symboles cohérents,
+  un zéro barré, un `l` distinct. Elle ne change rien à l'identité.
+- **L'option 2 est un choix de marque**, et il vous revient (`docs/25` §4 :
+  positionnement). Elle gagne 22 Ko et un préchargement — sensible sur 3G au
+  premier affichage — et elle **supprime UI-01 par construction** (une seule
+  famille, plus de coupure possible). Ce qu'elle retire : l'arrondi
+  géométrique de Manrope sur les titres et les prix, choisi pour l'accueil
+  premium (`docs/02` V-20). Sur la planche, c'est la différence entre la
+  première ligne et la troisième : plus neutre, plus compacte.
+
+---
+
+## Annexe — Couverture
+
+### Vérifié
+
+- `app/layout.tsx`, `app/globals.css`, `app/zabelie-theme.css` (lus en entier
+  sur les passages typographiques).
+- `/catalogue` et `/tableau-de-bord` rendus par un build de production de
+  `main` (`6f76eac`), stub Supabase, kreyòl, **390 × 844** et **1 440 × 900** :
+  styles calculés de chaque élément portant du texte visible (69 à 145 par
+  page), polices **effectivement dessinées** par le moteur
+  (`CSS.getPlatformFontsForNode`), fichiers téléchargés et leur poids, CLS.
+- Les 15 règles `@font-face` du build (famille, fichier, poids, plage
+  Unicode).
+- Les fichiers de police servis, ouverts avec `fontTools` : caractères, axes,
+  fonctionnalités, hauteur d'x.
+- Inter 4.1.1 (paquet npm `inter-ui`, OFL 1.1) découpée avec `pyftsubset` ;
+  les deux découpes vérifiées complètes (kreyòl/fr/es, accent combinant,
+  symboles, fonctionnalités).
+
+### Mesures de référence
+
+| Mesure | Catalogue | Tableau de bord |
+|---|---|---|
+| Polices téléchargées | 2 fichiers, 73 008 o | 2 fichiers, 73 008 o |
+| CLS | 0,0000 | 0,0000 |
+| Glyphes Inter / Manrope / système | 1 076 / 76 / 2 | 4 252 / 832 / 3 (+2 emoji) |
+| Tailles rendues (px, 390) | 11 · 12 · 14 · 16 · 24 · 32 | 12 · 14 · 16 · 18 · 20 · 24 · 30 · 36 |
+| Taille dominante du texte | 14 px (62 éléments) | 14 px (89 éléments) |
+
+Le texte courant est en **14 px** (`text-sm`) plutôt qu'en 16 px. Ce n'est pas
+retenu comme constat : la hauteur d'x d'Inter donne à 14 px la lecture d'un
+15–16 px dans la plupart des polices. À réexaminer après un essai sur un
+téléphone réel.
+
+### Non vérifié / à confirmer
+
+- ⚠️ **Le rendu sur un vrai Android.** Ici, les symboles manquants tombent sur
+  DejaVu Sans ; sur Android ce sera Roboto ou Noto, et `⚠` possiblement en
+  emoji couleur. La **conclusion** (police étrangère à la marque) tient ; le
+  **rendu exact** dépend de l'appareil.
+- ⚠️ **Le catalogue réel.** Le stub ne porte qu'un produit. Un nom de vendeur
+  ou un titre contenant un caractère `latin-ext` (`ă`, `ş`, `ł`…) déclencherait
+  le téléchargement d'Inter `latin-ext` : **85 272 octets**, plus que la
+  police principale. Non observé ici ; à vérifier sur la production.
+
+### Observé hors périmètre (non audité)
+
+Deux choses vues en mesurant, qui ne relèvent pas de la typographie mais ne
+doivent pas se perdre :
+
+- **Français en interface kreyòl sur le tableau de bord** — « Mes produits »,
+  « Codes promo », « Mes données & mon compte »
+  (`app/tableau-de-bord/page.tsx:665,748,833`), « Demander un retrait »
+  (`:560`), « Enregistrer » (`components/profile-form.tsx:337`), « Supprimer
+  mon compte » (`components/account-actions.tsx:55`), et « Bonjour » en tête
+  de page (capture `revue-typographie-2026-09-26/tableau-de-bord-mobile.png`).
+- **« NaN HTG » possible** — `components/digital-seller-metrics.tsx:9` calcule
+  `formatHTG(Number(data.gross_htg))` sans garde : si le champ manque,
+  `Number(undefined)` rend `NaN` et l'écran affiche un montant « NaN HTG ».
+  Observé avec le stub, qui ne fournit pas `gross_htg` ; en production, cela
+  dépend de la réponse de la fonction. Un affichage d'argent ne devrait pas
+  pouvoir produire `NaN`.
