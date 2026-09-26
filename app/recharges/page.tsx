@@ -12,7 +12,7 @@ import { isStripeEnabled } from "@/lib/stripe-config";
 
 export async function generateMetadata() {
   const lang = await getLang();
-  return { title: t(lang, "recharges.title"), description: t(lang, "recharges.intro"), alternates: editorialAlternates("/recharges", lang) };
+  return { title: `${t(lang, "recharges.title")} — Zabelie`, description: t(lang, "recharges.intro"), alternates: editorialAlternates("/recharges", lang) };
 }
 
 export default async function RechargesPage() {

@@ -47,7 +47,12 @@ import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Vendre — Zabelie" };
+export const metadata = {
+  title: "Vendre — Zabelie",
+  description:
+    "Préparez votre boutique sur Zabelie : présentez votre activité, ajoutez vos offres avec photos, prix et description. Chaque fiche est examinée.",
+  alternates: { canonical: "/vendre" },
+};
 
 function Shell({
   children,

@@ -12,7 +12,7 @@ import { t } from "@/lib/i18n";
 
 export async function generateMetadata() {
   const lang = await getLang();
-  return { title: t(lang, "aide.title"), description: t(lang, "aide.sub"), alternates: editorialAlternates("/aide", lang) };
+  return { title: `${t(lang, "aide.title")} — Zabelie`, description: t(lang, "aide.sub"), alternates: editorialAlternates("/aide", lang) };
 }
 
 /**

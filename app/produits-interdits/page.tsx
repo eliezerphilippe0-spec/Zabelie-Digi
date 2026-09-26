@@ -6,6 +6,9 @@ import { POLICY_VERSION } from "@/lib/policy";
 
 export const metadata = {
   title: "Ce qui ne peut pas être vendu — Zabelie",
+  description:
+    "Les règles de Zabelie sur ce qui ne peut pas être vendu : contrefaçons, armes et autres produits interdits. En publiant une fiche, le vendeur les accepte.",
+  alternates: { canonical: "/produits-interdits" },
 };
 
 /**

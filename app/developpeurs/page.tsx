@@ -5,7 +5,12 @@ import { getLang } from "@/lib/i18n-server";
 import { apiDocsCopy } from "@/lib/api/v1/docs-copy";
 import { PUBLIC_OPERATIONS } from "@/lib/api/v1/openapi";
 
-export const metadata = { title: "API Zabelie" };
+export const metadata = {
+  title: "API Zabelie",
+  description:
+    "API publique de Zabelie : lecture sans clé des produits, catégories, vendeurs, avis et stock de la marketplace haïtienne. Contrat OpenAPI disponible.",
+  alternates: { canonical: "/developpeurs" },
+};
 const example = `const response = await fetch("https://zabelie.com/api/v1/search_products", {
   method: "POST",
   credentials: "omit",

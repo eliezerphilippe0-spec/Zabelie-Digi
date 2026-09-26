@@ -6,6 +6,9 @@ import { CONDITIONS } from "@/lib/policy-terms";
 
 export const metadata = {
   title: "Conditions d'utilisation — Zabelie",
+  description:
+    "Les conditions d'utilisation de la marketplace haïtienne Zabelie, pour les acheteurs comme pour les vendeurs.",
+  alternates: { canonical: "/conditions" },
 };
 
 // Dernière mise à jour du gabarit (à actualiser à chaque changement — et la

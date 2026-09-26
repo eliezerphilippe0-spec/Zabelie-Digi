@@ -28,6 +28,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/catalogue?univers=numerique",
     "/catalogue?univers=services",
     "/vendre",
+    "/produits-interdits",
+    "/developpeurs",
   ].filter((path) => {
     if (!path.startsWith("/catalogue")) return true;
     const universe = catalogueUniverse(new URL(path, base).searchParams.get("univers"));

@@ -11,6 +11,9 @@ import {
 
 export const metadata = {
   title: "Politique de confidentialité — Zabelie",
+  description:
+    "La politique de confidentialité de Zabelie : les données traitées sur la marketplace, leur usage et vos droits.",
+  alternates: { canonical: "/confidentialite" },
 };
 
 // Dernière mise à jour de la politique (à actualiser à chaque changement).

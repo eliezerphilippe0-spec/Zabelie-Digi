@@ -10,7 +10,7 @@ import { t } from "@/lib/i18n";
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const [lang, { q }] = await Promise.all([getLang(), searchParams]);
   return {
-    title: t(lang, "directory.title"),
+    title: `${t(lang, "directory.title")} — Zabelie`,
     description: t(lang, "directory.intro"),
     alternates: { canonical: "/categories" },
     robots: typeof q === "string" && q.trim() ? { index: false, follow: true } : undefined,
