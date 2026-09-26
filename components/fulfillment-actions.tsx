@@ -100,7 +100,7 @@ export function FulfillmentAction({
       >
         {envoi ? "…" : labels.cta}
       </button>
-      {labels.hint && <p className="text-right text-[11px] text-mist">{labels.hint}</p>}
+      {labels.hint && <p className="text-right text-xs text-mist">{labels.hint}</p>}
       {erreur && <p className="text-right text-xs text-danger-text">{erreur}</p>}
     </div>
   );

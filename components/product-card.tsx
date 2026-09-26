@@ -84,18 +84,18 @@ export function ProductCard({
       <div className={`relative aspect-square w-full overflow-hidden bg-line ${boutique ? "rounded-lg" : ""}`}>
         {cover && <CardImage src={cover} alt={titre} size={COVER_WIDTHS.card} />}
         {!cover && labels.photoMissing && (
-          <div className={boutique ? "flex h-full flex-col items-center justify-center gap-2 px-1 text-center text-[10px] text-mist" : "home-photo-empty"}>
+          <div className={boutique ? "flex h-full flex-col items-center justify-center gap-2 px-1 text-center text-xs text-mist" : "home-photo-empty"}>
             <svg className={boutique ? "h-6 w-6 shrink-0" : undefined} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
             <span>{labels.photoMissing}</span>
           </div>
         )}
         {!boutique && kindLabel && (
-          <span className="absolute left-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
+          <span className="absolute left-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-xs font-medium text-on-chrome">
             {kindLabel}
           </span>
         )}
         {!boutique && (product.ratingAvg !== null || product.sales > 0) && (
-          <span className="absolute right-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-[11px] font-medium text-on-chrome">
+          <span className="absolute right-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-xs font-medium text-on-chrome">
             {product.ratingAvg !== null
               ? `★ ${product.ratingAvg} (${product.ratingCount})`
               : `${product.sales} ${

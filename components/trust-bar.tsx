@@ -44,7 +44,7 @@ export function TrustBar({ items, compact = false }: { items: Item[]; compact?: 
               >
                 <path d={ICONES[it.icone]} />
               </svg>
-              <span className="text-[11px] leading-tight text-mist sm:text-xs">{it.t}</span>
+              <span className="text-xs leading-tight text-mist">{it.t}</span>
             </li>
           ))}
         </ul>

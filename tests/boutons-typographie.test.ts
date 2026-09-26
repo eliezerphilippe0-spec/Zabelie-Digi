@@ -200,3 +200,24 @@ test("B4 — les appelants de `MetricA` (classe transmise) sont vérifiés eux a
   assert.ok(vus >= 3, `seulement ${vus} appel(s) de MetricA vu(s)`);
   assert.deepEqual(fautes, [], fautes.join("\n"));
 });
+
+test("B5 — les boutons de partage ont le gabarit de leur voisin, le bouton favoris / suivre (UI-05)", () => {
+  /* Sur la fiche produit et la page boutique, `ShareButtons` est rendu à côté de
+     `CollectionToggle` — sur la MÊME rangée côté boutique. Mesuré avant : 12 px /
+     500 / rayon 8 px, contre 14 px / 600 / rayon 20 px. Le gabarit se compare sur
+     ce qui COMMANDE le rendu : taille, graisse, rayon, rembourrage horizontal,
+     hauteur minimale — pas sur la couleur, qui distingue légitimement les deux. */
+  const GABARIT =
+    /(?<![\w:/-])(text-(?:xs|sm|base|lg|\[[^\]]+\])|font-(?:thin|light|normal|medium|semibold|bold|extrabold|black)|rounded(?:-\w+)?|px-[\w.]+|min-h-[\w.]+)(?![\w/-])/g;
+  const gabarits = (f: string) =>
+    [...readFileSync(f, "utf8").matchAll(/<button\b(?:[^>]|=>)*?className="([^"]*)"/g)].map((m) =>
+      [...m[1].matchAll(GABARIT)].map((x) => x[1]).sort().join(" ")
+    );
+  const partage = gabarits("components/share-buttons.tsx");
+  const voisin = gabarits("components/collection-toggle.tsx");
+  assert.equal(partage.length, 2, "ShareButtons doit rendre ses deux boutons avec une classe littérale");
+  assert.equal(voisin.length, 1, "CollectionToggle doit rendre son bouton avec une classe littérale");
+  for (const g of partage) {
+    assert.equal(g, voisin[0], `bouton de partage « ${g} » ≠ bouton voisin « ${voisin[0]} » — deux gabarits côte à côte`);
+  }
+});
