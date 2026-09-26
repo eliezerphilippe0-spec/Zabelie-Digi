@@ -83,19 +83,6 @@ const EXCEPTIONS: { fichier: string; element: string; px: number; raison: string
     px: 11,
     raison: "compteur du panier : un chiffre dans une pastille de 20 px, pas du texte à lire (UI-06 l'avait nommé ainsi)",
   },
-  ...[
-    [".home-kicker, .home-eyebrow", 11],
-    [".home-featured .home-eyebrow", 10],
-    [".home-photo-empty", 11],
-    [".home-featured-seller", 11],
-    [".home-featured .home-eyebrow", 8],
-    [".home-featured .home-photo-empty > span", 9],
-  ].map(([element, px]) => ({
-    fichier: "app/home-discovery.css",
-    element: element as string,
-    px: px as number,
-    raison: "accueil : tailles posées par le porteur le 2026-09-05 — relevées à 12 px dans un commit d'ARBITRAGE séparé",
-  })),
 ];
 
 /** Une exception désigne une taille : même fichier, même valeur, et en CSS le MÊME sélecteur
