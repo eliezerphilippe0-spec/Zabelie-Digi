@@ -266,6 +266,8 @@ de perdre Manrope.**
 
 - **L'option 1 est un gain pur** : +2 444 octets pour des symboles cohérents,
   un zéro barré, un `l` distinct. Elle ne change rien à l'identité.
+  *(Mise en œuvre : +3 656 octets — huit symboles de plus inclus, voir
+  « Suite donnée » ci-dessous.)*
 - **L'option 2 est un choix de marque**, et il vous revient (`docs/25` §4 :
   positionnement). Elle gagne 22 Ko et un préchargement — sensible sur 3G au
   premier affichage — et elle **supprime UI-01 par construction** (une seule
@@ -273,6 +275,66 @@ de perdre Manrope.**
   géométrique de Manrope sur les titres et les prix, choisi pour l'accueil
   premium (`docs/02` V-20). Sur la planche, c'est la différence entre la
   première ligne et la troisième : plus neutre, plus compacte.
+
+---
+
+## Suite donnée — 2026-09-26 : option 1, choisie par le porteur
+
+Signal : « option 1 ». Le même lot corrige UI-02, UI-03, UI-04 et UI-07.
+UI-01, UI-05 et UI-06 restent ouverts.
+
+### Ce qui a été fait
+
+| Constat | Geste |
+|---|---|
+| UI-03 · UI-04 | `app/fonts/InterZabelie-4.1.1.woff2` chargé par `next/font/local` à la place de l'Inter de Google. Découpe reproductible : `scripts/decouper-police-inter.sh` (source épinglée `inter-ui@4.1.1`, OFL 1.1, licence livrée dans `app/fonts/Inter-LICENSE.txt`). |
+| UI-04 | Classe `.code-lisible` (Inter, `zero`, `cv05`, `tnum`) sur les quatre endroits où un code promo s'affiche ou se saisit : l'exemple du tableau de bord, la liste et le champ du vendeur, le champ de l'acheteur. |
+| UI-03 | `✕` → `×` (4 occurrences : `✕` n'existe pas dans Inter). `🏍` et `⏱` suivis de U+FE0F : sans lui, la moto s'affichait en noir et blanc à côté d'une voiture en couleur. |
+| UI-02 | Classe `.titre-section` (18 px / 700) sur les 12 `h2` de section. `seller-pricing-panel` sert aussi `/vendre` : ses titres y suivent. |
+| UI-07 | Commentaires de `app/zabelie-theme.css` et `app/globals.css` corrigés. |
+
+### Mesuré après, même sonde que l'audit
+
+| Page | Octets de police | CLS | Glyphes dessinés par le téléphone (hors emoji) |
+|---|---|---|---|
+| Catalogue (390 et 1 440) | 73 008 → **76 664** | 0 → **0** | 2 → **0** |
+| Tableau de bord (390 et 1 440) | 73 008 → **76 664** | 0 → **0** | 3 → **0** |
+
+- Les dix `h2` rendus du tableau de bord : **tous** Manrope 18 px / 700.
+- L'exemple « PROMO50 » : Inter 700, `font-feature-settings: "cv05", "tnum",
+  "zero"` au style calculé ; zéro barré visible
+  (`revue-typographie-2026-09-26/apres-codes-promo.png`, à comparer avec
+  `avant-codes-promo.png`).
+- **+3 656 octets (+5 %)**, et non +2 444 comme annoncé : huit symboles
+  employés une fois chacun dans le site (`∞ ● ○ ▶ ⊘ ☆ ≤ ≠`) ont été ajoutés à
+  la découpe, pour que le compte tombe à zéro. Budget A7 (≤ 90 Ko) tenu :
+  76,7 Ko. Les 20 derniers octets sont la licence OFL, gardée DANS le
+  fichier (noms 13 et 14) : l'OFL veut qu'elle accompagne chaque copie, et
+  servir une police sur le web, c'est la distribuer.
+
+### Ce qui le garde
+
+- `tests/police-inter.test.ts` ouvre le fichier WOFF2 (lecteur maison,
+  `tests/woff2-lecteur.ts`, croisé avec fontTools sur trois polices) et
+  vérifie glyphe par glyphe : kreyòl, français, espagnol, accents combinants,
+  `zero`, `cv05`, budget 56 000 octets, branchement dans `layout.tsx`, et un
+  **croisement** — tout caractère non ASCII du code d'interface doit être dans
+  la police, ou être un emoji assumé, ou une exemption nommée.
+- `tests/titres-section.test.ts` refuse un `h2` de section sans
+  `.titre-section`, ou avec une taille ou une graisse à côté.
+- Onze mutations passées, chacune vérifiée appliquée avant lecture, chacune
+  rouge sur le bon test. **Une a d'abord été VERTE** : `✔` ajouté à un libellé
+  passait, parce que la frontière des emoji était `\p{Extended_Pictographic}`,
+  qui inclut `✔` alors qu'il ne s'affiche PAS en emoji par défaut. Resserrée à
+  « présentation emoji par défaut, ou suivi de U+FE0F » — c'est elle qui a
+  débusqué `🏍` et `⏱`.
+
+### Nouveau constat, préexistant
+
+- 🔵 **Le texte indicatif « PROMO50 » du champ Code est tronqué à 390 px**
+  (« PROMO5… ») — `components/zabelie-coupon-manager.tsx`, trois champs sur une
+  ligne. Déjà le cas avant ce lot : même largeur, même troncature sur la
+  capture d'origine.
 
 ---
 

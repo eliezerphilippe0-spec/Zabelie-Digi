@@ -1,5 +1,5 @@
-/* Typo AUTO-HÉBERGÉE via next/font (voir app/layout.tsx) : Manrope 700/800
-   (titres, prix, boutons) + Inter 400/500 (texte). Plus de requête tierce
+/* Typo AUTO-HÉBERGÉE (voir app/layout.tsx) : Manrope 700/800 (titres, prix,
+   boutons) + Inter 4.1 variable (texte, codes). Plus de requête tierce
    bloquante vers Google Fonts — gain net sur 3G. */
 @import "tailwindcss";
 @import "./marketplace-header.css";
@@ -160,5 +160,27 @@
   .metric {
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
+  }
+  /* TITRE DE SECTION — un seul style pour chaque `h2` qui ouvre une carte de
+     section (audit typographique du 2026-09-26, UI-02). Mesuré avant : dix
+     `h2` du tableau de bord en QUATRE styles (14 à 20 px, 600 ou 700), dont
+     deux au rendu exact d'un libellé de bouton. La famille et la graisse de
+     base viennent de la règle `h1…h6` ci-dessus ; cette classe fixe la taille,
+     et REPOSE la graisse que les `font-semibold` locaux avaient écrasée.
+     `tests/titres-section.test.ts` refuse qu'un de ces `h2` reprenne une
+     taille ou une graisse à côté. */
+  .titre-section {
+    font-size: var(--text-lg, 1.125rem);
+    line-height: var(--text-lg--line-height, calc(1.75 / 1.125));
+    font-weight: 700;
+  }
+  /* CODE À RECOPIER — zéro barré (`zero`) et `l` distinct (`cv05`). En Inter,
+     la seule des deux polices qui porte ces variantes : Manrope n'en a aucune.
+     Les codes promo sont composés librement par les vendeurs
+     (`lib/zabelie-coupons.ts` : `[A-Z0-9-]`), donc `PROMO50` et `PR0MO50`
+     coexistent — et à l'œil, ils étaient identiques. */
+  .code-lisible {
+    font-family: var(--font-sans);
+    font-feature-settings: "zero" 1, "cv05" 1, "tnum" 1;
   }
 }

@@ -182,7 +182,7 @@ export function InvoiceEditor({
                       className="text-xs text-danger-text hover:underline disabled:opacity-50"
                       aria-label="Supprimer la ligne"
                     >
-                      ✕
+                      ×
                     </button>
                   )}
                 </div>

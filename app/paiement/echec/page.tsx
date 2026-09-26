@@ -19,7 +19,7 @@ export default async function EchecPage({
       <SiteNav />
       <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger text-2xl text-ink">
-          ✕
+          ×
         </span>
         <h1 className="mt-6 text-2xl font-extrabold">{t(lang, "pay.fail.title")}</h1>
         <p className="mt-3 text-mist">

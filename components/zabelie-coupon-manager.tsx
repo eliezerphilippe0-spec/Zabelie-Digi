@@ -77,7 +77,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
             placeholder="PROMO50"
             maxLength={24}
             required
-            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            className="code-lisible mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
           />
         </div>
         <div className="w-24">
@@ -123,7 +123,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
               className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm"
             >
               <div>
-                <span className={`numeric font-extrabold ${c.active ? "text-accent" : "text-mist line-through"}`}>
+                <span className={`code-lisible font-extrabold ${c.active ? "text-accent" : "text-mist line-through"}`}>
                   {c.code}
                 </span>
                 <span className="ml-2 text-mist">
