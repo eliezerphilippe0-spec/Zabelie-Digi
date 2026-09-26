@@ -491,7 +491,7 @@ export default async function DashboardPage({
       )}
 
       <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-8 scroll-mt-28 rounded-2xl border border-line bg-surface p-5">
-        <h2 id="ma-boutique-title" className="text-lg font-semibold">{t(lang, "shop.manage")}</h2>
+        <h2 id="ma-boutique-title" className="titre-section">{t(lang, "shop.manage")}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
         <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
           {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
@@ -574,7 +574,7 @@ export default async function DashboardPage({
       {/* Ventes récentes */}
       <section id="ventes" className="mt-10 scroll-mt-24">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-lg font-semibold">{t(lang, "dashboard.sales.recent")}</h2>
+          <h2 className="titre-section">{t(lang, "dashboard.sales.recent")}</h2>
           {/* Le compte RÉEL, pas la longueur de la page. Sans lui, « 8 » est
               indiscernable de « 8 sur 30 » — et c'est le registre de son
               argent que le vendeur regarde. */}
@@ -662,7 +662,7 @@ export default async function DashboardPage({
       {/* Mes produits */}
       <section className="mt-10">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Mes produits</h2>
+          <h2 className="titre-section">Mes produits</h2>
           <Link
             href="/vendre"
             className="text-sm text-mist transition hover:text-cloud"
@@ -745,9 +745,9 @@ export default async function DashboardPage({
       {/* Codes promo (V-13) */}
       {products.length > 0 && (
         <section className="mt-10">
-          <h2 className="text-lg font-semibold">Codes promo</h2>
+          <h2 className="titre-section">Codes promo</h2>
           <p className="mt-1 text-xs text-mist">
-            Créez un code (ex. <span className="numeric text-accent">PROMO50</span>),
+            Créez un code (ex. <span className="code-lisible font-bold text-accent">PROMO50</span>),
             partagez-le sur WhatsApp — la remise s&apos;applique automatiquement au
             paiement. Valable sur tous vos produits.
           </p>
@@ -760,7 +760,7 @@ export default async function DashboardPage({
       {/* Profil public */}
       <section id="profil-public" className="mt-10 scroll-mt-28">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t(lang, "dashboard.profile.public")}</h2>
+          <h2 className="titre-section">{t(lang, "dashboard.profile.public")}</h2>
           <Link
             href={hrefBoutique({ id: user.id, boutikSlug })}
             className="text-sm text-mist transition hover:text-cloud"
@@ -830,7 +830,7 @@ export default async function DashboardPage({
 
       {/* Données & compte (RGPD) */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold">Mes données &amp; mon compte</h2>
+        <h2 className="titre-section">Mes données &amp; mon compte</h2>
         <p className="mt-1 text-sm text-mist">
           Téléchargez une copie de vos données ou supprimez votre compte. Voir
           notre{" "}

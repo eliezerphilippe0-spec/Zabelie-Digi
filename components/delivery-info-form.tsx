@@ -61,7 +61,7 @@ export function DeliveryInfoForm({
       onSubmit={enregistrer}
       className="mt-8 space-y-3 rounded-2xl border border-line bg-surface/40 p-5"
     >
-      <h2 className="text-sm font-semibold text-cloud">{labels.title}</h2>
+      <h2 className="titre-section text-cloud">{labels.title}</h2>
       <p className="text-xs text-mist">{labels.hint}</p>
       <label className="block text-xs text-mist">
         {labels.fullName}

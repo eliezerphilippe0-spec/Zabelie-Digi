@@ -631,7 +631,7 @@ export function PhysicalProductForm({
                 onClick={() => setVariants((vs) => vs.filter((_, j) => j !== i))}
                 className="h-9 rounded-lg border border-line text-mist"
               >
-                ✕
+                ×
               </button>
             </div>
           ))}
@@ -731,7 +731,7 @@ function FitmentPicker({
                   onClick={() => onChange(fitment.filter((_, j) => j !== i))}
                   className="text-mist"
                 >
-                  ✕
+                  ×
                 </button>
               </li>
             );
@@ -749,7 +749,7 @@ function FitmentPicker({
           <option value="">Marque…</option>
           {makes.map((mk) => (
             <option key={mk} value={mk}>
-              {mk.startsWith("moto:") ? "🏍 " : "🚗 "}
+              {mk.startsWith("moto:") ? "🏍️ " : "🚗 "}
               {mk.split(":")[1]}
             </option>
           ))}

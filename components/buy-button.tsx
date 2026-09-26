@@ -465,7 +465,7 @@ export function BuyButton({
             placeholder={coupon.placeholder}
             aria-label={coupon.placeholder}
             maxLength={24}
-            className="min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            className="code-lisible min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
           />
           <button
             type="button"

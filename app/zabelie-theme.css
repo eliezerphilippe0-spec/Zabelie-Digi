@@ -126,9 +126,12 @@
      SUPPRIMÉS le 2026-09-02 (audit UX, #12). `tests/ux-lot-d` garde. */
 
   /* ── Typographie ──
-     Titres, prix, boutons : Manrope 700/800 · Corps : Inter 400/500.
-     Polices AUTO-HÉBERGÉES via next/font (layout.tsx) → variables --font-inter
-     / --font-display, sous-ensembles latin + latin-ext (è, ò, à du kreyòl).
+     Titres, prix, boutons : Manrope 700/800 · Corps : Inter.
+     Deux polices VARIABLES, auto-hébergées (layout.tsx) → variables
+     --font-inter (Inter 4.1 découpée pour Zabelie, `next/font/local`, avec
+     flèches, coche, étoiles, zéro barré) et --font-display (Manrope,
+     `next/font/google`, sous-ensemble `latin`). Les diacritiques kreyòl
+     è/ò/à sont dans `latin` (U+00C0–U+00FF) : `latin-ext` n'est PAS chargé.
      Le repli des titres est une GROTESQUE système : avec `display: swap`, un
      repli de même famille limite le saut de largeur au basculement. */
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto,

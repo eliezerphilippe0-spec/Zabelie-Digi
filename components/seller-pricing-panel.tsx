@@ -7,7 +7,7 @@ export function SellerPricingPanel({ pricing, lang }: { pricing: SellerPricing; 
   const c = sellerPricingCopy(lang);
   const fmt = (n: number) => new Intl.NumberFormat(lang === "ht" ? "fr-HT" : lang).format(n);
   return <section className="mt-5 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-5" aria-label={c.title}>
-    <h2 className="text-lg font-semibold">{c.title}</h2>
+    <h2 className="titre-section">{c.title}</h2>
     <p className="mt-2 text-sm text-mist">{c.free}</p>
     <dl className="mt-4 grid gap-4 sm:grid-cols-2">
       {(["direct", "discovery"] as const).map(source => <div key={source}>
@@ -41,7 +41,7 @@ export function SellerLaunchPanel({ launch, lang, now }: { launch: SellerLaunch 
   const date = new Date(state === "submit" ? launch.submission_deadline : launch.ends_at ?? launch.submission_deadline)
     .toLocaleDateString(lang === "ht" ? "fr-HT" : lang, { timeZone: "America/Port-au-Prince", year: "numeric", month: "short", day: "numeric" });
   return <section className="my-5 rounded-2xl border border-line bg-surface p-5" aria-label={c.launch}>
-    <h2 className="font-semibold">{c.launch}</h2>
+    <h2 className="titre-section">{c.launch}</h2>
     <p className="mt-2 text-sm">{pricingText(c[state], { date, remaining: Math.max(0, launch.sales_limit - launch.used_sales) })}</p>
     <p className="mt-2 text-xs text-mist">{c.share}</p>
     <Link href="/vendre#mes-produits" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{c.manage}</Link>

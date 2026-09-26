@@ -337,7 +337,7 @@ export default async function ProductPage({
                 valeur MOINS un manque — le test truthy le masquait. */}
             {isService(product.kind, product.id) && product.deliveryDays != null && (
               <span className="rounded-full border border-line px-3 py-1 text-xs text-accent">
-                ⏱{" "}
+                ⏱️{" "}
                 {product.deliveryDays === 0
                   ? t(lang, "product.delivery.sameday")
                   : t(lang, "product.delivery.days", {
@@ -414,7 +414,7 @@ export default async function ProductPage({
                     key={i}
                     className="rounded-full border border-line px-3 py-1 text-sm text-cloud"
                   >
-                    {f.kind === "moto" ? "🏍 " : "🚗 "}
+                    {f.kind === "moto" ? "🏍️ " : "🚗 "}
                     {f.make} {f.model} · {f.yearStart}
                     {f.yearEnd ? `–${f.yearEnd}` : "+"}
                   </li>

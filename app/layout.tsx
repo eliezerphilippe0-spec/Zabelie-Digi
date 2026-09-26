@@ -2,7 +2,8 @@ import { ConnectivityNotice } from "@/components/connectivity-notice";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { DocumentLanguage } from "@/components/document-language";
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { getLang } from "@/lib/i18n-server";
 import { cookies, headers } from "next/headers";
@@ -24,16 +25,26 @@ import { RecoveryCatcher } from "@/components/recovery-catcher";
 // et `extrabold` sur des centaines d'éléments Inter. Deux graisses statiques
 // (400/500) laisseraient le navigateur SYNTHÉTISER le reste — un faux gras
 // qui empâte. Une variable couvre toutes les graisses dans UN fichier.
-// Sous-ensemble `latin` SEUL, et c'est mesuré contre le brief (qui demandait
-// `latin-ext` « pour les diacritiques kreyòl è/ò/à ») : ces lettres sont dans
-// `latin` (U+00C0–U+00FF), pas dans `latin-ext`. Et next/font PRÉCHARGE
-// chaque sous-ensemble déclaré : avec `latin-ext`, le build émettait quatre
-// fichiers préchargés pour 169 Ko — Inter latin-ext seul pesait 85 Ko, pour
-// des glyphes qu'aucune page n'affiche. Sans lui : Inter 48,4 Ko + Manrope
-// 24,6 Ko = 73 Ko, sous la cible A7 (≤ 90 Ko). `latin-ext` reviendrait
-// le jour où le catalogue porte des caractères qu'il couvre (Ș, Ő, Ă…).
-const inter = Inter({
-  subsets: ["latin"],
+//
+// INTER : VERSION 4.1 COMPLÈTE, DÉCOUPÉE POUR ZABELIE (2026-09-26, option 1
+// de `docs/REVUE-2026-09-26-typographie.md`, choisie par le porteur).
+// L'Inter de `next/font/google` était AMPUTÉE — mesuré au moteur de rendu :
+// `✓` ×51, `→` ×12, `★` ×7 (les étoiles de notation), `⚠`… étaient dessinés
+// par la police du TÉLÉPHONE, et ni le zéro barré ni le `l` distinct
+// n'existaient pour les codes promo. Le fichier se régénère à l'identique par
+// `scripts/decouper-police-inter.sh` ; `tests/police-inter.test.ts` l'ouvre
+// et vérifie ce qu'il contient, glyphe par glyphe.
+//
+// Sous-ensemble `latin` SEUL côté Manrope, et c'est mesuré contre le brief (qui
+// demandait `latin-ext` « pour les diacritiques kreyòl è/ò/à ») : ces lettres
+// sont dans `latin` (U+00C0–U+00FF), pas dans `latin-ext`. Et next/font
+// PRÉCHARGE chaque sous-ensemble déclaré : `latin-ext` ajouterait 15 Ko pour
+// Manrope, pour des glyphes qu'aucune page n'affiche. Préchargé aujourd'hui :
+// Inter 52,1 Ko + Manrope 24,6 Ko = 76,7 Ko, sous la cible A7 (≤ 90 Ko).
+const inter = localFont({
+  src: "./fonts/InterZabelie-4.1.1.woff2",
+  weight: "100 900",
+  style: "normal",
   variable: "--font-inter",
   display: "swap",
 });
