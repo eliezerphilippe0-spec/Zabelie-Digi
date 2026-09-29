@@ -26,7 +26,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
   const jsonLd = { "@context": "https://schema.org", "@type": "WebPage", name: t(lang, guide.title), description: t(lang, guide.intro), url, inLanguage: lang, isPartOf: { "@type": "WebSite", name: "Zabelie", url: siteUrl() } };
   return <div className="min-h-dvh bg-grain"><SiteNav /><main id="main" className="mx-auto max-w-6xl px-5 py-10">
     <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-    <nav aria-label={t(lang, "nav.breadcrumb")} className="flex flex-wrap gap-2 text-sm text-mist"><Link href="/" className="underline">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><Link href={guideHref(lang)} className="underline">{t(lang, "guides.title")}</Link></nav>
+    <nav aria-label={t(lang, "nav.breadcrumb")} className="flex flex-wrap gap-2 text-sm text-mist"><Link href="/" className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><Link href={guideHref(lang)} className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "guides.title")}</Link></nav>
     <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
       <article lang={lang} className="max-w-3xl">
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t(lang, guide.title)}</h1>
