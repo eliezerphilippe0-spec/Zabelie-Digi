@@ -30,7 +30,7 @@ const ICONES: Record<Icone, string> = {
 export function TrustBar({ items, compact = false }: { items: Item[]; compact?: boolean }) {
   if (compact) {
     return (
-      <section className="mx-auto max-w-6xl px-3 pt-3">
+      <section className="mx-auto max-w-6xl px-5 pt-3">
         <ul className="grid grid-cols-4 gap-1.5">
           {items.map((it) => (
             <li key={it.t} className="flex flex-col items-center gap-1 text-center">

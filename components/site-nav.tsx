@@ -75,7 +75,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
         {t(lang, "a11y.skip")}
       </a>
 
-      <div className="mx-auto max-w-6xl px-3">
+      <div className="mx-auto max-w-6xl px-5">
         {/* LIGNE 1 — logo · recherche · panier · compte */}
         <div className="marketplace-header-row">
           <BrandLogo className="header-fold marketplace-header-brand shrink-0 text-on-chrome" />
