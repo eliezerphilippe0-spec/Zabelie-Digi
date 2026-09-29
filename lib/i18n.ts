@@ -502,7 +502,8 @@ const fr = {
 
   // Catalogue
   "catalog.title": "Catalogue",
-  "catalog.results": "résultat(s)",
+  "catalog.results": "résultats",
+  "catalog.results.one": "résultat",
   "catalog.reviews.proof":
     "Une note ne vient que d'un acheteur qui a payé — un seul avis par commande.",
   "catalog.for": "pour",
@@ -537,7 +538,8 @@ const fr = {
   "product.by": "par",
   "product.sales": "ventes",
   "product.sales.one": "vente",
-  "product.reviews.badge": "avis vérifié(s)",
+  "product.reviews.badge": "avis vérifiés",
+  "product.reviews.badge.one": "avis vérifié",
   "product.pay": "Payer {price} avec MonCash",
   "product.get.free": "Obtenir gratuitement",
   "product.pay.loading": "Redirection vers MonCash…",
@@ -674,7 +676,8 @@ const fr = {
   "product.file": "✓ Téléchargement immédiat du fichier",
   "product.service": "✓ Mise en relation après paiement",
   "product.verifiedOnly": "✓ Avis réservés aux acheteurs vérifiés",
-  "product.delivery.days": "Livraison en {days} jour(s)",
+  "product.delivery.days": "Livraison en {days} jours",
+  "product.delivery.days.one": "Livraison en {days} jour",
   "product.delivery.sameday": "Livré le jour même",
   "product.includes": "Ce qui est inclus",
   "product.reviews": "Avis vérifiés",
@@ -985,7 +988,8 @@ const fr = {
   "upload.saved": "Fichier enregistré.",
   "upload.error": "Envoi échoué.",
 
-  "creator.products.label": "produit(s) en ligne",
+  "creator.products.label": "produits en ligne",
+  "creator.products.label.one": "produit en ligne",
   "creator.share.text": "La boutique de {name} sur Zabelie :",
   "creator.empty": "Aucun produit publié pour l'instant.",
   "creator.offers": "Les offres de cette boutique",
@@ -1579,6 +1583,7 @@ const ht: Record<I18nKey, string> = {
 
   "catalog.title": "Katalòg",
   "catalog.results": "rezilta",
+  "catalog.results.one": "rezilta",
   "catalog.reviews.proof":
     "Yon nòt soti sèlman nan yon achtè ki peye — yon sèl avi pou chak kòmand.",
   "catalog.for": "pou",
@@ -1615,6 +1620,7 @@ const ht: Record<I18nKey, string> = {
   // Les deux formes sont donc identiques, et c'est correct, pas un oubli.
   "product.sales.one": "vant",
   "product.reviews.badge": "avi verifye",
+  "product.reviews.badge.one": "avi verifye",
   "product.pay": "Peye {price} ak MonCash",
   "product.get.free": "Jwenn li gratis",
   "product.pay.loading": "N ap voye ou sou MonCash…",
@@ -1748,6 +1754,7 @@ const ht: Record<I18nKey, string> = {
   "product.service": "✓ Kontak ak vandè a apre peman",
   "product.verifiedOnly": "✓ Avi yo rezève pou achtè verifye sèlman",
   "product.delivery.days": "Livrezon nan {days} jou",
+  "product.delivery.days.one": "Livrezon nan {days} jou",
   "product.delivery.sameday": "Livre menm jou a",
   "product.includes": "Sa ki enkli",
   "product.reviews": "Avi verifye",
@@ -2040,6 +2047,7 @@ const ht: Record<I18nKey, string> = {
   "upload.error": "Anvwa a echwe.",
 
   "creator.products.label": "pwodui an liy",
+  "creator.products.label.one": "pwodui an liy",
   "creator.share.text": "Boutik {name} sou Zabelie :",
   "creator.empty": "Poko gen pwodui pibliye.",
   "creator.offers": "Òf boutik sa a",
@@ -2629,7 +2637,8 @@ const en = {
 
   // Catalog
   "catalog.title": "Catalog",
-  "catalog.results": "result(s)",
+  "catalog.results": "results",
+  "catalog.results.one": "result",
   "catalog.reviews.proof":
     "A rating only comes from a buyer who paid — one review per order.",
   "catalog.for": "for",
@@ -2664,7 +2673,8 @@ const en = {
   "product.by": "by",
   "product.sales": "sales",
   "product.sales.one": "sale",
-  "product.reviews.badge": "verified review(s)",
+  "product.reviews.badge": "verified reviews",
+  "product.reviews.badge.one": "verified review",
   "product.pay": "Pay {price} with MonCash",
   "product.get.free": "Get it free",
   "product.pay.loading": "Redirecting to MonCash…",
@@ -2796,7 +2806,8 @@ const en = {
   "product.file": "✓ Immediate file download",
   "product.service": "✓ Introduction after payment",
   "product.verifiedOnly": "✓ Reviews limited to verified buyers",
-  "product.delivery.days": "Delivery in {days} day(s)",
+  "product.delivery.days": "Delivery in {days} days",
+  "product.delivery.days.one": "Delivery in {days} day",
   "product.delivery.sameday": "Delivered same day",
   "product.includes": "What's included",
   "product.reviews": "Verified reviews",
@@ -3097,7 +3108,8 @@ const en = {
   "upload.saved": "File saved.",
   "upload.error": "Upload failed.",
 
-  "creator.products.label": "product(s) online",
+  "creator.products.label": "products online",
+  "creator.products.label.one": "product online",
   "creator.share.text": "{name}'s shop on Zabelie:",
   "creator.empty": "No products published yet.",
   "creator.offers": "Offers from this shop",
@@ -3688,7 +3700,8 @@ const es = {
 
   // Catálogo
   "catalog.title": "Catálogo",
-  "catalog.results": "resultado(s)",
+  "catalog.results": "resultados",
+  "catalog.results.one": "resultado",
   "catalog.reviews.proof":
     "Una valoración solo proviene de un comprador que pagó — una reseña por pedido.",
   "catalog.for": "para",
@@ -3723,7 +3736,8 @@ const es = {
   "product.by": "por",
   "product.sales": "ventas",
   "product.sales.one": "venta",
-  "product.reviews.badge": "reseña(s) verificada(s)",
+  "product.reviews.badge": "reseñas verificadas",
+  "product.reviews.badge.one": "reseña verificada",
   "product.pay": "Pagar {price} con MonCash",
   "product.get.free": "Obtener gratis",
   "product.pay.loading": "Redirigiendo a MonCash…",
@@ -3855,7 +3869,8 @@ const es = {
   "product.file": "✓ Descarga inmediata del archivo",
   "product.service": "✓ Puesta en contacto tras el pago",
   "product.verifiedOnly": "✓ Reseñas reservadas a compradores verificados",
-  "product.delivery.days": "Entrega en {days} día(s)",
+  "product.delivery.days": "Entrega en {days} días",
+  "product.delivery.days.one": "Entrega en {days} día",
   "product.delivery.sameday": "Entregado el mismo día",
   "product.includes": "Qué incluye",
   "product.reviews": "Reseñas verificadas",
@@ -4155,7 +4170,8 @@ const es = {
   "upload.saved": "Archivo guardado.",
   "upload.error": "El envío falló.",
 
-  "creator.products.label": "producto(s) en línea",
+  "creator.products.label": "productos en línea",
+  "creator.products.label.one": "producto en línea",
   "creator.share.text": "La tienda de {name} en Zabelie:",
   "creator.empty": "Todavía no hay productos publicados.",
   "creator.offers": "Ofertas de esta tienda",

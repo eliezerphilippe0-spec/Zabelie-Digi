@@ -20,7 +20,7 @@ import { getLang } from "@/lib/i18n-server";
 import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
 import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -194,7 +194,7 @@ export default async function CataloguePage({
           {(Object.keys(CATALOGUE_UNIVERSES) as (keyof typeof CATALOGUE_UNIVERSES)[]).map((key) => <Link key={key} href={universeHref(key)} aria-current={universe === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${universe === key ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, CATALOGUE_UNIVERSES[key].title)}</Link>)}
         </nav>
         <p className="mt-2 text-sm text-mist">
-          {totalExact ? total : `≥ ${total}`} {t(lang, "catalog.results")}
+          {totalExact ? total : `≥ ${total}`} {tn(lang, total, "catalog.results.one", "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
           {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
           {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}

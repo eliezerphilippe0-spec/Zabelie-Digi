@@ -41,7 +41,7 @@ import { ShareButtons } from "@/components/share-buttons";
 import { MessageForm } from "@/components/message-form";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
-import { t, type Lang } from "@/lib/i18n";
+import { t, tn, type Lang } from "@/lib/i18n";
 import {
   kindLabelKey,
   deliveryBulletKey as bulletKey,
@@ -340,7 +340,7 @@ export default async function ProductPage({
                 ⏱️{" "}
                 {product.deliveryDays === 0
                   ? t(lang, "product.delivery.sameday")
-                  : t(lang, "product.delivery.days", {
+                  : tn(lang, product.deliveryDays, "product.delivery.days.one", "product.delivery.days", {
                       days: String(product.deliveryDays),
                     })}
               </span>
@@ -388,7 +388,7 @@ export default async function ProductPage({
             {product.ratingAvg !== null && (
               <span>
                 <Stars value={product.ratingAvg} /> {product.ratingAvg} (
-                {product.ratingCount} {t(lang, "product.reviews.badge")})
+                {product.ratingCount} {tn(lang, product.ratingCount, "product.reviews.badge.one", "product.reviews.badge")})
               </span>
             )}
             {product.sales > 0 && (
@@ -528,7 +528,7 @@ export default async function ProductPage({
                 {product.ratingAvg !== null && (
                   <>
                     <span className="text-accent">★</span> {product.ratingAvg} (
-                    {product.ratingCount} {t(lang, "product.reviews.badge")})
+                    {product.ratingCount} {tn(lang, product.ratingCount, "product.reviews.badge.one", "product.reviews.badge")})
                   </>
                 )}
                 {product.ratingAvg !== null && product.sales > 0 && " · "}
