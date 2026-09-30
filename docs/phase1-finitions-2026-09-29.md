@@ -6,7 +6,7 @@ production** — l'empreinte `release` de `/api/deployment` est le SHA-256 de ce
 commit, recalculé le jour même.
 
 Quatre corrections faites (1.1 à 1.4), deux rendues au porteur (1.5, 1.6) parce
-qu'elles touchent des zones d'arrêt (`docs/25` §4).
+qu'elles touchent des zones d'arrêt (`docs/25` §4) — tranchées le 2026-09-30 (V-21).
 
 ## 1. Mesures au rendu, avant → après
 
@@ -70,6 +70,8 @@ il n'apparaît pas en local. Son « après » repose sur la classe `min-h-11`
   `tests/cibles-tactiles.test.ts`.
 
 ## 3. Rendu au porteur — deux zones d'arrêt
+
+**Tranché le 2026-09-30** par le porteur (« Je suis tes recommandations ») : option (a) pour les deux — `docs/02-DECISIONS.md` V-21. Les options restent ci-dessous pour mémoire.
 
 ### 1.5 — Les mentions d'avant-lancement (« promesse commerciale »)
 
