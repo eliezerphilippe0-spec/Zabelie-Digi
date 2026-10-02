@@ -26,8 +26,16 @@ import type { Lang } from "./i18n";
  * Or ces valeurs ne dépendent pas de la langue : une raison sociale et une
  * adresse e-mail s'écrivent pareil en kreyòl et en espagnol. Elles vivent
  * donc dans `IDENTITE` ci-dessous, référencées par `{entite}`, `{email}`,
- * `{purge}`, `{hebergement}` dans les quatre versions. **Les remplir une fois
- * les remplit partout.**
+ * `{hebergement}` dans les quatre versions. **Les remplir une fois les
+ * remplit partout.**
+ *
+ * ⚖️ 2026-10-02 — `purge` QUITTE `IDENTITE`. Ce n'était pas un fait que le
+ * porteur connaît, c'était un fait du CODE : `app/api/maturation/route.ts`
+ * appelle chaque jour `purge_payment_raw` avec `p_days: 90` (`0016`). Et une
+ * durée n'est pas indépendante de la langue (« 90 jours », « 90 jou »,
+ * « 90 days », « 90 días ») : elle s'écrit donc dans chaque version, et
+ * `tests/politique-confidentialite.test.ts` la relie au cron. Rédigé par
+ * l'agent sur mandat du porteur — à valider avec le reste du texte.
  *
  * ⚠️ Tant qu'un champ vaut `null`, le rendu affiche le marqueur — visible,
  * jamais silencieux. `tests/politique-confidentialite.test.ts` compte les
@@ -43,16 +51,15 @@ import type { Lang } from "./i18n";
  */
 
 /**
- * Les cinq faits que la politique promet et que le dépôt ne connaît pas.
+ * Les quatre faits que la politique promet et que le dépôt ne connaît pas.
  * `null` = non renseigné : le rendu le montre.
  */
 export const IDENTITE: Record<
-  "entite" | "email" | "purge" | "hebergement" | "retentionKyc",
+  "entite" | "email" | "hebergement" | "retentionKyc",
   string | null
 > = {
   entite: null,
   email: "contact@zabelie.com",
-  purge: null,
   hebergement: null,
   retentionKyc: null,
 };
@@ -62,36 +69,32 @@ const MANQUANT: Record<Lang, Record<keyof typeof IDENTITE, string>> = {
   fr: {
     entite: "[À COMPLÉTER : entité juridique et adresse]",
     email: "[À COMPLÉTER : e-mail de contact]",
-    purge: "[À COMPLÉTER : durée de purge]",
     hebergement: "[À COMPLÉTER : région d'hébergement et garanties de transfert]",
     retentionKyc: "[À COMPLÉTER : durée de conservation des pièces d'identité]",
   },
   ht: {
     entite: "[POU KONPLETE : antite jiridik ak adrès]",
     email: "[POU KONPLETE : imèl kontak]",
-    purge: "[POU KONPLETE : dire konsèvasyon]",
     hebergement: "[POU KONPLETE : rejyon ebèjman ak garanti transfè]",
     retentionKyc: "[POU KONPLETE : dire konsèvasyon pyès idantite yo]",
   },
   en: {
     entite: "[TO BE COMPLETED: legal entity and address]",
     email: "[TO BE COMPLETED: contact e-mail]",
-    purge: "[TO BE COMPLETED: purge period]",
     hebergement: "[TO BE COMPLETED: hosting region and transfer safeguards]",
     retentionKyc: "[TO BE COMPLETED: identity document retention period]",
   },
   es: {
     entite: "[POR COMPLETAR: entidad jurídica y dirección]",
     email: "[POR COMPLETAR: correo de contacto]",
-    purge: "[POR COMPLETAR: plazo de purga]",
     hebergement: "[POR COMPLETAR: región de alojamiento y garantías de transferencia]",
     retentionKyc: "[POR COMPLETAR: plazo de conservación de los documentos de identidad]",
   },
 };
 
-/** Remplace `{entite}`, `{email}`, `{purge}`, `{hebergement}`, `{retentionKyc}`. */
+/** Remplace `{entite}`, `{email}`, `{hebergement}`, `{retentionKyc}`. */
 export function resoudre(texte: string, lang: Lang): string {
-  return texte.replace(/\{(entite|email|purge|hebergement|retentionKyc)\}/g, (_, cle) => {
+  return texte.replace(/\{(entite|email|hebergement|retentionKyc)\}/g, (_, cle) => {
     const k = cle as keyof typeof IDENTITE;
     return IDENTITE[k] ?? MANQUANT[lang][k];
   });
@@ -170,7 +173,7 @@ const fr: Politique = {
           ul: [
             "Données de compte et de profil : tant que votre compte est actif.",
             "Données de paiement et de commande : conservées pour la durée légale applicable (obligations comptables), puis supprimées ou anonymisées.",
-            "Détails techniques du paiement (payload opérateur) : minimisés à la confirmation (l'identifiant du payeur n'est pas conservé) et purgés après **{purge}**.",
+            "Détails techniques du paiement (payload opérateur) : minimisés à la confirmation (l'identifiant du payeur n'est pas conservé) et purgés **90 jours** après la clôture du paiement (confirmé ou échoué).",
             "Termes de recherche non aboutis : conservés **90 jours**, puis purgés automatiquement.",
             "Pièces d'identité d'un vendeur : voir **§9**, qui en détaille la durée séparément.",
           ],
@@ -300,7 +303,7 @@ const ht: Politique = {
           ul: [
             "Done kont ak pwofil : toutotan kont ou aktif.",
             "Done peman ak kòmand : konsève pou dire legal ki aplikab (obligasyon kontab), apre sa efase oswa anonimize.",
-            "Detay teknik peman an (payload operatè a) : redwi lè konfimasyon an fèt (idantifyan moun ki peye a pa konsève) epi efase apre **{purge}**.",
+            "Detay teknik peman an (payload operatè a) : redwi lè konfimasyon an fèt (idantifyan moun ki peye a pa konsève) epi efase **90 jou** apre peman an fini (konfime oswa echwe).",
             "Mo rechèch ki pa bay rezilta : konsève **90 jou**, apre sa efase otomatikman.",
             "Pyès idantite yon vandè : gade **§9**, ki bay dire a apa.",
           ],
@@ -430,7 +433,7 @@ const en: Politique = {
           ul: [
             "Account and profile data: for as long as your account is active.",
             "Payment and order data: kept for the applicable statutory period (accounting obligations), then deleted or anonymised.",
-            "Technical payment details (operator payload): minimised at confirmation (the payer identifier is not kept) and purged after **{purge}**.",
+            "Technical payment details (operator payload): minimised at confirmation (the payer identifier is not kept) and purged **90 days** after the payment is closed (confirmed or failed).",
             "Unsuccessful search terms: kept **90 days**, then purged automatically.",
             "A seller's identity documents: see **§9**, which sets out their retention separately.",
           ],
@@ -560,7 +563,7 @@ const es: Politique = {
           ul: [
             "Datos de cuenta y perfil: mientras su cuenta esté activa.",
             "Datos de pago y pedido: conservados durante el plazo legal aplicable (obligaciones contables) y después eliminados o anonimizados.",
-            "Detalles técnicos del pago (payload del operador): minimizados en la confirmación (no se conserva el identificador del pagador) y purgados tras **{purge}**.",
+            "Detalles técnicos del pago (payload del operador): minimizados en la confirmación (no se conserva el identificador del pagador) y purgados **90 días** después del cierre del pago (confirmado o fallido).",
             "Términos de búsqueda sin resultado: conservados **90 días** y purgados automáticamente después.",
             "Documentos de identidad de un vendedor: véase **§9**, que detalla su plazo por separado.",
           ],

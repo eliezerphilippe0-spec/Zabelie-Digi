@@ -8,7 +8,7 @@ import type { Lang } from "../lib/i18n";
  * LE GABARIT CGU — ses gardes.
  *
  * Le document est un GABARIT : structure d'une marketplace avec escrow,
- * remplie des seuls termes déjà tranchés, et quatre marqueurs juridiques
+ * remplie des seuls termes déjà tranchés, et trois marqueurs juridiques
  * explicites par langue. Ces tests gardent trois choses :
  *
  *   1. La PARITÉ : quatre versions, même structure, section par section.
@@ -106,15 +106,20 @@ test("l'avis « le français fait foi » est sur les traductions, jamais sur l'o
 
 // ── 2. Le cliquet des marqueurs juridiques ──────────────────────────────────
 
-test("quatre marqueurs juridiques par langue — ni plus, ni moins", () => {
+test("trois marqueurs juridiques par langue — ni plus, ni moins", () => {
   /* FIGÉ le 2026-08-14 : âge minimum (§1), fenêtre de litige (§9),
    * résiliation plateforme (§12), droit applicable (§13) — numéros décalés
    * d'un cran le 2026-08-15 par l'insertion du §8 (services payants), qui
    * n'ouvre AUCUN blanc nouveau : les faits y sont tous tranchés (docs/34).
    * Pour REMPLIR un marqueur (décision porteur + conseil juridique) :
    * décrémenter ici DANS LE MÊME COMMIT. Pour en AJOUTER : ne pas — un
-   * nouveau blanc juridique est une décision, pas un réflexe. */
-  const ATTENDU = 4;
+   * nouveau blanc juridique est une décision, pas un réflexe.
+   *
+   * 4 → 3 le 2026-10-02 : fenêtre de litige (§10) rédigée par l'agent sur
+   * mandat du porteur (« Je rédige, vous validez »), d'après `0043`/`0068`.
+   * ⚖️ À VALIDER par le porteur et son conseil avant fusion. Restent : âge
+   * minimum (§1), résiliation plateforme (§13), droit applicable (§14). */
+  const ATTENDU = 3;
   for (const lang of LANGS) {
     const n = (texte(lang).match(MARQUEUR[lang]) ?? []).length;
     assert.equal(
@@ -142,6 +147,27 @@ test("les marqueurs des quatre langues couvrent les MÊMES sections", () => {
   const ref = parSection("fr");
   for (const lang of LANGS) {
     assert.equal(parSection(lang), ref, `${lang} : marqueurs placés différemment du français`);
+  }
+});
+
+test("le §10 ne chiffre aucun délai : les valeurs restent l'arbitrage D-14", () => {
+  /* Rédigé le 2026-10-02 d'après `0043` : « l'échéance affichée », « le délai
+   * fixé par Zabelie ». Les durées vivent dans `zabelie_fulfillment_limits`,
+   * proposées et NON décidées (`docs/28` D-14, à revoir après les vingt
+   * premières commandes, par `UPDATE`). Un chiffre recopié ici deviendrait un
+   * engagement contractuel que le prochain `UPDATE` rendrait faux. */
+  const DELAI = /(?<!\p{L})\d+\s*(jours?|jou|days?|d[ií]as?|heures?|hours?|horas?|h)(?!\p{L})/iu;
+  // L'instrument d'abord : il voit un délai dans chaque langue, et pas un
+  // chiffre sans unité (« J+7 » nomme une règle, il ne fixe pas un délai ici).
+  for (const d of ["sous 7 jours", "apre 5 jou", "within 5 days", "48 h", "en 3 días"]) {
+    assert.match(d, DELAI, `délai non vu : ${d}`);
+  }
+  assert.doesNotMatch("la maturation J+7 et la section 10", DELAI);
+  for (const lang of LANGS) {
+    const s10 = CONDITIONS[lang].sections.find((s) => s.titre.startsWith("10."));
+    assert.ok(s10, `${lang} : section 10 introuvable`);
+    const texte = s10.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)).join("\n");
+    assert.doesNotMatch(texte, DELAI, `${lang} : le §10 chiffre un délai`);
   }
 });
 
