@@ -57,6 +57,23 @@ test("P2 — le rendu réel : le défaut de production ne peut plus revenir", ()
   // regardée — un vendeur à une vente lisait « 1 ventes » lui aussi.
   assert.equal(`1 ${tn("fr", 1, "sec.sellers.sales.one", "sec.sellers.sales")}`, "1 vente");
   assert.equal(`4 ${tn("fr", 4, "sec.sellers.sales.one", "sec.sellers.sales")}`, "4 ventes");
+
+  // Les quatre « (s) » relevés le 2026-09-29 — « 0 résultat(s). » était lu sur
+  // le catalogue de zabelie.com. Le français accorde au singulier sous 2 :
+  // « 0 résultat » est la forme juste, pas une faute.
+  assert.equal(`0 ${tn("fr", 0, "catalog.results.one", "catalog.results")}`, "0 résultat");
+  assert.equal(`12 ${tn("fr", 12, "catalog.results.one", "catalog.results")}`, "12 résultats");
+  assert.equal(`0 ${tn("en", 0, "catalog.results.one", "catalog.results")}`, "0 results");
+  assert.equal(`1 ${tn("es", 1, "catalog.results.one", "catalog.results")}`, "1 resultado");
+  assert.equal(`1 ${tn("fr", 1, "product.reviews.badge.one", "product.reviews.badge")}`, "1 avis vérifié");
+  assert.equal(`3 ${tn("fr", 3, "product.reviews.badge.one", "product.reviews.badge")}`, "3 avis vérifiés");
+  assert.equal(`2 ${tn("es", 2, "product.reviews.badge.one", "product.reviews.badge")}`, "2 reseñas verificadas");
+  assert.equal(tn("fr", 1, "product.delivery.days.one", "product.delivery.days", { days: "1" }), "Livraison en 1 jour");
+  assert.equal(tn("fr", 5, "product.delivery.days.one", "product.delivery.days", { days: "5" }), "Livraison en 5 jours");
+  assert.equal(tn("en", 1, "product.delivery.days.one", "product.delivery.days", { days: "1" }), "Delivery in 1 day");
+  assert.equal(`1 ${tn("fr", 1, "creator.products.label.one", "creator.products.label")}`, "1 produit en ligne");
+  assert.equal(`7 ${tn("en", 7, "creator.products.label.one", "creator.products.label")}`, "7 products online");
+  assert.equal(`7 ${tn("ht", 7, "creator.products.label.one", "creator.products.label")}`, "7 pwodui an liy");
 });
 
 test("P3 — les deux formes existent dans les QUATRE langues", () => {
@@ -64,7 +81,14 @@ test("P3 — les deux formes existent dans les QUATRE langues", () => {
    * et seulement pour le compte 1. Le pire cas possible : un défaut qui ne se
    * montre qu'à un vendeur qui vient de faire sa première vente. */
   for (const lang of LANGS) {
-    for (const base of ["product.sales", "sec.sellers.sales"] as const) {
+    for (const base of [
+      "product.sales",
+      "sec.sellers.sales",
+      "catalog.results",
+      "product.reviews.badge",
+      "product.delivery.days",
+      "creator.products.label",
+    ] as const) {
       const one = DICT[lang][`${base}.one` as keyof (typeof DICT)[typeof lang]];
       const many = DICT[lang][base];
       assert.ok(one && one.trim().length > 0, `${base}.one vide en ${lang}`);
@@ -112,4 +136,36 @@ test("P4 — la carte choisit la forme, elle ne colle plus un mot fixe", () => {
     /\{s\.ventesPayees\}\s*\{tn\(lang,\s*s\.ventesPayees,/,
     "la carte vendeur n'accorde plus « ventes » au nombre de ventes du vendeur"
   );
+});
+
+test("P5 — catalogue, fiche et boutique : le compte AFFICHÉ est celui qui décide de la forme", () => {
+  /* Même ancrage que P4 : la LIAISON, pas le libellé. `catalog.results` reste
+   * dans le fichier que l'accord soit branché ou non ; seul le couple
+   * « compte rendu → compte passé à `tn` » distingue les deux. */
+  const liaisons: Array<[string, RegExp, number]> = [
+    ["app/catalogue/page.tsx", /`≥ \$\{total\}`\}\s*\{tn\(lang,\s*total,\s*"catalog\.results\.one",\s*"catalog\.results"\)\}/, 1],
+    ["app/produit/[slug]/page.tsx", /\{product\.ratingCount\}\s*\{tn\(lang,\s*product\.ratingCount,\s*"product\.reviews\.badge\.one",\s*"product\.reviews\.badge"\)\}/g, 2],
+    ["app/produit/[slug]/page.tsx", /tn\(lang,\s*product\.deliveryDays,\s*"product\.delivery\.days\.one",\s*"product\.delivery\.days",\s*\{\s*days:\s*String\(product\.deliveryDays\)/, 1],
+    ["components/boutique-vue.tsx", /\{creator\.products\.length\}\s*\{tn\(lang,\s*creator\.products\.length,\s*"creator\.products\.label\.one",\s*"creator\.products\.label"\)\}/, 1],
+  ];
+  for (const [fichier, motif, attendu] of liaisons) {
+    const src = readFileSync(fichier, "utf8");
+    const vus = motif.global ? (src.match(motif) ?? []).length : Number(motif.test(src));
+    assert.equal(vus, attendu, `${fichier} : l'accord n'est plus lié au compte affiché (${motif})`);
+  }
+});
+
+test("P6 — plus aucun « (s) » dans le dictionnaire : l'accord se fait par deux clés", () => {
+  /* « résultat(s) », « jour(s) », « reseña(s) verificada(s) » : la forme
+   * paresseuse qu'un lecteur voit comme une faute. Un mot qui dépend d'un
+   * nombre porte deux clés (`x.one`, `x`) et passe par `tn`. */
+  let lues = 0;
+  for (const lang of LANGS) {
+    for (const [cle, valeur] of Object.entries(DICT[lang])) {
+      lues++;
+      assert.doesNotMatch(valeur, /\((?:s|es|x)\)/, `${lang} « ${cle} » : « ${valeur} » — accorder avec tn()`);
+    }
+  }
+  // Non-vacuité : un dictionnaire vide passerait ce test sans rien lire.
+  assert.ok(lues > 3000, `seulement ${lues} valeurs lues`);
 });

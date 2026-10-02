@@ -137,15 +137,46 @@ test("les blancs sont COMPTÉS — leur nombre ne peut pas grossir en silence", 
   const vides = champsManquants();
   assert.deepEqual(
     vides.sort(),
-    ["entite", "hebergement", "purge", "retentionKyc"],
+    ["entite", "hebergement", "retentionKyc"],
     `Les faits non renseignés de la politique ont changé : ${vides.join(", ")}. ` +
       `Mettre ce test à jour EN MÊME TEMPS que lib/policy-privacy.ts.`,
   );
   assert.equal(
     Object.keys(IDENTITE).length,
-    5,
+    4,
     "Le nombre de faits attendus par la politique a changé.",
   );
+});
+
+test("la durée de purge publiée est celle que le cron applique", () => {
+  /* `purge` a quitté `IDENTITE` le 2026-10-02 : ce n'était pas un fait que le
+   * porteur connaît, c'était un fait du CODE. Il ne reste vrai que si le
+   * cron garde la même valeur — et si le cron tourne. Les deux se lisent ici,
+   * dans le dépôt, pas dans la mémoire de quelqu'un. */
+  const route = readFileSync("app/api/maturation/route.ts", "utf8");
+  const appel = route.match(/rpc\("purge_payment_raw",\s*\{\s*p_days:\s*(\d+)\s*\}\)/);
+  assert.ok(appel, "l'appel purge_payment_raw du cron de maturation a changé de forme : relire la politique");
+  const crons = JSON.parse(readFileSync("vercel.json", "utf8")).crons as { path: string }[];
+  assert.ok(
+    crons.some((c) => c.path === "/api/maturation"),
+    "aucun cron n'appelle /api/maturation : la purge annoncée n'a plus lieu",
+  );
+  const UNITE: Record<Lang, string> = { fr: "jours", ht: "jou", en: "days", es: "días" };
+  for (const lang of LANGS) {
+    const texte = POLITIQUE[lang].sections
+      .flatMap((s) => s.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)))
+      .join("\n");
+    // LA phrase du payload, pas le document : « **90 jours** » figure aussi
+    // dans la rétention des recherches (`0053`), et un contrôle sur le texte
+    // entier resterait vert si la phrase du paiement changeait de durée.
+    const phrase = texte.split("\n").find((l) => l.includes("payload"));
+    assert.ok(phrase, `${lang} : la phrase du payload opérateur a disparu de la politique`);
+    const annonce = `**${appel[1]} ${UNITE[lang]}**`;
+    assert.ok(
+      phrase.includes(annonce),
+      `${lang} : la phrase du payload n'annonce plus ${annonce}, alors que le cron purge à p_days: ${appel[1]}.\n  ${phrase}`,
+    );
+  }
 });
 
 test("la page rend le document, elle ne le recopie pas", () => {

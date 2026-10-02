@@ -78,6 +78,14 @@ const CLASSEMENT: Record<string, Classement> = {
   "home.receipt.body": {
     horsSujet: "Modalités à convenir avec le vendeur, sans engagement de qualité : le mot anglais agree est détecté comme agréé. Le texte précise que Zabelie ne stocke ni ne livre.",
   },
+  "faq.a5": {
+    horsSujet:
+      "NÉGATION, et limite posée à l'acheteur : « un signalement ne garantit " +
+      "pas un remboursement automatique » (kreyòl « pa garanti »), reprise de " +
+      "aide.problem.support.body. Le vendeur n'y est nommé que pour la remise " +
+      "qu'il déclare et le paiement bloqué pendant l'examen — aucune qualité " +
+      "du vendeur n'est affirmée.",
+  },
   "policy.alcohol.items": {
     horsSujet:
       "Obligation DU vendeur, pas engagement de la plateforme : « le vendeur " +

@@ -1,0 +1,290 @@
+{
+  "/ @320": {
+    "debordement": false,
+    "hauteurEntete": 101,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 52,
+      "w": 280,
+      "h": 44
+    },
+    "bandeau": 20,
+    "kicker": 20,
+    "h1": 20,
+    "premierH2": 20,
+    "univers": 20,
+    "piedLogo": 20,
+    "filAriane": null,
+    "resultats": "Ouverture progressive",
+    "petites": []
+  },
+  "/ @360": {
+    "debordement": false,
+    "hauteurEntete": 101,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 52,
+      "w": 320,
+      "h": 44
+    },
+    "bandeau": 20,
+    "kicker": 20,
+    "h1": 20,
+    "premierH2": 20,
+    "univers": 20,
+    "piedLogo": 20,
+    "filAriane": null,
+    "resultats": "Ouverture progressive",
+    "petites": []
+  },
+  "/ @390": {
+    "debordement": false,
+    "hauteurEntete": 101,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 52,
+      "w": 350,
+      "h": 44
+    },
+    "bandeau": 20,
+    "kicker": 20,
+    "h1": 20,
+    "premierH2": 20,
+    "univers": 20,
+    "piedLogo": 20,
+    "filAriane": null,
+    "resultats": "Ouverture progressive",
+    "petites": []
+  },
+  "/ @768": {
+    "debordement": false,
+    "hauteurEntete": 167,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 62,
+      "w": 728,
+      "h": 44
+    },
+    "bandeau": 20,
+    "kicker": 20,
+    "h1": 20,
+    "premierH2": 20,
+    "univers": 20,
+    "piedLogo": 20,
+    "filAriane": null,
+    "resultats": "Ouverture progressive",
+    "petites": []
+  },
+  "/ @1024": {
+    "debordement": false,
+    "hauteurEntete": 115,
+    "logo": 20,
+    "recherche": {
+      "x": 115,
+      "y": 10,
+      "w": 335,
+      "h": 44
+    },
+    "bandeau": 20,
+    "kicker": 20,
+    "h1": 20,
+    "premierH2": 20,
+    "univers": 20,
+    "piedLogo": 20,
+    "filAriane": null,
+    "resultats": "Ouverture progressive",
+    "petites": []
+  },
+  "/ @1440": {
+    "debordement": false,
+    "hauteurEntete": 115,
+    "logo": 164,
+    "recherche": {
+      "x": 259,
+      "y": 10,
+      "w": 463,
+      "h": 44
+    },
+    "bandeau": 164,
+    "kicker": 164,
+    "h1": 164,
+    "premierH2": 164,
+    "univers": 164,
+    "piedLogo": 164,
+    "filAriane": null,
+    "resultats": "Ouverture progressive",
+    "petites": []
+  },
+  "/catalogue @390": {
+    "debordement": false,
+    "hauteurEntete": 167,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 62,
+      "w": 350,
+      "h": 44
+    },
+    "bandeau": null,
+    "kicker": null,
+    "h1": 20,
+    "premierH2": 20,
+    "univers": null,
+    "piedLogo": 20,
+    "filAriane": {
+      "lien": {
+        "x": 20,
+        "y": 187,
+        "w": 49,
+        "h": 44
+      },
+      "ecartNavH1": 40
+    },
+    "resultats": "0 résultat.",
+    "petites": []
+  },
+  "/catalogue @1440": {
+    "debordement": false,
+    "hauteurEntete": 115,
+    "logo": 164,
+    "recherche": {
+      "x": 259,
+      "y": 10,
+      "w": 463,
+      "h": 44
+    },
+    "bandeau": null,
+    "kicker": null,
+    "h1": 164,
+    "premierH2": 412.1,
+    "univers": null,
+    "piedLogo": 164,
+    "filAriane": {
+      "lien": {
+        "x": 164,
+        "y": 135,
+        "w": 49,
+        "h": 44
+      },
+      "ecartNavH1": 40
+    },
+    "resultats": "0 résultat.",
+    "petites": []
+  },
+  "/categories @390": {
+    "debordement": false,
+    "hauteurEntete": 158,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 56,
+      "w": 350,
+      "h": 44
+    },
+    "bandeau": null,
+    "kicker": null,
+    "h1": 20,
+    "premierH2": null,
+    "univers": null,
+    "piedLogo": 20,
+    "filAriane": {
+      "lien": {
+        "x": 20,
+        "y": 178,
+        "w": 49,
+        "h": 44
+      },
+      "ecartNavH1": 40
+    },
+    "resultats": "Les familles et sous-catégories ouvertes",
+    "petites": []
+  },
+  "/categories @1440": {
+    "debordement": false,
+    "hauteurEntete": 98,
+    "logo": 164,
+    "recherche": {
+      "x": 259,
+      "y": 2,
+      "w": 463,
+      "h": 44
+    },
+    "bandeau": null,
+    "kicker": null,
+    "h1": 164,
+    "premierH2": null,
+    "univers": null,
+    "piedLogo": 164,
+    "filAriane": {
+      "lien": {
+        "x": 164,
+        "y": 118,
+        "w": 49,
+        "h": 44
+      },
+      "ecartNavH1": 40
+    },
+    "resultats": "Les familles et sous-catégories ouvertes",
+    "petites": []
+  },
+  "/recharges @390": {
+    "debordement": false,
+    "hauteurEntete": 158,
+    "logo": 20,
+    "recherche": {
+      "x": 20,
+      "y": 56,
+      "w": 350,
+      "h": 44
+    },
+    "bandeau": null,
+    "kicker": null,
+    "h1": 20,
+    "premierH2": 45,
+    "univers": null,
+    "piedLogo": 20,
+    "filAriane": {
+      "lien": {
+        "x": 20,
+        "y": 178,
+        "w": 49,
+        "h": 44
+      },
+      "ecartNavH1": 40
+    },
+    "resultats": "Retrouvez ici les services disponibles e",
+    "petites": []
+  },
+  "/recharges @1440": {
+    "debordement": false,
+    "hauteurEntete": 98,
+    "logo": 164,
+    "recherche": {
+      "x": 259,
+      "y": 2,
+      "w": 463,
+      "h": 44
+    },
+    "bandeau": null,
+    "kicker": null,
+    "h1": 164,
+    "premierH2": 197,
+    "univers": null,
+    "piedLogo": 164,
+    "filAriane": {
+      "lien": {
+        "x": 164,
+        "y": 118,
+        "w": 49,
+        "h": 44
+      },
+      "ecartNavH1": 40
+    },
+    "resultats": "Retrouvez ici les services disponibles e",
+    "petites": []
+  }
+}

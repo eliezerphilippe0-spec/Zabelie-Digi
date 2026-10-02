@@ -40,7 +40,9 @@ const CONTROLES: Array<[string, string[]]> = [
   // des douze défauts de l'accueil.
   ["components/theme-toggle.tsx", ["min-w-11"]],
   ["components/lang-toggle.tsx", ["min-w-11"]],
-  ["components/brand-logo.tsx", [T]],
+  // À 320 px le nom est masqué (marketplace-header.css) : le lien se réduisait
+  // au monogramme, 32 × 44 px — mesuré le 2026-09-29. D'où la largeur aussi.
+  ["components/brand-logo.tsx", [T, "min-w-11"]],
   ["components/search-box.tsx", [T]],
   ["components/site-nav.tsx", ["min-w-11"]],
   // L'écran de connexion : onglets et sortie de secours.
@@ -99,4 +101,52 @@ test("l'en-tête n'est collant qu'à partir de md — il fait 250 px sur mobile"
   assert.match(src, /className="header-fold[^"]*"/, "le logo doit porter header-fold pour se plier");
   assert.match(readFileSync("components/category-chips.tsx", "utf8"), /className="header-fold/, "les chips doivent porter header-fold");
   assert.match(readFileSync("app/globals.css", "utf8"), /header\[data-compact\] \.header-fold \{\s*display: none;/, "la règle CSS du pli manque");
+});
+
+/** Les classes de chaque ouverture `<balise …className="…">` du fragment, en ordre. */
+function classesDe(fragment: string, balise: string): string[][] {
+  return [...fragment.matchAll(new RegExp(`<${balise}\\b[^>]*?className="([^"]*)"`, "g"))].map((m) => m[1].split(/\s+/));
+}
+
+test("fil d'Ariane — chaque lien porte ses 44 px, compensés pour ne pas déplacer la page", () => {
+  /* MESURÉ sur zabelie.com le 2026-09-29, 390 px : « Accueil » du fil
+   * d'Ariane du catalogue faisait 49 × 20 px. Le même motif vit sur cinq
+   * pages. `min-h-11` donne la cible ; `-my-3` rend les 24 px ajoutés, pour que
+   * la ligne garde sa hauteur de texte et que le titre ne descende pas. Les
+   * deux ensemble, sur CHAQUE lien : l'un sans l'autre est soit une petite
+   * cible, soit une page qui bouge. */
+  const pages = ["app/catalogue/page.tsx", "app/categories/page.tsx", "app/recharges/page.tsx", "app/guides/[lang]/page.tsx", "app/guides/[lang]/[slug]/page.tsx"];
+  let liens = 0;
+  for (const fichier of pages) {
+    const src = readFileSync(fichier, "utf8");
+    const nav = src.match(/<nav aria-label=\{t\(lang, "nav\.breadcrumb"\)\}[\s\S]*?<\/nav>/);
+    assert.ok(nav, `${fichier} : le fil d'Ariane est introuvable`);
+    const classes = classesDe(nav[0], "Link");
+    assert.ok(classes.length > 0, `${fichier} : aucun lien lu dans le fil d'Ariane`);
+    for (const c of classes) {
+      assert.ok(c.includes(T) && c.includes("-my-3") && c.includes("inline-flex"), `${fichier} : lien du fil d'Ariane « ${c.join(" ")} » — il faut inline-flex, ${T} et -my-3`);
+      liens++;
+    }
+  }
+  assert.equal(liens, 7, "sept liens de fil d'Ariane attendus sur les cinq pages");
+});
+
+test("filtre de zone du catalogue — trois listes et le bouton à 44 px, listes en 16 px", () => {
+  /* MESURÉ le 2026-09-29, 390 px : liste Département 125 × 37 px, bouton
+   * « Filtrer » 74 × 38 px — à côté du tri et du bouton voisins, déjà en
+   * `min-h-11`. Les listes passent aussi en `text-base` : sous 16 px, Safari
+   * sur iPhone zoome la page à l'ouverture d'une liste — le tri voisin était
+   * déjà en 16 px. */
+  const src = readFileSync("app/catalogue/page.tsx", "utf8");
+  const form = src.match(/<form\b[^>]*>(?:(?!<\/form>)[\s\S])*?name="zd"[\s\S]*?<\/form>/);
+  assert.ok(form, "le formulaire du filtre de zone est introuvable");
+  const listes = [...form[0].matchAll(/<select\b[\s\S]*?className="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
+  assert.equal(listes.length, 3, "département, commune, quartier : trois listes");
+  for (const c of listes) {
+    assert.ok(c.includes(T), `liste de zone sans ${T} : « ${c.join(" ")} »`);
+    assert.ok(c.includes("text-base") && !c.includes("text-sm"), `liste de zone sous 16 px : « ${c.join(" ")} »`);
+  }
+  const boutons = [...form[0].matchAll(/<button\b[\s\S]*?className="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
+  assert.equal(boutons.length, 1, "un seul bouton dans le filtre de zone");
+  assert.ok(boutons[0].includes(T), `bouton « Filtrer » sans ${T} : « ${boutons[0].join(" ")} »`);
 });

@@ -76,7 +76,7 @@ function HomeRow({
 }) {
   if (!rangeeVisible(items.length, primary)) return null;
   return (
-    <section id={id} className={`mx-auto max-w-6xl px-3 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
+    <section id={id} className={`mx-auto max-w-6xl px-5 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
         <div><h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
         <Link href={href} className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
@@ -210,7 +210,7 @@ export default async function HomePage() {
             phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
             carrousel : le premier écran appartient aux produits. Le visuel de
             marque reste facultatif ; sinon un aplat de chrome. */}
-        <section className="home-premier-ecran mx-auto max-w-6xl px-3 pt-3">
+        <section className="home-premier-ecran mx-auto max-w-6xl px-5 pt-3">
           <div
             data-has-featured={Boolean(featured)}
             className={`home-hero relative overflow-hidden rounded-2xl ${opening ? "launch-hero" : "bg-chrome text-on-chrome"}`}
@@ -259,7 +259,7 @@ export default async function HomePage() {
         />
 
         {categories.length > 0 && (
-          <nav className="home-discovery-nav mx-auto max-w-6xl px-3" aria-label={t(lang, "home.explore")}>
+          <nav className="home-discovery-nav mx-auto max-w-6xl px-5" aria-label={t(lang, "home.explore")}>
             <span className="home-eyebrow">{t(lang, "home.explore")}</span>
             <div className="home-category-links">
               {categories.map((category) => <Link key={category} href={`/catalogue?cat=${encodeURIComponent(category)}`}>{category}<span aria-hidden="true">↗</span></Link>)}
@@ -268,7 +268,7 @@ export default async function HomePage() {
         )}
         {products.length === 0 && <MarketplaceUniverses lang={lang} />}
         {products.length === 0 && (
-          <section className="home-catalogue-state mx-auto max-w-6xl px-3 py-8" aria-live="polite">
+          <section className="home-catalogue-state mx-auto max-w-6xl px-5 py-8" aria-live="polite">
             <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -310,7 +310,7 @@ export default async function HomePage() {
 
         {/* MEILLEURS VENDEURS — ≥ 3 vendeurs avec ≥ 1 vente PAYÉE (§4.3). */}
         {sellers.length > 0 && (
-          <section className="mx-auto max-w-6xl px-3 pt-8">
+          <section className="mx-auto max-w-6xl px-5 pt-8">
             <h2 className="text-xl tracking-tight sm:text-2xl">{t(lang, "sec.sellers")}</h2>
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
               {sellers.map((s) => (
@@ -333,7 +333,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-3 pt-8">
+        <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-5 pt-8">
           <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <h2 id="receipt-title" className="text-xl tracking-tight sm:text-2xl">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
@@ -354,7 +354,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <aside className="home-help mx-auto max-w-6xl px-3 pt-8">
+        <aside className="home-help mx-auto max-w-6xl px-5 pt-8">
           <div><h2>{t(lang, "home.support.title")}</h2><p>{t(lang, "home.support.body")}</p></div>
           <Link href="/aide">{t(lang, "home.support.cta")}<span aria-hidden="true">↗</span></Link>
         </aside>
@@ -363,7 +363,7 @@ export default async function HomePage() {
             la carte « Ouvrez votre boutique » descendue ici, et « Comment ça
             marche » réduit à deux liens vers /aide et /vendre, qui portent les
             étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
-        <section id="comment" className="mx-auto max-w-6xl scroll-mt-24 px-3 pb-24 pt-10">
+        <section id="comment" className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-24 pt-10">
           <div className="rounded-2xl border border-line bg-surface p-6 text-center sm:p-10">
             <h2 className="mx-auto max-w-2xl text-2xl tracking-tight sm:text-3xl">{t(lang, "rail.shop.t")}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-mist">{t(lang, "home.final.sub")}</p>

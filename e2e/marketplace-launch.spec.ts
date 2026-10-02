@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+// Recherche PLEINE LARGEUR sur mobile (choix du porteur, 2026-09-15) : elle
+// occupe toute la largeur de la grille. Depuis le 2026-09-29, la grille a UNE
+// gouttière de 20 px, en-tête compris (`tests/gouttiere-unique.test.ts`) : la
+// largeur attendue est donc celle de l'écran moins 2 × 20 px.
 for (const width of [320, 390, 768, 1440]) {
   test(`search stays usable at ${width}px including after scrolling`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -7,13 +11,13 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(search).toHaveCount(1);
     const box = await search.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.width).toBeGreaterThanOrEqual(width < 1024 ? width - 30 : 250);
+    expect(box!.width).toBeGreaterThanOrEqual(width < 1024 ? width - 40 : 250);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     await page.evaluate(() => scrollTo(0, 600));
     await expect(page.locator('header')).toHaveAttribute('data-compact', '');
     await expect(search).toBeInViewport();
     const compactBox = await search.boundingBox();
-    expect(compactBox!.width).toBeGreaterThanOrEqual(width < 1024 ? width - 30 : 250);
+    expect(compactBox!.width).toBeGreaterThanOrEqual(width < 1024 ? width - 40 : 250);
     await expect(page.locator('header summary[aria-label="Français"]')).toBeVisible();
     await search.fill('Lightroom');
     await search.press('Enter');

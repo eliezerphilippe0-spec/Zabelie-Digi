@@ -15,11 +15,18 @@ import type { Politique } from "./policy-privacy";
  * commission au barème en vigueur, remboursement vers le moyen d'origine,
  * produits interdits, pas de cash à la livraison — `docs/26`, `docs/22`,
  * `CLAUDE.md`). Tout point exigeant un arbitrage JURIDIQUE porte un marqueur
- * `[À COMPLÉTER : …]` explicite — droit applicable, fenêtre de litige,
- * résiliation, âge minimum. **Quatre marqueurs par langue, comptés et FIGÉS
- * par `tests/conditions-utilisation.test.ts`** : un marqueur en plus rougit
+ * `[À COMPLÉTER : …]` explicite — droit applicable, résiliation, âge
+ * minimum. **Trois marqueurs par langue, comptés et FIGÉS par
+ * `tests/conditions-utilisation.test.ts`** : un marqueur en plus rougit
  * (on n'ouvre pas un blanc sans témoin), un marqueur rempli rougit aussi
  * (remplir un blanc est une décision porteur, le test force à la consigner).
+ *
+ * ⚖️ Le quatrième, la fenêtre de litige (§10), a été rédigé le 2026-10-02 par
+ * l'agent, sur mandat du porteur (« Je rédige, vous validez »), d'après le
+ * mécanisme en production (`0043`, `0068`). Il ne chiffre AUCUN délai — les
+ * valeurs vivent en table de config et restent l'arbitrage D-14 (`docs/28`) —
+ * et ne décrit pas l'exécution du remboursement (D-12). À VALIDER par le
+ * porteur et son conseil, comme le reste du gabarit.
  *
  * La page vide vaut mieux que la page inventée : ces marqueurs sont EN LIGNE,
  * visibles — exactement comme les blancs de la politique de confidentialité,
@@ -30,7 +37,7 @@ import type { Politique } from "./policy-privacy";
  * `lib/policy-privacy.ts` — l'objet `IDENTITE` n'est PAS dupliqué ici : les
  * remplir là-bas les remplit sur les deux documents. Ce jour-là, c'est le
  * cliquet de la CONFIDENTIALITÉ (`champsManquants`) qui rougira — pas
- * celui-ci : les quatre marqueurs d'ici sont d'AUTRES blancs, juridiques,
+ * celui-ci : les trois marqueurs d'ici sont d'AUTRES blancs, juridiques,
  * comptés dans le texte SOURCE, qu'`IDENTITE` ne touche pas. Deux comptes
  * orthogonaux, deux décisions distinctes.
  *
@@ -162,7 +169,13 @@ const fr: Politique = {
           p: "Si la remise n'a pas lieu ou n'est pas conforme, l'acheteur peut le signaler depuis son espace « mes achats ». Le dossier est alors examiné et le règlement du vendeur suspendu le temps de l'examen. Tout remboursement s'effectue **vers le moyen de paiement d'origine** — jamais vers un solde interne.",
         },
         {
-          p: "[À COMPLÉTER : fenêtre de contestation ouverte à l'acheteur et procédure détaillée de résolution des litiges]",
+          ul: [
+            "**Délai de contestation** : pour un produit physique ou un service, lorsque le vendeur déclare la remise, l'acheteur peut, jusqu'à l'échéance affichée dans « mes achats », confirmer la réception ou signaler qu'il n'a rien reçu. Sans réponse à l'échéance, la commande est réputée reçue, à condition que l'acheteur ait été avisé de la déclaration puis relancé avant l'échéance ; à défaut, le dossier est examiné par Zabelie.",
+            "**Absence de déclaration du vendeur** : si le vendeur ne déclare pas la remise dans le délai fixé par Zabelie à compter de la confirmation du paiement, la commande est examinée par Zabelie, qui peut relancer le vendeur, constater la remise ou rembourser l'acheteur.",
+            "**Après la réception, et pour un fichier téléchargeable** : un problème se signale par l'un des contacts indiqués sur la page d'aide, avec la référence de la commande. Il est examiné au cas par cas ; un signalement ne garantit pas un remboursement automatique.",
+            "**Examen** : Zabelie n'observe pas la remise. Elle statue au vu des déclarations des parties, des échanges tenus dans la messagerie Zabelie et des éléments fournis. À l'issue de l'examen, la commande est soit considérée comme remise — le règlement du vendeur reprend alors son cours —, soit remboursée à l'acheteur, vers son moyen de paiement d'origine.",
+            "**Paiement hors de la plateforme** : un règlement effectué en dehors de Zabelie, notamment de la main à la main, n'est pas couvert par cette procédure.",
+          ],
         },
       ],
     },
@@ -334,7 +347,13 @@ const ht: Politique = {
           p: "Si remiz la pa fèt oswa li pa konfòm, achtè a ka siyale sa nan espas « acha mwen yo ». Dosye a egzamine epi règleman vandè a sispann pandan egzamen an. Tout ranbousman fèt **sou mwayen peman orijinal la** — pa janm sou yon balans entèn.",
         },
         {
-          p: "[POU KONPLETE : fenèt kontestasyon achtè a genyen ak pwosedi detaye pou rezoud litij yo]",
+          ul: [
+            "**Delè pou konteste** : pou yon pwodui fizik oswa yon sèvis, lè vandè a deklare li remèt li, achtè a ka, jiska delè ki parèt nan « acha mwen yo », konfime li resevwa l oswa siyale li pa resevwa anyen. Si li pa reponn lè delè a rive, nou konsidere li resevwa l, depi li te resevwa yon avi sou deklarasyon an epi yon rapèl anvan delè a ; si se pa sa, Zabelie egzamine dosye a.",
+            "**Vandè a pa deklare anyen** : si vandè a pa deklare remiz la nan delè Zabelie fikse apati konfimasyon peman an, Zabelie egzamine kòmand lan ; li ka relanse vandè a, konstate remiz la oswa ranbouse achtè a.",
+            "**Apre resepsyon an, ak pou yon fichye pou telechaje** : pou siyale yon pwoblèm, sèvi ak youn nan kontak ki sou paj èd la, ak referans kòmand lan. Chak ka egzamine youn pa youn ; yon siyalman pa garanti yon ranbousman otomatik.",
+            "**Egzamen** : Zabelie pa wè remiz la. Li deside dapre sa de pati yo deklare, mesaj yo te voye nan mesaji Zabelie a ak prèv yo bay. Lè egzamen an fini, swa kòmand lan konsidere kòm remèt — règleman vandè a kontinye —, swa achtè a ranbouse sou mwayen peman orijinal li.",
+            "**Peman andeyò platfòm nan** : yon peman ki fèt andeyò Zabelie, sitou men nan men, pa kouvri pa pwosedi sa a.",
+          ],
         },
       ],
     },
@@ -506,7 +525,13 @@ const en: Politique = {
           p: "If delivery does not occur or does not conform, the buyer can report it from their “my purchases” space. The case is then reviewed and the seller settlement is withheld during the review. Any refund is made **to the original payment method** — never to an internal balance.",
         },
         {
-          p: "[TO BE COMPLETED: buyer dispute window and detailed dispute-resolution procedure]",
+          ul: [
+            "**Dispute window**: for a physical product or a service, when the seller declares delivery, the buyer may, until the deadline displayed in “my purchases”, confirm receipt or report that nothing was received. Absent a response by the deadline, the order is deemed received, provided the buyer was notified of the declaration and then reminded before the deadline; otherwise, the case is reviewed by Zabelie.",
+            "**No declaration by the seller**: if the seller does not declare delivery within the period set by Zabelie from payment confirmation, the order is reviewed by Zabelie, which may follow up with the seller, record the delivery or refund the buyer.",
+            "**After receipt, and for a downloadable file**: a problem is reported through one of the contacts listed on the help page, with the order reference. It is reviewed case by case; reporting a problem does not guarantee an automatic refund.",
+            "**Review**: Zabelie does not observe delivery. It decides on the basis of the parties' declarations, the exchanges held in Zabelie messaging and the evidence provided. At the end of the review, the order is either considered delivered — the seller settlement then resumes — or refunded to the buyer, to the original payment method.",
+            "**Payment outside the platform**: a payment made outside Zabelie, in particular hand to hand, is not covered by this procedure.",
+          ],
         },
       ],
     },
@@ -678,7 +703,13 @@ const es: Politique = {
           p: "Si la entrega no se produce o no es conforme, el comprador puede señalarlo desde su espacio «mis compras». El expediente se examina y la liquidación al vendedor se suspende durante el examen. Todo reembolso se efectúa **al medio de pago original** — nunca a un saldo interno.",
         },
         {
-          p: "[POR COMPLETAR: plazo de reclamación del comprador y procedimiento detallado de resolución de controversias]",
+          ul: [
+            "**Plazo de reclamación**: para un producto físico o un servicio, cuando el vendedor declara la entrega, el comprador puede, hasta el plazo indicado en «mis compras», confirmar la recepción o señalar que no ha recibido nada. Sin respuesta al vencer el plazo, el pedido se considera recibido, siempre que el comprador haya sido avisado de la declaración y luego recordado antes del vencimiento; de lo contrario, Zabelie examina el expediente.",
+            "**Falta de declaración del vendedor**: si el vendedor no declara la entrega dentro del plazo fijado por Zabelie desde la confirmación del pago, Zabelie examina el pedido y puede recordárselo al vendedor, constatar la entrega o reembolsar al comprador.",
+            "**Tras la recepción, y para un archivo descargable**: un problema se señala a través de uno de los contactos indicados en la página de ayuda, con la referencia del pedido. Se examina caso por caso; señalar un problema no garantiza un reembolso automático.",
+            "**Examen**: Zabelie no observa la entrega. Decide a la vista de las declaraciones de las partes, de los intercambios mantenidos en la mensajería de Zabelie y de los elementos aportados. Al término del examen, el pedido se considera entregado — y la liquidación al vendedor sigue su curso — o se reembolsa al comprador, al medio de pago original.",
+            "**Pago fuera de la plataforma**: un pago realizado fuera de Zabelie, en particular en mano, no está cubierto por este procedimiento.",
+          ],
         },
       ],
     },

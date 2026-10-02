@@ -72,7 +72,7 @@ test("S3 — une carte n'affiche jamais une URL brute ni un titre vide, et le ma
 
 test("S4 — la page applique le seuil à CHAQUE rangée, par le helper, pas à la main", () => {
   assert.match(page, /if \(!rangeeVisible\(items\.length, primary\)\) return null;/);
-  assert.match(page, /className=\{`mx-auto max-w-6xl px-3 pt-6 \$\{classesRangee\(items\.length, primary\)\}`\}/);
+  assert.match(page, /className=\{`mx-auto max-w-6xl px-5 pt-6 \$\{classesRangee\(items\.length, primary\)\}`\}/);
   // Les vendeurs passent par le helper aussi, sur des ventes PAYÉES.
   assert.match(page, /vendeursAffichables\(\[\.\.\.sellerMap\.values\(\)\]\)/);
   assert.match(page, /\.eq\("status", "paid"\)/);

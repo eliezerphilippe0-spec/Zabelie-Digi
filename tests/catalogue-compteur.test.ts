@@ -30,9 +30,11 @@ test("le compteur affiché est le TOTAL, jamais la longueur de la page", () => {
   /* La liaison : `total` alimente le compteur. L'ancienne forme est interdite
    * explicitement — un `products.length` qui reviendrait ici ressusciterait
    * le défaut sans rien casser d'autre. */
-  assert.match(PAGE, /\{totalExact \? total : `≥ \$\{total\}`\} \{t\(lang, "catalog\.results"\)\}/);
+  // Depuis le 2026-09-29, le MÊME `total` décide aussi de l'accord
+  // (« 1 résultat » / « 12 résultats » — tests/pluriel.test.ts P5).
+  assert.match(PAGE, /\{totalExact \? total : `≥ \$\{total\}`\} \{tn\(lang, total, "catalog\.results\.one", "catalog\.results"\)\}/);
   assert.ok(
-    !/\{products\.length\} \{t\(lang, "catalog\.results"\)\}/.test(PAGE),
+    !/\{products\.length\}\s*\{tn?\(lang,[^}]*"catalog\.results/.test(PAGE),
     "l'ancien compteur plafonné doit avoir disparu"
   );
 });

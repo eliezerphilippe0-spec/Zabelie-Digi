@@ -20,7 +20,7 @@ import { getLang } from "@/lib/i18n-server";
 import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
 import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -181,9 +181,9 @@ export default async function CataloguePage({
       <main id="main">
       <section className="mx-auto max-w-6xl px-5 pb-10 pt-8">
         <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
-          <Link href="/" className="underline underline-offset-4">{t(lang, "nav.home")}</Link>
+          <Link href="/" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "nav.home")}</Link>
           <span aria-hidden="true">/</span>
-          {selection ? <><Link href="/catalogue" className="underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
+          {selection ? <><Link href="/catalogue" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
         </nav>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           {selection ? t(lang, selection.title) : t(lang, "catalog.title")}
@@ -194,7 +194,7 @@ export default async function CataloguePage({
           {(Object.keys(CATALOGUE_UNIVERSES) as (keyof typeof CATALOGUE_UNIVERSES)[]).map((key) => <Link key={key} href={universeHref(key)} aria-current={universe === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${universe === key ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, CATALOGUE_UNIVERSES[key].title)}</Link>)}
         </nav>
         <p className="mt-2 text-sm text-mist">
-          {totalExact ? total : `≥ ${total}`} {t(lang, "catalog.results")}
+          {totalExact ? total : `≥ ${total}`} {tn(lang, total, "catalog.results.one", "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
           {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
           {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}
@@ -286,7 +286,7 @@ export default async function CataloguePage({
               name="zd"
               defaultValue={zd ?? ""}
               aria-label={t(lang, "zone.level.depatman")}
-              className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-accent"
+              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
             >
               <option value="">{t(lang, "zone.filter.all")}</option>
               {depatmans.map((z) => (
@@ -300,7 +300,7 @@ export default async function CataloguePage({
                 name="zk"
                 defaultValue={zkValide ?? ""}
                 aria-label={t(lang, "zone.level.komin")}
-                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.komin")}</option>
                 {komins.map((z) => (
@@ -315,7 +315,7 @@ export default async function CataloguePage({
                 name="zq"
                 defaultValue={zqValide ?? ""}
                 aria-label={t(lang, "zone.level.katye")}
-                className="rounded-xl border border-line bg-ink/40 px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.katye")}</option>
                 {katyes.map((z) => (
@@ -327,7 +327,7 @@ export default async function CataloguePage({
             )}
             <button
               type="submit"
-              className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-accent"
+              className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold text-cloud transition hover:border-accent"
             >
               {t(lang, "zone.filter.apply")}
             </button>

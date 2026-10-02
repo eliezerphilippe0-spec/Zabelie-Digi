@@ -65,7 +65,7 @@ export function BrandLogo({
   nomMasqueSurMobile?: boolean;
 }) {
   return (
-    <Link href="/" className={`inline-flex min-h-11 items-center gap-2 ${className}`}>
+    <Link href="/" className={`inline-flex min-h-11 min-w-11 items-center gap-2 ${className}`}>
       <BrandMark size={32} />
       {/* `sr-only` et non `hidden` sous sm : un `display: none` retirait le
           nom au lecteur d'écran aussi, et le lien n'avait plus de nom

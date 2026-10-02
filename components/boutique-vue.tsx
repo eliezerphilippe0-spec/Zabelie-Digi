@@ -3,7 +3,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { ShareButtons } from "@/components/share-buttons";
-import { t, type Lang } from "@/lib/i18n";
+import { t, tn, type Lang } from "@/lib/i18n";
 import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
 import type { CreatorProfile } from "@/lib/creators";
 
@@ -62,7 +62,7 @@ export async function BoutiqueVue({
               {creator.displayName}
             </h1>
             <p className="mt-1 text-sm text-mist">
-              {creator.products.length} {t(lang, "creator.products.label")}
+              {creator.products.length} {tn(lang, creator.products.length, "creator.products.label.one", "creator.products.label")}
             </p>
           </div>
         </div>
