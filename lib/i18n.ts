@@ -782,14 +782,14 @@ const fr = {
   "faq.a1": "Choisissez un produit, puis vérifiez sur sa fiche les moyens de paiement disponibles et le montant total avant de confirmer votre achat.",
   "faq.q2": "Quand est-ce que je reçois mon achat ?",
   "faq.a2":
-    "Cela dépend du produit. Un fichier est disponible immédiatement dans « Mes achats », avec un e-mail contenant le lien. Pour une prestation, le vendeur vous contacte après paiement. Un produit physique est expédié par le vendeur.",
+    "Cela dépend du produit. Un fichier est disponible dans « Mes achats » dès que le paiement est confirmé. Pour une prestation, le vendeur vous contacte après paiement. Pour un produit physique, la remise se fait comme convenu avec le vendeur : Zabelie ne stocke ni ne livre les produits.",
   "faq.q3": "Comment vendre sur Zabelie ?",
   "faq.a3": "Créez un compte et préparez votre offre. L’inscription et la boutique sont sans abonnement. Consultez les frais et les conditions de lancement dans l’espace Vendre.",
   "faq.a3.floor": "Créez un compte et préparez votre offre. L’inscription et la boutique sont sans abonnement. Consultez les frais et les conditions de lancement dans l’espace Vendre. L’arrondi de la commission est en votre faveur.",
   "faq.q4": "Quand le vendeur reçoit-il son argent ?",
-  "faq.a4": "Le net est crédité immédiatement « en attente », puis devient disponible 7 jours après la vente (protection anti-fraude).",
+  "faq.a4": "Le net est crédité immédiatement « en attente ». Il devient disponible 7 jours après la confirmation du paiement (protection anti-fraude) — et, pour un produit physique ou une prestation, pas avant la remise : confirmée par l’acheteur, ou automatiquement à l’échéance affichée, sauf contestation.",
   "faq.q5": "Et si quelque chose se passe mal ?",
-  "faq.a5": "Chaque commande est traçable et remboursable vers votre moyen de paiement d'origine. Les litiges sont examinés un par un.",
+  "faq.a5": "Chaque commande est traçable dans « Mes achats ». Si le vendeur déclare une remise que vous n’avez pas reçue, signalez-le avant l’échéance affichée : son paiement reste bloqué pendant l’examen. Tout remboursement se fait vers votre moyen de paiement d’origine ; un signalement ne garantit pas un remboursement automatique.",
   "footer.help": "Aide",
 
   // Fondateur
@@ -1854,14 +1854,14 @@ const ht: Record<I18nKey, string> = {
   "faq.a1": "Chwazi yon pwodui, epi verifye sou paj li ki mwayen peman ki disponib ak montan total la anvan ou konfime acha ou.",
   "faq.q2": "Kilè m ap resevwa acha m ?",
   "faq.a2":
-    "Sa depann de pwodui a. Yon fichye disponib touswit nan « Acha mwen yo », ak yon imèl ki gen lyen an. Pou yon sèvis, vandè a kontakte w apre peman an. Yon pwodui fizik, se vandè a k ap voye l apre peman an konfime.",
+    "Sa depann de pwodui a. Yon fichye disponib nan « Acha mwen yo » depi peman an konfime. Pou yon sèvis, vandè a kontakte w apre peman an. Pou yon pwodui fizik, remiz la fèt jan ou te dakò ak vandè a : Zabelie pa estoke pwodui ni fè livrezon.",
   "faq.q3": "Kijan pou m vann sou Zabelie ?",
   "faq.a3": "Kreye yon kont epi prepare òf ou. Enskripsyon ak boutik la pa gen abònman. Gade frè ak kondisyon kòmansman yo nan espas Vann lan.",
   "faq.a3.floor": "Kreye yon kont epi prepare òf ou. Enskripsyon ak boutik la pa gen abònman. Gade frè ak kondisyon kòmansman yo nan espas Vann lan. Awondi komisyon an an favè w.",
   "faq.q4": "Kilè vandè a resevwa lajan li ?",
-  "faq.a4": "Nèt la antre touswit « an atant », epi li vin disponib 7 jou apre vant lan (pwoteksyon kont fwod).",
+  "faq.a4": "Nèt la antre touswit « an atant ». Li vin disponib 7 jou apre peman an konfime (pwoteksyon kont fwod) — epi, pou yon pwodui fizik oswa yon sèvis, pa anvan remiz la : achtè a konfime l, oswa li fèt otomatikman nan delè ki parèt la, si pa gen kontestasyon.",
   "faq.q5": "E si yon bagay pase mal ?",
-  "faq.a5": "Chak kòmand ka trase e ranbouse sou menm mwayen peman ou te itilize a. Nou egzamine chak litij grenn pa grenn.",
+  "faq.a5": "Chak kòmand ka swiv nan « Acha mwen yo ». Si vandè a deklare li remèt pwodwi a men ou poko resevwa l, siyale l anvan delè ki parèt la : lajan vandè a rete bloke pandan n ap egzamine dosye a. Tout ranbousman fèt sou menm mwayen peman ou te itilize a ; yon siyalman pa garanti yon ranbousman otomatik.",
   "footer.help": "Èd",
 
   "founder.quote":
@@ -2907,14 +2907,14 @@ const en = {
   "faq.a1": "Choose a product, then check the available payment methods and total amount on its page before confirming your purchase.",
   "faq.q2": "When do I receive my purchase?",
   "faq.a2":
-    "It depends on the product. A file is available immediately under « My purchases », with an email containing the link. For a service, the seller contacts you after payment. A physical product is shipped by the seller.",
+    "It depends on the product. A file is available under « My purchases » as soon as payment is confirmed. For a service, the seller contacts you after payment. For a physical product, handover happens as arranged with the seller: Zabelie does not store products or provide delivery.",
   "faq.q3": "How do I sell on Zabelie?",
   "faq.a3": "Create an account and prepare your offer. Signup and your storefront have no subscription. See fees and launch terms in the Sell workspace.",
   "faq.a3.floor": "Create an account and prepare your offer. Signup and your storefront have no subscription. See fees and launch terms in the Sell workspace. Commission rounding is in your favour.",
   "faq.q4": "When does the seller get their money?",
-  "faq.a4": "The net amount is credited immediately as « pending », then becomes available 7 days after the sale (fraud protection).",
+  "faq.a4": "The net amount is credited immediately as « pending ». It becomes available 7 days after payment confirmation (fraud protection) — and, for a physical product or a service, not before handover: confirmed by the buyer, or automatically at the displayed deadline unless disputed.",
   "faq.q5": "What if something goes wrong?",
-  "faq.a5": "Every order is traceable and refundable to your original payment method. Disputes are reviewed one by one.",
+  "faq.a5": "Every order is traceable in « My purchases ». If the seller declares a handover you have not received, report it before the displayed deadline: their payment stays blocked during the review. Any refund goes to your original payment method; reporting an issue does not guarantee an automatic refund.",
   "footer.help": "Help",
 
   // Founder
@@ -3970,14 +3970,14 @@ const es = {
   "faq.a1": "Elige un producto y comprueba en su ficha los métodos de pago disponibles y el importe total antes de confirmar tu compra.",
   "faq.q2": "¿Cuándo recibo mi compra?",
   "faq.a2":
-    "Depende del producto. Un archivo está disponible de inmediato en « Mis compras », con un correo que incluye el enlace. Para un servicio, el vendedor te contacta tras el pago. Un producto físico lo envía el vendedor.",
+    "Depende del producto. Un archivo está disponible en « Mis compras » en cuanto se confirma el pago. Para un servicio, el vendedor te contacta tras el pago. Para un producto físico, la entrega se hace según lo acordado con el vendedor: Zabelie no almacena productos ni realiza entregas.",
   "faq.q3": "¿Cómo vendo en Zabelie?",
   "faq.a3": "Crea una cuenta y prepara tu oferta. El registro y tu tienda no tienen suscripción. Consulta las tarifas y condiciones de lanzamiento en Vender.",
   "faq.a3.floor": "Crea una cuenta y prepara tu oferta. El registro y tu tienda no tienen suscripción. Consulta las tarifas y condiciones de lanzamiento en Vender. El redondeo de la comisión es a tu favor.",
   "faq.q4": "¿Cuándo recibe su dinero el vendedor?",
-  "faq.a4": "El neto se acredita de inmediato como « pendiente », y queda disponible 7 días después de la venta (protección antifraude).",
+  "faq.a4": "El neto se acredita de inmediato como « pendiente ». Queda disponible 7 días después de la confirmación del pago (protección antifraude) — y, para un producto físico o un servicio, no antes de la entrega: confirmada por el comprador, o automáticamente al vencer el plazo indicado, salvo disputa.",
   "faq.q5": "¿Y si algo sale mal?",
-  "faq.a5": "Cada pedido es rastreable y reembolsable a tu medio de pago original. Las disputas se revisan una por una.",
+  "faq.a5": "Cada pedido es rastreable en « Mis compras ». Si el vendedor declara una entrega que no has recibido, señálalo antes del plazo indicado: su pago queda bloqueado durante la revisión. Todo reembolso se hace a tu medio de pago original; informar de un problema no garantiza un reembolso automático.",
   "footer.help": "Ayuda",
 
   // Fundador
