@@ -137,13 +137,13 @@ test("les blancs sont COMPTÉS — leur nombre ne peut pas grossir en silence", 
   const vides = champsManquants();
   assert.deepEqual(
     vides.sort(),
-    ["entite", "hebergement", "retentionKyc"],
+    ["entite", "retentionKyc"],
     `Les faits non renseignés de la politique ont changé : ${vides.join(", ")}. ` +
       `Mettre ce test à jour EN MÊME TEMPS que lib/policy-privacy.ts.`,
   );
   assert.equal(
     Object.keys(IDENTITE).length,
-    4,
+    3,
     "Le nombre de faits attendus par la politique a changé.",
   );
 });
@@ -176,6 +176,28 @@ test("la durée de purge publiée est celle que le cron applique", () => {
       phrase.includes(annonce),
       `${lang} : la phrase du payload n'annonce plus ${annonce}, alors que le cron purge à p_days: ${appel[1]}.\n  ${phrase}`,
     );
+  }
+});
+
+test("l'hébergement publié suit la région que le dépôt configure", () => {
+  /* Mesuré le 2026-10-03 : fonctions Vercel en `iad1` (en-tête `x-vercel-id`
+   * de zabelie.com), base Supabase en AWS `us-east-1` (l'hôte de la base
+   * résout dans ces plages). Seule la moitié Vercel vit dans le dépôt : sans
+   * clé `regions`, Vercel exécute en `iad1` ; avec une autre région, la
+   * politique mentirait sur le pays où tournent les fonctions. */
+  const config = JSON.parse(readFileSync("vercel.json", "utf8")) as { regions?: string[] };
+  assert.ok(
+    config.regions === undefined || (config.regions.length === 1 && config.regions[0] === "iad1"),
+    `vercel.json déplace les fonctions (${config.regions}) : réécrire l'hébergement publié dans les quatre langues.`,
+  );
+  const PAYS: Record<Lang, string> = { fr: "États-Unis", ht: "Ozetazini", en: "United States", es: "Estados Unidos" };
+  for (const lang of LANGS) {
+    const phrase = POLITIQUE[lang].sections
+      .flatMap((s) => s.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)))
+      .find((t) => t.includes("Vercel") && t.includes("Supabase") && !t.startsWith("**"));
+    assert.ok(phrase, `${lang} : la phrase d'hébergement (Vercel et Supabase) a disparu`);
+    assert.ok(phrase.includes(PAYS[lang]), `${lang} : la phrase d'hébergement ne dit plus le pays (${PAYS[lang]})`);
+    assert.ok(!phrase.includes("{hebergement}"), `${lang} : le gabarit {hebergement} est revenu`);
   }
 });
 

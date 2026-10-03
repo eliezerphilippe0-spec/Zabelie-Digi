@@ -14,12 +14,12 @@ import type { Politique } from "./policy-privacy";
  * remplie avec les SEULS termes déjà tranchés par le porteur (maturation J+7,
  * commission au barème en vigueur, remboursement vers le moyen d'origine,
  * produits interdits, pas de cash à la livraison — `docs/26`, `docs/22`,
- * `CLAUDE.md`). Tout point exigeant un arbitrage JURIDIQUE porte un marqueur
- * `[À COMPLÉTER : …]` explicite — droit applicable, résiliation, âge
- * minimum. **Trois marqueurs par langue, comptés et FIGÉS par
- * `tests/conditions-utilisation.test.ts`** : un marqueur en plus rougit
- * (on n'ouvre pas un blanc sans témoin), un marqueur rempli rougit aussi
- * (remplir un blanc est une décision porteur, le test force à la consigner).
+ * `CLAUDE.md`). Tout point exigeant un arbitrage JURIDIQUE portait un
+ * marqueur `[À COMPLÉTER : …]` explicite. **Le compte des marqueurs est FIGÉ
+ * par `tests/conditions-utilisation.test.ts`** — il vaut 0 depuis le
+ * 2026-10-03 : un marqueur en plus rougit (on n'ouvre pas un blanc sans
+ * témoin). Seule l'identité `{entite}` reste à fournir, et c'est le cliquet
+ * de la confidentialité qui la compte.
  *
  * ⚖️ Le quatrième, la fenêtre de litige (§10), a été rédigé le 2026-10-02 par
  * l'agent, sur mandat du porteur (« Je rédige, vous validez »), d'après le
@@ -27,6 +27,14 @@ import type { Politique } from "./policy-privacy";
  * valeurs vivent en table de config et restent l'arbitrage D-14 (`docs/28`) —
  * et ne décrit pas l'exécution du remboursement (D-12). À VALIDER par le
  * porteur et son conseil, comme le reste du gabarit.
+ *
+ * ⚖️ Les trois derniers — âge minimum (§1), suspension et fermeture (§13),
+ * droit applicable (§14) — l'ont été le 2026-10-03, sur le même mandat, sur
+ * le modèle des géants (Amazon, eBay, Etsy) et au plus près du code : le
+ * §13 décrit la suspension que font `/api/admin/user-status`, `0017`,
+ * `0079` et `0112`, rien de plus (garde : `tests/suspension-argent.test.ts`).
+ * Le §1 prend la majorité haïtienne (Constitution de 1987, art. 16-2). À
+ * VALIDER par le porteur et son conseil.
  *
  * La page vide vaut mieux que la page inventée : ces marqueurs sont EN LIGNE,
  * visibles — exactement comme les blancs de la politique de confidentialité,
@@ -37,7 +45,7 @@ import type { Politique } from "./policy-privacy";
  * `lib/policy-privacy.ts` — l'objet `IDENTITE` n'est PAS dupliqué ici : les
  * remplir là-bas les remplit sur les deux documents. Ce jour-là, c'est le
  * cliquet de la CONFIDENTIALITÉ (`champsManquants`) qui rougira — pas
- * celui-ci : les trois marqueurs d'ici sont d'AUTRES blancs, juridiques,
+ * celui-ci : les marqueurs d'ici étaient d'AUTRES blancs, juridiques,
  * comptés dans le texte SOURCE, qu'`IDENTITE` ne touche pas. Deux comptes
  * orthogonaux, deux décisions distinctes.
  *
@@ -56,7 +64,7 @@ const fr: Politique = {
           p: "Les présentes conditions régissent l'utilisation de la marketplace Zabelie, exploitée par **{entite}**. En créant un compte ou en passant une commande, vous les acceptez. Si vous n'acceptez pas ces conditions, n'utilisez pas le service.",
         },
         {
-          p: "[À COMPLÉTER : âge minimum et capacité juridique requis pour utiliser le service]",
+          p: "Pour créer un compte, vous devez avoir au moins **18 ans** — l'âge de la majorité en Haïti — et la capacité de conclure un contrat selon la loi qui vous est applicable. Un mineur ne peut utiliser le service que par le compte d'un parent ou d'un tuteur légal, sous sa supervision et sa responsabilité.",
         },
       ],
     },
@@ -202,7 +210,13 @@ const fr: Politique = {
           p: "Vous pouvez supprimer votre compte à tout moment depuis votre tableau de bord. Les obligations nées avant la résiliation (commandes en cours, règlements, obligations légales) survivent à la fermeture du compte.",
         },
         {
-          p: "[À COMPLÉTER : conditions et préavis de résiliation ou de suspension à l'initiative de la plateforme]",
+          ul: [
+            "**Suspension** : Zabelie peut suspendre un compte sans préavis en cas de fraude ou de tentative de fraude, de mise en vente d'un produit interdit, de paiement demandé ou effectué hors de la plateforme, d'atteinte à la sécurité d'autres utilisateurs, ou de manquement grave ou répété aux présentes conditions.",
+            "**Effets** : la suspension est réversible. Elle bloque la connexion au compte, masque ses offres du catalogue et empêche toute nouvelle commande sur celles-ci ; tout est rétabli si la suspension est levée.",
+            "**Argent** : une suspension n'efface ni ne réduit les sommes dues au vendeur, qui restent inscrites à son registre (§6) ; seul leur retrait est bloqué tant que dure la suspension. Les commandes concernées peuvent être remboursées aux acheteurs, une à une, vers leur moyen de paiement d'origine (§10).",
+            "**Motif et contestation** : toute suspension est motivée. Le motif est enregistré et vous est communiqué sur demande auprès des contacts indiqués sur la page d'aide, sauf si cette communication compromettrait l'examen d'une fraude. Vous pouvez contester la décision par les mêmes contacts.",
+            "**Fermeture à l'initiative de Zabelie** : hors des cas ci-dessus, Zabelie ne peut fermer un compte qu'avec un préavis écrit de **30 jours**.",
+          ],
         },
       ],
     },
@@ -210,7 +224,7 @@ const fr: Politique = {
       titre: "14. Droit applicable",
       blocs: [
         {
-          p: "[À COMPLÉTER : droit applicable et juridiction compétente]",
+          p: "Les présentes conditions sont régies par le droit haïtien. Avant toute action, la procédure du §10 s'applique. À défaut d'accord, tout litige relève des tribunaux haïtiens compétents du ressort du siège de **{entite}**, sans préjudice des dispositions impératives qui protègent le consommateur dans son pays de résidence.",
         },
       ],
     },
@@ -234,7 +248,7 @@ const ht: Politique = {
           p: "Kondisyon sa yo gouvène itilizasyon mache Zabelie a, ke **{entite}** ap opere. Lè ou kreye yon kont oswa ou pase yon kòmand, ou aksepte yo. Si ou pa dakò ak kondisyon sa yo, pa itilize sèvis la.",
         },
         {
-          p: "[POU KONPLETE : laj minimòm ak kapasite jiridik ki nesesè pou itilize sèvis la]",
+          p: "Pou kreye yon kont, ou dwe gen omwen **18 an** — laj majorite ann Ayiti — epi gen kapasite pou siyen yon kontra dapre lwa ki aplike pou ou. Yon minè ka itilize sèvis la sèlman nan kont yon paran oswa yon gadyen legal, anba siveyans ak responsablite li.",
         },
       ],
     },
@@ -380,7 +394,13 @@ const ht: Politique = {
           p: "Ou ka efase kont ou nenpòt lè nan tablo ou. Obligasyon ki te fèt anvan fèmti a (kòmand an kou, règleman, obligasyon legal) rete valab apre kont lan fèmen.",
         },
         {
-          p: "[POU KONPLETE : kondisyon ak preavi pou platfòm lan sispann oswa fèmen yon kont]",
+          ul: [
+            "**Sispansyon** : Zabelie ka sispann yon kont san preavi si gen fwod oswa tantativ fwod, si yo mete yon pwodwi entèdi an vant, si yo mande oswa fè yon peman andeyò platfòm nan, si yo mete sekirite lòt itilizatè an danje, oswa si yo vyole kondisyon sa yo yon fason grav oswa plizyè fwa.",
+            "**Efè** : sispansyon an ka anile. Li bloke koneksyon kont lan, li kache òf li yo nan katalòg la epi li anpeche nenpòt nouvo kòmand sou yo ; tout bagay retounen jan yo te ye si sispansyon an leve.",
+            "**Lajan** : yon sispansyon pa efase ni diminye lajan yo dwe vandè a, ki rete enskri nan rejis li (§6) ; se sèlman retrè lajan an ki bloke pandan sispansyon an dire. Kòmand ki konsène yo ka ranbouse bay achtè yo, youn pa youn, sou menm mwayen peman orijinal yo (§10).",
+            "**Rezon ak kontestasyon** : chak sispansyon gen yon rezon. Rezon an anrejistre epi nou ba ou l si ou mande l nan kontak ki sou paj èd la, sof si sa ta anpeche nou egzamine yon fwod. Ou ka konteste desizyon an nan menm kontak sa yo.",
+            "**Fèmti kont pa Zabelie** : apa ka ki anwo yo, Zabelie ka fèmen yon kont sèlman ak yon preavi alekri **30 jou** davans.",
+          ],
         },
       ],
     },
@@ -388,7 +408,7 @@ const ht: Politique = {
       titre: "14. Lwa ki aplikab",
       blocs: [
         {
-          p: "[POU KONPLETE : lwa ki aplikab ak tribinal ki konpetan]",
+          p: "Lwa ayisyen gouvène kondisyon sa yo. Anvan nenpòt aksyon, pwosedi §10 la aplike. Si pa gen antant, tout litij ale devan tribinal ayisyen ki konpetan nan zòn kote **{entite}** gen biwo prensipal li, san sa pa retire pwoteksyon obligatwa lwa peyi kote konsomatè a rete ba li.",
         },
       ],
     },
@@ -412,7 +432,7 @@ const en: Politique = {
           p: "These terms govern the use of the Zabelie marketplace, operated by **{entite}**. By creating an account or placing an order, you accept them. If you do not accept these terms, do not use the service.",
         },
         {
-          p: "[TO BE COMPLETED: minimum age and legal capacity required to use the service]",
+          p: "To create an account, you must be at least **18 years old** — the age of majority in Haiti — and have the legal capacity to enter into a contract under the law that applies to you. A minor may use the service only through the account of a parent or legal guardian, under their supervision and responsibility.",
         },
       ],
     },
@@ -558,7 +578,13 @@ const en: Politique = {
           p: "You may delete your account at any time from your dashboard. Obligations arising before termination (pending orders, settlements, legal obligations) survive the closure of the account.",
         },
         {
-          p: "[TO BE COMPLETED: conditions and notice for platform-initiated suspension or termination]",
+          ul: [
+            "**Suspension**: Zabelie may suspend an account without notice in case of fraud or attempted fraud, listing of a prohibited product, payment requested or made outside the platform, harm to the safety of other users, or serious or repeated breach of these terms.",
+            "**Effects**: suspension is reversible. It blocks sign-in to the account, hides its listings from the catalogue and prevents any new order on them; everything is restored if the suspension is lifted.",
+            "**Money**: a suspension neither erases nor reduces the sums owed to the seller, which remain recorded in their ledger (§6); only their withdrawal is blocked while the suspension lasts. The orders concerned may be refunded to buyers, one by one, to their original payment method (§10).",
+            "**Reason and challenge**: every suspension has a stated reason. The reason is recorded and communicated to you on request through the contacts listed on the help page, unless doing so would compromise the review of a fraud. You may challenge the decision through the same contacts.",
+            "**Closure by Zabelie**: outside the cases above, Zabelie may close an account only with **30 days'** written notice.",
+          ],
         },
       ],
     },
@@ -566,7 +592,7 @@ const en: Politique = {
       titre: "14. Governing law",
       blocs: [
         {
-          p: "[TO BE COMPLETED: governing law and competent jurisdiction]",
+          p: "These terms are governed by Haitian law. Before any action, the procedure in §10 applies. Failing agreement, any dispute falls within the jurisdiction of the competent Haitian courts for the registered office of **{entite}**, without prejudice to the mandatory provisions that protect consumers in their country of residence.",
         },
       ],
     },
@@ -590,7 +616,7 @@ const es: Politique = {
           p: "Las presentes condiciones rigen el uso del mercado Zabelie, operado por **{entite}**. Al crear una cuenta o realizar un pedido, usted las acepta. Si no acepta estas condiciones, no utilice el servicio.",
         },
         {
-          p: "[POR COMPLETAR: edad mínima y capacidad jurídica necesarias para utilizar el servicio]",
+          p: "Para crear una cuenta, usted debe tener al menos **18 años** —la mayoría de edad en Haití— y la capacidad de celebrar un contrato según la ley que le sea aplicable. Un menor solo puede utilizar el servicio a través de la cuenta de un padre, una madre o un tutor legal, bajo su supervisión y responsabilidad.",
         },
       ],
     },
@@ -736,7 +762,13 @@ const es: Politique = {
           p: "Puede eliminar su cuenta en cualquier momento desde su panel. Las obligaciones nacidas antes de la terminación (pedidos en curso, liquidaciones, obligaciones legales) sobreviven al cierre de la cuenta.",
         },
         {
-          p: "[POR COMPLETAR: condiciones y preaviso de suspensión o terminación a iniciativa de la plataforma]",
+          ul: [
+            "**Suspensión**: Zabelie puede suspender una cuenta sin preaviso en caso de fraude o intento de fraude, puesta a la venta de un producto prohibido, pago solicitado o realizado fuera de la plataforma, atentado contra la seguridad de otros usuarios, o incumplimiento grave o reiterado de las presentes condiciones.",
+            "**Efectos**: la suspensión es reversible. Bloquea el acceso a la cuenta, oculta sus ofertas del catálogo e impide cualquier nuevo pedido sobre ellas; todo se restablece si se levanta la suspensión.",
+            "**Dinero**: una suspensión no borra ni reduce las sumas adeudadas al vendedor, que siguen inscritas en su registro (§6); solo su retiro queda bloqueado mientras dure la suspensión. Los pedidos afectados pueden reembolsarse a los compradores, uno por uno, al medio de pago original (§10).",
+            "**Motivo e impugnación**: toda suspensión está motivada. El motivo queda registrado y se le comunica a petición a través de los contactos indicados en la página de ayuda, salvo que ello comprometa el examen de un fraude. Puede impugnar la decisión por los mismos contactos.",
+            "**Cierre por iniciativa de Zabelie**: fuera de los casos anteriores, Zabelie solo puede cerrar una cuenta con un preaviso escrito de **30 días**.",
+          ],
         },
       ],
     },
@@ -744,7 +776,7 @@ const es: Politique = {
       titre: "14. Derecho aplicable",
       blocs: [
         {
-          p: "[POR COMPLETAR: derecho aplicable y jurisdicción competente]",
+          p: "Las presentes condiciones se rigen por el derecho haitiano. Antes de cualquier acción, se aplica el procedimiento del §10. A falta de acuerdo, todo litigio corresponde a los tribunales haitianos competentes del domicilio social de **{entite}**, sin perjuicio de las disposiciones imperativas que protegen al consumidor en su país de residencia.",
         },
       ],
     },
