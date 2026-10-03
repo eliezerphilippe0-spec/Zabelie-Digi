@@ -503,6 +503,7 @@ export default async function DashboardPage({
           {studioProvider() && (
             <Link href="/tableau-de-bord/studio" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "estidyo.lien")}</Link>
           )}
+          <Link href="/tableau-de-bord/api" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "apikeys.link")}</Link>
         </div>
         <div className="mt-4 border-t border-line pt-4">
           <ShareButtons path={hrefBoutique({ id: user.id, boutikSlug })} text={t(lang, "creator.share.text", { name: profile.display_name })}

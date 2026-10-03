@@ -154,6 +154,7 @@ const eq = (url, key) => {
   return v?.startsWith("eq.") ? decodeURIComponent(v.slice(3)) : null;
 };
 
+const apiKeys = [];
 const server = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   const send = (code, body) => {
@@ -498,6 +499,32 @@ const server = createServer((req, res) => {
         zabelie_vehicle_models: { kind: "auto", make: "Toyota", model: "Corolla" },
       },
     ]);
+  }
+  // Clés d'API (0121) : table simulée en mémoire, avec le plafond ZB121 et le
+  // filtre de révocation de la vraie route. Une seule spec l'utilise.
+  if (url.pathname === "/rest/v1/zabelie_api_keys") {
+    if (req.method === "POST") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        const row = JSON.parse(body);
+        if (apiKeys.filter(k => k.seller_id === row.seller_id && !k.revoked_at).length >= 5) {
+          return send(400, { code: "ZB121", message: "ZB121 : 5 clés actives au plus par vendeur" });
+        }
+        const created = { id: `cccccccc-cccc-4ccc-8ccc-${String(apiKeys.length + 1).padStart(12, "0")}`, created_at: new Date().toISOString(), last_used_at: null, revoked_at: null, ...row };
+        apiKeys.unshift(created);
+        return single([created]);
+      });
+    }
+    if (req.method === "PATCH") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        const patch = JSON.parse(body), id = eq(url, "id"), seller = eq(url, "seller_id");
+        const hits = apiKeys.filter(k => k.id === id && k.seller_id === seller && (url.searchParams.get("revoked_at") !== "is.null" || !k.revoked_at));
+        hits.forEach(k => Object.assign(k, patch));
+        return single(hits);
+      });
+    }
+    return single(apiKeys);
   }
   if (url.pathname.startsWith("/rest/v1/profiles")) {
     if (BOUTIQUE_FIXTURE) {
