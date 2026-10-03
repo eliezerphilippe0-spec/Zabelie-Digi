@@ -1,5 +1,13 @@
+import { DOMAINES_REGIES } from "@/lib/pixels";
+
 /** One unpredictable nonce per response; only the proxy supplies it. */
-export function contentSecurityPolicy(nonce: string, development = false, backendUrl?: string): string {
+/**
+ * `publicite` : vrai SEULEMENT sur les pages qui peuvent porter le pixel d'un
+ * vendeur (`cheminPublicitaire`, lib/pixels.ts). Les domaines des régies sont
+ * alors admis en `img-src` / `connect-src` ; partout ailleurs, la politique
+ * reste exactement celle d'avant.
+ */
+export function contentSecurityPolicy(nonce: string, development = false, backendUrl?: string, options: { publicite?: boolean } = {}): string {
   if (!/^[A-Za-z0-9+/=_-]{20,}$/.test(nonce)) throw new Error("Invalid CSP nonce");
   let backend = "";
   if (backendUrl) {
@@ -7,15 +15,16 @@ export function contentSecurityPolicy(nonce: string, development = false, backen
     if (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname))) throw new Error("Unsafe backend origin");
     backend = " " + url.origin + " " + url.origin.replace(/^http/, "ws");
   }
+  const regies = options.publicite ? " " + DOMAINES_REGIES.join(" ") : "";
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
     "script-src-attr 'none'",
     // React uses style attributes for previews and theme controls. Scripts remain strict.
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://*.supabase.co",
+    `img-src 'self' data: blob: https://*.supabase.co${regies}`,
     "font-src 'self'",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${backend}${development ? " http://127.0.0.1:* http://localhost:* ws://localhost:* ws://127.0.0.1:*" : ""}`,
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${backend}${regies}${development ? " http://127.0.0.1:* http://localhost:* ws://localhost:* ws://127.0.0.1:*" : ""}`,
     "media-src 'self' blob: https://*.supabase.co",
     "worker-src 'self'",
     "frame-src 'none'",

@@ -1,4 +1,5 @@
 import { editorialLangFromPath } from "@/lib/editorial-routing";
+import { cheminPublicitaire } from "@/lib/pixels";
 import { guideLangFromPath } from "@/lib/guide-routing";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -12,7 +13,8 @@ export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   let backendUrl: string | undefined;
   try { backendUrl = configPublique().url; } catch { /* Public demo has no backend. */ }
-  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV !== "production", backendUrl);
+  // Domaines des régies publicitaires : seulement sur les pages qui peuvent porter le pixel d'un vendeur.
+  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV !== "production", backendUrl, { publicite: cheminPublicitaire(request.nextUrl.pathname) });
   request.headers.set("x-zabelie-nonce", nonce);
   request.headers.set("Content-Security-Policy", policy);
   // Strip caller-supplied language headers; only an explicit localized public URL wins over the cookie.

@@ -1,3 +1,5 @@
+import { SellerPixels } from "@/components/seller-pixels";
+import { lirePixelsVendeur } from "@/lib/pixels-server";
 import { supportCopy } from "@/lib/support-copy";
 import { ProductOffers } from "@/components/product-offers";
 import { publicOffers } from "@/lib/product-offers-server";
@@ -249,6 +251,8 @@ export default async function ProductPage({
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
   const estVendeur = visiteur?.id === product.creatorId;
+  // Pixels publicitaires du vendeur (0123) : chargés seulement après consentement.
+  const pixels = await lirePixelsVendeur(product.creatorId);
   const relatedOffers = estVendeur ? [] : await publicOffers(product.id, visiteur?.id);
   const query = await searchParams;
   const offerParam = query.offre;
@@ -810,6 +814,7 @@ export default async function ProductPage({
         </section>
       )}
 
+      {pixels && <SellerPixels ids={pixels} evenement={{ type: "produit", productId: product.id, valeurHtg: product.priceHTG }} labels={{ text: t(lang, "pixels.consent.text"), accept: t(lang, "pixels.consent.accept"), refuse: t(lang, "pixels.consent.refuse"), privacy: t(lang, "pixels.consent.privacy") }} />}
       <SiteFooter />
     </div>
   );

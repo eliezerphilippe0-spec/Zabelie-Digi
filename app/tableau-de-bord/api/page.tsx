@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { ApiKeysManager, type CleAffichee } from "@/components/api-keys-manager";
 import { WebhooksManager, type EnvoiAffiche, type PointAffiche } from "@/components/webhooks-manager";
 import { MAX_POINTS_ACTIFS } from "@/lib/webhooks";
+import { PixelsForm } from "@/components/pixels-form";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_CLES_ACTIVES } from "@/lib/api-keys";
@@ -38,6 +39,8 @@ export default async function ApiPage() {
     supabase.from("zabelie_webhook_deliveries").select("id, event_type, status, attempts, last_status, created_at").order("created_at", { ascending: false }).limit(10),
   ]);
   if (e1 || e2) throw new Error("webhooks_unavailable");
+  const { data: px, error: e3 } = await supabase.from("zabelie_seller_pixels").select("meta_pixel_id, google_tag_id, tiktok_pixel_id").maybeSingle();
+  if (e3) throw new Error("pixels_unavailable");
   const points: PointAffiche[] = (pts ?? []).map((p) => ({ id: p.id, url: p.url, events: p.events, createdAt: p.created_at, disabledAt: p.disabled_at, disabledReason: p.disabled_reason }));
   const envois: EnvoiAffiche[] = (env ?? []).map((d) => ({ id: d.id, eventType: d.event_type, status: d.status, attempts: d.attempts, lastStatus: d.last_status, createdAt: d.created_at }));
   const cles: CleAffichee[] = (data ?? []).map((k) => ({
@@ -90,6 +93,16 @@ export default async function ApiPage() {
             confirmDisable: t(lang, "webhooks.confirmDisable"), limit: t(lang, "webhooks.err.limit"), error: t(lang, "error.generic"),
             deliveries: t(lang, "webhooks.deliveries"), noDeliveries: t(lang, "webhooks.noDeliveries"), attempts: t(lang, "webhooks.attempts"),
             pending: t(lang, "webhooks.pending"), delivered: t(lang, "webhooks.delivered"), dead: t(lang, "webhooks.dead"),
+          }}
+        />
+        <h2 id="pixels" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "pixels.title")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "pixels.intro")}</p>
+        <PixelsForm
+          initial={{ meta: px?.meta_pixel_id ?? "", google: px?.google_tag_id ?? "", tiktok: px?.tiktok_pixel_id ?? "" }}
+          labels={{
+            meta: t(lang, "pixels.meta"), google: t(lang, "pixels.google"), tiktok: t(lang, "pixels.tiktok"),
+            metaHint: t(lang, "pixels.metaHint"), googleHint: t(lang, "pixels.googleHint"), tiktokHint: t(lang, "pixels.tiktokHint"),
+            save: t(lang, "pixels.save"), saving: t(lang, "pixels.saving"), saved: t(lang, "pixels.saved"), error: t(lang, "error.generic"),
           }}
         />
       </main>

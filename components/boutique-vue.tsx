@@ -1,3 +1,5 @@
+import { SellerPixels } from "@/components/seller-pixels";
+import { lirePixelsVendeur } from "@/lib/pixels-server";
 import { CollectionAction } from "@/components/collection-action";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -36,6 +38,7 @@ export async function BoutiqueVue({
     : [];
 
   const initials = creator.displayName.slice(0, 2).toUpperCase();
+  const pixels = await lirePixelsVendeur(creator.id);
 
   return (
     <div className="bg-grain min-h-dvh">
@@ -128,6 +131,7 @@ export async function BoutiqueVue({
         )}
       </section>
 
+      {pixels && <SellerPixels ids={pixels} evenement={{ type: "page" }} labels={{ text: t(lang, "pixels.consent.text"), accept: t(lang, "pixels.consent.accept"), refuse: t(lang, "pixels.consent.refuse"), privacy: t(lang, "pixels.consent.privacy") }} />}
       <SiteFooter />
     </div>
   );
