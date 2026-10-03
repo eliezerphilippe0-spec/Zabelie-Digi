@@ -19,7 +19,7 @@ import { siteUrl } from "@/lib/site-url";
  * le filtre `seller_id = <vendeur de la clé>`, présent dans CHAQUE requête —
  * `tests/api-seller.test.ts` l'exige requête par requête.
  *
- * Les `ErreurApi` levées ici portent une CLÉ de `seller-i18n.ts`, jamais une
+ * Les `ErreurApi` levées ici portent une CLÉ de `messages.ts`, jamais une
  * phrase : la route la traduit dans la langue de l'appelant (fr, ht, en, es).
  *
  * ⚠️ AUCUNE DONNÉE ACHETEUR. Une vente rend sa référence, son produit, son

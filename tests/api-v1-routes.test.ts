@@ -92,7 +92,7 @@ test("V3 — la SORTIE est validée, et son échec RETIENT la réponse", () => {
    * garde dont on jette le résultat laissent le même texte. */
   assert.match(
     src,
-    /const sortie = schemaSortie\.safeParse\(resultat\)[\s\S]{0,120}if \(!sortie\.success\)[\s\S]{0,400}return erreur\("internal"/,
+    /const sortie = schemaSortie\.safeParse\(resultat\)[\s\S]{0,120}if \(!sortie\.success\)[\s\S]{0,400}return erreur\(lang, "internal"/,
     "la sortie n'est plus validée, ou son échec ne retient plus la réponse — " +
       "une forme non conforme partirait comme un fait"
   );

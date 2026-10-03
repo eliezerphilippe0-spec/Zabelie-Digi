@@ -6,6 +6,8 @@ import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { V1_ENDPOINTS, ApiErrorOutput, type V1EndpointName } from "@/lib/api/v1/schemas";
 import { ErreurApi, V1_HANDLERS, type Contexte } from "@/lib/api/v1/handlers";
+import { estCleMessage, langueApi, message, type CleMessage } from "@/lib/api/v1/messages";
+import type { Lang } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,17 +73,17 @@ const CODE_HTTP: Record<string, number> = {
  * que d'échapper au contrat par la porte de service. Le chemin d'échec est
  * précisément celui qu'on n'éprouve jamais.
  */
-function erreur(code: string, message: string, field?: string): NextResponse {
-  const corps = { type: "error" as const, code, message, ...(field ? { field } : {}) };
+function erreur(lang: Lang, code: string, cle: CleMessage, field?: string, vars: Record<string, string> = {}): NextResponse {
+  const corps = { type: "error" as const, code, message: message(lang, cle, vars), ...(field ? { field } : {}) };
   const v = ApiErrorOutput.safeParse(corps);
   if (!v.success) {
     console.error("[api/v1] erreur non conforme au contrat", code, v.error.issues);
     return NextResponse.json(
-      { type: "error", code: "internal", message: "Erreur interne." },
-      { status: 500 }
+      { type: "error", code: "internal", message: message(lang, "internal") },
+      { status: 500, headers: { "Content-Language": lang } }
     );
   }
-  return NextResponse.json(v.data, { status: CODE_HTTP[code] ?? 500 });
+  return NextResponse.json(v.data, { status: CODE_HTTP[code] ?? 500, headers: { "Content-Language": lang } });
 }
 
 async function executePost(
@@ -89,10 +91,12 @@ async function executePost(
   { params }: { params: Promise<{ endpoint: string }> }
 ) {
   const { endpoint } = await params;
+  // Langue des messages : ?lang=, puis Accept-Language, sinon français (fr, ht, en, es).
+  const lang = langueApi(req.headers, req.url);
 
   // 1 — Le registre EST la liste blanche.
   if (!Object.prototype.hasOwnProperty.call(V1_ENDPOINTS, endpoint)) {
-    return erreur("not_found", `Endpoint inconnu : ${endpoint}`);
+    return erreur(lang, "not_found", "endpoint_unknown", undefined, { name: endpoint.slice(0, 60) });
   }
   const nom = endpoint as V1EndpointName;
   const { input: schemaEntree, output: schemaSortie } = V1_ENDPOINTS[nom];
@@ -103,7 +107,7 @@ async function executePost(
   try {
     brut = await readApiBody(req);
   } catch {
-    return erreur("invalid_input", "Corps JSON illisible ou supérieur à 16 Kio.");
+    return erreur(lang, "invalid_input", "body_invalid");
   }
 
   // 3 — Entrée. Le premier champ fautif est nommé : une erreur de validation
@@ -111,11 +115,8 @@ async function executePost(
   const entree = schemaEntree.safeParse(brut);
   if (!entree.success) {
     const p = entree.error.issues[0];
-    return erreur(
-      "invalid_input",
-      p?.message ?? "Entrée invalide.",
-      p?.path.length ? String(p.path[0]) : undefined
-    );
+    const champ = p?.path.length ? String(p.path[0]) : "body";
+    return erreur(lang, "invalid_input", "input_invalid", champ === "body" ? undefined : champ, { field: champ });
   }
 
   /* ⚠️ DÉFAUT TROUVÉ EN PARCOURANT LE CHEMIN, le 2026-08-22, et pas en le
@@ -146,7 +147,7 @@ async function executePost(
       "[api/v1] CLIENT SUPABASE INDISPONIBLE — variables d'environnement absentes ?",
       e
     );
-    return erreur("internal", "Service indisponible.");
+    return erreur(lang, "internal", "unavailable");
   }
 
   /* 4 — Cadence. Bornée par UTILISATEUR quand il y en a un, par ENDPOINT
@@ -165,7 +166,7 @@ async function executePost(
    * même garde que le client de session. */
   const cle = user ? `apiv1:${user.id}` : `apiv1:anon:${nom}`;
   if (!(await rateLimit(admin, cle, user ? 120 : 60))) {
-    return erreur("rate_limited", "Trop de requêtes. Réessayez dans une minute.");
+    return erreur(lang, "rate_limited", "rate_limited");
   }
 
   // 5 — Handler.
@@ -177,9 +178,9 @@ async function executePost(
       ctx
     );
   } catch (e) {
-    if (e instanceof ErreurApi) return erreur(e.code, e.message, e.field);
+    if (e instanceof ErreurApi) return erreur(lang, e.code, estCleMessage(e.message) ? e.message : "internal", e.field);
     console.error(`[api/v1/${nom}] exception non prévue`, e);
-    return erreur("internal", "Erreur interne.");
+    return erreur(lang, "internal", "internal");
   }
 
   /* 6 — Sortie. LE point de tout ce fichier.
@@ -195,14 +196,14 @@ async function executePost(
       `[api/v1/${nom}] SORTIE NON CONFORME AU CONTRAT — la réponse est retenue.`,
       JSON.stringify(sortie.error.issues.slice(0, 5))
     );
-    return erreur("internal", "Réponse non conforme au contrat.");
+    return erreur(lang, "internal", "contract");
   }
 
   return NextResponse.json(sortie.data, {
     status: 200,
     // Lecture seule, données publiques ou personnelles selon l'endpoint : on ne
     // met RIEN en cache partagé. `get_order` en cache serait une fuite.
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", "Content-Language": lang },
   });
 }
 
@@ -219,12 +220,13 @@ export async function OPTIONS(_req: Request, { params }: { params: Promise<{ end
   const allowed = isPublicEndpoint(endpoint);
   return new NextResponse(null, { status: allowed ? 204 : 403, headers: apiHeaders(allowed) });
 }
-export async function GET(_req: Request, { params }: { params: Promise<{ endpoint: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ endpoint: string }> }) {
   const { endpoint } = await params;
-  if (endpoint === "openapi.json") return NextResponse.json(openApiDocument(), {
-    headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300", "X-Content-Type-Options": "nosniff" },
+  const lang = langueApi(req.headers, req.url);
+  if (endpoint === "openapi.json") return NextResponse.json(openApiDocument(lang), {
+    headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300", "X-Content-Type-Options": "nosniff", "Content-Language": lang, Vary: "Accept-Language" },
   });
-  return NextResponse.json({ type: "error", code: "invalid_input", message: "Utilisez POST avec un corps JSON." }, {
-    status: 405, headers: { ...apiHeaders(isPublicEndpoint(endpoint)), Allow: "POST, OPTIONS" },
+  return NextResponse.json({ type: "error", code: "invalid_input", message: message(lang, "use_post") }, {
+    status: 405, headers: { ...apiHeaders(isPublicEndpoint(endpoint)), Allow: "POST, OPTIONS", "Content-Language": lang },
   });
 }

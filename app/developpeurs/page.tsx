@@ -49,7 +49,7 @@ export default async function DevelopersPage() {
   const c = apiDocsCopy(lang);
   return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-4xl px-5 py-12">
     <h1 className="text-3xl font-black">{c.title}</h1><p className="mt-3 text-lg">{c.intro}</p><p className="mt-4 text-mist">{c.scope}</p>
-    <Link href="/api/v1/openapi.json" className="mt-6 inline-block font-semibold underline">{c.contract}</Link>
+    <Link href={`/api/v1/openapi.json?lang=${lang}`} className="mt-6 inline-block font-semibold underline">{c.contract}</Link>
     <h2 className="mt-10 text-xl font-bold">{c.start}</h2>
     <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{example}</code></pre>
     <h2 className="mt-10 text-xl font-bold">{c.endpoints}</h2>
