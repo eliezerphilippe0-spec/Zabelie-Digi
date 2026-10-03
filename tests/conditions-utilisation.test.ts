@@ -8,7 +8,7 @@ import type { Lang } from "../lib/i18n";
  * LE GABARIT CGU — ses gardes.
  *
  * Le document est un GABARIT : structure d'une marketplace avec escrow,
- * remplie des seuls termes déjà tranchés, et trois marqueurs juridiques
+ * remplie des seuls termes déjà tranchés, et plus aucun marqueur juridique
  * explicites par langue. Ces tests gardent trois choses :
  *
  *   1. La PARITÉ : quatre versions, même structure, section par section.
@@ -106,7 +106,7 @@ test("l'avis « le français fait foi » est sur les traductions, jamais sur l'o
 
 // ── 2. Le cliquet des marqueurs juridiques ──────────────────────────────────
 
-test("trois marqueurs juridiques par langue — ni plus, ni moins", () => {
+test("aucun marqueur juridique ne reste — et aucun ne revient sans témoin", () => {
   /* FIGÉ le 2026-08-14 : âge minimum (§1), fenêtre de litige (§9),
    * résiliation plateforme (§12), droit applicable (§13) — numéros décalés
    * d'un cran le 2026-08-15 par l'insertion du §8 (services payants), qui
@@ -118,8 +118,14 @@ test("trois marqueurs juridiques par langue — ni plus, ni moins", () => {
    * 4 → 3 le 2026-10-02 : fenêtre de litige (§10) rédigée par l'agent sur
    * mandat du porteur (« Je rédige, vous validez »), d'après `0043`/`0068`.
    * ⚖️ À VALIDER par le porteur et son conseil avant fusion. Restent : âge
-   * minimum (§1), résiliation plateforme (§13), droit applicable (§14). */
-  const ATTENDU = 3;
+   * minimum (§1), résiliation plateforme (§13), droit applicable (§14).
+   *
+   * 3 → 0 le 2026-10-03 : les trois rédigés sur le même mandat, sur le modèle
+   * d'Amazon, eBay et Etsy ; le §13 décrit la suspension du code
+   * (`tests/suspension-argent.test.ts`). ⚖️ À VALIDER avant fusion. Un
+   * marqueur qui reviendrait rougit ici : un blanc juridique se rouvre par
+   * décision, jamais par réflexe. */
+  const ATTENDU = 0;
   for (const lang of LANGS) {
     const n = (texte(lang).match(MARQUEUR[lang]) ?? []).length;
     assert.equal(

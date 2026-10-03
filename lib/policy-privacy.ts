@@ -25,9 +25,8 @@ import type { Lang } from "./i18n";
  * Traduire le document sans les regrouper les aurait multipliés par quatre.
  * Or ces valeurs ne dépendent pas de la langue : une raison sociale et une
  * adresse e-mail s'écrivent pareil en kreyòl et en espagnol. Elles vivent
- * donc dans `IDENTITE` ci-dessous, référencées par `{entite}`, `{email}`,
- * `{hebergement}` dans les quatre versions. **Les remplir une fois les
- * remplit partout.**
+ * donc dans `IDENTITE` ci-dessous, référencées par `{entite}` et `{email}`
+ * dans les quatre versions. **Les remplir une fois les remplit partout.**
  *
  * ⚖️ 2026-10-02 — `purge` QUITTE `IDENTITE`. Ce n'était pas un fait que le
  * porteur connaît, c'était un fait du CODE : `app/api/maturation/route.ts`
@@ -36,6 +35,15 @@ import type { Lang } from "./i18n";
  * « 90 days », « 90 días ») : elle s'écrit donc dans chaque version, et
  * `tests/politique-confidentialite.test.ts` la relie au cron. Rédigé par
  * l'agent sur mandat du porteur — à valider avec le reste du texte.
+ *
+ * ⚖️ 2026-10-03 — `hebergement` QUITTE `IDENTITE` pour la même raison : c'est
+ * un fait MESURÉ, et une phrase qui change avec la langue. Mesures du jour :
+ * l'en-tête `x-vercel-id` de zabelie.com porte `iad1` (fonctions Vercel à
+ * Washington) ; l'hôte `db.<projet>.supabase.co` du projet de production
+ * résout vers une adresse des plages AWS `us-east-1` (Virginie du Nord). Le
+ * dépôt ne porte que la moitié Vercel (`vercel.json`, sans `regions`) : c'est
+ * elle que `tests/politique-confidentialite.test.ts` garde. Les garanties
+ * contractuelles de ces transferts restent à préciser par le conseil.
  *
  * ⚠️ Tant qu'un champ vaut `null`, le rendu affiche le marqueur — visible,
  * jamais silencieux. `tests/politique-confidentialite.test.ts` compte les
@@ -51,16 +59,15 @@ import type { Lang } from "./i18n";
  */
 
 /**
- * Les quatre faits que la politique promet et que le dépôt ne connaît pas.
+ * Les trois faits que la politique promet et que le dépôt ne connaît pas.
  * `null` = non renseigné : le rendu le montre.
  */
 export const IDENTITE: Record<
-  "entite" | "email" | "hebergement" | "retentionKyc",
+  "entite" | "email" | "retentionKyc",
   string | null
 > = {
   entite: null,
   email: "contact@zabelie.com",
-  hebergement: null,
   retentionKyc: null,
 };
 
@@ -69,32 +76,28 @@ const MANQUANT: Record<Lang, Record<keyof typeof IDENTITE, string>> = {
   fr: {
     entite: "[À COMPLÉTER : entité juridique et adresse]",
     email: "[À COMPLÉTER : e-mail de contact]",
-    hebergement: "[À COMPLÉTER : région d'hébergement et garanties de transfert]",
     retentionKyc: "[À COMPLÉTER : durée de conservation des pièces d'identité]",
   },
   ht: {
     entite: "[POU KONPLETE : antite jiridik ak adrès]",
     email: "[POU KONPLETE : imèl kontak]",
-    hebergement: "[POU KONPLETE : rejyon ebèjman ak garanti transfè]",
     retentionKyc: "[POU KONPLETE : dire konsèvasyon pyès idantite yo]",
   },
   en: {
     entite: "[TO BE COMPLETED: legal entity and address]",
     email: "[TO BE COMPLETED: contact e-mail]",
-    hebergement: "[TO BE COMPLETED: hosting region and transfer safeguards]",
     retentionKyc: "[TO BE COMPLETED: identity document retention period]",
   },
   es: {
     entite: "[POR COMPLETAR: entidad jurídica y dirección]",
     email: "[POR COMPLETAR: correo de contacto]",
-    hebergement: "[POR COMPLETAR: región de alojamiento y garantías de transferencia]",
     retentionKyc: "[POR COMPLETAR: plazo de conservación de los documentos de identidad]",
   },
 };
 
-/** Remplace `{entite}`, `{email}`, `{hebergement}`, `{retentionKyc}`. */
+/** Remplace `{entite}`, `{email}`, `{retentionKyc}`. */
 export function resoudre(texte: string, lang: Lang): string {
-  return texte.replace(/\{(entite|email|hebergement|retentionKyc)\}/g, (_, cle) => {
+  return texte.replace(/\{(entite|email|retentionKyc)\}/g, (_, cle) => {
     const k = cle as keyof typeof IDENTITE;
     return IDENTITE[k] ?? MANQUANT[lang][k];
   });
@@ -191,7 +194,7 @@ const fr: Politique = {
             "**MonCash (Digicel)** — traitement des paiements.",
           ],
         },
-        { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **{hebergement}**" },
+        { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **L'application (Vercel) et la base de données (Supabase) sont hébergées aux États-Unis, sur la côte Est (région de Washington et de Virginie du Nord) ; ces prestataires les traitent pour le compte de Zabelie.**" },
       ],
     },
     {
@@ -321,7 +324,7 @@ const ht: Politique = {
             "**MonCash (Digicel)** — tretman peman yo.",
           ],
         },
-        { p: "Kèk patnè ka ebèje done deyò peyi ou. **{hebergement}**" },
+        { p: "Kèk patnè ka ebèje done deyò peyi ou. **Aplikasyon an (Vercel) ak baz done a (Supabase) ebèje Ozetazini, sou kòt Lès la (rejyon Washington ak Vijini Nò) ; patnè sa yo trete done yo pou Zabelie.**" },
       ],
     },
     {
@@ -451,7 +454,7 @@ const en: Politique = {
             "**MonCash (Digicel)** — payment processing.",
           ],
         },
-        { p: "Some processors may host data outside your country. **{hebergement}**" },
+        { p: "Some processors may host data outside your country. **The application (Vercel) and the database (Supabase) are hosted in the United States, on the East Coast (Washington and Northern Virginia region); these providers process the data on Zabelie's behalf.**" },
       ],
     },
     {
@@ -581,7 +584,7 @@ const es: Politique = {
             "**MonCash (Digicel)** — tratamiento de los pagos.",
           ],
         },
-        { p: "Algunos encargados pueden alojar datos fuera de su país. **{hebergement}**" },
+        { p: "Algunos encargados pueden alojar datos fuera de su país. **La aplicación (Vercel) y la base de datos (Supabase) están alojadas en Estados Unidos, en la costa este (región de Washington y Virginia del Norte); estos proveedores tratan los datos por cuenta de Zabelie.**" },
       ],
     },
     {
