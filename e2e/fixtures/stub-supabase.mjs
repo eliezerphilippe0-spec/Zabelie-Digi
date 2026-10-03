@@ -524,7 +524,8 @@ const server = createServer((req, res) => {
         return single(hits);
       });
     }
-    return single(apiKeys);
+    const hash = eq(url, "key_hash");
+    return single((hash ? apiKeys.filter(k => k.key_hash === hash) : apiKeys).map(k => ({ ...k, seller: { suspended_at: null } })));
   }
   if (url.pathname.startsWith("/rest/v1/profiles")) {
     if (BOUTIQUE_FIXTURE) {

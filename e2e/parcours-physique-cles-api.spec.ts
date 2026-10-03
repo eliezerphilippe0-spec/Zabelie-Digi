@@ -44,3 +44,33 @@ test("une clé se crée, ne s'affiche qu'une fois, puis se révoque", async ({ p
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test("l'API vendeur répond à une clé valide, et plus du tout une fois révoquée", async ({ page, request }) => {
+  await connecte(page);
+  await page.goto("/tableau-de-bord/api", { waitUntil: "networkidle" });
+  const creee = await page.request.post("/api/account/api-keys", { data: { name: "Intégration e2e" } });
+  expect(creee.status()).toBe(201);
+  const { key, id } = await creee.json();
+  expect(key).toMatch(/^zb_live_[A-Za-z0-9_-]{43}$/);
+
+  // Une requête SANS cookie, comme un serveur tiers : seule la clé compte.
+  const api = request;
+  const appel = (nom: string, corps: unknown, cle?: string) =>
+    api.post(`/api/v1/seller/${nom}`, { data: corps, headers: cle ? { Authorization: `Bearer ${cle}` } : {} });
+
+  const produits = await appel("seller_products", { limit: 5 }, key);
+  expect(produits.status()).toBe(200);
+  const corps = await produits.json();
+  expect(corps.type).toBe("seller_products");
+  expect(Array.isArray(corps.results)).toBe(true);
+  expect(produits.headers()["access-control-allow-origin"]).toBeUndefined();
+
+  expect((await appel("seller_products", {})).status()).toBe(401);
+  expect((await appel("seller_products", {}, "zb_live_" + "x".repeat(43))).status()).toBe(401);
+  expect((await appel("seller_products", { limit: 500 }, key)).status()).toBe(400);
+  expect((await appel("create_product_link", { productId: "99999999-9999-4999-8999-999999999999" }, key)).status()).toBe(404);
+  expect((await appel("inconnu", {}, key)).status()).toBe(404);
+
+  expect((await page.request.delete(`/api/account/api-keys/${id}`)).status()).toBe(200);
+  expect((await appel("seller_products", { limit: 5 }, key)).status()).toBe(401);
+});
