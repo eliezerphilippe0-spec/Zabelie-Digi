@@ -84,7 +84,7 @@ export type Contexte = {
 /** Exige une session. Les deux endpoints de commande passent par là. */
 function exigerUtilisateur(ctx: Contexte): string {
   if (!ctx.userId) {
-    throw new ErreurApi("unauthenticated", "Authentification requise.");
+    throw new ErreurApi("unauthenticated", "auth_required");
   }
   return ctx.userId;
 }
@@ -152,7 +152,7 @@ function cleDepuisCurseur(curseur: string | undefined) {
   if (!cle) {
     throw new ErreurApi(
       "invalid_input",
-      "Curseur illisible. N'en construisez pas : reprenez `nextCursor` tel quel.",
+      "cursor_invalid",
       "cursor"
     );
   }
@@ -197,7 +197,7 @@ export async function searchProducts(
   }
 
   const { data, error } = await q;
-  if (error) throw new ErreurApi("internal", "Lecture du catalogue échouée.");
+  if (error) throw new ErreurApi("internal", "read_failed");
 
   const lignes = (data ?? []) as unknown as LigneProduit[];
   const encore = lignes.length > input.limit;
@@ -229,8 +229,8 @@ export async function getProduct(
   q = input.id ? q.eq("id", input.id) : q.eq("slug", input.slug!);
 
   const { data, error } = await q.maybeSingle();
-  if (error) throw new ErreurApi("internal", "Lecture du produit échouée.");
-  if (!data) throw new ErreurApi("not_found", "Produit introuvable.");
+  if (error) throw new ErreurApi("internal", "read_failed");
+  if (!data) throw new ErreurApi("not_found", "product_unknown");
 
   const p = data as unknown as LigneProduit & {
     delivery_days: number | null;
@@ -274,7 +274,7 @@ export async function compareProducts(
     .select(COLONNES_PRODUIT)
     .eq("status", "published")
     .in("id", input.ids);
-  if (error) throw new ErreurApi("internal", "Lecture des produits échouée.");
+  if (error) throw new ErreurApi("internal", "read_failed");
 
   const lignes = (data ?? []) as unknown as LigneProduit[];
   const trouves = new Set(lignes.map((p) => p.id));
@@ -294,7 +294,7 @@ export async function compareProducts(
   if (ordonnes.length < 2) {
     throw new ErreurApi(
       "not_found",
-      "Moins de deux produits comparables : au moins un identifiant est introuvable ou non publié.",
+      "compare_too_few",
       "ids"
     );
   }
@@ -324,8 +324,8 @@ export async function getSeller(
     .select("id, display_name, bio, avatar_url, tier, created_at")
     .eq("id", input.id)
     .maybeSingle();
-  if (error) throw new ErreurApi("internal", "Lecture du vendeur échouée.");
-  if (!prof) throw new ErreurApi("not_found", "Vendeur introuvable.");
+  if (error) throw new ErreurApi("internal", "read_failed");
+  if (!prof) throw new ErreurApi("not_found", "seller_unknown");
 
   const p = prof as unknown as {
     id: string;
@@ -343,7 +343,7 @@ export async function getSeller(
     .select("rating_count, rating_sum, sales_count")
     .eq("seller_id", input.id)
     .eq("status", "published");
-  if (ePro) throw new ErreurApi("internal", "Lecture du catalogue vendeur échouée.");
+  if (ePro) throw new ErreurApi("internal", "read_failed");
 
   const lignes = (prods ?? []) as unknown as {
     rating_count: number;
@@ -390,8 +390,8 @@ export async function getReviews(
     .eq("id", input.productId)
     .eq("status", "published")
     .maybeSingle();
-  if (eProd) throw new ErreurApi("internal", "Lecture du produit échouée.");
-  if (!prod) throw new ErreurApi("not_found", "Produit introuvable.");
+  if (eProd) throw new ErreurApi("internal", "read_failed");
+  if (!prod) throw new ErreurApi("not_found", "product_unknown");
   const agg = prod as unknown as { rating_count: number; rating_sum: number };
 
   /* ⚠️ `buyer_id` N'EST PAS SÉLECTIONNÉ, ET C'EST LE POINT. `product_reviews`
@@ -410,7 +410,7 @@ export async function getReviews(
   }
 
   const { data, error } = await q;
-  if (error) throw new ErreurApi("internal", "Lecture des avis échouée.");
+  if (error) throw new ErreurApi("internal", "read_failed");
 
   const lignes = (data ?? []) as unknown as {
     id: string;
@@ -450,8 +450,8 @@ export async function checkInventory(
     .eq("id", input.productId)
     .eq("status", "published")
     .maybeSingle();
-  if (error) throw new ErreurApi("internal", "Lecture du produit échouée.");
-  if (!prod) throw new ErreurApi("not_found", "Produit introuvable.");
+  if (error) throw new ErreurApi("internal", "read_failed");
+  if (!prod) throw new ErreurApi("not_found", "product_unknown");
   const p = prod as unknown as { id: string; kind: string; in_stock: boolean };
 
   const maintenant = new Date().toISOString();
@@ -487,7 +487,7 @@ export async function checkInventory(
     .eq("product_id", input.productId)
     .eq("active", true)
     .order("position");
-  if (eVar) throw new ErreurApi("internal", "Lecture du stock échouée.");
+  if (eVar) throw new ErreurApi("internal", "read_failed");
 
   const lignes = (vars ?? []) as unknown as {
     id: string;
@@ -537,8 +537,8 @@ export async function getDeliveryTerms(
     .eq("id", input.productId)
     .eq("status", "published")
     .maybeSingle();
-  if (error) throw new ErreurApi("internal", "Lecture du produit échouée.");
-  if (!data) throw new ErreurApi("not_found", "Produit introuvable.");
+  if (error) throw new ErreurApi("internal", "read_failed");
+  if (!data) throw new ErreurApi("not_found", "product_unknown");
   const p = data as unknown as { id: string; kind: string; delivery_days: number | null };
 
   /* ⚠️ `0` = LE JOUR MÊME depuis `0088`, et ce n'est pas « non déclaré ».
@@ -585,7 +585,7 @@ function commande(o: LigneCommande) {
      * `not null references products on delete restrict`. Si ça arrive, c'est
      * que la jointure a été filtrée par la RLS, et rendre une forme mutilée
      * serait pire que d'échouer. */
-    throw new ErreurApi("internal", "Commande sans produit lisible.");
+    throw new ErreurApi("internal", "read_failed");
   }
   return {
     id: o.id,
@@ -626,10 +626,10 @@ export async function getOrder(
   q = input.id ? q.eq("id", input.id) : q.eq("order_ref", input.ref!);
 
   const { data, error } = await q.maybeSingle();
-  if (error) throw new ErreurApi("internal", "Lecture de la commande échouée.");
+  if (error) throw new ErreurApi("internal", "read_failed");
   // « n'existe pas » et « pas à vous » rendent la MÊME réponse : sinon la
   // référence, courte, s'énumère.
-  if (!data) throw new ErreurApi("not_found", "Commande introuvable.");
+  if (!data) throw new ErreurApi("not_found", "order_unknown");
 
   return { type: "order_status" as const, order: commande(data as unknown as LigneCommande) };
 }
@@ -656,7 +656,7 @@ export async function getUserOrders(
   }
 
   const { data, error } = await q;
-  if (error) throw new ErreurApi("internal", "Lecture des commandes échouée.");
+  if (error) throw new ErreurApi("internal", "read_failed");
 
   const lignes = (data ?? []) as unknown as LigneCommande[];
   const encore = lignes.length > input.limit;
@@ -689,7 +689,7 @@ export async function listCategories(input: z.infer<typeof ListCategoriesInput>,
     .eq("active", true).order("id", { ascending: true }).limit(input.limit + 1);
   if (input.cursor) q = q.gt("id", input.cursor);
   const { data, error } = await q;
-  if (error) throw new ErreurApi("internal", "Lecture des catégories échouée.");
+  if (error) throw new ErreurApi("internal", "read_failed");
   const rows = (data ?? []) as { id: string; slug: string; parent_id: string | null; level: number; label_fr: string; label_kr: string | null; label_en: string | null; label_es: string | null }[];
   const page = rows.slice(0, input.limit);
   return {

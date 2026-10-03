@@ -128,7 +128,7 @@ test("B8 — le contrat OpenAPI vendeur couvre exactement le registre, avec auth
 });
 
 test("B9 — QUATRE LANGUES : chaque message et le contrat existent en fr, ht, en, es ; aucune phrase en dur", async () => {
-  const { MESSAGES, LANGUES_API, langueApi, message } = await import("../lib/api/v1/seller-i18n");
+  const { MESSAGES, LANGUES_API, langueApi, message } = await import("../lib/api/v1/messages");
   const { TEXTES_OPENAPI, sellerOpenApiDocument } = await import("../lib/api/v1/seller-openapi");
   for (const [cle, textes] of Object.entries(MESSAGES)) {
     for (const l of LANGUES_API) assert.ok((textes as Record<string, string>)[l]?.trim(), `${cle} sans traduction ${l}`);

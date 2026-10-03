@@ -1,12 +1,13 @@
 import type { Lang } from "@/lib/i18n";
 
 /**
- * Messages de l'API vendeur, dans les QUATRE langues du produit.
+ * Messages de l'API (publique ET vendeur), dans les QUATRE langues du produit.
  *
  * Le `code` d'erreur reste la vérité machine (stable, à tester côté client) ;
  * le `message` est pour l'humain qui lit la réponse, dans sa langue :
  * `?lang=` d'abord, puis `Accept-Language`, sinon le français.
- * `tests/api-seller.test.ts` exige les quatre traductions de chaque clé.
+ * `tests/api-seller.test.ts` et `tests/api-v1-langues.test.ts` exigent les
+ * quatre traductions de chaque clé.
  */
 export const LANGUES_API: readonly Lang[] = ["fr", "ht", "en", "es"];
 
@@ -112,6 +113,36 @@ export const MESSAGES = {
     ht: "Nou kenbe repons lan : li pa respekte kontra a.",
     en: "Response withheld: it does not match the contract.",
     es: "Respuesta retenida: no cumple el contrato.",
+  },
+  auth_required: {
+    fr: "Authentification requise.",
+    ht: "Ou dwe konekte.",
+    en: "Authentication required.",
+    es: "Se requiere autenticación.",
+  },
+  product_unknown: {
+    fr: "Produit introuvable.",
+    ht: "Nou pa jwenn pwodui a.",
+    en: "Product not found.",
+    es: "Producto no encontrado.",
+  },
+  seller_unknown: {
+    fr: "Vendeur introuvable.",
+    ht: "Nou pa jwenn vandè a.",
+    en: "Seller not found.",
+    es: "Vendedor no encontrado.",
+  },
+  order_unknown: {
+    fr: "Commande introuvable.",
+    ht: "Nou pa jwenn kòmand lan.",
+    en: "Order not found.",
+    es: "Pedido no encontrado.",
+  },
+  compare_too_few: {
+    fr: "Moins de deux produits comparables : au moins un identifiant est introuvable ou non publié.",
+    ht: "Mwens pase de pwodui pou konpare : omwen youn nan idantifyan yo pa egziste oswa li pa pibliye.",
+    en: "Fewer than two comparable products: at least one identifier is unknown or not published.",
+    es: "Menos de dos productos comparables: al menos un identificador no existe o no está publicado.",
   },
   use_post: {
     fr: "Utilisez POST avec un corps JSON.",

@@ -7,7 +7,7 @@ import { ApiErrorOutput } from "@/lib/api/v1/schemas";
 import { ErreurApi } from "@/lib/api/v1/handlers";
 import { SELLER_ENDPOINTS, SELLER_HANDLERS, type SellerEndpointName } from "@/lib/api/v1/seller";
 import { sellerOpenApiDocument } from "@/lib/api/v1/seller-openapi";
-import { estCleMessage, langueApi, message, type CleMessage } from "@/lib/api/v1/seller-i18n";
+import { estCleMessage, langueApi, message, type CleMessage } from "@/lib/api/v1/messages";
 import type { Lang } from "@/lib/i18n";
 
 export const runtime = "nodejs";
