@@ -27,6 +27,11 @@ const AUTH_GUARDS = [
    * motif — même raison que la négation exigée pour `autoriserAdmin`. */
   /const verdict = autoriserWebhookKobara\([\s\S]{0,200}if \(!verdict\.ok\)/,
   /!\(await autoriserAdmin\(/, // garde PARTAGÉ (lib/admin-gate.ts) — voir ci-dessous
+  /* Clé d'API vendeur (0121, `app/api/v1/seller`). Même règle : le motif ancre
+   * le REFUS — la résolution liée à `resolue`, puis le 401 si elle est nulle.
+   * La confiance accordée au nom `resoudreCle` est gardée par
+   * `tests/api-keys.test.ts` (A5 : inconnue, révoquée, suspendue → null). */
+  /resolue = await resoudreCle\(admin, brutCle\)[\s\S]{0,300}if \(!resolue\) return erreur\("unauthenticated"/,
 ];
 
 /* ⚠️ POURQUOI LE CINQUIÈME MOTIF EXIGE LA NÉGATION, ET PAS L'APPEL.
