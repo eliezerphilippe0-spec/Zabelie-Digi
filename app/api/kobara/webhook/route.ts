@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { repartirApresReponse } from "@/lib/webhooks-apres";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { autoriserWebhookKobara, isKobaraEnabled, resolveKobaraMode } from "@/lib/kobara";
 
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
     await ouvrirSuiviLivraison(admin, orderId, "kobara/webhook");
     const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
     notifyOrderPaid(admin, orderId).catch(() => undefined);
+    repartirApresReponse(admin); // webhooks vendeur (0122) — après la réponse
   }
   return NextResponse.json({ received: true, status: data?.status });
 }

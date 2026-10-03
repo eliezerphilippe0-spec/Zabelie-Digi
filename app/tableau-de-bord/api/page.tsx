@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ApiKeysManager, type CleAffichee } from "@/components/api-keys-manager";
+import { WebhooksManager, type EnvoiAffiche, type PointAffiche } from "@/components/webhooks-manager";
+import { MAX_POINTS_ACTIFS } from "@/lib/webhooks";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_CLES_ACTIVES } from "@/lib/api-keys";
@@ -30,6 +32,14 @@ export default async function ApiPage() {
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw new Error("api_keys_unavailable");
+  // Le secret n'est PAS dans la liste : la colonne n'est pas accordée au vendeur (0122).
+  const [{ data: pts, error: e1 }, { data: env, error: e2 }] = await Promise.all([
+    supabase.from("zabelie_webhook_endpoints").select("id, url, events, created_at, disabled_at, disabled_reason").order("created_at", { ascending: false }).limit(20),
+    supabase.from("zabelie_webhook_deliveries").select("id, event_type, status, attempts, last_status, created_at").order("created_at", { ascending: false }).limit(10),
+  ]);
+  if (e1 || e2) throw new Error("webhooks_unavailable");
+  const points: PointAffiche[] = (pts ?? []).map((p) => ({ id: p.id, url: p.url, events: p.events, createdAt: p.created_at, disabledAt: p.disabled_at, disabledReason: p.disabled_reason }));
+  const envois: EnvoiAffiche[] = (env ?? []).map((d) => ({ id: d.id, eventType: d.event_type, status: d.status, attempts: d.attempts, lastStatus: d.last_status, createdAt: d.created_at }));
   const cles: CleAffichee[] = (data ?? []).map((k) => ({
     id: k.id, name: k.name, prefix: k.prefix, createdAt: k.created_at, lastUsedAt: k.last_used_at, revokedAt: k.revoked_at,
   }));
@@ -62,6 +72,24 @@ export default async function ApiPage() {
             confirmRevoke: t(lang, "apikeys.confirmRevoke"),
             limit: t(lang, "apikeys.err.limit"),
             error: t(lang, "error.generic"),
+          }}
+        />
+        <h2 id="webhooks" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "webhooks.title")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "webhooks.intro")}</p>
+        <WebhooksManager
+          points={points}
+          envois={envois}
+          max={MAX_POINTS_ACTIFS}
+          locale={lang === "ht" ? "fr-HT" : lang}
+          labels={{
+            url: t(lang, "webhooks.url"), add: t(lang, "webhooks.add"), adding: t(lang, "webhooks.adding"),
+            secretOnce: t(lang, "webhooks.secretOnce"), copy: t(lang, "common.copy"), copied: t(lang, "common.copied"),
+            done: t(lang, "apikeys.done"), empty: t(lang, "webhooks.empty"), active: t(lang, "webhooks.active"),
+            disabledSeller: t(lang, "webhooks.disabledSeller"), disabledFailures: t(lang, "webhooks.disabledFailures"),
+            test: t(lang, "webhooks.test"), testSent: t(lang, "webhooks.testSent"), disable: t(lang, "webhooks.disable"),
+            confirmDisable: t(lang, "webhooks.confirmDisable"), limit: t(lang, "webhooks.err.limit"), error: t(lang, "error.generic"),
+            deliveries: t(lang, "webhooks.deliveries"), noDeliveries: t(lang, "webhooks.noDeliveries"), attempts: t(lang, "webhooks.attempts"),
+            pending: t(lang, "webhooks.pending"), delivered: t(lang, "webhooks.delivered"), dead: t(lang, "webhooks.dead"),
           }}
         />
       </main>

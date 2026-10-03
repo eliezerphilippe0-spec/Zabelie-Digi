@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { repartirApresReponse } from "@/lib/webhooks-apres";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { getAdminUser } from "@/lib/auth";
 import { exigerTraceAdmin } from "@/lib/admin-audit";
@@ -84,6 +85,7 @@ export async function POST(req: Request) {
     await ouvrirSuiviLivraison(admin, body.orderId, "admin/confirm-zelle");
     const { notifyOrderPaid } = await import("@/lib/zabelie-notify");
     notifyOrderPaid(admin, body.orderId).catch(() => undefined);
+    repartirApresReponse(admin); // webhooks vendeur (0122) — après la réponse
   }
   return NextResponse.json({ ok: true, status: data?.status });
 }

@@ -31,6 +31,15 @@ const response = await fetch("https://zabelie.com/api/v1/seller/seller_products"
 const result = await response.json();
 if (!response.ok) throw new Error(result.code);
 for (const p of result.results) console.log(p.untrusted.title, p.priceHtg, p.url);`;
+const exempleSignature = `import { createHmac, timingSafeEqual } from "node:crypto";
+// corps = le corps BRUT reçu (texte), avant tout JSON.parse.
+function webhookZabelieValide(secret, entete, corps) {
+  const { t, v1 } = Object.fromEntries(entete.split(",").map((p) => p.split("=")));
+  if (!t || !v1 || Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  const attendu = createHmac("sha256", secret).update(t + "." + corps).digest();
+  const recu = Buffer.from(v1, "hex");
+  return recu.length === attendu.length && timingSafeEqual(recu, attendu);
+}`;
 export default async function DevelopersPage() {
   const c = apiDocsCopy(await getLang());
   return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-4xl px-5 py-12">
@@ -49,5 +58,7 @@ export default async function DevelopersPage() {
     <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleVendeur}</code></pre>
     <ul className="mt-4 space-y-2">{SELLER_OPERATIONS.map(([name, e]) => <li key={name}><code className="break-all text-sm">POST /api/v1/seller/{name}</code> <span className="text-xs text-mist">({e.scope})</span></li>)}</ul>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerPrivacy}</p>
+    <p className="mt-6 text-sm leading-relaxed">{c.sellerWebhooks}</p>
+    <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleSignature}</code></pre>
   </main><SiteFooter/></div>;
 }

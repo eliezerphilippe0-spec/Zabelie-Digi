@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { repartirApresReponse } from "@/lib/webhooks-apres";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { siteOrigin } from "@/lib/site-origin";
@@ -181,6 +182,7 @@ export async function GET(req: Request) {
    * IMMÉDIATE — et le drain du cron la reprend. Dégradation propre par
    * construction : le reçu arrive plus tard, jamais jamais. */
   notifyOrderPaid(admin, orderId).catch(() => undefined);
+  repartirApresReponse(admin); // webhooks vendeur (0122) — après la réponse
 
   return NextResponse.redirect(`${site}/paiement/succes?commande=${orderId}`);
 }

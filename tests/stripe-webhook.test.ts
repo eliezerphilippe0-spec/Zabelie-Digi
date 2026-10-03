@@ -8,6 +8,7 @@ function fixture(options: {
 } = {}) {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
   const deliveries: string[] = [];
+  const webhooks: string[] = [];
   const db = database(() => ({ data: { rail: options.rail ?? "stripe", raw: { stripe_session_id: options.storedSession ?? "cs_test" } }, error: options.readError ? {} : null }));
   const route = loadRoute("app/api/stripe/webhook/route.ts", {
     "@/lib/stripe": { verifyStripeWebhook: () => {
@@ -23,8 +24,9 @@ function fixture(options: {
     } }) },
     "@/lib/fulfillment": { ouvrirSuiviLivraison: async (_db: unknown, order: string) => { deliveries.push(order); } },
     "@/lib/zabelie-notify": { notifyOrderPaid: async () => undefined },
+    "@/lib/webhooks-apres": { repartirApresReponse: () => { webhooks.push("planifie"); } },
   });
-  return { calls, deliveries, post: () => route.POST(new Request("https://example.test/api/stripe/webhook", {
+  return { calls, deliveries, webhooks, post: () => route.POST(new Request("https://example.test/api/stripe/webhook", {
     method: "POST", headers: { "stripe-signature": "signed-fixture" }, body: "{}",
   })) };
 }
@@ -38,6 +40,7 @@ for (const type of ["checkout.session.completed", "checkout.session.async_paymen
     assert.equal(f.calls[0].args.p_usd_cents, 1250);
     assert.equal(f.calls[0].args.p_idempotency_key, "order");
     assert.deepEqual(f.deliveries, ["order"]);
+    assert.deepEqual(f.webhooks, ["planifie"], "la vente confirmée doit planifier les webhooks vendeur (0122)");
   });
 }
 
@@ -55,6 +58,7 @@ test("delayed failure uses the locked failure RPC without fulfillment", async ()
   assert.equal(f.calls[0].name, "zabelie_stripe_payment_failed");
   assert.equal(f.calls[0].args.p_session_id, "cs_test");
   assert.equal(f.deliveries.length, 0);
+  assert.equal(f.webhooks.length, 0, "un échec de paiement ne déclenche aucun webhook");
 });
 
 test("invalid signatures, currency, rail, session and amounts cannot settle", async () => {

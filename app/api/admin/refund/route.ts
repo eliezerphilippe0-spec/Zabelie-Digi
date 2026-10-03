@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { repartirApresReponse } from "@/lib/webhooks-apres";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { getAdminUser } from "@/lib/auth";
 import { exigerTraceAdmin } from "@/lib/admin-audit";
@@ -49,5 +50,6 @@ export async function POST(req: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  repartirApresReponse(admin); // webhook `sale.refunded` (0122) — après la réponse
   return NextResponse.json({ ok: true, result: data });
 }

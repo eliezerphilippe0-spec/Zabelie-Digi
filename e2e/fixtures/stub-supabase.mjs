@@ -154,6 +154,8 @@ const eq = (url, key) => {
   return v?.startsWith("eq.") ? decodeURIComponent(v.slice(3)) : null;
 };
 
+const webhookPoints = [];
+const sansSecret = (p) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== "secret"));
 const apiKeys = [];
 const server = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
@@ -499,6 +501,24 @@ const server = createServer((req, res) => {
         zabelie_vehicle_models: { kind: "auto", make: "Toyota", model: "Corolla" },
       },
     ]);
+  }
+  // Points webhook (0122) : même simulation ; le secret n'est jamais relu.
+  if (url.pathname === "/rest/v1/zabelie_webhook_endpoints") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      if (req.method === "POST") {
+        const row = { id: `dddddddd-dddd-4ddd-8ddd-${String(webhookPoints.length + 1).padStart(12, "0")}`, created_at: new Date().toISOString(), disabled_at: null, disabled_reason: null, ...JSON.parse(body) };
+        webhookPoints.unshift(row);
+        return single([sansSecret(row)]);
+      }
+      if (req.method === "PATCH") {
+        const patch = JSON.parse(body), id = eq(url, "id"), seller = eq(url, "seller_id");
+        const hits = webhookPoints.filter(p => p.id === id && p.seller_id === seller && !p.disabled_at);
+        hits.forEach(p => Object.assign(p, patch));
+        return single(hits.map(sansSecret));
+      }
+      return single(webhookPoints.map(sansSecret));
+    });
   }
   // Clés d'API (0121) : table simulée en mémoire, avec le plafond ZB121 et le
   // filtre de révocation de la vraie route. Une seule spec l'utilise.
