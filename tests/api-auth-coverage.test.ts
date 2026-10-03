@@ -31,7 +31,7 @@ const AUTH_GUARDS = [
    * le REFUS — la résolution liée à `resolue`, puis le 401 si elle est nulle.
    * La confiance accordée au nom `resoudreCle` est gardée par
    * `tests/api-keys.test.ts` (A5 : inconnue, révoquée, suspendue → null). */
-  /resolue = await resoudreCle\(admin, brutCle\)[\s\S]{0,300}if \(!resolue\) return erreur\("unauthenticated"/,
+  /resolue = await resoudreCle\(admin, brutCle\)[\s\S]{0,300}if \(!resolue\) return erreur\(lang, "unauthenticated"/,
 ];
 
 /* ⚠️ POURQUOI LE CINQUIÈME MOTIF EXIGE LA NÉGATION, ET PAS L'APPEL.

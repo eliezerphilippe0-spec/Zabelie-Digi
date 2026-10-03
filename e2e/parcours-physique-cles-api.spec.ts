@@ -21,8 +21,8 @@ test("une clé se crée, ne s'affiche qu'une fois, puis se révoque", async ({ p
   await page.goto("/tableau-de-bord/api", { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-  await page.locator("main form input").fill("Mon site e2e");
-  await page.locator("main form button[type=submit]").click();
+  await page.locator("main form").first().locator("input").fill("Mon site e2e");
+  await page.locator("main form").first().locator("button[type=submit]").click();
 
   const affichee = page.locator('[role="status"] code');
   await expect(affichee).toHaveText(/^zb_live_[A-Za-z0-9_-]{43}$/);
@@ -31,7 +31,7 @@ test("une clé se crée, ne s'affiche qu'une fois, puis se révoque", async ({ p
   // La liste ne porte que le PRÉFIXE, jamais la clé entière.
   const ligne = page.locator("main li", { hasText: "Mon site e2e" });
   await expect(ligne).toContainText(cle.slice(0, 14));
-  expect(await page.locator("main ul").innerText()).not.toContain(cle);
+  expect(await page.locator("main ul").first().innerText()).not.toContain(cle);
 
   // Une fois masquée, la clé n'est plus nulle part dans la page.
   await page.locator('[role="status"] button').last().click();
@@ -66,6 +66,14 @@ test("l'API vendeur répond à une clé valide, et plus du tout une fois révoqu
   expect(produits.headers()["access-control-allow-origin"]).toBeUndefined();
 
   expect((await appel("seller_products", {})).status()).toBe(401);
+  // Les quatre langues : la réponse suit Accept-Language, puis ?lang=.
+  for (const [l, attendu] of [["ht", "Kle API a manke"], ["en", "API key missing"], ["es", "Clave de API ausente"], ["fr", "Clé d'API absente"]] as const) {
+    const r = await api.post("/api/v1/seller/seller_products", { data: {}, headers: { "Accept-Language": l } });
+    expect(r.headers()["content-language"]).toBe(l);
+    expect((await r.json()).message).toContain(attendu);
+  }
+  const contrat = await (await api.get("/api/v1/seller/openapi.json?lang=ht")).json();
+  expect(contrat.info.title).toBe("Zabelie — API vandè");
   expect((await appel("seller_products", {}, "zb_live_" + "x".repeat(43))).status()).toBe(401);
   expect((await appel("seller_products", { limit: 500 }, key)).status()).toBe(400);
   expect((await appel("create_product_link", { productId: "99999999-9999-4999-8999-999999999999" }, key)).status()).toBe(404);
@@ -73,4 +81,32 @@ test("l'API vendeur répond à une clé valide, et plus du tout une fois révoqu
 
   expect((await page.request.delete(`/api/account/api-keys/${id}`)).status()).toBe(200);
   expect((await appel("seller_products", { limit: 5 }, key)).status()).toBe(401);
+});
+
+test("un point webhook s'ajoute (secret affiché une fois), refuse le http, se désactive", async ({ page }) => {
+  await connecte(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/tableau-de-bord/api#webhooks", { waitUntil: "networkidle" });
+  const formulaire = page.locator("main form").last();
+
+  // L'API refuse le http : on l'appelle directement (le champ `type=url` du navigateur bloquerait avant).
+  const refus = await page.request.post("/api/account/webhooks", { data: { url: "http://boutik.example/h" } });
+  expect(refus.status()).toBe(422);
+  expect((await page.request.post("/api/account/webhooks", { data: { url: "https://127.0.0.1/h" } })).status()).toBe(422);
+
+  await formulaire.locator("input").fill("https://boutik.example/hooks/zabelie");
+  await formulaire.locator("button[type=submit]").click();
+  const secret = page.locator('[role="status"] code');
+  await expect(secret).toHaveText(/^whsec_[A-Za-z0-9_-]{43}$/);
+  const valeur = (await secret.textContent())!;
+
+  const ligne = page.locator("main li", { hasText: "https://boutik.example/hooks/zabelie" });
+  await expect(ligne).toBeVisible();
+  await page.locator('[role="status"] button').last().click();
+  expect(await page.content()).not.toContain(valeur);
+
+  page.once("dialog", (d) => d.accept());
+  await ligne.getByRole("button").last().click();
+  await expect(ligne.getByRole("button")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
