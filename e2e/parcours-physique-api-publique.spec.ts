@@ -26,7 +26,7 @@ test("public errors and oversized requests keep their JSON and CORS contract", a
 });
 test("developer documentation and OpenAPI match the public operations on mobile", async ({ page, request, baseURL }) => {
   const r=await request.get(`${baseURL}/api/v1/openapi.json`);expect(r.status()).toBe(200);const spec=await r.json();expect(Object.keys(spec.paths)).toHaveLength(8);expect(spec.paths["/api/v1/get_order"]).toBeUndefined();
-  await page.setViewportSize({width:390,height:844});await page.goto(`${baseURL}/developpeurs`);await expect(page.getByRole("heading",{name:"API Zabelie",exact:true})).toBeVisible();await expect(page.locator('a[href="/api/v1/openapi.json"]')).toBeVisible();await expect(page.locator('a[href="/api/v1/seller/openapi.json"]')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.setViewportSize({width:390,height:844});await page.goto(`${baseURL}/developpeurs`);await expect(page.getByRole("heading",{name:"API Zabelie",exact:true})).toBeVisible();await expect(page.locator('a[href="/api/v1/openapi.json"]')).toBeVisible();await expect(page.locator('a[href^="/api/v1/seller/openapi.json?lang="]')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test("seller API contract is published separately, every operation behind an API key", async ({ request, baseURL }) => {
   const r = await request.get(`${baseURL}/api/v1/seller/openapi.json`);

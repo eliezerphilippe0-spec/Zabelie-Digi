@@ -37,7 +37,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const eventId = randomUUID();
   const { error } = await admin.from("zabelie_webhook_deliveries").insert({
     endpoint_id: point.id, event_id: eventId, event_type: "webhook.test",
-    payload: { id: eventId, type: "webhook.test", created_at: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"), data: { message: "Zabelie webhook test" } },
+    payload: { id: eventId, type: "webhook.test", created_at: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"), data: { test: true } },
   });
   if (error) {
     console.error("[webhooks] test non enfilé", error.code, error.message);

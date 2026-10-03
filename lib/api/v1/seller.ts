@@ -19,6 +19,9 @@ import { siteUrl } from "@/lib/site-url";
  * le filtre `seller_id = <vendeur de la clé>`, présent dans CHAQUE requête —
  * `tests/api-seller.test.ts` l'exige requête par requête.
  *
+ * Les `ErreurApi` levées ici portent une CLÉ de `seller-i18n.ts`, jamais une
+ * phrase : la route la traduit dans la langue de l'appelant (fr, ht, en, es).
+ *
  * ⚠️ AUCUNE DONNÉE ACHETEUR. Une vente rend sa référence, son produit, son
  * montant, son statut — jamais le nom, le téléphone ni l'adresse de
  * l'acheteur. Le site du vendeur n'en a pas besoin pour se synchroniser.
@@ -105,7 +108,7 @@ export type ContexteVendeur = { admin: SupabaseClient; sellerId: string };
 function cle(curseur: string | undefined) {
   if (curseur === undefined) return null;
   const c = decoderCurseur(curseur);
-  if (!c) throw new ErreurApi("invalid_input", "Curseur illisible. Reprenez `nextCursor` tel quel.", "cursor");
+  if (!c) throw new ErreurApi("invalid_input", "cursor_invalid", "cursor");
   return c;
 }
 
@@ -127,7 +130,7 @@ export async function sellerProducts(input: z.infer<typeof SellerProductsInput>,
   if (input.status) q = q.eq("status", input.status);
   if (c) q = q.or(apres(c));
   const { data, error } = await q.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(input.limit + 1);
-  if (error || !data) throw new ErreurApi("internal", "Lecture des produits impossible.");
+  if (error || !data) throw new ErreurApi("internal", "read_failed");
   const page = data.slice(0, input.limit);
   const dernier = page.at(-1);
   return {
@@ -150,7 +153,7 @@ export async function sellerSales(input: z.infer<typeof SellerSalesInput>, ctx: 
     .in("status", input.status ? [input.status] : [...SALE_STATUSES]);
   if (c) q = q.or(apres(c));
   const { data, error } = await q.order("created_at", { ascending: false }).order("id", { ascending: false }).limit(input.limit + 1);
-  if (error || !data) throw new ErreurApi("internal", "Lecture des ventes impossible.");
+  if (error || !data) throw new ErreurApi("internal", "read_failed");
   const page = data.slice(0, input.limit);
   const dernier = page.at(-1);
   return {
@@ -170,11 +173,11 @@ export async function createProductLink(input: z.infer<typeof CreateProductLinkI
     .eq("id", input.productId)
     .eq("seller_id", ctx.sellerId)
     .maybeSingle();
-  if (error) throw new ErreurApi("internal", "Lecture du produit impossible.");
+  if (error) throw new ErreurApi("internal", "read_failed");
   // Le produit d'une autre boutique rend 404, comme un produit inexistant.
-  if (!data) throw new ErreurApi("not_found", "Produit introuvable dans votre boutique.", "productId");
-  if (data.status !== "published") throw new ErreurApi("unsupported_state", "Le produit n'est pas publié.", "productId");
-  if (!data.in_stock) throw new ErreurApi("unsupported_state", "Le produit est en rupture de stock.", "productId");
+  if (!data) throw new ErreurApi("not_found", "product_not_found", "productId");
+  if (data.status !== "published") throw new ErreurApi("unsupported_state", "product_not_published", "productId");
+  if (!data.in_stock) throw new ErreurApi("unsupported_state", "product_out_of_stock", "productId");
   return { type: "product_link" as const, productId: data.id, url: urlFiche(data.slug) };
 }
 

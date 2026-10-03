@@ -123,7 +123,7 @@ test("H9 — l'exemple de vérification publié sur /developpeurs fonctionne vra
   const { createHmac: ch, timingSafeEqual: tse } = await import("node:crypto");
   const page = readFileSync("app/developpeurs/page.tsx", "utf8");
   const code = page.match(/const exempleSignature = `([\s\S]*?)`;/)![1].replace(/^import .*$/m, "");
-  const valide = new Function("createHmac", "timingSafeEqual", "Buffer", `${code}; return webhookZabelieValide;`)(ch, tse, Buffer) as
+  const valide = new Function("createHmac", "timingSafeEqual", "Buffer", `${code}; return isValidZabelieWebhook;`)(ch, tse, Buffer) as
     (s: string, e: string, c: string) => boolean;
   const secret = genererSecret();
   const corps = JSON.stringify({ type: "sale.paid" });

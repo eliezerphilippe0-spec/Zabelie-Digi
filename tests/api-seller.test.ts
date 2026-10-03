@@ -106,9 +106,9 @@ test("B6 — un brouillon n'a pas d'adresse publique", async () => {
 test("B7 — la route : clé avant tout, portée vérifiée, cadence par clé, aucun CORS", () => {
   const src = readFileSync("app/api/v1/seller/[endpoint]/route.ts", "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
   const i = (m: RegExp) => { const r = src.search(m); assert.ok(r >= 0, `absent : ${m}`); return r; };
-  const cle = i(/const brutCle = lireCle\(req\.headers\);\s*if \(!brutCle\) return erreur\("unauthenticated"/);
-  const resolution = i(/if \(!resolue\) return erreur\("unauthenticated"/);
-  const portee = i(/if \(!resolue\.scopes\.includes\(scope\)\) return erreur\("forbidden"/);
+  const cle = i(/const brutCle = lireCle\(req\.headers\);\s*if \(!brutCle\) return erreur\(lang, "unauthenticated"/);
+  const resolution = i(/if \(!resolue\) return erreur\(lang, "unauthenticated"/);
+  const portee = i(/if \(!resolue\.scopes\.includes\(scope\)\) return erreur\(lang, "forbidden"/);
   const cadence = i(/rateLimit\(admin, `apiv1:seller:\$\{resolue\.keyId\}`/);
   const corps = i(/brut = await readApiBody\(req\)/);
   const handler = i(/\{ admin, sellerId: resolue\.sellerId \}/);
@@ -125,4 +125,38 @@ test("B8 — le contrat OpenAPI vendeur couvre exactement le registre, avec auth
   assert.deepEqual(Object.keys(doc.paths).sort(), Object.keys(SELLER_ENDPOINTS).map((n) => `/api/v1/seller/${n}`).sort());
   for (const op of Object.values(doc.paths)) assert.deepEqual(op.post.security, [{ cleApi: [] }]);
   assert.doesNotThrow(() => JSON.stringify(doc));
+});
+
+test("B9 — QUATRE LANGUES : chaque message et le contrat existent en fr, ht, en, es ; aucune phrase en dur", async () => {
+  const { MESSAGES, LANGUES_API, langueApi, message } = await import("../lib/api/v1/seller-i18n");
+  const { TEXTES_OPENAPI, sellerOpenApiDocument } = await import("../lib/api/v1/seller-openapi");
+  for (const [cle, textes] of Object.entries(MESSAGES)) {
+    for (const l of LANGUES_API) assert.ok((textes as Record<string, string>)[l]?.trim(), `${cle} sans traduction ${l}`);
+    assert.equal(new Set(Object.values(textes)).size, 4, `${cle} : deux langues portent le même texte (traduction oubliée ?)`);
+  }
+  for (const l of LANGUES_API) {
+    assert.deepEqual(Object.keys(TEXTES_OPENAPI[l]).sort(), Object.keys(TEXTES_OPENAPI.fr).sort());
+    const doc = sellerOpenApiDocument(l);
+    assert.equal(doc.info.description, TEXTES_OPENAPI[l].intro);
+    assert.deepEqual(Object.keys(doc.paths), Object.keys(sellerOpenApiDocument("fr").paths));
+  }
+  // Choix de la langue : ?lang= d'abord, puis Accept-Language, sinon français.
+  assert.equal(langueApi(new Headers({ "accept-language": "ht-HT,fr;q=0.8" })), "ht");
+  assert.equal(langueApi(new Headers({ "accept-language": "de-DE,es;q=0.5" })), "es");
+  assert.equal(langueApi(new Headers({ "accept-language": "de" })), "fr");
+  assert.equal(langueApi(new Headers({ "accept-language": "en" }), "https://zabelie.com/x?lang=ht"), "ht");
+  assert.equal(langueApi(new Headers(), "https://zabelie.com/x?lang=de"), "fr");
+  assert.equal(message("ht", "scope_missing", { scope: "sales:read" }), "Kle sa a pa gen dwa sales:read.");
+
+  // La route ne passe JAMAIS une phrase à `erreur` : seulement des clés traduites.
+  const route = readFileSync("app/api/v1/seller/[endpoint]/route.ts", "utf8");
+  const appels = [...route.matchAll(/erreur\(lang, "[a-z_]+", ([^,)]+)/g)].map((m) => m[1].trim());
+  assert.ok(appels.length >= 10, `témoin : ${appels.length} appels lus`);
+  for (const a of appels) assert.match(a, /^"[a-z_]+"$|^estCleMessage\(e\.message\) \? e\.message : "internal"$/, `message non traduit : ${a}`);
+  assert.doesNotMatch(route, /erreur\("[a-z_]+", "/, "ancienne forme, phrase en dur");
+  // Les handlers lèvent des CLÉS connues.
+  const handlers = readFileSync("lib/api/v1/seller.ts", "utf8");
+  const cles = [...handlers.matchAll(/new ErreurApi\("[a-z_]+", "([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(cles.length >= 6);
+  for (const c of cles) assert.ok(Object.prototype.hasOwnProperty.call(MESSAGES, c), `clé inconnue : ${c}`);
 });

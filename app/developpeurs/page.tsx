@@ -21,27 +21,32 @@ const example = `const response = await fetch("https://zabelie.com/api/v1/search
 const result = await response.json();
 if (!response.ok) throw new Error(result.code);
 console.log(result.results, result.nextCursor);`;
-const exempleVendeur = `// Sur VOTRE serveur — la clé ne va jamais dans le navigateur.
-// cleZabelie : votre clé zb_live_…, lue depuis votre coffre de secrets.
-const response = await fetch("https://zabelie.com/api/v1/seller/seller_products", {
+// Exemples SANS prose : le code se lit dans toutes les langues ; les
+// explications sont dans les paragraphes traduits (docs-copy, fr/ht/en/es).
+const exempleVendeur = `const response = await fetch("https://zabelie.com/api/v1/seller/seller_products", {
   method: "POST",
-  headers: { "Content-Type": "application/json", Authorization: \`Bearer \${cleZabelie}\` },
+  headers: {
+    "Content-Type": "application/json",
+    "Accept-Language": "ht",
+    Authorization: \`Bearer \${apiKey}\`
+  },
   body: JSON.stringify({ limit: 20, status: "published" })
 });
 const result = await response.json();
 if (!response.ok) throw new Error(result.code);
 for (const p of result.results) console.log(p.untrusted.title, p.priceHtg, p.url);`;
 const exempleSignature = `import { createHmac, timingSafeEqual } from "node:crypto";
-// corps = le corps BRUT reçu (texte), avant tout JSON.parse.
-function webhookZabelieValide(secret, entete, corps) {
-  const { t, v1 } = Object.fromEntries(entete.split(",").map((p) => p.split("=")));
+
+function isValidZabelieWebhook(secret, header, rawBody) {
+  const { t, v1 } = Object.fromEntries(header.split(",").map((p) => p.split("=")));
   if (!t || !v1 || Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
-  const attendu = createHmac("sha256", secret).update(t + "." + corps).digest();
-  const recu = Buffer.from(v1, "hex");
-  return recu.length === attendu.length && timingSafeEqual(recu, attendu);
+  const expected = createHmac("sha256", secret).update(t + "." + rawBody).digest();
+  const received = Buffer.from(v1, "hex");
+  return received.length === expected.length && timingSafeEqual(received, expected);
 }`;
 export default async function DevelopersPage() {
-  const c = apiDocsCopy(await getLang());
+  const lang = await getLang();
+  const c = apiDocsCopy(lang);
   return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-4xl px-5 py-12">
     <h1 className="text-3xl font-black">{c.title}</h1><p className="mt-3 text-lg">{c.intro}</p><p className="mt-4 text-mist">{c.scope}</p>
     <Link href="/api/v1/openapi.json" className="mt-6 inline-block font-semibold underline">{c.contract}</Link>
@@ -54,7 +59,7 @@ export default async function DevelopersPage() {
     <h2 id="api-vendeur" className="mt-14 scroll-mt-24 text-2xl font-bold">{c.sellerTitle}</h2>
     <p className="mt-3">{c.sellerIntro}</p>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerAuth}</p>
-    <Link href="/api/v1/seller/openapi.json" className="mt-4 inline-block font-semibold underline">{c.sellerContract}</Link>
+    <Link href={`/api/v1/seller/openapi.json?lang=${lang}`} className="mt-4 inline-block font-semibold underline">{c.sellerContract}</Link>
     <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleVendeur}</code></pre>
     <ul className="mt-4 space-y-2">{SELLER_OPERATIONS.map(([name, e]) => <li key={name}><code className="break-all text-sm">POST /api/v1/seller/{name}</code> <span className="text-xs text-mist">({e.scope})</span></li>)}</ul>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerPrivacy}</p>

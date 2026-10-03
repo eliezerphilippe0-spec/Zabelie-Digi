@@ -66,6 +66,14 @@ test("l'API vendeur répond à une clé valide, et plus du tout une fois révoqu
   expect(produits.headers()["access-control-allow-origin"]).toBeUndefined();
 
   expect((await appel("seller_products", {})).status()).toBe(401);
+  // Les quatre langues : la réponse suit Accept-Language, puis ?lang=.
+  for (const [l, attendu] of [["ht", "Kle API a manke"], ["en", "API key missing"], ["es", "Clave de API ausente"], ["fr", "Clé d'API absente"]] as const) {
+    const r = await api.post("/api/v1/seller/seller_products", { data: {}, headers: { "Accept-Language": l } });
+    expect(r.headers()["content-language"]).toBe(l);
+    expect((await r.json()).message).toContain(attendu);
+  }
+  const contrat = await (await api.get("/api/v1/seller/openapi.json?lang=ht")).json();
+  expect(contrat.info.title).toBe("Zabelie — API vandè");
   expect((await appel("seller_products", {}, "zb_live_" + "x".repeat(43))).status()).toBe(401);
   expect((await appel("seller_products", { limit: 500 }, key)).status()).toBe(400);
   expect((await appel("create_product_link", { productId: "99999999-9999-4999-8999-999999999999" }, key)).status()).toBe(404);
