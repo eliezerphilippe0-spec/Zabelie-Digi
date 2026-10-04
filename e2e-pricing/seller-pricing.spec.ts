@@ -72,7 +72,7 @@ test("checkout ignores a forged source and respects the signed catalogue visit",
   const data = { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", source: "discovery" };
   // The stub records inserts but deliberately refuses creating a payable order.
   expect((await page.request.post("/api/checkout", { data })).status()).toBe(500);
-  const writes = async () => (await (await page.request.get("http://127.0.0.1:54325/__ecritures")).json()).filter((e: { method: string }) => e.method === "POST");
+  const writes = async () => (await (await page.request.get("http://127.0.0.1:15425/__ecritures")).json()).filter((e: { method: string }) => e.method === "POST");
   let rows = await writes();
   expect(JSON.parse(rows.at(-1).body)).toMatchObject({ zabelie_sale_source: "direct", zabelie_payment_is_live: false });
   await page.request.get("/decouvrir/filtre-huile-corolla");

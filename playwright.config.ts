@@ -29,7 +29,7 @@ const launchOptions = executablePath ? { executablePath } : undefined;
  */
 const RECYCLER = false;
 
-const STUB_URL = "http://127.0.0.1:54321";
+const STUB_URL = "http://127.0.0.1:15421";
 const STUB_ENV = {
   NEXT_PUBLIC_SUPABASE_URL: STUB_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "cle-anon-de-test",
@@ -47,13 +47,13 @@ export default defineConfig({
   webServer: [
     {
       command: "node e2e/fixtures/stub-mfa.mjs",
-      url: "http://127.0.0.1:54322/__sante",
+      url: "http://127.0.0.1:15422/__sante",
       reuseExistingServer: RECYCLER,
     },
     {
       command: "npm run start",
       url: "http://127.0.0.1:3002",
-      env: { ...STUB_ENV, NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54322", PORT: "3002" },
+      env: { ...STUB_ENV, NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:15422", PORT: "3002" },
       reuseExistingServer: RECYCLER,
       timeout: 120_000,
     },

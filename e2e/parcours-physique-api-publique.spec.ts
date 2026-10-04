@@ -4,7 +4,7 @@ test("public API works cross-origin and does not authorize private reads", async
   const preflight=await request.fetch(`${baseURL}/api/v1/search_products`,{method:"OPTIONS",headers:{Origin:"http://127.0.0.1:3000","Access-Control-Request-Method":"POST","Access-Control-Request-Headers":"content-type"}});
   expect(preflight.status()).toBe(204);expect(preflight.headers()["access-control-allow-origin"]).toBe("*");
   // Real second HTTP origin: no response interception, CSP bypass or disabled browser security.
-  await page.goto("http://127.0.0.1:54321/__partner");
+  await page.goto("http://127.0.0.1:15421/__partner");
   const result=await page.evaluate(async url=>{const r=await fetch(`${url}/api/v1/search_products`,{method:"POST",credentials:"omit",headers:{"Content-Type":"application/json"},body:JSON.stringify({limit:1})});return {status:r.status,body:await r.json()};},baseURL);
   expect(result.status).toBe(200);expect(result.body.type).toBe("product_results");expect(result.body.results[0].untrusted.title).toBe("Filtre à huile Corolla");
   const privateRead=await request.post(`${baseURL}/api/v1/get_user_orders`,{data:{},headers:{Origin:"http://127.0.0.1:3000"}});

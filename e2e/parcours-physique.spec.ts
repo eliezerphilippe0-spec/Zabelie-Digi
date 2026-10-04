@@ -18,7 +18,7 @@ import { test, expect, type Page } from "@playwright/test";
  * plus le checkout par le chemin normal).
  */
 
-const STUB = "http://127.0.0.1:54321";
+const STUB = "http://127.0.0.1:15421";
 const ORDER_ID = "33333333-3333-3333-3333-333333333333";
 const SLUG = "filtre-huile-corolla";
 

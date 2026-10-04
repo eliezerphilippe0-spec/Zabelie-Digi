@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { t } from "../lib/i18n";
-const auth = "http://127.0.0.1:54323/auth/v1/";
+const auth = "http://127.0.0.1:15423/auth/v1/";
 async function fill(page: Page, email: string, password="Valid-test-123!") {
   await page.locator("#auth-email").fill(email);
   await page.locator("#auth-password").fill(password);

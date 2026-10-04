@@ -12,7 +12,7 @@ async function connect(page: Page, seller = true) {
   })).toString("base64url");
   await page.context().addCookies([{ name: "sb-127-auth-token", value, domain: "127.0.0.1", path: "/" }]);
 }
-test.beforeEach(async ({ request }) => { await request.post("http://127.0.0.1:54327/__discount-reset"); });
+test.beforeEach(async ({ request }) => { await request.post("http://127.0.0.1:15427/__discount-reset"); });
 
 for (const width of [390, 1280]) {
   test("seller discount is visible and charged on the chosen variant at " + width + "px", async ({ page, request }) => {
@@ -49,7 +49,7 @@ for (const width of [390, 1280]) {
     const result = await checkout;
     expect(result.status()).toBe(502);
     expect((await result.json()).code).toBe("provider_unavailable");
-    const orders = await (await request.get("http://127.0.0.1:54327/__discount-orders")).json();
+    const orders = await (await request.get("http://127.0.0.1:15427/__discount-orders")).json();
     expect(orders).toHaveLength(1);
     expect(orders[0].amount_htg).toBe(1500);
     await connect(page);
@@ -70,5 +70,5 @@ test("a forged or missing variant cannot create a discounted order", async ({ pa
     const result = await page.request.post("/api/checkout", { data: { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", variantId, amount_htg: 1 } });
     expect(result.status()).toBe(422);
   }
-  expect(await (await request.get("http://127.0.0.1:54327/__discount-orders")).json()).toEqual([]);
+  expect(await (await request.get("http://127.0.0.1:15427/__discount-orders")).json()).toEqual([]);
 });
