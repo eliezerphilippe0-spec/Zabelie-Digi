@@ -1,0 +1,52 @@
+import { test, expect, type Page } from "@playwright/test";
+
+/**
+ * Pixels vendeur (0123) : RIEN ne part vers une régie avant le consentement ;
+ * un refus est retenu ; un accord charge les seules régies configurées.
+ * Les régies sont interceptées (aucune requête ne sort du test).
+ */
+async function intercepter(page: Page) {
+  const appels: string[] = [];
+  await page.route(/connect\.facebook\.net|googletagmanager\.com|analytics\.tiktok\.com|google-analytics\.com|facebook\.com\/tr/, (route) => {
+    appels.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: "application/javascript", body: "" });
+  });
+  return appels;
+}
+
+test("aucun pixel avant consentement ; le refus est retenu", async ({ page }) => {
+  const appels = await intercepter(page);
+  const r = await page.goto("/produit/pixel-test", { waitUntil: "networkidle" });
+  expect(r?.headers()["content-security-policy"]).toContain("https://connect.facebook.net");
+  const bandeau = page.locator("[data-bandeau-pixels]");
+  await expect(bandeau).toBeVisible();
+  expect(appels).toEqual([]);
+
+  await bandeau.getByRole("button").first().click(); // Refuser
+  await expect(bandeau).toHaveCount(0);
+  expect((await page.context().cookies()).find((c) => c.name === "zab_pub")?.value).toBe("0");
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("[data-bandeau-pixels]")).toHaveCount(0);
+  expect(appels, "un refus ne charge rien, même après rechargement").toEqual([]);
+});
+
+test("l'accord charge Meta et Google (configurés), pas TikTok ; ViewContent part avec le prix", async ({ page }) => {
+  const appels = await intercepter(page);
+  await page.goto("/produit/pixel-test", { waitUntil: "networkidle" });
+  await page.locator("[data-bandeau-pixels]").getByRole("button").last().click(); // Accepter
+  await expect.poll(() => appels.length).toBeGreaterThanOrEqual(2);
+  expect(appels.some((u) => u.includes("connect.facebook.net/en_US/fbevents.js"))).toBe(true);
+  expect(appels.some((u) => u.includes("googletagmanager.com/gtag/js?id=G-AB12CD34EF"))).toBe(true);
+  expect(appels.some((u) => u.includes("tiktok"))).toBe(false);
+  const evenements = await page.evaluate(() => ((window as unknown as { fbq: { queue: unknown[][] } }).fbq.queue).map((a) => a[1]));
+  expect(evenements).toEqual(["123456789012345", "PageView", "ViewContent"]);
+});
+
+test("hors des pages vendeur : ni bandeau, ni domaines de régie dans la CSP", async ({ page }) => {
+  const r = await page.goto("/catalogue", { waitUntil: "networkidle" });
+  expect(r?.headers()["content-security-policy"]).not.toContain("facebook");
+  await expect(page.locator("[data-bandeau-pixels]")).toHaveCount(0);
+  const p = await page.goto("/produit/" + "kit-depart", { waitUntil: "networkidle" });
+  expect(p?.status()).toBeLessThan(500);
+  await expect(page.locator("[data-bandeau-pixels]"), "un vendeur sans pixel n'affiche aucun bandeau").toHaveCount(0);
+});

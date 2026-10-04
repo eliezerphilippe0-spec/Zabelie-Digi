@@ -1,3 +1,5 @@
+import { SellerPixels } from "@/components/seller-pixels";
+import { lirePixelsVendeur } from "@/lib/pixels-server";
 import { ProductOffers } from "@/components/product-offers";
 import { publicOffers } from "@/lib/product-offers-server";
 import { offerCopy } from "@/lib/product-offer-copy";
@@ -36,8 +38,8 @@ import { isProductKind, pickByKind, isDownloadable } from "@/lib/product-kind";
  */
 async function detailsCommande(
   orderId: string
-): Promise<{ ref: string | null; kind: string | null; productId: string | null; buyerId: string | null }> {
-  const vide = { ref: null, kind: null, productId: null, buyerId: null };
+): Promise<{ ref: string | null; kind: string | null; productId: string | null; buyerId: string | null; sellerId: string | null; montantHtg: number | null }> {
+  const vide = { ref: null, kind: null, productId: null, buyerId: null, sellerId: null, montantHtg: null };
   if (!isSupabaseConfigured()) return vide;
   try {
     const supabase = await createClient();
@@ -45,19 +47,22 @@ async function detailsCommande(
     if (!user) return vide;
     const { data, error } = await supabase
       .from("orders")
-      .select("order_ref,product_id,buyer_id,status,product:products(kind)")
+      .select("order_ref,product_id,buyer_id,status,amount_htg,product:products(kind,seller_id)")
       .eq("buyer_id", user.id)
       .eq("id", orderId)
       .maybeSingle();
     if (error && !isMissingColumn(error)) return vide;
     const ligne = data as
-      | { order_ref?: string | null; product_id: string; buyer_id: string; status: string; product?: { kind?: string | null } | null }
+      | { order_ref?: string | null; product_id: string; buyer_id: string; status: string; amount_htg?: number | null; product?: { kind?: string | null; seller_id?: string | null } | null }
       | null;
     return {
       productId: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.product_id : null,
       buyerId: user.id,
       ref: ligne?.order_ref ?? null,
       kind: ligne?.product?.kind ?? null,
+      // Pixel « achat » : seulement pour une commande PAYÉE (statut lu en base, jamais le retour navigateur).
+      sellerId: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.product?.seller_id ?? null : null,
+      montantHtg: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.amount_htg ?? null : null,
     };
   } catch {
     return vide;
@@ -104,9 +109,10 @@ export default async function SuccesPage({
   searchParams: Promise<{ commande?: string }>;
 }) {
   const [{ commande }, lang] = await Promise.all([searchParams, getLang()]);
-  const { ref, kind, productId, buyerId } = commande
+  const { ref, kind, productId, buyerId, sellerId, montantHtg } = commande
     ? await detailsCommande(commande)
-    : { ref: null, kind: null, productId: null, buyerId: null };
+    : { ref: null, kind: null, productId: null, buyerId: null, sellerId: null, montantHtg: null };
+  const pixels = sellerId && productId && montantHtg !== null ? await lirePixelsVendeur(sellerId) : null;
   const offers = productId && buyerId ? await publicOffers(productId, buyerId) : [];
 
   /* L'escrow ne se dit que là où il veut dire quelque chose : sur une
@@ -183,6 +189,9 @@ export default async function SuccesPage({
         </div>
         <ProductOffers offers={offers} copy={offerCopy(lang)} afterPurchase/>
       </main>
+      {pixels && commande && productId && montantHtg !== null && (
+        <SellerPixels ids={pixels} evenement={{ type: "achat", orderId: commande, productId, valeurHtg: montantHtg }} labels={{ text: t(lang, "pixels.consent.text"), accept: t(lang, "pixels.consent.accept"), refuse: t(lang, "pixels.consent.refuse"), privacy: t(lang, "pixels.consent.privacy") }} />
+      )}
     </div>
   );
 }

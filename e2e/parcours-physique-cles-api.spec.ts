@@ -87,7 +87,7 @@ test("un point webhook s'ajoute (secret affiché une fois), refuse le http, se d
   await connecte(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/tableau-de-bord/api#webhooks", { waitUntil: "networkidle" });
-  const formulaire = page.locator("main form").last();
+  const formulaire = page.locator("main form", { has: page.locator("input[type=url]") });
 
   // L'API refuse le http : on l'appelle directement (le champ `type=url` du navigateur bloquerait avant).
   const refus = await page.request.post("/api/account/webhooks", { data: { url: "http://boutik.example/h" } });
@@ -109,4 +109,14 @@ test("un point webhook s'ajoute (secret affiché une fois), refuse le http, se d
   await ligne.getByRole("button").last().click();
   await expect(ligne.getByRole("button")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("les pixels du vendeur s'enregistrent ; un identifiant hors format est refusé", async ({ page }) => {
+  await connecte(page);
+  await page.goto("/tableau-de-bord/api#pixels", { waitUntil: "networkidle" });
+  expect((await page.request.put("/api/account/pixels", { data: { meta: "123;alert(1)" } })).status()).toBe(422);
+  expect((await page.request.put("/api/account/pixels", { data: { google: "UA-123-1" } })).status()).toBe(422);
+  const ok = await page.request.put("/api/account/pixels", { data: { meta: " 123456789012345 ", google: "g-ab12cd34ef", tiktok: "" } });
+  expect(ok.status()).toBe(200);
+  expect(await ok.json()).toMatchObject({ meta: "123456789012345", google: "G-AB12CD34EF", tiktok: null });
 });

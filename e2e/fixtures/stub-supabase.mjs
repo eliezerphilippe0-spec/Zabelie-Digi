@@ -154,6 +154,8 @@ const eq = (url, key) => {
   return v?.startsWith("eq.") ? decodeURIComponent(v.slice(3)) : null;
 };
 
+const PIXEL_SELLER = "99999999-9999-4999-8999-999999999991";
+const PIXEL_PRODUCT = "99999999-9999-4999-8999-999999999992";
 const webhookPoints = [];
 const sansSecret = (p) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== "secret"));
 const apiKeys = [];
@@ -454,6 +456,8 @@ const server = createServer((req, res) => {
     ] : [PRODUCT];
     if (BOUTIQUE_FIXTURE && (id === DIGITAL_ID || slug === "formation-studio-test")) return single([SHOP_PRODUCTS[1]]);
     if (id === DIGITAL_ID || slug === "formation-studio-test") return single([{ ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", kind: "fichier", product_assets: [{ id: ASSET_ID }], seller_id: SELLER_ID }]);
+    // Produit dédié aux pixels (0123) : son vendeur, et lui seul, a un pixel.
+    if (slug === "pixel-test" || id === PIXEL_PRODUCT) return single([{ ...PRODUCT, id: PIXEL_PRODUCT, slug: "pixel-test", title: "Produit pixel", seller_id: PIXEL_SELLER }]);
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
     if (slug) rows = rows.filter((row) => row.slug === slug);
     if (id) rows = rows.filter((row) => row.id === id);
@@ -501,6 +505,10 @@ const server = createServer((req, res) => {
         zabelie_vehicle_models: { kind: "auto", make: "Toyota", model: "Corolla" },
       },
     ]);
+  }
+  // Pixels vendeur (0123) : seul le vendeur du produit « pixel-test » en a.
+  if (url.pathname === "/rest/v1/zabelie_seller_pixels") {
+    return single(eq(url, "seller_id") === PIXEL_SELLER ? [{ meta_pixel_id: "123456789012345", google_tag_id: "G-AB12CD34EF", tiktok_pixel_id: null }] : []);
   }
   // Points webhook (0122) : même simulation ; le secret n'est jamais relu.
   if (url.pathname === "/rest/v1/zabelie_webhook_endpoints") {
