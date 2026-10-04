@@ -629,6 +629,7 @@ as $$
     ('zabelie_order_age_attestation_immutable','interdit la reecriture d''une attestation d''age (0115)'),
     ('zabelie_api_keys_garde','plafond et immuabilite des cles d''API (0121)'),
     ('zabelie_webhook_endpoints_garde','plafond et immuabilite des adresses webhook (0122)'),
-    ('zabelie_webhook_enfiler_vente','enfile les webhooks a chaque vente payee ou remboursee (0122)')
+    ('zabelie_webhook_enfiler_vente','enfile les webhooks a chaque vente payee ou remboursee (0122)'),
+    ('zabelie_group_leader_failed','propage l''echec de la meneuse a tout le panier (0128) : absent, les autres commandes restent pending et tiennent le stock')
   ) v(objet,pourquoi);
 $$;
