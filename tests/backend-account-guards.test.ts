@@ -62,7 +62,7 @@ test("checkout rejects suspended sellers and unavailable seller status before in
   }
 });
 
-function accountFixture(options: { count?: number | null; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
+function accountFixture(options: { count?: number | null; kyc?: number | null; kycError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
   const actions: string[] = [];
   let profile: Record<string, unknown> = {};
   let metadata: Record<string, unknown> = {};
@@ -80,6 +80,9 @@ function accountFixture(options: { count?: number | null; readError?: boolean; d
     if (step("range")) {
       const offset = step("range")![0] as number;
       return { data: offset === 0 && options.pages ? Array.from({ length: 500 }, (_, i) => ({ id: "order-" + i })) : [{ id: "last" }], error: null };
+    }
+    if (query.table === "zabelie_kyc_documents") {
+      return { count: options.kyc === undefined ? 0 : options.kyc, error: options.kycError ? { message: "offline" } : null };
     }
     return { count: options.count === undefined ? 1 : options.count, error: options.readError ? { message: "offline" } : null };
   });
@@ -127,8 +130,22 @@ test("account without orders is deleted; Auth failure never triggers arbitrary a
   }
 });
 
+test("a never-sold account WITH identity documents is anonymized, never deleted (no orphan KYC files)", async () => {
+  // 2026-10-04 : supprimer le profil effaçait les lignes KYC en cascade mais
+  // pas les fichiers du bucket privé. Les pièces restent suivies et la purge
+  // planifiée (5 ans, 0126) les retire ; 0127 l'impose aussi en base.
+  const f = accountFixture({ count: 0, kyc: 2 });
+  const response = await f.route.DELETE();
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).mode, "anonymized");
+  assert.ok(!f.actions.includes("delete-auth"), "un compte avec pièces d'identité ne doit jamais être supprimé");
+  assert.ok(f.actions.includes("close-profile"));
+  const sansPieces = accountFixture({ count: 0, kyc: 0 });
+  assert.equal((await (await sansPieces.route.DELETE()).json()).mode, "deleted", "témoin : sans pièces, la suppression reste complète");
+});
+
 test("account closure reports database and Auth failures instead of claiming success", async () => {
-  for (const options of [{ count: null }, { readError: true }, { profileError: true }, { authError: true }]) {
+  for (const options of [{ count: null }, { readError: true }, { kyc: null, count: 0 }, { kycError: true, count: 0 }, { profileError: true }, { authError: true }]) {
     const f = accountFixture(options);
     assert.equal((await f.route.DELETE()).status, 503);
     assert.ok(!f.actions.includes("sign-out"));
