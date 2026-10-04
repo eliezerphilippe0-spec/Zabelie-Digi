@@ -13,6 +13,8 @@
 --   G7. Expiration de la meneuse → tout le groupe annulé.
 --   G8. Une commande hors groupe se confirme exactement comme avant.
 --   G9. Abandon avant paiement : commandes annulées ; jamais sur un groupe confirmé.
+--   G10. La meneuse échoue (n'importe quel chemin) → tout le groupe tombe ;
+--        jamais sur un groupe confirmé.
 begin;
 
 insert into auth.users (id, email) values
@@ -95,6 +97,14 @@ end $$;
 -- G3 / G4 ──────────────────────────────────────────────────────────────────────
 select pg_temp.groupe('ok', 'moncash');
 select zabelie_group_seal((select id from g_ids where nom = 'ok'));
+-- Panier de l'acheteur : les deux articles du groupe, et un troisième qui doit rester.
+insert into products (id, seller_id, slug, title, kind, price_htg, status) values
+  ('00000000-0000-0000-0000-0000000f00a3', '00000000-0000-0000-0000-0000000f0002', 'gwoup-c', 'Gid C', 'fichier', 500, 'published');
+insert into zabelie_carts (id, buyer_id) values ('00000000-0000-0000-0000-0000000f00c1', '00000000-0000-0000-0000-0000000f0003');
+insert into zabelie_cart_items (cart_id, product_id) values
+  ('00000000-0000-0000-0000-0000000f00c1', '00000000-0000-0000-0000-0000000f00a1'),
+  ('00000000-0000-0000-0000-0000000f00c1', '00000000-0000-0000-0000-0000000f00a2'),
+  ('00000000-0000-0000-0000-0000000f00c1', '00000000-0000-0000-0000-0000000f00a3');
 do $$
 declare g uuid := (select id from g_ids where nom = 'ok');
         m text := (select id from g_ids where nom = 'ok:meneuse')::text;
@@ -117,7 +127,11 @@ begin
   if (select count(*) from wallets where owner_id in ('00000000-0000-0000-0000-0000000f0001', '00000000-0000-0000-0000-0000000f0002') and pending_htg > 0) <> 2 then
     raise exception 'G3 KO : chaque vendeur n''est pas crédité';
   end if;
-  raise notice 'G3 OK — un paiement, deux commandes payées, deux vendeurs crédités, grand livre intact';
+  if (select array_agg(product_id::text order by product_id) from zabelie_cart_items
+       where cart_id = '00000000-0000-0000-0000-0000000f00c1') is distinct from array['00000000-0000-0000-0000-0000000f00a3'] then
+    raise exception 'G3 KO : le panier garde les articles payés, ou a perdu l''autre';
+  end if;
+  raise notice 'G3 OK — un paiement, deux commandes payées, deux vendeurs crédités, grand livre intact, panier vidé des seuls articles payés';
 
   select count(*) into n from wallet_transactions t join orders o on o.id = t.order_id where o.group_id = g;
   update zabelie_order_groups set confirmed_at = '2026-01-01' where id = g;
@@ -208,6 +222,29 @@ begin
   if zabelie_group_abort((select id from g_ids where nom = 'ok')) <> 'deja_confirme' then raise exception 'G9 KO : groupe confirmé abandonné'; end if;
   if (select count(*) from orders where group_id = (select id from g_ids where nom = 'ok') and status = 'paid') <> 2 then raise exception 'G9 KO : groupe payé touché'; end if;
   raise notice 'G9 OK — abandon avant paiement ; jamais sur un groupe confirmé';
+end $$;
+
+-- G10 ──────────────────────────────────────────────────────────────────────────
+select pg_temp.groupe('echec', 'stripe', 1000, 3000);
+select zabelie_group_seal((select id from g_ids where nom = 'echec'));
+do $$
+declare g uuid := (select id from g_ids where nom = 'echec');
+        m uuid := (select id from g_ids where nom = 'echec:meneuse');
+        a uuid := (select id from g_ids where nom = 'echec:autre');
+        ok uuid := (select id from g_ids where nom = 'ok');
+begin
+  -- Le chemin le plus nu : un UPDATE direct, comme le ferait toute fonction d'échec.
+  update payments set status = 'failed' where order_id = m;
+  if (select status from payments where order_id = a) <> 'failed' then raise exception 'G10 KO : l''autre paiement reste %', (select status from payments where order_id = a); end if;
+  if (select status from orders where id = a) <> 'cancelled' then raise exception 'G10 KO : l''autre commande reste %', (select status from orders where id = a); end if;
+  if (select status from zabelie_order_groups where id = g) <> 'failed' then raise exception 'G10 KO : groupe'; end if;
+  -- Groupe confirmé : un échec tardif sur la meneuse ne défait rien.
+  update payments set status = 'failed' where order_id = (select id from g_ids where nom = 'ok:meneuse');
+  if (select count(*) from orders where group_id = ok and status = 'paid') <> 2
+     or (select status from zabelie_order_groups where id = ok) <> 'confirmed' then
+    raise exception 'G10 KO : un groupe confirmé a été défait';
+  end if;
+  raise notice 'G10 OK — la meneuse échoue, le groupe tombe ; jamais un groupe confirmé';
 end $$;
 
 rollback;

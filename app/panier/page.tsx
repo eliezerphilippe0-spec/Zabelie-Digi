@@ -10,6 +10,12 @@ import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { isProductKind, isDownloadable } from "@/lib/product-kind";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { CartPayAll, type OptionPanier } from "@/components/cart-pay-all";
+import { isStripeEnabled } from "@/lib/stripe";
+import { isKobaraEnabled } from "@/lib/kobara";
+import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
+import type { Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie" };
@@ -101,6 +107,18 @@ export default async function PanierPage() {
   ].filter((g) => g.lignes.length > 0);
   const montrerEntetes = groupes.length > 1;
 
+  /* PAIEMENT GROUPÉ (0128) — derrière le drapeau EN BASE, lu à chaque rendu.
+   * Fermé si la table est illisible (migration absente, incident) : le
+   * panier retombe alors exactement sur le paiement article par article. */
+  const config = items.length > 1 ? await lirePanierConfig() : null;
+  const payerTout =
+    config !== null &&
+    items.length <= config.max_articles &&
+    items.every((l) => (l.product?.price_htg ?? 0) > 0);
+  const optionsGroupe = payerTout
+    ? optionsPanier(lang, total, items.map((l) => l.product!.price_htg))
+    : [];
+
   return (
     <Coquille titre={t(lang, "cart.title")}>
       {error && (
@@ -182,11 +200,61 @@ export default async function PanierPage() {
               {formatHTG(total)}
             </span>
           </div>
-          <p className="mt-3 text-center text-xs text-mist">{t(lang, "cart.note")}</p>
+          {payerTout ? (
+            <>
+              <CartPayAll
+                options={optionsGroupe}
+                labels={{
+                  title: t(lang, "cart.pay.all.title"),
+                  note: t(lang, "cart.pay.all.note", { n: String(items.length) }),
+                  coupon: t(lang, "cart.pay.all.coupon"),
+                  loading: t(lang, "cart.pay.all.loading"),
+                  error: t(lang, "cart.pay.all.error"),
+                  age: t(lang, "cart.pay.all.age"),
+                }}
+              />
+              <p className="mt-3 text-center text-xs text-mist">{t(lang, "cart.note.group")}</p>
+            </>
+          ) : (
+            <p className="mt-3 text-center text-xs text-mist">{t(lang, "cart.note")}</p>
+          )}
         </>
       )}
     </Coquille>
   );
+}
+
+async function lirePanierConfig(): Promise<{ max_articles: number } | null> {
+  try {
+    const { data, error } = await createAdminClient()
+      .from("zabelie_panier_config")
+      .select("paiement_groupe, max_articles")
+      .maybeSingle();
+    if (error || !data || data.paiement_groupe !== true) return null;
+    return { max_articles: data.max_articles };
+  } catch {
+    return null;
+  }
+}
+
+/** Les rails du paiement groupé, dans l'ordre de la fiche produit. Zelle n'y
+ *  est pas : semi-manuel, il ne sait pas confirmer un groupe (bientôt). */
+function optionsPanier(lang: Lang, total: number, prix: number[]): OptionPanier[] {
+  const price = formatHTG(total);
+  const options: OptionPanier[] = [{ rail: "moncash", label: t(lang, "product.pay", { price }) }];
+  if (isKobaraEnabled()) {
+    options.push({ rail: "kobara", kobaraProvider: "natcash", label: t(lang, "product.pay.natcash", { price }) });
+    if (process.env.KOBARA_MONCASH?.trim() === "true") {
+      options.push({ rail: "kobara", kobaraProvider: "moncash", label: t(lang, "product.pay.kobara.moncash", { price }) });
+    }
+  }
+  const rate = Number(process.env.USD_HTG_RATE);
+  if (isStripeEnabled() && Number.isFinite(rate) && rate > 0) {
+    // La somme des montants USD PAR ARTICLE : c'est ce que le serveur scelle.
+    const usd = formatUsd(prix.reduce((n, p) => n + usdCentsFromHtg(p, rate), 0));
+    options.push({ rail: "stripe", label: t(lang, "product.pay.stripe", { usd }) });
+  }
+  return options;
 }
 
 function Coquille({ titre, children }: { titre: string; children: React.ReactNode }) {

@@ -52,6 +52,7 @@ test("checkout rejects suspended sellers and unavailable seller status before in
         return id === "seller" ? Response.json({ error: "unavailable" }, { status }) : null;
       } },
       "@/lib/zabelie-rate-limit": { rateLimit: async () => true },
+      "@/lib/panier-groupe-contexte": { contexteGroupe: () => null },
     });
     const response = await route.POST(new Request("https://example.test/api/checkout", {
       method: "POST", body: JSON.stringify({ productId: "product" }),
