@@ -47,7 +47,7 @@ export function CartPayAll({
       "/panier",
     );
     if (issue.etat === "connexion") {
-      window.location.href = issue.vers;
+      window.location.assign(issue.vers);
       return;
     }
     if (issue.etat !== "ok" || !issue.data.redirectUrl) {
@@ -57,7 +57,7 @@ export function CartPayAll({
       return;
     }
     // Vers l'opérateur. Le retour est vérifié serveur-à-serveur (invariant b).
-    window.location.href = issue.data.redirectUrl;
+    window.location.assign(issue.data.redirectUrl);
   }
 
   return (
