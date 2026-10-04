@@ -59,6 +59,11 @@ const VENDEUR =
 type Classement = { colonne: string } | { horsSujet: string };
 
 const CLASSEMENT: Record<string, Classement> = {
+  // « Réservé aux vendeurs dont l'identité est vérifiée » : la condition est
+  // `zabelie_kyc_submissions.status = 'approved'` (0079), exigée par
+  // `zabelie_domaine_demander` et recontrôlée à chaque visite par
+  // `zabelie_domaine_boutik` (0125, tests SQL D2 et D3).
+  "domain.intro": { colonne: "status" },
   "digital.check": { horsSujet: "Conseil à l’acheteur : vérifier format, compatibilité et licence. Ne qualifie pas le vendeur de vérifié." },
   "guides.diaspora.prepare.body": { horsSujet: "Le destinataire et l’acheteur vérifient les coordonnées ; les modalités sont à convenir avec le vendeur. Aucun badge ni contrôle vendeur promis." },
   "guides.digital.check.body": { horsSujet: "L’acheteur vérifie les caractéristiques déclarées et demande un aperçu. Il ne s’agit pas d’une certification de ces caractéristiques par Zabelie." },

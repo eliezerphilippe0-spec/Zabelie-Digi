@@ -1,5 +1,9 @@
 # OPS_TODO — Zabelie
 
+## Domaine personnalisé des boutiques — 4 octobre 2026
+
+Demande porteur (« Passe au nom de domaine personnalisé »). Arbitrages du même jour : **branchement manuel** (aucun jeton Vercel) et **réservé aux vendeurs vérifiés** (KYC approuvé). Migration `0125`. Le vendeur demande son domaine dans `/tableau-de-bord/api#domaine` et reçoit ses réglages DNS (A `@` → `76.76.21.21`, CNAME `www` → `cname.vercel-dns.com`). **Geste porteur/admin par demande** : Vercel → projet → Settings → Domains → ajouter le domaine ET `www.` ; puis `/admin/domaines` → « Vérifier et activer » (le site contrôle que le domaine atteint bien Zabelie avant d'activer). Seule la racine du domaine sert la boutique ; tout autre chemin repart vers zabelie.com (compte, paiement, escrow). Un vendeur suspendu ou dont la vérification est retirée perd son domaine immédiatement. ⚠️ À vérifier par le porteur : le nombre de domaines admis par projet sur votre plan Vercel, et l'usage commercial sur le plan Hobby (conditions Vercel).
+
 ## Relances de paiement abandonné — 4 octobre 2026
 
 Demande porteur (« Vas-y », après la comparaison avec Maketou ; commission inchangée à 10 %). Migration `0124` + cron quotidien `/api/relances` (15:30 UTC) : **un seul e-mail** par acheteur et par produit quand un paiement RÉEL n'aboutit pas, entre 2 h et 50 h après, dans la langue de l'achat (4 langues), avec désabonnement en un clic (lien + `List-Unsubscribe`, RFC 8058). Aucune relance sur un paiement d'essai : **rien ne partira tant que MonCash n'est pas en production.** Mesuré le 2026-10-04 : 14 commandes abandonnées (3 acheteurs), toutes d'essai — le chemin existe. Reste au porteur, dans Vercel (jamais dans le chat) : **`RESEND_API_KEY`** et **`EMAIL_FROM`** sur un domaine vérifié chez Resend (sans `EMAIL_FROM`, Resend ne livre qu'au titulaire du compte — voir plus bas). Sans clé, le cron journalise `email_non_configure` et ne consomme AUCUNE relance.

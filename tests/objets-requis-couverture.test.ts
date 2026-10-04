@@ -92,7 +92,10 @@ function nomsAppelesParLeCode(): Map<string, string[]> {
   const vus = new Map<string, string[]>();
   for (const f of ["app", "lib", "components"].flatMap(fichiers)) {
     const src = readFileSync(f, "utf8");
-    for (const m of src.matchAll(/\.rpc\(\s*["'`]([a-z0-9_]+)["'`]/g)) {
+    // `.rpc("nom")` ET l'appel REST nu `/rest/v1/rpc/nom` (le proxy Edge de
+    // 0125 n'importe aucun client Supabase) : deux façons d'adresser une RPC
+    // par CHAÎNE, que tsc ne voit ni l'une ni l'autre.
+    for (const m of src.matchAll(/(?:\.rpc\(\s*["'`]|\/rest\/v1\/rpc\/)([a-z0-9_]+)/g)) {
       const liste = vus.get(m[1]) ?? [];
       liste.push(f);
       vus.set(m[1], liste);
