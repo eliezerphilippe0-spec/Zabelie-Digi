@@ -62,10 +62,11 @@ test("checkout rejects suspended sellers and unavailable seller status before in
   }
 });
 
-function accountFixture(options: { count?: number | null; kyc?: number | null; kycError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
+function accountFixture(options: { count?: number | null; kyc?: number | null; kycError?: boolean; kycCloseError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
   const actions: string[] = [];
   let profile: Record<string, unknown> = {};
   let metadata: Record<string, unknown> = {};
+  const kycClosures: { patch: Record<string, unknown>; filters: unknown[][] }[] = [];
   const db = database(query => {
     const step = (name: string) => query.steps.find(([s]) => s === name)?.[1];
     if (query.table === "profiles") {
@@ -80,6 +81,11 @@ function accountFixture(options: { count?: number | null; kyc?: number | null; k
     if (step("range")) {
       const offset = step("range")![0] as number;
       return { data: offset === 0 && options.pages ? Array.from({ length: 500 }, (_, i) => ({ id: "order-" + i })) : [{ id: "last" }], error: null };
+    }
+    if (query.table === "zabelie_kyc_submissions" && step("update")) {
+      actions.push("close-kyc");
+      kycClosures.push({ patch: step("update")![0] as Record<string, unknown>, filters: query.steps.filter(([m]) => m === "eq").map(([, a]) => a as unknown[]) });
+      return { error: options.kycCloseError ? { message: "offline" } : null };
     }
     if (query.table === "zabelie_kyc_documents") {
       return { count: options.kyc === undefined ? 0 : options.kyc, error: options.kycError ? { message: "offline" } : null };
@@ -99,7 +105,7 @@ function accountFixture(options: { count?: number | null; kyc?: number | null; k
       },
     } } }) },
   });
-  return { route, actions, db, profile: () => profile, metadata: () => metadata };
+  return { route, actions, db, profile: () => profile, metadata: () => metadata, kycClosures };
 }
 
 test("account closure clears storefront location, identity, metadata and all recipient pages", async () => {
@@ -142,6 +148,23 @@ test("a never-sold account WITH identity documents is anonymized, never deleted 
   assert.ok(f.actions.includes("close-profile"));
   const sansPieces = accountFixture({ count: 0, kyc: 0 });
   assert.equal((await (await sansPieces.route.DELETE()).json()).mode, "deleted", "témoin : sans pièces, la suppression reste complète");
+});
+
+test("closing an account closes a PENDING identity dossier, so the 5-year purge clock starts", async () => {
+  // Sans décision, `zabelie_kyc_docs_expires` ne voit jamais le dossier :
+  // les pièces resteraient pour toujours.
+  const f = accountFixture({ count: 0, kyc: 1 });
+  assert.equal((await f.route.DELETE()).status, 200);
+  assert.equal(f.kycClosures.length, 1);
+  const { patch, filters } = f.kycClosures[0];
+  assert.equal(patch.status, "rejected");
+  assert.ok(typeof patch.decided_at === "string" && !Number.isNaN(Date.parse(patch.decided_at as string)), "decided_at lance le délai");
+  assert.equal(patch.note_admin, "Compte fermé avant décision");
+  assert.deepEqual(filters, [["user_id", "user"], ["status", "pending"]], "seul un dossier EN ATTENTE de CE compte est clos");
+  assert.ok(f.actions.indexOf("close-kyc") > f.actions.indexOf("close-profile"));
+  const echec = accountFixture({ count: 0, kyc: 1, kycCloseError: true });
+  assert.equal((await echec.route.DELETE()).status, 503, "un échec de clôture du dossier n'est jamais annoncé comme un succès");
+  assert.ok(!echec.actions.includes("sign-out"));
 });
 
 test("account closure reports database and Auth failures instead of claiming success", async () => {

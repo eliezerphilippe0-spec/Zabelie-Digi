@@ -35,4 +35,35 @@ begin
   raise notice 'R2 OK — sans pièces (ou après purge), la suppression passe';
 end $$;
 
+-- R3. Fermeture d'un compte avec un dossier EN ATTENTE : la clôture faite
+--     par `DELETE /api/account` respecte la contrainte du dossier, et la
+--     purge voit les pièces une fois le délai écoulé — jamais avant.
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000e0003', 'kyc-r3@test.local');
+insert into profiles (id, display_name) values ('00000000-0000-0000-0000-0000000e0003', 'KYC') on conflict (id) do nothing;
+insert into zabelie_kyc_submissions (user_id) values ('00000000-0000-0000-0000-0000000e0003');
+insert into zabelie_kyc_documents (user_id, kind, storage_path) values
+  ('00000000-0000-0000-0000-0000000e0003', 'cin', 'test/kyc-r3-cin.jpg');
+
+do $$
+declare u uuid := '00000000-0000-0000-0000-0000000e0003';
+begin
+  if exists (select 1 from zabelie_kyc_docs_expires() where storage_path = 'test/kyc-r3-cin.jpg') then
+    raise exception 'R3 KO : un dossier en attente est déjà purgeable';
+  end if;
+  -- Même écriture que la route.
+  update zabelie_kyc_submissions
+     set status = 'rejected', decided_at = now(), decided_by = null, note_admin = 'Compte fermé avant décision'
+   where user_id = u and status = 'pending';
+  if exists (select 1 from zabelie_kyc_docs_expires() where storage_path = 'test/kyc-r3-cin.jpg') then
+    raise exception 'R3 KO : purgeable dès la fermeture, avant le délai';
+  end if;
+  update zabelie_kyc_submissions
+     set decided_at = now() - make_interval(days => (select retention_jours from zabelie_kyc_config) + 1)
+   where user_id = u;
+  if not exists (select 1 from zabelie_kyc_docs_expires() where storage_path = 'test/kyc-r3-cin.jpg') then
+    raise exception 'R3 KO : le délai écoulé, la purge ne voit pas les pièces';
+  end if;
+  raise notice 'R3 OK — dossier en attente clos à la fermeture : purgé au terme, pas avant';
+end $$;
+
 rollback;
