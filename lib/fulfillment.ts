@@ -40,6 +40,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { autresCommandesDuGroupe } from "./panier-groupe";
 
 /** Ce que l'appel a produit — la valeur sert au journal, pas au flux. */
 /**
@@ -195,6 +196,19 @@ function journal(champs: Record<string, unknown>) {
 }
 
 export async function ouvrirSuiviLivraison(
+  admin: SupabaseClient,
+  orderId: string,
+  site: string
+): Promise<IssueSuivi> {
+  const issue = await ouvrirUnSuivi(admin, orderId, site);
+  // Panier groupé (0128) : la meneuse ouvre aussi le suivi des autres commandes.
+  for (const autre of await autresCommandesDuGroupe(admin, orderId)) {
+    await ouvrirUnSuivi(admin, autre, `${site}/groupe`);
+  }
+  return issue;
+}
+
+async function ouvrirUnSuivi(
   admin: SupabaseClient,
   orderId: string,
   site: string

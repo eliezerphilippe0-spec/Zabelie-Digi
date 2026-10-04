@@ -45,6 +45,7 @@ import { offreFlashActive, flashEpuisee } from "@/lib/flash";
 import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 import { normaliserNumeroHaiti } from "@/lib/rechaj";
 import { attestationAgeValide, lireAgeMinimum } from "@/lib/age-minimum";
+import { contexteGroupe } from "@/lib/panier-groupe-contexte";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -126,9 +127,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 400 });
   }
 
-  const rail: Rail = (RAILS as readonly string[]).includes(String(railInput ?? "moncash"))
-    ? ((railInput ?? "moncash") as Rail)
-    : "moncash";
+  /* PANIER GROUPÉ (0128) : la route du panier appelle ce checkout article par
+   * article. Le contexte n'existe QUE pour une requête construite par elle
+   * (`lib/panier-groupe-contexte.ts`) ; le rail et l'opérateur viennent alors
+   * du contexte, pas du corps. */
+  const groupe = contexteGroupe(req);
+  const rail: Rail = groupe
+    ? groupe.rail
+    : (RAILS as readonly string[]).includes(String(railInput ?? "moncash"))
+      ? ((railInput ?? "moncash") as Rail)
+      : "moncash";
   if (!railEnabled(rail)) {
     return NextResponse.json(
       { error: t(lang, "api.rail.unavailable") },
@@ -149,8 +157,8 @@ export async function POST(req: Request) {
    * et sans frais de passerelle (`docs/03` §9.1). Router MonCash par Kobara
    * reste possible — le porteur l'a demandé explicitement — mais ce n'est pas
    * ce qui arrive quand personne ne choisit. */
-  let kobaraProvider: KobaraProvider = "natcash";
-  if (rail === "kobara") {
+  let kobaraProvider: KobaraProvider = groupe?.kobaraProvider ?? "natcash";
+  if (rail === "kobara" && !groupe) {
     if (providerInput !== undefined && !isKobaraProvider(providerInput)) {
       return NextResponse.json(
         { error: t(lang, "api.rail.unavailable"), code: "kobara_provider_invalide" },
@@ -178,7 +186,9 @@ export async function POST(req: Request) {
 
   // Débit borné AVANT tout effet (consommation coupon, session MonCash/Stripe
   // payante) : 10 checkouts/min par compte suffisent largement à un humain.
-  if (!(await rateLimit(admin, `checkout:${user.id}`, 10))) {
+  // En groupe, le débit est borné UNE fois par la route du panier : dix
+  // articles ne sont pas dix tentatives.
+  if (!groupe && !(await rateLimit(admin, `checkout:${user.id}`, 10))) {
     return NextResponse.json(
       { error: t(lang, "api.rate.limited") },
       { status: 429 }
@@ -318,6 +328,14 @@ export async function POST(req: Request) {
    * d'implémentation — et le découvrir après avoir reçu la commande serait le
    * découvrir trop tard. */
   const estGratuit = product.price_htg === 0;
+  // Un article gratuit ne s'encaisse pas : il n'a rien à faire dans un
+  // paiement groupé (et `zabelie_group_seal` refuse un montant nul).
+  if (groupe && estGratuit) {
+    return NextResponse.json(
+      { error: t(lang, "cart.group.free"), code: "groupe_gratuit" },
+      { status: 422 }
+    );
+  }
   if (estGratuit && !isDigitalKind(product.kind)) {
     return NextResponse.json(
       {
@@ -491,6 +509,8 @@ export async function POST(req: Request) {
     .insert({
       buyer_id: user.id,
       product_id: product.id,
+      // Panier groupé (0128) : rattachée au groupe, seulement par le contexte serveur.
+      ...(groupe ? { group_id: groupe.groupId } : {}),
       ...offerAttribution(offerInput),
       ...recommendationAttribution(recommendationInput),
       ...(source ? { zabelie_sale_source: source } : {}),
@@ -600,10 +620,14 @@ export async function POST(req: Request) {
    * obtient `moncash`, et un client qui réclamerait `moncash` sur un produit à
    * 0 obtient `gratis`. Dans les deux sens, c'est le prix qui commande. */
   const railEffectif = order.amount_htg === 0 ? RAIL_GRATIS : rail;
+  /* En groupe, seule la meneuse porte le vrai rail : c'est sur SA clé que
+   * l'opérateur encaisse le total. Les autres sont en rail `groupe`, qu'aucun
+   * réconciliateur ne réclame — elles se confirment par la meneuse (0128). */
+  const railPaiement = groupe && !groupe.meneuse ? "groupe" : railEffectif;
 
   const { error: payErr } = await admin.from("payments").insert({
     order_id: order.id,
-    rail: railEffectif,
+    rail: railPaiement,
     idempotency_key: order.id,
     status: "pending",
     expected_usd_cents: expectedUsdCents,
@@ -687,6 +711,13 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
+  }
+
+  /* PANIER GROUPÉ : la commande et son paiement existent, le stock est pris.
+   * L'opérateur sera appelé UNE fois, par la route du panier, pour le total
+   * scellé en base. Rien d'autre ici. */
+  if (groupe) {
+    return NextResponse.json({ orderId: order.id, amountHtg: order.amount_htg });
   }
 
   /* ── ACQUISITION GRATUITE (0087) ──────────────────────────────────────────

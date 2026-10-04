@@ -19,7 +19,7 @@ export function loadRoute(file: string, overrides: Record<string, unknown>) {
   const routeModule = { exports: {} };
   vm.runInNewContext(code, {
     module: routeModule, exports: routeModule.exports, console, process: { env: {} },
-    URL, Response, AbortController, setTimeout, clearTimeout,
+    URL, Request, Headers, Response, AbortController, setTimeout, clearTimeout,
     require(name: string) {
       if (name in stubs) return stubs[name];
       throw new Error("Unexpected dependency " + name);

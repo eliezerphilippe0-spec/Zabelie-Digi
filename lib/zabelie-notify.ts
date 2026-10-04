@@ -18,12 +18,24 @@ import {
   sellerSaleEmail,
 } from "./zabelie-email";
 import { siteUrl } from "./site-url";
+import { autresCommandesDuGroupe } from "./panier-groupe";
 
 function formatHtg(n: number): string {
   return `${new Intl.NumberFormat("fr-HT").format(n)} HTG`;
 }
 
 export async function notifyOrderPaid(
+  admin: SupabaseClient,
+  orderId: string
+): Promise<void> {
+  await notifierUneCommande(admin, orderId);
+  // Panier groupé (0128) : chaque vendeur du groupe reçoit SON avis de vente.
+  for (const autre of await autresCommandesDuGroupe(admin, orderId)) {
+    await notifierUneCommande(admin, autre);
+  }
+}
+
+async function notifierUneCommande(
   admin: SupabaseClient,
   orderId: string
 ): Promise<void> {
