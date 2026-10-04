@@ -5,6 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { contentSecurityPolicy } from "@/lib/content-security-policy";
 import { configPublique } from "@/lib/supabase/config";
+import { cheminSurDomaine, estHoteZabelie, hoteDe, resoudreDomaine } from "@/lib/domaines";
+import { siteUrl } from "@/lib/site-url";
 
 // Next 16 : convention « proxy » (ex-« middleware »). Rafraîchit la session
 // Supabase à chaque requête. Comportement inchangé — simple renommage du point
@@ -12,7 +14,33 @@ import { configPublique } from "@/lib/supabase/config";
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   let backendUrl: string | undefined;
-  try { backendUrl = configPublique().url; } catch { /* Public demo has no backend. */ }
+  let config: { url: string; key: string } | null = null;
+  try { config = configPublique(); backendUrl = config.url; } catch { /* Public demo has no backend. */ }
+
+  /* DOMAINE D'UN VENDEUR (0125). Sa racine sert la boutique ; TOUT autre
+     chemin repart vers zabelie.com, où vivent la session, le paiement et
+     l'escrow. Aucune session n'est rafraîchie ici : ce domaine ne porte
+     jamais les cookies de Zabelie. */
+  const hote = hoteDe(request.headers.get("host"));
+  if (!estHoteZabelie(hote)) {
+    if (cheminSurDomaine(request.nextUrl.pathname) === "zabelie") {
+      const renvoi = NextResponse.redirect(new URL(request.nextUrl.pathname + request.nextUrl.search, siteUrl()), 308);
+      // Signature lue par l'activation admin : prouve que le domaine atteint
+      // CE proxy, et pas une simple redirection posée chez le registraire.
+      renvoi.headers.set("x-zabelie-domaine", hote);
+      return renvoi;
+    }
+    const slug = await resoudreDomaine(hote, config);
+    const policyBoutique = contentSecurityPolicy(nonce, process.env.NODE_ENV !== "production", backendUrl, { publicite: Boolean(slug) });
+    request.headers.set("x-zabelie-nonce", nonce);
+    request.headers.set("Content-Security-Policy", policyBoutique);
+    // Inconnu, inactif ou vendeur plus éligible : un vrai 404, décidé AVANT tout rendu.
+    const boutique = slug
+      ? NextResponse.rewrite(new URL(`/boutik/${slug}`, request.url), { request: { headers: request.headers } })
+      : NextResponse.rewrite(new URL("/404", request.url), { status: 404, request: { headers: request.headers } });
+    boutique.headers.set("Content-Security-Policy", policyBoutique);
+    return boutique;
+  }
   // Domaines des régies publicitaires : seulement sur les pages qui peuvent porter le pixel d'un vendeur.
   const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV !== "production", backendUrl, { publicite: cheminPublicitaire(request.nextUrl.pathname) });
   request.headers.set("x-zabelie-nonce", nonce);

@@ -282,6 +282,11 @@ const server = createServer((req, res) => {
   const sellerPreparation = token.includes("vendeur-preparation");
 
   if (url.pathname === "/__gift-writes") return send(200, giftWrites);
+  // Domaine vendeur (0125) : un seul domaine actif connu du stub.
+  if (url.pathname === "/rest/v1/rpc/zabelie_domaine_boutik") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => send(200, JSON.parse(body || "{}").p_hote === "boutik-mari.ht" ? "atelye-lakay" : null));
+  }
   if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") {
     if (!BOUTIQUE_FIXTURE) return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
     let body = ""; req.on("data", c => body += c);

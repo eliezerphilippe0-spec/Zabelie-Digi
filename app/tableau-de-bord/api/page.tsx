@@ -6,6 +6,7 @@ import { ApiKeysManager, type CleAffichee } from "@/components/api-keys-manager"
 import { WebhooksManager, type EnvoiAffiche, type PointAffiche } from "@/components/webhooks-manager";
 import { MAX_POINTS_ACTIFS } from "@/lib/webhooks";
 import { PixelsForm } from "@/components/pixels-form";
+import { DomainForm, type DomaineAffiche } from "@/components/domain-form";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_CLES_ACTIVES } from "@/lib/api-keys";
@@ -41,6 +42,10 @@ export default async function ApiPage() {
   if (e1 || e2) throw new Error("webhooks_unavailable");
   const { data: px, error: e3 } = await supabase.from("zabelie_seller_pixels").select("meta_pixel_id, google_tag_id, tiktok_pixel_id").maybeSingle();
   if (e3) throw new Error("pixels_unavailable");
+  // Domaine personnalisé (0125) : lecture par la SESSION, RLS = sa ligne seulement.
+  const { data: dom, error: e4 } = await supabase.from("zabelie_seller_domains").select("domaine, statut, note_admin").maybeSingle();
+  if (e4) throw new Error("domain_unavailable");
+  const domaine: DomaineAffiche = dom ? { domaine: dom.domaine, statut: dom.statut, note: dom.note_admin } : null;
   const points: PointAffiche[] = (pts ?? []).map((p) => ({ id: p.id, url: p.url, events: p.events, createdAt: p.created_at, disabledAt: p.disabled_at, disabledReason: p.disabled_reason }));
   const envois: EnvoiAffiche[] = (env ?? []).map((d) => ({ id: d.id, eventType: d.event_type, status: d.status, attempts: d.attempts, lastStatus: d.last_status, createdAt: d.created_at }));
   const cles: CleAffichee[] = (data ?? []).map((k) => ({
@@ -103,6 +108,19 @@ export default async function ApiPage() {
             meta: t(lang, "pixels.meta"), google: t(lang, "pixels.google"), tiktok: t(lang, "pixels.tiktok"),
             metaHint: t(lang, "pixels.metaHint"), googleHint: t(lang, "pixels.googleHint"), tiktokHint: t(lang, "pixels.tiktokHint"),
             save: t(lang, "pixels.save"), saving: t(lang, "pixels.saving"), saved: t(lang, "pixels.saved"), error: t(lang, "error.generic"),
+          }}
+        />
+        <h2 id="domaine" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "domain.title")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "domain.intro")}</p>
+        <Link href="/tableau-de-bord#profil-public" className="mt-1 inline-block text-sm text-mist underline">{t(lang, "domain.kyc")}</Link>
+        <DomainForm
+          initial={domaine}
+          labels={{
+            label: t(lang, "domain.label"), save: t(lang, "domain.save"), saving: t(lang, "domain.saving"),
+            remove: t(lang, "domain.remove"), confirmRemove: t(lang, "domain.confirmRemove"),
+            pending: t(lang, "domain.pending"), active: t(lang, "domain.active"), refused: t(lang, "domain.refused"),
+            dnsTitle: t(lang, "domain.dnsTitle"), dnsType: t(lang, "domain.dnsType"), dnsName: t(lang, "domain.dnsName"),
+            dnsValue: t(lang, "domain.dnsValue"), dnsHelp: t(lang, "domain.dnsHelp"), error: t(lang, "error.generic"),
           }}
         />
       </main>
