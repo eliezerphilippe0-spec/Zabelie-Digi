@@ -1,5 +1,9 @@
 # OPS_TODO — Zabelie
 
+## Fichiers d'identité orphelins corrigés — 4 octobre 2026
+
+✅ **`0127` APPLIQUÉE le 2026-10-04 à 21:54:08Z** (version `20261004215408`), instruction « Corrige les fichiers orphelins » + autorisation permanente du 2026-08-17. SQL reçu identique au fichier (sha256 brut `dc4ab75f…` des deux côtés), empreinte canonique `1c079e53…`, inscrite au registre (`journal_supabase`). Constaté : `zabelie_kyc_documents_user_id_fkey` en RESTRICT, 0 pièce stockée. PR #315 fusionnée : un compte qui a des pièces d'identité est anonymisé, jamais supprimé ; la politique §7 l'annonce. En ligne : 52 contrôles sur 52. Limite connue : un dossier KYC encore en attente au moment de la fermeture n'est purgé qu'après une décision admin.
+
 ## Pièces d'identité 5 ans, région d'hébergement — 4 octobre 2026
 
 ✅ **`0126` APPLIQUÉE le 2026-10-04 à 20:55:38Z** (version `20261004205538`), décision porteur « 5 ans » + autorisation permanente du 2026-08-17. SQL reçu identique au fichier (sha256 brut `686567c6…` des deux côtés), empreinte canonique `c128cbfe…`, inscrite au registre (`journal_supabase`). Constaté : `retention_jours = 1825`, 0 pièce stockée. PR #313 fusionnée. Champ vide restant dans la politique de confidentialité : **l'entité juridique** (porteur). Écart et défaut consignés dans `docs/67` §4.1 (purge depuis la décision ; fichiers KYC orphelins à la suppression d'un compte sans vente).
