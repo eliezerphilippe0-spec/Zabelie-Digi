@@ -451,6 +451,12 @@ const server = createServer((req, res) => {
     return single(rows);
   }
 
+  // Compte des rayons peuplés (menu, `/categories`) : une offre publiée dans
+  // « Écharpes » (s2), aucune dans « Robes » (s1). Seule la requête du menu
+  // (select=category_id, sans filtre de département) est servie ici.
+  if (url.pathname === "/rest/v1/products" && url.searchParams.get("select") === "category_id" && !url.searchParams.has("category")) {
+    return single([{ category_id: "s2" }]);
+  }
   if (url.pathname.startsWith("/rest/v1/products")) {
     const slug = eq(url, "slug");
     const id = eq(url, "id");

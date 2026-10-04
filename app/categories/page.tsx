@@ -2,25 +2,29 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { DepartmentIcon } from "@/components/department-icons";
-import { getMenuRayons } from "@/lib/taxonomy";
+import { getMenuRayons, rayonsPeuples } from "@/lib/taxonomy";
 import { filterCategoryDirectory } from "@/lib/category-directory";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const [lang, { q }] = await Promise.all([getLang(), searchParams]);
+  // Sans aucun rayon peuplé, la page n'a rien à indexer.
+  const vide = rayonsPeuples(await getMenuRayons(lang)).length === 0;
   return {
     title: `${t(lang, "directory.title")} — Zabelie`,
     description: t(lang, "directory.intro"),
     alternates: { canonical: "/categories" },
-    robots: typeof q === "string" && q.trim() ? { index: false, follow: true } : undefined,
+    robots: vide || (typeof q === "string" && q.trim()) ? { index: false, follow: true } : undefined,
   };
 }
 
 export default async function CategoriesPage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const [lang, { q: rawQuery }] = await Promise.all([getLang(), searchParams]);
   const q = typeof rawQuery === "string" ? rawQuery.slice(0, 120) : "";
-  const all = await getMenuRayons(lang);
+  // Les rayons vides ne sont jamais affichés (décision porteur 2026-10-04).
+  const brut = await getMenuRayons(lang);
+  const all = rayonsPeuples(brut);
   const rows = filterCategoryDirectory(all, q);
   return <div className="bg-grain min-h-dvh">
     <SiteNav activeHref="/categories" />
@@ -42,7 +46,6 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             <DepartmentIcon slug={department.slug} className="mt-1 h-6 w-6 flex-none stroke-current text-cloud" />
             <div>
               <h2 id={`department-${department.slug}`} className="text-lg font-bold"><Link href={department.href} className="inline-flex min-h-11 items-center hover:underline">{department.label}</Link></h2>
-              <p className="text-xs text-mist">{t(lang, department.vide ? "directory.empty" : "directory.offers")}</p>
             </div>
           </div>
           <ul className="mt-4 divide-y divide-line">
@@ -59,7 +62,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             </li>)}
           </ul>
         </section>)}
-      </div> : <p className="mt-8 rounded-2xl border border-line p-6 text-mist">{t(lang, all.length ? "directory.noMatch" : "directory.unavailable")}</p>}
+      </div> : <p className="mt-8 rounded-2xl border border-line p-6 text-mist">{t(lang, all.length ? "directory.noMatch" : brut.length ? "directory.none" : "directory.unavailable")}</p>}
     </main>
     <SiteFooter />
   </div>;
