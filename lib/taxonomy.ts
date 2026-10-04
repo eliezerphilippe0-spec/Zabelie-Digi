@@ -217,6 +217,10 @@ export type RayonMenu = {
 /**
  * Construction du menu, PURE et exportée pour être éprouvée sans base.
  *
+ * ⚠️ REMPLACÉE le 2026-10-04 : plus aucun rayon vide n'est affiché — voir
+ * `rayonsPeuples` ci-dessous. Le menu continue de MARQUER les vides ; c'est
+ * l'affichage qui les retire. Décision d'origine, pour mémoire :
+ *
  * DÉCISION PORTEUR (2026-08-02) : on affiche TOUS les rayons actifs, y compris
  * ceux sans produit, mais on les MARQUE. C'est un compromis assumé avec V-13
  * (« aucun rayon désert ») : V-13 interdisait d'afficher une rangée vide sur
@@ -282,6 +286,22 @@ export function construireMenu(
  * cache profilé sur un client à cookies est un piège classique.
  */
 export const getMenuRayons = cache(getMenuRayonsNonMemoise);
+
+/**
+ * LES RAYONS QU'ON MONTRE — décision porteur du 2026-10-04 (« masque les
+ * rayons vides »), qui REMPLACE celle du 2026-08-02 (« afficher tous les
+ * rayons actifs, marqués vides »). Mesuré ce jour-là : 83 rayons actifs,
+ * 0 avec une offre, et `/categories` affichait 36 fois « aucune offre
+ * publiée ».
+ *
+ * Récursif : un rayon vide disparaît avec toute sa descendance (vide par
+ * définition, `construireMenu` remontant les comptes), et un rayon peuplé
+ * perd ses sous-rayons vides. Le menu brut garde son drapeau `vide` : c'est
+ * l'information, l'affichage décide ici.
+ */
+export function rayonsPeuples(menu: RayonMenu[]): RayonMenu[] {
+  return menu.filter((r) => !r.vide).map((r) => ({ ...r, enfants: rayonsPeuples(r.enfants) }));
+}
 
 
 /**
