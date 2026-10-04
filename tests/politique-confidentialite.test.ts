@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { LANGS, type Lang } from "../lib/i18n";
 import {
   POLITIQUE,
@@ -133,17 +133,21 @@ test("les blancs sont COMPTÉS — leur nombre ne peut pas grossir en silence", 
    * défaut technique de 90 jours, mais une obligation de vigilance
    * anti-blanchiment peut imposer une durée MINIMALE de conservation, donc
    * plus longue, pas plus courte. Recopier le 90 d'aujourd'hui dans la
-   * politique publierait un engagement qu'un conseil peut inverser. */
+   * politique publierait un engagement qu'un conseil peut inverser.
+   *
+   * ✅ 2026-10-04 : tranché par le porteur — 5 ans (loi haïtienne du
+   * 11/11/2013), réglé en base par `0126`. `hebergement` est rempli par la
+   * région MESURÉE. Les deux quittent `IDENTITE` ; reste `entite`. */
   const vides = champsManquants();
   assert.deepEqual(
     vides.sort(),
-    ["entite", "hebergement", "retentionKyc"],
+    ["entite"],
     `Les faits non renseignés de la politique ont changé : ${vides.join(", ")}. ` +
       `Mettre ce test à jour EN MÊME TEMPS que lib/policy-privacy.ts.`,
   );
   assert.equal(
     Object.keys(IDENTITE).length,
-    4,
+    2,
     "Le nombre de faits attendus par la politique a changé.",
   );
 });
@@ -208,4 +212,31 @@ test("le pied de page ne porte plus de libellé légal en dur", () => {
     />\s*(Légal|Confidentialité)\s*</,
     "« Légal » ou « Confidentialité » est de nouveau écrit en dur dans le JSX.",
   );
+});
+
+
+test("la durée de conservation des pièces d'identité publiée est celle que la purge applique", () => {
+  /* La purge (`zabelie_kyc_docs_expires`, 0079) lit `zabelie_kyc_config.
+   * retention_jours`. La DERNIÈRE migration qui fixe cette valeur — défaut de
+   * 0079 ou `update` ultérieur — fait foi. */
+  const dossier = "supabase/migrations";
+  let jours: number | null = null;
+  for (const f of readdirSync(dossier).filter((x) => x.endsWith(".sql")).sort()) {
+    const sql = readFileSync(`${dossier}/${f}`, "utf8");
+    for (const m of sql.matchAll(/retention_jours\s+(?:integer not null default|=)\s+(\d+)/g)) jours = Number(m[1]);
+  }
+  assert.equal(jours, 1825, "le réglage de conservation KYC a changé : relire la politique §9");
+  const annonce = { fr: "**5 ans** après la décision", ht: "**5 an** apre desizyon an", en: "**5 years** after the decision", es: "**5 años** tras la decisión" } as const;
+  for (const lang of LANGS) {
+    const texte = POLITIQUE[lang].sections.flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul))).join("\n");
+    assert.ok(texte.includes(annonce[lang]), `${lang} : la politique n'annonce pas ${annonce[lang]}`);
+  }
+});
+
+test("la région d'hébergement mesurée est nommée dans les quatre langues, sans garantie inventée", () => {
+  for (const lang of LANGS) {
+    const texte = POLITIQUE[lang].sections.flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul))).join("\n");
+    for (const fait of ["Supabase", "us-east-1", "Vercel", "iad1"]) assert.ok(texte.includes(fait), `${lang} : ${fait} absent`);
+    assert.doesNotMatch(texte, /clauses contractuelles|standard contractual|kloz kontra|cláusulas contractuales/i, `${lang} : une garantie de transfert non constatée est affirmée`);
+  }
 });
