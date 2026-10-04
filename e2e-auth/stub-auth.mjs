@@ -10,7 +10,7 @@ function session() {
   return { access_token: token, refresh_token: "test-refresh", token_type: "bearer", expires_in: 3600, user };
 }
 createServer(async (req, res) => {
-  const url = new URL(req.url, "http://127.0.0.1:54323");
+  const url = new URL(req.url, "http://127.0.0.1:15423");
   res.setHeader("Access-Control-Allow-Origin", "http://127.0.0.1:3003");
   res.setHeader("Access-Control-Allow-Headers", "authorization,apikey,content-type,x-client-info,x-supabase-api-version");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,OPTIONS");
@@ -35,4 +35,4 @@ createServer(async (req, res) => {
   if(url.pathname === "/rest/v1/profiles") return reply({ id, role:"buyer", display_name:"Acheteur test", tier:"standard", is_test:false });
   if(url.pathname.startsWith("/rest/v1/")) { res.setHeader("Content-Range","*/0"); return reply([]); }
   return reply({ code:"not_found" },404);
-}).listen(54323,"127.0.0.1",()=>console.log("Auth stub local :54323"));
+}).listen(15423,"127.0.0.1",()=>console.log("Auth stub local :15423"));

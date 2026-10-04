@@ -1,6 +1,6 @@
 import { test, expect, type BrowserContext, type APIRequestContext } from "@playwright/test";
 
-const STUB = "http://127.0.0.1:54322";
+const STUB = "http://127.0.0.1:15422";
 async function signIn(context: BrowserContext, config: Record<string, unknown> = {}) {
   const response = await context.request.post(`${STUB}/__setup`, { data: config });
   const { cookie } = await response.json();

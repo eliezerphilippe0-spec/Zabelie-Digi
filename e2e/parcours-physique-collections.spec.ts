@@ -83,7 +83,7 @@ test("le serveur refuse une cible invalide et annule si sa sauvegarde échoue", 
  expect(invalid.status()).toBe(422);
  const failed = await page.request.post("/api/checkout", { data: { productId: "99999999-9999-9999-9999-999999999990", recipient } });
  expect(failed.status()).toBe(503);
- const events = await (await request.get("http://127.0.0.1:54321/__gift-writes")).json();
+ const events = await (await request.get("http://127.0.0.1:15421/__gift-writes")).json();
  expect(events.map((e: { step: string }) => e.step)).toEqual(["order", "recipient", "cleanup"]);
  expect(events[1].body.phone).toBe("34123456");
 });

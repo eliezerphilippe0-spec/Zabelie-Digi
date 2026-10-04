@@ -17,7 +17,7 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 
-const PORT = Number(process.env.STUB_PORT ?? 54321);
+const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
 const digitalFacts = new Map();
 const digitalStudios = new Map();
@@ -53,7 +53,7 @@ const PRODUCT = {
   seller_id: SELLER_ID,
   delivery_days: null,
   service_includes: null,
-  cover_url: "http://127.0.0.1:54321/cover.png",
+  cover_url: "http://127.0.0.1:15421/cover.png",
   status: "published",
   in_stock: true,
   seller: { display_name: "Garaj Petyonvil" },
@@ -577,12 +577,15 @@ const server = createServer((req, res) => {
   return single([]);
 });
 
-// Les ports des stubs (54321–54329) tombent dans la plage ÉPHÉMÈRE de Linux
-// (32768–60999) : une connexion sortante encore ouverte de la suite
-// précédente peut détenir le port local par hasard, et `listen` échoue en
-// EADDRINUSE avant qu'aucun test ne tourne (vu sur #263, #251, #272). On
-// réessaie quelques secondes — le temps que la connexion se ferme — au lieu
-// de mourir. Au-delà, l'échec reste bruyant.
+// PORTS HORS DE LA PLAGE ÉPHÉMÈRE (2026-10-04). Les stubs écoutaient sur
+// 54321–54329, DANS la plage éphémère de Linux (32768–60999) : une connexion
+// sortante de la suite précédente pouvait détenir ce port local par hasard,
+// et `listen` échouait en EADDRINUSE avant qu'aucun test ne tourne (#251,
+// #263, #272, puis #303, #309, #311 — la nouvelle tentative de 10 s s'est
+// épuisée à 10,4 s sur #311). Ils écoutent désormais sur 15421–15429, que le
+// noyau n'attribue jamais à une connexion sortante. `tests/e2e-ports.test.ts`
+// interdit d'y revenir. La nouvelle tentative reste, en filet : un port peut
+// encore être tenu par un processus de la suite précédente qui s'éteint.
 const ESSAIS_MAX = 50;
 const ATTENTE_MS = 200;
 let essais = 0;

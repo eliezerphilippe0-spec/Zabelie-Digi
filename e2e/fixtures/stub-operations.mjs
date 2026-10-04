@@ -1,6 +1,6 @@
 // Isolated test server: no production keys and loopback binding only.
 import {createServer} from "node:http";
-const port=Number(process.env.STUB_PORT||54329),appPort=Number(process.env.APP_PORT||3059);
+const port=Number(process.env.STUB_PORT||15429),appPort=Number(process.env.APP_PORT||3059);
 const ids={buyer:"11300000-0000-4000-8000-000000000003",seller:"11300000-0000-4000-8000-000000000001",foreign:"11300000-0000-4000-8000-000000000004",admin:"11300000-0000-4000-8000-000000000005"};
 const order="11300000-0000-4000-8000-000000000020",caseId="11300000-0000-4000-8000-000000000030";
 let messages=[],status="open";
