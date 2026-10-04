@@ -192,6 +192,7 @@ const fr: Politique = {
           ],
         },
         { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **{hebergement}**" },
+        { p: "Avec votre accord seulement, et uniquement sur les pages d'un vendeur qui les a activés, des données de navigation peuvent être transmises à **Meta, Google ou TikTok** (voir la section 8). Ces régies ne sont pas nos sous-traitants : elles traitent ces données pour leur propre compte." },
       ],
     },
     {
@@ -211,11 +212,34 @@ const fr: Politique = {
       ],
     },
     {
-      titre: "8. Cookies",
+      titre: "8. Cookies et traceurs",
       blocs: [
+        { p: "Nous utilisons trois catégories de cookies." },
+        { p: "**Nécessaires au fonctionnement** (sans consentement, car le site ne peut pas fonctionner sans eux) :" },
         {
-          p: "Nous utilisons uniquement des cookies **strictement nécessaires** au maintien de votre session d'authentification. Aucun cookie publicitaire ni de traçage tiers.",
+          ul: [
+            "la **session de connexion**, tant que vous restez connecté ;",
+            "vos **préférences de langue et d'apparence** (zabelie_lang, zab_theme).",
+          ],
         },
+        { p: "**Attribution des ventes** (sans donnée publicitaire, jamais transmis à un tiers) :" },
+        {
+          ul: [
+            "zab_ref : retient pendant **7 jours** le lien d'affiliation par lequel vous êtes arrivé, pour rémunérer la personne qui vous a recommandé le produit ;",
+            "zabelie_sale_sources : retient pendant **30 jours au plus** que vous avez découvert un produit sur Zabelie, pour calculer les frais du vendeur.",
+          ],
+        },
+        { p: "**Pixels publicitaires des vendeurs** (uniquement avec votre accord) :" },
+        {
+          ul: [
+            "Un vendeur peut ajouter à sa boutique les outils de mesure de **Meta** (Facebook, Instagram), **Google** ou **TikTok**, pour mesurer l'effet de ses publicités.",
+            "Ces outils ne se chargent que sur **ses** fiches produit, **sa** boutique et la page de confirmation de **vos** achats chez lui, et **seulement si vous cliquez « Accepter »** dans le bandeau qui s'affiche alors.",
+            "Ils transmettent alors à la régie concernée : la page consultée, le produit, son prix et, après un achat, le montant et un identifiant de commande. Ils ne transmettent ni votre nom, ni votre téléphone, ni votre adresse.",
+            "Chaque régie traite ensuite ces données selon sa propre politique de confidentialité.",
+            "Votre choix est conservé **180 jours** dans le cookie zab_pub, y compris un refus : nous ne vous le redemandons pas pendant cette période. Pour changer d'avis, effacez les cookies de zabelie.com dans votre navigateur ; le bandeau réapparaîtra.",
+          ],
+        },
+        { p: "Zabelie n'installe **aucun pixel publicitaire pour son propre compte**." },
       ],
     },
     {
@@ -322,6 +346,7 @@ const ht: Politique = {
           ],
         },
         { p: "Kèk patnè ka ebèje done deyò peyi ou. **{hebergement}**" },
+        { p: "Sèlman si ou dakò, epi sèlman sou paj yon vandè ki aktive yo, done navigasyon ka ale bay **Meta, Google oswa TikTok** (gade seksyon 8). Platfòm sa yo pa patnè pa nou : yo trete done sa yo pou pwòp kont pa yo." },
       ],
     },
     {
@@ -341,11 +366,34 @@ const ht: Politique = {
       ],
     },
     {
-      titre: "8. Cookies",
+      titre: "8. Cookies ak siveyans",
       blocs: [
+        { p: "Nou itilize twa kalite cookies." },
+        { p: "**Nesesè pou sit la mache** (san konsantman, paske sit la pa ka mache san yo) :" },
         {
-          p: "Nou itilize sèlman cookies ki **estriktèman nesesè** pou kenbe sesyon otantifikasyon ou. Pa gen okenn cookie piblisite ni swiv twazyèm pati.",
+          ul: [
+            "**sesyon koneksyon** ou, toutotan ou rete konekte ;",
+            "**preferans lang ak aparans** ou (zabelie_lang, zab_theme).",
+          ],
         },
+        { p: "**Atribisyon vant** (pa gen done piblisite, nou pa janm voye yo bay lòt moun) :" },
+        {
+          ul: [
+            "zab_ref : kenbe pandan **7 jou** lyen afilyasyon ki mennen ou sou sit la, pou nou peye moun ki rekòmande pwodui a ba ou ;",
+            "zabelie_sale_sources : kenbe pandan **30 jou pi plis** ke ou te dekouvri yon pwodui sou Zabelie, pou kalkile frè vandè a.",
+          ],
+        },
+        { p: "**Piksèl piblisite vandè yo** (sèlman si ou dakò) :" },
+        {
+          ul: [
+            "Yon vandè ka ajoute nan boutik li zouti mezi **Meta** (Facebook, Instagram), **Google** oswa **TikTok**, pou mezire efè piblisite li.",
+            "Zouti sa yo chaje sèlman sou fich pwodui **li**, boutik **li** ak paj konfimasyon acha **ou** fè lakay li, epi **sèlman si ou klike « Aksepte »** nan bann ki parèt lè sa a.",
+            "Lè sa a, yo voye bay platfòm piblisite a : paj ou gade a, pwodui a, pri li, epi apre yon acha, montan an ak yon idantifyan kòmand. Yo pa voye ni non ou, ni telefòn ou, ni adrès ou.",
+            "Chak platfòm trete done sa yo dapre pwòp politik konfidansyalite pa li.",
+            "Nou kenbe chwa ou pandan **180 jou** nan cookie zab_pub, menm si ou refize : nou p ap mande w ankò pandan tan sa a. Pou chanje lide, efase cookies zabelie.com yo nan navigatè ou ; bann lan ap parèt ankò.",
+          ],
+        },
+        { p: "Zabelie pa mete **okenn piksèl piblisite pou pwòp kont pa li**." },
       ],
     },
     {
@@ -452,6 +500,7 @@ const en: Politique = {
           ],
         },
         { p: "Some processors may host data outside your country. **{hebergement}**" },
+        { p: "Only with your consent, and only on the pages of a seller who has enabled them, browsing data may be sent to **Meta, Google or TikTok** (see section 8). These platforms are not our processors: they process this data on their own behalf." },
       ],
     },
     {
@@ -471,11 +520,34 @@ const en: Politique = {
       ],
     },
     {
-      titre: "8. Cookies",
+      titre: "8. Cookies and trackers",
       blocs: [
+        { p: "We use three categories of cookies." },
+        { p: "**Necessary for the site to work** (no consent needed, because the site cannot work without them):" },
         {
-          p: "We use only **strictly necessary** cookies to maintain your authentication session. No advertising cookies and no third-party tracking.",
+          ul: [
+            "your **login session**, for as long as you stay signed in;",
+            "your **language and appearance preferences** (zabelie_lang, zab_theme).",
+          ],
         },
+        { p: "**Sales attribution** (no advertising data, never shared with third parties):" },
+        {
+          ul: [
+            "zab_ref: keeps for **7 days** the affiliate link you arrived through, so the person who recommended the product can be paid;",
+            "zabelie_sale_sources: keeps for **up to 30 days** the fact that you discovered a product on Zabelie, to calculate the seller's fees.",
+          ],
+        },
+        { p: "**Sellers' advertising pixels** (only with your consent):" },
+        {
+          ul: [
+            "A seller can add measurement tools from **Meta** (Facebook, Instagram), **Google** or **TikTok** to their shop, to measure how their ads perform.",
+            "These tools load only on **that seller's** product pages, **their** shop and the confirmation page of **your** purchases from them, and **only if you click \"Accept\"** in the banner shown there.",
+            "They then send the ad platform: the page viewed, the product, its price and, after a purchase, the amount and an order identifier. They do not send your name, phone number or address.",
+            "Each platform then processes this data under its own privacy policy.",
+            "Your choice is kept for **180 days** in the zab_pub cookie, including a refusal: we will not ask again during that period. To change your mind, clear zabelie.com's cookies in your browser and the banner will appear again.",
+          ],
+        },
+        { p: "Zabelie installs **no advertising pixel on its own behalf**." },
       ],
     },
     {
@@ -582,6 +654,7 @@ const es: Politique = {
           ],
         },
         { p: "Algunos encargados pueden alojar datos fuera de su país. **{hebergement}**" },
+        { p: "Solo con su consentimiento, y únicamente en las páginas de un vendedor que los haya activado, pueden transmitirse datos de navegación a **Meta, Google o TikTok** (véase la sección 8). Estas plataformas no son encargadas nuestras: tratan estos datos por cuenta propia." },
       ],
     },
     {
@@ -601,11 +674,34 @@ const es: Politique = {
       ],
     },
     {
-      titre: "8. Cookies",
+      titre: "8. Cookies y rastreadores",
       blocs: [
+        { p: "Utilizamos tres categorías de cookies." },
+        { p: "**Necesarias para el funcionamiento** (sin consentimiento, porque el sitio no puede funcionar sin ellas):" },
         {
-          p: "Utilizamos únicamente cookies **estrictamente necesarias** para mantener su sesión de autenticación. Sin cookies publicitarias ni rastreo de terceros.",
+          ul: [
+            "su **sesión de inicio**, mientras permanezca conectado;",
+            "sus **preferencias de idioma y apariencia** (zabelie_lang, zab_theme).",
+          ],
         },
+        { p: "**Atribución de ventas** (sin datos publicitarios, nunca se comparten con terceros):" },
+        {
+          ul: [
+            "zab_ref: conserva durante **7 días** el enlace de afiliado por el que llegó, para remunerar a quien le recomendó el producto;",
+            "zabelie_sale_sources: conserva durante **30 días como máximo** que descubrió un producto en Zabelie, para calcular las comisiones del vendedor.",
+          ],
+        },
+        { p: "**Píxeles publicitarios de los vendedores** (solo con su consentimiento):" },
+        {
+          ul: [
+            "Un vendedor puede añadir a su tienda las herramientas de medición de **Meta** (Facebook, Instagram), **Google** o **TikTok**, para medir el efecto de sus anuncios.",
+            "Estas herramientas solo se cargan en **sus** fichas de producto, **su** tienda y la página de confirmación de **sus** compras a ese vendedor, y **solo si hace clic en «Aceptar»** en el aviso que aparece entonces.",
+            "En ese caso transmiten a la plataforma publicitaria: la página visitada, el producto, su precio y, tras una compra, el importe y un identificador de pedido. No transmiten su nombre, teléfono ni dirección.",
+            "Cada plataforma trata después estos datos según su propia política de privacidad.",
+            "Su elección se conserva **180 días** en la cookie zab_pub, también si la rechaza: no volveremos a preguntarle durante ese periodo. Para cambiar de opinión, borre las cookies de zabelie.com en su navegador y el aviso volverá a aparecer.",
+          ],
+        },
+        { p: "Zabelie no instala **ningún píxel publicitario por cuenta propia**." },
       ],
     },
     {
