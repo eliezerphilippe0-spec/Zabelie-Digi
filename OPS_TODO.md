@@ -1,5 +1,9 @@
 # OPS_TODO — Zabelie
 
+## Pièces d'identité 5 ans, région d'hébergement — 4 octobre 2026
+
+✅ **`0126` APPLIQUÉE le 2026-10-04 à 20:55:38Z** (version `20261004205538`), décision porteur « 5 ans » + autorisation permanente du 2026-08-17. SQL reçu identique au fichier (sha256 brut `686567c6…` des deux côtés), empreinte canonique `c128cbfe…`, inscrite au registre (`journal_supabase`). Constaté : `retention_jours = 1825`, 0 pièce stockée. PR #313 fusionnée. Champ vide restant dans la politique de confidentialité : **l'entité juridique** (porteur). Écart et défaut consignés dans `docs/67` §4.1 (purge depuis la décision ; fichiers KYC orphelins à la suppression d'un compte sans vente).
+
 ## Domaine personnalisé des boutiques — 4 octobre 2026
 
 Demande porteur (« Passe au nom de domaine personnalisé »). Arbitrages du même jour : **branchement manuel** (aucun jeton Vercel) et **réservé aux vendeurs vérifiés** (KYC approuvé). Migration `0125`. Le vendeur demande son domaine dans `/tableau-de-bord/api#domaine` et reçoit ses réglages DNS (A `@` → `76.76.21.21`, CNAME `www` → `cname.vercel-dns.com`). **Geste porteur/admin par demande** : Vercel → projet → Settings → Domains → ajouter le domaine ET `www.` ; puis `/admin/domaines` → « Vérifier et activer » (le site contrôle que le domaine atteint bien Zabelie avant d'activer). Seule la racine du domaine sert la boutique ; tout autre chemin repart vers zabelie.com (compte, paiement, escrow). Un vendeur suspendu ou dont la vérification est retirée perd son domaine immédiatement. ⚠️ À vérifier par le porteur : le nombre de domaines admis par projet sur votre plan Vercel, et l'usage commercial sur le plan Hobby (conditions Vercel).
