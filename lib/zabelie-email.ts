@@ -60,6 +60,8 @@ export async function sendEmail(input: {
   to: string;
   subject: string;
   html: string;
+  /** En-têtes additionnels, ex. `List-Unsubscribe` (désabonnement en un clic). */
+  headers?: Record<string, string>;
 }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
@@ -71,7 +73,7 @@ export async function sendEmail(input: {
         Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to: input.to, subject: input.subject, html: input.html }),
+      body: JSON.stringify({ from, to: input.to, subject: input.subject, html: input.html, ...(input.headers ? { headers: input.headers } : {}) }),
       cache: "no-store",
     });
     /* ⚠️ CE JOURNAL MANQUAIT, ET SON ABSENCE ÉTAIT LE VRAI DÉFAUT.

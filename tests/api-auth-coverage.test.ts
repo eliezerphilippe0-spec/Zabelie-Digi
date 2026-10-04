@@ -101,6 +101,11 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // Le vecteur restant serait une déconnexion forcée par `<img src>` — fermé
   // par l'absence de tout export GET, vérifiée dans tests/deconnexion.test.ts.
   "auth/signout/route.ts": /cookieStore\.getAll\(\)/,
+  // Désabonnement des relances (0124) : publique PAR NÉCESSITÉ — un lien
+  // d'e-mail doit couper en un clic, sans connexion (RFC 8058). Le geste ne
+  // fait que COUPER les relances du porteur d'un jeton de 122 bits ; POST
+  // seulement (un scanner de liens ne désabonne personne) ; borné par IP.
+  "desabonnement/route.ts": /rateLimit\(admin, `desabonnement:/,
   // Lecture publique sans mutation : empreinte opaque figée au build, jamais un secret.
   "deployment/route.ts": /const valid = \/\^\[a-f0-9\]\{64\}\$\/\.test\(release\)/,
   "health/route.ts": /never lies|ne ment jamais/,

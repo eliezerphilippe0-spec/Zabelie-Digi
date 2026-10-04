@@ -73,3 +73,15 @@ test("« Gérer les traceurs » : depuis le pied de page, l'accord se retire en 
   await expect(page.locator("[data-bandeau-pixels]")).toHaveCount(0);
   expect(appels).toEqual([]);
 });
+
+test("relances : la page de désabonnement ne coupe rien seule, et parle kreyòl", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "zabelie_lang", value: "ht", url: baseURL! }]);
+  const jeton = "0b6b4c1e-8a4e-4d0b-9f43-2a1c3d4e5f60";
+  await page.goto(`/desabonnement/${jeton}`);
+  const form = page.locator('main form[action="/api/desabonnement"]');
+  await expect(form).toHaveAttribute("method", "post");
+  await expect(form.locator('input[name="jeton"]')).toHaveValue(jeton);
+  await expect(form.getByRole("button")).toHaveText("Kanpe rapèl yo");
+  const get = await page.request.get(`/api/desabonnement?jeton=${jeton}`);
+  expect(get.status(), "un GET (scanner de liens) ne désabonne pas").toBe(405);
+});

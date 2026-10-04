@@ -1,5 +1,11 @@
 # OPS_TODO — Zabelie
 
+## Relances de paiement abandonné — 4 octobre 2026
+
+Demande porteur (« Vas-y », après la comparaison avec Maketou ; commission inchangée à 10 %). Migration `0124` + cron quotidien `/api/relances` (15:30 UTC) : **un seul e-mail** par acheteur et par produit quand un paiement RÉEL n'aboutit pas, entre 2 h et 50 h après, dans la langue de l'achat (4 langues), avec désabonnement en un clic (lien + `List-Unsubscribe`, RFC 8058). Aucune relance sur un paiement d'essai : **rien ne partira tant que MonCash n'est pas en production.** Mesuré le 2026-10-04 : 14 commandes abandonnées (3 acheteurs), toutes d'essai — le chemin existe. Reste au porteur, dans Vercel (jamais dans le chat) : **`RESEND_API_KEY`** et **`EMAIL_FROM`** sur un domaine vérifié chez Resend (sans `EMAIL_FROM`, Resend ne livre qu'au titulaire du compte — voir plus bas). Sans clé, le cron journalise `email_non_configure` et ne consomme AUCUNE relance.
+
+✅ **`0124` APPLIQUÉE le 2026-10-04 à 12:09:08Z** (version `20261004120908`), autorisation permanente du 2026-08-17 + instruction « Vas-y ». SQL reçu identique au fichier (sha256 brut `9002c61a…` des deux côtés), empreinte canonique `9c64d474…`, inscrite au registre (`journal_supabase`). Constaté : RLS active sur les trois tables, `anon` n'atteint que `zabelie_email_desabonner`, 0 relance due.
+
 ## Phase 1 « haut de gamme » — finitions visibles (29 septembre 2026)
 
 Branche `claude/zabelie-design-architecture-9kdhw9`, sur `920be25` (= production). Quatre corrections : bannière de lancement alignée sur la grille, **une seule gouttière de 20 px** (en-tête compris — ⚖️ la recherche mobile passe de 366 à 350 px à 390), accord en nombre des quatre « (s) » dans les quatre langues, cibles tactiles du fil d'Ariane, du filtre de zone et du logo à 320 px. Aucune migration, aucune variable, aucune écriture en production. **Deux décisions rendues au porteur, tranchées le 2026-09-30** (option a pour les deux, V-21) : les mentions d'avant-lancement (promesse commerciale) et le visuel de la moitié droite de la bannière (positionnement). Mesures avant/après, captures et options : `docs/phase1-finitions-2026-09-29.md`.

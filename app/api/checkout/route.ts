@@ -504,6 +504,8 @@ export async function POST(req: Request) {
       coupon_id: couponId, // BL-133 : consommé par confirm_payment, pas ici
       discount_htg: discountHtg,
       status: "pending",
+      // Langue de l'achat : la relance d'un paiement abandonné (0124) la reprend.
+      zabelie_lang: lang,
     })
     .select("id, amount_htg")
     .single();
