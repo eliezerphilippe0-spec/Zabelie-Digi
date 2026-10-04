@@ -55,6 +55,19 @@ export async function DELETE() {
   }).eq("id", user.id).select("id").maybeSingle();
   if (scrubError || !closed) return unavailable();
 
+  /* DOSSIER D'IDENTITÉ EN ATTENTE (2026-10-04). La purge des pièces compte
+   * depuis la DÉCISION (`zabelie_kyc_docs_expires`) : un dossier resté
+   * `pending` à la fermeture ne serait jamais décidé, donc jamais purgé. On le
+   * clôt ici, motif explicite, ce qui lance le délai de conservation annoncé
+   * (5 ans, 0126). Idempotent : un nouvel essai ne retrouve plus de `pending`. */
+  const { error: kycError } = await admin.from("zabelie_kyc_submissions").update({
+    status: "rejected",
+    decided_at: new Date().toISOString(),
+    decided_by: null,
+    note_admin: "Compte fermé avant décision",
+  }).eq("user_id", user.id).eq("status", "pending");
+  if (kycError) return unavailable();
+
   const removals = await Promise.all([
     admin.from("zabelie_favorites").delete().eq("user_id", user.id),
     admin.from("zabelie_shop_follows").delete().eq("user_id", user.id),
