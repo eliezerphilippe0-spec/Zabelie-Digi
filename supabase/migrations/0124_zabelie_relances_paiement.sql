@@ -395,4 +395,3 @@ as $$
     ('zabelie_webhook_enfiler_vente','enfile les webhooks a chaque vente payee ou remboursee (0122)')
   ) v(objet,pourquoi);
 $$;
-
