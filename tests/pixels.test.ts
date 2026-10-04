@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FORMATS_PIXEL, cheminPublicitaire, idValide, idsPixels, lireConsentement, scriptsRegies, DOMAINES_REGIES } from "../lib/pixels";
-import { chargerPixels } from "../lib/pixels-client";
+import { FORMATS_PIXEL, cheminPublicitaire, cookiesRegies, domainesCookie, idValide, idsPixels, lireConsentement, scriptsRegies, DOMAINES_REGIES } from "../lib/pixels";
+import { chargerPixels, ecrireConsentement } from "../lib/pixels-client";
 import { contentSecurityPolicy } from "../lib/content-security-policy";
 
 const SQL = readFileSync("supabase/migrations/0123_zabelie_seller_pixels.sql", "utf8");
@@ -92,4 +92,54 @@ test("X6 — rien ne se charge sans « oui » ; l'achat ne vient que d'une comma
   const route = readFileSync("app/api/account/pixels/route.ts", "utf8");
   assert.match(route, /const id = idValide\(regie, brut\);\s*if \(!id\) return NextResponse\.json\([^;]{0,200}status: 422 \}\);/);
   assert.doesNotMatch(route, /createAdminClient/, "l'écriture passe par la session (RLS), pas par le service");
+});
+
+/** Un `document.cookie` minimal : l'écriture ajoute ou remplace, `Max-Age=0` efface (par nom et domaine). */
+function faussesCookies(initial: Record<string, string>) {
+  const pots = new Map<string, string>(Object.entries(initial).map(([k, v]) => [`${k}|`, v]));
+  const ecrits: string[] = [];
+  const doc = {
+    get cookie() { return [...pots].map(([k, v]) => `${k.split("|")[0]}=${v}`).join("; "); },
+    set cookie(v: string) {
+      ecrits.push(v);
+      const [paire, ...attrs] = v.split(";").map((x) => x.trim());
+      const [nom, val] = paire.split("=");
+      const domaine = attrs.find((a) => a.startsWith("Domain="))?.slice(7) ?? "";
+      if (attrs.includes("Max-Age=0")) { pots.delete(`${nom}|${domaine}`); if (domaine === "zabelie.com") pots.delete(`${nom}|`); }
+      else pots.set(`${nom}|`, val);
+    },
+  };
+  return { doc: doc as unknown as Document, ecrits };
+}
+
+test("X7 — retirer son accord efface aussi les cookies posés par les régies ; l'accord n'efface rien", () => {
+  // Témoins du relevé : les noms des trois régies, et rien d'autre.
+  assert.deepEqual(cookiesRegies("_fbp=a; zab_pub=1; _ga=b; _ga_AB12CD=c; _gcl_au=d; _ttp=e; zabelie_lang=ht; zab_ref=x"), ["_fbp", "_ga", "_ga_AB12CD", "_gcl_au", "_ttp"]);
+  assert.deepEqual(domainesCookie("www.zabelie.com"), ["www.zabelie.com", "zabelie.com"]);
+  assert.deepEqual(domainesCookie("localhost"), []);
+  assert.deepEqual(domainesCookie("127.0.0.1"), []);
+
+  const loc = { protocol: "https:", hostname: "www.zabelie.com" };
+  const refus = faussesCookies({ _fbp: "fb.1", _ga: "GA1", _ttp: "t", zabelie_lang: "ht", zab_ref: "r" });
+  ecrireConsentement(false, refus.doc, loc);
+  assert.equal(refus.doc.cookie, "zabelie_lang=ht; zab_ref=r; zab_pub=0", "un refus efface les cookies des régies, garde ceux du site");
+  assert.ok(refus.ecrits[0].includes("Max-Age=15552000") && refus.ecrits[0].includes("Secure"));
+  assert.ok(refus.ecrits.includes("_ga=; Max-Age=0; Path=/; Domain=zabelie.com"), "Google pose sur le domaine parent : l'effacement doit l'y viser");
+
+  const accord = faussesCookies({ _fbp: "fb.1" });
+  ecrireConsentement(true, accord.doc, loc);
+  assert.equal(accord.doc.cookie, "_fbp=fb.1; zab_pub=1");
+});
+
+test("X8 — « Gérer les traceurs » : atteignable depuis chaque page, branché sur la section, même écriture que le bandeau", () => {
+  const pied = readFileSync("components/site-footer.tsx", "utf8");
+  assert.match(pied, /<Link href="\/confidentialite#traceurs"[^>]*>\{t\(lang, "pixels\.prefs\.link"\)\}/);
+  const page = readFileSync("app/confidentialite/page.tsx", "utf8");
+  assert.match(page, /<section id=\{ancre\}/, "la section doit porter l'ancre visée par le lien");
+  assert.match(page, /\{s\.ancre === "traceurs" && \(\s*<TrackerPreferences/, "le centre de préférences est rendu dans la section des traceurs");
+  for (const f of ["components/tracker-preferences.tsx", "components/seller-pixels.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    assert.match(src, /function choisir\(oui: boolean\) \{\s*ecrireConsentement\(oui\);/, `${f} : le choix passe par ecrireConsentement`);
+    assert.doesNotMatch(src, /document\.cookie\s*=/, `${f} : aucune écriture de cookie à côté`);
+  }
 });

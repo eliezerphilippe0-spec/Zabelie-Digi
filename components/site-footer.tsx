@@ -101,6 +101,7 @@ export async function SiteFooter() {
               <li><Link href="/confidentialite" className={LIEN}>{t(lang, "footer.privacy")}</Link></li>
               <li><Link href="/conditions" className={LIEN}>{t(lang, "footer.terms")}</Link></li>
               <li><Link href={POLICY_PATH} className={LIEN}>{t(lang, "policy.link")}</Link></li>
+              <li><Link href="/confidentialite#traceurs" className={LIEN}>{t(lang, "pixels.prefs.link")}</Link></li>
             </ul>
           </FooterSection>
 

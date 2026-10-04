@@ -54,6 +54,31 @@ export function lireConsentement(cookie: string): Consentement {
   return m ? (m[1] === "1" ? "oui" : "non") : "inconnu";
 }
 
+/**
+ * Cookies que les scripts des régies déposent sur NOTRE domaine (Meta `_fbp`,
+ * `_fbc` ; Google `_ga`, `_ga_<ID>`, `_gcl_*` ; TikTok `_ttp`,
+ * `_tt_enable_cookie`). Un refus les efface, comme le font les centres de
+ * préférences des grandes plateformes : retirer son accord ne doit pas laisser
+ * derrière soi l'identifiant posé pendant qu'il était donné.
+ */
+const COOKIE_REGIE = /^(?:_fbp|_fbc|_ga|_ga_[A-Za-z0-9]+|_gcl_[a-z]+|_ttp|_tt_enable_cookie)$/;
+
+export function cookiesRegies(cookie: string): string[] {
+  return cookie
+    .split(";")
+    .map((c) => c.trim().split("=")[0])
+    .filter((nom) => COOKIE_REGIE.test(nom));
+}
+
+/** Domaines où un cookie de régie a pu être posé : l'hôte, puis chaque parent d'au moins deux labels. */
+export function domainesCookie(hote: string): string[] {
+  const labels = hote.split(".");
+  if (labels.length < 2 || /^[0-9.]+$/.test(hote)) return [];
+  const d: string[] = [];
+  for (let i = 0; i <= labels.length - 2; i++) d.push(labels.slice(i).join("."));
+  return d;
+}
+
 // ─── Périmètre ───────────────────────────────────────────────────────────────
 
 /** Chemins où un pixel de vendeur peut se charger — et donc où la CSP s'ouvre aux régies. */

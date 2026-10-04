@@ -1,4 +1,4 @@
-import { scriptsRegies, type EvenementPixel, type IdsPixels } from "@/lib/pixels";
+import { COOKIE_CONSENTEMENT, DUREE_CONSENTEMENT_S, cookiesRegies, domainesCookie, scriptsRegies, type EvenementPixel, type IdsPixels } from "@/lib/pixels";
 
 /**
  * Chargement des pixels dans le navigateur — APRÈS consentement uniquement
@@ -93,4 +93,19 @@ export function chargerPixels(ids: IdsPixels, evenement: EvenementPixel, w: Fene
     if (achat) ttq.track("CompletePayment", { content_id: achat.productId, content_type: "product", value: achat.valeurHtg, currency: "HTG" }, { event_id: achat.orderId });
   }
   for (const src of scriptsRegies(ids)) ajouterScript(doc, src);
+}
+
+/**
+ * Enregistre le choix du visiteur (bandeau ou « Gérer les traceurs »). Un
+ * REFUS efface aussi les cookies que les régies avaient posés sur notre
+ * domaine : le retrait vaut pour l'avenir ET pour l'identifiant déjà déposé.
+ */
+export function ecrireConsentement(oui: boolean, doc: Document = document, loc: Pick<Location, "protocol" | "hostname"> = location) {
+  const secure = loc.protocol === "https:" ? "; Secure" : "";
+  doc.cookie = `${COOKIE_CONSENTEMENT}=${oui ? 1 : 0}; Max-Age=${DUREE_CONSENTEMENT_S}; Path=/; SameSite=Lax${secure}`;
+  if (oui) return;
+  for (const nom of cookiesRegies(doc.cookie)) {
+    doc.cookie = `${nom}=; Max-Age=0; Path=/`;
+    for (const d of domainesCookie(loc.hostname)) doc.cookie = `${nom}=; Max-Age=0; Path=/; Domain=${d}`;
+  }
 }
