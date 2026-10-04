@@ -17,7 +17,7 @@ export const metadata = {
 };
 
 // Dernière mise à jour de la politique (à actualiser à chaque changement).
-const LAST_UPDATE = "2 octobre 2026";
+const LAST_UPDATE = "4 octobre 2026";
 
 /**
  * `**gras**` et `*italique*` → JSX.
