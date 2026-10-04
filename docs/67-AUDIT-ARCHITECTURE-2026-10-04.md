@@ -174,6 +174,22 @@ Mesuré en ligne aujourd'hui :
 | `/confidentialite` | Région d'hébergement et garanties de transfert | **fait technique** (région Supabase/Vercel) + formulation des garanties | je peux mesurer la région ; le porteur valide |
 | `/confidentialite` | Durée de conservation des pièces d'identité | **fait du code** : `zabelie_kyc_config.retention_jours = 90` | je peux le brancher sur la config, comme la purge des paiements |
 
+**Mise à jour du 2026-10-04 (soir).** Deux des sept champs sont remplis
+(PR #313, migration `0126`) :
+
+* **Région** : mesurée — Supabase `us-east-1`, fonctions Vercel `iad1`.
+  Aucune garantie de transfert affirmée (rien de signé n'a été constaté).
+* **Pièces d'identité : 5 ans**, décision porteur, alignée sur la loi
+  haïtienne du 11/11/2013 contre le blanchiment. ⚠️ Écart connu : la purge
+  compte depuis la DÉCISION sur le dossier, la loi depuis la FIN DE LA
+  RELATION ; un vendeur actif plus de 5 ans verrait ses pièces purgées trop
+  tôt si Zabelie était soumise à l'obligation.
+* 🐞 **Défaut trouvé en passant** : supprimer un compte qui n'a jamais vendu
+  (`DELETE /api/account`, mode `deleted`) efface en cascade les lignes
+  `zabelie_kyc_documents`, mais PAS les fichiers du bucket privé — ils
+  deviennent orphelins et échappent à toute purge. Aujourd'hui : 0 pièce
+  stockée, donc aucun fichier concerné. À corriger avant le premier KYC.
+
 À ajouter au P0 juridique : le **dossier BRH** (`docs/17`) et la mention
 « le paiement reste protégé », qui ne doit pas présenter le registre interne
 comme un compte ou un portefeuille.
