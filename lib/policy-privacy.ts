@@ -208,7 +208,7 @@ const fr: Politique = {
           ul: [
             "**Accès / portabilité** : exportez vos données depuis votre tableau de bord.",
             "**Rectification** : modifiez votre profil à tout moment.",
-            "**Effacement** : supprimez votre compte depuis votre tableau de bord. Les données strictement nécessaires à nos obligations légales (paiements) sont alors *anonymisées* plutôt que supprimées, comme le permet la réglementation.",
+            "**Effacement** : supprimez votre compte depuis votre tableau de bord. Les données strictement nécessaires à nos obligations légales (paiements) sont alors *anonymisées* plutôt que supprimées, comme le permet la réglementation. Les pièces d'identité d'un vendeur restent conservées jusqu'au terme prévu au **§9**, puis supprimées automatiquement.",
           ],
         },
         { p: "Les résidents de l'UE peuvent introduire une réclamation auprès de leur autorité de contrôle (en France, la CNIL)." },
@@ -368,7 +368,7 @@ const ht: Politique = {
           ul: [
             "**Aksè / pòtabilite** : ekspòte done ou yo depi tablo ou.",
             "**Koreksyon** : chanje pwofil ou nenpòt lè.",
-            "**Efasman** : efase kont ou depi tablo ou. Done ki estriktèman nesesè pou obligasyon legal nou yo (peman) *anonimize* olye yo efase, jan règleman an pèmèt sa.",
+            "**Efasman** : efase kont ou depi tablo ou. Done ki estriktèman nesesè pou obligasyon legal nou yo (peman) *anonimize* olye yo efase, jan règleman an pèmèt sa. Pyès idantite yon vandè rete konsève jiska dat ki prevwa nan **§9** la, apre sa yo efase otomatikman.",
           ],
         },
         { p: "Moun ki rete nan Inyon Ewopeyèn nan ka depoze yon plent bò kote otorite kontwòl yo (an Frans, CNIL la)." },
@@ -528,7 +528,7 @@ const en: Politique = {
           ul: [
             "**Access / portability**: export your data from your dashboard.",
             "**Rectification**: edit your profile at any time.",
-            "**Erasure**: delete your account from your dashboard. Data strictly necessary for our legal obligations (payments) is then *anonymised* rather than deleted, as the regulation permits.",
+            "**Erasure**: delete your account from your dashboard. Data strictly necessary for our legal obligations (payments) is then *anonymised* rather than deleted, as the regulation permits. A seller's identity documents are kept until the term set in **§9**, then deleted automatically.",
           ],
         },
         { p: "EU residents may lodge a complaint with their supervisory authority (in France, the CNIL)." },
@@ -688,7 +688,7 @@ const es: Politique = {
           ul: [
             "**Acceso / portabilidad**: exporte sus datos desde su panel.",
             "**Rectificación**: modifique su perfil en cualquier momento.",
-            "**Supresión**: elimine su cuenta desde su panel. Los datos estrictamente necesarios para nuestras obligaciones legales (pagos) se *anonimizan* en lugar de suprimirse, como permite la normativa.",
+            "**Supresión**: elimine su cuenta desde su panel. Los datos estrictamente necesarios para nuestras obligaciones legales (pagos) se *anonimizan* en lugar de suprimirse, como permite la normativa. Los documentos de identidad de un vendedor se conservan hasta el plazo previsto en el **§9** y luego se eliminan automáticamente.",
           ],
         },
         { p: "Los residentes en la UE pueden presentar una reclamación ante su autoridad de control (en Francia, la CNIL)." },

@@ -240,3 +240,14 @@ test("la région d'hébergement mesurée est nommée dans les quatre langues, sa
     assert.doesNotMatch(texte, /clauses contractuelles|standard contractual|kloz kontra|cláusulas contractuales/i, `${lang} : une garantie de transfert non constatée est affirmée`);
   }
 });
+
+test("l'effacement annonce que les pièces d'identité survivent à la fermeture du compte (0127)", () => {
+  // La route anonymise tout compte qui a des pièces ; la politique doit le dire.
+  const route = readFileSync("app/api/account/route.ts", "utf8");
+  assert.match(route, /if \(purchases\.count === 0 && sales\.count === 0 && kyc\.count === 0\) \{/);
+  const renvoi = { fr: "jusqu'au terme prévu au **§9**", ht: "jiska dat ki prevwa nan **§9**", en: "until the term set in **§9**", es: "hasta el plazo previsto en el **§9**" } as const;
+  for (const lang of LANGS) {
+    const texte = POLITIQUE[lang].sections.flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul))).join("\n");
+    assert.ok(texte.includes(renvoi[lang]), `${lang} : l'effacement ne mentionne pas la conservation des pièces`);
+  }
+});

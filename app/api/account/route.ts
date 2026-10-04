@@ -8,7 +8,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Preserve accounting history; a failed Auth operation never proves that
- * anonymization is required. Close the storefront before scrubbing contacts. */
+ * anonymization is required. Close the storefront before scrubbing contacts.
+ *
+ * PIÈCES D'IDENTITÉ (2026-10-04). Un compte qui a déposé des pièces n'est
+ * JAMAIS supprimé entièrement : il est anonymisé, comme un vendeur qui a
+ * vendu. Supprimer le profil effaçait en cascade les lignes
+ * `zabelie_kyc_documents` mais PAS les fichiers du bucket privé — orphelins,
+ * hors de toute purge. Et la politique promet « 5 ans après la décision »
+ * (0126) : c'est la purge planifiée qui les retire, pas la fermeture du
+ * compte. `0127` interdit en base la suppression d'un profil qui a des
+ * pièces, quel que soit le chemin. */
 export async function DELETE() {
   const lang = await getLang();
   const unavailable = () => NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
@@ -17,12 +26,14 @@ export async function DELETE() {
   if (identityError || !user) return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   const admin = createAdminClient();
 
-  const [purchases, sales] = await Promise.all([
+  const [purchases, sales, kyc] = await Promise.all([
     admin.from("orders").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
     admin.from("orders").select("id,products!inner(seller_id)", { count: "exact", head: true }).eq("products.seller_id", user.id),
+    admin.from("zabelie_kyc_documents").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
-  if (purchases.error || sales.error || typeof purchases.count !== "number" || typeof sales.count !== "number") return unavailable();
-  if (purchases.count === 0 && sales.count === 0) {
+  if (purchases.error || sales.error || kyc.error) return unavailable();
+  if (typeof purchases.count !== "number" || typeof sales.count !== "number" || typeof kyc.count !== "number") return unavailable();
+  if (purchases.count === 0 && sales.count === 0 && kyc.count === 0) {
     const { error } = await admin.auth.admin.deleteUser(user.id);
     if (error) return unavailable(); // Includes a concurrent order: retry rechecks history.
     await supabase.auth.signOut({ scope: "global" });
