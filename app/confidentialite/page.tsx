@@ -2,6 +2,7 @@ import { t } from "@/lib/i18n";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
+import { TrackerPreferences } from "@/components/tracker-preferences";
 import {
   POLITIQUE,
   resoudre,
@@ -43,9 +44,9 @@ function riche(texte: string): React.ReactNode[] {
   });
 }
 
-function Section({ titre, blocs, lang }: { titre: string; blocs: Bloc[]; lang: Parameters<typeof resoudre>[1] }) {
+function Section({ titre, ancre, blocs, lang, children }: { titre: string; ancre?: string; blocs: Bloc[]; lang: Parameters<typeof resoudre>[1]; children?: React.ReactNode }) {
   return (
-    <section className="mt-10">
+    <section id={ancre} className="mt-10 scroll-mt-24">
       <h2 className="text-xl font-bold tracking-tight">{titre}</h2>
       <div className="mt-3 space-y-3 text-base leading-relaxed text-mist">
         {blocs.map((bloc, i) =>
@@ -60,6 +61,7 @@ function Section({ titre, blocs, lang }: { titre: string; blocs: Bloc[]; lang: P
           ),
         )}
       </div>
+      {children}
     </section>
   );
 }
@@ -90,7 +92,23 @@ export default async function ConfidentialitePage() {
           <p className="mt-3 leading-relaxed text-mist">{t(lang, "collections.privacy.body")}</p>
         </section>
         {doc.sections.map((s) => (
-          <Section key={s.titre} titre={s.titre} blocs={s.blocs} lang={lang} />
+          <Section key={s.titre} titre={s.titre} ancre={s.ancre} blocs={s.blocs} lang={lang}>
+            {s.ancre === "traceurs" && (
+              <TrackerPreferences
+                labels={{
+                  title: t(lang, "pixels.prefs.title"),
+                  current: t(lang, "pixels.prefs.current"),
+                  yes: t(lang, "pixels.prefs.yes"),
+                  no: t(lang, "pixels.prefs.no"),
+                  none: t(lang, "pixels.prefs.none"),
+                  saved: t(lang, "pixels.prefs.saved"),
+                  hint: t(lang, "pixels.prefs.hint"),
+                  accept: t(lang, "pixels.consent.accept"),
+                  refuse: t(lang, "pixels.consent.refuse"),
+                }}
+              />
+            )}
+          </Section>
         ))}
       </main>
       <SiteFooter />

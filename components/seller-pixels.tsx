@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { COOKIE_CONSENTEMENT, DUREE_CONSENTEMENT_S, lireConsentement, type Consentement, type EvenementPixel, type IdsPixels } from "@/lib/pixels";
-import { chargerPixels } from "@/lib/pixels-client";
+import { lireConsentement, type Consentement, type EvenementPixel, type IdsPixels } from "@/lib/pixels";
+import { chargerPixels, ecrireConsentement } from "@/lib/pixels-client";
 
 type Labels = { text: string; accept: string; refuse: string; privacy: string };
 
@@ -31,7 +31,7 @@ export function SellerPixels({ ids, evenement, labels }: { ids: IdsPixels; evene
   }, [consentement, ids, evenement]);
 
   function choisir(oui: boolean) {
-    document.cookie = `${COOKIE_CONSENTEMENT}=${oui ? 1 : 0}; Max-Age=${DUREE_CONSENTEMENT_S}; Path=/; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
+    ecrireConsentement(oui);
     setChoix(oui ? "oui" : "non");
   }
 
@@ -40,7 +40,7 @@ export function SellerPixels({ ids, evenement, labels }: { ids: IdsPixels; evene
   return (
     <div role="dialog" aria-live="polite" aria-label={labels.privacy} data-bandeau-pixels
       className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-lg rounded-2xl border border-line bg-surface p-4 text-sm shadow-lg">
-      <p className="text-cloud">{labels.text} <Link href="/confidentialite" className="underline">{labels.privacy}</Link></p>
+      <p className="text-cloud">{labels.text} <Link href="/confidentialite#traceurs" className="underline">{labels.privacy}</Link></p>
       <div className="mt-3 flex flex-wrap justify-end gap-2">
         <button type="button" onClick={() => choisir(false)} className="inline-flex min-h-11 items-center rounded-xl border border-line px-4">{labels.refuse}</button>
         <button type="button" onClick={() => choisir(true)} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 font-semibold text-on-brand">{labels.accept}</button>

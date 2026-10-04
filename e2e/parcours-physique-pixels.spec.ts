@@ -50,3 +50,26 @@ test("hors des pages vendeur : ni bandeau, ni domaines de régie dans la CSP", a
   expect(p?.status()).toBeLessThan(500);
   await expect(page.locator("[data-bandeau-pixels]"), "un vendeur sans pixel n'affiche aucun bandeau").toHaveCount(0);
 });
+
+test("« Gérer les traceurs » : depuis le pied de page, l'accord se retire en un clic et efface les cookies des régies", async ({ page, context, baseURL }) => {
+  const url = baseURL!;
+  await context.addCookies([
+    { name: "zab_pub", value: "1", url },
+    { name: "_fbp", value: "fb.1.test", url },
+  ]);
+  await page.goto("/catalogue");
+  await page.locator('footer a[href="/confidentialite#traceurs"]').click();
+  await expect(page).toHaveURL(/\/confidentialite#traceurs$/);
+  const centre = page.locator("[data-preferences-traceurs]");
+  await expect(centre.locator("[data-etat]")).toHaveAttribute("data-etat", "oui");
+  await centre.getByRole("button").first().click(); // Refuser
+  await expect(centre.locator("[data-etat]")).toHaveAttribute("data-etat", "non");
+  const cookies = await context.cookies();
+  expect(cookies.find((c) => c.name === "zab_pub")?.value).toBe("0");
+  expect(cookies.find((c) => c.name === "_fbp"), "le refus efface l'identifiant Meta déjà posé").toBeUndefined();
+
+  const appels = await intercepter(page);
+  await page.goto("/produit/pixel-test", { waitUntil: "networkidle" });
+  await expect(page.locator("[data-bandeau-pixels]")).toHaveCount(0);
+  expect(appels).toEqual([]);
+});

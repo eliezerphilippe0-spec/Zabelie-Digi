@@ -106,7 +106,8 @@ export function champsManquants(): (keyof typeof IDENTITE)[] {
 }
 
 export type Bloc = { p: string } | { ul: string[] };
-export type SectionPolitique = { titre: string; blocs: Bloc[] };
+/** `ancre` : identifiant d'ancre de la section (`/confidentialite#traceurs`), le même dans les quatre langues. */
+export type SectionPolitique = { titre: string; ancre?: "traceurs"; blocs: Bloc[] };
 export type Politique = {
   titre: string;
   majLabel: string;
@@ -199,6 +200,9 @@ const fr: Politique = {
       titre: "7. Vos droits",
       blocs: [
         {
+          p: "Zabelie s'adresse d'abord au public haïtien et applique le **droit haïtien** de la protection des données : l'arrêté fixant les règles de protection des données à caractère personnel (*Le Moniteur* n° 87 du 15 mai 2018) et les dispositions du Code pénal qui protègent les données personnelles et la vie privée. Pour la diaspora, nous respectons aussi les règles du pays de résidence lorsqu'elles s'appliquent.",
+        },
+        {
           p: "Selon la réglementation applicable (notamment le RGPD pour les résidents de l'Union européenne), vous disposez des droits d'accès, de rectification, d'effacement, de portabilité et d'opposition.",
         },
         {
@@ -213,6 +217,7 @@ const fr: Politique = {
     },
     {
       titre: "8. Cookies et traceurs",
+      ancre: "traceurs",
       blocs: [
         { p: "Nous utilisons trois catégories de cookies." },
         { p: "**Nécessaires au fonctionnement** (sans consentement, car le site ne peut pas fonctionner sans eux) :" },
@@ -236,7 +241,8 @@ const fr: Politique = {
             "Ces outils ne se chargent que sur **ses** fiches produit, **sa** boutique et la page de confirmation de **vos** achats chez lui, et **seulement si vous cliquez « Accepter »** dans le bandeau qui s'affiche alors.",
             "Ils transmettent alors à la régie concernée : la page consultée, le produit, son prix et, après un achat, le montant et un identifiant de commande. Ils ne transmettent ni votre nom, ni votre téléphone, ni votre adresse.",
             "Chaque régie traite ensuite ces données selon sa propre politique de confidentialité.",
-            "Votre choix est conservé **180 jours** dans le cookie zab_pub, y compris un refus : nous ne vous le redemandons pas pendant cette période. Pour changer d'avis, effacez les cookies de zabelie.com dans votre navigateur ; le bandeau réapparaîtra.",
+            "Le vendeur qui active un pixel le choisit pour sa propre publicité et **répond de l'usage qu'il en fait** auprès de la régie. Zabelie fournit l'outil, recueille votre accord et limite ce qui est transmis.",
+            "Votre choix est conservé **180 jours** dans le cookie zab_pub, y compris un refus : nous ne vous le redemandons pas pendant cette période. Vous pouvez le changer à tout moment avec **Gérer les traceurs**, en bas de chaque page ou juste en dessous. Un refus efface aussi les cookies que ces outils avaient déposés sur zabelie.com.",
           ],
         },
         { p: "Zabelie n'installe **aucun pixel publicitaire pour son propre compte**." },
@@ -353,6 +359,9 @@ const ht: Politique = {
       titre: "7. Dwa ou yo",
       blocs: [
         {
+          p: "Zabelie vize piblik ayisyen an anvan tout bagay, epi li aplike **lwa ayisyen** sou pwoteksyon done : arete ki fikse règ pou pwoteksyon done pèsonèl yo (*Le Moniteur* nimewo 87, 15 me 2018) ak atik Kòd penal la ki pwoteje done pèsonèl ak lavi prive. Pou dyaspora a, nou respekte tou règ peyi kote moun nan rete a lè yo aplikab.",
+        },
+        {
           p: "Dapre règleman ki aplikab (an patikilye RGPD la pou moun ki rete nan Inyon Ewopeyèn nan), ou gen dwa aksè, koreksyon, efasman, pòtabilite ak opozisyon.",
         },
         {
@@ -367,6 +376,7 @@ const ht: Politique = {
     },
     {
       titre: "8. Cookies ak siveyans",
+      ancre: "traceurs",
       blocs: [
         { p: "Nou itilize twa kalite cookies." },
         { p: "**Nesesè pou sit la mache** (san konsantman, paske sit la pa ka mache san yo) :" },
@@ -390,7 +400,8 @@ const ht: Politique = {
             "Zouti sa yo chaje sèlman sou fich pwodui **li**, boutik **li** ak paj konfimasyon acha **ou** fè lakay li, epi **sèlman si ou klike « Aksepte »** nan bann ki parèt lè sa a.",
             "Lè sa a, yo voye bay platfòm piblisite a : paj ou gade a, pwodui a, pri li, epi apre yon acha, montan an ak yon idantifyan kòmand. Yo pa voye ni non ou, ni telefòn ou, ni adrès ou.",
             "Chak platfòm trete done sa yo dapre pwòp politik konfidansyalite pa li.",
-            "Nou kenbe chwa ou pandan **180 jou** nan cookie zab_pub, menm si ou refize : nou p ap mande w ankò pandan tan sa a. Pou chanje lide, efase cookies zabelie.com yo nan navigatè ou ; bann lan ap parèt ankò.",
+            "Vandè ki mete yon piksèl la chwazi l pou pwòp piblisite pa l, epi **se li ki reponn pou jan li sèvi avè l** devan platfòm piblisite a. Zabelie bay zouti a, mande w si ou dakò, epi limite sa ki voye.",
+            "Nou kenbe chwa ou pandan **180 jou** nan cookie zab_pub, menm si ou refize : nou p ap mande w ankò pandan tan sa a. Ou ka chanje l nenpòt ki lè ak **Jere siveyans yo**, anba chak paj oswa jis anba a. Si ou refize, nou efase tou cookies zouti sa yo te mete sou zabelie.com.",
           ],
         },
         { p: "Zabelie pa mete **okenn piksèl piblisite pou pwòp kont pa li**." },
@@ -507,6 +518,9 @@ const en: Politique = {
       titre: "7. Your rights",
       blocs: [
         {
+          p: "Zabelie serves the Haitian public first and applies **Haitian law** on data protection: the decree setting the rules for the protection of personal data (*Le Moniteur* no. 87 of 15 May 2018) and the provisions of the Penal Code that protect personal data and privacy. For the diaspora, we also follow the rules of the country of residence where they apply.",
+        },
+        {
           p: "Under applicable regulation (notably the GDPR for residents of the European Union), you have rights of access, rectification, erasure, portability and objection.",
         },
         {
@@ -521,6 +535,7 @@ const en: Politique = {
     },
     {
       titre: "8. Cookies and trackers",
+      ancre: "traceurs",
       blocs: [
         { p: "We use three categories of cookies." },
         { p: "**Necessary for the site to work** (no consent needed, because the site cannot work without them):" },
@@ -544,7 +559,8 @@ const en: Politique = {
             "These tools load only on **that seller's** product pages, **their** shop and the confirmation page of **your** purchases from them, and **only if you click \"Accept\"** in the banner shown there.",
             "They then send the ad platform: the page viewed, the product, its price and, after a purchase, the amount and an order identifier. They do not send your name, phone number or address.",
             "Each platform then processes this data under its own privacy policy.",
-            "Your choice is kept for **180 days** in the zab_pub cookie, including a refusal: we will not ask again during that period. To change your mind, clear zabelie.com's cookies in your browser and the banner will appear again.",
+            "The seller who turns on a pixel chooses it for their own advertising and **is answerable for how they use it** to the platform. Zabelie provides the tool, collects your consent and limits what is sent.",
+            "Your choice is kept for **180 days** in the zab_pub cookie, including a refusal: we will not ask again during that period. You can change it at any time with **Manage trackers**, at the bottom of every page or just below. Refusing also deletes the cookies these tools had set on zabelie.com.",
           ],
         },
         { p: "Zabelie installs **no advertising pixel on its own behalf**." },
@@ -661,6 +677,9 @@ const es: Politique = {
       titre: "7. Sus derechos",
       blocs: [
         {
+          p: "Zabelie se dirige ante todo al público haitiano y aplica el **derecho haitiano** de protección de datos: el decreto que fija las normas de protección de los datos personales (*Le Moniteur* n.º 87 del 15 de mayo de 2018) y las disposiciones del Código Penal que protegen los datos personales y la vida privada. Para la diáspora, respetamos también las normas del país de residencia cuando se aplican.",
+        },
+        {
           p: "Conforme a la normativa aplicable (en particular el RGPD para residentes en la Unión Europea), usted dispone de los derechos de acceso, rectificación, supresión, portabilidad y oposición.",
         },
         {
@@ -675,6 +694,7 @@ const es: Politique = {
     },
     {
       titre: "8. Cookies y rastreadores",
+      ancre: "traceurs",
       blocs: [
         { p: "Utilizamos tres categorías de cookies." },
         { p: "**Necesarias para el funcionamiento** (sin consentimiento, porque el sitio no puede funcionar sin ellas):" },
@@ -698,7 +718,8 @@ const es: Politique = {
             "Estas herramientas solo se cargan en **sus** fichas de producto, **su** tienda y la página de confirmación de **sus** compras a ese vendedor, y **solo si hace clic en «Aceptar»** en el aviso que aparece entonces.",
             "En ese caso transmiten a la plataforma publicitaria: la página visitada, el producto, su precio y, tras una compra, el importe y un identificador de pedido. No transmiten su nombre, teléfono ni dirección.",
             "Cada plataforma trata después estos datos según su propia política de privacidad.",
-            "Su elección se conserva **180 días** en la cookie zab_pub, también si la rechaza: no volveremos a preguntarle durante ese periodo. Para cambiar de opinión, borre las cookies de zabelie.com en su navegador y el aviso volverá a aparecer.",
+            "El vendedor que activa un píxel lo elige para su propia publicidad y **responde del uso que hace de él** ante la plataforma. Zabelie proporciona la herramienta, recoge su consentimiento y limita lo que se transmite.",
+            "Su elección se conserva **180 días** en la cookie zab_pub, también si la rechaza: no volveremos a preguntarle durante ese periodo. Puede cambiarla en cualquier momento con **Gestionar rastreadores**, al pie de cada página o justo debajo. Un rechazo borra también las cookies que esas herramientas habían dejado en zabelie.com.",
           ],
         },
         { p: "Zabelie no instala **ningún píxel publicitario por cuenta propia**." },
