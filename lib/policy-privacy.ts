@@ -37,6 +37,17 @@ import type { Lang } from "./i18n";
  * `tests/politique-confidentialite.test.ts` la relie au cron. Rédigé par
  * l'agent sur mandat du porteur — à valider avec le reste du texte.
  *
+ * ⚖️ 2026-10-04 — `hebergement` et `retentionKyc` QUITTENT `IDENTITE`, pour
+ * la même raison que `purge` : ce sont des faits mesurés, écrits dans chaque
+ * langue.
+ *   • Région : MESURÉE le 2026-10-04 — Supabase `us-east-1` (`get_project`),
+ *     fonctions Vercel `iad1` (en-tête `x-vercel-id` de zabelie.com). La
+ *     phrase ne promet AUCUNE garantie de transfert : ni clauses types ni
+ *     accord signé n'ont été constatés, donc rien n'est affirmé.
+ *   • Pièces d'identité : 5 ans, décision porteur du 2026-10-04 (loi
+ *     haïtienne du 11/11/2013), réglée en base par `0126` ;
+ *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
+ *
  * ⚠️ Tant qu'un champ vaut `null`, le rendu affiche le marqueur — visible,
  * jamais silencieux. `tests/politique-confidentialite.test.ts` compte les
  * champs vides : le compte ne peut pas grossir sans que quelqu'un le voie.
@@ -54,14 +65,9 @@ import type { Lang } from "./i18n";
  * Les quatre faits que la politique promet et que le dépôt ne connaît pas.
  * `null` = non renseigné : le rendu le montre.
  */
-export const IDENTITE: Record<
-  "entite" | "email" | "hebergement" | "retentionKyc",
-  string | null
-> = {
+export const IDENTITE: Record<"entite" | "email", string | null> = {
   entite: null,
   email: "contact@zabelie.com",
-  hebergement: null,
-  retentionKyc: null,
 };
 
 /** Ce qu'on affiche à la place d'un champ vide, par langue. */
@@ -69,32 +75,24 @@ const MANQUANT: Record<Lang, Record<keyof typeof IDENTITE, string>> = {
   fr: {
     entite: "[À COMPLÉTER : entité juridique et adresse]",
     email: "[À COMPLÉTER : e-mail de contact]",
-    hebergement: "[À COMPLÉTER : région d'hébergement et garanties de transfert]",
-    retentionKyc: "[À COMPLÉTER : durée de conservation des pièces d'identité]",
   },
   ht: {
     entite: "[POU KONPLETE : antite jiridik ak adrès]",
     email: "[POU KONPLETE : imèl kontak]",
-    hebergement: "[POU KONPLETE : rejyon ebèjman ak garanti transfè]",
-    retentionKyc: "[POU KONPLETE : dire konsèvasyon pyès idantite yo]",
   },
   en: {
     entite: "[TO BE COMPLETED: legal entity and address]",
     email: "[TO BE COMPLETED: contact e-mail]",
-    hebergement: "[TO BE COMPLETED: hosting region and transfer safeguards]",
-    retentionKyc: "[TO BE COMPLETED: identity document retention period]",
   },
   es: {
     entite: "[POR COMPLETAR: entidad jurídica y dirección]",
     email: "[POR COMPLETAR: correo de contacto]",
-    hebergement: "[POR COMPLETAR: región de alojamiento y garantías de transferencia]",
-    retentionKyc: "[POR COMPLETAR: plazo de conservación de los documentos de identidad]",
   },
 };
 
-/** Remplace `{entite}`, `{email}`, `{hebergement}`, `{retentionKyc}`. */
+/** Remplace `{entite}` et `{email}`. */
 export function resoudre(texte: string, lang: Lang): string {
-  return texte.replace(/\{(entite|email|hebergement|retentionKyc)\}/g, (_, cle) => {
+  return texte.replace(/\{(entite|email)\}/g, (_, cle) => {
     const k = cle as keyof typeof IDENTITE;
     return IDENTITE[k] ?? MANQUANT[lang][k];
   });
@@ -193,7 +191,7 @@ const fr: Politique = {
             "**MonCash (Digicel)** — traitement des paiements.",
           ],
         },
-        { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **{hebergement}**" },
+        { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **Vos données sont hébergées aux États-Unis : la base de données chez Supabase (région us-east-1, Virginie du Nord) et l'application chez Vercel (région iad1, Washington).**" },
         { p: "Avec votre accord seulement, et uniquement sur les pages d'un vendeur qui les a activés, des données de navigation peuvent être transmises à **Meta, Google ou TikTok** (voir la section 8). Ces régies ne sont pas nos sous-traitants : elles traitent ces données pour leur propre compte." },
       ],
     },
@@ -260,7 +258,7 @@ const fr: Politique = {
             "**Ce que nous demandons** : deux documents parmi une *carte d'identification nationale*, un *passeport* et une *photo de vous* permettant de vous rapprocher du document présenté.",
             "**Qui les voit** : uniquement les membres de notre équipe chargés de la vérification. Elles ne sont **jamais** publiées, ni montrées aux acheteurs, ni montrées aux autres vendeurs.",
             "**Comment elles sont conservées** : dans un espace de stockage **privé**, qu'aucun lien public n'ouvre. Notre équipe y accède par un lien signé qui **expire au bout de cinq minutes**.",
-            "**Combien de temps** : **{retentionKyc}** après la décision. Le fichier et sa trace sont ensuite supprimés automatiquement.",
+            "**Combien de temps** : **5 ans** après la décision. Le fichier et sa trace sont ensuite supprimés automatiquement.",
             "**Pourquoi** : prévenir la fraude et sécuriser les retraits d'argent — *intérêt légitime* — et satisfaire nos obligations de vigilance là où elles s'appliquent — *obligation légale*.",
           ],
         },
@@ -353,7 +351,7 @@ const ht: Politique = {
             "**MonCash (Digicel)** — tretman peman yo.",
           ],
         },
-        { p: "Kèk patnè ka ebèje done deyò peyi ou. **{hebergement}**" },
+        { p: "Kèk patnè ka ebèje done deyò peyi ou. **Done ou yo ebèje Ozetazini : baz done a lakay Supabase (rejyon us-east-1, Nò Vijini) ak aplikasyon an lakay Vercel (rejyon iad1, Washington).**" },
         { p: "Sèlman si ou dakò, epi sèlman sou paj yon vandè ki aktive yo, done navigasyon ka ale bay **Meta, Google oswa TikTok** (gade seksyon 8). Platfòm sa yo pa patnè pa nou : yo trete done sa yo pou pwòp kont pa yo." },
       ],
     },
@@ -420,7 +418,7 @@ const ht: Politique = {
             "**Sa nou mande** : de dokiman pami yon *kat idantifikasyon nasyonal*, yon *paspò* ak yon *foto ou* ki pèmèt nou konpare ou ak dokiman an.",
             "**Kilès ki wè yo** : sèlman manm ekip nou an ki responsab verifikasyon an. Yo pa **janm** pibliye, ni montre bay achtè, ni montre bay lòt vandè.",
             "**Kijan nou kenbe yo** : nan yon depo **prive**, okenn lyen piblik pa ouvri l. Ekip nou an ouvri yo ak yon lyen siyen ki **ekspire apre senk minit**.",
-            "**Konbyen tan** : **{retentionKyc}** apre desizyon an. Apre sa, fichye a ak tras li efase otomatikman.",
+            "**Konbyen tan** : **5 an** apre desizyon an. Apre sa, fichye a ak tras li efase otomatikman.",
             "**Poukisa** : anpeche fwod epi sekirize retrè lajan — *enterè lejitim* — epi respekte obligasyon vijilans nou yo kote yo aplikab — *obligasyon legal*.",
           ],
         },
@@ -513,7 +511,7 @@ const en: Politique = {
             "**MonCash (Digicel)** — payment processing.",
           ],
         },
-        { p: "Some processors may host data outside your country. **{hebergement}**" },
+        { p: "Some processors may host data outside your country. **Your data is hosted in the United States: the database with Supabase (us-east-1 region, Northern Virginia) and the application with Vercel (iad1 region, Washington).**" },
         { p: "Only with your consent, and only on the pages of a seller who has enabled them, browsing data may be sent to **Meta, Google or TikTok** (see section 8). These platforms are not our processors: they process this data on their own behalf." },
       ],
     },
@@ -580,7 +578,7 @@ const en: Politique = {
             "**What we ask for**: two documents among a *national identification card*, a *passport* and a *photo of you* that lets us match you to the document presented.",
             "**Who sees them**: only the members of our team responsible for verification. They are **never** published, shown to buyers, or shown to other sellers.",
             "**How they are stored**: in a **private** storage area that no public link opens. Our team reaches them through a signed link that **expires after five minutes**.",
-            "**For how long**: **{retentionKyc}** after the decision. The file and its record are then deleted automatically.",
+            "**For how long**: **5 years** after the decision. The file and its record are then deleted automatically.",
             "**Why**: to prevent fraud and secure money withdrawals — *legitimate interest* — and to meet our due-diligence obligations where they apply — *legal obligation*.",
           ],
         },
@@ -673,7 +671,7 @@ const es: Politique = {
             "**MonCash (Digicel)** — tratamiento de los pagos.",
           ],
         },
-        { p: "Algunos encargados pueden alojar datos fuera de su país. **{hebergement}**" },
+        { p: "Algunos encargados pueden alojar datos fuera de su país. **Sus datos se alojan en Estados Unidos: la base de datos en Supabase (región us-east-1, Virginia del Norte) y la aplicación en Vercel (región iad1, Washington).**" },
         { p: "Solo con su consentimiento, y únicamente en las páginas de un vendedor que los haya activado, pueden transmitirse datos de navegación a **Meta, Google o TikTok** (véase la sección 8). Estas plataformas no son encargadas nuestras: tratan estos datos por cuenta propia." },
       ],
     },
@@ -740,7 +738,7 @@ const es: Politique = {
             "**Qué pedimos**: dos documentos entre una *cédula de identificación nacional*, un *pasaporte* y una *foto suya* que permita compararle con el documento presentado.",
             "**Quién los ve**: únicamente los miembros de nuestro equipo encargados de la verificación. **Nunca** se publican, ni se muestran a los compradores, ni a otros vendedores.",
             "**Cómo se conservan**: en un espacio de almacenamiento **privado** que ningún enlace público abre. Nuestro equipo accede a ellos mediante un enlace firmado que **caduca a los cinco minutos**.",
-            "**Cuánto tiempo**: **{retentionKyc}** tras la decisión. Después, el archivo y su rastro se eliminan automáticamente.",
+            "**Cuánto tiempo**: **5 años** tras la decisión. Después, el archivo y su rastro se eliminan automáticamente.",
             "**Por qué**: prevenir el fraude y proteger las retiradas de dinero — *interés legítimo* — y cumplir nuestras obligaciones de diligencia donde sean aplicables — *obligación legal*.",
           ],
         },
