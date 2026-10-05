@@ -154,7 +154,7 @@ Légende : ✅ existe et fonctionne (testé) · 🟡 existe mais incomplet ·
 
 | Élément | État |
 |---|---|
-| Panier multi-vendeurs | Mise à jour 2026-10-05 : panier (`0058`) et paiement groupé (`0128`, `0129`) construits ; `panier/payer` réutilise le checkout existant. Migrations et activation encore en attente selon `OPS_TODO`, non vérifiées en base dans ce passage |
+| Panier multi-vendeurs | Mise à jour 2026-10-05 : panier (`0058`) et paiement groupé (`0128`, `0129`) construits ; `panier/payer` réutilise le checkout existant. Schéma appliqué et vérifié à 18:12Z (§10) ; ouverture automatique après la première vente réelle admissible, hors auto-achat et comptes test (`0132`) |
 | Recherche : approximative, demande non servie | ✅ `zabelie_search_fuzzy`, `0047` ; synonymes kreyòl ❌ |
 | Catégories : 83 rayons actifs | 🐞 **la page `/categories` affiche 36 fois « aucune offre publiée »** |
 | SEO : sitemap, robots, canonique, données structurées | Mise à jour 2026-10-05 : URL publiques par langue construites (`78e830f`, `proxy.ts`, `lib/langue-url.ts`) ; ne pas recréer une seconde couche de routage |
@@ -474,7 +474,8 @@ rendu. Les corrections réutilisent les modules canoniques :
   mappées les interdictions IPv4 existantes, lors de la résolution de connexion.
 
 **Validation et publication :** résultats consignés dans `OPS_TODO.md`.
-La migration KYC doit passer la CI/Postgres avant application et publication.
+La migration KYC a passé la CI/Postgres, a été appliquée à 14:54:29Z puis
+publiée par la PR #324.
 Les migrations groupées `0128`/`0129`, les activations de rails, les secrets,
 les paramètres commerciaux et les données financières réelles ne font pas
 partie de ce lot. Le contrat sans livraison Zabelie et sans Pay autonome
@@ -562,7 +563,39 @@ Zabelie reste à qualifier, et les cinq ans sont aussi la décision explicite
 du porteur. La société, le dépôt, les contrats et les mouvements réels
 ne se déduisent pas de tests logiciels.
 
-**Validation et publication :** en cours, après gel des sources ; voir
-`OPS_TODO`. L'ordre préparé est `0128`, `0129`, `0131`, `0132`, `0133`.
-`0130` est déjà appliquée. Chaque application devra croiser le SQL exact
-du journal Supabase, l'empreinte canonique et le registre opérationnel.
+**Validation :** [CI verte](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/37353277158)
+sur `25e440f6768dfc29e59604ed2af5b48b74e37c85` : 1 564 tests unitaires,
+185 tests navigateur, PostgreSQL 17 et toutes les suites SQL, confirmations
+simultanées, courses KYC entre sessions et restauration synthétique avec RLS.
+TypeScript, lint sans erreur (10 avertissements existants), contraste,
+audit des dépendances de production, scanner Linux et compilation réussis.
+La QA FR/HT/EN/ES à 360 px vérifie les documents publics versionnés, les cases
+non précochées, le refus sans les deux actes, la déclaration exacte sans
+session e-mail et le retour OAuth sans achat automatique. Aucun compte,
+paiement, remise ou retour réel n'est créé par ces essais.
+
+**Applications de production — 5 octobre 2026 :**
+
+| Fichier | UTC | SHA-256 canonique |
+|---|---|---|
+| `0128_zabelie_paiement_groupe.sql` | 18:11:50Z | `14a4752dc04df53dd6a74a20cea5776d51438d300f2ce747face4fa7de6b7738` |
+| `0129_zabelie_objets_requis_panier.sql` | 18:12:31Z | `08ef8d8962c6f6aa756dc9f8c36fff6835e3597b7b2bc3c3f3cac5e23ffa9555` |
+| `0131_zabelie_kyc_retention_cloture.sql` | 18:12:38Z | `071584a880ea8e0a2dec43f6bc8ec7a4514a645af2f1fe8982ef7e5db3540f4f` |
+| `0132_zabelie_achat_distinct.sql` | 18:12:46Z | `8e323283002c6534148f0a27d6ce98cff25e47f05fc23c8384e50a251f723b2c` |
+| `0133_zabelie_acceptation_compte.sql` | 18:12:53Z | `836197e0b191a68c7967c0a8760bdf561fd147ed9d738f226b6c5d21dd63bc0e` |
+
+Pour chaque fichier, le SQL intégral reçu est identique à la source contrôlée
+par la CI ; le journal Supabase et le registre opérationnel concordent
+(`appliquee`, `journal_supabase`). Autorisation : instruction du porteur du
+5 octobre et règle permanente du 17 août. `0130` était déjà appliquée.
+Postconditions lues : panier fermé et armement automatique conservé, KYC
+cinq ans, zéro candidat à la purge, trigger Auth actif, RPC juridique
+refusée à anon et autorisée à authenticated. Les deux anciens reçus produits
+sont conservés ; aucune acceptation historique de compte n'est inventée.
+La seule absence reste `0056`, gelée et annulée antérieurement par le porteur
+jusqu'aux décisions D-10 à D-14 sur les preuves de litige. Aucun nouvel objet
+requis n'est absent et aucune purge d'avis n'est activée par ce lot.
+
+**Publication :** [PR #325](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/325),
+avec statut, commit de déploiement et contrôles du domaine dans sa description.
+Les changements de suivi après application ne modifient aucun SQL appliqué.

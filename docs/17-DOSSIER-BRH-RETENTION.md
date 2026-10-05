@@ -326,7 +326,7 @@ Sources officielles consultées le 2026-10-05 :
 Le dépôt MCI et une trace d'acceptation ne valent respectivement ni
 immatriculation obtenue ni signature électronique certifiée.
 
-**Conservation KYC — correction technique `0131` préparée avant lancement.** La
+**Conservation KYC — correction technique `0131` appliquée avant lancement.** La
 [circulaire BRH 129-1 du 6 février 2026, §14 p.16](https://www.brh.ht/wp-content/uploads/Circulaire-CIR-.-BRH-IF-2026-129-1-Aux-Institutions-FinancieEres-6-feevrier-2026-Lutte-contre-le-blanchiment-de-capitaux._0001.pdf),
 relue sur le PDF officiel, distingue les documents de vigilance conservés
 au moins cinq ans après clôture/cessation de relation, et les pièces d'opération
@@ -336,8 +336,10 @@ suspendus et démarre le délai à la fermeture explicite. La première date de
 fermeture est conservée au réessai ; un compte anonymisé ne peut plus être
 réactivé par la modération. La purge des métadonnées revérifie l'éligibilité.
 Les tests PostgreSQL couvrent la frontière calendaire, le 29 février,
-les rôles et les comptes anciens encore actifs. L'application reste subordonnée
-à leur réussite en CI et à la vérification du journal de production.
+les rôles et les comptes anciens encore actifs. Ils passent en PostgreSQL 17.
+Application le 5 octobre 2026 à 18:12:38Z : SQL exact vérifié au journal,
+empreinte `071584a880ea8e0a2dec43f6bc8ec7a4514a645af2f1fe8982ef7e5db3540f4f`,
+registre `appliquee`/`journal_supabase` ; trace complète `docs/67` §10.
 La portée du cadre financier à Zabelie reste
 une question pour le conseil ; appliquer la conservation décidée par le
 porteur ne lui attribue aucun statut financier.

@@ -29,12 +29,26 @@ annoncé pour la semaine prochaine reste une démarche à effectuer.
   elle n'est pas acquise par la présence du workflow. Le cron quotidien
   reste le secours. GitHub ne garantit pas une exécution à la minute exacte.
 
-**Application préparée, pas encore effectuée :** `0128`, `0129`, `0131`,
-`0132`, puis `0133`, après CI/PostgreSQL verte. Le panier conserve l'ouverture
+**Application vérifiée :** `0128`, `0129`, `0131`, `0132` et `0133` sont
+appliquées le 5 octobre 2026, de 18:11:50Z à 18:12:53Z, après la CI verte
+du commit `25e440f`. SQL reçu identique aux fichiers, registre en
+`appliquee`/`journal_supabase`. Dates et empreintes complètes : `docs/67` §10.
+Le panier conserve l'ouverture
 automatique autorisée après la première vente réelle entre acteurs distincts,
 hors comptes test ; aucune ouverture manuelle ni mode marchand n'est ajouté.
-Les fichiers `0128`/`0129` sont identiques au HEAD fusionné ; leurs empreintes
-ci-dessous ont été recalculées sur ces sources le 5 octobre 2026.
+Les fichiers `0128`/`0129` sont identiques aux sources déjà fusionnées.
+La vérification de production confirme le panier fermé, le réglage KYC à
+cinq ans, le trigger Auth actif et la RPC juridique interdite à anon.
+La seule absence historique de la sonde reste `0056`, volontairement gelée
+par la décision antérieure du porteur pour préserver les preuves de litige
+jusqu'aux arbitrages D-10 à D-14 ; elle n'est pas réappliquée.
+
+**Validation :** 1 564 tests unitaires et 185 tests navigateur, zéro échec ;
+PostgreSQL 17, confirmations simultanées, courses KYC, restauration synthétique,
+TypeScript, build, lint sans erreur, contraste et scanner Linux réussis.
+QA FR/HT/EN/ES à 360 px ; opérateurs simulés, aucun débit réel.
+Statut de publication et vérification du domaine :
+[PR #325](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/325).
 
 **Limites factuelles :** `docs/17` porte le dossier des fonds et `docs/22`
 le protocole de première commande et remboursement. Une simulation ne
@@ -65,8 +79,8 @@ sans nouveau rail, portefeuille, registre financier ni service de livraison.
 - Les adresses IPv4 privées mappées en IPv6 sont refusées à la connexion
   des webhooks, y compris leurs formes hexadécimales et développées.
 
-**Déploiement KYC :** `0130_zabelie_kyc_depot_atomique.sql` doit être éprouvée
-par la CI/Postgres avant application et avant publication de la route.
+**Déploiement KYC :** `0130_zabelie_kyc_depot_atomique.sql` a été appliquée
+le 5 octobre 2026 à 14:54:29Z, après CI/Postgres, puis publiée par la PR #324.
 Elle ne dépend pas de `0128`/`0129` et n'ouvre pas le panier groupé.
 Résultats et limites de ce lot : `docs/67` §9.
 
@@ -80,8 +94,8 @@ rechargement, clés conservées, conflits et attente dans les quatre langues
 Les cinq parcours collections/destinataire passent également. Leur panne
 API est répétée deux fois sur le même serveur fictif : le journal reste
 isolé par tentative, sans suppression, seconde préparation ou session.
-La CI reste la porte pour PostgreSQL 17, les courses KYC entre sessions et
-le scanner Linux. Elle précède toute application de `0130` et fusion.
+PostgreSQL 17, les courses KYC entre sessions et le scanner Linux ont également
+réussi en CI avant application de `0130` et fusion.
 Empreinte canonique de `0130` :
 `d449c17185ebc5f700a64c93c55f493de362d9179c1a9a4266ac553e4e6e596c`.
 
@@ -145,25 +159,17 @@ Demande porteur (« Passe au panier multi vendeurs »). Arbitrages du 2026-10-04
 
 Code fusionné : PR #318 (`e5651263`) et PR #319 (`c2c4ffaf`). **En ligne, 55 contrôles sur 55 :** la route `/api/panier/payer` refuse sans session, et le bouton est absent. Le code fonctionne SANS les migrations, et c'est voulu : panier article par article comme avant, route en 409 « fermé ».
 
-⛔ **`0128` et `0129` NE SONT PAS APPLIQUÉES.** `apply_migration` (MCP Supabase) a expiré **trois fois** les 2026-10-04 et 2026-10-05 :
+**`0128` et `0129` sont appliquées le 5 octobre 2026** : trace complète au §10
+de `docs/67`. Historique des essais antérieurs : `apply_migration` (MCP Supabase)
+avait expiré **trois fois** les 2026-10-04 et 2026-10-05 :
 - deux fois sur 0128 d'un seul tenant (41,7 Ko) ;
 - une fois sur 0128 scindée (20 Ko, PR #319).
 
 Après chaque tentative, on a vérifié qu'il n'y avait aucun objet créé, aucune ligne au journal des migrations, aucune trace au journal Postgres, aucun verrou et aucune session active : **rien n'a atteint la base**, et rien n'est à moitié appliqué. La taille n'était donc pas la cause, contrairement à ma première hypothèse. Je me suis arrêté à trois tentatives plutôt que de m'acharner sur un outil d'écriture en production qui dysfonctionne.
 
-À faire :
-1. **Réessayer `0128` puis `0129` par MCP** quand l'outil répond. Les empreintes attendues :
-
-   | Fichier | sha256 brut | Empreinte canonique |
-   |---|---|---|
-   | `0128` | `4c3fe3c592a537b97ee7f6d360a9ce7013821bd368abf36b86f825e2eb812fe7` | `14a4752dc04df53dd6a74a20cea5776d51438d300f2ce747face4fa7de6b7738` |
-   | `0129` | `48d4074a3ef15c019bed4c53b9e092a8721999c043fc34f1e5e4c695e2985b09` | `08ef8d8962c6f6aa756dc9f8c36fff6835e3597b7b2bc3c3f3cac5e23ffa9555` |
-
-   Suivre la méthode habituelle : SQL reçu croisé avec le fichier, puis ligne au registre `journal_supabase`.
-2. ⚠️ Repli par l'éditeur SQL Supabase : possible, mais la preuve tombe en `sonde_schema` (le SQL exact n'est pas journalisé). C'est à éviter si l'outil revient.
-3. ✅ **Ouverture tranchée par le porteur le 2026-10-05** : « Tu peux l'activer dès la première vente ».
+✅ **Ouverture tranchée par le porteur le 2026-10-05** : « Tu peux l'activer dès la première vente ».
    - C'est **automatique** : `zabelie_panier_groupe_ouvert()` (0128) ouvre le panier groupé dès qu'existe une vente réelle, c'est-à-dire mode production, montant > 0, commande payée ou remise.
-   - Une vente d'essai ne compte pas. Si l'unique vente réelle est remboursée, le panier se referme.
+   - Une vente d'essai, une auto-vente ou un acteur test ne compte pas (0132). Si l'unique vente réelle est remboursée, le panier se referme.
    - Personne n'a rien à lever.
    - Désarmer : `update zabelie_panier_config set ouvrir_apres_premiere_vente = false`.
 

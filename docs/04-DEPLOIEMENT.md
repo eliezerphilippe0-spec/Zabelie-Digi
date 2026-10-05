@@ -123,7 +123,9 @@ Non configurés = invisibles au checkout (MonCash seul). Pour les activer :
 
 ## 4. Checklist de mise en prod
 
-- [ ] Migrations `0001→0020` appliquées, bucket `product-files` privé.
+- [ ] Schéma et registre croisés contre les migrations requises ; appliquer
+  uniquement les fichiers proposés après CI/PostgreSQL verte, jamais rejouer
+  une plage de numéros aveuglément. Bucket `product-files` privé.
 - [ ] Test SQL d'idempotence : OK.
 - [ ] Variables d'env Supabase (dont `SUPABASE_SERVICE_ROLE_KEY`) sur Vercel.
 - [ ] Auth : redirect URL `/auth/callback` configurée côté Supabase.
@@ -138,6 +140,8 @@ Non configurés = invisibles au checkout (MonCash seul). Pour les activer :
 
 ## 5. Différé (Vague 2 — bloqué)
 
-- **NatCash** : ajouter `'natcash'` à l'enum `payment_rail` + un client dédié.
-- **Retraits BRH** : activer `payouts` selon les règles BRH (KYC, plafonds,
-  reporting). Voir `00-CONTEXTE.md §11`.
+- **MonCash/NatCash via Kobara** : client et parcours existants ; la bascule
+  réelle exige les contrats et paramètres autorisés, sans nouveau client.
+- **Règlement vendeur** : demandes, file administrative et preuve externe
+  existent. La qualification du circuit des fonds et les contrats restent
+  ceux de `17-DOSSIER-BRH-RETENTION.md`, avant les encaissements réels.
