@@ -68,6 +68,8 @@ const MIGRATION = migrationDeLaSonde();
  * qu'on la retire.
  */
 const APPELES_DEPUIS_SQL: Record<string, string> = {
+  zabelie_release_stock:
+    "appelée par confirm_payment/refund_order et l'expiration SQL (0037, 0081), jamais par un timeout TS : une session incertaine conserve son stock jusqu'à une décision formelle",
   zabelie_search_normalize:
     "appelée à l'intérieur d'autres fonctions SQL (0047), jamais par le code TS — mais le capteur de demande en dépend, donc elle reste surveillée",
   zabelie_confirm_group_payment:

@@ -37,6 +37,16 @@ test("H2 — adresses privées refusées (IPv4, IPv6, IPv4 mappée)", () => {
   for (const ip of ["8.8.8.8", "172.32.0.1", "1.1.1.1", "2606:4700::1111"]) assert.equal(adresseIpPrivee(ip), false, ip);
 });
 
+test("H2b — mapped IPv4 and local IPv6 are classified by address, regardless of notation", () => {
+  for (const ip of ["::ffff:7f00:1", "::ffff:a00:1", "::ffff:a9fe:a9fe", "::ffff:c0a8:101", "0:0:0:0:0:ffff:7f00:1",
+    "0000:0000:0000:0000:0000:FFFF:0A00:0001", "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:0", "FE80:0000:0000:0000:0000:0000:0000:0001", "fe80::1%eth0"]) {
+    assert.equal(adresseIpPrivee(ip), true, ip);
+  }
+  for (const ip of ["::ffff:8.8.8.8", "::ffff:808:808", "0:0:0:0:0:ffff:808:808", "2606:4700:0:0:0:0:0:1111"]) {
+    assert.equal(adresseIpPrivee(ip), false, ip);
+  }
+});
+
 test("H3 — adresse de réception : https public seulement, et la base l'accepte aussi", () => {
   const sqlUrl = new RegExp(SQL.match(/url ~ '([^']+)'/)![1].replace("[^\\s/?#@]", "[^\\s/?#@]"));
   for (const ok of ["https://boutik.example/hooks/zabelie", "https://shop.example.ht/h?x=1", "https://boutik.example:443/h"]) {
@@ -59,6 +69,10 @@ test("H4 — la résolution est vérifiée À LA CONNEXION : une seule adresse p
   assert.equal(await resoudre(["93.184.216.34"]), "93.184.216.34");
   assert.equal(await resoudre(["10.0.0.5"]), "adresse_privee");
   assert.equal(await resoudre(["93.184.216.34", "127.0.0.1"]), "adresse_privee", "DNS rebinding partiel");
+  for (const ip of ["::ffff:7f00:1", "::ffff:a00:1", "::ffff:a9fe:a9fe", "0:0:0:0:0:ffff:c0a8:101", "0:0:0:0:0:0:0:1"]) {
+    assert.equal(await resoudre(["93.184.216.34", ip]), "adresse_privee", ip);
+  }
+  assert.equal(await resoudre(["::ffff:808:808"]), "::ffff:808:808", "public mapped address remains usable");
   assert.equal(await resoudre([]), "adresse_privee");
   assert.match(readFileSync("lib/webhooks.ts", "utf8"), /httpsRequest\(url, \{[\s\S]{0,200}lookup: lookupPublic\(\)/, "l'envoi réel doit passer par le lookup filtré");
 });

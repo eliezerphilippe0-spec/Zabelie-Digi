@@ -3,10 +3,11 @@ import { normalizeRecipient, type RecipientInput, type RecipientLabels } from "@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { useSessionDraft, prepareCheckoutAttempt, clearCheckoutAttempt } from "@/lib/use-session-draft";
+import { useSessionDraft, prepareCheckoutAttempt, readCheckoutAttempt, clearCheckoutAttempt, CHECKOUT_ATTEMPT_MAX_AGE } from "@/lib/use-session-draft";
 import type { MarketplaceCopy } from "@/lib/marketplace-copy";
 import { useRouter } from "next/navigation";
 import { appelSession } from "@/lib/appel-session";
+import type { IssueAppel } from "@/lib/appel-session";
 import {
   normaliserNumeroHaiti,
   operateurDouteux,
@@ -112,7 +113,7 @@ export function BuyButton({
   offerId?: string;
   recommendationSource?: string;
   draftScope?: string;
-  trustLabels?: Pick<MarketplaceCopy, "resume" | "draft" | "reconnect" | "paymentReview">;
+  trustLabels?: Pick<MarketplaceCopy, "resume" | "draft" | "reconnect" | "paymentReview" | "resumeAttempt" | "checkingAttempt" | "attemptUnavailable">;
   options: BuyOption[];
   /** Variantes physiques. Absent = produit digital, parcours inchangé. */
   variants?: VariantChoice[];
@@ -137,10 +138,14 @@ export function BuyButton({
     (v): v is Omit<RecipientInput, "consent"> => Boolean(v && typeof v === "object" && ["name", "phone", "locality", "note"].every(k => typeof (v as Record<string, unknown>)[k] === "string" && String((v as Record<string, unknown>)[k]).length <= 500)));
   const [consent, setConsent] = useState(false);
   const recipientInput = { ...recipientFields, consent };
-  const [uncertain, setUncertain] = useSessionDraft<boolean>(draftScope ? `zabelie:checkout-review:${draftScope}:${productId}` : undefined, false, (v): v is boolean => typeof v === "boolean");
+  const [uncertain, setUncertain, clearReview, reviewLoaded] = useSessionDraft<boolean>(`zabelie:checkout-review:${draftScope ?? "visitor"}:${productId}`, false,
+    (v): v is boolean => typeof v === "boolean", CHECKOUT_ATTEMPT_MAX_AGE);
+  const [retryKey, setRetryKey, clearRetry, retryLoaded] = useSessionDraft<string | null>(`zabelie:checkout-retry:${draftScope ?? "visitor"}:${productId}`, null,
+    (v): v is string | null => v === null || typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v), CHECKOUT_ATTEMPT_MAX_AGE);
   const recipientValue = forSomeone ? normalizeRecipient(recipientInput) : null;
   const [loadingRail, setLoadingRail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recovering, setRecovering] = useState(false);
   const checkoutAttempt = useRef<{ intent: string; key: string } | null>(null);
   const submitting = useRef(false);
   const attemptStorageKey = `zabelie:checkout-attempt:${draftScope ?? "visitor"}:${productId}`;
@@ -216,7 +221,7 @@ export function BuyButton({
      sont désormais distinctes, et `reseau` ne couvre plus que le cas où la
      requête n'est jamais partie. */
   async function handleBuy(option: BuyOption) {
-    if (submitting.current || loadingRail || uncertain) return;
+    if (submitting.current || loadingRail || uncertain || !reviewLoaded || !retryLoaded) return;
     if (!navigator.onLine) { setError(errors?.network ?? "Connexion impossible."); return; }
     if (recipient && forSomeone && !recipientValue) { setError(recipient.invalid); return; }
     setLoadingRail(cleOption(option));
@@ -247,7 +252,7 @@ export function BuyButton({
     submitting.current = true;
     try {
       const key = await prepareCheckoutAttempt(attemptStorageKey, intent,
-        checkoutAttempt.current?.intent === intent ? checkoutAttempt.current.key : undefined);
+        retryKey ?? (checkoutAttempt.current?.intent === intent ? checkoutAttempt.current.key : undefined));
       checkoutAttempt.current = { intent, key };
     } catch {
       submitting.current = false;
@@ -255,12 +260,21 @@ export function BuyButton({
       setError(errors?.generic ?? "Une erreur est survenue.");
       return;
     }
-    const issue = await appelSession<{ redirectUrl?: string }>("/api/checkout", {
-      ...body, checkoutKey: checkoutAttempt.current.key,
-    });
-    submitting.current = false;
+    let issue: IssueAppel<{ redirectUrl?: string; checkoutState?: "ready" | "complete" }>;
+    // Reload/closed connection during this POST cannot become a fresh order.
+    // The draft setter persists immediately, before any gateway navigation.
+    setUncertain(true);
+    try {
+      issue = await appelSession("/api/checkout", { ...body, checkoutKey: checkoutAttempt.current.key });
+    } catch {
+      setUncertain(true);
+      setLoadingRail(null);
+      setError(errors?.generic ?? "Une erreur est survenue.");
+      return;
+    } finally { submitting.current = false; }
 
     if (issue.etat === "connexion") {
+      setUncertain(false);
       // Préserve le contexte : retour automatique sur la page produit
       // après connexion (le point de friction n°1 vs Gumroad).
       router.push(issue.vers);
@@ -268,17 +282,21 @@ export function BuyButton({
     }
 
     if (issue.etat === "refus") {
-      if (issue.code === "provider_unavailable") {
+      if (issue.code === "provider_unavailable" || issue.code === "checkout_attempt_conflict" || issue.statut >= 500) {
         // An operator timeout may have created a session. Review the
         // existing purchase instead of offering a second payment attempt.
         setUncertain(true);
       } else if (issue.code === "coupon_invalid" && coupon) {
+        setRetryKey(checkoutAttempt.current.key);
+        setUncertain(false);
         // Bilingue (i18n) + retour à l'état sans remise : l'acheteur
         // re-choisit en connaissance de cause, jamais de prix plein en douce.
         setApplied(null);
         setCouponError(true);
         setError(coupon.invalid);
       } else {
+        setRetryKey(checkoutAttempt.current.key);
+        setUncertain(false);
         setError(
           issue.code === "provider_unavailable" && errors
             ? errors.provider
@@ -299,7 +317,7 @@ export function BuyButton({
     // Redirection vers le rail (URL absolue opérateur ou page interne). Une
     // réponse OK sans destination n'est pas une réussite : sans ce garde,
     // `window.location.href` recevait la chaîne « undefined ».
-    const destination = String(issue.data.redirectUrl ?? "");
+    const destination = typeof issue.data?.redirectUrl === "string" ? issue.data.redirectUrl : "";
     if (!destination) {
       setUncertain(true);
       setError(errors?.generic ?? "Une erreur est survenue.");
@@ -307,7 +325,20 @@ export function BuyButton({
       return;
     }
     clearDraft();
-    clearCheckoutAttempt(attemptStorageKey);
+    // Keep the identity while the external payment can still be pending.
+    // Going back from the operator must not create a second purchase.
+    if (issue.data.checkoutState === "complete") {
+      clearCheckoutAttempt(attemptStorageKey);
+      clearReview();
+      clearRetry();
+      setRetryKey(null);
+      setUncertain(false);
+    } else {
+      setUncertain(true);
+    }
+    // A back/forward-cache restore can retain this component. Keep the
+    // purchase locked, but leave its read-only recovery action available.
+    setLoadingRail(null);
     if (destination.startsWith("/")) {
       router.push(destination);
     } else {
@@ -315,8 +346,61 @@ export function BuyButton({
     }
   }
 
+  async function resumeAttempt() {
+    if (submitting.current || recovering) return;
+    if (!navigator.onLine) { setError(errors?.network ?? "Connexion impossible."); return; }
+    const key = checkoutAttempt.current?.key ?? readCheckoutAttempt(attemptStorageKey);
+    if (!key) { setError(trustLabels?.attemptUnavailable ?? errors?.generic ?? "Une erreur est survenue."); return; }
+    submitting.current = true;
+    setRecovering(true);
+    setError(null);
+    let issue: IssueAppel<{ redirectUrl?: string; checkoutState?: "ready" | "pending" | "review" | "complete" | "retryable"; retryAllowed?: boolean }>;
+    try {
+      issue = await appelSession("/api/checkout", { productId, checkoutKey: key, recoveryOnly: true });
+    } catch {
+      setError(trustLabels?.attemptUnavailable ?? errors?.generic ?? "Une erreur est survenue.");
+      return;
+    } finally {
+      submitting.current = false;
+      setRecovering(false);
+    }
+    if (issue.etat === "connexion") { router.push(issue.vers); return; }
+    if (issue.etat === "refus" && issue.statut === 404) {
+      // No stored order was found. Keep its identity even if the original
+      // request is still finishing, then let the buyer revalidate normally.
+      setRetryKey(key);
+      setUncertain(false);
+      return;
+    }
+    if (issue.etat === "ok" && issue.data?.checkoutState === "retryable" && issue.data.retryAllowed === true) {
+      // The server has proved that this order has no payment/session. Only
+      // then may the normal validation flow prepare it, with its same key.
+      setRetryKey(key);
+      setUncertain(false);
+      return;
+    }
+    if (issue.etat !== "ok" || typeof issue.data?.redirectUrl !== "string" || !issue.data.redirectUrl || !["ready", "pending", "review", "complete"].includes(issue.data.checkoutState ?? "")) {
+      setError(trustLabels?.attemptUnavailable ?? errors?.generic ?? "Une erreur est survenue.");
+      return;
+    }
+    if (issue.data.checkoutState !== "ready" && !issue.data.redirectUrl.startsWith("/")) {
+      setError(trustLabels?.attemptUnavailable ?? errors?.generic ?? "Une erreur est survenue.");
+      return;
+    }
+    if (issue.data.checkoutState === "complete") {
+      clearCheckoutAttempt(attemptStorageKey);
+      clearReview();
+      clearRetry();
+      setRetryKey(null);
+      setUncertain(false);
+    }
+    const destination = issue.data.redirectUrl;
+    if (destination.startsWith("/")) router.push(destination);
+    else window.location.href = destination;
+  }
+
   const [primary, ...others] = selected?.options ?? options;
-  const busy = loadingRail !== null || uncertain;
+  const busy = loadingRail !== null || uncertain || !reviewLoaded || !retryLoaded;
 
   const stockBadge = (n: number) => {
     if (!stockLabels) return null;
@@ -334,7 +418,15 @@ export function BuyButton({
 
   return (
     <div>
-      {uncertain && <p role="alert" className="mb-4 text-sm">{trustLabels?.paymentReview ?? trustLabels?.reconnect}<Link href="/mes-achats" className="ml-2 inline-flex min-h-11 items-center underline">{trustLabels?.resume ?? "Mes achats"}</Link></p>}
+      {uncertain && <div role="alert" className="mb-4 text-sm">
+        <p>{trustLabels?.paymentReview ?? trustLabels?.reconnect}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={resumeAttempt} disabled={recovering || loadingRail !== null} className="inline-flex min-h-11 items-center rounded-xl border border-line px-3 disabled:opacity-50">
+            {recovering ? trustLabels?.checkingAttempt ?? loadingLabel : trustLabels?.resumeAttempt ?? "Reprendre cette tentative"}
+          </button>
+          <Link href="/mes-achats" className="inline-flex min-h-11 items-center underline">{trustLabels?.resume ?? "Mes achats"}</Link>
+        </div>
+      </div>}
       {recipient && <fieldset className="mb-5 rounded-xl border border-line p-4">
         <legend className="sr-only">{recipient.toggle}</legend>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={forSomeone} onChange={e => setForSomeone(e.target.checked)} disabled={busy}/>{recipient.toggle}</label>

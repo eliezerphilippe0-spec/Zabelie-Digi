@@ -424,3 +424,69 @@ rail n'est effectuée par ce lot. La publication du code est autorisée le
 Le rejeu individuel lit la commande sans exiger `group_id` (0128 non appliquée),
 tout en conservant la garde groupe si la colonne existe. Un ancien client sans
 clé reçoit un message invitant à actualiser : aucun repli non dédupliqué.
+
+## 9. Corrections de l'audit de la version en ligne — 5 octobre 2026
+
+Le nouvel audit porte sur `6a1f2ca`, publié après le §8. Il a reproduit un
+blocage d'achat numérique et quatre défauts de priorité secondaire : reprise
+inaccessible, session physique exposée après libération du stock, décision
+KYC écrasée par un dépôt concurrent et filtrage incomplet des IPv4 privées
+mappées en IPv6. Les deux défauts de sécurité sont préexistants. Le blocage
+de reprise numérique et certains chemins d'incertitude ont été introduits
+par le lot précédent. Ces reproductions utilisent des I/O simulées ; elles
+n'attestent aucun débit ou incident de production.
+
+**Implémentation autorisée :** instruction « implémenté » après ce compte
+rendu. Les corrections réutilisent les modules canoniques :
+
+- `app/api/checkout` répare une préparation sans paiement sur le même ordre
+  et conserve montant, coupon et snapshot. Un montant/coupon changé entraîne
+  un conflit, sans encaissement silencieux. Seule la requête gagnant l'INSERT
+  unique de `payments` peut réserver le stock et appeler l'opérateur.
+  Le destinataire et les métadonnées déjà acquis ne peuvent pas changer
+  à la reprise. Une ancienne commande physique sans paiement ne stockant
+  pas sa variante/quantité reste en vérification, sans création de session.
+  Le paiement gagnant fixe une empreinte de l'intention normalisée dans
+  son `raw` existant ; elle est conservée avec la session, sans seconde
+  copie des coordonnées privées. Les requêtes concurrentes divergentes
+  sont refusées et seul ce gagnant écrit les métadonnées obligatoires.
+- `recoveryOnly` relit une tentative ou une commande appartenant à l'acheteur,
+  sans créer de commande, paiement ou session. La reprise utilise le rail
+  enregistré et une URL opérateur autorisée. Les états en attente restent
+  en attente ; seul un état terminal vérifié autorise l'oubli de la tentative.
+  Les instructions Zelle exigent une preuve persistée de préparation
+  complète, à la reprise comme sur leur page directement accessible.
+  Une ligne de paiement en attente seule ne constitue pas cette preuve.
+- Le bouton existant et le contrôle de suivi exposent cette vérification
+  depuis la fiche, Mes achats et la page d'attente, dans les quatre langues.
+  Le stockage de la clé/alerte non sensible est distinct des saisies privées
+  expirant après 30 minutes. Une panne de rapprochement ne fait pas expirer
+  l'identité de la tentative côté navigateur.
+- Une exception de création/persistance opérateur ne libère plus le stock
+  d'une session potentiellement payable. Une ancienne session physique dont
+  la réservation est absente, libérée ou expirée n'est pas exposée au rejeu.
+- `0130` ajoute une RPC KYC transactionnelle, `SECURITY INVOKER` et réservée
+  au serveur : profil verrouillé avant dossier, comparaison de la décision
+  relue et insertion du document avec la remise en attente atomique. Les
+  fichiers refusés sont nettoyés ; une réponse RPC perdue après commit ne
+  conduit pas à supprimer une pièce déjà enregistrée.
+- `lib/webhooks` compare les mots numériques des IPv6 et applique aux IPv4
+  mappées les interdictions IPv4 existantes, lors de la résolution de connexion.
+
+**Validation et publication :** résultats consignés dans `OPS_TODO.md`.
+La migration KYC doit passer la CI/Postgres avant application et publication.
+Les migrations groupées `0128`/`0129`, les activations de rails, les secrets,
+les paramètres commerciaux et les données financières réelles ne font pas
+partie de ce lot. Le contrat sans livraison Zabelie et sans Pay autonome
+reste celui de `docs/26` §0.
+
+**Limites de lancement :** les mentions légales à compléter et la
+qualification du circuit des fonds ne se déduisent pas des tests de code.
+La cadence de rapprochement toutes les cinq minutes nécessite encore le
+choix/configuration du porteur prévu au §5 L3 ; le cron quotidien actuel ne
+prouve pas cette cadence. Le premier achat réel complet et son remboursement
+restent à valider avec des acteurs, une offre et un montant autorisés.
+Une insertion de paiement dont la réponse est perdue, ou un échec de
+métadonnées après cette insertion, conserve l'état en attente sans lancer
+une seconde session. La reprise affiche alors la vérification nécessaire ;
+elle ne prétend pas réparer automatiquement ces états ambigus.

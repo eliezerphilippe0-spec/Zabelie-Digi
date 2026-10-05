@@ -1,4 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+import { checkoutOrderId } from "../lib/checkout-idempotency";
 async function connecte(page: Page, token: string) {
   const session = {
     access_token: token,
@@ -55,7 +57,7 @@ test("une boutique suivie se retrouve dans sa liste personnelle", async ({ page 
  await page.getByRole("button", { name: "Ne plus suivre" }).click();
  await expect(page.getByText("Cette liste est vide pour le moment.")).toBeVisible();
 });
-test("diaspora : consentement requis, récapitulatif, et conservation sur erreur", async ({ page }) => {
+test("diaspora : consentement requis, récapitulatif, et conservation sur erreur", async ({ page }, testInfo) => {
  await connecte(page, "recipient-ui");
  await page.setViewportSize({ width: 390, height: 844 });
  await page.goto("/produit/filtre-huile-corolla");
@@ -74,16 +76,42 @@ test("diaspora : consentement requis, récapitulatif, et conservation sur erreur
  expect(posted!.recipient).toMatchObject({ name: "Marie Test", phone: "+509 3412 3456", consent: true });
  await expect(page.getByLabel("Nom du destinataire", { exact: true })).toHaveValue("Marie Test");
  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- await page.screenshot({ path: "validation/diaspora-mobile.png", fullPage: true });
+ await page.screenshot({ path: testInfo.outputPath("diaspora-mobile.png"), fullPage: true });
 });
-test("le serveur refuse une cible invalide et annule si sa sauvegarde échoue", async ({ page, request }) => {
+test("le serveur refuse une cible invalide et conserve la tentative si sa sauvegarde échoue", async ({ page, request }) => {
  await connecte(page, "recipient-api");
- const recipient = { name: "Marie Test", phone: "34123456", locality: "Jacmel", note: "", consent: true };
- const invalid = await page.request.post("/api/checkout", { data: { productId: "99999999-9999-9999-9999-999999999990", recipient: { ...recipient, consent: false }, checkoutKey: "11111111-1111-4111-8111-111111111111" } });
+ // A retry shares the stub process with the first run. Observe this attempt
+ // only, while exercising the same persisted order/payment after failure.
+ const checkoutKey = randomUUID();
+ const orderId = checkoutOrderId("11111111-1111-1111-1111-111111111111", checkoutKey);
+ const writes = async () => (await request.get(`http://127.0.0.1:15421/__gift-writes?order_id=${orderId}`)).json();
+ const recipient = { name: " Marie Test ", phone: "+509 3412 3456", locality: " Jacmel ", note: " Près de la place ", consent: true };
+ const data = { productId: "99999999-9999-9999-9999-999999999990", recipient, checkoutKey };
+ const invalid = await page.request.post("/api/checkout", { data: { ...data, recipient: { ...recipient, consent: false } } });
  expect(invalid.status()).toBe(422);
- const failed = await page.request.post("/api/checkout", { data: { productId: "99999999-9999-9999-9999-999999999990", recipient, checkoutKey: "11111111-1111-4111-8111-111111111111" } });
+ expect(await writes()).toEqual([]);
+ const failed = await page.request.post("/api/checkout", { data });
  expect(failed.status()).toBe(503);
- const events = await (await request.get("http://127.0.0.1:15421/__gift-writes")).json();
- expect(events.map((e: { step: string }) => e.step)).toEqual(["order", "recipient", "cleanup"]);
- expect(events[1].body.phone).toBe("34123456");
+ const events = await writes();
+ // Payment ownership precedes private metadata. No DELETE, reservation,
+ // confirmation or saved operator session may follow the failed write.
+ expect(events.map((e: { step: string }) => e.step)).toEqual(["order", "payment", "recipient"]);
+ expect(events[0].body).toMatchObject({ id: orderId, status: "pending", amount_htg: 1500 });
+ expect(events[1].body).toMatchObject({ order_id: orderId, idempotency_key: orderId, rail: "moncash", status: "pending" });
+ expect(events[1].body.raw.checkout_intent_hash).toMatch(/^[0-9a-f]{64}$/);
+ expect(events[1].body.raw.checkout_redirect_url).toBeUndefined();
+ expect(events[2].body).toEqual({ order_id: orderId, full_name: "Marie Test", phone: "34123456", locality: "Jacmel", note: "Près de la place" });
+ const recovery = await page.request.post("/api/checkout", { data: { productId: data.productId, checkoutKey, recoveryOnly: true } });
+ expect(recovery.status()).toBe(200);
+ const result = await recovery.json();
+ expect(result).toMatchObject({ orderId, deja: true, orderStatus: "pending", paymentStatus: "pending", checkoutState: "pending", redirectUrl: `/paiement/en-attente?commande=${orderId}` });
+ expect(result.retryAllowed).toBeUndefined();
+ expect(await writes()).toEqual(events);
+ const replay = await page.request.post("/api/checkout", { data });
+ expect(replay.status()).toBe(200);
+ expect(await replay.json()).toMatchObject({ orderId, deja: true, checkoutState: "pending", redirectUrl: `/paiement/en-attente?commande=${orderId}` });
+ const replayWrites = await writes();
+ expect(replayWrites.slice(events.length).map((e: { step: string }) => e.step)).toEqual(["order"]);
+ expect(replayWrites.filter((e: { step: string }) => e.step === "payment")).toHaveLength(1);
+ expect(replayWrites.filter((e: { step: string }) => e.step === "recipient")).toHaveLength(1);
 });

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
-import { OrderStatusPoll } from "@/components/order-status-poll";
+import { OrderStatusPoll, OrderPaymentRecovery } from "@/components/order-status-poll";
+import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -30,6 +31,7 @@ export default async function EnAttentePage({
           {t(lang, "pay.wait.body")}
         </p>
         <div className="mt-8 flex flex-col gap-3">
+          {commande && <OrderPaymentRecovery orderId={commande} labels={marketplaceCopy(lang)} />}
           <Link
             href="/mes-achats"
             className="bouton rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-semibold text-cloud"

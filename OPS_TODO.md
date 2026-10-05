@@ -1,5 +1,54 @@
 # OPS_TODO — Zabelie
 
+## Corrections après l'audit en ligne — 5 octobre 2026
+
+Instruction du porteur : « implémenté », après le compte rendu des cinq
+défauts. Le checkout, les boutons et les dossiers existants sont corrigés,
+sans nouveau rail, portefeuille, registre financier ni service de livraison.
+
+- Une commande numérique sans paiement peut être préparée de nouveau avec
+  le même identifiant, après validation du même montant et du même coupon.
+  L'unicité du paiement arbitre les préparations concurrentes ; aucun ordre
+  ou snapshot acquis n'est supprimé en cas de panne.
+  Une ancienne commande physique sans paiement dont la variante/quantité
+  ne peut être prouvée reste en vérification ; aucun opérateur n'est appelé.
+- Une issue opérateur incertaine conserve sa réservation. Une reprise refuse
+  d'exposer une ancienne session physique sans stock encore réservé.
+- La vérification/reprise est accessible depuis la fiche, Mes achats et la
+  page d'attente. La clé d'une tentative incertaine ne disparaît pas par un
+  simple délai ; les saisies privées restent limitées à 30 minutes.
+- Le dépôt KYC enregistre pièce et dossier dans une transaction protégeant
+  la décision administrative et la fermeture du profil.
+- Les adresses IPv4 privées mappées en IPv6 sont refusées à la connexion
+  des webhooks, y compris leurs formes hexadécimales et développées.
+
+**Déploiement KYC :** `0130_zabelie_kyc_depot_atomique.sql` doit être éprouvée
+par la CI/Postgres avant application et avant publication de la route.
+Elle ne dépend pas de `0128`/`0129` et n'ouvre pas le panier groupé.
+Résultats et limites de ce lot : `docs/67` §9.
+
+**Validation locale :** 1 528 tests unitaires, zéro échec ; compilation et
+TypeScript réussis ; lint sans erreur (10 avertissements existants),
+contraste et audit des dépendances de production réussis. Les régressions
+ont aussi été éprouvées sur les versions défectueuses chargées en mémoire.
+Les 22 tests navigateur ciblés passent sur le build final : reprise,
+rechargement, clés conservées, conflits et attente dans les quatre langues
+à 360 px, avec un contrôle à 1 440 px. Les opérateurs et données sont simulés.
+Les cinq parcours collections/destinataire passent également. Leur panne
+API est répétée deux fois sur le même serveur fictif : le journal reste
+isolé par tentative, sans suppression, seconde préparation ou session.
+La CI reste la porte pour PostgreSQL 17, les courses KYC entre sessions et
+le scanner Linux. Elle précède toute application de `0130` et fusion.
+Empreinte canonique de `0130` :
+`d449c17185ebc5f700a64c93c55f493de362d9179c1a9a4266ac553e4e6e596c`.
+
+**Préparation commerciale encore ouverte :** les faits et décisions juridiques
+manquants restent ceux du registre ci-dessous ; le dépôt annoncé pour la
+semaine suivante ne constitue pas une immatriculation obtenue. Aucun mode
+marchand réel, secret ou plan payant n'est activé par ces corrections.
+La cadence du rapprochement reste quotidienne ; le choix Pro/cron externe
+et le premier achat réel autorisé restent à réaliser avant l'encaissement.
+
 ## Corrections e-commerce, périmètre haïtien — 5 octobre 2026
 
 Instruction « implémenté, tout en restant focus sur la loi haïtienne sur le

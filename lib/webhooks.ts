@@ -65,10 +65,22 @@ export function adresseIpPrivee(ip: string): boolean {
       || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
   }
   if (v === 6) {
-    const x = ip.toLowerCase();
-    const mappe = x.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mappe) return adresseIpPrivee(mappe[1]);
-    return x === "::" || x === "::1" || /^f[cd]/.test(x) || /^fe[89ab]/.test(x) || x.startsWith("ff");
+    // Compare numeric words: DNS can return mapped IPv4 in hexadecimal,
+    // and fully expanded loopback/unspecified addresses are equivalent.
+    if (ip.includes("%")) return true; // Scoped addresses are never public endpoints.
+    const x = ip.toLowerCase().replace(/\d+\.\d+\.\d+\.\d+$/, (tail) => {
+      const [a, b, c, d] = tail.split(".").map(Number);
+      return `${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+    });
+    const [head, tail] = x.split("::");
+    const left = head ? head.split(":") : [];
+    const right = tail ? tail.split(":") : [];
+    const words = [...left, ...Array(8 - left.length - right.length).fill("0"), ...right].map((word) => parseInt(word, 16));
+    if (words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff) {
+      return adresseIpPrivee(`${words[6] >> 8}.${words[6] & 255}.${words[7] >> 8}.${words[7] & 255}`);
+    }
+    return (words.slice(0, 7).every((word) => word === 0) && words[7] <= 1)
+      || (words[0] & 0xfe00) === 0xfc00 || (words[0] & 0xffc0) === 0xfe80 || (words[0] & 0xff00) === 0xff00;
   }
   return true; // illisible : refusé
 }

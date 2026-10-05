@@ -146,8 +146,9 @@ const ecritures = [];
 const collectionsBySession = new Map();
 const commitments = new Map();
 const giftWrites = [];
+const giftOrders = new Map();
+const giftPayments = new Map();
 const GIFT_PRODUCT = "99999999-9999-9999-9999-999999999990";
-const GIFT_ORDER = "99999999-9999-9999-9999-999999999991";
 
 const eq = (url, key) => {
   const v = url.searchParams.get(key);
@@ -282,7 +283,18 @@ const server = createServer((req, res) => {
   const historyError = token.includes("historique-erreur") || eq(url, "buyer_id") === HISTORY_ERROR_ID;
   const sellerPreparation = token.includes("vendeur-preparation");
 
-  if (url.pathname === "/__gift-writes") return send(200, giftWrites);
+  if (url.pathname === "/__gift-writes") {
+    const orderId = url.searchParams.get("order_id");
+    return send(200, orderId ? giftWrites.filter(event => event.order_id === orderId) : giftWrites);
+  }
+  if (["zabelie_reserve_stock", "zabelie_release_stock", "confirm_payment"].some(name => url.pathname === `/rest/v1/rpc/${name}`)) {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      const input = JSON.parse(body || "{}"), orderId = input.p_order_id ?? input.p_order ?? input.p_idempotency_key;
+      if (giftOrders.has(orderId)) giftWrites.push({ step: "stock-or-confirm", order_id: orderId, method: req.method, rpc: url.pathname, body: input });
+      return single([]);
+    });
+  }
   // Domaine vendeur (0125) : un seul domaine actif connu du stub.
   if (url.pathname === "/rest/v1/rpc/zabelie_domaine_boutik") {
     let body = ""; req.on("data", c => body += c);
@@ -317,11 +329,29 @@ const server = createServer((req, res) => {
   }
   if (url.pathname === "/rest/v1/zabelie_order_recipients" && req.method === "POST") {
     let body = ""; req.on("data", c => body += c);
-    return req.on("end", () => { giftWrites.push({ step: "recipient", body: JSON.parse(body) }); send(503, { code: "08006" }); });
+    return req.on("end", () => {
+      const input = JSON.parse(body);
+      if (giftOrders.has(input.order_id)) giftWrites.push({ step: "recipient", order_id: input.order_id, body: input });
+      send(503, { code: "08006" });
+    });
   }
-  if (url.pathname === "/rest/v1/payments" && req.method === "POST") {
-    let body = ""; req.on("data", c => body += c);
-    return req.on("end", () => { if (JSON.parse(body).order_id === GIFT_ORDER) giftWrites.push({ step: "payment" }); send(201, []); });
+  if (url.pathname === "/rest/v1/payments") {
+    const orderId = eq(url, "order_id");
+    if (req.method === "GET" && giftOrders.has(orderId)) return single(giftPayments.has(orderId) ? [giftPayments.get(orderId)] : []);
+    if (req.method === "POST" || giftOrders.has(orderId)) {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        const input = JSON.parse(body || "{}"), target = input.order_id ?? orderId;
+        if (!giftOrders.has(target)) return send(201, []);
+        giftWrites.push({ step: req.method === "POST" ? "payment" : "payment-change", order_id: target, method: req.method, body: input });
+        if (req.method === "POST") {
+          if (giftPayments.has(target)) return send(409, { code: "23505" });
+          giftPayments.set(target, input);
+        } else if (req.method === "DELETE") giftPayments.delete(target);
+        else Object.assign(giftPayments.get(target) ?? {}, input);
+        return send(req.method === "POST" ? 201 : 200, []);
+      });
+    }
   }
 
   // ── Auth ────────────────────────────────────────────────────────────────
@@ -388,15 +418,29 @@ const server = createServer((req, res) => {
       req.on("data", (c) => (body += c));
       return req.on("end", () => {
         if (req.method === "POST" && JSON.parse(body).product_id === GIFT_PRODUCT) {
-          giftWrites.push({ step: "order" }); return send(201, { id: GIFT_ORDER, amount_htg: 1500 });
+          const input = JSON.parse(body);
+          giftWrites.push({ step: "order", order_id: input.id, method: req.method, body: input });
+          if (giftOrders.has(input.id)) return send(409, { code: "23505" });
+          giftOrders.set(input.id, input);
+          return single([input]);
         }
-        if (eq(url, "id") === GIFT_ORDER) { giftWrites.push({ step: "cleanup" }); return send(200, []); }
+        if (giftOrders.has(eq(url, "id"))) {
+          const orderId = eq(url, "id"), input = JSON.parse(body || "{}");
+          giftWrites.push({ step: "cleanup", order_id: orderId, method: req.method, body: input });
+          if (req.method === "DELETE") giftOrders.delete(orderId);
+          else Object.assign(giftOrders.get(orderId), input);
+          return send(200, []);
+        }
         ecritures.push({ method: req.method, query: url.search, body });
         if (process.env.PRICING_FIXTURE === "true" && req.method === "POST") return send(503, { code: "08006", message: "pricing fixture stops before payment" });
         send(200, []);
       });
     }
     const id = eq(url, "id");
+    if (giftOrders.has(id)) {
+      const order = giftOrders.get(id), buyer = eq(url, "buyer_id");
+      return single(!buyer || order.buyer_id === buyer ? [order] : []);
+    }
     if (id?.startsWith("aaaaaaaa-")) return single([{ ...ORDER, id, product_id: DIGITAL_ID, buyer_id: id.endsWith("104") ? SELLER_ID : BUYER_ID, status: id.endsWith("102") ? "pending" : id.endsWith("103") ? "refunded" : "paid", product: { title: "Formation achetée", slug: "formation-studio-test", kind: "fichier" } }]);
     if (historyError) return send(503, { code: "08006", message: "test unavailable" });
     let rows = id && id !== ORDER_ID ? [] : [ORDER];

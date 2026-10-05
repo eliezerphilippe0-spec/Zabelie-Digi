@@ -192,5 +192,5 @@ test("AS9 — le bouton d'achat distingue les quatre issues, et `reseau` ne couv
   assert.match(src, /if \(issue\.etat === "connexion"\) \{\s*router\.push\(issue\.vers\);/);
   assert.match(src, /if \(issue\.etat === "refus"\) \{/);
   // Une réponse OK sans destination n'est pas une réussite.
-  assert.match(src, /const destination = String\(issue\.data\.redirectUrl \?\? ""\);[\s\S]{0,120}if \(!destination\)/);
+  assert.match(src, /const destination = typeof issue\.data\?\.redirectUrl === "string" \? issue\.data\.redirectUrl : "";[\s\S]{0,120}if \(!destination\)/);
 });

@@ -134,7 +134,7 @@ test("RN5 — le rayon décide de l'opérateur et de l'existence du champ", () =
 test("RN6 — la route refuse AVANT de créer la commande, et le refus est distinct", () => {
   const code = sansCommentaires(ROUTE);
   const iRefus = code.indexOf("rechaj_numero_invalide");
-  const iCommande = code.indexOf('.from("orders")');
+  const iCommande = code.search(/\.from\("orders"\)\s*\.insert\(/);
   assert.ok(iRefus > 0, "le refus de numéro n'existe pas");
   assert.ok(
     iRefus < iCommande,
@@ -152,20 +152,22 @@ test("RN6 — la route refuse AVANT de créer la commande, et le refus est disti
   // La question est posée à l'ASCENDANCE, jamais au libellé du rayon.
   assert.match(code, /rpc\("zabelie_est_rechaj"/);
 
-  // L'écriture de la cible retire la commande si elle échoue — pas de
-  // best-effort ici : une commande payable sans cible est indélivrable.
+  // Failure blocks the external payment; preserving the order permits a
+  // safe retry without deleting an immutable snapshot or concurrent owner.
   assert.match(
     code,
-    /from\("zabelie_rechaj_cible"\)[\s\S]{0,200}insert\(\{ order_id: order\.id, msisdn: rechajNumero \}\)[\s\S]{0,240}delete\(\)\.eq\("id", order\.id\)/,
-    "l'échec d'écriture de la cible doit retirer la commande"
+    /from\("zabelie_rechaj_cible"\)[\s\S]{0,200}insert\(\{ order_id: order\.id, msisdn: rechajNumero \}\)[\s\S]{0,400}if \(cibleErr &&[\s\S]{0,400}return NextResponse\.json/,
+    "l'échec d'écriture de la cible doit refuser le paiement"
   );
-  // Et elle a lieu AVANT le paiement : rien ne doit être encaissé sans cible.
-  // A replay may READ payments earlier; the guarded effect is its INSERT.
+  // The UNIQUE payment owner is fixed before private writes; no operator
+  // may be invoked before the target is durably stored.
   const iPaiement = code.search(/\.from\("payments"\)\s*\.insert\(/);
+  const iOperateur = code.indexOf("await createStripeCheckout(");
   assert.ok(iPaiement > 0, "l'insertion du paiement doit être présente");
   assert.ok(
-    code.indexOf('from("zabelie_rechaj_cible")') < iPaiement,
-    "la cible s'écrit avant le paiement"
+    code.indexOf('from("zabelie_rechaj_cible")', iPaiement) > iPaiement &&
+    code.indexOf('from("zabelie_rechaj_cible")', iPaiement) < iOperateur,
+    "le propriétaire du paiement écrit la cible avant l'opérateur"
   );
 });
 

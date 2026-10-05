@@ -3,7 +3,7 @@ import vm from "node:vm";
 import ts from "typescript";
 
 /** Execute the real route with explicit I/O doubles; no network or database writes. */
-export function loadRoute(file: string, overrides: Record<string, unknown>, env: Record<string, string> = {}) {
+export function loadRoute(file: string, overrides: Record<string, unknown>, env: Record<string, string> = {}, globals: Record<string, unknown> = {}) {
   const source = readFileSync(file, "utf8");
   const stubs: Record<string, unknown> = Object.fromEntries(
     [...source.matchAll(/from\s+"([^"]+)"/g)].map(m => [m[1], {}]),
@@ -14,12 +14,14 @@ export function loadRoute(file: string, overrides: Record<string, unknown>, env:
     "@/lib/i18n": { t: (_lang: string, key: string) => key },
   }, overrides);
   const code = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    fileName: file,
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
   const routeModule = { exports: {} };
   vm.runInNewContext(code, {
     module: routeModule, exports: routeModule.exports, console, process: { env },
-    URL, Request, Headers, Response, AbortController, setTimeout, clearTimeout,
+    URL, Request, Headers, Response, File, FormData, crypto, AbortController, setTimeout, clearTimeout,
+    ...globals,
     require(name: string) {
       if (name in stubs) return stubs[name];
       throw new Error("Unexpected dependency " + name);

@@ -101,13 +101,15 @@ test("AC4 — le refus a lieu AVANT la création de la commande", () => {
   assert.ok(refus < commande, "l'attestation doit être exigée avant l'insertion de la commande");
 });
 
-test("AC5 — l'attestation est écrite AVANT le paiement, et son échec retire la commande", () => {
+test("AC5 — le propriétaire du paiement écrit l'attestation AVANT l'opérateur et son échec bloque l'appel", () => {
   const ecriture = ROUTE.search(
-    /if \(ageMinimum > 0\) \{\s*const \{ error: ageErr \} = await admin\s*\.from\("zabelie_order_age_attestations"\)\s*\.insert\(\{ order_id: order\.id, age_minimum: ageMinimum \}\);\s*if \(ageErr\) \{\s*await admin\.from\("orders"\)\.delete\(\)\.eq\("id", order\.id\);/
+    /if \(ageMinimum > 0\) \{\s*const \{ error: ageErr \} = await admin\s*\.from\("zabelie_order_age_attestations"\)\s*\.insert\(\{ order_id: order\.id, age_minimum: ageMinimum \}\);\s*if \(ageErr &&[\s\S]{0,600}return NextResponse\.json/
   );
   const paiement = ROUTE.search(/\.from\("payments"\)\.insert\(/);
-  assert.ok(ecriture > 0, "écriture de l'attestation absente ou détachée de son retrait");
-  assert.ok(paiement > 0 && ecriture < paiement, "l'attestation doit précéder le paiement");
+  const operateur = ROUTE.indexOf("await createStripeCheckout(");
+  assert.ok(ecriture > 0, "écriture de l'attestation absente ou détachée du refus de paiement");
+  assert.ok(paiement > 0 && paiement < ecriture, "le claim UNIQUE doit précéder l'écriture privée");
+  assert.ok(operateur > ecriture, "l'attestation doit précéder tout appel opérateur");
 });
 
 // ── L'interface ─────────────────────────────────────────────────────────────
