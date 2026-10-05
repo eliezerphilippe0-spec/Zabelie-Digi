@@ -43,6 +43,7 @@ import { ShareButtons } from "@/components/share-buttons";
 import { MessageForm } from "@/components/message-form";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { t, tn, type Lang } from "@/lib/i18n";
 import {
   kindLabelKey,
@@ -72,8 +73,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductView(slug).catch(() => undefined);
+  const [product, lang] = await Promise.all([getProductView(slug).catch(() => undefined), getLang()]);
   if (!product) return { title: "Produit introuvable — Zabelie" };
+  const langue = metaLangue(`/produit/${product.slug}`, lang);
 
   const price = formatHTG(product.priceHTG);
   const title = `${product.title} — ${price}`;
@@ -85,12 +87,12 @@ export async function generateMetadata({
   return {
     title,
     description: description.length > 200 ? description.slice(0, 197) + "…" : description,
-    alternates: { canonical: `/produit/${product.slug}` },
+    ...langue,
     openGraph: {
       title,
       description,
       type: "website",
-      url: `/produit/${product.slug}`,
+      url: langue.alternates.canonical,
       siteName: "Zabelie",
     },
     twitter: { card: "summary_large_image", title, description },

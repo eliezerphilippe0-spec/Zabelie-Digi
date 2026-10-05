@@ -2,16 +2,21 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { apiDocsCopy } from "@/lib/api/v1/docs-copy";
 import { PUBLIC_OPERATIONS } from "@/lib/api/v1/openapi";
 import { SELLER_OPERATIONS } from "@/lib/api/v1/seller-openapi";
 
-export const metadata = {
+const META = {
   title: "API Zabelie",
   description:
     "API publique de Zabelie : lecture sans clé des produits, catégories, vendeurs, avis et stock de la marketplace haïtienne. Contrat OpenAPI disponible.",
-  alternates: { canonical: "/developpeurs" },
 };
+
+// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+export async function generateMetadata() {
+  return { ...META, ...metaLangue("/developpeurs", await getLang()) };
+}
 const example = `const response = await fetch("https://zabelie.com/api/v1/search_products", {
   method: "POST",
   credentials: "omit",

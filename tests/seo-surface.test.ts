@@ -189,15 +189,15 @@ test("N4 — aucune lecture directe de NEXT_PUBLIC_SITE_URL hors des exemptés",
 test("N6 — catalogue metadata uses tested URL normalization and working-view noindex", () => {
   const src = lire("app/catalogue/page.tsx");
   assert.match(src, /export async function generateMetadata/);
-  assert.match(src, /const canonical = catalogueCanonical\(raw\)/);
-  assert.match(src, /robots: catalogueIsWorkingView\(raw\)/);
+  assert.match(src, /const langue = metaLangue\(catalogueCanonical\(raw\), lang\);\s*const canonical = langue\.alternates\.canonical;/);
+  assert.match(src, /robots: catalogueIsWorkingView\(raw\) \|\| emptyPage \? \{ index: false, follow: true \} : langue\.robots,/);
   assert.doesNotMatch(SITEMAP, /lastModified: now|"\/connexion"/);
 });
 
 test("N5 — le sitemap construit l'URL vendeur par hrefBoutique, jamais en dur", () => {
   assert.match(
     SITEMAP,
-    /url:\s*`\$\{base\}\$\{hrefBoutique\(/,
+    /declinaisons\(hrefBoutique\(c\),/,
     "L'URL vendeur du sitemap doit venir de hrefBoutique() — la fonction qui " +
       "tranche déjà entre /boutik/<slug> et /createur/<id> partout ailleurs."
   );

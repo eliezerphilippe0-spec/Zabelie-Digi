@@ -5,6 +5,7 @@ import { DepartmentIcon } from "@/components/department-icons";
 import { getMenuRayons, rayonsPeuples } from "@/lib/taxonomy";
 import { filterCategoryDirectory } from "@/lib/category-directory";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { t } from "@/lib/i18n";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
@@ -14,8 +15,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   return {
     title: `${t(lang, "directory.title")} — Zabelie`,
     description: t(lang, "directory.intro"),
-    alternates: { canonical: "/categories" },
-    robots: vide || (typeof q === "string" && q.trim()) ? { index: false, follow: true } : undefined,
+    ...metaLangue("/categories", lang),
+    ...(vide || (typeof q === "string" && q.trim()) ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

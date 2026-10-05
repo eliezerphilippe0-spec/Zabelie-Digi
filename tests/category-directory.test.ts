@@ -41,7 +41,7 @@ test("un rayon vide disparaît avec sa descendance ; un rayon peuplé perd ses s
 test("/categories n'affiche que les rayons peuplés, et ne s'indexe pas quand il n'y en a aucun", () => {
   const page = readFileSync("app/categories/page.tsx", "utf8");
   assert.match(page, /const brut = await getMenuRayons\(lang\);\s*const all = rayonsPeuples\(brut\);\s*const rows = filterCategoryDirectory\(all, q\);/);
-  assert.match(page, /const vide = rayonsPeuples\(await getMenuRayons\(lang\)\)\.length === 0;[\s\S]{0,200}robots: vide \|\|/);
+  assert.match(page, /const vide = rayonsPeuples\(await getMenuRayons\(lang\)\)\.length === 0;[\s\S]{0,300}\.\.\.\(vide \|\| [^?]*\? \{ robots: \{ index: false, follow: true \} \} : \{\}\)/);
   assert.doesNotMatch(page, /directory\.empty/, "plus de mention « aucune offre » par rayon");
   // Le menu et le sitemap masquaient déjà : témoin que ce n'est pas régressé.
   assert.match(readFileSync("components/category-chips.tsx", "utf8"), /const pleins = rayons\.filter\(\(r\) => !r\.vide\);/);

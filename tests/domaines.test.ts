@@ -87,7 +87,7 @@ test("DM4 — l'activation exige que le domaine atteigne CE proxy, pas une simpl
 test("DM5 — branchements : proxy avant la session, admin sonde avant de décider, vendeur par sa session", () => {
   const proxy = readFileSync("proxy.ts", "utf8");
   const branche = proxy.indexOf("if (!estHoteZabelie(hote)) {");
-  assert.ok(branche > 0 && branche < proxy.indexOf("await updateSession(request)"), "le domaine vendeur est traité avant toute session");
+  assert.ok(branche > 0 && branche < proxy.indexOf("await updateSession(request"), "le domaine vendeur est traité avant toute session");
   assert.match(proxy, /if \(cheminSurDomaine\(request\.nextUrl\.pathname\) === "zabelie"\) \{\s*const renvoi = NextResponse\.redirect\([^;]*siteUrl\(\)\), 308\);\s*[\s\S]{0,200}renvoi\.headers\.set\("x-zabelie-domaine", hote\);\s*return renvoi;/);
   assert.match(proxy, /const slug = await resoudreDomaine\(hote, config\);[\s\S]{0,600}const boutique = slug\s*\? NextResponse\.rewrite\(new URL\(`\/boutik\/\$\{slug\}`[\s\S]{0,200}: NextResponse\.rewrite\(new URL\("\/404", request\.url\), \{ status: 404/);
 

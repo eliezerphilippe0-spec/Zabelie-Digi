@@ -172,7 +172,22 @@ prouve que le filtre ne cache pas de vrai code.**
 
 ---
 
-## 3. ⛔ L'arbitrage ouvert — la langue vit dans un cookie
+## 3. ✅ TRANCHÉ le 2026-10-05 — la langue vit dans un cookie (état d'origine ci-dessous)
+
+> **Instruction porteur du 2026-10-05 :** « Corrige les URLs /ht/ et /fr/ pour l'indexation ». Ce qui est fait :
+>
+> - **`/ht/…` et `/fr/…` existent** pour onze pages publiques : accueil, catalogue, catégories, fiche produit, boutique, vendre (deux pages), produits interdits, développeurs, conditions et confidentialité.
+> - **Comment c'est servi :** le proxy RÉÉCRIT vers la page existante et porte la langue dans l'en-tête que `getLang()` lit déjà. Aucune route n'est déplacée (`lib/langue-url.ts`).
+> - **Ce que chaque page déclare :** sa canonique dans la langue servie, et un hreflang réel (`ht`, `fr`, `x-default` → `fr`).
+> - **Le sitemap** annonce les deux versions.
+> - **`en` et `es`** restent en cookie et passent en `noindex`.
+> - **L'arrivée par `/ht/` pose le cookie**, pour que la suite de la visite reste en kreyòl.
+>
+> ⚠️ **Reste à faire, et je le nomme pour qu'il ne soit pas découvert plus tard :** les liens internes sont encore SANS préfixe. Une page `/ht/` renvoie vers `/produit/x`, servi par le cookie, dont la canonique pointe vers `/ht/produit/x`.
+>
+> - Les moteurs trouvent les pages kreyòl par le sitemap et le hreflang.
+> - Le maillage interne ne les y conduit pas encore.
+> - C'est l'étape suivante : préfixer les liens des pages publiques. C'est le gros des 83 points de contact mesurés ci-dessous.
 
 **C'est le seul point de ce document dont le coût augmente avec le temps.**
 

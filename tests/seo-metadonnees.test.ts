@@ -20,7 +20,8 @@ const PAGES: Record<string, string> = {
 };
 
 const lire = (f: string) => readFileSync(f, "utf8");
-const bloc = (src: string) => src.match(/export const metadata = \{[\s\S]*?\n\};/)?.[0] ?? src.match(/export const metadata = \{.*\};/)?.[0] ?? "";
+// `const META` : la forme des pages qui ont une adresse par langue (lib/langue-url.ts).
+const bloc = (src: string) => src.match(/(?:export const metadata|const META) = \{[\s\S]*?\n\};/)?.[0] ?? src.match(/export const metadata = \{.*\};/)?.[0] ?? "";
 const description = (src: string) => bloc(src).match(/description:\s*"([^"]+)"/)?.[1];
 
 test("S1 — chaque page indexable a SA description (70 à 160 signes) et sa canonique", () => {
@@ -32,7 +33,10 @@ test("S1 — chaque page indexable a SA description (70 à 160 signes) et sa can
     assert.ok(d!.length >= 70 && d!.length <= 160, `${f} : description de ${d!.length} signes`);
     assert.ok(!vues.has(d!), `${f} : même description que ${vues.get(d!)}`);
     vues.set(d!, f);
-    assert.match(bloc(src), new RegExp(`alternates: \\{ canonical: "${chemin.replace(/\//g, "\\/")}" \\}`), `${f} : canonique absente ou fausse`);
+    // Canonique fixe, ou canonique PAR LANGUE (/ht/, /fr/) pour les pages localisées.
+    const fixe = new RegExp(`alternates: \\{ canonical: "${chemin.replace(/\//g, "\\/")}" \\}`).test(bloc(src));
+    const parLangue = src.includes(`...metaLangue("${chemin}", await getLang())`);
+    assert.ok(fixe || parLangue, `${f} : canonique absente ou fausse`);
   }
 });
 

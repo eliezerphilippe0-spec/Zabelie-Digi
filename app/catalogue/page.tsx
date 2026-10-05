@@ -17,6 +17,7 @@ import { sessionFingerprint } from "@/lib/search-demand";
 import { headers } from "next/headers";
 import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
 import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
@@ -31,17 +32,18 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const titleKey = univers ? CATALOGUE_UNIVERSES[univers].title : "catalog.title";
   const title = `${cat && cat !== "Tout" ? `${cat} — ` : ""}${t(lang, titleKey)} — Zabelie`;
   const description = t(lang, univers === "objets" ? "catalog.seo.objects" : univers === "numerique" ? "catalog.seo.digital" : univers === "services" ? "catalog.seo.services" : "catalog.seo.all");
-  const canonical = catalogueCanonical(raw);
+  const langue = metaLangue(catalogueCanonical(raw), lang);
+  const canonical = langue.alternates.canonical;
   const workingView = catalogueIsWorkingView(raw);
   const productIds = !workingView && sous ? await productIdsInCategory(sous) : null;
   const result = workingView ? null : await getPublishedProductsPage({ category: cat ?? "Tout", kind: univers ? CATALOGUE_UNIVERSES[univers].kind : undefined, page, productIds: productIds ?? undefined, sort: "recent" }).catch(() => null);
   const emptyPage = result !== null && result.items.length === 0;
   return {
     title, description,
-    alternates: { canonical },
+    alternates: langue.alternates,
     openGraph: { title, description, url: canonical },
     twitter: { card: "summary_large_image" as const, title, description },
-    robots: catalogueIsWorkingView(raw) || emptyPage ? { index: false, follow: true } : undefined,
+    robots: catalogueIsWorkingView(raw) || emptyPage ? { index: false, follow: true } : langue.robots,
   };
 }
 
