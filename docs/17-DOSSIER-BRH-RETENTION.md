@@ -7,7 +7,8 @@
 > **Rédigé le** : 2026-07-24 · **Statut** : brief factuel, ne contient
 > **aucune interprétation juridique** — c'est précisément ce qui est demandé.
 > **Présentation technique actualisée le 2026-10-05** : les sections 1, 2 et 6
-> décrivent les appelants présents, pas des virements observés. Les relevés
+> décrivent les appelants présents, pas des virements observés. Les questions
+> de la section 4 distinguent ce circuit des situations restant à prouver. Les relevés
 > historiques des sections 7 à 9 ne valent pas confirmation opérateur actuelle.
 >
 > **Périmètre conservé** : aucun nouveau rail ni Pay autonome avant qualification.
@@ -194,11 +195,12 @@ d'inscrire au crédit du vendeur, dans un registre interne, la part lui revenant
 compte de tiers** au sens de la Circulaire n°121 ? La réponse dépend-elle de la
 durée de rétention ?
 
-**Q2 — Effet de l'absence de voie de sortie.** L'absence de tout mécanisme de
-retrait (§2.5) aggrave-t-elle la qualification, l'atténue-t-elle, ou est-elle
-sans effet ? Formulé autrement : vaut-il mieux, au regard de la Circulaire,
-**implémenter le retrait rapidement** ou **suspendre l'inscription au crédit**
-tant que le retrait n'existe pas ?
+**Q2 — Effet de l'absence de virement automatique.** Le circuit de demande et
+d'enregistrement des règlements manuels existe (§2.5), mais sa réalisation
+effective et ses délais restent à prouver. L'absence de virement automatique
+modifie-t-elle la qualification ? Quelles preuves et conditions faut-il réunir
+avant encaissement commercial, et faut-il suspendre l'encaissement tant qu'elles
+ne sont pas réunies ?
 
 **Q3 — Seuil de tolérance.** Existe-t-il une durée, un encours ou un nombre de
 bénéficiaires en deçà desquels ce mécanisme reste hors du champ de la
@@ -216,13 +218,14 @@ la Circulaire ? Le plafond de remise exprimé en gourdes (§3.3) modifie-t-il
 l'analyse ?
 
 **Q6 — Régularisation.** Si le mécanisme actuel est non conforme, quelle est la
-marche à suivre pour la situation **déjà constituée** (fonds encaissés et non
-reversés à ce jour) ?
+marche à suivre **si des encaissements pour tiers non reversés sont établis** ?
+Les encours et leurs justificatifs doivent être réunis (§6) ; ce dossier
+n'atteste pas l'existence de fonds actuellement dus.
 
-**Q7 — Effet des règlements manuels.** La plateforme entreprend d'apurer
-**immédiatement et à la main** les sommes dues (virement MonCash direct, un
-vendeur après l'autre, contre reçu), sans attendre l'existence d'une route de
-décaissement automatisée.
+**Q7 — Effet des règlements manuels.** Dans l'hypothèse où des sommes dues
+seraient établies, un règlement manuel documenté est envisagé, sous réserve des
+permissions du compte opérateur et de l'avis du conseil. Le dossier ne présente
+aucun apurement comme engagé ou effectué et ne garantit aucun délai de virement.
 
 - Le fait de démontrer que **les fonds sont disponibles sur demande** modifie-t-il
   la qualification, par rapport à une rétention subie faute de voie de sortie ?
@@ -231,35 +234,40 @@ décaissement automatisée.
 - Quelle **trace** faut-il conserver pour que ces règlements soient opposables
   (reçu MonCash, accusé du vendeur, écriture comptable) ?
 
-**Q8 — Ségrégation.** L'absence de compte de cantonnement (§2.6) est-elle, en
-elle-même, un manquement ? Un compte distinct est-il exigé, recommandé, ou sans
-objet en l'espèce ?
+**Q8 — Ségrégation.** Aucune preuve de compte de cantonnement n'est réunie
+(§2.6). Si son absence est confirmée, serait-elle en elle-même un manquement ?
+Un compte distinct est-il exigé, recommandé, ou sans objet en l'espèce ?
 
 ---
 
 ## 5. Options de mise en conformité — pour éclairer Q4
 
-Aucune n'est retenue à ce stade ; chacune est techniquement réalisable.
+Aucune n'est retenue à ce stade. La faisabilité dépend des permissions opérateur
+et des contrats ; les effets juridiques ci-dessous sont à confirmer par le conseil.
 
 ### Option (a) — Règlement immédiat, commission facturée
 Le vendeur est réglé dès confirmation du paiement ; la commission fait l'objet
 d'une facturation distincte.
-- ✅ Supprime la rétention : plus de fonds de tiers détenus.
+- Objectif : réduire la durée de détention des fonds de tiers. Le circuit
+  d'encaissement et sa qualification restent à valider, même avec règlement immédiat.
 - ❌ Supprime la fenêtre anti-fraude : un remboursement après règlement devient
   une créance sur le vendeur, difficile à recouvrer.
 - ⚙️ Impact technique : **fort** (le décaissement doit être automatisé, ce qui
   suppose une API de versement MonCash — à vérifier auprès de Digicel).
 
-### Option (b) — Différé J+7 maintenu, retrait implémenté
-On conserve l'existant en ajoutant le décaissement réel.
-- ✅ Impact technique **faible** : le schéma est déjà en place (§2.5).
-- ✅ Préserve la protection de l'acheteur.
-- ❌ Ne répond pas à Q1 : la rétention subsiste, seulement bornée dans le temps.
+### Option (b) — Différé J+7 maintenu, règlement effectif documenté
+On conserve le registre et le circuit de demande (§2.5), en documentant le
+versement réel et ses conditions.
+- La fenêtre de contestation est conservée ; les limites de protection de
+  l'acheteur et la réversibilité après versement restent à examiner.
+- Le délai et les preuves de sortie doivent être définis et vérifiés. La
+  qualification de la détention temporaire reste la question Q1.
 
 ### Option (c) — Tiers agréé
 Les fonds transitent par un établissement disposant de l'agrément.
-- ✅ Écarte la question réglementaire — **si et seulement si le tiers est
-  réellement agréé.**
+- Objectif : confier les opérations concernées à un tiers autorisé. Son agrément,
+  le périmètre des services et les responsabilités contractuelles de Zabelie
+  doivent être vérifiés ; sa présence ne suffit pas à conclure à la conformité.
 - ❌ Suppose un partenaire, un contrat et une marge supplémentaire.
 - ⚙️ Impact technique **moyen** ; impact économique à évaluer.
 
@@ -269,11 +277,9 @@ paiement haïtiennes qui encaissent MonCash pour le compte de tiers. **La
 question préalable n'a pas été posée, et elle commande tout le reste :
 disposent-elles elles-mêmes de l'agrément ?**
 
-Tant qu'elle n'est pas répondue, cette option ne transfère aucune charge
-réglementaire — elle **empile un intermédiaire non agréé sur l'exposition
-existante**, en payant 2,9 % à l'entrée et 5 % à la sortie pour ce
-privilège. Elle ne doit donc pas être présentée au conseil comme une voie de
-conformité, mais comme une hypothèse à instruire.
+Le relevé historique ne prouve ni agrément actuel ni tarif contractuel. Cette
+option reste une hypothèse à instruire ; aucun intermédiaire ne doit être
+présenté comme autorisé ou non agréé sur la seule absence de pièce dans ce dossier.
 
 ---
 
@@ -286,24 +292,29 @@ jointes. Ne pas exporter identifiants, coordonnées ni secrets dans Git.
 Requêtes en lecture seule :
 
 ```sql
--- 1. Encours actuellement détenu pour le compte des vendeurs
--- (le solde disponible est `balance_htg` ; `pending_htg` = escrow non maturé)
-select coalesce(sum(balance_htg), 0) as disponible_non_retire_htg,
+-- 1. Soldes comptables du registre, à rapprocher des mouvements externes
+-- `balance_htg` = disponible comptablement ; `pending_htg` = en attente
+select coalesce(sum(balance_htg), 0) as disponible_comptable_htg,
        coalesce(sum(pending_htg), 0) as en_attente_htg,
-       coalesce(sum(balance_htg + pending_htg), 0) as du_total_htg,
+       coalesce(sum(balance_htg + pending_htg), 0) as total_comptable_htg,
        count(*) filter (where balance_htg + pending_htg > 0) as vendeurs_concernes
   from wallets;
 
--- 2. Ancienneté de la rétention la plus ancienne
+-- 2. Ancienneté du registre et statut des écritures, pas des impayés
 select min(created_at) as plus_ancienne_entree,
        count(*)        as nb_entrees,
-       count(*) filter (where status = 'matured') as matures_non_retirees
+       count(*) filter (where status = 'matured') as nb_escrows_matured
   from escrow_entries;
 
 -- 3. Volume traité
 select count(*) as commandes_payees, coalesce(sum(amount_htg), 0) as volume_htg
   from orders where status in ('paid', 'delivered');
 ```
+
+La date minimale porte sur toutes les écritures, y compris celles reversées.
+Le statut `matured` d'un escrow n'est pas modifié par un règlement vendeur : son
+comptage peut inclure des ventes déjà réglées. Ces agrégats ne mesurent donc ni
+l'ancienneté d'une dette actuelle ni le nombre de ventes impayées.
 
 Pièces nécessaires avant de demander une qualification du circuit :
 
