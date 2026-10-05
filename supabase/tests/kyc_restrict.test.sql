@@ -50,16 +50,15 @@ begin
   if exists (select 1 from zabelie_kyc_docs_expires() where storage_path = 'test/kyc-r3-cin.jpg') then
     raise exception 'R3 KO : un dossier en attente est déjà purgeable';
   end if;
-  -- Même écriture que la route.
+  -- Fixture d'une relation déjà close depuis le délai, mais dont le dossier
+  -- administratif est seulement décidé à présent.
+  update profiles set suspended_reason = 'account_closed', suspended_at = now() - make_interval(years =>
+    (select retention_annees from zabelie_kyc_config) + 1) where id = u;
   update zabelie_kyc_submissions
      set status = 'rejected', decided_at = now(), decided_by = null, note_admin = 'Compte fermé avant décision'
    where user_id = u and status = 'pending';
-  if exists (select 1 from zabelie_kyc_docs_expires() where storage_path = 'test/kyc-r3-cin.jpg') then
-    raise exception 'R3 KO : purgeable dès la fermeture, avant le délai';
-  end if;
-  update zabelie_kyc_submissions
-     set decided_at = now() - make_interval(days => (select retention_jours from zabelie_kyc_config) + 1)
-   where user_id = u;
+  -- Le dossier vient d'être décidé, mais la relation est close depuis le
+  -- délai retenu ; c'est la clôture, pas la décision, qui détermine la purge.
   if not exists (select 1 from zabelie_kyc_docs_expires() where storage_path = 'test/kyc-r3-cin.jpg') then
     raise exception 'R3 KO : le délai écoulé, la purge ne voit pas les pièces';
   end if;

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { repartirApresReponse } from "@/lib/webhooks-apres";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { getAdminUser } from "@/lib/auth";
@@ -7,10 +8,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+const input = z.object({ orderId: z.string().uuid() }).strict();
 
 /**
  * POST /api/admin/refund  { orderId }
- * Rembourse une commande (annule l'escrow). Réservé au rôle admin.
+ * Annule l'écriture comptable d'une commande. Réservé au rôle admin.
+ * Le retour des fonds chez l'opérateur est distinct et son justificatif
+ * s'enregistre dans la file d'opérations existante.
  * Avant maturité → pending annulé (aucun solde fantôme) ; après → débite le
  * disponible. Idempotent (refund_order renvoie 'already_reversed' au rejeu).
  */
@@ -20,13 +24,13 @@ export async function POST(req: Request) {
     return erreurTraduite("api.access.denied", 403);
   }
 
-  let body: { orderId?: string };
+  let body;
   try {
-    body = await req.json();
+    body = input.safeParse(await req.json());
   } catch {
     return erreurTraduite("api.json.invalid", 400);
   }
-  if (!body.orderId) {
+  if (!body.success) {
     return erreurTraduite("api.params.invalid", 400);
   }
 
@@ -38,18 +42,18 @@ export async function POST(req: Request) {
     actorId: user.id,
     action: "order.refund",
     targetType: "order",
-    targetId: body.orderId,
+    targetId: body.data.orderId,
   });
   if (!trace) {
     return erreurTraduite("api.audit.unavailable", 503);
   }
 
   const { data, error } = await admin.rpc("refund_order", {
-    p_order_id: body.orderId,
+    p_order_id: body.data.orderId,
   });
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return erreurTraduite("api.unavailable", 503);
   }
   repartirApresReponse(admin); // webhook `sale.refunded` (0122) — après la réponse
-  return NextResponse.json({ ok: true, result: data });
+  return NextResponse.json({ ok: true, result: data }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -490,3 +490,79 @@ Une insertion de paiement dont la réponse est perdue, ou un échec de
 métadonnées après cette insertion, conserve l'état en attente sans lancer
 une seconde session. La reprise affiche alors la vérification nécessaire ;
 elle ne prétend pas réparer automatiquement ces états ambigus.
+
+## 10. Compléments techniques avant lancement — 5 octobre 2026
+
+Le porteur demande d'implémenter maintenant les compléments au §9, sans
+attendre le lancement. Ils réutilisent le checkout, le panier, les gardes de
+compte, le registre d'acceptations et le rapprochement existants. Le contrat
+de `docs/26` reste sans livraison Zabelie ni service Pay autonome.
+
+**Documents publics :** les trois clauses CGU auparavant en attente sont
+rédigées dans les quatre langues : capacité selon les règles applicables,
+restriction motivée avec recours par le contact existant, droit haïtien et
+droits impératifs applicables à la diaspora. Aucune majorité uniforme ou
+juridiction exclusive n'est inventée. L'identité et l'adresse ne sont pas
+fabriquées. Les formalités des vendeurs professionnels sont distinguées des
+ventes de particuliers. `docs/17` décrit les contrats, responsables et
+preuves nécessaires à la qualification des fonds ; un ledger ne prouve
+ni ségrégation bancaire ni règlement effectif.
+
+**KYC (`0131`) :** cinq années calendaires après la clôture du profil,
+avec conservation pendant la relation active. La décision KYC ne lance
+plus le délai. La clôture sans date est conservée, une suspension temporaire
+reste réversible, et un compte clôturé anonymisé ne peut pas être restauré.
+La purge reste réservée au serveur, revérifie les identifiants expirés et
+traite le stockage avant les métadonnées. Le test inclut l'anniversaire
+du 29 février, les limites temporelles, les dossiers absents/en attente,
+les droits anon/authenticated et la conservation du premier horodatage.
+
+**Achat et retour (`0132`) :** auto-achat refusé par les routes et par le
+trigger de commande ; l'ouverture groupée exige une véritable commande
+payée/remise entre acteurs distincts hors test. La méthode originale
+MonCash/NatCash/Stripe/Zelle est conservée sans payload personnel et devient
+immuable ; un Kobara historique dont le fournisseur est inconnu ne permet
+pas d'inventer une preuve de remboursement. L'annulation comptable et
+la preuve opérateur du retour sont présentées comme deux opérations.
+Le scénario SQL couvre achat, remise vendeur, réception, annulation au
+ledger, retour documenté, idempotence et équilibre. `docs/22` reste le
+protocole de l'exercice réel à réaliser.
+
+**Acceptation (`0133`) :** les deux déclarations non précochées réutilisent
+`zabelie_policy_acceptances` : `cgu-v1` pour les CGU et
+`confidentialite-v1` pour l'information de confidentialité. Elles ne sont
+ni un consentement global à tous les traitements ni une signature certifiée.
+Le trigger Auth enregistre la déclaration initiale dans la transaction
+de création email, même lorsque la confirmation ne fournit pas de session.
+Il ne déduit aucune acceptation de modifications ultérieures des metadata.
+Une RPC authentifiée sans identifiant de tiers enregistre l'acceptation
+explicite du parcours OAuth, avec verrou contre une clôture concurrente.
+La garde juridique est activée aux seuls points métier nommés : nouvel achat,
+panier groupé, création de produit et dépôt KYC, avec présentation sur les
+écrans vendeurs concernés. La reprise `recoveryOnly`, les droits, l'export,
+la fermeture, le support et l'historique restent accessibles. Le refus
+redirige vers l'acte explicite puis revient au contexte, sans achat automatique.
+Ce contrôle applicatif ne constitue pas un verrou de tous les accès SQL.
+
+**Cadence :** le workflow facultatif réutilise `/api/reconcile` et son bail.
+Un HTTP 200 contenant des erreurs de rails ou des divergences échoue ;
+les réponses sont bornées et aucune réémission automatique ne suit une
+issue incertaine. L'activation exige un plan confirmé ou la configuration
+GitHub autorisée. Aucun plan n'est souscrit ; les retards possibles de
+GitHub empêchent de promettre cinq minutes exactes. Le cron quotidien
+reste le secours. `docs/04` contient la configuration unique.
+
+**Sources et portée :** [MCI, CIP](https://mci.gouv.ht/cip.php),
+[guichet MCI](https://guichet.mci.ht/aide-et-questions),
+[CONATEL, signature électronique](https://www.conatel.gouv.ht/signature-electronique),
+[BRH, circulaire 129-1 du 6 février 2026, §14](https://www.brh.ht/wp-content/uploads/Circulaire-CIR-.-BRH-IF-2026-129-1-Aux-Institutions-FinancieEres-6-feevrier-2026-Lutte-contre-le-blanchiment-de-capitaux._0001.pdf),
+[BRH, circulaire 121](https://www.brh.ht/wp-content/uploads/Circulaire-121-FSP.pdf).
+Le §14 vise les institutions financières ; l'applicabilité à l'exploitant
+Zabelie reste à qualifier, et les cinq ans sont aussi la décision explicite
+du porteur. La société, le dépôt, les contrats et les mouvements réels
+ne se déduisent pas de tests logiciels.
+
+**Validation et publication :** en cours, après gel des sources ; voir
+`OPS_TODO`. L'ordre préparé est `0128`, `0129`, `0131`, `0132`, `0133`.
+`0130` est déjà appliquée. Chaque application devra croiser le SQL exact
+du journal Supabase, l'empreinte canonique et le registre opérationnel.

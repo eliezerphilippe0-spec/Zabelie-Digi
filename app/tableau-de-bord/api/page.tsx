@@ -7,7 +7,7 @@ import { WebhooksManager, type EnvoiAffiche, type PointAffiche } from "@/compone
 import { MAX_POINTS_ACTIFS } from "@/lib/webhooks";
 import { PixelsForm } from "@/components/pixels-form";
 import { DomainForm, type DomaineAffiche } from "@/components/domain-form";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_CLES_ACTIVES } from "@/lib/api-keys";
 import { getLang } from "@/lib/i18n-server";
@@ -26,6 +26,7 @@ export const metadata = { title: "API — Zabelie", robots: { index: false, foll
 export default async function ApiPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/connexion?next=%2Ftableau-de-bord%2Fapi");
+  await requireLegalAccountPage(user.id, "/tableau-de-bord/api");
   const lang = await getLang();
   const supabase = await createClient();
   const { data, error } = await supabase

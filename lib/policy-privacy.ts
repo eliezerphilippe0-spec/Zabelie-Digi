@@ -44,8 +44,9 @@ import type { Lang } from "./i18n";
  *     fonctions Vercel `iad1` (en-tête `x-vercel-id` de zabelie.com). La
  *     phrase ne promet AUCUNE garantie de transfert : ni clauses types ni
  *     accord signé n'ont été constatés, donc rien n'est affirmé.
- *   • Pièces d'identité : 5 ans, décision porteur du 2026-10-04 (loi
- *     haïtienne du 11/11/2013), réglée en base par `0126` ;
+ *   • Pièces d'identité : 5 ans, décision porteur du 2026-10-04. `0131`
+ *     compte cinq années calendaires après fermeture, en conservant les
+ *     pièces d'un compte actif. Le cadre BRH reste à qualifier (`docs/17`) ;
  *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
  *
  * ⚠️ Tant qu'un champ vaut `null`, le rendu affiche le marqueur — visible,
@@ -138,6 +139,7 @@ const fr: Politique = {
             "**Localisation approximative** : nous déduisons votre *pays* (jamais votre position précise) à partir de votre adresse IP au moment d'un achat ou d'une publication (voir §4).",
             "**Paiement** : références de transaction MonCash nécessaires à la confirmation et à la réconciliation de vos paiements.",
             "**Activité** : produits publiés, commandes passées, écritures du registre comptable vendeur.",
+            "**Déclarations sur les documents** : identifiant du compte, version des conditions acceptées, version de la politique de confidentialité portée à votre connaissance et date enregistrée par le serveur. Ni adresse IP ni agent utilisateur pour cette trace. Il ne s’agit pas d’un consentement général au traitement des données ni d’une signature électronique certifiée.",
             "**Coordonnées de remise** (si vous les renseignez) : nom complet, téléphone et adresse — montrés au vendeur *uniquement* pour organiser la remise de votre commande payée, jamais publics. Zabelie ne livre pas les produits.",
             "**Pièces d'identité** (vendeurs seulement, lorsqu'une vérification est demandée) : documents officiels et photo, conservés à part et jamais publics — voir §9.",
           ],
@@ -172,6 +174,7 @@ const fr: Politique = {
         {
           ul: [
             "Données de compte et de profil : tant que votre compte est actif.",
+            "Déclarations sur les documents : conservées dans un registre non modifiable, y compris après la fermeture du compte. Aucune purge automatique de ces traces n’est actuellement prévue ; vous pouvez adresser une demande à **{email}**. Un compte qui porte ces traces est fermé et ses coordonnées sont anonymisées plutôt que supprimé entièrement.",
             "Données de paiement et de commande : conservées pour la durée légale applicable (obligations comptables), puis supprimées ou anonymisées.",
             "Détails techniques du paiement (payload opérateur) : minimisés à la confirmation (l'identifiant du payeur n'est pas conservé) et purgés **90 jours** après la clôture du paiement (confirmé ou échoué).",
             "Termes de recherche non aboutis : conservés **90 jours**, puis purgés automatiquement.",
@@ -258,7 +261,7 @@ const fr: Politique = {
             "**Ce que nous demandons** : deux documents parmi une *carte d'identification nationale*, un *passeport* et une *photo de vous* permettant de vous rapprocher du document présenté.",
             "**Qui les voit** : uniquement les membres de notre équipe chargés de la vérification. Elles ne sont **jamais** publiées, ni montrées aux acheteurs, ni montrées aux autres vendeurs.",
             "**Comment elles sont conservées** : dans un espace de stockage **privé**, qu'aucun lien public n'ouvre. Notre équipe y accède par un lien signé qui **expire au bout de cinq minutes**.",
-            "**Combien de temps** : **5 ans** après la décision. Le fichier et sa trace sont ensuite supprimés automatiquement.",
+            "**Combien de temps** : pendant la relation liée au compte, puis **5 ans** après la fermeture du compte. Le délai compte en années calendaires ; la décision sur le dossier ne le déclenche pas. Le fichier et sa trace sont ensuite supprimés automatiquement.",
             "**Pourquoi** : prévenir la fraude et sécuriser les retraits d'argent — *intérêt légitime* — et satisfaire nos obligations de vigilance là où elles s'appliquent — *obligation légale*.",
           ],
         },
@@ -298,6 +301,7 @@ const ht: Politique = {
             "**Kote ou ye apeprè** : nou dedwi *peyi* ou (pa janm pozisyon egzak ou) apati adrès IP ou lè ou achte oswa lè ou pibliye (gade §4).",
             "**Peman** : referans tranzaksyon MonCash ki nesesè pou konfime epi rekonsilye peman ou yo.",
             "**Aktivite** : pwodwi ou pibliye, kòmand ou pase, ekriti nan rejis kontab vandè a.",
+            "**Deklarasyon sou dokiman yo** : idantifyan kont lan, vèsyon kondisyon ou aksepte yo, vèsyon règleman sou vi prive nou fè ou konnen an, ak dat sèvè a anrejistre. Nou pa mete adrès IP ni ajan itilizatè nan tras sa a. Sa pa yon konsantman jeneral pou tretman done ni yon siyati elektwonik sètifye.",
             "**Kòdone pou remiz la** (si ou mete yo) : non konplè, telefòn ak adrès — vandè a wè yo *sèlman* pou òganize remiz kòmand ou peye a, yo pa janm piblik. Zabelie pa livre pwodwi yo.",
             "**Pyès idantite** (vandè sèlman, lè nou mande yon verifikasyon) : dokiman ofisyèl ak foto, kenbe apa epi yo pa janm piblik — gade §9.",
           ],
@@ -332,6 +336,7 @@ const ht: Politique = {
         {
           ul: [
             "Done kont ak pwofil : toutotan kont ou aktif.",
+            "Deklarasyon sou dokiman yo : kenbe nan yon rejis ki pa ka modifye, menm apre kont lan fèmen. Pa gen efasman otomatik pou tras sa yo kounye a ; ou ka voye yon demann nan **{email}**. Yon kont ki gen tras sa yo fèmen epi kòdone li anonimize olye kont lan efase nèt.",
             "Done peman ak kòmand : konsève pou dire legal ki aplikab (obligasyon kontab), apre sa efase oswa anonimize.",
             "Detay teknik peman an (payload operatè a) : redwi lè konfimasyon an fèt (idantifyan moun ki peye a pa konsève) epi efase **90 jou** apre peman an fini (konfime oswa echwe).",
             "Mo rechèch ki pa bay rezilta : konsève **90 jou**, apre sa efase otomatikman.",
@@ -418,7 +423,7 @@ const ht: Politique = {
             "**Sa nou mande** : de dokiman pami yon *kat idantifikasyon nasyonal*, yon *paspò* ak yon *foto ou* ki pèmèt nou konpare ou ak dokiman an.",
             "**Kilès ki wè yo** : sèlman manm ekip nou an ki responsab verifikasyon an. Yo pa **janm** pibliye, ni montre bay achtè, ni montre bay lòt vandè.",
             "**Kijan nou kenbe yo** : nan yon depo **prive**, okenn lyen piblik pa ouvri l. Ekip nou an ouvri yo ak yon lyen siyen ki **ekspire apre senk minit**.",
-            "**Konbyen tan** : **5 an** apre desizyon an. Apre sa, fichye a ak tras li efase otomatikman.",
+            "**Konbyen tan** : pandan relasyon ki lye ak kont lan, epi **5 an** apre kont lan fèmen. Delè a konte an ane kalandriye ; desizyon sou dosye a pa fè l kòmanse. Apre sa, fichye a ak tras li efase otomatikman.",
             "**Poukisa** : anpeche fwod epi sekirize retrè lajan — *enterè lejitim* — epi respekte obligasyon vijilans nou yo kote yo aplikab — *obligasyon legal*.",
           ],
         },
@@ -458,6 +463,7 @@ const en: Politique = {
             "**Approximate location**: we infer your *country* (never your precise position) from your IP address at the time of a purchase or a publication (see §4).",
             "**Payment**: MonCash transaction references required to confirm and reconcile your payments.",
             "**Activity**: products published, orders placed, entries in the seller accounting ledger.",
+            "**Document declarations**: account identifier, version of the terms accepted, version of the privacy information acknowledged and server-recorded date. No IP address or user agent is collected for this receipt. This is not blanket consent to data processing or a certified electronic signature.",
             "**Handover details** (if you provide them): full name, phone and address — shown to the seller *only* to arrange handover of your paid order, never public. Zabelie does not deliver products.",
             "**Identity documents** (sellers only, when a verification is requested): official documents and photo, stored separately and never public — see §9.",
           ],
@@ -492,6 +498,7 @@ const en: Politique = {
         {
           ul: [
             "Account and profile data: for as long as your account is active.",
+            "Document declarations: kept in an immutable registry, including after account closure. No automatic purge of these receipts is currently provided; you may send a request to **{email}**. An account carrying these receipts is closed and its contact details anonymised rather than fully deleted.",
             "Payment and order data: kept for the applicable statutory period (accounting obligations), then deleted or anonymised.",
             "Technical payment details (operator payload): minimised at confirmation (the payer identifier is not kept) and purged **90 days** after the payment is closed (confirmed or failed).",
             "Unsuccessful search terms: kept **90 days**, then purged automatically.",
@@ -578,7 +585,7 @@ const en: Politique = {
             "**What we ask for**: two documents among a *national identification card*, a *passport* and a *photo of you* that lets us match you to the document presented.",
             "**Who sees them**: only the members of our team responsible for verification. They are **never** published, shown to buyers, or shown to other sellers.",
             "**How they are stored**: in a **private** storage area that no public link opens. Our team reaches them through a signed link that **expires after five minutes**.",
-            "**For how long**: **5 years** after the decision. The file and its record are then deleted automatically.",
+            "**For how long**: during the account relationship, then **5 years** after account closure. The period uses calendar years; the dossier decision does not start it. The file and its record are then deleted automatically.",
             "**Why**: to prevent fraud and secure money withdrawals — *legitimate interest* — and to meet our due-diligence obligations where they apply — *legal obligation*.",
           ],
         },
@@ -618,6 +625,7 @@ const es: Politique = {
             "**Ubicación aproximada**: deducimos su *país* (nunca su posición exacta) a partir de su dirección IP en el momento de una compra o una publicación (véase §4).",
             "**Pago**: referencias de transacción MonCash necesarias para confirmar y conciliar sus pagos.",
             "**Actividad**: productos publicados, pedidos realizados, apuntes del registro contable del vendedor.",
+            "**Declaraciones sobre documentos**: identificador de cuenta, versión de las condiciones aceptadas, versión de la información de privacidad reconocida y fecha registrada por el servidor. Esta constancia no recoge dirección IP ni agente de usuario. No es un consentimiento general al tratamiento de datos ni una firma electrónica certificada.",
             "**Datos para la entrega** (si los indica): nombre completo, teléfono y dirección — mostrados al vendedor *solo* para organizar la entrega de su pedido pagado, nunca públicos. Zabelie no entrega los productos.",
             "**Documentos de identidad** (solo vendedores, cuando se solicita una verificación): documentos oficiales y foto, conservados aparte y nunca públicos — véase §9.",
           ],
@@ -652,6 +660,7 @@ const es: Politique = {
         {
           ul: [
             "Datos de cuenta y perfil: mientras su cuenta esté activa.",
+            "Declaraciones sobre documentos: conservadas en un registro inmutable, incluso tras el cierre de la cuenta. Actualmente no existe una eliminación automática de estas constancias; puede enviar una solicitud a **{email}**. Una cuenta con estas constancias se cierra y sus datos de contacto se anonimizan en lugar de eliminarla completamente.",
             "Datos de pago y pedido: conservados durante el plazo legal aplicable (obligaciones contables) y después eliminados o anonimizados.",
             "Detalles técnicos del pago (payload del operador): minimizados en la confirmación (no se conserva el identificador del pagador) y purgados **90 días** después del cierre del pago (confirmado o fallido).",
             "Términos de búsqueda sin resultado: conservados **90 días** y purgados automáticamente después.",
@@ -738,7 +747,7 @@ const es: Politique = {
             "**Qué pedimos**: dos documentos entre una *cédula de identificación nacional*, un *pasaporte* y una *foto suya* que permita compararle con el documento presentado.",
             "**Quién los ve**: únicamente los miembros de nuestro equipo encargados de la verificación. **Nunca** se publican, ni se muestran a los compradores, ni a otros vendedores.",
             "**Cómo se conservan**: en un espacio de almacenamiento **privado** que ningún enlace público abre. Nuestro equipo accede a ellos mediante un enlace firmado que **caduca a los cinco minutos**.",
-            "**Cuánto tiempo**: **5 años** tras la decisión. Después, el archivo y su rastro se eliminan automáticamente.",
+            "**Cuánto tiempo**: durante la relación vinculada a la cuenta, y luego **5 años** tras el cierre de la cuenta. El plazo se cuenta en años naturales; la decisión sobre el expediente no lo inicia. Después, el archivo y su rastro se eliminan automáticamente.",
             "**Por qué**: prevenir el fraude y proteger las retiradas de dinero — *interés legítimo* — y cumplir nuestras obligaciones de diligencia donde sean aplicables — *obligación legal*.",
           ],
         },

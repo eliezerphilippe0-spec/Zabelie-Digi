@@ -15,12 +15,14 @@
 begin;
 
 insert into auth.users (id, email)
-  values ('00000000-0000-0000-0000-0000000c0001', 'cc.vendeur@test.local');
+  values ('00000000-0000-0000-0000-0000000c0001', 'cc.vendeur@test.local'),
+         ('00000000-0000-0000-0000-0000000c0002', 'cc.acheteur@test.local');
 
 -- 0045 : profil auto-créé à l'inscription — on pilote la ligne nous-mêmes.
 delete from profiles where id in (select id from auth.users);
 insert into profiles (id, role, display_name)
-  values ('00000000-0000-0000-0000-0000000c0001', 'creator', 'Vendeur CC');
+  values ('00000000-0000-0000-0000-0000000c0001', 'creator', 'Vendeur CC'),
+         ('00000000-0000-0000-0000-0000000c0002', 'buyer', 'Acheteur CC');
 insert into products (id, seller_id, slug, title, kind, price_htg, status)
   values ('00000000-0000-0000-0000-0000000c0010',
           '00000000-0000-0000-0000-0000000c0001',
@@ -45,7 +47,7 @@ begin
 
   insert into orders (id, buyer_id, product_id, amount_htg, status)
     values ('00000000-0000-0000-0000-0000000c0020',
-            '00000000-0000-0000-0000-0000000c0001',
+            '00000000-0000-0000-0000-0000000c0002',
             '00000000-0000-0000-0000-0000000c0010', 999, 'pending');
   insert into payments (order_id, rail, idempotency_key, status)
     values ('00000000-0000-0000-0000-0000000c0020', 'moncash', 'cc-k1', 'pending');

@@ -1,0 +1,34 @@
+name: Rapprochement des paiements
+
+# Ordonnanceur principal OPTIONNEL, activé explicitement dans les variables
+# du dépôt. Le cron quotidien Vercel reste le filet de secours : les deux
+# invoquent le même worker et son bail DB, sans seconde logique d'argent.
+# Actions peut retarder ou abandonner un passage ; cinq minutes est une
+# cadence demandée, jamais une garantie de délai. Voir docs/04 §3.
+on:
+  schedule:
+    - cron: "2-59/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: reconcile-production
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.ref == 'refs/heads/main' && vars.ZABELIE_RECONCILE_SCHEDULER == 'github'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Déclencher le rapprochement canonique et vérifier son résultat
+        env:
+          ZABELIE_URL: ${{ vars.ZABELIE_URL }}
+          ZABELIE_RECONCILE_SCHEDULER: ${{ vars.ZABELIE_RECONCILE_SCHEDULER }}
+          RECONCILE_SECRET: ${{ secrets.RECONCILE_SECRET }}
+        run: node scripts/declencher-reconciliation.mjs

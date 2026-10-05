@@ -1,5 +1,48 @@
 # OPS_TODO — Zabelie
 
+## Compléments techniques avant lancement — 5 octobre 2026
+
+Instruction du porteur : « Profitez en pour pouvoir implémenté tous,
+n'attend pas le lancement ». Le présent état remplace les points techniques
+encore ouverts dans les comptes rendus historiques ci-dessous ; le dépôt
+annoncé pour la semaine prochaine reste une démarche à effectuer.
+
+- Les CGU présentent capacité, suspension motivée avec recours et droit
+  haïtien, avec respect des droits impératifs applicables à la diaspora.
+  Les formalités professionnelles visent les vendeurs concernés. L'identité,
+  l'adresse et le statut réel de l'exploitant restent à fournir.
+- `0131` conserve les pièces KYC durant la relation, puis cinq années
+  calendaires depuis la clôture. Une décision KYC, une suspension temporaire
+  ou une date de clôture inconnue ne déclenchent pas la purge. La clôture
+  anonymisée est terminale et son premier horodatage est conservé.
+- `0132` refuse l'auto-achat dans les deux checkouts et en base, conserve
+  la méthode du paiement après purge du payload, et impose cette méthode
+  pour la preuve du retour effectif. Le bouton administratif dit « annuler
+  comptablement » ; l'écriture au ledger ne prétend pas transférer des fonds.
+- `0133` enregistre l'acceptation explicite des CGU et la lecture de la
+  confidentialité dans le registre immuable existant. La création email
+  conserve les deux traces même sans session de confirmation. Le parcours
+  OAuth réutilise les mêmes documents et une RPC réservée à l'appelant.
+- Un ordonnanceur GitHub facultatif appelle le rapprochement existant
+  toutes les cinq minutes avec le même bail. Son activation demande le
+  choix du plan et la configuration autorisée de la variable et du secret ;
+  elle n'est pas acquise par la présence du workflow. Le cron quotidien
+  reste le secours. GitHub ne garantit pas une exécution à la minute exacte.
+
+**Application préparée, pas encore effectuée :** `0128`, `0129`, `0131`,
+`0132`, puis `0133`, après CI/PostgreSQL verte. Le panier conserve l'ouverture
+automatique autorisée après la première vente réelle entre acteurs distincts,
+hors comptes test ; aucune ouverture manuelle ni mode marchand n'est ajouté.
+Les fichiers `0128`/`0129` sont identiques au HEAD fusionné ; leurs empreintes
+ci-dessous ont été recalculées sur ces sources le 5 octobre 2026.
+
+**Limites factuelles :** `docs/17` porte le dossier des fonds et `docs/22`
+le protocole de première commande et remboursement. Une simulation ne
+remplace ni l'opinion juridique, ni les contrats opérateurs, ni le dépôt,
+ni un débit et un retour effectifs entre personnes réelles. Aucun secret,
+plan payant, encaissement ou versement réel n'est créé par ce lot.
+Validation, trace de migration et publication : `docs/67` §10.
+
 ## Corrections après l'audit en ligne — 5 octobre 2026
 
 Instruction du porteur : « implémenté », après le compte rendu des cinq
@@ -113,8 +156,8 @@ Après chaque tentative, on a vérifié qu'il n'y avait aucun objet créé, aucu
 
    | Fichier | sha256 brut | Empreinte canonique |
    |---|---|---|
-   | `0128` | `3d0133a7…` | `3d2ad33a…` |
-   | `0129` | `c800b9f5…` | `1799a1d1…` |
+   | `0128` | `4c3fe3c592a537b97ee7f6d360a9ce7013821bd368abf36b86f825e2eb812fe7` | `14a4752dc04df53dd6a74a20cea5776d51438d300f2ce747face4fa7de6b7738` |
+   | `0129` | `48d4074a3ef15c019bed4c53b9e092a8721999c043fc34f1e5e4c695e2985b09` | `08ef8d8962c6f6aa756dc9f8c36fff6835e3597b7b2bc3c3f3cac5e23ffa9555` |
 
    Suivre la méthode habituelle : SQL reçu croisé avec le fichier, puis ligne au registre `journal_supabase`.
 2. ⚠️ Repli par l'éditeur SQL Supabase : possible, mais la preuve tombe en `sonde_schema` (le SQL exact n'est pas journalisé). C'est à éviter si l'outil revient.

@@ -15,7 +15,8 @@
 begin;
 
 insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-0000000e0001'::uuid, 'stock.life@test.local');
+  ('00000000-0000-0000-0000-0000000e0001'::uuid, 'stock.life@test.local'),
+  ('00000000-0000-0000-0000-0000000e0004'::uuid, 'stock.buyer@test.local');
 
 -- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
 -- veulent piloter la ligne eux-mêmes (rôle, tier) et éprouver le chemin
@@ -24,7 +25,8 @@ insert into auth.users (id, email) values
 -- chose.
 delete from profiles where id in (select id from auth.users);
 insert into profiles (id, display_name, role) values
-  ('00000000-0000-0000-0000-0000000e0001'::uuid, 'Vendeur Stock', 'creator');
+  ('00000000-0000-0000-0000-0000000e0001'::uuid, 'Vendeur Stock', 'creator'),
+  ('00000000-0000-0000-0000-0000000e0004'::uuid, 'Acheteur Stock', 'buyer');
 
 insert into products (id, seller_id, slug, title, description, price_htg, kind, status, category)
 values ('00000000-0000-0000-0000-0000000e0002'::uuid,
@@ -43,7 +45,7 @@ do $$
 declare
   v_variant uuid := '00000000-0000-0000-0000-0000000e0003';
   v_product uuid := '00000000-0000-0000-0000-0000000e0002';
-  v_buyer   uuid := '00000000-0000-0000-0000-0000000e0001';
+  v_buyer   uuid := '00000000-0000-0000-0000-0000000e0004';
   v_order1  uuid;
   v_order2  uuid;
   v_res     jsonb;

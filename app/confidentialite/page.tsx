@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
 import { TrackerPreferences } from "@/components/tracker-preferences";
+import { CONFIDENTIALITE_VERSION } from "@/lib/legal-acceptance";
 import {
   POLITIQUE,
   resoudre,
@@ -78,7 +79,7 @@ export default async function ConfidentialitePage() {
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main id="main" className="mx-auto max-w-2xl px-5 py-16">
+      <main id="main" data-policy-version={CONFIDENTIALITE_VERSION} className="mx-auto max-w-2xl px-5 py-16">
         <h1 className="text-3xl font-black tracking-tight">{doc.titre}</h1>
         <p className="mt-2 text-sm text-mist">
           {doc.majLabel} : {LAST_UPDATE}

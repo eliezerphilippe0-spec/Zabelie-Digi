@@ -116,6 +116,18 @@ test("PG1 — fermé (ni drapeau, ni première vente réelle) : 409, aucun group
   assert.equal(m.appels.length, 0);
 });
 
+test("an own article refuses the entire group before checkout, creation, stock or operator", async () => {
+  for (const at of [0, 1]) {
+    const articles = ARTICLES.map((a, i) => ({ ...a, product: { ...a.product, seller_id: i === at ? "acheteur" : a.product.seller_id } }));
+    const m = monter({ articles });
+    const res = await m.payer();
+    assert.equal(res.status, 422);
+    const body = await res.json();
+    assert.equal(body.code, "self_purchase"); assert.equal(body.productId, articles[at].product_id);
+    assert.deepEqual(m.rpc, []); assert.equal(m.appels.length, 0); assert.equal(m.operateur.length, 0);
+  }
+});
+
 test("PG2 — un groupe, chaque article par le checkout existant, l'opérateur appelé UNE fois pour le total SCELLÉ", async () => {
   const m = monter({ scelle: { leader_order_id: "o-p1", total_htg: 3999, expected_usd_cents: null } });
   const res = await m.payer();

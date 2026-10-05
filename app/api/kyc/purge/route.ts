@@ -8,11 +8,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Purge des pièces d'identité après décision (docs/35 V-6, `0079`).
+ * Purge des pièces d'identité après fermeture du compte (0131).
  *
  * Une pièce d'identité gardée « au cas où » est une fuite qui attend son
- * incident : la rétention est bornée (config `retention_jours`, défaut 90
- * après la décision) et ce cron l'applique.
+ * incident : la rétention est bornée (config `retention_annees`, cinq années
+ * calendaires après fermeture) et ce cron l'applique. Un compte actif ou
+ * simplement suspendu ne démarre pas ce délai.
  *
  * ORDRE DÉLIBÉRÉ — les objets D'ABORD, les lignes ENSUITE. Si le passage
  * échoue au milieu, le suivant reprend : il reste des lignes qui pointent des

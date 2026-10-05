@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/safe-next";
 import { siteOrigin } from "@/lib/site-origin";
+import { ACCOUNT_LEGAL_VERSIONS, hasCurrentLegalAcceptance } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,12 +41,21 @@ export async function GET(req: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error || !data.user) {
       // BL-121 (C-13) : lien expiré ou déjà consommé (double-clic, préfetch
       // d'antivirus de messagerie) → message clair au lieu d'un atterrissage
       // silencieusement déconnecté.
       return NextResponse.redirect(`${site}/connexion?erreur=lien_expire`);
+    }
+    // OAuth may CREATE an account from the ordinary sign-in button. Its
+    // provider metadata is not acceptance of Zabelie's documents. A missing
+    // receipt requires a fresh explicit act; no historical act is invented.
+    const { data: receipts, error: receiptError } = await supabase.from("zabelie_policy_acceptances")
+      .select("policy_version").eq("user_id", data.user.id)
+      .in("policy_version", [...ACCOUNT_LEGAL_VERSIONS]);
+    if (receiptError || !receipts || !hasCurrentLegalAcceptance(receipts)) {
+      return NextResponse.redirect(`${site}/connexion?mode=legal&next=${encodeURIComponent(next)}`);
     }
   }
   return NextResponse.redirect(`${site}${next}`);

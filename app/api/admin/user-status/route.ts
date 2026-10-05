@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
  * ⚠️ Cadre BRH : cette route ne fait AUCUNE opération monétaire. Le wallet et
  * l'escrow du vendeur restent intacts (la maturation J+7 suit son cours) — on
  * ne gèle jamais un solde dû. La remédiation financière d'une fraude passe par
- * /api/admin/refund (moyen d'origine + checkpoint humain), commande par commande.
+ * /api/admin/refund pour l'annulation comptable, puis par le retour opérateur
+ * documenté via /api/admin/refund-receipt, commande par commande.
  *
  * Effets : marqueur traçable sur le profil (qui/quand/pourquoi), ban auth
  * réversible (bloque la connexion), produits masqués du catalogue (policy RLS
@@ -43,16 +44,22 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  const { data: target } = await admin
+  const { data: target, error: readError } = await admin
     .from("profiles")
-    .select("id, role, suspended_at")
+    .select("id, role, suspended_at, suspended_reason")
     .eq("id", userId)
     .maybeSingle();
+  if (readError) return erreurTraduite("api.read.failed", 503);
   if (!target) {
     return erreurTraduite("api.account.notfound", 404);
   }
   if (target.role === "admin") {
     return erreurTraduite("api.admin.protected", 400);
+  }
+  // Closure scrubbed the identity and ended the account relationship. It is
+  // terminal; moderation reactivation must not reopen it or race KYC purge.
+  if (target.suspended_reason === "account_closed") {
+    return erreurTraduite("api.account.closed", 409);
   }
 
   if (action === "suspend") {
@@ -71,7 +78,7 @@ export async function POST(req: Request) {
       })
       .eq("id", userId);
     if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
+      return erreurTraduite(updErr.code === "ZB131" ? "api.account.closed" : "api.write.failed", updErr.code === "ZB131" ? 409 : 503);
     }
 
     // Ban auth RÉVERSIBLE (≈100 ans, levé à la réactivation).
@@ -101,7 +108,7 @@ export async function POST(req: Request) {
     .update({ suspended_at: null, suspended_reason: null, suspended_by: null })
     .eq("id", userId);
   if (updErr) {
-    return NextResponse.json({ error: updErr.message }, { status: 500 });
+    return erreurTraduite(updErr.code === "ZB131" ? "api.account.closed" : "api.write.failed", updErr.code === "ZB131" ? 409 : 503);
   }
 
   const { error: unbanErr } = await admin.auth.admin.updateUserById(userId, {

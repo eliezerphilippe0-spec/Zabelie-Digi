@@ -6,46 +6,58 @@
 > plateforme.
 > **Rédigé le** : 2026-07-24 · **Statut** : brief factuel, ne contient
 > **aucune interprétation juridique** — c'est précisément ce qui est demandé.
+> **Présentation technique actualisée le 2026-10-05** : les sections 1, 2 et 6
+> décrivent les appelants présents, pas des virements observés. Les relevés
+> historiques des sections 7 à 9 ne valent pas confirmation opérateur actuelle.
 >
 > ⚠️ **Gel décidé** : aucune construction nouvelle sur ce mécanisme tant que
 > l'avis écrit n'est pas rendu.
 
 ---
 
-## 1. Résumé de l'exposition en cinq phrases
+## 1. Circuit prévu et preuves à obtenir
 
-1. Un acheteur paie **100 %** du prix à la plateforme, via le compte marchand
-   MonCash **de la plateforme**.
+1. Le code dirige le prix final d'une commande vers le compte marchand MonCash
+   associé aux identifiants serveur. Le titulaire juridique, les conditions
+   signées et le mode réellement autorisé doivent être documentés par le porteur.
 2. La plateforme conserve sa commission (10 % standard / 6 % Elite) et inscrit
    le solde net du vendeur comme **écriture comptable** dans une table
    `wallets`, colonne `pending_htg`.
-3. Après **7 jours**, un traitement automatique fait passer cette écriture de
-   « en attente » à « disponible ».
-4. **Aucun mécanisme de retrait n'est implémenté.** Le vendeur ne dispose
-   aujourd'hui d'**aucun moyen** d'obtenir les fonds portés à son crédit.
-5. Ces sommes se trouvent sur le **compte marchand unique** de la plateforme,
-   **mêlées** à ses propres revenus : aucun compte de cantonnement n'existe.
-6. Autrement dit : **la plateforme détient, sur son compte propre, des fonds
-   appartenant économiquement à des tiers, pour une durée indéterminée, sans
-   voie de sortie.**
+3. La disponibilité comptable exige **J+7** et, pour les produits physiques et
+   services, la remise confirmée selon le mécanisme existant. Elle ne prouve
+   pas qu'un virement a eu lieu.
+4. **La voie de règlement vendeur est implémentée** : demandes, file admin et
+   enregistrement d'un règlement effectué manuellement. Un reçu saisi par
+   l'administrateur ne constitue pas une vérification indépendante de l'opérateur.
+5. Le logiciel n'effectue pas de répartition des fonds entre plusieurs comptes
+   marchands au paiement et ne crée aucun compte de cantonnement. L'existence
+   d'une séparation bancaire externe reste à prouver ; elle ne se déduit pas
+   d'une table comptable.
+6. La qualification de l'encaissement pour vendeurs tiers, la durée de rétention,
+   les modalités de séparation et la sortie effective des fonds restent à
+   instruire avant encaissement commercial. Aucun registre ni délai J+7 ne
+   vaut autorisation BRH.
 
-Ce sont les points 5 et 6 qui motivent la présente consultation.
+Ces points décrivent l'architecture du circuit. Ils n'affirment aucun encours
+réel actuel ni paiement, versement ou remboursement de production réussi.
 
-> **Mesure conservatoire engagée sans attendre l'avis** : l'exploitant procède
-> à l'apurement **manuel** des sommes dues (virement MonCash direct contre
-> reçu). L'absence de route de décaissement dans le logiciel n'est pas une
-> impossibilité de payer — c'est une impossibilité de payer *automatiquement*.
-> L'effet de ces règlements sur la qualification fait l'objet de la question Q7.
+> Le règlement manuel est le circuit prévu. Pour attester son exécution, joindre
+> les reçus opérateur et leur rapprochement comptable ; aucun apurement ne doit
+> être présenté comme effectué sur la seule présence de ses routes dans le code.
+> Son effet sur la qualification reste la question Q7.
 
 ---
 
 ## 2. Description technique du mécanisme (vérifiable dans le code)
 
 ### 2.1 Encaissement
-L'acheteur est redirigé vers MonCash et paie **sur le compte marchand de la
-plateforme** (identifiants `MONCASH_CLIENT_ID` / `MONCASH_CLIENT_SECRET`,
-propriété de la plateforme). La plateforme reçoit donc **l'intégralité** du
-montant, y compris la part due au vendeur.
+L'acheteur est redirigé vers MonCash associé aux identifiants serveur
+`MONCASH_CLIENT_ID` / `MONCASH_CLIENT_SECRET`. Le code encaisse le prix final,
+y compris la part due au vendeur, sur un seul compte marchand. La propriété
+et les permissions de ce compte exigent le contrat opérateur, sans recopier
+les secrets dans le présent dossier. Les rails diaspora existants nécessitent
+la même vérification de titulaire et d'autorisation ; aucun nouveau rail
+n'est proposé dans ce dossier.
 
 ### 2.2 Inscription au crédit du vendeur
 Après vérification serveur-à-serveur du paiement, la fonction
@@ -62,7 +74,7 @@ Après vérification serveur-à-serveur du paiement, la fonction
 - `supabase/migrations/0006_escrow_maturation.sql:143-173` — fonction
   `mature_wallets()`, déclenchée quotidiennement par une tâche planifiée
   (`/api/maturation`, cron 13h UTC) : les entrées échues passent de
-  `pending_htg` à `available_htg`.
+  `pending_htg` à `balance_htg` (solde comptablement disponible).
 
 Justification d'origine du délai : **fenêtre anti-fraude** (permettre
 l'annulation d'une vente contestée avant que les fonds ne soient réputés
@@ -73,62 +85,62 @@ acquis), et non une volonté de conserver les fonds.
   **avant** maturité annule l'écriture (réduction de `pending_htg`, statut
   `'reversed'`) ; après maturité, les fonds sont réputés disponibles.
 
-### 2.5 ⚠️ Absence de voie de sortie — le point central
+### 2.5 Voie de sortie existante — règlement externe manuel
 
 | Élément | État |
 |---|---|
 | Table `payouts` (demandes de retrait) | **Existe** — `0001_schema.sql:119-126` |
 | Politique RLS sur `payouts` | **Existe** — `0002_rls.sql:81-85` |
-| Fonction ou route de décaissement | ❌ **N'existe pas** |
-| Interface vendeur pour demander un retrait | ❌ **N'existe pas** |
+| Demande de règlement vendeur | `app/api/payouts/route.ts` → `zabelie_request_payout`, composants `payout-request` et `payout-queue` |
+| Enregistrement d'un règlement déjà effectué | `app/api/admin/payouts/settle/route.ts` → `zabelie_settle_payout`, référence de reçu obligatoire |
+| Enregistrement manuel hors demande | `app/api/admin/payouts/route.ts` → `zabelie_record_manual_payout` |
+| Refus d'une demande | `zabelie_reject_payout`, restitution par écriture compensatoire, pas par effacement du ledger |
+| Appel opérateur automatique de versement | **Non implémenté** : l'activation et les permissions de `Transfert` ne sont pas attestées (§9.3) |
 
-Le code lui-même documente ce blocage :
-- `app/tableau-de-bord/page.tsx:241` — message affiché au vendeur : « Les
-  retraits du solde disponible arriveront avec la [suite] »
-- `supabase/migrations/0017_seller_suspension.sql:7` — « les retraits — **déjà
-  bloqués en Vague 1** »
+La maturation et la demande de règlement sont des écritures/demandes internes.
+Le virement est ensuite réalisé par l'équipe à l'extérieur du logiciel, puis
+sa référence est enregistrée. Le code ne garantit donc ni sortie effective ni
+délai de virement ; ces éléments nécessitent des preuves d'exploitation.
 
-**Conséquence** : le solde « disponible » ne l'est qu'au sens comptable. En
-pratique, les fonds restent chez la plateforme **sans limite de durée**.
-
-### 2.6 ⚠️ Ségrégation des fonds — il n'y en a aucune
+### 2.6 Ségrégation — aucun dispositif logiciel, preuves externes manquantes
 
 **Point à examiner en priorité, souvent avant la durée de détention.**
 
-La plateforme dispose d'**un seul compte marchand MonCash**, identifié par un
-unique jeu d'identifiants (`lib/moncash.ts:28-30` — `MONCASH_CLIENT_ID` /
-`MONCASH_CLIENT_SECRET`). Il n'existe :
+Le code utilise **un jeu d'identifiants marchand MonCash**, `lib/moncash.ts`.
+Il ne réalise :
 
-- ❌ **aucun compte de cantonnement** (trust / escrow account) distinct ;
-- ❌ **aucune séparation** entre les sommes dues aux vendeurs et les revenus
-  propres de la plateforme ;
-- ❌ **aucun mouvement de fonds** reflétant la répartition.
+- aucun routage vers un compte de cantonnement distinct ;
+- aucune séparation bancaire automatique des sommes dues et des revenus ;
+- aucun mouvement opérateur reflétant la ventilation comptable.
 
-Concrètement, sur ce compte unique se trouvent **mêlés** :
+La ventilation suivante existe dans la base, sans preuve de sa matérialisation
+sur les comptes externes :
 1. la **commission** de la plateforme — enregistrée dans `platform_earnings`
    (`0005_commission.sql:138`), simple écriture comptable ;
 2. le **net dû aux vendeurs** — enregistré dans `wallets`, simple écriture
    comptable ;
-3. les éventuels fonds propres de l'exploitant.
+3. les éventuels fonds propres de l'exploitant ne sont pas décrits par ce registre.
 
-La répartition n'existe donc **que dans la base de données**. Aucun compte
-bancaire ne la matérialise.
+Joindre les attestations de titulaire, comptes/relevés de séparation éventuels
+et procédure de rapprochement. L'absence de mécanisme dans le dépôt ne prouve
+pas l'absence d'un compte bancaire externe.
 
-**Conséquence pratique** : rien n'empêche techniquement l'utilisation des
-sommes dues aux vendeurs pour les dépenses de la plateforme — la limite est
-uniquement une discipline de gestion, non un dispositif.
+**Point à qualifier** : les sommes dues aux vendeurs sont-elles protégées et
+isolées des dépenses propres de l'exploitant dans le circuit réellement utilisé ?
 
-⚠️ **Écart de réconciliation non mesuré** : aucun endpoint de solde ou de
+⚠️ **Rapprochement du compte marchand non attesté** : aucun endpoint de solde ou de
 relevé n'est implémenté (`lib/moncash.ts` n'expose que création et vérification
-de paiement). **Le solde réel du compte marchand n'a jamais été rapproché du
-total du registre interne.** Un écart entre les deux, s'il existe, est
-aujourd'hui invisible. → Traité en priorité par le chantier 0
+de paiement). Le rapprochement des paiements existe (`app/api/reconcile`),
+mais il ne prouve pas le rapprochement du **solde marchand réel** avec toutes
+les sommes dues. Aucun relevé externe ne permet de l'attester dans ce dossier.
+→ Traité par le chantier 0
 (`docs/19-CHANTIER-0-RETRAIT-VENDEUR.md`).
 
 ### 2.7 Ce que le mécanisme ne fait pas
-Éléments pertinents pour écarter certaines qualifications :
+Aspects techniques à soumettre au conseil, sans en déduire une qualification :
 - ❌ Aucun **cash-in** : impossible d'alimenter un solde par un dépôt.
-- ❌ Aucun **cash-out** : aucun retrait implémenté (§2.5).
+- ❌ Aucun **cash-out de portefeuille acheteur** ni service de retrait
+  d'espèces ; le règlement de ventes au vendeur relève du circuit §2.5.
 - ❌ Aucun **transfert P2P** : aucun mouvement entre comptes utilisateurs.
 - ❌ Aucun **paiement de tiers** : le solde ne peut servir à régler quoi que
   ce soit sur ou hors plateforme.
@@ -264,8 +276,11 @@ conformité, mais comme une hypothèse à instruire.
 
 ## 6. Éléments à réunir avant le rendez-vous
 
-À produire par le porteur — ces chiffres seront la première question du conseil.
-Requêtes à exécuter dans l'éditeur SQL Supabase :
+À produire par le porteur — les requêtes suivantes sont des agrégats bruts de
+comptabilité, **pas une preuve de fonds réels chez l'opérateur**. Distinguer
+production/sandbox, comptes d'essai et ventes commerciales dans les pièces
+jointes. Ne pas exporter identifiants, coordonnées ni secrets dans Git.
+Requêtes en lecture seule :
 
 ```sql
 -- 1. Encours actuellement détenu pour le compte des vendeurs
@@ -287,9 +302,42 @@ select count(*) as commandes_payees, coalesce(sum(amount_htg), 0) as volume_htg
   from orders where status in ('paid', 'delivered');
 ```
 
-Également utile : statut juridique de la société, nature du compte marchand
-MonCash (personnel ou société), et conditions générales acceptées par les
-vendeurs.
+Pièces nécessaires avant de demander une qualification du circuit :
+
+| Élément | Preuve attendue, hors dépôt public |
+|---|---|
+| Exploitant | Dénomination/forme/adresse exactes ; dépôt annoncé séparé de l'immatriculation délivrée ; CIP et formalités applicables |
+| Comptes d'encaissement | Titulaire de chaque compte/rail, contrat et permissions d'encaissement pour vendeurs tiers ; environnement réellement autorisé |
+| Fonds et rétention | Schéma encaissement → ventilation comptable → remise/J+7 → versement ; fonds séparés éventuels et engagement de disponibilité |
+| Rapprochement | Relevés marchand/bancaire confrontés à ledger, soldes dus, règlements en cours et remboursements, à une même date |
+| Sortie effective | Achat, versement vendeur et remboursement réels contrôlés ; références opérateur, date, montant et rapprochement |
+| Décisions | Réponse écrite de l'opérateur sur `Transfert` et règlement vendeur tiers ; avis du conseil et, si requis, démarche BRH |
+| Conditions acceptées | Version des CGU et confidentialité présentées ; capacité, recours et obligations vendeur, sans prétendre à une signature certifiée |
+
+Sources officielles consultées le 2026-10-05 :
+[MCI — CIP et statut de commerçant](https://mci.gouv.ht/cip.php),
+[Guichet MCI — demande, suivi et vérification](https://guichet.mci.ht/aide-et-questions),
+[BRH — circulaire 121](https://www.brh.ht/wp-content/uploads/Circulaire-121-FSP.pdf),
+[BRH — présentation des circulaires 121 et 131](https://www.brh.ht/la-confiance-au-coeur-de-lecosysteme-des-paiements-numeriques-la-vision-de-la-brh-pour-une-protection-renforcee-des-consommateurs/),
+[CONATEL — signature et preuve électroniques](https://www.conatel.gouv.ht/signature-electronique).
+Le dépôt MCI et une trace d'acceptation ne valent respectivement ni
+immatriculation obtenue ni signature électronique certifiée.
+
+**Conservation KYC — correction technique `0131` préparée avant lancement.** La
+[circulaire BRH 129-1 du 6 février 2026, §14 p.16](https://www.brh.ht/wp-content/uploads/Circulaire-CIR-.-BRH-IF-2026-129-1-Aux-Institutions-FinancieEres-6-feevrier-2026-Lutte-contre-le-blanchiment-de-capitaux._0001.pdf),
+relue sur le PDF officiel, distingue les documents de vigilance conservés
+au moins cinq ans après clôture/cessation de relation, et les pièces d'opération
+après l'opération ou la fin de relation. `0131` remplace le réglage en jours
+par `retention_annees = 5`, conserve les pièces des comptes actifs ou simplement
+suspendus et démarre le délai à la fermeture explicite. La première date de
+fermeture est conservée au réessai ; un compte anonymisé ne peut plus être
+réactivé par la modération. La purge des métadonnées revérifie l'éligibilité.
+Les tests PostgreSQL couvrent la frontière calendaire, le 29 février,
+les rôles et les comptes anciens encore actifs. L'application reste subordonnée
+à leur réussite en CI et à la vérification du journal de production.
+La portée du cadre financier à Zabelie reste
+une question pour le conseil ; appliquer la conservation décidée par le
+porteur ne lui attribue aucun statut financier.
 
 ---
 

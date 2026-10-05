@@ -8,8 +8,8 @@ import type { Lang } from "../lib/i18n";
  * LE GABARIT CGU — ses gardes.
  *
  * Le document est un GABARIT : structure d'une marketplace avec règlement vendeur,
- * remplie des seuls termes déjà tranchés, et trois marqueurs juridiques
- * explicites par langue. Ces tests gardent trois choses :
+ * remplie des termes déjà tranchés et des clauses préparées sur instruction
+ * du porteur le 2026-10-05. L'identité réelle reste séparée. Ces tests gardent :
  *
  *   1. La PARITÉ : quatre versions, même structure, section par section.
  *      Une section perdue dans une langue ne se verrait nulle part sinon —
@@ -106,7 +106,7 @@ test("l'avis « le français fait foi » est sur les traductions, jamais sur l'o
 
 // ── 2. Le cliquet des marqueurs juridiques ──────────────────────────────────
 
-test("trois marqueurs juridiques par langue — ni plus, ni moins", () => {
+test("aucun marqueur contractuel après la rédaction autorisée du 2026-10-05", () => {
   /* FIGÉ le 2026-08-14 : âge minimum (§1), fenêtre de litige (§9),
    * résiliation plateforme (§12), droit applicable (§13) — numéros décalés
    * d'un cran le 2026-08-15 par l'insertion du §8 (services payants), qui
@@ -119,7 +119,11 @@ test("trois marqueurs juridiques par langue — ni plus, ni moins", () => {
    * mandat du porteur (« Je rédige, vous validez »), d'après `0043`/`0068`.
    * ⚖️ À VALIDER par le porteur et son conseil avant fusion. Restent : âge
    * minimum (§1), résiliation plateforme (§13), droit applicable (§14). */
-  const ATTENDU = 3;
+  // 3 → 0 le 2026-10-05 : instruction directe « implémenter tous,
+  // n'attend pas le lancement ». Capacité selon les règles applicables,
+  // modération effective + contact hors compte, droit haïtien sans forum
+  // exclusif. Aucun fait d'identité ni validation juridique n'est inventé.
+  const ATTENDU = 0;
   for (const lang of LANGS) {
     const n = (texte(lang).match(MARQUEUR[lang]) ?? []).length;
     assert.equal(
@@ -127,6 +131,29 @@ test("trois marqueurs juridiques par langue — ni plus, ni moins", () => {
       `${lang} : ${n} marqueur(s) au lieu de ${ATTENDU} — un blanc a été ouvert ou ` +
         `rempli sans mettre ce compte à jour dans le même geste.`,
     );
+  }
+});
+
+test("les clauses rédigées protègent capacité, recours et droits impératifs dans les quatre langues", () => {
+  const attentes: Record<Lang, { capacite: RegExp; motif: RegExp; horsCompte: RegExp; fonds: RegExp; droit: RegExp; facultatif: RegExp; imperatif: RegExp }> = {
+    fr: { capacite: /capacité juridique/iu, motif: /enregistrée avec son motif/iu, horsCompte: /sans accès au compte/iu, fonds: /n'efface ni vos droits sur les sommes dues/iu, droit: /droit haïtien/iu, facultatif: /démarche est facultative/iu, imperatif: /droits impératifs du consommateur/iu },
+    ht: { capacite: /kapasite jiridik/iu, motif: /anrejistre sispansyon an ak rezon/iu, horsCompte: /pa gen aksè nan kont/iu, fonds: /pa efase dwa ou sou lajan/iu, droit: /lwa ayisyen/iu, facultatif: /demach sa a pa obligatwa/iu, imperatif: /dwa obligatwa/iu },
+    en: { capacite: /legal capacity/iu, motif: /suspension and its reason are recorded/iu, horsCompte: /without access to the account/iu, fonds: /does not extinguish your rights to sums owed/iu, droit: /Haitian law/iu, facultatif: /step is optional/iu, imperatif: /mandatory consumer rights/iu },
+    es: { capacite: /capacidad jurídica/iu, motif: /suspensión y su motivo quedan registrados/iu, horsCompte: /sin acceso a la cuenta/iu, fonds: /no extingue sus derechos sobre los importes debidos/iu, droit: /derecho haitiano/iu, facultatif: /trámite es opcional/iu, imperatif: /derechos imperativos del consumidor/iu },
+  };
+  for (const lang of LANGS) {
+    const sections = CONDITIONS[lang].sections;
+    const contenu = (numero: number) => sections.find(s => s.titre.startsWith(`${numero}.`))!
+      .blocs.flatMap(b => "p" in b ? [b.p] : b.ul).join("\n");
+    const capacite = contenu(1), suspension = contenu(13), droit = contenu(14);
+    assert.match(capacite, attentes[lang].capacite);
+    assert.doesNotMatch(capacite, /\d/u, `${lang} : âge chiffré ajouté sans arbitrage`);
+    for (const cle of ["motif", "horsCompte", "fonds"] as const) assert.match(suspension, attentes[lang][cle]);
+    assert.match(suspension, /\{email\}/u, `${lang} : recours dépend d'un compte accessible`);
+    assert.doesNotMatch(suspension, /\d/u, `${lang} : délai de préavis inventé`);
+    for (const cle of ["droit", "facultatif", "imperatif"] as const) assert.match(droit, attentes[lang][cle]);
+    assert.match(droit, /\{email\}/u);
+    assert.doesNotMatch(droit, /Port-au-Prince|Paris|New York|Miami/iu, `${lang} : tribunal local exclusif inventé`);
   }
 });
 

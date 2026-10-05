@@ -11,7 +11,8 @@ begin;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000001', 's1@test.local'),
-  ('00000000-0000-0000-0000-000000000002', 's2@test.local')
+  ('00000000-0000-0000-0000-000000000002', 's2@test.local'),
+  ('00000000-0000-0000-0000-000000000003', 'buyer@test.local')
   on conflict do nothing;
 
 -- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
@@ -22,7 +23,8 @@ insert into auth.users (id, email) values
 delete from profiles where id in (select id from auth.users);
 insert into profiles (id, role, display_name, tier) values
   ('00000000-0000-0000-0000-000000000001', 'creator', 'S1', 'standard'),
-  ('00000000-0000-0000-0000-000000000002', 'creator', 'S2', 'standard');
+  ('00000000-0000-0000-0000-000000000002', 'creator', 'S2', 'standard'),
+  ('00000000-0000-0000-0000-000000000003', 'buyer', 'Acheteur', 'standard');
 
 -- ════════════════ M : maturation (net 2250 sur 2500) ════════════════
 insert into products (id, seller_id, slug, title, kind, price_htg, status)
@@ -31,7 +33,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'prod-m', 'Prod M', 'fichier', 2500, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b1',
-          '00000000-0000-0000-0000-000000000001',
+          '00000000-0000-0000-0000-000000000003',
           '00000000-0000-0000-0000-0000000000a1', 2500, 'pending');
 insert into payments (order_id, rail, idempotency_key, status)
   values ('00000000-0000-0000-0000-0000000000b1', 'moncash',
@@ -45,7 +47,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'prod-r', 'Prod R', 'fichier', 3000, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b2',
-          '00000000-0000-0000-0000-000000000002',
+          '00000000-0000-0000-0000-000000000003',
           '00000000-0000-0000-0000-0000000000a2', 3000, 'pending');
 insert into payments (order_id, rail, idempotency_key, status)
   values ('00000000-0000-0000-0000-0000000000b2', 'moncash',

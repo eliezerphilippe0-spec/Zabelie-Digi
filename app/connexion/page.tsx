@@ -69,6 +69,15 @@ export default async function ConnexionPage() {
           errNetwork: t(lang, "auth.err.network"),
           oauthOr: t(lang, "auth.oauth.or"),
           errProvider: t(lang, "auth.err.provider"),
+          legalTitle: t(lang, "auth.legal.title"),
+          legalIntro: t(lang, "auth.legal.intro"),
+          conditionsAccept: t(lang, "auth.legal.conditions.accept"),
+          privacyRead: t(lang, "auth.legal.privacy.read"),
+          conditionsLink: t(lang, "auth.legal.conditions.link"),
+          privacyLink: t(lang, "auth.legal.privacy.link"),
+          legalRequired: t(lang, "auth.legal.required"),
+          legalUnavailable: t(lang, "auth.legal.unavailable"),
+          legalContinue: t(lang, "auth.legal.continue"),
         }}
         providers={providers}
       />

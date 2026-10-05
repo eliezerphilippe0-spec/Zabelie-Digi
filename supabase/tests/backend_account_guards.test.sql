@@ -13,8 +13,17 @@ do $$
 declare oid uuid:=gen_random_uuid(); paid_id uuid:=gen_random_uuid(); s text; p payments;
 begin
  assert zabelie_boutik_public(null,'guards-seller') is not null,'active storefront missing';
+ begin
+   insert into orders(buyer_id,product_id,amount_htg) values
+   ('11200000-0000-4000-8000-000000000001','11200000-0000-4000-8000-000000000003',1000);
+   raise exception 'self purchase accepted';
+ exception when sqlstate 'ZB132' then null; end;
  insert into orders(id,buyer_id,product_id,amount_htg) values
  (oid,'11200000-0000-4000-8000-000000000002','11200000-0000-4000-8000-000000000003',1000);
+ begin
+   update orders set buyer_id='11200000-0000-4000-8000-000000000001' where id=oid;
+   raise exception 'self purchase accepted by buyer update';
+ exception when sqlstate 'ZB132' then null; end;
  insert into payments(order_id,idempotency_key,rail,expected_usd_cents,raw)
  values(oid,oid::text,'stripe',1250,'{"stripe_session_id":"cs_test"}');
  perform zabelie_reserve_stock('11200000-0000-4000-8000-000000000004',oid,2);

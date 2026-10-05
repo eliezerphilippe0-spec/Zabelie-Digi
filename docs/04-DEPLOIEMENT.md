@@ -82,11 +82,41 @@ Non configurés = invisibles au checkout (MonCash seul). Pour les activer :
    (compatible plan Hobby — Vercel REJETTE tout le déploiement si un cron
    dépasse la limite du plan). Vercel injecte `Authorization: Bearer
    $CRON_SECRET` sur l'appel GET.
-   > 🔧 En production réelle, le réconciliateur doit tourner **toutes les
-   > 5 min** : passer au plan **Pro** (et remettre `*/5 * * * *`), ou brancher
-   > un cron externe gratuit (ex. cron-job.org) qui appelle
-   > `POST /api/reconcile` avec l'en-tête `Authorization: Bearer
-   > $RECONCILE_SECRET` toutes les 5 min. Idem `/api/maturation` (1×/h suffit).
+   > **Rapprochement avant encaissement : cadence demandée de cinq minutes.**
+   > Un seul ordonnanceur principal est choisi : Vercel Pro avec
+   > `*/5 * * * *` sur l'entrée existante, ou le workflow GitHub existant
+   > `.github/workflows/reconcile.yml`, sans fournisseur supplémentaire.
+   > Le plan Pro doit être vérifié avant de modifier `vercel.json`.
+   > [Limites Vercel](https://vercel.com/docs/cron-jobs/usage-and-pricing)
+   > vérifiées le 5 octobre 2026 : Hobby une fois/jour, Pro une fois/minute.
+   >
+   > Pour choisir **GitHub** : dans **Settings → Secrets and variables → Actions**
+   > du dépôt, poser la variable `ZABELIE_RECONCILE_SCHEDULER=github`,
+   > `ZABELIE_URL=https://zabelie.com` et le secret `RECONCILE_SECRET`, de même
+   > valeur que celui déjà configuré en Production Vercel. Ces paramètres
+   > Actions ne se recopient pas dans l'environnement Vercel. Sans sélection
+   > explicite, le job reste inactif ; sans URL/secret valides, il échoue avant
+   > tout appel. Aucun secret n'est écrit dans le code ni dans le journal.
+   >
+   > Le passage GitHub appelle **la même** route `POST /api/reconcile`, avec
+   > son bail en base et son idempotence ; la quotidienne Vercel reste alors
+   > un **filet de secours**, sans second worker ni second registre. Le script
+   > exige une réponse complète et saine : les erreurs métier, divergences,
+   > montants rejetés et sessions manquantes échouent même sous HTTP 200.
+   > Les logs Actions ne contiennent que l'état et les compteurs agrégés.
+   > Le dépôt est public au contrôle du 5 octobre 2026 ; le runner standard
+   > `ubuntu-latest` est [gratuit dans ce cas](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
+   > Les invocations Vercel restent soumises aux limites du projet existant.
+   > Aucune reprise immédiate après coupure : le passage suivant reprend le
+   > worker canonique. `maxDuration=300` maintient la marge du bail de 600 s.
+   >
+   > Actions demande les passages à 02, 07, …, 57 minutes pour éviter le début
+   > d'heure. [GitHub précise](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+   > que des retards ou passages abandonnés sont possibles et qu'un dépôt
+   > public inactif 60 jours perd sa planification. **Cinq minutes n'est donc
+   > pas une garantie de délai.** Vérifier les exécutions et leur résultat
+   > avant les premiers encaissements ; choisir Pro si le besoin de précision
+   > l'exige. Ne pas activer les deux ordonnanceurs principaux ensemble.
 4. Déployer. Vérifier `https://<domaine>` puis un achat de bout en bout.
 
 ---

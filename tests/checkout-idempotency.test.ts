@@ -26,7 +26,7 @@ test("attempt identity is stable, scoped to the verified buyer and bounded", () 
 
 function fixture(options: { missingOriginal?: boolean; readError?: boolean; sessionError?: boolean; sessionCommittedError?: boolean; paid?: boolean; operatorError?: boolean; legacySchema?: boolean; groupedOriginal?: boolean;
   firstPaymentFailure?: boolean; firstPaymentCommittedError?: boolean; digital?: boolean; physical?: boolean; stockStatus?: string; expiredStock?: boolean; stockReadError?: boolean; noStock?: boolean; age?: number;
-  recharge?: boolean; metadataWriteError?: string; metadataReadError?: boolean; deferFirstPaymentClaim?: boolean } = {}) {
+  recharge?: boolean; metadataWriteError?: string; metadataReadError?: boolean; deferFirstPaymentClaim?: boolean; ownProduct?: boolean } = {}) {
   const orders = new Map<string, Record<string, unknown>>();
   const operatorCalls: string[] = [];
   const paymentWrites: string[] = [];
@@ -36,6 +36,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
   const recipients = new Map<string, Record<string, unknown>>();
   const rechargeTargets = new Map<string, Record<string, unknown>>();
   const stockCalls: string[] = [];
+  const accountChecks: { id: string; legalAcceptance: boolean | undefined }[] = [];
   let failedPayment = false;
   let currentPrice = 100;
   let storedSessions = 0;
@@ -48,7 +49,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
   const paymentClaimEntered = new Promise<void>(resolve => { notifyPaymentClaim = resolve; });
   function step(query: Query, name: string) { return query.steps.find(([s]) => s === name)?.[1]; }
   const db = database(async query => {
-    if (query.table === "products") return { data: { id: "product", seller_id: "seller", kind: options.physical ? "physical" : options.digital ? "fichier" : "service", price_htg: currentPrice, category_id: currentRecharge ? "category" : null, product_assets: [{ count: 1 }] }, error: null };
+    if (query.table === "products") return { data: { id: "product", seller_id: options.ownProduct ? "buyer" : "seller", kind: options.physical ? "physical" : options.digital ? "fichier" : "service", price_htg: currentPrice, category_id: currentRecharge ? "category" : null, product_assets: [{ count: 1 }] }, error: null };
     if (query.table === "orders" && step(query, "insert")) {
       const input = step(query, "insert")![0] as Record<string, unknown>;
       // Postgres supplies a fresh default id if the application omits it.
@@ -117,7 +118,10 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
     "@/lib/seller-pricing-server": { readSellerPricing: async () => null },
     "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "buyer" } } }) } }) },
     "@/lib/supabase/admin": { createAdminClient: () => ({ ...db, rpc: async (name: string) => { if (name === "zabelie_est_rechaj") return { data: currentRecharge, error: null }; stockCalls.push(name); return { data: { ok: true }, error: null }; } }) },
-    "@/lib/auth": { requireActiveAccount: async () => null },
+    "@/lib/auth": { requireActiveAccount: async (id: string, guard?: { legalAcceptance?: boolean }) => {
+      accountChecks.push({ id, legalAcceptance: guard?.legalAcceptance });
+      return null;
+    } },
     "@/lib/zabelie-rate-limit": { rateLimit: async () => true },
     "@/lib/panier-groupe-contexte": { contexteGroupe: () => null },
     "@/lib/product-kind": { isDownloadable: () => Boolean(options.digital), isDigitalKind: () => Boolean(options.digital), isTrackedStockKind, isProductKind },
@@ -143,7 +147,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
     },
   }, { USD_HTG_RATE: "132" });
   return {
-    orders, payments, sessions, attestations, recipients, rechargeTargets, operatorCalls, paymentWrites, stockCalls, db,
+    orders, payments, sessions, attestations, recipients, rechargeTargets, operatorCalls, paymentWrites, stockCalls, accountChecks, db,
     changePrice: (price: number) => { currentPrice = price; },
     changeAge: (age: number) => { currentAge = age; },
     changeRecharge: (required: boolean) => { currentRecharge = required; },
@@ -154,6 +158,18 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
     })),
   };
 }
+
+test("an own offer is rejected before any order, private metadata, stock or operator", async () => {
+  for (const opts of [{}, { digital: true }, { physical: true }]) {
+    const f = fixture({ ...opts, ownProduct: true });
+    const res = await f.post();
+    assert.equal(res.status, 422);
+    assert.equal((await res.json()).code, "self_purchase");
+    assert.equal(f.orders.size, 0); assert.equal(f.payments.size, 0);
+    assert.equal(f.attestations.size + f.recipients.size + f.rechargeTargets.size, 0);
+    assert.equal(f.stockCalls.length, 0); assert.equal(f.operatorCalls.length, 0);
+  }
+});
 
 function zellePage(f: ReturnType<typeof fixture>) {
   let instructionsRead = 0;
@@ -556,4 +572,18 @@ test("confirmed purchases and untrusted destinations never reopen a payment sess
     assert.equal(savedCheckoutRedirect(pending, { ...payment, rail, raw: { checkout_redirect_url: url } }), url);
   }
   assert.equal(savedCheckoutRedirect(pending, { ...payment, status: "confirmed" }), null);
+});
+
+
+test("legal receipts are required for a new purchase, never for owned recoveryOnly observation", async () => {
+  const f = fixture({ paid: true });
+  assert.equal((await f.post()).status, 200);
+  assert.deepEqual(f.accountChecks[0], { id: "buyer", legalAcceptance: true });
+  const before = f.operatorCalls.length;
+  f.accountChecks.length = 0;
+  const response = await f.post(KEY, { recoveryOnly: true });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).checkoutState, "complete");
+  assert.deepEqual(f.accountChecks, [{ id: "buyer", legalAcceptance: false }]);
+  assert.equal(f.operatorCalls.length, before, "observing an old payment cannot start a new payment");
 });

@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   }
-  const refus = await requireActiveAccount(user.id);
+  const refus = await requireActiveAccount(user.id, { legalAcceptance: true });
   if (refus) return refus;
 
   const admin = createAdminClient();
@@ -113,6 +113,10 @@ export async function POST(req: Request) {
       { error: t(lang, "cart.pay.all.count", { max: String(config.max_articles) }), code: "panier_taille" },
       { status: 422 }
     );
+  }
+  const ownArticle = articles.find((a) => a.product!.seller_id === user.id);
+  if (ownArticle) {
+    return NextResponse.json({ error: t(lang, "cart.pay.all.blocked", { title: ownArticle.product!.title, raison: t(lang, "api.checkout.selfPurchase") }), code: "self_purchase", productId: ownArticle.product_id }, { status: 422 });
   }
 
   /* Le code promo ne vaut que pour les articles de SON vendeur (décision

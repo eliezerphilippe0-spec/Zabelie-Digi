@@ -4,6 +4,8 @@ import { readAdminSession } from "@/lib/admin-session";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
+import { ACCOUNT_LEGAL_VERSIONS, hasCurrentLegalAcceptance } from "@/lib/legal-acceptance";
+import { redirect } from "next/navigation";
 
 export type CurrentUser = {
   id: string;
@@ -49,10 +51,32 @@ export async function getSuspension(userId: string): Promise<Suspension | null> 
   return readSuspension(createAdminClient(), userId);
 }
 
+/** Immutable receipts, never Auth metadata. Used only at named business
+ * entry points; export, account closure, support and history stay available. */
+export async function hasAccountLegalAcceptance(userId: string): Promise<boolean> {
+  const { data, error } = await createAdminClient().from("zabelie_policy_acceptances")
+    .select("policy_version").eq("user_id", userId).in("policy_version", [...ACCOUNT_LEGAL_VERSIONS]);
+  if (error || !data) throw new Error("legal_status_unavailable");
+  return hasCurrentLegalAcceptance(data);
+}
+
+export async function requireLegalAccountPage(userId: string, nextPath: string): Promise<void> {
+  let accepted = false;
+  try { accepted = await hasAccountLegalAcceptance(userId); } catch { /* fail closed */ }
+  if (!accepted) redirect(`/connexion?mode=legal&next=${encodeURIComponent(nextPath)}`);
+}
+
 /** API guard: preserve the distinction between a suspension and an outage. */
-export async function requireActiveAccount(userId: string) {
+export async function requireActiveAccount(userId: string, options: { legalAcceptance?: boolean } = {}) {
   try {
-    return await getSuspension(userId) ? erreurTraduite("api.suspended", 403, { code: "suspended" }) : null;
+    if (await getSuspension(userId)) return erreurTraduite("api.suspended", 403, { code: "suspended" });
+    // Opt-in only: the existing guard keeps its behaviour everywhere else.
+    if (options.legalAcceptance && !await hasAccountLegalAcceptance(userId)) {
+      return erreurTraduite("auth.legal.required", 403, {
+        code: "legal_acceptance_required", next: "/connexion?mode=legal",
+      });
+    }
+    return null;
   } catch {
     return erreurTraduite("api.unavailable", 503, { code: "account_status_unavailable" });
   }
