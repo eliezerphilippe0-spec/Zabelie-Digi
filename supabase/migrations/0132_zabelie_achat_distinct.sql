@@ -8,7 +8,16 @@ returns trigger language plpgsql set search_path = public
 as $$
 declare v_seller uuid; v_suspended timestamptz;
 begin
-  select seller_id into v_seller from products where id=new.product_id for share;
+  if tg_op='INSERT' or new.product_id is distinct from old.product_id then
+    -- 0112 : création/réaffectation sérialisée avec la modération vendeur.
+    select seller_id into v_seller from products where id=new.product_id for share;
+  else
+    -- Sur le même produit, RLS interdit au client de transférer seller_id.
+    -- Ne pas prendre SHARE ici : confirm_payment prend ensuite le verrou
+    -- vendeur/tarification et incrémente sales_count ; plusieurs SHARE
+    -- concurrents provoqueraient une promotion de verrou circulaire.
+    select seller_id into v_seller from products where id=new.product_id;
+  end if;
   if not found then raise exception 'Seller unavailable' using errcode='ZB112'; end if;
   if new.buyer_id=v_seller and (
        tg_op='INSERT'
