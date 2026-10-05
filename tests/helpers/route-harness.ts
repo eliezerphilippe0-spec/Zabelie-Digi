@@ -3,7 +3,7 @@ import vm from "node:vm";
 import ts from "typescript";
 
 /** Execute the real route with explicit I/O doubles; no network or database writes. */
-export function loadRoute(file: string, overrides: Record<string, unknown>) {
+export function loadRoute(file: string, overrides: Record<string, unknown>, env: Record<string, string> = {}) {
   const source = readFileSync(file, "utf8");
   const stubs: Record<string, unknown> = Object.fromEntries(
     [...source.matchAll(/from\s+"([^"]+)"/g)].map(m => [m[1], {}]),
@@ -18,7 +18,7 @@ export function loadRoute(file: string, overrides: Record<string, unknown>) {
   }).outputText;
   const routeModule = { exports: {} };
   vm.runInNewContext(code, {
-    module: routeModule, exports: routeModule.exports, console, process: { env: {} },
+    module: routeModule, exports: routeModule.exports, console, process: { env },
     URL, Request, Headers, Response, AbortController, setTimeout, clearTimeout,
     require(name: string) {
       if (name in stubs) return stubs[name];

@@ -245,7 +245,8 @@ const server = createServer((req, res) => {
       let body = ""; req.on("data", c => body += c);
       return req.on("end", () => {
         const input = JSON.parse(body), variant = variants.find(v => v.id === input.p_variant_id);
-        return send(200, { ok: Boolean(variant && input.p_order_id === ORDER_ID && input.p_quantity > 0 && input.p_quantity <= variant.zabelie_stock.quantity_available) });
+        const order = discountOrders.find(o => o.id === input.p_order_id && o.buyer_id === BUYER_ID && o.product_id === PRODUCT_ID);
+        return send(200, { ok: Boolean(variant && order && input.p_quantity > 0 && input.p_quantity <= variant.zabelie_stock.quantity_available) });
       });
     }
 

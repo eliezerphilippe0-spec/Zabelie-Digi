@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { appelSession } from "@/lib/appel-session";
+import { prepareCheckoutAttempt, clearCheckoutAttempt } from "@/lib/use-session-draft";
 
 /**
  * PAYER UNE LIGNE DU PANIER — la marche intermédiaire, dite comme telle.
@@ -29,22 +30,34 @@ export function CartPayButton({
 }) {
   const [enCours, setEnCours] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const attemptKey = useRef<string | null>(null);
+  const submitting = useRef(false);
 
   async function payer() {
+    if (submitting.current) return;
+    submitting.current = true;
     setEnCours(true);
     setMsg(null);
+    const storageKey = `zabelie:cart-checkout-attempt:${productId}`;
+    try { attemptKey.current = await prepareCheckoutAttempt(storageKey, productId, attemptKey.current ?? undefined); }
+    catch { submitting.current = false; setEnCours(false); setMsg(labels.error); return; }
     // Même porte que le bouton d'achat (`lib/appel-session.ts`) : ce composant
     // faisait déjà la moitié du travail (`res.json().catch`), il partage
     // maintenant la même lecture des quatre issues. `/panier` reste la
     // destination de retour — c'est bien la page où l'on est.
     const issue = await appelSession<{ redirectUrl?: string }>(
       "/api/checkout",
-      { productId, rail: "moncash" },
+      { productId, rail: "moncash", checkoutKey: attemptKey.current },
       "/panier",
     );
+    submitting.current = false;
 
     if (issue.etat === "connexion") {
       window.location.href = issue.vers;
+      return;
+    }
+    if (issue.etat === "refus" && issue.code === "provider_unavailable") {
+      window.location.href = "/mes-achats";
       return;
     }
     if (issue.etat !== "ok" || !issue.data.redirectUrl) {
@@ -54,6 +67,7 @@ export function CartPayButton({
     }
     // Redirection vers la passerelle MonCash — le retour est vérifié
     // serveur-à-serveur par /api/moncash/return (invariant b).
+    clearCheckoutAttempt(storageKey);
     window.location.href = issue.data.redirectUrl;
   }
 

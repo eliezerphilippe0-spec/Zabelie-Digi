@@ -6,6 +6,9 @@ import { loadRoute, database, type Query } from "./helpers/route-harness";
 import { contexteGroupe, inscrireContexteGroupe, type ContexteGroupe } from "../lib/panier-groupe-contexte";
 import { couponApplies, normalizeCouponCode } from "../lib/zabelie-coupons";
 import { autresCommandesDuGroupe } from "../lib/panier-groupe";
+import { reconcileStripe } from "../lib/stripe-reconcile";
+import type Stripe from "stripe";
+import { persistPaymentSession } from "../lib/payment-utils";
 
 /**
  * PAIEMENT GROUPÉ DU PANIER (0128) — la route `/api/panier/payer`, exécutée
@@ -23,6 +26,7 @@ type Fixture = {
   operateurEnPanne?: boolean;
   rail?: string;
   couponCode?: string;
+  persistance?: "erreur" | "absente" | "exception";
 };
 
 const ARTICLES = [
@@ -34,9 +38,19 @@ function monter(f: Fixture = {}) {
   const rpc: { nom: string; args: Record<string, unknown> }[] = [];
   const appels: { ctx: ContexteGroupe | null; corps: Record<string, unknown> }[] = [];
   const operateur: unknown[][] = [];
+  const paiements = new Map<string, Record<string, unknown>>();
   const db = database((q: Query) => {
     if (q.table === "zabelie_panier_config") return { data: { max_articles: 10 }, error: null };
     if (q.table === "zabelie_coupons") return { data: f.coupons ?? [], error: null };
+    if (q.table === "payments") {
+      if (f.persistance === "exception") throw new Error("base indisponible");
+      if (f.persistance === "erreur") return { data: null, error: { message: "base indisponible" } };
+      if (f.persistance === "absente") return { data: null, error: null };
+      const orderId = q.steps.find(([m, args]) => m === "eq" && args[0] === "order_id")?.[1][1];
+      const raw = (q.steps.find(([m]) => m === "update")?.[1][0] as { raw: Record<string, unknown> }).raw;
+      paiements.set(String(orderId), raw);
+      return { data: { order_id: orderId }, error: null };
+    }
     return { data: null, error: null };
   });
   const admin = {
@@ -73,7 +87,7 @@ function monter(f: Fixture = {}) {
       kobaraCap: () => 20000,
       createKobaraPayment: async (a: unknown) => { operateur.push(["kobara", a]); return { id: "k1", redirectUrl: "https://kobara.test", mode: "sandbox", modeSource: "env" }; },
     },
-    "@/lib/payment-utils": { railCap: (r: string) => (r === "moncash" ? 75000 : null) },
+    "@/lib/payment-utils": { persistPaymentSession, railCap: (r: string) => (r === "moncash" ? 75000 : null) },
     "@/lib/zabelie-coupons": { couponApplies, normalizeCouponCode },
     "@/lib/panier-groupe-contexte": { inscrireContexteGroupe },
     "@/app/api/checkout/route": {
@@ -90,7 +104,7 @@ function monter(f: Fixture = {}) {
       method: "POST",
       body: JSON.stringify({ rail: f.rail ?? "moncash", ...(f.couponCode ? { couponCode: f.couponCode } : {}) }),
     }));
-  return { payer, rpc, appels, operateur };
+  return { payer, rpc, appels, operateur, paiements };
 }
 
 test("PG1 — fermé (ni drapeau, ni première vente réelle) : 409, aucun groupe ouvert, aucun article commandé", async () => {
@@ -226,4 +240,44 @@ test("PG11 — la page panier pose à la base la MÊME question que la route ava
   assert.match(page, /const \[\{ data: ouvert, error: e1 \}, \{ data, error: e2 \}\] = await Promise\.all\(\[\s*admin\.rpc\("zabelie_panier_groupe_ouvert"\)/);
   assert.match(page, /if \(e1 \|\| e2 \|\| !data \|\| ouvert !== true\) return null;/);
   assert.match(page, /config !== null &&\s*items\.length <= config\.max_articles/);
+});
+
+for (const rail of ["stripe", "kobara", "moncash"] as const) {
+  for (const persistance of ["erreur", "absente", "exception"] as const) {
+    test(`PG12 — session ${rail} non persistée (${persistance}) : pas de redirection, groupe abandonné`, async () => {
+      const m = monter({ rail, scelle: { leader_order_id: "o-p1", total_htg: 4000, expected_usd_cents: rail === "stripe" ? 3071 : null }, persistance });
+      const res = await m.payer();
+      const corps = await res.json();
+      assert.equal(res.status, 502);
+      assert.equal(corps.code, "provider_unavailable");
+      assert.equal(corps.redirectUrl, undefined, "une session non rapprochable n'est jamais donnée à l'acheteur");
+      assert.equal(m.operateur.length, 1, "la panne survient après la création opérateur");
+      assert.equal(m.rpc.at(-1)?.nom, "zabelie_group_abort");
+      assert.equal(m.paiements.size, 0);
+    });
+  }
+}
+
+test("PG13 — la session Stripe persistée sur la meneuse permet le rattrapage sans retour navigateur", async () => {
+  const m = monter({ rail: "stripe", scelle: { leader_order_id: "o-p1", total_htg: 4000, expected_usd_cents: 3071 } });
+  assert.equal((await m.payer()).status, 200);
+  assert.deepEqual([...m.paiements.keys()], ["o-p1"], "seule la meneuse est rapprochée chez l'opérateur");
+  const raw = m.paiements.get("o-p1")!;
+  assert.equal(raw.groupe, "G1");
+  const consultees: string[] = [];
+  const confirmees: string[] = [];
+  const result = await reconcileStripe({
+    listPending: async () => [{ order_id: "o-p1", idempotency_key: "o-p1", raw }],
+    retrieve: async (id) => {
+      consultees.push(id);
+      return { id: "cs_1", metadata: { order_id: "o-p1" }, mode: "payment", currency: "usd", amount_total: 3071, payment_status: "paid", status: "complete" } as unknown as Stripe.Checkout.Session;
+    },
+    confirm: async (order) => { confirmees.push(order.order_id); return { status: "confirmed" }; },
+    expire: async () => { throw new Error("pas d'expiration d'une session payée"); },
+  });
+  assert.deepEqual(consultees, ["cs_1"], "l'identifiant interrogé vient de l'écriture réelle de la route");
+  assert.deepEqual(confirmees, ["o-p1"]);
+  assert.equal(result.missingSession, 0);
+  assert.equal(result.confirmed, 1);
+  assert.deepEqual(result.errors, []);
 });

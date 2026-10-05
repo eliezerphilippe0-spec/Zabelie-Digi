@@ -49,7 +49,7 @@ const PORTE = (c: string) => /(?<![\w-])bouton(?![\w-])/.test(c);
 function sources(dir: string, ext = /\.tsx$/): string[] {
   return readdirSync(dir).flatMap((e) => {
     const p = join(dir, e);
-    return statSync(p).isDirectory() ? sources(p, ext) : ext.test(e) ? [p] : [];
+    return statSync(p).isDirectory() ? sources(p, ext) : ext.test(e) ? [p.replace(/\\/g, "/")] : [];
   });
 }
 const FICHIERS = [...sources("app"), ...sources("components")];

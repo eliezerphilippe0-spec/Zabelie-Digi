@@ -160,8 +160,11 @@ test("RN6 — la route refuse AVANT de créer la commande, et le refus est disti
     "l'échec d'écriture de la cible doit retirer la commande"
   );
   // Et elle a lieu AVANT le paiement : rien ne doit être encaissé sans cible.
+  // A replay may READ payments earlier; the guarded effect is its INSERT.
+  const iPaiement = code.search(/\.from\("payments"\)\s*\.insert\(/);
+  assert.ok(iPaiement > 0, "l'insertion du paiement doit être présente");
   assert.ok(
-    code.indexOf('from("zabelie_rechaj_cible")') < code.indexOf('from("payments")'),
+    code.indexOf('from("zabelie_rechaj_cible")') < iPaiement,
     "la cible s'écrit avant le paiement"
   );
 });

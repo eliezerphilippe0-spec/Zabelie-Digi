@@ -9,6 +9,36 @@ import {
   champsManquants,
 } from "../lib/policy-privacy";
 
+test("la politique distingue les coordonnées de remise du service de livraison et d'un wallet", () => {
+  const GARDES: Record<Lang, RegExp[]> = {
+    fr: [/registre comptable vendeur/iu, /Zabelie ne livre pas les produits/iu],
+    ht: [/rejis kontab vandè a/iu, /Zabelie pa livre pwodwi yo/iu],
+    en: [/seller accounting ledger/iu, /Zabelie does not deliver products/iu],
+    es: [/registro contable del vendedor/iu, /Zabelie no entrega los productos/iu],
+  };
+  for (const lang of LANGS) {
+    const contenu = POLITIQUE[lang].sections
+      .filter((s) => /^(2|3)\./u.test(s.titre))
+      .flatMap((s) => s.blocs.flatMap((b) => "p" in b ? [b.p] : b.ul)).join("\n");
+    for (const garde of GARDES[lang]) assert.match(contenu, garde, `${lang} : périmètre vendeur imprécis`);
+    assert.doesNotMatch(contenu, /wallet|pòtfèy|monedero/iu, `${lang} : portefeuille présenté comme un service`);
+  }
+});
+
+test("les outils de données restent disponibles sans régime UE ou pénal affirmé automatiquement", () => {
+  const EXPORT: Record<Lang, RegExp> = { fr: /exportez vos données/iu, ht: /ekspòte done ou yo/iu, en: /export your data/iu, es: /exporte sus datos/iu };
+  const EFFACEMENT: Record<Lang, RegExp> = { fr: /supprimez votre compte/iu, ht: /efase kont ou/iu, en: /delete your account/iu, es: /elimine su cuenta/iu };
+  for (const lang of LANGS) {
+    const section = POLITIQUE[lang].sections.find((s) => s.titre.startsWith("7."));
+    assert.ok(section);
+    const contenu = section.blocs.flatMap((b) => "p" in b ? [b.p] : b.ul).join("\n");
+    assert.match(contenu, EXPORT[lang], `${lang} : export absent`);
+    assert.match(contenu, EFFACEMENT[lang], `${lang} : suppression du compte absente`);
+    assert.match(contenu, /\{email\}/u, `${lang} : demande directe impossible`);
+    assert.doesNotMatch(contenu, /Code pénal|Kòd penal|Penal Code|Código Penal|RGPD|GDPR|CNIL/iu);
+  }
+});
+
 /**
  * LA POLITIQUE DE CONFIDENTIALITÉ — CE QUI DOIT RESTER VRAI.
  *

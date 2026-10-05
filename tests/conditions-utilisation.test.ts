@@ -7,7 +7,7 @@ import type { Lang } from "../lib/i18n";
 /**
  * LE GABARIT CGU — ses gardes.
  *
- * Le document est un GABARIT : structure d'une marketplace avec escrow,
+ * Le document est un GABARIT : structure d'une marketplace avec règlement vendeur,
  * remplie des seuls termes déjà tranchés, et trois marqueurs juridiques
  * explicites par langue. Ces tests gardent trois choses :
  *
@@ -186,6 +186,40 @@ test("aucune version ne promet le cash à la livraison", () => {
     for (const re of PROMESSE) {
       assert.doesNotMatch(texte(lang), re, `${lang} : promesse de paiement à la livraison`);
     }
+  }
+});
+
+test("les quatre versions attribuent la remise au vendeur et excluent la livraison Zabelie", () => {
+  // La distinction commande l'offre : pas seulement une absence de promesse,
+  // mais un vendeur responsable de sa remise et aucune tarification transport
+  // par la plateforme. Le test porte sur la section des obligations vendeur.
+  const GARDES: Record<Lang, RegExp[]> = {
+    fr: [/Le vendeur organise la remise/iu, /Zabelie ne stocke ni ne livre/iu, /ne facture pas de frais de livraison/iu],
+    ht: [/Vandè a òganize remiz la/iu, /Zabelie pa estoke ni livre/iu, /pa faktire frè livrezon/iu],
+    en: [/The seller arranges the handover/iu, /Zabelie does not store or deliver/iu, /or charge delivery fees/iu],
+    es: [/El vendedor organiza la entrega/iu, /Zabelie no almacena ni entrega/iu, /ni cobra gastos de entrega/iu],
+  };
+  for (const lang of LANGS) {
+    const section = CONDITIONS[lang].sections.find((s) => s.titre.startsWith("4."));
+    assert.ok(section);
+    const contenu = section.blocs.flatMap((b) => "p" in b ? [b.p] : b.ul).join("\n");
+    for (const garde of GARDES[lang]) assert.match(contenu, garde, `${lang} : responsabilité de remise incomplète`);
+  }
+});
+
+test("le registre décrit ses capacités sans prétendre à une qualification BRH", () => {
+  const GARDES: Record<Lang, RegExp[]> = {
+    fr: [/ne permet pas d'alimenter un solde/iu, /Zabelie ne propose pas de service Zabelie Pay autonome/iu, /n'atteste pas d'un agrément ni d'une validation de la BRH/iu],
+    ht: [/pa pèmèt alimante yon balans/iu, /Zabelie pa ofri yon sèvis Zabelie Pay otonòm/iu, /pa prèv yon otorizasyon ni yon validasyon BRH/iu],
+    en: [/does not allow topping up a balance/iu, /Zabelie does not offer a standalone Zabelie Pay service/iu, /does not attest to authorisation or approval by the BRH/iu],
+    es: [/No permite recargar un saldo/iu, /Zabelie no ofrece un servicio Zabelie Pay autónomo/iu, /no acredita una autorización ni una aprobación de la BRH/iu],
+  };
+  for (const lang of LANGS) {
+    const section = CONDITIONS[lang].sections.find((s) => s.titre.startsWith("6."));
+    assert.ok(section);
+    const contenu = section.blocs.flatMap((b) => "p" in b ? [b.p] : b.ul).join("\n");
+    for (const garde of GARDES[lang]) assert.match(contenu, garde, `${lang} : garde financière absente`);
+    assert.doesNotMatch(contenu, /ne constitue ni un compte|pa yon kont peman|neither a payment account|no constituye una cuenta/iu);
   }
 });
 

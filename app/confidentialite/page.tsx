@@ -23,7 +23,7 @@ export async function generateMetadata() {
 }
 
 // Dernière mise à jour de la politique (à actualiser à chaque changement).
-const LAST_UPDATE = "4 octobre 2026";
+const LAST_UPDATE = "5 octobre 2026";
 
 /**
  * `**gras**` et `*italique*` → JSX.

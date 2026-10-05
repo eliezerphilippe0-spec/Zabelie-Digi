@@ -21,7 +21,7 @@ import { join } from "node:path";
 function fichiersTsx(dossier: string): string[] {
   return readdirSync(dossier).flatMap((nom) => {
     const chemin = join(dossier, nom);
-    return statSync(chemin).isDirectory() ? fichiersTsx(chemin) : chemin.endsWith(".tsx") ? [chemin] : [];
+    return statSync(chemin).isDirectory() ? fichiersTsx(chemin) : chemin.endsWith(".tsx") ? [chemin.replace(/\\/g, "/")] : [];
   });
 }
 

@@ -124,7 +124,7 @@ const fr: Politique = {
       titre: "1. Responsable du traitement",
       blocs: [
         {
-          p: "Zabelie (« nous ») exploite cette marketplace de produits digitaux et de talents. Responsable du traitement : **{entite}**. Pour toute question relative à vos données, contactez-nous à **{email}**.",
+          p: "Zabelie (« nous ») exploite cette marketplace de produits physiques, de produits digitaux et de services. Responsable du traitement : **{entite}**. Pour toute question relative à vos données, contactez-nous à **{email}**.",
         },
       ],
     },
@@ -137,8 +137,8 @@ const fr: Politique = {
             "**Profil** : nom d'affichage, bio, avatar, pays et — pour Haïti — département, si vous les renseignez.",
             "**Localisation approximative** : nous déduisons votre *pays* (jamais votre position précise) à partir de votre adresse IP au moment d'un achat ou d'une publication (voir §4).",
             "**Paiement** : références de transaction MonCash nécessaires à la confirmation et à la réconciliation de vos paiements.",
-            "**Activité** : produits publiés, commandes passées, solde du wallet vendeur.",
-            "**Livraison** (si vous les renseignez) : nom complet, téléphone et adresse de livraison — montrés à un vendeur *uniquement* lorsqu'il a une commande payée à vous expédier, jamais publics.",
+            "**Activité** : produits publiés, commandes passées, écritures du registre comptable vendeur.",
+            "**Coordonnées de remise** (si vous les renseignez) : nom complet, téléphone et adresse — montrés au vendeur *uniquement* pour organiser la remise de votre commande payée, jamais publics. Zabelie ne livre pas les produits.",
             "**Pièces d'identité** (vendeurs seulement, lorsqu'une vérification est demandée) : documents officiels et photo, conservés à part et jamais publics — voir §9.",
           ],
         },
@@ -149,7 +149,7 @@ const fr: Politique = {
       blocs: [
         {
           ul: [
-            "Fournir le service (compte, catalogue, achat, livraison, wallet) — *exécution du contrat*.",
+            "Fournir le service (compte, catalogue, achat, coordonnées pour la remise par le vendeur, registre comptable vendeur) — *exécution du contrat*.",
             "Traiter et réconcilier les paiements — *exécution du contrat* et *obligation légale* (comptabilité).",
             "Comprendre la répartition géographique agrégée de notre communauté — *intérêt légitime* (statistiques, jamais à l'échelle individuelle sur nos tableaux de bord).",
             "Prévenir la fraude et sécuriser la plateforme — *intérêt légitime*.",
@@ -199,19 +199,19 @@ const fr: Politique = {
       titre: "7. Vos droits",
       blocs: [
         {
-          p: "Zabelie s'adresse d'abord au public haïtien et applique le **droit haïtien** de la protection des données : l'arrêté fixant les règles de protection des données à caractère personnel (*Le Moniteur* n° 87 du 15 mai 2018) et les dispositions du Code pénal qui protègent les données personnelles et la vie privée. Pour la diaspora, nous respectons aussi les règles du pays de résidence lorsqu'elles s'appliquent.",
+          p: "Zabelie s'adresse d'abord au public haïtien. Cette politique tient compte du **droit haïtien** de la protection des données, notamment de l'arrêté fixant les règles relatives à la protection des données à caractère personnel (*Le Moniteur* n° 87 du 15 mai 2018). Les règles d'un autre pays s'appliquent lorsque leurs conditions d'application sont réunies ; la résidence à l'étranger ne suffit pas, à elle seule, à déterminer ce régime.",
         },
         {
-          p: "Selon la réglementation applicable (notamment le RGPD pour les résidents de l'Union européenne), vous disposez des droits d'accès, de rectification, d'effacement, de portabilité et d'opposition.",
+          p: "Zabelie propose les outils ci-dessous pour consulter, exporter, corriger et supprimer vos données, indépendamment des droits supplémentaires que la réglementation applicable peut vous accorder. Vous pouvez aussi nous adresser une demande à **{email}**.",
         },
         {
           ul: [
             "**Accès / portabilité** : exportez vos données depuis votre tableau de bord.",
             "**Rectification** : modifiez votre profil à tout moment.",
-            "**Effacement** : supprimez votre compte depuis votre tableau de bord. Les données strictement nécessaires à nos obligations légales (paiements) sont alors *anonymisées* plutôt que supprimées, comme le permet la réglementation. Les pièces d'identité d'un vendeur restent conservées jusqu'au terme prévu au **§9**, puis supprimées automatiquement.",
+            "**Effacement** : supprimez votre compte depuis votre tableau de bord. Les données de paiement conservées pour nos obligations légales sont alors *anonymisées* plutôt que supprimées. Les pièces d'identité d'un vendeur restent conservées jusqu'au terme prévu au **§9**, puis supprimées automatiquement.",
           ],
         },
-        { p: "Les résidents de l'UE peuvent introduire une réclamation auprès de leur autorité de contrôle (en France, la CNIL)." },
+        { p: "Lorsqu'une réglementation applicable vous ouvre un droit de réclamation auprès d'une autorité compétente, les outils Zabelie et le contact ci-dessus ne limitent pas ce droit." },
       ],
     },
     {
@@ -284,7 +284,7 @@ const ht: Politique = {
       titre: "1. Responsab tretman an",
       blocs: [
         {
-          p: "Zabelie (« nou ») ap opere mache sa a pou pwodwi dijital ak talan. Responsab tretman an : **{entite}**. Pou nenpòt kesyon sou done ou yo, ekri nou nan **{email}**.",
+          p: "Zabelie (« nou ») ap opere mache sa a pou pwodwi fizik, pwodwi dijital ak sèvis. Responsab tretman an : **{entite}**. Pou nenpòt kesyon sou done ou yo, ekri nou nan **{email}**.",
         },
       ],
     },
@@ -297,8 +297,8 @@ const ht: Politique = {
             "**Pwofil** : non ki parèt, bio, foto, peyi epi — pou Ayiti — depatman, si ou mete yo.",
             "**Kote ou ye apeprè** : nou dedwi *peyi* ou (pa janm pozisyon egzak ou) apati adrès IP ou lè ou achte oswa lè ou pibliye (gade §4).",
             "**Peman** : referans tranzaksyon MonCash ki nesesè pou konfime epi rekonsilye peman ou yo.",
-            "**Aktivite** : pwodwi ou pibliye, kòmand ou pase, balans pòtfèy vandè a.",
-            "**Livrezon** (si ou mete yo) : non konplè, telefòn ak adrès livrezon — yon vandè wè yo *sèlman* lè li gen yon kòmand ou peye pou l voye ba ou, yo pa janm piblik.",
+            "**Aktivite** : pwodwi ou pibliye, kòmand ou pase, ekriti nan rejis kontab vandè a.",
+            "**Kòdone pou remiz la** (si ou mete yo) : non konplè, telefòn ak adrès — vandè a wè yo *sèlman* pou òganize remiz kòmand ou peye a, yo pa janm piblik. Zabelie pa livre pwodwi yo.",
             "**Pyès idantite** (vandè sèlman, lè nou mande yon verifikasyon) : dokiman ofisyèl ak foto, kenbe apa epi yo pa janm piblik — gade §9.",
           ],
         },
@@ -309,7 +309,7 @@ const ht: Politique = {
       blocs: [
         {
           ul: [
-            "Bay sèvis la (kont, katalòg, acha, livrezon, pòtfèy) — *egzekisyon kontra a*.",
+            "Bay sèvis la (kont, katalòg, acha, kòdone pou vandè a remèt pwodwi a, rejis kontab vandè a) — *egzekisyon kontra a*.",
             "Trete epi rekonsilye peman yo — *egzekisyon kontra a* ak *obligasyon legal* (kontabilite).",
             "Konprann repatisyon jeyografik global kominote nou an — *enterè lejitim* (estatistik, pa janm sou yon moun an patikilye nan tablo nou yo).",
             "Anpeche fwod epi sekirize plataform lan — *enterè lejitim*.",
@@ -359,19 +359,19 @@ const ht: Politique = {
       titre: "7. Dwa ou yo",
       blocs: [
         {
-          p: "Zabelie vize piblik ayisyen an anvan tout bagay, epi li aplike **lwa ayisyen** sou pwoteksyon done : arete ki fikse règ pou pwoteksyon done pèsonèl yo (*Le Moniteur* nimewo 87, 15 me 2018) ak atik Kòd penal la ki pwoteje done pèsonèl ak lavi prive. Pou dyaspora a, nou respekte tou règ peyi kote moun nan rete a lè yo aplikab.",
+          p: "Zabelie vize piblik ayisyen an anvan tout bagay. Politik sa a pran an konsiderasyon **lwa ayisyen** sou pwoteksyon done, sitou arete ki fikse règ pou pwoteksyon done pèsonèl yo (*Le Moniteur* nimewo 87, 15 me 2018). Règ yon lòt peyi aplikab lè kondisyon yo pou aplike yo reyini ; lefètke ou rete aletranje pa sifi, poukont li, pou detèmine rejim sa a.",
         },
         {
-          p: "Dapre règleman ki aplikab (an patikilye RGPD la pou moun ki rete nan Inyon Ewopeyèn nan), ou gen dwa aksè, koreksyon, efasman, pòtabilite ak opozisyon.",
+          p: "Zabelie bay zouti ki anba yo pou ou konsilte, ekspòte, korije ak efase done ou yo, kèlkeswa dwa anplis règleman ki aplikab la ka ba ou. Ou ka voye yon demann tou nan **{email}**.",
         },
         {
           ul: [
             "**Aksè / pòtabilite** : ekspòte done ou yo depi tablo ou.",
             "**Koreksyon** : chanje pwofil ou nenpòt lè.",
-            "**Efasman** : efase kont ou depi tablo ou. Done ki estriktèman nesesè pou obligasyon legal nou yo (peman) *anonimize* olye yo efase, jan règleman an pèmèt sa. Pyès idantite yon vandè rete konsève jiska dat ki prevwa nan **§9** la, apre sa yo efase otomatikman.",
+            "**Efasman** : efase kont ou depi tablo ou. Done peman nou konsève pou obligasyon legal nou yo *anonimize* olye yo efase. Pyès idantite yon vandè rete konsève jiska dat ki prevwa nan **§9** la, apre sa yo efase otomatikman.",
           ],
         },
-        { p: "Moun ki rete nan Inyon Ewopeyèn nan ka depoze yon plent bò kote otorite kontwòl yo (an Frans, CNIL la)." },
+        { p: "Lè yon règleman ki aplikab ba ou dwa depoze yon plent bò kote yon otorite ki konpetan, zouti Zabelie yo ak kontak ki anwo a pa limite dwa sa a." },
       ],
     },
     {
@@ -444,7 +444,7 @@ const en: Politique = {
       titre: "1. Data controller",
       blocs: [
         {
-          p: "Zabelie (“we”) operates this marketplace for digital products and talent. Data controller: **{entite}**. For any question about your data, contact us at **{email}**.",
+          p: "Zabelie (“we”) operates this marketplace for physical products, digital products and services. Data controller: **{entite}**. For any question about your data, contact us at **{email}**.",
         },
       ],
     },
@@ -457,8 +457,8 @@ const en: Politique = {
             "**Profile**: display name, bio, avatar, country and — for Haiti — department, if you provide them.",
             "**Approximate location**: we infer your *country* (never your precise position) from your IP address at the time of a purchase or a publication (see §4).",
             "**Payment**: MonCash transaction references required to confirm and reconcile your payments.",
-            "**Activity**: products published, orders placed, seller wallet balance.",
-            "**Delivery** (if you provide them): full name, phone and delivery address — shown to a seller *only* when they have a paid order to ship to you, never public.",
+            "**Activity**: products published, orders placed, entries in the seller accounting ledger.",
+            "**Handover details** (if you provide them): full name, phone and address — shown to the seller *only* to arrange handover of your paid order, never public. Zabelie does not deliver products.",
             "**Identity documents** (sellers only, when a verification is requested): official documents and photo, stored separately and never public — see §9.",
           ],
         },
@@ -469,7 +469,7 @@ const en: Politique = {
       blocs: [
         {
           ul: [
-            "Provide the service (account, catalogue, purchase, delivery, wallet) — *performance of the contract*.",
+            "Provide the service (account, catalogue, purchase, details for handover by the seller, seller accounting ledger) — *performance of the contract*.",
             "Process and reconcile payments — *performance of the contract* and *legal obligation* (accounting).",
             "Understand the aggregate geographic spread of our community — *legitimate interest* (statistics, never at individual level on our dashboards).",
             "Prevent fraud and secure the platform — *legitimate interest*.",
@@ -519,19 +519,19 @@ const en: Politique = {
       titre: "7. Your rights",
       blocs: [
         {
-          p: "Zabelie serves the Haitian public first and applies **Haitian law** on data protection: the decree setting the rules for the protection of personal data (*Le Moniteur* no. 87 of 15 May 2018) and the provisions of the Penal Code that protect personal data and privacy. For the diaspora, we also follow the rules of the country of residence where they apply.",
+          p: "Zabelie serves the Haitian public first. This policy takes into account **Haitian law** on data protection, including the order setting the rules for the protection of personal data (*Le Moniteur* no. 87 of 15 May 2018). Another country's rules apply when their conditions of application are met; residence abroad alone does not determine that regime.",
         },
         {
-          p: "Under applicable regulation (notably the GDPR for residents of the European Union), you have rights of access, rectification, erasure, portability and objection.",
+          p: "Zabelie offers the tools below to view, export, correct and delete your data, independently of any additional rights that applicable regulation may grant you. You may also send us a request at **{email}**.",
         },
         {
           ul: [
             "**Access / portability**: export your data from your dashboard.",
             "**Rectification**: edit your profile at any time.",
-            "**Erasure**: delete your account from your dashboard. Data strictly necessary for our legal obligations (payments) is then *anonymised* rather than deleted, as the regulation permits. A seller's identity documents are kept until the term set in **§9**, then deleted automatically.",
+            "**Erasure**: delete your account from your dashboard. Payment data retained for our legal obligations is then *anonymised* rather than deleted. A seller's identity documents are kept until the term set in **§9**, then deleted automatically.",
           ],
         },
-        { p: "EU residents may lodge a complaint with their supervisory authority (in France, the CNIL)." },
+        { p: "Where applicable regulation grants you a right to complain to a competent authority, the Zabelie tools and the contact above do not limit that right." },
       ],
     },
     {
@@ -604,7 +604,7 @@ const es: Politique = {
       titre: "1. Responsable del tratamiento",
       blocs: [
         {
-          p: "Zabelie («nosotros») opera este mercado de productos digitales y talento. Responsable del tratamiento: **{entite}**. Para cualquier consulta sobre sus datos, escríbanos a **{email}**.",
+          p: "Zabelie («nosotros») opera este mercado de productos físicos, productos digitales y servicios. Responsable del tratamiento: **{entite}**. Para cualquier consulta sobre sus datos, escríbanos a **{email}**.",
         },
       ],
     },
@@ -617,8 +617,8 @@ const es: Politique = {
             "**Perfil**: nombre visible, biografía, avatar, país y —para Haití— departamento, si los indica.",
             "**Ubicación aproximada**: deducimos su *país* (nunca su posición exacta) a partir de su dirección IP en el momento de una compra o una publicación (véase §4).",
             "**Pago**: referencias de transacción MonCash necesarias para confirmar y conciliar sus pagos.",
-            "**Actividad**: productos publicados, pedidos realizados, saldo del monedero del vendedor.",
-            "**Entrega** (si los indica): nombre completo, teléfono y dirección de entrega — mostrados a un vendedor *solo* cuando tiene un pedido pagado que enviarle, nunca públicos.",
+            "**Actividad**: productos publicados, pedidos realizados, apuntes del registro contable del vendedor.",
+            "**Datos para la entrega** (si los indica): nombre completo, teléfono y dirección — mostrados al vendedor *solo* para organizar la entrega de su pedido pagado, nunca públicos. Zabelie no entrega los productos.",
             "**Documentos de identidad** (solo vendedores, cuando se solicita una verificación): documentos oficiales y foto, conservados aparte y nunca públicos — véase §9.",
           ],
         },
@@ -629,7 +629,7 @@ const es: Politique = {
       blocs: [
         {
           ul: [
-            "Prestar el servicio (cuenta, catálogo, compra, entrega, monedero) — *ejecución del contrato*.",
+            "Prestar el servicio (cuenta, catálogo, compra, datos para la entrega por el vendedor, registro contable del vendedor) — *ejecución del contrato*.",
             "Tramitar y conciliar los pagos — *ejecución del contrato* y *obligación legal* (contabilidad).",
             "Comprender la distribución geográfica agregada de nuestra comunidad — *interés legítimo* (estadísticas, nunca a escala individual en nuestros paneles).",
             "Prevenir el fraude y proteger la plataforma — *interés legítimo*.",
@@ -679,19 +679,19 @@ const es: Politique = {
       titre: "7. Sus derechos",
       blocs: [
         {
-          p: "Zabelie se dirige ante todo al público haitiano y aplica el **derecho haitiano** de protección de datos: el decreto que fija las normas de protección de los datos personales (*Le Moniteur* n.º 87 del 15 de mayo de 2018) y las disposiciones del Código Penal que protegen los datos personales y la vida privada. Para la diáspora, respetamos también las normas del país de residencia cuando se aplican.",
+          p: "Zabelie se dirige ante todo al público haitiano. Esta política tiene en cuenta el **derecho haitiano** de protección de datos, en particular el arrêté que fija las normas de protección de los datos personales (*Le Moniteur* n.º 87 del 15 de mayo de 2018). Las normas de otro país se aplican cuando se cumplen sus condiciones de aplicación; residir en el extranjero no basta, por sí solo, para determinar ese régimen.",
         },
         {
-          p: "Conforme a la normativa aplicable (en particular el RGPD para residentes en la Unión Europea), usted dispone de los derechos de acceso, rectificación, supresión, portabilidad y oposición.",
+          p: "Zabelie ofrece las herramientas siguientes para consultar, exportar, corregir y eliminar sus datos, con independencia de los derechos adicionales que pueda otorgarle la normativa aplicable. También puede enviarnos una solicitud a **{email}**.",
         },
         {
           ul: [
             "**Acceso / portabilidad**: exporte sus datos desde su panel.",
             "**Rectificación**: modifique su perfil en cualquier momento.",
-            "**Supresión**: elimine su cuenta desde su panel. Los datos estrictamente necesarios para nuestras obligaciones legales (pagos) se *anonimizan* en lugar de suprimirse, como permite la normativa. Los documentos de identidad de un vendedor se conservan hasta el plazo previsto en el **§9** y luego se eliminan automáticamente.",
+            "**Supresión**: elimine su cuenta desde su panel. Los datos de pago conservados para nuestras obligaciones legales se *anonimizan* en lugar de suprimirse. Los documentos de identidad de un vendedor se conservan hasta el plazo previsto en el **§9** y luego se eliminan automáticamente.",
           ],
         },
-        { p: "Los residentes en la UE pueden presentar una reclamación ante su autoridad de control (en Francia, la CNIL)." },
+        { p: "Cuando una normativa aplicable le otorga el derecho a reclamar ante una autoridad competente, las herramientas Zabelie y el contacto anterior no limitan ese derecho." },
       ],
     },
     {

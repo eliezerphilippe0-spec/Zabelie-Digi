@@ -8,6 +8,11 @@ Version condensée « toujours en contexte ». Le détail est dans `docs/`.
 vendeur. Marché : **Haïti** + **diaspora**. Terrain : Android d'entrée de
 gamme, bande passante faible, coupures fréquentes.
 
+**Consignes produit du porteur (2026-10-05)** : absence de livraison Zabelie,
+Zabelie Pay autonome exclu et réutilisation sans doublons. Le contrat unique
+est `docs/26-CAHIER-DES-CHARGES-MARKETPLACE.md` §0 ; lire l'inventaire `docs/67`
+avant de proposer une construction à partir d'un Master Prompt.
+
 **Naming (tranché, 2026-07-24)** : le nom officiel et UNIQUE est « **Zabelie** ».
 « Zabelie Digi » est **éliminé**.
 

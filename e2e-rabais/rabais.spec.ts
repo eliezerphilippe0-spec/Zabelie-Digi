@@ -67,7 +67,7 @@ for (const width of [390, 1280]) {
 test("a forged or missing variant cannot create a discounted order", async ({ page, request }) => {
   await connect(page, false);
   for (const variantId of [undefined, "55555555-5555-5555-5555-555555555599", "invalid"]) {
-    const result = await page.request.post("/api/checkout", { data: { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", variantId, amount_htg: 1 } });
+    const result = await page.request.post("/api/checkout", { data: { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", variantId, amount_htg: 1, checkoutKey: "11111111-1111-4111-8111-111111111111" } });
     expect(result.status()).toBe(422);
   }
   expect(await (await request.get("http://127.0.0.1:15427/__discount-orders")).json()).toEqual([]);
