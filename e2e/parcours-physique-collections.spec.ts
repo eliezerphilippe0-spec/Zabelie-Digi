@@ -81,7 +81,7 @@ test("le serveur refuse une cible invalide et annule si sa sauvegarde échoue", 
  const recipient = { name: "Marie Test", phone: "34123456", locality: "Jacmel", note: "", consent: true };
  const invalid = await page.request.post("/api/checkout", { data: { productId: "99999999-9999-9999-9999-999999999990", recipient: { ...recipient, consent: false } } });
  expect(invalid.status()).toBe(422);
- const failed = await page.request.post("/api/checkout", { data: { productId: "99999999-9999-9999-9999-999999999990", recipient } });
+ const failed = await page.request.post("/api/checkout", { data: { productId: "99999999-9999-9999-9999-999999999990", recipient, checkoutKey: "11111111-1111-4111-8111-111111111111" } });
  expect(failed.status()).toBe(503);
  const events = await (await request.get("http://127.0.0.1:15421/__gift-writes")).json();
  expect(events.map((e: { step: string }) => e.step)).toEqual(["order", "recipient", "cleanup"]);

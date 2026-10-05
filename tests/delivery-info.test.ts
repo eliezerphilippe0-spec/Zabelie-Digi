@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { LANGS, type Lang } from "../lib/i18n";
+import { POLITIQUE } from "../lib/policy-privacy";
 
 /**
  * Coordonnées de livraison (V-5, docs/35) — le cœur est la RLS de 0076,
@@ -45,13 +47,18 @@ test("tableau de bord : le formulaire est masqué tant que 0076 n'est pas appliq
 });
 
 test("la politique de confidentialité décrit la collecte, dans les quatre langues", () => {
-  const src = readFileSync("lib/policy-privacy.ts", "utf8");
-  for (const marqueur of [
-    "adresse de livraison",
-    "adrès livrezon",
-    "delivery address",
-    "dirección de entrega",
-  ]) {
-    assert.ok(src.includes(marqueur), `politique : « ${marqueur} » absent`);
+  const collecte: Record<Lang, { titre: string; gardes: RegExp[] }> = {
+    fr: { titre: "Coordonnées de remise", gardes: [/nom complet/u, /téléphone/u, /adresse/u, /vendeur \*uniquement\*/u, /commande payée/u, /jamais publics/u, /Zabelie ne livre pas les produits/u] },
+    ht: { titre: "Kòdone pou remiz la", gardes: [/non konplè/u, /telefòn/u, /adrès/u, /vandè a wè yo \*sèlman\*/u, /kòmand ou peye a/u, /pa janm piblik/u, /Zabelie pa livre pwodwi yo/u] },
+    en: { titre: "Handover details", gardes: [/full name/u, /phone/u, /address/u, /seller \*only\*/u, /paid order/u, /never public/u, /Zabelie does not deliver products/u] },
+    es: { titre: "Datos para la entrega", gardes: [/nombre completo/u, /teléfono/u, /dirección/u, /vendedor \*solo\*/u, /pedido pagado/u, /nunca públicos/u, /Zabelie no entrega los productos/u] },
+  };
+  for (const lang of LANGS) {
+    const section = POLITIQUE[lang].sections.find(s => s.titre.startsWith("2."));
+    assert.ok(section, `${lang} : section collecte absente`);
+    const ligne = section.blocs.flatMap(b => "ul" in b ? b.ul : [])
+      .find(texte => texte.includes(`**${collecte[lang].titre}**`));
+    assert.ok(ligne, `${lang} : coordonnées de remise absentes de la collecte`);
+    for (const garde of collecte[lang].gardes) assert.match(ligne, garde, `${lang} : collecte ou restriction absente`);
   }
 });

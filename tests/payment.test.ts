@@ -9,6 +9,7 @@ import {
 import {
   slugify,
   paymentIdempotencyKey,
+  persistPaymentSession,
   walletCreditKey,
   amountMatches,
   withinRailCap,
@@ -18,6 +19,8 @@ import {
   formatUsd,
   zelleMemo,
 } from "../lib/payment-utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { database } from "./helpers/route-harness";
 
 test("isSuccessful : true uniquement si statut 'successful'", () => {
   const base: Omit<MonCashPayment, "status"> = {
@@ -78,6 +81,29 @@ test("paymentIdempotencyKey : stable = order.id", () => {
   assert.equal(paymentIdempotencyKey("abc"), "abc");
   // Idempotent : même entrée → même clé (pas de doublon de paiement).
   assert.equal(paymentIdempotencyKey("abc"), paymentIdempotencyKey("abc"));
+});
+
+test("persistPaymentSession : écrit la référence sur la commande attendue avant de réussir", async () => {
+  const raw = { stripe_session_id: "cs_1" };
+  const db = database(() => ({ data: { order_id: "o1" }, error: null }));
+  await persistPaymentSession(db as unknown as SupabaseClient, "o1", raw);
+  assert.equal(db.queries.length, 1);
+  assert.equal(db.queries[0].table, "payments");
+  assert.deepEqual(db.queries[0].steps.find(([m]) => m === "update")?.[1], [{ raw }]);
+  assert.deepEqual(db.queries[0].steps.find(([m]) => m === "eq")?.[1], ["order_id", "o1"]);
+});
+
+test("persistPaymentSession : refuse erreur DB, absence, mauvaise commande et exception", async () => {
+  for (const result of [
+    { data: null, error: { message: "base indisponible" } },
+    { data: null, error: null },
+    { data: { order_id: "autre" }, error: null },
+  ]) {
+    const db = database(() => result);
+    await assert.rejects(persistPaymentSession(db as unknown as SupabaseClient, "o1", { stripe_session_id: "cs_1" }));
+  }
+  const exception = database(() => { throw new Error("connexion coupée"); });
+  await assert.rejects(persistPaymentSession(exception as unknown as SupabaseClient, "o1", { stripe_session_id: "cs_1" }));
 });
 
 test("walletCreditKey : format aligné sur confirm_payment (SQL)", () => {

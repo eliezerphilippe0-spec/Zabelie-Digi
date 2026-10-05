@@ -18,7 +18,7 @@ export async function generateMetadata() {
 
 // Dernière mise à jour du gabarit (à actualiser à chaque changement — et la
 // première vraie « mise à jour » sera la relecture du conseil juridique).
-const LAST_UPDATE = "2 octobre 2026";
+const LAST_UPDATE = "5 octobre 2026";
 
 /**
  * `**gras**` et `*italique*` → JSX. Même rendu que `app/confidentialite/

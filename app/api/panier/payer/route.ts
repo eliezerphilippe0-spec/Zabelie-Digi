@@ -8,7 +8,7 @@ import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { createPayment, resolveMonCashMode } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { createKobaraPayment, isKobaraEnabled, isKobaraProvider, kobaraCap, type KobaraProvider } from "@/lib/kobara";
-import { railCap } from "@/lib/payment-utils";
+import { persistPaymentSession, railCap } from "@/lib/payment-utils";
 import { couponApplies, normalizeCouponCode, type CouponRow } from "@/lib/zabelie-coupons";
 import { inscrireContexteGroupe } from "@/lib/panier-groupe-contexte";
 import { POST as checkoutArticle } from "@/app/api/checkout/route";
@@ -208,31 +208,24 @@ export async function POST(req: Request) {
     if (rail === "stripe") {
       if (usdCents === null) throw new Error("montant USD absent");
       const { redirectUrl, sessionId } = await createStripeCheckout({ orderId: meneuse, usdCents, productTitle: titre });
-      await admin.from("payments").update({ raw: { stripe_session_id: sessionId, groupe: groupId } }).eq("order_id", meneuse);
+      // Comme Kobara, aucune redirection sans référence persistée : le
+      // réconciliateur Stripe ne peut interroger qu'une session enregistrée.
+      await persistPaymentSession(admin, meneuse, { stripe_session_id: sessionId, groupe: groupId });
       return NextResponse.json({ redirectUrl, orderId: meneuse, groupId });
     }
     if (rail === "kobara") {
       const session = await createKobaraPayment({ orderId: meneuse, amountHtg: totalHtg, provider: kobaraProvider, description: titre });
-      const { error: persistance } = await admin
-        .from("payments")
-        .update({
-          raw: {
-            kobara_payment_id: session.id,
-            kobara_provider: kobaraProvider,
-            kobara_mode: session.mode,
-            kobara_mode_source: session.modeSource,
-            groupe: groupId,
-          },
-        })
-        .eq("order_id", meneuse);
-      if (persistance) throw new Error("Kobara : session non enregistree.");
+      await persistPaymentSession(admin, meneuse, {
+        kobara_payment_id: session.id,
+        kobara_provider: kobaraProvider,
+        kobara_mode: session.mode,
+        kobara_mode_source: session.modeSource,
+        groupe: groupId,
+      });
       return NextResponse.json({ redirectUrl: session.redirectUrl, orderId: meneuse, groupId });
     }
     const { redirectUrl, paymentToken, mode, gatewayHost } = await createPayment(meneuse, totalHtg);
-    await admin
-      .from("payments")
-      .update({ raw: { payment_token: paymentToken, moncash_mode: mode, moncash_host: gatewayHost, groupe: groupId } })
-      .eq("order_id", meneuse);
+    await persistPaymentSession(admin, meneuse, { payment_token: paymentToken, moncash_mode: mode, moncash_host: gatewayHost, groupe: groupId });
     return NextResponse.json({ redirectUrl, orderId: meneuse, groupId });
   } catch (e) {
     console.error("[panier/payer] échec opérateur", e instanceof Error ? e.message : "inconnu", {

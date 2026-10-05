@@ -29,6 +29,7 @@ import {
   railCap,
   usdCentsFromHtg,
   railCountry,
+  persistPaymentSession,
 } from "@/lib/payment-utils";
 import {
   normalizeCouponCode,
@@ -46,12 +47,13 @@ import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 import { normaliserNumeroHaiti } from "@/lib/rechaj";
 import { attestationAgeValide, lireAgeMinimum } from "@/lib/age-minimum";
 import { contexteGroupe } from "@/lib/panier-groupe-contexte";
+import { checkoutOrderId, validCheckoutKey, savedCheckoutRedirect } from "@/lib/checkout-idempotency";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/checkout  { productId, rail? }
+ * POST /api/checkout  { productId, checkoutKey (UUID v4), rail? }
  * rail ∈ 'moncash' (défaut) | 'stripe' | 'zelle' (rails diaspora, V-10).
  * Crée une commande + un paiement (pending, clé d'idempotence) puis renvoie
  * l'URL de redirection du rail. Aucune livraison/crédit ici : tout passe par la
@@ -106,6 +108,7 @@ export async function POST(req: Request) {
   let offerInput: unknown;
   let recommendationInput: unknown;
   let ageAttestationInput: unknown;
+  let checkoutKeyInput: unknown;
   try {
     ({
       productId,
@@ -119,6 +122,7 @@ export async function POST(req: Request) {
       offerId: offerInput,
       recommendationSource: recommendationInput,
       ageAttestation: ageAttestationInput,
+      checkoutKey: checkoutKeyInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
@@ -503,10 +507,22 @@ export async function POST(req: Request) {
   }
   const source = pricing ? attributedSource((await cookies()).get(SALE_SOURCE_COOKIE)?.value, product.id, configService().key) : null;
 
+  // A public retry must keep its attempt key. The orders primary key stops
+  // concurrent submissions in Postgres before any second operator call.
+  // Grouped orders already have their server-only group concurrency guard.
+  if (!groupe && !validCheckoutKey(checkoutKeyInput)) {
+    return NextResponse.json(
+      { error: t(lang, "api.checkout.refresh"), code: "checkout_key_required" },
+      { status: 400, headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
+  const attemptOrderId = groupe ? null : checkoutOrderId(user.id, checkoutKeyInput as string);
+
   // Commande (pending).
   const { data: order, error: orderErr } = await admin
     .from("orders")
     .insert({
+      ...(attemptOrderId ? { id: attemptOrderId } : {}),
       buyer_id: user.id,
       product_id: product.id,
       // Panier groupé (0128) : rattachée au groupe, seulement par le contexte serveur.
@@ -529,6 +545,25 @@ export async function POST(req: Request) {
     })
     .select("id, amount_htg")
     .single();
+
+  if (orderErr?.code === "23505" && attemptOrderId) {
+    const { data: existing, error: existingError } = await admin.from("orders")
+      // group_id is present only after 0128. Keep it when available without
+      // requiring that migration for individual checkout retries.
+      .select("*").eq("id", attemptOrderId).eq("buyer_id", user.id).maybeSingle();
+    if (existingError || !existing) {
+      return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    }
+    const { data: payment, error: paymentError } = await admin.from("payments")
+      .select("status, rail, raw").eq("order_id", existing.id).maybeSingle();
+    // Reuse a known session after a lost response. A missing/uncertain
+    // session goes to purchase review, never to another operator call.
+    const redirectUrl = paymentError ? null : savedCheckoutRedirect(existing, payment);
+    return NextResponse.json(
+      { redirectUrl: redirectUrl ?? "/mes-achats", orderId: existing.id, deja: true },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
 
   if (orderErr?.code === "ZB112") {
     return NextResponse.json({ error: t(lang, "api.product.notfound"), code: "seller_unavailable" }, { status: 409 });
@@ -798,10 +833,7 @@ export async function POST(req: Request) {
         usdCents: expectedUsdCents as number,
         productTitle: product.title,
       });
-      await admin
-        .from("payments")
-        .update({ raw: { stripe_session_id: sessionId } })
-        .eq("order_id", order.id);
+      await persistPaymentSession(admin, order.id, { stripe_session_id: sessionId, checkout_redirect_url: redirectUrl });
       return NextResponse.json({ redirectUrl, orderId: order.id });
     }
 
@@ -837,18 +869,13 @@ export async function POST(req: Request) {
        *
        *   select raw->>'kobara_mode', raw->>'kobara_mode_source', count(*)
        *     from payments where rail = 'kobara' group by 1, 2; */
-      const { error: persistenceError } = await admin
-        .from("payments")
-        .update({
-          raw: {
-            kobara_payment_id: session.id,
-            kobara_provider: kobaraProvider,
-            kobara_mode: session.mode,
-            kobara_mode_source: session.modeSource,
-          },
-        })
-        .eq("order_id", order.id);
-      if (persistenceError) throw new Error("Kobara : session non enregistree.");
+      await persistPaymentSession(admin, order.id, {
+        kobara_payment_id: session.id,
+        kobara_provider: kobaraProvider,
+        kobara_mode: session.mode,
+        kobara_mode_source: session.modeSource,
+        checkout_redirect_url: session.redirectUrl,
+      });
       return NextResponse.json({ redirectUrl: session.redirectUrl, orderId: order.id });
     }
 
@@ -870,16 +897,12 @@ export async function POST(req: Request) {
      *   select raw->>'moncash_mode', count(*) from payments group by 1;
      * C'est le corollaire d'observabilité du dépôt appliqué au rail d'argent :
      * l'absence de signal doit être un signal, et ici elle n'en était pas un. */
-    await admin
-      .from("payments")
-      .update({
-        raw: {
-          payment_token: paymentToken,
-          moncash_mode: mode,
-          moncash_host: gatewayHost,
-        },
-      })
-      .eq("order_id", order.id);
+    await persistPaymentSession(admin, order.id, {
+      payment_token: paymentToken,
+      moncash_mode: mode,
+      moncash_host: gatewayHost,
+      checkout_redirect_url: redirectUrl,
+    });
 
     return NextResponse.json({ redirectUrl, orderId: order.id });
   } catch (e) {

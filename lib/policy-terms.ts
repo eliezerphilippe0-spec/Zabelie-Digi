@@ -10,7 +10,7 @@ import type { Politique } from "./policy-privacy";
  * la compilation ou le test de parité, jamais silencieusement.
  *
  * ─── CE QUE CE MODULE EST, ET N'EST PAS ─────────────────────────────────────
- * C'est un GABARIT : la structure attendue d'une marketplace avec escrow,
+ * C'est un GABARIT : la structure attendue d'une marketplace avec règlement vendeur,
  * remplie avec les SEULS termes déjà tranchés par le porteur (maturation J+7,
  * commission au barème en vigueur, remboursement vers le moyen d'origine,
  * produits interdits, pas de cash à la livraison — `docs/26`, `docs/22`,
@@ -88,12 +88,12 @@ const fr: Politique = {
         {
           ul: [
             "Ne publier que des produits que vous avez le droit de vendre — la liste de ce qui ne peut pas être vendu est publiée sur la page *produits interdits* et fait partie des présentes conditions.",
-            "Décrire honnêtement le produit ou la prestation (état, contenu, compatibilité, délais).",
-            "Honorer la remise : expédier le produit physique, rendre la prestation, fournir un fichier téléchargeable conforme.",
+            "Décrire honnêtement le produit ou la prestation (prix, état, contenu, compatibilité, délais) et annoncer les conditions de remise avant la commande.",
+            "Honorer la remise annoncée : remettre le produit physique en main propre ou organiser son transport par un tiers, rendre la prestation, fournir un fichier téléchargeable conforme.",
           ],
         },
         {
-          p: "Zabelie peut retirer une publication contraire à ces obligations et suspendre le compte vendeur en cas de manquement grave ou répété.",
+          p: "Le vendeur organise la remise ou le transport prévu dans son offre. **Zabelie ne stocke ni ne livre les produits, n'organise pas leur transport et ne facture pas de frais de livraison.** Zabelie peut retirer une publication contraire à ces obligations et suspendre le compte vendeur en cas de manquement grave ou répété.",
         },
       ],
     },
@@ -112,7 +112,7 @@ const fr: Politique = {
           p: "Les sommes issues d'une vente sont inscrites au registre vendeur et deviennent disponibles après une **période de maturation de 7 jours** suivant la confirmation du paiement. Pour les produits physiques et les services, la disponibilité est en outre conditionnée à la **remise** : le vendeur déclare avoir remis, l'acheteur confirme (ou la confirmation intervient automatiquement après le délai affiché, sauf contestation).",
         },
         {
-          p: "Le registre Zabelie est un registre comptable interne : il ne constitue ni un compte de paiement, ni un portefeuille électronique, et ne permet ni dépôt, ni retrait en espèces, ni transfert entre utilisateurs.",
+          p: "Le registre Zabelie retrace les écritures comptables liées aux ventes. Il ne permet pas d'alimenter un solde, de payer un achat avec ce solde, de retirer des espèces ni de transférer une somme entre utilisateurs. **Zabelie ne propose pas de service Zabelie Pay autonome.** La maturation est une règle de fonctionnement commercial ; elle n'atteste pas d'un agrément ni d'une validation de la BRH.",
         },
       ],
     },
@@ -266,12 +266,12 @@ const ht: Politique = {
         {
           ul: [
             "Pibliye sèlman pwodwi ou gen dwa vann — lis sa ou pa gen dwa vann lan pibliye sou paj *pwodwi entèdi* a epi li fè pati kondisyon sa yo.",
-            "Dekri pwodwi a oswa prestasyon an onètman (eta, kontni, konpatibilite, delè).",
-            "Onore remiz la : voye pwodwi fizik la, rann prestasyon an, bay yon fichye ki konfòm.",
+            "Dekri pwodwi a oswa prestasyon an onètman (pri, eta, kontni, konpatibilite, delè) epi anonse kondisyon remiz la anvan kòmand lan.",
+            "Onore remiz ou anonse a : remèt pwodwi fizik la men nan men oswa òganize transpò li ak yon lòt prestatè, rann prestasyon an, bay yon fichye ki konfòm.",
           ],
         },
         {
-          p: "Zabelie ka retire yon piblikasyon ki vyole obligasyon sa yo epi sispann kont yon vandè an ka de vyolasyon grav oswa repete.",
+          p: "Vandè a òganize remiz la oswa transpò ki prevwa nan òf li a. **Zabelie pa estoke ni livre pwodwi yo, li pa òganize transpò yo epi li pa faktire frè livrezon.** Zabelie ka retire yon piblikasyon ki vyole obligasyon sa yo epi sispann kont yon vandè an ka de vyolasyon grav oswa repete.",
         },
       ],
     },
@@ -290,7 +290,7 @@ const ht: Politique = {
           p: "Lajan ki soti nan yon vant anrejistre nan rejis vandè a epi li vin disponib apre yon **peryòd maturasyon 7 jou** apre konfimasyon peman an. Pou pwodwi fizik ak sèvis, disponibilite a kondisyone tou pa **remiz la** : vandè a deklare li remèt, achtè a konfime (oswa konfimasyon an fèt otomatikman apre delè ki afiche a, sof si gen kontestasyon).",
         },
         {
-          p: "Rejis Zabelie a se yon rejis kontab entèn : li pa yon kont peman, ni yon bous elektwonik, epi li pa pèmèt ni depo, ni retrè kach, ni transfè ant itilizatè.",
+          p: "Rejis Zabelie a anrejistre ekriti kontab ki gen rapò ak vant yo. Li pa pèmèt alimante yon balans, peye yon acha ak balans sa a, retire lajan kach ni transfere yon montan ant itilizatè. **Zabelie pa ofri yon sèvis Zabelie Pay otonòm.** Maturasyon an se yon règ fonksyònman komèsyal ; li pa prèv yon otorizasyon ni yon validasyon BRH.",
         },
       ],
     },
@@ -444,12 +444,12 @@ const en: Politique = {
         {
           ul: [
             "Only publish products you have the right to sell — the list of what cannot be sold is published on the *prohibited products* page and forms part of these terms.",
-            "Describe the product or service honestly (condition, content, compatibility, timelines).",
-            "Honour delivery: ship the physical product, perform the service, provide a conforming downloadable file.",
+            "Describe the product or service honestly (price, condition, content, compatibility, timelines) and state the handover conditions before the order.",
+            "Honour the stated handover: hand over the physical product in person or arrange its transport with a third party, perform the service, provide a conforming downloadable file.",
           ],
         },
         {
-          p: "Zabelie may remove a listing that breaches these obligations and suspend a seller account in the event of a serious or repeated breach.",
+          p: "The seller arranges the handover or transport stated in their offer. **Zabelie does not store or deliver products, arrange their transport or charge delivery fees.** Zabelie may remove a listing that breaches these obligations and suspend a seller account in the event of a serious or repeated breach.",
         },
       ],
     },
@@ -468,7 +468,7 @@ const en: Politique = {
           p: "Proceeds of a sale are recorded in the seller ledger and become available after a **7-day maturation period** following payment confirmation. For physical products and services, availability is additionally conditioned on **delivery**: the seller declares delivery, the buyer confirms (or confirmation occurs automatically after the displayed period, absent a dispute).",
         },
         {
-          p: "The Zabelie ledger is an internal accounting record: it is neither a payment account nor an electronic wallet, and allows no deposits, no cash withdrawals and no transfers between users.",
+          p: "The Zabelie ledger records accounting entries related to sales. It does not allow topping up a balance, paying for a purchase with that balance, withdrawing cash or transferring an amount between users. **Zabelie does not offer a standalone Zabelie Pay service.** Maturation is a commercial operating rule; it does not attest to authorisation or approval by the BRH.",
         },
       ],
     },
@@ -622,12 +622,12 @@ const es: Politique = {
         {
           ul: [
             "Publicar únicamente productos que tenga derecho a vender — la lista de lo que no puede venderse está publicada en la página de *productos prohibidos* y forma parte de estas condiciones.",
-            "Describir honestamente el producto o la prestación (estado, contenido, compatibilidad, plazos).",
-            "Cumplir la entrega: enviar el producto físico, realizar la prestación, facilitar un archivo descargable conforme.",
+            "Describir honestamente el producto o la prestación (precio, estado, contenido, compatibilidad, plazos) e indicar las condiciones de entrega antes del pedido.",
+            "Cumplir la entrega anunciada: entregar el producto físico en persona u organizar su transporte mediante un tercero, realizar la prestación, facilitar un archivo descargable conforme.",
           ],
         },
         {
-          p: "Zabelie puede retirar una publicación contraria a estas obligaciones y suspender la cuenta del vendedor en caso de incumplimiento grave o reiterado.",
+          p: "El vendedor organiza la entrega o el transporte previsto en su oferta. **Zabelie no almacena ni entrega productos, no organiza su transporte ni cobra gastos de entrega.** Zabelie puede retirar una publicación contraria a estas obligaciones y suspender la cuenta del vendedor en caso de incumplimiento grave o reiterado.",
         },
       ],
     },
@@ -646,7 +646,7 @@ const es: Politique = {
           p: "Los importes de una venta se inscriben en el registro del vendedor y quedan disponibles tras un **período de maduración de 7 días** desde la confirmación del pago. Para los productos físicos y los servicios, la disponibilidad está además condicionada a la **entrega**: el vendedor declara haber entregado, el comprador confirma (o la confirmación se produce automáticamente tras el plazo indicado, salvo controversia).",
         },
         {
-          p: "El registro Zabelie es un registro contable interno: no constituye una cuenta de pago ni un monedero electrónico, y no permite depósitos, retiradas de efectivo ni transferencias entre usuarios.",
+          p: "El registro Zabelie recoge los apuntes contables relacionados con las ventas. No permite recargar un saldo, pagar una compra con ese saldo, retirar efectivo ni transferir un importe entre usuarios. **Zabelie no ofrece un servicio Zabelie Pay autónomo.** La maduración es una regla de funcionamiento comercial; no acredita una autorización ni una aprobación de la BRH.",
         },
       ],
     },

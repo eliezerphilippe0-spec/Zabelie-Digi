@@ -10,6 +10,13 @@ requêtes HTTP). Chaque chiffre ci-dessous a été **mesuré aujourd'hui**, sauf
 mention contraire. Les informations juridiques manquantes ne sont **pas**
 inventées : elles sont listées comme bloquantes.
 
+**Mise à jour de périmètre du 2026-10-05.** Le porteur confirme : Zabelie ne fait
+pas de livraison, Zabelie Pay autonome est exclu pour le marché haïtien, et
+aucune fonction existante ne doit être reconstruite. Le contrat est amendé
+dans `docs/26` §0. Les mesures du 4 octobre restent datées : elles ne constituent
+pas une nouvelle lecture de la base. Ne pas utiliser l'ancien clone
+`marketplace-hub` comme état de la production actuelle.
+
 ---
 
 ## 1. Executive Summary
@@ -54,7 +61,7 @@ Trois conclusions :
 
 ---
 
-## 2. Architecture actuelle
+## 2. Architecture relevée le 4 octobre 2026
 
 | Couche | Technologie | Remarques |
 |---|---|---|
@@ -71,7 +78,7 @@ Trois conclusions :
 
 ---
 
-## 3. Inventaire, rangé selon les 6 piliers proposés
+## 3. Inventaire du 4 octobre, avec mises à jour explicitement datées
 
 Légende : ✅ existe et fonctionne (testé) · 🟡 existe mais incomplet ·
 ❌ absent · 🐞 bug potentiel · 🔐 risque sécurité · 💼 risque business.
@@ -85,7 +92,7 @@ Légende : ✅ existe et fonctionne (testé) · 🟡 existe mais incomplet ·
 | Vidéo produit | 🟡 Phase 0 seulement, aucun code | `docs/66` |
 | Rabais / prix barré par variante | ✅ | `0037`–`0040`, e2e `rabais` |
 | Remise : retrait chez le vendeur, points de retrait | ✅ | `0082`, `0043` fulfillment |
-| Livraison avec prix, zones, suivi, preuve, transporteurs | ❌ | Zabelie « ne stocke ni ne livre » (texte public) |
+| Livraison opérée par Zabelie | Hors périmètre | La remise et une éventuelle livraison sont organisées par le vendeur ; réutiliser les déclarations existantes |
 | Avis | ✅ **un avis par commande** (`product_reviews.order_id unique`) = achat vérifié par construction | `0008` |
 | Questions / réponses | ❌ | |
 | Favoris, boutiques suivies, partage | ✅ | `0102` |
@@ -147,10 +154,10 @@ Légende : ✅ existe et fonctionne (testé) · 🟡 existe mais incomplet ·
 
 | Élément | État |
 |---|---|
-| Panier multi-vendeurs | 🟡 **le panier existe (`0058`), mais on paie article par article** ; le paiement unique pour N commandes (`order_groups`) est spécifié (`docs/27`) et non construit |
+| Panier multi-vendeurs | Mise à jour 2026-10-05 : panier (`0058`) et paiement groupé (`0128`, `0129`) construits ; `panier/payer` réutilise le checkout existant. Migrations et activation encore en attente selon `OPS_TODO`, non vérifiées en base dans ce passage |
 | Recherche : approximative, demande non servie | ✅ `zabelie_search_fuzzy`, `0047` ; synonymes kreyòl ❌ |
 | Catégories : 83 rayons actifs | 🐞 **la page `/categories` affiche 36 fois « aucune offre publiée »** |
-| SEO : sitemap, robots, canonique, données structurées | ✅ ; 💼 aucune URL par langue (`docs/47`) |
+| SEO : sitemap, robots, canonique, données structurées | Mise à jour 2026-10-05 : URL publiques par langue construites (`78e830f`, `proxy.ts`, `lib/langue-url.ts`) ; ne pas recréer une seconde couche de routage |
 | Événements analytics, entonnoir admin | ✅ `0086`, entonnoir hebdomadaire |
 | Notifications | 🟡 file `outbox` ✅, **aucun envoi** (pas de clé e-mail) |
 | Sécurité : RLS partout, CSP à nonce, plafonds d'appels, audit admin, isolation vendeur testée | ✅ |
@@ -226,17 +233,20 @@ comme un compte ou un portefeuille.
   mérite sa boutique ») à un H1 acheteur est une décision de
   **positionnement** (zone d'arrêt, `docs/25` §4). Je la prépare quand il y
   aura une offre à montrer.
-* **Zabelie Livraison avec prix et suivi** : engage un prix, un partenaire et
-  une promesse commerciale. L'abstraction `DeliveryProvider` peut être
-  construite sans partenaire, mais elle n'a de sens qu'après la première
-  commande physique réelle.
+* **Zabelie Livraison, y compris `DeliveryProvider` propre à la plateforme** :
+  exclu par la consigne du porteur du 2026-10-05. Réutiliser les déclarations de
+  remise/retrait/livraison du vendeur et la machine de fulfillment existante.
+* **Zabelie Pay autonome** : exclu du périmètre actuel. Le checkout et le
+  registre vendeur existants ne sont pas une autorisation de créer un nouveau
+  portefeuille ou service financier ; le dossier de qualification BRH reste
+  ouvert (`docs/17`).
 * **Multi-devises** : affichage seulement, et après le rail diaspora.
 * **Plus aucun filet sur un chemin vide** (voir §1, point 3).
 
 ### 4.5 Sur le « master prompt » pour Codex/Javis
 
 Il est solide, et il recoupe largement ce que le dépôt fait déjà. Quatre
-ajustements pour qu'il ne fasse pas reculer le projet :
+ajustements de méthode, complétés par les contraintes produit du 2026-10-05 :
 
 1. **Lui faire lire `CLAUDE.md` et `docs/25` d'abord.** Le dépôt a des règles
    qu'un agent neuf ignorerait : une mutation par tour, zones d'arrêt
@@ -250,6 +260,17 @@ ajustements pour qu'il ne fasse pas reculer le projet :
    de contradiction l'agent s'arrête et demande.*
 4. **Les phases 2 et 10 à 12 supposent des données** (ventes, avis,
    visiteurs) : elles viennent après la première vente réelle, pas avant.
+5. **Retirer le module et l'objectif « Zabelie Livraison »** des sections 5
+   et 18 du texte reçu. Dans les parcours physique, checkout et diaspora,
+   remplacer la livraison plateforme par les conditions de remise du vendeur.
+6. **Retirer Zabelie Pay autonome et le wallet acheteur** des objectifs.
+   Les sections 14 à 17 réutilisent les paiements, le ledger, les litiges et
+   règlements vendeurs existants ; toute extension financière dépend de la
+   qualification juridique applicable en Haïti. Renommer un escrow
+   « Protection Zabelie » ne résout pas cette qualification.
+7. **Éviter aussi les doublons de documentation** : amender `docs/26`, conserver
+   cet inventaire, et vérifier les composants/routes/tables/tests existants
+   avant tout ajout. Ne pas importer un second moteur depuis `marketplace-hub`.
 
 ---
 
@@ -263,11 +284,11 @@ ajustements pour qu'il ne fasse pas reculer le projet :
 | L3 | P0 | MonCash en production ; réconciliation toutes les 5 min (Pro ou cron externe) | **porteur** (dépense, variables) | L2 |
 | L4 | P0 | Première vente réelle de bout en bout + remboursement (`docs/22`) | porteur + agent | L3 |
 | L5 | P0 | 20 premiers vendeurs, fiches avec photos, KYC | **porteur** (terrain) | — |
-| L6 | P1 | Paiement unique du panier multi-vendeurs (`docs/27`, money-path) | agent | L4 |
+| L6 | P1 | Paiement groupé déjà construit : éprouver l'existant et vérifier migrations/ouverture selon `OPS_TODO`, sans second checkout | agent + porteur | État réel des migrations et gardes |
 | L7 | P1 | « Protection Zabelie » : libellé unique sur fiche, panier, checkout, confirmation, Mes achats (sans parler de compte ni de portefeuille) | agent ; formulation validée par le porteur | L2 |
 | L8 | P1 | Fiches physique et digital séparées et enrichies (vidéo, licence, formats, Q&A) | agent | L5 |
 | L9 | P1 | Homepage acheteur, modules masqués quand vides | agent ; **positionnement : porteur** | L5 |
-| L10 | P2 | Livraison (`DeliveryProvider`), Copilot vendeur, tableau de bord vendeur | agent | L4, L5 |
+| L10 | P2 | Copilot vendeur, tableau de bord vendeur, en réutilisant les briques présentes | agent | L4, L5 |
 | L11 | P2 | Diaspora complète (carte, devises d'affichage) | porteur (entité étrangère) puis agent | L3 |
 
 ## 6. Décisions demandées au porteur
@@ -279,3 +300,127 @@ ajustements pour qu'il ne fasse pas reculer le projet :
    (plan Vercel Pro ou cron externe gratuit).
 3. Valider l'ordre §5, en particulier : **plus de nouvelle fonctionnalité
    acheteur avant la première vente réelle**, hors L0, L1 et L7.
+
+## 7. Vérification ciblée du 5 octobre 2026
+
+**Périmètre.** Lecture du dépôt `Zabelie-Digi` au commit
+`35a9b4eea4c63d83c4d52584491a8f6533b3bbf1`, navigation publique sans compte
+ni paiement, et tests existants. Les données et le registre de migrations
+Supabase n'ont pas été interrogés dans ce passage. Les mesures de la base
+dans les sections précédentes conservent leur date ; une migration présente
+sur disque ne prouve pas son application.
+
+**Attribution de production.** `/api/deployment` répond 200 avec
+`d1a8f95c3917ade01221fb0d93dfa2992d19b1e5d2f7a857aaf438f15dd02733`,
+identique au SHA-256 du commit complet ci-dessus. Cette correspondance
+identifie le code publié, pas les secrets ni l'état de la base.
+
+**Constats publics.** L'accueil indique explicitement que Zabelie ne stocke
+ni ne livre les produits et que la remise se prépare avec le vendeur.
+MonCash reste annoncé en test, sans paiement réel. `/recharges` répond 200 ;
+`/zabely-pay` répond 404. À 390 × 844, `/recharges`, `/conditions`,
+`/confidentialite` et cette page 404 n'ont produit aucune erreur JavaScript
+de page ni débordement horizontal. Cela ne valide pas un paiement réel,
+tous les navigateurs ou les six largeurs du Master Prompt.
+
+**Légal encore incomplet.** Le rendu public contient quatre mentions
+« À COMPLÉTER » dans les conditions et une dans la confidentialité : entité
+juridique/adresse (dans les deux documents), capacité/âge, résiliation et
+droit/juridiction. Aucune valeur n'est inventée. Le dossier BRH reste ouvert ;
+J+7 et un registre comptable ne suffisent pas à conclure à la conformité.
+La [circulaire 121, §4.1](https://www.brh.ht/wp-content/uploads/Circulaire-121-FSP.pdf)
+prévoit l'autorisation ou l'avis de non-objection pour les activités relevant
+de son champ. La qualification du dispositif Zabelie nécessite les faits et
+l'avis juridique documentés dans `docs/17`.
+
+**Étape documentaire, avant l'implémentation §8 : 83 réussites, aucun échec.** Disponibilité des paiements,
+mode MonCash, panier groupé, fidélité désactivée, promesses vendeur/livraison,
+schémas API (dont refus de `platformFulfilled: true`), fermeture des recharges,
+CGU et i18n. Aucun second module, route, table, moteur financier ou test n'a
+été ajouté. `git diff --check` passe. Seuls les trois documents existants
+`CLAUDE.md`, `docs/26` et ce document sont amendés localement.
+
+**Défauts relevés avant l'implémentation §8 :**
+- **P1, retry du checkout** : `app/api/checkout/route.ts` insère une nouvelle
+  commande par POST (bloc `orders.insert`, lignes 507–531 au commit inspecté).
+  La clé de paiement basée sur `order.id` ne déduplique pas la répétition de
+  création. Définir et tester l'idempotence de l'opération de checkout ; ne
+  pas confondre idempotence de confirmation et de création.
+- **P1, rattrapage Stripe groupé** : `app/api/panier/payer/route.ts:210`
+  ignore l'erreur d'enregistrement de `stripe_session_id`, alors que
+  `lib/stripe-reconcile.ts:22` en dépend. Réutiliser le contrôle de persistance
+  déjà présent dans la branche Kobara et tester son échec avant redirection.
+- **P2, trace des accès digitaux** : `app/api/download/route.ts:104` ignore
+  l'erreur du journal d'accès. La clé unique compte une ouverture par
+  commande/version/fichier, pas chaque tentative ; elle ne doit pas être
+  présentée comme un historique exhaustif ou une limite de téléchargement.
+
+Ces constats sont statiques ; aucune exploitation, perte de paiement ou
+transaction réelle n'a été démontrée pendant cet audit. Aucune écriture
+de production, activation de rail, migration, dépense ou publication n'a
+été effectuée.
+
+## 8. Implémentation locale autorisée — 5 octobre 2026
+
+Instruction du porteur : « implémenté, tout en restant focus sur la loi
+haïtienne sur le ecommerce ». Ce lot corrige les trois défauts du §7 dans le
+checkout, le panier et le téléchargement existants. Aucun second checkout,
+rail, portefeuille acheteur, registre, transporteur ou objet SQL n'est créé.
+Les conditions commerciales, montants et activations restent ceux de l'existant.
+
+- **Création de commande** : le checkout public exige une `checkoutKey`
+  UUID v4. Le serveur dérive un identifiant de commande de cette clé et de
+  l'acheteur authentifié ; la clé primaire `orders.id` existante arbitre les
+  requêtes simultanées en base. Un rejeu ne crée pas de paiement, ne réserve
+  pas à nouveau le stock et ne relance pas l'opérateur. Il reprend une session
+  persistée si la commande et son paiement sont encore `pending`, sinon il
+  mène à la vérification des achats. Le contexte groupé reste exclusivement
+  serveur. Les deux clients du checkout transmettent la clé.
+- **Rechargement / réseau haïtien** : le brouillon existant conserve pendant
+  30 minutes dans le même onglet la clé et une empreinte SHA-256 de l'intention,
+  sans coordonnées du destinataire ni consentement en clair. Le bouton garde
+  un repli en mémoire si le stockage est indisponible. Une nouvelle clé est
+  une nouvelle tentative : cette garantie ne déduplique pas universellement
+  tous les achats d'un même produit. Une issue opérateur incertaine invite à
+  vérifier les achats, sans supposer qu'aucun paiement n'existe.
+- **Sessions opérateur** : `persistPaymentSession` dans `lib/payment-utils.ts`
+  est partagé par les deux checkouts et les trois rails existants. Une erreur,
+  une ligne absente ou une mauvaise commande interdit la redirection.
+  Stripe reçoit également l'idempotence `order.id`. Une reprise utilise
+  uniquement l'URL enregistrée côté serveur, en HTTPS et sur les hôtes des
+  opérateurs existants ; aucun lien fourni par l'acheteur n'est accepté.
+- **Accès digital** : le journal `zabelie_digital_accesses` existant doit
+  accepter la trace avant l'exposition de l'URL et la déclaration de remise.
+  Une panne produit 503 sans cache. L'unicité commande/version/fichier est
+  conservée ; aucun quota de téléchargement n'est inventé.
+- **Information contractuelle** : CGU et confidentialité corrigées en
+  français, kreyòl, anglais et espagnol. Le vendeur annonce et organise la
+  remise ; aucun transport ni frais de livraison Zabelie. Le registre est
+  décrit par ses capacités, sans transformer sa description en qualification
+  juridique. Les affirmations pénales non établies et l'application automatique
+  du RGPD selon la seule résidence sont retirées. Export, correction,
+  fermeture du compte et demandes de droits applicables restent décrits.
+
+**Sources primaires consultées** : [CONATEL, signature électronique et amendement
+2025](https://www.conatel.gouv.ht/signature-electronique),
+[communiqué CONATEL](https://www.conatel.gouv.ht/sites/default/files/NOTE%20DE%20PRESSE%20SIGNATURE%20ELECTRONIQUE%20OCTOBRE%202025.pdf),
+[BRH, circulaire 121](https://www.brh.ht/wp-content/uploads/Circulaire-121-FSP.pdf),
+[BRH, présentation des circulaires 121 et 131 (2026)](https://www.brh.ht/la-confiance-au-coeur-de-lecosysteme-des-paiements-numeriques-la-vision-de-la-brh-pour-une-protection-renforcee-des-consommateurs/),
+[MCI, carte d'identité professionnelle](https://mci.gouv.ht/cip.php).
+L'applicabilité d'une obligation à l'exploitant ou à chaque catégorie de vendeur
+doit être qualifiée ; aucune CIP n'est imposée automatiquement à tout particulier.
+
+**Limite juridique** : l'entité exploitante et son adresse ne sont pas
+renseignées ; les trois marqueurs CGU (capacité/âge, suspension/préavis,
+droit applicable/juridiction) restent visibles. Le dossier BRH `docs/17`
+reste ouvert, notamment sur les fonds marchands et leur rétention.
+L'implémentation ne certifie aucune conformité globale ou signature électronique
+certifiée, et ne remplace pas les décisions et la validation juridique manquantes.
+
+**Validation finale** : voir les résultats de ce lot dans `OPS_TODO.md`.
+Aucune écriture de données réelles, application de migration ou activation de
+rail n'est effectuée par ce lot. La publication du code est autorisée le
+5 octobre par « pousse et met le en ligne », après la validation locale.
+Le rejeu individuel lit la commande sans exiger `group_id` (0128 non appliquée),
+tout en conservant la garde groupe si la colonne existe. Un ancien client sans
+clé reçoit un message invitant à actualiser : aucun repli non dédupliqué.

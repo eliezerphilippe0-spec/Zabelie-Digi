@@ -1,4 +1,4 @@
-# Cahier des charges — Marketplace Zabelie (v3.2)
+# Cahier des charges — Marketplace Zabelie (v3.3)
 
 > **Nature.** Cahier des charges exécutable. Zabelie existe déjà : toute
 > construction **étend l'existant**, jamais ne le réécrit.
@@ -16,6 +16,10 @@
 >
 > **v3.2 (2026-08-08)** — versionnée au dépôt ; arbitrages **A** et **B**
 > tranchés par le porteur et intégrés.
+>
+> **v3.3 (2026-10-05)** — contraintes directes du porteur : aucune livraison
+> opérée par Zabelie, aucun service financier autonome Zabelie Pay, aucun doublon.
+> Le Master Prompt reçu complète ce contrat ; il ne crée pas un second PRD.
 
 ---
 
@@ -25,18 +29,37 @@
 inclus). Pas de Fastify, pas de Redis, pas de n8n, pas de nouveau framework.
 RLS multi-tenant dès la première migration.
 
+**Périmètre produit confirmé par le porteur (2026-10-05).**
+
+- **Marché principal : Haïti**, avec les parcours diaspora existants. Prioriser
+  mobile à faible bande passante, kreyòl/français et montants comptables en HTG.
+- **Zabelie ne fait pas de livraison** : ni flotte, ni entrepôt, ni contrat
+  transporteur. Le vendeur organise la remise, le retrait ou une livraison
+  indépendante et en déclare les conditions. Aucun module « Zabelie Livraison »,
+  moteur logistique propre, tarif de transport ou délai garanti par la plateforme.
+  Réutiliser le suivi de remise existant (`docs/21`) ; téléchargement digital et
+  prestation restent des modes de fulfillment distincts.
+- **Zabelie Pay comme service financier autonome est exclu du périmètre actuel**,
+  conformément à la consigne du porteur sur sa non-conformité pour le marché
+  haïtien. Ne pas construire ni lancer un portefeuille acheteur rechargeable,
+  du P2P, du cash-in/cash-out ou un nouvel instrument de paiement. Réutiliser
+  uniquement les rails de checkout et le registre comptable vendeur existants,
+  avec leurs gardes et leurs limites. Leur présence dans le code ne vaut ni
+  activation commerciale ni validation juridique ; la qualification de
+  l'encaissement et de la rétention reste ouverte dans `docs/17`.
+
 **Nommage.** Le projet s'appelle **Zabelie** (jamais « Zabely » dans l'UI ni
 le nouveau code). Les tables existantes utilisent le préfixe `zabelie_` ;
 toute nouvelle table le poursuit. Aucun renommage global, jamais.
 
-**Conformité BRH — Circulaire 121 (contrainte dure).**
+**Argent et qualification BRH — dossier ouvert (`docs/17`).**
 - Ledger financier append-only, protégé par trigger.
 - Aucun transfert P2P, aucun cash-in/cash-out.
-- **Maturation J+7 obligatoire** avant toute disponibilité de fonds vendeur
-  — vivante en production depuis `0006` (`mature_wallets`).
+- **Maturation J+7 : règle métier existante** avant toute disponibilité de fonds
+  vendeur (`0006`, `mature_wallets`), pas une preuve de conformité juridique.
 - **Payout : déclenchement automatique à maturité, règlement manuel**
-  (arbitrage A tranché — §10). Le déclenchement n'est pas discrétionnaire ;
-  c'est ce qui distingue un règlement d'une rétention.
+  (arbitrage A tranché — §10). Ce déclenchement décrit le fonctionnement
+  métier ; sa qualification juridique reste à établir dans `docs/17`.
 - Tout mécanisme de rétention **au-delà de J+7** : dormant tant que non
   validé par Cabinet Volmar.
 - `ZABELIE_TOPUP_FIRSTPARTY_ENABLED = false` : intermédiation pure.
@@ -52,6 +75,13 @@ toute nouvelle table le poursuit. Aucun renommage global, jamais.
   d'**absence** (« X n'existe pas ») ne se vérifient jamais de l'extérieur.
 
 **Ne pas reconstruire ce qui existe déjà :**
+Avant tout développement, identifier l'implémentation, ses appelants, sa route,
+ses tables et ses tests, puis l'étendre. Le dépôt de référence est
+`Zabelie-Digi` (Next.js/Supabase), pas l'ancien `marketplace-hub`.
+L'inventaire existant est `docs/67` ; la découverte déduplique par `products.id`
+avant découpage (`docs/decouverte-sans-doublons.md`). Deux offres de vendeurs
+distincts restent distinctes même si leurs titres sont identiques.
+
 - Référence de commande **`ZB-YYMMDD-XXXXX`** (Crockford base32, `0042`,
   contrainte SQL `^ZB-…`). Toute génération en `ZD-` violerait la base.
 - Machine à états fulfillment à **cinq états** (`awaiting_shipment →
@@ -166,12 +196,16 @@ vendeur sans complexifier l'expérience acheteur.
 
 ## 6. Checkout
 
-`Cart → Address → Delivery → Payment → Confirmation`, mobile-first.
+`Cart → Coordonnées si nécessaires → Conditions de remise vendeur → Payment → Confirmation`, mobile-first.
+La remise physique est organisée par le vendeur ; aucun service de livraison
+Zabelie ni supplément de transport plateforme n'est ajouté à ce parcours.
 
 1. **MonCash** — rail principal, triple vérification (montant à la création,
    propriété+montant à la vérification, miroir au webhook).
 2. **Zelle** — diaspora, confirmation manuelle admin.
-3. **NatCash** — optionnel, derrière la même interface.
+3. **NatCash** — via l'intégration Kobara existante, selon configuration et
+   prérequis documentés dans `docs/03` et `docs/58` ; ne pas reconstruire un
+   second rail direct.
 4. **Stripe** — l'intégration technique **existe**. Ne pas l'activer
    commercialement ni l'étendre sans entité étrangère *merchant of record*.
 

@@ -4,6 +4,7 @@ import { readOfflineListings, rememberListing, OFFLINE_MAX_AGE, OFFLINE_LIMIT } 
 import { parseCommitment, availabilityNeedsReview } from "../lib/product-commitments";
 import { marketplaceCopy } from "../lib/marketplace-copy";
 import { topupConfiguration } from "../lib/topup-availability";
+import { prepareCheckoutAttempt, clearCheckoutAttempt } from "../lib/use-session-draft";
 
 const now = Date.parse("2026-09-17T12:00:00Z");
 const listing = { slug: "lampe-solaire", title: "Lampe solaire", priceHTG: 1500 };
@@ -57,5 +58,37 @@ test("all four languages cover every new customer-facing label", () => {
   for (const lang of ["fr", "ht", "en", "es"] as const) {
     assert.deepEqual(Object.keys(marketplaceCopy(lang)).sort(), Object.keys(marketplaceCopy("fr")).sort());
     assert.ok(Object.values(marketplaceCopy(lang)).every(s => s.trim()));
+  }
+});
+
+test("checkout attempts survive reload in the same tab without storing purchase details", async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  } });
+  try {
+    const body = JSON.stringify({ recipient: "Marie Test", phone: "34123456", consent: true });
+    const key = await prepareCheckoutAttempt("attempt", body);
+    assert.equal(await prepareCheckoutAttempt("attempt", body), key);
+    assert.doesNotMatch(values.get("attempt")!, /Marie|34123456|recipient|consent/);
+    assert.notEqual(await prepareCheckoutAttempt("other-buyer", body), key);
+    assert.notEqual(await prepareCheckoutAttempt("attempt", body + "changed"), key);
+    clearCheckoutAttempt("attempt");
+    assert.equal(values.has("attempt"), false);
+    values.set("attempt", JSON.stringify({ at: Date.now() - 31 * 60_000, key, fingerprint: "stale" }));
+    assert.notEqual(await prepareCheckoutAttempt("attempt", body), key);
+    values.set("attempt", "invalid-json");
+    assert.match(await prepareCheckoutAttempt("attempt", body), /^[0-9a-f-]{36}$/);
+    Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: {
+      getItem: () => { throw new Error("Storage blocked"); },
+      setItem: () => { throw new Error("Storage blocked"); },
+    } });
+    assert.equal(await prepareCheckoutAttempt("attempt", body, key), key);
+  } finally {
+    if (original) Object.defineProperty(globalThis, "sessionStorage", original);
+    else Reflect.deleteProperty(globalThis, "sessionStorage");
   }
 });

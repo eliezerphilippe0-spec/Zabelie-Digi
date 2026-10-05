@@ -1,5 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 /**
- * Fonctions pures liées au paiement et au catalogue. Sans dépendance runtime,
+ * Fonctions liées au paiement et au catalogue. Sans dépendance runtime,
  * donc testables unitairement (voir tests/payment.test.ts).
  */
 
@@ -20,6 +22,25 @@ export function slugify(s: string): string {
  */
 export function paymentIdempotencyKey(orderId: string): string {
   return orderId;
+}
+
+/**
+ * Aucun checkout ne redirige avant d'avoir enregistré sa session opérateur.
+ * Une mise à jour sans ligne est un échec, même si PostgREST ne rend pas
+ * d'erreur : sans référence persistée, la réconciliation ne peut pas agir.
+ */
+export async function persistPaymentSession(
+  admin: SupabaseClient,
+  orderId: string,
+  raw: Record<string, unknown>
+): Promise<void> {
+  const { data: paiement, error } = await admin
+    .from("payments")
+    .update({ raw })
+    .eq("order_id", orderId)
+    .select("order_id")
+    .single();
+  if (error || paiement?.order_id !== orderId) throw new Error("Session de paiement non enregistree.");
 }
 
 /**

@@ -2,6 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { loadRoute, database } from "./helpers/route-harness";
+import { UUID_RE } from "../lib/digital-studio";
+import { isDownloadable, KIND_FILE } from "../lib/product-kind";
+import { DIGITAL_BUCKET } from "../lib/storage-buckets";
 
 /**
  * C1.5 de `docs/31` — LE CONNU-NÉGATIF DU TÉLÉCHARGEMENT.
@@ -49,4 +53,85 @@ test("D3 — l'authentification précède tout, et la signature d'URL suit tout"
 test("D4 — l'URL signée est courte et force le téléchargement", () => {
   assert.match(ROUTE, /createSignedUrl\(asset\.storage_path,\s*60 \* 5/, "5 minutes, pas plus");
   assert.match(ROUTE, /download: asset\.file_name/);
+});
+
+function downloadFixture(accessFailure?: "returned" | "thrown") {
+  const orderId = "00000000-0000-0000-0000-000000000001";
+  const releaseId = "00000000-0000-0000-0000-000000000002";
+  const assetId = "00000000-0000-0000-0000-000000000003";
+  const writes: string[] = [];
+  const db = database(query => {
+    if (query.table === "orders") {
+      if (query.steps.some(([method]) => method === "update")) {
+        writes.push("delivered");
+        return { error: null };
+      }
+      return { data: { id: orderId, buyer_id: "buyer", product_id: "product", status: "paid" }, error: null };
+    }
+    if (query.table === "products") return { data: { kind: KIND_FILE }, error: null };
+    if (query.table === "zabelie_digital_accesses") {
+      writes.push("access");
+      if (accessFailure === "thrown") throw new Error("private database detail");
+      // Supabase upsert does not return rows by default; an ignored duplicate
+      // also succeeds with data:null. Neither requires a second access row.
+      return { data: null, error: accessFailure === "returned" ? { message: "private database detail" } : null };
+    }
+    throw new Error("Unexpected table " + query.table);
+  });
+  const route = loadRoute(join(import.meta.dirname, "..", "app/api/download/route.ts"), {
+    "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "buyer" } } }) } }) },
+    "@/lib/supabase/admin": { createAdminClient: () => ({
+      ...db,
+      storage: { from: (bucket: string) => {
+        assert.equal(bucket, DIGITAL_BUCKET);
+        return { createSignedUrl: async () => ({ data: { signedUrl: "https://storage.test/private-signed-file" }, error: null }) };
+      } },
+    }) },
+    "@/lib/digital-file-security": { digitalFileIsClean: async () => true },
+    "@/lib/digital-studio-server": { resolveDigitalRelease: async () => ({ release: {
+      id: releaseId,
+      payload: { files: [{ id: assetId, storage_path: "seller/book.pdf", file_name: "book.pdf" }] },
+    } }) },
+    "@/lib/digital-studio": { UUID_RE },
+    "@/lib/product-kind": { isDownloadable },
+    "@/lib/storage-buckets": { DIGITAL_BUCKET },
+  });
+  return {
+    get: () => route.GET(new Request(`https://zabelie.test/api/download?orderId=${orderId}`)),
+    writes, db, orderId, releaseId, assetId,
+  };
+}
+
+for (const failure of ["returned", "thrown"] as const) {
+  test(`D5 — audit ${failure}: 503, aucun lien exposé ni remise déclarée`, async () => {
+    const fixture = downloadFixture(failure);
+    const response = await fixture.get();
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    const body = await response.json();
+    assert.equal(body.code, "download_access_unavailable");
+    assert.equal(body.url, undefined);
+    assert.doesNotMatch(JSON.stringify(body), /private database detail|private-signed-file/);
+    assert.deepEqual(fixture.writes, ["access"]);
+  });
+}
+
+test("D6 — accès persisté ou déjà connu: lien rendu et trace unique réutilisée avant la remise", async () => {
+  const fixture = downloadFixture();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await fixture.get();
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).url, "https://storage.test/private-signed-file");
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+  }
+  assert.deepEqual(fixture.writes, ["access", "delivered", "access", "delivered"]);
+  const accesses = fixture.db.queries.filter(q => q.table === "zabelie_digital_accesses");
+  assert.equal(accesses.length, 2);
+  for (const query of accesses) {
+    const args = query.steps.find(([method]) => method === "upsert")?.[1];
+    assert.equal(JSON.stringify(args), JSON.stringify([
+      { order_id: fixture.orderId, release_id: fixture.releaseId, asset_id: fixture.assetId },
+      { onConflict: "order_id,release_id,asset_id", ignoreDuplicates: true },
+    ]));
+  }
 });

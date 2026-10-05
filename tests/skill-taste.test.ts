@@ -32,6 +32,12 @@ const INSTALLES: Record<string, string> = {
 const DEBUT = "<!-- ═══";
 const FIN = "═══ -->\n";
 
+/** `.gitattributes` impose LF : comparer le contenu canonique, même si le
+ * checkout Windows a conservé CRLF. Aucun autre octet n'est normalisé. */
+function lireSkill(nom: string): string {
+  return readFileSync(join(SKILLS, nom, "SKILL.md"), "utf8").replace(/\r\n/g, "\n");
+}
+
 test("T0 — aucun skill n'est un lien symbolique, et aucun n'est là sans être listé", () => {
   const presents = readdirSync(SKILLS);
   for (const nom of presents) {
@@ -45,7 +51,7 @@ test("T0 — aucun skill n'est un lien symbolique, et aucun n'est là sans être
 });
 
 for (const [nom, empreinte] of Object.entries(INSTALLES)) {
-  const SKILL = readFileSync(join(SKILLS, nom, "SKILL.md"), "utf8");
+  const SKILL = lireSkill(nom);
 
   test(`T1 [${nom}] — frontmatter amont intact, nom d'installation présent`, () => {
     assert.match(SKILL, new RegExp(`^---\\nname: ${nom}\\n`), "le nom d'installation commande le chargement");
@@ -61,7 +67,7 @@ for (const [nom, empreinte] of Object.entries(INSTALLES)) {
     assert.match(bloc, /LE DÉPÔT GAGNE/, "la règle de précédence doit être écrite");
   });
 
-  test(`T3 [${nom}] — reconstitué sans le bloc, le fichier EST l'amont, octet pour octet`, () => {
+  test(`T3 [${nom}] — reconstitué sans le bloc, le fichier canonique LF EST l'amont, octet pour octet`, () => {
     const i = SKILL.indexOf(DEBUT);
     const j = SKILL.indexOf(FIN) + FIN.length;
     assert.ok(i > 0 && j > i);
@@ -75,12 +81,12 @@ for (const [nom, empreinte] of Object.entries(INSTALLES)) {
 }
 
 test("T4 — les points de précédence nomment ce qu'ils protègent", () => {
-  const principal = readFileSync(join(SKILLS, "design-taste-frontend/SKILL.md"), "utf8");
+  const principal = lireSkill("design-taste-frontend");
   const bloc = principal.slice(principal.indexOf(DEBUT), principal.indexOf(FIN));
   for (const ancre of ["app/zabelie-theme.css", "check:contrast", "lib/i18n.ts", "prefers-reduced-motion", "Higgsfield", "docs/25", "trust-first"]) {
     assert.ok(bloc.includes(ancre), `le bloc principal ne cite plus « ${ancre} »`);
   }
-  const redesign = readFileSync(join(SKILLS, "redesign-existing-projects/SKILL.md"), "utf8");
+  const redesign = lireSkill("redesign-existing-projects");
   const blocR = redesign.slice(redesign.indexOf(DEBUT), redesign.indexOf(FIN));
   // Le second skill s'appuie sur le premier et ajoute ses refus propres.
   assert.match(blocR, /design-taste-frontend\/SKILL\.md/, "le bloc redesign doit renvoyer aux huit points du bloc principal");

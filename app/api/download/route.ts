@@ -76,7 +76,7 @@ export async function GET(req: Request) {
   // Never substitute the mutable current file for the acquired snapshot.
   const asset = access?.release.payload.files.find(f => !assetId || f.id === assetId);
 
-  if (!asset) {
+  if (!access || !asset) {
     return NextResponse.json(
       { error: "Aucun fichier livrable pour ce produit." },
       { status: 404 }
@@ -100,9 +100,24 @@ export async function GET(req: Request) {
     );
   }
 
+  // Le journal existant compte les accès uniques, pas chaque tentative.
+  // Ne pas exposer le lien ni déclarer la remise sans cette trace persistée.
+  try {
+    const { error: accessError } = await admin.from("zabelie_digital_accesses").upsert(
+      { order_id: order.id, release_id: access.release.id, asset_id: asset.id },
+      { onConflict: "order_id,release_id,asset_id", ignoreDuplicates: true }
+    );
+    if (accessError) throw new Error("digital_access_record_failed");
+  } catch {
+    console.error("[download] digital_access_record_failed");
+    return NextResponse.json(
+      { error: t(await getLang(), "purchases.download.error"), code: "download_access_unavailable" },
+      { status: 503, headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
+
   // Marque la commande comme livrée (best-effort, idempotent).
   await admin.from("orders").update({ status: "delivered" }).eq("id", order.id).eq("buyer_id", user.id).eq("status", "paid");
-  if (access) await admin.from("zabelie_digital_accesses").upsert({ order_id: order.id, release_id: access.release.id, asset_id: asset.id }, { onConflict: "order_id,release_id,asset_id", ignoreDuplicates: true });
 
   return NextResponse.json({ url: signed.signedUrl }, { headers: { "Cache-Control": "private, no-store" } });
 }

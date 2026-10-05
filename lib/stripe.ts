@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { siteUrl } from "./site-url";
+import { paymentIdempotencyKey } from "./payment-utils";
 
 /**
  * Client Stripe — rail carte pour la diaspora (docs/03-PAIEMENTS.md, V-10).
@@ -33,6 +34,7 @@ export type StripeCheckoutInput = {
  * Crée une session Stripe Checkout. `metadata.order_id` = notre order.id
  * (clé de rapprochement, comme l'orderId MonCash). Le montant envoyé est
  * expected_usd_cents — la vérité serveur, jamais un montant client.
+ * La même clé de commande protège aussi les retries de création opérateur.
  */
 export async function createStripeCheckout({
   orderId,
@@ -60,7 +62,7 @@ export async function createStripeCheckout({
     // La page « en attente » couvre le délai webhook (souvent < 2 s).
     success_url: `${site}/paiement/en-attente?commande=${orderId}`,
     cancel_url: `${site}/paiement/echec?raison=annule`,
-  });
+  }, { idempotencyKey: paymentIdempotencyKey(orderId) });
 
   if (!session.url) throw new Error("Stripe: session sans URL de redirection.");
   return { redirectUrl: session.url, sessionId: session.id };

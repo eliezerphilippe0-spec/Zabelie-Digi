@@ -1,9 +1,9 @@
 "use client";
 import { normalizeRecipient, type RecipientInput, type RecipientLabels } from "@/lib/order-recipient";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { useSessionDraft } from "@/lib/use-session-draft";
+import { useSessionDraft, prepareCheckoutAttempt, clearCheckoutAttempt } from "@/lib/use-session-draft";
 import type { MarketplaceCopy } from "@/lib/marketplace-copy";
 import { useRouter } from "next/navigation";
 import { appelSession } from "@/lib/appel-session";
@@ -112,7 +112,7 @@ export function BuyButton({
   offerId?: string;
   recommendationSource?: string;
   draftScope?: string;
-  trustLabels?: Pick<MarketplaceCopy, "resume" | "draft" | "reconnect">;
+  trustLabels?: Pick<MarketplaceCopy, "resume" | "draft" | "reconnect" | "paymentReview">;
   options: BuyOption[];
   /** Variantes physiques. Absent = produit digital, parcours inchangé. */
   variants?: VariantChoice[];
@@ -141,6 +141,9 @@ export function BuyButton({
   const recipientValue = forSomeone ? normalizeRecipient(recipientInput) : null;
   const [loadingRail, setLoadingRail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const checkoutAttempt = useRef<{ intent: string; key: string } | null>(null);
+  const submitting = useRef(false);
+  const attemptStorageKey = `zabelie:checkout-attempt:${draftScope ?? "visitor"}:${productId}`;
   const [showCoupon, setShowCoupon] = useState(false);
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ percent: number; priceHtg: number } | null>(null);
@@ -213,13 +216,13 @@ export function BuyButton({
      sont désormais distinctes, et `reseau` ne couvre plus que le cas où la
      requête n'est jamais partie. */
   async function handleBuy(option: BuyOption) {
-    if (loadingRail || uncertain) return;
+    if (submitting.current || loadingRail || uncertain) return;
     if (!navigator.onLine) { setError(errors?.network ?? "Connexion impossible."); return; }
     if (recipient && forSomeone && !recipientValue) { setError(recipient.invalid); return; }
     setLoadingRail(cleOption(option));
     setError(null);
 
-    const issue = await appelSession<{ redirectUrl?: string }>("/api/checkout", {
+    const body = {
       productId, offerId, recommendationSource,
       rail: option.rail,
       // Passerelle Kobara : l'opérateur derrière le rail. Le serveur le
@@ -239,7 +242,23 @@ export function BuyButton({
       // restreinte. Le serveur relit le seuil en base et exige `true`.
       ageAttestation: ageMinimum ? ageAtteste : undefined,
       recipient: recipient && forSomeone ? recipientInput : undefined,
+    };
+    const intent = JSON.stringify(body);
+    submitting.current = true;
+    try {
+      const key = await prepareCheckoutAttempt(attemptStorageKey, intent,
+        checkoutAttempt.current?.intent === intent ? checkoutAttempt.current.key : undefined);
+      checkoutAttempt.current = { intent, key };
+    } catch {
+      submitting.current = false;
+      setLoadingRail(null);
+      setError(errors?.generic ?? "Une erreur est survenue.");
+      return;
+    }
+    const issue = await appelSession<{ redirectUrl?: string }>("/api/checkout", {
+      ...body, checkoutKey: checkoutAttempt.current.key,
     });
+    submitting.current = false;
 
     if (issue.etat === "connexion") {
       // Préserve le contexte : retour automatique sur la page produit
@@ -249,7 +268,11 @@ export function BuyButton({
     }
 
     if (issue.etat === "refus") {
-      if (issue.code === "coupon_invalid" && coupon) {
+      if (issue.code === "provider_unavailable") {
+        // An operator timeout may have created a session. Review the
+        // existing purchase instead of offering a second payment attempt.
+        setUncertain(true);
+      } else if (issue.code === "coupon_invalid" && coupon) {
         // Bilingue (i18n) + retour à l'état sans remise : l'acheteur
         // re-choisit en connaissance de cause, jamais de prix plein en douce.
         setApplied(null);
@@ -284,6 +307,7 @@ export function BuyButton({
       return;
     }
     clearDraft();
+    clearCheckoutAttempt(attemptStorageKey);
     if (destination.startsWith("/")) {
       router.push(destination);
     } else {
@@ -310,7 +334,7 @@ export function BuyButton({
 
   return (
     <div>
-      {uncertain && <p role="alert" className="mb-4 text-sm">{trustLabels?.reconnect}<Link href="/mes-achats" className="ml-2 inline-flex min-h-11 items-center underline">{trustLabels?.resume ?? "Mes achats"}</Link></p>}
+      {uncertain && <p role="alert" className="mb-4 text-sm">{trustLabels?.paymentReview ?? trustLabels?.reconnect}<Link href="/mes-achats" className="ml-2 inline-flex min-h-11 items-center underline">{trustLabels?.resume ?? "Mes achats"}</Link></p>}
       {recipient && <fieldset className="mb-5 rounded-xl border border-line p-4">
         <legend className="sr-only">{recipient.toggle}</legend>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={forSomeone} onChange={e => setForSomeone(e.target.checked)} disabled={busy}/>{recipient.toggle}</label>

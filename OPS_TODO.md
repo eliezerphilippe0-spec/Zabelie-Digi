@@ -1,5 +1,48 @@
 # OPS_TODO — Zabelie
 
+## Corrections e-commerce, périmètre haïtien — 5 octobre 2026
+
+Instruction « implémenté, tout en restant focus sur la loi haïtienne sur le
+ecommerce ». Lot local dans le checkout/panier/téléchargement existants :
+tentative de commande dédupliquée par la clé primaire, persistance commune
+des sessions des trois rails, rejeu Stripe idempotent, trace digitale obligatoire.
+Les quatre versions des CGU et de la confidentialité décrivent la remise vendeur,
+le registre comptable et l'absence de Pay autonome sans affirmer un agrément BRH.
+Inventaire et limites : `docs/67` §8 ; contrat unique : `docs/26` §0.
+
+**Validation terminée : 1 502 tests unitaires, zéro échec ; 24 tests navigateur
+ciblés, zéro échec ; build et TypeScript réussis ; lint sans erreur (10
+avertissements) ; diffcheck propre.** Les deux documents légaux sont parcourus
+dans les quatre langues à 360 px, avec refus des traceurs et accès par l'accordéon
+du pied de page. Les opérateurs sont simulés : aucun paiement réel n'est testé.
+Relecture indépendante terminée, sans bloqueur statique restant sur ce lot.
+
+Les défauts des sondes Windows (chemins et CRLF) sont corrigés dans les tests,
+sans modifier les composants ni les skills.
+`validation/` est exclu de TypeScript comme il l'était déjà d'ESLint : une
+ancienne copie locale de l'application empêchait la compilation.
+
+Instruments éprouvés : l'ancien checkout chargé en mémoire fait échouer huit
+des dix nouveaux cas ; le checkout corrigé passe les dix. Les mutants de
+persistance, journal d'accès, contenu de skill et donnée kreyòl manquante sont
+également détectés. Les premiers tests navigateur supposaient à tort des URL
+légales préfixées et un pied de page déjà déplié : corrigés pour parcourir les
+URL, le cookie de langue et l'accordéon existants, sans nouveau routage.
+
+Restent à renseigner/valider : identité légale, adresse et statut de l'exploitant,
+immatriculations applicables, capacité/âge, suspension/préavis, juridiction et
+qualification financière BRH. **Aucun de ces points n'est déclaré conforme.**
+Au stade de cette validation locale : aucune migration, activation, écriture
+de données réelles ou publication.
+
+**Publication autorisée le 5 octobre 2026** : instruction du porteur « pousse
+et met le en ligne ». Passage par la PR et ses contrôles CI, puis déploiement
+Vercel du code fusionné. La lecture d'une commande rejouée reste compatible
+avec le schéma sans 0128 ; les anciens clients sans clé reçoivent une invitation
+à actualiser, dans les quatre langues, sans création de commande.
+Le porteur prévoit le dépôt la semaine prochaine, avant le lancement : c'est
+une échéance annoncée, pas une immatriculation obtenue ni une validation BRH.
+
 ## Panier multi-vendeurs, un seul paiement — 5 octobre 2026
 
 Demande porteur (« Passe au panier multi vendeurs »). Arbitrages du 2026-10-04 :
