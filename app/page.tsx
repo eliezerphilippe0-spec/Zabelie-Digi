@@ -18,6 +18,7 @@ import { whatsappHref } from "@/lib/whatsapp";
 import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { t, tn } from "@/lib/i18n";
 import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
@@ -26,12 +27,12 @@ import { allocateHomeRows, classesRangee, rangeeVisible, vendeursAffichables } f
 
 export const dynamic = "force-dynamic";
 
-// Canonique explicite (metadataBase : lib/site-url). PAS de hreflang : la
-// langue vit dans un cookie, toutes les langues partagent la même URL — un
-// hreflang qui pointe quatre fois sur la même adresse est un signal faux.
-export const metadata = {
-  alternates: { canonical: "/" },
-};
+// Canonique et hreflang RÉELS depuis que la langue a son URL (`/ht`, `/fr` —
+// lib/langue-url.ts). Avant, la langue ne vivait que dans un cookie et un
+// hreflang aurait pointé quatre fois sur la même adresse : un signal faux.
+export async function generateMetadata() {
+  return metaLangue("/", await getLang());
+}
 
 /**
  * PHOTO DE LA BANNIÈRE — fournie par le porteur, jamais générée (brief §8.8).

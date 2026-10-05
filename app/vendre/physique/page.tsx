@@ -7,6 +7,7 @@ import { PhysicalProductForm } from "@/components/physical-product-form";
 import { getCurrentUser } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { t } from "@/lib/i18n";
 import { ROUNDING_IN_FORCE } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
@@ -17,12 +18,16 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-export const metadata = {
+const META = {
   title: "Vendre un produit — Zabelie",
   description:
     "Créez la fiche d'un produit réel sur Zabelie : photos, prix et description. La fiche reste en brouillon, puis elle est examinée avant sa publication.",
-  alternates: { canonical: "/vendre/physique" },
 };
+
+// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+export async function generateMetadata() {
+  return { ...META, ...metaLangue("/vendre/physique", await getLang()) };
+}
 
 /**
  * Chantier B — création d'un produit PHYSIQUE.

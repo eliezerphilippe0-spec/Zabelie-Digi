@@ -6,8 +6,11 @@ import { configPublique } from "@/lib/supabase/config";
  * Rafraîchit la session Supabase à chaque requête (pattern SSR officiel).
  * No-op si Supabase n'est pas configuré (démo sans base).
  */
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+export async function updateSession(request: NextRequest, reecriture?: URL) {
+  // `reecriture` : l'adresse servie quand l'URL publique en diffère (`/ht/…`,
+  // lib/langue-url.ts). Les cookies de session sont posés sur la même réponse.
+  const suite = () => (reecriture ? NextResponse.rewrite(reecriture, { request }) : NextResponse.next({ request }));
+  let response = suite();
 
   // Même lecture centralisée que les trois autres clients. Le NO-OP est
   // préservé — et ÉLARGI en connaissance : absente OU invalide, le middleware
@@ -36,7 +39,7 @@ export async function updateSession(request: NextRequest) {
       ) {
         // Forward refreshed cookies to this render as well as to the browser.
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        response = suite();
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );

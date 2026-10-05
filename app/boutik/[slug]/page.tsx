@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCreatorBySlug } from "@/lib/creators";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { BoutiqueVue } from "@/components/boutique-vue";
 import { slugValide } from "@/lib/boutik-slug";
 
@@ -27,6 +28,7 @@ export async function generateMetadata({
   const creator = slugValide(slug) ? await getCreatorBySlug(slug) : null;
   return {
     title: creator ? `${creator.displayName} — Zabelie` : "Boutik — Zabelie",
+    ...(creator ? metaLangue(`/boutik/${slug}`, await getLang()) : {}),
   };
 }
 

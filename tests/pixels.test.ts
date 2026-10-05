@@ -40,7 +40,7 @@ test("X3 — périmètre : seules les pages d'un vendeur ; la CSP ne s'ouvre qu'
   const directive = (p: string, n: string) => p.split("; ").find((x) => x.startsWith(n + " "))!;
   for (const n of ["img-src", "connect-src"]) for (const d of DOMAINES_REGIES) assert.ok(directive(ouverte, n).includes(d), `${n} sans ${d}`);
   assert.equal(directive(ouverte, "script-src"), directive(fermee, "script-src"), "script-src ne doit jamais s'ouvrir aux régies");
-  assert.match(readFileSync("proxy.ts", "utf8"), /contentSecurityPolicy\(nonce, [^)]*\{ publicite: cheminPublicitaire\(request\.nextUrl\.pathname\) \}\)/);
+  assert.match(readFileSync("proxy.ts", "utf8"), /contentSecurityPolicy\(nonce, [^)]*\{ publicite: cheminPublicitaire\(localise\?\.base \?\? request\.nextUrl\.pathname\) \}\)/);
 });
 
 /** Faux navigateur minimal. */

@@ -8,6 +8,7 @@ import { getBoutikSlug } from "@/lib/creators";
 import { hrefBoutique } from "@/lib/boutique-href";
 import { getMenuRayons } from "@/lib/taxonomy";
 import { siteUrl } from "@/lib/site-url";
+import { LANGS_INDEXEES, cheminLocalise, estCheminLocalisable } from "@/lib/langue-url";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
   const products = await getProductsForSitemap().catch(() => []);
 
+  /* UNE ENTRÉE PAR LANGUE INDEXÉE (`/ht/…`, `/fr/…` — lib/langue-url.ts),
+   * chacune avec ses alternates. Une page qui n'a pas d'adresse par langue
+   * (`/createur/<id>` d'un vendeur sans slug) garde son entrée unique. */
+  type Frequence = MetadataRoute.Sitemap[number]["changeFrequency"];
+  const declinaisons = (chemin: string, priority: number, changeFrequency: Frequence = "weekly"): MetadataRoute.Sitemap => {
+    if (!estCheminLocalisable(chemin.split("?")[0])) return [{ url: `${base}${chemin}`, changeFrequency, priority }];
+    const languages = {
+      ht: `${base}${cheminLocalise(chemin, "ht")}`,
+      fr: `${base}${cheminLocalise(chemin, "fr")}`,
+      "x-default": `${base}${cheminLocalise(chemin, "fr")}`,
+    };
+    return LANGS_INDEXEES.map((lang) => ({ url: `${base}${cheminLocalise(chemin, lang)}`, changeFrequency, priority, alternates: { languages } }));
+  };
+
   const staticRoutes: MetadataRoute.Sitemap = [
-    "",
+    "/",
     "/catalogue",
     "/categories",
     "/catalogue?univers=objets",
@@ -34,21 +49,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!path.startsWith("/catalogue")) return true;
     const universe = catalogueUniverse(new URL(path, base).searchParams.get("univers"));
     return universe ? products.some((p) => p.kind === CATALOGUE_UNIVERSES[universe].kind) : products.length > 0;
-  }).map((path) => ({
-    url: `${base}${path}`,
-    changeFrequency: "weekly",
-    priority: path === "" ? 1 : 0.7,
-  }));
+  }).flatMap((path) => declinaisons(path, path === "/" ? 1 : 0.7));
 
   // Correctif audit : un incident Supabase transitoire ne doit pas faire
   // échouer le sitemap entier (500 sur chaque crawl) — les routes statiques
   // restent utiles même sans les routes produit/créateur ce coup-ci.
 
-  const productRoutes: MetadataRoute.Sitemap = products.map((p) => ({
-    url: `${base}/produit/${p.slug}`,
-    changeFrequency: "weekly",
-    priority: 0.8,
-  }));
+  const productRoutes: MetadataRoute.Sitemap = products.flatMap((p) => declinaisons(`/produit/${p.slug}`, 0.8));
 
   const creatorIds = Array.from(
     new Set(products.map((p) => p.creatorId).filter((id): id is string => !!id))
@@ -75,19 +82,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const creators = await Promise.all(
     creatorIds.map(async (id) => ({ id, boutikSlug: await getBoutikSlug(id) }))
   );
-  const creatorRoutes: MetadataRoute.Sitemap = creators.map((c) => ({
-    url: `${base}${hrefBoutique(c)}`,
-    changeFrequency: "weekly",
-    priority: 0.6,
-  }));
+  const creatorRoutes: MetadataRoute.Sitemap = creators.flatMap((c) => declinaisons(hrefBoutique(c), 0.6));
 
   // Only stocked departments belong in the discovery sitemap. No invented lastModified dates.
   const rayons = await getMenuRayons("fr").catch(() => []);
-  const rayonRoutes: MetadataRoute.Sitemap = rayons.filter((r) => !r.vide).map((r) => ({
-    url: `${base}${r.href}`,
-    changeFrequency: "weekly",
-    priority: 0.6,
-  }));
+  const rayonRoutes: MetadataRoute.Sitemap = rayons.filter((r) => !r.vide).flatMap((r) => declinaisons(r.href, 0.6));
 
   const guideRoutes: MetadataRoute.Sitemap = LANGS.flatMap((lang) => [undefined, ...BUYING_GUIDES.map((guide) => guide.slug)].map((slug) => ({
     url: `${base}${guideHref(lang, slug)}`,

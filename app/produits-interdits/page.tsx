@@ -1,15 +1,20 @@
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
+import { metaLangue } from "@/lib/langue-url";
 import { t, type Lang } from "@/lib/i18n";
 import { POLICY_VERSION } from "@/lib/policy";
 
-export const metadata = {
+const META = {
   title: "Ce qui ne peut pas être vendu — Zabelie",
   description:
     "Les règles de Zabelie sur ce qui ne peut pas être vendu : contrefaçons, armes et autres produits interdits. En publiant une fiche, le vendeur les accepte.",
-  alternates: { canonical: "/produits-interdits" },
 };
+
+// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+export async function generateMetadata() {
+  return { ...META, ...metaLangue("/produits-interdits", await getLang()) };
+}
 
 /**
  * Politique « produits interdits » (lot R1).

@@ -4,6 +4,7 @@ import { useEffect, useRef, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { editorialLanguagePath, editorialLangFromPath } from "@/lib/editorial-routing";
 import { guideLanguagePath, guideLangFromPath } from "@/lib/guide-routing";
+import { cheminPourLangue } from "@/lib/langue-url";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 
 /**
@@ -129,7 +130,7 @@ export function LangToggle({
     closeMenu(menuRef.current, true);
     if (lang === current || isPending) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
-    const guidePath = guideLanguagePath(pathname, lang) ?? (editorialLangFromPath(pathname) ? editorialLanguagePath(pathname, lang) : null);
+    const guidePath = guideLanguagePath(pathname, lang) ?? (editorialLangFromPath(pathname) ? editorialLanguagePath(pathname, lang) : null) ?? cheminPourLangue(pathname, lang);
     if (compact && guidePath) {
       try { sessionStorage.setItem(LANGUAGE_FOCUS_KEY, guidePath); } catch { /* La navigation reste disponible sans stockage. */ }
     }
