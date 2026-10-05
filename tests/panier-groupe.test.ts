@@ -35,13 +35,14 @@ function monter(f: Fixture = {}) {
   const appels: { ctx: ContexteGroupe | null; corps: Record<string, unknown> }[] = [];
   const operateur: unknown[][] = [];
   const db = database((q: Query) => {
-    if (q.table === "zabelie_panier_config") return { data: { paiement_groupe: f.drapeau ?? true, max_articles: 10 }, error: null };
+    if (q.table === "zabelie_panier_config") return { data: { max_articles: 10 }, error: null };
     if (q.table === "zabelie_coupons") return { data: f.coupons ?? [], error: null };
     return { data: null, error: null };
   });
   const admin = {
     ...db,
     rpc: async (nom: string, args: Record<string, unknown>) => {
+      if (nom === "zabelie_panier_groupe_ouvert") return { data: f.drapeau ?? true, error: null };
       rpc.push({ nom, args });
       if (nom === "zabelie_group_create") return { data: "G1", error: null };
       if (nom === "zabelie_group_seal") return { data: f.scelle ?? { leader_order_id: "o-p1", total_htg: 4000, expected_usd_cents: null }, error: null };
@@ -92,7 +93,7 @@ function monter(f: Fixture = {}) {
   return { payer, rpc, appels, operateur };
 }
 
-test("PG1 — drapeau baissé : 409, aucun groupe ouvert, aucun article commandé", async () => {
+test("PG1 — fermé (ni drapeau, ni première vente réelle) : 409, aucun groupe ouvert, aucun article commandé", async () => {
   const m = monter({ drapeau: false });
   const res = await m.payer();
   assert.equal(res.status, 409);
@@ -218,4 +219,11 @@ test("PG10 — après confirmation, la meneuse entraîne les autres commandes (s
     const src = readFileSync(fichier, "utf8");
     assert.match(src, new RegExp(`for \\(const autre of await autresCommandesDuGroupe\\(admin, orderId\\)\\) \\{\\s*await ${une}\\(admin, autre`), fichier);
   }
+});
+
+test("PG11 — la page panier pose à la base la MÊME question que la route avant d'afficher le bouton", () => {
+  const page = readFileSync("app/panier/page.tsx", "utf8");
+  assert.match(page, /const \[\{ data: ouvert, error: e1 \}, \{ data, error: e2 \}\] = await Promise\.all\(\[\s*admin\.rpc\("zabelie_panier_groupe_ouvert"\)/);
+  assert.match(page, /if \(e1 \|\| e2 \|\| !data \|\| ouvert !== true\) return null;/);
+  assert.match(page, /config !== null &&\s*items\.length <= config\.max_articles/);
 });

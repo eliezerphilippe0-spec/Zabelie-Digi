@@ -10,7 +10,7 @@ select zabelie_migration_garde('0129_zabelie_objets_requis_panier.sql');
 -- pour soi.
 --
 -- Copie EXACTE de la définition de `0125` (appliquée, donc intouchable), plus
--- les quatre fonctions, les deux tables et le trigger du paiement groupé.
+-- les cinq fonctions, les deux tables et le trigger du paiement groupé.
 create or replace function zabelie_objets_requis()
 returns table (objet text, present boolean, pourquoi text)
 language sql
@@ -137,6 +137,8 @@ as $$
        'la décision admin : absente, aucun domaine ne peut être activé ni refusé'),
       ('zabelie_domaine_boutik(text)',
        'hôte vers boutique, lu à chaque visite d''un domaine vendeur : absente, tous les domaines actifs répondent 404'),
+      ('zabelie_panier_groupe_ouvert()',
+       'dit si le panier groupé est ouvert — drapeau ou première vente réelle (0128) : absente, « payer tout le panier » reste fermé pour toujours'),
       ('zabelie_group_create(uuid,payment_rail)',
        'ouvre un paiement groupé du panier (0128) : absente, « payer tout le panier » échoue en 409'),
       ('zabelie_group_seal(uuid)',

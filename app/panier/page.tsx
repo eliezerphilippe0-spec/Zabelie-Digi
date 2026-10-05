@@ -226,11 +226,13 @@ export default async function PanierPage() {
 
 async function lirePanierConfig(): Promise<{ max_articles: number } | null> {
   try {
-    const { data, error } = await createAdminClient()
-      .from("zabelie_panier_config")
-      .select("paiement_groupe, max_articles")
-      .maybeSingle();
-    if (error || !data || data.paiement_groupe !== true) return null;
+    const admin = createAdminClient();
+    // Même question que la route : la base décide (0128).
+    const [{ data: ouvert, error: e1 }, { data, error: e2 }] = await Promise.all([
+      admin.rpc("zabelie_panier_groupe_ouvert"),
+      admin.from("zabelie_panier_config").select("max_articles").maybeSingle(),
+    ]);
+    if (e1 || e2 || !data || ouvert !== true) return null;
     return { max_articles: data.max_articles };
   } catch {
     return null;
