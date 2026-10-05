@@ -10,8 +10,9 @@
 > décrivent les appelants présents, pas des virements observés. Les relevés
 > historiques des sections 7 à 9 ne valent pas confirmation opérateur actuelle.
 >
-> ⚠️ **Gel décidé** : aucune construction nouvelle sur ce mécanisme tant que
-> l'avis écrit n'est pas rendu.
+> **Périmètre conservé** : aucun nouveau rail ni Pay autonome avant qualification.
+> Les corrections des mécanismes existants sont autorisées par le porteur le
+> 5 octobre 2026 ; elles ne constituent pas l'avis juridique attendu.
 
 ---
 
@@ -20,8 +21,10 @@
 1. Le code dirige le prix final d'une commande vers le compte marchand MonCash
    associé aux identifiants serveur. Le titulaire juridique, les conditions
    signées et le mode réellement autorisé doivent être documentés par le porteur.
-2. La plateforme conserve sa commission (10 % standard / 6 % Elite) et inscrit
-   le solde net du vendeur comme **écriture comptable** dans une table
+2. La commission applicable provient de la configuration et de l'instantané
+   de commande, jamais d'un taux supposé par ce dossier. Le paiement groupé
+   conserve la décision de zéro frais plateforme. Le solde net du vendeur
+   est inscrit comme **écriture comptable** dans une table
    `wallets`, colonne `pending_htg`.
 3. La disponibilité comptable exige **J+7** et, pour les produits physiques et
    services, la remise confirmée selon le mécanisme existant. Elle ne prouve
