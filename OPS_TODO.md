@@ -34,6 +34,9 @@ ont aussi été éprouvées sur les versions défectueuses chargées en mémoire
 Les 22 tests navigateur ciblés passent sur le build final : reprise,
 rechargement, clés conservées, conflits et attente dans les quatre langues
 à 360 px, avec un contrôle à 1 440 px. Les opérateurs et données sont simulés.
+Les cinq parcours collections/destinataire passent également. Leur panne
+API est répétée deux fois sur le même serveur fictif : le journal reste
+isolé par tentative, sans suppression, seconde préparation ou session.
 La CI reste la porte pour PostgreSQL 17, les courses KYC entre sessions et
 le scanner Linux. Elle précède toute application de `0130` et fusion.
 Empreinte canonique de `0130` :
