@@ -1,5 +1,40 @@
 # OPS_TODO — Zabelie
 
+## Panier multi-vendeurs, un seul paiement — 5 octobre 2026
+
+Demande porteur (« Passe au panier multi vendeurs »). Arbitrages du 2026-10-04 :
+- construit maintenant, mais **désactivé** ;
+- MonCash, NatCash (Kobara) et Stripe ensemble, Zelle plus tard ;
+- **zéro frais plateforme** ;
+- un code promo ne vaut que pour les articles de son vendeur.
+
+Code fusionné : PR #318 (`e5651263`) et PR #319 (`c2c4ffaf`). **En ligne, 55 contrôles sur 55 :** la route `/api/panier/payer` refuse sans session, et le bouton est absent. Le code fonctionne SANS les migrations, et c'est voulu : panier article par article comme avant, route en 409 « fermé ».
+
+⛔ **`0128` et `0129` NE SONT PAS APPLIQUÉES.** `apply_migration` (MCP Supabase) a expiré **trois fois** les 2026-10-04 et 2026-10-05 :
+- deux fois sur 0128 d'un seul tenant (41,7 Ko) ;
+- une fois sur 0128 scindée (20 Ko, PR #319).
+
+Après chaque tentative, on a vérifié qu'il n'y avait aucun objet créé, aucune ligne au journal des migrations, aucune trace au journal Postgres, aucun verrou et aucune session active : **rien n'a atteint la base**, et rien n'est à moitié appliqué. La taille n'était donc pas la cause, contrairement à ma première hypothèse. Je me suis arrêté à trois tentatives plutôt que de m'acharner sur un outil d'écriture en production qui dysfonctionne.
+
+À faire :
+1. **Réessayer `0128` puis `0129` par MCP** quand l'outil répond. Les empreintes attendues :
+
+   | Fichier | sha256 brut | Empreinte canonique |
+   |---|---|---|
+   | `0128` | `3d0133a7…` | `3d2ad33a…` |
+   | `0129` | `c800b9f5…` | `1799a1d1…` |
+
+   Suivre la méthode habituelle : SQL reçu croisé avec le fichier, puis ligne au registre `journal_supabase`.
+2. ⚠️ Repli par l'éditeur SQL Supabase : possible, mais la preuve tombe en `sonde_schema` (le SQL exact n'est pas journalisé). C'est à éviter si l'outil revient.
+3. **Lever le drapeau** (`update zabelie_panier_config set paiement_groupe = true`) : **décision porteur**, après une première vente réelle (`docs/22`). Ce n'est pas une commande que je propose de passer moi-même.
+
+Preuves avant fusion :
+- SQL G1 à G10, mutations tuées, dont le trigger d'échec de meneuse et le vidage du panier ;
+- route PG1 à PG10, 13 mutations TS sur 13 tuées ;
+- 1464 tests unitaires, 58 e2e `physique`, CI verte.
+
+J'ai aussi corrigé un défaut de mon outil de mutation SQL : un mutant mal nommé passait sans avoir été chargé.
+
 ## Fichiers d'identité orphelins corrigés — 4 octobre 2026
 
 ✅ **`0127` APPLIQUÉE le 2026-10-04 à 21:54:08Z** (version `20261004215408`), instruction « Corrige les fichiers orphelins » + autorisation permanente du 2026-08-17. SQL reçu identique au fichier (sha256 brut `dc4ab75f…` des deux côtés), empreinte canonique `1c079e53…`, inscrite au registre (`journal_supabase`). Constaté : `zabelie_kyc_documents_user_id_fkey` en RESTRICT, 0 pièce stockée. PR #315 fusionnée : un compte qui a des pièces d'identité est anonymisé, jamais supprimé ; la politique §7 l'annonce. En ligne : 52 contrôles sur 52. Limite connue : un dossier KYC encore en attente au moment de la fermeture n'est purgé qu'après une décision admin.
