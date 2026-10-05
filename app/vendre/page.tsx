@@ -1,3 +1,4 @@
+import { requireLegalAccountPage } from "@/lib/auth";
 import { formatHTG } from "@/lib/sample-data";
 import { ProductOffersEditor } from "@/components/product-offers-editor";
 import { sellerOffers } from "@/lib/product-offers-server";
@@ -273,6 +274,7 @@ export default async function VendrePage() {
     product_assets: { id: string; file_name: string; size_bytes: number }[];
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
+  await requireLegalAccountPage(user.id, "/vendre");
   const related = mine.length ? await sellerOffers(supabase, user.id) : null;
   const offerText = offerCopy(lang);
   const commitments = await getProductCommitments(mine.filter(p => p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL).map(p => p.id));

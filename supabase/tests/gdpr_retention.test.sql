@@ -9,7 +9,8 @@
 begin;
 
 insert into auth.users (id, email)
-  values ('00000000-0000-0000-0000-0000000000e1', 'seller@test.local');
+  values ('00000000-0000-0000-0000-0000000000e1', 'seller@test.local'),
+         ('00000000-0000-0000-0000-0000000000e2', 'buyer@test.local');
 
 -- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
 -- veulent piloter la ligne eux-mêmes (rôle, tier) et éprouver le chemin
@@ -18,7 +19,8 @@ insert into auth.users (id, email)
 -- chose.
 delete from profiles where id in (select id from auth.users);
 insert into profiles (id, role, display_name)
-  values ('00000000-0000-0000-0000-0000000000e1', 'creator', 'Vendeur');
+  values ('00000000-0000-0000-0000-0000000000e1', 'creator', 'Vendeur'),
+         ('00000000-0000-0000-0000-0000000000e2', 'buyer', 'Acheteur');
 insert into products (id, seller_id, slug, title, kind, price_htg, status)
   values ('00000000-0000-0000-0000-0000000000c1',
           '00000000-0000-0000-0000-0000000000e1',
@@ -26,10 +28,10 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
 
 -- Helper local : crée order + payment avec un raw non nul.
 insert into orders (id, buyer_id, product_id, amount_htg, status) values
-  ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000e1','00000000-0000-0000-0000-0000000000c1',100,'paid'),
-  ('00000000-0000-0000-0000-0000000000d2','00000000-0000-0000-0000-0000000000e1','00000000-0000-0000-0000-0000000000c1',100,'paid'),
-  ('00000000-0000-0000-0000-0000000000d3','00000000-0000-0000-0000-0000000000e1','00000000-0000-0000-0000-0000000000c1',100,'pending'),
-  ('00000000-0000-0000-0000-0000000000d4','00000000-0000-0000-0000-0000000000e1','00000000-0000-0000-0000-0000000000c1',100,'disputed');
+  ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000e2','00000000-0000-0000-0000-0000000000c1',100,'paid'),
+  ('00000000-0000-0000-0000-0000000000d2','00000000-0000-0000-0000-0000000000e2','00000000-0000-0000-0000-0000000000c1',100,'paid'),
+  ('00000000-0000-0000-0000-0000000000d3','00000000-0000-0000-0000-0000000000e2','00000000-0000-0000-0000-0000000000c1',100,'pending'),
+  ('00000000-0000-0000-0000-0000000000d4','00000000-0000-0000-0000-0000000000e2','00000000-0000-0000-0000-0000000000c1',100,'disputed');
 
 -- p1 : confirmé, ANCIEN (100 j) → raw doit être purgé.
 insert into payments (order_id, rail, idempotency_key, status, raw, confirmed_at)
@@ -62,6 +64,9 @@ begin
     'p3 (pending) : raw ne doit PAS être purgé';
   assert (select raw from payments where idempotency_key = 'k4') is null,
     'p4 (failed ancien) : raw aurait dû être purgé';
+  assert (select count(*) from payments
+    where idempotency_key in ('k1','k2','k3','k4') and zabelie_original_method = 'moncash') = 4,
+    'La purge du payload ne doit pas effacer le moyen d''origine non personnel';
 
   -- Rejeu : idempotent (0 ligne à purger la 2e fois).
   select purge_payment_raw(90) into v_purged;

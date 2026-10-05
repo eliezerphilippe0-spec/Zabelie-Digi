@@ -246,17 +246,15 @@ test("le pied de page ne porte plus de libellé légal en dur", () => {
 
 
 test("la durée de conservation des pièces d'identité publiée est celle que la purge applique", () => {
-  /* La purge (`zabelie_kyc_docs_expires`, 0079) lit `zabelie_kyc_config.
-   * retention_jours`. La DERNIÈRE migration qui fixe cette valeur — défaut de
-   * 0079 ou `update` ultérieur — fait foi. */
+  // 0131 replaces the old day setting with calendar years after closure.
   const dossier = "supabase/migrations";
-  let jours: number | null = null;
+  let annees: number | null = null;
   for (const f of readdirSync(dossier).filter((x) => x.endsWith(".sql")).sort()) {
     const sql = readFileSync(`${dossier}/${f}`, "utf8");
-    for (const m of sql.matchAll(/retention_jours\s+(?:integer not null default|=)\s+(\d+)/g)) jours = Number(m[1]);
+    for (const m of sql.matchAll(/retention_annees\s*=\s*(\d+)/g)) annees = Number(m[1]);
   }
-  assert.equal(jours, 1825, "le réglage de conservation KYC a changé : relire la politique §9");
-  const annonce = { fr: "**5 ans** après la décision", ht: "**5 an** apre desizyon an", en: "**5 years** after the decision", es: "**5 años** tras la decisión" } as const;
+  assert.equal(annees, 5, "le réglage de conservation KYC a changé : relire la politique §9");
+  const annonce = { fr: "**5 ans** après la fermeture du compte", ht: "**5 an** apre kont lan fèmen", en: "**5 years** after account closure", es: "**5 años** tras el cierre de la cuenta" } as const;
   for (const lang of LANGS) {
     const texte = POLITIQUE[lang].sections.flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul))).join("\n");
     assert.ok(texte.includes(annonce[lang]), `${lang} : la politique n'annonce pas ${annonce[lang]}`);
@@ -274,7 +272,7 @@ test("la région d'hébergement mesurée est nommée dans les quatre langues, sa
 test("l'effacement annonce que les pièces d'identité survivent à la fermeture du compte (0127)", () => {
   // La route anonymise tout compte qui a des pièces ; la politique doit le dire.
   const route = readFileSync("app/api/account/route.ts", "utf8");
-  assert.match(route, /if \(purchases\.count === 0 && sales\.count === 0 && kyc\.count === 0\) \{/);
+  assert.match(route, /if \(purchases\.count === 0 && sales\.count === 0 && kyc\.count === 0 && acceptances\.count === 0\) \{/);
   const renvoi = { fr: "jusqu'au terme prévu au **§9**", ht: "jiska dat ki prevwa nan **§9**", en: "until the term set in **§9**", es: "hasta el plazo previsto en el **§9**" } as const;
   for (const lang of LANGS) {
     const texte = POLITIQUE[lang].sections.flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul))).join("\n");

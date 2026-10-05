@@ -28,8 +28,8 @@ export function RefundReceiptForm({orderId}:{orderId:string}){
  if(!r.ok)throw new Error("unconfirmed");form.reset();setNotice("Référence enregistrée.");router.refresh();
  }catch{setNotice("Référence non enregistrée. Vérifiez la date et le statut de la commande.");}finally{setBusy(false);}}
  return <details className="mt-3 text-sm"><summary className="min-h-11 cursor-pointer">Enregistrer le retour effectif des fonds</summary><form onSubmit={submit} className="mt-3 space-y-3">
- <p className="text-xs text-mist">Ce formulaire ne transfère aucun argent. Vérifiez le justificatif opérateur ou la remise en espèces avant de confirmer.</p>
- <label className="block">Moyen utilisé<select name="method" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2">{["moncash","natcash","stripe","zelle","bank","cash"].map(m=><option key={m} value={m}>{m}</option>)}</select></label>
+ <p className="text-xs text-mist">Ce formulaire ne transfère aucun argent. Vérifiez le justificatif du retour sur le moyen de paiement d’origine avant de confirmer.</p>
+ <label className="block">Moyen d’origine<select name="method" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2">{["moncash","natcash","stripe","zelle"].map(m=><option key={m} value={m}>{m}</option>)}</select></label>
  <label className="block">Référence opérateur ou reçu<input name="reference" required minLength={5} maxLength={120} className="mt-1 min-h-11 w-full rounded-xl border border-line bg-surface p-2"/></label>
  <label className="block">Date du retour des fonds<input name="date" type="date" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2"/></label>
  <label className="flex min-h-11 items-center gap-3"><input name="confirm" type="checkbox" required/>J’ai vérifié le justificatif du retour des fonds.</label>

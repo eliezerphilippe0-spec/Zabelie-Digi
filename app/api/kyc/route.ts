@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   if (!user) {
     return erreurTraduite("api.auth.required", 401);
   }
-  const accountRefusal = await requireActiveAccount(user.id);
+  const accountRefusal = await requireActiveAccount(user.id, { legalAcceptance: true });
   if (accountRefusal) return accountRefusal;
 
   let form: FormData;

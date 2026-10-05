@@ -159,6 +159,7 @@ export default async function AdminPage({
 }: {
   searchParams?: Promise<{ ref?: string; zelle?: string; topup?: string }>;
 }) {
+  const lang = await getLang();
   // Recherche par numéro de commande (0042). Normalisation en MAJUSCULES :
   // l'écriture est toujours en majuscules, la recherche accepte les deux
   // casses — un numéro dicté au téléphone se retape n'importe comment.
@@ -546,7 +547,14 @@ export default async function AdminPage({
                     </p>
                   </div>
                   {(o.status === "paid" || o.status === "delivered") && (
-                    <AdminRefundButton orderId={o.id} />
+                    <AdminRefundButton orderId={o.id} labels={{
+                      button: t(lang, "admin.refund.button"),
+                      confirm: t(lang, "admin.refund.confirm"),
+                      error: t(lang, "admin.refund.error"),
+                      connection: t(lang, "admin.refund.connection"),
+                      notice: t(lang, "admin.refund.notice"),
+                      operations: t(lang, "admin.refund.operations"),
+                    }} />
                   )}
                 </li>
               );

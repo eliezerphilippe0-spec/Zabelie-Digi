@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { PhysicalProductForm } from "@/components/physical-product-form";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
@@ -50,6 +50,7 @@ export default async function VendrePhysiquePage() {
   }
 
   const user = await getCurrentUser();
+  if (user) await requireLegalAccountPage(user.id, "/vendre/physique");
   const pricingClient = await createClient();
   const pricing = await readSellerPricing(pricingClient);
   const launch = user && pricing ? await readSellerLaunch(pricingClient, user.id, pricing, user.createdAt) : null;

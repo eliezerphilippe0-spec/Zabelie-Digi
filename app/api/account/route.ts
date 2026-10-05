@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic";
  * JAMAIS supprimé entièrement : il est anonymisé, comme un vendeur qui a
  * vendu. Supprimer le profil effaçait en cascade les lignes
  * `zabelie_kyc_documents` mais PAS les fichiers du bucket privé — orphelins,
- * hors de toute purge. Et la politique promet « 5 ans après la décision »
- * (0126) : c'est la purge planifiée qui les retire, pas la fermeture du
+ * hors de toute purge. La politique promet cinq années calendaires après
+ * fermeture (0131) : c'est la purge planifiée qui les retire, pas la fermeture du
  * compte. `0127` interdit en base la suppression d'un profil qui a des
  * pièces, quel que soit le chemin. */
 export async function DELETE() {
@@ -26,14 +26,17 @@ export async function DELETE() {
   if (identityError || !user) return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   const admin = createAdminClient();
 
-  const [purchases, sales, kyc] = await Promise.all([
+  const [purchases, sales, kyc, acceptances] = await Promise.all([
     admin.from("orders").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
     admin.from("orders").select("id,products!inner(seller_id)", { count: "exact", head: true }).eq("products.seller_id", user.id),
     admin.from("zabelie_kyc_documents").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    // 0046 is append-only, including its profile FK cascade. Keep the receipt
+    // while closing and scrubbing identity rather than attempting deletion.
+    admin.from("zabelie_policy_acceptances").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
-  if (purchases.error || sales.error || kyc.error) return unavailable();
-  if (typeof purchases.count !== "number" || typeof sales.count !== "number" || typeof kyc.count !== "number") return unavailable();
-  if (purchases.count === 0 && sales.count === 0 && kyc.count === 0) {
+  if (purchases.error || sales.error || kyc.error || acceptances.error) return unavailable();
+  if (typeof purchases.count !== "number" || typeof sales.count !== "number" || typeof kyc.count !== "number" || typeof acceptances.count !== "number") return unavailable();
+  if (purchases.count === 0 && sales.count === 0 && kyc.count === 0 && acceptances.count === 0) {
     const { error } = await admin.auth.admin.deleteUser(user.id);
     if (error) return unavailable(); // Includes a concurrent order: retry rechecks history.
     await supabase.auth.signOut({ scope: "global" });
@@ -55,11 +58,10 @@ export async function DELETE() {
   }).eq("id", user.id).select("id").maybeSingle();
   if (scrubError || !closed) return unavailable();
 
-  /* DOSSIER D'IDENTITÉ EN ATTENTE (2026-10-04). La purge des pièces compte
-   * depuis la DÉCISION (`zabelie_kyc_docs_expires`) : un dossier resté
-   * `pending` à la fermeture ne serait jamais décidé, donc jamais purgé. On le
-   * clôt ici, motif explicite, ce qui lance le délai de conservation annoncé
-   * (5 ans, 0126). Idempotent : un nouvel essai ne retrouve plus de `pending`. */
+  /* Clore aussi le dossier en attente, sans présenter cette décision comme
+   * le début de la conservation. 0131 lit le marqueur account_closed du
+   * profil et conserve sa première date lors d'un réessai. Cette décision
+   * reste un fait administratif explicite, indépendant de la purge. */
   const { error: kycError } = await admin.from("zabelie_kyc_submissions").update({
     status: "rejected",
     decided_at: new Date().toISOString(),

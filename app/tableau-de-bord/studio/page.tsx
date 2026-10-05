@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { StudioGenerator, type StudioProduit } from "@/components/studio-generator";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { studioProvider } from "@/lib/studio-server";
 import { CONFIG_TABLE } from "@/lib/creative/studio";
@@ -26,6 +26,7 @@ export default async function StudioPage() {
   if (!studioProvider()) notFound();
   const user = await getCurrentUser();
   if (!user) redirect("/connexion");
+  await requireLegalAccountPage(user.id, "/tableau-de-bord/studio");
 
   const lang = await getLang();
   const admin = createAdminClient();

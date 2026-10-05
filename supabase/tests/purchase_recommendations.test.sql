@@ -49,11 +49,14 @@ begin
   insert into payments(order_id,idempotency_key,status,confirmed_at) values(ord,ord::text,'confirmed',now()-interval '2 days');
  end loop;
  if exists(select 1 from zabelie_product_recommendations(src,null) where target_product_id=b) then raise exception 'achats repetes gonflent le seuil'; end if;
+ -- Anciennes auto-ventes antérieures au garde 0132 : elles restent exclues des recommandations.
+ alter table orders disable trigger zabelie_order_seller_guard;
  for target in select unnest(array[src,b]) loop
   insert into orders(buyer_id,product_id,amount_htg,status,zabelie_payment_is_live)
   values(seller,target,500,'paid',true) returning id into ord;
   insert into payments(order_id,idempotency_key,status,confirmed_at) values(ord,ord::text,'confirmed',now()-interval '2 days');
  end loop;
+ alter table orders enable trigger zabelie_order_seller_guard;
  if exists(select 1 from zabelie_product_recommendations(src,null) where target_product_id=b) then raise exception 'auto achat vendeur utilise'; end if;
  update orders set status='paid',zabelie_payment_is_live=false where id=b_order;
  if exists(select 1 from zabelie_product_recommendations(src,null) where target_product_id=b) then raise exception 'sandbox utilise'; end if;

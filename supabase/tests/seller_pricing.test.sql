@@ -54,8 +54,10 @@ begin
  if (select commission_htg from platform_earnings where order_id=oid)<>0 then raise exception 'free sale charged'; end if;
  oid:=pg_temp.pricing_order(1000,'direct',false);
  if (select commission_htg from platform_earnings where order_id=oid)<>166 then raise exception 'sandbox fee mismatch'; end if;
- oid:=pg_temp.pricing_order(1000,'direct',true,'10000000-0000-4000-8000-000000000001');
- if (select launch_discount_htg from zabelie_order_pricing where order_id=oid)<>0 then raise exception 'self purchase bonus'; end if;
+ begin
+   perform pg_temp.pricing_order(1000,'direct',true,'10000000-0000-4000-8000-000000000001');
+   raise exception 'self purchase accepted';
+ exception when sqlstate 'ZB132' then null; end;
  oid:=pg_temp.pricing_order(1000,'direct',true,'10000000-0000-4000-8000-000000000002',false);
  perform confirm_payment(oid::text,'mismatch','{}',999,null);
  if (select used_sales from zabelie_seller_launch where seller_id='10000000-0000-4000-8000-000000000001')<>0 then raise exception 'free/sandbox/self/failed consumed bonus'; end if;

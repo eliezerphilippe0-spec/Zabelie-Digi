@@ -25,12 +25,14 @@ export async function GET() {
   }
 
   const admin = createAdminClient();
-  const [profile, products, orders, wallet] = await Promise.all([
+  const [profile, products, orders, wallet, acceptances] = await Promise.all([
     admin.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     admin.from("products").select("*").eq("seller_id", user.id),
     admin.from("orders").select("*").eq("buyer_id", user.id),
     admin.from("wallets").select("*").eq("owner_id", user.id).maybeSingle(),
+    admin.from("zabelie_policy_acceptances").select("policy_version,accepted_at").eq("user_id", user.id).order("accepted_at"),
   ]);
+  if (acceptances.error || !acceptances.data) return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
 
   let collections;
   try { collections = await exportCollections(supabase, user.id); }
@@ -43,6 +45,7 @@ export async function GET() {
     products_as_seller: products.data ?? [],
     orders_as_buyer: orders.data ?? [],
     wallet: wallet.data ?? null,
+    legal_acknowledgements: acceptances.data,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {

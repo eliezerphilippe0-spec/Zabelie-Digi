@@ -2,7 +2,7 @@ import type { Lang } from "./i18n";
 import type { Politique } from "./policy-privacy";
 
 /**
- * LES CONDITIONS D'UTILISATION, EN QUATRE LANGUES — GABARIT.
+ * LES CONDITIONS D'UTILISATION, EN QUATRE LANGUES — PROJET CONTRACTUEL.
  *
  * Même architecture que `lib/policy-privacy.ts`, et pour les mêmes raisons :
  * un DOCUMENT typé, pas cinquante clés plates — le type impose la même
@@ -10,16 +10,16 @@ import type { Politique } from "./policy-privacy";
  * la compilation ou le test de parité, jamais silencieusement.
  *
  * ─── CE QUE CE MODULE EST, ET N'EST PAS ─────────────────────────────────────
- * C'est un GABARIT : la structure attendue d'une marketplace avec règlement vendeur,
+ * C'est un projet contractuel : la structure d'une marketplace avec règlement vendeur,
  * remplie avec les SEULS termes déjà tranchés par le porteur (maturation J+7,
  * commission au barème en vigueur, remboursement vers le moyen d'origine,
  * produits interdits, pas de cash à la livraison — `docs/26`, `docs/22`,
- * `CLAUDE.md`). Tout point exigeant un arbitrage JURIDIQUE porte un marqueur
- * `[À COMPLÉTER : …]` explicite — droit applicable, résiliation, âge
- * minimum. **Trois marqueurs par langue, comptés et FIGÉS par
- * `tests/conditions-utilisation.test.ts`** : un marqueur en plus rougit
- * (on n'ouvre pas un blanc sans témoin), un marqueur rempli rougit aussi
- * (remplir un blanc est une décision porteur, le test force à la consigner).
+ * `CLAUDE.md`). Les trois dernières clauses ont été rédigées le 2026-10-05
+ * sur instruction du porteur « implémenter tous, n'attend pas le lancement » :
+ * capacité selon les règles applicables, suspension motivée avec recours par
+ * le contact existant, droit haïtien sous réserve des règles impératives.
+ * Aucun âge chiffré, délai de préavis, tribunal exclusif ou notification
+ * automatique n'est inventé. Les tests gardent ces réserves en quatre langues.
  *
  * ⚖️ Le quatrième, la fenêtre de litige (§10), a été rédigé le 2026-10-02 par
  * l'agent, sur mandat du porteur (« Je rédige, vous validez »), d'après le
@@ -28,17 +28,16 @@ import type { Politique } from "./policy-privacy";
  * et ne décrit pas l'exécution du remboursement (D-12). À VALIDER par le
  * porteur et son conseil, comme le reste du gabarit.
  *
- * La page vide vaut mieux que la page inventée : ces marqueurs sont EN LIGNE,
- * visibles — exactement comme les blancs de la politique de confidentialité,
- * et c'est voulu. La clôture est la relecture du conseil juridique, adossée
- * au jalon « avant la première commande réelle » (`OPS_TODO`).
+ * L'identité/adresse reste non renseignée dans le module canonique ci-dessous.
+ * Rédiger les clauses n'atteste ni immatriculation, ni agrément, ni conformité
+ * globale. La validation juridique reste à obtenir avant encaissement réel.
  *
  * `{entite}` et `{email}` sont résolus par le `resoudre` de
  * `lib/policy-privacy.ts` — l'objet `IDENTITE` n'est PAS dupliqué ici : les
  * remplir là-bas les remplit sur les deux documents. Ce jour-là, c'est le
  * cliquet de la CONFIDENTIALITÉ (`champsManquants`) qui rougira — pas
- * celui-ci : les trois marqueurs d'ici sont d'AUTRES blancs, juridiques,
- * comptés dans le texte SOURCE, qu'`IDENTITE` ne touche pas. Deux comptes
+ * celui-ci : les marqueurs contractuels sont comptés dans le texte SOURCE,
+ * qu'`IDENTITE` ne touche pas. Deux comptes
  * orthogonaux, deux décisions distinctes.
  *
  * Les versions kreyòl, anglaise et espagnole sont des traductions de l'agent,
@@ -56,7 +55,7 @@ const fr: Politique = {
           p: "Les présentes conditions régissent l'utilisation de la marketplace Zabelie, exploitée par **{entite}**. En créant un compte ou en passant une commande, vous les acceptez. Si vous n'acceptez pas ces conditions, n'utilisez pas le service.",
         },
         {
-          p: "[À COMPLÉTER : âge minimum et capacité juridique requis pour utiliser le service]",
+          p: "Pour créer un compte et conclure une vente ou un achat, vous devez avoir la capacité juridique nécessaire selon les règles qui vous sont applicables. Si vous agissez pour une entreprise ou pour un tiers, vous devez être habilité à l'engager. N'utilisez pas le service pour conclure un contrat que vous n'avez pas la capacité ou le pouvoir de conclure.",
         },
       ],
     },
@@ -89,6 +88,7 @@ const fr: Politique = {
           ul: [
             "Ne publier que des produits que vous avez le droit de vendre — la liste de ce qui ne peut pas être vendu est publiée sur la page *produits interdits* et fait partie des présentes conditions.",
             "Décrire honnêtement le produit ou la prestation (prix, état, contenu, compatibilité, délais) et annoncer les conditions de remise avant la commande.",
+            "Si vous exercez une activité commerciale, satisfaire aux formalités qui vous sont applicables en Haïti, notamment l'immatriculation, la carte d'identité professionnelle (CIP) et les autorisations liées à votre activité. Vous êtes responsable de vos déclarations et obligations fiscales ; un compte Zabelie ne remplace aucune formalité administrative.",
             "Honorer la remise annoncée : remettre le produit physique en main propre ou organiser son transport par un tiers, rendre la prestation, fournir un fichier téléchargeable conforme.",
           ],
         },
@@ -202,7 +202,7 @@ const fr: Politique = {
           p: "Vous pouvez supprimer votre compte à tout moment depuis votre tableau de bord. Les obligations nées avant la résiliation (commandes en cours, règlements, obligations légales) survivent à la fermeture du compte.",
         },
         {
-          p: "[À COMPLÉTER : conditions et préavis de résiliation ou de suspension à l'initiative de la plateforme]",
+          p: "Zabelie peut retirer une offre ou suspendre l'accès au compte en cas de violation de ces conditions, de contenu interdit, de fraude suspectée ou de risque pour la sécurité. Une mesure conservatoire peut être immédiate lorsque la protection des utilisateurs ou le respect d'une obligation légale l'exige ; aucun délai de préavis uniforme n'est garanti. La suspension est enregistrée avec son motif et peut être levée après examen. Vous pouvez demander ce motif et contester la mesure à **{email}**, y compris sans accès au compte. La suspension n'efface ni vos droits sur les sommes dues ni les obligations liées aux commandes antérieures.",
         },
       ],
     },
@@ -210,7 +210,7 @@ const fr: Politique = {
       titre: "14. Droit applicable",
       blocs: [
         {
-          p: "[À COMPLÉTER : droit applicable et juridiction compétente]",
+          p: "Les présentes conditions sont régies par le droit haïtien, sous réserve des dispositions impératives applicables à votre situation, notamment pour un acheteur situé hors d'Haïti. Vous pouvez contacter **{email}** pour rechercher une solution amiable ; cette démarche est facultative et ne vous prive pas d'un recours. À défaut d'accord, le litige relève des juridictions compétentes selon les règles applicables. Aucune compétence territoriale exclusive ni renonciation aux droits impératifs du consommateur n'est imposée par ces conditions.",
         },
       ],
     },
@@ -234,7 +234,7 @@ const ht: Politique = {
           p: "Kondisyon sa yo gouvène itilizasyon mache Zabelie a, ke **{entite}** ap opere. Lè ou kreye yon kont oswa ou pase yon kòmand, ou aksepte yo. Si ou pa dakò ak kondisyon sa yo, pa itilize sèvis la.",
         },
         {
-          p: "[POU KONPLETE : laj minimòm ak kapasite jiridik ki nesesè pou itilize sèvis la]",
+          p: "Pou kreye yon kont epi fè yon kontra vann oswa achte, ou dwe gen kapasite jiridik ki nesesè dapre règ ki aplikab pou ou. Si ou aji pou yon antrepriz oswa pou yon lòt moun, ou dwe gen otorizasyon pou angaje li. Pa itilize sèvis la pou fè yon kontra ou pa gen kapasite oswa otorizasyon pou fè.",
         },
       ],
     },
@@ -267,6 +267,7 @@ const ht: Politique = {
           ul: [
             "Pibliye sèlman pwodwi ou gen dwa vann — lis sa ou pa gen dwa vann lan pibliye sou paj *pwodwi entèdi* a epi li fè pati kondisyon sa yo.",
             "Dekri pwodwi a oswa prestasyon an onètman (pri, eta, kontni, konpatibilite, delè) epi anonse kondisyon remiz la anvan kòmand lan.",
+            "Si ou fè yon aktivite komèsyal, ranpli fòmalite ki aplikab pou ou ann Ayiti, sitou enskripsyon, kat idantite pwofesyonèl (CIP) ak otorizasyon pou aktivite ou. Ou responsab deklarasyon ak obligasyon fiskal ou ; yon kont Zabelie pa ranplase okenn fòmalite administratif.",
             "Onore remiz ou anonse a : remèt pwodwi fizik la men nan men oswa òganize transpò li ak yon lòt prestatè, rann prestasyon an, bay yon fichye ki konfòm.",
           ],
         },
@@ -380,7 +381,7 @@ const ht: Politique = {
           p: "Ou ka efase kont ou nenpòt lè nan tablo ou. Obligasyon ki te fèt anvan fèmti a (kòmand an kou, règleman, obligasyon legal) rete valab apre kont lan fèmen.",
         },
         {
-          p: "[POU KONPLETE : kondisyon ak preavi pou platfòm lan sispann oswa fèmen yon kont]",
+          p: "Zabelie ka retire yon òf oswa sispann aksè nan kont lan si kondisyon sa yo pa respekte, si gen kontni entèdi, sispisyon fwod oswa risk pou sekirite. Yon mezi pwoteksyon ka pran touswit lè pwoteksyon itilizatè yo oswa yon obligasyon legal mande sa ; pa gen yon sèl delè preavi garanti. Yo anrejistre sispansyon an ak rezon li, epi yo ka leve li apre egzamen. Ou ka mande rezon an epi konteste mezi a nan **{email}**, menm si ou pa gen aksè nan kont lan. Sispansyon an pa efase dwa ou sou lajan yo dwe ou ni obligasyon ki soti nan kòmand anvan yo.",
         },
       ],
     },
@@ -388,7 +389,7 @@ const ht: Politique = {
       titre: "14. Lwa ki aplikab",
       blocs: [
         {
-          p: "[POU KONPLETE : lwa ki aplikab ak tribinal ki konpetan]",
+          p: "Se lwa ayisyen ki gouvène kondisyon sa yo, san yo pa retire dispozisyon obligatwa ki aplikab pou sitiyasyon ou, sitou pou yon achtè ki deyò Ayiti. Ou ka kontakte **{email}** pou chèche yon antant ; demach sa a pa obligatwa epi li pa retire dwa ou pou fè yon rekou. Si pa gen antant, se tribinal ki konpetan dapre règ aplikab yo ki ka trete litij la. Kondisyon sa yo pa enpoze yon sèl kote pou tribinal la ni yo pa fè konsomatè a renonse ak dwa obligatwa li yo.",
         },
       ],
     },
@@ -412,7 +413,7 @@ const en: Politique = {
           p: "These terms govern the use of the Zabelie marketplace, operated by **{entite}**. By creating an account or placing an order, you accept them. If you do not accept these terms, do not use the service.",
         },
         {
-          p: "[TO BE COMPLETED: minimum age and legal capacity required to use the service]",
+          p: "To create an account and enter into a sale or purchase, you must have the necessary legal capacity under the rules applicable to you. If you act for a business or another person, you must be authorised to bind them. Do not use the service to enter into a contract you lack the capacity or authority to make.",
         },
       ],
     },
@@ -445,6 +446,7 @@ const en: Politique = {
           ul: [
             "Only publish products you have the right to sell — the list of what cannot be sold is published on the *prohibited products* page and forms part of these terms.",
             "Describe the product or service honestly (price, condition, content, compatibility, timelines) and state the handover conditions before the order.",
+            "If you carry on a commercial activity, fulfil the formalities applicable to you in Haiti, including registration, the professional identity card (CIP) and authorisations for your activity. You are responsible for your tax declarations and obligations; a Zabelie account does not replace any administrative formality.",
             "Honour the stated handover: hand over the physical product in person or arrange its transport with a third party, perform the service, provide a conforming downloadable file.",
           ],
         },
@@ -558,7 +560,7 @@ const en: Politique = {
           p: "You may delete your account at any time from your dashboard. Obligations arising before termination (pending orders, settlements, legal obligations) survive the closure of the account.",
         },
         {
-          p: "[TO BE COMPLETED: conditions and notice for platform-initiated suspension or termination]",
+          p: "Zabelie may remove an offer or suspend account access for a breach of these terms, prohibited content, suspected fraud or a security risk. A protective measure may take effect immediately when user protection or a legal obligation requires it; no uniform notice period is guaranteed. The suspension and its reason are recorded, and it may be lifted after review. You may request the reason and challenge the measure at **{email}**, including without access to the account. Suspension does not extinguish your rights to sums owed or obligations arising from earlier orders.",
         },
       ],
     },
@@ -566,7 +568,7 @@ const en: Politique = {
       titre: "14. Governing law",
       blocs: [
         {
-          p: "[TO BE COMPLETED: governing law and competent jurisdiction]",
+          p: "These terms are governed by Haitian law, subject to mandatory provisions applicable to your situation, including for a buyer outside Haiti. You may contact **{email}** to seek an amicable solution; this step is optional and does not deprive you of a remedy. Without an agreement, disputes fall within the jurisdiction of the courts competent under the applicable rules. These terms impose neither exclusive territorial jurisdiction nor a waiver of mandatory consumer rights.",
         },
       ],
     },
@@ -590,7 +592,7 @@ const es: Politique = {
           p: "Las presentes condiciones rigen el uso del mercado Zabelie, operado por **{entite}**. Al crear una cuenta o realizar un pedido, usted las acepta. Si no acepta estas condiciones, no utilice el servicio.",
         },
         {
-          p: "[POR COMPLETAR: edad mínima y capacidad jurídica necesarias para utilizar el servicio]",
+          p: "Para crear una cuenta y celebrar una venta o compra, debe tener la capacidad jurídica necesaria conforme a las normas que le sean aplicables. Si actúa por una empresa o por otra persona, debe estar autorizado para obligarla. No utilice el servicio para celebrar un contrato para el que carezca de capacidad o autorización.",
         },
       ],
     },
@@ -623,6 +625,7 @@ const es: Politique = {
           ul: [
             "Publicar únicamente productos que tenga derecho a vender — la lista de lo que no puede venderse está publicada en la página de *productos prohibidos* y forma parte de estas condiciones.",
             "Describir honestamente el producto o la prestación (precio, estado, contenido, compatibilidad, plazos) e indicar las condiciones de entrega antes del pedido.",
+            "Si ejerce una actividad comercial, cumplir las formalidades que le sean aplicables en Haití, en particular la inscripción, la tarjeta de identidad profesional (CIP) y las autorizaciones de su actividad. Es responsable de sus declaraciones y obligaciones fiscales; una cuenta Zabelie no sustituye ninguna formalidad administrativa.",
             "Cumplir la entrega anunciada: entregar el producto físico en persona u organizar su transporte mediante un tercero, realizar la prestación, facilitar un archivo descargable conforme.",
           ],
         },
@@ -736,7 +739,7 @@ const es: Politique = {
           p: "Puede eliminar su cuenta en cualquier momento desde su panel. Las obligaciones nacidas antes de la terminación (pedidos en curso, liquidaciones, obligaciones legales) sobreviven al cierre de la cuenta.",
         },
         {
-          p: "[POR COMPLETAR: condiciones y preaviso de suspensión o terminación a iniciativa de la plataforma]",
+          p: "Zabelie puede retirar una oferta o suspender el acceso a la cuenta por incumplimiento de estas condiciones, contenido prohibido, sospecha de fraude o un riesgo de seguridad. Una medida de protección puede ser inmediata cuando la protección de los usuarios o una obligación legal lo requiera; no se garantiza un plazo de preaviso uniforme. La suspensión y su motivo quedan registrados, y puede levantarse tras su revisión. Puede solicitar el motivo e impugnar la medida en **{email}**, incluso sin acceso a la cuenta. La suspensión no extingue sus derechos sobre los importes debidos ni las obligaciones de pedidos anteriores.",
         },
       ],
     },
@@ -744,7 +747,7 @@ const es: Politique = {
       titre: "14. Derecho aplicable",
       blocs: [
         {
-          p: "[POR COMPLETAR: derecho aplicable y jurisdicción competente]",
+          p: "Estas condiciones se rigen por el derecho haitiano, sin perjuicio de las disposiciones imperativas aplicables a su situación, incluso para un comprador situado fuera de Haití. Puede contactar con **{email}** para buscar una solución amistosa; este trámite es opcional y no le priva de un recurso. A falta de acuerdo, los litigios corresponden a los tribunales competentes según las normas aplicables. Estas condiciones no imponen una competencia territorial exclusiva ni una renuncia a los derechos imperativos del consumidor.",
         },
       ],
     },

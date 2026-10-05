@@ -7,6 +7,8 @@ import { reconcilePayments, type ReconcileDeps } from "@/lib/reconcile";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Le bail de 600 s doit survivre au worker, y compris après un changement de plan.
+export const maxDuration = 300;
 
 /**
  * Réconciliateur : pour chaque paiement encore 'pending', interroge MonCash

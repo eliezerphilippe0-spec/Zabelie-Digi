@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
-  const accountRefusal = await requireActiveAccount(user.id);
+  const accountRefusal = await requireActiveAccount(user.id, { legalAcceptance: true });
   if (accountRefusal) return accountRefusal;
 
   let body: {

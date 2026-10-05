@@ -24,7 +24,8 @@ begin;
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000001', 'seller@test.local'),
   ('00000000-0000-0000-0000-000000000002', 'elite@test.local'),
-  ('00000000-0000-0000-0000-000000000003', 'diaspora@test.local')
+  ('00000000-0000-0000-0000-000000000003', 'diaspora@test.local'),
+  ('00000000-0000-0000-0000-000000000004', 'buyer@test.local')
   on conflict do nothing;
 
 -- 0045 : le profil est désormais créé en base à l'inscription. Ces tests
@@ -36,7 +37,8 @@ delete from profiles where id in (select id from auth.users);
 insert into profiles (id, role, display_name, tier) values
   ('00000000-0000-0000-0000-000000000001', 'creator', 'Vendeur Standard', 'standard'),
   ('00000000-0000-0000-0000-000000000002', 'creator', 'Vendeur Elite', 'elite'),
-  ('00000000-0000-0000-0000-000000000003', 'creator', 'Vendeur Diaspora', 'standard');
+  ('00000000-0000-0000-0000-000000000003', 'creator', 'Vendeur Diaspora', 'standard'),
+  ('00000000-0000-0000-0000-000000000004', 'buyer', 'Acheteur', 'standard');
 
 -- ════════════════════ Scénario A : idempotence + commission 10 % ════════════════════
 insert into products (id, seller_id, slug, title, kind, price_htg, status)
@@ -45,7 +47,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-a', 'Produit A', 'fichier', 2500, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b1',
-          '00000000-0000-0000-0000-000000000001',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a1', 2500, 'pending');
 insert into payments (order_id, rail, idempotency_key, status)
   values ('00000000-0000-0000-0000-0000000000b1', 'moncash',
@@ -63,7 +65,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-b', 'Produit B', 'fichier', 4000, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b2',
-          '00000000-0000-0000-0000-000000000001',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a2', 4000, 'pending');
 insert into payments (order_id, rail, idempotency_key, status)
   values ('00000000-0000-0000-0000-0000000000b2', 'moncash',
@@ -79,7 +81,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-c', 'Produit C', 'fichier', 1000, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b3',
-          '00000000-0000-0000-0000-000000000002',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a3', 1000, 'pending');
 insert into payments (order_id, rail, idempotency_key, status)
   values ('00000000-0000-0000-0000-0000000000b3', 'moncash',
@@ -94,7 +96,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-d', 'Produit D', 'fichier', 2640, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b4',
-          '00000000-0000-0000-0000-000000000003',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a4', 2640, 'pending');
 -- 2640 HTG à 132 HTG/USD = 2000 cents figés au checkout.
 insert into payments (order_id, rail, idempotency_key, status, expected_usd_cents)
@@ -112,7 +114,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-e', 'Produit E', 'fichier', 2640, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status)
   values ('00000000-0000-0000-0000-0000000000b5',
-          '00000000-0000-0000-0000-000000000003',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a5', 2640, 'pending');
 insert into payments (order_id, rail, idempotency_key, status, expected_usd_cents)
   values ('00000000-0000-0000-0000-0000000000b5', 'zelle',
@@ -136,7 +138,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-f', 'Produit F', 'fichier', 1000, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status, coupon_id, coupon_code, discount_htg)
   values ('00000000-0000-0000-0000-0000000000b6',
-          '00000000-0000-0000-0000-000000000003',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a6', 800, 'pending',
           '00000000-0000-0000-0000-0000000000c1', 'BL133F', 200);
 insert into payments (order_id, rail, idempotency_key, status)
@@ -157,7 +159,7 @@ insert into products (id, seller_id, slug, title, kind, price_htg, status)
           'produit-g', 'Produit G', 'fichier', 1000, 'published');
 insert into orders (id, buyer_id, product_id, amount_htg, status, coupon_id, coupon_code, discount_htg)
   values ('00000000-0000-0000-0000-0000000000b7',
-          '00000000-0000-0000-0000-000000000003',
+          '00000000-0000-0000-0000-000000000004',
           '00000000-0000-0000-0000-0000000000a7', 800, 'pending',
           '00000000-0000-0000-0000-0000000000c2', 'BL133G', 200);
 insert into payments (order_id, rail, idempotency_key, status)

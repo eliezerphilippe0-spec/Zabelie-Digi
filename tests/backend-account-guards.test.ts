@@ -4,6 +4,60 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { readSuspension, AccountStatusUnavailable } from "../lib/account-suspension";
 import { loadRoute, database } from "./helpers/route-harness";
 
+function moderationFixture(options: { closed?: boolean; readError?: boolean; writeError?: string } = {}) {
+  const effects: string[] = [];
+  const db = database(q => {
+    if (q.steps.some(([s]) => s === "update")) {
+      effects.push("profile-update");
+      return { error: options.writeError ? { code: options.writeError, message: "private database detail" } : null };
+    }
+    return { data: { id: "target", role: "creator", suspended_at: "2026-10-05", suspended_reason: options.closed ? "account_closed" : "moderation" }, error: options.readError ? { code: "offline" } : null };
+  });
+  const route = loadRoute("app/api/admin/user-status/route.ts", {
+    "@/lib/auth": { getAdminUser: async () => ({ id: "admin", role: "admin" }) },
+    "@/lib/api-erreur": { erreurTraduite: async (key: string, status: number) => Response.json({ error: key }, { status }) },
+    "@/lib/admin-audit": { journaliserActeAdmin: async () => { effects.push("audit"); } },
+    "@/lib/supabase/admin": { createAdminClient: () => Object.assign(db, { auth: { admin: { updateUserById: async () => { effects.push("auth-update"); return { error: null }; } } } }) },
+  });
+  return { effects, route, request: (action: string) => new Request("https://zabelie.com/api/admin/user-status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: "target", action, reason: "review" }) }) };
+}
+
+test("moderation cannot reactivate or re-suspend a permanently closed account", async () => {
+  for (const action of ["suspend", "reactivate"]) {
+    const f = moderationFixture({ closed: true });
+    const response = await f.route.POST(f.request(action));
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, "api.account.closed");
+    assert.deepEqual(f.effects, []);
+  }
+});
+
+test("moderation reactivation remains available for a reversible suspension", async () => {
+  const f = moderationFixture();
+  assert.equal((await f.route.POST(f.request("reactivate"))).status, 200);
+  assert.deepEqual(f.effects, ["profile-update", "auth-update", "audit"]);
+});
+
+test("concurrent account closure prevents the Auth unban after the DB refusal", async () => {
+  for (const action of ["suspend", "reactivate"]) {
+    const f = moderationFixture({ writeError: "ZB131" });
+    const response = await f.route.POST(f.request(action));
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, "api.account.closed");
+    assert.deepEqual(f.effects, ["profile-update"]);
+  }
+});
+
+test("unavailable moderation state or failed write never changes Auth or leaks SQL", async () => {
+  for (const options of [{ readError: true }, { writeError: "XX001" }]) {
+    const f = moderationFixture(options);
+    const response = await f.route.POST(f.request("reactivate"));
+    assert.equal(response.status, 503);
+    assert.doesNotMatch(await response.text(), /private database detail/);
+    assert.ok(!f.effects.includes("auth-update"));
+  }
+});
+
 test("account status: active, suspended, missing, read error and thrown network failure", async () => {
   const cases = [
     { data: { suspended_at: null, suspended_reason: null }, error: null },
@@ -63,7 +117,7 @@ test("checkout rejects suspended sellers and unavailable seller status before in
   }
 });
 
-function accountFixture(options: { count?: number | null; kyc?: number | null; kycError?: boolean; kycCloseError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
+function accountFixture(options: { count?: number | null; kyc?: number | null; acceptances?: number | null; acceptanceError?: boolean; kycError?: boolean; kycCloseError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
   const actions: string[] = [];
   let profile: Record<string, unknown> = {};
   let metadata: Record<string, unknown> = {};
@@ -90,6 +144,9 @@ function accountFixture(options: { count?: number | null; kyc?: number | null; k
     }
     if (query.table === "zabelie_kyc_documents") {
       return { count: options.kyc === undefined ? 0 : options.kyc, error: options.kycError ? { message: "offline" } : null };
+    }
+    if (query.table === "zabelie_policy_acceptances") {
+      return { count: options.acceptances === undefined ? 0 : options.acceptances, error: options.acceptanceError ? { message: "offline" } : null };
     }
     return { count: options.count === undefined ? 1 : options.count, error: options.readError ? { message: "offline" } : null };
   });
@@ -137,6 +194,18 @@ test("account without orders is deleted; Auth failure never triggers arbitrary a
   }
 });
 
+test("a never-sold account WITH immutable legal receipts closes without deleting its evidence", async () => {
+  const f = accountFixture({ count: 0, acceptances: 2 });
+  const response = await f.route.DELETE();
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).mode, "anonymized");
+  assert.ok(f.actions.includes("close-profile"));
+  assert.ok(!f.actions.includes("delete-auth"));
+  assert.ok(!f.actions.includes("remove-zabelie_policy_acceptances"));
+  const query = f.db.queries.find(q => q.table === "zabelie_policy_acceptances");
+  assert.ok(query?.steps.some(([s, a]) => s === "eq" && a[0] === "user_id" && a[1] === "user"));
+});
+
 test("a never-sold account WITH identity documents is anonymized, never deleted (no orphan KYC files)", async () => {
   // 2026-10-04 : supprimer le profil effaçait les lignes KYC en cascade mais
   // pas les fichiers du bucket privé. Les pièces restent suivies et la purge
@@ -151,15 +220,13 @@ test("a never-sold account WITH identity documents is anonymized, never deleted 
   assert.equal((await (await sansPieces.route.DELETE()).json()).mode, "deleted", "témoin : sans pièces, la suppression reste complète");
 });
 
-test("closing an account closes a PENDING identity dossier, so the 5-year purge clock starts", async () => {
-  // Sans décision, `zabelie_kyc_docs_expires` ne voit jamais le dossier :
-  // les pièces resteraient pour toujours.
+test("closing an account also closes a PENDING identity dossier independently of retention", async () => {
   const f = accountFixture({ count: 0, kyc: 1 });
   assert.equal((await f.route.DELETE()).status, 200);
   assert.equal(f.kycClosures.length, 1);
   const { patch, filters } = f.kycClosures[0];
   assert.equal(patch.status, "rejected");
-  assert.ok(typeof patch.decided_at === "string" && !Number.isNaN(Date.parse(patch.decided_at as string)), "decided_at lance le délai");
+  assert.ok(typeof patch.decided_at === "string" && !Number.isNaN(Date.parse(patch.decided_at as string)), "la décision administrative reste datée");
   assert.equal(patch.note_admin, "Compte fermé avant décision");
   assert.deepEqual(filters, [["user_id", "user"], ["status", "pending"]], "seul un dossier EN ATTENTE de CE compte est clos");
   assert.ok(f.actions.indexOf("close-kyc") > f.actions.indexOf("close-profile"));
@@ -169,7 +236,7 @@ test("closing an account closes a PENDING identity dossier, so the 5-year purge 
 });
 
 test("account closure reports database and Auth failures instead of claiming success", async () => {
-  for (const options of [{ count: null }, { readError: true }, { kyc: null, count: 0 }, { kycError: true, count: 0 }, { profileError: true }, { authError: true }]) {
+  for (const options of [{ count: null }, { readError: true }, { kyc: null, count: 0 }, { kycError: true, count: 0 }, { acceptances: null, count: 0 }, { acceptanceError: true, count: 0 }, { profileError: true }, { authError: true }]) {
     const f = accountFixture(options);
     assert.equal((await f.route.DELETE()).status, 503);
     assert.ok(!f.actions.includes("sign-out"));

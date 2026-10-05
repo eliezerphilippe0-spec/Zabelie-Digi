@@ -10,8 +10,9 @@ import { causeAuth, estModeDemo } from "@/lib/auth-erreurs";
 import { ConfigSupabaseInvalide } from "@/lib/supabase/config";
 import { checkDisplayName } from "@/lib/display-name";
 import { urlDeRetourOAuth, type AuthProvider } from "@/lib/auth-providers";
+import { CONDITIONS_VERSION, CONFIDENTIALITE_VERSION, initialLegalDeclaration } from "@/lib/legal-acceptance";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "legal";
 
 /** Un fournisseur tiers, avec son libellé déjà traduit côté serveur. */
 export type ConnexionProvider = AuthProvider & { label: string };
@@ -45,6 +46,15 @@ export type ConnexionLabels = {
   /** V-19 — séparateur au-dessus des fournisseurs tiers, et leur échec. */
   oauthOr: string;
   errProvider: string;
+  legalTitle: string;
+  legalIntro: string;
+  conditionsAccept: string;
+  privacyRead: string;
+  conditionsLink: string;
+  privacyLink: string;
+  legalRequired: string;
+  legalUnavailable: string;
+  legalContinue: string;
 };
 
 /* Marques des fournisseurs — SVG inline minimaux (préambule Zabelie du skill,
@@ -94,10 +104,12 @@ function ConnexionFormInner({
   // V-19 : ?erreur=fournisseur quand un fournisseur tiers a refusé ou que
   // l'utilisateur a annulé chez lui — même principe, la cause est nommée.
   const erreur = searchParams.get("erreur");
-  const [mode, setMode] = useState<Mode>(() => searchParams.get("mode") === "signup" ? "signup" : "signin");
+  const [mode, setMode] = useState<Mode>(() => searchParams.get("mode") === "legal" ? "legal" : searchParams.get("mode") === "signup" ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [conditionsAccepted, setConditionsAccepted] = useState(false);
+  const [privacyRead, setPrivacyRead] = useState(false);
   const [msg, setMsg] = useState<string | null>(
     erreur === "lien_expire"
       ? labels.linkExpired
@@ -143,6 +155,10 @@ function ConnexionFormInner({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode !== "signin" && (!conditionsAccepted || !privacyRead)) {
+      setMsg(labels.legalRequired);
+      return;
+    }
     setLoading(true);
     setMsg(null);
 
@@ -150,7 +166,23 @@ function ConnexionFormInner({
       // Dans le try : sans Supabase configuré (mode démo), createClient()
       // lève — l'utilisateur doit voir un message, pas un bouton figé.
       const supabase = createClient();
-      if (mode === "signup") {
+      if (mode === "legal") {
+        // A first OAuth session has no initial declaration. Record the new,
+        // explicit act in the SAME append-only registry, not in user_metadata.
+        const { error } = await supabase.rpc("zabelie_accept_account_legal", {
+          p_conditions_version: CONDITIONS_VERSION,
+          p_confidentialite_version: CONFIDENTIALITE_VERSION,
+          p_conditions_accepted: conditionsAccepted,
+          p_confidentialite_read: privacyRead,
+        });
+        if (error) {
+          setMsg(labels.legalUnavailable);
+          return;
+        }
+        router.push(nextPath);
+        router.refresh();
+        return;
+      } else if (mode === "signup") {
         // Le nom part dans les métadonnées, donc il doit être jugé ICI : la
         // base le remplacerait sans rien dire (0045).
         const verdict = checkDisplayName(name || email.split("@")[0]);
@@ -167,7 +199,10 @@ function ConnexionFormInner({
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { display_name: verdict.value } },
+          options: { data: {
+            display_name: verdict.value,
+            legal_acceptance: initialLegalDeclaration(conditionsAccepted, privacyRead),
+          } },
         });
         if (error) throw error;
         // Insert de repli, volontairement conservé : tant que 0045 n'est pas
@@ -255,10 +290,10 @@ function ConnexionFormInner({
       </Link>
 
       <div className="glass rounded-3xl p-7">
-        <h1 className="mb-5 text-2xl font-bold">{mode === "signin" ? labels.tabSignin : labels.tabSignup}</h1>
-        <div className="mb-6 flex rounded-xl border border-line p-1 text-sm">
+        <h1 className="mb-5 text-2xl font-bold">{mode === "legal" ? labels.legalTitle : mode === "signin" ? labels.tabSignin : labels.tabSignup}</h1>
+        {mode !== "legal" && <div className="mb-6 flex rounded-xl border border-line p-1 text-sm">
           <button
-            onClick={() => setMode("signin")}
+            onClick={() => { setMode("signin"); setConditionsAccepted(false); setPrivacyRead(false); }}
             className={`min-h-11 flex-1 rounded-lg py-2 transition ${
               mode === "signin" ? "bg-cloud text-ink" : "text-mist"
             }`}
@@ -266,14 +301,14 @@ function ConnexionFormInner({
             {labels.tabSignin}
           </button>
           <button
-            onClick={() => setMode("signup")}
+            onClick={() => { setMode("signup"); setConditionsAccepted(false); setPrivacyRead(false); }}
             className={`min-h-11 flex-1 rounded-lg py-2 transition ${
               mode === "signup" ? "bg-cloud text-ink" : "text-mist"
             }`}
           >
             {labels.tabSignup}
           </button>
-        </div>
+        </div>}
 
         <form onSubmit={submit} className="space-y-3">
           {/* ÉTIQUETTES VISIBLES — audit UX 2026-09-02 (#4), règle §4.6 du
@@ -297,7 +332,7 @@ function ConnexionFormInner({
               />
             </div>
           )}
-          <div className="space-y-1">
+          {mode !== "legal" && <div className="space-y-1">
             <label htmlFor="auth-email" className="block text-sm text-mist">
               {labels.emailPh}
             </label>
@@ -311,8 +346,8 @@ function ConnexionFormInner({
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
             />
-          </div>
-          <div className="space-y-1">
+          </div>}
+          {mode !== "legal" && <div className="space-y-1">
             <label htmlFor="auth-password" className="block text-sm text-mist">
               {labels.passwordPh}
             </label>
@@ -326,20 +361,39 @@ function ConnexionFormInner({
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
             />
-          </div>
+          </div>}
+          {mode !== "signin" && (
+            <fieldset className="min-w-0 space-y-1">
+              <legend className="mb-1 text-sm text-mist">{labels.legalIntro}</legend>
+              <Link href="/conditions" target="_blank" rel="noopener" className="flex min-h-11 items-center text-sm text-cloud underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
+                {labels.conditionsLink}
+              </Link>
+              <Link href="/confidentialite" target="_blank" rel="noopener" className="flex min-h-11 items-center text-sm text-cloud underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
+                {labels.privacyLink}
+              </Link>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm text-cloud" htmlFor="auth-conditions">
+                <input id="auth-conditions" type="checkbox" required checked={conditionsAccepted} onChange={e => setConditionsAccepted(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand" />
+                <span>{labels.conditionsAccept}</span>
+              </label>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 text-sm text-cloud" htmlFor="auth-privacy">
+                <input id="auth-privacy" type="checkbox" required checked={privacyRead} onChange={e => setPrivacyRead(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand" />
+                <span>{labels.privacyRead}</span>
+              </label>
+            </fieldset>
+          )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (mode !== "signin" && (!conditionsAccepted || !privacyRead))}
             className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "…" : mode === "signin" ? labels.signinCta : labels.signupCta}
+            {loading ? "…" : mode === "legal" ? labels.legalContinue : mode === "signin" ? labels.signinCta : labels.signupCta}
           </button>
         </form>
 
         {/* V-19 — fournisseurs tiers. RIEN si la liste est vide : un bouton
             vers un fournisseur non activé chez Supabase mène à une page
             d'erreur brute hors de notre interface (lib/auth-providers.ts). */}
-        {providers.length > 0 && (
+        {providers.length > 0 && mode !== "legal" && (
           <div className="mt-5">
             <p className="mb-3 flex items-center gap-3 text-xs text-mist before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
               {labels.oauthOr}
@@ -377,6 +431,7 @@ function ConnexionFormInner({
         )}
 
         {msg && <p role="status" aria-live="polite" className="mt-4 text-center text-xs text-mist">{msg}</p>}
+        {mode === "legal" && <p className="mt-3 text-center text-sm"><Link href={`/connexion?next=${encodeURIComponent(nextPath)}`} onClick={() => { setMode("signin"); setConditionsAccepted(false); setPrivacyRead(false); setMsg(null); }} className="inline-flex min-h-11 items-center text-cloud underline">{labels.tabSignin}</Link></p>}
       </div>
 
       <p className="mt-6 text-center text-xs text-mist">
@@ -396,7 +451,7 @@ export function ConnexionForm({
   providers?: ConnexionProvider[];
 }) {
   return (
-    <main id="main" className="bg-grain flex min-h-dvh items-center justify-center px-5">
+    <main id="main" className="bg-grain flex min-h-dvh items-center justify-center px-5 py-16">
       {/* useSearchParams exige une frontière Suspense (App Router). */}
       <Suspense fallback={null}>
         <ConnexionFormInner labels={labels} providers={providers} />

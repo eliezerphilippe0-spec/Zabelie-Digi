@@ -5,7 +5,7 @@
 --       approved → le retrait passe. Le recouvrement du surplus IA (0072)
 --       fonctionne toujours dans le même geste.
 --   K3. La décision est complète ou absente (contrainte) ; RLS own-row.
---   K4. La purge ne prend QUE les documents décidés depuis > retention_jours.
+--   K4. La purge attend la fermeture et retention_annees, pas la décision.
 begin;
 
 insert into auth.users (id, email) values
@@ -115,12 +115,18 @@ begin
     raise exception 'K4a KO : % document(s) purgeable(s), attendu 0', v_n;
   end if;
 
-  -- On vieillit la décision de u1 au-delà de la rétention.
+  -- Une décision ancienne ne suffit pas tant que le compte est actif.
   update zabelie_kyc_submissions
-     set decided_at = now() - make_interval(days =>
-           (select retention_jours from zabelie_kyc_config) + 1)
+     set decided_at = now() - make_interval(years =>
+           (select retention_annees from zabelie_kyc_config) + 1)
    where user_id = '00000000-0000-0000-0000-000000120001';
 
+  if exists (select 1 from zabelie_kyc_docs_expires()) then
+    raise exception 'K4b KO : décision ancienne d''un compte actif purgeable';
+  end if;
+  update profiles set suspended_reason = 'account_closed', suspended_at = now() - make_interval(years =>
+           (select retention_annees from zabelie_kyc_config) + 1)
+    where id = '00000000-0000-0000-0000-000000120001';
   select count(*) into v_n from zabelie_kyc_docs_expires();
   if v_n <> 1 then
     raise exception 'K4b KO : % document(s) purgeable(s), attendu 1', v_n;

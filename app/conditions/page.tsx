@@ -4,6 +4,7 @@ import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
 import { resoudre, type Bloc, type Politique } from "@/lib/policy-privacy";
 import { CONDITIONS } from "@/lib/policy-terms";
+import { CONDITIONS_VERSION } from "@/lib/legal-acceptance";
 
 const META = {
   title: "Conditions d'utilisation — Zabelie",
@@ -70,7 +71,7 @@ export default async function ConditionsPage() {
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main id="main" className="mx-auto max-w-2xl px-5 py-16">
+      <main id="main" data-policy-version={CONDITIONS_VERSION} className="mx-auto max-w-2xl px-5 py-16">
         <h1 className="text-3xl font-black tracking-tight">{doc.titre}</h1>
         <p className="mt-2 text-sm text-mist">
           {doc.majLabel} : {LAST_UPDATE}

@@ -1,9 +1,23 @@
 import { test, expect, type Page } from "@playwright/test";
 import { t } from "../lib/i18n";
+import { initialLegalDeclaration } from "../lib/legal-acceptance";
 const auth = "http://127.0.0.1:15423/auth/v1/";
 async function fill(page: Page, email: string, password="Valid-test-123!") {
   await page.locator("#auth-email").fill(email);
   await page.locator("#auth-password").fill(password);
+}
+
+async function acceptDocuments(page: Page) {
+  const terms = page.getByRole("checkbox", { name: t("fr", "auth.legal.conditions.accept"), exact: true });
+  const privacy = page.getByRole("checkbox", { name: t("fr", "auth.legal.privacy.read"), exact: true });
+  const submit = page.locator('button[type="submit"]');
+  await expect(terms).not.toBeChecked();
+  await expect(privacy).not.toBeChecked();
+  await expect(submit).toBeDisabled();
+  await terms.check();
+  await expect(submit).toBeDisabled();
+  await privacy.check();
+  await expect(submit).toBeEnabled();
 }
 
 test("le client compilé appelle Auth et affiche une erreur exploitable", async ({ page }) => {
@@ -32,10 +46,11 @@ test("inscription avec confirmation : métadonnées envoyées, aucune fausse ses
   await page.getByRole("button",{name:t("fr","auth.tab.signup"),exact:true}).click();
   await page.locator("#auth-name").fill("Créateur test");
   await fill(page,"new@example.test");
+  await acceptDocuments(page);
   const request=page.waitForRequest((r)=>r.url().startsWith(auth+"signup") && r.method()==="POST");
   await page.locator('button[type="submit"]').click();
-  expect((await request).postDataJSON().data.display_name).toBe("Créateur test");
-  await expect(page.locator('[role="status"]')).toBeVisible();
+  expect((await request).postDataJSON().data).toEqual({ display_name: "Créateur test", legal_acceptance: initialLegalDeclaration(true, true) });
+  await expect(page.locator('[role="status"]')).toHaveText(t("fr", "auth.signup.success"));
   expect((await context.cookies()).some((c)=>/^sb-127-auth-token(?:\.\d+)?$/.test(c.name))).toBe(false);
 });
 
@@ -44,7 +59,10 @@ test("adresse déjà inscrite : bascule vers Connexion sans bouton bloqué", asy
   await page.getByRole("button",{name:t("fr","auth.tab.signup"),exact:true}).click();
   await page.locator("#auth-name").fill("Créateur test");
   await fill(page,"existing@example.test");
+  await acceptDocuments(page);
+  const request=page.waitForRequest((r)=>r.url().startsWith(auth+"signup") && r.method()==="POST");
   await page.locator('button[type="submit"]').click();
+  expect((await request).postDataJSON().data).toEqual({ display_name: "Créateur test", legal_acceptance: initialLegalDeclaration(true, true) });
   await expect(page.getByText(t("fr","auth.err.exists"),{exact:true})).toBeVisible();
   await expect(page.getByRole("heading",{level:1,name:t("fr","auth.tab.signin")})).toBeVisible();
 });

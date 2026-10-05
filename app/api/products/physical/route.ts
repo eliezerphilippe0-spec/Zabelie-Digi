@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
-  const accountRefusal = await requireActiveAccount(user.id);
+  const accountRefusal = await requireActiveAccount(user.id, { legalAcceptance: true });
   if (accountRefusal) return accountRefusal;
 
   const admin = createAdminClient();

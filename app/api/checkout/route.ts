@@ -187,7 +187,7 @@ export async function POST(req: Request) {
 
   // Compte suspendu (modération) : action bloquée même si la session est
   // encore active (le ban auth ne coupe la session qu'au refresh du token).
-  const accountRefusal = await requireActiveAccount(user.id);
+  const accountRefusal = await requireActiveAccount(user.id, { legalAcceptance: recoveryOnlyInput !== true });
   if (accountRefusal) return accountRefusal;
 
   const admin = createAdminClient();
@@ -284,6 +284,9 @@ export async function POST(req: Request) {
 
   if (prodErr || !product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
+  }
+  if (product.seller_id === user.id) {
+    return NextResponse.json({ error: t(lang, "api.checkout.selfPurchase"), code: "self_purchase" }, { status: 422 });
   }
 
   const sellerRefusal = await requireActiveAccount(product.seller_id);
@@ -701,7 +704,7 @@ export async function POST(req: Request) {
     idempotency_key: order.id,
     status: "pending",
     expected_usd_cents: expectedUsdCents,
-    raw: { checkout_intent_hash: intentHash },
+    raw: { checkout_intent_hash: intentHash, ...(rail === "kobara" ? { kobara_provider: kobaraProvider } : {}) },
   });
   if (payErr) {
     if (payErr.code === "23505") {

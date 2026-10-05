@@ -176,6 +176,16 @@ const server = createServer((req, res) => {
   // The real limiter returns a boolean; an empty PostgREST result is an error.
   if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
 
+  // These fixture accounts explicitly represent users who accepted both
+  // current documents. This is simulated data, not evidence for a real user.
+  if (url.pathname === "/rest/v1/zabelie_policy_acceptances") {
+    const owner = url.searchParams.get("user_id")?.replace(/^eq\./, "");
+    return send(200, [BUYER_ID, SELLER_ID].includes(owner) ? [
+      { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
+      { policy_version: "confidentialite-v1", accepted_at: "2026-10-05T00:00:00Z" },
+    ] : []);
+  }
+
   // RPC : expiration des réservations. Renvoie 0 — le cas « rien à libérer »,
   // celui où le journal d'exécution est justement indispensable.
   if (url.pathname === "/rest/v1/rpc/zabelie_expire_stock_reservations") {

@@ -33,13 +33,21 @@ insert into fx values
   ('2', '14', 'cancelled', true,  5,  'fr'),  -- payé depuis ↓
   ('2', '14', 'paid',      true,  3,  'fr'),
   ('3', '15', 'cancelled', true,  6,  null),  -- produit retiré ↓
-  ('1', '10', 'cancelled', true,  5,  'fr'),  -- vendeur sur son produit
+  ('1', '10', 'cancelled', true,  5,  'fr'),  -- ancienne auto-vente, avant 0132
   ('3', '10', 'cancelled', true,  6,  'en'),  -- essai en cours ↓
   ('3', '10', 'pending',   true,  0,  'en');
 insert into orders (buyer_id, product_id, amount_htg, status, zabelie_payment_is_live, zabelie_lang, created_at)
 select ('00000000-0000-0000-0000-0000000b200' || b)::uuid, ('00000000-0000-0000-0000-0000000b20' || p)::uuid,
        1000, s, live, l, now() - make_interval(hours => h)
-from fx;
+from fx where b <> '1';
+-- L'unique auto-vente historique garde la couverture R2 ; toute nouvelle
+-- commande normale conserve le garde d'achat distinct de 0132.
+alter table orders disable trigger zabelie_order_seller_guard;
+insert into orders (buyer_id, product_id, amount_htg, status, zabelie_payment_is_live, zabelie_lang, created_at)
+select ('00000000-0000-0000-0000-0000000b200' || b)::uuid, ('00000000-0000-0000-0000-0000000b20' || p)::uuid,
+       1000, s, live, l, now() - make_interval(hours => h)
+from fx where b = '1';
+alter table orders enable trigger zabelie_order_seller_guard;
 update products set status = 'archived' where id = '00000000-0000-0000-0000-0000000b2015';
 
 do $$

@@ -103,6 +103,12 @@ export async function appelSession<T = Record<string, unknown>>(
   // Un corps illisible n'est pas une panne : c'est une réponse sans détail.
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 
+  // A legal step redirects to public documents and explicit controls. The
+  // caller only navigates; returning never resumes a payment automatically.
+  if (res.status === 403 && data.code === "legal_acceptance_required") {
+    return { etat: "connexion", vers: `/connexion?mode=legal&next=${encodeURIComponent(ici || "/")}` };
+  }
+
   if (!res.ok) {
     return {
       etat: "refus",

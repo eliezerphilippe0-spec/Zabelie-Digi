@@ -82,6 +82,31 @@ begin
   perform pg_temp.vente(true, 'paid', 0);
   if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : une acquisition gratuite ouvre le panier groupé'; end if;
 
+  -- Production + profil test ne suffit pas à faire une vente réelle.
+  update profiles set is_test=true where id='00000000-0000-0000-0000-0000000f0004';
+  perform pg_temp.vente(true,'paid',1000);
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : acheteur test ouvre le panier'; end if;
+  update orders set status='refunded' where zabelie_payment_is_live and amount_htg>0;
+  update profiles set is_test=false where id='00000000-0000-0000-0000-0000000f0004';
+  update profiles set is_test=true where id='00000000-0000-0000-0000-0000000f0001';
+  perform pg_temp.vente(true,'paid',1000);
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : vendeur test ouvre le panier'; end if;
+  update orders set status='refunded' where zabelie_payment_is_live and amount_htg>0;
+  update profiles set is_test=false where id='00000000-0000-0000-0000-0000000f0001';
+
+  -- Simule une auto-vente antérieure à 0132, pas un contournement autorisé.
+  alter table orders disable trigger zabelie_order_seller_guard;
+  insert into orders(buyer_id,product_id,amount_htg,status,zabelie_payment_is_live)
+  values('00000000-0000-0000-0000-0000000f0001','00000000-0000-0000-0000-0000000f00a1',1000,'paid',true);
+  alter table orders enable trigger zabelie_order_seller_guard;
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : auto-vente historique ouvre le panier'; end if;
+  begin
+    update orders set status='delivered' where buyer_id='00000000-0000-0000-0000-0000000f0001';
+    raise exception 'G1 KO : auto-vente historique livrée';
+  exception when sqlstate 'ZB132' then null; end;
+  -- La réparation compensatoire reste possible ; aucune preuve effacée.
+  update orders set status='refunded' where buyer_id='00000000-0000-0000-0000-0000000f0001';
+
   perform pg_temp.vente(true, 'paid', 1000);
   if not zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : la première vente réelle n''ouvre pas'; end if;
   perform zabelie_group_abort(zabelie_group_create('00000000-0000-0000-0000-0000000f0003', 'moncash'));
@@ -110,7 +135,13 @@ begin
   insert into payments (order_id, rail, idempotency_key, status) values (o, 'moncash', o::text, 'pending');
   begin perform zabelie_group_seal(g); raise exception 'G2 KO : deux meneuses acceptées';
   exception when raise_exception then if sqlerrm not like '%exactement une%' then raise; end if; end;
-  update payments set rail = 'groupe' where order_id = o;
+  begin
+    update payments set rail='groupe' where order_id=o;
+    raise exception 'G2 KO : rail d’origine modifiable';
+  exception when sqlstate 'ZB132' then null; end;
+  -- Nouvelle fixture non payée, pas mutation de provenance d'un paiement.
+  delete from payments where order_id=o;
+  insert into payments(order_id,rail,idempotency_key,status) values(o,'groupe',o::text,'pending');
   update orders set buyer_id = '00000000-0000-0000-0000-0000000f0004' where id = o;
   begin perform zabelie_group_seal(g); raise exception 'G2 KO : commande d''un autre acheteur acceptée';
   exception when raise_exception then if sqlerrm not like '%non conforme%' then raise; end if; end;
@@ -275,6 +306,90 @@ begin
     raise exception 'G10 KO : un groupe confirmé a été défait';
   end if;
   raise notice 'G10 OK — la meneuse échoue, le groupe tombe ; jamais un groupe confirmé';
+end $$;
+
+-- G11 : justificatif externe d'un enfant groupé, provenance de la meneuse.
+-- La réponse de cron porte `provider`, pas `kobara_provider`, puis son
+-- payload peut disparaître sans perdre le moyen d'origine non personnel.
+update profiles set role='admin' where id='00000000-0000-0000-0000-0000000f0004';
+select pg_temp.groupe('refund-origin','kobara');
+select zabelie_group_seal((select id from g_ids where nom='refund-origin'));
+do $$
+declare m uuid:=(select id from g_ids where nom='refund-origin:meneuse');
+        a uuid:=(select id from g_ids where nom='refund-origin:autre');
+        adm uuid:='00000000-0000-0000-0000-0000000f0004'; n bigint; unknown_order uuid:=gen_random_uuid();
+        retry_order uuid:=gen_random_uuid(); failed_payment uuid; unknown_payment uuid;
+begin
+  update payments set raw='{"kobara_provider":"natcash"}' where order_id=m;
+  assert (select zabelie_original_method from payments where order_id=m)='natcash','G11: original provider absent';
+  perform confirm_payment(m::text,'KOBARA-G11','{"provider":"natcash"}',4000);
+  update payments set raw=null where order_id=m;
+  assert (select zabelie_original_method from payments where order_id=m)='natcash','G11: payload purge erased origin';
+  begin
+    update payments set zabelie_original_method='moncash' where order_id=m;
+    raise exception 'G11: original provider mutable';
+  exception when sqlstate 'ZB132' then null; end;
+  perform refund_order(a);
+  select count(*) into n from wallet_transactions;
+  begin
+    perform zabelie_record_refund_receipt(a,adm,'moncash','G11-WRONG',now());
+    raise exception 'G11: receipt accepted wrong provider';
+  exception when invalid_parameter_value then null; end;
+  perform zabelie_record_refund_receipt(a,adm,'natcash','G11-RIGHT',now());
+  assert (select count(*) from wallet_transactions)=n,'G11: evidence moved money';
+  assert (zabelie_solvency_report()->>'ok')::boolean,'G11: original refund incoherent';
+  -- Plusieurs tentatives sur une commande : seul le moyen confirmé compte.
+  insert into orders(id,buyer_id,product_id,amount_htg)
+    values(retry_order,'00000000-0000-0000-0000-0000000f0003','00000000-0000-0000-0000-0000000f00a1',1000);
+  insert into payments(order_id,rail,idempotency_key,status)
+    values(retry_order,'moncash',retry_order::text||':failed','failed') returning id into failed_payment;
+  insert into payments(order_id,rail,idempotency_key,raw)
+    values(retry_order,'kobara',retry_order::text,'{"provider":"natcash"}');
+  perform confirm_payment(retry_order::text,'KOBARA-RETRY','{"provider":"natcash"}',1000);
+  perform refund_order(retry_order);
+  select count(*) into n from wallet_transactions;
+  begin
+    perform zabelie_record_refund_receipt(retry_order,adm,'moncash','G11-FAILED-RAIL',now());
+    raise exception 'G11: failed attempt certified as original method';
+  exception when invalid_parameter_value then null; end;
+  perform zabelie_record_refund_receipt(retry_order,adm,'natcash','G11-RETRY',now());
+  -- Une répétition confirmée du même moyen ne rend pas la preuve ambiguë.
+  insert into payments(order_id,rail,idempotency_key,status,raw)
+    values(retry_order,'kobara',retry_order::text||':repeat','confirmed','{"provider":"natcash"}');
+  assert (zabelie_record_refund_receipt(retry_order,adm,'natcash','G11-RETRY',now())->>'duplicate')::boolean,
+    'G11: repeated confirmed method rejected';
+  -- COUNT(DISTINCT) ignore NULL : la preuve doit aussi refuser ce mélange.
+  insert into payments(order_id,rail,idempotency_key,status)
+    values(retry_order,'kobara',retry_order::text||':unknown','confirmed') returning id into unknown_payment;
+  assert (select zabelie_original_method from payments where id=unknown_payment) is null,
+    'G11: unknown confirmed method invented';
+  begin
+    perform zabelie_record_refund_receipt(retry_order,adm,'natcash','G11-RETRY',now());
+    raise exception 'G11: unknown confirmed attempt ignored';
+  exception when invalid_parameter_value then null; end;
+  delete from payments where id=unknown_payment;
+  -- Historique contradictoire : refus, même si un justificatif existe déjà.
+  update payments set status='confirmed' where id=failed_payment;
+  begin
+    perform zabelie_record_refund_receipt(retry_order,adm,'natcash','G11-RETRY',now());
+    raise exception 'G11: contradictory confirmed methods certified';
+  exception when invalid_parameter_value then null; end;
+  assert (select count(*) from wallet_transactions)=n,'G11: retry evidence moved money';
+  -- Ancien Kobara dont aucune preuve d'opérateur n'a été conservée : ne
+  -- jamais permettre à un champ fourni de fabriquer le moyen d'origine.
+  insert into orders(id,buyer_id,product_id,amount_htg)
+    values(unknown_order,'00000000-0000-0000-0000-0000000f0003','00000000-0000-0000-0000-0000000f00a1',1000);
+  insert into payments(order_id,rail,idempotency_key) values(unknown_order,'kobara',unknown_order::text);
+  perform confirm_payment(unknown_order::text,'KOBARA-UNKNOWN','{}',1000);
+  perform refund_order(unknown_order);
+  begin
+    update payments set zabelie_original_method='natcash' where order_id=unknown_order;
+    raise exception 'G11: unknown original method invented';
+  exception when sqlstate 'ZB132' then null; end;
+  begin
+    perform zabelie_record_refund_receipt(unknown_order,adm,'natcash','G11-UNKNOWN',now());
+    raise exception 'G11: unknown original method certified';
+  exception when invalid_parameter_value then null; end;
 end $$;
 
 rollback;
