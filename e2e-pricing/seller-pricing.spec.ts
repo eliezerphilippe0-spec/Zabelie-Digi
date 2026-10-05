@@ -69,7 +69,7 @@ for (const discoveryPage of ["/", "/catalogue"]) {
 
 test("checkout ignores a forged source and respects the signed catalogue visit", async ({ page }) => {
   await login(page, "pricing-buyer");
-  const data = { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", source: "discovery" };
+  const data = { productId: "44444444-4444-4444-4444-444444444444", rail: "moncash", source: "discovery", checkoutKey: "11111111-1111-4111-8111-111111111111" };
   // The stub records inserts but deliberately refuses creating a payable order.
   expect((await page.request.post("/api/checkout", { data })).status()).toBe(500);
   const writes = async () => (await (await page.request.get("http://127.0.0.1:15425/__ecritures")).json()).filter((e: { method: string }) => e.method === "POST");
