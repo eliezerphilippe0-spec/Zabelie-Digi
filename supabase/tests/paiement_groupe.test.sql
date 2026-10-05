@@ -1,6 +1,6 @@
 -- Tests du paiement groupé (0128) — panier multi-vendeurs. Transaction annulée.
 --
---   G1. Désactivé par défaut : aucun groupe ne s'ouvre.
+--   G1. Fermé tant qu'aucune vente réelle ; ouvert de lui-même dès la première.
 --   G2. Scellement : refuse un groupe d'une commande, deux meneuses, une
 --       commande d'un autre acheteur ; fige le total depuis la base.
 --   G3. Connu-POSITIF : UN paiement du total sur la clé de la meneuse →
@@ -49,19 +49,49 @@ begin
 end $$;
 
 -- G1 ───────────────────────────────────────────────────────────────────────────
+-- L'ouverture : fermé sans vente réelle, ouvert dès la première (instruction
+-- porteur du 2026-10-05). Chaque cas qui NE doit PAS ouvrir est posé avant
+-- celui qui ouvre : un garde retiré se voit au cas qu'il gardait.
+create function pg_temp.vente(p_live boolean, p_statut order_status, p_montant integer)
+returns void language sql as $$
+  insert into orders (buyer_id, product_id, amount_htg, status, zabelie_payment_is_live)
+  values ('00000000-0000-0000-0000-0000000f0004', '00000000-0000-0000-0000-0000000f00a1', p_montant, p_statut, p_live);
+$$;
 do $$
 begin
+  if exists (select 1 from orders where status in ('paid', 'delivered') and zabelie_payment_is_live and amount_htg > 0) then
+    raise exception 'G1 : base de test impure, une vente réelle existe déjà';
+  end if;
+  if (select ouvrir_apres_premiere_vente from zabelie_panier_config) is distinct from true then
+    raise exception 'G1 KO : l''ouverture à la première vente n''est pas armée par défaut';
+  end if;
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : ouvert sans aucune vente'; end if;
   begin
     perform zabelie_group_create('00000000-0000-0000-0000-0000000f0003', 'moncash');
-    raise exception 'G1 KO : un groupe s''ouvre alors que le paiement groupé est désactivé';
+    raise exception 'G1 KO : un groupe s''ouvre alors que le paiement groupé est fermé';
   exception when raise_exception then
     -- Le PRÉFIXE de la fonction, pas un mot : le message d'échec du test
-    -- contient lui-même « désactivé » et serait avalé (mutation survivante).
+    -- contient lui-même « fermé » et serait avalé (mutation survivante).
     if sqlerrm not like 'zabelie_group_create:%' then raise; end if;
   end;
-  raise notice 'G1 OK — désactivé par défaut';
+  perform pg_temp.vente(false, 'paid', 1000);
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : une vente d''ESSAI ouvre le panier groupé'; end if;
+  perform pg_temp.vente(true, 'refunded', 1000);
+  perform pg_temp.vente(true, 'pending', 1000);
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : une vente remboursée ou impayée ouvre le panier groupé'; end if;
+  perform pg_temp.vente(true, 'paid', 0);
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : une acquisition gratuite ouvre le panier groupé'; end if;
+
+  perform pg_temp.vente(true, 'paid', 1000);
+  if not zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : la première vente réelle n''ouvre pas'; end if;
+  perform zabelie_group_abort(zabelie_group_create('00000000-0000-0000-0000-0000000f0003', 'moncash'));
+
+  update zabelie_panier_config set ouvrir_apres_premiere_vente = false;
+  if zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : désarmé, il reste ouvert'; end if;
+  update zabelie_panier_config set paiement_groupe = true;
+  if not zabelie_panier_groupe_ouvert() then raise exception 'G1 KO : le drapeau manuel n''ouvre pas'; end if;
+  raise notice 'G1 OK — fermé sans vente réelle (essai, remboursée, impayée, gratuite) ; ouvert dès la première ; drapeau manuel';
 end $$;
-update zabelie_panier_config set paiement_groupe = true;
 
 -- G2 ───────────────────────────────────────────────────────────────────────────
 do $$

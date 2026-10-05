@@ -4,10 +4,10 @@ select zabelie_migration_garde('0128_zabelie_paiement_groupe.sql');
 --
 -- Instruction porteur du 2026-10-04 (« Passe au panier multi vendeurs ») et
 -- arbitrages du même jour :
---   • construit maintenant, mais DÉSACTIVÉ (`zabelie_panier_config.
---     paiement_groupe = false`) tant qu'une vente réelle n'a pas eu lieu —
---     l'arbitrage du 2026-08-21 (`docs/27` étape 3, `docs/22` étape 0 bis)
---     est levé pour la construction, pas pour l'activation ;
+--   • construit maintenant, FERMÉ tant qu'une vente réelle n'a pas eu lieu
+--     (`docs/27` étape 3, `docs/22` étape 0 bis), puis OUVERT de lui-même
+--     dès la première — instruction porteur du 2026-10-05 : « Tu peux
+--     l'activer dès la première vente » (`zabelie_panier_groupe_ouvert()`) ;
 --   • rails : MonCash, NatCash (Kobara) et Stripe ensemble ; Zelle plus tard ;
 --   • zéro frais plateforme ; un code promo ne réduit que les articles de
 --     son vendeur.
@@ -51,10 +51,14 @@ select zabelie_migration_garde('0128_zabelie_paiement_groupe.sql');
 
 alter type payment_rail add value if not exists 'groupe';
 
--- Réglages : désactivé par défaut. L'activation est un `update` explicite.
+-- Réglages. Deux façons d'ouvrir : le drapeau manuel (`paiement_groupe`), ou
+-- l'ouverture AUTOMATIQUE à la première vente réelle, armée par défaut sur
+-- instruction du porteur (2026-10-05). Désarmer = `ouvrir_apres_premiere_vente
+-- = false` ; fermer de force = les deux à `false`.
 create table zabelie_panier_config (
   id boolean primary key default true check (id),
   paiement_groupe boolean not null default false,
+  ouvrir_apres_premiere_vente boolean not null default true,
   max_articles integer not null default 10 check (max_articles between 2 and 50)
 );
 alter table zabelie_panier_config enable row level security;
@@ -63,6 +67,27 @@ grant all on zabelie_panier_config to service_role;
 create policy zabelie_panier_config_server on zabelie_panier_config
   for all to service_role using (true) with check (true);
 insert into zabelie_panier_config (id) values (true);
+
+-- Ouvert ou non, RECALCULÉ à chaque appel : aucune écriture dans le chemin de
+-- l'argent, aucun cron. « Vente réelle » = la définition déjà en service
+-- (`0111`) : paiement en mode production, montant > 0, commande payée ou
+-- remise. Une vente d'essai (bac à sable) n'ouvre rien. Si l'unique vente
+-- réelle est remboursée, le panier groupé se referme — c'est voulu : la
+-- condition du porteur est une vente, pas une tentative.
+create function zabelie_panier_groupe_ouvert()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select c.paiement_groupe
+        or (c.ouvrir_apres_premiere_vente
+            and exists (select 1 from orders o
+                         where o.status in ('paid', 'delivered')
+                           and o.zabelie_payment_is_live
+                           and o.amount_htg > 0))
+      from zabelie_panier_config c where c.id
+  ), false);
+$$;
+revoke all on function zabelie_panier_groupe_ouvert() from public, anon, authenticated;
+grant execute on function zabelie_panier_groupe_ouvert() to service_role;
 
 create table zabelie_order_groups (
   id                 uuid primary key default gen_random_uuid(),
@@ -101,7 +126,7 @@ create function zabelie_group_create(p_buyer uuid, p_rail payment_rail)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare v_id uuid;
 begin
-  if not (select paiement_groupe from zabelie_panier_config where id) then
+  if not zabelie_panier_groupe_ouvert() then
     raise exception 'zabelie_group_create: paiement groupé désactivé' using errcode = 'P0001';
   end if;
   insert into zabelie_order_groups (buyer_id, rail) values (p_buyer, p_rail) returning id into v_id;

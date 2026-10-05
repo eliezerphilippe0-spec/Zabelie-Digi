@@ -24,7 +24,8 @@ export const dynamic = "force-dynamic";
  * Le montage, et pourquoi il ne touche à aucune fonction d'argent :
  *
  *   1. un groupe est ouvert en base (`zabelie_group_create`, refusé tant que
- *      `zabelie_panier_config.paiement_groupe` est faux) ;
+ *      `zabelie_panier_groupe_ouvert()` est faux : ni drapeau manuel, ni
+ *      première vente réelle) ;
  *   2. CHAQUE article passe par le checkout EXISTANT, celui d'un produit
  *      unique — prix relu en base, coupon, flash, stock, âge, affiliation :
  *      rien n'est réécrit ici. Le premier article est la commande MENEUSE ;
@@ -87,12 +88,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t(lang, "api.rate.limited") }, { status: 429 });
   }
 
-  // Le drapeau, lu en base à chaque appel. Illisible = fermé.
-  const { data: config, error: configErr } = await admin
-    .from("zabelie_panier_config")
-    .select("paiement_groupe, max_articles")
-    .maybeSingle();
-  if (configErr || !config || config.paiement_groupe !== true) {
+  // Ouvert ou non : la BASE décide (drapeau manuel, ou première vente réelle
+  // — `zabelie_panier_groupe_ouvert()`, 0128). Illisible = fermé.
+  const [{ data: ouvert, error: ouvertErr }, { data: config, error: configErr }] = await Promise.all([
+    admin.rpc("zabelie_panier_groupe_ouvert"),
+    admin.from("zabelie_panier_config").select("max_articles").maybeSingle(),
+  ]);
+  if (ouvertErr || configErr || !config || ouvert !== true) {
     return NextResponse.json({ error: t(lang, "cart.pay.all.closed"), code: "panier_groupe_ferme" }, { status: 409 });
   }
 

@@ -26,7 +26,11 @@ Après chaque tentative, on a vérifié qu'il n'y avait aucun objet créé, aucu
 
    Suivre la méthode habituelle : SQL reçu croisé avec le fichier, puis ligne au registre `journal_supabase`.
 2. ⚠️ Repli par l'éditeur SQL Supabase : possible, mais la preuve tombe en `sonde_schema` (le SQL exact n'est pas journalisé). C'est à éviter si l'outil revient.
-3. **Lever le drapeau** (`update zabelie_panier_config set paiement_groupe = true`) : **décision porteur**, après une première vente réelle (`docs/22`). Ce n'est pas une commande que je propose de passer moi-même.
+3. ✅ **Ouverture tranchée par le porteur le 2026-10-05** : « Tu peux l'activer dès la première vente ».
+   - C'est **automatique** : `zabelie_panier_groupe_ouvert()` (0128) ouvre le panier groupé dès qu'existe une vente réelle, c'est-à-dire mode production, montant > 0, commande payée ou remise.
+   - Une vente d'essai ne compte pas. Si l'unique vente réelle est remboursée, le panier se referme.
+   - Personne n'a rien à lever.
+   - Désarmer : `update zabelie_panier_config set ouvrir_apres_premiere_vente = false`.
 
 Preuves avant fusion :
 - SQL G1 à G10, mutations tuées, dont le trigger d'échec de meneuse et le vidage du panier ;
