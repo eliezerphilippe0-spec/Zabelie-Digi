@@ -9,6 +9,8 @@ import { formatUsd, zelleMemo } from "@/lib/payment-utils";
 import { ZelleReferenceForm } from "@/components/zelle-reference-form";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { checkoutStockIsHeld } from "@/lib/checkout-idempotency";
+import { isProductKind, isTrackedStockKind } from "@/lib/product-kind";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Paiement Zelle — Zabelie" };
@@ -35,13 +37,13 @@ export default async function ZellePage({
   const admin = createAdminClient();
   const { data: payment } = await admin
     .from("payments")
-    .select("status, rail, expected_usd_cents, raw, orders!inner(buyer_id)")
+    .select("status, rail, expected_usd_cents, raw, orders!inner(buyer_id, status, product_id)")
     .eq("order_id", orderId)
     .single();
 
   const rawOrder = payment?.orders as unknown;
   const order = (Array.isArray(rawOrder) ? rawOrder[0] : rawOrder) as
-    | { buyer_id: string }
+    | { buyer_id: string; status: string; product_id: string }
     | null;
   if (!payment || payment.rail !== "zelle" || order?.buyer_id !== user.id) {
     notFound();
@@ -50,11 +52,25 @@ export default async function ZellePage({
     redirect(`/paiement/succes?commande=${orderId}`);
   }
 
+  const raw = (payment.raw ?? {}) as Record<string, unknown>;
+  // The page is directly addressable: a UNIQUE payment claim alone does not
+  // authorize transfer instructions. Legacy rows without proof need review.
+  if (payment.status !== "pending" || order?.status !== "pending" || raw.checkout_prepared !== true) {
+    redirect(`/paiement/en-attente?commande=${orderId}`);
+  }
+  const { data: product, error: productError } = await admin.from("products")
+    .select("kind").eq("id", order.product_id).maybeSingle();
+  if (productError || !isProductKind(product?.kind)) redirect(`/paiement/en-attente?commande=${orderId}`);
+  if (isTrackedStockKind(product.kind)) {
+    const { data: reservations, error } = await admin.from("zabelie_stock_reservations")
+      .select("status, expires_at").eq("order_id", orderId);
+    if (error || !checkoutStockIsHeld(reservations)) redirect(`/paiement/en-attente?commande=${orderId}`);
+  }
+
   const lang = await getLang();
   const recipient = zelleRecipient();
   const memo = zelleMemo(orderId);
   const amount = formatUsd(payment.expected_usd_cents ?? 0);
-  const raw = (payment.raw ?? {}) as Record<string, unknown>;
   const alreadySent = typeof raw.buyer_ref === "string";
 
   return (

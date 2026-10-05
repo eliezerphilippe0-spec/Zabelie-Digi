@@ -817,7 +817,7 @@ const fr = {
   "pay.back": "Retour au catalogue",
   "pay.wait.title": "Paiement en cours de vérification",
   "pay.wait.body":
-    "Nous confirmons votre paiement auprès de MonCash. Si le montant a été débité, votre achat sera validé automatiquement d'ici quelques instants — même si cette page a été interrompue.",
+    "Le statut de votre paiement doit être vérifié auprès de l’opérateur. Le délai de confirmation peut varier. Consultez Mes achats avant d’effectuer un autre paiement. Si votre compte a été débité sans commande confirmée, contactez l’aide.",
   "pay.wait.cta": "Vérifier mes achats",
   "pay.fail.title": "Paiement non confirmé",
   "pay.fail.body":
@@ -2011,7 +2011,7 @@ const ht: Record<I18nKey, string> = {
   "err.404.catalog": "Wè katalòg la",
   "pay.wait.title": "N ap verifye peman an",
   "pay.wait.body":
-    "N ap konfime peman ou an ak MonCash. Si kòb la te soti, acha ou ap valide otomatikman nan kèk moman — menm si paj sa a te koupe.",
+    "Fòk nou verifye estati peman ou bò operatè a. Tan konfimasyon an ka varye. Gade Acha mwen anvan ou fè yon lòt peman. Si lajan soti san kòmann konfime, kontakte èd la.",
   "pay.wait.cta": "Tcheke acha mwen yo",
   "pay.fail.title": "Peman an pa konfime",
   "pay.fail.body":
@@ -3171,7 +3171,7 @@ const en = {
   "pay.back": "Back to catalog",
   "pay.wait.title": "Payment being verified",
   "pay.wait.body":
-    "We are confirming your payment with MonCash. If the amount was debited, your purchase will be confirmed automatically in a few moments — even if this page was interrupted.",
+    "Your payment status needs to be checked with the provider. Confirmation times can vary. Check My purchases before making another payment. If money was debited without a confirmed order, contact support.",
   "pay.wait.cta": "Check my purchases",
   "pay.fail.title": "Payment not confirmed",
   "pay.fail.body":
@@ -4346,7 +4346,7 @@ const es = {
   "pay.back": "Volver al catálogo",
   "pay.wait.title": "Verificando el pago",
   "pay.wait.body":
-    "Estamos confirmando tu pago con MonCash. Si se debitó el monto, tu compra se validará automáticamente en unos instantes — aunque esta página se haya interrumpido.",
+    "Hay que verificar el estado de tu pago con el operador. El plazo de confirmación puede variar. Consulta Mis compras antes de realizar otro pago. Si se debitó dinero sin un pedido confirmado, contacta con ayuda.",
   "pay.wait.cta": "Revisar mis compras",
   "pay.fail.title": "Pago no confirmado",
   "pay.fail.body":

@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { readOfflineListings, rememberListing, OFFLINE_MAX_AGE, OFFLINE_LIMIT } from "../lib/marketplace-offline";
 import { parseCommitment, availabilityNeedsReview } from "../lib/product-commitments";
 import { marketplaceCopy } from "../lib/marketplace-copy";
+import { t } from "../lib/i18n";
 import { topupConfiguration } from "../lib/topup-availability";
-import { prepareCheckoutAttempt, clearCheckoutAttempt } from "../lib/use-session-draft";
+import { prepareCheckoutAttempt, readCheckoutAttempt, clearCheckoutAttempt } from "../lib/use-session-draft";
 
 const now = Date.parse("2026-09-17T12:00:00Z");
 const listing = { slug: "lampe-solaire", title: "Lampe solaire", priceHTG: 1500 };
@@ -61,6 +62,15 @@ test("all four languages cover every new customer-facing label", () => {
   }
 });
 
+test("pending payment copy names no exclusive operator and promises no automatic confirmation deadline", () => {
+  for (const lang of ["fr", "ht", "en", "es"] as const) {
+    const body = t(lang, "pay.wait.body");
+    assert.doesNotMatch(body, /MonCash|automati|otomatik|quelques instants|few moments|unos instantes|kèk moman/i);
+    assert.ok(body.includes({ fr: "Mes achats", ht: "Acha mwen", en: "My purchases", es: "Mis compras" }[lang]));
+    assert.ok(body.includes({ fr: "contactez l’aide", ht: "kontakte èd", en: "contact support", es: "contacta con ayuda" }[lang]));
+  }
+});
+
 test("checkout attempts survive reload in the same tab without storing purchase details", async () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
   const values = new Map<string, string>();
@@ -74,6 +84,19 @@ test("checkout attempts survive reload in the same tab without storing purchase 
     const key = await prepareCheckoutAttempt("attempt", body);
     assert.equal(await prepareCheckoutAttempt("attempt", body), key);
     assert.doesNotMatch(values.get("attempt")!, /Marie|34123456|recipient|consent/);
+    const saved = JSON.parse(values.get("attempt")!);
+    values.set("attempt", JSON.stringify({ ...saved, at: Date.now() - 31 * 60_000 }));
+    assert.equal(await prepareCheckoutAttempt("attempt", body), key, "a pending order must not get a new key after its private draft expires");
+    values.set("attempt", JSON.stringify({ ...saved, at: Date.now() - 9 * 24 * 60 * 60_000 }));
+    assert.equal(readCheckoutAttempt("attempt"), key, "a late reconciler must not turn an unresolved purchase into a new attempt");
+    assert.equal(await prepareCheckoutAttempt("attempt", body), key);
+    values.set("attempt", JSON.stringify({ ...saved, at: Date.now() + 60_000 }));
+    assert.equal(readCheckoutAttempt("attempt"), key, "device clock correction cannot forget an unresolved order");
+    assert.equal(await prepareCheckoutAttempt("attempt", body), key);
+    values.set("attempt", JSON.stringify({ ...saved, at: null }));
+    assert.equal(readCheckoutAttempt("attempt"), null);
+    assert.notEqual(await prepareCheckoutAttempt("attempt", body), key);
+    values.set("attempt", JSON.stringify(saved));
     assert.notEqual(await prepareCheckoutAttempt("other-buyer", body), key);
     assert.notEqual(await prepareCheckoutAttempt("attempt", body + "changed"), key);
     clearCheckoutAttempt("attempt");
@@ -81,12 +104,14 @@ test("checkout attempts survive reload in the same tab without storing purchase 
     values.set("attempt", JSON.stringify({ at: Date.now() - 31 * 60_000, key, fingerprint: "stale" }));
     assert.notEqual(await prepareCheckoutAttempt("attempt", body), key);
     values.set("attempt", "invalid-json");
+    assert.equal(readCheckoutAttempt("attempt"), null);
     assert.match(await prepareCheckoutAttempt("attempt", body), /^[0-9a-f-]{36}$/);
     Object.defineProperty(globalThis, "sessionStorage", { configurable: true, value: {
       getItem: () => { throw new Error("Storage blocked"); },
       setItem: () => { throw new Error("Storage blocked"); },
     } });
     assert.equal(await prepareCheckoutAttempt("attempt", body, key), key);
+    assert.equal(readCheckoutAttempt("attempt"), null);
   } finally {
     if (original) Object.defineProperty(globalThis, "sessionStorage", original);
     else Reflect.deleteProperty(globalThis, "sessionStorage");

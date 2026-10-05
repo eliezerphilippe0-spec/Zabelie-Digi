@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTable } from "@/lib/product-media";
+import { isMissingFunction } from "@/lib/pg-errors";
 import {
   KYC_BUCKET,
   KYC_EXTENSIONS,
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
   // Le dossier : créé au premier dépôt, jamais rouvert par cette route.
   const { data: sub, error: subErr } = await admin
     .from("zabelie_kyc_submissions")
-    .select("status")
+    .select("status, submitted_at, decided_at, decided_by")
     .eq("user_id", user.id)
     .maybeSingle();
   if (subErr) {
@@ -91,33 +92,44 @@ export async function POST(req: Request) {
     return erreurTraduite("api.upload.failed", 502);
   }
 
-  const { data: ligne, error: insErr } = await admin
-    .from("zabelie_kyc_documents")
-    .insert({ user_id: user.id, kind, storage_path: path })
-    .select("id")
-    .single();
-  if (insErr || !ligne) {
-    // Une pièce d'identité orpheline au stockage est un défaut de rétention,
-    // pas un simple déchet : on nettoie avant d'échouer.
-    await admin.storage.from(KYC_BUCKET).remove([path]);
-    return erreurTraduite("api.write.failed", 500);
+  // The profile lock serializes this transaction with account closure; the
+  // snapshot check prevents overwriting a decision made during the upload.
+  // The existing document and submission are recorded together (0130).
+  let result: { ok?: boolean; id?: string; code?: string } | null = null;
+  let registrationError: { code?: string; message?: string } | null = null;
+  try {
+    const { data, error } = await admin.rpc("zabelie_register_kyc_document", {
+      p_user_id: user.id, p_kind: kind, p_storage_path: path, p_expected: sub,
+    });
+    result = data;
+    registrationError = error;
+  } catch {
+    registrationError = { code: "registration_unavailable" };
   }
-
-  // Le dépôt (re)met le dossier en attente de décision.
-  const { error: upsertErr } = await admin.from("zabelie_kyc_submissions").upsert(
-    {
-      user_id: user.id,
-      status: "pending",
-      submitted_at: new Date().toISOString(),
-      decided_at: null,
-      decided_by: null,
-    },
-    { onConflict: "user_id" }
-  );
-  if (upsertErr) {
-    return erreurTraduite("api.write.failed", 500);
+  if (registrationError || !result?.ok || !result.id) {
+    // A lost RPC response can follow a committed transaction. Never delete
+    // its file: verify the existing metadata before removing an upload.
+    try {
+      const { data: recorded, error: readError } = await admin.from("zabelie_kyc_documents")
+        .select("id").eq("user_id", user.id).eq("storage_path", path).maybeSingle();
+      if (readError) throw new Error("cleanup_status_unavailable");
+      if (!recorded) {
+        const { error: removeError } = await admin.storage.from(KYC_BUCKET).remove([path]);
+        if (removeError) throw new Error("cleanup_failed");
+      }
+    } catch {
+      console.error("[kyc] upload_cleanup_unavailable");
+      return erreurTraduite("api.unavailable", 503);
+    }
+    if (registrationError && isMissingFunction(registrationError)) {
+      console.error("[kyc] MIGRATION 0130 NON APPLIQUÉE — dépôt atomique indisponible");
+      return erreurTraduite("api.feature.off", 503);
+    }
+    if (result?.code === "account_inactive") return erreurTraduite("api.suspended", 403);
+    if (result?.code === "conflict" || result?.code === "locked") return erreurTraduite("api.kyc.locked", 409);
+    return erreurTraduite("api.write.failed", 503);
   }
 
   // L'identifiant seul — jamais d'URL : le bucket est privé, par construction.
-  return NextResponse.json({ ok: true, id: ligne.id, kind });
+  return NextResponse.json({ ok: true, id: result.id, kind });
 }

@@ -14,7 +14,7 @@ import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isDownloadable, isDigitalKind, isTrackedStockKind } from "@/lib/product-kind";
+import { isDownloadable, isDigitalKind, isTrackedStockKind, isProductKind } from "@/lib/product-kind";
 import { createPayment, resolveMonCashMode } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
@@ -47,7 +47,7 @@ import { attribuerCommande, REF_COOKIE, CODE_RE } from "@/lib/affiliation";
 import { normaliserNumeroHaiti } from "@/lib/rechaj";
 import { attestationAgeValide, lireAgeMinimum } from "@/lib/age-minimum";
 import { contexteGroupe } from "@/lib/panier-groupe-contexte";
-import { checkoutOrderId, validCheckoutKey, savedCheckoutRedirect } from "@/lib/checkout-idempotency";
+import { checkoutOrderId, checkoutIntentHash, checkoutStockIsHeld, validCheckoutKey, validCheckoutOrderId, savedCheckoutRedirect } from "@/lib/checkout-idempotency";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,6 +109,8 @@ export async function POST(req: Request) {
   let recommendationInput: unknown;
   let ageAttestationInput: unknown;
   let checkoutKeyInput: unknown;
+  let recoveryOnlyInput: unknown;
+  let orderIdInput: unknown;
   try {
     ({
       productId,
@@ -123,11 +125,13 @@ export async function POST(req: Request) {
       recommendationSource: recommendationInput,
       ageAttestation: ageAttestationInput,
       checkoutKey: checkoutKeyInput,
+      recoveryOnly: recoveryOnlyInput,
+      orderId: orderIdInput,
     } = await req.json());
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
-  if (!productId) {
+  if (!productId && !(recoveryOnlyInput === true && validCheckoutOrderId(orderIdInput))) {
     return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 400 });
   }
 
@@ -197,6 +201,73 @@ export async function POST(req: Request) {
       { error: t(lang, "api.rate.limited") },
       { status: 429 }
     );
+  }
+
+  type ExistingOrder = { id: string; product_id: string; amount_htg: number; status: string; group_id?: string | null; coupon_id?: string | null; coupon_code?: string | null };
+  type ExistingPayment = { status: string; rail: string; raw: Record<string, unknown> | null };
+  const conflict = () => NextResponse.json(
+    { error: t(lang, "api.order.failed"), code: "checkout_attempt_conflict" },
+    { status: 409, headers: { "Cache-Control": "private, no-store" } }
+  );
+  // Recovery observes the original purchase before mutable catalogue/price,
+  // coupon or age validation. It never creates an order, payment or session.
+  const resume = async (existing: ExistingOrder, payment: ExistingPayment | null, kind?: unknown) => {
+    if (productId && existing.product_id !== productId) return conflict();
+    const complete = ["paid", "delivered", "cancelled", "refunded"].includes(existing.status) ||
+      (payment?.status === "failed" && payment.raw?.checkout_preparation_failed === true);
+    if (!payment && existing.status === "pending" && !existing.group_id) {
+      let originalKind = kind;
+      if (!originalKind) {
+        const { data: originalProduct, error } = await admin.from("products").select("kind").eq("id", existing.product_id).maybeSingle();
+        if (error || !originalProduct) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+        originalKind = originalProduct.kind;
+      }
+      if (!isProductKind(originalKind)) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+      // Orders have no original variant/quantity. Without a payment owner or
+      // reservation, a physical intent cannot safely be reconstructed.
+      if (!isTrackedStockKind(originalKind)) {
+        return NextResponse.json({ orderId: existing.id, deja: true, checkoutState: "retryable", retryAllowed: true },
+          { headers: { "Cache-Control": "private, no-store" } });
+      }
+    }
+    let redirectUrl = complete ? "/mes-achats" : savedCheckoutRedirect(existing, payment);
+    let checkoutState = complete ? "complete" : "review";
+    if (existing.status === "pending" && !existing.group_id && payment?.status === "pending") {
+      if (payment.rail === "zelle" && payment.raw?.checkout_prepared === true) redirectUrl = `/paiement/zelle/${existing.id}`;
+      if (redirectUrl) {
+        let originalKind = kind;
+        if (!originalKind) {
+          const { data: originalProduct, error } = await admin.from("products").select("kind").eq("id", existing.product_id).maybeSingle();
+          if (error || !originalProduct) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+          originalKind = originalProduct.kind;
+        }
+        if (!isProductKind(originalKind)) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+        if (isTrackedStockKind(originalKind)) {
+          const { data: reservations, error } = await admin.from("zabelie_stock_reservations")
+            .select("status, expires_at").eq("order_id", existing.id);
+          // Existing sessions from before this fix may already have released
+          // stock. Never expose those URLs or silently reserve another unit.
+          if (error) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+          if (!checkoutStockIsHeld(reservations)) redirectUrl = null;
+        }
+        checkoutState = redirectUrl ? "ready" : "review";
+      } else checkoutState = payment.rail === "zelle" ? "review" : "pending";
+    }
+    return NextResponse.json({ redirectUrl: redirectUrl ?? (checkoutState === "pending" ? `/paiement/en-attente?commande=${existing.id}` : "/mes-achats"),
+      orderId: existing.id, orderStatus: existing.status, paymentStatus: payment?.status ?? null, deja: true, checkoutState }, { headers: { "Cache-Control": "private, no-store" } });
+  };
+  if (recoveryOnlyInput === true) {
+    if (groupe || (!validCheckoutKey(checkoutKeyInput) && !validCheckoutOrderId(orderIdInput))) {
+      return NextResponse.json({ error: t(lang, "api.checkout.refresh"), code: "checkout_key_required" }, { status: 400 });
+    }
+    const id = validCheckoutKey(checkoutKeyInput) ? checkoutOrderId(user.id, checkoutKeyInput) : orderIdInput as string;
+    const { data: existing, error } = await admin.from("orders").select("*").eq("id", id).eq("buyer_id", user.id).maybeSingle();
+    if (error) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    if (!existing) return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
+    if (productId && existing.product_id !== productId) return conflict();
+    const { data: payment, error: paymentError } = await admin.from("payments").select("status, rail, raw").eq("order_id", existing.id).maybeSingle();
+    if (paymentError) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    return resume(existing, payment);
   }
 
   // Produit publié uniquement, prix = source de vérité serveur. Le comptage
@@ -376,6 +447,7 @@ export async function POST(req: Request) {
         orderId: deja.id,
         gratuit: true,
         deja: true,
+        checkoutState: "complete",
       });
     }
   }
@@ -517,9 +589,15 @@ export async function POST(req: Request) {
     );
   }
   const attemptOrderId = groupe ? null : checkoutOrderId(user.id, checkoutKeyInput as string);
+  const intentHash = checkoutIntentHash({ productId: product.id, variantId, quantity: purchase.quantity,
+    amountHtg: finalPriceHtg, couponId, couponCode, rail: finalPriceHtg === 0 ? RAIL_GRATIS : rail,
+    provider: rail === "kobara" ? kobaraProvider : null, recipient, recharge: rechajNumero, ageMinimum });
+  const samePaymentIntent = (payment: ExistingPayment) =>
+    payment.raw?.checkout_intent_hash === undefined || payment.raw.checkout_intent_hash === intentHash;
+  let repairingMissingPayment = false;
 
   // Commande (pending).
-  const { data: order, error: orderErr } = await admin
+  let { data: order, error: orderErr } = await admin
     .from("orders")
     .insert({
       ...(attemptOrderId ? { id: attemptOrderId } : {}),
@@ -556,13 +634,19 @@ export async function POST(req: Request) {
     }
     const { data: payment, error: paymentError } = await admin.from("payments")
       .select("status, rail, raw").eq("order_id", existing.id).maybeSingle();
-    // Reuse a known session after a lost response. A missing/uncertain
-    // session goes to purchase review, never to another operator call.
-    const redirectUrl = paymentError ? null : savedCheckoutRedirect(existing, payment);
-    return NextResponse.json(
-      { redirectUrl: redirectUrl ?? "/mes-achats", orderId: existing.id, deja: true },
-      { headers: { "Cache-Control": "private, no-store" } }
-    );
+    if (paymentError) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    if (existing.product_id !== productId) return conflict();
+    if (payment && !samePaymentIntent(payment)) return conflict();
+    if (payment || existing.status !== "pending" || existing.group_id) return resume(existing, payment, product.kind);
+    // No payment exists: no operator could have been invoked. Reuse the
+    // immutable digital snapshot and exact original price/coupon. Only the
+    // winner of payments' UNIQUE insertion below may reserve/call a provider.
+    if (existing.amount_htg !== finalPriceHtg || (existing.coupon_id ?? null) !== couponId ||
+        (existing.coupon_code ?? null) !== couponCode) return conflict();
+    if (isTrackedStockKind(product.kind)) return conflict();
+    order = existing;
+    orderErr = null;
+    repairingMissingPayment = true;
   }
 
   if (orderErr?.code === "ZB112") {
@@ -575,79 +659,30 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fatal on failure: no payment may start without its recipient details.
-  if (recipient) {
-    const { error: recipientError } = await admin.from("zabelie_order_recipients").insert({ order_id: order.id, ...recipient });
-    if (recipientError) {
-      await admin.from("orders").delete().eq("id", order.id).eq("status", "pending");
-      console.error("[checkout] recipient save failed", { code: recipientError.code });
-      return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
-    }
-  }
+  const matchingMetadata = async (table: string, expected: Record<string, unknown>) => {
+    const { data, error } = await admin.from(table).select(Object.keys(expected).join(",")).eq("order_id", order.id).maybeSingle();
+    if (error || !data || typeof data !== "object" || Array.isArray(data)) return false;
+    const saved = data as unknown as Record<string, unknown>;
+    return Object.entries(expected).every(([field, value]) => saved[field] === value);
+  };
 
-  /* La cible de recharge, AVANT le paiement et sans best-effort (0099).
-   *
-   * Ce n'est pas l'affiliation : un cookie d'affiliation cassé fait perdre une
-   * commission, une cible manquante fait encaisser une commande indélivrable.
-   * Un échec ici retire donc la commande et rend une erreur, exactement comme
-   * l'échec d'insertion du paiement plus bas — et pour la même raison : rien
-   * ne doit survivre à mi-chemin.
-   *
-   * La contrainte `check` de la table est le second garde. Si elle refuse la
-   * valeur, c'est que `normaliserNumeroHaiti` a laissé passer quelque chose —
-   * on préfère le 500 bruyant au numéro faux écrit en silence. */
-  if (rechajNumero) {
-    const { error: cibleErr } = await admin
-      .from("zabelie_rechaj_cible")
-      .insert({ order_id: order.id, msisdn: rechajNumero });
-    if (cibleErr) {
-      await admin.from("orders").delete().eq("id", order.id);
-      console.error("[checkout] cible rechaj refusée", {
-        orderId: order.id,
-        code: cibleErr.code,
-      });
-      return NextResponse.json(
-        { error: t(lang, "api.order.failed") },
-        { status: 500 }
-      );
-    }
+  // A historical missing-payment repair may add metadata that never reached
+  // the database, but cannot erase or change any already recorded intention.
+  // Presence matters too: an omitted gift/target/age is not a matching value.
+  if (repairingMissingPayment) {
+    const metadata: [string, Record<string, unknown> | null][] = [
+      ["zabelie_order_recipients", recipient],
+      ["zabelie_rechaj_cible", rechajNumero ? { msisdn: rechajNumero } : null],
+      ["zabelie_order_age_attestations", ageMinimum > 0 ? { age_minimum: ageMinimum } : null],
+    ];
+    const reads = await Promise.all(metadata.map(async ([table, expected]) => {
+      const { data, error } = await admin.from(table).select("*").eq("order_id", order.id).maybeSingle();
+      return { data, error, expected };
+    }));
+    if (reads.some(({ error }) => error)) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    if (reads.some(({ data, expected }) => data && (!expected || typeof data !== "object" || Array.isArray(data) ||
+      !Object.entries(expected).every(([field, value]) => (data as unknown as Record<string, unknown>)[field] === value)))) return conflict();
   }
-
-  /* L'attestation d'âge, AVANT le paiement et sans best-effort (0115).
-   *
-   * Une commande restreinte sans trace de l'attestation serait une vente dont
-   * personne ne peut dire que la question a été posée. Même traitement que la
-   * cible de recharge : l'échec retire la commande. */
-  if (ageMinimum > 0) {
-    const { error: ageErr } = await admin
-      .from("zabelie_order_age_attestations")
-      .insert({ order_id: order.id, age_minimum: ageMinimum });
-    if (ageErr) {
-      await admin.from("orders").delete().eq("id", order.id);
-      console.error("[checkout] attestation d'age refusee", {
-        orderId: order.id,
-        code: ageErr.code,
-      });
-      return NextResponse.json(
-        { error: t(lang, "api.order.failed") },
-        { status: 500 }
-      );
-    }
-  }
-
-  // Affiliation (0081) : attribution FIGÉE maintenant, jamais au paiement
-  // (leçon Jumia, docs/37). Best-effort par contrat — un cookie cassé est
-  // ignoré, jamais un checkout bloqué.
-  const refCookie = req.headers
-    .get("cookie")
-    ?.match(new RegExp(`${REF_COOKIE}=([a-z0-9]{6,16})`))?.[1];
-  await attribuerCommande(admin, {
-    orderId: order.id,
-    productId: product.id,
-    buyerId: user.id,
-    sellerId: product.seller_id,
-    code: refCookie && CODE_RE.test(refCookie) ? refCookie : null,
-  });
 
   // Paiement (pending). idempotency_key = order.id (1 paiement/commande).
   /* Le rail est DÉDUIT du montant relu en base, jamais du champ envoyé par
@@ -666,11 +701,22 @@ export async function POST(req: Request) {
     idempotency_key: order.id,
     status: "pending",
     expected_usd_cents: expectedUsdCents,
+    raw: { checkout_intent_hash: intentHash },
   });
   if (payErr) {
-    // BL-122 (C-4a) : un order sans ligne payment serait invisible du
-    // réconciliateur (il scanne payments) — on le retire, best-effort.
-    await admin.from("orders").delete().eq("id", order.id);
+    if (payErr.code === "23505") {
+      // Another preparation won the payment key. Never delete its order,
+      // private metadata or immutable snapshot, and never call its provider.
+      const { data: payment, error } = await admin.from("payments").select("status, rail, raw").eq("order_id", order.id).maybeSingle();
+      if (error || !payment) return NextResponse.json({ error: t(lang, "api.payment.failed") }, { status: 503 });
+      const { data: currentOrder, error: currentError } = await admin.from("orders").select("*").eq("id", order.id).eq("buyer_id", user.id).maybeSingle();
+      if (currentError || !currentOrder) return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+      if (!samePaymentIntent(payment)) return conflict();
+      return resume(currentOrder, payment, product.kind);
+    }
+    // Preserve the order/snapshot. A later validated retry can claim its
+    // missing payment. A transport error may have committed the INSERT, so
+    // do not delete anything or infer that an existing payment is absent.
 
     /* ⚠️ LE RAIL GRATUIT ÉCHOUE **ICI**, PAS PLUS BAS — corrigé le 2026-08-22.
      *
@@ -718,6 +764,77 @@ export async function POST(req: Request) {
     );
   }
 
+  // Only the UNIQUE payment owner reaches private writes. No external
+  // payment may start until every required detail has been persisted.
+  if (recipient) {
+    const { error: recipientError } = await admin.from("zabelie_order_recipients").insert({ order_id: order.id, ...recipient });
+    if (recipientError && (recipientError.code !== "23505" || !(await matchingMetadata("zabelie_order_recipients", recipient)))) {
+      console.error("[checkout] recipient save failed", { code: recipientError.code });
+      return NextResponse.json({ error: t(lang, "api.order.failed") }, { status: 503 });
+    }
+  }
+
+  /* La cible de recharge, AVANT l’opérateur et sans best-effort (0099).
+   *
+   * Ce n'est pas l'affiliation : un cookie d'affiliation cassé fait perdre une
+   * commission, une cible manquante fait encaisser une commande indélivrable.
+   * Un échec refuse le paiement. L'ordre reste reprenable : le supprimer
+   * détruirait le snapshot acquis ou le travail d'une reprise concurrente.
+   *
+   * La contrainte `check` de la table est le second garde. Si elle refuse la
+   * valeur, c'est que `normaliserNumeroHaiti` a laissé passer quelque chose —
+   * on préfère le 500 bruyant au numéro faux écrit en silence. */
+  if (rechajNumero) {
+    const { error: cibleErr } = await admin
+      .from("zabelie_rechaj_cible")
+      .insert({ order_id: order.id, msisdn: rechajNumero });
+    if (cibleErr && (cibleErr.code !== "23505" || !(await matchingMetadata("zabelie_rechaj_cible", { msisdn: rechajNumero })))) {
+      console.error("[checkout] cible rechaj refusée", {
+        orderId: order.id,
+        code: cibleErr.code,
+      });
+      return NextResponse.json(
+        { error: t(lang, "api.order.failed") },
+        { status: 500 }
+      );
+    }
+  }
+
+  /* L'attestation d'âge, AVANT l’opérateur et sans best-effort (0115).
+   *
+   * Une commande restreinte sans trace de l'attestation serait une vente dont
+   * personne ne peut dire que la question a été posée. Même traitement que la
+   * cible de recharge : l'échec interdit tout démarrage de paiement. */
+  if (ageMinimum > 0) {
+    const { error: ageErr } = await admin
+      .from("zabelie_order_age_attestations")
+      .insert({ order_id: order.id, age_minimum: ageMinimum });
+    if (ageErr && (ageErr.code !== "23505" || !(await matchingMetadata("zabelie_order_age_attestations", { age_minimum: ageMinimum })))) {
+      console.error("[checkout] attestation d'age refusee", {
+        orderId: order.id,
+        code: ageErr.code,
+      });
+      return NextResponse.json(
+        { error: t(lang, "api.order.failed") },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Affiliation (0081) : attribution FIGÉE maintenant, jamais au paiement
+  // (leçon Jumia, docs/37). Best-effort par contrat — un cookie cassé est
+  // ignoré, jamais un checkout bloqué.
+  const refCookie = req.headers
+    .get("cookie")
+    ?.match(new RegExp(`${REF_COOKIE}=([a-z0-9]{6,16})`))?.[1];
+  await attribuerCommande(admin, {
+    orderId: order.id,
+    productId: product.id,
+    buyerId: user.id,
+    sellerId: product.seller_id,
+    code: refCookie && CODE_RE.test(refCookie) ? refCookie : null,
+  });
+
   // Produit PHYSIQUE : réservation ATOMIQUE du stock (0036). Le stock est pris
   // ici, à la commande — pas à la livraison : deux acheteurs ne peuvent pas
   // acheter la même unité. La réservation expire seule (TTL 30 min) si le
@@ -729,10 +846,10 @@ export async function POST(req: Request) {
       { p_variant_id: variantId, p_order_id: order.id, p_quantity: qty }
     );
     if (resErr || !reservation?.ok) {
-      // Rien n'est vendu : on retire la commande et son paiement, sinon le
-      // réconciliateur traînerait un pending qui ne peut plus aboutir.
-      await admin.from("payments").delete().eq("order_id", order.id);
-      await admin.from("orders").delete().eq("id", order.id);
+      // Nothing has reached an operator. Mark this preparation terminal
+      // rather than delete a key a concurrent retry might already be reading.
+      await admin.from("payments").update({ status: "failed", raw: { checkout_intent_hash: intentHash, checkout_preparation_failed: true, reason: reservation?.reason ?? "stock_unavailable" } })
+        .eq("order_id", order.id).eq("status", "pending");
       const reason = reservation?.reason as string | undefined;
       return NextResponse.json(
         {
@@ -799,8 +916,6 @@ export async function POST(req: Request) {
           message: gratisErr.message,
         })
       );
-      await admin.from("payments").delete().eq("order_id", order.id);
-      await admin.from("orders").delete().eq("id", order.id);
       return NextResponse.json(
         { error: t(lang, "api.free.closed"), code: "ZB087" },
         { status: 503 }
@@ -822,6 +937,7 @@ export async function POST(req: Request) {
       redirectUrl: "/mes-achats",
       orderId: order.id,
       gratuit: true,
+      checkoutState: "complete",
     });
   }
 
@@ -833,16 +949,19 @@ export async function POST(req: Request) {
         usdCents: expectedUsdCents as number,
         productTitle: product.title,
       });
-      await persistPaymentSession(admin, order.id, { stripe_session_id: sessionId, checkout_redirect_url: redirectUrl });
-      return NextResponse.json({ redirectUrl, orderId: order.id });
+      await persistPaymentSession(admin, order.id, { checkout_intent_hash: intentHash, stripe_session_id: sessionId, checkout_redirect_url: redirectUrl });
+      return NextResponse.json({ redirectUrl, orderId: order.id, checkoutState: "ready" });
     }
 
     if (rail === "zelle") {
       // Pas d'API Zelle : page d'instructions (mémo + montant), confirmation
       // administrative ensuite — même confirm_payment idempotent.
+      // A pending claim alone proves neither metadata nor stock preparation.
+      await persistPaymentSession(admin, order.id, { checkout_intent_hash: intentHash, checkout_prepared: true });
       return NextResponse.json({
         redirectUrl: `/paiement/zelle/${order.id}`,
         orderId: order.id,
+        checkoutState: "ready",
       });
     }
 
@@ -870,13 +989,14 @@ export async function POST(req: Request) {
        *   select raw->>'kobara_mode', raw->>'kobara_mode_source', count(*)
        *     from payments where rail = 'kobara' group by 1, 2; */
       await persistPaymentSession(admin, order.id, {
+        checkout_intent_hash: intentHash,
         kobara_payment_id: session.id,
         kobara_provider: kobaraProvider,
         kobara_mode: session.mode,
         kobara_mode_source: session.modeSource,
         checkout_redirect_url: session.redirectUrl,
       });
-      return NextResponse.json({ redirectUrl: session.redirectUrl, orderId: order.id });
+      return NextResponse.json({ redirectUrl: session.redirectUrl, orderId: order.id, checkoutState: "ready" });
     }
 
     // MonCash. orderId envoyé = notre order.id (clé de rapprochement).
@@ -898,29 +1018,28 @@ export async function POST(req: Request) {
      * C'est le corollaire d'observabilité du dépôt appliqué au rail d'argent :
      * l'absence de signal doit être un signal, et ici elle n'en était pas un. */
     await persistPaymentSession(admin, order.id, {
+      checkout_intent_hash: intentHash,
       payment_token: paymentToken,
       moncash_mode: mode,
       moncash_host: gatewayHost,
       checkout_redirect_url: redirectUrl,
     });
 
-    return NextResponse.json({ redirectUrl, orderId: order.id });
+    return NextResponse.json({ redirectUrl, orderId: order.id, checkoutState: "ready" });
   } catch (e) {
     // BL-114 (C-3, pattern erreurs typées façon Stripe) : le détail opérateur
     // (statut HTTP, corps brut MonCash) reste dans les logs serveur — jamais
     // renvoyé au client (fuite d'infos + intraduisible FR/KR).
     console.error("checkout: échec opérateur", e);
-    // La session de paiement n'a pas pu être créée : on relibère
-    // immédiatement le stock au lieu d'attendre l'expiration du TTL.
-    if (variantId) {
-      await admin
-        .rpc("zabelie_release_stock", { p_order_id: order.id })
-        .then(undefined, () => undefined);
-    }
+    // Creation or persistence can lose their response after committing.
+    // Keep the reservation for this possibly payable session; only formal
+    // provider expiry/reconciliation or the stock TTL may release it.
     return NextResponse.json(
       {
         error: t(lang, "api.operator.down"),
         code: "provider_unavailable",
+        orderId: order.id,
+        checkoutState: "pending",
       },
       { status: 502 }
     );
