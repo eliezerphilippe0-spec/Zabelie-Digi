@@ -91,3 +91,10 @@ environnement) : rendu à 390 px et interactions sont couverts par la suite CI
 ajoutée, mais leur exécution locale n’est pas revendiquée. Le plugin Browser
 n’est pas disponible dans cette session. Aucun appel IA ni paiement réel
 n’a été exécuté pendant ces contrôles.
+
+La première CI a révélé deux alertes nouvelles sur des dépendances déjà
+présentes : Sharp 0.35.4 et source-map-js 1.2.1. Le lockfile est mis à jour
+uniquement vers Sharp 0.35.5 (binaires associés/libvips compris) et
+source-map-js 1.2.2. Aucune dépendance directe n’est ajoutée.
+`npm audit --omit=dev --audit-level=high` renvoie zéro vulnérabilité après
+réinstallation ; la bibliothèque librsvg embarquée est vérifiée en 2.63.2.
