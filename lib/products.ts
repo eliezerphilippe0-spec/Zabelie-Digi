@@ -163,6 +163,9 @@ const SELECT =
   "id, slug, title, description, kind, category, price_htg, sales_count, rating_count, rating_sum, seller_id, cover_url, delivery_days, service_includes, seller:profiles!products_seller_id_fkey(display_name), sous_rayon:zabelie_categories!products_category_id_fkey(slug)";
 
 export type ProductFilters = {
+  /** Internal assistant search: bounded keywords and an explicit shop scope. */
+  searchTerms?: string[];
+  sellerId?: string;
   minPrice?: number;
   maxPrice?: number;
   sort?: CatalogueSort;
@@ -302,6 +305,12 @@ export async function getPublishedProducts(
     if (withStockFilter) query = query.eq("in_stock", true);
 
     if (filters?.kind) query = query.eq("kind", filters.kind);
+    if (filters?.sellerId) query = query.eq("seller_id", filters.sellerId);
+    if (filters?.searchTerms) {
+      const terms = filters.searchTerms.slice(0, 8).map(t => t.replace(/[^\p{L}\p{N}]/gu, "")).filter(Boolean);
+      if (!terms.length) query = query.eq("id", ZERO_UUID);
+      else query = query.or(terms.flatMap(t => [`title.ilike.%${t}%`, `description.ilike.%${t}%`]).join(","));
+    }
     if (filters?.category && filters.category !== "Tout") {
       query = query.eq("category", filters.category);
     }

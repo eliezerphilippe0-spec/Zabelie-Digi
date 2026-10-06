@@ -1,5 +1,15 @@
 # OPS_TODO — Zabelie
 
+## Assistant d’achat — 6 octobre 2026
+
+Demande directe : « Implémenté ». V1 sur `/assistant` et mode boutique,
+comparaison de zéro à trois offres réelles, budget HTG et stock physique
+vérifiés, panier/fiche/checkout existants. Documentation : `docs/68`.
+Aucune migration ni variable d’environnement modifiée. Le dialogue IA
+dépend du fournisseur déjà configuré ; formulaire guidé sans appel IA.
+WhatsApp et les configurations vendeur avancées ne font pas partie de la V1.
+
+
 ## Compléments techniques avant lancement — 5 octobre 2026
 
 Instruction du porteur : « Profitez en pour pouvoir implémenté tous,
