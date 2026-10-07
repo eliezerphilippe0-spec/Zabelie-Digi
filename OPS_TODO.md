@@ -7,7 +7,10 @@ le parcours assistant échoue. Reproduction HTTP : l'origine 127.0.0.1 est
 refusée car Next.js normalise `req.url` vers localhost. Le contrôle utilise
 désormais l'autorité Host de la requête ; une origine étrangère reste refusée.
 Le test navigateur vérifie explicitement la réponse 200 et le refus 403.
-Fusion et déploiement attendent la CI du correctif.
+La suite money-path passe ensuite ses 152 tests. Le lien assistant de boutique
+est déplacé dans l'en-tête : la région des offres contient uniquement ses
+produits, comme le garantit le parcours d'achat digital. Fusion et déploiement
+attendent la CI du correctif.
 
 ## Dossier de clés API et secret OpenAI — 7 octobre 2026
 
