@@ -74,6 +74,9 @@ test("le garde PARTAGÉ vérifie réellement le rôle, sinon les routes qui s'y 
 // Routes publiques PAR CONCEPTION — chacune doit exhiber le garde alternatif
 // indiqué. Toute nouvelle route publique doit être ajoutée ICI, avec sa raison.
 const PUBLIC_ROUTES: Record<string, RegExp> = {
+  // Public catalogue assistant; read-only. Fail-closed DB quotas bound public
+  // reads and model usage. It cannot write a cart or create a payment.
+  "ai/shopping/route.ts": /if \(!await rateLimit\(admin, `shopping:\$\{ipHash\}`, 10, 60\)\) return fail\("shopping_limit", 429\)/,
   // Retour navigateur MonCash : pas de session requise, la vérité vient de la
   // vérification serveur-à-serveur auprès de MonCash (INVARIANT 2).
   "moncash/return/route.ts": /retrieveTransactionPayment/,

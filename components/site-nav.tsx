@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SHOPPING_COPY } from "@/lib/shopping-ai-copy";
 import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 import { LangToggle } from "@/components/lang-toggle";
@@ -172,6 +173,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
               {t(lang, "topbar.sell")}
             </Link>
             <div className="my-1 border-t border-line" />
+            <Link href="/assistant" className={MENU_LINK}>{SHOPPING_COPY[lang].title}</Link>
             <Link href="/aide" className={MENU_LINK}>
               {t(lang, "nav.help")}
             </Link>

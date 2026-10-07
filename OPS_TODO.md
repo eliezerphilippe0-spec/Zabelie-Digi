@@ -1,5 +1,46 @@
 # OPS_TODO — Zabelie
 
+## Contrôle avant fusion — 7 octobre 2026
+
+Instruction : « Fusionner et déployer ». CI navigateur : 150 tests passent,
+le parcours assistant échoue. Reproduction HTTP : l'origine 127.0.0.1 est
+refusée car Next.js normalise `req.url` vers localhost. Le contrôle utilise
+désormais l'autorité Host de la requête ; une origine étrangère reste refusée.
+Le test navigateur vérifie explicitement la réponse 200 et le refus 403.
+La suite money-path passe ensuite ses 152 tests. Le lien assistant de boutique
+est déplacé dans l'en-tête : la région des offres contient uniquement ses
+produits, comme le garantit le parcours d'achat digital. Fusion et déploiement
+attendent la CI du correctif.
+
+## Dossier de clés API et secret OpenAI — 7 octobre 2026
+
+Instruction directe : clé fournie et « créer un dossier pour les clés API ».
+`cles-api/` créé localement, ignoré par Git, permissions 700 ; fichier
+`openai.env` en permissions 600. Aucune valeur dans les fichiers versionnés.
+Secret Vercel `OPENAI_API_KEY` ajouté en production et preview sur instruction
+du porteur. Présence vérifiée sans lire sa valeur ; aucun appel facturable
+effectué. La clé a été partagée dans le chat : rotation recommandée.
+La PR #327 reste à fusionner/déployer avant activation en production.
+
+## Configuration OpenAI — 6 octobre 2026
+
+Instruction directe du porteur : « Installe le », après recommandation
+OpenAI API / GPT-4.1 mini. Modèle par défaut de l'assistant et exemple de
+configuration mis à jour. Variable Vercel `OPENAI_MODEL=gpt-4.1-mini` ajoutée
+en production, preview et développement, avec cette instruction comme
+autorisation. Clé `OPENAI_API_KEY` absente : activation et appel réel OpenAI
+non vérifiés. La clé existante Gemini est conservée. Voir `docs/68`.
+
+## Assistant d’achat — 6 octobre 2026
+
+Demande directe : « Implémenté ». V1 sur `/assistant` et mode boutique,
+comparaison de zéro à trois offres réelles, budget HTG et stock physique
+vérifiés, panier/fiche/checkout existants. Documentation : `docs/68`.
+Aucune migration ni variable d’environnement modifiée. Le dialogue IA
+dépend du fournisseur déjà configuré ; formulaire guidé sans appel IA.
+WhatsApp et les configurations vendeur avancées ne font pas partie de la V1.
+
+
 ## Compléments techniques avant lancement — 5 octobre 2026
 
 Instruction du porteur : « Profitez en pour pouvoir implémenté tous,
