@@ -23,7 +23,11 @@ async function fail(code: string, status: number) {
 /** Public read-only assistant. All purchase mutations stay behind the existing checkout. */
 export async function POST(req: Request) {
   const origin = req.headers.get("origin");
-  if (origin && origin !== new URL(req.url).origin) return fail("shopping_origin", 403);
+  // Next.js can normalize req.url to localhost behind its server/proxy.
+  // The Host header retains the authority actually addressed by the browser.
+  const url = new URL(req.url);
+  const requestOrigin = `${url.protocol}//${req.headers.get("host") ?? url.host}`;
+  if (origin && origin !== requestOrigin) return fail("shopping_origin", 403);
   let input;
   try { input = ShoppingRequestSchema.parse(await readApiBody(req)); }
   catch { return fail("shopping_input", 400); }
