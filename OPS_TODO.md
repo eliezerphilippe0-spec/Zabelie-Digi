@@ -1,5 +1,14 @@
 # OPS_TODO — Zabelie
 
+## Configuration OpenAI — 6 octobre 2026
+
+Instruction directe du porteur : « Installe le », après recommandation
+OpenAI API / GPT-4.1 mini. Modèle par défaut de l'assistant et exemple de
+configuration mis à jour. Variable Vercel `OPENAI_MODEL=gpt-4.1-mini` ajoutée
+en production, preview et développement, avec cette instruction comme
+autorisation. Clé `OPENAI_API_KEY` absente : activation et appel réel OpenAI
+non vérifiés. La clé existante Gemini est conservée. Voir `docs/68`.
+
 ## Assistant d’achat — 6 octobre 2026
 
 Demande directe : « Implémenté ». V1 sur `/assistant` et mode boutique,

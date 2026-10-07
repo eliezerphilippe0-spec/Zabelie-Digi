@@ -57,7 +57,14 @@ Les quotas utilisent l’empreinte SHA-256 de l’IP fournie par le proxy de con
 
 ## Activation et limites
 
-La PR ne modifie aucune variable d’environnement. Le dialogue dépend de
+Sur instruction « Installe le » du 6 octobre 2026, GPT-4.1 mini est le modèle
+OpenAI par défaut de l'assistant. `OPENAI_MODEL=gpt-4.1-mini` est configuré
+dans Vercel pour production, preview et développement. La vérification des
+métadonnées confirme l'absence de `OPENAI_API_KEY` ; son ajout en secret serveur
+reste nécessaire avant de tester un dialogue OpenAI réel. Une clé Gemini
+existe déjà en production et preview ; le fournisseur existant reste utilisé
+tant que la clé OpenAI manque. Ces variables sont prises en compte au prochain
+déploiement. Le dialogue dépend de
 `OPENAI_API_KEY`/`OPENAI_MODEL` ou `GEMINI_API_KEY`/`GEMINI_MODEL` existants.
 Le serveur doit disposer de la clé de service existante pour les quotas ; les
 lectures catalogue continuent d’utiliser le client de session sous RLS.

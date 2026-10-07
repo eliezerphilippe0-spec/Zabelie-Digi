@@ -18,7 +18,7 @@ export async function extractShoppingIntent(previous: ShoppingIntent, message: s
   if (provider === "openai") {
     const response = await fetcher("https://api.openai.com/v1/chat/completions", {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY!.trim()}` },
-      body: JSON.stringify({ model: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini", temperature: 0,
+      body: JSON.stringify({ model: process.env.OPENAI_MODEL?.trim() || "gpt-4.1-mini", temperature: 0,
         max_tokens: 400, response_format: { type: "json_object" },
         messages: [{ role: "system", content: SHOPPING_EXTRACTION_PROMPT }, { role: "user", content: prompt }] }),
       signal: AbortSignal.timeout(15_000),
