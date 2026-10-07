@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Clés API locales privées : aucune valeur ne doit être versionnée.
+/cles-api/
+
 # playwright
 /test-results
 /playwright-report

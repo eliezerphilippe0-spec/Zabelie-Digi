@@ -59,11 +59,14 @@ Les quotas utilisent l’empreinte SHA-256 de l’IP fournie par le proxy de con
 
 Sur instruction « Installe le » du 6 octobre 2026, GPT-4.1 mini est le modèle
 OpenAI par défaut de l'assistant. `OPENAI_MODEL=gpt-4.1-mini` est configuré
-dans Vercel pour production, preview et développement. La vérification des
-métadonnées confirme l'absence de `OPENAI_API_KEY` ; son ajout en secret serveur
-reste nécessaire avant de tester un dialogue OpenAI réel. Une clé Gemini
-existe déjà en production et preview ; le fournisseur existant reste utilisé
-tant que la clé OpenAI manque. Ces variables sont prises en compte au prochain
+dans Vercel pour production, preview et développement. Le 7 octobre, le porteur
+a fourni la clé OpenAI : `OPENAI_API_KEY` est ajouté comme secret Vercel en
+production et preview. Sa présence est vérifiée sans lire sa valeur ; aucun
+appel facturable n'est effectué. Une clé Gemini existe déjà et est conservée.
+Le dossier local `cles-api/` est ignoré par Git (permissions 700), avec
+`openai.env` en permissions 600 ; Next.js ne charge pas ce dossier automatiquement.
+Les secrets de déploiement sont gérés dans Vercel, jamais dans le code.
+Ces variables sont prises en compte au prochain
 déploiement. Le dialogue dépend de
 `OPENAI_API_KEY`/`OPENAI_MODEL` ou `GEMINI_API_KEY`/`GEMINI_MODEL` existants.
 Le serveur doit disposer de la clé de service existante pour les quotas ; les

@@ -1,5 +1,15 @@
 # OPS_TODO — Zabelie
 
+## Dossier de clés API et secret OpenAI — 7 octobre 2026
+
+Instruction directe : clé fournie et « créer un dossier pour les clés API ».
+`cles-api/` créé localement, ignoré par Git, permissions 700 ; fichier
+`openai.env` en permissions 600. Aucune valeur dans les fichiers versionnés.
+Secret Vercel `OPENAI_API_KEY` ajouté en production et preview sur instruction
+du porteur. Présence vérifiée sans lire sa valeur ; aucun appel facturable
+effectué. La clé a été partagée dans le chat : rotation recommandée.
+La PR #327 reste à fusionner/déployer avant activation en production.
+
 ## Configuration OpenAI — 6 octobre 2026
 
 Instruction directe du porteur : « Installe le », après recommandation
