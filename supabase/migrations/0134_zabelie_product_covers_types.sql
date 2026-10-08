@@ -20,7 +20,7 @@ select zabelie_migration_garde('0134_zabelie_product_covers_types.sql');
 -- * 1 536 000 octets, soit `COVER_MAX_OCTETS` (1 500 × 1024). Ce plafond
 --   existait déjà en production, posé à la main et absent des migrations
 --   (0120 l'avait noté) : il entre ici dans le dépôt, au même octet que la
---   borne applicative, et `tests/image-pipeline.test.ts` croise les deux.
+--   borne applicative, et `tests/galerie-photos.test.ts` croise les deux.
 --
 -- Mesuré avant écriture (2026-10-08) : un seul objet dans le bucket, de type
 -- `image/png`. Un réglage de bucket ne vaut que pour les envois futurs : rien
