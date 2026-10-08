@@ -19,6 +19,8 @@ import {
 import type { CreatorTier } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
 import Link from "next/link";
+import type { ServiceStarter } from "@/lib/service-starters";
+import { serviceStarterDraft } from "@/lib/service-starter-draft";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -57,8 +59,12 @@ export function PublishForm({
   pricing,
   lang = "fr",
   aiActif = false,
+  serviceStarters = [],
+  starterLabels,
 }: {
   labels: PublishFormLabels;
+  serviceStarters?: ServiceStarter[];
+  starterLabels?: { heading: string; hint: string; confirmReplace: string };
   /**
    * Les rayons OUVERTS, lus en base côté serveur (lib/product-categories).
    * En prop et non importés : ce composant est client, et la taxonomie vit
@@ -105,6 +111,14 @@ export function PublishForm({
 
   function set<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  function applyStarter(starter: ServiceStarter) {
+    if ((form.title || form.description || form.serviceIncludes || form.priceHTG || form.deliveryDays) &&
+        !window.confirm(starterLabels!.confirmReplace)) return;
+    setError(null);
+    setPolicyOk(false);
+    setForm(serviceStarterDraft(starter));
   }
 
   async function submit(e: React.FormEvent) {
@@ -155,6 +169,19 @@ export function PublishForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      {starterLabels && serviceStarters.length > 0 && (
+        <fieldset className="rounded-xl border border-line p-4">
+          <legend className="px-1 text-sm font-semibold">{starterLabels.heading}</legend>
+          <p className="mb-3 text-xs leading-relaxed text-mist">{starterLabels.hint}</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {serviceStarters.map((starter) => (
+              <button key={starter.id} type="button" disabled={loading}
+                className="min-h-11 rounded-xl border border-line px-3 py-3 text-left text-sm hover:border-accent disabled:opacity-60"
+                onClick={() => applyStarter(starter)}>{starter.title}</button>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <input
         className={input}
         placeholder={labels.titlePh}

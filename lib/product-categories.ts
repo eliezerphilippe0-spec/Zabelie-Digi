@@ -119,6 +119,8 @@ export async function normalizeCategory(
  */
 export type OptionSousRayon = {
   id: string;
+  /** Slug de la taxonomie active, pour les modèles de service. */
+  slug?: string;
   /** `label_fr` du département (niveau 1) — la même clé que `OptionCategorie.value`. */
   departement: string;
   /** Libellé traduit, avec son parent pour un niveau 3. */
@@ -128,6 +130,7 @@ export type OptionSousRayon = {
 
 type LigneSousRayon = {
   id: string;
+  slug?: string;
   parent_id: string | null;
   level: number;
   position: number | null;
@@ -160,7 +163,7 @@ export async function lireSousRayonsPublication(
 ): Promise<OptionSousRayon[]> {
   const { data, error } = await lireCategories(
     client,
-    "id, parent_id, level, position, label_fr, label_kr, label_en, label_es",
+    "id, slug, parent_id, level, position, label_fr, label_kr, label_en, label_es",
     (q) => q.eq("active", true)
   );
   if (error || !data) {
@@ -181,6 +184,7 @@ export function construireSousRayons(lignes: LigneSousRayon[], lang: Lang): Opti
     if (!departement || departement.level !== 1) continue;
     out.push({
       id: l.id,
+      ...(l.slug ? { slug: l.slug } : {}),
       departement: departement.label_fr,
       chemin: l.level === 3 ? `${libelle(parent, lang)} › ${libelle(l, lang)}` : libelle(l, lang),
       level: l.level,
