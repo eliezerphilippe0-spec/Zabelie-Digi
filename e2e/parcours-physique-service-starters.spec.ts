@@ -35,7 +35,7 @@ test("a service model sets the scope without carrying over price or deadline", a
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/vendre");
   const starter = page.getByRole("button", { name: "Diagnostic téléphone ou ordinateur", exact: true });
-  if (!await starter.isVisible()) await page.locator("details").filter({ has: starter }).locator("summary").click();
+  if (!await starter.isVisible()) await page.locator("details").filter({ has: page.getByRole("button", { name: "Diagnostic téléphone ou ordinateur", exact: true, includeHidden: true }) }).locator("summary").click();
   await starter.click();
   await expect(page.getByRole("textbox", { name: "Titre du produit", exact: true })).toHaveValue("Diagnostic téléphone ou ordinateur");
   await expect(page.getByRole("combobox", { name: "Type de produit", exact: true })).toHaveValue("service");
