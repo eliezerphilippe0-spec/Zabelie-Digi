@@ -1,5 +1,31 @@
 # OPS_TODO — Zabelie
 
+## Photos de `/vendre` et migration 0134 — 8 octobre 2026
+
+Instruction directe : « pousse et mets les en lignes », après la revue de
+`/vendre` (`docs/REVUE-2026-10-08-vendre.md`). Corrigés : UX-01, SEC-02,
+SEC-05, RES-01 (galerie), UX-06 pour les routes `products/cover`,
+`products/media` et `products/media/video` — PR
+[#330](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/330).
+
+**Application vérifiée :** `0134_zabelie_product_covers_types.sql` appliquée
+le 8 octobre 2026 à 19:17:23Z (journal Supabase `20261008191723`), après la
+CI verte de `35914e1` ; `b330571` ne change qu'un commentaire. SQL reçu
+identique au fichier : SHA-256 `b5ad8826…e815` des deux côtés, 2 113
+caractères. Empreinte canonique au registre : `e5ee68cf…4f28`, en
+`appliquee`/`journal_supabase`, `applied_by` : autorisation permanente du
+2026-08-17. Registre croisé avec le disque : 134 lignes pour 134 fichiers.
+
+`product-covers` accepte désormais `image/jpeg`, `image/png` et `image/webp`
+seulement, sous 1 536 000 octets — le même plafond que `COVER_MAX_OCTETS`,
+jusqu'ici posé à la main hors migrations. L'unique objet existant
+(`image/png`) est intact : le réglage ne vaut que pour les envois futurs.
+
+**Non vérifié :** un envoi réel de photo par un compte vendeur en production
+(aucun compte vendeur de test, écriture de données exclue). Le chemin est
+prouvé dans Chromium sur les doublures (`e2e/parcours-physique-galerie.spec.ts`)
+et par les routes exécutées (`tests/galerie-photos.test.ts`).
+
 ## Contrôle avant fusion — 7 octobre 2026
 
 Instruction : « Fusionner et déployer ». CI navigateur : 150 tests passent,

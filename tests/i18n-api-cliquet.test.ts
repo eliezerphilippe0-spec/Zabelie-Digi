@@ -64,14 +64,17 @@ function compter(): { total: number; parFichier: Map<string, number> } {
  *   332 — après les trois routes que le porteur traverse (`products`,
  *         `checkout`, `admin/product-status`) ;
  *   249 — après les seize routes d'administration et de vérification (KYC),
- *         soit 83 occurrences de moins en un lot.
+ *         soit 83 occurrences de moins en un lot ;
+ *   212 — après les trois routes de la galerie vendeur (`products/cover`,
+ *         `products/media`, `products/media/video`), le 2026-10-08 : la
+ *         première étape que `/vendre` demande au vendeur.
  *
  * ⚠️ NE JAMAIS RELEVER CE NOMBRE. Il ne descend que par du travail réel ; le
  * monter reviendrait à transformer un cliquet en décoration. Si une route neuve
  * a besoin d'un message, elle le prend dans `lib/i18n.ts` — c'est deux minutes,
  * et c'est le prix de ne pas laisser un vendeur kreyòl lire du français.
  */
-const PLAFOND = 249;
+const PLAFOND = 212;
 
 /** Routes déjà converties : elles ne doivent JAMAIS régresser. */
 const CONVERTIES = [
@@ -96,6 +99,10 @@ const CONVERTIES = [
   // Vérification vendeur (KYC) — lot du 2026-08-22.
   "app/api/kyc/route.ts",
   "app/api/kyc/purge/route.ts",
+  // Galerie vendeur — photo principale, photos, vidéo — lot du 2026-10-08.
+  "app/api/products/cover/route.ts",
+  "app/api/products/media/route.ts",
+  "app/api/products/media/video/route.ts",
   /* ⚠️ `admin/topup/sync-catalog` est ABSENTE, volontairement, et il faut dire
    * pourquoi plutôt que de la faire disparaître : ses deux messages restants
    * nomment `RELOADLY_CLIENT_ID` / `RELOADLY_CLIENT_SECRET` et le mode bac à

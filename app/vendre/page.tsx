@@ -38,6 +38,7 @@ import type { TauxCommission } from "@/lib/commission-config";
 import { CommissionAnnonce } from "@/components/commission-annonce";
 import { RATE_BPS } from "@/lib/commission";
 import { POLICY_PATH } from "@/lib/policy";
+import { COVER_MAX_OCTETS } from "@/lib/image-limits";
 import { horsProduction, signalerConfigAbsente } from "@/lib/diagnostic";
 import { aiProviderDisponible } from "@/lib/ai-description";
 import { tarifSurplusAffiche } from "@/lib/ai-billing";
@@ -326,6 +327,11 @@ export default async function VendrePage() {
       String(MAX_IMAGES_PER_PRODUCT)
     ),
     error: t(lang, "sell.galerie.error"),
+    preparing: t(lang, "sell.galerie.preparing"),
+    // La borne affichée EST celle du serveur (`lib/image-limits.ts`).
+    tooHeavy: t(lang, "sell.galerie.heavy", {
+      max: String(Math.round(COVER_MAX_OCTETS / 1024)),
+    }),
     videoAdd: t(lang, "sell.galerie.video.add"),
     videoTooLong: t(lang, "sell.galerie.video.long"),
     videoTooBig: t(lang, "sell.galerie.video.big"),

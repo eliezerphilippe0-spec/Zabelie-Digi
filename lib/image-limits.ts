@@ -24,6 +24,47 @@ export const COVER_MAX_OCTETS = 1_500 * 1024;
 /** Dimension au-delà de laquelle le serveur refuse, quel que soit le poids. */
 export const COVER_MAX_DIMENSION = 4000;
 
+/* Les signatures, écrites UNE fois : le format et les dimensions se lisent
+ * avec les mêmes octets, sinon une image reconnue par l'un serait refusée par
+ * l'autre — ou l'inverse. */
+const estPng = (buf: Uint8Array) =>
+  buf.length > 24 &&
+  buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+const estWebp = (buf: Uint8Array) =>
+  buf.length > 30 &&
+  buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+  buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50;
+const estJpeg = (buf: Uint8Array) =>
+  buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8;
+
+/** Les trois formats que le stockage accepte (0134 les redit sur le bucket). */
+export type FormatImage = "image/jpeg" | "image/png" | "image/webp";
+
+/** Extension du fichier stocké, déduite du format RÉEL. */
+export const EXTENSION_DU_FORMAT: Record<FormatImage, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/**
+ * Le format RÉEL d'une image, lu dans ses premiers octets.
+ *
+ * ⚠️ Ni le nom du fichier ni le type que le navigateur annonce ne disent ce
+ * que contient l'image : tous deux viennent du client. Un fichier nommé
+ * `.png` pouvait contenir n'importe quoi, et partait au bucket PUBLIC avec le
+ * type choisi par l'appelant (revue du 2026-10-08, SEC-02). Le type stocké se
+ * déduit donc d'ici, jamais de la requête.
+ *
+ * Rend `null` pour tout autre contenu — l'appelant refuse (fail-closed).
+ */
+export function formatDepuisEntete(buf: Uint8Array): FormatImage | null {
+  if (estPng(buf)) return "image/png";
+  if (estWebp(buf)) return "image/webp";
+  if (estJpeg(buf)) return "image/jpeg";
+  return null;
+}
+
 /**
  * Dimensions d'une image depuis ses PREMIERS OCTETS — sans dépendance ni
  * décodage complet.
@@ -47,19 +88,12 @@ export function dimensionsDepuisEntete(
   const be16 = (i: number) => (buf[i] << 8) | buf[i + 1];
 
   // ── PNG : signature 8 octets, puis IHDR (largeur/hauteur en big-endian) ──
-  if (
-    buf.length > 24 &&
-    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47
-  ) {
+  if (estPng(buf)) {
     return { largeur: be32(16), hauteur: be32(20) };
   }
 
   // ── WebP : "RIFF" .... "WEBP" puis un chunk VP8 / VP8L / VP8X ────────────
-  if (
-    buf.length > 30 &&
-    buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
-    buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
-  ) {
+  if (estWebp(buf)) {
     const type = String.fromCharCode(buf[12], buf[13], buf[14], buf[15]);
     if (type === "VP8X") {
       const l = 1 + (buf[24] | (buf[25] << 8) | (buf[26] << 16));
@@ -77,7 +111,7 @@ export function dimensionsDepuisEntete(
   }
 
   // ── JPEG : parcours des marqueurs jusqu'à un SOF (hors DHT/DAC/RST) ──────
-  if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+  if (estJpeg(buf)) {
     let i = 2;
     while (i + 9 < buf.length) {
       if (buf[i] !== 0xff) {

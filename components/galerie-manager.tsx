@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { compresserImage } from "@/lib/image-compress";
+import { COVER_MAX_OCTETS } from "@/lib/image-limits";
 import {
   MAX_VIDEO_BYTES,
   MAX_VIDEO_SECONDS,
@@ -17,6 +19,10 @@ export type GalerieLabels = {
   /** Rappel du plafond — composé au serveur (« Jusqu'à 6 photos… »). */
   hint: string;
   error: string;
+  /** Pendant la compression, avant l'envoi. */
+  preparing: string;
+  /** Photo encore au-dessus du plafond serveur APRÈS compression — composé au serveur. */
+  tooHeavy: string;
   /** V-1B — la vidéo (arbitrages porteur : 60 s, 50 Mo). */
   videoAdd: string;
   videoTooLong: string;
@@ -68,16 +74,29 @@ export function GalerieManager({
   const [medias, setMedias] = useState<MediaItem[]>(initial);
   const [video, setVideo] = useState<MediaItem | null>(initialVideo);
   const [busy, setBusy] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* Même chemin que la photo principale (`physical-product-form`) : la photo
+   * est COMPRESSÉE dans le navigateur avant l'envoi. Sans ça, une photo de
+   * téléphone (2 à 5 Mo) partait telle quelle et le stockage, plafonné à
+   * 1,5 Mo, la refusait (revue du 2026-10-08, UX-01). */
   async function ajouter(file: File | null) {
     if (!file) return;
     setBusy(true);
     setError(null);
     try {
+      setPreparing(true);
+      const { fichier } = await compresserImage(file);
+      setPreparing(false);
+      // Refus LOCAL, avant tout octet envoyé — le serveur redit la borne.
+      if (fichier.size > COVER_MAX_OCTETS) {
+        setError(labels.tooHeavy);
+        return;
+      }
       const form = new FormData();
       form.set("productId", productId);
-      form.set("file", file);
+      form.set("file", fichier);
       const res = await fetch("/api/products/media", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok || !data.id) {
@@ -89,6 +108,7 @@ export function GalerieManager({
     } catch {
       setError(labels.error);
     } finally {
+      setPreparing(false);
       setBusy(false);
     }
   }
@@ -193,11 +213,13 @@ export function GalerieManager({
   }
 
   return (
-    <details className="mt-2 rounded-xl border border-line/60 p-3">
-      <summary className="cursor-pointer text-xs font-semibold text-cloud">
+    <details className="mt-2 rounded-xl border border-line/60 px-3">
+      {/* 44 px de haut (RES-01) : l'ouverture de la galerie se faisait sur
+          une bande de 16 px. */}
+      <summary className="min-h-11 cursor-pointer py-3.5 text-xs font-semibold text-cloud">
         {labels.title} ({medias.length}/{max})
       </summary>
-      <div className="mt-2 space-y-2">
+      <div className="space-y-2 pb-3">
         <p className="text-xs text-mist">{labels.hint}</p>
         {medias.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -216,7 +238,7 @@ export function GalerieManager({
                   type="button"
                   disabled={busy}
                   onClick={() => retirer(m.id)}
-                  className="block w-full text-center text-xs text-mist underline hover:text-danger-text disabled:opacity-50"
+                  className="block min-h-11 w-full text-center text-xs text-mist underline hover:text-danger-text disabled:opacity-50"
                 >
                   {labels.remove}
                 </button>
@@ -225,8 +247,8 @@ export function GalerieManager({
           </div>
         )}
         {medias.length < max && (
-          <label className="inline-block cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent">
-            {busy ? labels.sending : labels.add}
+          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent">
+            {preparing ? labels.preparing : busy ? labels.sending : labels.add}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -252,13 +274,13 @@ export function GalerieManager({
               type="button"
               disabled={busy}
               onClick={retirerVideo}
-              className="text-xs text-mist underline hover:text-danger-text disabled:opacity-50"
+              className="min-h-11 text-xs text-mist underline hover:text-danger-text disabled:opacity-50"
             >
               {labels.remove}
             </button>
           </div>
         ) : (
-          <label className="inline-block cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent">
+          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent">
             {busy ? labels.sending : labels.videoAdd}
             <input
               type="file"
@@ -272,7 +294,7 @@ export function GalerieManager({
             />
           </label>
         )}
-        {error && <p className="text-xs text-danger-text">{error}</p>}
+        {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
       </div>
     </details>
   );
