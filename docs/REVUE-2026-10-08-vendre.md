@@ -234,7 +234,7 @@ Par quoi commencer aujourd'hui : la ligne 1. Elle touche une seule route et un s
 | Constat | État | Ce qui a changé |
 |---------|------|-----------------|
 | UX-01 | corrigé le 2026-10-08 | `GalerieManager` compresse la photo avant l'envoi (`compresserImage`, comme `/vendre/physique`) et la refuse sur place si elle dépasse encore 1,5 Mo ; la route lit `COVER_MAX_OCTETS`. Mesuré dans Chromium : une photo de 6,3 Mo part à 287 Ko, en WebP (`e2e/parcours-physique-galerie.spec.ts`). |
-| SEC-02 | corrigé le 2026-10-08 ; migration `0134` | Format lu dans l'en-tête (`formatDepuisEntete`), dimensions bornées à 4 000 px, type et extension stockés déduits du format réel, pour la galerie **et** la photo principale. `0134` pose sur `product-covers` les trois types image et le plafond de 1,5 Mo, au même octet que le code. |
+| SEC-02 | corrigé le 2026-10-08 ; `0134` appliquée le même jour à 19:17:23Z | Format lu dans l'en-tête (`formatDepuisEntete`), dimensions bornées à 4 000 px, type et extension stockés déduits du format réel, pour la galerie **et** la photo principale. `0134` pose sur `product-covers` les trois types image et le plafond de 1,5 Mo, au même octet que le code. |
 | SEC-05 | corrigé le 2026-10-08 | Cadence bornée à 20 envois par minute ; la suppression exige un compte actif. |
 | RES-01 | corrigé pour la galerie | Résumé, envois et retraits à 44 px. Le lien « Lire les règles » (31 px) reste à reprendre. |
 | UX-06 | en partie | Les routes `products/cover`, `products/media` et `products/media/video` répondent dans les quatre langues (cliquet : 249 → 212 messages en dur). Les autres routes de la page restent en français. |
