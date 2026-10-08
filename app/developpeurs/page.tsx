@@ -55,8 +55,10 @@ export default async function DevelopersPage() {
   return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-4xl px-5 py-12">
     <h1 className="text-3xl font-black">{c.title}</h1><p className="mt-3 text-lg">{c.intro}</p><p className="mt-4 text-mist">{c.scope}</p>
     <Link href={`/api/v1/openapi.json?lang=${lang}`} className="mt-6 inline-block font-semibold underline">{c.contract}</Link>
-    <h2 className="mt-10 text-xl font-bold">{c.start}</h2>
-    <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{example}</code></pre>
+    <h2 id="api-exemple" className="mt-10 text-xl font-bold">{c.start}</h2>
+    {/* Défilant à 360 px : focusable et nommé, sinon le clavier ne peut pas
+        faire défiler le code (axe, scrollable-region-focusable). */}
+    <pre tabIndex={0} role="region" aria-labelledby="api-exemple" className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{example}</code></pre>
     <h2 className="mt-10 text-xl font-bold">{c.endpoints}</h2>
     <ul className="mt-4 space-y-2">{PUBLIC_OPERATIONS.map(([name]) => <li key={name}><code className="break-all text-sm">POST /api/v1/{name}</code></li>)}</ul>
     <h2 className="mt-10 text-xl font-bold">{c.limits}</h2>
@@ -65,10 +67,10 @@ export default async function DevelopersPage() {
     <p className="mt-3">{c.sellerIntro}</p>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerAuth}</p>
     <Link href={`/api/v1/seller/openapi.json?lang=${lang}`} className="mt-4 inline-block font-semibold underline">{c.sellerContract}</Link>
-    <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleVendeur}</code></pre>
+    <pre tabIndex={0} role="region" aria-labelledby="api-vendeur" className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleVendeur}</code></pre>
     <ul className="mt-4 space-y-2">{SELLER_OPERATIONS.map(([name, e]) => <li key={name}><code className="break-all text-sm">POST /api/v1/seller/{name}</code> <span className="text-xs text-mist">({e.scope})</span></li>)}</ul>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerPrivacy}</p>
-    <p className="mt-6 text-sm leading-relaxed">{c.sellerWebhooks}</p>
-    <pre className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleSignature}</code></pre>
+    <p id="api-webhooks" className="mt-6 text-sm leading-relaxed">{c.sellerWebhooks}</p>
+    <pre tabIndex={0} role="region" aria-labelledby="api-webhooks" className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleSignature}</code></pre>
   </main><SiteFooter/></div>;
 }
