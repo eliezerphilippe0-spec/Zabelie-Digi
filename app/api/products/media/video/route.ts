@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import {
   MAX_VIDEO_BYTES,
   VIDEO_BUCKET,
@@ -29,12 +31,13 @@ export const dynamic = "force-dynamic";
  * redit le plafond d'UNE vidéo par produit.
  */
 export async function POST(req: Request) {
+  const lang = await getLang();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   }
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
@@ -43,10 +46,10 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
   if (!body.productId) {
-    return NextResponse.json({ error: "productId requis" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -56,7 +59,7 @@ export async function POST(req: Request) {
     .eq("id", body.productId)
     .single();
   if (!product || product.seller_id !== user.id) {
-    return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
+    return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
 
   // Une seule vidéo par produit (redit en base par ZB073).
@@ -67,16 +70,15 @@ export async function POST(req: Request) {
     .eq("kind", "video");
   if (countErr) {
     if (isMissingTable(countErr)) {
-      return NextResponse.json(
-        { error: "Galerie non activée (0073 à appliquer)." },
-        { status: 503 }
-      );
+      // L'identifiant de migration va au journal, pas au vendeur.
+      console.error("[media/video] zabelie_product_media absente (0073)");
+      return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
     }
-    return NextResponse.json({ error: "Lecture de la galerie échouée" }, { status: 500 });
+    return NextResponse.json({ error: t(lang, "api.read.failed") }, { status: 500 });
   }
   if ((count ?? 0) >= 1) {
     return NextResponse.json(
-      { error: "Une seule vidéo par produit — retirez l'actuelle d'abord." },
+      { error: t(lang, "api.video.one") },
       { status: 422 }
     );
   }
@@ -89,7 +91,7 @@ export async function POST(req: Request) {
       .from(VIDEO_BUCKET)
       .createSignedUploadUrl(path);
     if (error || !data) {
-      return NextResponse.json({ error: "Lien d'envoi indisponible" }, { status: 502 });
+      return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
     }
     return NextResponse.json({ ok: true, path: data.path, token: data.token });
   }
@@ -97,7 +99,7 @@ export async function POST(req: Request) {
   if (body.step === "confirme") {
     const path = String(body.path ?? "");
     if (!cheminVideoValide(product.id, path)) {
-      return NextResponse.json({ error: "Chemin invalide" }, { status: 400 });
+      return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
     }
     // L'objet RÉELLEMENT téléversé : existence, taille, type.
     const dossier = path.slice(0, path.lastIndexOf("/"));
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
       .list(dossier, { search: nom });
     const objet = (objets ?? []).find((o) => o.name === nom);
     if (listErr || !objet) {
-      return NextResponse.json({ error: "Vidéo introuvable au stockage" }, { status: 404 });
+      return NextResponse.json({ error: t(lang, "api.video.notfound") }, { status: 404 });
     }
     const meta = (objet.metadata ?? {}) as { size?: number; mimetype?: string };
     const taille = Number(meta.size ?? 0);
@@ -117,7 +119,11 @@ export async function POST(req: Request) {
       // hors contrat.
       await admin.storage.from(VIDEO_BUCKET).remove([path]);
       return NextResponse.json(
-        { error: "Vidéo refusée : 50 Mo maximum, format vidéo requis." },
+        {
+          error: t(lang, "api.video.refused", {
+            max: String(Math.round(MAX_VIDEO_BYTES / (1024 * 1024))),
+          }),
+        },
         { status: 422 }
       );
     }
@@ -129,11 +135,11 @@ export async function POST(req: Request) {
       .single();
     if (insErr || !ligne) {
       await admin.storage.from(VIDEO_BUCKET).remove([path]);
-      return NextResponse.json({ error: "Enregistrement échoué" }, { status: 500 });
+      return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
     }
     const { data: pub } = admin.storage.from(VIDEO_BUCKET).getPublicUrl(path);
     return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl });
   }
 
-  return NextResponse.json({ error: "step inconnu" }, { status: 400 });
+  return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
 }
