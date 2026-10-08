@@ -1,3 +1,4 @@
+import { serviceStarterCopy } from "@/lib/service-starters";
 import { readSellerPricing } from "@/lib/seller-pricing-server";
 import { createClient as pricingClient } from "@/lib/supabase/server";
 import { parseCatalogueSearch, catalogueHref, catalogueCanonical, catalogueIsWorkingView, type CatalogueSearch } from "@/lib/catalogue-query";
@@ -144,6 +145,7 @@ export default async function CataloguePage({
      sources donneraient deux réponses le jour où l'une dérive. `max(1, …)`
      parce qu'un catalogue vide reste « page 1 sur 1 », jamais « sur 0 ». */
   const nbPages = Math.max(1, Math.ceil(total / CATALOGUE_PAGE_SIZE));
+  const serviceGuide = serviceStarterCopy(lang);
 
   const CATEGORIES = ["Tout", ...categories];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
@@ -190,6 +192,15 @@ export default async function CataloguePage({
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           {selection ? t(lang, selection.title) : t(lang, "catalog.title")}
         </h1>
+        {universe === "services" && (
+          <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="service-buying-guide">
+            <h2 id="service-buying-guide" className="text-sm font-semibold">{serviceGuide.buyerTitle}</h2>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-mist">
+              {serviceGuide.buyerSteps.map((step) => <li key={step}>{step}</li>)}
+            </ol>
+            <Link href="/vendre" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold underline">{serviceGuide.sell}</Link>
+          </section>
+        )}
         {selection && <p className="mt-3 max-w-2xl text-mist">{t(lang, selection.description)}</p>}
         <nav aria-label={t(lang, "universe.nav")} className="mt-6 flex flex-wrap gap-2">
           <Link href="/catalogue" aria-current={!universe ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${!universe ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, "nav.catalog")}</Link>

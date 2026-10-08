@@ -1,3 +1,4 @@
+import { availableServiceStarters, serviceStarterCopy } from "@/lib/service-starters";
 import { requireLegalAccountPage } from "@/lib/auth";
 import { formatHTG } from "@/lib/sample-data";
 import { ProductOffersEditor } from "@/components/product-offers-editor";
@@ -174,6 +175,7 @@ function Shell({
 
 export default async function VendrePage() {
   const lang = await getLang();
+  const starterCopy = serviceStarterCopy(lang);
   // Mesure : arriver ici EST le signal « CTA vendeur » — tous les chemins
   // (topbar, slide 3, rail, section finale) convergent sur cette page, et le
   // serveur le voit sans un octet de JS. Garde préchargement : un survol de
@@ -366,6 +368,8 @@ export default async function VendrePage() {
           aiActif={aiProviderDisponible() !== null}
           categories={rayonsPublication}
           sousRayons={sousRayonsPublication}
+          serviceStarters={availableServiceStarters(lang, rayonsPublication, sousRayonsPublication)}
+          starterLabels={{ heading: starterCopy.heading, hint: starterCopy.hint, confirmReplace: starterCopy.confirmReplace }}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
             kindAria: t(lang, "publish.kind.aria"),

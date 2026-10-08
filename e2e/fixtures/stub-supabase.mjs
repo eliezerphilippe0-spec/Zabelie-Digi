@@ -496,6 +496,12 @@ const server = createServer((req, res) => {
       make("s1", "c1", 3, "wob", "Robes"),
       make("s2", "c1", 3, "foula", "Écharpes"),
       make("closed", "c1", 3, "ferme", "Rayon fermé", false),
+      ...(sellerPreparation ? [
+        make("services-dept", null, 1, "dijital-sevis", "Digital & services"),
+        make("services-parent", "services-dept", 2, "sevis-pwofesyonel", "Services professionnels"),
+        make("services-design", "services-parent", 3, "grafik-ak-design", "Graphisme & design"),
+        make("services-repair", "services-parent", 3, "reparasyon", "Réparations"),
+      ] : []),
     ].filter(row => row.active);
     for (const key of ["id", "parent_id", "slug", "level", "label_fr"]) {
       const value = eq(url, key);
