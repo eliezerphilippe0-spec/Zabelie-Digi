@@ -9,10 +9,13 @@ export type ReadinessProduct = {
   service_includes: string[] | null;
 };
 /** Presence checks only, never an approval, identity check or quality score. */
-export function sellerReadiness(product: ReadinessProduct, hasGalleryImage: boolean) {
+export function sellerReadiness(product: ReadinessProduct) {
   const checks: { key: I18nKey; complete: boolean }[] = [
     { key: "seller.ready.description", complete: Boolean(product.description?.trim()) },
-    { key: "seller.ready.photo", complete: Boolean(product.cover_url?.trim()) || hasGalleryImage },
+    // The MAIN photo only: catalogue cards and the home page show `cover_url`
+    // and nothing else. Counting a gallery image here marked « renseigné » a
+    // listing that would still appear without any image (review 2026-10-08, UX-02).
+    { key: "seller.ready.photo", complete: Boolean(product.cover_url?.trim()) },
   ];
   if (isDownloadable(product.kind)) {
     checks.push({ key: "seller.ready.asset", complete: Boolean(product.product_assets?.length) });

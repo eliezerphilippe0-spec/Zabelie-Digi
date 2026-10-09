@@ -247,12 +247,12 @@ export function GalerieManager({
           </div>
         )}
         {medias.length < max && (
-          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent">
+          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
             {preparing ? labels.preparing : busy ? labels.sending : labels.add}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              className="hidden"
+              className="sr-only"
               disabled={busy}
               onChange={(e) => {
                 ajouter(e.target.files?.[0] ?? null);
@@ -280,12 +280,12 @@ export function GalerieManager({
             </button>
           </div>
         ) : (
-          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent">
+          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
             {busy ? labels.sending : labels.videoAdd}
             <input
               type="file"
               accept="video/mp4,video/webm"
-              className="hidden"
+              className="sr-only"
               disabled={busy}
               onChange={(e) => {
                 ajouterVideo(e.target.files?.[0] ?? null);
