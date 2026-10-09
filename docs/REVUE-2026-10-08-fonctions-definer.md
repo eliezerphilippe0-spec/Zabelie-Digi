@@ -41,7 +41,7 @@ Lues dans le corps déployé (`pg_get_functiondef`) le 2026-10-08. Les droits de
 | `zabelie_accept_account_legal(…)` | auth | `0133` | `auth.uid()` | enregistre l'acceptation des CGU de l'appelant, compte actif exigé | **Garder** |
 | `zabelie_cart_add(uuid)` | auth | `0058` | `auth.uid()` | ajoute un produit publié au panier de l'appelant, jamais le sien | **Garder** |
 | `zabelie_cart_remove(uuid)` | auth | `0058` | `auth.uid()` | retire du panier de l'appelant | **Garder** |
-| `zabelie_commission_taux()` | auth | `0066` | — | deux entiers publics (10 %, 6 %) pour l'affichage | **Garder**, mais voir SEC-D1 |
+| `zabelie_commission_taux()` | anon (`0135`), auth | `0066` | — | deux entiers publics (10 %, 6 %) pour l'affichage | **Garder** ; ouverte aux visiteurs sur décision du porteur (SEC-D1) |
 
 ## Constats
 
@@ -59,7 +59,7 @@ Lues dans le corps déployé (`pg_get_functiondef`) le 2026-10-08. Les droits de
   - chaque visite non connectée tombe donc dans le repli et journalise `[commission] taux de repli utilisé` ;
   - ce message apparaît aussi dans la CI.
 - **Impact** : aujourd'hui, rien de visible, car la table vaut 1000/600, comme la constante. Le jour où le taux change en base, le prospect lit l'ancien taux : l'affiché et le facturé divergent sur la page qui précède la décision du vendeur. Entre-temps, chaque visite non connectée laisse une erreur dans le journal.
-- **Correctif proposé** : une migration `grant execute on function zabelie_commission_taux() to anon`. Elle mettrait à jour la post-condition de `0066`, qui interdit ce droit, puis la liste du garde. Les deux entiers sont déjà publics. ⚖️ **C'est la décision que `0066` réservait au porteur** : non appliquée.
+- **Correctif** : ⚖️ **tranché par le porteur le 2026-10-09** (« Oui ouvre le aux visiteurs »). La migration `0135_zabelie_commission_taux_visiteurs.sql` accorde `EXECUTE` à `anon` sur la seule fonction. `PUBLIC` reste sans droit, et la table reste fermée ; les deux sont vérifiés par sa post-condition et par `supabase/tests/commission_taux.test.sql` (P3 et N4, éprouvés par mutation). La liste du garde porte désormais `zabelie_commission_taux():anon,auth`. Le fichier de `0066` ne bouge pas : il est appliqué.
 - **Effort** : S
 
 ### 🔵 Faibles

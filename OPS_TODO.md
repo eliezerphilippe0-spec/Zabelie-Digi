@@ -12,15 +12,30 @@ Aucun droit retiré : quatre sont des aides de politiques RLS qui doivent
 rester ouvertes. Garde permanent : `supabase/tests/definer_exposition.test.sql`
 (liste revue figée, `search_path` obligatoire, deux cas connus-négatifs).
 
-**⚖️ Arbitrage porteur — SEC-D1 : ouvrir `zabelie_commission_taux()` aux
-visiteurs ?** `/vendre` est publique et annonce la commission au futur
+**✅ Tranché le 2026-10-09 — SEC-D1 : ouvrir `zabelie_commission_taux()` aux
+visiteurs.** Réponse du porteur : « Oui ouvre le aux visiteurs » → migration
+`0135_zabelie_commission_taux_visiteurs.sql`. Constat d'origine : `/vendre` est publique et annonce la commission au futur
 vendeur avant l'inscription, mais `0066` a fermé cette fonction à `anon`
 (« le jour où une page publique en aura besoin, ce sera une décision »).
 Aujourd'hui, chaque visite non connectée retombe sur la constante et
 journalise une erreur ; rien de visible tant que la base vaut 1000/600. Le
 jour où un taux change en base, le prospect lirait l'ancien. Proposition :
-une migration `grant execute … to anon`, avec la post-condition de `0066` et
-la liste du garde mises à jour. Non appliquée : réponse attendue.
+une migration `grant execute … to anon`, avec la liste du garde mise à jour
+(le fichier de `0066`, appliqué, ne bouge pas).
+
+**Application vérifiée :** `0135_zabelie_commission_taux_visiteurs.sql`
+appliquée le 9 octobre 2026 à 03:20:15Z (journal Supabase `20261009032015`),
+après la CI verte de `6b85cee` (PR
+[#333](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/333)). SQL
+reçu identique au fichier : SHA-256 `d2096446…707b` des deux côtés, 3 043
+caractères. Empreinte canonique au registre : `a68d61b1…b61c`, en
+`appliquee`/`journal_supabase`, `applied_by` : autorisation permanente du
+2026-08-17, sur la décision du porteur citée plus haut. Vérifié après
+application, sous le rôle `anon` : la fonction rend standard 1000 / elite 600
+(elle rendait `permission denied`) ; la table reste fermée ; aucun droit
+`PUBLIC`. Registre croisé avec le disque : 135 lignes pour 135 fichiers.
+**Non vérifié :** l'appel HTTP réel d'un visiteur — l'hôte Supabase est
+bloqué par la politique réseau de la session.
 
 ## Photos de `/vendre` et migration 0134 — 8 octobre 2026
 

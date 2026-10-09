@@ -24,6 +24,7 @@ import { RPC_TAUX } from "../lib/commission-config";
 
 const MIG_0054 = readFileSync("supabase/migrations/0054_commission_config.sql", "utf8");
 const MIG_0066 = readFileSync("supabase/migrations/0066_commission_taux_lecture.sql", "utf8");
+const MIG_0135 = readFileSync("supabase/migrations/0135_zabelie_commission_taux_visiteurs.sql", "utf8");
 const exec = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/--[^\n]*/g, "");
 
 test("le repli TS rend EXACTEMENT ce que rend le repli SQL", () => {
@@ -69,10 +70,24 @@ test("la RPC appelée par le TS est bien celle que crée 0066", () => {
   );
 });
 
-test("0066 est fermée à `anon` et ouverte à `authenticated`", () => {
+test("0066 l'a ouverte à `authenticated` et fermée à `anon` — point de départ", () => {
   const sql = exec(MIG_0066);
   assert.match(sql, new RegExp(`revoke all on function ${RPC_TAUX}\\(\\) from public, anon`));
   assert.match(sql, new RegExp(`grant execute on function ${RPC_TAUX}\\(\\) to authenticated`));
+});
+
+test("0135 l'ouvre aux visiteurs — la fonction seule, jamais PUBLIC ni la table", () => {
+  /* Décision du porteur, 2026-10-09 : `/vendre` est publique et annonce la
+   * commission AVANT l'inscription. Sans ce droit, un visiteur retombait sur
+   * la constante — et un taux changé en base ne l'aurait jamais atteint.
+   * L'ouverture est nommée rôle par rôle : un `to public` ouvrirait aussi les
+   * rôles futurs, et un droit sur la table ouvrirait ses colonnes futures. */
+  const sql = exec(MIG_0135);
+  assert.match(sql, new RegExp(`grant execute on function public\\.${RPC_TAUX}\\(\\) to anon;`));
+  assert.doesNotMatch(sql, /\bto public\b/i, "aucun droit à PUBLIC");
+  assert.doesNotMatch(sql, /grant [^;]* on (table )?(public\.)?zabelie_commission_config/i, "la table reste fermée");
+  assert.match(sql, /has_table_privilege\('anon', 'public\.zabelie_commission_config', 'select'\)/,
+    "la post-condition doit vérifier que la table reste fermée");
 });
 
 test("l'estimation est COMMANDÉE par le taux reçu, pas par la constante", () => {
