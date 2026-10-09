@@ -1,5 +1,27 @@
 # OPS_TODO — Zabelie
 
+## Fonctions `SECURITY DEFINER` exposées — revue du 8 octobre 2026
+
+Instruction directe : « pousse et mets les en lignes » (troisième point
+proposé : la revue des fonctions publiques). Rapport :
+`docs/REVUE-2026-10-08-fonctions-definer.md`. En production, lecture seule :
+99 fonctions `security definer`, toutes avec un `search_path` fixé ; 12
+exécutables par un client (7 par `anon`, 5 par `authenticated`), toutes
+saines — identité par `auth.uid()` ou par jeton secret, jamais par paramètre.
+Aucun droit retiré : quatre sont des aides de politiques RLS qui doivent
+rester ouvertes. Garde permanent : `supabase/tests/definer_exposition.test.sql`
+(liste revue figée, `search_path` obligatoire, deux cas connus-négatifs).
+
+**⚖️ Arbitrage porteur — SEC-D1 : ouvrir `zabelie_commission_taux()` aux
+visiteurs ?** `/vendre` est publique et annonce la commission au futur
+vendeur avant l'inscription, mais `0066` a fermé cette fonction à `anon`
+(« le jour où une page publique en aura besoin, ce sera une décision »).
+Aujourd'hui, chaque visite non connectée retombe sur la constante et
+journalise une erreur ; rien de visible tant que la base vaut 1000/600. Le
+jour où un taux change en base, le prospect lirait l'ancien. Proposition :
+une migration `grant execute … to anon`, avec la post-condition de `0066` et
+la liste du garde mises à jour. Non appliquée : réponse attendue.
+
 ## Photos de `/vendre` et migration 0134 — 8 octobre 2026
 
 Instruction directe : « pousse et mets les en lignes », après la revue de
