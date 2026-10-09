@@ -12,15 +12,16 @@ Aucun droit retiré : quatre sont des aides de politiques RLS qui doivent
 rester ouvertes. Garde permanent : `supabase/tests/definer_exposition.test.sql`
 (liste revue figée, `search_path` obligatoire, deux cas connus-négatifs).
 
-**⚖️ Arbitrage porteur — SEC-D1 : ouvrir `zabelie_commission_taux()` aux
-visiteurs ?** `/vendre` est publique et annonce la commission au futur
+**✅ Tranché le 2026-10-09 — SEC-D1 : ouvrir `zabelie_commission_taux()` aux
+visiteurs.** Réponse du porteur : « Oui ouvre le aux visiteurs » → migration
+`0135_zabelie_commission_taux_visiteurs.sql`. Constat d'origine : `/vendre` est publique et annonce la commission au futur
 vendeur avant l'inscription, mais `0066` a fermé cette fonction à `anon`
 (« le jour où une page publique en aura besoin, ce sera une décision »).
 Aujourd'hui, chaque visite non connectée retombe sur la constante et
 journalise une erreur ; rien de visible tant que la base vaut 1000/600. Le
 jour où un taux change en base, le prospect lirait l'ancien. Proposition :
-une migration `grant execute … to anon`, avec la post-condition de `0066` et
-la liste du garde mises à jour. Non appliquée : réponse attendue.
+une migration `grant execute … to anon`, avec la liste du garde mise à jour
+(le fichier de `0066`, appliqué, ne bouge pas).
 
 ## Photos de `/vendre` et migration 0134 — 8 octobre 2026
 

@@ -58,15 +58,43 @@ begin
     null;
   end;
 
-  -- ── N3 — la fonction reste fermée a anon ──────────────────────────────────
+  -- ── N3 — PUBLIC reste sans droit : l'ouverture est nommée, rôle par rôle ───
+  -- `0066` fermait aussi `anon` ; `0135` l'a ouvert sur décision du porteur
+  -- (2026-10-09 : `/vendre` est publique). PUBLIC, lui, ne l'est jamais.
   select count(*) into v_n
     from information_schema.role_routine_grants
-   where routine_name = 'zabelie_commission_taux' and grantee in ('anon', 'PUBLIC');
+   where routine_name = 'zabelie_commission_taux' and grantee = 'PUBLIC';
   if v_n > 0 then
-    raise exception 'ECHEC N3 : zabelie_commission_taux exposee a anon/PUBLIC';
+    raise exception 'ECHEC N3 : zabelie_commission_taux exposee a PUBLIC';
   end if;
 
   raise notice 'OK — taux : P1 lit la table, P2 suit l''UPDATE (affichage ET money-path), N1/N2/N3 refusent';
 end $$;
+
+-- ── P3 — un VISITEUR lit le taux en vigueur (0135) ─────────────────────────
+-- Exécuté sous `anon`, le rôle d'une visite non connectée de `/vendre`. Le
+-- taux attendu est celui que P2 vient d'écrire : une constante ne rendrait
+-- pas 777.
+set local role anon;
+do $$
+declare v_std integer;
+begin
+  select rate_bps into v_std from zabelie_commission_taux() where tier = 'standard';
+  if v_std is distinct from 777 then
+    raise exception 'ECHEC P3 : un visiteur lit % au lieu du taux en vigueur (777)', v_std;
+  end if;
+end $$;
+
+-- ── N4 — la TABLE reste fermée : la fonction n'ouvre que deux colonnes ──────
+do $$
+begin
+  begin
+    perform 1 from zabelie_commission_config;
+    raise exception 'ECHEC N4 : un visiteur lit la table de configuration';
+  exception when insufficient_privilege then
+    null;
+  end;
+end $$;
+reset role;
 
 rollback;

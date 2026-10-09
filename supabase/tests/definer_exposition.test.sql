@@ -53,9 +53,9 @@ declare
     -- Panier : auth.uid(), produit publié, jamais son propre produit.
     'zabelie_cart_add(p_product_id uuid):auth',
     'zabelie_cart_remove(p_product_id uuid):auth',
-    -- Deux entiers publics, pour AFFICHAGE. ⚠️ Fermée à `anon` par 0066 alors
-    -- que `/vendre` est devenue publique : arbitrage porteur ouvert (revue).
-    'zabelie_commission_taux():auth',
+    -- Deux entiers publics, pour AFFICHAGE. Ouverte à `anon` par 0135, sur
+    -- décision du porteur (2026-10-09) : `/vendre` est publique.
+    'zabelie_commission_taux():anon,auth',
     -- Domaine vendeur → boutique, appelée par le proxy sans session.
     'zabelie_domaine_boutik(p_hote text):anon,auth',
     -- Désabonnement par jeton gen_random_uuid() : ne touche que sa ligne.
