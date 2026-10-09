@@ -354,3 +354,46 @@ test("la page passe les libellés neufs, et le plafond affiché vient du module 
     /tooHeavy: t\(lang, "sell\.galerie\.heavy", \{\s*\n\s*max: String\(Math\.round\(COVER_MAX_OCTETS \/ 1024\)\),/
   );
 });
+
+// ── UX-02 : la photo principale des fichiers et des services ────────────────
+
+const PRINCIPALE = readFileSync("components/photo-principale.tsx", "utf8");
+const VENDRE = readFileSync("app/vendre/page.tsx", "utf8");
+
+test("UX-02 — la photo principale ENVOYÉE est celle du compresseur, vers la route de couverture", () => {
+  assert.match(
+    PRINCIPALE,
+    /const \{ fichier \} = await compresserImage\(file\);[\s\S]{0,500}form\.set\("file", fichier\);[\s\S]{0,200}fetch\("\/api\/products\/cover", \{ method: "POST", body: form \}\)/
+  );
+  assert.ok(!/form\.set\("file", file\)/.test(PRINCIPALE), "l'original ne doit jamais partir");
+  assert.match(
+    PRINCIPALE,
+    /if \(fichier\.size > COVER_MAX_OCTETS\) \{\s*\n\s*setError\(labels\.tooHeavy\);\s*\n\s*return;\s*\n\s*\}/
+  );
+});
+
+test("UX-02 — la page ne propose la photo principale que sur un BROUILLON (SEC-01)", () => {
+  /* La condition et le composant, liés : un `{true && <PhotoPrincipale` ou un
+   * rendu hors condition rendrait la photo d'une fiche publiée modifiable
+   * sans nouvelle revue. */
+  assert.match(VENDRE, /\{p\.status === "draft" && \(\s*\n\s*<PhotoPrincipale[\s>]/);
+  assert.equal((VENDRE.match(/<PhotoPrincipale[\s>]/g) ?? []).length, 1, "un seul rendu, celui sous condition");
+  assert.match(VENDRE, /<PhotoPrincipale productId=\{p\.id\} initialUrl=\{p\.cover_url\}/);
+});
+
+test("UX-02 — la cible d'envoi fait 44 px, et le message d'échec est annoncé", () => {
+  assert.match(PRINCIPALE, /<label className="[^"]*\bmin-h-11\b[^"]*">/);
+  assert.match(PRINCIPALE, /role="alert"/);
+});
+
+test("les champs photo restent joignables au CLAVIER — masqués visuellement, jamais `display: none`", () => {
+  /* `className="hidden"` sur un <input type="file"> le retire du clavier : le
+   * libellé reste cliquable à la souris, mais rien ne prend le focus. */
+  for (const [nom, src] of [["photo-principale", PRINCIPALE], ["galerie-manager", ECRAN]] as const) {
+    const champs = src.match(/<input\s+type="file"[\s\S]{0,600}?\/>/g) ?? [];
+    assert.ok(champs.length > 0, `${nom} : aucun champ fichier trouvé — le contrôle regarderait le vide`);
+    for (const champ of champs) {
+      assert.match(champ, /className="sr-only"/, `${nom} : champ fichier hors du clavier`);
+    }
+  }
+});

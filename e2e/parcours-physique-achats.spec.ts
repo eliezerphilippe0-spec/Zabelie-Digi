@@ -76,7 +76,7 @@ test("vendeur : éléments manquants et délai nul correctement présentés", as
   await page.goto("/vendre");
   const guide = page.locator("li").filter({ has: page.getByText("Guide vendeur test", { exact: true }) });
   await expect(guide.getByText("Fichier à remettre · à compléter", { exact: true })).toBeVisible();
-  await expect(guide.getByText("Photo du produit · à compléter", { exact: true })).toBeVisible();
+  await expect(guide.getByText("Photo principale · à compléter", { exact: true })).toBeVisible();
   const service = page.locator("li").filter({ has: page.getByText("Prestation vendeur test", { exact: true }) });
   await expect(service.getByText("Délai de réalisation · renseigné", { exact: true })).toBeVisible();
   await expect(service.getByText("Fichier à remettre", { exact: false })).toHaveCount(0);

@@ -21,10 +21,21 @@ test("purchase filters reject repeated/invalid URL inputs and keep universe in p
 });
 test("seller preparation uses saved content and separates physical, file and service requirements", () => {
   const base = { description: " ", cover_url: null, product_assets: [], delivery_days: null, service_includes: [] };
-  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE }, false).map(c => c.complete), [false, false, false, false]);
-  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE, description: "PDF", product_assets: [{ id: "asset" }] }, true).map(c => c.complete), [true, true, true, false]);
-  const service = sellerReadiness({ ...base, kind: KIND_SERVICE, delivery_days: 0, service_includes: ["Consultation"] }, false);
+  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE }).map(c => c.complete), [false, false, false, false]);
+  assert.deepEqual(sellerReadiness({ ...base, kind: KIND_FILE, description: "PDF", cover_url: "https://cdn.test/p/cover.webp", product_assets: [{ id: "asset" }] }).map(c => c.complete), [true, true, true, false]);
+  const service = sellerReadiness({ ...base, kind: KIND_SERVICE, delivery_days: 0, service_includes: ["Consultation"] });
   assert.equal(service.find(c => c.key === "seller.ready.delay")?.complete, true);
   assert.equal(service.some(c => c.key === "seller.ready.asset"), false);
-  assert.equal(sellerReadiness({ ...base, kind: KIND_PHYSICAL }, false).length, 2);
+  assert.equal(sellerReadiness({ ...base, kind: KIND_PHYSICAL }).length, 2);
+});
+test("seller preparation: the photo check is the MAIN photo, the one the catalogue shows (UX-02)", () => {
+  /* A gallery image used to count: the checklist said « renseigné » while the
+   * catalogue card, which reads `cover_url` only, showed no image at all. */
+  const base = { description: "x", cover_url: null as string | null, product_assets: [], delivery_days: null, service_includes: [] };
+  const photo = (p: typeof base & { kind: typeof KIND_FILE }) =>
+    sellerReadiness(p).find(c => c.key === "seller.ready.photo")?.complete;
+  assert.equal(photo({ ...base, kind: KIND_FILE }), false);
+  assert.equal(photo({ ...base, kind: KIND_FILE, cover_url: "   " }), false);
+  assert.equal(photo({ ...base, kind: KIND_FILE, cover_url: "https://cdn.test/p/cover.webp?v=1" }), true);
+  assert.equal(sellerReadiness.length, 1, "aucun second argument (galerie) ne doit pouvoir compter comme photo principale");
 });

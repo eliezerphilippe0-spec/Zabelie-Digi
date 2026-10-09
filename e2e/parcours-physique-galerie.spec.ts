@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * LA GALERIE COMPRESSE AVANT D'ENVOYER — revue du 2026-10-08 (UX-01, RES-01).
+ * LES PHOTOS DE /vendre PARTENT COMPRESSÉES — revue du 2026-10-08 (UX-01, UX-02, RES-01).
  *
  * La photo d'un téléphone pèse 2 à 5 Mo ; le stockage refuse au-delà de
  * 1,5 Mo. Les tests unitaires disent que le CODE branche le compresseur ; ce
@@ -32,23 +32,9 @@ async function connecte(page: Page, token: string) {
 
 const PLAFOND = 1_500 * 1024;
 
-test("une photo de téléphone part compressée en WebP, sous le plafond du stockage", async ({ page }) => {
-  await connecte(page, "vendeur-preparation-studio");
-  await page.setViewportSize({ width: 360, height: 740 });
-  await page.goto("/vendre", { waitUntil: "networkidle" });
-
-  const galerie = page
-    .locator("#produit-77777777-7777-7777-7777-777777777777 details")
-    .filter({ has: page.locator("summary", { hasText: /^Photos \(\d\/\d\)$/ }) });
-  const resume = galerie.locator("summary");
-  // RES-01 : l'ouverture se faisait sur une bande de 16 px.
-  expect((await resume.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  await resume.click();
-  const envoi = galerie.locator("label", { hasText: "Ajouter une photo" });
-  expect((await envoi.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-
-  // Une « photo de téléphone » : 4000 × 3000, dégradés et grain — lourde, comme
-  // une vraie, et pas du bruit pur qu'aucun encodeur ne sait réduire.
+/** Une « photo de téléphone » : 4000 × 3000, dégradés et grain — lourde, comme
+ * une vraie, et pas du bruit pur qu'aucun encodeur ne sait réduire. */
+async function photoDeTelephone(page: Page): Promise<Buffer> {
   const jpeg = Buffer.from(
     await page.evaluate(async () => {
       const c = document.createElement("canvas");
@@ -83,6 +69,25 @@ test("une photo de téléphone part compressée en WebP, sous le plafond du stoc
     "base64"
   );
   expect(jpeg.length, "la photo source doit dépasser le plafond, sinon le test ne prouve rien").toBeGreaterThan(PLAFOND);
+  return jpeg;
+}
+
+test("une photo de téléphone part compressée en WebP, sous le plafond du stockage", async ({ page }) => {
+  await connecte(page, "vendeur-preparation-studio");
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto("/vendre", { waitUntil: "networkidle" });
+
+  const galerie = page
+    .locator("#produit-77777777-7777-7777-7777-777777777777 details")
+    .filter({ has: page.locator("summary", { hasText: /^Photos \(\d\/\d\)$/ }) });
+  const resume = galerie.locator("summary");
+  // RES-01 : l'ouverture se faisait sur une bande de 16 px.
+  expect((await resume.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await resume.click();
+  const envoi = galerie.locator("label", { hasText: "Ajouter une photo" });
+  expect((await envoi.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
+  const jpeg = await photoDeTelephone(page);
 
   let corps: Buffer | null = null;
   await page.route("**/api/products/media", async (route) => {
@@ -104,4 +109,55 @@ test("une photo de téléphone part compressée en WebP, sous le plafond du stoc
   expect(envoye.length).toBeLessThan(jpeg.length / 4);
   test.info().annotations.push({ type: "poids", description: `${jpeg.length} → ${envoye.length} octets` });
   await expect(galerie.locator("summary")).toHaveText("Photos (1/6)");
+});
+
+test("UX-02 : un fichier et un service reçoivent leur photo principale, compressée", async ({ page }) => {
+  /* Le catalogue n'affiche que la photo principale (`cover_url`). Avant ce
+   * correctif, seule la fiche physique pouvait en recevoir une : un fichier
+   * ou un service apparaissait sans image, même avec six photos de galerie. */
+  await connecte(page, "vendeur-preparation-studio");
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto("/vendre", { waitUntil: "networkidle" });
+
+  // Les deux brouillons de la doublure : un fichier SANS photo principale, et
+  // un service qui en a déjà une — les deux états du champ.
+  for (const [id, libelle, repere] of [
+    ["77777777-7777-7777-7777-777777777777", "Ajouter la photo principale", "Photo principale · à compléter"],
+    ["66666666-6666-6666-6666-666666666666", "Remplacer la photo principale", "Photo principale · renseigné"],
+  ]) {
+    const champ = page.locator(`#produit-${id} label`, { hasText: libelle });
+    await expect(champ).toBeVisible();
+    expect((await champ.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    // La liste de préparation dit la vérité : elle mesure la photo du catalogue.
+    await expect(page.locator(`#produit-${id}`).getByText(repere, { exact: true })).toBeVisible();
+  }
+
+  const fiche = page.locator("#produit-77777777-7777-7777-7777-777777777777");
+
+  // Joignable au CLAVIER : le champ est masqué visuellement, pas retiré.
+  const entree = fiche.locator("label", { hasText: "Ajouter la photo principale" }).locator('input[type="file"]');
+  await entree.focus();
+  await expect(entree).toBeFocused();
+
+  const jpeg = await photoDeTelephone(page);
+  let corps: Buffer | null = null;
+  await page.route("**/api/products/cover", async (route) => {
+    corps = route.request().postDataBuffer();
+    await route.fulfill({ json: { ok: true, coverUrl: "https://cdn.test/couverture-e2e.webp?v=1" } });
+  });
+  await fiche
+    .locator("label", { hasText: "Ajouter la photo principale" })
+    .locator('input[type="file"]')
+    .setInputFiles({ name: "IMG_20261009.jpg", mimeType: "image/jpeg", buffer: jpeg });
+
+  await expect(fiche.getByRole("status").filter({ hasText: "Photo principale enregistrée." })).toBeVisible();
+  await expect(fiche.locator('img[src^="https://cdn.test/couverture-e2e.webp"]')).toHaveCount(1);
+  await expect(fiche.locator("label", { hasText: "Remplacer la photo principale" })).toBeVisible();
+
+  expect(corps, "aucun envoi intercepté").not.toBeNull();
+  const envoye = corps! as Buffer;
+  expect(envoye.toString("latin1")).toMatch(/name="productId"\r\n\r\n77777777-7777-7777-7777-777777777777\r\n/);
+  expect(envoye.toString("latin1")).toMatch(/filename="IMG_20261009\.webp"\r\nContent-Type: image\/webp/);
+  expect(envoye.length).toBeLessThan(PLAFOND);
+  test.info().annotations.push({ type: "poids", description: `${jpeg.length} → ${envoye.length} octets` });
 });

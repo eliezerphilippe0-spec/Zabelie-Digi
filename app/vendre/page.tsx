@@ -45,6 +45,7 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listerMedias, MAX_IMAGES_PER_PRODUCT } from "@/lib/product-media";
 import { GalerieManager } from "@/components/galerie-manager";
+import { PhotoPrincipale } from "@/components/photo-principale";
 import { lireCompares, lireVariantesRabais } from "@/lib/product-discount";
 import { RabaisManager } from "@/components/rabais-manager";
 import { FlashManager } from "@/components/flash-manager";
@@ -336,6 +337,20 @@ export default async function VendrePage() {
     videoTooLong: t(lang, "sell.galerie.video.long"),
     videoTooBig: t(lang, "sell.galerie.video.big"),
   };
+  // UX-02 : la photo que montrent le catalogue et l'accueil. Les états
+  // « préparation », « envoi », « trop lourde », « échec » sont ceux de la
+  // galerie : même compresseur, même plafond, mêmes mots pour le vendeur.
+  const photoLabels = {
+    title: t(lang, "sell.cover.title"),
+    hint: t(lang, "sell.cover.hint"),
+    add: t(lang, "sell.cover.add"),
+    replace: t(lang, "sell.cover.replace"),
+    preparing: galerieLabels.preparing,
+    sending: galerieLabels.sending,
+    saved: t(lang, "sell.cover.saved"),
+    tooHeavy: galerieLabels.tooHeavy,
+    error: galerieLabels.error,
+  };
   // BL-130 (FRONT-14) : `status` est un mot-clé technique brut ("published")
   // — jamais affiché tel quel, toujours mappé sur un libellé FR/KR.
   //
@@ -470,7 +485,7 @@ export default async function VendrePage() {
                   <div className="my-4 rounded-xl border border-line p-4">
                     <h3 className="font-semibold">{t(lang, "seller.ready.title")}</h3>
                     <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-                      {sellerReadiness({ ...p, digitalDetails: digitalDetails?.get(p.id) }, (galeries[i] ?? []).some((m) => m.kind === "image")).map((check) => (
+                      {sellerReadiness({ ...p, digitalDetails: digitalDetails?.get(p.id) }).map((check) => (
                         <li key={check.key} className="flex items-start gap-2 text-xs">
                           <span aria-hidden="true" className={check.complete ? "text-success-text" : "text-warning-text"}>{check.complete ? "✓" : "○"}</span>
                           <span>{t(lang, check.key)} · {t(lang, check.complete ? "seller.ready.present" : "seller.ready.missing")}</span>
@@ -481,6 +496,12 @@ export default async function VendrePage() {
                     {isDownloadable(p.kind) && <p className="mt-2 text-xs text-mist">{t(lang, "seller.digital.guide")}</p>}
                   </div>
                   {(p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL) && (commitments === null ? <p role="status" className="mt-4 text-sm text-mist">{trustLabels.missing}</p> : <ProductCommitmentEditor productId={p.id} initial={commitments.get(p.id)} labels={trustLabels} service={p.kind === COMMITMENT_SERVICE}/>)}
+                  {/* UX-02 : sur un BROUILLON seulement — la règle de l'atelier
+                      numérique (on ne modifie qu'en brouillon) vaut pour la
+                      photo que le public verra (SEC-01). */}
+                  {p.status === "draft" && (
+                    <PhotoPrincipale productId={p.id} initialUrl={p.cover_url} labels={photoLabels} />
+                  )}
                   <GalerieManager
                     productId={p.id}
                     initial={(galeries[i] ?? [])
