@@ -10,7 +10,7 @@ export const CONDITIONS_VERSION = "cgu-v1";
  * fusionnée : sinon l'application exige un reçu que la RPC ne sait pas écrire,
  * et la ré-acceptation tourne en boucle sans jamais satisfaire la garde.
  */
-export const CONFIDENTIALITE_VERSION = "confidentialite-v2";
+export const CONFIDENTIALITE_VERSION = "confidentialite-v3";
 
 export const ACCOUNT_LEGAL_VERSIONS = [CONDITIONS_VERSION, CONFIDENTIALITE_VERSION] as const;
 

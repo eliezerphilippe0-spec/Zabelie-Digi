@@ -280,6 +280,57 @@ test("l'effacement annonce que les pièces d'identité survivent à la fermeture
   }
 });
 
+/**
+ * CROISEMENT CODE ↔ §6, pour TOUS les tiers appelés.
+ *
+ * Mesuré le 2026-10-10 (`docs/69`) : le code appelait HUIT tiers et le §6 n'en
+ * nommait que trois. Reloadly et Kobara ne figuraient dans aucune liste de
+ * suivi ; Stripe serait passé à travers une recherche d'URL, n'en écrivant
+ * aucune. Une liste tenue à la main vieillit ; un croisement non.
+ *
+ * ⚠️ La recherche est bornée aux PUCES du §6, jamais à la section entière :
+ * ses paragraphes nomment déjà Meta, Google et TikTok comme régies « qui
+ * traitent pour leur propre compte ». Chercher « Google » dans le texte
+ * complet serait satisfait par cette phrase et ne prouverait rien sur la
+ * déclaration de Gemini — le piège de sous-chaîne, exactement.
+ */
+const TIERS_APPELES = [
+  { nom: "Resend", fichier: "lib/zabelie-email.ts", marque: "api.resend.com" },
+  { nom: "Reloadly", fichier: "lib/zabelie-topup/reloadly.ts", marque: "reloadly.com" },
+  { nom: "OpenAI", fichier: "lib/shopping-ai-provider.ts", marque: "api.openai.com" },
+  { nom: "Gemini", fichier: "lib/shopping-ai-provider.ts", marque: "generativelanguage.googleapis.com" },
+  { nom: "Higgsfield", fichier: "lib/creative/providers/higgsfield.ts", marque: "api.higgsfield.ai" },
+  { nom: "TypeSafe", fichier: "lib/jev.ts", marque: "untrusted_customer_message" },
+  { nom: "MonCash", fichier: "lib/moncash.ts", marque: "moncashbutton.digicelgroup.com" },
+  { nom: "Stripe", fichier: "lib/stripe.ts", marque: "checkout.sessions.create" },
+  { nom: "Kobara", fichier: "lib/kobara.ts", marque: "api.kobara.app" },
+] as const;
+
+/** Les PUCES du §6 seulement — pas ses paragraphes. */
+function pucesDestinataires(lang: Lang): string {
+  return POLITIQUE[lang].sections
+    .filter((s) => /^6\./u.test(s.titre))
+    .flatMap((s) => s.blocs.flatMap((b) => ("ul" in b ? b.ul : [])))
+    .join("\n");
+}
+
+test("tout tiers appelé par le code est NOMMÉ au §6, dans les deux sens", () => {
+  for (const lang of LANGS) {
+    const puces = pucesDestinataires(lang);
+    assert.ok(puces.includes("Supabase"), `${lang} : les puces du §6 n'ont pas été trouvées`);
+    for (const tiers of TIERS_APPELES) {
+      const appele = readFileSync(tiers.fichier, "utf8").includes(tiers.marque);
+      assert.equal(
+        puces.includes(tiers.nom),
+        appele,
+        appele
+          ? `${lang} : ${tiers.fichier} appelle ${tiers.nom}, qui doit être nommé au §6`
+          : `${lang} : plus aucun appel vers ${tiers.nom} — sa ligne du §6 doit partir`
+      );
+    }
+  }
+});
+
 test("un tiers qui reçoit les mots du client est NOMMÉ au §6, dans les deux sens", () => {
   /**
    * CROISEMENT CODE ↔ DÉCLARATION.

@@ -141,3 +141,52 @@ conseil, pas sur le code.
   déclarer tant qu'aucune API n'est appelée.
 * La question de savoir si l'un de ces contrats comporte des clauses types de
   transfert. Aucune n'a été constatée ; ne rien affirmer à ce sujet.
+
+---
+
+## 8. Décision du porteur — `v3` groupé, préparé le 2026-10-10
+
+Arbitrage tranché : **`v3` groupé**, une seule ré-acceptation au lieu de deux.
+`0136` a été **réécrite plutôt que doublée** — elle n'était ni appliquée ni
+fusionnée, donc son fichier pouvait encore bouger (une migration appliquée, elle,
+ne bouge plus jamais). Renommée `0136_zabelie_confidentialite_v3.sql`.
+
+`confidentialite-v2` ne sera jamais vivante : **aucun compte ne porte ce reçu**
+et `0136` ne l'accepte pas. Son empreinte reste archivée dans
+`tests/account-legal-acceptance.test.ts` comme trace du document intermédiaire.
+
+### Le §6 est désormais coupé en deux
+
+* **Sous-traitants** — Supabase, Vercel, Resend, Reloadly, OpenAI *ou* Gemini,
+  Higgsfield, TypeSafe. Chaque ligne dit **ce qui part** : l'adresse e-mail, le
+  numéro du bénéficiaire, le texte écrit par l'utilisateur.
+* **Services de paiement, destinataires distincts** — MonCash (Digicel),
+  Stripe, Kobara, précédés d'une phrase qui dit pourquoi : *« vous saisissez vos
+  moyens de paiement chez eux, sur leur propre page. Nous ne leur transmettons
+  que le montant, la référence de commande et le libellé de l'achat. »*
+
+⚖️ **MonCash a changé de rubrique.** C'est le point qui demande le conseil :
+changement de qualification, pas de formulation.
+
+### Le croisement qui remplace la liste tenue à la main
+
+`tests/politique-confidentialite.test.ts` croise désormais **les neuf tiers**
+avec les puces du §6, dans les deux sens et dans les quatre langues. C'est ce
+qui fait qu'un prochain Reloadly ne pourra plus passer inaperçu.
+
+⚠️ **La recherche est bornée aux PUCES, jamais à la section entière**, et ce
+n'est pas un détail de style — c'est mesuré :
+
+```
+recherche naïve de « Google » sur toute la section : true   ← serait resté VERT
+recherche bornée aux puces, « Gemini »             : false  ← rougit
+```
+
+Les paragraphes du §6 nomment déjà Meta, Google et TikTok comme régies « qui
+traitent pour leur propre compte ». Chercher « Google » dans le texte complet
+aurait été satisfait par cette phrase sans rien prouver sur Gemini. C'est le
+piège de sous-chaîne, pris en flagrant délit.
+
+Trois mutations passées : Reloadly retiré du kreyòl seul → rouge ; Gemini retiré
+des puces françaises → rouge ; `api.higgsfield.ai` retiré du code alors que la
+ligne reste → rouge. Validation : `tsc` propre, lint 0 erreur, **1604/1604**.

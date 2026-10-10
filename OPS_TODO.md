@@ -36,6 +36,13 @@ en boucle, paiement bloqué. `0136` accepte v1 ET v2 pendant la fenêtre de dép
 enregistre la version réellement déclarée, donc **l'appliquer seule ne change rien et ne casse
 rien** : le coût ne commence qu'à la mise en ligne du code.
 
+✅ **`v3` GROUPÉ PRÉPARÉ le 10 octobre** (décision porteur) — une seule ré-acceptation au lieu
+de deux. `0136` réécrite et renommée en `_v3` (elle n’était pas appliquée, donc son fichier
+pouvait encore bouger). Le §6 est coupé en deux : sept sous-traitants qui reçoivent ce que NOUS
+leur transmettons, et trois services de paiement où l’utilisateur saisit lui-même.
+⚖️ **MonCash change de rubrique** — qualification, pas formulation : à valider par le conseil
+avant mise en ligne. Croisement des neuf tiers posé dans les deux sens.
+
 ⚠️ **Relevé fait le 10 octobre — ils ne sont pas quatre, mais HUIT** : Resend, Reloadly,
 OpenAI/Gemini (×2 usages), Higgsfield, Stripe, Kobara, TypeSafe. `Reloadly` et `Kobara`
 n’étaient dans aucune liste. **Aucun des huit n’est déclaré.** Et le relevé coupe en deux :

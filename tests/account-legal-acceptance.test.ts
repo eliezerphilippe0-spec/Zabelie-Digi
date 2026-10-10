@@ -18,8 +18,12 @@ import { appelSession } from "../lib/appel-session";
 const DOCUMENTS = {
   "cgu-v1": "1ed972be789bdfae4067cae594856049dbec1c7371a370c37e5646047457b250",
   "confidentialite-v1": "6ab1482d81dd66d66d75f260a439e77e96e4a331debb7b91ae473ca7ca3f0853",
-  // v2 — 2026-10-10 : TypeSafe entre au §6 (0136).
+  // v2 — 2026-10-10 : TypeSafe seul. JAMAIS APPLIQUÉE ni déployée : aucun
+  // compte ne porte ce reçu, et 0136 ne l'accepte pas. Conservée comme trace
+  // du document intermédiaire, pas comme version vivante.
   "confidentialite-v2": "6318df0e2dc8500af19983bd75dc07be3be76d637767c173298907fb76b0d162",
+  // v3 — 2026-10-10 : les huit tiers du relevé docs/69, §6 coupé en deux (0136).
+  "confidentialite-v3": "4319942979b375d6e7ea63754a6fcbbbc37d930199a47ba6272434c7c09a570d",
 };
 
 test("receipt versions describe the canonical documents actually linked, in all four languages", () => {
@@ -42,7 +46,7 @@ test("receipt versions describe the canonical documents actually linked, in all 
   // refusé v2 et les utilisateurs auraient ré-accepté en boucle sans jamais
   // satisfaire la garde. Une présence de sous-chaîne ne prouve rien sur
   // l'endroit qui décide.
-  const migration = readFileSync("supabase/migrations/0136_zabelie_confidentialite_v2.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/0136_zabelie_confidentialite_v3.sql", "utf8");
   const corps = migration
     .split(/create (?:or replace )?function /)
     .slice(1)
