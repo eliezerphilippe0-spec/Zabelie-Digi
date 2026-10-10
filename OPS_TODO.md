@@ -36,7 +36,14 @@ en boucle, paiement bloqué. `0136` accepte v1 ET v2 pendant la fenêtre de dép
 enregistre la version réellement déclarée, donc **l'appliquer seule ne change rien et ne casse
 rien** : le coût ne commence qu'à la mise en ligne du code.
 
-⚠️ **Restent absents du §6, non traités ici** : Resend, Stripe, Higgsfield, OpenAI/Gemini.
+⚠️ **Relevé fait le 10 octobre — ils ne sont pas quatre, mais HUIT** : Resend, Reloadly,
+OpenAI/Gemini (×2 usages), Higgsfield, Stripe, Kobara, TypeSafe. `Reloadly` et `Kobara`
+n’étaient dans aucune liste. **Aucun des huit n’est déclaré.** Et le relevé coupe en deux :
+Resend envoie l’adresse e-mail, Reloadly le téléphone du bénéficiaire, le Shopping AI la phrase
+libre de l’acheteur — sous-traitants pleins ; **Stripe et Kobara ne reçoivent de Zabelie aucune
+donnée personnelle** (montant, order_id, titre produit), l’utilisateur saisit chez eux. Les
+nommer à l’identique serait inexact. Qualifications à trancher avec le conseil, y compris le
+déplacement de MonCash. Voir [le relevé](docs/69-SOUS-TRAITANTS-RELEVE-2026-10-10.md).
 Chacun demande de constater d'abord s'il traite réellement des données aujourd'hui —
 déclarer un sous-traitant inactif est aussi faux que d'en taire un actif. Les regrouper dans
 un même `v3` éviterait une seconde ré-acceptation. À arbitrer avec le conseil.
