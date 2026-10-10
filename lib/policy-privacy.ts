@@ -49,6 +49,41 @@ import type { Lang } from "./i18n";
  *     pièces d'un compte actif. Le cadre BRH reste à qualifier (`docs/17`) ;
  *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
  *
+ * ⚖️ 2026-10-10 (second passage) — **`v3` GROUPÉ, décision du porteur.** Le
+ * relevé `docs/69` a mesuré HUIT tiers appelés par le code, pas quatre :
+ * Reloadly et Kobara n'étaient dans aucune liste, et Stripe serait passé à
+ * travers une recherche d'URL puisqu'il n'en écrit aucune. Aucun n'était
+ * déclaré. Tout entre ici en UNE version, pour ne faire payer qu'UNE
+ * ré-acceptation au lieu de deux.
+ *   • Le §6 est désormais COUPÉ EN DEUX, et ce n'est pas du vocabulaire.
+ *     Les sous-traitants reçoivent des données que NOUS leur transmettons.
+ *     Les services de paiement n'en reçoivent aucune : mesuré, Stripe ne
+ *     reçoit qu'`order_id`, un montant et un libellé (`lib/stripe.ts:47`),
+ *     Kobara qu'un montant et un `order_id` (`lib/kobara.ts:167`), et
+ *     `redactKobaraPayment` retire même le téléphone du payeur avant écriture.
+ *     L'utilisateur saisit ses moyens de paiement CHEZ EUX.
+ *   • ⚖️ **MonCash change donc de rubrique** — il passe des sous-traitants aux
+ *     destinataires de paiement. C'est un changement de QUALIFICATION, pas de
+ *     formulation : à faire valider par le conseil avant mise en ligne.
+ *   • AUCUNE région d'hébergement n'est affirmée pour les sept tiers ajoutés :
+ *     aucune n'a été mesurée, contrairement à Supabase et Vercel.
+ *   • Zelle reste absent, et c'est exact : aucun appel sortant dans le code.
+ *
+ * ⚖️ 2026-10-10 (premier passage) — **TypeSafe ENTRE au §6.** Ce n'est pas un ajout de confort :
+ * `lib/jev.ts` envoie `untrusted_customer_message` — les mots mêmes du client —
+ * à `api.typesafe.ai`. Le triage est livré et son drapeau est fermé ; l'ouvrir
+ * sans cette ligne transmettrait des messages clients à un tiers non déclaré.
+ * `tests/politique-confidentialite.test.ts` croise désormais les deux dans LES
+ * DEUX SENS : tant que ce code transmet, TypeSafe doit être nommé ; si la
+ * transmission disparaît, la ligne doit partir. Rédigé par l'agent sur mandat
+ * du porteur — à valider par le conseil.
+ *   • AUCUNE région d'hébergement n'est affirmée pour TypeSafe : elle n'a pas
+ *     été mesurée, contrairement à Supabase et Vercel. Ne pas en inventer une.
+ *   • ⚠️ RESTENT ABSENTS, et ce n'est PAS réglé ici : Resend, Stripe,
+ *     Higgsfield, OpenAI/Gemini. Chacun demande de constater d'abord s'il
+ *     traite réellement des données aujourd'hui — déclarer un sous-traitant
+ *     inactif est aussi faux que d'en taire un actif.
+ *
  * ⚠️ Tant qu'un champ vaut `null`, le rendu affiche le marqueur — visible,
  * jamais silencieux. `tests/politique-confidentialite.test.ts` compte les
  * champs vides : le compte ne peut pas grossir sans que quelqu'un le voie.
@@ -191,7 +226,19 @@ const fr: Politique = {
           ul: [
             "**Supabase** — base de données, authentification et stockage.",
             "**Vercel** — hébergement de l'application.",
-            "**MonCash (Digicel)** — traitement des paiements.",
+            "**Resend** — envoi des e-mails de service : votre adresse et le contenu du message.",
+            "**Reloadly** — recharge téléphonique : le numéro du bénéficiaire que vous indiquez.",
+            "**OpenAI** ou **Google (Gemini)**, selon le fournisseur configuré — assistant d'achat et aide à la rédaction : le texte que vous écrivez.",
+            "**Higgsfield** — génération de visuels pour les vendeurs : le texte et l'image de référence fournis.",
+            "**TypeSafe** — classement automatique des messages de support, lorsque cette aide est activée.",
+          ],
+        },
+        { p: "Les services de paiement sont des destinataires **distincts** : vous saisissez vos moyens de paiement chez eux, sur leur propre page. Nous ne leur transmettons que le montant, la référence de commande et le libellé de l'achat." },
+        {
+          ul: [
+            "**MonCash (Digicel)** — paiement en gourdes.",
+            "**Stripe** — paiement par carte.",
+            "**Kobara** — paiement en gourdes.",
           ],
         },
         { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **Vos données sont hébergées aux États-Unis : la base de données chez Supabase (région us-east-1, Virginie du Nord) et l'application chez Vercel (région iad1, Washington).**" },
@@ -353,7 +400,19 @@ const ht: Politique = {
           ul: [
             "**Supabase** — baz done, otantifikasyon ak depo.",
             "**Vercel** — ebèjman aplikasyon an.",
-            "**MonCash (Digicel)** — tretman peman yo.",
+            "**Resend** — voye imèl sèvis yo : adrès ou ak kontni mesaj la.",
+            "**Reloadly** — rechaj telefòn : nimewo moun w ap rechaje a.",
+            "**OpenAI** oswa **Google (Gemini)**, selon founisè ki konfigire a — asistan acha ak èd pou ekri : tèks ou ekri a.",
+            "**Higgsfield** — kreyasyon imaj pou vandè yo : tèks ak imaj referans ou bay.",
+            "**TypeSafe** — klasman otomatik mesaj sipò yo, lè èd sa a aktive.",
+          ],
+        },
+        { p: "Sèvis peman yo se destinatè **apa** : se lakay yo ou antre mwayen peman ou, sou pwòp paj pa yo. Nou voye ba yo sèlman montan an, referans kòmand lan ak non acha a." },
+        {
+          ul: [
+            "**MonCash (Digicel)** — peman an goud.",
+            "**Stripe** — peman ak kat.",
+            "**Kobara** — peman an goud.",
           ],
         },
         { p: "Kèk patnè ka ebèje done deyò peyi ou. **Done ou yo ebèje Ozetazini : baz done a lakay Supabase (rejyon us-east-1, Nò Vijini) ak aplikasyon an lakay Vercel (rejyon iad1, Washington).**" },
@@ -515,7 +574,19 @@ const en: Politique = {
           ul: [
             "**Supabase** — database, authentication and storage.",
             "**Vercel** — application hosting.",
-            "**MonCash (Digicel)** — payment processing.",
+            "**Resend** — sending service emails: your address and the message content.",
+            "**Reloadly** — phone top-up: the beneficiary number you provide.",
+            "**OpenAI** or **Google (Gemini)**, depending on the configured provider — shopping assistant and writing help: the text you write.",
+            "**Higgsfield** — image generation for sellers: the text and reference image provided.",
+            "**TypeSafe** — automatic classification of support messages, when this assistance is enabled.",
+          ],
+        },
+        { p: "Payment services are **separate** recipients: you enter your payment details on their own pages. We send them only the amount, the order reference and the purchase label." },
+        {
+          ul: [
+            "**MonCash (Digicel)** — payment in gourdes.",
+            "**Stripe** — card payment.",
+            "**Kobara** — payment in gourdes.",
           ],
         },
         { p: "Some processors may host data outside your country. **Your data is hosted in the United States: the database with Supabase (us-east-1 region, Northern Virginia) and the application with Vercel (iad1 region, Washington).**" },
@@ -677,7 +748,19 @@ const es: Politique = {
           ul: [
             "**Supabase** — base de datos, autenticación y almacenamiento.",
             "**Vercel** — alojamiento de la aplicación.",
-            "**MonCash (Digicel)** — tratamiento de los pagos.",
+            "**Resend** — envío de correos de servicio: su dirección y el contenido del mensaje.",
+            "**Reloadly** — recarga telefónica: el número del beneficiario que usted indica.",
+            "**OpenAI** o **Google (Gemini)**, según el proveedor configurado — asistente de compra y ayuda a la redacción: el texto que usted escribe.",
+            "**Higgsfield** — generación de imágenes para vendedores: el texto y la imagen de referencia proporcionados.",
+            "**TypeSafe** — clasificación automática de los mensajes de soporte, cuando esta ayuda está activada.",
+          ],
+        },
+        { p: "Los servicios de pago son destinatarios **distintos**: usted introduce sus medios de pago en sus propias páginas. Solo les transmitimos el importe, la referencia del pedido y la denominación de la compra." },
+        {
+          ul: [
+            "**MonCash (Digicel)** — pago en gourdes.",
+            "**Stripe** — pago con tarjeta.",
+            "**Kobara** — pago en gourdes.",
           ],
         },
         { p: "Algunos encargados pueden alojar datos fuera de su país. **Sus datos se alojan en Estados Unidos: la base de datos en Supabase (región us-east-1, Virginia del Norte) y la aplicación en Vercel (región iad1, Washington).**" },

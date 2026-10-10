@@ -12,9 +12,18 @@ import { appelSession } from "../lib/appel-session";
 // Fingerprints archive the exact canonical documents behind these receipt IDs.
 // A document/identity change needs a NEW version, fingerprint and SQL migration;
 // replacing only a fingerprint would relabel an already accepted document.
+// Les empreintes retirées ne s'effacent pas : elles ARCHIVENT le document que
+// chaque reçu atteste. `confidentialite-v1` reste donc ici après le passage en
+// v2 — des comptes portent ce reçu, et il désigne un texte précis.
 const DOCUMENTS = {
   "cgu-v1": "1ed972be789bdfae4067cae594856049dbec1c7371a370c37e5646047457b250",
   "confidentialite-v1": "6ab1482d81dd66d66d75f260a439e77e96e4a331debb7b91ae473ca7ca3f0853",
+  // v2 — 2026-10-10 : TypeSafe seul. JAMAIS APPLIQUÉE ni déployée : aucun
+  // compte ne porte ce reçu, et 0136 ne l'accepte pas. Conservée comme trace
+  // du document intermédiaire, pas comme version vivante.
+  "confidentialite-v2": "6318df0e2dc8500af19983bd75dc07be3be76d637767c173298907fb76b0d162",
+  // v3 — 2026-10-10 : les huit tiers du relevé docs/69, §6 coupé en deux (0136).
+  "confidentialite-v3": "4319942979b375d6e7ea63754a6fcbbbc37d930199a47ba6272434c7c09a570d",
 };
 
 test("receipt versions describe the canonical documents actually linked, in all four languages", () => {
@@ -26,8 +35,31 @@ test("receipt versions describe the canonical documents actually linked, in all 
     assert.equal(createHash("sha256").update(JSON.stringify({ document, identity: IDENTITE, collections })).digest("hex"), DOCUMENTS[version], "Changed legal text requires a new receipt version and SQL constants");
     assert.match(readFileSync(page, "utf8"), new RegExp(`data-policy-version=\\{${symbol}\\}`));
   }
-  const migration = readFileSync("supabase/migrations/0133_zabelie_acceptation_compte.sql", "utf8");
-  for (const version of ACCOUNT_LEGAL_VERSIONS) assert.ok(migration.includes(`'${version}'`));
+  // La migration COURANTE est la source de vérité des versions que le serveur
+  // sait écrire. La faire pointer sur 0133 après un passage en v2 aurait laissé
+  // l'application exiger un reçu qu'aucune fonction SQL ne produit.
+  //
+  // ⚠️ L'assertion porte sur CHAQUE FONCTION, jamais sur le fichier. Mesuré le
+  // 2026-10-10 : retirer `confidentialite-v2` de la seule RPC de
+  // ré-acceptation laissait le test VERT — cinq occurrences survivaient dans
+  // les commentaires, le trigger et la sonde. En production, la RPC aurait
+  // refusé v2 et les utilisateurs auraient ré-accepté en boucle sans jamais
+  // satisfaire la garde. Une présence de sous-chaîne ne prouve rien sur
+  // l'endroit qui décide.
+  const migration = readFileSync("supabase/migrations/0136_zabelie_confidentialite_v3.sql", "utf8");
+  const corps = migration
+    .split(/create (?:or replace )?function /)
+    .slice(1)
+    .map((bloc) => bloc.slice(0, bloc.indexOf("$$;")));
+  assert.equal(corps.length, 2, "0136 doit porter les DEUX fonctions d'acceptation");
+  for (const [rang, fonction] of corps.entries()) {
+    for (const version of ACCOUNT_LEGAL_VERSIONS) {
+      assert.ok(
+        fonction.includes(`'${version}'`),
+        `${version} absente du corps de la fonction ${rang + 1} de 0136 : un reçu exigé que cette fonction ne sait pas écrire`
+      );
+    }
+  }
 });
 
 test("initial declarations require both distinct explicit acts; old product receipts are insufficient", () => {
