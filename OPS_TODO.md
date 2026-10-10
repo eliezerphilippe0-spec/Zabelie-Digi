@@ -1,5 +1,47 @@
 # OPS_TODO — Zabelie
 
+## TypeSafe — la clé bloque TROIS chantiers, et le §6 bloquait l'activation (10 octobre 2026)
+
+⚠️ **Mesuré** : le proxy des sessions agent refuse `actions/secrets` et `actions/variables` en **403**.
+Je ne peux poser aucune de ces valeurs — les trois gestes ci-dessous sont les tiens, et c'est
+**la même clé renouvelée** à trois endroits différents :
+
+| Chantier | Où poser la clé | Plus |
+|---|---|---|
+| Supervision (en veille depuis le 25/09) | GitHub → Settings → Secrets and variables → **Actions** | variable `JEV_SUPERVISION_ENABLED=true` + rétablir le `schedule` commenté |
+| Triage support (livré, drapeau fermé) | **Vercel** → projet zabelie → Environment Variables | `ZABELIE_JEV_TRIAGE_ENABLED=true` |
+| Éval kreyòl (harnais local) | ta machine, `.env.local` | + le CSV de messages réels anonymisés |
+
+⚠️ **La clé collée dans la conversation du 21 septembre est COMPROMISE** — à révoquer, pas à
+réutiliser (`docs/JEV-INTEGRATION.md:17`, et `tests/secrets-hors-depot.test.ts:23` : « la seule
+réponse à une clé exposée est de la FAIRE TOURNER »).
+
+### Le vrai blocage n'était pas la clé
+
+**TypeSafe n'était pas déclaré au §6** de la politique de confidentialité, alors que
+`lib/jev.ts` envoie `untrusted_customer_message` — les mots mêmes du client — à
+`api.typesafe.ai`. Allumer le triage dans cet état aurait transmis des messages clients à un
+tiers non déclaré. Corrigé dans les quatre langues, avec le croisement qui empêche l'oubli de
+revenir (`tests/politique-confidentialite.test.ts`, dans les deux sens).
+
+⛔ **Conséquence, et elle demande ton geste** : changer le texte impose `confidentialite-v2`.
+Tout compte existant devra repasser **une fois** par `/connexion?mode=legal` avant de payer,
+déposer un KYC ou créer un produit. La surface et la RPC existent — ce n'est pas un mur.
+Décision assumée ici : au `docs/49`, 2 produits publiés et 14 paiements tous échoués, donc
+**le moment le moins coûteux pour imposer une ré-acceptation, c'est maintenant.**
+
+⚠️ **ORDRE OBLIGATOIRE** (`docs/25` §7.2) : **appliquer `0136` AVANT de fusionner la PR.**
+L'inverse laisse l'application exiger un reçu que la RPC ne sait pas écrire — ré-acceptation
+en boucle, paiement bloqué. `0136` accepte v1 ET v2 pendant la fenêtre de déploiement et
+enregistre la version réellement déclarée, donc **l'appliquer seule ne change rien et ne casse
+rien** : le coût ne commence qu'à la mise en ligne du code.
+
+⚠️ **Restent absents du §6, non traités ici** : Resend, Stripe, Higgsfield, OpenAI/Gemini.
+Chacun demande de constater d'abord s'il traite réellement des données aujourd'hui —
+déclarer un sous-traitant inactif est aussi faux que d'en taire un actif. Les regrouper dans
+un même `v3` éviterait une seconde ré-acceptation. À arbitrer avec le conseil.
+
+
 ## Fonctions `SECURITY DEFINER` exposées — revue du 8 octobre 2026
 
 Instruction directe : « pousse et mets les en lignes » (troisième point

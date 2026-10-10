@@ -49,6 +49,21 @@ import type { Lang } from "./i18n";
  *     pièces d'un compte actif. Le cadre BRH reste à qualifier (`docs/17`) ;
  *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
  *
+ * ⚖️ 2026-10-10 — **TypeSafe ENTRE au §6.** Ce n'est pas un ajout de confort :
+ * `lib/jev.ts` envoie `untrusted_customer_message` — les mots mêmes du client —
+ * à `api.typesafe.ai`. Le triage est livré et son drapeau est fermé ; l'ouvrir
+ * sans cette ligne transmettrait des messages clients à un tiers non déclaré.
+ * `tests/politique-confidentialite.test.ts` croise désormais les deux dans LES
+ * DEUX SENS : tant que ce code transmet, TypeSafe doit être nommé ; si la
+ * transmission disparaît, la ligne doit partir. Rédigé par l'agent sur mandat
+ * du porteur — à valider par le conseil.
+ *   • AUCUNE région d'hébergement n'est affirmée pour TypeSafe : elle n'a pas
+ *     été mesurée, contrairement à Supabase et Vercel. Ne pas en inventer une.
+ *   • ⚠️ RESTENT ABSENTS, et ce n'est PAS réglé ici : Resend, Stripe,
+ *     Higgsfield, OpenAI/Gemini. Chacun demande de constater d'abord s'il
+ *     traite réellement des données aujourd'hui — déclarer un sous-traitant
+ *     inactif est aussi faux que d'en taire un actif.
+ *
  * ⚠️ Tant qu'un champ vaut `null`, le rendu affiche le marqueur — visible,
  * jamais silencieux. `tests/politique-confidentialite.test.ts` compte les
  * champs vides : le compte ne peut pas grossir sans que quelqu'un le voie.
@@ -192,6 +207,7 @@ const fr: Politique = {
             "**Supabase** — base de données, authentification et stockage.",
             "**Vercel** — hébergement de l'application.",
             "**MonCash (Digicel)** — traitement des paiements.",
+            "**TypeSafe** — classement automatique des messages de support, lorsque cette aide est activée.",
           ],
         },
         { p: "Certains sous-traitants peuvent héberger des données hors de votre pays. **Vos données sont hébergées aux États-Unis : la base de données chez Supabase (région us-east-1, Virginie du Nord) et l'application chez Vercel (région iad1, Washington).**" },
@@ -354,6 +370,7 @@ const ht: Politique = {
             "**Supabase** — baz done, otantifikasyon ak depo.",
             "**Vercel** — ebèjman aplikasyon an.",
             "**MonCash (Digicel)** — tretman peman yo.",
+            "**TypeSafe** — klasman otomatik mesaj sipò yo, lè èd sa a aktive.",
           ],
         },
         { p: "Kèk patnè ka ebèje done deyò peyi ou. **Done ou yo ebèje Ozetazini : baz done a lakay Supabase (rejyon us-east-1, Nò Vijini) ak aplikasyon an lakay Vercel (rejyon iad1, Washington).**" },
@@ -516,6 +533,7 @@ const en: Politique = {
             "**Supabase** — database, authentication and storage.",
             "**Vercel** — application hosting.",
             "**MonCash (Digicel)** — payment processing.",
+            "**TypeSafe** — automatic classification of support messages, when this assistance is enabled.",
           ],
         },
         { p: "Some processors may host data outside your country. **Your data is hosted in the United States: the database with Supabase (us-east-1 region, Northern Virginia) and the application with Vercel (iad1 region, Washington).**" },
@@ -678,6 +696,7 @@ const es: Politique = {
             "**Supabase** — base de datos, autenticación y almacenamiento.",
             "**Vercel** — alojamiento de la aplicación.",
             "**MonCash (Digicel)** — tratamiento de los pagos.",
+            "**TypeSafe** — clasificación automática de los mensajes de soporte, cuando esta ayuda está activada.",
           ],
         },
         { p: "Algunos encargados pueden alojar datos fuera de su país. **Sus datos se alojan en Estados Unidos: la base de datos en Supabase (región us-east-1, Virginia del Norte) y la aplicación en Vercel (región iad1, Washington).**" },

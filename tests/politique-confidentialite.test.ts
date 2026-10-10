@@ -279,3 +279,56 @@ test("l'effacement annonce que les pièces d'identité survivent à la fermeture
     assert.ok(texte.includes(renvoi[lang]), `${lang} : l'effacement ne mentionne pas la conservation des pièces`);
   }
 });
+
+test("un tiers qui reçoit les mots du client est NOMMÉ au §6, dans les deux sens", () => {
+  /**
+   * CROISEMENT CODE ↔ DÉCLARATION.
+   *
+   * Mesuré le 2026-10-10 : `lib/jev.ts` envoyait `untrusted_customer_message`
+   * — le texte écrit par le client — à `api.typesafe.ai`, et le §6 ne nommait
+   * que Supabase, Vercel et MonCash. Le triage était livré, drapeau fermé :
+   * l'ouvrir aurait transmis des messages clients à un tiers non déclaré, sans
+   * qu'aucun contrôle ne le dise.
+   *
+   * L'assertion porte sur ce qui COMMANDE — la transmission dans le code —
+   * jamais sur la présence d'un libellé. Et elle vaut DANS LES DEUX SENS : une
+   * liste qui ne sait que grandir finit par déclarer des tiers disparus, ce
+   * qui est une autre façon de mentir.
+   */
+  const transmet = readFileSync("lib/jev.ts", "utf8").includes("untrusted_customer_message");
+  const sousTraitants = (lang: Lang) =>
+    POLITIQUE[lang].sections
+      .filter((s) => /^6\./u.test(s.titre))
+      .flatMap((s) => s.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)))
+      .join("\n");
+
+  for (const lang of LANGS) {
+    const declare = sousTraitants(lang).includes("TypeSafe");
+    assert.equal(
+      declare,
+      transmet,
+      transmet
+        ? `${lang} : lib/jev.ts transmet le message du client à TypeSafe, qui doit être nommé au §6`
+        : `${lang} : plus aucune transmission vers TypeSafe — la ligne du §6 doit partir`
+    );
+  }
+});
+
+test("aucune région d’hébergement n’est inventée pour un tiers non mesuré", () => {
+  /**
+   * Supabase et Vercel portent une région PARCE QU'ELLE A ÉTÉ MESURÉE
+   * (2026-10-04). TypeSafe n'a pas été mesuré : lui coller un pays serait une
+   * garantie inventée dans un document juridique. Ce test garde l'abstention.
+   */
+  for (const lang of LANGS) {
+    const texte = POLITIQUE[lang].sections
+      .flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)))
+      .join("\n");
+    const phrase = texte.split("\n").find((l) => l.includes("TypeSafe")) ?? "";
+    assert.doesNotMatch(
+      phrase,
+      /États-Unis|Ozetazini|United States|Estados Unidos|us-east-1|iad1|région|rejyon|region|región/u,
+      `${lang} : une région est affirmée pour TypeSafe alors qu'aucune n'a été mesurée`
+    );
+  }
+});
