@@ -30,7 +30,7 @@
     "@playwright/test": "^1.49.1",
     "@serwist/next": "^9.5.12",
     "@tailwindcss/postcss": "^4.0.0",
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.6.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "axe-core": "^4.13.0",
