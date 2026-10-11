@@ -134,7 +134,9 @@ invisibles au checkout).
   **aucun `.env` n'a jamais été commité**.
 - **`tests/secrets-hors-depot.test.ts` — le scan n'est plus un audit, c'est un
   test qui casse la CI.** Il balaie tous les fichiers **suivis par Git** et
-  reconnaît onze familles de clés : Supabase secrète (`sb_secret_`), Stripe
+  reconnaît treize familles de clés : TypeSafe (Jev), Supabase secrète
+  (`sb_secret_`) et jeton d'accès personnel Supabase (`sbp_`, ajouté le
+  2026-10-11 : il administre tout le compte, pas un seul projet), Stripe
   (live, test, webhook), GitHub, AWS, SendGrid, Brevo, Resend, OpenAI, et les
   JWT signés (`eyJ…`, l'ancienne forme de la clé service_role).
   Éprouvé dans les deux sens : un échantillon synthétique par famille doit
@@ -146,6 +148,18 @@ invisibles au checkout).
   test se taira — d'où le §5, qui reste la seule vraie réponse.
   ⚠️ Une seule exemption, nominative : ce fichier-ci, qui **nomme** les motifs.
   Un quatrième test vérifie qu'il ne porte aucune **valeur**.
+- **gitleaks dans la CI** (étape du job `build`, depuis le 2026-10-11) : il lit
+  les **commits poussés**, pas seulement l'arbre courant, avec ses quelque deux
+  cents règles. Une clé commitée puis retirée dans le même push est donc
+  attrapée avant d'atteindre main — le trou que le test ci-dessus avoue.
+  Version épinglée (8.30.1) ; faux positifs nommés un par un dans
+  `.gitleaks.toml`. Balayage de l'historique complet le 2026-10-11 : aucun vrai
+  secret (seule trouvaille, l'URL de la base Postgres jetable de la CI, sur
+  `localhost`). ⚠️ Il ne protège que ce qui est poussé APRÈS son arrivée, et
+  rien de ce qui n'est jamais commité — le §5 reste la seule vraie réponse.
+- `.github/dependabot.yml` : les mises à jour de dépendances arrivent en PR.
+  Les **alertes** et les PR de **sécurité** s'activent dans les réglages du
+  dépôt (Settings → Code security), pas dans ce fichier.
 - `createAdminClient()` (clé service role) n'apparaît que dans du code
   serveur — jamais dans un composant `"use client"`.
 - Le test CI `api-auth-coverage` empêche d'ajouter une route API sans garde.

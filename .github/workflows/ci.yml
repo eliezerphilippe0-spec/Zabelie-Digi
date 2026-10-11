@@ -16,6 +16,14 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review]
 
+# Moindre privilège pour le jeton du workflow. Sans ce bloc, ses droits
+# dépendent d'un réglage du dépôt, invisible depuis ce fichier. Lecture du
+# code, et lecture des PR pour que gitleaks liste les commits d'une PR. Aucune
+# étape n'écrit : pas de commentaire, pas de statut posé à la main.
+permissions:
+  contents: read
+  pull-requests: read
+
 # Quand plusieurs commits s'enchaînent, le run devenu obsolète est annulé au
 # lieu d'occuper la file jusqu'au bout. Le SHA de tête — le seul que la
 # protection de branche regarde — est toujours celui qui va au bout.
@@ -37,6 +45,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # `tests/secrets-hors-depot.test.ts` lit l'ARBRE COURANT : une clé
+      # commitée puis retirée dans le même push y échappe, et il ne connaît
+      # que les familles qu'on lui a listées. gitleaks lit les COMMITS poussés,
+      # avec ses quelque deux cents règles. Étape du job `build` et pas job à
+      # part : le nom d'un job est un contrat avec la protection de branche
+      # (`tests/ci-jobs-discipline.test.ts`), et un job de plus coûterait une
+      # minute facturée par run, arrondi oblige. Version épinglée : une règle
+      # qui change seule ferait rougir un run sans changement de code.
+      # Faux positifs connus et nommés : `.gitleaks.toml`.
+      - name: Secrets dans les commits poussés (gitleaks)
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_ENABLE_COMMENTS: false
 
       - uses: actions/setup-node@v4
         with:
@@ -84,13 +110,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Une branche qui ne touche QUE `docs/` ou des `.md` ne peut rien changer
+      # à un parcours navigateur : l'application n'en lit aucun à l'exécution.
+      # Mesuré sur 30 jours : 64 runs sur 355, à ~8 min d'e2e chacun. La mesure
+      # porte sur la BRANCHE ENTIÈRE (merge-base avec main), jamais sur le
+      # dernier commit — détail et preuves dans `scripts/ci-portee.mjs` et
+      # `tests/ci-portee.test.ts`. Le saut s'affiche en annotation et dans le
+      # résumé du job : un vert sans e2e doit se voir. Toute incertitude lance
+      # l'e2e — d'où `!= 'true'`, jamais `== 'false'`, sur chaque étape.
+      - name: Portée du changement
+        id: portee
+        run: node scripts/ci-portee.mjs
 
       - uses: actions/setup-node@v4
+        if: steps.portee.outputs.docs_seulement != 'true'
         with:
           node-version: 22
           cache: npm
 
       - name: Install
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npm ci
 
       # `--with-deps` retiré après mesure, pas par principe. Sur le run
@@ -116,41 +158,52 @@ jobs:
       # NOMME. Bruyant et immédiat — l'inverse des défauts silencieux qu'on
       # traque ailleurs dans ce dépôt. On remettrait `--with-deps` ce jour-là.
       - name: Playwright browsers
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright install chromium
 
       - name: Build
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npm run build
 
       - name: E2E (money path)
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npm run test:e2e
 
       - name: Seller pricing and launch in the browser
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.pricing.config.ts
 
       - name: Boutique and digital purchase journey
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.boutique.config.ts
 
       - name: Variant discounts and purchase price
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.rabais.config.ts
 
       - name: Seller offers and explicit purchase choice
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.offers.config.ts
 
       - name: Haiti operations and support on mobile
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.operations.config.ts
 
       - name: Sandbox top-ups cannot accept payment
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.topup.config.ts
 
       # Même check requis e2e, nouveau build isolé : les variables publiques
       # doivent être présentes à la compilation du client navigateur.
       - name: Build avec le client Auth configuré
+        if: steps.portee.outputs.docs_seulement != 'true'
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:15423
           NEXT_PUBLIC_SUPABASE_ANON_KEY: cle-anon-de-test
           SUPABASE_SERVICE_ROLE_KEY: cle-service-de-test
         run: npm run build
       - name: Connexion et inscription dans le navigateur
+        if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.auth.config.ts
 
   sql-tests:
