@@ -10,19 +10,28 @@ name: CI
 # de branche à venir : un check est attaché au SHA, pas à l'événement qui l'a
 # produit. Constaté pendant cette session, pas supposé — l'API des check runs
 # de la PR #55 rendait bien les runs déclenchés par `push`.
+#
+# 2026-10-11 — `opened`/`reopened`/`ready_for_review` retirés à leur tour, pour
+# la même raison. Sur 30 jours, 99 runs sur 355 venaient de l'OUVERTURE d'une
+# PR : le SHA de tête avait déjà été poussé, donc déjà vérifié, et l'ouverture
+# rejouait les trois jobs (~13 min facturées) sur le même code.
+# CE QUI EST PERDU, et qu'il faut savoir : le run `pull_request` vérifiait le
+# commit de FUSION avec main au moment de l'ouverture, pas seulement la tête
+# de branche. Ce contrôle d'intégration ne valait qu'à l'instant de
+# l'ouverture — main bouge plusieurs fois par jour — et il reste couvert par
+# le push sur main après fusion. Pour l'avoir AVANT la fusion, l'outil est la
+# protection de branche « Require branches to be up to date before merging » :
+# la tête de branche contient alors main, et son push vérifie l'ensemble.
 on:
   push:
     branches: ["**"]
-  pull_request:
-    types: [opened, reopened, ready_for_review]
 
 # Moindre privilège pour le jeton du workflow. Sans ce bloc, ses droits
 # dépendent d'un réglage du dépôt, invisible depuis ce fichier. Lecture du
-# code, et lecture des PR pour que gitleaks liste les commits d'une PR. Aucune
-# étape n'écrit : pas de commentaire, pas de statut posé à la main.
+# code, rien d'autre : sans événement `pull_request`, gitleaks lit les commits
+# du push et n'a plus besoin de lister ceux d'une PR. Aucune étape n'écrit.
 permissions:
   contents: read
-  pull-requests: read
 
 # Quand plusieurs commits s'enchaînent, le run devenu obsolète est annulé au
 # lieu d'occuper la file jusqu'au bout. Le SHA de tête — le seul que la
