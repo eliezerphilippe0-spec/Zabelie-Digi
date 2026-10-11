@@ -34,6 +34,10 @@ import { readFileSync } from "node:fs";
 const PREFIXES: { nom: string; motif: string }[] = [
   { nom: "TypeSafe Jev", motif: "api" + "key_[a-f0-9]{32,}_[a-f0-9]{32,}" },
   { nom: "Supabase (clé secrète, contourne la RLS)", motif: "sb_" + "secret_[A-Za-z0-9_-]{10,}" },
+  // Jeton d'accès PERSONNEL (API de gestion) : il ne contourne pas seulement la
+  // RLS d'un projet, il administre TOUT le compte — projets, bases, clés. C'est
+  // la forme qu'un script d'administration local finit par contenir en dur.
+  { nom: "Supabase (jeton d'accès personnel, gère tout le compte)", motif: "sbp" + "_[a-f0-9]{40}" },
   { nom: "Stripe (clé live)", motif: "sk_" + "live_[A-Za-z0-9]{10,}" },
   { nom: "Stripe (clé test)", motif: "sk_" + "test_[A-Za-z0-9]{10,}" },
   { nom: "Stripe (secret de webhook)", motif: "whsec" + "_[A-Za-z0-9]{10,}" },
@@ -94,6 +98,7 @@ test("le détecteur reconnaît chaque forme de clé, et se tait sur un gabarit",
   // vraie clé — ils sont assemblés ici pour que ce fichier reste propre.
   const echantillons: [string, string][] = [
     ["Supabase secrète", "sb_" + "secret_AbCdEf12345_XyZ"],
+    ["Supabase jeton personnel", "sbp" + "_" + "0123456789abcdef".repeat(2) + "01234567"],
     ["Stripe live", "sk_" + "live_51AbCdEfGhIjKlMnOp"],
     ["Stripe webhook", "whsec" + "_AbCdEf1234567890"],
     ["GitHub", "ghp" + "_AbCdEfGhIjKlMnOpQrStUvWxYz0123"],
@@ -117,6 +122,8 @@ test("le détecteur reconnaît chaque forme de clé, et se tait sur un gabarit",
     "const key = process.env.SUPABASE_SERVICE_ROLE_KEY;",
     "// ne jamais committer de clé",
     "sb_" + "secret_", // le préfixe nu, sans valeur derrière
+    "sbp" + "_", // idem pour le jeton personnel
+    "SUPABASE_ACCESS_TOKEN=",
   ];
   for (const ok of innocents) {
     assert.ok(!DETECTEUR.test(ok), `FAUX POSITIF sur : ${ok}`);
