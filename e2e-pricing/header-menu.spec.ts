@@ -43,7 +43,7 @@ for (const [width, height] of [[1440, 600], [390, 600], [320, 568]]) {
     await expect(menu).not.toHaveAttribute("open", "");
     await trigger.click();
     // Keyboard users can move to another header control without overlapping panels.
-    await page.locator('header summary[aria-label="Français"]').focus();
+    await page.locator('header summary[aria-label="FR, Français"]').focus();
     await page.keyboard.press("Enter");
     await expect(menu).not.toHaveAttribute("open", "");
     expect(await page.locator("header details[open]").count()).toBe(1);
