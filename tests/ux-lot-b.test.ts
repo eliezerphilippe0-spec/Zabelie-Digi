@@ -55,9 +55,13 @@ test("UB4 — le halo extérieur a disparu, de la feuille et de la page", () => 
   // Dans un attribut className — pas dans un commentaire qui raconte son retrait.
   assert.doesNotMatch(PAGE, /className="[^"]*\bglow-ring\b/);
   // Et le bloc de conversion final porte bien sa bordure de remplacement.
-  // Le bloc de conversion n'est plus un `.glass` bordé d'accent : depuis la
-  // Phase 3 de l'accueil premium, c'est une surface pleine bordée de `line`.
-  assert.match(PAGE, /id="comment"[\s\S]{0,200}className="rounded-2xl border border-line bg-surface/);
+  // Le bloc de conversion n'est plus un `.glass` bordé d'accent. Phase 3 de
+  // l'accueil premium : une surface pleine bordée de `line`. Accueil vivant
+  // (V-22, 2026-10-12) : le dégradé de marque, texte `on-chrome`. Le fond est
+  // posé par la feuille de l'accueil — l'assertion porte donc sur la RÈGLE qui
+  // le pose, pas seulement sur le nom de classe qui la désigne.
+  assert.match(PAGE, /id="comment"[\s\S]{0,200}className="home-final rounded-2xl[^"]*\btext-on-chrome\b/);
+  assert.match(lire("app/home-vivant.css"), /#comment > \.home-final \{[^}]*background-image: var\(--brand-gradient\)/);
   assert.doesNotMatch(PAGE, /className="glass/);
 });
 

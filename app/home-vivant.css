@@ -1,0 +1,147 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCUEIL VIVANT — V-22, décision porteur du 2026-10-12 (docs/02-DECISIONS.md)
+
+   Exception NOMMÉE, pour l'accueil seulement, à deux règles du dépôt :
+   « sans visuel réel, pas de décor » (préambule du skill de goût §6) et « pas
+   de micro-animation dispersée » (globals.css, révélation de confirmation).
+   Le reste tient : tokens du thème, aucune dépendance, aucun JavaScript, et
+   AUCUNE durée au-delà de --motion-slow (300 ms), qui tombe à 0 ms sous
+   `prefers-reduced-motion: reduce`.
+
+   Deux règles de sûreté, mesurées contre l'instrument a11y de la CI
+   (e2e/accessibilite.spec.ts : axe-core juste après `networkidle`) :
+   1. L'ÉTAT DE REPOS EST VISIBLE. Toute animation vit sous
+      `prefers-reduced-motion: no-preference` ; sans elle, rien ne bouge et
+      tout est là.
+   2. L'apparition au défilement n'anime QUE `transform`, jamais l'opacité :
+      un texte à demi transparent au moment où axe mesure le contraste serait
+      une violation. Le fondu (opacité) est réservé à la bannière, finie en
+      moins de 500 ms, et aux tuiles de la vitrine, qui ne portent aucun texte.
+   Les survols passent par `translate`, pas `transform` : une animation
+   remplie (`both`) écrase `transform` et le survol ne bougerait plus.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Bande « tap-tap » : triangles alternés, d'après les bordures peintes des
+   tap-taps. Couleurs posées comme dans une image (elle ne bascule pas). */
+.home-discovery {
+  --taptap: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='12' viewBox='0 0 32 12'%3E%3Cpath d='M0 12 8 0l8 12z' fill='%23e0580f'/%3E%3Cpath d='M16 12 24 0l8 12z' fill='%2317123a'/%3E%3Cpath d='M8 0h16L16 12z' fill='%23f2eee7'/%3E%3C/svg%3E");
+}
+
+/* ── Bannière de lancement : deux colonnes, la vitrine à droite ── */
+.home-discovery.editorial-page .home-hero.launch-hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 48px; }
+.home-hero.launch-hero .home-headline { font-size: clamp(36px, 4vw, 56px); }
+.launch-hero .home-kicker { display: flex; align-items: center; gap: 10px; }
+.launch-hero .home-kicker::before { content: ""; flex-shrink: 0; width: 28px; height: 8px; background: var(--taptap) left center / 16px 8px repeat-x; }
+
+.home-vitrine { position: relative; aspect-ratio: 1 / .9; border-radius: 24px; overflow: hidden; background: #f2eee7; }
+.home-vitrine-scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.home-vitrine::after { content: ""; position: absolute; inset: auto 0 0; height: 12px; background: var(--taptap) left bottom / 32px 12px repeat-x; }
+.home-vitrine-tile { position: absolute; display: grid; place-items: center; width: 23%; aspect-ratio: 1; border-radius: 16px; background: #fffdf9; color: #17123a; border: 1px solid #e8e3dc; box-shadow: 0 10px 24px -14px rgba(23, 18, 58, .35); }
+.home-vitrine-tile > svg { width: 46%; height: 46%; }
+.home-vitrine-tile:nth-of-type(1) { left: 9%; top: 51%; }
+.home-vitrine-tile:nth-of-type(2) { left: 30%; top: 45%; }
+.home-vitrine-tile:nth-of-type(3) { left: 51%; top: 51%; }
+.home-vitrine-tile:nth-of-type(4) { left: 72%; top: 45%; background: #17123a; color: #fffdf9; border-color: #17123a; }
+
+/* ── Univers : cartes pleines, icône illustrée sur fond teinté ── */
+.home-discovery .universe-grid > a { border: 1px solid var(--color-line); border-radius: 18px; padding: 16px 16px 20px; }
+.universe-art { display: grid; place-items: center; height: 112px; margin-bottom: 18px; border-radius: 12px; background: var(--color-ink-soft); }
+/* Teintes posées en dur en clair : l'indigo et le bordeaux du thème sont trop
+   sombres pour teinter par mélange (mesuré au rendu : un gris terne). En
+   sombre, un mélange de tokens suffit. Aucun texte n'est posé sur ces fonds. */
+.universe-grid > a:nth-child(1) .universe-art { background: #f6e7dc; }
+.universe-grid > a:nth-child(2) .universe-art { background: #e7e6f0; }
+.universe-grid > a:nth-child(3) .universe-art { background: #efe3e4; }
+[data-theme="dark"] .universe-grid > a:nth-child(1) .universe-art { background: color-mix(in srgb, var(--color-brand) 14%, var(--color-surface)); }
+[data-theme="dark"] .universe-grid > a:nth-child(2) .universe-art { background: color-mix(in srgb, var(--color-cloud) 8%, var(--color-surface)); }
+[data-theme="dark"] .universe-grid > a:nth-child(3) .universe-art { background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); }
+/* Recharges : la carte est déjà en `ink-soft` (editorial-marketplace.css). */
+.universe-grid > a:nth-child(4) .universe-art { background: var(--color-surface); }
+.universe-art .ua-forme { fill: var(--color-surface); stroke: var(--color-cloud); stroke-width: 2.5; }
+.universe-art .ua-trait { stroke: var(--color-cloud); stroke-width: 2.5; }
+.universe-art .ua-detail { stroke: var(--color-brand); stroke-width: 3; }
+
+/* ── « Le catalogue prend forme » : la boutique en préparation à gauche ── */
+.home-discovery .home-catalogue-state:has(> .home-chantier-art) { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; align-items: center; }
+.home-chantier-art { width: 100%; height: auto; }
+
+/* ── Les trois étapes : cercles numérotés, reliés (21st « How It Works Steps ») ── */
+.home-steps { position: relative; }
+.home-discovery .home-steps > li { border-top: 0; padding-top: 0; }
+.home-step-num { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--color-line); background: var(--color-chrome); color: var(--color-on-chrome); font-family: var(--font-heading); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 6px var(--color-bg-1); }
+.home-steps > li:nth-child(2) .home-step-num { background: var(--color-brand); color: var(--color-on-brand); border-color: var(--color-brand); }
+@media (min-width: 640px) {
+  .home-steps::before { content: ""; position: absolute; top: 22px; left: 16.66%; right: 16.66%; height: 2px; background: repeating-linear-gradient(90deg, var(--color-line) 0 8px, transparent 8px 14px); }
+  .home-discovery .home-steps > li { display: block; text-align: center; }
+  .home-step-num { position: relative; margin: 0 auto; }
+  .home-discovery .home-receipt .home-steps li h3 { margin-top: 16px; }
+  .home-discovery .home-receipt .home-steps li p { margin-inline: auto; }
+}
+@media (max-width: 639px) {
+  .home-steps::before { content: ""; position: absolute; top: 22px; bottom: 22px; left: 21px; width: 2px; background: repeating-linear-gradient(180deg, var(--color-line) 0 8px, transparent 8px 14px); }
+  .home-discovery .home-steps > li { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 16px; align-items: center; }
+  .home-step-num { position: relative; }
+  .home-discovery .home-receipt .home-steps li h3 { margin-top: 0; }
+  .home-discovery .home-receipt .home-steps li p { grid-column: 2; margin-top: 6px; }
+}
+
+/* ── Appel final : le dégradé de marque, la bande tap-tap, un soleil ── */
+.home-discovery.editorial-page #comment > .home-final { position: relative; overflow: hidden; border: 0; border-radius: 24px; padding-top: 48px; background-color: var(--color-chrome); background-image: var(--brand-gradient); }
+.home-final::before { content: ""; position: absolute; inset: 0 0 auto; height: 12px; background: var(--taptap) left top / 32px 12px repeat-x; }
+.home-final::after { content: ""; position: absolute; right: -60px; bottom: -60px; width: 260px; height: 260px; opacity: .22; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-70 -70 140 140'%3E%3Ccircle r='34' fill='%23e0580f'/%3E%3Cg stroke='%23e0580f' stroke-width='7' stroke-linecap='round'%3E%3Cpath d='M0-48v-16M0 48v16M-48 0h-16M48 0h16M-34-34l-11-11M34 34l11 11M-34 34l-11 11M34-34l11-11'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat; }
+.home-final > * { position: relative; z-index: 1; }
+.home-final-chip { background: rgba(255, 253, 249, .14); border: 1px solid rgba(255, 253, 249, .3); }
+
+/* La bulle WhatsApp (48 px, bas droite) couvrait « Fait pour Haïti ». */
+.home-discovery > footer > div { padding-bottom: 88px; }
+
+@media (max-width: 767px) {
+  .home-discovery.editorial-page .home-hero.launch-hero { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .home-vitrine { aspect-ratio: 16 / 10; border-radius: 20px; }
+  .home-vitrine-tile { width: 19%; border-radius: 12px; }
+  .home-vitrine-tile:nth-of-type(1) { left: 12%; top: 50%; }
+  .home-vitrine-tile:nth-of-type(2) { left: 32%; top: 44%; }
+  .home-vitrine-tile:nth-of-type(3) { left: 52%; top: 50%; }
+  .home-vitrine-tile:nth-of-type(4) { left: 72%; top: 44%; }
+  .universe-art { height: 84px; margin-bottom: 14px; }
+  .universe-art > svg { width: 48px; height: 48px; }
+  .home-discovery .universe-grid > a { padding: 12px 12px 16px; border-radius: 16px; }
+  .home-discovery .home-catalogue-state:has(> .home-chantier-art) { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .home-chantier-art { max-width: 200px; }
+  .home-discovery.editorial-page #comment > .home-final { border-radius: 20px; padding-top: 40px; }
+}
+
+/* ── Mouvement : uniquement sous no-preference, uniquement par les tokens ── */
+@media (prefers-reduced-motion: no-preference) {
+  .home-discovery .launch-hero .home-hero-copy > * { animation: zbReveal var(--motion-slow) var(--ease) both; }
+  .home-discovery .launch-hero .home-hero-copy > :nth-child(2) { animation-delay: 50ms; }
+  .home-discovery .launch-hero .home-hero-copy > :nth-child(3) { animation-delay: 100ms; }
+  .home-discovery .launch-hero .home-hero-copy > :nth-child(4) { animation-delay: 150ms; }
+  .home-discovery .launch-hero .home-hero-copy > :nth-child(5) { animation-delay: 200ms; }
+  .home-vitrine { animation: zbReveal var(--motion-slow) var(--ease) 100ms both; }
+  .home-vitrine-tile { animation: hvTuile var(--motion-slow) var(--ease) both; }
+  .home-vitrine-tile:nth-of-type(1) { animation-delay: 200ms; }
+  .home-vitrine-tile:nth-of-type(2) { animation-delay: 250ms; }
+  .home-vitrine-tile:nth-of-type(3) { animation-delay: 300ms; }
+  .home-vitrine-tile:nth-of-type(4) { animation-delay: 350ms; }
+  .home-discovery .universe-grid > a { transition: translate var(--motion-base) var(--ease), border-color var(--motion-base), box-shadow var(--motion-base), background-color var(--motion-base); }
+  .universe-art > svg { transition: scale var(--motion-base) var(--ease), rotate var(--motion-base) var(--ease); }
+  .home-vitrine-tile { transition: translate var(--motion-base) var(--ease); }
+  /* Apparition au défilement — transform SEUL (règle 2 de l'en-tête). Sans
+     support de `animation-timeline`, la règle ne s'applique pas : rien ne
+     bouge, tout est visible. */
+  @supports (animation-timeline: view()) {
+    .home-discovery .universe-grid > a, .home-discovery .home-chantier-art, .home-discovery .home-steps > li, .home-discovery.editorial-page #comment > .home-final {
+      animation: hvMonte linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+@media (hover: hover) {
+  .home-discovery .universe-grid > a:hover { translate: 0 -4px; box-shadow: 0 16px 30px -22px rgba(23, 18, 58, .45); }
+  .home-discovery .universe-grid > a:hover .universe-art > svg { scale: 1.08; rotate: -3deg; }
+  .home-vitrine-tile:hover { translate: 0 -6px; }
+}
+@keyframes hvTuile { from { opacity: 0; transform: translateY(14px) scale(.92); } to { opacity: 1; transform: none; } }
+@keyframes hvMonte { from { transform: translateY(24px); } to { transform: none; } }
