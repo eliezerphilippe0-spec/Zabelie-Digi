@@ -26,6 +26,15 @@ updates:
     groups:
       correctifs-mineurs:
         update-types: [minor, patch]
+    # `@types/node` décrit l'API de Node : sa version MAJEURE suit celle du
+    # runtime du projet (Node 22, `.github/workflows/ci.yml`), jamais l'inverse.
+    # Des types plus récents décrivent des API absentes à l'exécution, et
+    # changent des signatures (`assert.ok` sous les types 26 : trois erreurs
+    # tsc, PR #340 refusée le 2026-10-12). Monter de version majeure se fait
+    # avec le runtime, à la main. Les correctifs 22.x continuent d'arriver.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: deps
 
