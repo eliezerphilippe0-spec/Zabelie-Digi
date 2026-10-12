@@ -1,5 +1,16 @@
 # OPS_TODO — Zabelie
 
+## Accueil vivant — ce qui reste au porteur (12 octobre 2026)
+
+V-22 (`docs/02-DECISIONS.md`) : décor illustré et apparitions légères sur
+l'accueil. ✅ **Tranché le 2026-10-12** : l'orange du décor est gardé
+(« garde l'orange »). **Toujours
+attendu** : une vraie photo de vendeur·se (V-21). ⚠️ Posée en
+`public/brand/hero-accueil.jpg` (1600 × 900, ≤ 120 Ko), elle n'est rendue
+qu'APRÈS le lancement (`heroImage && !opening`, `app/page.tsx`) : la mettre à
+la place de la vitrine demandera un petit changement de code, pas seulement le
+fichier.
+
 ## Fonctions `SECURITY DEFINER` exposées — revue du 8 octobre 2026
 
 Instruction directe : « pousse et mets les en lignes » (troisième point
