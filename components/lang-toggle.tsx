@@ -143,8 +143,13 @@ export function LangToggle({
   if (compact) {
     return (
       <details data-header-menu name="header-menu" ref={menuRef} className="relative shrink-0 [&[open]>summary+div]:block">
+        {/* Le nom accessible CONTIENT le texte visible (WCAG 2.5.3, « Label in
+            Name ») : « FR, Français ». Avec `NOM` seul, la pastille affichait
+            « FR » et s'appelait « Français » — une commande vocale « clique sur
+            FR » ne la trouvait pas. axe-core 4.14 le signale sur chaque page
+            (PR Dependabot #338, 2026-10-12). */}
         <summary
-          aria-label={NOM[current]}
+          aria-label={`${ABBR[current]}, ${NOM[current]}`}
           className="inline-flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-1 rounded-xl text-sm font-semibold text-on-chrome transition marker:content-none hover:bg-on-chrome/10 [&::-webkit-details-marker]:hidden"
           aria-busy={isPending}
         >

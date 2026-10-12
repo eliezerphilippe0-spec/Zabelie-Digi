@@ -78,6 +78,10 @@ test("H4b — la LANGUE est une pastille de la barre, visible en permanence, et 
   // Elle affiche la langue COURANTE — c'est ce qui la sépare d'un globe, qui
   // annonce la fonction sans dire où l'on est (Airbnb, Booking).
   assert.match(lt, /\{ABBR\[current\]\}\s*<\/summary>/);
+  // Et son nom accessible CONTIENT ce texte visible (WCAG 2.5.3) : il commence
+  // par la même abréviation. `aria-label={NOM[current]}` seul faisait échouer
+  // axe-core 4.14 sur chaque page (label-content-name-mismatch, 2026-10-12).
+  assert.match(lt, /<summary\s+aria-label=\{`\$\{ABBR\[current\]\}, \$\{NOM\[current\]\}`\}/);
   // Cible tactile de 44 px (A13), et largeur seulement : la hauteur de
   // l'en-tête ne bouge pas (A2).
   assert.match(lt, /<summary[\s\S]{0,200}min-h-11 min-w-11/);

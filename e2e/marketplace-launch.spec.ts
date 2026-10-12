@@ -18,7 +18,7 @@ for (const width of [320, 390, 768, 1440]) {
     await expect(search).toBeInViewport();
     const compactBox = await search.boundingBox();
     expect(compactBox!.width).toBeGreaterThanOrEqual(width < 1024 ? width - 40 : 250);
-    await expect(page.locator('header summary[aria-label="Français"]')).toBeVisible();
+    await expect(page.locator('header summary[aria-label="FR, Français"]')).toBeVisible();
     await search.fill('Lightroom');
     await search.press('Enter');
     await expect(page).toHaveURL(/q=Lightroom/);
