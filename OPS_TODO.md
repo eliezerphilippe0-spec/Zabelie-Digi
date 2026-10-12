@@ -1,11 +1,10 @@
 # OPS_TODO — Zabelie
 
-## Accueil vivant — un arbitrage rendu au porteur (12 octobre 2026)
+## Accueil vivant — ce qui reste au porteur (12 octobre 2026)
 
 V-22 (`docs/02-DECISIONS.md`) : décor illustré et apparitions légères sur
-l'accueil. **À trancher** : l'orange du décor (auvent, frise tap-tap, soleil)
-déroge à « orange = CTA et prix ». Garder, ou passer le décor en indigo et
-bordeaux (`components/home-vivant.tsx`, `app/home-vivant.css`). **Toujours
+l'accueil. ✅ **Tranché le 2026-10-12** : l'orange du décor est gardé
+(« garde l'orange »). **Toujours
 attendu** : une vraie photo de vendeur·se (V-21). ⚠️ Posée en
 `public/brand/hero-accueil.jpg` (1600 × 900, ≤ 120 Ko), elle n'est rendue
 qu'APRÈS le lancement (`heroImage && !opening`, `app/page.tsx`) : la mettre à
