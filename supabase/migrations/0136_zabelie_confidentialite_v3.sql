@@ -18,7 +18,7 @@ select zabelie_migration_garde('0136_zabelie_confidentialite_v3.sql');
 -- ⚠️ LA FENÊTRE DE DÉPLOIEMENT EST TRAITÉE, PAS IGNORÉE (docs/25 §7.2).
 -- Le schéma part avant le code : entre l'application de cette migration et la
 -- mise en ligne du build, les clients en vol déclarent encore `v1`. Les deux
--- fonctions acceptent donc `v1` ET `v2`, et **enregistrent exactement ce qui a
+-- fonctions acceptent donc `v1` ET `v3`, et **enregistrent exactement ce qui a
 -- été déclaré** — jamais un reçu `v3` pour quelqu'un qui n'a lu que `v1`. Un
 -- compte créé dans la fenêtre repart avec un reçu `v1` et passera par la
 -- ré-acceptation comme les comptes existants : c'est correct, pas un oubli.
@@ -35,7 +35,7 @@ select zabelie_migration_garde('0136_zabelie_confidentialite_v3.sql');
 --
 -- ⚠️ ORDRE OBLIGATOIRE : appliquer CETTE migration AVANT de fusionner le code
 -- qui porte `CONFIDENTIALITE_VERSION = "confidentialite-v3"`. L'inverse
--- laisserait l'application exiger un reçu `v2` que la RPC ne sait pas écrire —
+-- laisserait l'application exiger un reçu `v3` que la RPC ne sait pas écrire —
 -- les utilisateurs ré-accepteraient en boucle sans jamais satisfaire la garde.
 -- ─────────────────────────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ end;
 $$;
 revoke all on function public.zabelie_handle_new_user() from public, anon, authenticated;
 comment on function public.zabelie_handle_new_user() is
-  'Creates the safe profile (0045/0095) and captures an explicit initial legal declaration once in 0046 receipts (0133, 0136). The receipt carries the version actually declared; v1 stays accepted during the v2 rollout. Metadata edits cannot create or change receipts. Missing declarations are never backfilled.';
+  'Creates the safe profile (0045/0095) and captures an explicit initial legal declaration once in 0046 receipts (0133, 0136). The receipt carries the version actually declared; v1 stays accepted during the v3 rollout. Metadata edits cannot create or change receipts. Missing declarations are never backfilled.';
 
 -- Ré-acceptation explicite par un compte existant, ou première session OAuth.
 -- Aucun identifiant en argument : l'appelant n'atteste que pour lui-même.
@@ -112,9 +112,9 @@ $$;
 revoke all on function public.zabelie_accept_account_legal(text,text,boolean,boolean) from public, anon, authenticated;
 grant execute on function public.zabelie_accept_account_legal(text,text,boolean,boolean) to authenticated;
 comment on function public.zabelie_accept_account_legal(text,text,boolean,boolean) is
-  'Records a new explicit current CGU acceptance and privacy-information acknowledgement by auth.uid only, under the version actually declared (v1 accepted during the v2 rollout). Atomic, append-only and idempotent. No historical inference, blanket data consent or certified signature (0133, 0136).';
+  'Records a new explicit current CGU acceptance and privacy-information acknowledgement by auth.uid only, under the version actually declared (v1 accepted during the v3 rollout). Atomic, append-only and idempotent. No historical inference, blanket data consent or certified signature (0133, 0136).';
 
--- Sondes : les ACL de 0133 sont intactes, et la fenêtre v1/v2 est bien ouverte
+-- Sondes : les ACL de 0133 sont intactes, et la fenêtre v1/v3 est bien ouverte
 -- des DEUX côtés. Une migration qui n'aurait changé qu'une des deux fonctions
 -- casserait soit l'inscription, soit la ré-acceptation — en silence.
 do $$
