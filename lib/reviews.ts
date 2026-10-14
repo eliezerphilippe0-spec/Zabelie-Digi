@@ -9,6 +9,8 @@ export type ReviewView = {
   /** « Prénom + initiale » (0137), ou `null` : le libellé de repli est traduit par l'écran. */
   buyerName: string | null;
   createdAt: string;
+  /** Réponse publique du vendeur (0139), une seule par avis. */
+  reponse: { texte: string; le: string } | null;
 };
 
 /**
@@ -42,6 +44,8 @@ export async function getProductReviews(
     comment: string | null;
     created_at: string;
     auteur: string | null;
+    reponse_vendeur: string | null;
+    reponse_le: string | null;
   };
 
   return ((data ?? []) as Row[]).map((r) => ({
@@ -50,6 +54,7 @@ export async function getProductReviews(
     comment: r.comment,
     buyerName: r.auteur,
     createdAt: r.created_at,
+    reponse: r.reponse_vendeur && r.reponse_le ? { texte: r.reponse_vendeur, le: r.reponse_le } : null,
   }));
 }
 
