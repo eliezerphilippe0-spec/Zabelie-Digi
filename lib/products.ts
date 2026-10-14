@@ -1,3 +1,4 @@
+import { noteAffichee } from "@/lib/note-affichee";
 import { cache } from "react";
 import type { CatalogueSort } from "@/lib/catalogue-query";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +21,7 @@ export type ProductView = {
   category: string;
   priceHTG: number;
   sales: number;
-  ratingAvg: number | null; // null si aucun avis
+  ratingAvg: number | null; // null sous le seuil d'affichage (lib/note-affichee.ts)
   ratingCount: number;
   accent: string;
   /** Photo produit (bucket public 0039). null = repli dégradé — la colonne
@@ -145,10 +146,8 @@ function rowAsView(r: Row): ProductView {
     category: r.category ?? "Divers",
     priceHTG: r.price_htg,
     sales: r.sales_count,
-    ratingAvg:
-      r.rating_count > 0
-        ? Math.round((r.rating_sum / r.rating_count) * 10) / 10
-        : null,
+    // Sous le seuil d'affichage, pas de moyenne : `lib/note-affichee.ts`.
+    ratingAvg: noteAffichee(r.rating_sum, r.rating_count ?? 0),
     ratingCount: r.rating_count ?? 0,
     accent: accentFor(r.slug),
     coverUrl: r.cover_url,
