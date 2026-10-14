@@ -9,7 +9,9 @@ import {
   KYC_BUCKET,
   KYC_EXTENSIONS,
   KYC_MAX_BYTES,
+  KYC_TYPE_PAR_EXTENSION,
   estTypeKyc,
+  signatureKycValide,
 } from "@/lib/kyc";
 
 export const runtime = "nodejs";
@@ -55,6 +57,13 @@ export async function POST(req: Request) {
   if (!KYC_EXTENSIONS.has(ext)) {
     return erreurTraduite("api.kyc.format", 422);
   }
+  // Le contenu doit être ce que l'extension annonce ; le type enregistré est
+  // celui du serveur, jamais celui que le navigateur déclare.
+  const entete = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  if (!signatureKycValide(ext, entete)) {
+    return erreurTraduite("api.kyc.format", 422);
+  }
+  const contentType = KYC_TYPE_PAR_EXTENSION[ext];
 
   const admin = createAdminClient();
 
@@ -87,7 +96,7 @@ export async function POST(req: Request) {
   const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
   const { error: upErr } = await admin.storage
     .from(KYC_BUCKET)
-    .upload(path, file, { contentType: file.type || undefined });
+    .upload(path, file, { contentType });
   if (upErr) {
     return erreurTraduite("api.upload.failed", 502);
   }

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { KYC_BUCKET, estTypeKyc, kycRequisPourRetrait } from "../lib/kyc";
+import { KYC_BUCKET, KYC_TYPE_PAR_EXTENSION, estTypeKyc, kycRequisPourRetrait, signatureKycValide } from "../lib/kyc";
 import { refus } from "./refus-forme";
 import { database, loadRoute } from "./helpers/route-harness";
 
@@ -157,11 +157,11 @@ function depotFixture(options: {
     "@/lib/api-erreur": { erreurTraduite: (error: string, status: number) => Response.json({ error }, { status }) },
     "@/lib/product-media": { isMissingTable: () => false },
     "@/lib/pg-errors": { isMissingFunction: (error: { code?: string }) => error.code === "PGRST202" },
-    "@/lib/kyc": { KYC_BUCKET, KYC_EXTENSIONS: new Set(["jpg"]), KYC_MAX_BYTES: 1000, estTypeKyc },
+    "@/lib/kyc": { KYC_BUCKET, KYC_EXTENSIONS: new Set(["jpg"]), KYC_MAX_BYTES: 1000, KYC_TYPE_PAR_EXTENSION, estTypeKyc, signatureKycValide },
   });
   const execute = () => {
     const form = new FormData(); form.set("kind", "cin");
-    form.set("file", new File(["synthetic document"], "fixture.jpg", { type: "image/jpeg" }));
+    form.set("file", new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), "synthetic document"], "fixture.jpg", { type: "image/jpeg" }));
     return route.POST(new Request("https://zabelie.test/api/kyc", { method: "POST", body: form }));
   };
   return { state, documents, objects, removed, calls, execute };

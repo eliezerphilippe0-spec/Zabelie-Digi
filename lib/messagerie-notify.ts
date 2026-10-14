@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isEmailEnabled, sendEmail } from "./zabelie-email";
 import { siteUrl } from "./site-url";
+import { echapperHtml } from "./echapper-html";
 
 /**
  * Prévenir le destinataire d'un message — BEST-EFFORT INTÉGRAL.
@@ -116,10 +117,4 @@ export function messageRecuEmail(input: {
  * tiers. `<img src=x onerror=…>` dans un titre de fiche deviendrait sinon du
  * balisage dans un e-mail signé Zabelie.
  */
-function echapper(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+const echapper = echapperHtml;

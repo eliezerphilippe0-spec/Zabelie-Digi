@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isEmailEnabled, sendEmail } from "./zabelie-email";
+import { echapperHtml } from "./echapper-html";
 
 /**
  * L'ALERTE SORTANTE — C2.3 de `docs/31`, « l'écart le plus dangereux du dépôt ».
@@ -101,8 +102,7 @@ export async function alerterAdmins(
 
 /** Corps HTML minimal, sans secret, lisible sur un téléphone. */
 export function corpsAlerte(titre: string, lignes: Array<[string, string | number | null]>): string {
-  const esc = (s: unknown) =>
-    String(s ?? "—").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c] as string);
+  const esc = (s: unknown) => echapperHtml(String(s ?? "—"));
   const rows = lignes.map(([k, v]) => `<tr><td style="padding:2px 8px 2px 0"><b>${esc(k)}</b></td><td>${esc(v)}</td></tr>`).join("");
   return `<p>${esc(titre)}</p><table>${rows}</table><p style="color:#666;font-size:12px">Zabelie · /api/admin/coherence</p>`;
 }
