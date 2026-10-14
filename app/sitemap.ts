@@ -43,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/catalogue?univers=numerique",
     "/catalogue?univers=services",
     "/vendre",
+    "/ouvrir-ma-boutique",
     "/produits-interdits",
     "/developpeurs",
   ].filter((path) => {
