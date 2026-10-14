@@ -64,6 +64,12 @@ const CLASSEMENT: Record<string, Classement> = {
   // `zabelie_domaine_demander` et recontrôlée à chaque visite par
   // `zabelie_domaine_boutik` (0125, tests SQL D2 et D3).
   "domain.intro": { colonne: "status" },
+  // Badge « Identité vérifiée » (0138, décision porteur du 2026-10-14) : rendu
+  // seulement pour un marchand non suspendu dont
+  // `zabelie_kyc_submissions.status = 'approved'` (0079), par
+  // `zabelie_identites_verifiees` (test SQL I1-I4). L'aide dit aussi ce que le
+  // badge n'est PAS : une garantie sur les produits.
+  "seller.identite.aide": { colonne: "status" },
   "digital.check": { horsSujet: "Conseil à l’acheteur : vérifier format, compatibilité et licence. Ne qualifie pas le vendeur de vérifié." },
   "guides.diaspora.prepare.body": { horsSujet: "Le destinataire et l’acheteur vérifient les coordonnées ; les modalités sont à convenir avec le vendeur. Aucun badge ni contrôle vendeur promis." },
   "guides.digital.check.body": { horsSujet: "L’acheteur vérifie les caractéristiques déclarées et demande un aperçu. Il ne s’agit pas d’une certification de ces caractéristiques par Zabelie." },

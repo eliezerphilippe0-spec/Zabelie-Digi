@@ -27,6 +27,8 @@ import { listerMedias } from "@/lib/product-media";
 import { lireComparePrix, pourcentageRabais } from "@/lib/product-discount";
 import { GalerieProduit } from "@/components/galerie-produit";
 import { getProductReviews } from "@/lib/reviews";
+import { identitesVerifiees } from "@/lib/identite-verifiee";
+import { BadgeIdentite } from "@/components/badge-identite";
 import { offreFlashActive } from "@/lib/flash";
 import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
@@ -253,6 +255,8 @@ export default async function ProductPage({
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
   const estVendeur = visiteur?.id === product.creatorId;
+  // Badge « Identité vérifiée » (0138) : vide sur toute erreur, jamais inventé.
+  const identiteVerifiee = product.creatorId ? (await identitesVerifiees([product.creatorId])).has(product.creatorId) : false;
   // Pixels publicitaires du vendeur (0123) : chargés seulement après consentement.
   const pixels = await lirePixelsVendeur(product.creatorId);
   const relatedOffers = estVendeur ? [] : await publicOffers(product.id, visiteur?.id);
@@ -390,6 +394,9 @@ export default async function ProductPage({
               </Link>
             ) : (
               <span>{t(lang, "product.by")} {product.creator}</span>
+            )}
+            {identiteVerifiee && (
+              <BadgeIdentite label={t(lang, "seller.identite.badge")} aide={t(lang, "seller.identite.aide")} />
             )}
             {product.ratingAvg !== null && (
               <span>
