@@ -65,6 +65,9 @@ declare
     'zabelie_email_desabonner(p_jeton uuid):anon,auth',
     -- Aide RLS du support : auth.uid() acheteur ou vendeur de la commande.
     'zabelie_order_participant(p_order_id uuid):auth',
+    -- Badge « Identité vérifiée » (0138) : parmi les ids reçus (100 au plus),
+    -- les MARCHANDS non suspendus au KYC approuvé. Ni date, ni décision.
+    'zabelie_identites_verifiees(p_ids uuid[]):anon,auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',
