@@ -1,5 +1,17 @@
 # OPS_TODO — Zabelie
 
+## Commission au lancement — sept décisions à trancher (14 octobre 2026)
+
+Note de décision : `docs/70-DECISION-COMMISSIONS-2026-10-14.md`. Rien n'est
+codé avant arbitrage. À trancher par le porteur : (1) le modèle de référence,
+deux niveaux ou le modèle dormant de `0108` ; (2) une commission minimum par
+commande, en HTG ; (3) qui paie les frais MonCash, après avoir obtenu la
+grille de Digicel ; (4) l'offre fondateur, taux, borne et éligibilité ; (5) la
+porte du niveau Elite ; (6) paiement complet ou acompte pour les services ;
+(7) qui paie une promotion financée par Zabelie (D-6). Préalables hors code :
+la grille marchande MonCash, et les taux des concurrents vérifiés sur leurs
+pages.
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347
