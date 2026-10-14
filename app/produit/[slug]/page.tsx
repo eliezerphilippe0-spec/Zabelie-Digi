@@ -788,7 +788,7 @@ export default async function ProductPage({
                 className="rounded-2xl border border-line bg-surface/60 p-4"
               >
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{r.buyerName}</span>
+                  <span className="font-medium">{r.buyerName ?? t(lang, "product.reviews.auteur")}</span>
                   <Stars value={r.rating} />
                 </div>
                 {r.comment && (

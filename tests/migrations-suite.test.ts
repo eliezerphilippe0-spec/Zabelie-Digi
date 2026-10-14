@@ -41,6 +41,7 @@ const DIR = "supabase/migrations";
 
 /** Trous DÉLIBÉRÉS ou en attente, chacun avec sa raison. */
 const TROUS_ADMIS: Record<number, string> = {
+  136: "0136_zabelie_confidentialite_v3.sql vit sur la PR #335, à ne fusionner qu'après son application ; 0137 (vie privée, audit docs/69) a été rédigée pendant ce temps. Retirer cette ligne en fusionnant #335.",
 };
 
 function numerosPresents(): number[] {
