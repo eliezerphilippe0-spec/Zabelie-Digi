@@ -9,6 +9,8 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { HomeFeatured } from "@/components/home-featured";
 import "./home-discovery.css";
+import "./home-vivant.css";
+import { HomeChantier, HomeVitrine } from "@/components/home-vivant";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
@@ -244,6 +246,9 @@ export default async function HomePage() {
               </div>
               {opening && <p className="launch-note">{t(lang, "launch.note")}</p>}
             </div>
+            {/* Moitié droite de la bannière de LANCEMENT : un décor, pas une offre
+                (V-22, remplace V-21 §2 jusqu'à une vraie photo de vendeur·se). */}
+            {opening && <HomeVitrine />}
             {featured && <HomeFeatured product={featured} discovery={discovery} label={t(lang, "home.featured")} cta={t(lang, "home.product.cta")} missing={t(lang, "home.photo.missing")} fallback={t(lang, "card.title.fallback")} />}
           </div>
         </section>
@@ -270,11 +275,16 @@ export default async function HomePage() {
         {products.length === 0 && <MarketplaceUniverses lang={lang} />}
         {products.length === 0 && (
           <section className="home-catalogue-state mx-auto max-w-6xl px-5 py-8" aria-live="polite">
+            {/* Le dessin « boutique en préparation » dit que le catalogue est VIDE :
+                sur une erreur de chargement (catalogue === null), il mentirait. */}
+            {catalogue !== null && <HomeChantier />}
+            <div className="home-chantier-copy">
             <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
               <Link href={catalogue === null ? "/" : "/aide#comment"} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
               {catalogue !== null && <Link href="/vendre" className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 font-semibold hover:border-accent">{t(lang, "home.cta.sell")}</Link>}
+            </div>
             </div>
           </section>
         )}
@@ -338,14 +348,14 @@ export default async function HomePage() {
           <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <h2 id="receipt-title" className="text-xl tracking-tight sm:text-2xl">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
-            <ol className="mt-5 grid gap-4 sm:grid-cols-3">
+            <ol className="home-steps mt-5 grid gap-4 sm:grid-cols-3">
               {[
                 { title: t(lang, "home.b1.t"), body: t(lang, "home.b1.b") },
                 { title: t(lang, "home.b2.t"), body: t(lang, "home.b2.b") },
                 { title: t(lang, "home.b3.t"), body: t(lang, "home.b3.b") },
               ].map((step, index) => (
                 <li key={step.title} className="border-t border-line pt-4">
-                  <span className="text-sm font-bold text-accent" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="home-step-num" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                   <h3 className="mt-2 text-sm font-semibold">{step.title}</h3>
                   <p className="mt-1 text-sm leading-relaxed text-mist">{step.body}</p>
                 </li>
@@ -365,9 +375,9 @@ export default async function HomePage() {
             marche » réduit à deux liens vers /aide et /vendre, qui portent les
             étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
         <section id="comment" className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-24 pt-10">
-          <div className="rounded-2xl border border-line bg-surface p-6 text-center sm:p-10">
+          <div className="home-final rounded-2xl p-6 text-center text-on-chrome sm:p-10">
             <h2 className="mx-auto max-w-2xl text-2xl tracking-tight sm:text-3xl">{t(lang, "rail.shop.t")}</h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-mist">{t(lang, "home.final.sub")}</p>
+            <p className="mx-auto mt-3 max-w-md text-sm text-on-chrome">{t(lang, "home.final.sub")}</p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/vendre"
@@ -375,18 +385,20 @@ export default async function HomePage() {
               >
                 {t(lang, "home.cta.sell")}
               </Link>
-              {/* Texte ENCRE sur la teinte orange à 10 % : `text-accent` y
-                  mesurait 4,35:1 (Lighthouse, Phase 3) — sous le seuil. */}
-              <span className="rounded-lg bg-brand/10 px-3 py-1.5 text-sm font-bold text-cloud">{t(lang, "rail.shop.free")}</span>
+              {/* Accueil vivant (V-22) : le bloc passe sur le dégradé de marque,
+                  le texte suit en `on-chrome` (12,8:1 au moins sur chaque arrêt,
+                  zabelie-theme.css). La pastille est un voile clair, pas un
+                  orange : `text-accent` sur l'orange à 10 % mesurait 4,35:1. */}
+              <span className="home-final-chip rounded-lg px-3 py-1.5 text-sm font-bold text-on-chrome">{t(lang, "rail.shop.free")}</span>
             </div>
             <p className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-              <Link href="/aide#comment" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
+              <Link href="/aide#comment" className="inline-flex min-h-11 items-center font-medium text-on-chrome underline-offset-4 hover:underline">
                 {t(lang, "home.how.buy")}
               </Link>
-              <Link href="/vendre#comment" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
+              <Link href="/vendre#comment" className="inline-flex min-h-11 items-center font-medium text-on-chrome underline-offset-4 hover:underline">
                 {t(lang, "home.how.sell")}
               </Link>
-              <Link href="/aide#faq" className="inline-flex min-h-11 items-center font-medium text-cloud underline-offset-4 hover:underline">
+              <Link href="/aide#faq" className="inline-flex min-h-11 items-center font-medium text-on-chrome underline-offset-4 hover:underline">
                 {t(lang, "sec.faq")}
               </Link>
             </p>

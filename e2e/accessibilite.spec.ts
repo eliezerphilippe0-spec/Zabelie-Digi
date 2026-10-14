@@ -32,6 +32,7 @@ const PAGES = [
   "/mot-de-passe-oublie",
   "/vendre",
   "/vendre/physique",
+  "/ouvrir-ma-boutique",
   "/assistant",
   "/recharges",
   "/hors-ligne",
@@ -47,6 +48,7 @@ const PAGES = [
   "/ht/catalogue",
   "/ht/produit/pack-presets-lightroom-afro",
   "/ht/vendre",
+  "/ht/ouvrir-ma-boutique",
   "/ht/developpeurs",
 ];
 

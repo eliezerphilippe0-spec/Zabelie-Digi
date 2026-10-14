@@ -26,6 +26,16 @@ const DOCUMENTS = {
   "confidentialite-v3": "4319942979b375d6e7ea63754a6fcbbbc37d930199a47ba6272434c7c09a570d",
 };
 
+// Le faux Supabase des e2e déclare des comptes « ayant accepté les documents
+// EN VIGUEUR ». Écrit à la main, il est resté en `confidentialite-v1` quand
+// l'application est passée en v3 (PR #335) : quatorze parcours vendeur e2e se
+// sont arrêtés à la ré-acceptation, sans que rien ne nomme la cause.
+test("le faux Supabase des e2e porte les versions EN VIGUEUR des reçus", () => {
+  const stub = readFileSync("e2e/fixtures/stub-supabase.mjs", "utf8");
+  const versions = [...stub.matchAll(/policy_version: "([^"]+)"/g)].map(m => m[1]).sort();
+  assert.deepEqual(versions, [...ACCOUNT_LEGAL_VERSIONS].sort(), "e2e/fixtures/stub-supabase.mjs doit suivre ACCOUNT_LEGAL_VERSIONS");
+});
+
 test("receipt versions describe the canonical documents actually linked, in all four languages", () => {
   for (const [version, document, page, symbol] of [
     [CONDITIONS_VERSION, CONDITIONS, "app/conditions/page.tsx", "CONDITIONS_VERSION"],

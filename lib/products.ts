@@ -1,7 +1,9 @@
+import { noteAffichee } from "@/lib/note-affichee";
 import { cache } from "react";
 import type { CatalogueSort } from "@/lib/catalogue-query";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { clausesRecherche, variantesRecherche } from "@/lib/recherche-synonymes";
 import { getSellerIdsInZone } from "@/lib/zones";
 import { PRODUCTS as SAMPLE, type ProductKind } from "@/lib/sample-data";
 
@@ -20,7 +22,7 @@ export type ProductView = {
   category: string;
   priceHTG: number;
   sales: number;
-  ratingAvg: number | null; // null si aucun avis
+  ratingAvg: number | null; // null sous le seuil d'affichage (lib/note-affichee.ts)
   ratingCount: number;
   accent: string;
   /** Photo produit (bucket public 0039). null = repli dégradé — la colonne
@@ -145,10 +147,8 @@ function rowAsView(r: Row): ProductView {
     category: r.category ?? "Divers",
     priceHTG: r.price_htg,
     sales: r.sales_count,
-    ratingAvg:
-      r.rating_count > 0
-        ? Math.round((r.rating_sum / r.rating_count) * 10) / 10
-        : null,
+    // Sous le seuil d'affichage, pas de moyenne : `lib/note-affichee.ts`.
+    ratingAvg: noteAffichee(r.rating_sum, r.rating_count ?? 0),
     ratingCount: r.rating_count ?? 0,
     accent: accentFor(r.slug),
     coverUrl: r.cover_url,
@@ -268,12 +268,12 @@ function filterSample(
   }
   const q = filters?.q?.trim().toLowerCase();
   if (q) {
-    out = out.filter((p) =>
-      [p.title, p.blurb, p.creator, p.category]
-        .join(" ")
-        .toLowerCase()
-        .includes(q)
-    );
+    // Mêmes synonymes que la base (lib/recherche-synonymes.ts).
+    const variantes = variantesRecherche(q).map((v) => v.toLowerCase());
+    out = out.filter((p) => {
+      const texte = [p.title, p.blurb, p.creator, p.category].join(" ").toLowerCase();
+      return variantes.some((v) => texte.includes(v));
+    });
   }
   if (filters?.minPrice !== undefined) out = out.filter((p) => p.priceHTG >= filters.minPrice!);
   if (filters?.maxPrice !== undefined) out = out.filter((p) => p.priceHTG <= filters.maxPrice!);
@@ -315,7 +315,7 @@ export async function getPublishedProducts(
       query = query.eq("category", filters.category);
     }
     if (q) {
-      query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+      query = query.or(clausesRecherche(q).join(","));
     }
 
     // BL-116 (C-6, pattern Amazon — liste toujours bornée) : sans LIMIT, le HTML
@@ -531,7 +531,7 @@ const publishedPageForRender = cache(async (serialized: string): Promise<Product
     }
 
     if (q) {
-      const clauses = [`title.ilike.%${q}%`, `description.ilike.%${q}%`];
+      const clauses = clausesRecherche(q);
       if (sellerIds.length > 0) clauses.push(`seller_id.in.(${sellerIds.join(",")})`);
       query = query.or(clauses.join(","));
     }

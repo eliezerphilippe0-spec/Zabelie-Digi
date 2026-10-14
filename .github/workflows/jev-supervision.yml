@@ -29,10 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       # Node built-ins only: no npm install or third-party lifecycle scripts with secrets.
@@ -44,7 +44,7 @@ jobs:
         run: node scripts/jev-supervisor.mjs --output-dir "$RUNNER_TEMP/jev-report"
       - name: Conserver le rapport même en cas d’alerte
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jev-supervision-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/jev-report/

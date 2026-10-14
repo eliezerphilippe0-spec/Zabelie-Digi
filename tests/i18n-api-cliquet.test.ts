@@ -103,6 +103,8 @@ const CONVERTIES = [
   "app/api/products/cover/route.ts",
   "app/api/products/media/route.ts",
   "app/api/products/media/video/route.ts",
+  // Réponse du vendeur aux avis (0139) — née traduite, le 2026-10-14.
+  "app/api/reviews/reponse/route.ts",
   /* ⚠️ `admin/topup/sync-catalog` est ABSENTE, volontairement, et il faut dire
    * pourquoi plutôt que de la faire disparaître : ses deux messages restants
    * nomment `RELOADLY_CLIENT_ID` / `RELOADLY_CLIENT_SECRET` et le mode bac à

@@ -10,6 +10,8 @@ import { ShareButtons } from "@/components/share-buttons";
 import { t, tn, type Lang } from "@/lib/i18n";
 import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
 import type { CreatorProfile } from "@/lib/creators";
+import { identitesVerifiees } from "@/lib/identite-verifiee";
+import { BadgeIdentite } from "@/components/badge-identite";
 
 /**
  * LA VITRINE D'UN VENDEUR — une vue, deux adresses.
@@ -41,6 +43,8 @@ export async function BoutiqueVue({
 
   const initials = creator.displayName.slice(0, 2).toUpperCase();
   const pixels = await lirePixelsVendeur(creator.id);
+  // Badge « Identité vérifiée » (0138) : vide sur toute erreur, jamais inventé.
+  const identiteVerifiee = (await identitesVerifiees([creator.id])).has(creator.id);
 
   return (
     <div className="bg-grain min-h-dvh">
@@ -71,6 +75,13 @@ export async function BoutiqueVue({
             </p>
           </div>
         </div>
+
+        {identiteVerifiee && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <BadgeIdentite label={t(lang, "seller.identite.badge")} aide={t(lang, "seller.identite.aide")} />
+            <p className="text-xs text-mist" aria-hidden="true">{t(lang, "seller.identite.aide")}</p>
+          </div>
+        )}
 
         {creator.bio && (
           <p className="mt-5 max-w-2xl whitespace-pre-line break-words text-sm leading-relaxed text-mist sm:text-base">{creator.bio}</p>

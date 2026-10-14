@@ -1,0 +1,49 @@
+# Mises à jour proposées par Dependabot — en PR, jamais fusionnées seules.
+#
+# Pourquoi ce fichier : sans lui, une dépendance vulnérable n'est signalée que
+# lorsque `npm audit --omit=dev --audit-level=high` fait rougir la CI, c'est-à-
+# dire au pire moment, sur une branche qui n'a rien à voir. Ici, la mise à jour
+# arrive d'elle-même, dans sa propre PR, avec sa propre CI.
+#
+# Sobriété : chaque PR consomme un run CI complet. Les correctifs mineurs sont
+# groupés en UNE PR par semaine, et le nombre de PR ouvertes est plafonné. Les
+# versions majeures arrivent une par une : elles se décident, elles ne se
+# subissent pas (Next, React, Supabase, Stripe : lire le guide de migration).
+#
+# Les alertes et les PR de SÉCURITÉ s'activent dans les réglages du dépôt
+# (Settings → Code security → Dependabot alerts / security updates) : ce
+# fichier ne règle que les mises à jour de version.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Port-au-Prince
+    open-pull-requests-limit: 3
+    groups:
+      correctifs-mineurs:
+        update-types: [minor, patch]
+    # `@types/node` décrit l'API de Node : sa version MAJEURE suit celle du
+    # runtime du projet (Node 22, `.github/workflows/ci.yml`), jamais l'inverse.
+    # Des types plus récents décrivent des API absentes à l'exécution, et
+    # changent des signatures (`assert.ok` sous les types 26 : trois erreurs
+    # tsc, PR #340 refusée le 2026-10-12). Monter de version majeure se fait
+    # avec le runtime, à la main. Les correctifs 22.x continuent d'arriver.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

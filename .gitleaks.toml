@@ -1,0 +1,15 @@
+# Configuration gitleaks (étape « Secrets dans les commits poussés » du job
+# `build`, .github/workflows/ci.yml).
+#
+# Les règles par défaut, plus les faux positifs CONNUS ET NOMMÉS — un par
+# entrée, avec la raison. Élargir une exemption « pour que ça passe » serait
+# exactement la porte ouverte que `tests/secrets-hors-depot.test.ts` refuse à
+# son propre fichier exempté.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Base Postgres jetable du job sql-tests : conteneur postgres:17 sur localhost, mot de passe public par construction (ci.yml, supabase/tests/)"
+regexTarget = "line"
+regexes = ['''postgres(ql)?://postgres:postgres@localhost:5432/postgres''']

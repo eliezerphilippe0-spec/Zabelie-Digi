@@ -48,6 +48,9 @@ declare
     'zabelie_accept_account_legal(p_conditions_version text, p_confidentialite_version text, p_conditions_accepted boolean, p_confidentialite_read boolean):auth',
     -- Facture payable sans compte : jeton de 144 bits (`invoiceToken`), lecture seule.
     'zabelie_biz_get_invoice_by_token(p_token text):anon,auth',
+    -- Avis publics d'un produit PUBLIÉ (0137) : note, commentaire, date, auteur
+    -- en Prénom + initiale. Jamais buyer_id, order_id ni le nom complet.
+    'zabelie_avis_produit(p_product_id uuid, p_limite integer):anon,auth',
     -- Vitrine publique : champs de profil choisis, vendeur actif seulement.
     'zabelie_boutik_public(p_id uuid, p_slug text):anon,auth',
     -- Panier : auth.uid(), produit publié, jamais son propre produit.
@@ -62,6 +65,15 @@ declare
     'zabelie_email_desabonner(p_jeton uuid):anon,auth',
     -- Aide RLS du support : auth.uid() acheteur ou vendeur de la commande.
     'zabelie_order_participant(p_order_id uuid):auth',
+    -- Badge « Identité vérifiée » (0138) : parmi les ids reçus (100 au plus),
+    -- les MARCHANDS non suspendus au KYC approuvé. Ni date, ni décision.
+    'zabelie_identites_verifiees(p_ids uuid[]):anon,auth',
+    -- Réponse du vendeur à un avis (0139) : auth.uid() = vendeur du produit,
+    -- compte actif, une seule fois (update atomique). Écrit sa ligne, rien d'autre.
+    'zabelie_repondre_avis(p_review_id uuid, p_texte text):auth',
+    -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
+    -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
+    'zabelie_profil_lisible(p_id uuid):anon,auth',
     -- Filtre catalogue par zone : identifiants de vendeurs, déjà publics.
     'zabelie_vande_nan_zon(p_zone_ids uuid[]):anon,auth',
     -- Aide RLS du catalogue (comptes d'essai masqués).
