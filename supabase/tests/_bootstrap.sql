@@ -84,6 +84,19 @@ grant execute on all functions in schema extensions to anon, authenticated, serv
 alter default privileges in schema public
   grant select, insert, update, delete on tables to anon, authenticated;
 
+-- ─────────────── Droits par défaut sur les FONCTIONS ────────────────────────
+-- Même trou que celui des tables, trouvé le 2026-10-14 par la post-condition
+-- de `0139` EN PRODUCTION : Supabase accorde EXECUTE sur toute nouvelle
+-- fonction du schéma public à `anon`, `authenticated` et `service_role`,
+-- directement, pas via PUBLIC. Un `revoke all … from public` seul laisse donc
+-- `anon` exécuter la fonction. Le harnais ne l'accordait pas : le test A5 de
+-- `avis_reponse.test.sql` (« anon ne peut pas répondre ») passait vert sur une
+-- migration que la production a refusée.
+-- Mesuré en production le 2026-10-14 (`pg_default_acl`, objtype 'f') :
+-- postgres et supabase_admin → anon=X, authenticated=X, service_role=X.
+alter default privileges in schema public
+  grant execute on functions to anon, authenticated, service_role;
+
 create schema if not exists auth;
 create table if not exists auth.users (
   id    uuid primary key,
