@@ -1,5 +1,52 @@
 # OPS_TODO — Zabelie
 
+## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
+
+Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347
+(`/ouvrir-ma-boutique`), #348 (audit `docs/69`), #349 (moyenne affichée à
+partir de 3 avis), #350 (synonymes kreyòl et français), #351 (vie privée,
+0137), #352 (badge « Identité vérifiée », 0138), #353 (réponse du vendeur,
+0139) et #354 (correctif de 0139). CI de `main` et vérification après
+déploiement vertes sur `b2d302d`.
+
+**Applications vérifiées** (méthode 0086 : SHA-256 du fichier de `main` sans
+saut de ligne final = `statements[1]` du journal Supabase) :
+
+| Migration | Journal | SQL reçu = fichier | Empreinte canonique |
+|---|---|---|---|
+| `0137_zabelie_vie_privee_comptes_avis.sql` | `20261014113409` | `f46c3633…d9ae`, 30 749 car. | `ae3bc764…a47d` |
+| `0138_zabelie_identite_verifiee.sql` | `20261014113721` | `c8842534…e1e8`, 25 556 car. | `6b8af881…68c1` |
+| `0139_zabelie_reponse_vendeur_avis.sql` | `20261014115413` | `c285d660…f8c6`, 28 948 car. | `5d7acb5e…25d6` |
+
+Les trois sont au registre en `appliquee`/`journal_supabase`, avec
+`applied_by` portant le signal « fusionne ». Registre : 139 lignes, 137
+`appliquee`.
+
+⚠️ **0139 a d'abord été REFUSÉE en production par sa propre post-condition**
+(« anon peut ecrire une reponse »), après une CI verte. Supabase accorde
+EXECUTE sur toute nouvelle fonction directement à `anon`, et le fichier ne
+révoquait que PUBLIC. La migration s'est annulée en bloc (vérifié : ni
+colonne, ni fonction, ni journal, ni registre). Correctif #354 : révocation
+`from public, anon, authenticated`, et le harnais SQL reproduit désormais
+les droits par défaut des fonctions (`supabase/tests/_bootstrap.sql`). La CI
+a rougi sur l'ancien fichier avec l'erreur exacte de la production, puis
+elle est repassée au vert sur le nouveau.
+
+Sondes après application : un visiteur voit 2 profils sur 4 (les deux
+marchands) ; `zabelie_repondre_avis` refusée à `anon`, ouverte à
+`authenticated` ; les fonctions `security definer` ouvertes à `anon` sont
+exactement les 11 de la liste revue ; seule absence de la sonde
+`zabelie_objets_requis()` : `zabelie_purge_sent_notices`, attendue (0056
+gelée). Au moment des applications : 0 avis, 0 produit publié, 0 dossier KYC.
+
+**Reste au porteur :** relecture du kreyòl des nouveaux libellés par un
+locuteur natif ; les décisions de l'audit (`docs/69`) : MonCash en
+production, les 20 premiers vendeurs, mentions légales, clé e-mail et
+WhatsApp, positionnement prix, libellé « Protection Zabelie », affichage USD.
+⚠️ `0136` est appliquée depuis le 2026-10-13 mais son fichier vit encore sur
+la PR #335 ; quand elle fusionnera, retirer `TROUS_ADMIS[136]` de
+`tests/migrations-suite.test.ts`.
+
 ## Accueil vivant — ce qui reste au porteur (12 octobre 2026)
 
 V-22 (`docs/02-DECISIONS.md`) : décor illustré et apparitions légères sur
