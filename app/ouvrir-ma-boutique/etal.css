@@ -1,0 +1,412 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   « OUVRIR MA BOUTIQUE » — V-23, décision porteur du 2026-10-14
+   (docs/02-DECISIONS.md, docs/ouvrir-ma-boutique/PLAN.md).
+
+   L'exception de V-22 (décor illustré et mouvement) étendue à CETTE page, et à
+   elle seule, sous les mêmes garde-fous :
+   1. L'ÉTAT DE REPOS EST LE CONTENU COMPLET. Le mouvement ne s'ajoute que sous
+      `[data-etal-anime]` (posé par le composant, jamais en mouvement réduit) ou sous
+      `prefers-reduced-motion: no-preference`. Sans JavaScript, tout se lit et
+      l'étal est fini (`--etal-p` absent vaut 1).
+   2. AUCUN TEXTE N'EST ANIMÉ EN OPACITÉ (axe-core mesure le contraste après
+      `networkidle`) : les textes apparaissent par `transform` hors d'un masque.
+      L'opacité ne touche que le décor (`aria-hidden`).
+   3. Durées en tokens du thème (`--motion-*`, 300 ms au plus). Le défilement,
+      lui, n'a pas de durée : c'est la main qui la donne.
+
+   Tout est sous `.page-etal` : rien ne fuit vers les autres pages, même après
+   une navigation côté client. Couleurs = celles du thème clair, posées comme
+   dans une image (la page a ses propres fonds, clair et sombre, par chapitre).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.page-etal {
+  --etal-papier: #faf8f5;
+  --etal-creme: #fffdf9;
+  --etal-sable: #f2eee7;
+  --etal-indigo: #17123a;
+  --etal-indigo-2: #2b3050;
+  --etal-bordeaux: #4a2731;
+  --etal-mist: #5c5a57;
+  --etal-filet: #e8e3dc;
+  --etal-orange: #e0580f;
+  --etal-orange-texte: #b8500c;
+  --etal-orange-sombre: #f26a21;
+  --etal-peche: #f6c9a6;
+  --etal-taptap: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='12' viewBox='0 0 32 12'%3E%3Cpath d='M0 12 8 0l8 12z' fill='%23e0580f'/%3E%3Cpath d='M16 12 24 0l8 12z' fill='%2317123a'/%3E%3Cpath d='M8 0h16L16 12z' fill='%23f2eee7'/%3E%3C/svg%3E");
+  --etal-encre: var(--etal-indigo);
+  --etal-encre-douce: var(--etal-mist);
+  --etal-gouttiere: clamp(1.25rem, 5vw, 5.5rem);
+  --etal-section: clamp(4.5rem, 9vw, 10rem);
+  --etal-display: var(--font-display), system-ui, sans-serif;
+  --etal-texte: var(--font-inter), system-ui, sans-serif;
+
+  background: var(--etal-papier);
+  color: var(--etal-encre);
+  font-family: var(--etal-texte);
+  font-size: clamp(1rem, 0.96rem + 0.22vw, 1.125rem);
+  line-height: 1.62;
+  overflow-x: clip;
+}
+
+/* Les fonds sombres redéfinissent l'encre ET la couleur (sinon le texte garde
+   celle héritée). Deux arrêts d'orange : #e0580f sur clair, #f26a21 sur sombre. */
+.page-etal .etal-main,
+.page-etal .etal-loin {
+  --etal-encre: #faf8f5;
+  color: var(--etal-encre);
+}
+.page-etal .etal-main { --etal-encre-douce: #c9c4dc; }
+.page-etal .etal-loin { --etal-encre-douce: #e3d2cc; }
+
+.page-etal .etal-cadre { width: 100%; max-width: 82rem; margin-inline: auto; padding-inline: var(--etal-gouttiere); }
+.page-etal .etal-ch { position: relative; padding-block: var(--etal-section); }
+.page-etal .etal-pile > * + * { margin-top: 1rem; }
+.page-etal .etal-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ----------------------------------------------------------- typographie -- */
+.page-etal .etal-h1,
+.page-etal .etal-h2 {
+  font-family: var(--etal-display);
+  font-weight: 800;
+  text-wrap: balance;
+  margin: 0;
+}
+.page-etal .etal-h1 { font-size: clamp(2.35rem, 1rem + 5.6vw, 6.4rem); line-height: 0.98; letter-spacing: -0.038em; max-width: 14ch; }
+.page-etal .etal-h2 { font-size: clamp(2rem, 1.25rem + 3.1vw, 4.25rem); line-height: 1.02; letter-spacing: -0.032em; max-width: 18ch; }
+.page-etal .etal-lede { margin: 0; max-width: 46ch; font-size: clamp(1.125rem, 1.02rem + 0.45vw, 1.4rem); line-height: 1.46; text-wrap: pretty; }
+.page-etal .etal-petit { margin: 0; max-width: 62ch; font-size: 0.875rem; line-height: 1.6; color: var(--etal-encre-douce); }
+.page-etal .etal-lien { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.22em; }
+
+/* Le masque : une ligne sort de derrière son bord, elle n'apparaît pas en fondu. */
+.page-etal .etal-masque { display: block; overflow: clip; padding-bottom: 0.12em; margin-bottom: -0.12em; }
+.page-etal .etal-masque > span { display: block; }
+
+/* Lien d'évitement : invisible jusqu'au premier Tab, puis au-dessus de tout. */
+.page-etal .etal-evitement {
+  position: fixed; left: 12px; top: 12px; z-index: 70;
+  padding: 10px 16px; border-radius: 12px;
+  background: var(--etal-orange); color: var(--etal-indigo);
+  font-weight: 600; font-size: 0.875rem; text-decoration: none;
+  translate: 0 -200%;
+}
+.page-etal .etal-evitement:focus-visible { translate: 0 0; }
+
+/* ------------------------------------------------------------------ folio -- */
+.page-etal .etal-folio-bande { position: fixed; top: 0; left: 0; z-index: 60; padding: 12px var(--etal-gouttiere); pointer-events: none; }
+.page-etal .etal-folio {
+  --folio-encre: var(--etal-indigo);
+  --folio-fond: var(--etal-papier);
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
+  background: var(--folio-fond);
+  color: var(--folio-encre);
+  font: 600 0.8125rem/1 var(--etal-texte);
+  text-decoration: none;
+  box-shadow: 0 1px 2px hsl(248 52% 15% / 0.12), 0 6px 16px -6px hsl(248 52% 15% / 0.22);
+  translate: 0 -160%;
+  pointer-events: none;
+}
+.page-etal .etal-folio.est-visible,
+.page-etal .etal-folio:focus-visible { translate: 0 0; pointer-events: auto; }
+.page-etal[data-fond-courant="sombre"] .etal-folio { --folio-encre: #faf8f5; --folio-fond: var(--etal-indigo-2); }
+.page-etal .etal-folio .etal-marque { width: 28px; height: 28px; flex: none; }
+.page-etal .etal-folio-nom { font-family: var(--etal-display); font-weight: 800; letter-spacing: -0.01em; }
+.page-etal .etal-folio-ch { font-weight: 500; }
+.page-etal .etal-folio-ch::before { content: "·"; margin-right: 8px; }
+@media (prefers-reduced-motion: no-preference) {
+  .page-etal .etal-folio { transition: translate var(--motion-base) var(--ease); }
+}
+@media (max-width: 520px) {
+  .page-etal .etal-folio-nom, .page-etal .etal-folio-ch::before { display: none; }
+}
+
+/* -------------------------------------------------------- page de titre -- */
+.page-etal .etal-titre {
+  --h: clamp(0, calc((var(--etal-p, 0.5) - 0.5) * 2), 1);
+  --auvent-h: clamp(64px, 7vw, 104px);
+  --bande: clamp(40px, 4.4vw, 64px);
+  position: relative;
+  min-height: 100vh; min-height: 100svh;
+  overflow: clip;
+  display: flex; align-items: flex-end;
+  background: var(--etal-papier);
+}
+.page-etal .etal-titre-soleil {
+  position: absolute; z-index: 0;
+  right: max(2vw, 8px); top: calc(var(--auvent-h) * 0.25);
+  width: clamp(220px, 38vw, 600px);
+}
+.page-etal .etal-titre-soleil svg { width: 100%; height: auto; }
+/* L'auvent : le plan le plus proche, devant le soleil (occlusion). */
+.page-etal .etal-auvent {
+  position: absolute; z-index: 3; top: 0; left: -32px; right: -32px;
+  height: var(--auvent-h);
+  filter: drop-shadow(0 10px 14px hsl(248 52% 15% / 0.16));
+}
+.page-etal .etal-auvent-barre { height: 10px; background: var(--etal-bordeaux); border-radius: 0 0 4px 4px; }
+.page-etal .etal-auvent-toile,
+.page-etal .etal-auvent-festons {
+  background: repeating-linear-gradient(90deg, var(--etal-indigo) 0 var(--bande), var(--etal-orange) var(--bande) calc(var(--bande) * 2));
+}
+.page-etal .etal-auvent-toile { height: calc(var(--auvent-h) - 10px - var(--bande) / 2); }
+.page-etal .etal-auvent-festons {
+  height: calc(var(--bande) / 2);
+  -webkit-mask: radial-gradient(circle at 50% 0, #000 0 calc(var(--bande) / 4 - 0.5px), transparent calc(var(--bande) / 4)) 0 0 / calc(var(--bande) / 2) calc(var(--bande) / 2) repeat-x;
+          mask: radial-gradient(circle at 50% 0, #000 0 calc(var(--bande) / 4 - 0.5px), transparent calc(var(--bande) / 4)) 0 0 / calc(var(--bande) / 2) calc(var(--bande) / 2) repeat-x;
+}
+/* La page de titre recule quand on la tourne : le soleil descend lentement,
+   l'auvent remonte vite, le titre suit la page. */
+.page-etal[data-etal-anime] .etal-titre-soleil {
+  transform: translate3d(0, calc(var(--h) * 30vh), 0) scale(calc(1 - var(--h) * 0.1));
+  translate: calc(var(--mx, 0) * -16px) calc(var(--my, 0) * -10px);
+}
+.page-etal[data-etal-anime] .etal-auvent {
+  transform: translate3d(0, calc(var(--h) * -20vh), 0);
+  translate: calc(var(--mx, 0) * 10px) 0;
+}
+.page-etal[data-etal-anime] .etal-titre-contenu { transform: translate3d(0, calc(var(--h) * -4vh), 0); }
+
+.page-etal .etal-titre-contenu { position: relative; z-index: 2; padding-top: calc(var(--auvent-h) + 2rem); padding-bottom: clamp(3.5rem, 11vh, 8rem); }
+.page-etal .etal-masthead { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 2rem; font-size: 0.9375rem; }
+.page-etal .etal-masthead .etal-marque { width: 40px; height: 40px; flex: none; }
+.page-etal .etal-masthead-nom { font-family: var(--etal-display); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.015em; }
+.page-etal .etal-masthead-devise { display: inline-flex; align-items: center; gap: 10px; color: var(--etal-orange-texte); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.75rem; }
+.page-etal .etal-masthead-devise::before { content: ""; width: 28px; height: 8px; background: var(--etal-taptap) left center / 16px 8px repeat-x; }
+@media (prefers-reduced-motion: no-preference) {
+  .page-etal .etal-h1 .etal-masque > span { animation: etal-monte var(--motion-slow) var(--ease) both; }
+}
+@keyframes etal-monte { from { transform: translateY(104%); } to { transform: none; } }
+
+/* La ligne de formulaire imprimé : le seuil du geste signature. */
+.page-etal .etal-champ { display: grid; gap: 6px; max-width: 30rem; }
+.page-etal .etal-titre .etal-champ { margin-top: 3rem; }
+.page-etal .etal-champ label { font-size: 0.875rem; font-weight: 500; color: var(--etal-mist); }
+.page-etal .etal-champ input {
+  width: 100%;
+  border: 0; border-bottom: 2px solid var(--etal-indigo); border-radius: 0;
+  background: transparent;
+  padding: 6px 2px 8px;
+  font-family: var(--etal-display); font-weight: 700;
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  letter-spacing: -0.015em;
+  color: var(--etal-indigo);
+}
+.page-etal .etal-champ input::placeholder { color: var(--etal-mist); opacity: 1; font-weight: 600; }
+.page-etal .etal-champ input:focus { outline: none; border-bottom-color: var(--etal-orange); }
+.page-etal .etal-champ input:focus-visible { outline: 2px solid var(--etal-orange); outline-offset: 4px; border-radius: 4px; }
+
+.page-etal .etal-cta {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 2rem; min-height: 52px; padding: 0 26px;
+  border-radius: 12px;
+  background: var(--etal-orange); color: var(--etal-indigo);
+  font-family: var(--etal-display); font-weight: 800; font-size: 1.0625rem; letter-spacing: -0.01em;
+  text-decoration: none; white-space: nowrap;
+  box-shadow: 0 1px 2px hsl(248 52% 15% / 0.2), 0 2px 6px -1px hsl(248 52% 15% / 0.18);
+}
+.page-etal .etal-cta:active { scale: 0.97; }
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .page-etal .etal-cta { transition: translate var(--motion-fast) var(--ease), box-shadow var(--motion-fast) var(--ease); }
+  .page-etal .etal-cta:hover { translate: 0 -1px; box-shadow: 0 2px 4px hsl(248 52% 15% / 0.2), 0 8px 18px -4px hsl(248 52% 15% / 0.28); }
+}
+
+.page-etal .etal-frise { position: absolute; left: 0; right: 0; bottom: 0; height: 12px; z-index: 2; background: var(--etal-taptap) left bottom / 32px 12px repeat-x; }
+.page-etal .etal-frise--haut { top: 0; bottom: auto; }
+
+/* ------------------------------------------------- l'entrée, en transform -- */
+@media (prefers-reduced-motion: no-preference) {
+  .page-etal[data-etal-anime] [data-etal-entree] { transition: transform var(--motion-slow) var(--ease); }
+  .page-etal[data-etal-anime] [data-etal-entree]:not(.est-entre) { transform: translateY(18px); }
+}
+
+/* ---------------------------------------------------- I · savoir-faire -- */
+.page-etal .etal-faire { background: var(--etal-sable); }
+.page-etal .etal-faire-grille { display: grid; gap: 4rem; }
+.page-etal .etal-familles { margin: 0; display: grid; }
+.page-etal .etal-famille { display: grid; gap: 0.5rem; padding-block: 1.5rem; border-top: 1px solid color-mix(in oklab, var(--etal-indigo) 16%, transparent); }
+.page-etal .etal-famille:last-child { border-bottom: 1px solid color-mix(in oklab, var(--etal-indigo) 16%, transparent); }
+.page-etal .etal-famille dt { display: flex; align-items: center; gap: 12px; font-family: var(--etal-display); font-weight: 800; font-size: clamp(1.25rem, 1.1rem + 0.7vw, 1.75rem); letter-spacing: -0.02em; }
+.page-etal .etal-famille dt svg { width: 28px; height: 28px; flex: none; fill: none; stroke: var(--etal-orange); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.page-etal .etal-famille dd { margin: 0; color: var(--etal-mist); max-width: 46ch; }
+@media (min-width: 900px) {
+  .page-etal .etal-faire-grille { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; gap: 6rem; }
+  .page-etal .etal-familles { margin-top: clamp(4rem, 12vw, 10rem); }
+}
+@media (min-width: 1280px) {
+  .page-etal .etal-famille { grid-template-columns: 13rem minmax(0, 1fr); align-items: baseline; gap: 1.5rem; }
+}
+
+/* --------------------------------------------- II · de la main à la main -- */
+.page-etal .etal-main { position: relative; overflow: clip; background: var(--etal-sable); }
+/* Le rideau indigo tombe sous la main : la coupe franche du chapitre. Sans
+   JavaScript ou en mouvement réduit, il est déjà tombé (aucun clip posé). */
+.page-etal .etal-rideau { position: absolute; inset: 0; z-index: 0; background: var(--etal-indigo); }
+.page-etal .etal-main-texte { position: relative; z-index: 1; padding-block: 26vh 30vh; }
+.page-etal .etal-main-lignes { margin-top: 3rem; display: grid; gap: 0.75rem; }
+.page-etal .etal-main-lignes p { margin: 0; font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem); line-height: 1.5; color: var(--etal-encre-douce); max-width: 40ch; }
+.page-etal .etal-main-seul {
+  margin: 46vh 0 0 auto; max-width: 16ch;
+  font-family: var(--etal-display); font-weight: 800;
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3.25rem); line-height: 1.04; letter-spacing: -0.028em;
+  text-align: right;
+}
+
+/* -------------------------------------------------------- III · l'étal -- */
+.page-etal .etal-pic { position: relative; background: var(--etal-papier); }
+.page-etal .etal-scene {
+  min-height: 100vh; min-height: 100svh;
+  display: grid; align-content: center; gap: 1.5rem;
+  padding: 76px var(--etal-gouttiere) 28px;
+}
+/* Épinglée seulement quand le défilement est monté : sinon, une section comme
+   les autres, et l'étal fini. */
+.page-etal[data-etal-anime] .etal-scene { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: clip; }
+.page-etal .etal-scene-texte { display: grid; gap: 1rem; align-content: start; }
+.page-etal .etal-scene-lede { margin: 0; max-width: 36ch; color: var(--etal-mist); font-size: clamp(1rem, 0.95rem + 0.3vw, 1.2rem); }
+.page-etal .etal-champ-mini { max-width: 20rem; margin-top: 0.5rem; }
+.page-etal .etal-champ-mini input { font-size: 1.125rem; }
+.page-etal .etal-figure { margin: 0; display: grid; gap: 0.75rem; justify-items: center; min-height: 0; }
+.page-etal .etal-figure .etal { width: min(100%, 64vh, 44rem); }
+.page-etal .etal-figure figcaption { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 0.5em; font-size: 0.875rem; color: var(--etal-mist); text-align: center; }
+/* La phrase de fin sort de son masque à la fin du dessin : pas de fondu. */
+.page-etal .etal-fin { color: var(--etal-indigo); font-weight: 600; }
+.page-etal[data-etal-anime] .etal-fin { clip-path: inset(0 calc((1 - clamp(0, calc((var(--etal-p, 1) - 0.9) / 0.06), 1)) * 100%) 0 0); }
+@media (min-width: 900px) {
+  .page-etal .etal-scene { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); align-items: center; gap: 4rem; padding-top: 64px; }
+  .page-etal .etal-figure .etal { width: min(100%, 76vh, 46rem); }
+}
+@media (max-width: 899px) {
+  .page-etal .etal-scene { align-content: start; }
+  .page-etal .etal-scene .etal-h2 { font-size: clamp(1.75rem, 1.2rem + 3vw, 2.5rem); }
+  .page-etal .etal-figure .etal { width: min(100%, 50svh); }
+}
+@media (max-width: 899px) and (max-height: 720px) {
+  .page-etal .etal-champ-mini { display: none; }
+}
+
+/* Le dessin. Chaque pièce porte sa fenêtre (--a départ, --d durée) dans la
+   progression de l'acte ; --k est linéaire, --e adouci. Hors acte (le colophon),
+   sans JavaScript et en mouvement réduit, --etal-p vaut 1 : l'étal est fini. */
+.page-etal .etal { display: block; height: auto; overflow: visible; }
+.page-etal .etal-sol { stroke: color-mix(in oklab, var(--etal-indigo) 22%, transparent); stroke-width: 2; }
+.page-etal .etal-nom { font-family: var(--etal-display); font-weight: 800; letter-spacing: -0.01em; fill: var(--etal-indigo); }
+.page-etal .etal--anime :is(.etal-trait, .etal-bande, .etal-enseigne, .etal-nom, .etal-pinceau, .etal-tuile, .etal-soleil, .etal-colline) {
+  --k: clamp(0, calc((var(--etal-p, 1) - var(--a, 0)) / var(--d, 0.1)), 1);
+  --e: calc(var(--k) * var(--k) * (3 - 2 * var(--k)));
+}
+.page-etal .etal--anime .etal-trait {
+  stroke-opacity: min(1, calc(var(--k) * 40));
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: calc(1 - var(--e));
+  fill-opacity: clamp(0, calc((var(--etal-p, 1) - var(--a, 0) - var(--d, 0.1) * 0.7) / 0.05), 1);
+}
+.page-etal .etal--anime .etal-colline { opacity: var(--e); }
+.page-etal .etal--anime .etal-soleil { opacity: var(--e); transform: translate(0, calc((1 - var(--e)) * 46px)); }
+.page-etal .etal--anime .etal-bande { transform-box: fill-box; transform-origin: 50% 0; transform: scaleY(var(--e)); }
+.page-etal .etal--anime .etal-enseigne {
+  transform-box: view-box; transform-origin: 240px 151px;
+  opacity: min(1, calc(var(--k) * 5));
+  transform: rotate(calc(13deg * (1 - var(--e)) * cos(calc(var(--e) * 560deg))));
+}
+.page-etal .etal--anime .etal-nom { clip-path: inset(-40% calc((1 - var(--k)) * 100%) -40% -4%); }
+.page-etal .etal--anime .etal-pinceau {
+  transform: translate(calc((var(--x0, 170) + var(--k) * var(--w, 140)) * 1px), 210px);
+  opacity: min(1, calc(var(--k) * 14), calc((1 - var(--k)) * 14));
+}
+.page-etal .etal--anime .etal-tuile { opacity: var(--e); transform: translate(0, calc((1 - var(--e)) * -40px)); }
+@media (prefers-reduced-motion: reduce) {
+  .page-etal .etal--anime { --etal-p: 1; }
+}
+
+/* ------------------------------------------------------- IV · l'argent -- */
+.page-etal .etal-argent { background: var(--etal-creme); }
+.page-etal .etal-argent-grille { display: grid; gap: 4rem; }
+.page-etal .etal-calcul {
+  margin: 0; max-width: 30ch;
+  font-family: var(--etal-display); font-weight: 700;
+  font-size: clamp(1.5rem, 1.15rem + 1.6vw, 2.6rem); line-height: 1.32; letter-spacing: -0.02em;
+}
+.page-etal .etal-calcul-prix input {
+  width: 5.4ch; padding: 0 2px; margin: 0 0.1em;
+  border: 0; border-bottom: 2px solid var(--etal-indigo); border-radius: 0; background: transparent;
+  font: inherit; color: inherit; text-align: center;
+  -moz-appearance: textfield;
+}
+.page-etal .etal-calcul-prix input::-webkit-outer-spin-button,
+.page-etal .etal-calcul-prix input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.page-etal .etal-calcul-prix input:focus { outline: none; border-bottom-color: var(--etal-orange); }
+.page-etal .etal-calcul-prix input:focus-visible { outline: 2px solid var(--etal-orange); outline-offset: 4px; border-radius: 4px; }
+/* Un prix : l'orange de texte (A12). */
+.page-etal .etal-calcul-net { color: var(--etal-orange-texte); font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.page-etal .etal-registre { list-style: none; margin: 0; padding: 0; display: grid; }
+.page-etal .etal-registre li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: 1rem; align-items: baseline; padding-block: 1rem; border-top: 1px solid var(--etal-filet); }
+.page-etal .etal-registre li:last-child { border-bottom: 1px solid var(--etal-filet); }
+.page-etal .etal-registre-n { font-family: var(--etal-display); font-weight: 800; color: var(--etal-mist); font-variant-numeric: tabular-nums; }
+.page-etal .etal-registre-txt { max-width: 52ch; }
+.page-etal .etal-registre-etat { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--etal-mist); white-space: nowrap; }
+.page-etal .etal-registre-etat--fin { color: var(--etal-indigo); }
+.page-etal .etal-note { display: grid; gap: 0.25rem; }
+.page-etal .etal-note p { margin: 0; max-width: 72ch; font-size: 0.875rem; line-height: 1.6; color: var(--etal-mist); }
+@media (min-width: 900px) {
+  .page-etal .etal-argent-grille { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: end; column-gap: 6rem; }
+  .page-etal .etal-note { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .page-etal .etal-registre li { grid-template-columns: 1.5rem minmax(0, 1fr); }
+  .page-etal .etal-registre-etat { grid-column: 2; }
+}
+
+/* ---------------------------------------------------- V · ici et là-bas -- */
+.page-etal .etal-loin { background: var(--etal-bordeaux); overflow: clip; }
+.page-etal .etal-loin-grille { display: grid; gap: 4rem; }
+/* Trois plans dans le flux, séparés par plus que leur course de parallaxe
+   cumulée (±85 px au loin, ±40 au milieu, ∓15 devant) : ils glissent l'un
+   par rapport à l'autre sans jamais se chevaucher. Couleurs pleines (pas de
+   transparence) : contraste mesuré ≥ 4,5:1 sur le bordeaux. */
+.page-etal .etal-villes { display: flex; flex-direction: column; gap: clamp(4.5rem, 8vw, 6rem); padding-block: 3rem; }
+.page-etal .etal-plan { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+.page-etal .etal-plan-loin { align-self: flex-end; justify-content: flex-end; gap: 0.2em 1.1em; max-width: 26rem; font-size: 1.0625rem; font-weight: 500; color: #bbadae; }
+.page-etal .etal-plan-mi { align-self: flex-end; justify-content: flex-end; margin-right: 8%; gap: 0.2em 0.9em; max-width: 30rem; font-family: var(--etal-display); font-weight: 700; font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem); color: #d9cfcf; }
+.page-etal .etal-plan-pres {
+  gap: 0.06em 0.45em; max-width: 36rem;
+  font-family: var(--etal-display); font-weight: 800;
+  font-size: clamp(1.9rem, 1.1rem + 2.6vw, 3.6rem); line-height: 1.06; letter-spacing: -0.03em;
+  color: #faf8f5;
+}
+.page-etal .etal-plan-pres li:not(:last-child)::after { content: ","; color: var(--etal-encre-douce); }
+@media (min-width: 900px) {
+  .page-etal .etal-loin-grille { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: 6rem; }
+}
+
+/* ------------------------------------------------------------- colophon -- */
+.page-etal .etal-colophon { background: var(--etal-papier); min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding-block: clamp(5rem, 12vw, 10rem) clamp(3rem, 8vw, 6rem); }
+.page-etal .etal-colophon-grille { display: grid; gap: 3rem; align-items: end; }
+.page-etal .etal-vignette { width: min(100%, 18rem); }
+.page-etal .etal-colophon-texte { display: grid; gap: 1rem; max-width: 38rem; }
+.page-etal .etal-colophon-texte p { margin: 0; }
+.page-etal .etal-colophon-titre { font-family: var(--etal-display); font-weight: 800; font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.875rem); line-height: 1.2; letter-spacing: -0.022em; text-wrap: balance; }
+.page-etal .etal-colophon-cta { font-size: 1.0625rem; }
+.page-etal .etal-lien-cta { color: var(--etal-orange-texte); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.22em; white-space: nowrap; }
+.page-etal .etal-lien-cta::after { content: " →"; }
+.page-etal .etal-colophon-petit,
+.page-etal .etal-colophon-liens { font-size: 0.8125rem; line-height: 1.6; color: var(--etal-mist); max-width: 60ch; }
+.page-etal .etal-colophon-marque { font-size: 0.8125rem; font-weight: 600; padding-top: 1rem; border-top: 1px solid var(--etal-filet); }
+@media (min-width: 900px) {
+  .page-etal .etal-colophon-grille { grid-template-columns: 18rem minmax(0, 38rem); gap: 6rem; }
+}
+
+/* Le nom du visiteur : entre guillemets quand il en a écrit un, ceux de la
+   langue servie (`quotes: auto` suit `<html lang>`). */
+.page-etal.a-nom .etal-nom-cite { quotes: auto; }
+/* En français et en kreyòl, l'espace insécable à l'intérieur des guillemets. */
+.page-etal.a-nom .etal-nom-cite:is(:lang(fr), :lang(ht)) { quotes: "\00ab\00a0" "\00a0\00bb"; }
+.page-etal.a-nom .etal-nom-cite::before { content: open-quote; }
+.page-etal.a-nom .etal-nom-cite::after { content: close-quote; }
+
+/* Petits téléphones : le titre descend d'un cran. */
+@media (max-width: 420px) {
+  .page-etal .etal-h1 { font-size: clamp(2.1rem, 1.2rem + 4.6vw, 2.6rem); }
+  .page-etal .etal-masthead { margin-bottom: 1.5rem; }
+  .page-etal .etal-titre .etal-champ { margin-top: 2rem; }
+}

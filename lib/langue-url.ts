@@ -42,6 +42,7 @@ const CHEMINS: RegExp[] = [
   /^\/categories$/,
   /^\/vendre$/,
   /^\/vendre\/physique$/,
+  /^\/ouvrir-ma-boutique$/,
   /^\/produits-interdits$/,
   /^\/developpeurs$/,
   /^\/conditions$/,
