@@ -29,6 +29,7 @@ import { GalerieProduit } from "@/components/galerie-produit";
 import { getProductReviews } from "@/lib/reviews";
 import { identitesVerifiees } from "@/lib/identite-verifiee";
 import { BadgeIdentite } from "@/components/badge-identite";
+import { ReponseAvisForm } from "@/components/reponse-avis-form";
 import { offreFlashActive } from "@/lib/flash";
 import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
@@ -248,9 +249,10 @@ export default async function ProductPage({
     }
   }
 
-  /* Qui regarde ? Uniquement pour décider du point d'entrée de la messagerie :
-   * un vendeur ne s'écrit pas à lui-même, un visiteur non connecté doit se
-   * connecter d'abord. Aucune donnée personnelle n'entre dans le rendu. */
+  /* Qui regarde ? Uniquement pour décider du point d'entrée de la messagerie
+   * (un vendeur ne s'écrit pas à lui-même, un visiteur non connecté doit se
+   * connecter d'abord) et pour offrir au vendeur la réponse aux avis (0139,
+   * que la base revérifie). Aucune donnée personnelle n'entre dans le rendu. */
   const visiteur = isSupabaseConfigured()
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
@@ -805,6 +807,29 @@ export default async function ProductPage({
                   {new Date(r.createdAt).toLocaleDateString("fr-HT")} ·{" "}
                   {t(lang, "product.verified")}
                 </p>
+                {r.reponse ? (
+                  <div className="mt-3 border-l border-line pl-3">
+                    <p className="text-xs font-semibold text-cloud">{t(lang, "review.reponse.titre")}</p>
+                    <p className="mt-1 whitespace-pre-line break-words text-sm text-mist">{r.reponse.texte}</p>
+                    <p className="mt-1 text-xs text-mist">{new Date(r.reponse.le).toLocaleDateString("fr-HT")}</p>
+                  </div>
+                ) : (
+                  estVendeur && (
+                    <ReponseAvisForm
+                      reviewId={r.id}
+                      labels={{
+                        cta: t(lang, "review.reponse.cta"),
+                        placeholder: t(lang, "review.reponse.placeholder"),
+                        envoyer: t(lang, "review.reponse.envoyer"),
+                        annuler: t(lang, "review.reponse.annuler"),
+                        aide: t(lang, "review.reponse.aide"),
+                        erreur: t(lang, "review.reponse.erreur"),
+                        deja: t(lang, "review.reponse.deja"),
+                        reseau: t(lang, "review.reponse.reseau"),
+                      }}
+                    />
+                  )
+                )}
               </li>
             ))}
           </ul>
