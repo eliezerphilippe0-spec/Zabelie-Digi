@@ -279,3 +279,107 @@ test("l'effacement annonce que les pièces d'identité survivent à la fermeture
     assert.ok(texte.includes(renvoi[lang]), `${lang} : l'effacement ne mentionne pas la conservation des pièces`);
   }
 });
+
+/**
+ * CROISEMENT CODE ↔ §6, pour TOUS les tiers appelés.
+ *
+ * Mesuré le 2026-10-10 (`docs/69`) : le code appelait HUIT tiers et le §6 n'en
+ * nommait que trois. Reloadly et Kobara ne figuraient dans aucune liste de
+ * suivi ; Stripe serait passé à travers une recherche d'URL, n'en écrivant
+ * aucune. Une liste tenue à la main vieillit ; un croisement non.
+ *
+ * ⚠️ La recherche est bornée aux PUCES du §6, jamais à la section entière :
+ * ses paragraphes nomment déjà Meta, Google et TikTok comme régies « qui
+ * traitent pour leur propre compte ». Chercher « Google » dans le texte
+ * complet serait satisfait par cette phrase et ne prouverait rien sur la
+ * déclaration de Gemini — le piège de sous-chaîne, exactement.
+ */
+const TIERS_APPELES = [
+  { nom: "Resend", fichier: "lib/zabelie-email.ts", marque: "api.resend.com" },
+  { nom: "Reloadly", fichier: "lib/zabelie-topup/reloadly.ts", marque: "reloadly.com" },
+  { nom: "OpenAI", fichier: "lib/shopping-ai-provider.ts", marque: "api.openai.com" },
+  { nom: "Gemini", fichier: "lib/shopping-ai-provider.ts", marque: "generativelanguage.googleapis.com" },
+  { nom: "Higgsfield", fichier: "lib/creative/providers/higgsfield.ts", marque: "api.higgsfield.ai" },
+  { nom: "TypeSafe", fichier: "lib/jev.ts", marque: "untrusted_customer_message" },
+  { nom: "MonCash", fichier: "lib/moncash.ts", marque: "moncashbutton.digicelgroup.com" },
+  { nom: "Stripe", fichier: "lib/stripe.ts", marque: "checkout.sessions.create" },
+  { nom: "Kobara", fichier: "lib/kobara.ts", marque: "api.kobara.app" },
+] as const;
+
+/** Les PUCES du §6 seulement — pas ses paragraphes. */
+function pucesDestinataires(lang: Lang): string {
+  return POLITIQUE[lang].sections
+    .filter((s) => /^6\./u.test(s.titre))
+    .flatMap((s) => s.blocs.flatMap((b) => ("ul" in b ? b.ul : [])))
+    .join("\n");
+}
+
+test("tout tiers appelé par le code est NOMMÉ au §6, dans les deux sens", () => {
+  for (const lang of LANGS) {
+    const puces = pucesDestinataires(lang);
+    assert.ok(puces.includes("Supabase"), `${lang} : les puces du §6 n'ont pas été trouvées`);
+    for (const tiers of TIERS_APPELES) {
+      const appele = readFileSync(tiers.fichier, "utf8").includes(tiers.marque);
+      assert.equal(
+        puces.includes(tiers.nom),
+        appele,
+        appele
+          ? `${lang} : ${tiers.fichier} appelle ${tiers.nom}, qui doit être nommé au §6`
+          : `${lang} : plus aucun appel vers ${tiers.nom} — sa ligne du §6 doit partir`
+      );
+    }
+  }
+});
+
+test("un tiers qui reçoit les mots du client est NOMMÉ au §6, dans les deux sens", () => {
+  /**
+   * CROISEMENT CODE ↔ DÉCLARATION.
+   *
+   * Mesuré le 2026-10-10 : `lib/jev.ts` envoyait `untrusted_customer_message`
+   * — le texte écrit par le client — à `api.typesafe.ai`, et le §6 ne nommait
+   * que Supabase, Vercel et MonCash. Le triage était livré, drapeau fermé :
+   * l'ouvrir aurait transmis des messages clients à un tiers non déclaré, sans
+   * qu'aucun contrôle ne le dise.
+   *
+   * L'assertion porte sur ce qui COMMANDE — la transmission dans le code —
+   * jamais sur la présence d'un libellé. Et elle vaut DANS LES DEUX SENS : une
+   * liste qui ne sait que grandir finit par déclarer des tiers disparus, ce
+   * qui est une autre façon de mentir.
+   */
+  const transmet = readFileSync("lib/jev.ts", "utf8").includes("untrusted_customer_message");
+  const sousTraitants = (lang: Lang) =>
+    POLITIQUE[lang].sections
+      .filter((s) => /^6\./u.test(s.titre))
+      .flatMap((s) => s.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)))
+      .join("\n");
+
+  for (const lang of LANGS) {
+    const declare = sousTraitants(lang).includes("TypeSafe");
+    assert.equal(
+      declare,
+      transmet,
+      transmet
+        ? `${lang} : lib/jev.ts transmet le message du client à TypeSafe, qui doit être nommé au §6`
+        : `${lang} : plus aucune transmission vers TypeSafe — la ligne du §6 doit partir`
+    );
+  }
+});
+
+test("aucune région d’hébergement n’est inventée pour un tiers non mesuré", () => {
+  /**
+   * Supabase et Vercel portent une région PARCE QU'ELLE A ÉTÉ MESURÉE
+   * (2026-10-04). TypeSafe n'a pas été mesuré : lui coller un pays serait une
+   * garantie inventée dans un document juridique. Ce test garde l'abstention.
+   */
+  for (const lang of LANGS) {
+    const texte = POLITIQUE[lang].sections
+      .flatMap((x) => x.blocs.flatMap((b) => ("p" in b ? [b.p] : b.ul)))
+      .join("\n");
+    const phrase = texte.split("\n").find((l) => l.includes("TypeSafe")) ?? "";
+    assert.doesNotMatch(
+      phrase,
+      /États-Unis|Ozetazini|United States|Estados Unidos|us-east-1|iad1|région|rejyon|region|región/u,
+      `${lang} : une région est affirmée pour TypeSafe alors qu'aucune n'a été mesurée`
+    );
+  }
+});

@@ -182,7 +182,7 @@ const server = createServer((req, res) => {
     const owner = url.searchParams.get("user_id")?.replace(/^eq\./, "");
     return send(200, [BUYER_ID, SELLER_ID].includes(owner) ? [
       { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
-      { policy_version: "confidentialite-v1", accepted_at: "2026-10-05T00:00:00Z" },
+      { policy_version: "confidentialite-v3", accepted_at: "2026-10-05T00:00:00Z" },
     ] : []);
   }
 
