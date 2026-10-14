@@ -80,7 +80,10 @@ $$;
 comment on function zabelie_repondre_avis(uuid, text) is
   'Reponse publique du vendeur a un avis (0139) : auth.uid() doit etre le vendeur du produit, compte actif, une seule fois (update atomique), 1 a 1000 caracteres. Appelee par /api/reviews/reponse avec le client de SESSION.';
 
-revoke all on function zabelie_repondre_avis(uuid, text) from public;
+-- Supabase accorde EXECUTE à anon et authenticated sur toute nouvelle
+-- fonction, directement : retirer à PUBLIC seul ne ferme rien (trouvé par
+-- la post-condition ci-dessous, en production, le 2026-10-14).
+revoke all on function zabelie_repondre_avis(uuid, text) from public, anon, authenticated;
 grant execute on function zabelie_repondre_avis(uuid, text) to authenticated;
 
 -- La lecture publique rend aussi la réponse. Le type de retour change : la

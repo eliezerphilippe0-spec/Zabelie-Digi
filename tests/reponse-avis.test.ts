@@ -86,7 +86,7 @@ test("R7 — vendeur du produit, compte actif, une seule fois, authenticated seu
   assert.match(m, /if v_vendeur is null or v_vendeur <> v_moi then/);
   assert.match(m, /if not seller_is_active\(v_vendeur\) then/);
   assert.match(m, /where id = p_review_id and reponse_vendeur is null\s+returning reponse_le into v_le;/);
-  assert.match(m, /revoke all on function zabelie_repondre_avis\(uuid, text\) from public;/);
+  assert.match(m, /revoke all on function zabelie_repondre_avis\(uuid, text\) from public, anon, authenticated;/);
   assert.match(m, /grant execute on function zabelie_repondre_avis\(uuid, text\) to authenticated;/);
   assert.doesNotMatch(m, /grant execute on function zabelie_repondre_avis\(uuid, text\) to [^;]*anon/);
 });
