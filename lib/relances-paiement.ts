@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LANGS, t, type Lang } from "@/lib/i18n";
+import { echapperHtml } from "@/lib/echapper-html";
 
 /**
  * RELANCE DES PAIEMENTS ABANDONNÉS (0124).
@@ -28,9 +29,7 @@ export type RelanceDue = {
   jeton: string | null;
 };
 
-function echapper(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
+const echapper = echapperHtml;
 
 /** `12500` → `12 500` (espace fine insécable, lisible dans les quatre langues). */
 export function montant(htg: number): string {

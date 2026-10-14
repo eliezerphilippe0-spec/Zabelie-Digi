@@ -19,6 +19,44 @@ export type KycStatut = "pending" | "approved" | "rejected";
 export const KYC_MAX_BYTES = 5 * 1024 * 1024;
 export const KYC_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "pdf"]);
 
+/**
+ * Type enregistré au stockage, déduit de l'extension PAR LE SERVEUR. Celui que
+ * le navigateur déclare n'est jamais repris : c'est lui qui décide comment la
+ * pièce s'ouvre quand l'administrateur la consulte. Le bucket (0140) n'accepte
+ * que ces quatre types.
+ */
+export const KYC_TYPE_PAR_EXTENSION: Readonly<Record<string, string>> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  pdf: "application/pdf",
+};
+
+const commencePar = (octets: Uint8Array, attendu: readonly number[], decalage = 0) =>
+  octets.length >= decalage + attendu.length && attendu.every((o, i) => octets[decalage + i] === o);
+
+/**
+ * Les premiers octets correspondent-ils à l'extension annoncée ? Lit 12 octets
+ * au plus. Un fichier renommé (une page enregistrée en `.pdf`, une image en
+ * `.png` qui n'en est pas une) est refusé avant d'atteindre le stockage.
+ */
+export function signatureKycValide(ext: string, octets: Uint8Array): boolean {
+  switch (ext) {
+    case "jpg":
+    case "jpeg":
+      return commencePar(octets, [0xff, 0xd8, 0xff]);
+    case "png":
+      return commencePar(octets, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case "webp":
+      return commencePar(octets, [0x52, 0x49, 0x46, 0x46]) && commencePar(octets, [0x57, 0x45, 0x42, 0x50], 8);
+    case "pdf":
+      return commencePar(octets, [0x25, 0x50, 0x44, 0x46, 0x2d]);
+    default:
+      return false;
+  }
+}
+
 export type DossierKyc = {
   statut: KycStatut;
   documents: { id: string; kind: KycType }[];

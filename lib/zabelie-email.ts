@@ -4,6 +4,8 @@
  * doit jamais bloquer ni faire échouer une confirmation de paiement.
  */
 
+import { echapperHtml } from "./echapper-html";
+
 export function isEmailEnabled(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
@@ -269,8 +271,8 @@ export function buyerPurchaseEmail(input: {
     subject: `✅ Achat confirmé — ${input.productTitle}`,
     html: wrap(`
       <p><strong>Mèsi ! Acha ou konfime.</strong> / Merci ! Votre achat est confirmé.</p>
-      <p style="font-size:15px">${input.productTitle} — <strong>${input.amountLabel}</strong></p>
-      <p><a href="${input.purchasesUrl}"
+      <p style="font-size:15px">${echapperHtml(input.productTitle)} — <strong>${echapperHtml(input.amountLabel)}</strong></p>
+      <p><a href="${echapperHtml(input.purchasesUrl)}"
             style="display:inline-block;background:#d96a16;color:#fff;
                    padding:12px 20px;border-radius:10px;text-decoration:none;
                    font-weight:700">Telechaje / Télécharger mes achats</a></p>
@@ -292,10 +294,10 @@ export function sellerSaleEmail(input: {
     subject: `🎉 Ou fè yon vant ! — ${input.productTitle}`,
     html: wrap(`
       <p><strong>🎉 Félicitations — nouvelle vente !</strong></p>
-      <p style="font-size:15px">${input.productTitle}</p>
-      ${input.orderRef ? `<p>Nimewo kòmand / N° de commande : <strong>${input.orderRef}</strong></p>` : ""}
-      <p>Net vendeur crédité (en attente J+7) : <strong>${input.netLabel}</strong></p>
-      <p><a href="${input.dashboardUrl}"
+      <p style="font-size:15px">${echapperHtml(input.productTitle)}</p>
+      ${input.orderRef ? `<p>Nimewo kòmand / N° de commande : <strong>${echapperHtml(input.orderRef)}</strong></p>` : ""}
+      <p>Net vendeur crédité (en attente J+7) : <strong>${echapperHtml(input.netLabel)}</strong></p>
+      <p><a href="${echapperHtml(input.dashboardUrl)}"
             style="display:inline-block;background:#5c2340;color:#fff;
                    padding:12px 20px;border-radius:10px;text-decoration:none;
                    font-weight:700">Wè tablo bò mwen / Voir mon tableau de bord</a></p>
@@ -321,15 +323,15 @@ export function sellerSaleEmail(input: {
  */
 
 const ligneCommande = (titre: string, ref?: string | null) =>
-  `<p style="font-size:15px">${titre}${
-    ref ? ` — <strong>${ref}</strong>` : ""
+  `<p style="font-size:15px">${echapperHtml(titre)}${
+    ref ? ` — <strong>${echapperHtml(ref)}</strong>` : ""
   }</p>`;
 
 const boutonAchats = (url: string, libelle: string) =>
-  `<p><a href="${url}"
+  `<p><a href="${echapperHtml(url)}"
         style="display:inline-block;background:#d96a16;color:#fff;
                padding:12px 20px;border-radius:10px;text-decoration:none;
-               font-weight:700">${libelle}</a></p>`;
+               font-weight:700">${echapperHtml(libelle)}</a></p>`;
 
 /** Avis immédiat : le vendeur déclare avoir remis, et l'horloge démarre. */
 export function shippedNoticeEmail(input: {
@@ -344,10 +346,10 @@ export function shippedNoticeEmail(input: {
       <p><strong>Vandè a di li remèt kòmand ou an.</strong><br>
       Le vendeur déclare avoir remis votre commande.</p>
       ${ligneCommande(input.productTitle, input.orderRef)}
-      <p><strong>Si ou pa reponn anvan ${input.deadlineLabel}</strong>, n ap
+      <p><strong>Si ou pa reponn anvan ${echapperHtml(input.deadlineLabel)}</strong>, n ap
       konsidere ou resevwa l, e n ap peye vandè a.<br>
       <span style="color:#77636b">Sans réponse de votre part avant le
-      ${input.deadlineLabel}, la commande sera réputée reçue et le vendeur
+      ${echapperHtml(input.deadlineLabel)}, la commande sera réputée reçue et le vendeur
       sera payé.</span></p>
       ${boutonAchats(input.purchasesUrl, "Konfime / Signaler un problème")}
       <p style="font-size:13px;color:#77636b">Zabelie pa livre e pa verifye
@@ -370,7 +372,7 @@ export function reminderNoticeEmail(input: {
       <p><strong>Rapèl : nou poko tande ou sou kòmand sa a.</strong><br>
       Rappel : nous n'avons pas encore eu votre réponse.</p>
       ${ligneCommande(input.productTitle, input.orderRef)}
-      <p><strong>${input.deadlineLabel}</strong> — apre dat sa a, n ap
+      <p><strong>${echapperHtml(input.deadlineLabel)}</strong> — apre dat sa a, n ap
       konsidere ou resevwa l.<br>
       <span style="color:#77636b">Après cette date, la commande sera réputée
       reçue.</span></p>
