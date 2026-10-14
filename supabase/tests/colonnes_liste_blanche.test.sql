@@ -60,6 +60,8 @@ insert into zabelie_colonnes_privees (nom_table, colonne, raison) values
   ('profiles', 'pwen_repe',        '0084 : idem — point de repere saisi par tout compte sur le formulaire de livraison'),
   ('profiles', 'boutik_slug',      '0084 : idem — la resolution d''adresse passe par la fonction, pas par un filtre direct'),
   ('profiles', 'is_test',          '0101 : marque de compte d''essai. Lue UNIQUEMENT par zabelie_vendeur_essai (SECURITY DEFINER), que la policy publique appelle. Aucun client n''a besoin de la lire, et l''accorder exposerait publiquement quels comptes sont des essais'),
+  ('product_reviews', 'buyer_id',  '0137 : l''auteur d''un avis n''est pas public ; son Prenom + initiale passe par zabelie_avis_produit'),
+  ('product_reviews', 'order_id',  '0137 : order_id unique par avis, il dirait qui a achete quoi ; l''acheteur lit les siens cote serveur'),
   ('zabelie_webhook_endpoints',  'secret',      '0122 : secret de signature HMAC, relu par le service seul pour signer ; affiche UNE fois au vendeur, a la creation'),
   ('zabelie_webhook_deliveries', 'payload',     '0122 : corps signe envoye au vendeur ; reste cote service, le tableau de bord n''en a pas besoin'),
   ('zabelie_webhook_deliveries', 'lease_until', '0122 : bail interne du repartiteur, sans signification pour le vendeur');
