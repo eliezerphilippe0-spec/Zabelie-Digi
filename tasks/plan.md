@@ -62,8 +62,8 @@ Contrats purs (schémas, transitions, CAS) ── Drapeaux ── Fournisseur si
 **Checkpoint 1** — tests, typecheck, lint, build verts ; aucun effet sur le catalogue ; PR 1 relue.
 
 ### Phase 2 — Un projet privé, de bout en bout, sans IA (lots 2 et 3)
-- [ ] 2.1 Table des projets, RLS et sauvegarde CAS en base
-- [ ] 2.2 API projets sous JWT
+- [x] 2.1 Table des projets, RLS et sauvegarde CAS en base (`0141`, CI `sql-tests` verte, P1–P11 lus au journal)
+- [x] 2.2 API projets sous JWT (11 tests de route, 12 mutations tuées, 1704/1704)
 - [ ] 2.3 Liste des projets et création, lien conditionnel
 - [ ] 2.4 Éditeur : brief, plan, sections, approbation du plan
 - [ ] 2.5 Sauvegarde robuste : états, conflit, brouillon local, coupure
@@ -129,3 +129,23 @@ C4-A, D1-A (sous réserve de l'essai 4.1), D2-A, D6.
 Restent ouvertes, et ne bloquent que l'ouverture (phase 8) : D3 fournisseur
 réel, D4 budget et plafonds, D5 conservation, D7 liste pilote, D8 libellés
 publics.
+
+## Idées tirées de CreateurSuite (2026-10-15) — PROPOSÉES, à valider
+
+Source : createursuite.com (page publique) et capture de son tableau de bord.
+Ce qui s'y voit : un accueil « Que souhaitez-vous faire aujourd'hui ? » à trois
+entrées (analyser un marché, créer un produit digital, créer une publicité),
+des projets à reprendre (« Continuer », état Prêt / Brouillon), des
+« opportunités » notées, des modèles, un export PDF, des maquettes 3D, et des
+crédits achetables (« Research Points ») qui n'expirent pas.
+
+| Idée | Chez Zabelie, à partir de | Coût | Statut |
+|---|---|---|---|
+| Accueil à trois entrées + projets « Continuer » | 2.3 : créer un guide, créer une pub (Studio images s'il est allumé), trouver une idée | nul, dans 2.3 | proposé |
+| Modèles de guide prêts à remplir (plan pré-rempli, ht/fr, sans IA) | motif existant `lib/service-starters.ts` | faible, tâche 2.6 | proposé |
+| Compteur visible des suggestions restantes (quota non monétaire) | phase 3 (quotas) | nul | proposé |
+| Couverture automatique + maquette (titre, couleurs) | `next/og` déjà utilisé (`app/**/opengraph-image.tsx`), aucune dépendance ; alimente la photo principale ET le Studio images | moyen, tâche 4.4 | à décider (gabarit visuel) |
+| Kit de lancement : textes de partage WhatsApp/Facebook en kreyòl + lien | `ShareButtons` existant | faible, tâche 5.4 | à décider |
+| « Idées qui se cherchent » : recherches sans résultat sur Zabelie | capteur `zabelie_search_misses` (`0047`), agrégé avec un seuil de sessions distinctes | moyen, tâche 6.3 | à décider (vie privée) |
+| Analyse des publicités concurrentes (bibliothèque publicitaire) | rien d'existant ; API externe, coût et conditions | élevé | écarté pour l'instant |
+| Crédits achetables qui n'expirent pas | contraire au PRD §11 (aucun crédit prépayé au MVP) et à la prudence BRH | — | non recommandé |
