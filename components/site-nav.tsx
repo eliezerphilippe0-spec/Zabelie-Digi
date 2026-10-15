@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SHOPPING_COPY } from "@/lib/shopping-ai-copy";
 import { BrandLogo } from "@/components/brand-logo";
 import { SignOutButton } from "@/components/sign-out-button";
+import { PurgeBrouillonsCreation } from "@/components/purge-brouillons-creation";
 import { LangToggle } from "@/components/lang-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SearchBox, type SearchSuggestion } from "@/components/search-box";
@@ -66,6 +67,9 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
 
   return (
     <HeaderShell className="sticky top-0 z-50 bg-chrome text-on-chrome">
+      {/* Studio de création (D6, docs/70) : les brouillons locaux d'un autre
+          compte, ou de tout le monde après la déconnexion, quittent l'appareil. */}
+      <PurgeBrouillonsCreation garder={user?.id ?? null} />
       {/* LIEN D'ÉVITEMENT (audit UX 2026-09-02, #14). Invisible jusqu'au
           premier Tab, puis un vrai bouton en haut à gauche. Cible :
           `<main id="main">`. */}

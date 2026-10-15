@@ -64,7 +64,9 @@ test("éditeur : rédaction après approbation, approbation sur révision enregi
   const src = readFileSync("components/authoring-editor.tsx", "utf8");
   assert.match(src, /\{planApprouve === null \? \(\s*<p[^>]*>\{e\.redactionVerrou\}/, "la rédaction n'est pas verrouillée avant le plan");
   assert.match(src, /if \(statut !== "propre" && statut !== "enregistre"\) rev = await sauver\(\);/, "l'approbation n'enregistre pas d'abord");
-  assert.match(src, /body: JSON\.stringify\(\{ revisionAttendue, jeton: crypto\.randomUUID\(\), projet, brief, contenu \}\)/);
+  // Chaque envoi porte la révision attendue et un jeton neuf, gardé pour trancher une réponse perdue.
+  assert.match(src, /const suivi: EnvoiSuivi = \{ revisionAttendue, jeton: crypto\.randomUUID\(\), version: version\.current \};/);
+  assert.match(src, /body: JSON\.stringify\(\{\s*revisionAttendue,\s*jeton: suivi\.jeton,/);
   assert.match(src, /onClick=\{garderMaVersion\}/);
   assert.match(src, /onClick=\{reprendreServeur\}/);
 });

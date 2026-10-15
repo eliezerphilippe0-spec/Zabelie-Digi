@@ -67,7 +67,7 @@ Contrats purs (schémas, transitions, CAS) ── Drapeaux ── Fournisseur si
 - [x] 2.3 Accueil à trois entrées, liste des projets, création, liens conditionnels
 - [x] 2.4 Éditeur : brief, plan, sections, approbation du plan (e2e 7/7 local)
 - [x] 2.6 Modèles de guide (recette, métier, démarche, liste de contrôle)
-- [ ] 2.5 Sauvegarde robuste : états, conflit, brouillon local, coupure
+- [x] 2.5 Sauvegarde robuste : états, conflit, brouillon local, coupure (e2e 13/13 local)
 
 **Checkpoint 2** — un guide ht et un guide fr créés et repris sans IA à 360 px ; conflit entre onglets et coupure réseau reproduits ; SQL vert en CI ; PR 2 (migration non appliquée).
 

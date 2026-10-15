@@ -39,7 +39,7 @@ test("un guide en kreyòl naît d'un modèle, son plan s'approuve, sa rédaction
   const corps = page.getByRole("textbox", { name: "Tèks seksyon an : Engredyan ak materyèl" });
   await corps.fill("Diri, pwa, lwil, sèl.");
   await page.getByRole("button", { name: "Anrejistre" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Li anrejistre" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^✓ Li anrejistre$/ })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Tèks seksyon an : Engredyan ak materyèl" })).toHaveValue("Diri, pwa, lwil, sèl.");
@@ -58,7 +58,7 @@ test("deux onglets sur le même projet : conflit explicite, rien d'écrasé, le 
 
   await page.getByRole("textbox", { name: "Titre de travail" }).fill("Version de l’onglet A");
   await page.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(page.getByRole("status").filter({ hasText: "Enregistré" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^✓ Enregistré$/ })).toBeVisible();
 
   await autre.getByRole("textbox", { name: "Titre de travail" }).fill("Version de l’onglet B");
   await autre.getByRole("button", { name: "Enregistrer" }).click();
@@ -68,7 +68,7 @@ test("deux onglets sur le même projet : conflit explicite, rien d'écrasé, le 
   await expect(autre.getByRole("textbox", { name: "Titre de travail" })).toHaveValue("Version de l’onglet B");
 
   await alerte.getByRole("button", { name: "Garder ma version" }).click();
-  await expect(autre.getByRole("status").filter({ hasText: "Enregistré" })).toBeVisible();
+  await expect(autre.getByRole("status").filter({ hasText: /^✓ Enregistré$/ })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Titre de travail" })).toHaveValue("Version de l’onglet B");
 });

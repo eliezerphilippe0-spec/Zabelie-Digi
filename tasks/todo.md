@@ -103,19 +103,20 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 2.5 Sauvegarde robuste
 **Description :** états « modifications locales », « enregistrement », « enregistré » (après confirmation serveur seulement), « connexion interrompue », « conflit à résoudre » ; sauvegarde après une seconde d'inactivité et bouton explicite ; brouillon local par utilisateur et projet, purgé à la déconnexion ; avertissement avant de quitter. **Bloquée par D6.**
 **Critères :**
-- [ ] Deux onglets sur la même révision : conflit explicite, aucune écriture gagnante silencieuse.
-- [ ] Coupure puis retour : brouillon local plus récent proposé avant remplacement (T15) ; stockage refusé : édition en ligne possible et limite annoncée (T16).
-- [ ] Changement de compte sur le même appareil : aucun brouillon du précédent visible (T14).
+- [x] Deux onglets sur la même révision : conflit explicite, aucune écriture gagnante silencieuse.
+- [x] Coupure puis retour : brouillon local plus récent proposé avant remplacement (T15) ; stockage refusé : édition en ligne possible et limite annoncée (T16).
+- [x] Changement de compte sur le même appareil : aucun brouillon du précédent visible (T14).
 **Vérification :** e2e (deux contextes, réseau coupé, stockage bloqué) ; 360 px.
 **Dépendances :** 2.4, D6.
 **Remarques d'usage relevées à 360 px (2026-10-15) :** replier les six champs facultatifs du brief sous « Plus de détails » ; garder le bouton d'enregistrement et l'état de sauvegarde visibles en bas d'écran (barre collante) — la sauvegarde automatique les rend moins critiques sans les supprimer.
-**Fichiers :** `lib/digital-authoring/local-draft.ts`, `components/authoring-save-state.tsx`, `components/authoring-editor.tsx`, `app/api/auth/signout/route.ts` (ou le bouton de déconnexion), `e2e/creation-sauvegarde.spec.ts`.
+**Fichiers :** `lib/digital-authoring/local-draft.ts`, `lib/digital-authoring/local-draft-purge.ts` (sans dépendance, chargé partout), `components/purge-brouillons-creation.tsx` + `components/site-nav.tsx` (purge à chaque page : la déconnexion est un formulaire sans JavaScript), `components/authoring-editor.tsx`, `lib/digital-authoring/copy.ts`, `e2e-creation/sauvegarde.spec.ts`, `tests/digital-authoring-brouillon-local.test.ts`.
+**Mesuré (2026-10-15) :** sauvegarde automatique à 1 s, saisie jamais bloquée pendant un envoi, réponse perdue tranchée en relisant le serveur (jeton), conflit à deux issues, champs facultatifs du brief repliés, barre d'enregistrement collante. 8 tests unitaires ; e2e local 13/13 (dont T14, T15, T16 et l'avertissement avant de quitter) ; deux pannes provoquées (sauvegarde automatique, proposition de restauration) détectées par les parcours. ⚠️ Instrument corrigé : un filtre Playwright en texte ignore la casse — « Enregistré » trouvait « …pas encore enregistrées ». Les vérifications de l'état enregistré sont désormais ancrées (`/^✓ Enregistré$/`), y compris dans les parcours de la 2.4.
 **Taille :** M.
 
 ## Checkpoint 2
-- [ ] Un guide ht et un guide fr créés et repris sans IA, à 360 px.
-- [ ] SQL vert dans le job CI ; e2e ciblés verts ; suite complète verte.
-- [ ] PR 2 : migration rédigée, **non appliquée**, protocole de vérification écrit.
+- [x] Un guide ht et un guide fr créés et repris sans IA, à 360 px (e2e : guide ht depuis un modèle, guide fr en conflit d'onglets ; 360 px dans les quatre langues).
+- [x] SQL vert dans le job CI (P1–P11 lus au journal) ; e2e ciblés verts (13/13 local, étape CI dédiée) ; suite complète verte (1727/1727).
+- [ ] PR 2 : migration rédigée, **non appliquée**, protocole de vérification écrit (`OPS_TODO.md`).
 
 ---
 

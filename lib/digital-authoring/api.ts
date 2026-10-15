@@ -74,6 +74,8 @@ export type ProjetEditeur = {
   brief: Brief;
   contenu: Contenu;
   revision: number;
+  /** Jeton de la dernière sauvegarde : dit « c'était nous » après une réponse perdue. */
+  jeton: string | null;
   planApprouveRevision: number | null;
   archive: boolean;
 };
@@ -106,6 +108,7 @@ export function projetPourEditeur(ligne: unknown): ProjetEditeur | null {
     brief,
     contenu: { objectif: texteOuVide(contenuBrut.objectif), sections },
     revision: l.revision,
+    jeton: typeof l.derniere_sauvegarde === "string" ? l.derniere_sauvegarde : null,
     planApprouveRevision: typeof l.plan_approuve_revision === "number" ? l.plan_approuve_revision : null,
     archive: Boolean(l.archived_at),
   };

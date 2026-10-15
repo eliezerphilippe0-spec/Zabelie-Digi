@@ -23,6 +23,28 @@ utilisateur et projet, purgé à la déconnexion. Phase 1 lancée.
 | D7 — liste pilote (5 à 10 créateurs) et support | 2026-10-15 | Accès de vrais utilisateurs |
 | D8 — libellés publics (« Zabelie Studio », « Créer un produit numérique ») | 2026-10-15 | Ouverture publique |
 
+### Migration `0141_zabelie_authoring_projects.sql` — protocole d'application (PR de la phase 2)
+
+**Rédigée, NON appliquée.** Décision C2-A : son application attend un « oui » explicite du porteur, même CI verte.
+Elle est additive et isolée : deux tables neuves (`zabelie_authoring_config`, `zabelie_authoring_projects`), trois
+fonctions sous `auth.uid()`, et la sonde `zabelie_objets_requis()` redéfinie à l'identique de `0139` plus ces trois
+fonctions. Aucune table existante n'est modifiée.
+
+Ordre proposé : CI verte sur la tête de la PR → application de `0141` → vérifications ci-dessous → fusion. Le Studio
+reste éteint après la fusion (`ZABELIE_AUTHORING_ENABLED` absent) : aucune page ni route n'est atteignable.
+
+Vérifications après application, en lecture :
+1. Registre : `select filename from zabelie_schema_migrations where filename = '0141_zabelie_authoring_projects.sql'`, puis
+   le décompte du registre égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB141` passées (la migration lève sinon) : RLS active, `anon` sans droit, colonnes calculées non
+   modifiables par `authenticated`, trois fonctions non exécutables par `anon`, sonde à jour.
+3. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : trois lignes, `present`
+   vrai.
+4. `select * from zabelie_authoring_config` : une ligne (160 / 6000 / 12 / 12000 / 120000 / 10).
+
+Retour arrière : le Studio étant éteint, aucun retour n'est nécessaire pour la marketplace. Ne pas supprimer les
+tables d'un projet déjà utilisé : les données additives restent (PRD §20.3).
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347
