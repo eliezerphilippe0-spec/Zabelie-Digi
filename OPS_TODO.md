@@ -1,5 +1,28 @@
 # OPS_TODO — Zabelie
 
+## Création éditoriale (Zabelie Studio) — décisions (15 octobre 2026)
+
+Lot 0 fait, en lecture seule : `docs/70-CHANTIER-CREATION-EDITORIALE.md`
+(matrice existant → extension, chemin `/tableau-de-bord/creation`, stratégie
+PDF, orchestration). Plan : `tasks/plan.md`, tâches : `tasks/todo.md`.
+
+✅ **Tranché le 2026-10-15** (« oui valide les six et lance »), comme
+recommandé dans `docs/70` §9 : **C1-A** service role confiné au stockage, au
+limiteur et au contrat système ; **C2-A** « oui » explicite à chaque migration
+et chaque fusion de ce chantier (l'autorisation permanente du 2026-08-17 ne s'y
+applique pas) ; **C4-A** brouillon produit créé au geste « Soumettre à la
+revue » ; **D1-A** moteur PDF interne, confirmé après l'essai de la tâche 4.1 ;
+**D2-A** colonne additive unique sur `products` ; **D6** brouillon local par
+utilisateur et projet, purgé à la déconnexion. Phase 1 lancée.
+
+| Décision encore ouverte | Depuis | Ce qu'elle bloque |
+|---|---|---|
+| D3 — fournisseur et modèle texte réels | 2026-10-15 | IA réelle (lot 9) |
+| D4 — budget, plafonds, unité d'usage | 2026-10-15 | IA réelle (lot 9) |
+| D5 — conservation des brouillons, révisions, exports non acquis | 2026-10-15 | Purge automatique, pilote réel |
+| D7 — liste pilote (5 à 10 créateurs) et support | 2026-10-15 | Accès de vrais utilisateurs |
+| D8 — libellés publics (« Zabelie Studio », « Créer un produit numérique ») | 2026-10-15 | Ouverture publique |
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347
