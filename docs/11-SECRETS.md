@@ -102,6 +102,9 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `JEV_TIMEOUT_MS` | délai par appel Jev, 1000 à 30000 ms ; vide = 8000 |
 | `ZABELIE_STUDIO_ENABLED` | `true` (valeur exacte) ouvre `/api/studio/generations` (docs/62) ⚠️ **dépense** : chaque image est payée à Higgsfield — ne pas poser avant l'application de `0118` et l'arbitrage des quotas (`zabelie_studio_config`) |
 | `HF_TIMEOUT_MS` | délai par appel Higgsfield, 1000 à 60000 ms ; vide = 15000 |
+| `ZABELIE_AUTHORING_ENABLED` | `true` (valeur exacte) ouvre le parcours manuel de création éditoriale (docs/70) ; indépendante de `ZABELIE_STUDIO_ENABLED` ; ne pas poser avant l'application des migrations du chantier |
+| `ZABELIE_AUTHORING_AI_ENABLED` | `true` (valeur exacte) ouvre les suggestions ; sans effet si `ZABELIE_AUTHORING_ENABLED` est fermée |
+| `ZABELIE_AUTHORING_AI_PROVIDER` | moteur des suggestions : `mock` (simulation, refusée sur un déploiement de production) ; toute autre valeur = aucun moteur ⚠️ **dépense** le jour où un fournisseur réel s'y ajoute (tâche 3.4) |
 
 ### 2.3 — Publiques par nature (`NEXT_PUBLIC_`, lisibles dans le navigateur)
 
