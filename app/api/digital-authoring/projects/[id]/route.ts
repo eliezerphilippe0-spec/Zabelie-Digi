@@ -7,7 +7,7 @@ import { getLang } from "@/lib/i18n-server";
 import { erreurAvecLangue } from "@/lib/api-erreur";
 import { UUID_RE } from "@/lib/digital-studio";
 import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
-import { lire, schemaBrief, schemaContenu, schemaProjet } from "@/lib/digital-authoring/schema";
+import { lire, remplirBrief, schemaBrief, schemaContenu, schemaProjet } from "@/lib/digital-authoring/schema";
 import { revisionValide } from "@/lib/digital-authoring/revision";
 import {
   ENTETES_PRIVEES,
@@ -27,6 +27,9 @@ type Contexte = { params: Promise<{ id: string }> };
  * GET   /api/digital-authoring/projects/[id]  → le projet complet
  * PATCH /api/digital-authoring/projects/[id]  { revisionAttendue, jeton, projet?, brief?, contenu? }
  * POST  /api/digital-authoring/projects/[id]  { action: "approuver_plan", revision } | { action: "archiver" }
+ *
+ * La sauvegarde accepte un travail INCOMPLET (mode `brouillon`) ; l'approbation
+ * du plan exige le brief et le plan complets, relus en base (mode `complet`).
  *
  * Studio de création éditoriale (docs/70, tâche 2.2). Client de SESSION
  * partout : la RLS de 0141 cache les projets des autres, si bien qu'un
@@ -100,13 +103,15 @@ export async function PATCH(req: Request, ctx: Contexte) {
       marche_diaspora: p.valeur.marcheDiaspora,
     });
   }
+  // Brouillon : un travail en cours s'enregistre même incomplet. Le complet
+  // est exigé à l'approbation du plan (POST ci-dessous).
   if (corps.brief !== undefined) {
-    const b = lire(schemaBrief(limites), corps.brief);
+    const b = lire(schemaBrief(limites, "brouillon"), corps.brief);
     if (!b.ok) return erreurAvecLangue(lang, cleRefus(b.code), 422, { code: b.code });
     maj.brief = b.valeur;
   }
   if (corps.contenu !== undefined) {
-    const c = lire(schemaContenu(limites), corps.contenu);
+    const c = lire(schemaContenu(limites, "brouillon"), corps.contenu);
     if (!c.ok) return erreurAvecLangue(lang, cleRefus(c.code), 422, { code: c.code });
     maj.contenu = c.valeur;
   }
@@ -161,6 +166,21 @@ export async function POST(req: Request, ctx: Contexte) {
 
   let appel;
   if (corps.action === "approuver_plan" && revisionValide(corps.revision)) {
+    // Approuver exige un brief et un plan COMPLETS, lus en base — pas ceux
+    // que le navigateur croit avoir. La fonction de 0141 tient la révision
+    // exacte et le plan non vide.
+    const [{ data: ligne, error: erreurLecture }, { data: config, error: erreurConfig }] = await Promise.all([
+      supabase.from(TABLE_PROJETS).select("brief, contenu").eq("id", id).maybeSingle(),
+      supabase.from(TABLE_CONFIG).select("*").maybeSingle(),
+    ]);
+    if (erreurLecture) return erreurAvecLangue(lang, "api.unavailable", 503);
+    if (!ligne) return erreurAvecLangue(lang, "authoring.introuvable", 404);
+    const limites = erreurConfig ? null : limitesDepuisConfig(config);
+    if (!limites) return erreurAvecLangue(lang, "api.unavailable", 503);
+    const b = lire(schemaBrief(limites, "complet"), remplirBrief(ligne.brief));
+    if (!b.ok) return erreurAvecLangue(lang, cleRefus(b.code), 422, { code: b.code });
+    const c = lire(schemaContenu(limites, "complet"), ligne.contenu);
+    if (!c.ok) return erreurAvecLangue(lang, cleRefus(c.code), 422, { code: c.code });
     appel = supabase.rpc("zabelie_authoring_approuver_plan", { p_projet: id, p_revision: corps.revision });
   } else if (corps.action === "archiver") {
     appel = supabase.rpc("zabelie_authoring_archiver", { p_projet: id });

@@ -7,6 +7,7 @@ import * as schema from "../lib/digital-authoring/schema";
 import * as api from "../lib/digital-authoring/api";
 import * as revision from "../lib/digital-authoring/revision";
 import * as digitalStudio from "../lib/digital-studio";
+import * as modeles from "../lib/digital-authoring/modeles";
 
 /**
  * Studio de création éditoriale — routes des projets (docs/70, tâche 2.2).
@@ -19,6 +20,8 @@ const MOI = "00000000-0000-4000-8000-0000000000a1";
 const PROJET = "00000000-0000-4000-8000-0000000000b1";
 const JETON = "00000000-0000-4000-8000-0000000000c1";
 const SECTION = "00000000-0000-4000-8000-0000000000d1";
+const BRIEF_COMPLET = { sujet: "Manje", publicDetail: "Machann", probleme: "Kliyan", resultat: "Vant", methode: "Okap", exemples: "", prerequis: "", ton: "", limitesMethode: "", notes: "", references: "" };
+const LIGNE_COMPLETE = { brief: BRIEF_COMPLET, contenu: { objectif: "", sections: [{ id: "00000000-0000-4000-8000-0000000000d1", titre: "Kòmanse", resultat: "", corps: "" }] } };
 const CONFIG = { id: true, titre_max: 160, brief_max: 6000, sections_max: 12, section_max: 12000, total_max: 120000, projets_actifs_max: 10 };
 
 type Opts = {
@@ -29,6 +32,7 @@ type Opts = {
   rpcErreur?: { code?: string; message?: string };
   majLignes?: Array<Record<string, unknown>>;
   actuel?: Record<string, unknown> | null;
+  ligne?: Record<string, unknown> | null;
 };
 
 function fixture(o: Opts = {}) {
@@ -41,6 +45,7 @@ function fixture(o: Opts = {}) {
     if (q.table === api.TABLE_PROJETS && maj) return { data: o.majLignes ?? [{ revision: 3, derniere_sauvegarde: JETON, updated_at: "t" }], error: null };
     if (q.table === api.TABLE_PROJETS) {
       const colonnes = String(q.steps.find(([m]) => m === "select")?.[1][0] ?? "");
+      if (colonnes === "brief, contenu") return { data: o.ligne === undefined ? LIGNE_COMPLETE : o.ligne, error: null };
       if (colonnes === "revision, derniere_sauvegarde, archived_at") return { data: o.actuel === undefined ? { revision: 7, derniere_sauvegarde: "autre", archived_at: null } : o.actuel, error: null };
       return { data: q.steps.some(([m]) => m === "maybeSingle") ? { id: PROJET, titre: "Gid" } : [{ id: PROJET }], error: null };
     }
@@ -74,6 +79,7 @@ function fixture(o: Opts = {}) {
     "@/lib/digital-authoring/api": api,
     "@/lib/digital-authoring/revision": revision,
     "@/lib/digital-studio": digitalStudio,
+    "@/lib/digital-authoring/modeles": modeles,
   };
   const liste = loadRoute("app/api/digital-authoring/projects/route.ts", deps);
   const detail = loadRoute("app/api/digital-authoring/projects/[id]/route.ts", deps);
@@ -186,7 +192,7 @@ test("sauvegarde : entrées invalides refusées avant toute écriture", async ()
     [{ ...sauvegarde(), revisionAttendue: 0 }, 400],
     [{ ...sauvegarde(), jeton: "pas-un-uuid" }, 400],
     [{ revisionAttendue: 2, jeton: JETON }, 400],
-    [sauvegarde({ contenu: { objectif: "", sections: [{ id: SECTION, titre: "", resultat: "", corps: "" }] } }), 422],
+    [sauvegarde({ contenu: { objectif: "", sections: [{ id: SECTION, titre: "x".repeat(161), resultat: "", corps: "" }] } }), 422],
     [sauvegarde({ brief: { sujet: "x" } }), 422],
   ] as const) {
     const f = fixture();
@@ -225,4 +231,53 @@ test("la clé de service ne sert qu'au plafond de débit (décision C1-A)", () =
     assert.ok(usages > 0, `${fichier} : aucun usage lu — le contrôle regarderait le vide`);
     assert.equal(usages, limiteur, `${fichier} : la clé de service sert ailleurs qu'au limiteur`);
   }
+});
+
+test("création avec modèle : le plan part comme une sauvegarde sur la révision 1, dans la langue du guide", async () => {
+  const f = fixture();
+  const r = await f.creer({ ...projetValide, modele: "recette" });
+  assert.equal(r.status, 201);
+  assert.equal((await json(r)).modeleApplique, true);
+  const q = f.db.queries.find((x) => x.steps.some(([m]) => m === "update"))!;
+  const envoye = simple(q.steps.find(([m]) => m === "update")![1][0]) as { contenu: { sections: { titre: string; corps: string }[] } };
+  assert.equal(envoye.contenu.sections.length, 4);
+  assert.equal(envoye.contenu.sections[0].titre, "Engredyan ak materyèl", "guide en kreyòl : plan en kreyòl");
+  assert.ok(envoye.contenu.sections.every((s) => s.corps === ""), "le modèle n'écrit aucun texte à la place du créateur");
+  assert.deepEqual(simple(q.steps.filter(([m]) => m === "eq").map(([, a]) => a)), [["id", PROJET], ["revision", 1]]);
+
+  const inconnu = fixture();
+  assert.equal((await inconnu.creer({ ...projetValide, modele: "roman" })).status, 422);
+  assert.equal(inconnu.rpcs.length, 0, "modèle inconnu : rien n'est créé");
+
+  const sans = fixture();
+  assert.equal((await sans.creer({ ...projetValide, modele: null })).status, 201);
+  assert.ok(!sans.db.queries.some((x) => x.steps.some(([m]) => m === "update")), "sans modèle, aucune écriture de plan");
+
+  const rate = fixture({ majLignes: [] });
+  const r3 = await rate.creer({ ...projetValide, modele: "liste" });
+  assert.equal(r3.status, 201, "le projet existe même si le plan n'a pas pu être posé");
+  assert.equal((await json(r3)).modeleApplique, false);
+});
+
+test("sauvegarde : un travail INCOMPLET s'enregistre (brief à moitié rempli, section sans titre)", async () => {
+  const f = fixture();
+  const briefPartiel = { sujet: "Manje", publicDetail: "", probleme: "", resultat: "", methode: "", exemples: "", prerequis: "", ton: "", limitesMethode: "", notes: "", references: "" };
+  const r = await f.sauver(sauvegarde({ brief: briefPartiel, contenu: { objectif: "", sections: [{ id: SECTION, titre: "", resultat: "", corps: "" }] } }));
+  assert.equal(r.status, 200, "un brouillon incomplet doit pouvoir être enregistré");
+});
+
+test("approbation : brief et plan COMPLETS exigés, relus en base, avant la fonction", async () => {
+  const briefVide = fixture({ ligne: { brief: {}, contenu: LIGNE_COMPLETE.contenu } });
+  const r1 = await briefVide.agir({ action: "approuver_plan", revision: 3 });
+  assert.equal(r1.status, 422);
+  assert.deepEqual(await json(r1), { error: "authoring.refus.requis", code: "champ_requis" });
+  assert.equal(briefVide.rpcs.length, 0);
+
+  const sansTitre = fixture({ ligne: { brief: BRIEF_COMPLET, contenu: { objectif: "", sections: [{ id: SECTION, titre: "", resultat: "", corps: "" }] } } });
+  assert.equal((await sansTitre.agir({ action: "approuver_plan", revision: 3 })).status, 422);
+  assert.equal(sansTitre.rpcs.length, 0);
+
+  const absent = fixture({ ligne: null });
+  assert.equal((await absent.agir({ action: "approuver_plan", revision: 3 })).status, 404);
+  assert.equal(absent.rpcs.length, 0);
 });

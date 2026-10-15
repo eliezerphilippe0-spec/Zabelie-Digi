@@ -1,5 +1,5 @@
 import type { I18nKey } from "@/lib/i18n";
-import type { CodeRefus, LimitesEditeur } from "./schema";
+import { remplirBrief, type Brief, type CodeRefus, type Contenu, type LimitesEditeur } from "./schema";
 
 /**
  * Studio de création éditoriale — ce que les routes partagent, sans aucune
@@ -62,6 +62,53 @@ export function traduireErreurBase(erreur: { code?: string | null; message?: str
   if (connu) return { ...connu, code: message };
   if (erreur?.code === "42501") return { statut: 403, cle: "api.access.denied", code: "refus" };
   return { statut: 500, cle: "api.write.failed", code: "inattendu" };
+}
+
+/** Ce que l'éditeur reçoit : une forme sûre, quelle que soit la ligne en base. */
+export type ProjetEditeur = {
+  id: string;
+  titre: string;
+  langue: "ht" | "fr";
+  public: "haiti" | "diaspora" | "both";
+  marcheDiaspora: string;
+  brief: Brief;
+  contenu: Contenu;
+  revision: number;
+  planApprouveRevision: number | null;
+  archive: boolean;
+};
+
+const texteOuVide = (v: unknown) => (typeof v === "string" ? v : "");
+
+/**
+ * Une ligne de `zabelie_authoring_projects` mise en forme pour l'éditeur.
+ * Le propriétaire peut écrire sa ligne par SQL direct : on n'y fait donc
+ * confiance pour RIEN. Un champ de mauvais type devient vide, une section
+ * mal formée est écartée — l'écran s'affiche, et la prochaine sauvegarde
+ * repasse par la validation complète du serveur.
+ */
+export function projetPourEditeur(ligne: unknown): ProjetEditeur | null {
+  if (!ligne || typeof ligne !== "object") return null;
+  const l = ligne as Record<string, unknown>;
+  if (typeof l.id !== "string" || typeof l.revision !== "number") return null;
+  const brutBrief = remplirBrief(l.brief);
+  const brief = Object.fromEntries(Object.entries(brutBrief).map(([k, v]) => [k, texteOuVide(v)])) as Brief;
+  const contenuBrut = l.contenu && typeof l.contenu === "object" ? (l.contenu as Record<string, unknown>) : {};
+  const sections = (Array.isArray(contenuBrut.sections) ? contenuBrut.sections : [])
+    .filter((s): s is Record<string, unknown> => !!s && typeof s === "object" && typeof (s as Record<string, unknown>).id === "string")
+    .map((s) => ({ id: s.id as string, titre: texteOuVide(s.titre), resultat: texteOuVide(s.resultat), corps: texteOuVide(s.corps) }));
+  return {
+    id: l.id,
+    titre: texteOuVide(l.titre),
+    langue: l.langue === "fr" ? "fr" : "ht",
+    public: l.public_vise === "diaspora" || l.public_vise === "both" ? l.public_vise : "haiti",
+    marcheDiaspora: texteOuVide(l.marche_diaspora),
+    brief,
+    contenu: { objectif: texteOuVide(contenuBrut.objectif), sections },
+    revision: l.revision,
+    planApprouveRevision: typeof l.plan_approuve_revision === "number" ? l.plan_approuve_revision : null,
+    archive: Boolean(l.archived_at),
+  };
 }
 
 /** La ligne de config, ou `null` si elle manque ou ne ressemble pas à une config. */

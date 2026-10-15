@@ -64,8 +64,9 @@ Contrats purs (schémas, transitions, CAS) ── Drapeaux ── Fournisseur si
 ### Phase 2 — Un projet privé, de bout en bout, sans IA (lots 2 et 3)
 - [x] 2.1 Table des projets, RLS et sauvegarde CAS en base (`0141`, CI `sql-tests` verte, P1–P11 lus au journal)
 - [x] 2.2 API projets sous JWT (11 tests de route, 12 mutations tuées, 1704/1704)
-- [ ] 2.3 Liste des projets et création, lien conditionnel
-- [ ] 2.4 Éditeur : brief, plan, sections, approbation du plan
+- [x] 2.3 Accueil à trois entrées, liste des projets, création, liens conditionnels
+- [x] 2.4 Éditeur : brief, plan, sections, approbation du plan (e2e 7/7 local)
+- [x] 2.6 Modèles de guide (recette, métier, démarche, liste de contrôle)
 - [ ] 2.5 Sauvegarde robuste : états, conflit, brouillon local, coupure
 
 **Checkpoint 2** — un guide ht et un guide fr créés et repris sans IA à 360 px ; conflit entre onglets et coupure réseau reproduits ; SQL vert en CI ; PR 2 (migration non appliquée).
@@ -141,9 +142,9 @@ crédits achetables (« Research Points ») qui n'expirent pas.
 
 | Idée | Chez Zabelie, à partir de | Coût | Statut |
 |---|---|---|---|
-| Accueil à trois entrées + projets « Continuer » | 2.3 : créer un guide, créer une pub (Studio images s'il est allumé), trouver une idée | nul, dans 2.3 | proposé |
-| Modèles de guide prêts à remplir (plan pré-rempli, ht/fr, sans IA) | motif existant `lib/service-starters.ts` | faible, tâche 2.6 | proposé |
-| Compteur visible des suggestions restantes (quota non monétaire) | phase 3 (quotas) | nul | proposé |
+| Accueil à trois entrées + projets « Continuer » | 2.3 : écrire un guide, partir d'un modèle, créer une pub (Studio images s'il est allumé) ; « trouver une idée » attend l'idée 6 | nul, dans 2.3 | ✅ validé, fait |
+| Modèles de guide prêts à remplir (plan pré-rempli, ht/fr, sans IA) | motif existant `lib/service-starters.ts` | faible, tâche 2.6 | ✅ validé, fait |
+| Compteur visible des suggestions restantes (quota non monétaire) | phase 3 (quotas) ; le compteur de projets actifs est déjà affiché | nul | ✅ validé |
 | Couverture automatique + maquette (titre, couleurs) | `next/og` déjà utilisé (`app/**/opengraph-image.tsx`), aucune dépendance ; alimente la photo principale ET le Studio images | moyen, tâche 4.4 | à décider (gabarit visuel) |
 | Kit de lancement : textes de partage WhatsApp/Facebook en kreyòl + lien | `ShareButtons` existant | faible, tâche 5.4 | à décider |
 | « Idées qui se cherchent » : recherches sans résultat sur Zabelie | capteur `zabelie_search_misses` (`0047`), agrégé avec un seuil de sessions distinctes | moyen, tâche 6.3 | à décider (vie privée) |
