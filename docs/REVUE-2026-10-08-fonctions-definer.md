@@ -96,3 +96,15 @@ Trois mutations ont été jouées à la main, et chacune nomme la fonction en ca
 | Retirer `anon` d'une aide RLS | rouge | l'aide RLS concernée |
 
 ⚠️ **Limite.** Le garde lit la base de la CI, construite depuis les migrations. Un `grant` passé à la main en production, hors migration, ne s'y voit pas. Le croisement production–CI de ce jour, identique, est à refaire à chaque revue.
+
+## Ajout du 2026-10-15 — Studio de création éditoriale (`0141`, non appliquée)
+
+Trois fonctions neuves, exécutables par `authenticated` seulement, ajoutées à la liste figée :
+
+| Fonction | Identité | Écrit | Rend |
+|----------|----------|-------|------|
+| `zabelie_authoring_creer_projet` | `auth.uid()`, compte actif (`seller_is_active`) | une ligne de `zabelie_authoring_projects` au nom de l'appelant, sous verrou consultatif et plafond lu en base | la ligne créée |
+| `zabelie_authoring_approuver_plan` | `auth.uid()` = propriétaire, compte actif | `plan_approuve_revision` de son projet, si la révision fournie est la révision courante | la révision approuvée |
+| `zabelie_authoring_archiver` | `auth.uid()` = propriétaire | `archived_at` de son projet | la date d'archivage |
+
+Aucune ne reçoit d'identifiant de vendeur, aucune n'est exécutable par `anon` (post-condition `ZB141` et test `supabase/tests/authoring_projects.test.sql`, cas P2 et P3).
