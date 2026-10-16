@@ -83,6 +83,10 @@ declare
     -- partie. Le bail, la soumission et la conclusion ne sont PAS ici : service role seul.
     'zabelie_authoring_demander(p_projet uuid, p_type text, p_section uuid, p_cle uuid):auth',
     'zabelie_authoring_annuler(p_operation uuid):auth',
+    -- Studio, tableau (0143) : lecture AGRÉGÉE des recherches sans résultat et des
+    -- ventes de produits digitaux, sous seuils de personnes et de vendeurs ;
+    -- compte actif exigé. N'écrit rien, ne rend ni compte, ni vendeur, ni montant.
+    'zabelie_authoring_opportunites():auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',

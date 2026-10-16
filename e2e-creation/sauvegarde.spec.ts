@@ -8,7 +8,7 @@ const STUB = "http://127.0.0.1:15431";
 const VENDEUR = "11400000-0000-4000-8000-000000000001";
 const PREFIXE = "zabelie:creation:v1:";
 
-async function connecte(page: Page, role: "seller" | "other" = "seller", suite = "/tableau-de-bord/creation") {
+async function connecte(page: Page, role: "seller" | "other" = "seller", suite = "/tableau-de-bord/creation?depart=vide") {
   await page.goto(`${STUB}/__login?role=${role}&lang=fr&next=${encodeURIComponent(suite)}`);
 }
 async function nouveauProjet(page: Page, titre = "Guide de test"): Promise<string> {

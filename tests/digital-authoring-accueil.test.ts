@@ -69,8 +69,10 @@ test("page : drapeau éteint = 404, session requise, noindex, lecture sous le JW
   assert.match(src, /robots: \{ index: false, follow: false \}/);
   assert.ok(!src.includes("createAdminClient"), "la page ne lit pas les projets avec la clé de service");
   assert.match(src, /\.select\(COLONNES_RESUME\)/, "la liste ne charge que des résumés");
-  // La carte « publicité » n'existe que si le Studio images est allumé.
-  assert.match(src, /\{pub && \(\s*<li>\s*<Link href="\/tableau-de-bord\/studio"/);
+  // Publicités abandonnées le 2026-10-16 (« on laisse tomber les pubs ») : aucune entrée.
+  assert.ok(!src.includes("/tableau-de-bord/studio") && !src.includes("studioProvider"), "plus d'entrée publicité");
+  // Opportunités et compteur lus sous le JWT, par les fonctions de la base.
+  assert.match(src, /chargerOpportunites\(supabase, lang\)/);
 });
 
 test("liens d'entrée : présents seulement quand le Studio est allumé", () => {

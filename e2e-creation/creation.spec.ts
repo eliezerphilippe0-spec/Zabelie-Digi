@@ -6,7 +6,7 @@ import { test, expect, type Page } from "@playwright/test";
  */
 const STUB = "http://127.0.0.1:15431";
 
-async function connecte(page: Page, role: "seller" | "other", lang: string, suite = "/tableau-de-bord/creation") {
+async function connecte(page: Page, role: "seller" | "other", lang: string, suite = "/tableau-de-bord/creation?depart=vide") {
   await page.goto(`${STUB}/__login?role=${role}&lang=${lang}&next=${encodeURIComponent(suite)}`);
 }
 
@@ -15,35 +15,43 @@ test.beforeEach(async ({ request }) => {
 });
 
 test("un guide en kreyòl naît d'un modèle, son plan s'approuve, sa rédaction se retrouve après rechargement", async ({ page }) => {
-  await connecte(page, "seller", "ht");
+  await connecte(page, "seller", "ht", "/tableau-de-bord/creation");
   await expect(page.getByRole("heading", { level: 1, name: "Kisa ou vle fè jodi a ?" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Ekri yon gid/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Kreye yon piblisite/ })).toHaveCount(0); // Studio images éteint
+  await expect(page.getByText("Bonjou, Vandè.")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Analize yon mache/ }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Kreye yon pwodui dijital/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /piblisite/i })).toHaveCount(0); // publicités abandonnées
+  await expect(page.locator("#nouveau-projet")).toHaveCount(0); // le formulaire vient après un choix
 
   await page.getByRole("link", { name: /Kòmanse ak yon modèl/ }).click();
-  await expect(page.getByRole("combobox", { name: "Modèl" })).toHaveValue("recette");
-  await page.getByRole("textbox", { name: "Tit travay la" }).fill("Fè diri ak pwa");
+  await expect(page.getByRole("combobox", { name: "Modèl" })).toHaveValue("activite");
+  await expect(page.getByText("Egz. : Lanse boutik ou sou entènèt nan 30 jou").first()).toBeVisible();
+  // Audio et vidéo annoncés, jamais proposés.
+  await expect(page.locator("main").getByText("Talè konsa")).toHaveCount(3);
+  await expect(page.getByRole("link", { name: /Pake odyo|Fòmasyon videyo/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Pake odyo|Fòmasyon videyo/ })).toHaveCount(0);
+  await page.getByRole("textbox", { name: "Tit travay la" }).fill("Lanse boutik mwen sou entènèt");
   await page.getByRole("button", { name: "Kreye pwojè a" }).click();
   await expect(page).toHaveURL(/\/tableau-de-bord\/creation\/[0-9a-f-]{36}$/);
 
-  await expect(page.getByRole("textbox", { name: "1. Tit seksyon an" })).toHaveValue("Engredyan ak materyèl");
+  await expect(page.getByRole("textbox", { name: "1. Tit seksyon an" })).toHaveValue("Poukisa aktivite sa a ka mache");
   await expect(page.getByText("Apwouve plan an anvan pou w kòmanse ekri.")).toBeVisible();
 
   for (const [champ, valeur] of [
-    ["Sijè gid la", "Diri ak pwa"], ["Pou ki moun egzakteman", "Machann manje"], ["Pwoblèm gid la rezoud", "Diri a kole"],
-    ["Sa lektè a ap konn fè lè li fini", "Fè yon bon diri"], ["Eksperyans ou oswa metòd ou", "Dis ane nan kizin"],
+    ["Sijè gid la", "Vann sou entènèt"], ["Pou ki moun egzakteman", "Machann nan mache Okap"], ["Pwoblèm gid la rezoud", "Yo pa konn kote pou yo kòmanse"],
+    ["Sa lektè a ap konn fè lè li fini", "Louvri yon boutik sou Zabelie"], ["Eksperyans ou oswa metòd ou", "Senk lane ap vann sou WhatsApp"],
   ]) await page.getByRole("textbox", { name: champ, exact: true }).fill(valeur);
   await page.getByRole("button", { name: "Apwouve plan an" }).click();
   await expect(page.getByText("Plan an apwouve")).toBeVisible();
 
-  const corps = page.getByRole("textbox", { name: "Tèks seksyon an : Engredyan ak materyèl" });
-  await corps.fill("Diri, pwa, lwil, sèl.");
+  const corps = page.getByRole("textbox", { name: "Tèks seksyon an : Poukisa aktivite sa a ka mache" });
+  await corps.fill("Moun ap chèche achte san yo pa deplase.");
   await page.getByRole("button", { name: "Anrejistre" }).click();
   await expect(page.getByRole("status").filter({ hasText: /^✓ Li anrejistre$/ })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "Tèks seksyon an : Engredyan ak materyèl" })).toHaveValue("Diri, pwa, lwil, sèl.");
-  await expect(page.getByRole("textbox", { name: "Sijè gid la", exact: true })).toHaveValue("Diri ak pwa");
+  await expect(page.getByRole("textbox", { name: "Tèks seksyon an : Poukisa aktivite sa a ka mache" })).toHaveValue("Moun ap chèche achte san yo pa deplase.");
+  await expect(page.getByRole("textbox", { name: "Sijè gid la", exact: true })).toHaveValue("Vann sou entènèt");
 });
 
 test("deux onglets sur le même projet : conflit explicite, rien d'écrasé, le vendeur choisit sa version", async ({ page, context }) => {

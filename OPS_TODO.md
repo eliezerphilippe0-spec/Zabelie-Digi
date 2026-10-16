@@ -72,6 +72,39 @@ Vérifications après application, en lecture :
 
 L'IA reste coupée après la fusion (`ZABELIE_AUTHORING_AI_ENABLED` absent) : aucune demande ne peut partir.
 
+### Migration `0143_zabelie_authoring_opportunites.sql` — protocole d'application (PR du tableau, phase T)
+
+**Rédigée, NON appliquée ; exige `0142` appliquée avant elle.** Décision C2-A : « oui » explicite du porteur, à part.
+Additive et en LECTURE : six colonnes de seuils ajoutées à `zabelie_authoring_config`, une table d'exclusion vide
+(`zabelie_authoring_termes_exclus`, administration seule), une fonction `zabelie_authoring_opportunites()` sous
+`auth.uid()` qui agrège les recherches sans résultat (`0047`) et les ventes réelles de produits digitaux (même
+définition que `zabelie_market_metrics`, `0113`), et la sonde redéfinie (dix entrées `zabelie_authoring_%`).
+
+**Seuils proposés, à confirmer par le porteur** (modifiables en base, bornés par des contraintes) :
+
+| Seuil | Valeur | Rôle |
+|---|---|---|
+| `opportunites_jours` | 30 | fenêtre d'observation |
+| `opportunites_personnes_min` | 5 (au moins 3) | personnes distinctes avant qu'un terme apparaisse |
+| `opportunites_jours_distincts_min` | 2 | une seule soirée ne fait pas une tendance |
+| `opportunites_ventes_min` | 3 | ventes avant qu'un rayon apparaisse |
+| `opportunites_vendeurs_min` | 2 (au moins 2) | le chiffre d'UN vendeur ne se lit jamais |
+| `opportunites_max` | 10 | longueur de chaque liste |
+
+Toujours exclus : un terme avec trois chiffres d'affilée (téléphone, pièce), une adresse, un lien. Retirer un terme à
+la main : `insert into zabelie_authoring_termes_exclus (term, raison) values (zabelie_search_normalize('…'), '…')`.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0143_zabelie_authoring_opportunites.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB143` passées (la migration lève sinon).
+3. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : dix lignes, `present`
+   vrai.
+4. `select opportunites_jours, opportunites_personnes_min, opportunites_ventes_min, opportunites_vendeurs_min from
+   zabelie_authoring_config` : 30 / 5 / 3 / 2.
+
+Au lancement, les listes seront très probablement vides : peu de recherches atteignent cinq personnes distinctes en
+trente jours. L'écran le dit (« pas encore assez de données ») ; il n'affiche jamais un chiffre complété.
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347

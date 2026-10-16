@@ -9,22 +9,29 @@ import { IDS_MODELES, type IdModele } from "@/lib/digital-authoring/modeles";
  * l'autorité (`/api/digital-authoring/projects`) : ce formulaire aide la
  * saisie, n'invente aucune valeur, et garde ce qui a été tapé en cas d'échec.
  *
- * Langue du guide par défaut : kreyòl (`docs/25` §5, « kreyòl d'abord »).
+ * Langue du guide par défaut : celle de l'interface quand c'est le kreyòl ou
+ * le français, sinon le kreyòl (`docs/25` §5, « kreyòl d'abord » ; décision du
+ * 2026-10-16). Elle se change d'un geste.
  */
 export function AuthoringCreateForm({
   labels,
   modeleInitial,
+  langueDefaut,
+  titreInitial = "",
   plein,
 }: {
   labels: CopieCreation;
   modeleInitial: IdModele | null;
+  langueDefaut: "ht" | "fr";
+  /** Repris d'une opportunité (« Créer un guide sur ce sujet ») : un point de départ, modifiable. */
+  titreInitial?: string;
   /** Plafond de projets actifs atteint : le bouton reste fermé, la raison est dite. */
   plein: string | null;
 }) {
   const router = useRouter();
   const ids = useId();
-  const [titre, setTitre] = useState("");
-  const [langue, setLangue] = useState<"ht" | "fr">("ht");
+  const [titre, setTitre] = useState(titreInitial);
+  const [langue, setLangue] = useState<"ht" | "fr">(langueDefaut);
   const [publicVise, setPublicVise] = useState<"haiti" | "diaspora" | "both">("haiti");
   const [marche, setMarche] = useState("");
   const [modele, setModele] = useState<IdModele | "">(modeleInitial ?? "");
@@ -73,6 +80,7 @@ export function AuthoringCreateForm({
           onChange={(e) => setTitre(e.target.value)}
           required
           maxLength={500}
+          placeholder={labels.champTitrePh}
           aria-describedby={`${ids}-titre`}
         />
       </label>
@@ -112,6 +120,7 @@ export function AuthoringCreateForm({
           ))}
         </select>
       </label>
+      {modele && <p className="-mt-2 text-xs text-mist">{labels.modelesExemples[modele]}</p>}
 
       {plein && <p id={`${ids}-plein`} className="text-sm text-warning-text">{plein}</p>}
       <button

@@ -521,7 +521,8 @@ export function AuthoringEditor({
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => sugg.demander("plan", null)} disabled={sugg.enCours(null)}
                   className="min-h-11 rounded-xl border border-line px-4 text-sm disabled:opacity-40">{labels.ia.proposerPlan}</button>
-                {restantes && <span className="text-xs text-mist">{restantes}</span>}
+                {/* Un seul compteur à l'écran : ici avant l'approbation, sous « Rédaction » après. */}
+                {restantes && planApprouve === null && <span className="text-xs text-mist">{restantes}</span>}
               </div>
               <ConfirmationEnvoi s={sugg} labels={labels.ia} sectionId={null} />
               <EtatSuggestion s={sugg} labels={labels.ia} sectionId={null} revisionCourante={revision} actions={
