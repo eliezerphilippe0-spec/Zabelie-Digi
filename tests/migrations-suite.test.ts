@@ -90,3 +90,17 @@ test("aucune exemption périmée : un numéro exempté qui a gagné son fichier 
       `conformité par usure.`
   );
 });
+
+/* Le 2026-10-16, deux branches ont pris 0141 et 0142 chacune de leur côté :
+ * les noms de fichiers différaient, GitHub n'a vu aucun conflit, et le
+ * contrôle de contiguïté ci-dessus, qui range les numéros dans un ensemble,
+ * est resté vert sur deux fichiers par numéro. Un doublon se mesure à part. */
+test("aucun numéro de migration n'est porté par deux fichiers", () => {
+  const parNumero = new Map<number, string[]>();
+  for (const f of readdirSync(DIR).filter((f) => /^\d{4}_.*\.sql$/.test(f))) {
+    const n = Number(f.slice(0, 4));
+    parNumero.set(n, [...(parNumero.get(n) ?? []), f]);
+  }
+  const doublons = [...parNumero].filter(([, fs]) => fs.length > 1).map(([n, fs]) => `${n} : ${fs.join(", ")}`);
+  assert.deepEqual(doublons, [], `numéro pris deux fois, renuméroter la migration non appliquée : ${doublons.join(" ; ")}`);
+});

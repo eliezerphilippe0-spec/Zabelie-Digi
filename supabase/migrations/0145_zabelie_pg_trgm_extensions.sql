@@ -1,6 +1,6 @@
-select zabelie_migration_garde('0142_zabelie_pg_trgm_extensions.sql');
+select zabelie_migration_garde('0145_zabelie_pg_trgm_extensions.sql');
 
--- 0142 — `pg_trgm` quitte le schéma `public` pour `extensions`.
+-- 0145 — `pg_trgm` quitte le schéma `public` pour `extensions`.
 --
 -- Installée en `public` par 0028, l'extension exposait ses fonctions dans
 -- l'API au même titre que les nôtres (conseiller Supabase, lint 0014). Le
@@ -27,18 +27,18 @@ do $$
 declare v_invalides text;
 begin
   if (select extnamespace::regnamespace::text from pg_extension where extname = 'pg_trgm') is distinct from 'extensions' then
-    raise exception '0142: pg_trgm n''est pas dans le schéma extensions';
+    raise exception '0145: pg_trgm n''est pas dans le schéma extensions';
   end if;
   if not exists (select 1 from pg_proc
                   where proname = 'zabelie_search_fuzzy' and pronamespace = 'public'::regnamespace
                     and 'search_path=public, extensions, pg_temp' = any (proconfig)) then
-    raise exception '0142: zabelie_search_fuzzy ne voit pas le schéma extensions';
+    raise exception '0145: zabelie_search_fuzzy ne voit pas le schéma extensions';
   end if;
   select string_agg(i.indexrelid::regclass::text, ', ') into v_invalides
     from pg_index i
    where i.indexrelid::regclass::text like '%trgm%' and not (i.indisvalid and i.indisready);
   if v_invalides is not null then
-    raise exception '0142: index trigrammes invalides : %', v_invalides;
+    raise exception '0145: index trigrammes invalides : %', v_invalides;
   end if;
   -- La preuve qui compte : la recherche approximative s'exécute.
   perform * from public.zabelie_search_fuzzy('zabelie', 1);

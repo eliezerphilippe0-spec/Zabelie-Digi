@@ -1,4 +1,4 @@
--- Date d'inscription figée côté client (0141). Transaction annulée.
+-- Date d'inscription figée côté client (0144). Transaction annulée.
 -- Éprouvé sous le rôle réel `authenticated` ; le superuser sert seulement à
 -- poser le décor et à relire.
 --
@@ -6,7 +6,7 @@
 --       et le reste de sa modification (nom affiché) passe bien ;
 --   F2  un profil créé par le client lui-même prend la date du jour, pas celle
 --       qu'il propose ;
---   F3  le rôle reste figé, comme avant 0141 (non-régression).
+--   F3  le rôle reste figé, comme avant 0144 (non-régression).
 begin;
 
 insert into auth.users (id, email) values

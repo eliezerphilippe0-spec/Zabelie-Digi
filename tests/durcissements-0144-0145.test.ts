@@ -10,12 +10,12 @@ import { IDENTITE } from "../lib/policy-privacy";
  *  D1  `/.well-known/security.txt` : champs obligatoires (RFC 9116), contact
  *      unique avec la politique de confidentialité, et un rappel AVANT
  *      l'expiration (30 jours) plutôt qu'un fichier périmé en silence ;
- *  D2  0141 fige la date d'inscription sans perdre un garde de 0017 ;
- *  D3  0142 : la recherche approximative voit `extensions` ; et toute fonction
+ *  D2  0144 fige la date d'inscription sans perdre un garde de 0017 ;
+ *  D3  0145 : la recherche approximative voit `extensions` ; et toute fonction
  *      trigramme écrite APRÈS le déplacement doit le voir aussi.
  *
  * Le comportement en base est éprouvé par `profil_inscription_figee.test.sql`
- * et par la post-condition de 0142 (la recherche s'exécute) ; ici, le texte.
+ * et par la post-condition de 0145 (la recherche s'exécute) ; ici, le texte.
  */
 
 const RACINE = join(import.meta.dirname, "..");
@@ -34,8 +34,8 @@ test("D1 — security.txt complet, contact unique, expiration surveillée", () =
   assert.ok(jours <= 366, "Expires à plus d'un an : la RFC 9116 recommande moins d'un an");
 });
 
-test("D2 — 0141 fige la date d'inscription et garde les gardes de 0017", () => {
-  const m = sansCommentairesSql(lire("supabase/migrations/0141_zabelie_profil_inscription_figee.sql"));
+test("D2 — 0144 fige la date d'inscription et garde les gardes de 0017", () => {
+  const m = sansCommentairesSql(lire("supabase/migrations/0144_zabelie_profil_inscription_figee.sql"));
   const insert = /if tg_op = 'INSERT' then([\s\S]*?)elsif tg_op = 'UPDATE' then([\s\S]*?)end if;/.exec(m);
   assert.ok(insert, "branches INSERT / UPDATE introuvables");
   const [, brancheInsert, brancheUpdate] = insert;
@@ -60,7 +60,7 @@ function fonctions(sql: string): Array<{ nom: string; entete: string; corps: str
 const TRIGRAMME = /\b(word_similarity|strict_word_similarity|similarity|show_trgm)\s*\(|<<?%|%>>?|<<?->>?/;
 
 test("D3 — la recherche approximative voit `extensions`, et toute fonction trigramme future aussi", () => {
-  const m = sansCommentairesSql(lire("supabase/migrations/0142_zabelie_pg_trgm_extensions.sql"));
+  const m = sansCommentairesSql(lire("supabase/migrations/0145_zabelie_pg_trgm_extensions.sql"));
   assert.match(m, /alter extension pg_trgm set schema extensions;/);
   assert.match(m, /alter function public\.zabelie_search_fuzzy\(text, integer\)\s+set search_path = public, extensions, pg_temp;/);
 
@@ -70,10 +70,10 @@ test("D3 — la recherche approximative voit `extensions`, et toute fonction tri
   assert.deepEqual(essai.filter((f) => TRIGRAMME.test(f.corps)).map((f) => f.nom), ["f"]);
 
   const fautives: string[] = [];
-  for (const f of readdirSync(join(RACINE, "supabase/migrations")).filter((n) => /^\d{4}_.*\.sql$/.test(n) && Number(n.slice(0, 4)) >= 142).sort()) {
+  for (const f of readdirSync(join(RACINE, "supabase/migrations")).filter((n) => /^\d{4}_.*\.sql$/.test(n) && Number(n.slice(0, 4)) >= 145).sort()) {
     for (const fn of fonctions(sansCommentairesSql(lire(`supabase/migrations/${f}`)))) {
       if (TRIGRAMME.test(fn.corps) && !/set search_path\s*=\s*[^;$]*\bextensions\b/i.test(fn.entete)) fautives.push(`${f}: ${fn.nom}`);
     }
   }
-  assert.deepEqual(fautives, [], `fonction trigramme sans \`extensions\` dans son search_path (pg_trgm vit dans extensions depuis 0142) : ${fautives.join(", ")}`);
+  assert.deepEqual(fautives, [], `fonction trigramme sans \`extensions\` dans son search_path (pg_trgm vit dans extensions depuis 0145) : ${fautives.join(", ")}`);
 });
