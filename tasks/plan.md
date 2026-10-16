@@ -79,6 +79,23 @@ Contrats purs (schémas, transitions, CAS) ── Drapeaux ── Fournisseur si
 
 **Checkpoint 3** — doubles clics, dernier quota, réponse tardive, sortie malformée, délai après envoi : ni écrasement ni deuxième appel ; aucun service payant appelé ; PR 3.
 
+### Phase T — Tableau du Studio (décisions du 2026-10-16)
+Demande du porteur : « tu dois t'inspirer de Tunafrik, de CreateurSuite pour construire ton tableau » ; puis « oui suis tes recommandations » et « on laisse tomber les pubs ». Tranché :
+- **Formats** : l'ebook (le guide) est actif ; « Pack audio » et « Formation vidéo » sont annoncés « Bientôt », sans bouton ni coût.
+- **Opportunités** : calculées sur les données réelles de Zabelie, agrégées, sans donnée personnelle (migration, donc « oui » du porteur avant application).
+- **Modèles** : remplacés par des modèles de savoir-faire (Tunafrik : formateurs, coachs, couturières, cuisiniers, coiffeurs, éleveurs…) ; plus aucun exemple qui ressemble à un produit physique.
+- **Tunnel de vente** (page de vente, offre complémentaire, version allégée) : plus tard, après le PDF et la fiche (phases 4-5) ; il touche au panier et à l'escrow.
+- **Publicités** : abandonnées dans le Studio. L'entrée « Créer une publicité » disparaît ; le Studio images existant n'est pas touché.
+- Recommandations des captures : la langue du guide suit par défaut celle de l'interface (ht ou fr) ; un seul compteur de suggestions.
+
+- [x] T.1 Modèles de savoir-faire et exemples de produits digitaux
+- [x] T.2 Tableau façon CreateurSuite : menu, accueil personnalisé, deux entrées (analyser un marché, créer un produit digital) + modèles, projets avec statut, « Comment ça marche » en trois étapes (Tunafrik)
+- [x] T.3 Choix du format (ebook actif ; audio et vidéo « Bientôt »), langue par défaut, compteur unique
+- [x] T.4 Opportunités sur données réelles (`0143`) : recherches sans résultat et produits digitaux qui se vendent, seuils de confidentialité
+- [x] T.5 Parcours e2e, captures 360 px et bureau, relecture des textes
+
+**Checkpoint T** — tableau lisible à 360 px et sur ordinateur ; aucun chiffre inventé (état vide honnête tant que les seuils ne sont pas atteints) ; aucune entrée vers une fonction absente ; PR T (migration non appliquée).
+
 ### Phase 4 — Vérification et PDF (lot 5)
 - [ ] 4.1 Essai PDF borné (décision D1)
 - [ ] 4.2 Contrôles qualité et approbation de révision
@@ -147,6 +164,7 @@ crédits achetables (« Research Points ») qui n'expirent pas.
 | Compteur visible des suggestions restantes (quota non monétaire) | phase 3 (quotas) ; le compteur de projets actifs est déjà affiché | nul | ✅ validé |
 | Couverture automatique + maquette (titre, couleurs) | `next/og` déjà utilisé (`app/**/opengraph-image.tsx`), aucune dépendance ; alimente la photo principale ET le Studio images | moyen, tâche 4.4 | à décider (gabarit visuel) |
 | Kit de lancement : textes de partage WhatsApp/Facebook en kreyòl + lien | `ShareButtons` existant | faible, tâche 5.4 | à décider |
-| « Idées qui se cherchent » : recherches sans résultat sur Zabelie | capteur `zabelie_search_misses` (`0047`), agrégé avec un seuil de sessions distinctes | moyen, tâche 6.3 | à décider (vie privée) |
+| « Idées qui se cherchent » : recherches sans résultat sur Zabelie | capteur `zabelie_search_misses` (`0047`), agrégé avec un seuil de sessions distinctes | moyen, tâche T.4 | ✅ validé le 2026-10-16 (« Opportunités », données réelles agrégées) |
+| Entrée « Créer une publicité » | Studio images | — | ❌ abandonnée le 2026-10-16 (« on laisse tomber les pubs ») |
 | Analyse des publicités concurrentes (bibliothèque publicitaire) | rien d'existant ; API externe, coût et conditions | élevé | écarté pour l'instant |
 | Crédits achetables qui n'expirent pas | contraire au PRD §11 (aucun crédit prépayé au MVP) et à la prudence BRH | — | non recommandé |

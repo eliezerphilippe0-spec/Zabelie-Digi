@@ -14,23 +14,23 @@ test.beforeEach(async ({ request }) => {
 async function guideAvecPlanApprouve(page: Page, lang: "ht" | "fr") {
   await page.goto(`${STUB}/__login?role=seller&lang=${lang}&next=${encodeURIComponent("/tableau-de-bord/creation?depart=modele")}`);
   const fr = lang === "fr";
-  await page.getByRole("textbox", { name: fr ? "Titre de travail" : "Tit travay la" }).fill(fr ? "Guide des confitures" : "Gid konfiti");
+  await page.getByRole("textbox", { name: fr ? "Titre de travail" : "Tit travay la" }).fill(fr ? "Lancer sa boutique en ligne" : "Lanse boutik ou sou entènèt");
   await page.getByRole("button", { name: fr ? "Créer le projet" : "Kreye pwojè a" }).click();
   await expect(page).toHaveURL(/\/tableau-de-bord\/creation\/[0-9a-f-]{36}$/);
   const champs = fr
     ? ["Sujet du guide", "Pour qui, précisément", "Le problème que le guide résout", "Ce que le lecteur saura faire à la fin", "Votre expérience ou votre méthode"]
     : ["Sijè gid la", "Pou ki moun egzakteman", "Pwoblèm gid la rezoud", "Sa lektè a ap konn fè lè li fini", "Eksperyans ou oswa metòd ou"];
-  for (const c of champs) await page.getByRole("textbox", { name: c, exact: true }).fill("Konfiti");
+  for (const c of champs) await page.getByRole("textbox", { name: c, exact: true }).fill(fr ? "Vendre en ligne" : "Vann sou entènèt");
   await page.getByRole("button", { name: fr ? "Approuver le plan" : "Apwouve plan an" }).click();
   await expect(page.getByText(fr ? "Plan approuvé" : "Plan an apwouve")).toBeVisible();
 }
 
 test("section : information AVANT l'envoi, proposition séparée, reprise sur clic seulement", async ({ page }) => {
   await guideAvecPlanApprouve(page, "ht");
-  const corps = page.getByRole("textbox", { name: "Tèks seksyon an : Engredyan ak materyèl" });
+  const corps = page.getByRole("textbox", { name: "Tèks seksyon an : Poukisa aktivite sa a ka mache" });
   await corps.fill("Mo pa m");
 
-  await page.getByRole("button", { name: "Sijere yon bouyon : Engredyan ak materyèl" }).click();
+  await page.getByRole("button", { name: "Sijere yon bouyon : Poukisa aktivite sa a ka mache" }).click();
   // Rien n'est parti : l'écran dit d'abord ce qui sera transmis.
   await expect(page.getByText(/Asistan an ap resevwa tit gid la, brief ou a \(san nòt prive ou yo\)/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Sijesyon" })).toHaveCount(0);
@@ -52,16 +52,19 @@ test("section : information AVANT l'envoi, proposition séparée, reprise sur cl
   await expect(page.getByRole("region", { name: "Sijesyon" })).toHaveCount(0);
   await expect(page.getByRole("status").filter({ hasText: /^✓ Li anrejistre$/ })).toBeVisible({ timeout: 5000 });
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "Tèks seksyon an : Engredyan ak materyèl" })).toHaveValue(/\[SIMULASYON\]/);
+  await expect(page.getByRole("textbox", { name: "Tèks seksyon an : Poukisa aktivite sa a ka mache" })).toHaveValue(/\[SIMULASYON\]/);
 });
 
 test("plan : proposition affichée, « Utiliser ce plan » la reprend ; interface en français, guide en kreyòl (STU 02)", async ({ page }) => {
-  await page.goto(`${STUB}/__login?role=seller&lang=fr&next=/tableau-de-bord/creation`);
+  await page.goto(`${STUB}/__login?role=seller&lang=fr&next=${encodeURIComponent("/tableau-de-bord/creation?depart=vide")}`);
+  // La langue du guide suit l'interface par défaut ; le créateur choisit le kreyòl.
+  await expect(page.getByRole("combobox", { name: "Langue du guide" })).toHaveValue("fr");
+  await page.getByRole("combobox", { name: "Langue du guide" }).selectOption("ht");
   await page.getByRole("textbox", { name: "Titre de travail" }).fill("Guide sans plan");
   await page.getByRole("button", { name: "Créer le projet" }).click();
   await expect(page).toHaveURL(/\/tableau-de-bord\/creation\/[0-9a-f-]{36}$/);
   for (const c of ["Sujet du guide", "Pour qui, précisément", "Le problème que le guide résout", "Ce que le lecteur saura faire à la fin", "Votre expérience ou votre méthode"]) {
-    await page.getByRole("textbox", { name: c, exact: true }).fill("Confitures");
+    await page.getByRole("textbox", { name: c, exact: true }).fill("Couture");
   }
   await page.getByRole("button", { name: "Proposer un plan" }).click();
   await expect(page.getByText(/L’assistant recevra le titre du guide, votre brief \(sans vos notes privées\) et les titres actuels du plan/)).toBeVisible();
@@ -69,9 +72,9 @@ test("plan : proposition affichée, « Utiliser ce plan » la reprend ; interfac
   const proposition = page.getByRole("region", { name: "Suggestion" });
   await expect(proposition.getByRole("listitem")).toHaveCount(3);
   await proposition.getByRole("button", { name: "Utiliser ce plan" }).click();
-  // Le guide est en kreyòl (langue par défaut du formulaire) : le plan proposé
-  // l'est aussi, quelle que soit la langue de l'interface.
-  await expect(page.getByRole("textbox", { name: "1. Titre de la section" })).toHaveValue(/\[SIMULASYON\] Poukisa Confitures enpòtan/);
+  // Le guide est en kreyòl : le plan proposé l'est aussi, quelle que soit la
+  // langue de l'interface.
+  await expect(page.getByRole("textbox", { name: "1. Titre de la section" })).toHaveValue(/\[SIMULASYON\] Poukisa Couture enpòtan/);
   await expect(page.getByRole("textbox", { name: "3. Titre de la section" })).toHaveValue(/Egzèsis ak plan aksyon/);
 });
 
@@ -104,5 +107,5 @@ test("texte hostile dans une proposition : affiché comme du texte, jamais exéc
   await expect(corps).toHaveValue("Mon texte");
   page.once("dialog", (d) => void d.accept());
   await page.getByRole("region", { name: "Suggestion" }).getByRole("button", { name: "Remplacer le texte" }).click();
-  await expect(corps).toHaveValue(/^\[SIMULASYON\]/); // guide en kreyòl, langue par défaut
+  await expect(corps).toHaveValue(/^\[SIMULATION\]/); // guide en français : la langue de l'interface, par défaut
 });

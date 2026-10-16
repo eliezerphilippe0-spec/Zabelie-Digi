@@ -235,13 +235,13 @@ test("la clé de service ne sert qu'au plafond de débit (décision C1-A)", () =
 
 test("création avec modèle : le plan part comme une sauvegarde sur la révision 1, dans la langue du guide", async () => {
   const f = fixture();
-  const r = await f.creer({ ...projetValide, modele: "recette" });
+  const r = await f.creer({ ...projetValide, modele: "activite" });
   assert.equal(r.status, 201);
   assert.equal((await json(r)).modeleApplique, true);
   const q = f.db.queries.find((x) => x.steps.some(([m]) => m === "update"))!;
   const envoye = simple(q.steps.find(([m]) => m === "update")![1][0]) as { contenu: { sections: { titre: string; corps: string }[] } };
-  assert.equal(envoye.contenu.sections.length, 4);
-  assert.equal(envoye.contenu.sections[0].titre, "Engredyan ak materyèl", "guide en kreyòl : plan en kreyòl");
+  assert.equal(envoye.contenu.sections.length, 7);
+  assert.equal(envoye.contenu.sections[0].titre, "Poukisa aktivite sa a ka mache", "guide en kreyòl : plan en kreyòl");
   assert.ok(envoye.contenu.sections.every((s) => s.corps === ""), "le modèle n'écrit aucun texte à la place du créateur");
   assert.deepEqual(simple(q.steps.filter(([m]) => m === "eq").map(([, a]) => a)), [["id", PROJET], ["revision", 1]]);
 
@@ -254,7 +254,7 @@ test("création avec modèle : le plan part comme une sauvegarde sur la révisio
   assert.ok(!sans.db.queries.some((x) => x.steps.some(([m]) => m === "update")), "sans modèle, aucune écriture de plan");
 
   const rate = fixture({ majLignes: [] });
-  const r3 = await rate.creer({ ...projetValide, modele: "liste" });
+  const r3 = await rate.creer({ ...projetValide, modele: "kit" });
   assert.equal(r3.status, 201, "le projet existe même si le plan n'a pas pu être posé");
   assert.equal((await json(r3)).modeleApplique, false);
 });

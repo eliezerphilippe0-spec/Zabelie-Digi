@@ -119,3 +119,11 @@ Aucune ne reçoit d'identifiant de vendeur, aucune n'est exécutable par `anon` 
 | `zabelie_authoring_instantane` | AUCUN rôle client | — | appelée par les fonctions ci-dessus | — |
 
 Les trois fonctions système ne figurent pas dans la liste figée (elle ne couvre que `anon` et `authenticated`) ; la post-condition `ZB142` et `supabase/tests/authoring_operations.test.sql` (O7) prouvent qu'`authenticated` ne peut pas les exécuter.
+
+## Ajout du 2026-10-16 — Studio de création éditoriale, tableau (`0143`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_opportunites` | `authenticated` | `auth.uid()`, compte actif | rien | deux listes agrégées : des termes de recherche sans résultat (au moins 5 personnes distinctes sur au moins 2 jours, sans chiffres en série, adresse ni lien, hors liste d'exclusion) et des rayons de produits digitaux (au moins 3 ventes réelles venant d'au moins 2 vendeurs) ; jamais un compte, un vendeur ou un montant |
+
+Elle lit des tables fermées aux clients (`zabelie_search_misses`, `orders`, `payments`) ; c'est sa raison d'être `SECURITY DEFINER`. Les seuils sont lus dans `zabelie_authoring_config` et bornés par des contraintes (au moins 3 personnes, au moins 2 vendeurs) ; `supabase/tests/authoring_opportunites.test.sql` (OP1 à OP9) prouve les filtres et les témoins.

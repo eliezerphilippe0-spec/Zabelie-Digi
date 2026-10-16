@@ -174,6 +174,37 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 - [x] Aucun service payant appelé (moteur simulé seulement ; l'adaptateur réel n'est testé qu'avec un `fetcher` injecté) ; journaux sans corps de livre ni brief (sept `console.error` dans le Studio, tous limités à un code d'erreur).
 - [ ] PR 3 relue.
 
+## Phase T — Tableau du Studio (décisions du 2026-10-16, `tasks/plan.md`)
+
+### T.1 Modèles de savoir-faire
+**Description :** remplacer recette, métier, démarche et liste par des modèles de produits digitaux de savoir-faire (Tunafrik) : lancer une activité, apprendre un métier, méthode pas à pas, kit pratique ; exemples de titres par modèle, en quatre langues.
+- [x] Plus aucun exemple qui ressemble à un produit physique ; plans de 5 à 7 sections, sans texte écrit à la place du créateur.
+**Fichiers :** `lib/digital-authoring/modeles.ts`, `lib/digital-authoring/copy.ts`, `components/authoring-create-form.tsx`.
+
+### T.2 Tableau façon CreateurSuite
+**Description :** menu du Studio (à gauche sur ordinateur, onglets sur téléphone), « Bonjour, prénom », « Que voulez-vous faire aujourd'hui ? », trois entrées (analyser un marché, créer un produit digital, partir d'un modèle), projets avec format et statut, « Voir tous » au-delà de cinq, opportunités, « Comment ça marche » en trois étapes (Tunafrik). Entrée « Créer une publicité » retirée.
+- [x] Le menu ne mène qu'à des pages qui existent ; le formulaire n'apparaît qu'après un choix.
+**Fichiers :** `components/studio-shell.tsx`, `app/tableau-de-bord/creation/page.tsx`.
+
+### T.3 Formats, langue par défaut, compteur unique
+- [x] Ebook actif ; « Pack audio » et « Formation vidéo » annoncés « Bientôt », jamais cliquables ; la mise en vente (phase 5) annoncée « Bientôt ».
+- [x] La langue du guide suit l'interface (ht ou fr), sinon le kreyòl ; un seul compteur de suggestions dans l'éditeur.
+
+### T.4 Opportunités sur données réelles (`0143`, NON APPLIQUÉE)
+**Description :** fonction `zabelie_authoring_opportunites()` sous `auth.uid()` : recherches sans résultat (au moins 5 personnes sur au moins 2 jours, sans chiffres en série, adresse ni lien, hors exclusions) et rayons de produits digitaux (au moins 3 ventes réelles d'au moins 2 vendeurs). Page « Analyser un marché », « Créer un guide sur ce sujet » qui préremplit le titre.
+- [x] Aucune donnée personnelle, aucun chiffre d'un seul vendeur ; état vide honnête.
+**Vérification :** `supabase/tests/authoring_opportunites.test.sql` (OP1 à OP9) dans le job CI.
+**Fichiers :** `supabase/migrations/0143_zabelie_authoring_opportunites.sql`, `lib/digital-authoring/opportunites.ts`, `app/tableau-de-bord/creation/analyse/page.tsx`, `supabase/tests/definer_exposition.test.sql`, `docs/REVUE-2026-10-08-fonctions-definer.md`.
+
+### T.5 Preuves
+**Mesuré (2026-10-16) :** `npm test` 1773/1773 ; typecheck, lint, build ; e2e du Studio 19/19 dans Chrome (dont trois parcours du tableau : opportunités → analyse → guide créé depuis une recherche ; état vide ; menu à gauche sur ordinateur et sans défilement horizontal à 360 px) ; captures à 360 px (kreyòl) et sur ordinateur (français) ; 9 mutations tuées sur 9 (lecture des opportunités : 3 ; écran : 6) ; textes relus avec `humanizer` (deux tournures corrigées dans les quatre langues). ⚠️ Corrigé en route : dans ce thème, `ink` est une couleur de FOND (`--color-ink: #faf8f5`) ; la bordure active était invisible, remplacée par `cloud` (le texte), comme la pastille du catalogue.
+
+## Checkpoint T
+- [x] Tableau lisible à 360 px et sur ordinateur ; aucune entrée vers une fonction absente ; aucun chiffre inventé.
+- [x] SQL vert en CI (OP1–OP9 lus au journal du job `sql-tests` sur `36d483b`, premier passage, avec le témoin de OP7).
+- [x] `0143` appliquée le 2026-10-16 (12:41 UTC) après la CI verte de la PR rebasée sur `main` ; vérifications vertes.
+- [ ] PR T relue.
+
 ---
 
 ## Phase 4 — Vérification et PDF (lot 5)

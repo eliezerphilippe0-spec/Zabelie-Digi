@@ -23,15 +23,29 @@ utilisateur et projet, purgé à la déconnexion. Phase 1 lancée.
 | D7 — liste pilote (5 à 10 créateurs) et support | 2026-10-15 | Accès de vrais utilisateurs |
 | D8 — libellés publics (« Zabelie Studio », « Créer un produit numérique ») | 2026-10-15 | Ouverture publique. Avant l'IA réelle, le texte affiché avant l'envoi doit aussi nommer le fournisseur externe (OpenAI ou Google) |
 
+### Séquence du Studio exécutée le 2026-10-16
+
+« oui » du porteur le 2026-10-16 pour la séquence complète, dans cet ordre : `0141` → `0142` → fusion de #361 →
+rebase de #362 sur `main`, CI verte → `0143` → fusion de #362 ; seuils des opportunités confirmés tels que proposés.
+Le porteur a choisi d'attendre le connecteur plutôt que fusionner avant les migrations. Le connecteur était autorisé
+sur la mauvaise organisation Supabase (« eliezerphilippe0-1474's projects », vide) ; rebranché par le porteur sur
+« eliezerphilippe0@gmail.com », qui contient `ddditxykopuxxqzgkqwy`.
+
+| Étape | Heure (UTC) | Preuve |
+|---|---|---|
+| `0141` appliquée | 12:27:34 | journal `20261016122734` ; SQL reçu = fichier de `main` (`a1add473…42b9`, 37 382 car.) ; ZB141 passées ; registre 141 lignes = 141 fichiers |
+| `0142` appliquée | 12:30:58 | journal `20261016123058` ; SQL reçu = fichier de #361 (`25d3d3ba…ac93`, 49 550 car.) ; ZB142 passées ; 5 vérifications vertes |
+| #361 fusionnée | 12:31:55 | `913e7c8` ; CI et vérification après déploiement de `main` vertes |
+| `0143` appliquée | 12:41:10 | journal `20261016124110` ; SQL reçu = fichier de #362 (`e7a28205…5267`, 32 608 car.) ; ZB143 passées ; 4 vérifications vertes |
+
+Avant chaque application, la sonde de la migration a été comparée à celle de la base : elle n'a fait qu'ajouter
+(138 → 141 → 147 → 148 objets), rien de perdu. Le Studio et l'IA restent éteints en production.
+
 ### Migration `0141_zabelie_authoring_projects.sql` — protocole d'application (PR de la phase 2)
 
-**Rédigée, NON appliquée.** Décision C2-A : son application attend un « oui » explicite du porteur, même CI verte.
-
-⚠️ **État au 2026-10-16** : « oui » donné (« oui applique 0141 et fusionne »), mais le connecteur Supabase refuse tout
-accès au projet (« You do not have permission »), même en lecture. La PR #360 a été fusionnée depuis GitHub par le
-porteur à 04:38 UTC (`fff8299`, CI et vérification après déploiement vertes) **avant** l'application : sans incidence,
-le Studio est éteint en production. L'application de `0141` et les quatre vérifications ci-dessous restent à faire dès
-que le connecteur est rebranché sur le compte propriétaire du projet `ddditxykopuxxqzgkqwy`.
+✅ **APPLIQUÉE le 2026-10-16 à 12:27:34 UTC** (voir la séquence ci-dessus), après la fusion de #360 par le porteur à
+04:38 UTC. Les quatre vérifications ci-dessous sont vertes : registre, `ZB141`, trois fonctions présentes, ligne de
+configuration 160 / 6000 / 12 / 12000 / 120000 / 10.
 
 Elle est additive et isolée : deux tables neuves (`zabelie_authoring_config`, `zabelie_authoring_projects`), trois
 fonctions sous `auth.uid()`, et la sonde `zabelie_objets_requis()` redéfinie à l'identique de `0139` plus ces trois
@@ -54,8 +68,8 @@ tables d'un projet déjà utilisé : les données additives restent (PRD §20.3)
 
 ### Migration `0142_zabelie_authoring_operations.sql` — protocole d'application (PR de la phase 3)
 
-**Rédigée, NON appliquée ; exige `0141` appliquée avant elle.** Décision C2-A : « oui » explicite du porteur, à part de
-celui de `0141`. Additive : trois tables neuves (`zabelie_authoring_pilotes`, `zabelie_authoring_revisions`,
+✅ **APPLIQUÉE le 2026-10-16 à 12:30:58 UTC**, avant la fusion de #361 ; cinq vérifications vertes (registre, `ZB142`,
+neuf fonctions présentes, configuration 10 / 100 / 2 / 60 / vrai, liste pilote vide). Additive : trois tables neuves (`zabelie_authoring_pilotes`, `zabelie_authoring_revisions`,
 `zabelie_authoring_operations`), cinq colonnes ajoutées à `zabelie_authoring_config` avec leurs valeurs par défaut, trois
 fonctions vendeur sous `auth.uid()` (`demander`, `annuler`, `quota`), trois fonctions système réservées au
 `service_role` (`prendre_bail`, `marquer_soumis`, `conclure`), et la sonde redéfinie (neuf entrées `zabelie_authoring_%`).
@@ -71,6 +85,40 @@ Vérifications après application, en lecture :
    tranchée.
 
 L'IA reste coupée après la fusion (`ZABELIE_AUTHORING_AI_ENABLED` absent) : aucune demande ne peut partir.
+
+### Migration `0143_zabelie_authoring_opportunites.sql` — protocole d'application (PR du tableau, phase T)
+
+✅ **APPLIQUÉE le 2026-10-16 à 12:41:10 UTC**, avant la fusion de #362 ; quatre vérifications vertes (registre, `ZB143`,
+dix fonctions présentes, seuils 30 / 5 / 3 / 2). Constaté ce jour-là, en nombres seulement : 22 recherches sans
+résultat en 30 jours, dont UN terme au-dessus des seuils, et zéro vente de produit digital. Additive et en LECTURE : six colonnes de seuils ajoutées à `zabelie_authoring_config`, une table d'exclusion vide
+(`zabelie_authoring_termes_exclus`, administration seule), une fonction `zabelie_authoring_opportunites()` sous
+`auth.uid()` qui agrège les recherches sans résultat (`0047`) et les ventes réelles de produits digitaux (même
+définition que `zabelie_market_metrics`, `0113`), et la sonde redéfinie (dix entrées `zabelie_authoring_%`).
+
+**Seuils confirmés par le porteur le 2026-10-16** (modifiables en base, bornés par des contraintes) :
+
+| Seuil | Valeur | Rôle |
+|---|---|---|
+| `opportunites_jours` | 30 | fenêtre d'observation |
+| `opportunites_personnes_min` | 5 (au moins 3) | personnes distinctes avant qu'un terme apparaisse |
+| `opportunites_jours_distincts_min` | 2 | une seule soirée ne fait pas une tendance |
+| `opportunites_ventes_min` | 3 | ventes avant qu'un rayon apparaisse |
+| `opportunites_vendeurs_min` | 2 (au moins 2) | le chiffre d'UN vendeur ne se lit jamais |
+| `opportunites_max` | 10 | longueur de chaque liste |
+
+Toujours exclus : un terme avec trois chiffres d'affilée (téléphone, pièce), une adresse, un lien. Retirer un terme à
+la main : `insert into zabelie_authoring_termes_exclus (term, raison) values (zabelie_search_normalize('…'), '…')`.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0143_zabelie_authoring_opportunites.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB143` passées (la migration lève sinon).
+3. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : dix lignes, `present`
+   vrai.
+4. `select opportunites_jours, opportunites_personnes_min, opportunites_ventes_min, opportunites_vendeurs_min from
+   zabelie_authoring_config` : 30 / 5 / 3 / 2.
+
+Au lancement, les listes seront très probablement vides : peu de recherches atteignent cinq personnes distinctes en
+trente jours. L'écran le dit (« pas encore assez de données ») ; il n'affiche jamais un chiffre complété.
 
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 

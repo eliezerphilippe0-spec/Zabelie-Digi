@@ -1,4 +1,4 @@
-// Studio de création éditoriale — faux Supabase isolé (docs/70, tâches 2.3 à 2.5).
+// Studio de création éditoriale — faux Supabase isolé (docs/70, tâches 2.3 à 3.3, tableau T.2 à T.4).
 // Aucune clé réelle, écoute en boucle locale seulement. Il reproduit ce que la
 // base garantit et que l'écran doit montrer : un vendeur ne voit que ses
 // projets (RLS), la sauvegarde compare la révision, un projet archivé ne se
@@ -17,6 +17,21 @@ const EDITORIAUX = ["titre", "langue", "public_vise", "marche_diaspora", "brief"
 let projets = new Map();
 let operations = new Map();
 let revisions = new Map();
+// Opportunités (0143) : un jeu de TEST, au format exact de la fonction ; `/__opportunites?mode=vide` le vide.
+const OPPORTUNITES = {
+  jours: 30,
+  seuils: { personnes: 5, ventes: 3, vendeurs: 2 },
+  recherches: [
+    { terme: "aprann angle", personnes: 23 },
+    { terme: "fe yon cv", personnes: 14 },
+    { terme: "komanse yon biznis", personnes: 9 },
+  ],
+  ventes: [
+    { rayon_ht: "Pwodwi dijital", rayon_fr: "Produits digitaux", rayon_en: "Digital products", rayon_es: "Productos digitales", ventes: 12 },
+    { rayon_ht: "E-book", rayon_fr: "E-books", rayon_en: "E-books", rayon_es: "E-books", ventes: 7 },
+  ],
+};
+let opportunitesVides = false;
 
 function token(role) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -42,7 +57,8 @@ const server = createServer(async (req, res) => {
   const moi = ids[role];
 
   if (u.pathname === "/__health") return send({ ok: true });
-  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); return send({ ok: true }); }
+  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); opportunitesVides = false; return send({ ok: true }); }
+  if (u.pathname === "/__opportunites") { opportunitesVides = u.searchParams.get("mode") === "vide"; return send({ ok: true }); }
   if (u.pathname === "/__login") {
     const qui = Object.keys(ids).includes(u.searchParams.get("role")) ? u.searchParams.get("role") : "seller";
     const session = { access_token: token(qui), refresh_token: "fixture", expires_at: 4102444800, expires_in: 3600, token_type: "bearer",
@@ -173,6 +189,11 @@ const server = createServer(async (req, res) => {
   }
   if (u.pathname === "/rest/v1/zabelie_authoring_revisions") {
     return single([...revisions.values()].filter((r) => r.id === eq("id")));
+  }
+
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_opportunites") {
+    if (!moi) return send({ code: "42501", message: "permission denied" }, 401);
+    return send(opportunitesVides ? { ...OPPORTUNITES, recherches: [], ventes: [] } : OPPORTUNITES);
   }
 
   if (u.pathname.startsWith("/rest/v1/rpc/")) return send([]);

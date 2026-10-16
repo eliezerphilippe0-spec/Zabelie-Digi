@@ -2,7 +2,8 @@ import type { Contenu, LangueContenu } from "./schema";
 
 /**
  * Modèles de guide du Studio de création éditoriale (docs/70, tâche 2.6 ;
- * idée validée par le porteur le 2026-10-15, inspirée de CreateurSuite).
+ * idée validée par le porteur le 2026-10-15, inspirée de CreateurSuite ;
+ * refaits en modèles de savoir-faire le 2026-10-16, tâche T.1).
  *
  * Un modèle est un PLAN prêt à remplir : des titres de section et le résultat
  * attendu de chacune, dans la langue du guide. Aucun corps de texte, aucune
@@ -13,24 +14,33 @@ import type { Contenu, LangueContenu } from "./schema";
  * (serveur) : deux projets nés du même modèle n'ont jamais les mêmes.
  */
 
-export const IDS_MODELES = ["recette", "metier", "demarche", "liste"] as const;
+export const IDS_MODELES = ["activite", "metier", "methode", "kit"] as const;
 export type IdModele = (typeof IDS_MODELES)[number];
 
 type Plan = { titre: string; resultat: string }[];
 
+// Des produits de SAVOIR-FAIRE, comme ceux que vendent formateurs, coachs,
+// couturières ou coiffeurs (décision du 2026-10-16, inspirée de Tunafrik) :
+// rien qui ressemble à un produit physique.
 const MODELES: Record<IdModele, Record<LangueContenu, Plan>> = {
-  recette: {
+  activite: {
     ht: [
-      { titre: "Engredyan ak materyèl", resultat: "Lektè a konnen sa pou l achte ak sa pou l pare." },
-      { titre: "Preparasyon, etap pa etap", resultat: "Lektè a ka fè resèt la poukont li." },
-      { titre: "Konsève ak sèvi", resultat: "Lektè a konnen konbyen tan manje a kenbe ak kijan pou l sèvi l." },
-      { titre: "Varyant ak konsèy", resultat: "Lektè a ka adapte resèt la ak sa li jwenn." },
+      { titre: "Poukisa aktivite sa a ka mache", resultat: "Lektè a konnen ki bezwen aktivite a reponn ak ki moun ki ka achte." },
+      { titre: "Sa pou w genyen anvan ou kòmanse", resultat: "Lektè a gen lis kòb, zouti ak papye li bezwen." },
+      { titre: "Premye etap yo, semèn pa semèn", resultat: "Lektè a konnen sa pou l fè chak semèn." },
+      { titre: "Jwenn premye kliyan yo", resultat: "Lektè a gen yon plan pou l fè premye vant li." },
+      { titre: "Swiv kòb ou", resultat: "Lektè a konnen konbyen li depanse ak konbyen li fè." },
+      { titre: "Erè pou evite", resultat: "Lektè a pa pèdi kòb sou erè moun deja konnen." },
+      { titre: "Plan aksyon 30 jou", resultat: "Lektè a fini ak yon plan li ka kòmanse demen." },
     ],
     fr: [
-      { titre: "Ingrédients et matériel", resultat: "Le lecteur sait quoi acheter et quoi préparer." },
-      { titre: "Préparation, pas à pas", resultat: "Le lecteur réalise la recette seul." },
-      { titre: "Conservation et service", resultat: "Le lecteur sait combien de temps le plat se garde et comment le servir." },
-      { titre: "Variantes et astuces", resultat: "Le lecteur adapte la recette à ce qu’il trouve." },
+      { titre: "Pourquoi cette activité peut marcher", resultat: "Le lecteur sait à quel besoin répond l’activité et qui peut acheter." },
+      { titre: "Ce qu’il faut avant de commencer", resultat: "Le lecteur a la liste de l’argent, des outils et des papiers nécessaires." },
+      { titre: "Les premières étapes, semaine par semaine", resultat: "Le lecteur sait quoi faire chaque semaine." },
+      { titre: "Trouver ses premiers clients", resultat: "Le lecteur a un plan pour faire sa première vente." },
+      { titre: "Suivre son argent", resultat: "Le lecteur sait combien il dépense et combien il gagne." },
+      { titre: "Erreurs à éviter", resultat: "Le lecteur ne perd pas d’argent sur des erreurs connues." },
+      { titre: "Plan d’action sur 30 jours", resultat: "Le lecteur repart avec un plan qu’il peut commencer demain." },
     ],
   },
   metier: {
@@ -40,7 +50,7 @@ const MODELES: Record<IdModele, Record<LangueContenu, Plan>> = {
       { titre: "Metòd la, etap pa etap", resultat: "Lektè a ka swiv chak etap san li pa pèdi." },
       { titre: "Erè pou evite", resultat: "Lektè a konnen erè ki pi souvan yo ak kijan pou l evite yo." },
       { titre: "Egzèsis pratik", resultat: "Lektè a pratike sou yon ka reyèl." },
-      { titre: "Pwochen etap", resultat: "Lektè a konnen kijan pou l kontinye avanse." },
+      { titre: "Viv ak metye a", resultat: "Lektè a konnen kijan pou l jwenn premye kliyan l ak konbyen pou l mande." },
     ],
     fr: [
       { titre: "Ce que vous allez apprendre", resultat: "Le lecteur connaît le résultat qu’il atteindra." },
@@ -48,37 +58,43 @@ const MODELES: Record<IdModele, Record<LangueContenu, Plan>> = {
       { titre: "La méthode, pas à pas", resultat: "Le lecteur suit chaque étape sans se perdre." },
       { titre: "Erreurs à éviter", resultat: "Le lecteur connaît les erreurs les plus courantes et comment les éviter." },
       { titre: "Exercice pratique", resultat: "Le lecteur s’entraîne sur un cas réel." },
-      { titre: "Pour aller plus loin", resultat: "Le lecteur sait comment continuer à progresser." },
+      { titre: "Vivre de ce métier", resultat: "Le lecteur sait trouver ses premiers clients et fixer ses prix." },
     ],
   },
-  demarche: {
+  methode: {
     ht: [
-      { titre: "Pou ki moun gid sa a ye", resultat: "Lektè a konnen si gid la fèt pou li." },
-      { titre: "Sa pou w prepare", resultat: "Lektè a rasanble dokiman ak enfòmasyon li bezwen." },
-      { titre: "Etap yo, youn apre lòt", resultat: "Lektè a fè demach la nan bon lòd." },
-      { titre: "Pyèj pou evite", resultat: "Lektè a pa pèdi tan ni lajan sou erè moun deja konnen." },
-      { titre: "Lis kontwòl final", resultat: "Lektè a verifye li pa bliye anyen." },
+      { titre: "Pwoblèm nan, klè", resultat: "Lektè a rekonèt pwoblèm pa l nan sa w ap dekri a." },
+      { titre: "Metòd la an kout", resultat: "Lektè a konprann metòd la an kèk liy." },
+      { titre: "Etap yo, youn apre lòt", resultat: "Lektè a aplike chak etap nan bon lòd." },
+      { titre: "Yon egzanp toutbon", resultat: "Lektè a wè metòd la ap mache sou yon ka reyèl." },
+      { titre: "Egzèsis", resultat: "Lektè a eseye metòd la poukont li." },
+      { titre: "Lè sa pa mache", resultat: "Lektè a konnen sa pou l fè si li bloke." },
+      { titre: "Plan aksyon", resultat: "Lektè a konnen sa pou l fè depi jodi a." },
     ],
     fr: [
-      { titre: "À qui s’adresse ce guide", resultat: "Le lecteur sait si le guide est fait pour lui." },
-      { titre: "Ce qu’il faut préparer", resultat: "Le lecteur réunit les documents et informations nécessaires." },
-      { titre: "Les étapes, une à une", resultat: "Le lecteur suit la démarche dans le bon ordre." },
-      { titre: "Pièges à éviter", resultat: "Le lecteur ne perd ni temps ni argent sur des erreurs connues." },
-      { titre: "Liste de contrôle finale", resultat: "Le lecteur vérifie qu’il n’a rien oublié." },
+      { titre: "Le problème, clairement", resultat: "Le lecteur reconnaît son problème dans votre description." },
+      { titre: "La méthode en bref", resultat: "Le lecteur comprend la méthode en quelques lignes." },
+      { titre: "Les étapes, une à une", resultat: "Le lecteur applique chaque étape dans le bon ordre." },
+      { titre: "Un exemple réel", resultat: "Le lecteur voit la méthode fonctionner sur un cas concret." },
+      { titre: "Exercices", resultat: "Le lecteur essaie la méthode seul." },
+      { titre: "Quand ça bloque", resultat: "Le lecteur sait quoi faire s’il est bloqué." },
+      { titre: "Plan d’action", resultat: "Le lecteur sait quoi faire dès aujourd’hui." },
     ],
   },
-  liste: {
+  kit: {
     ht: [
-      { titre: "Anvan ou kòmanse", resultat: "Lektè a konnen nan ki kondisyon pou l sèvi ak lis la." },
-      { titre: "Lis kontwòl la", resultat: "Lektè a koche chak pwen youn apre lòt." },
-      { titre: "Kijan pou w konnen ou fini", resultat: "Lektè a rekonèt siy ki montre travay la byen fèt." },
-      { titre: "Apre sa", resultat: "Lektè a konnen sa pou l fè apre." },
+      { titre: "Kijan pou w sèvi ak kit la", resultat: "Lektè a konnen nan ki lòd pou l itilize chak pyès." },
+      { titre: "Lis kontwòl yo", resultat: "Lektè a koche chak pwen youn apre lòt." },
+      { titre: "Modèl pou ranpli", resultat: "Lektè a gen paj li ka kopye epi ranpli." },
+      { titre: "Yon egzanp ki deja ranpli", resultat: "Lektè a wè kijan yon modèl ranpli sanble." },
+      { titre: "Kesyon moun poze souvan", resultat: "Lektè a jwenn repons pou kesyon li genyen yo." },
     ],
     fr: [
-      { titre: "Avant de commencer", resultat: "Le lecteur connaît les conditions d’utilisation de la liste." },
-      { titre: "La liste de contrôle", resultat: "Le lecteur coche chaque point un à un." },
-      { titre: "Savoir que c’est terminé", resultat: "Le lecteur reconnaît les signes d’un travail bien fait." },
-      { titre: "Et ensuite", resultat: "Le lecteur sait quoi faire après." },
+      { titre: "Comment utiliser ce kit", resultat: "Le lecteur sait dans quel ordre utiliser chaque pièce." },
+      { titre: "Les listes de contrôle", resultat: "Le lecteur coche chaque point un à un." },
+      { titre: "Les modèles à remplir", resultat: "Le lecteur a des pages à recopier et à remplir." },
+      { titre: "Un exemple déjà rempli", resultat: "Le lecteur voit à quoi ressemble un modèle rempli." },
+      { titre: "Questions fréquentes", resultat: "Le lecteur trouve les réponses à ses questions." },
     ],
   },
 };
