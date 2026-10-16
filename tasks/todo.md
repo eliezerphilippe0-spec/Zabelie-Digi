@@ -201,7 +201,7 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 
 ## Checkpoint T
 - [x] Tableau lisible à 360 px et sur ordinateur ; aucune entrée vers une fonction absente ; aucun chiffre inventé.
-- [ ] SQL vert en CI (OP1–OP9 lus au journal).
+- [x] SQL vert en CI (OP1–OP9 lus au journal du job `sql-tests` sur `36d483b`, premier passage, avec le témoin de OP7).
 - [ ] PR T relue ; `0143` non appliquée.
 
 ---
