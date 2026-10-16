@@ -4,6 +4,8 @@ import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import { projetPourEditeur, type ProjetEditeur } from "@/lib/digital-authoring/api";
 import { rapprocherApresPerte } from "@/lib/digital-authoring/revision";
 import { ficheTest, regrouperParCode, type CodeControle, type Controle } from "@/lib/digital-authoring/quality";
+import { exportAJour, lireExportClient, tailleLisible, type ExportClient } from "@/lib/digital-authoring/export";
+import type { Lang } from "@/lib/i18n";
 import { ConfirmationEnvoi, EtatSuggestion, useSuggestions, type PlanPropose, type Quota } from "@/components/authoring-suggestion";
 import {
   brouillonDiffere,
@@ -35,6 +37,10 @@ import {
  * Relecture (tâche 4.2) : la fiche-test tourne en direct sur le texte de
  * l'écran ; l'approbation enregistre d'abord, puis le serveur la refait sur
  * le texte en base. Une approbation ne vaut que pour SA révision.
+ *
+ * PDF (tâche 4.3) : créé par le serveur depuis la révision approuvée, ouvert
+ * par un lien signé de cinq minutes, puis approuvé TEL QUEL : l'écran renvoie
+ * l'empreinte du fichier montré, et le bouton n'ouvre qu'après l'aperçu.
  *
  * Sauvegarde (STU 05) :
  *   - automatique une seconde après la dernière frappe, et par le bouton ;
@@ -70,6 +76,8 @@ export function AuthoringEditor({
   userId,
   ia = false,
   quotaInitial = null,
+  lang = "fr",
+  exportInitial = null,
 }: {
   initial: ProjetEditeur;
   labels: CopieCreation;
@@ -78,6 +86,9 @@ export function AuthoringEditor({
   /** Suggestions ouvertes (drapeau, moteur, configuration) : sinon aucune trace d'IA à l'écran. */
   ia?: boolean;
   quotaInitial?: Quota | null;
+  lang?: Lang;
+  /** Le dernier PDF du projet, lu sous le JWT (0145) ; `null` s'il n'y en a pas. */
+  exportInitial?: ExportClient | null;
 }) {
   const e = labels.editeur;
   const ids = useId();
@@ -96,6 +107,10 @@ export function AuthoringEditor({
   const [revisionApprouvee, setRevisionApprouvee] = useState<number | null>(initial.revisionApprouvee);
   const [responsable, setResponsable] = useState(false);
   const [approbation, setApprobation] = useState(false);
+  const [pdf, setPdf] = useState<ExportClient | null>(exportInitial);
+  const [rendu, setRendu] = useState(false);
+  const [apercuOuvert, setApercuOuvert] = useState(false);
+  const [approbationPdf, setApprobationPdf] = useState(false);
   const [statut, setStatut] = useState<Statut>("propre");
   const [message, setMessage] = useState<string | null>(null);
   const [proposition, setProposition] = useState<BrouillonLocal | null>(null);
@@ -384,6 +399,56 @@ export function AuthoringEditor({
     }
   }
 
+  /** Créer le PDF : le serveur le rend depuis la révision approuvée, le dépose, l'enregistre. */
+  async function creerPdf() {
+    setRendu(true);
+    setMessage(null);
+    try {
+      const r = await fetch(`${url}/exports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revision: revRef.current }),
+      });
+      const d = await r.json().catch(() => null);
+      const cree = r.ok ? lireExportClient(d?.export) : null;
+      if (cree) {
+        setPdf(cree);
+        setApercuOuvert(false); // un nouveau fichier se regarde avant d'être approuvé
+      } else {
+        setMessage(typeof d?.error === "string" ? d.error : labels.pdf.erreur);
+        if (d?.code === "conflit") setStatut("conflit");
+      }
+    } catch {
+      setMessage(labels.pdf.erreur);
+    } finally {
+      setRendu(false);
+    }
+  }
+
+  /** Approuver CE fichier : l'empreinte montrée part avec la demande (T28). */
+  async function approuverPdf() {
+    if (!pdf || !apercuOuvert) return;
+    setApprobationPdf(true);
+    try {
+      const r = await fetch(`/api/digital-authoring/exports/${pdf.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empreinte: pdf.empreinte }),
+      });
+      const d = await r.json().catch(() => null);
+      if (r.ok && typeof d?.approuveLe === "string") {
+        setPdf({ ...pdf, approuveLe: d.approuveLe });
+        setMessage(null);
+      } else {
+        setMessage(typeof d?.error === "string" ? d.error : e.erreurSauvegarde);
+      }
+    } catch {
+      setMessage(e.erreurSauvegarde);
+    } finally {
+      setApprobationPdf(false);
+    }
+  }
+
   async function archiver() {
     if (!window.confirm(e.confirmerArchive)) return;
     if (await action({ action: "archiver" })) setArchive(true);
@@ -468,6 +533,14 @@ export function AuthoringEditor({
   const cartesConseils = regrouperParCode(fiche.controles.filter((c) => c.niveau === "conseil"));
   const approuve = revisionApprouvee !== null && revisionApprouvee === revision && !NON_ENREGISTRE.has(statut);
   const perime = revisionApprouvee !== null && !approuve;
+  const p = labels.pdf;
+  const pdfAJour = pdf !== null && approuve && exportAJour(pdf, { revision, revisionApprouvee });
+  // Port-au-Prince fixé : le serveur et le navigateur écrivent la même date (hydratation).
+  const dateLisible = (iso: string) =>
+    new Intl.DateTimeFormat(lang === "ht" ? "fr" : lang, { dateStyle: "long", timeStyle: "short", timeZone: "America/Port-au-Prince" }).format(new Date(iso));
+  const lienPdf = (id: string, doc: "guide" | "extrait", telecharger = false) =>
+    `/api/digital-authoring/exports/${id}?document=${doc}${telecharger ? "&telecharger=1" : ""}`;
+  const lienBouton = "bouton inline-flex min-h-11 items-center rounded-xl border border-line px-3 text-sm font-semibold";
   const lieu = (c: Controle) => {
     const titreSection = c.section === null ? "" : contenu.sections[c.section - 1]?.titre.trim();
     return c.section === null ? r.guide : r.section.replace("{n}", String(c.section)) + (titreSection ? ` · ${titreSection}` : "");
@@ -731,6 +804,50 @@ export function AuthoringEditor({
                 </div>
               )}
             </>
+          )}
+        </section>
+
+        <section aria-labelledby={`${ids}-pdf`} className="rounded-2xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-pdf`} className="text-lg font-semibold">{p.titre}</h2>
+          {!approuve ? (
+            <p className="mt-1 text-sm text-mist">{p.verrou}</p>
+          ) : !pdfAJour || !pdf ? (
+            <>
+              {pdf && <p className="mt-1 text-sm text-warning-text">⚠ {p.ancien}</p>}
+              <button type="button" onClick={() => void creerPdf()} disabled={rendu}
+                className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                {rendu ? p.creation : p.creer}
+              </button>
+            </>
+          ) : (
+            <div className="mt-3 space-y-4">
+              <div>
+                <p className="text-sm font-semibold">{p.guide.replace("{pages}", String(pdf.pages)).replace("{taille}", tailleLisible(pdf.taille, lang))}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <a href={lienPdf(pdf.id, "guide")} target="_blank" rel="noopener noreferrer" onClick={() => setApercuOuvert(true)}
+                    aria-label={`${p.apercu} ${p.nouvelOnglet}`} className={lienBouton}>{p.apercu}</a>
+                  <a href={lienPdf(pdf.id, "guide", true)} onClick={() => setApercuOuvert(true)} className={lienBouton}>{p.telecharger}</a>
+                </div>
+                <p className="mt-2 break-all text-xs text-mist">{p.empreinte.replace("{e}", `${pdf.empreinte.slice(0, 12)}…${pdf.empreinte.slice(-6)}`)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{p.extrait.replace("{pages}", String(pdf.extraitPages)).replace("{taille}", tailleLisible(pdf.extraitTaille, lang))}</p>
+                <p className="mt-1 text-xs text-mist">{p.extraitAide}</p>
+                <a href={lienPdf(pdf.id, "extrait")} target="_blank" rel="noopener noreferrer"
+                  aria-label={`${p.apercuExtrait} ${p.nouvelOnglet}`} className={`${lienBouton} mt-2`}>{p.apercuExtrait}</a>
+              </div>
+              {pdf.approuveLe ? (
+                <p role="status" className="text-sm font-semibold text-success-text">✓ {p.approuve.replace("{date}", dateLisible(pdf.approuveLe))}</p>
+              ) : (
+                <div className="border-t border-line pt-4">
+                  <p className="text-sm text-mist">{p.consigne}</p>
+                  <button type="button" onClick={() => void approuverPdf()} disabled={!apercuOuvert || approbationPdf}
+                    className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                    {approbationPdf ? p.approbation : p.approuver}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </section>
       </fieldset>

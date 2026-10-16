@@ -233,15 +233,17 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 **Mesuré (2026-10-16) :** sept bloquants et neuf conseils ; la fiche tourne en direct dans l'éditeur (valeurs différées : la frappe n'attend pas) et la route la refait sur le texte EN BASE, à la révision demandée, avant d'appeler `zabelie_authoring_approuver_revision` (0144, non appliquée), qui revérifie ce que la base peut voir. Case de responsabilité jamais cochée d'avance ; seul `true` passe, à l'écran, dans la route et en base. Une écriture après approbation avance la révision : l'écran dit « le guide a changé depuis votre approbation de la version N ». À 360 px, une carte par problème (sept sections courtes font une carte), extraits de chiffres coupés aux limites des mots. 10 tests unitaires de la fiche, 3 de la route, 12 cas SQL (AP1 à AP12, exécutés en CI seulement), 3 parcours e2e ; 27 mutations tuées sur 27.
 
 ### 4.3 Export privé et approbation de l'export exact
-**Description :** table `zabelie_authoring_exports` ; rendu depuis une révision approuvée ; dépôt au stockage privé (service role confiné, C1-A) ; empreinte, taille réelle, date ; prévisualisation et lien vendeur expirant ; approbation de l'export exact (auteur, date, empreinte). **Bloquée par C1 et D1.**
+**Description :** table `zabelie_authoring_exports` ; rendu depuis une révision approuvée ; dépôt au stockage privé (service role confiné, C1-A) ; empreinte, taille réelle, date ; prévisualisation et lien vendeur expirant ; approbation de l'export exact (auteur, date, empreinte). C1 et D1 tranchées (C1-A, D1-A).
 **Critères :**
-- [ ] Export ancien après modification : rattachement refusé ou nouvelle approbation exigée (T18).
-- [ ] Non approuvé refusé, exact approuvé accepté, empreinte différente refusée (T28).
-- [ ] Taille réelle affichée avant téléchargement ; aucun lien sans contrôle de propriété.
+- [x] Export ancien après modification : rattachement refusé ou nouvelle approbation exigée (T18).
+- [x] Non approuvé refusé, exact approuvé accepté, empreinte différente refusée (T28).
+- [x] Taille réelle affichée avant téléchargement ; aucun lien sans contrôle de propriété.
 **Vérification :** tests SQL et API ; inspection du PDF téléchargé.
 **Dépendances :** 4.1, 4.2, C1, D1.
-**Fichiers :** `supabase/migrations/NNNN_zabelie_authoring_exports.sql`, `app/api/digital-authoring/exports/route.ts`, `lib/digital-authoring/export.ts`, `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`.
+**Fichiers :** `supabase/migrations/0145_zabelie_authoring_exports.sql`, `app/api/digital-authoring/projects/[id]/exports/route.ts` (création), `app/api/digital-authoring/exports/[id]/route.ts` (lien signé, approbation), `lib/digital-authoring/export.ts`, `lib/storage-buckets.ts`, `components/authoring-editor.tsx` (étape « 5. Le PDF »), `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`, `tests/digital-authoring-api-exports.test.ts`, `e2e-creation/pdf.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-16) :** le guide et son extrait gratuit sont rendus par le serveur depuis la révision approuvée, déposés dans le bucket privé `authoring-exports` (PDF seulement, 20 Mo, aucune policy) à un chemin adressé par le contenu, puis enregistrés par une fonction que seul le service role exécute ; la base recalcule le chemin et la route refuse de répondre s'il diffère. Rendre deux fois la même révision donne les mêmes octets et la même ligne. Aperçu et téléchargement par un lien signé de 5 minutes, jamais en cache, après lecture sous la RLS (l'export d'un autre : 404). L'écran montre pages, taille réelle et empreinte ; « Approuver ce PDF » n'ouvre qu'après l'aperçu et renvoie l'empreinte montrée. En e2e, les octets servis par le lien sont un PDF dont l'empreinte est celle de l'écran. 5 tests du module, 9 des routes, 10 cas SQL (EX1 à EX10, CI), 3 parcours e2e ; 19 mutations tuées sur 19.
+**Reste (5.3) :** la fermeture de compte garde les projets et les exports (comme les pièces KYC), et une suppression complète laisserait les fichiers du bucket : à traiter avec l'export et la suppression de compte. Durée de conservation des exports non acquis : décision D5, ouverte.
 
 ### 4.4 Extrait gratuit automatique (idée 1, validée le 2026-10-16)
 **Description :** depuis la même révision que le guide : page de titre, sommaire complet, première section entière, puis une page de fin d'extrait qui dit ce que contient le guide complet (nombre de pages et de sections). Même moteur, même déterminisme, empreinte propre.

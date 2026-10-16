@@ -135,3 +135,12 @@ Elle lit des tables fermées aux clients (`zabelie_search_misses`, `orders`, `pa
 | `zabelie_authoring_approuver_revision` | `authenticated` | `auth.uid()` = propriétaire du projet, compte actif | `revision_approuvee` et `revision_approuvee_le` de son projet, si la révision fournie est la révision courante, la responsabilité confirmée (`true`, jamais présumée), le plan approuvé, chaque section titrée et rédigée, et aucun marqueur de simulation dans le texte | la révision approuvée |
 
 Les deux colonnes ne sont accordées en écriture à aucun rôle client (post-condition `ZB144`) ; la garde de `0141`, redéfinie, les remet à vide à toute création. Une écriture ultérieure du texte avance la révision : l'approbation ne vaut plus, sans rien effacer. `supabase/tests/authoring_approbation.test.sql` (AP1 à AP12) prouve les refus, les forgeries refusées et les témoins acceptés.
+
+## Ajout du 2026-10-16 — Studio de création éditoriale, export PDF (`0145`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_enregistrer_export` | `service_role` SEUL | l'identifiant de session lu par la route ; la base revérifie que le projet est le sien, le compte actif, la révision courante ET approuvée | une ligne de `zabelie_authoring_exports`, chemins calculés par la base depuis les identifiants et l'empreinte ; mêmes octets pour la même révision : la ligne existante | la ligne |
+| `zabelie_authoring_approuver_export` | `authenticated` | `auth.uid()` = propriétaire de l'export, compte actif | `approuve_le` et `approuve_empreinte`, une seule fois, si l'empreinte reçue est celle de l'export (T28) et si l'export porte la révision courante et approuvée (T18) | la date d'approbation |
+
+Les octets, leur empreinte et leur taille viennent du serveur : la route rend le PDF, le dépose dans le bucket privé `authoring-exports` (PDF seulement, 20 Mo, aucune policy), puis appelle l'enregistrement. Un vendeur ne peut ni exécuter cette fonction ni écrire une ligne d'export (post-condition `ZB145`). Une garde rend chaque export immuable et son approbation définitive, même pour le propriétaire de la base. `supabase/tests/authoring_exports.test.sql` (EX1 à EX10) prouve les refus, T18, T28 et l'immuabilité.

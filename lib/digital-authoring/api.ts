@@ -64,6 +64,11 @@ const REFUS_BASE: Record<string, { statut: number; cle: I18nKey }> = {
   authoring_guide_sans_plan: { statut: 409, cle: "authoring.approbation.sansPlan" },
   authoring_guide_incomplet: { statut: 422, cle: "authoring.approbation.pasPret" },
   authoring_marqueur_simulation: { statut: 422, cle: "authoring.approbation.pasPret" },
+  // Export PDF et approbation de l'export exact (0145).
+  authoring_guide_non_approuve: { statut: 409, cle: "authoring.export.nonApprouve" },
+  authoring_export_introuvable: { statut: 404, cle: "authoring.export.introuvable" },
+  authoring_export_perime: { statut: 409, cle: "authoring.export.perime" },
+  authoring_empreinte_differente: { statut: 409, cle: "authoring.export.empreinte" },
 };
 
 export const TABLE_OPERATIONS = "zabelie_authoring_operations";

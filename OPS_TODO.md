@@ -142,6 +142,28 @@ Vérifications après application, en lecture :
 
 Retour arrière : le Studio étant éteint, aucun n'est nécessaire. Ne pas supprimer les colonnes à la main.
 
+### Migration `0145_zabelie_authoring_exports.sql` — protocole d'application (PR 4, export PDF)
+
+⏳ **NON APPLIQUÉE.** Exige `0144`. « oui » du porteur requis avant l'application (C2-A). Additive : un bucket PRIVÉ
+`authoring-exports` (PDF seulement, 20 Mo, aucune policy), une table `zabelie_authoring_exports` (le vendeur lit les
+siens, n'en écrit aucun), une garde d'immuabilité, `zabelie_authoring_enregistrer_export(…)` exécutable par le
+**service role seul**, `zabelie_authoring_approuver_export(uuid, text)` sous `auth.uid()`, et la sonde redéfinie
+(treize entrées `zabelie_authoring_%`). Aucune table d'argent, de commande ni de produit n'est touchée.
+
+Ordre proposé, avec `0144` : CI verte sur la tête de la PR 4 → comparaison de la sonde → `0144` → vérifications →
+`0145` → vérifications → fusion de la PR 4. Le Studio reste éteint en production.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0145_zabelie_authoring_exports.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB145` passées (la migration lève sinon).
+3. `select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'authoring-exports'` :
+   `false`, 20971520, `{application/pdf}`.
+4. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : treize lignes,
+   `present` vrai.
+
+Connu, à traiter en 5.3 : la fermeture de compte garde projets et exports ; une suppression complète laisserait les
+fichiers du bucket (même situation que les pièces KYC). Conservation des exports non acquis : décision D5, ouverte.
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347

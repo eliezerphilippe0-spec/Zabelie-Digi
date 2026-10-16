@@ -1,4 +1,4 @@
-// Studio de création éditoriale — faux Supabase isolé (docs/70, tâches 2.3 à 3.3, tableau T.2 à T.4).
+// Studio de création éditoriale — faux Supabase isolé (docs/70, tâches 2.3 à 4.3, tableau T.2 à T.4).
 // Aucune clé réelle, écoute en boucle locale seulement. Il reproduit ce que la
 // base garantit et que l'écran doit montrer : un vendeur ne voit que ses
 // projets (RLS), la sauvegarde compare la révision, un projet archivé ne se
@@ -17,6 +17,10 @@ const EDITORIAUX = ["titre", "langue", "public_vise", "marche_diaspora", "brief"
 let projets = new Map();
 let operations = new Map();
 let revisions = new Map();
+// Export PDF (0145) : les lignes, et les objets du bucket privé (octets réels déposés par la route).
+let exportsPdf = new Map();
+let objets = new Map();
+const BUCKET_EXPORTS = "authoring-exports";
 // Opportunités (0143) : un jeu de TEST, au format exact de la fonction ; `/__opportunites?mode=vide` le vide.
 const OPPORTUNITES = {
   jours: 30,
@@ -57,7 +61,8 @@ const server = createServer(async (req, res) => {
   const moi = ids[role];
 
   if (u.pathname === "/__health") return send({ ok: true });
-  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); opportunitesVides = false; return send({ ok: true }); }
+  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); exportsPdf = new Map(); objets = new Map(); opportunitesVides = false; return send({ ok: true }); }
+  if (u.pathname === "/__objets") return send([...objets.keys()]);
   if (u.pathname === "/__opportunites") { opportunitesVides = u.searchParams.get("mode") === "vide"; return send({ ok: true }); }
   if (u.pathname === "/__login") {
     const qui = Object.keys(ids).includes(u.searchParams.get("role")) ? u.searchParams.get("role") : "seller";
@@ -213,6 +218,73 @@ const server = createServer(async (req, res) => {
   if (u.pathname === "/rest/v1/rpc/zabelie_authoring_opportunites") {
     if (!moi) return send({ code: "42501", message: "permission denied" }, 401);
     return send(opportunitesVides ? { ...OPPORTUNITES, recherches: [], ventes: [] } : OPPORTUNITES);
+  }
+
+  // ── Export PDF (0145) : bucket privé, enregistrement par le service role seul ──
+  const prefixeObjet = `/storage/v1/object/${BUCKET_EXPORTS}/`;
+  const prefixeSigne = `/storage/v1/object/sign/${BUCKET_EXPORTS}/`;
+  if (u.pathname.startsWith(prefixeObjet) && req.method === "POST") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const morceaux = [];
+    for await (const c of req) morceaux.push(c);
+    const octets = Buffer.concat(morceaux);
+    if (req.headers["content-type"] !== "application/pdf") return send({ message: "type refuse" }, 415);
+    const chemin = decodeURIComponent(u.pathname.slice(prefixeObjet.length));
+    objets.set(chemin, octets);
+    return send({ Key: `${BUCKET_EXPORTS}/${chemin}`, Id: randomUUID() });
+  }
+  if (u.pathname.startsWith(prefixeSigne) && req.method === "POST") {
+    if (role !== "service") return send({ message: "signature : service role seulement" }, 403);
+    const chemin = decodeURIComponent(u.pathname.slice(prefixeSigne.length));
+    if (!objets.has(chemin)) return send({ message: "objet absent" }, 404);
+    return send({ signedURL: `/object/sign/${BUCKET_EXPORTS}/${encodeURI(chemin)}?token=jeton-${randomUUID()}` });
+  }
+  if (u.pathname.startsWith(prefixeSigne) && req.method === "GET") {
+    const chemin = decodeURIComponent(u.pathname.slice(prefixeSigne.length));
+    const octets = objets.get(chemin);
+    if (!u.searchParams.get("token")?.startsWith("jeton-") || !octets) return send({ message: "lien invalide" }, 400);
+    const entetes = { "content-type": "application/pdf", "content-length": octets.length };
+    if (u.searchParams.has("download")) entetes["content-disposition"] = `attachment; filename="${u.searchParams.get("download") || "fichier.pdf"}"`;
+    res.writeHead(200, entetes);
+    return res.end(octets);
+  }
+  if (u.pathname === "/rest/v1/zabelie_authoring_exports") {
+    const lignes = [...exportsPdf.values()]
+      .filter((e) => e.seller_id === moi && (!eq("id") || e.id === eq("id")) && (!eq("project_id") || e.project_id === eq("project_id")))
+      .toSorted((a, b) => b.created_at.localeCompare(a.created_at));
+    return single(lignes);
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_enregistrer_export") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for function" }, 403);
+    const b = await body();
+    const p = projets.get(b.p_projet);
+    if (!p || p.seller_id !== b.p_seller) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
+    if (p.archived_at) return send({ code: "P0001", message: "authoring_projet_archive" }, 400);
+    if (p.revision !== b.p_revision) return send({ code: "40001", message: "authoring_revision_perimee" }, 409);
+    if (p.revision_approuvee !== b.p_revision) return send({ code: "P0001", message: "authoring_guide_non_approuve" }, 400);
+    const base = `${b.p_seller}/${b.p_projet}/`;
+    const existant = [...exportsPdf.values()].find((e) => e.project_id === b.p_projet && e.revision === b.p_revision && e.empreinte === b.p_empreinte);
+    if (existant) return single([existant]);
+    const e = {
+      id: randomUUID(), project_id: b.p_projet, seller_id: b.p_seller, revision: b.p_revision, moteur: b.p_moteur,
+      chemin: `${base}${b.p_empreinte}.pdf`, empreinte: b.p_empreinte, taille: b.p_taille, pages: b.p_pages,
+      extrait_chemin: `${base}${b.p_extrait_empreinte}-extrait.pdf`, extrait_empreinte: b.p_extrait_empreinte,
+      extrait_taille: b.p_extrait_taille, extrait_pages: b.p_extrait_pages,
+      created_at: new Date().toISOString(), approuve_le: null, approuve_empreinte: null,
+    };
+    exportsPdf.set(e.id, e);
+    return single([e]);
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_approuver_export") {
+    const b = await body();
+    const e = exportsPdf.get(b.p_export);
+    if (!e || e.seller_id !== moi) return send({ code: "42501", message: "authoring_export_introuvable" }, 403);
+    const p = projets.get(e.project_id);
+    if (p.archived_at) return send({ code: "P0001", message: "authoring_projet_archive" }, 400);
+    if (p.revision !== e.revision || p.revision_approuvee !== e.revision) return send({ code: "40001", message: "authoring_export_perime" }, 409);
+    if (b.p_empreinte !== e.empreinte) return send({ code: "22023", message: "authoring_empreinte_differente" }, 400);
+    if (!e.approuve_le) { e.approuve_le = new Date().toISOString(); e.approuve_empreinte = b.p_empreinte; }
+    return send(e.approuve_le);
   }
 
   if (u.pathname.startsWith("/rest/v1/rpc/")) return send([]);
