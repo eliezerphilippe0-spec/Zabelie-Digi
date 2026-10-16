@@ -125,49 +125,53 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 3.1 Opérations, instantanés, quotas, bail
 **Description :** migration : `zabelie_authoring_revisions` (immuables), `zabelie_authoring_operations` (unique `(seller_id, idempotency_key)`, empreinte, instantané source, bail à jeton), quotas réservés sous verrou consultatif par jour civil haïtien, RPC de création d'intention sous `auth.uid()`, RPC de résultat réservée au service role et conditionnée au jeton.
 **Critères :**
-- [ ] Même clé, même empreinte : même opération (T06) ; dix réservations concurrentes sur le dernier quota : une seule admise (T08).
-- [ ] Un ancien jeton ne peut pas écrire de résultat (T10) ; l'instantané d'une opération en attente ne change pas si le document change (T29).
-- [ ] Le vendeur ne peut fabriquer ni état, ni résultat, ni compteur (T31).
+- [x] Même clé, même empreinte : même opération (T06) ; dix réservations concurrentes sur le dernier quota : une seule admise (T08).
+- [x] Un ancien jeton ne peut pas écrire de résultat (T10) ; l'instantané d'une opération en attente ne change pas si le document change (T29).
+- [x] Le vendeur ne peut fabriquer ni état, ni résultat, ni compteur (T31).
 **Vérification :** `supabase/tests/authoring_operations.test.sql` + `supabase/tests/authoring_quota_concurrent.sh` dans le job CI ; mutations des gardes.
 **Dépendances :** 2.1, 1.1.
-**Fichiers :** `supabase/migrations/NNNN_zabelie_authoring_operations.sql`, `supabase/tests/authoring_operations.test.sql`, `supabase/tests/authoring_quota_concurrent.sh`, `supabase/tests/run.sh`.
+**Fichiers :** `supabase/migrations/0142_zabelie_authoring_operations.sql`, `supabase/tests/authoring_operations.test.sql`, `supabase/tests/authoring_quota_concurrent.sh`, `supabase/tests/run.sh`, `supabase/tests/colonnes_liste_blanche.test.sql`, `supabase/tests/definer_exposition.test.sql`.
+**Mesuré (2026-10-16) :** job CI `sql-tests` vert sur `33cb0e7` (O1–O18 et l'essai à dix sessions parallèles : une réservation admise, neuf refus `authoring_quota_vendeur`). Premier passage rouge sur `4f8dc8e` : six colonnes internes des opérations (jeton et échéance du bail, empreinte, reprises, consommation) n'étaient pas déclarées privées dans `colonnes_liste_blanche` ; déclarées avec leur raison.
 **Taille :** M.
 
 ### 3.2 Exécuteur par étapes et routes d'opérations
 **Description :** `POST /api/digital-authoring/operations` (contrôles, intention, réservation), `GET …/[id]` (lecture, prise de bail, revérification juste avant l'envoi, appel au simulé, validation, persistance sous jeton). Délai après envoi → `uncertain` définitif.
 **Critères :**
-- [ ] Même clé avec une autre entrée : conflit, aucun appel (T07) ; délai après envoi : `uncertain`, aucune relance (T09).
-- [ ] Sortie invalide, excessive ou partielle rejetée avec un code borné (T11).
-- [ ] IA coupée ou vendeur suspendu entre attente et envoi : aucun appel, état explicite, quota cohérent (T25, T30).
+- [x] Même clé avec une autre entrée : conflit, aucun appel (T07) ; délai après envoi : `uncertain`, aucune relance (T09).
+- [x] Sortie invalide, excessive ou partielle rejetée avec un code borné (T11).
+- [x] IA coupée ou vendeur suspendu entre attente et envoi : aucun appel, état explicite, quota cohérent (T25, T30).
 **Vérification :** tests d'intégration avec `fetcher` et horloge injectés ; aucun réseau.
 **Dépendances :** 3.1, 1.2.
-**Fichiers :** `app/api/digital-authoring/operations/route.ts`, `app/api/digital-authoring/operations/[id]/route.ts`, `lib/digital-authoring/executor.ts`, `tests/digital-authoring-executeur.test.ts`.
+**Fichiers :** `app/api/digital-authoring/operations/route.ts`, `app/api/digital-authoring/operations/[id]/route.ts`, `lib/digital-authoring/executor.ts`, `tests/digital-authoring-executeur.test.ts`, `tests/digital-authoring-api-operations.test.ts`.
+**Mesuré (2026-10-16) :** 9 tests de l'exécuteur + 12 des routes ; 13 mutations tuées sur 13. ⚠️ Deux tests annulés en CI sur `4f8dc8e` : `AbortSignal.timeout` ne retient pas le processus, une attente sans autre activité était abandonnée avant que le délai ne tombe. Minuterie explicite (`setTimeout` + `AbortController`, effacée après l'envoi) ; mutation « délai sans coupure » tuée.
 **Taille :** M.
 
 ### 3.3 Proposition séparée
 **Description :** information préalable sur les données transmises, puis action du créateur ; affichage de la proposition à côté du texte ; accepter (nouvelle révision sous CAS), copier une partie, rejeter ; révision source affichée si le texte a changé.
 **Critères :**
-- [ ] Une saisie humaine pendant la génération est conservée ; la proposition reste séparée (T13).
-- [ ] Rejeter ou annuler conserve le texte courant.
-- [ ] Aucun HTML ni script de la réponse n'est exécuté (T12).
+- [x] Une saisie humaine pendant la génération est conservée ; la proposition reste séparée (T13).
+- [x] Rejeter ou annuler conserve le texte courant.
+- [x] Aucun HTML ni script de la réponse n'est exécuté (T12).
 **Vérification :** e2e avec le simulé ; 360 px.
 **Dépendances :** 3.2, 2.5.
-**Fichiers :** `components/authoring-suggestion.tsx`, `components/authoring-editor.tsx`, `lib/i18n.ts`, `e2e/creation-suggestion.spec.ts`.
+**Fichiers :** `components/authoring-suggestion.tsx`, `components/authoring-editor.tsx`, `lib/digital-authoring/copy.ts`, `lib/digital-authoring/api.ts`, `app/tableau-de-bord/creation/[projectId]/page.tsx`, `e2e/fixtures/stub-creation.mjs`, `e2e-creation/suggestions.spec.ts`, `tests/digital-authoring-suggestions.test.ts`.
+**Mesuré (2026-10-16) :** l'information sur les données transmises s'affiche avant tout envoi ; la proposition s'affiche à côté du texte et n'est reprise que sur clic (remplacer avec confirmation, ajouter à la suite, copier, utiliser ce plan) ; avertissement quand le texte a changé depuis la demande ; compteur de suggestions restantes ; suivi espacé de 1,5 s à 8 s, suspendu onglet caché ou hors ligne. Garantie T13 structurelle : le crochet des suggestions n'a aucun accès au texte (5 tests de source). e2e local 16/16 (dont 3 parcours de suggestions : kreyòl, plan avec interface en français, texte hostile) ; 8 mutations tuées sur 8 (information absente, HTML interprété, « texte modifié » tu, « Ignorer » sans effet, « Ajouter » qui remplace, « Remplacer » sans confirmation, envoi sans enregistrer, délai sans coupure). L'éditeur à 360 px est couvert par le parcours 360 px de la 2.4 ; la proposition elle-même n'y est pas photographiée.
 **Taille :** M.
 
 ### 3.4 Adaptateur réel préparé, éteint
 **Description :** adaptateur OpenAI ou Gemini à sortie JSON structurée, reprenant le choix du fournisseur, la clé en en-tête et le délai de `lib/ai-description.ts` ; consignes construites sans données inutiles ; jamais actif sans `ZABELIE_AUTHORING_AI_ENABLED`, budget et liste pilote.
 **Critères :**
-- [ ] Testé uniquement avec un `fetcher` injecté ; aucune requête réseau dans la suite.
-- [ ] Une réponse non conforme au schéma n'est jamais persistée comme résultat.
+- [x] Testé uniquement avec un `fetcher` injecté ; aucune requête réseau dans la suite.
+- [x] Une réponse non conforme au schéma n'est jamais persistée comme résultat.
 **Vérification :** tests unitaires ; test de source « aucune clé dans l'URL ».
 **Dépendances :** 3.2.
-**Fichiers :** `lib/digital-authoring/provider-llm.ts`, `tests/digital-authoring-llm.test.ts`.
+**Fichiers :** `lib/digital-authoring/provider-llm.ts`, `lib/digital-authoring/flags.ts`, `lib/digital-authoring/provider.ts`, `lib/ai-description.ts` (modèles par défaut partagés), `tests/digital-authoring-llm.test.ts`.
+**Mesuré (2026-10-16) :** moteur réel seulement avec le parcours, l'IA, la valeur exacte `openai` ou `gemini` ET la clé de ce fournisseur (clés et modèles partagés avec les descriptions produit, aucune variable nouvelle). Sortie JSON structurée : OpenAI `response_format` `json_schema` strict ; Gemini `generationConfig.responseFormat.text` (relevé le 2026-10-16 sur ai.google.dev : `responseMimeType` et `responseJsonSchema` y sont marqués dépréciés). Réponse tronquée, refusée, filtrée ou illisible → `corps: null` ; non-2xx jamais lu ; consommation jamais inventée. 11 tests ; 15 mutations tuées sur 15 (deux survivants au premier passage — refus OpenAI, consommation à 0 — tests resserrés).
 **Taille :** S.
 
 ## Checkpoint 3
-- [ ] T06–T13, T25, T29–T31 verts (SQL en CI).
-- [ ] Aucun service payant appelé ; journaux sans corps de livre ni brief.
+- [x] T06–T13, T25, T29–T31 verts (SQL en CI : O1–O18 et le quota concurrent lus au journal du job `sql-tests` sur `33cb0e7`).
+- [x] Aucun service payant appelé (moteur simulé seulement ; l'adaptateur réel n'est testé qu'avec un `fetcher` injecté) ; journaux sans corps de livre ni brief (sept `console.error` dans le Studio, tous limités à un code d'erreur).
 - [ ] PR 3 relue.
 
 ---

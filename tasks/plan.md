@@ -72,10 +72,10 @@ Contrats purs (schémas, transitions, CAS) ── Drapeaux ── Fournisseur si
 **Checkpoint 2** — un guide ht et un guide fr créés et repris sans IA à 360 px ; conflit entre onglets et coupure réseau reproduits ; SQL vert en CI ; PR 2 (migration non appliquée).
 
 ### Phase 3 — Assistance IA simulée (lot 4)
-- [ ] 3.1 Opérations, instantanés, quotas et bail en base
-- [ ] 3.2 Exécuteur par étapes et routes d'opérations
-- [ ] 3.3 Proposition séparée : accepter, copier, rejeter
-- [ ] 3.4 Adaptateur réel préparé, éteint, testé sans réseau
+- [x] 3.1 Opérations, instantanés, quotas et bail en base
+- [x] 3.2 Exécuteur par étapes et routes d'opérations
+- [x] 3.3 Proposition séparée : accepter, copier, rejeter
+- [x] 3.4 Adaptateur réel préparé, éteint, testé sans réseau
 
 **Checkpoint 3** — doubles clics, dernier quota, réponse tardive, sortie malformée, délai après envoi : ni écrasement ni deuxième appel ; aucun service payant appelé ; PR 3.
 

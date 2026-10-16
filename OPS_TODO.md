@@ -26,6 +26,13 @@ utilisateur et projet, purgé à la déconnexion. Phase 1 lancée.
 ### Migration `0141_zabelie_authoring_projects.sql` — protocole d'application (PR de la phase 2)
 
 **Rédigée, NON appliquée.** Décision C2-A : son application attend un « oui » explicite du porteur, même CI verte.
+
+⚠️ **État au 2026-10-16** : « oui » donné (« oui applique 0141 et fusionne »), mais le connecteur Supabase refuse tout
+accès au projet (« You do not have permission »), même en lecture. La PR #360 a été fusionnée depuis GitHub par le
+porteur à 04:38 UTC (`fff8299`, CI et vérification après déploiement vertes) **avant** l'application : sans incidence,
+le Studio est éteint en production. L'application de `0141` et les quatre vérifications ci-dessous restent à faire dès
+que le connecteur est rebranché sur le compte propriétaire du projet `ddditxykopuxxqzgkqwy`.
+
 Elle est additive et isolée : deux tables neuves (`zabelie_authoring_config`, `zabelie_authoring_projects`), trois
 fonctions sous `auth.uid()`, et la sonde `zabelie_objets_requis()` redéfinie à l'identique de `0139` plus ces trois
 fonctions. Aucune table existante n'est modifiée.

@@ -3,6 +3,7 @@ import { LIMITES_DEFAUT, champTexte, type Brief, type Contenu, type LangueConten
 import type { TypeOperation } from "./operations";
 import { choisirMoteur, type EnvCreation } from "./flags";
 import { fournisseurSimule } from "./provider-mock";
+import { fournisseurReel } from "./provider-llm";
 
 /**
  * Studio de création éditoriale — contrat du fournisseur de texte
@@ -39,7 +40,7 @@ export type ReponseFournisseur =
   | { type: "aucune_reponse" };
 
 export interface FournisseurEditorial {
-  readonly nom: "mock";
+  readonly nom: "mock" | "openai" | "gemini";
   /** Vrai pour la simulation : l'écran et les statistiques le disent. */
   readonly simulation: boolean;
   /** UN envoi, jamais de relance interne : une relance serait un second appel payant. */
@@ -112,9 +113,14 @@ export function validerSortie(
  * appel ne peut partir (STU 09, T25).
  */
 export function fournisseurEditorial(
-  env: EnvCreation
+  env: EnvCreation,
+  fetcher: typeof fetch = fetch
 ): { ok: true; fournisseur: FournisseurEditorial } | { ok: false; code: "ia_coupee" | "configuration_absente" } {
   const choix = choisirMoteur(env);
   if (!choix.ok) return choix;
-  return { ok: true, fournisseur: fournisseurSimule() };
+  if (choix.moteur === "mock") return { ok: true, fournisseur: fournisseurSimule() };
+  // `choisirMoteur` n'accepte un moteur réel qu'avec sa clé posée.
+  const cle = (choix.moteur === "openai" ? env.OPENAI_API_KEY : env.GEMINI_API_KEY)!.trim();
+  const modele = choix.moteur === "openai" ? env.OPENAI_MODEL : env.GEMINI_MODEL;
+  return { ok: true, fournisseur: fournisseurReel({ nom: choix.moteur, cle, modele }, fetcher) };
 }
