@@ -73,40 +73,50 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 2.3 Liste des projets et création
 **Description :** page `/tableau-de-bord/creation` (résumés, prochaine action utile), création d'un projet, liens conditionnels depuis `/tableau-de-bord` et le parcours numérique de `/vendre`, `noindex`. Libellés dans les quatre langues.
 **Critères :**
-- [ ] Drapeau éteint : aucune entrée visible, page en 404.
-- [ ] 360 px sans défilement horizontal, focus clavier visible, quatre langues.
-- [ ] Un projet créé est retrouvé après déconnexion et reconnexion.
+- [x] Drapeau éteint : aucune entrée visible, page en 404.
+- [x] 360 px sans défilement horizontal, focus clavier visible, quatre langues.
+- [x] Un projet créé est retrouvé après déconnexion et reconnexion.
 **Vérification :** e2e ciblé (config dédiée, `stub-supabase`) ; captures 360 px ; tests i18n existants verts.
 **Dépendances :** 2.2.
-**Fichiers :** `app/tableau-de-bord/creation/page.tsx`, `components/authoring-project-list.tsx`, `app/tableau-de-bord/page.tsx`, `app/vendre/page.tsx`, `lib/i18n.ts`.
+**Fichiers :** `app/tableau-de-bord/creation/page.tsx` (accueil à trois entrées, idée validée le 2026-10-15), `components/authoring-create-form.tsx`, `lib/digital-authoring/copy.ts`, `app/tableau-de-bord/page.tsx`, `app/vendre/page.tsx`.
+**Mesuré :** 6 tests + 13 mutations tuées ; capture 360 px relue (ht).
 **Taille :** M.
 
 ### 2.4 Éditeur : brief, plan, sections
 **Description :** `/tableau-de-bord/creation/[projectId]` : brief validé côté serveur, plan éditable (ajouter, supprimer, réordonner, identifiants stables), approbation explicite du plan, sections en texte brut. Confirmation avant suppression d'une section rédigée.
 **Critères :**
-- [ ] Ordre et identifiants conservés après sauvegarde et reprise ; réordonner n'efface rien.
-- [ ] Langue d'interface et langue du contenu indépendantes ; changer la langue du projet ne traduit rien.
-- [ ] Aucun HTML saisi n'est interprété à l'affichage (T12, partie éditeur).
+- [x] Ordre et identifiants conservés après sauvegarde et reprise ; réordonner n'efface rien.
+- [x] Langue d'interface et langue du contenu indépendantes ; changer la langue du projet ne traduit rien.
+- [x] Aucun HTML saisi n'est interprété à l'affichage (T12, partie éditeur).
 **Vérification :** tests de composant ou e2e ; 360 px ; quatre langues.
 **Dépendances :** 2.3.
-**Fichiers :** `app/tableau-de-bord/creation/[projectId]/page.tsx`, `components/authoring-editor.tsx`, `components/authoring-plan.tsx`, `lib/i18n.ts`, `e2e/creation-editeur.spec.ts`.
+**Fichiers :** `app/tableau-de-bord/creation/[projectId]/page.tsx`, `components/authoring-editor.tsx` (plan inclus), `lib/digital-authoring/copy.ts`, `lib/digital-authoring/api.ts` (`projetPourEditeur`), `e2e-creation/creation.spec.ts`, `e2e/fixtures/stub-creation.mjs`, `playwright.creation.config.ts`, étape CI « Editorial studio seller journey ».
 **Taille :** M.
+**Mesuré (2026-10-15) :** sauvegarde en mode `brouillon` (travail incomplet accepté), approbation en mode `complet` relu en base ; 6 tests + 13 mutations tuées ; e2e local 7/7 dans Chrome (modèle kreyòl → approbation → rédaction → rechargement ; conflit entre onglets ; projet d'un autre introuvable ; 360 px en ht, fr, en, es sans défilement horizontal). ⚠️ La page d'un projet étranger rend l'écran « introuvable » avec un statut HTTP 200 : le `app/loading.tsx` racine ouvre le streaming avant le `notFound()`. L'API rend 404.
+
+### 2.6 Modèles de guide (idée validée le 2026-10-15)
+**Description :** quatre plans prêts à remplir (recette, métier, démarche, liste de contrôle), en kreyòl et en français, sans IA ni texte écrit à la place du créateur ; choisis à la création, posés comme une sauvegarde sur la révision 1.
+- [x] Chaque modèle est un contenu valide dans les deux langues, identifiants neufs à chaque création.
+- [x] Modèle inconnu refusé avant toute création ; échec de pose signalé (`modeleApplique: false`), projet conservé.
+**Fichiers :** `lib/digital-authoring/modeles.ts`, `app/api/digital-authoring/projects/route.ts`, `components/authoring-create-form.tsx`, `tests/digital-authoring-accueil.test.ts`.
 
 ### 2.5 Sauvegarde robuste
 **Description :** états « modifications locales », « enregistrement », « enregistré » (après confirmation serveur seulement), « connexion interrompue », « conflit à résoudre » ; sauvegarde après une seconde d'inactivité et bouton explicite ; brouillon local par utilisateur et projet, purgé à la déconnexion ; avertissement avant de quitter. **Bloquée par D6.**
 **Critères :**
-- [ ] Deux onglets sur la même révision : conflit explicite, aucune écriture gagnante silencieuse.
-- [ ] Coupure puis retour : brouillon local plus récent proposé avant remplacement (T15) ; stockage refusé : édition en ligne possible et limite annoncée (T16).
-- [ ] Changement de compte sur le même appareil : aucun brouillon du précédent visible (T14).
+- [x] Deux onglets sur la même révision : conflit explicite, aucune écriture gagnante silencieuse.
+- [x] Coupure puis retour : brouillon local plus récent proposé avant remplacement (T15) ; stockage refusé : édition en ligne possible et limite annoncée (T16).
+- [x] Changement de compte sur le même appareil : aucun brouillon du précédent visible (T14).
 **Vérification :** e2e (deux contextes, réseau coupé, stockage bloqué) ; 360 px.
 **Dépendances :** 2.4, D6.
-**Fichiers :** `lib/digital-authoring/local-draft.ts`, `components/authoring-save-state.tsx`, `components/authoring-editor.tsx`, `app/api/auth/signout/route.ts` (ou le bouton de déconnexion), `e2e/creation-sauvegarde.spec.ts`.
+**Remarques d'usage relevées à 360 px (2026-10-15) :** replier les six champs facultatifs du brief sous « Plus de détails » ; garder le bouton d'enregistrement et l'état de sauvegarde visibles en bas d'écran (barre collante) — la sauvegarde automatique les rend moins critiques sans les supprimer.
+**Fichiers :** `lib/digital-authoring/local-draft.ts`, `lib/digital-authoring/local-draft-purge.ts` (sans dépendance, chargé partout), `components/purge-brouillons-creation.tsx` + `components/site-nav.tsx` (purge à chaque page : la déconnexion est un formulaire sans JavaScript), `components/authoring-editor.tsx`, `lib/digital-authoring/copy.ts`, `e2e-creation/sauvegarde.spec.ts`, `tests/digital-authoring-brouillon-local.test.ts`.
+**Mesuré (2026-10-15) :** sauvegarde automatique à 1 s, saisie jamais bloquée pendant un envoi, réponse perdue tranchée en relisant le serveur (jeton), conflit à deux issues, champs facultatifs du brief repliés, barre d'enregistrement collante. 8 tests unitaires ; e2e local 13/13 (dont T14, T15, T16 et l'avertissement avant de quitter) ; deux pannes provoquées (sauvegarde automatique, proposition de restauration) détectées par les parcours. ⚠️ Instrument corrigé : un filtre Playwright en texte ignore la casse — « Enregistré » trouvait « …pas encore enregistrées ». Les vérifications de l'état enregistré sont désormais ancrées (`/^✓ Enregistré$/`), y compris dans les parcours de la 2.4.
 **Taille :** M.
 
 ## Checkpoint 2
-- [ ] Un guide ht et un guide fr créés et repris sans IA, à 360 px.
-- [ ] SQL vert dans le job CI ; e2e ciblés verts ; suite complète verte.
-- [ ] PR 2 : migration rédigée, **non appliquée**, protocole de vérification écrit.
+- [x] Un guide ht et un guide fr créés et repris sans IA, à 360 px (e2e : guide ht depuis un modèle, guide fr en conflit d'onglets ; 360 px dans les quatre langues).
+- [x] SQL vert dans le job CI (P1–P11 lus au journal) ; e2e ciblés verts (13/13 local, étape CI dédiée) ; suite complète verte (1727/1727).
+- [ ] PR 2 : migration rédigée, **non appliquée**, protocole de vérification écrit (`OPS_TODO.md`).
 
 ---
 

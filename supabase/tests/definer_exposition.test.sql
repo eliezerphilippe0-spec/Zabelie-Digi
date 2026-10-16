@@ -71,6 +71,13 @@ declare
     -- Réponse du vendeur à un avis (0139) : auth.uid() = vendeur du produit,
     -- compte actif, une seule fois (update atomique). Écrit sa ligne, rien d'autre.
     'zabelie_repondre_avis(p_review_id uuid, p_texte text):auth',
+    -- Studio de création éditoriale (0141, docs/70) : auth.uid() seul fait
+    -- l'identité, compte actif exigé ; n'écrivent que les projets de l'appelant.
+    -- Création sous verrou et plafond lu en base ; approbation d'une révision
+    -- EXACTE ; archivage. Rendent la ligne créée, une révision ou une date.
+    'zabelie_authoring_creer_projet(p_titre text, p_langue text, p_public text, p_marche text):auth',
+    'zabelie_authoring_approuver_plan(p_projet uuid, p_revision integer):auth',
+    'zabelie_authoring_archiver(p_projet uuid):auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',

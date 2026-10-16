@@ -50,6 +50,8 @@ import { lireCompares, lireVariantesRabais } from "@/lib/product-discount";
 import { RabaisManager } from "@/components/rabais-manager";
 import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
+import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
+import { copieCreation } from "@/lib/digital-authoring/copy";
 
 export const dynamic = "force-dynamic";
 const META = {
@@ -377,6 +379,10 @@ export default async function VendrePage() {
         {[["#mes-produits", "sell.mine.title"], ["/mes-ventes", "seller.orders"], ["/tableau-de-bord", "nav.dashboard"], ["/messages", "seller.messages"]].map(([href, key]) => (
           <Link key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm">{t(lang, key as import("@/lib/i18n").I18nKey)}</Link>
         ))}
+        {/* Studio de création éditoriale (docs/70) : seulement quand il est allumé. */}
+        {creationActive(lireEnvCreation()) && (
+          <Link href="/tableau-de-bord/creation" className="inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm">{copieCreation(lang).lien}</Link>
+        )}
       </nav>
       <details open={mine.length === 0} className="glass rounded-2xl p-6">
         <summary className="cursor-pointer text-lg font-semibold leading-11">{t(lang, "seller.new")}</summary>

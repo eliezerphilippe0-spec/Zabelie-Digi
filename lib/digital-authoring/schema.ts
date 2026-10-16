@@ -102,17 +102,26 @@ export function schemaProjet(l: LimitesEditeur = LIMITES_DEFAUT) {
 }
 export type Projet = z.infer<ReturnType<typeof schemaProjet>>;
 
-const CHAMPS_BRIEF_REQUIS = ["sujet", "publicDetail", "probleme", "resultat", "methode"] as const;
-const CHAMPS_BRIEF_FACULTATIFS = ["exemples", "prerequis", "ton", "limitesMethode", "notes", "references"] as const;
+export const CHAMPS_BRIEF_REQUIS = ["sujet", "publicDetail", "probleme", "resultat", "methode"] as const;
+export const CHAMPS_BRIEF_FACULTATIFS = ["exemples", "prerequis", "ton", "limitesMethode", "notes", "references"] as const;
+
+/**
+ * `brouillon` : ce qu'une SAUVEGARDE accepte — un brief à moitié rempli, une
+ * section encore sans titre. Refuser l'enregistrement d'un travail en cours
+ * le ferait perdre à la première coupure. `complet` : ce qu'exige
+ * l'APPROBATION du plan (et plus tard toute génération) — les champs requis
+ * sont remplis. Les limites de longueur et de caractères valent dans les deux.
+ */
+export type ModeSaisie = "brouillon" | "complet";
 
 /**
  * Le brief (PRD §5.2). Rien n'y est inventé : un champ facultatif vide reste
  * vide, et aucune génération ne le remplira d'une expérience, d'un diplôme ou
  * d'un résultat que le créateur n'a pas fournis (STU 02).
  */
-export function schemaBrief(l: LimitesEditeur = LIMITES_DEFAUT) {
+export function schemaBrief(l: LimitesEditeur = LIMITES_DEFAUT, mode: ModeSaisie = "complet") {
   const forme: Record<string, ReturnType<typeof champTexte>> = {};
-  for (const c of CHAMPS_BRIEF_REQUIS) forme[c] = champTexte(l.brief, true);
+  for (const c of CHAMPS_BRIEF_REQUIS) forme[c] = champTexte(l.brief, mode === "complet");
   for (const c of CHAMPS_BRIEF_FACULTATIFS) forme[c] = champTexte(l.brief);
   return z
     .object(forme)
@@ -129,11 +138,11 @@ export type Brief = Record<(typeof CHAMPS_BRIEF_REQUIS)[number] | (typeof CHAMPS
  * change pas l'identité, et une suggestion d'IA vise un identifiant, jamais
  * une position (STU 03).
  */
-export function schemaContenu(l: LimitesEditeur = LIMITES_DEFAUT) {
+export function schemaContenu(l: LimitesEditeur = LIMITES_DEFAUT, mode: ModeSaisie = "complet") {
   const section = z
     .object({
       id: z.string().uuid(),
-      titre: champTexte(l.titre, true),
+      titre: champTexte(l.titre, mode === "complet"),
       resultat: champTexte(l.brief),
       corps: champTexte(l.section),
     })
@@ -151,6 +160,18 @@ export function schemaContenu(l: LimitesEditeur = LIMITES_DEFAUT) {
 }
 export type Contenu = z.infer<ReturnType<typeof schemaContenu>>;
 export type Section = Contenu["sections"][number];
+
+/**
+ * Un brief lu en base, complété des clés absentes par du texte vide. La base
+ * crée un projet avec `{}` : sans ce remplissage, un brief jamais touché
+ * serait « mal formé » au lieu d'être simplement « incomplet ».
+ */
+export function remplirBrief(valeur: unknown): Record<string, unknown> {
+  const source = valeur && typeof valeur === "object" && !Array.isArray(valeur) ? (valeur as Record<string, unknown>) : {};
+  const plein: Record<string, unknown> = { ...source };
+  for (const c of [...CHAMPS_BRIEF_REQUIS, ...CHAMPS_BRIEF_FACULTATIFS]) if (plein[c] === undefined) plein[c] = "";
+  return plein;
+}
 
 /** Ce que mesure la limite totale : tout le texte du guide, titres compris. */
 export function longueurContenu(c: { objectif: string; sections: { titre: string; resultat: string; corps: string }[] }): number {
