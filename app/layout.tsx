@@ -12,6 +12,7 @@ import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK, brandIconUrl } from "@/lib/bra
 import { ThemeProvider } from "@/components/theme-provider";
 import { THEME_COOKIE, THEME_INIT_SCRIPT, readThemePreference, resolveTheme } from "@/lib/theme";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
+import { ADSENSE_CLIENT } from "@/lib/adsense";
 
 // Polices AUTO-HÉBERGÉES par Next (servies depuis notre domaine) — supprime la
 // requête tierce bloquante vers Google Fonts, gain net sur 3G. `swap` : le
@@ -91,6 +92,9 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  // Validation du site par AdSense : une balise, aucun script ni cookie
+  // (lib/adsense.ts dit ce qu'il faudra avant d'afficher une annonce).
+  other: { "google-adsense-account": ADSENSE_CLIENT },
 };
 
 export const viewport: Viewport = {

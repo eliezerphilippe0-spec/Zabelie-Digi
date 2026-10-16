@@ -64,7 +64,13 @@ insert into zabelie_colonnes_privees (nom_table, colonne, raison) values
   ('product_reviews', 'order_id',  '0137 : order_id unique par avis, il dirait qui a achete quoi ; l''acheteur lit les siens cote serveur'),
   ('zabelie_webhook_endpoints',  'secret',      '0122 : secret de signature HMAC, relu par le service seul pour signer ; affiche UNE fois au vendeur, a la creation'),
   ('zabelie_webhook_deliveries', 'payload',     '0122 : corps signe envoye au vendeur ; reste cote service, le tableau de bord n''en a pas besoin'),
-  ('zabelie_webhook_deliveries', 'lease_until', '0122 : bail interne du repartiteur, sans signification pour le vendeur');
+  ('zabelie_webhook_deliveries', 'lease_until', '0122 : bail interne du repartiteur, sans signification pour le vendeur'),
+  ('zabelie_authoring_operations', 'bail_jeton',   '0142 : jeton du bail de l''executeur ; le lire permettrait de conclure une operation a sa place'),
+  ('zabelie_authoring_operations', 'bail_expire',  '0142 : echeance interne du bail, sans signification pour le vendeur'),
+  ('zabelie_authoring_operations', 'empreinte',    '0142 : empreinte de la demande, sert au rejeu cote base seulement'),
+  ('zabelie_authoring_operations', 'tentatives',   '0142 : compteur interne de reprises de bail'),
+  ('zabelie_authoring_operations', 'usage_entree', '0142 : consommation chez le fournisseur, pour le suivi des couts par l''equipe, pas pour l''ecran vendeur'),
+  ('zabelie_authoring_operations', 'usage_sortie', '0142 : idem usage_entree');
 
 -- Les tables sous liste blanche : grants de COLONNE présents, grant de TABLE
 -- absent. C'est la définition exacte d'« une liste blanche est en vigueur ».

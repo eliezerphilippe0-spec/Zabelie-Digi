@@ -24,6 +24,8 @@ import { bornes, pageValide, nbPages, pageDansBornes } from "@/lib/pagination";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
 import { studioProvider } from "@/lib/studio-server";
+import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
+import { copieCreation } from "@/lib/digital-authoring/copy";
 import { t, type I18nKey } from "@/lib/i18n";
 import { AccountActions } from "@/components/account-actions";
 import { PayoutRequest } from "@/components/payout-request";
@@ -502,6 +504,10 @@ export default async function DashboardPage({
           {/* Le lien n'existe que si le Studio est allumé ET configuré : même prédicat que la page et les routes. */}
           {studioProvider() && (
             <Link href="/tableau-de-bord/studio" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "estidyo.lien")}</Link>
+          )}
+          {/* Studio de création éditoriale (docs/70) : même prédicat que sa page et ses routes. */}
+          {creationActive(lireEnvCreation()) && (
+            <Link href="/tableau-de-bord/creation" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{copieCreation(lang).lien}</Link>
           )}
           <Link href="/tableau-de-bord/api" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "apikeys.link")}</Link>
         </div>
