@@ -23,6 +23,15 @@ utilisateur et projet, purgé à la déconnexion. Phase 1 lancée.
 | D7 — liste pilote (5 à 10 créateurs) et support | 2026-10-15 | Accès de vrais utilisateurs |
 | D8 — libellés publics (« Zabelie Studio », « Créer un produit numérique ») | 2026-10-15 | Ouverture publique. Avant l'IA réelle, le texte affiché avant l'envoi doit aussi nommer le fournisseur externe (OpenAI ou Google) |
 
+### Autorisations du Studio en attente d'exécution (2026-10-16)
+
+« oui » du porteur le 2026-10-16 pour la séquence complète, **dans cet ordre et seulement dans cet ordre** :
+`0141` (vérifications) → `0142` (vérifications) → fusion de #361 → rebase de #362 sur `main`, CI verte → `0143`
+(vérifications) → fusion de #362 ; seuils des opportunités confirmés tels que proposés (5 / 2 / 3 / 2 / 30 / 10).
+Choix du porteur : **attendre** le connecteur plutôt que fusionner le code avant les migrations. Bloquant : le
+connecteur Supabase est branché sur un compte qui ne voit aucun projet ; le reconnecter avec le compte propriétaire
+de `ddditxykopuxxqzgkqwy`. Si une vérification échoue, la séquence s'arrête là.
+
 ### Migration `0141_zabelie_authoring_projects.sql` — protocole d'application (PR de la phase 2)
 
 **Rédigée, NON appliquée.** Décision C2-A : son application attend un « oui » explicite du porteur, même CI verte.
