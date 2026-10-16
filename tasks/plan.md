@@ -98,7 +98,7 @@ Demande du porteur : « tu dois t'inspirer de Tunafrik, de CreateurSuite pour co
 
 ### Phase 4 — Vérification et PDF (lot 5)
 - [x] 4.1 Essai PDF borné (décision D1) : 34 pages, 84 Ko, inspectées ; moteur interne gardé (D1-A, rendu validé par le porteur le 2026-10-16)
-- [ ] 4.2 Fiche-test de préparation (enrichie, idée 5) et approbation de révision
+- [x] 4.2 Fiche-test de préparation (enrichie, idée 5) et approbation de révision — migration `0144` écrite, NON appliquée (« oui » requis)
 - [ ] 4.3 Export privé, approbation de l'export exact
 - [x] 4.4 Extrait gratuit automatique (idée 1)
 - [x] 4.5 Exemplaire au nom de l'acheteur (idée 3) — moteur seulement ; la remise à l'acheteur vient avec la phase 5

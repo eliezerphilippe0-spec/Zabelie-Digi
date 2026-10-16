@@ -224,12 +224,13 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 4.2 Fiche-test de préparation et approbation de révision (idée 5, validée le 2026-10-16)
 **Description :** fiche-test « prêt à vendre » inspirée de la revue qualité d'Udemy. BLOQUANTS : section sans texte, titre de section vide, marqueur inachevé (« TODO », « XXX », « [...] »), marqueur de SIMULATION resté dans le texte, caractère que le PDF ne sait pas dessiner. CONSEILS : résultat manquant, section très courte, guide court, paragraphe répété, objectif vide, titre trop long pour une couverture, chiffres, prix et pourcentages à vérifier, liens à vérifier. Une note de préparation lisible (« prêt », « presque prêt », « pas prêt »). Confirmation non précochée de responsabilité ; approbation liée à une révision exacte (RPC), revérifiée en base pour les bloquants qu'elle peut voir.
 **Critères :**
-- [ ] Section vide ou marqueur inachevé signalé avant approbation.
-- [ ] Toute modification invalide l'approbation pour un nouvel export.
+- [x] Section vide ou marqueur inachevé signalé avant approbation.
+- [x] Toute modification invalide l'approbation pour un nouvel export.
 **Vérification :** tests unitaires et SQL ; e2e court.
 **Dépendances :** 2.4, 3.1.
-**Fichiers :** `lib/digital-authoring/quality.ts`, `components/authoring-review.tsx`, `supabase/migrations/NNNN_…` (RPC d'approbation), `tests/digital-authoring-qualite.test.ts`.
+**Fichiers :** `lib/digital-authoring/quality.ts`, `components/authoring-editor.tsx` (étape « 4. La relecture »), `app/api/digital-authoring/projects/[id]/route.ts` (action `approuver_guide`), `supabase/migrations/0144_zabelie_authoring_approbation.sql`, `supabase/tests/authoring_approbation.test.sql`, `tests/digital-authoring-qualite.test.ts`, `e2e-creation/relecture.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-16) :** sept bloquants et neuf conseils ; la fiche tourne en direct dans l'éditeur (valeurs différées : la frappe n'attend pas) et la route la refait sur le texte EN BASE, à la révision demandée, avant d'appeler `zabelie_authoring_approuver_revision` (0144, non appliquée), qui revérifie ce que la base peut voir. Case de responsabilité jamais cochée d'avance ; seul `true` passe, à l'écran, dans la route et en base. Une écriture après approbation avance la révision : l'écran dit « le guide a changé depuis votre approbation de la version N ». À 360 px, une carte par problème (sept sections courtes font une carte), extraits de chiffres coupés aux limites des mots. 10 tests unitaires de la fiche, 3 de la route, 12 cas SQL (AP1 à AP12, exécutés en CI seulement), 3 parcours e2e ; 27 mutations tuées sur 27.
 
 ### 4.3 Export privé et approbation de l'export exact
 **Description :** table `zabelie_authoring_exports` ; rendu depuis une révision approuvée ; dépôt au stockage privé (service role confiné, C1-A) ; empreinte, taille réelle, date ; prévisualisation et lien vendeur expirant ; approbation de l'export exact (auteur, date, empreinte). **Bloquée par C1 et D1.**

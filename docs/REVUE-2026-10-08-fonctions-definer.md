@@ -97,7 +97,7 @@ Trois mutations ont été jouées à la main, et chacune nomme la fonction en ca
 
 ⚠️ **Limite.** Le garde lit la base de la CI, construite depuis les migrations. Un `grant` passé à la main en production, hors migration, ne s'y voit pas. Le croisement production–CI de ce jour, identique, est à refaire à chaque revue.
 
-## Ajout du 2026-10-15 — Studio de création éditoriale (`0141`, non appliquée)
+## Ajout du 2026-10-15 — Studio de création éditoriale (`0141`, appliquée le 2026-10-16)
 
 Trois fonctions neuves, exécutables par `authenticated` seulement, ajoutées à la liste figée :
 
@@ -109,7 +109,7 @@ Trois fonctions neuves, exécutables par `authenticated` seulement, ajoutées à
 
 Aucune ne reçoit d'identifiant de vendeur, aucune n'est exécutable par `anon` (post-condition `ZB141` et test `supabase/tests/authoring_projects.test.sql`, cas P2 et P3).
 
-## Ajout du 2026-10-16 — Studio de création éditoriale, phase 3 (`0142`, non appliquée)
+## Ajout du 2026-10-16 — Studio de création éditoriale, phase 3 (`0142`, appliquée le 2026-10-16)
 
 | Fonction | Rôle | Identité | Écrit | Rend |
 |----------|------|----------|-------|------|
@@ -120,10 +120,18 @@ Aucune ne reçoit d'identifiant de vendeur, aucune n'est exécutable par `anon` 
 
 Les trois fonctions système ne figurent pas dans la liste figée (elle ne couvre que `anon` et `authenticated`) ; la post-condition `ZB142` et `supabase/tests/authoring_operations.test.sql` (O7) prouvent qu'`authenticated` ne peut pas les exécuter.
 
-## Ajout du 2026-10-16 — Studio de création éditoriale, tableau (`0143`, non appliquée)
+## Ajout du 2026-10-16 — Studio de création éditoriale, tableau (`0143`, appliquée le 2026-10-16)
 
 | Fonction | Rôle | Identité | Écrit | Rend |
 |----------|------|----------|-------|------|
 | `zabelie_authoring_opportunites` | `authenticated` | `auth.uid()`, compte actif | rien | deux listes agrégées : des termes de recherche sans résultat (au moins 5 personnes distinctes sur au moins 2 jours, sans chiffres en série, adresse ni lien, hors liste d'exclusion) et des rayons de produits digitaux (au moins 3 ventes réelles venant d'au moins 2 vendeurs) ; jamais un compte, un vendeur ou un montant |
 
 Elle lit des tables fermées aux clients (`zabelie_search_misses`, `orders`, `payments`) ; c'est sa raison d'être `SECURITY DEFINER`. Les seuils sont lus dans `zabelie_authoring_config` et bornés par des contraintes (au moins 3 personnes, au moins 2 vendeurs) ; `supabase/tests/authoring_opportunites.test.sql` (OP1 à OP9) prouve les filtres et les témoins.
+
+## Ajout du 2026-10-16 — Studio de création éditoriale, relecture (`0144`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_approuver_revision` | `authenticated` | `auth.uid()` = propriétaire du projet, compte actif | `revision_approuvee` et `revision_approuvee_le` de son projet, si la révision fournie est la révision courante, la responsabilité confirmée (`true`, jamais présumée), le plan approuvé, chaque section titrée et rédigée, et aucun marqueur de simulation dans le texte | la révision approuvée |
+
+Les deux colonnes ne sont accordées en écriture à aucun rôle client (post-condition `ZB144`) ; la garde de `0141`, redéfinie, les remet à vide à toute création. Une écriture ultérieure du texte avance la révision : l'approbation ne vaut plus, sans rien effacer. `supabase/tests/authoring_approbation.test.sql` (AP1 à AP12) prouve les refus, les forgeries refusées et les témoins acceptés.

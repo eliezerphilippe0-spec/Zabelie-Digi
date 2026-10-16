@@ -110,7 +110,7 @@ const server = createServer(async (req, res) => {
     const maintenant = new Date().toISOString();
     const p = { id: randomUUID(), seller_id: moi, titre: b.p_titre, langue: b.p_langue, public_vise: b.p_public, marche_diaspora: b.p_marche,
       brief: {}, contenu: { objectif: "", sections: [] }, revision: 1, derniere_sauvegarde: null, plan_approuve_revision: null,
-      created_at: maintenant, updated_at: maintenant, archived_at: null };
+      revision_approuvee: null, revision_approuvee_le: null, created_at: maintenant, updated_at: maintenant, archived_at: null };
     projets.set(p.id, p);
     return single([p]);
   }
@@ -121,6 +121,25 @@ const server = createServer(async (req, res) => {
     if (p.revision !== b.p_revision) return send({ code: "40001", message: "authoring_revision_perimee" }, 409);
     if (!p.contenu.sections.length) return send({ code: "P0001", message: "authoring_plan_vide" }, 400);
     p.plan_approuve_revision = b.p_revision;
+    return send(b.p_revision);
+  }
+  // Approbation du guide (0144) : mêmes refus que la fonction SQL, dans le même ordre.
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_approuver_revision") {
+    const b = await body();
+    if (b.p_responsabilite !== true) return send({ code: "22023", message: "authoring_responsabilite_requise" }, 400);
+    const p = projets.get(b.p_projet);
+    if (!p || p.seller_id !== moi) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
+    if (p.archived_at) return send({ code: "P0001", message: "authoring_projet_archive" }, 400);
+    if (p.revision !== b.p_revision) return send({ code: "40001", message: "authoring_revision_perimee" }, 409);
+    if (!p.plan_approuve_revision) return send({ code: "P0001", message: "authoring_guide_sans_plan" }, 400);
+    const s = p.contenu.sections;
+    if (!s.length || s.some((x) => !String(x.titre ?? "").trim() || !String(x.corps ?? "").trim())) {
+      return send({ code: "P0001", message: "authoring_guide_incomplet" }, 400);
+    }
+    const texte = JSON.stringify(p.contenu);
+    if (texte.includes("[SIMULASYON]") || texte.includes("[SIMULATION]")) return send({ code: "P0001", message: "authoring_marqueur_simulation" }, 400);
+    p.revision_approuvee = b.p_revision;
+    p.revision_approuvee_le = new Date().toISOString();
     return send(b.p_revision);
   }
   if (u.pathname === "/rest/v1/rpc/zabelie_authoring_archiver") {

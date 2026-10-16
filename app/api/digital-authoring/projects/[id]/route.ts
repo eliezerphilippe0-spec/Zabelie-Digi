@@ -9,12 +9,14 @@ import { UUID_RE } from "@/lib/digital-studio";
 import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
 import { lire, remplirBrief, schemaBrief, schemaContenu, schemaProjet } from "@/lib/digital-authoring/schema";
 import { revisionValide } from "@/lib/digital-authoring/revision";
+import { ficheTest } from "@/lib/digital-authoring/quality";
 import {
   ENTETES_PRIVEES,
   TABLE_CONFIG,
   TABLE_PROJETS,
   cleRefus,
   limitesDepuisConfig,
+  projetPourEditeur,
   traduireErreurBase,
 } from "@/lib/digital-authoring/api";
 
@@ -26,10 +28,14 @@ type Contexte = { params: Promise<{ id: string }> };
 /**
  * GET   /api/digital-authoring/projects/[id]  → le projet complet
  * PATCH /api/digital-authoring/projects/[id]  { revisionAttendue, jeton, projet?, brief?, contenu? }
- * POST  /api/digital-authoring/projects/[id]  { action: "approuver_plan", revision } | { action: "archiver" }
+ * POST  /api/digital-authoring/projects/[id]  { action: "approuver_plan", revision }
+ *                                              | { action: "approuver_guide", revision, responsabilite: true }
+ *                                              | { action: "archiver" }
  *
  * La sauvegarde accepte un travail INCOMPLET (mode `brouillon`) ; l'approbation
  * du plan exige le brief et le plan complets, relus en base (mode `complet`).
+ * L'approbation du guide (tâche 4.2) refait la fiche-test sur le texte EN
+ * BASE, à la révision demandée : un point bloquant rend 422 avec la fiche.
  *
  * Studio de création éditoriale (docs/70, tâche 2.2). Client de SESSION
  * partout : la RLS de 0141 cache les projets des autres, si bien qu'un
@@ -182,6 +188,31 @@ export async function POST(req: Request, ctx: Contexte) {
     const c = lire(schemaContenu(limites, "complet"), ligne.contenu);
     if (!c.ok) return erreurAvecLangue(lang, cleRefus(c.code), 422, { code: c.code });
     appel = supabase.rpc("zabelie_authoring_approuver_plan", { p_projet: id, p_revision: corps.revision });
+  } else if (corps.action === "approuver_guide" && revisionValide(corps.revision)) {
+    // La case de responsabilité n'est jamais présumée : seul `true` passe.
+    if (corps.responsabilite !== true) {
+      return erreurAvecLangue(lang, "authoring.approbation.responsabilite", 422, { code: "authoring_responsabilite_requise" });
+    }
+    const { data: ligne, error: erreurLecture } = await supabase
+      .from(TABLE_PROJETS)
+      .select("id, titre, contenu, revision, plan_approuve_revision, archived_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (erreurLecture) return erreurAvecLangue(lang, "api.unavailable", 503);
+    const p = projetPourEditeur(ligne);
+    if (!p) return erreurAvecLangue(lang, "authoring.introuvable", 404);
+    if (p.archive) return erreurAvecLangue(lang, "authoring.archive", 409, { code: "archive" });
+    // La fiche porte sur LA révision approuvée : si le texte a bougé, conflit.
+    if (p.revision !== corps.revision) return erreurAvecLangue(lang, "authoring.conflit", 409, { code: "conflit" });
+    const fiche = ficheTest({ titre: p.titre, contenu: p.contenu, planApprouve: p.planApprouveRevision !== null });
+    if (fiche.bloquants > 0) {
+      return erreurAvecLangue(lang, "authoring.approbation.pasPret", 422, { code: "guide_pas_pret", fiche });
+    }
+    appel = supabase.rpc("zabelie_authoring_approuver_revision", {
+      p_projet: id,
+      p_revision: corps.revision,
+      p_responsabilite: true,
+    });
   } else if (corps.action === "archiver") {
     appel = supabase.rpc("zabelie_authoring_archiver", { p_projet: id });
   } else {
