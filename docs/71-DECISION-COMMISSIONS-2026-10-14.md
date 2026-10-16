@@ -1,4 +1,4 @@
-# 70 — Note de décision : la commission au lancement
+# 71 — Note de décision : la commission au lancement
 
 **Date :** 2026-10-14
 **Statut :** à trancher par le porteur. Rien n'est codé tant que les décisions ci-dessous ne sont pas prises : ce sont des règles commerciales et de positionnement (`docs/25` §4).

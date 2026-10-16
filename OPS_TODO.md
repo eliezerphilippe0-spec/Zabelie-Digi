@@ -121,7 +121,7 @@ Au lancement, les listes seront très probablement vides : peu de recherches att
 trente jours. L'écran le dit (« pas encore assez de données ») ; il n'affiche jamais un chiffre complété.
 ## Commission au lancement — sept décisions à trancher (14 octobre 2026)
 
-Note de décision : `docs/70-DECISION-COMMISSIONS-2026-10-14.md`. Rien n'est
+Note de décision : `docs/71-DECISION-COMMISSIONS-2026-10-14.md`. Rien n'est
 codé avant arbitrage. À trancher par le porteur : (1) le modèle de référence,
 deux niveaux ou le modèle dormant de `0108` ; (2) une commission minimum par
 commande, en HTG ; (3) qui paie les frais MonCash, après avoir obtenu la
