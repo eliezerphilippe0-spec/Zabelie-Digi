@@ -251,7 +251,8 @@ begin
   foreach v_sql in array array[
     format('update zabelie_authoring_exports set empreinte = %L, approuve_empreinte = %L where id = %L', repeat('0', 64), repeat('0', 64), v_ex),
     format('update zabelie_authoring_exports set chemin = %L where id = %L', 'ailleurs.pdf', v_ex),
-    format('update zabelie_authoring_exports set approuve_le = now() where id = %L', v_ex),
+    -- `now()` est figée dans la transaction (= la date d'EX6) : on décale pour réécrire VRAIMENT.
+    format('update zabelie_authoring_exports set approuve_le = approuve_le + interval ''1 day'' where id = %L', v_ex),
     format('update zabelie_authoring_exports set approuve_le = null, approuve_empreinte = null where id = %L', v_ex)
   ] loop
     begin
