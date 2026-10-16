@@ -37,6 +37,9 @@ export default defineConfig({
         SUPABASE_SERVICE_ROLE_KEY: "cle-service-de-test",
         PORT: port,
         ZABELIE_AUTHORING_ENABLED: "true",
+        // Suggestions par le moteur SIMULÉ seulement : aucun appel réel, aucune dépense.
+        ZABELIE_AUTHORING_AI_ENABLED: "true",
+        ZABELIE_AUTHORING_AI_PROVIDER: "mock",
       },
     },
   ],

@@ -9,8 +9,9 @@
  * Seule la valeur exacte `true` ouvre : `"1"`, `"TRUE"` ou `"true "` laissent
  * fermé, comme pour le Studio images.
  *
- * `ZABELIE_AUTHORING_AI_PROVIDER` choisit le moteur : `mock` (simulation) ou,
- * à la tâche 3.4, un fournisseur réel. Absent → aucun moteur, jamais un
+ * `ZABELIE_AUTHORING_AI_PROVIDER` choisit le moteur : `mock` (simulation),
+ * `openai` ou `gemini` (réels, tâche 3.4 — avec la clé du fournisseur,
+ * partagée avec les descriptions produit). Absent → aucun moteur, jamais un
  * défaut implicite qui dépenserait.
  */
 
@@ -19,6 +20,10 @@ export type EnvCreation = {
   ZABELIE_AUTHORING_AI_ENABLED?: string;
   ZABELIE_AUTHORING_AI_PROVIDER?: string;
   VERCEL_ENV?: string;
+  OPENAI_API_KEY?: string;
+  OPENAI_MODEL?: string;
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
 };
 
 /** Lectures EXPLICITES (inventaire `.env.example`, `tests/env-example-complet.test.ts`). */
@@ -28,6 +33,10 @@ export function lireEnvCreation(): EnvCreation {
     ZABELIE_AUTHORING_AI_ENABLED: process.env.ZABELIE_AUTHORING_AI_ENABLED,
     ZABELIE_AUTHORING_AI_PROVIDER: process.env.ZABELIE_AUTHORING_AI_PROVIDER,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_MODEL: process.env.OPENAI_MODEL,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
   };
 }
 
@@ -40,7 +49,7 @@ export function iaActive(env: EnvCreation): boolean {
 }
 
 export type ChoixMoteur =
-  | { ok: true; moteur: "mock" }
+  | { ok: true; moteur: "mock" | "openai" | "gemini" }
   | { ok: false; code: "ia_coupee" | "configuration_absente" };
 
 /**
@@ -56,7 +65,10 @@ export function choisirMoteur(env: EnvCreation): ChoixMoteur {
   if (env.ZABELIE_AUTHORING_AI_PROVIDER === "mock") {
     return env.VERCEL_ENV === "production" ? { ok: false, code: "configuration_absente" } : { ok: true, moteur: "mock" };
   }
-  // Fournisseur réel : tâche 3.4. D'ici là, toute autre valeur est une
-  // configuration absente — jamais une bascule silencieuse vers un défaut.
+  // Fournisseur réel : la valeur exacte ET sa clé. Une valeur inconnue, ou une
+  // clé posée pour l'autre fournisseur, reste une configuration absente —
+  // jamais une bascule silencieuse vers un défaut.
+  if (env.ZABELIE_AUTHORING_AI_PROVIDER === "openai" && env.OPENAI_API_KEY?.trim()) return { ok: true, moteur: "openai" };
+  if (env.ZABELIE_AUTHORING_AI_PROVIDER === "gemini" && env.GEMINI_API_KEY?.trim()) return { ok: true, moteur: "gemini" };
   return { ok: false, code: "configuration_absente" };
 }

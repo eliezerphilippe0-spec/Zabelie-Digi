@@ -15,6 +15,8 @@ const ids = {
 const CONFIG = { id: true, titre_max: 160, brief_max: 6000, sections_max: 12, section_max: 12000, total_max: 120000, projets_actifs_max: 10 };
 const EDITORIAUX = ["titre", "langue", "public_vise", "marche_diaspora", "brief", "contenu", "derniere_sauvegarde"];
 let projets = new Map();
+let operations = new Map();
+let revisions = new Map();
 
 function token(role) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -40,7 +42,7 @@ const server = createServer(async (req, res) => {
   const moi = ids[role];
 
   if (u.pathname === "/__health") return send({ ok: true });
-  if (u.pathname === "/__reset") { projets = new Map(); return send({ ok: true }); }
+  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); return send({ ok: true }); }
   if (u.pathname === "/__login") {
     const qui = Object.keys(ids).includes(u.searchParams.get("role")) ? u.searchParams.get("role") : "seller";
     const session = { access_token: token(qui), refresh_token: "fixture", expires_at: 4102444800, expires_in: 3600, token_type: "bearer",
@@ -111,6 +113,66 @@ const server = createServer(async (req, res) => {
     if (!p || p.seller_id !== moi || p.archived_at) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
     p.archived_at = new Date().toISOString();
     return send(p.archived_at);
+  }
+
+  // ── Opérations d'IA (0142) : rejeu par clé, instantané figé, bail à jeton ──
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_demander") {
+    const b = await body();
+    const p = projets.get(b.p_projet);
+    if (!moi || !p || p.seller_id !== moi) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
+    if (b.p_type !== "plan" && !p.plan_approuve_revision) return send({ code: "P0001", message: "authoring_plan_non_approuve" }, 400);
+    const cleRev = `${p.id}:${p.revision}`;
+    if (!revisions.has(cleRev)) revisions.set(cleRev, { id: randomUUID(), numero: p.revision, titre: p.titre, langue: p.langue, public_vise: p.public_vise, marche_diaspora: p.marche_diaspora, brief: structuredClone(p.brief), contenu: structuredClone(p.contenu) });
+    const rev = revisions.get(cleRev);
+    const existante = [...operations.values()].find((o) => o.seller_id === moi && o.idempotency_key === b.p_cle);
+    if (existante) return single([existante]);
+    const o = { id: randomUUID(), seller_id: moi, project_id: p.id, revision_id: rev.id, type: b.p_type, section_id: b.p_section, idempotency_key: b.p_cle,
+      etat: "queued", fournisseur: null, bail_jeton: null, soumis_le: null, resultat: null, code_erreur: null, created_at: new Date().toISOString() };
+    operations.set(o.id, o);
+    return single([o]);
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_prendre_bail") {
+    const b = await body();
+    const o = operations.get(b.p_operation);
+    if (!o || o.etat !== "queued") return send([]);
+    Object.assign(o, { etat: "running", bail_jeton: b.p_jeton });
+    return send([o]);
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_marquer_soumis") {
+    const b = await body();
+    const o = operations.get(b.p_operation);
+    if (!o || o.bail_jeton !== b.p_jeton || o.etat !== "running" || o.soumis_le) return send(false);
+    Object.assign(o, { soumis_le: new Date().toISOString(), fournisseur: b.p_fournisseur });
+    return send(true);
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_conclure") {
+    const b = await body();
+    const o = operations.get(b.p_operation);
+    if (!o || o.bail_jeton !== b.p_jeton || o.etat !== "running") return send(false);
+    Object.assign(o, { etat: b.p_etat, resultat: b.p_resultat, code_erreur: b.p_code, bail_jeton: null });
+    return send(true);
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_annuler") {
+    const b = await body();
+    const o = operations.get(b.p_operation);
+    if (!o || o.seller_id !== moi || o.etat !== "queued") return send({ code: "P0001", message: "authoring_operation_non_annulable" }, 400);
+    Object.assign(o, { etat: "cancelled", code_erreur: "annule_par_vendeur" });
+    return send("cancelled");
+  }
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_quota") {
+    const utilisees = [...operations.values()].filter((o) => o.seller_id === moi && !(["cancelled", "failed"].includes(o.etat) && !o.soumis_le)).length;
+    return single([{ utilisees, maximum: 10 }]);
+  }
+  if (u.pathname === "/rest/v1/zabelie_authoring_operations") {
+    const numero = (o) => [...revisions.values()].find((r) => r.id === o.revision_id)?.numero ?? null;
+    const lignes = [...operations.values()]
+      .filter((o) => o.seller_id === moi && (!eq("id") || o.id === eq("id")) && (!eq("project_id") || o.project_id === eq("project_id")))
+      // Le vendeur ne lit jamais le jeton de bail (0142).
+      .map((o) => { const copie = { ...o, revision: { numero: numero(o) } }; delete copie.bail_jeton; return copie; });
+    return single(lignes);
+  }
+  if (u.pathname === "/rest/v1/zabelie_authoring_revisions") {
+    return single([...revisions.values()].filter((r) => r.id === eq("id")));
   }
 
   if (u.pathname.startsWith("/rest/v1/rpc/")) return send([]);

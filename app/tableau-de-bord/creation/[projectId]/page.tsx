@@ -7,7 +7,7 @@ import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getLang } from "@/lib/i18n-server";
 import { UUID_RE } from "@/lib/digital-studio";
-import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
+import { choisirMoteur, creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
 import { copieCreation } from "@/lib/digital-authoring/copy";
 import { TABLE_CONFIG, TABLE_PROJETS, limitesDepuisConfig, projetPourEditeur } from "@/lib/digital-authoring/api";
 import { LIMITES_DEFAUT } from "@/lib/digital-authoring/schema";
@@ -39,6 +39,10 @@ export default async function ProjetPage({ params }: { params: Promise<{ project
   ]);
   const projet = projetPourEditeur(ligne);
   if (!projet) notFound();
+  // Suggestions : seulement si le moteur est réellement disponible. Sinon,
+  // aucune trace d'IA à l'écran — l'édition manuelle reste entière (STU 04).
+  const ia = choisirMoteur(lireEnvCreation()).ok;
+  const quota = ia ? (await supabase.rpc("zabelie_authoring_quota").maybeSingle<{ utilisees: number; maximum: number }>()).data : null;
 
   return (
     <>
@@ -50,7 +54,7 @@ export default async function ProjetPage({ params }: { params: Promise<{ project
         <p className="mt-2 text-sm text-mist">{c.lien}</p>
         <h1 className="mt-1 break-words text-2xl font-semibold">{projet.titre}</h1>
         <div className="mt-6">
-          <AuthoringEditor initial={projet} labels={c} limites={limitesDepuisConfig(config) ?? LIMITES_DEFAUT} userId={user.id} />
+          <AuthoringEditor initial={projet} labels={c} limites={limitesDepuisConfig(config) ?? LIMITES_DEFAUT} userId={user.id} ia={ia} quotaInitial={quota ?? null} />
         </div>
       </main>
       <SiteFooter />

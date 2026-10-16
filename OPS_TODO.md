@@ -17,15 +17,22 @@ utilisateur et projet, purgé à la déconnexion. Phase 1 lancée.
 
 | Décision encore ouverte | Depuis | Ce qu'elle bloque |
 |---|---|---|
-| D3 — fournisseur et modèle texte réels | 2026-10-15 | IA réelle (lot 9) |
-| D4 — budget, plafonds, unité d'usage | 2026-10-15 | IA réelle (lot 9) |
+| D3 — fournisseur et modèle texte réels | 2026-10-15 | IA réelle (lot 9). L'adaptateur est prêt et éteint (tâche 3.4) : `openai` ou `gemini`, mêmes clés et modèles que les descriptions produit (`OPENAI_API_KEY`/`OPENAI_MODEL`, `GEMINI_API_KEY`/`GEMINI_MODEL`) |
+| D4 — budget, plafonds, unité d'usage | 2026-10-15 | IA réelle (lot 9). En base aujourd'hui : 10 suggestions par vendeur et par jour, 100 pour tout Zabelie, 2 en cours par vendeur, liste pilote exigée (`0142`). Aucun plafond en argent : celui de la console du fournisseur, partagé avec les descriptions produit |
 | D5 — conservation des brouillons, révisions, exports non acquis | 2026-10-15 | Purge automatique, pilote réel |
 | D7 — liste pilote (5 à 10 créateurs) et support | 2026-10-15 | Accès de vrais utilisateurs |
-| D8 — libellés publics (« Zabelie Studio », « Créer un produit numérique ») | 2026-10-15 | Ouverture publique |
+| D8 — libellés publics (« Zabelie Studio », « Créer un produit numérique ») | 2026-10-15 | Ouverture publique. Avant l'IA réelle, le texte affiché avant l'envoi doit aussi nommer le fournisseur externe (OpenAI ou Google) |
 
 ### Migration `0141_zabelie_authoring_projects.sql` — protocole d'application (PR de la phase 2)
 
 **Rédigée, NON appliquée.** Décision C2-A : son application attend un « oui » explicite du porteur, même CI verte.
+
+⚠️ **État au 2026-10-16** : « oui » donné (« oui applique 0141 et fusionne »), mais le connecteur Supabase refuse tout
+accès au projet (« You do not have permission »), même en lecture. La PR #360 a été fusionnée depuis GitHub par le
+porteur à 04:38 UTC (`fff8299`, CI et vérification après déploiement vertes) **avant** l'application : sans incidence,
+le Studio est éteint en production. L'application de `0141` et les quatre vérifications ci-dessous restent à faire dès
+que le connecteur est rebranché sur le compte propriétaire du projet `ddditxykopuxxqzgkqwy`.
+
 Elle est additive et isolée : deux tables neuves (`zabelie_authoring_config`, `zabelie_authoring_projects`), trois
 fonctions sous `auth.uid()`, et la sonde `zabelie_objets_requis()` redéfinie à l'identique de `0139` plus ces trois
 fonctions. Aucune table existante n'est modifiée.
@@ -44,6 +51,26 @@ Vérifications après application, en lecture :
 
 Retour arrière : le Studio étant éteint, aucun retour n'est nécessaire pour la marketplace. Ne pas supprimer les
 tables d'un projet déjà utilisé : les données additives restent (PRD §20.3).
+
+### Migration `0142_zabelie_authoring_operations.sql` — protocole d'application (PR de la phase 3)
+
+**Rédigée, NON appliquée ; exige `0141` appliquée avant elle.** Décision C2-A : « oui » explicite du porteur, à part de
+celui de `0141`. Additive : trois tables neuves (`zabelie_authoring_pilotes`, `zabelie_authoring_revisions`,
+`zabelie_authoring_operations`), cinq colonnes ajoutées à `zabelie_authoring_config` avec leurs valeurs par défaut, trois
+fonctions vendeur sous `auth.uid()` (`demander`, `annuler`, `quota`), trois fonctions système réservées au
+`service_role` (`prendre_bail`, `marquer_soumis`, `conclure`), et la sonde redéfinie (neuf entrées `zabelie_authoring_%`).
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0142_zabelie_authoring_operations.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB142` passées (la migration lève sinon).
+3. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : neuf lignes, `present`
+   vrai.
+4. `select suggestions_vendeur_jour, suggestions_global_jour, operations_simultanees, bail_secondes, pilote_requis from
+   zabelie_authoring_config` : 10 / 100 / 2 / 60 / vrai.
+5. `select count(*) from zabelie_authoring_pilotes` : 0 — personne n'a accès aux suggestions tant que D7 n'est pas
+   tranchée.
+
+L'IA reste coupée après la fusion (`ZABELIE_AUTHORING_AI_ENABLED` absent) : aucune demande ne peut partir.
 
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
