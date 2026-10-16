@@ -94,11 +94,18 @@ export async function executerEtape(deps: DepsExecuteur, operationId: string): P
   if (marque.error) throw new Error(`soumission refusee : ${marque.error.code ?? "sans code"}`);
   if (marque.data !== true) return null; // annulée en base (compte, projet, pilote) ou bail perdu
 
+  // Minuterie explicite plutôt qu'`AbortSignal.timeout` : celle-ci ne retient
+  // pas le processus, et une attente sans autre activité serait abandonnée
+  // sans que le délai ne tombe jamais.
+  const coupure = new AbortController();
+  const minuterie = setTimeout(() => coupure.abort(), deps.delaiMs);
   let reponse: ReponseFournisseur;
   try {
-    reponse = await choix.fournisseur.envoyer({ type: op.type, contexte }, AbortSignal.timeout(deps.delaiMs));
+    reponse = await choix.fournisseur.envoyer({ type: op.type, contexte }, coupure.signal);
   } catch {
     reponse = { type: "aucune_reponse" };
+  } finally {
+    clearTimeout(minuterie);
   }
 
   if (reponse.type === "aucune_reponse") {

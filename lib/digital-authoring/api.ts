@@ -69,7 +69,7 @@ export const TABLE_OPERATIONS = "zabelie_authoring_operations";
  * pour dire si le texte a bougé depuis la demande (`etatProposition`).
  */
 export const COLONNES_OPERATION =
-  "id, type, section_id, etat, code_erreur, resultat, created_at, revision:zabelie_authoring_revisions(numero)";
+  "id, type, section_id, etat, code_erreur, resultat, fournisseur, created_at, revision:zabelie_authoring_revisions(numero)";
 
 export type OperationClient = {
   id: string;
@@ -79,6 +79,8 @@ export type OperationClient = {
   code: string | null;
   resultat: unknown;
   revisionSource: number | null;
+  /** Produite par le fournisseur simulé : l'écran le dit, toujours (PRD §8.3). */
+  simulation: boolean;
 };
 
 export function operationPourClient(ligne: unknown): OperationClient | null {
@@ -95,6 +97,7 @@ export function operationPourClient(ligne: unknown): OperationClient | null {
     // Un résultat n'est montré que s'il a abouti : rien de partiel ne sort.
     resultat: l.etat === "succeeded" ? l.resultat ?? null : null,
     revisionSource: typeof rev?.numero === "number" ? rev.numero : null,
+    simulation: l.fournisseur === "mock",
   };
 }
 

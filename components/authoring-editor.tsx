@@ -3,6 +3,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import { projetPourEditeur, type ProjetEditeur } from "@/lib/digital-authoring/api";
 import { rapprocherApresPerte } from "@/lib/digital-authoring/revision";
+import { ConfirmationEnvoi, EtatSuggestion, useSuggestions, type PlanPropose, type Quota } from "@/components/authoring-suggestion";
 import {
   brouillonDiffere,
   effacerBrouillon,
@@ -51,11 +52,16 @@ export function AuthoringEditor({
   labels,
   limites,
   userId,
+  ia = false,
+  quotaInitial = null,
 }: {
   initial: ProjetEditeur;
   labels: CopieCreation;
   limites: LimitesEditeur;
   userId: string;
+  /** Suggestions ouvertes (drapeau, moteur, configuration) : sinon aucune trace d'IA à l'écran. */
+  ia?: boolean;
+  quotaInitial?: Quota | null;
 }) {
   const e = labels.editeur;
   const ids = useId();
@@ -171,6 +177,15 @@ export function AuthoringEditor({
     // `confirmer` et les libellés sont stables pour la vie de l'éditeur.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
+
+  // L'assistant lit la version ENREGISTRÉE : on enregistre d'abord ce qui est en cours.
+  const avantEnvoi = useCallback(async () => {
+    const st = statutRef.current;
+    if (st === "propre" || st === "enregistre") return true;
+    return (await sauver()) !== null;
+  }, [sauver]);
+  const sugg = useSuggestions({ projetId: initial.id, labels: labels.ia, quotaInitial, avantEnvoi });
+  const [copiee, setCopiee] = useState<string | null>(null);
 
   async function lireServeur(): Promise<ProjetEditeur | null> {
     try {
@@ -348,6 +363,36 @@ export function AuthoringEditor({
     toucher();
   }
 
+  function remplacerParSuggestion(s: Section, texte: string) {
+    if (s.corps.trim() && !window.confirm(labels.ia.confirmerRemplacer)) return;
+    majSection(s.id, { corps: texte });
+    sugg.oublier(s.id);
+  }
+  function ajouterSuggestion(s: Section, texte: string) {
+    majSection(s.id, { corps: s.corps.trim() ? `${s.corps}\n\n${texte}` : texte });
+    sugg.oublier(s.id);
+  }
+  async function copierSuggestion(id: string, texte: string) {
+    try {
+      await navigator.clipboard.writeText(texte);
+      setCopiee(id);
+    } catch {
+      /* presse-papiers refusé : le texte reste affiché, sélectionnable */
+    }
+  }
+  function utiliserPlan(plan: PlanPropose) {
+    if (contenu.sections.some((x) => x.corps.trim()) && !window.confirm(labels.ia.confirmerPlan)) return;
+    setContenu((c) => ({
+      objectif: c.objectif.trim() ? c.objectif : plan.objectif,
+      sections: plan.sections.slice(0, limites.sections).map((x) => ({ id: crypto.randomUUID(), titre: x.titre, resultat: x.resultat, corps: "" })),
+    }));
+    toucher();
+    sugg.oublier(null);
+  }
+  const restantes = sugg.quota
+    ? labels.ia.restantes.replace("{n}", String(Math.max(0, sugg.quota.maximum - sugg.quota.utilisees))).replace("{max}", String(sugg.quota.maximum))
+    : null;
+
   const compteur = (n: number, max: number) => e.compteur.replace("{n}", String(n)).replace("{max}", String(max));
   const texteStatut: Record<Statut, string> = {
     propre: "",
@@ -471,6 +516,22 @@ export function AuthoringEditor({
             {planApprouve !== null && <span className="text-sm text-success-text">✓ {e.planApprouve}</span>}
           </div>
           {contenu.sections.length === 0 && <p className="mt-2 text-xs text-mist">{e.planVideAide}</p>}
+          {ia && (
+            <div className="mt-4 border-t border-line pt-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => sugg.demander("plan", null)} disabled={sugg.enCours(null)}
+                  className="min-h-11 rounded-xl border border-line px-4 text-sm disabled:opacity-40">{labels.ia.proposerPlan}</button>
+                {restantes && <span className="text-xs text-mist">{restantes}</span>}
+              </div>
+              <ConfirmationEnvoi s={sugg} labels={labels.ia} sectionId={null} />
+              <EtatSuggestion s={sugg} labels={labels.ia} sectionId={null} revisionCourante={revision} actions={
+                sugg.proposition(null)?.plan ? (
+                  <button type="button" onClick={() => utiliserPlan(sugg.proposition(null)!.plan!)}
+                    className="min-h-11 rounded-xl border border-line px-3 text-sm font-semibold">{labels.ia.utiliserPlan}</button>
+                ) : null
+              } />
+            </div>
+          )}
         </section>
 
         <section aria-labelledby={`${ids}-redaction`} className="rounded-2xl border border-line bg-surface p-5">
@@ -480,15 +541,41 @@ export function AuthoringEditor({
           ) : (
             <>
               <p className="mt-1 text-sm text-mist">{e.redactionIntro}</p>
+              {ia && restantes && <p className="mt-1 text-xs text-mist">{restantes}</p>}
               <div className="mt-4 space-y-5">
-                {contenu.sections.map((s, i) => (
-                  <label key={s.id} className="block text-sm">
-                    <span className="font-semibold">{i + 1}. {s.titre}</span>
-                    <textarea className={champ} rows={8} value={s.corps} maxLength={limites.section} aria-label={`${e.corps} : ${s.titre}`}
-                      onChange={(v) => majSection(s.id, { corps: v.target.value })} />
-                    <span className="mt-1 block text-xs text-mist">{compteur(s.corps.length, limites.section)}</span>
-                  </label>
-                ))}
+                {contenu.sections.map((s, i) => {
+                  const p = sugg.proposition(s.id);
+                  return (
+                    <div key={s.id}>
+                      <label className="block text-sm">
+                        <span className="font-semibold">{i + 1}. {s.titre}</span>
+                        <textarea className={champ} rows={8} value={s.corps} maxLength={limites.section} aria-label={`${e.corps} : ${s.titre}`}
+                          onChange={(v) => majSection(s.id, { corps: v.target.value })} />
+                      </label>
+                      <span className="mt-1 block text-xs text-mist">{compteur(s.corps.length, limites.section)}</span>
+                      {ia && (
+                        <>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {([["draft", labels.ia.suggererBrouillon], ["rewrite", labels.ia.reformuler], ["exercise", labels.ia.proposerExercice]] as const).map(([type, libelle]) => (
+                              <button key={type} type="button" onClick={() => sugg.demander(type, s.id)} disabled={sugg.enCours(s.id)}
+                                aria-label={`${libelle} : ${s.titre}`} className="min-h-11 rounded-xl border border-line px-3 text-sm disabled:opacity-40">{libelle}</button>
+                            ))}
+                          </div>
+                          <ConfirmationEnvoi s={sugg} labels={labels.ia} sectionId={s.id} />
+                          <EtatSuggestion s={sugg} labels={labels.ia} sectionId={s.id} revisionCourante={revision} actions={
+                            p?.texte ? (
+                              <>
+                                <button type="button" onClick={() => remplacerParSuggestion(s, p.texte!)} className="min-h-11 rounded-xl border border-line px-3 text-sm font-semibold">{labels.ia.remplacer}</button>
+                                <button type="button" onClick={() => ajouterSuggestion(s, p.texte!)} className="min-h-11 rounded-xl border border-line px-3 text-sm">{labels.ia.ajouter}</button>
+                                <button type="button" onClick={() => void copierSuggestion(p.operationId, p.texte!)} className="min-h-11 rounded-xl border border-line px-3 text-sm">{copiee === p.operationId ? labels.ia.copie : labels.ia.copier}</button>
+                              </>
+                            ) : null
+                          } />
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
