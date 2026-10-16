@@ -212,12 +212,13 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 4.1 Essai PDF borné (décision D1)
 **Description :** générateur interne minimal (polices standard, WinAnsi, chasses AFM, césure, pagination, sommaire en deux passes) ; rendu d'un guide de 30 pages en kreyòl avec longues chaînes, listes et sauts de page ; caractères hors WinAnsi refusés avec un message clair.
 **Critères :**
-- [ ] Toutes les pages inspectées : aucun texte tronqué ni recouvert, accents corrects (T17).
-- [ ] Deux rendus de la même révision donnent les mêmes octets.
-- [ ] Taille ≤ 5 Mio pour le guide d'essai.
+- [x] Toutes les pages inspectées : aucun texte tronqué ni recouvert, accents corrects (T17).
+- [x] Deux rendus de la même révision donnent les mêmes octets.
+- [x] Taille ≤ 5 Mio pour le guide d'essai.
 **Vérification :** captures de chaque page ; test de déterminisme ; décision D1 rendue au porteur avec les captures.
 **Dépendances :** 1.1.
-**Fichiers :** `lib/digital-authoring/pdf/writer.ts`, `lib/digital-authoring/pdf/metrics.ts`, `lib/digital-authoring/pdf/layout.ts`, `tests/digital-authoring-pdf.test.ts`.
+**Fichiers :** `lib/digital-authoring/pdf/writer.ts`, `lib/digital-authoring/pdf/metrics.ts`, `lib/digital-authoring/pdf/layout.ts`, `lib/digital-authoring/pdf/winansi.ts`, `lib/digital-authoring/pdf/guide-pdf.ts`, `tests/digital-authoring-pdf.test.ts`, `tests/helpers/guide-essai.ts`.
+**Mesuré (2026-10-16) :** moteur interne sans dépendance (Helvetica, gras, italique ; chasses extraites des AFM « Core 14 » d'Adobe, téléchargés avec l'accord du porteur et non commités ; encodage WinAnsi). Format A5 (lecture sur téléphone), coupure au mot, mot trop long coupé avec un trait d'union, listes à puces et numérotées à marques alignées à droite, chaque section sur une page neuve, ni veuve ni orpheline, sommaire en deux passes. Guide d'essai en kreyòl : **34 pages, 83 901 octets**, les 34 pages inspectées une à une dans Chrome ; trois défauts trouvés à l'inspection et corrigés (« 10. » collé au texte, liste collée au paragraphe suivant, ligne seule en haut de page). 16 tests ; 17 mutations tuées sur 17 (deux tours : cinq survivants au premier, tests resserrés). Caractère sans dessin (émoji, ✓, idéogramme) : refusé en nommant la section et le caractère.
 **Taille :** M.
 
 ### 4.2 Contrôles qualité et approbation de révision

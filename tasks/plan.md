@@ -97,7 +97,7 @@ Demande du porteur : « tu dois t'inspirer de Tunafrik, de CreateurSuite pour co
 **Checkpoint T** — tableau lisible à 360 px et sur ordinateur ; aucun chiffre inventé (état vide honnête tant que les seuils ne sont pas atteints) ; aucune entrée vers une fonction absente ; PR T (migration non appliquée).
 
 ### Phase 4 — Vérification et PDF (lot 5)
-- [ ] 4.1 Essai PDF borné (décision D1)
+- [x] 4.1 Essai PDF borné (décision D1) : 34 pages, 84 Ko, inspectées ; D1 à confirmer par le porteur
 - [ ] 4.2 Contrôles qualité et approbation de révision
 - [ ] 4.3 Export privé, approbation de l'export exact
 
