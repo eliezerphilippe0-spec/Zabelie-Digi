@@ -221,8 +221,8 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 **Mesuré (2026-10-16) :** moteur interne sans dépendance (Helvetica, gras, italique ; chasses extraites des AFM « Core 14 » d'Adobe, téléchargés avec l'accord du porteur et non commités ; encodage WinAnsi). Format A5 (lecture sur téléphone), coupure au mot, mot trop long coupé avec un trait d'union, listes à puces et numérotées à marques alignées à droite, chaque section sur une page neuve, ni veuve ni orpheline, sommaire en deux passes. Guide d'essai en kreyòl : **34 pages, 83 901 octets**, les 34 pages inspectées une à une dans Chrome ; trois défauts trouvés à l'inspection et corrigés (« 10. » collé au texte, liste collée au paragraphe suivant, ligne seule en haut de page). 16 tests ; 17 mutations tuées sur 17 (deux tours : cinq survivants au premier, tests resserrés). Caractère sans dessin (émoji, ✓, idéogramme) : refusé en nommant la section et le caractère.
 **Taille :** M.
 
-### 4.2 Contrôles qualité et approbation de révision
-**Description :** liste de contrôle (sections vides, marqueurs inachevés, références déclarées séparées des suggérées, faits à vérifier), confirmation non précochée de responsabilité, approbation liée à une révision exacte (RPC).
+### 4.2 Fiche-test de préparation et approbation de révision (idée 5, validée le 2026-10-16)
+**Description :** fiche-test « prêt à vendre » inspirée de la revue qualité d'Udemy. BLOQUANTS : section sans texte, titre de section vide, marqueur inachevé (« TODO », « XXX », « [...] »), marqueur de SIMULATION resté dans le texte, caractère que le PDF ne sait pas dessiner. CONSEILS : résultat manquant, section très courte, guide court, paragraphe répété, objectif vide, titre trop long pour une couverture, chiffres, prix et pourcentages à vérifier, liens à vérifier. Une note de préparation lisible (« prêt », « presque prêt », « pas prêt »). Confirmation non précochée de responsabilité ; approbation liée à une révision exacte (RPC), revérifiée en base pour les bloquants qu'elle peut voir.
 **Critères :**
 - [ ] Section vide ou marqueur inachevé signalé avant approbation.
 - [ ] Toute modification invalide l'approbation pour un nouvel export.
@@ -241,6 +241,22 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 **Dépendances :** 4.1, 4.2, C1, D1.
 **Fichiers :** `supabase/migrations/NNNN_zabelie_authoring_exports.sql`, `app/api/digital-authoring/exports/route.ts`, `lib/digital-authoring/export.ts`, `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`.
 **Taille :** M.
+
+### 4.4 Extrait gratuit automatique (idée 1, validée le 2026-10-16)
+**Description :** depuis la même révision que le guide : page de titre, sommaire complet, première section entière, puis une page de fin d'extrait qui dit ce que contient le guide complet (nombre de pages et de sections). Même moteur, même déterminisme, empreinte propre.
+**Critères :**
+- [x] L'extrait ne contient aucun texte des sections suivantes.
+- [x] Deux rendus de l'extrait donnent les mêmes octets.
+**Fichiers :** `lib/digital-authoring/pdf/guide-pdf.ts`, `lib/digital-authoring/pdf/layout.ts`, `tests/digital-authoring-pdf.test.ts`.
+**Mesuré (2026-10-16) :** extrait du guide d'essai : 7 pages, 14 137 octets (le guide : 34 pages). Sommaire et première section identiques au guide, ligne pour ligne et numéros compris ; page de titre marquée « Ekstrè gratis » ; page de fin « Fen ekstrè a » qui annonce 34 pages et 8 sections. L'extrait n'existe que si le guide complet se rend.
+
+### 4.5 Exemplaire au nom de l'acheteur (idée 3, validée le 2026-10-16)
+**Description :** une ligne discrète en pied de chaque page (« Exemplaire de Jean P. · commande ZB-… »), sans rien déplacer dans la mise en page : le corps d'un exemplaire nominatif est ligne pour ligne celui du guide approuvé. Prénom et initiale seulement, jamais un téléphone ni une adresse. La remise à l'acheteur (téléchargement) vient avec la phase 5.
+**Critères :**
+- [x] Le corps de l'exemplaire est identique à celui du guide approuvé ; seule la ligne de pied change.
+- [x] Le nom est réduit au prénom et à l'initiale ; un caractère sans dessin dans le nom est retiré, jamais bloquant.
+**Fichiers :** `lib/digital-authoring/pdf/layout.ts`, `lib/digital-authoring/pdf/guide-pdf.ts`, `tests/digital-authoring-pdf.test.ts`.
+**Mesuré (2026-10-16) :** « Kopi pou Jean-Robert P. · kòmand ZB-2026-0042 » (fr : « Exemplaire de … · commande … ») en 7,5 pt gris sous le numéro de page, sur chaque page ; corps identique ligne pour ligne au guide. Chiffres retirés du nom (un téléphone ne passe pas), référence réduite aux lettres, chiffres et tirets. 20 tests au total ; 11 mutations de 4.4 et 4.5 tuées sur 11.
 
 ## Checkpoint 4
 - [ ] PDF d'essai inspecté en entier ; D1 tranchée par le porteur.

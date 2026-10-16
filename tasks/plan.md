@@ -97,9 +97,26 @@ Demande du porteur : « tu dois t'inspirer de Tunafrik, de CreateurSuite pour co
 **Checkpoint T** — tableau lisible à 360 px et sur ordinateur ; aucun chiffre inventé (état vide honnête tant que les seuils ne sont pas atteints) ; aucune entrée vers une fonction absente ; PR T (migration non appliquée).
 
 ### Phase 4 — Vérification et PDF (lot 5)
-- [x] 4.1 Essai PDF borné (décision D1) : 34 pages, 84 Ko, inspectées ; D1 à confirmer par le porteur
-- [ ] 4.2 Contrôles qualité et approbation de révision
+- [x] 4.1 Essai PDF borné (décision D1) : 34 pages, 84 Ko, inspectées ; moteur interne gardé (D1-A, rendu validé par le porteur le 2026-10-16)
+- [ ] 4.2 Fiche-test de préparation (enrichie, idée 5) et approbation de révision
 - [ ] 4.3 Export privé, approbation de l'export exact
+- [x] 4.4 Extrait gratuit automatique (idée 1)
+- [x] 4.5 Exemplaire au nom de l'acheteur (idée 3) — moteur seulement ; la remise à l'acheteur vient avec la phase 5
+
+Idées tirées des plateformes de produits digitaux et de formations (Gumroad, Leanpub, Udemy, Teachable, Kajabi, Skillshare, Amazon KDP, Selar, Chariow), proposées le 2026-10-16 ; **1, 3 et 5 validées** (« oui 1, 3, 5 ») :
+
+| # | Idée | Inspirée de | Statut |
+|---|---|---|---|
+| 1 | Extrait gratuit automatique (sommaire + première section) | Amazon « Look inside », Leanpub, aperçus Udemy | ✅ validée → 4.4 |
+| 2 | Page de vente remplie depuis le guide | Udemy, Teachable | proposée → phase 5 |
+| 3 | Exemplaire au nom de l'acheteur, en pied de page | marquage des PDF de Gumroad | ✅ validée → 4.5 |
+| 4 | Nouvelles versions gratuites pour les acheteurs | Leanpub | proposée → phase 5 |
+| 5 | Fiche-test de préparation avant export | revue qualité Udemy | ✅ validée → 4.2 |
+| 6 | Audio enregistré par le créateur | Audible, Tunafrik | proposée |
+| 7 | Kit de lancement WhatsApp / Facebook | Selar, Chariow, Gumroad | proposée (idée 5 de CreateurSuite) |
+| 8 | Prix au choix avec minimum, prix en dollars | Gumroad, Leanpub | règle commerciale à décider |
+| 9 | Guide → formation, quiz, attestation de fin | Teachable, Thinkific, Udemy | proposée |
+| 10 | Affiliés par produit | Gumroad, Selar | règle commerciale à décider |
 
 **Checkpoint 4** — PDF inspecté page par page ; export figé, nouvel export exigé après modification ; PR 4.
 

@@ -31,6 +31,7 @@ export const STYLES = {
   resultat: { police: "Helvetica-Oblique", taille: 10, interligne: 14, gris: true },
   corps: { police: "Helvetica", taille: 10.5, interligne: 15, gris: false },
   pied: { police: "Helvetica", taille: 9, interligne: 12, gris: true },
+  exemplaire: { police: "Helvetica", taille: 7.5, interligne: 10, gris: true },
 } as const satisfies Record<string, Style>;
 
 export type Ligne = {
@@ -54,7 +55,28 @@ export type GuideNormalise = {
   sections: { titre: string; resultat: string; corps: string }[];
 };
 
-const LIBELLES = { ht: { sommaire: "Somè" }, fr: { sommaire: "Sommaire" } } as const;
+const LIBELLES = {
+  ht: {
+    sommaire: "Somè",
+    extrait: "Ekstrè gratis : premye seksyon an",
+    finExtrait: "Fen ekstrè a",
+    resteExtrait: "Ou fèk li premye seksyon an. Gid konplè a gen {pages} paj ak {sections} seksyon.",
+  },
+  fr: {
+    sommaire: "Sommaire",
+    extrait: "Extrait gratuit : la première section",
+    finExtrait: "Fin de l’extrait",
+    resteExtrait: "Vous venez de lire la première section. Le guide complet compte {pages} pages et {sections} sections.",
+  },
+} as const;
+
+/** Ce qui distingue un rendu d'un autre, à contenu égal. */
+export type OptionsMiseEnPage = {
+  /** Extrait gratuit (4.4) : le titre, le sommaire complet, la première section, une page de fin. */
+  extrait?: boolean;
+  /** Exemplaire nominatif (4.5) : une ligne en pied de chaque page, rien d'autre ne bouge. */
+  exemplaire?: string;
+};
 
 const arrondi = (n: number) => Math.round(n * 100) / 100;
 
@@ -290,7 +312,7 @@ function poserSansVeuve(
 }
 
 /** La page de titre, sans numéro. */
-function composerTitre(g: GuideNormalise): PageMiseEnPage {
+function composerTitre(g: GuideNormalise, extrait: boolean): PageMiseEnPage {
   const c = new Composeur(null);
   c.nouvellePage(false);
   c.placer(FORMAT.hauteur * 0.66);
@@ -303,26 +325,38 @@ function composerTitre(g: GuideNormalise): PageMiseEnPage {
     c.espace(22);
     for (const l of couperEnLignes(g.auteur, STYLES.auteur, LARGEUR_UTILE)) c.ligne(l, STYLES.auteur);
   }
+  if (extrait) {
+    c.espace(22);
+    for (const l of couperEnLignes(LIBELLES[g.langue].extrait, STYLES.resultat, LARGEUR_UTILE)) c.ligne(l, STYLES.resultat);
+  }
   return c.pages[0];
 }
 
-/** Le numéro de page, centré en pied. */
-function ajouterPied(page: PageMiseEnPage): void {
-  if (page.numero === null) return;
-  const s = STYLES.pied;
-  const texte = String(page.numero);
-  page.lignes.push({
-    x: arrondi((FORMAT.largeur - largeur(texte, s)) / 2),
-    y: arrondi(MARGES.bas - 28),
-    police: s.police,
-    taille: s.taille,
-    texte,
-    gris: true,
-  });
+/** La dernière page d'un extrait : ce que contient le guide complet. Sans numéro. */
+function composerFinExtrait(g: GuideNormalise, pagesCompletes: number): PageMiseEnPage {
+  const c = new Composeur(null);
+  c.nouvellePage(false);
+  c.placer(FORMAT.hauteur * 0.62);
+  c.ligne(LIBELLES[g.langue].finExtrait, STYLES.titreSection);
+  c.espace(8);
+  const reste = LIBELLES[g.langue].resteExtrait.replace("{pages}", String(pagesCompletes)).replace("{sections}", String(g.sections.length));
+  for (const l of couperEnLignes(reste, STYLES.corps, LARGEUR_UTILE)) c.ligne(l, STYLES.corps);
+  return c.pages[0];
 }
 
-export function mettreEnPage(g: GuideNormalise): MiseEnPage {
-  const titre = composerTitre(g);
+/** Une ligne de pied centrée, dans un style donné. */
+function centree(texte: string, s: Style, y: number): Ligne {
+  return { x: arrondi((FORMAT.largeur - largeur(texte, s)) / 2), y: arrondi(y), police: s.police, taille: s.taille, texte, gris: s.gris };
+}
+
+/** Le numéro de page, centré en pied ; dessous, la mention de l'exemplaire nominatif s'il y en a une. */
+function ajouterPied(page: PageMiseEnPage, exemplaire: string | undefined): void {
+  if (page.numero !== null) page.lignes.push(centree(String(page.numero), STYLES.pied, MARGES.bas - 28));
+  if (exemplaire) page.lignes.push(centree(exemplaire, STYLES.exemplaire, MARGES.bas - 42));
+}
+
+export function mettreEnPage(g: GuideNormalise, options: OptionsMiseEnPage = {}): MiseEnPage {
+  const titre = composerTitre(g, Boolean(options.extrait));
   // Passe 1 : la longueur du sommaire, avec des numéros de largeur maximale.
   const essai = composerSommaire(g, g.sections.map(() => "000"), 2);
   const premierCorps = 2 + essai.length;
@@ -331,9 +365,19 @@ export function mettreEnPage(g: GuideNormalise): MiseEnPage {
   // titres se coupent exactement comme à la passe 1, la longueur ne change pas.
   const sommaire = composerSommaire(g, corps.debuts.map(String), 2);
   if (sommaire.length !== essai.length) throw new Error("pdf: sommaire instable entre les deux passes");
-  const pages = [titre, ...sommaire, ...corps.pages];
-  pages.forEach(ajouterPied);
-  return { pages, sommaire: g.sections.map((s, i) => ({ titre: sectionTitre(i, s.titre), page: corps.debuts[i] })) };
+  const entrees = g.sections.map((s, i) => ({ titre: sectionTitre(i, s.titre), page: corps.debuts[i] }));
+  let pages: PageMiseEnPage[];
+  if (options.extrait) {
+    // Les pages de la première section, numérotées comme dans le guide complet,
+    // puis la page de fin. Aucune ligne d'une autre section n'y entre.
+    const total = 1 + sommaire.length + corps.pages.length;
+    const fin = corps.debuts.length > 1 ? corps.debuts[1] : Infinity;
+    pages = [titre, ...sommaire, ...corps.pages.filter((p) => (p.numero ?? 0) < fin), composerFinExtrait(g, total)];
+  } else {
+    pages = [titre, ...sommaire, ...corps.pages];
+  }
+  pages.forEach((p) => ajouterPied(p, options.exemplaire));
+  return { pages, sommaire: entrees };
 }
 
 /** Exposé pour les tests : la table des chasses est bien celle d'Adobe. */

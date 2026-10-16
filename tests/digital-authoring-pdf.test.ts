@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { rendreGuidePdf } from "../lib/digital-authoring/pdf/guide-pdf";
+import { mentionExemplaire, rendreExemplairePdf, rendreExtraitPdf, rendreGuidePdf } from "../lib/digital-authoring/pdf/guide-pdf";
 import { FORMAT, LARGEUR_UTILE, MARGES, STYLES, blocsDuCorps, couperEnLignes, largeur, mettreEnPage, type GuideNormalise } from "../lib/digital-authoring/pdf/layout";
 import { LARGEURS } from "../lib/digital-authoring/pdf/metrics";
 import { caracteresNonPrisEnCharge, normaliserPourPdf, pointDepuisOctet } from "../lib/digital-authoring/pdf/winansi";
@@ -123,7 +123,7 @@ test("aucune ligne hors de la page, aucune ligne qui en chevauche une autre", ()
       assert.ok(l.x >= MARGES.gauche - 0.01, `page ${p + 1} : marge gauche (${l.texte})`);
       assert.ok(l.x + w <= FORMAT.largeur - MARGES.droite + 0.01, `page ${p + 1} : marge droite (${l.texte})`);
       assert.ok(l.y >= MARGES.bas - 30 && l.y <= FORMAT.hauteur - MARGES.haut, `page ${p + 1} : hauteur (${l.texte})`);
-      if (l.taille !== STYLES.pied.taille) {
+      if (l.taille !== STYLES.pied.taille && l.taille !== STYLES.exemplaire.taille) {
         assert.ok(l.y >= MARGES.bas - 0.01, `page ${p + 1} : texte dans la marge du bas (${l.texte})`);
         ys.push(l.y);
       }
@@ -287,6 +287,69 @@ test("équivalents explicites : espace fine insécable, trait d'union conditionn
 test("guide vide : refusé (aucun titre ou aucune section)", () => {
   assert.deepEqual(rendreGuidePdf({ ...GUIDE_ESSAI, sections: [] }), { ok: false, code: "guide_vide" });
   assert.deepEqual(rendreGuidePdf({ ...GUIDE_ESSAI, titre: "   " }), { ok: false, code: "guide_vide" });
+});
+
+test("extrait (4.4) : titre, sommaire complet, première section à l'identique, page de fin ; rien d'autre", () => {
+  const g = normaliser(GUIDE_ESSAI);
+  const complet = mettreEnPage(g);
+  const extrait = mettreEnPage(g, { extrait: true });
+  const debut2 = complet.sommaire[1].page;
+  const section1 = complet.pages.filter((p) => p.numero !== null && p.numero >= complet.sommaire[0].page && p.numero < debut2);
+  const sommaire = complet.pages.filter((p) => p.numero !== null && p.numero < complet.sommaire[0].page);
+  assert.equal(extrait.pages.length, 1 + sommaire.length + section1.length + 1);
+  // Le sommaire et la première section sont ceux du guide complet, ligne pour ligne, numéros compris.
+  assert.deepEqual(extrait.pages.slice(1, 1 + sommaire.length + section1.length), [...sommaire, ...section1]);
+  assert.ok(extrait.pages.every((p) => p.numero === null || p.numero < debut2), "aucune page d'une autre section");
+  // Page de titre marquée, page de fin qui dit ce que contient le guide complet.
+  assert.ok(extrait.pages[0].lignes.some((l) => l.texte.startsWith("Ekstrè gratis")));
+  const fin = extrait.pages[extrait.pages.length - 1];
+  assert.equal(fin.numero, null);
+  assert.equal(fin.lignes[0].texte, "Fen ekstrè a");
+  assert.ok(fin.lignes.map((l) => l.texte).join(" ").includes(`${complet.pages.length} paj ak ${g.sections.length} seksyon`));
+});
+
+test("extrait : octets déterministes, bien plus léger que le guide, mêmes refus", () => {
+  const a = rendreExtraitPdf(GUIDE_ESSAI);
+  const b = rendreExtraitPdf(GUIDE_ESSAI);
+  const complet = rendre();
+  assert.ok(a.ok && b.ok);
+  assert.equal(a.empreinte, b.empreinte);
+  assert.notEqual(a.empreinte, complet.empreinte);
+  assert.ok(a.octets.length < complet.octets.length / 3, `${a.octets.length} octets`);
+  const coche = String.fromCodePoint(0x2713);
+  const refus = rendreExtraitPdf({ ...GUIDE_ESSAI, sections: [GUIDE_ESSAI.sections[0], { ...GUIDE_ESSAI.sections[1], corps: coche }] });
+  assert.equal(refus.ok, false, "l'extrait n'existe que si le guide complet se rend");
+});
+
+test("exemplaire (4.5) : le corps est ligne pour ligne celui du guide ; seule la mention s'ajoute en pied", () => {
+  const g = normaliser(GUIDE_ESSAI);
+  const mention = mentionExemplaire("ht", "Jean-Robert Pierre-Louis", "ZB-2026-0042");
+  assert.equal(mention, "Kopi pou Jean-Robert P. · kòmand ZB-2026-0042");
+  const complet = mettreEnPage(g);
+  const exemplaire = mettreEnPage(g, { exemplaire: mention });
+  assert.equal(exemplaire.pages.length, complet.pages.length);
+  exemplaire.pages.forEach((p, i) => {
+    const pied = p.lignes.filter((l) => l.taille === STYLES.exemplaire.taille);
+    assert.equal(pied.length, 1, `page ${i + 1} : une mention`);
+    assert.equal(pied[0].texte, mention);
+    assert.ok(pied[0].x >= MARGES.gauche && pied[0].x + largeur(mention, STYLES.exemplaire) <= FORMAT.largeur - MARGES.droite);
+    assert.ok(pied[0].y >= 12 && pied[0].y < MARGES.bas - 30, "sous le numéro de page");
+    assert.deepEqual(p.lignes.filter((l) => l.taille !== STYLES.exemplaire.taille), complet.pages[i].lignes);
+  });
+});
+
+test("exemplaire : prénom et initiale seulement ; ni chiffre, ni caractère sans dessin, ni balise", () => {
+  const emoji = String.fromCodePoint(0x1f600);
+  assert.equal(mentionExemplaire("fr", "Marie", "ZB-1"), "Exemplaire de Marie · commande ZB-1");
+  assert.equal(mentionExemplaire("fr", `Ti ${emoji} Jak Bazil 3712 4455`, "ZB 7;<b>"), "Exemplaire de Ti B. · commande ZB7b");
+  assert.equal(mentionExemplaire("ht", "   ", ""), "Kopi pou ? · kòmand ?");
+  const a = rendreExemplairePdf(GUIDE_ESSAI, { nom: "Marie Jean", commande: "ZB-1" });
+  const b = rendreExemplairePdf(GUIDE_ESSAI, { nom: "Marie Jean", commande: "ZB-1" });
+  const c = rendreExemplairePdf(GUIDE_ESSAI, { nom: "Paul Jean", commande: "ZB-2" });
+  assert.ok(a.ok && b.ok && c.ok);
+  assert.equal(a.empreinte, b.empreinte, "même acheteur, mêmes octets");
+  assert.notEqual(a.empreinte, c.empreinte, "deux acheteurs, deux exemplaires");
+  assert.notEqual(a.empreinte, rendre().empreinte, "l'exemplaire n'est pas le fichier approuvé");
 });
 
 test("source : aucune dépendance, aucune date, aucun aléa dans le moteur", () => {
