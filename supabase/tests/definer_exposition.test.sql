@@ -71,6 +71,22 @@ declare
     -- Réponse du vendeur à un avis (0139) : auth.uid() = vendeur du produit,
     -- compte actif, une seule fois (update atomique). Écrit sa ligne, rien d'autre.
     'zabelie_repondre_avis(p_review_id uuid, p_texte text):auth',
+    -- Studio de création éditoriale (0141, docs/70) : auth.uid() seul fait
+    -- l'identité, compte actif exigé ; n'écrivent que les projets de l'appelant.
+    -- Création sous verrou et plafond lu en base ; approbation d'une révision
+    -- EXACTE ; archivage. Rendent la ligne créée, une révision ou une date.
+    'zabelie_authoring_creer_projet(p_titre text, p_langue text, p_public text, p_marche text):auth',
+    'zabelie_authoring_approuver_plan(p_projet uuid, p_revision integer):auth',
+    'zabelie_authoring_archiver(p_projet uuid):auth',
+    -- Studio, phase 3 (0142) : demander une suggestion (verrou, rejeu, quotas,
+    -- instantané ; n'écrit qu'au nom de l'appelant) et annuler une demande non
+    -- partie. Le bail, la soumission et la conclusion ne sont PAS ici : service role seul.
+    'zabelie_authoring_demander(p_projet uuid, p_type text, p_section uuid, p_cle uuid):auth',
+    'zabelie_authoring_annuler(p_operation uuid):auth',
+    -- Studio, tableau (0143) : lecture AGRÉGÉE des recherches sans résultat et des
+    -- ventes de produits digitaux, sous seuils de personnes et de vendeurs ;
+    -- compte actif exigé. N'écrit rien, ne rend ni compte, ni vendeur, ni montant.
+    'zabelie_authoring_opportunites():auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',

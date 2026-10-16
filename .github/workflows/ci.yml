@@ -202,6 +202,12 @@ jobs:
         if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.topup.config.ts
 
+      # Studio de création éditoriale (docs/70) : allumé pour ce seul serveur,
+      # contre un faux Supabase isolé. Le Studio reste éteint ailleurs.
+      - name: Editorial studio seller journey
+        if: steps.portee.outputs.docs_seulement != 'true'
+        run: npx playwright test --config=playwright.creation.config.ts
+
       # Même check requis e2e, nouveau build isolé : les variables publiques
       # doivent être présentes à la compilation du client navigateur.
       - name: Build avec le client Auth configuré

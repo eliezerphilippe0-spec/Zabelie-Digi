@@ -96,3 +96,34 @@ Trois mutations ont été jouées à la main, et chacune nomme la fonction en ca
 | Retirer `anon` d'une aide RLS | rouge | l'aide RLS concernée |
 
 ⚠️ **Limite.** Le garde lit la base de la CI, construite depuis les migrations. Un `grant` passé à la main en production, hors migration, ne s'y voit pas. Le croisement production–CI de ce jour, identique, est à refaire à chaque revue.
+
+## Ajout du 2026-10-15 — Studio de création éditoriale (`0141`, non appliquée)
+
+Trois fonctions neuves, exécutables par `authenticated` seulement, ajoutées à la liste figée :
+
+| Fonction | Identité | Écrit | Rend |
+|----------|----------|-------|------|
+| `zabelie_authoring_creer_projet` | `auth.uid()`, compte actif (`seller_is_active`) | une ligne de `zabelie_authoring_projects` au nom de l'appelant, sous verrou consultatif et plafond lu en base | la ligne créée |
+| `zabelie_authoring_approuver_plan` | `auth.uid()` = propriétaire, compte actif | `plan_approuve_revision` de son projet, si la révision fournie est la révision courante | la révision approuvée |
+| `zabelie_authoring_archiver` | `auth.uid()` = propriétaire | `archived_at` de son projet | la date d'archivage |
+
+Aucune ne reçoit d'identifiant de vendeur, aucune n'est exécutable par `anon` (post-condition `ZB141` et test `supabase/tests/authoring_projects.test.sql`, cas P2 et P3).
+
+## Ajout du 2026-10-16 — Studio de création éditoriale, phase 3 (`0142`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_demander` | `authenticated` | `auth.uid()` = propriétaire du projet, compte actif | une opération en attente et, au besoin, l'instantané immuable de la révision courante ; sous verrou consultatif, après rejeu de la clé et contrôle des quotas lus en base | l'opération |
+| `zabelie_authoring_annuler` | `authenticated` | `auth.uid()` = propriétaire de l'opération | l'état `cancelled` d'une opération encore en attente | l'état |
+| `zabelie_authoring_prendre_bail`, `zabelie_authoring_marquer_soumis`, `zabelie_authoring_conclure` | `service_role` SEUL | le jeton de bail, jamais un identifiant de vendeur | les transitions de l'opération, gardées par un trigger qui refuse toute réécriture d'un état final | une ligne ou un booléen |
+| `zabelie_authoring_instantane` | AUCUN rôle client | — | appelée par les fonctions ci-dessus | — |
+
+Les trois fonctions système ne figurent pas dans la liste figée (elle ne couvre que `anon` et `authenticated`) ; la post-condition `ZB142` et `supabase/tests/authoring_operations.test.sql` (O7) prouvent qu'`authenticated` ne peut pas les exécuter.
+
+## Ajout du 2026-10-16 — Studio de création éditoriale, tableau (`0143`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_opportunites` | `authenticated` | `auth.uid()`, compte actif | rien | deux listes agrégées : des termes de recherche sans résultat (au moins 5 personnes distinctes sur au moins 2 jours, sans chiffres en série, adresse ni lien, hors liste d'exclusion) et des rayons de produits digitaux (au moins 3 ventes réelles venant d'au moins 2 vendeurs) ; jamais un compte, un vendeur ou un montant |
+
+Elle lit des tables fermées aux clients (`zabelie_search_misses`, `orders`, `payments`) ; c'est sa raison d'être `SECURITY DEFINER`. Les seuils sont lus dans `zabelie_authoring_config` et bornés par des contraintes (au moins 3 personnes, au moins 2 vendeurs) ; `supabase/tests/authoring_opportunites.test.sql` (OP1 à OP9) prouve les filtres et les témoins.

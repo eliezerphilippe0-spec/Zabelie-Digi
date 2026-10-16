@@ -132,6 +132,13 @@ function borner(texte: string): string {
 const TIMEOUT_MS = 20_000;
 
 /**
+ * Modèles par défaut, partagés avec le Studio de création
+ * (`lib/digital-authoring/provider-llm.ts`) : un seul endroit à remonter
+ * quand un fournisseur retire un modèle.
+ */
+export const MODELE_DEFAUT = { openai: "gpt-4o-mini", gemini: "gemini-3.7-flash" } as const;
+
+/**
  * Génère une suggestion de description. Jette sur tout échec (clé absente,
  * HTTP non-2xx, réponse vide) — l'appelant décide du code de réponse ; ce
  * module ne connaît ni Next ni la session.
@@ -160,7 +167,7 @@ async function viaOpenAI(
       Authorization: `Bearer ${process.env.OPENAI_API_KEY!.trim()}`,
     },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini",
+      model: process.env.OPENAI_MODEL?.trim() || MODELE_DEFAUT.openai,
       messages: [
         { role: "system", content: consigneSysteme(input.lang) },
         { role: "user", content: messageVendeur(input) },
@@ -181,7 +188,7 @@ async function viaGemini(
   input: AiDescriptionInput,
   fetcher: typeof fetch
 ): Promise<string> {
-  const modele = process.env.GEMINI_MODEL?.trim() || "gemini-3.7-flash";
+  const modele = process.env.GEMINI_MODEL?.trim() || MODELE_DEFAUT.gemini;
   const res = await fetcher(
     // Clé en EN-TÊTE, jamais en query string — une URL se retrouve dans les
     // journaux d'accès, un en-tête non.
