@@ -50,7 +50,53 @@ const REFUS_BASE: Record<string, { statut: number; cle: I18nKey }> = {
   authoring_trop_de_sections: { statut: 422, cle: "authoring.refus.sections" },
   authoring_contenu_trop_long: { statut: 422, cle: "authoring.refus.contenuTropLong" },
   authoring_config_absente: { statut: 503, cle: "api.unavailable" },
+  // Opérations d'IA (0142).
+  authoring_demande_invalide: { statut: 400, cle: "api.params.invalid" },
+  authoring_cle_conflit: { statut: 409, cle: "authoring.ia.cleConflit" },
+  authoring_plan_non_approuve: { statut: 409, cle: "authoring.ia.planNonApprouve" },
+  authoring_section_introuvable: { statut: 422, cle: "authoring.ia.sectionIntrouvable" },
+  authoring_quota_vendeur: { statut: 429, cle: "authoring.ia.quotaVendeur" },
+  authoring_quota_global: { statut: 429, cle: "authoring.ia.quotaGlobal" },
+  authoring_operations_en_cours: { statut: 429, cle: "authoring.ia.enCours" },
+  authoring_operation_non_annulable: { statut: 409, cle: "authoring.ia.nonAnnulable" },
 };
+
+export const TABLE_OPERATIONS = "zabelie_authoring_operations";
+
+/**
+ * Ce que le navigateur lit d'une opération — JAMAIS le jeton de bail (la
+ * base ne le lui accorde pas, 0142), et le numéro de l'instantané d'origine
+ * pour dire si le texte a bougé depuis la demande (`etatProposition`).
+ */
+export const COLONNES_OPERATION =
+  "id, type, section_id, etat, code_erreur, resultat, created_at, revision:zabelie_authoring_revisions(numero)";
+
+export type OperationClient = {
+  id: string;
+  type: string;
+  sectionId: string | null;
+  etat: string;
+  code: string | null;
+  resultat: unknown;
+  revisionSource: number | null;
+};
+
+export function operationPourClient(ligne: unknown): OperationClient | null {
+  if (!ligne || typeof ligne !== "object") return null;
+  const l = ligne as Record<string, unknown>;
+  if (typeof l.id !== "string" || typeof l.etat !== "string" || typeof l.type !== "string") return null;
+  const rev = l.revision as { numero?: unknown } | null | undefined;
+  return {
+    id: l.id,
+    type: l.type,
+    sectionId: typeof l.section_id === "string" ? l.section_id : null,
+    etat: l.etat,
+    code: typeof l.code_erreur === "string" ? l.code_erreur : null,
+    // Un résultat n'est montré que s'il a abouti : rien de partiel ne sort.
+    resultat: l.etat === "succeeded" ? l.resultat ?? null : null,
+    revisionSource: typeof rev?.numero === "number" ? rev.numero : null,
+  };
+}
 
 export function traduireErreurBase(erreur: { code?: string | null; message?: string | null } | null): {
   statut: number;

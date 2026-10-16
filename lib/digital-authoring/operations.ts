@@ -73,6 +73,9 @@ export const CODES_ERREUR = [
   "configuration_absente",
   "budget_epuise",
   "projet_inadmissible",
+  // Posés par la base (0142) : liste pilote exigée, annulation par le vendeur.
+  "hors_pilote",
+  "annule_par_vendeur",
 ] as const;
 export type CodeErreur = (typeof CODES_ERREUR)[number];
 

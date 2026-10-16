@@ -108,3 +108,14 @@ Trois fonctions neuves, exécutables par `authenticated` seulement, ajoutées à
 | `zabelie_authoring_archiver` | `auth.uid()` = propriétaire | `archived_at` de son projet | la date d'archivage |
 
 Aucune ne reçoit d'identifiant de vendeur, aucune n'est exécutable par `anon` (post-condition `ZB141` et test `supabase/tests/authoring_projects.test.sql`, cas P2 et P3).
+
+## Ajout du 2026-10-16 — Studio de création éditoriale, phase 3 (`0142`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_demander` | `authenticated` | `auth.uid()` = propriétaire du projet, compte actif | une opération en attente et, au besoin, l'instantané immuable de la révision courante ; sous verrou consultatif, après rejeu de la clé et contrôle des quotas lus en base | l'opération |
+| `zabelie_authoring_annuler` | `authenticated` | `auth.uid()` = propriétaire de l'opération | l'état `cancelled` d'une opération encore en attente | l'état |
+| `zabelie_authoring_prendre_bail`, `zabelie_authoring_marquer_soumis`, `zabelie_authoring_conclure` | `service_role` SEUL | le jeton de bail, jamais un identifiant de vendeur | les transitions de l'opération, gardées par un trigger qui refuse toute réécriture d'un état final | une ligne ou un booléen |
+| `zabelie_authoring_instantane` | AUCUN rôle client | — | appelée par les fonctions ci-dessus | — |
+
+Les trois fonctions système ne figurent pas dans la liste figée (elle ne couvre que `anon` et `authenticated`) ; la post-condition `ZB142` et `supabase/tests/authoring_operations.test.sql` (O7) prouvent qu'`authenticated` ne peut pas les exécuter.
