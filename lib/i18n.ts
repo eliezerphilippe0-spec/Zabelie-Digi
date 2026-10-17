@@ -879,6 +879,9 @@ const fr = {
     "Merci ! Votre achat est validé. Le vendeur doit maintenant vous remettre la commande — vous confirmerez la réception dans « Mes achats ».",
   "pay.ok.cta": "Voir mes achats",
   "pay.back": "Retour au catalogue",
+  "pay.check.title": "Vérifiez l'état de votre commande",
+  "pay.check.body":
+    "Cette page ne peut pas confirmer ce paiement. Pour savoir s'il est passé, ouvrez « Mes achats ».",
   "pay.wait.title": "Paiement en cours de vérification",
   "pay.wait.body":
     "Le statut de votre paiement doit être vérifié auprès de l’opérateur. Le délai de confirmation peut varier. Consultez Mes achats avant d’effectuer un autre paiement. Si votre compte a été débité sans commande confirmée, contactez l’aide.",
@@ -2202,6 +2205,9 @@ const ht: Record<I18nKey, string> = {
     "Mèsi! Acha ou valide. Vandè a gen pou l remèt ou li — w ap konfime nan « Acha mwen yo ».",
   "pay.ok.cta": "Wè acha mwen yo",
   "pay.back": "Tounen nan katalòg la",
+  "pay.check.title": "Tcheke eta kòmand ou a",
+  "pay.check.body":
+    "Paj sa a pa ka konfime peman sa a. Pou w konnen si li pase, louvri « Acha mwen yo ».",
 
   "err.404.title": "Paj sa a pa egziste",
   "err.404.body":
@@ -3503,6 +3509,9 @@ const en = {
     "Thank you! Your purchase is confirmed. The seller now has to hand it over — you will confirm receipt in “My purchases”.",
   "pay.ok.cta": "View my purchases",
   "pay.back": "Back to catalog",
+  "pay.check.title": "Check your order status",
+  "pay.check.body":
+    "This page can't confirm this payment. To see whether it went through, open “My purchases”.",
   "pay.wait.title": "Payment being verified",
   "pay.wait.body":
     "Your payment status needs to be checked with the provider. Confirmation times can vary. Check My purchases before making another payment. If money was debited without a confirmed order, contact support.",
@@ -4813,6 +4822,9 @@ const es = {
     "¡Gracias! Tu compra está confirmada. El vendedor debe entregarte el pedido — confirmarás la recepción en «Mis compras».",
   "pay.ok.cta": "Ver mis compras",
   "pay.back": "Volver al catálogo",
+  "pay.check.title": "Revisa el estado de tu pedido",
+  "pay.check.body":
+    "Esta página no puede confirmar este pago. Para saber si se realizó, abre «Mis compras».",
   "pay.wait.title": "Verificando el pago",
   "pay.wait.body":
     "Hay que verificar el estado de tu pago con el operador. El plazo de confirmación puede variar. Consulta Mis compras antes de realizar otro pago. Si se debitó dinero sin un pedido confirmado, contacta con ayuda.",
