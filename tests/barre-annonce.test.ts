@@ -82,3 +82,15 @@ test("A6 — la vitesse suit la longueur du texte, avec un plancher", () => {
     assert.ok(d >= 24 && d <= 90, `durée hors bornes en ${lang} : ${d} s`);
   }
 });
+
+test("A7 — la barre n'est pas orange : l'accent reste aux boutons et aux prix", () => {
+  /* Revue des couleurs du 2026-10-17 : une bande orange en tête de chaque
+   * page faisait concurrence au bouton principal (« un seul accent »,
+   * zabelie-theme.css). L'orange ne reste que sur les losanges. */
+  const regle = CSS.slice(CSS.indexOf(".annonce {"), CSS.indexOf("}", CSS.indexOf(".annonce {")));
+  assert.match(regle, /background: var\(--color-chrome-2\);/);
+  assert.match(regle, /color: var\(--color-on-chrome\);/);
+  assert.doesNotMatch(regle, /--color-brand/, "la barre a repris l'orange de l'accent");
+  const puce = CSS.slice(CSS.indexOf(".annonce-item::before"), CSS.indexOf("}", CSS.indexOf(".annonce-item::before")));
+  assert.match(puce, /background: var\(--color-brand\);/, "les losanges portent l'accent");
+});
