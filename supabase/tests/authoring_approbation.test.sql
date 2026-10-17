@@ -1,4 +1,4 @@
--- Studio de création éditoriale — approbation d'une révision exacte (0144 ; tâche 4.2).
+-- Studio de création éditoriale — approbation d'une révision exacte (0146 ; tâche 4.2).
 -- Transaction annulée. Rôles réels ; chaque refus attendu est un connu-négatif,
 -- chaque acceptation un connu-positif.
 --

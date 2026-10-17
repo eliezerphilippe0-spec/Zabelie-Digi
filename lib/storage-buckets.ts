@@ -45,7 +45,7 @@ export const VIDEO_BUCKET = "product-videos";
 export const KYC_BUCKET = "kyc-documents";
 
 /**
- * PDF du Studio de création (0145). Privé — aucune policy, lecture par URL
+ * PDF du Studio de création (0147). Privé — aucune policy, lecture par URL
  * signée et courte, après contrôle de propriété ; PDF seulement, 20 Mo au plus.
  */
 export const AUTHORING_BUCKET = "authoring-exports";

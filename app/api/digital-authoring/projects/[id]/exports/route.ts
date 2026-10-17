@@ -27,7 +27,7 @@ const RENDUS_FENETRE = 600;
  * POST /api/digital-authoring/projects/[id]/exports  { revision }
  *
  * Rend le PDF du guide et son extrait gratuit depuis la révision APPROUVÉE
- * (0144), les dépose dans le bucket privé, puis enregistre la ligne (0145).
+ * (0146), les dépose dans le bucket privé, puis enregistre la ligne (0147).
  * Tâche 4.3 ; docs/70 §7.4.
  *
  * Décision C1-A : la clé de service ne sert qu'au limiteur, au dépôt des

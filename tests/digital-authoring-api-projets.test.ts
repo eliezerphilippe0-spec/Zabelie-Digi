@@ -349,7 +349,7 @@ test("approbation du guide : un bloquant en base rend la fiche, sans appeler la 
   }
 });
 
-test("approbation du guide : les refus de la base (0144) sont traduits, jamais bruts", async () => {
+test("approbation du guide : les refus de la base (0146) sont traduits, jamais bruts", async () => {
   const cas: Array<[string, number, string]> = [
     ["authoring_marqueur_simulation", 422, "authoring.approbation.pasPret"],
     ["authoring_guide_incomplet", 422, "authoring.approbation.pasPret"],

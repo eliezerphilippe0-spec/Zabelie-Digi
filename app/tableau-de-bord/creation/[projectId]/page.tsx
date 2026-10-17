@@ -37,7 +37,7 @@ export default async function ProjetPage({ params }: { params: Promise<{ project
   const [{ data: ligne }, { data: config }, { data: dernierExport }] = await Promise.all([
     supabase.from(TABLE_PROJETS).select("*").eq("id", projectId).maybeSingle(),
     supabase.from(TABLE_CONFIG).select("*").maybeSingle(),
-    // Le dernier PDF du projet (0145), sous la RLS. Absent ou illisible : aucun.
+    // Le dernier PDF du projet (0147), sous la RLS. Absent ou illisible : aucun.
     supabase.from(TABLE_EXPORTS).select(COLONNES_EXPORT).eq("project_id", projectId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const projet = projetPourEditeur(ligne);

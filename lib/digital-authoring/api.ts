@@ -59,12 +59,12 @@ const REFUS_BASE: Record<string, { statut: number; cle: I18nKey }> = {
   authoring_quota_global: { statut: 429, cle: "authoring.ia.quotaGlobal" },
   authoring_operations_en_cours: { statut: 429, cle: "authoring.ia.enCours" },
   authoring_operation_non_annulable: { statut: 409, cle: "authoring.ia.nonAnnulable" },
-  // Approbation du guide avant export (0144).
+  // Approbation du guide avant export (0146).
   authoring_responsabilite_requise: { statut: 422, cle: "authoring.approbation.responsabilite" },
   authoring_guide_sans_plan: { statut: 409, cle: "authoring.approbation.sansPlan" },
   authoring_guide_incomplet: { statut: 422, cle: "authoring.approbation.pasPret" },
   authoring_marqueur_simulation: { statut: 422, cle: "authoring.approbation.pasPret" },
-  // Export PDF et approbation de l'export exact (0145).
+  // Export PDF et approbation de l'export exact (0147).
   authoring_guide_non_approuve: { statut: 409, cle: "authoring.export.nonApprouve" },
   authoring_export_introuvable: { statut: 404, cle: "authoring.export.introuvable" },
   authoring_export_perime: { statut: 409, cle: "authoring.export.perime" },
@@ -136,7 +136,7 @@ export type ProjetEditeur = {
   /** Jeton de la dernière sauvegarde : dit « c'était nous » après une réponse perdue. */
   jeton: string | null;
   planApprouveRevision: number | null;
-  /** Révision approuvée avant export (0144) : ne vaut que si elle est la révision courante. */
+  /** Révision approuvée avant export (0146) : ne vaut que si elle est la révision courante. */
   revisionApprouvee: number | null;
   archive: boolean;
 };

@@ -87,7 +87,7 @@ export function AuthoringEditor({
   ia?: boolean;
   quotaInitial?: Quota | null;
   lang?: Lang;
-  /** Le dernier PDF du projet, lu sous le JWT (0145) ; `null` s'il n'y en a pas. */
+  /** Le dernier PDF du projet, lu sous le JWT (0147) ; `null` s'il n'y en a pas. */
   exportInitial?: ExportClient | null;
 }) {
   const e = labels.editeur;

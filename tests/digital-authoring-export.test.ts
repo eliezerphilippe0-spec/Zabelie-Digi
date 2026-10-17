@@ -24,10 +24,10 @@ const LIGNE = {
   chemin: `${V}/${P}/${"c".repeat(64)}.pdf`,
 };
 
-test("chemins : la route et la base (0145) calculent le même, adressé par le contenu", () => {
+test("chemins : la route et la base (0147) calculent le même, adressé par le contenu", () => {
   assert.equal(cheminExport(V, P, "c".repeat(64)), `${V}/${P}/${"c".repeat(64)}.pdf`);
   assert.equal(cheminExtrait(V, P, "d".repeat(64)), `${V}/${P}/${"d".repeat(64)}-extrait.pdf`);
-  const sql = readFileSync("supabase/migrations/0145_zabelie_authoring_exports.sql", "utf8");
+  const sql = readFileSync("supabase/migrations/0147_zabelie_authoring_exports.sql", "utf8");
   assert.ok(sql.includes("v_base text := p_seller::text || '/' || p_projet::text || '/';"), "base du chemin en SQL");
   assert.ok(sql.includes("v_base || p_empreinte || '.pdf'"), "chemin du guide en SQL");
   assert.ok(sql.includes("v_base || p_extrait_empreinte || '-extrait.pdf'"), "chemin de l'extrait en SQL");

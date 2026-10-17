@@ -1,5 +1,5 @@
 -- Studio de création éditoriale — exports PDF et approbation de l'export exact
--- (0145 ; tâche 4.3 ; PRD T18, T28). Transaction annulée. Rôles réels ; chaque
+-- (0147 ; tâche 4.3 ; PRD T18, T28). Transaction annulée. Rôles réels ; chaque
 -- refus attendu est un connu-négatif, chaque acceptation un connu-positif.
 --
 --   EX1  le service role enregistre l'export d'une révision approuvée : chemin calculé, non approuvé ;
@@ -58,7 +58,7 @@ returns text language sql as $$
     p_seller, p_projet, coalesce(p_rev::text, 'null'), 'zabelie-pdf-1', p_empreinte, repeat('e', 64));
 $$;
 
--- A approuve sa révision courante (0144).
+-- A approuve sa révision courante (0146).
 do $$
 declare v_rev int := (select revision from zabelie_authoring_projects where id = '00000000-0000-0000-0000-0000000a17f1');
 begin

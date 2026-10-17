@@ -1,135 +1,198 @@
-select zabelie_migration_garde('0144_zabelie_authoring_approbation.sql');
+select zabelie_migration_garde('0147_zabelie_authoring_exports.sql');
 
--- 0144 — Studio de création éditoriale, phase 4 : l'approbation d'une
--- révision exacte avant export (tasks/todo.md 4.2 ; fiche-test validée par le
--- porteur le 2026-10-16). Exige 0141.
+-- 0147 — Studio de création éditoriale, phase 4 : l'export PDF privé et
+-- l'approbation de l'export EXACT (tasks/todo.md 4.3 ; docs/70 §7.4 ; PRD
+-- T18 et T28). Exige 0141 et 0146.
 --
 -- ─── CE QUE LA BASE GARANTIT ───────────────────────────────────────────────
--- 1. Le créateur approuve UNE révision : celle qu'il a vue. Si le guide a
---    changé depuis (révision périmée), l'approbation est refusée.
--- 2. Toute modification ultérieure du texte avance la révision (garde de
---    0141) : l'approbation porte alors sur une révision ancienne, et le guide
---    n'est plus « approuvé » tant qu'il ne l'est pas à nouveau. Rien à effacer.
--- 3. Il confirme EXPRESSÉMENT sa responsabilité (case non précochée, envoyée
---    à vrai) ; sans elle, refus.
--- 4. Ce que la base peut voir, elle le revérifie : plan approuvé, au moins une
---    section, aucun titre ni texte de section vide, aucun marqueur de
---    simulation resté dans le texte. Le reste de la fiche-test (marqueurs
---    inachevés, caractères que le PDF ne sait pas dessiner) est vérifié par
---    la route, puis de nouveau au moment de l'export (tâche 4.3).
+-- 1. Un export naît d'une révision APPROUVÉE et courante (0146). Après une
+--    modification, l'ancien export est périmé : il ne s'approuve plus (T18).
+-- 2. Le créateur approuve un fichier, pas une intention : il renvoie
+--    l'empreinte SHA-256 qu'on lui a montrée, et une empreinte différente est
+--    refusée (T28). Une approbation ne se défait ni ne se réécrit.
+-- 3. Les octets, leur empreinte et leur taille viennent du SERVEUR : la ligne
+--    s'écrit par une fonction que seul le service role exécute (contrat
+--    système, décision C1-A), après le rendu et le dépôt. Le chemin de dépôt
+--    est calculé par la base, jamais reçu.
+-- 4. Les PDF vivent dans un bucket PRIVÉ, sans aucune policy : lecture par
+--    URL signée et courte, délivrée par la route après contrôle de propriété.
 --
--- ─── LE MODÈLE DE DROITS (décision C1-A) ───────────────────────────────────
--- Deux colonnes neuves, jamais accordées en écriture au vendeur : seule la
--- fonction, sous `auth.uid()`, les écrit. Aucune table d'argent, de commande
--- ni de produit n'est touchée.
+-- ─── CE QUI N'EST PAS ICI ──────────────────────────────────────────────────
+-- Ni produit, ni fiche, ni release : le rattachement à une fiche viendra au
+-- geste « Soumettre à la revue » (phase 6). Aucune table d'argent n'est touchée.
+-- La durée de conservation des exports non acquis est la décision D5, ouverte :
+-- rien n'est purgé.
 
-alter table public.zabelie_authoring_projects
-  add column revision_approuvee integer check (revision_approuvee is null or revision_approuvee >= 1),
-  add column revision_approuvee_le timestamptz,
-  add constraint zabelie_authoring_projects_approbation check ((revision_approuvee is null) = (revision_approuvee_le is null));
+-- ── Bucket privé, PDF seulement ────────────────────────────────────────────
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('authoring-exports', 'authoring-exports', false, 20971520, array['application/pdf'])
+on conflict (id) do update
+  set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
--- La garde de 0141, redéfinie à l'identique, plus : une création ne naît jamais approuvée.
-create or replace function public.zabelie_authoring_projects_garde() returns trigger
+-- ── Exports ────────────────────────────────────────────────────────────────
+create table public.zabelie_authoring_exports (
+  id uuid primary key default gen_random_uuid(),
+  -- Un projet supprimé emporte ses exports ; un compte supprimé aussi.
+  project_id uuid not null references public.zabelie_authoring_projects(id) on delete cascade,
+  seller_id uuid not null references public.profiles(id) on delete cascade,
+  revision integer not null check (revision >= 1),
+  moteur text not null check (moteur ~ '^[a-z0-9-]{1,40}$'),
+  chemin text not null,
+  empreinte text not null check (empreinte ~ '^[0-9a-f]{64}$'),
+  taille integer not null check (taille > 0),
+  pages integer not null check (pages > 0),
+  extrait_chemin text not null,
+  extrait_empreinte text not null check (extrait_empreinte ~ '^[0-9a-f]{64}$'),
+  extrait_taille integer not null check (extrait_taille > 0),
+  extrait_pages integer not null check (extrait_pages > 0),
+  created_at timestamptz not null default now(),
+  approuve_le timestamptz,
+  approuve_empreinte text,
+  constraint zabelie_authoring_exports_approbation check (
+    (approuve_le is null) = (approuve_empreinte is null)
+    and (approuve_empreinte is null or approuve_empreinte = empreinte)
+  ),
+  -- Mêmes octets, même révision : une seule ligne. Les octets étant
+  -- déterministes, régénérer rend la ligne existante.
+  constraint zabelie_authoring_exports_unique unique (project_id, revision, empreinte)
+);
+create index zabelie_authoring_exports_projet on public.zabelie_authoring_exports (project_id, created_at desc);
+
+alter table public.zabelie_authoring_exports enable row level security;
+revoke all on public.zabelie_authoring_exports from public, anon, authenticated, service_role;
+-- Le vendeur LIT ses exports ; il n'en écrit aucun champ.
+grant select on public.zabelie_authoring_exports to authenticated, service_role;
+create policy zabelie_authoring_exports_lecture on public.zabelie_authoring_exports
+  for select to authenticated using (seller_id = auth.uid());
+
+-- ── Garde : un export est immuable, son approbation ne s'écrit qu'une fois ──
+-- Elle vaut pour TOUT rôle, propriétaire de la base compris.
+create function public.zabelie_authoring_exports_garde() returns trigger
 language plpgsql security invoker set search_path = public, pg_temp as $$
-declare
-  c public.zabelie_authoring_config%rowtype;
 begin
-  select * into c from public.zabelie_authoring_config where id;
-  if not found then
-    raise exception 'authoring_config_absente' using errcode = 'P0001';
-  end if;
-  if char_length(new.titre) > c.titre_max or char_length(new.marche_diaspora) > c.titre_max then
-    raise exception 'authoring_titre_trop_long' using errcode = '23514';
-  end if;
-  -- Bornes de STOCKAGE, en octets (4 au plus par caractère UTF-8, plus la
-  -- syntaxe JSON). La mesure exacte, en caractères, est celle de la route.
-  if octet_length(new.brief::text) > c.brief_max * 4 + 4096 then
-    raise exception 'authoring_brief_trop_long' using errcode = '23514';
-  end if;
-  if jsonb_array_length(new.contenu -> 'sections') > c.sections_max then
-    raise exception 'authoring_trop_de_sections' using errcode = '23514';
-  end if;
-  if octet_length(new.contenu::text) > c.total_max * 4 + 65536 then
-    raise exception 'authoring_contenu_trop_long' using errcode = '23514';
-  end if;
-
   if tg_op = 'INSERT' then
-    new.revision := 1;
-    new.plan_approuve_revision := null;
-    new.archived_at := null;
-    new.revision_approuvee := null;
-    new.revision_approuvee_le := null;
     new.created_at := now();
-    new.updated_at := now();
+    new.approuve_le := null;
+    new.approuve_empreinte := null;
     return new;
   end if;
-
-  if new.seller_id <> old.seller_id or new.created_at <> old.created_at then
-    raise exception 'authoring_projet_immuable' using errcode = '42501';
-  end if;
-  -- Une écriture éditoriale (ou une nouvelle sauvegarde) avance la révision
-  -- d'exactement un. Une approbation ou un archivage ne la touche pas.
-  if (new.titre, new.langue, new.public_vise, new.marche_diaspora, new.brief, new.contenu, new.derniere_sauvegarde)
+  if (new.id, new.project_id, new.seller_id, new.revision, new.moteur, new.chemin, new.empreinte, new.taille, new.pages,
+      new.extrait_chemin, new.extrait_empreinte, new.extrait_taille, new.extrait_pages, new.created_at)
      is distinct from
-     (old.titre, old.langue, old.public_vise, old.marche_diaspora, old.brief, old.contenu, old.derniere_sauvegarde) then
-    new.revision := old.revision + 1;
-    new.updated_at := now();
-  else
-    new.revision := old.revision;
-    new.updated_at := old.updated_at;
+     (old.id, old.project_id, old.seller_id, old.revision, old.moteur, old.chemin, old.empreinte, old.taille, old.pages,
+      old.extrait_chemin, old.extrait_empreinte, old.extrait_taille, old.extrait_pages, old.created_at) then
+    raise exception 'authoring_export_immuable' using errcode = '42501';
+  end if;
+  if old.approuve_le is not null and (new.approuve_le, new.approuve_empreinte) is distinct from (old.approuve_le, old.approuve_empreinte) then
+    raise exception 'authoring_export_immuable' using errcode = '42501';
   end if;
   return new;
 end;
 $$;
+revoke all on function public.zabelie_authoring_exports_garde() from public, anon, authenticated;
+create trigger zabelie_authoring_exports_garde
+  before insert or update on public.zabelie_authoring_exports
+  for each row execute function public.zabelie_authoring_exports_garde();
 
--- ── Approuver une révision exacte ──────────────────────────────────────────
-create function public.zabelie_authoring_approuver_revision(p_projet uuid, p_revision integer, p_responsabilite boolean)
-returns integer
+-- ── Enregistrer un export : service role SEUL (contrat système, C1-A) ──────
+-- Appelée par la route APRÈS le rendu et le dépôt des octets. L'identité du
+-- vendeur vient de la session, lue par la route ; la base revérifie qu'il est
+-- le propriétaire, actif, et que la révision est approuvée et courante.
+create function public.zabelie_authoring_enregistrer_export(
+  p_seller uuid, p_projet uuid, p_revision integer, p_moteur text,
+  p_empreinte text, p_taille integer, p_pages integer,
+  p_extrait_empreinte text, p_extrait_taille integer, p_extrait_pages integer
+) returns setof public.zabelie_authoring_exports
 language plpgsql security definer set search_path = public, pg_temp as $$
 declare
-  v_moi uuid := auth.uid();
   p public.zabelie_authoring_projects%rowtype;
+  v_base text := p_seller::text || '/' || p_projet::text || '/';
 begin
-  if v_moi is null or not public.seller_is_active(v_moi) then
-    raise exception 'authoring_compte_inactif' using errcode = '42501';
-  end if;
-  if p_responsabilite is distinct from true then
-    raise exception 'authoring_responsabilite_requise' using errcode = '22023';
-  end if;
   select * into p from public.zabelie_authoring_projects where id = p_projet for update;
-  if not found or p.seller_id <> v_moi then
+  if not found or p.seller_id is distinct from p_seller then
     raise exception 'authoring_projet_introuvable' using errcode = '42501';
+  end if;
+  if not public.seller_is_active(p_seller) then
+    raise exception 'authoring_compte_inactif' using errcode = '42501';
   end if;
   if p.archived_at is not null then
     raise exception 'authoring_projet_archive' using errcode = 'P0001';
   end if;
-  -- `is distinct from` : une révision nulle est périmée, pas « égale ».
   if p.revision is distinct from p_revision then
     raise exception 'authoring_revision_perimee' using errcode = '40001';
   end if;
-  if p.plan_approuve_revision is null then
-    raise exception 'authoring_guide_sans_plan' using errcode = 'P0001';
+  if p.revision_approuvee is distinct from p_revision then
+    raise exception 'authoring_guide_non_approuve' using errcode = 'P0001';
   end if;
-  if jsonb_array_length(p.contenu -> 'sections') = 0
-     or exists (select 1 from jsonb_array_elements(p.contenu -> 'sections') s
-                 where btrim(coalesce(s ->> 'titre', '')) = '' or btrim(coalesce(s ->> 'corps', '')) = '') then
-    raise exception 'authoring_guide_incomplet' using errcode = 'P0001';
+  return query
+    insert into public.zabelie_authoring_exports (
+      project_id, seller_id, revision, moteur, chemin, empreinte, taille, pages,
+      extrait_chemin, extrait_empreinte, extrait_taille, extrait_pages)
+    values (
+      p_projet, p_seller, p_revision, p_moteur, v_base || p_empreinte || '.pdf', p_empreinte, p_taille, p_pages,
+      v_base || p_extrait_empreinte || '-extrait.pdf', p_extrait_empreinte, p_extrait_taille, p_extrait_pages)
+    on conflict (project_id, revision, empreinte) do nothing
+    returning *;
+  if not found then
+    -- Mêmes octets déjà enregistrés pour cette révision : la ligne existante.
+    return query select * from public.zabelie_authoring_exports
+                  where project_id = p_projet and revision = p_revision and empreinte = p_empreinte;
   end if;
-  if position('[SIMULASYON]' in p.contenu::text) > 0 or position('[SIMULATION]' in p.contenu::text) > 0 then
-    raise exception 'authoring_marqueur_simulation' using errcode = 'P0001';
-  end if;
-  update public.zabelie_authoring_projects
-     set revision_approuvee = p_revision, revision_approuvee_le = now()
-   where id = p_projet;
-  return p_revision;
 end;
 $$;
-revoke all on function public.zabelie_authoring_approuver_revision(uuid, integer, boolean) from public, anon, authenticated;
-grant execute on function public.zabelie_authoring_approuver_revision(uuid, integer, boolean) to authenticated;
+revoke all on function public.zabelie_authoring_enregistrer_export(uuid, uuid, integer, text, text, integer, integer, text, integer, integer)
+  from public, anon, authenticated;
+grant execute on function public.zabelie_authoring_enregistrer_export(uuid, uuid, integer, text, text, integer, integer, text, integer, integer)
+  to service_role;
+
+-- ── Approuver l'export EXACT : le vendeur, sous sa session ─────────────────
+create function public.zabelie_authoring_approuver_export(p_export uuid, p_empreinte text)
+returns timestamptz
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_moi uuid := auth.uid();
+  v_projet uuid;
+  p public.zabelie_authoring_projects%rowtype;
+  e public.zabelie_authoring_exports%rowtype;
+  v_le timestamptz;
+begin
+  if v_moi is null or not public.seller_is_active(v_moi) then
+    raise exception 'authoring_compte_inactif' using errcode = '42501';
+  end if;
+  -- Même ordre de verrous que l'enregistrement : le projet, puis l'export.
+  select project_id into v_projet from public.zabelie_authoring_exports where id = p_export and seller_id = v_moi;
+  if v_projet is null then
+    raise exception 'authoring_export_introuvable' using errcode = '42501';
+  end if;
+  select * into p from public.zabelie_authoring_projects where id = v_projet for update;
+  select * into e from public.zabelie_authoring_exports where id = p_export for update;
+  if p.archived_at is not null then
+    raise exception 'authoring_projet_archive' using errcode = 'P0001';
+  end if;
+  -- T18 : un export d'une révision ancienne, ou d'une révision non approuvée, est périmé.
+  if p.revision is distinct from e.revision or p.revision_approuvee is distinct from e.revision then
+    raise exception 'authoring_export_perime' using errcode = '40001';
+  end if;
+  -- T28 : on approuve le fichier qu'on a vu, pas un autre.
+  if p_empreinte is distinct from e.empreinte then
+    raise exception 'authoring_empreinte_differente' using errcode = '22023';
+  end if;
+  if e.approuve_le is not null then
+    return e.approuve_le;
+  end if;
+  update public.zabelie_authoring_exports
+     set approuve_le = now(), approuve_empreinte = p_empreinte
+   where id = p_export
+  returning approuve_le into v_le;
+  return v_le;
+end;
+$$;
+revoke all on function public.zabelie_authoring_approuver_export(uuid, text) from public, anon, authenticated;
+grant execute on function public.zabelie_authoring_approuver_export(uuid, text) to authenticated;
 
 -- ── Sonde de présence (`/api/admin/coherence`) ───────────────────────────
--- Redéfinition COMPLÈTE de la sonde de 0143, avec la fonction de 0144 en
--- plus (`tests/objets-requis-couverture.test.ts`).
+-- Redéfinition COMPLÈTE de la sonde de 0146, avec les deux fonctions de 0147
+-- en plus (`tests/objets-requis-couverture.test.ts`).
 create or replace function zabelie_objets_requis()
 returns table (objet text, present boolean, pourquoi text)
 language sql
@@ -172,7 +235,9 @@ as $$
       ('zabelie_authoring_marquer_soumis(uuid,uuid,text)', 'sans elle, rien ne part vers le fournisseur (0142) : la verification avant envoi est le seul passage'),
       ('zabelie_authoring_conclure(uuid,uuid,text,jsonb,text,integer,integer)', 'sans elle, aucun resultat n''est enregistre (0142) : les operations restent en cours puis deviennent incertaines'),
       ('zabelie_authoring_opportunites()', 'sans elle, le tableau du Studio n''affiche plus aucune opportunite (0143) : silencieux, l''etat vide s''affiche'),
-      ('zabelie_authoring_approuver_revision(uuid,integer,boolean)', 'sans elle, aucun guide ne s''approuve avant export (0144) : l''export reste ferme'),
+      ('zabelie_authoring_approuver_revision(uuid,integer,boolean)', 'sans elle, aucun guide ne s''approuve avant export (0146) : l''export reste ferme'),
+      ('zabelie_authoring_enregistrer_export(uuid,uuid,integer,text,text,integer,integer,text,integer,integer)', 'sans elle, aucun PDF du Studio n''est enregistre (0147) : la route rend une erreur, le fichier depose reste sans ligne'),
+      ('zabelie_authoring_approuver_export(uuid,text)', 'sans elle, aucun PDF du Studio ne s''approuve (0147) : rien ne peut partir vers une fiche produit'),
       ('zabelie_submit_support(uuid,uuid,uuid,text,text,text)', 'les demandes et reponses du support'),
       ('zabelie_accept_account_legal(text,text,boolean,boolean)', 'enregistre les deux déclarations explicites de la première session OAuth (0133)'),
       ('zabelie_record_refund_receipt(uuid,uuid,text,text,timestamp with time zone)', 'sans elle, le retour effectif des fonds ne peut plus etre documente'),
@@ -439,19 +504,29 @@ $$;
 -- ── Post-conditions : on asserte l'EFFET ───────────────────────────────────
 do $$
 begin
-  if has_column_privilege('authenticated', 'public.zabelie_authoring_projects', 'revision_approuvee', 'UPDATE')
-     or has_column_privilege('authenticated', 'public.zabelie_authoring_projects', 'revision_approuvee_le', 'UPDATE') then
-    raise exception 'ZB144 : le vendeur ecrit son approbation sans passer par la fonction';
+  if not exists (select 1 from storage.buckets where id = 'authoring-exports' and not public
+                   and allowed_mime_types = array['application/pdf']) then
+    raise exception 'ZB147 : bucket authoring-exports absent, public, ou ouvert a d''autres types que le PDF';
   end if;
-  if not has_column_privilege('authenticated', 'public.zabelie_authoring_projects', 'revision_approuvee', 'SELECT') then
-    raise exception 'ZB144 : le vendeur ne lit pas son approbation';
+  if has_table_privilege('authenticated', 'public.zabelie_authoring_exports', 'INSERT')
+     or has_table_privilege('authenticated', 'public.zabelie_authoring_exports', 'UPDATE')
+     or has_table_privilege('authenticated', 'public.zabelie_authoring_exports', 'DELETE')
+     or has_table_privilege('anon', 'public.zabelie_authoring_exports', 'SELECT') then
+    raise exception 'ZB147 : un role client ecrit les exports, ou anon les lit';
   end if;
-  if has_function_privilege('anon', 'public.zabelie_authoring_approuver_revision(uuid, integer, boolean)', 'EXECUTE')
-     or not has_function_privilege('authenticated', 'public.zabelie_authoring_approuver_revision(uuid, integer, boolean)', 'EXECUTE') then
-    raise exception 'ZB144 : droits d''execution de l''approbation';
+  if has_function_privilege('authenticated', 'public.zabelie_authoring_enregistrer_export(uuid, uuid, integer, text, text, integer, integer, text, integer, integer)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.zabelie_authoring_enregistrer_export(uuid, uuid, integer, text, text, integer, integer, text, integer, integer)', 'EXECUTE')
+     or not has_function_privilege('service_role', 'public.zabelie_authoring_enregistrer_export(uuid, uuid, integer, text, text, integer, integer, text, integer, integer)', 'EXECUTE') then
+    raise exception 'ZB147 : l''enregistrement d''un export n''est pas reserve au service role';
   end if;
-  if not exists (select 1 from zabelie_objets_requis() where objet = 'zabelie_authoring_approuver_revision(uuid,integer,boolean)' and present) then
-    raise exception 'ZB144 : sonde non a jour';
+  if has_function_privilege('anon', 'public.zabelie_authoring_approuver_export(uuid, text)', 'EXECUTE')
+     or not has_function_privilege('authenticated', 'public.zabelie_authoring_approuver_export(uuid, text)', 'EXECUTE') then
+    raise exception 'ZB147 : droits d''execution de l''approbation d''un export';
+  end if;
+  if (select count(*) from zabelie_objets_requis()
+       where objet in ('zabelie_authoring_enregistrer_export(uuid,uuid,integer,text,text,integer,integer,text,integer,integer)',
+                       'zabelie_authoring_approuver_export(uuid,text)') and present) <> 2 then
+    raise exception 'ZB147 : sonde non a jour';
   end if;
 end;
 $$;

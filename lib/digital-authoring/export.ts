@@ -7,7 +7,7 @@ import type { ProjetEditeur } from "./api";
  * Module PUR, sans dépendance serveur : les routes, l'éditeur et les tests le
  * partagent.
  *
- * Le chemin de dépôt est calculé ICI et, à l'identique, par la base (0145) :
+ * Le chemin de dépôt est calculé ICI et, à l'identique, par la base (0147) :
  * la route dépose à ce chemin, la fonction d'enregistrement le recalcule, et
  * la route refuse de répondre s'ils diffèrent. Le chemin est adressé par le
  * contenu (empreinte des octets) : un même chemin porte toujours les mêmes octets.

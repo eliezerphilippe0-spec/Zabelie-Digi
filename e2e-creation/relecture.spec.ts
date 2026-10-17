@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 /**
  * Studio de création éditoriale — relecture et approbation du guide
  * (tâche 4.2 ; fiche-test validée le 2026-10-16). Contre
- * `e2e/fixtures/stub-creation.mjs`, qui refuse comme la fonction de 0144.
+ * `e2e/fixtures/stub-creation.mjs`, qui refuse comme la fonction de 0146.
  */
 const STUB = "http://127.0.0.1:15431";
 const EMOJI = String.fromCodePoint(0x1f600);

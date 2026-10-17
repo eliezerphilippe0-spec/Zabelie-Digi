@@ -24,7 +24,7 @@ const HEX64 = /^[0-9a-f]{64}$/;
  * POST /api/digital-authoring/exports/[id]  { empreinte }
  *      → approuve CET export, celui dont l'empreinte a été montrée (T28).
  *
- * Tâche 4.3. La ligne est lue sous le JWT du vendeur : la RLS de 0145 rend
+ * Tâche 4.3. La ligne est lue sous le JWT du vendeur : la RLS de 0147 rend
  * l'export d'un autre INTROUVABLE (404). La clé de service ne sert qu'à
  * signer l'URL (C1-A), après ce contrôle.
  */

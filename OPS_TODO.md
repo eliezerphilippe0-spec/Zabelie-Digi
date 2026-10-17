@@ -131,7 +131,7 @@ porte du niveau Elite ; (6) paiement complet ou acompte pour les services ;
 la grille marchande MonCash, et les taux des concurrents vérifiés sur leurs
 pages.
 
-### Migration `0144_zabelie_authoring_approbation.sql` — protocole d'application (PR 4, relecture)
+### Migration `0146_zabelie_authoring_approbation.sql` — protocole d'application (PR 4, relecture)
 
 ⏳ **NON APPLIQUÉE.** « oui » du porteur requis avant l'application, puis un autre avant la fusion de la PR 4 (C2-A),
 même CI verte. Additive : deux colonnes nullables sur `zabelie_authoring_projects` (`revision_approuvee`,
@@ -141,11 +141,11 @@ redéfinie à l'identique plus deux lignes (une création ne naît jamais approu
 `zabelie_authoring_%`). Aucune table d'argent, de commande ni de produit n'est touchée.
 
 Ordre proposé : CI verte sur la tête de la PR 4 → comparaison de la sonde (elle ne fait qu'ajouter) → application de
-`0144` → vérifications ci-dessous → fusion. Le Studio reste éteint en production pendant tout ce temps.
+`0146` → vérifications ci-dessous → fusion. Le Studio reste éteint en production pendant tout ce temps.
 
 Vérifications après application, en lecture :
-1. Registre : la ligne `0144_zabelie_authoring_approbation.sql`, et le décompte égal au nombre de fichiers du dépôt.
-2. Post-conditions `ZB144` passées (la migration lève sinon).
+1. Registre : la ligne `0146_zabelie_authoring_approbation.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB146` passées (la migration lève sinon).
 3. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : onze lignes, `present`
    vrai.
 4. `select count(*) from zabelie_authoring_projects where revision_approuvee is not null` : 0 (rien n'est approuvé
@@ -153,20 +153,20 @@ Vérifications après application, en lecture :
 
 Retour arrière : le Studio étant éteint, aucun n'est nécessaire. Ne pas supprimer les colonnes à la main.
 
-### Migration `0145_zabelie_authoring_exports.sql` — protocole d'application (PR 4, export PDF)
+### Migration `0147_zabelie_authoring_exports.sql` — protocole d'application (PR 4, export PDF)
 
-⏳ **NON APPLIQUÉE.** Exige `0144`. « oui » du porteur requis avant l'application (C2-A). Additive : un bucket PRIVÉ
+⏳ **NON APPLIQUÉE.** Exige `0146`. « oui » du porteur requis avant l'application (C2-A). Additive : un bucket PRIVÉ
 `authoring-exports` (PDF seulement, 20 Mo, aucune policy), une table `zabelie_authoring_exports` (le vendeur lit les
 siens, n'en écrit aucun), une garde d'immuabilité, `zabelie_authoring_enregistrer_export(…)` exécutable par le
 **service role seul**, `zabelie_authoring_approuver_export(uuid, text)` sous `auth.uid()`, et la sonde redéfinie
 (treize entrées `zabelie_authoring_%`). Aucune table d'argent, de commande ni de produit n'est touchée.
 
-Ordre proposé, avec `0144` : CI verte sur la tête de la PR 4 → comparaison de la sonde → `0144` → vérifications →
-`0145` → vérifications → fusion de la PR 4. Le Studio reste éteint en production.
+Ordre proposé, avec `0146` : CI verte sur la tête de la PR 4 → comparaison de la sonde → `0146` → vérifications →
+`0147` → vérifications → fusion de la PR 4. Le Studio reste éteint en production.
 
 Vérifications après application, en lecture :
-1. Registre : la ligne `0145_zabelie_authoring_exports.sql`, et le décompte égal au nombre de fichiers du dépôt.
-2. Post-conditions `ZB145` passées (la migration lève sinon).
+1. Registre : la ligne `0147_zabelie_authoring_exports.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB147` passées (la migration lève sinon).
 3. `select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'authoring-exports'` :
    `false`, 20971520, `{application/pdf}`.
 4. `select objet, present from zabelie_objets_requis() where objet like 'zabelie_authoring_%'` : treize lignes,

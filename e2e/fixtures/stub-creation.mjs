@@ -17,7 +17,7 @@ const EDITORIAUX = ["titre", "langue", "public_vise", "marche_diaspora", "brief"
 let projets = new Map();
 let operations = new Map();
 let revisions = new Map();
-// Export PDF (0145) : les lignes, et les objets du bucket privé (octets réels déposés par la route).
+// Export PDF (0147) : les lignes, et les objets du bucket privé (octets réels déposés par la route).
 let exportsPdf = new Map();
 let objets = new Map();
 const BUCKET_EXPORTS = "authoring-exports";
@@ -128,7 +128,7 @@ const server = createServer(async (req, res) => {
     p.plan_approuve_revision = b.p_revision;
     return send(b.p_revision);
   }
-  // Approbation du guide (0144) : mêmes refus que la fonction SQL, dans le même ordre.
+  // Approbation du guide (0146) : mêmes refus que la fonction SQL, dans le même ordre.
   if (u.pathname === "/rest/v1/rpc/zabelie_authoring_approuver_revision") {
     const b = await body();
     if (b.p_responsabilite !== true) return send({ code: "22023", message: "authoring_responsabilite_requise" }, 400);
@@ -220,7 +220,7 @@ const server = createServer(async (req, res) => {
     return send(opportunitesVides ? { ...OPPORTUNITES, recherches: [], ventes: [] } : OPPORTUNITES);
   }
 
-  // ── Export PDF (0145) : bucket privé, enregistrement par le service role seul ──
+  // ── Export PDF (0147) : bucket privé, enregistrement par le service role seul ──
   const prefixeObjet = `/storage/v1/object/${BUCKET_EXPORTS}/`;
   const prefixeSigne = `/storage/v1/object/sign/${BUCKET_EXPORTS}/`;
   if (u.pathname.startsWith(prefixeObjet) && req.method === "POST") {
