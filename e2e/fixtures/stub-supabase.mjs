@@ -228,6 +228,21 @@ const server = createServer((req, res) => {
 
   if (process.env.OFFERS_FIXTURE === "true" && offersFixture(req,url,send,single)) return;
 
+  // Ventes flash (0080) — opt-in : une offre vivante sur le produit publié,
+  // 1 050 HTG au lieu de 1 500, plafond de 10 unités dont 3 déjà prises
+  // (comptage HEAD des commandes, comme le checkout). Les autres suites
+  // gardent le prix normal.
+  if (process.env.FLASH_FIXTURE === "true") {
+    if (url.pathname === "/rest/v1/zabelie_flash_sales") {
+      const now = Date.now();
+      return single([{ id: "f1a5f1a5-0000-4000-8000-000000000001", product_id: PRODUCT_ID, prix_flash_htg: 1050, debut: new Date(now - 3600e3).toISOString(), fin: new Date(now + 3 * 3600e3).toISOString(), unites_max: 10 }]);
+    }
+    if (url.pathname === "/rest/v1/orders" && req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json", "content-range": "*/3" });
+      return res.end();
+    }
+  }
+
   if (process.env.PRICING_FIXTURE === "true") {
     if (url.pathname === "/rest/v1/zabelie_seller_pricing_config") return single([{
       id: true, enabled: true, direct_rate_bps: 1000, direct_fixed_usd_cents: 50,

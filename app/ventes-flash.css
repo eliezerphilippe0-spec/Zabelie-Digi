@@ -1,0 +1,95 @@
+/* VENTES FLASH (components/ventes-flash.tsx) — rangée de l'accueil et bloc de
+   la fiche produit. Orange de la marque et encre : le couple des boutons
+   principaux, contraste déjà vérifié (zabelie-theme.css). */
+.flash-bandeau {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  overflow: hidden;
+  padding: 10px 14px;
+  border-radius: 12px 12px 0 0;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+.flash-rangee {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, 46%);
+  gap: 12px;
+  margin: 0;
+  padding: 12px 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.flash-rangee::-webkit-scrollbar { display: none; }
+.flash-carte { scroll-snap-align: start; }
+@media (min-width: 768px) {
+  .flash-rangee { grid-auto-columns: minmax(0, 1fr); grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
+}
+@media (min-width: 1024px) {
+  .flash-rangee { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+.flash-remise {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-size: 12px;
+  font-weight: 800;
+}
+.flash-stock { display: grid; gap: 4px; }
+.flash-barre {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+.flash-barre > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-brand);
+  transform: scaleX(var(--part, 0));
+  transform-origin: left center;
+}
+
+/* Le mouvement n'existe que si le visiteur ne l'a pas refusé ; au repos, tout
+   est déjà à sa place (même sens que `.reveal`, tests/paiement-succes S4).
+   Chaque animation est JOUÉE UNE FOIS : rien ne clignote en continu à côté
+   du contenu (WCAG 2.2.2). */
+@media (prefers-reduced-motion: no-preference) {
+  .flash-bandeau::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    transform: translateX(-120%);
+    animation: flash-reflet 1.6s ease-out 0.3s 2 both;
+    pointer-events: none;
+  }
+  .flash-eclair { animation: flash-eclair 0.9s ease-out 0.2s 2 both; }
+  .flash-remise { animation: flash-apparait 0.45s cubic-bezier(.2, .9, .3, 1.4) 0.15s both; }
+  .flash-barre > span { animation: flash-remplir 0.9s ease-out 0.25s both; }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .flash-lien { transition: transform 180ms ease, border-color 180ms ease; }
+  .flash-lien:hover { transform: translateY(-3px); border-color: var(--color-accent); }
+}
+@keyframes flash-reflet { to { transform: translateX(320%); } }
+@keyframes flash-eclair {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  30% { transform: scale(1.25) rotate(-8deg); opacity: 0.6; }
+  60% { transform: scale(0.95); opacity: 1; }
+}
+@keyframes flash-apparait { from { transform: scale(0.6); opacity: 0; } }
+@keyframes flash-remplir { from { transform: scaleX(0); } }

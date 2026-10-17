@@ -28,6 +28,8 @@ import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { siteUrl } from "@/lib/site-url";
 import { allocateHomeRows, classesRangee, rangeeVisible, vendeursAffichables } from "@/lib/home-sections";
+import { offresFlashVitrine, type FlashVitrine } from "@/lib/flash";
+import { VentesFlash } from "@/components/ventes-flash";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +122,19 @@ async function produitsAvecVentePayee(): Promise<Map<string, number>> {
   return compte;
 }
 
+/**
+ * Ventes flash vivantes parmi les produits affichés (0080, lecture publique).
+ * Silencieuse en cas d'erreur : la section s'efface, l'accueil reste.
+ */
+async function ventesFlashAccueil(products: ProductView[]): Promise<FlashVitrine[]> {
+  if (!isSupabaseConfigured() || products.length === 0) return [];
+  try {
+    return await offresFlashVitrine(await pricingClient(), createAdminClient(), products.map((p) => p.id));
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomePage() {
   const discovery = isSupabaseConfigured() && Boolean(await readSellerPricing(await pricingClient()));
   const [catalogue, lang, ventesPayees] = await Promise.all([
@@ -134,6 +149,7 @@ export default async function HomePage() {
   ]);
 
   const products = catalogue ?? [];
+  const flash = await ventesFlashAccueil(products);
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].slice(0, 6);
   // A single offer stays in the main grid; the hero never repeats it.
   const featured = products.length > 1 ? products.find((p) => p.coverUrl) ?? products[0] : undefined;
@@ -316,6 +332,10 @@ export default async function HomePage() {
             mesuré le 2026-09-26, elle commençait à y = 1 055 en 375 × 812. L'ORDRE
             DU DOCUMENT ne change pas — lecteurs d'écran et ordinateur gardent
             bannière → confiance → produits (tests/home-premium-structure S8). */}
+        {/* VENTES FLASH — sur le modèle de Jumia : la rangée n'existe que si
+            un vendeur a une offre vivante ; sur mobile, elle suit la
+            première rangée (elle n'est pas dans le premier écran remonté). */}
+        <VentesFlash lang={lang} offres={flash} produits={products} discovery={discovery} />
         {principaux.length > 0 && (
           <div className="home-premier-ecran">
             <HomeRow primary title={t(lang, "home.products")} discovery={discovery} subtitle={t(lang, "home.selection.sub")} more={t(lang, "home.all")} items={principaux} cardLabels={cardLabels} />
