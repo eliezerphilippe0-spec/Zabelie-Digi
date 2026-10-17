@@ -54,11 +54,14 @@ test("post-purchase complement requires a confirmed order belonging to the buyer
  const url="/paiement/succes?commande=33333333-3333-3333-3333-333333333333";
  await request.post("http://127.0.0.1:15428/__offers-status",{data:{status:"pending"}});
  await page.goto(url);await expect(page.getByRole("region",{name:"Pour compléter votre achat"})).toHaveCount(0);
+ const confirme=page.getByRole("heading",{name:"Paiement confirmé"});
+ await expect(confirme).toHaveCount(0);await expect(page.getByRole("heading",{name:"Vérifiez l'état de votre commande"})).toBeVisible();
  await request.post("http://127.0.0.1:15428/__offers-status",{data:{status:"paid"}});
- await page.reload();const offers=page.getByRole("region",{name:"Pour compléter votre achat"});
+ await page.reload();await expect(confirme).toBeVisible();const offers=page.getByRole("region",{name:"Pour compléter votre achat"});
  await expect(offers.getByRole("heading",{name:"Accessoire pratique"})).toBeVisible();
  await expect(offers.getByRole("heading",{name:"Kit complet"})).toHaveCount(0);
  await connect(page);await page.reload();await expect(page.getByRole("region",{name:"Pour compléter votre achat"})).toHaveCount(0);
+ await expect(confirme).toHaveCount(0); // payée, mais pas la sienne
 });
 test("offer removal is persisted and the public card disappears",async({page})=>{
  await connect(page);

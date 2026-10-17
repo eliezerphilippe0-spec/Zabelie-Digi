@@ -38,8 +38,8 @@ import { isProductKind, pickByKind, isDownloadable } from "@/lib/product-kind";
  */
 async function detailsCommande(
   orderId: string
-): Promise<{ ref: string | null; kind: string | null; productId: string | null; buyerId: string | null; sellerId: string | null; montantHtg: number | null }> {
-  const vide = { ref: null, kind: null, productId: null, buyerId: null, sellerId: null, montantHtg: null };
+): Promise<{ payee: boolean; ref: string | null; kind: string | null; productId: string | null; buyerId: string | null; sellerId: string | null; montantHtg: number | null }> {
+  const vide = { payee: false, ref: null, kind: null, productId: null, buyerId: null, sellerId: null, montantHtg: null };
   if (!isSupabaseConfigured()) return vide;
   try {
     const supabase = await createClient();
@@ -55,14 +55,17 @@ async function detailsCommande(
     const ligne = data as
       | { order_ref?: string | null; product_id: string; buyer_id: string; status: string; amount_htg?: number | null; product?: { kind?: string | null; seller_id?: string | null } | null }
       | null;
+    // Statut lu en base sous la session, jamais le retour navigateur : seule source de « payée ».
+    const payee = !!ligne && ["paid", "delivered"].includes(ligne.status);
     return {
-      productId: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.product_id : null,
+      payee,
+      productId: payee && ligne ? ligne.product_id : null,
       buyerId: user.id,
       ref: ligne?.order_ref ?? null,
       kind: ligne?.product?.kind ?? null,
       // Pixel « achat » : seulement pour une commande PAYÉE (statut lu en base, jamais le retour navigateur).
-      sellerId: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.product?.seller_id ?? null : null,
-      montantHtg: ligne && ["paid", "delivered"].includes(ligne.status) ? ligne.amount_htg ?? null : null,
+      sellerId: payee && ligne ? ligne.product?.seller_id ?? null : null,
+      montantHtg: payee && ligne ? ligne.amount_htg ?? null : null,
     };
   } catch {
     return vide;
@@ -101,7 +104,8 @@ function cleCorps(kind: string | null): I18nKey {
   );
 }
 
-export const metadata = { title: "Paiement réussi — Zabelie" };
+/* Titre neutre : il s'affiche avant de savoir si la commande est payée. */
+export const metadata = { title: "Votre commande — Zabelie", robots: { index: false, follow: false } };
 
 export default async function SuccesPage({
   searchParams,
@@ -109,9 +113,48 @@ export default async function SuccesPage({
   searchParams: Promise<{ commande?: string }>;
 }) {
   const [{ commande }, lang] = await Promise.all([searchParams, getLang()]);
-  const { ref, kind, productId, buyerId, sellerId, montantHtg } = commande
+  const { payee, ref, kind, productId, buyerId, sellerId, montantHtg } = commande
     ? await detailsCommande(commande)
-    : { ref: null, kind: null, productId: null, buyerId: null, sellerId: null, montantHtg: null };
+    : { payee: false, ref: null, kind: null, productId: null, buyerId: null, sellerId: null, montantHtg: null };
+
+  /* ⚠️ SEC-01 (audit du 2026-10-17) : la page disait « ✓ Paiement confirmé »
+   * à N'IMPORTE QUI — sans session, sans commande, avec un numéro inventé.
+   * Une page officielle de zabelie.com servait alors de fausse preuve de
+   * paiement : le faux acheteur envoie la capture au vendeur, qui remet
+   * l'objet sans être payé.
+   *
+   * La coche ne s'affiche donc que pour une commande relue en base, sous la
+   * session, payée et appartenant à l'acheteur. Tout le reste — session
+   * absente, commande d'un autre, en attente, inconnue, Supabase non
+   * configuré — reçoit une page qui ne confirme rien et renvoie vers
+   * « Mes achats », où l'état fait foi. Pas de numéro de commande non plus :
+   * recopié depuis l'URL, il donnerait du crédit à une capture. */
+  if (!payee) {
+    return (
+      <div className="bg-grain min-h-dvh">
+        <SiteNav />
+        <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
+          <h1 className="text-2xl font-extrabold">{t(lang, "pay.check.title")}</h1>
+          <p className="mt-3 text-mist">{t(lang, "pay.check.body")}</p>
+          <div className="mt-8 flex flex-col gap-3">
+            <Link
+              href="/mes-achats"
+              className="bouton inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+            >
+              {t(lang, "pay.wait.cta")}
+            </Link>
+            <Link
+              href="/catalogue"
+              className="inline-flex min-h-11 items-center justify-center text-sm text-mist hover:text-cloud"
+            >
+              {t(lang, "pay.back")}
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const pixels = sellerId && productId && montantHtg !== null ? await lirePixelsVendeur(sellerId) : null;
   const offers = productId && buyerId ? await publicOffers(productId, buyerId) : [];
 
