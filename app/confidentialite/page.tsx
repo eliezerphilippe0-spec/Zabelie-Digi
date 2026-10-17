@@ -2,7 +2,7 @@ import { t } from "@/lib/i18n";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
-import { metaLangue } from "@/lib/langue-url";
+import { metaPage } from "@/lib/meta-page";
 import { TrackerPreferences } from "@/components/tracker-preferences";
 import { CONFIDENTIALITE_VERSION } from "@/lib/legal-acceptance";
 import {
@@ -12,15 +12,9 @@ import {
   type Politique,
 } from "@/lib/policy-privacy";
 
-const META = {
-  title: "Politique de confidentialité — Zabelie",
-  description:
-    "La politique de confidentialité de Zabelie : les données traitées sur la marketplace, leur usage et vos droits.",
-};
-
-// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+// Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
 export async function generateMetadata() {
-  return { ...META, ...metaLangue("/confidentialite", await getLang()) };
+  return metaPage("/confidentialite", await getLang(), "confidentialite");
 }
 
 // Dernière mise à jour de la politique (à actualiser à chaque changement).

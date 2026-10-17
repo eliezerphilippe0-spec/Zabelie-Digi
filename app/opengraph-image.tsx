@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { siteUrl } from "@/lib/site-url";
+import { OG_IMAGE_ALT } from "@/lib/brand";
 
 /**
  * Aperçu de partage de l'ACCUEIL — le canal d'acquisition est WhatsApp : ce
@@ -16,7 +17,7 @@ import { siteUrl } from "@/lib/site-url";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const alt = "Zabelie — makètplas ayisyen an";
+export const alt = OG_IMAGE_ALT;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

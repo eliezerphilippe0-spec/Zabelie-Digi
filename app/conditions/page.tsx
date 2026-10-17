@@ -1,20 +1,14 @@
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { getLang } from "@/lib/i18n-server";
-import { metaLangue } from "@/lib/langue-url";
+import { metaPage } from "@/lib/meta-page";
 import { resoudre, type Bloc, type Politique } from "@/lib/policy-privacy";
 import { CONDITIONS } from "@/lib/policy-terms";
 import { CONDITIONS_VERSION } from "@/lib/legal-acceptance";
 
-const META = {
-  title: "Conditions d'utilisation — Zabelie",
-  description:
-    "Les conditions d'utilisation de la marketplace haïtienne Zabelie, pour les acheteurs comme pour les vendeurs.",
-};
-
-// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+// Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
 export async function generateMetadata() {
-  return { ...META, ...metaLangue("/conditions", await getLang()) };
+  return metaPage("/conditions", await getLang(), "conditions");
 }
 
 // Dernière mise à jour du gabarit (à actualiser à chaque changement — et la

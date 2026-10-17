@@ -5,6 +5,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
 import { t, isLang, LANGS } from "@/lib/i18n";
+import { partage } from "@/lib/meta-page";
 import { siteUrl } from "@/lib/site-url";
 export const dynamic = "force-dynamic";
 async function resolve(params: Promise<{ lang: string; slug: string }>) {
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const title = `${t(lang, guide.title)} — Zabelie`;
   const description = t(lang, guide.intro);
   const canonical = guideHref(lang, guide.slug);
-  return { title, description, alternates: { canonical, languages: { ...Object.fromEntries(LANGS.map((l) => [l, `${siteUrl()}${guideHref(l, guide.slug)}`])), "x-default": `${siteUrl()}${guideHref("fr", guide.slug)}` } }, openGraph: { title, description, url: canonical, type: "article" as const }, twitter: { card: "summary_large_image" as const, title, description } };
+  return { title, description, alternates: { canonical, languages: { ...Object.fromEntries(LANGS.map((l) => [l, `${siteUrl()}${guideHref(l, guide.slug)}`])), "x-default": `${siteUrl()}${guideHref("fr", guide.slug)}` } }, ...partage(lang, title, description, canonical, "article") };
 }
 export default async function BuyingGuidePage({ params }: { params: Promise<{ lang: string; slug: string }> }) {
   const { lang, guide } = await resolve(params);

@@ -1,4 +1,5 @@
 import { editorialAlternates } from "@/lib/editorial-routing";
+import { partage } from "@/lib/meta-page";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -8,11 +9,10 @@ import { t } from "@/lib/i18n";
 
 export async function generateMetadata() {
   const lang = await getLang();
-  return {
-    title: t(lang, "about.title"),
-    description: t(lang, "about.intro"),
-    alternates: editorialAlternates("/a-propos", lang),
-  };
+  const title = t(lang, "about.title");
+  const description = t(lang, "about.intro");
+  const alternates = editorialAlternates("/a-propos", lang);
+  return { title, description, alternates, ...partage(lang, title, description, alternates.canonical) };
 }
 
 export default async function AboutPage() {

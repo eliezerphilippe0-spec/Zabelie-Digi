@@ -65,15 +65,15 @@ test("LU4 — le proxy réécrit, porte la langue, garde la session et la CSP de
   assert.match(proxy, /if \(localise && request\.cookies\.get\(LANG_COOKIE_NOM\)\?\.value !== localise\.lang\) \{\s*response\.cookies\.set\(LANG_COOKIE_NOM, localise\.lang,/);
 });
 
-test("LU5 — chaque page localisable déclare SA canonique par metaLangue, et le sitemap annonce les deux langues", () => {
+test("LU5 — chaque page localisable déclare SA canonique par metaLangue (ou metaPage, qui l'appelle), et le sitemap annonce les deux langues", () => {
   const pages: [string, string][] = [
-    ["app/page.tsx", 'metaLangue("/", await getLang())'],
-    ["app/vendre/page.tsx", 'metaLangue("/vendre", await getLang())'],
-    ["app/vendre/physique/page.tsx", 'metaLangue("/vendre/physique", await getLang())'],
-    ["app/produits-interdits/page.tsx", 'metaLangue("/produits-interdits", await getLang())'],
-    ["app/developpeurs/page.tsx", 'metaLangue("/developpeurs", await getLang())'],
-    ["app/conditions/page.tsx", 'metaLangue("/conditions", await getLang())'],
-    ["app/confidentialite/page.tsx", 'metaLangue("/confidentialite", await getLang())'],
+    ["app/page.tsx", 'metaPage("/", await getLang(), "accueil")'],
+    ["app/vendre/page.tsx", 'metaPage("/vendre", await getLang(), "vendre")'],
+    ["app/vendre/physique/page.tsx", 'metaPage("/vendre/physique", await getLang(), "vendrePhysique")'],
+    ["app/produits-interdits/page.tsx", 'metaPage("/produits-interdits", await getLang(), "interdits")'],
+    ["app/developpeurs/page.tsx", 'metaPage("/developpeurs", await getLang(), "developpeurs")'],
+    ["app/conditions/page.tsx", 'metaPage("/conditions", await getLang(), "conditions")'],
+    ["app/confidentialite/page.tsx", 'metaPage("/confidentialite", await getLang(), "confidentialite")'],
     ["app/categories/page.tsx", 'metaLangue("/categories", lang)'],
     ["app/catalogue/page.tsx", "metaLangue(catalogueCanonical(raw), lang)"],
     ["app/produit/[slug]/page.tsx", "metaLangue(`/produit/${product.slug}`, lang)"],
@@ -82,7 +82,7 @@ test("LU5 — chaque page localisable déclare SA canonique par metaLangue, et l
   for (const [fichier, appel] of pages) {
     // Une page qui annonce /ht/<base> sans que le proxy la serve publierait
     // un hreflang vers un 404. La base annoncée doit être dans la liste.
-    const base = /metaLangue\("([^"]+)"/.exec(appel)?.[1] ?? /metaLangue\(`([^$`]+)\$\{/.exec(appel)?.[1]?.concat("x") ?? "/catalogue";
+    const base = /meta(?:Langue|Page)\("([^"]+)"/.exec(appel)?.[1] ?? /metaLangue\(`([^$`]+)\$\{/.exec(appel)?.[1]?.concat("x") ?? "/catalogue";
     assert.ok(estCheminLocalisable(base), `${fichier} annonce ${base}, que le proxy ne sert pas sous /ht/`);
     const src = readFileSync(fichier, "utf8");
     assert.ok(src.includes(appel), `${fichier} : ${appel}`);

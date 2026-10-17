@@ -1,6 +1,7 @@
 import { getTopupAvailability } from "@/lib/topup-availability";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { editorialAlternates } from "@/lib/editorial-routing";
+import { partage } from "@/lib/meta-page";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
@@ -12,7 +13,10 @@ import { isStripeEnabled } from "@/lib/stripe-config";
 
 export async function generateMetadata() {
   const lang = await getLang();
-  return { title: `${t(lang, "recharges.title")} — Zabelie`, description: t(lang, "recharges.intro"), alternates: editorialAlternates("/recharges", lang) };
+  const title = `${t(lang, "recharges.title")} — Zabelie`;
+  const description = t(lang, "recharges.intro");
+  const alternates = editorialAlternates("/recharges", lang);
+  return { title, description, alternates, ...partage(lang, title, description, alternates.canonical) };
 }
 
 export default async function RechargesPage() {
