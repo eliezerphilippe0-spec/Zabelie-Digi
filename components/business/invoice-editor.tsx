@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatHTG } from "@/lib/sample-data";
+import type { FacturationCopy } from "@/lib/facturation-copy";
 
 type Item = {
   id: string;
@@ -32,11 +33,13 @@ export function InvoiceEditor({
   items,
   clientName,
   shareUrl,
+  labels,
 }: {
   invoice: Invoice;
   items: Item[];
   clientName: string;
   shareUrl: string;
+  labels: FacturationCopy;
 }) {
   const router = useRouter();
   const isDraft = invoice.status === "draft";
@@ -63,13 +66,13 @@ export function InvoiceEditor({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Ligne refusée.");
+        setError(data.error ?? labels.lineError);
         return;
       }
       setLine({ label: "", qty: "1", unitPrice: "" });
       router.refresh();
     } catch {
-      setError("Connexion impossible.");
+      setError(labels.network);
     } finally {
       setBusy(false);
     }
@@ -85,19 +88,19 @@ export function InvoiceEditor({
       );
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Suppression impossible.");
+        setError(data.error ?? labels.removeError);
         return;
       }
       router.refresh();
     } catch {
-      setError("Connexion impossible.");
+      setError(labels.network);
     } finally {
       setBusy(false);
     }
   }
 
   async function send() {
-    if (!confirm("Envoyer la facture ? Elle ne sera plus modifiable.")) return;
+    if (!confirm(labels.sendConfirm)) return;
     setBusy(true);
     setError(null);
     try {
@@ -106,19 +109,19 @@ export function InvoiceEditor({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Envoi refusé.");
+        setError(data.error ?? labels.sendError);
         return;
       }
       router.refresh();
     } catch {
-      setError("Connexion impossible.");
+      setError(labels.network);
     } finally {
       setBusy(false);
     }
   }
 
   async function voidInvoice() {
-    if (!confirm("Annuler cette facture ?")) return;
+    if (!confirm(labels.voidConfirm)) return;
     setBusy(true);
     setError(null);
     try {
@@ -127,12 +130,12 @@ export function InvoiceEditor({
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error ?? "Annulation impossible.");
+        setError(data.error ?? labels.voidError);
         return;
       }
       router.refresh();
     } catch {
-      setError("Connexion impossible.");
+      setError(labels.network);
     } finally {
       setBusy(false);
     }
@@ -150,17 +153,17 @@ export function InvoiceEditor({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">
-            {invoice.invoice_number ?? "Nouvelle facture"}
+            {invoice.invoice_number ?? labels.newInvoice}
           </h1>
-          <p className="mt-1 text-sm text-mist">Pour {clientName}</p>
+          <p className="mt-1 text-sm text-mist">{labels.forClient.replace("{nom}", clientName)}</p>
         </div>
-        <StatusBadge status={invoice.status} />
+        <StatusBadge status={invoice.status} labels={labels} />
       </div>
 
       {/* Lignes */}
       <div className="glass mt-6 rounded-2xl p-6">
         {items.length === 0 ? (
-          <p className="text-sm text-mist">Aucune ligne pour l&apos;instant.</p>
+          <p className="text-sm text-mist">{labels.noLines}</p>
         ) : (
           <ul className="divide-y divide-line">
             {items.map((it) => (
@@ -180,7 +183,7 @@ export function InvoiceEditor({
                       onClick={() => removeLine(it.id)}
                       disabled={busy}
                       className="text-xs text-danger-text hover:underline disabled:opacity-50"
-                      aria-label="Supprimer la ligne"
+                      aria-label={labels.removeLine}
                     >
                       ×
                     </button>
@@ -196,7 +199,8 @@ export function InvoiceEditor({
           <form onSubmit={addLine} className="mt-4 space-y-3 border-t border-line pt-4">
             <input
               className={input}
-              placeholder="Description (ex. Logo + charte)"
+              placeholder={labels.lineDesc}
+              aria-label={labels.lineDesc}
               value={line.label}
               onChange={(e) => setLine((l) => ({ ...l, label: e.target.value }))}
               required
@@ -206,7 +210,8 @@ export function InvoiceEditor({
                 className={`${input} w-24`}
                 type="number"
                 min={1}
-                placeholder="Qté"
+                placeholder={labels.qty}
+                aria-label={labels.qty}
                 value={line.qty}
                 onChange={(e) => setLine((l) => ({ ...l, qty: e.target.value }))}
                 required
@@ -215,7 +220,8 @@ export function InvoiceEditor({
                 className={input}
                 type="number"
                 min={0}
-                placeholder="Prix unitaire (HTG)"
+                placeholder={labels.unitPrice}
+                aria-label={labels.unitPrice}
                 value={line.unitPrice}
                 onChange={(e) => setLine((l) => ({ ...l, unitPrice: e.target.value }))}
                 required
@@ -224,7 +230,7 @@ export function InvoiceEditor({
                 disabled={busy}
                 className="whitespace-nowrap rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent disabled:opacity-60"
               >
-                + Ligne
+                {labels.addLine}
               </button>
             </div>
           </form>
@@ -233,17 +239,17 @@ export function InvoiceEditor({
         {/* Totaux */}
         <div className="mt-4 space-y-1 border-t border-line pt-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-mist">Total</span>
+            <span className="text-mist">{labels.total}</span>
             <span className="font-bold">{formatHTG(invoice.total_htg)}</span>
           </div>
           {invoice.paid_htg > 0 && (
             <>
               <div className="flex justify-between">
-                <span className="text-mist">Réglé</span>
+                <span className="text-mist">{labels.paid}</span>
                 <span className="text-success-text">{formatHTG(invoice.paid_htg)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-mist">Reste dû</span>
+                <span className="text-mist">{labels.remaining}</span>
                 <span className="font-semibold text-accent">{formatHTG(remaining)}</span>
               </div>
             </>
@@ -261,24 +267,19 @@ export function InvoiceEditor({
             disabled={busy || invoice.total_htg <= 0}
             className="w-full rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand disabled:opacity-60"
           >
-            {invoice.total_htg <= 0
-              ? "Ajoute au moins une ligne"
-              : "Envoyer la facture"}
+            {invoice.total_htg <= 0 ? labels.addLineFirst : labels.send}
           </button>
         ) : (
           <div className="glass rounded-2xl p-5">
-            <p className="text-sm font-semibold">Lien de paiement</p>
-            <p className="mt-1 text-xs text-mist">
-              Partage-le à ton client (WhatsApp, SMS…). Il paie en MonCash, tu es
-              crédité aussitôt.
-            </p>
+            <p className="text-sm font-semibold">{labels.payLink}</p>
+            <p className="mt-1 text-xs text-mist">{labels.payLinkHint}</p>
             <div className="mt-3 flex gap-2">
-              <input readOnly value={shareUrl} className={`${input} font-mono text-xs`} />
+              <input readOnly value={shareUrl} aria-label={labels.payLink} className={`${input} font-mono text-xs`} />
               <button
                 onClick={copyLink}
                 className="whitespace-nowrap rounded-xl border border-line px-4 text-sm font-semibold hover:border-accent"
               >
-                {copied ? "Copié ✓" : "Copier"}
+                {copied ? labels.copied : labels.copy}
               </button>
             </div>
             <a
@@ -287,7 +288,7 @@ export function InvoiceEditor({
               rel="noopener noreferrer"
               className="mt-3 inline-block text-sm text-accent hover:underline"
             >
-              Ouvrir le portail client ↗
+              {labels.openPortal}
             </a>
           </div>
         )}
@@ -299,7 +300,7 @@ export function InvoiceEditor({
             disabled={busy}
             className="w-full rounded-xl border border-line px-5 py-2.5 text-sm text-danger-text hover:border-danger disabled:opacity-60"
           >
-            Annuler la facture
+            {labels.voidInvoice}
           </button>
         )}
       </div>
@@ -307,15 +308,8 @@ export function InvoiceEditor({
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    draft: "Brouillon",
-    sent: "Envoyée",
-    partially_paid: "Partielle",
-    paid: "Réglée",
-    overdue: "En retard",
-    void: "Annulée",
-  };
+function StatusBadge({ status, labels }: { status: string; labels: FacturationCopy }) {
+  const map: Record<string, string> = labels.status;
   return (
     <span className="whitespace-nowrap rounded-full border border-line px-3 py-1 text-xs text-mist">
       {map[status] ?? status}
