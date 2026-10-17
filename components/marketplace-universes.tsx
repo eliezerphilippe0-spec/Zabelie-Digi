@@ -20,20 +20,24 @@ function UniverseArt({ index }: { index: number }) {
 }
 
 export function MarketplaceUniverses({ lang }: { lang: Lang }) {
+  /* Audit du 2026-10-17 : la carte disait « Recharges actuellement
+   * indisponibles » en plein accueil. Une vitrine ne montre que ce qui
+   * s'achète ; la carte revient d'elle-même quand les recharges ouvrent.
+   * `/recharges` reste joignable par la navigation et l'aide. */
+  const recharges = isTopupFirstPartyEnabled();
   return <section className="marketplace-universes mx-auto max-w-6xl px-5 py-7" aria-labelledby="shop-universes">
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 id="shop-universes" className="text-xl font-bold">{t(lang, "universe.heading")}</h2><Link href="/categories" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.title")}</Link></div>
-    <div className="universe-grid">
+    <div className={recharges ? "universe-grid" : "universe-grid universe-grid-trois"}>
       {(Object.keys(CATALOGUE_UNIVERSES) as CatalogueUniverse[]).map((key, index) => <Link key={key} href={universeHref(key)} className="group flex flex-col bg-ink p-4 sm:p-5 transition hover:bg-surface-neutral">
         <UniverseArt index={index} />
         <span className="flex items-center justify-between gap-3 text-sm font-bold sm:text-base">{t(lang, CATALOGUE_UNIVERSES[key].title)}<span aria-hidden="true" className="transition group-hover:translate-x-1">↗</span></span>
         <span className="mt-2 text-xs leading-relaxed sm:text-sm text-mist">{t(lang, CATALOGUE_UNIVERSES[key].description)}</span>
       </Link>)}
-      <Link href="/recharges" className="group flex flex-col bg-ink p-4 sm:p-5 transition hover:bg-surface-neutral">
+      {recharges && <Link href="/recharges" className="universe-recharges group flex flex-col bg-ink p-4 sm:p-5 transition hover:bg-surface-neutral">
         <UniverseArt index={3} />
         <span className="flex items-center justify-between gap-3 text-sm font-bold sm:text-base">{t(lang, "universe.recharges")}<span aria-hidden="true" className="transition group-hover:translate-x-1">↗</span></span>
         <span className="mt-2 text-xs leading-relaxed sm:text-sm text-mist">{t(lang, "universe.recharges.body")}</span>
-        {!isTopupFirstPartyEnabled() && <span className="mt-4 text-xs font-semibold text-mist">{t(lang, "availability.topup.paused")}</span>}
-      </Link>
+      </Link>}
     </div>
   </section>;
 }
