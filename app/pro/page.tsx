@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getProfessional } from "@/lib/business";
 import { ProConsole } from "@/components/business/pro-console";
+import { getLang } from "@/lib/i18n-server";
+import { facturationCopy } from "@/lib/facturation-copy";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -17,18 +19,18 @@ export const metadata = {
 
 function Shell({
   children,
+  title,
   subtitle,
 }: {
   children: React.ReactNode;
+  title: string;
   subtitle?: string;
 }) {
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          Espace pro — Fè m peye
-        </h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
         <div className="mt-8">{children}</div>
       </main>
@@ -38,12 +40,11 @@ function Shell({
 }
 
 export default async function ProPage() {
+  const c = facturationCopy(await getLang());
   if (!isSupabaseConfigured()) {
     return (
-      <Shell subtitle="Mode démo — connecte Supabase pour créer de vraies factures.">
-        <div className="glass rounded-2xl p-6 text-sm text-mist">
-          L&apos;espace pro nécessite une base Supabase configurée.
-        </div>
+      <Shell title={c.proTitle} subtitle={c.demo}>
+        <div className="glass rounded-2xl p-6 text-sm text-mist">{c.demoBody}</div>
       </Shell>
     );
   }
@@ -54,12 +55,12 @@ export default async function ProPage() {
   } = await supabase.auth.getUser();
   if (!user) {
     return (
-      <Shell subtitle="Connecte-toi pour facturer tes clients.">
+      <Shell title={c.proTitle} subtitle={c.login}>
         <Link
-          href="/connexion"
+          href={`/connexion?next=${encodeURIComponent("/pro")}`}
           className="bouton inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
         >
-          Se connecter
+          {c.loginCta}
         </Link>
       </Shell>
     );
@@ -71,8 +72,8 @@ export default async function ProPage() {
   // Pas encore de profil pro → écran d'ouverture.
   if (!pro) {
     return (
-      <Shell subtitle="Crée et envoie des factures à tes clients, encaisse en MonCash.">
-        <ProConsole professional={null} clients={[]} invoices={[]} />
+      <Shell title={c.proTitle} subtitle={c.open}>
+        <ProConsole professional={null} clients={[]} invoices={[]} labels={c} />
       </Shell>
     );
   }
@@ -92,11 +93,12 @@ export default async function ProPage() {
   ]);
 
   return (
-    <Shell subtitle={`Connecté comme ${pro.display_name}.`}>
+    <Shell title={c.proTitle} subtitle={c.account.replace("{nom}", pro.display_name)}>
       <ProConsole
         professional={{ id: pro.id, displayName: pro.display_name }}
         clients={clients ?? []}
         invoices={invoices ?? []}
+        labels={c}
       />
     </Shell>
   );

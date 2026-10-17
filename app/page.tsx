@@ -245,7 +245,6 @@ export default async function HomePage() {
           repère que Lighthouse réclamait (landmark-one-main) — l'accueil était
           la seule page sans lui (Phase 0, mesuré). */}
       <main id="main">
-        <div className="home-premier-ecran"><MarketplaceStatus lang={lang} /></div>
         {/* BANNIÈRE — accueil premium §4.2 : UNE bannière, le h1 DEDANS, une
             phrase (≤ 8 mots), un seul CTA orange. Plus de titre séparé, plus de
             carrousel : le premier écran appartient aux produits. Le visuel de
@@ -290,16 +289,24 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* CONFIANCE — quatre repères tenus, une ligne (§4.5). */}
-        <TrustBar
-          compact
-          items={[
-            { t: t(lang, "trust.c1"), icone: "bouclier" },
-            { t: t(lang, "trust.c2"), icone: "coffre" },
-            { t: t(lang, "trust.c3"), icone: "gourde" },
-            { t: t(lang, "trust.c4"), icone: "message" },
-          ]}
-        />
+        {/* CONFIANCE — quatre repères tenus, une ligne (§4.5). Audit du
+            2026-10-17 : la PROMESSE vient avant la limite. Le premier repère
+            est la garantie de séquestre (`trust.2.b`, déjà tenue sur la fiche,
+            le panier et le succès) au lieu de « Paiement expliqué », et ce
+            bloc remonte dans le premier écran à la place de l'état des
+            paiements, qui le suit, en une ligne. */}
+        <div className="home-premier-ecran">
+          <TrustBar
+            compact
+            items={[
+              { t: t(lang, "trust.2.b"), icone: "bouclier" },
+              { t: t(lang, "trust.c2"), icone: "coffre" },
+              { t: t(lang, "trust.c3"), icone: "gourde" },
+              { t: t(lang, "trust.c4"), icone: "message" },
+            ]}
+          />
+        </div>
+        <MarketplaceStatus lang={lang} />
 
         {categories.length > 0 && (
           <nav className="home-discovery-nav mx-auto max-w-6xl px-5" aria-label={t(lang, "home.explore")}>
@@ -385,10 +392,20 @@ export default async function HomePage() {
           </section>
         )}
 
+        {/* Les trois étapes se replient (audit du 2026-10-17) : elles restent
+            dans la page — lecteurs d'écran, moteurs, `tests/accueil-etapes` —
+            mais ne coûtent plus un écran entier à qui vient acheter. Le titre
+            et la mention « Zabelie met en relation… » restent VISIBLES : c'est
+            ce que la plateforme fait et ne fait pas, on ne le cache pas
+            (e2e `parcours-physique-accueil`). */}
         <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-5 pt-8">
           <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
             <h2 id="receipt-title" className="text-xl tracking-tight sm:text-2xl">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
+            <details className="group mt-3">
+              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold underline underline-offset-4 [&::-webkit-details-marker]:hidden">
+                {t(lang, "home.receipt.steps")}<span aria-hidden="true" className="no-underline transition group-open:rotate-45">+</span>
+              </summary>
             <ol className="home-steps mt-5 grid gap-4 sm:grid-cols-3">
               {[
                 { title: t(lang, "home.b1.t"), body: t(lang, "home.b1.b") },
@@ -402,14 +419,10 @@ export default async function HomePage() {
                 </li>
               ))}
             </ol>
-            <Link href="/aide#comment" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline underline-offset-4">{t(lang, "home.how.buy")}</Link>
+            </details>
+            <Link href="/aide#comment" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline underline-offset-4">{t(lang, "home.how.buy")}</Link>
           </div>
         </section>
-
-        <aside className="home-help mx-auto max-w-6xl px-5 pt-8">
-          <div><h2>{t(lang, "home.support.title")}</h2><p>{t(lang, "home.support.body")}</p></div>
-          <Link href="/aide">{t(lang, "home.support.cta")}<span aria-hidden="true">↗</span></Link>
-        </aside>
 
         {/* VENDRE + COMMENT ÇA MARCHE — un seul bloc en fin de page (§4.2, §4.6) :
             la carte « Ouvrez votre boutique » descendue ici, et « Comment ça

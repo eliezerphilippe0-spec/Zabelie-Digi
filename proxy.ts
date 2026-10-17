@@ -8,6 +8,7 @@ import { contentSecurityPolicy } from "@/lib/content-security-policy";
 import { configPublique } from "@/lib/supabase/config";
 import { cheminSurDomaine, estHoteZabelie, hoteDe, resoudreDomaine } from "@/lib/domaines";
 import { siteUrl } from "@/lib/site-url";
+import { guideIntrouvable, ressourceDuChemin, ressourceExiste } from "@/lib/existence-publique";
 
 // Next 16 : convention « proxy » (ex-« middleware »). Rafraîchit la session
 // Supabase à chaque requête. Comportement inchangé — simple renommage du point
@@ -61,6 +62,30 @@ export async function proxy(request: NextRequest) {
   }
   const guideLang = localise?.lang ?? guideLangFromPath(request.nextUrl.pathname) ?? editorialLangFromPath(request.nextUrl.pathname);
   if (guideLang) request.headers.set("x-zabelie-guide-lang", guideLang);
+  /* Produit, boutique, créateur ou guide inexistant : un VRAI 404, pour la
+     même raison (lib/existence-publique.ts). Seulement au chargement complet
+     d'une page. Next retire l'en-tête `RSC` avant le proxy : c'est
+     `Sec-Fetch-Dest` qui distingue une navigation dans l'application
+     (« empty », elle n'attend rien) d'une page ouverte (« document ») ; un
+     robot ou un vérificateur de liens n'envoie pas l'en-tête. Réécriture sur
+     un `false` explicite : dans le doute, la page est servie comme avant. */
+  const destination = request.headers.get("sec-fetch-dest");
+  const chargementComplet = (request.method === "GET" || request.method === "HEAD")
+    && (destination === null || destination === "document");
+  if (chargementComplet) {
+    const cheminBase = localise?.base ?? request.nextUrl.pathname;
+    const ressource = ressourceDuChemin(cheminBase);
+    const absent = guideIntrouvable(cheminBase)
+      ? "/404"
+      : ressource && (await ressourceExiste(ressource, config)) === false
+        ? `/indisponible?type=${ressource.type}&cle=${encodeURIComponent(ressource.cle)}`
+        : null;
+    if (absent) {
+      const response = NextResponse.rewrite(new URL(absent, request.url), { status: 404, request: { headers: request.headers } });
+      response.headers.set("Content-Security-Policy", policy);
+      return response;
+    }
+  }
   // API handlers own authentication; public reads must not refresh caller cookies.
   const publicApi = request.nextUrl.pathname.startsWith("/api/v1/");
   const response = request.nextUrl.pathname === "/hors-ligne" || publicApi

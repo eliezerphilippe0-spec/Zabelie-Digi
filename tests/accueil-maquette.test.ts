@@ -39,9 +39,11 @@ import { DICT, LANGS } from "@/lib/i18n";
  * qu'il faudrait exempter un à un, et la liste d'exemptions mangerait le garde.
  */
 /* Accueil premium, Phase 3 (2026-09-04) : la barre est COMPACTE — quatre
- * libellés courts (trust.c1→c4) — et « Pourquoi choisir Zabelie » a disparu
- * (doublon de la confiance). `trust.2.b` reste : fiche produit, panier, succès. */
-const CLES_CONFIANCE = ["trust.c1", "trust.c2", "trust.c3", "trust.c4", "trust.2.b"] as const;
+ * libellés courts — et « Pourquoi choisir Zabelie » a disparu (doublon de la
+ * confiance). Audit du 2026-10-17 : « Paiement expliqué » (trust.c1) cède sa
+ * place à la garantie de séquestre `trust.2.b`, déjà tenue sur la fiche
+ * produit, le panier et le succès. */
+const CLES_CONFIANCE = ["trust.2.b", "trust.c2", "trust.c3", "trust.c4"] as const;
 
 /** Ce qu'aucun de ces dix libellés ne doit affirmer. */
 const PROMESSES_NON_TENUES =
@@ -168,7 +170,7 @@ test("aucune paire de clés de l'accueil ne partage une valeur, hors exemptions 
   const cles = clesRenduesParLAccueil(src);
   // Accueil premium, Phase 3 : la page rend ~25 clés (elle en rendait 60+).
   assert.ok(cles.length >= 20, `extraction suspecte : ${cles.length} clés`);
-  assert.ok(cles.includes("trust.c1"), "clé de référence absente — l'extraction a bougé");
+  assert.ok(cles.includes("trust.2.b"), "clé de référence absente — l'extraction a bougé");
 
   const vivantes = new Set<string>();
   for (const lang of LANGS) {
