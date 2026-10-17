@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   if (!(await rateLimit(admin, `biz-register:${user.id}`, 5))) {
     return NextResponse.json(
-      { error: "Trop de tentatives — réessayez dans une minute." },
+      { error: "Trop de tentatives. Réessayez dans une minute." },
       { status: 429 }
     );
   }

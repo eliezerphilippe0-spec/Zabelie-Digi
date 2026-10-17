@@ -93,7 +93,7 @@ export async function POST(req: Request) {
   // mais pas la cadence des appels eux-mêmes.
   if (!(await rateLimit(admin, `topup:${user.id}`, 5))) {
     return NextResponse.json(
-      { error: "Trop de tentatives — réessayez dans une minute." },
+      { error: "Trop de tentatives. Réessayez dans une minute." },
       { status: 429 }
     );
   }

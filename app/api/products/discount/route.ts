@@ -29,7 +29,7 @@ async function session() {
 const RAISONS: Record<string, string> = {
   introuvable: "Produit introuvable",
   prix_invalide: "Prix invalide (entier positif en HTG).",
-  pas_une_baisse: "Un rabais BAISSE le prix — saisissez un prix inférieur au prix actuel.",
+  pas_une_baisse: "Un rabais baisse le prix : saisissez un prix inférieur au prix actuel.",
   variantes_multiples:
     "Choisissez la taille ou le modèle dont vous voulez réduire le prix.",
 };
