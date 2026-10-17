@@ -1,0 +1,114 @@
+/* BARRE D'ANNONCE (components/barre-annonce.tsx) — le bandeau défilant en
+   haut de chaque page. Orange de la marque, texte encre : le même couple que
+   les boutons principaux, dont le contraste est déjà vérifié
+   (zabelie-theme.css). */
+.annonce {
+  display: flex;
+  align-items: stretch;
+  min-height: 36px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.annonce-fenetre {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.annonce-piste {
+  display: flex;
+  width: max-content;
+}
+/* Chaque copie couvre au moins la largeur de l'écran : en reculant de la
+   moitié de la piste, la seconde prend exactement la place de la première,
+   et aucun vide n'apparaît, même sur un grand écran. */
+.annonce-groupe {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-around;
+  gap: 2.5rem;
+  min-width: 100vw;
+  margin: 0;
+  padding: 0 1.25rem;
+  list-style: none;
+}
+.annonce-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+.annonce-item::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  transform: rotate(45deg);
+  opacity: 0.7;
+}
+.annonce-lien {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  text-decoration: none;
+}
+.annonce-lien:hover,
+.annonce-lien:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.annonce-pause {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  border-inline-start: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  color: inherit;
+  background: inherit;
+  cursor: pointer;
+}
+.annonce-pause:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -4px;
+}
+@media (min-width: 768px) {
+  .annonce { font-size: 13px; }
+}
+/* Repli avec l'en-tête au défilement. `.header-fold` le fait déjà, mais dans
+   la couche `utilities` de globals.css : une feuille hors couche comme
+   celle-ci passe devant, et la barre restait affichée (e2e barre-annonce). */
+header[data-compact] .annonce { display: none; }
+
+/* Le mouvement n'existe que si le visiteur ne l'a pas refusé — même sens que
+   `.reveal` (tests/paiement-succes S4) : au repos, tout est lisible. Arrêt au
+   survol, au focus d'un lien, et sur le bouton pause. Le focus du bouton
+   lui-même ne compte pas : sinon le second clic ne relancerait rien. */
+@media (prefers-reduced-motion: no-preference) {
+  .annonce-piste {
+    animation: annonce-defile var(--annonce-duree, 36s) linear infinite;
+  }
+  .annonce-fenetre:hover .annonce-piste,
+  .annonce-fenetre:focus-within .annonce-piste,
+  .annonce[data-pause] .annonce-piste {
+    animation-play-state: paused;
+  }
+}
+/* Mouvement réduit : une seule copie, immobile, qu'on fait glisser du doigt. */
+@media (prefers-reduced-motion: reduce) {
+  .annonce-groupe[aria-hidden="true"],
+  .annonce-pause {
+    display: none;
+  }
+  .annonce-fenetre {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}
+@keyframes annonce-defile {
+  to { transform: translateX(-50%); }
+}
