@@ -38,7 +38,7 @@ export const dynamic = "force-dynamic";
 
 /** Ventes par page. Huit tiennent dans un écran de 360 px sans défilement. */
 const PAGE_VENTES = 8;
-export const metadata = { title: "Tableau de bord — Zabelie" };
+export const metadata = { title: "Tableau de bord — Zabelie", robots: { index: false, follow: false } };
 
 function Shell({
   title,

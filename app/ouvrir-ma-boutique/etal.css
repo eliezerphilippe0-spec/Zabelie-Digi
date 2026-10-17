@@ -329,6 +329,9 @@
 }
 .page-etal .etal-calcul-prix input {
   width: 5.4ch; padding: 0 2px; margin: 0 0.1em;
+  /* Zone tactile d'au moins 44 px : la boîte grandit vers le haut, la marge
+   * négative rend la place à la ligne. Le soulignement ne bouge pas. */
+  min-height: 44px; padding-top: 10px; margin-top: -10px;
   border: 0; border-bottom: 2px solid var(--etal-indigo); border-radius: 0; background: transparent;
   font: inherit; color: inherit; text-align: center;
   -moz-appearance: textfield;
