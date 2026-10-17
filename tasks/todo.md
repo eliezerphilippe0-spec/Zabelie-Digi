@@ -212,34 +212,54 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 4.1 Essai PDF borné (décision D1)
 **Description :** générateur interne minimal (polices standard, WinAnsi, chasses AFM, césure, pagination, sommaire en deux passes) ; rendu d'un guide de 30 pages en kreyòl avec longues chaînes, listes et sauts de page ; caractères hors WinAnsi refusés avec un message clair.
 **Critères :**
-- [ ] Toutes les pages inspectées : aucun texte tronqué ni recouvert, accents corrects (T17).
-- [ ] Deux rendus de la même révision donnent les mêmes octets.
-- [ ] Taille ≤ 5 Mio pour le guide d'essai.
+- [x] Toutes les pages inspectées : aucun texte tronqué ni recouvert, accents corrects (T17).
+- [x] Deux rendus de la même révision donnent les mêmes octets.
+- [x] Taille ≤ 5 Mio pour le guide d'essai.
 **Vérification :** captures de chaque page ; test de déterminisme ; décision D1 rendue au porteur avec les captures.
 **Dépendances :** 1.1.
-**Fichiers :** `lib/digital-authoring/pdf/writer.ts`, `lib/digital-authoring/pdf/metrics.ts`, `lib/digital-authoring/pdf/layout.ts`, `tests/digital-authoring-pdf.test.ts`.
+**Fichiers :** `lib/digital-authoring/pdf/writer.ts`, `lib/digital-authoring/pdf/metrics.ts`, `lib/digital-authoring/pdf/layout.ts`, `lib/digital-authoring/pdf/winansi.ts`, `lib/digital-authoring/pdf/guide-pdf.ts`, `tests/digital-authoring-pdf.test.ts`, `tests/helpers/guide-essai.ts`.
+**Mesuré (2026-10-16) :** moteur interne sans dépendance (Helvetica, gras, italique ; chasses extraites des AFM « Core 14 » d'Adobe, téléchargés avec l'accord du porteur et non commités ; encodage WinAnsi). Format A5 (lecture sur téléphone), coupure au mot, mot trop long coupé avec un trait d'union, listes à puces et numérotées à marques alignées à droite, chaque section sur une page neuve, ni veuve ni orpheline, sommaire en deux passes. Guide d'essai en kreyòl : **34 pages, 83 901 octets**, les 34 pages inspectées une à une dans Chrome ; trois défauts trouvés à l'inspection et corrigés (« 10. » collé au texte, liste collée au paragraphe suivant, ligne seule en haut de page). 16 tests ; 17 mutations tuées sur 17 (deux tours : cinq survivants au premier, tests resserrés). Caractère sans dessin (émoji, ✓, idéogramme) : refusé en nommant la section et le caractère.
 **Taille :** M.
 
-### 4.2 Contrôles qualité et approbation de révision
-**Description :** liste de contrôle (sections vides, marqueurs inachevés, références déclarées séparées des suggérées, faits à vérifier), confirmation non précochée de responsabilité, approbation liée à une révision exacte (RPC).
+### 4.2 Fiche-test de préparation et approbation de révision (idée 5, validée le 2026-10-16)
+**Description :** fiche-test « prêt à vendre » inspirée de la revue qualité d'Udemy. BLOQUANTS : section sans texte, titre de section vide, marqueur inachevé (« TODO », « XXX », « [...] »), marqueur de SIMULATION resté dans le texte, caractère que le PDF ne sait pas dessiner. CONSEILS : résultat manquant, section très courte, guide court, paragraphe répété, objectif vide, titre trop long pour une couverture, chiffres, prix et pourcentages à vérifier, liens à vérifier. Une note de préparation lisible (« prêt », « presque prêt », « pas prêt »). Confirmation non précochée de responsabilité ; approbation liée à une révision exacte (RPC), revérifiée en base pour les bloquants qu'elle peut voir.
 **Critères :**
-- [ ] Section vide ou marqueur inachevé signalé avant approbation.
-- [ ] Toute modification invalide l'approbation pour un nouvel export.
+- [x] Section vide ou marqueur inachevé signalé avant approbation.
+- [x] Toute modification invalide l'approbation pour un nouvel export.
 **Vérification :** tests unitaires et SQL ; e2e court.
 **Dépendances :** 2.4, 3.1.
-**Fichiers :** `lib/digital-authoring/quality.ts`, `components/authoring-review.tsx`, `supabase/migrations/NNNN_…` (RPC d'approbation), `tests/digital-authoring-qualite.test.ts`.
+**Fichiers :** `lib/digital-authoring/quality.ts`, `components/authoring-editor.tsx` (étape « 4. La relecture »), `app/api/digital-authoring/projects/[id]/route.ts` (action `approuver_guide`), `supabase/migrations/0146_zabelie_authoring_approbation.sql`, `supabase/tests/authoring_approbation.test.sql`, `tests/digital-authoring-qualite.test.ts`, `e2e-creation/relecture.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-16) :** sept bloquants et neuf conseils ; la fiche tourne en direct dans l'éditeur (valeurs différées : la frappe n'attend pas) et la route la refait sur le texte EN BASE, à la révision demandée, avant d'appeler `zabelie_authoring_approuver_revision` (0146, non appliquée), qui revérifie ce que la base peut voir. Case de responsabilité jamais cochée d'avance ; seul `true` passe, à l'écran, dans la route et en base. Une écriture après approbation avance la révision : l'écran dit « le guide a changé depuis votre approbation de la version N ». À 360 px, une carte par problème (sept sections courtes font une carte), extraits de chiffres coupés aux limites des mots. 10 tests unitaires de la fiche, 3 de la route, 12 cas SQL (AP1 à AP12, exécutés en CI seulement), 3 parcours e2e ; 27 mutations tuées sur 27.
 
 ### 4.3 Export privé et approbation de l'export exact
-**Description :** table `zabelie_authoring_exports` ; rendu depuis une révision approuvée ; dépôt au stockage privé (service role confiné, C1-A) ; empreinte, taille réelle, date ; prévisualisation et lien vendeur expirant ; approbation de l'export exact (auteur, date, empreinte). **Bloquée par C1 et D1.**
+**Description :** table `zabelie_authoring_exports` ; rendu depuis une révision approuvée ; dépôt au stockage privé (service role confiné, C1-A) ; empreinte, taille réelle, date ; prévisualisation et lien vendeur expirant ; approbation de l'export exact (auteur, date, empreinte). C1 et D1 tranchées (C1-A, D1-A).
 **Critères :**
-- [ ] Export ancien après modification : rattachement refusé ou nouvelle approbation exigée (T18).
-- [ ] Non approuvé refusé, exact approuvé accepté, empreinte différente refusée (T28).
-- [ ] Taille réelle affichée avant téléchargement ; aucun lien sans contrôle de propriété.
+- [x] Export ancien après modification : rattachement refusé ou nouvelle approbation exigée (T18).
+- [x] Non approuvé refusé, exact approuvé accepté, empreinte différente refusée (T28).
+- [x] Taille réelle affichée avant téléchargement ; aucun lien sans contrôle de propriété.
 **Vérification :** tests SQL et API ; inspection du PDF téléchargé.
 **Dépendances :** 4.1, 4.2, C1, D1.
-**Fichiers :** `supabase/migrations/NNNN_zabelie_authoring_exports.sql`, `app/api/digital-authoring/exports/route.ts`, `lib/digital-authoring/export.ts`, `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`.
+**Fichiers :** `supabase/migrations/0147_zabelie_authoring_exports.sql`, `app/api/digital-authoring/projects/[id]/exports/route.ts` (création), `app/api/digital-authoring/exports/[id]/route.ts` (lien signé, approbation), `lib/digital-authoring/export.ts`, `lib/storage-buckets.ts`, `components/authoring-editor.tsx` (étape « 5. Le PDF »), `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`, `tests/digital-authoring-api-exports.test.ts`, `e2e-creation/pdf.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-16) :** le guide et son extrait gratuit sont rendus par le serveur depuis la révision approuvée, déposés dans le bucket privé `authoring-exports` (PDF seulement, 20 Mo, aucune policy) à un chemin adressé par le contenu, puis enregistrés par une fonction que seul le service role exécute ; la base recalcule le chemin et la route refuse de répondre s'il diffère. Rendre deux fois la même révision donne les mêmes octets et la même ligne. Aperçu et téléchargement par un lien signé de 5 minutes, jamais en cache, après lecture sous la RLS (l'export d'un autre : 404). L'écran montre pages, taille réelle et empreinte ; « Approuver ce PDF » n'ouvre qu'après l'aperçu et renvoie l'empreinte montrée. En e2e, les octets servis par le lien sont un PDF dont l'empreinte est celle de l'écran. 5 tests du module, 9 des routes, 10 cas SQL (EX1 à EX10, CI), 3 parcours e2e ; 19 mutations tuées sur 19.
+**Reste (5.3) :** la fermeture de compte garde les projets et les exports (comme les pièces KYC), et une suppression complète laisserait les fichiers du bucket : à traiter avec l'export et la suppression de compte. Durée de conservation des exports non acquis : décision D5, ouverte.
+
+### 4.4 Extrait gratuit automatique (idée 1, validée le 2026-10-16)
+**Description :** depuis la même révision que le guide : page de titre, sommaire complet, première section entière, puis une page de fin d'extrait qui dit ce que contient le guide complet (nombre de pages et de sections). Même moteur, même déterminisme, empreinte propre.
+**Critères :**
+- [x] L'extrait ne contient aucun texte des sections suivantes.
+- [x] Deux rendus de l'extrait donnent les mêmes octets.
+**Fichiers :** `lib/digital-authoring/pdf/guide-pdf.ts`, `lib/digital-authoring/pdf/layout.ts`, `tests/digital-authoring-pdf.test.ts`.
+**Mesuré (2026-10-16) :** extrait du guide d'essai : 7 pages, 14 137 octets (le guide : 34 pages). Sommaire et première section identiques au guide, ligne pour ligne et numéros compris ; page de titre marquée « Ekstrè gratis » ; page de fin « Fen ekstrè a » qui annonce 34 pages et 8 sections. L'extrait n'existe que si le guide complet se rend.
+
+### 4.5 Exemplaire au nom de l'acheteur (idée 3, validée le 2026-10-16)
+**Description :** une ligne discrète en pied de chaque page (« Exemplaire de Jean P. · commande ZB-… »), sans rien déplacer dans la mise en page : le corps d'un exemplaire nominatif est ligne pour ligne celui du guide approuvé. Prénom et initiale seulement, jamais un téléphone ni une adresse. La remise à l'acheteur (téléchargement) vient avec la phase 5.
+**Critères :**
+- [x] Le corps de l'exemplaire est identique à celui du guide approuvé ; seule la ligne de pied change.
+- [x] Le nom est réduit au prénom et à l'initiale ; un caractère sans dessin dans le nom est retiré, jamais bloquant.
+**Fichiers :** `lib/digital-authoring/pdf/layout.ts`, `lib/digital-authoring/pdf/guide-pdf.ts`, `tests/digital-authoring-pdf.test.ts`.
+**Mesuré (2026-10-16) :** « Kopi pou Jean-Robert P. · kòmand ZB-2026-0042 » (fr : « Exemplaire de … · commande … ») en 7,5 pt gris sous le numéro de page, sur chaque page ; corps identique ligne pour ligne au guide. Chiffres retirés du nom (un téléphone ne passe pas), référence réduite aux lettres, chiffres et tirets. 20 tests au total ; 11 mutations de 4.4 et 4.5 tuées sur 11.
 
 ## Checkpoint 4
 - [ ] PDF d'essai inspecté en entier ; D1 tranchée par le porteur.

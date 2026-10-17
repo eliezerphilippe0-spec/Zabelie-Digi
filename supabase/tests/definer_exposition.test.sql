@@ -87,6 +87,15 @@ declare
     -- ventes de produits digitaux, sous seuils de personnes et de vendeurs ;
     -- compte actif exigé. N'écrit rien, ne rend ni compte, ni vendeur, ni montant.
     'zabelie_authoring_opportunites():auth',
+    -- Studio, relecture (0146) : approuver une révision EXACTE de son guide, responsabilité
+    -- confirmée, plan approuvé, texte complet et sans marqueur de simulation ;
+    -- compte actif exigé. N'écrit que l'approbation de l'appelant, rend la révision.
+    'zabelie_authoring_approuver_revision(p_projet uuid, p_revision integer, p_responsabilite boolean):auth',
+    -- Studio, export (0147) : approuver l'export EXACT de son guide (empreinte
+    -- montrée = empreinte enregistrée, T28), seulement pour la révision courante
+    -- et approuvée (T18) ; compte actif. N'écrit que l'approbation, une fois.
+    -- L'enregistrement d'un export n'est PAS ici : service role seul.
+    'zabelie_authoring_approuver_export(p_export uuid, p_empreinte text):auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',
