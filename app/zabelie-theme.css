@@ -112,6 +112,13 @@
      Base = pastilles/graphiques (3:1). Variantes -text = texte de badge sur
      fond teinté 10 % (4.5:1). Valeurs du mode clair du 2026-08-15, inchangées.
      Vert/jaune/rouge portent payé / en attente / échoué : non négociables. */
+  /* Fonds des illustrations de rayons (accueil) — pêche, lavande, rose.
+     Décor seulement : aucun texte ne s'y pose. Valeurs reprises telles
+     quelles de home-vivant.css, où elles étaient écrites en dur. */
+  --color-illus-1: #f6e7dc;
+  --color-illus-2: #e7e6f0;
+  --color-illus-3: #efe3e4;
+
   --color-success: #3f7d24;
   --color-success-text: #2f6317;
   --color-warning: #7d5a10;
@@ -119,8 +126,10 @@
   --color-danger: #b3362e;
   --color-danger-text: #9c2f28;
   /* Pas de bleu : `info` reste un neutre chaud (décision 2026-08-17). */
-  --color-info: #5d5348;
-  --color-info-text: #5d5348;
+  /* Info : un bleu d'encre, distinct du texte secondaire (`mist`) dont il
+     était presque le jumeau (#5d5348 contre #5c5a57, revue du 2026-10-17). */
+  --color-info: #3f4f7a;
+  --color-info-text: #3f4f7a;
 
   /* ── Compat : les anciens noms (gold, amber, violet, teal, magenta) ont été
      SUPPRIMÉS le 2026-09-02 (audit UX, #12). `tests/ux-lot-d` garde. */
@@ -241,9 +250,18 @@
   --color-accent: #f5934f;
   --color-accent-strong: #f5934f;
 
-  --color-chrome: #100c09;
-  --color-chrome-2: #1e1811;
-  --color-chrome-3: #221b14;
+  /* CHROME : les MÊMES valeurs qu'en clair, redites ici parce que chaque
+     palette doit poser ses trois arrêts (tests/home-premium-header H7).
+     L'en-tête, le pied et la barre d'annonce gardent l'indigo de la marque.
+     Revue des couleurs du 2026-10-17 : en brun-noir (#100c09), l'en-tête
+     se confondait avec le fond (#070505), l'indigo disparaissait du mode
+     sombre, et la barre d'adresse Android, déjà indigo (`BRAND_INK`,
+     layout.tsx), ne prolongeait plus rien. ⚠️ L'indigo avait été écarté
+     le 2026-07-25 quand le site entier était noir et orange ; ici il ne
+     couvre que le chrome, au-dessus d'une toile brune chaude. */
+  --color-chrome: #17123a;
+  --color-chrome-2: #2b3050;
+  --color-chrome-3: #4a2731;
   --color-on-chrome: #f7f2ec;
   --color-ink: #100c09;
   --color-ink-soft: #1b1610;
@@ -257,8 +275,16 @@
   --color-warning-text: #e8b84b;
   --color-danger: #e0645c;
   --color-danger-text: #ec9f9a;
-  --color-info: #a99f95;
-  --color-info-text: #a99f95;
+  /* Info : le même bleu d'encre, éclairci ; il était IDENTIQUE à `mist`. */
+  --color-info: #a3b1d6;
+  --color-info-text: #a3b1d6;
+
+  /* Teintes des illustrations, mêlées à la surface comme avant (calculées
+     depuis les color-mix de home-vivant.css : brand 14 %, cloud 8 %,
+     accent 10 % sur #17120d). */
+  --color-illus-1: #361e10;
+  --color-illus-2: #29241f;
+  --color-illus-3: #2d1f14;
 }
 
 [data-theme="dark"] body,
