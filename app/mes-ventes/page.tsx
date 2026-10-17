@@ -14,7 +14,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mes ventes — Zabelie" };
+export const metadata = { title: "Mes ventes — Zabelie", robots: { index: false, follow: false } };
 
 /**
  * L'ÉCRAN QUI MANQUAIT AU VENDEUR.

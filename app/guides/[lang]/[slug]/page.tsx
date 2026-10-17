@@ -5,6 +5,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
 import { t, isLang, LANGS } from "@/lib/i18n";
+import { NOMS_LANGUES } from "@/lib/noms-langues";
 import { partage } from "@/lib/meta-page";
 import { siteUrl } from "@/lib/site-url";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
         <Link href={guide.catalogue} className="bouton mt-4 flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
         <Link href="/mes-achats" className="mt-3 flex min-h-11 items-center text-sm underline">{t(lang, "purchases.title")}</Link>
         <Link href="/aide" className="flex min-h-11 items-center text-sm underline">{t(lang, "nav.help")}</Link>
-        <nav aria-label={t(lang, "guides.languages")} className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">{LANGS.map((l) => <Link key={l} href={guideHref(l, guide.slug)} hrefLang={l} lang={l} aria-current={l === lang ? "page" : undefined} className="inline-flex min-h-11 items-center text-sm underline">{l.toUpperCase()}</Link>)}</nav>
+        <nav aria-label={t(lang, "guides.languages")} className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">{LANGS.map((l) => <Link key={l} href={guideHref(l, guide.slug)} hrefLang={l} lang={l} aria-current={l === lang ? "page" : undefined} className="inline-flex min-h-11 items-center text-sm underline">{NOMS_LANGUES[l]}</Link>)}</nav>
       </aside>
     </div>
   </main><SiteFooter /></div>;
