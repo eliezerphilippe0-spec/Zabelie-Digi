@@ -4,6 +4,7 @@
 @import "tailwindcss";
 @import "./marketplace-header.css";
 @import "./barre-annonce.css";
+@import "./ventes-flash.css";
 @import "./editorial-marketplace.css";
 @import "./zabelie-theme.css"; /* SOURCE UNIQUE des design tokens */
 
