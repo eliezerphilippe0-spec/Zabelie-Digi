@@ -15,6 +15,45 @@ import { LANGS, t } from "@/lib/i18n";
  * porteur (docs/25 §4). Chaque lien est croisé avec une route existante par
  * `tests/llms-txt.test.ts`.
  */
+/** Les mêmes faits que la section anglaise, dans les deux langues indexées du
+ *  site (`/ht/…`, `/fr/…`) : un assistant interrogé en kreyòl ou en français
+ *  trouve une réponse dans la langue de la question. Rien de plus que l'anglais. */
+const FAITS: Record<"ht" | "fr", (base: string) => string[]> = {
+  ht: () => [
+    "- Vandè yo prepare fich yo ; nou egzamine chak fich anvan li parèt.",
+    "- Pwodwi fizik : pri yo an goud, epi se ak vandè a ou fè aranjman pou w resevwa l.",
+    `- Fichye nimerik : apre acha a konfime, telechajman yo nan « ${t("ht", "purchases.title")} ».`,
+    "- Peman : se sèlman mwayen ki parèt lè w ap peye a ou ka itilize.",
+  ],
+  fr: () => [
+    "- Les vendeurs préparent leurs fiches ; chaque fiche est examinée avant sa publication.",
+    "- Produits physiques : prix en gourdes ; la remise se convient directement avec le vendeur.",
+    `- Fichiers numériques : une fois l'achat confirmé, les téléchargements sont dans « ${t("fr", "purchases.title")} ».`,
+    "- Paiement : seuls les moyens proposés au moment du paiement peuvent être utilisés.",
+  ],
+};
+
+function sectionLangue(lang: "ht" | "fr", base: string): string[] {
+  const sansMarque = (s: string) => s.replace(/ — Zabelie$/, "");
+  const liens: Array<[string, string]> = [
+    [t(lang, "nav.home"), `/${lang}`],
+    [t(lang, "directory.title"), `/${lang}/categories`],
+    [sansMarque(t(lang, "meta.vendre.title")), `/${lang}/vendre`],
+    [sansMarque(t(lang, "etal.meta.title")), `/${lang}/ouvrir-ma-boutique`],
+    [t(lang, "policy.title"), `/${lang}/produits-interdits`],
+    [t(lang, "guides.title"), guideHref(lang)],
+  ];
+  return [
+    lang === "ht" ? "## An kreyòl" : "## En français",
+    "",
+    t(lang, "meta.accueil.description"),
+    "",
+    ...FAITS[lang](base),
+    ...liens.map(([nom, chemin]) => `- [${nom}](${base}${chemin})`),
+    "",
+  ];
+}
+
 export function llmsTxt(base: string): string {
   const guides = BUYING_GUIDES.map((g) => `- [${t("en", g.title)}](${base}${guideHref("en", g.slug)}): ${t("en", g.intro)}`);
   const NOMS: Record<(typeof EDITORIAL_PATHS)[number], string> = { "/aide": "Help", "/a-propos": "About Zabelie", "/recharges": "Top-ups and payments" };
@@ -50,6 +89,8 @@ export function llmsTxt(base: string): string {
     `- [All categories](${base}/categories)`,
     `- [Sell on Zabelie](${base}/vendre)`,
     "",
+    ...sectionLangue("ht", base),
+    ...sectionLangue("fr", base),
     "## Optional",
     "",
     `- [Public API (read-only, no key)](${base}/developpeurs)`,

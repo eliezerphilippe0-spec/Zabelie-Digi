@@ -59,7 +59,12 @@ if (n !== 1) {
   );
 }
 
-writeFileSync(fichier, avant.replace(ancre, remplacement));
+// Remplacement par FONCTION, jamais par chaîne : `String.replace` interprète
+// `$$`, `$&`, `$'`… dans une chaîne de remplacement. Mesuré le 2026-10-14 :
+// une mutation SQL `as $$ … $$` est arrivée dans le fichier en `as $ … $`, le
+// corps n'était plus du SQL, et le garde l'a ignoré à bon droit — vert, pour
+// une mutation qui n'était pas celle qu'on croyait.
+writeFileSync(fichier, avant.replace(ancre, () => remplacement));
 
 let code = 1;
 try {
@@ -77,6 +82,14 @@ try {
       `le fichier ${fichier} est IDENTIQUE après substitution.\n` +
         `   C'est la mutation qui n'a pas muté : la suite qui suivrait rendrait ` +
         `du vert sur le dépôt intact.`
+    );
+  }
+  // (2 bis) Et il a changé EN CE QU'ON A DEMANDÉ, mot pour mot.
+  if (!apres.includes(remplacement)) {
+    echec(
+      `le remplacement n'apparaît pas tel quel dans ${fichier}.\n` +
+        `   La mutation appliquée n'est pas celle demandée : son verdict ne ` +
+        `dirait rien du garde.`
     );
   }
 

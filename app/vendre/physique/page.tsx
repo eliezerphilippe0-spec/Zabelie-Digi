@@ -7,7 +7,7 @@ import { PhysicalProductForm } from "@/components/physical-product-form";
 import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
-import { metaLangue } from "@/lib/langue-url";
+import { metaPage } from "@/lib/meta-page";
 import { t } from "@/lib/i18n";
 import { ROUNDING_IN_FORCE } from "@/lib/commission";
 import { lireTauxCommission } from "@/lib/commission-config";
@@ -18,15 +18,9 @@ import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-const META = {
-  title: "Vendre un produit — Zabelie",
-  description:
-    "Créez la fiche d'un produit réel sur Zabelie : photos, prix et description. La fiche reste en brouillon, puis elle est examinée avant sa publication.",
-};
-
-// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+// Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
 export async function generateMetadata() {
-  return { ...META, ...metaLangue("/vendre/physique", await getLang()) };
+  return metaPage("/vendre/physique", await getLang(), "vendrePhysique");
 }
 
 /**

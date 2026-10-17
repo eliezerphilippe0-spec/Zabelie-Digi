@@ -20,8 +20,10 @@ import { whatsappHref } from "@/lib/whatsapp";
 import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
-import { metaLangue } from "@/lib/langue-url";
-import { t, tn } from "@/lib/i18n";
+import { metaPage } from "@/lib/meta-page";
+import { t, tn, LANGS } from "@/lib/i18n";
+import { PROFILS_SOCIAUX } from "@/lib/brand";
+import { IDENTITE } from "@/lib/policy-privacy";
 import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { siteUrl } from "@/lib/site-url";
@@ -33,7 +35,7 @@ export const dynamic = "force-dynamic";
 // lib/langue-url.ts). Avant, la langue ne vivait que dans un cookie et un
 // hreflang aurait pointé quatre fois sur la même adresse : un signal faux.
 export async function generateMetadata() {
-  return metaLangue("/", await getLang());
+  return metaPage("/", await getLang(), "accueil");
 }
 
 /**
@@ -182,14 +184,33 @@ export default async function HomePage() {
   const opening = catalogue !== null && products.length === 0;
 
   // JSON-LD : Organization + WebSite avec SearchAction (sitelinks searchbox).
+  // L'Organization dit aux moteurs et aux assistants IA ce qu'est Zabelie, où
+  // et dans quelles langues : rien d'autre que ce que le site affiche déjà.
+  // `sameAs` reste absent tant que PROFILS_SOCIAUX est vide (lib/brand.ts).
+  const organisation = `${siteUrl()}/#organisation`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "Organization", name: "Zabelie", url: siteUrl(), logo: `${siteUrl()}/icon.svg` },
+      {
+        "@type": "Organization",
+        "@id": organisation,
+        name: "Zabelie",
+        url: siteUrl(),
+        logo: `${siteUrl()}/icon.svg`,
+        description: t(lang, "meta.accueil.description"),
+        areaServed: { "@type": "Country", name: "Haiti" },
+        knowsLanguage: [...LANGS],
+        ...(IDENTITE.email
+          ? { contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: IDENTITE.email, availableLanguage: [...LANGS] } }
+          : {}),
+        ...(PROFILS_SOCIAUX.length ? { sameAs: [...PROFILS_SOCIAUX] } : {}),
+      },
       {
         "@type": "WebSite",
         name: "Zabelie",
         url: siteUrl(),
+        inLanguage: lang,
+        publisher: { "@id": organisation },
         potentialAction: {
           "@type": "SearchAction",
           target: `${siteUrl()}/catalogue?q={search_term_string}`,

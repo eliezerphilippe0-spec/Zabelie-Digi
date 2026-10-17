@@ -22,9 +22,11 @@
 --
 -- Les extensions sont donc posées AVANT les migrations, dans le schéma où la
 -- production les a, et le `search_path` de la base reproduit celui du rôle.
--- `0001` et `0028` (`if not exists`) ne les déplacent pas. `pg_trgm` reste
--- dans `public` : c'est là qu'elle est en production, et une fidélité
--- sélective serait une infidélité de plus.
+-- `0001` et `0028` (`if not exists`) ne les déplacent pas. `pg_trgm` naît
+-- dans `public` (0028) puis passe dans `extensions` avec `0145`, exactement
+-- comme en production (déplacée le 2026-10-14) : le harnais rejoue donc le
+-- déplacement lui-même, et une fonction trigramme qui ne verrait pas
+-- `extensions` y casse comme elle casserait en production.
 create schema if not exists extensions;
 create extension if not exists pgcrypto    with schema extensions;
 create extension if not exists "uuid-ossp" with schema extensions;

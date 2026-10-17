@@ -1,4 +1,5 @@
 import { editorialAlternates } from "@/lib/editorial-routing";
+import { partage } from "@/lib/meta-page";
 import { BUYING_GUIDES, guideHref } from "@/lib/buying-guides";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -12,7 +13,10 @@ import { t } from "@/lib/i18n";
 
 export async function generateMetadata() {
   const lang = await getLang();
-  return { title: `${t(lang, "aide.title")} — Zabelie`, description: t(lang, "aide.sub"), alternates: editorialAlternates("/aide", lang) };
+  const title = `${t(lang, "aide.title")} — Zabelie`;
+  const description = t(lang, "aide.sub");
+  const alternates = editorialAlternates("/aide", lang);
+  return { title, description, alternates, ...partage(lang, title, description, alternates.canonical) };
 }
 
 /**

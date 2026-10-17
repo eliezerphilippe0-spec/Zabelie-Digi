@@ -19,6 +19,7 @@ import { headers } from "next/headers";
 import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
+import { partage } from "@/lib/meta-page";
 import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
 import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
@@ -42,8 +43,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   return {
     title, description,
     alternates: langue.alternates,
-    openGraph: { title, description, url: canonical },
-    twitter: { card: "summary_large_image" as const, title, description },
+    ...partage(lang, title, description, canonical),
     robots: catalogueIsWorkingView(raw) || emptyPage ? { index: false, follow: true } : langue.robots,
   };
 }

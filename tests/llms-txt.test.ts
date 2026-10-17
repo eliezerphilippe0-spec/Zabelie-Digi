@@ -18,6 +18,9 @@ function route(chemin: string): string | null {
   const candidats = [
     `app/${seg.join("/")}/page.tsx`,
     seg.length === 2 && /^(fr|ht|en|es)$/.test(seg[0]) ? `app/[lang]/${seg[1]}/page.tsx` : "",
+    // `/ht/…` et `/fr/…` : le proxy réécrit vers la page sans préfixe (lib/langue-url.ts).
+    seg.length === 1 && /^(fr|ht)$/.test(seg[0]) ? "app/page.tsx" : "",
+    seg.length >= 2 && /^(fr|ht)$/.test(seg[0]) ? `app/${seg.slice(1).join("/")}/page.tsx` : "",
     seg[0] === "guides" && seg.length === 2 ? "app/guides/[lang]/page.tsx" : "",
     seg[0] === "guides" && seg.length === 3 ? "app/guides/[lang]/[slug]/page.tsx" : "",
     seg[0] === "api" && seg[1] === "v1" && seg.length === 3 ? "app/api/v1/[endpoint]/route.ts" : "",

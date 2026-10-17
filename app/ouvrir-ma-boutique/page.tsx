@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLang } from "@/lib/i18n-server";
 import { t, type Lang } from "@/lib/i18n";
+import { partage } from "@/lib/meta-page";
 import { metaLangue } from "@/lib/langue-url";
 import { isSupabaseConfigured } from "@/lib/products";
 import { createClient } from "@/lib/supabase/server";
@@ -41,11 +42,10 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  return {
-    title: t(lang, "etal.meta.title"),
-    description: t(lang, "etal.meta.description"),
-    ...metaLangue(CHEMIN, lang),
-  };
+  const title = t(lang, "etal.meta.title");
+  const description = t(lang, "etal.meta.description");
+  const langue = metaLangue(CHEMIN, lang);
+  return { title, description, ...langue, ...partage(lang, title, description, langue.alternates.canonical) };
 }
 
 type Lecture =
