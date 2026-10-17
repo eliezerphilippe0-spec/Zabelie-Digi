@@ -8,6 +8,8 @@ import { estTokenFacture } from "@/lib/business";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { formatHTG } from "@/lib/sample-data";
 import { PayInvoiceButton } from "@/components/business/pay-invoice-button";
+import { getLang } from "@/lib/i18n-server";
+import { facturationCopy, LOCALE_DATE } from "@/lib/facturation-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -54,14 +56,6 @@ type Portal = {
   items: PortalItem[];
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  sent: "À régler",
-  partially_paid: "Partiellement réglée",
-  paid: "Réglée ✓",
-  overdue: "En retard",
-  void: "Annulée",
-};
-
 export default async function FacturePortal({
   params,
   searchParams,
@@ -69,8 +63,8 @@ export default async function FacturePortal({
   params: Promise<{ token: string }>;
   searchParams: Promise<{ paye?: string }>;
 }) {
-  const { token } = await params;
-  const { paye } = await searchParams;
+  const [{ token }, { paye }, lang] = await Promise.all([params, searchParams, getLang()]);
+  const c = facturationCopy(lang);
 
   if (!isSupabaseConfigured()) notFound();
 
@@ -98,6 +92,12 @@ export default async function FacturePortal({
 
   const remaining = inv.total_htg - inv.paid_htg;
   const payable = ["sent", "partially_paid", "overdue"].includes(inv.status);
+  /* ⚠️ `?paye=1` vient de l'URL : n'importe qui peut l'ajouter au lien d'une
+   * facture impayée et capturer « Paiement reçu, merci ! » sur zabelie.com —
+   * le défaut SEC-01 de `/paiement/succes`, sur la page que le client montre
+   * au professionnel. Le remerciement ne s'affiche donc que si la facture,
+   * relue en base, a bien reçu un paiement ; sinon, une phrase d'attente. */
+  const paiementRecu = ["paid", "partially_paid"].includes(inv.status);
 
   return (
     <div className="bg-grain min-h-dvh">
@@ -115,13 +115,13 @@ export default async function FacturePortal({
         <div className="glass rounded-2xl p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm text-mist">Facture de</p>
+              <p className="text-sm text-mist">{c.from}</p>
               <h1 className="text-2xl font-extrabold tracking-tight">
                 {inv.professional}
               </h1>
             </div>
             <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
-              {STATUS_LABEL[inv.status] ?? inv.status}
+              {c.publicStatus[inv.status as keyof typeof c.publicStatus] ?? inv.status}
             </span>
           </div>
 
@@ -130,7 +130,7 @@ export default async function FacturePortal({
           )}
           {inv.due_date && (
             <p className="mt-1 text-sm text-mist">
-              Échéance&nbsp;: {new Date(inv.due_date).toLocaleDateString("fr-FR")}
+              {c.due.replace("{date}", new Date(inv.due_date).toLocaleDateString(LOCALE_DATE[lang]))}
             </p>
           )}
 
@@ -152,17 +152,17 @@ export default async function FacturePortal({
           {/* Totaux */}
           <div className="mt-4 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-mist">Total</span>
+              <span className="text-mist">{c.total}</span>
               <span className="font-semibold">{formatHTG(inv.total_htg)}</span>
             </div>
             {inv.paid_htg > 0 && (
               <>
                 <div className="flex justify-between">
-                  <span className="text-mist">Déjà réglé</span>
+                  <span className="text-mist">{c.alreadyPaid}</span>
                   <span className="text-success-text">−{formatHTG(inv.paid_htg)}</span>
                 </div>
                 <div className="flex justify-between border-t border-line pt-1">
-                  <span className="text-mist">Reste dû</span>
+                  <span className="text-mist">{c.remaining}</span>
                   <span className="font-bold text-accent">{formatHTG(remaining)}</span>
                 </div>
               </>
@@ -171,27 +171,32 @@ export default async function FacturePortal({
 
           {/* Paiement */}
           <div className="mt-6">
-            {paye === "1" && (
+            {paye === "1" && paiementRecu && (
               <p className="mb-3 rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success-text">
-                Paiement reçu — merci&nbsp;! Le statut se met à jour ci-dessus.
+                {c.paidThanks}
+              </p>
+            )}
+            {paye === "1" && !paiementRecu && (
+              <p className="mb-3 rounded-xl border border-line px-4 py-3 text-sm text-mist">
+                {c.checking}
               </p>
             )}
             {inv.status === "paid" ? (
               <p className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-center text-sm text-success-text">
-                Cette facture est entièrement réglée.
+                {c.fullyPaid}
               </p>
             ) : inv.status === "void" ? (
               <p className="rounded-xl border border-line px-4 py-3 text-center text-sm text-mist">
-                Cette facture a été annulée.
+                {c.voided}
               </p>
             ) : payable ? (
-              <PayInvoiceButton token={token} />
+              <PayInvoiceButton token={token} labels={{ payCta: c.payCta, redirecting: c.redirecting, payUnavailable: c.payUnavailable, network: c.network }} />
             ) : null}
           </div>
         </div>
 
         <p className="mt-6 text-center text-xs text-mist">
-          Paiement sécurisé via MonCash · <Link href="/" className="underline">Zabelie</Link>
+          {c.secure} · <Link href="/" className="underline">Zabelie</Link>
         </p>
       </main>
       <SiteFooter />
