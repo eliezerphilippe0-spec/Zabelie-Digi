@@ -40,19 +40,33 @@ import { ADSENSE_CLIENT } from "@/lib/adsense";
 // demandait `latin-ext` « pour les diacritiques kreyòl è/ò/à ») : ces lettres
 // sont dans `latin` (U+00C0–U+00FF), pas dans `latin-ext`. Et next/font
 // PRÉCHARGE chaque sous-ensemble déclaré : `latin-ext` ajouterait 15 Ko pour
-// Manrope, pour des glyphes qu'aucune page n'affiche. Préchargé aujourd'hui :
-// Inter 52,1 Ko + Manrope 24,6 Ko = 76,7 Ko, sous la cible A7 (≤ 90 Ko).
+// Manrope, pour des glyphes qu'aucune page n'affiche. Poids : Inter 52,1 Ko +
+// Manrope 24,6 Ko = 76,7 Ko, sous la cible A7 (≤ 90 Ko).
+//
+// ⚠️ PLUS DE PRÉCHARGEMENT (mesure du 2026-10-17, zabelie.com, mobile 360 px,
+// 4G lente, processeur ×4, quatre rondes entrelacées). Préchargées, les deux
+// polices partaient dans l'en-tête `Link` AVANT les feuilles de style et leur
+// disputaient la bande passante : premier affichage à 2,1 s. Sans
+// préchargement : 0,86 s, pour le même rendu (elles sont demandées dès que la
+// feuille de style les cite, et `swap` les pose à leur arrivée).
+// Les deux restent en `swap`. `optional` a été ESSAYÉ pour Manrope et retiré :
+// sans préchargement, elle n'arrive presque jamais dans la fenêtre de 100 ms,
+// et les titres restaient dans leur police de repli à chaque première visite,
+// même sur fibre — pour 0,2 s de gain mesuré. Le contenu principal est un
+// texte en Inter : c'est son arrivée qui fixe le LCP, pas Manrope.
 const inter = localFont({
   src: "./fonts/InterZabelie-4.1.1.woff2",
   weight: "100 900",
   style: "normal",
   variable: "--font-inter",
   display: "swap",
+  preload: false,
 });
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
+  preload: false,
 });
 
 // Source UNIQUE — partagée avec `app/manifest.ts`. Deux copies d'une chaîne de
