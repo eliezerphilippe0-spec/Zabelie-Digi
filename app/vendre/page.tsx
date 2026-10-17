@@ -27,7 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import { lireRayonsPublication, lireSousRayonsPublication } from "@/lib/product-categories";
 import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
-import { metaLangue } from "@/lib/langue-url";
+import { metaPage } from "@/lib/meta-page";
 import { isPrefetch, logLanding } from "@/lib/metrics";
 import { t, type Lang } from "@/lib/i18n";
 import type { ProductKind } from "@/lib/sample-data";
@@ -54,15 +54,9 @@ import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
 import { copieCreation } from "@/lib/digital-authoring/copy";
 
 export const dynamic = "force-dynamic";
-const META = {
-  title: "Vendre — Zabelie",
-  description:
-    "Préparez votre boutique sur Zabelie : présentez votre activité, ajoutez vos offres avec photos, prix et description. Chaque fiche est examinée.",
-};
-
-// Canonique et hreflang selon la langue servie (/ht/, /fr/ — lib/langue-url.ts).
+// Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
 export async function generateMetadata() {
-  return { ...META, ...metaLangue("/vendre", await getLang()) };
+  return metaPage("/vendre", await getLang(), "vendre");
 }
 
 function Shell({

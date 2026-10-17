@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { LANGS, t } from "../lib/i18n";
+import { META_PAGES } from "../lib/meta-page";
 
 /**
  * MÉTADONNÉES DES PAGES INDEXABLES — mesuré le 2026-09-26 sur zabelie.com :
@@ -28,15 +30,22 @@ test("S1 — chaque page indexable a SA description (70 à 160 signes) et sa can
   const vues = new Map<string, string>();
   for (const [f, chemin] of Object.entries(PAGES)) {
     const src = lire(f);
-    const d = description(src);
-    assert.ok(d, `${f} : pas de description — elle hériterait de celle de l'accueil`);
-    assert.ok(d!.length >= 70 && d!.length <= 160, `${f} : description de ${d!.length} signes`);
-    assert.ok(!vues.has(d!), `${f} : même description que ${vues.get(d!)}`);
-    vues.set(d!, f);
+    // Pages à adresse par langue : `metaPage` (lib/meta-page.ts), une description
+    // PAR LANGUE. Les autres : une constante, comme avant.
+    const appel = src.match(/metaPage\("([^"]+)", await getLang\(\), "(\w+)"\)/);
+    const page = appel && appel[1] === chemin ? (appel[2] as keyof typeof META_PAGES) : undefined;
+    const descriptions: Array<[string, string | undefined]> = page
+      ? LANGS.map((l) => [l, t(l, META_PAGES[page][1])])
+      : [["fr", description(src)]];
+    for (const [l, d] of descriptions) {
+      assert.ok(d, `${f} : pas de description — elle hériterait de celle de l'accueil`);
+      assert.ok(d!.length >= 70 && d!.length <= 160, `${f} (${l}) : description de ${d!.length} signes`);
+      assert.ok(!vues.has(`${l}:${d}`), `${f} (${l}) : même description que ${vues.get(`${l}:${d}`)}`);
+      vues.set(`${l}:${d}`, f);
+    }
     // Canonique fixe, ou canonique PAR LANGUE (/ht/, /fr/) pour les pages localisées.
     const fixe = new RegExp(`alternates: \\{ canonical: "${chemin.replace(/\//g, "\\/")}" \\}`).test(bloc(src));
-    const parLangue = src.includes(`...metaLangue("${chemin}", await getLang())`);
-    assert.ok(fixe || parLangue, `${f} : canonique absente ou fausse`);
+    assert.ok(fixe || page, `${f} : canonique absente ou fausse`);
   }
 });
 
@@ -50,7 +59,7 @@ test("S2 — les pages utilitaires sont noindex, et PAS interdites au robot (sin
 
 test("S3 — les titres traduits portent la marque", () => {
   for (const [f, cle] of [["app/categories/page.tsx", "directory.title"], ["app/aide/page.tsx", "aide.title"], ["app/recharges/page.tsx", "recharges.title"]]) {
-    assert.match(lire(f), new RegExp(`title: \`\\$\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\} — Zabelie\``), `${f} : titre sans la marque`);
+    assert.match(lire(f), new RegExp(`title(?::|\\s*=)\\s*\`\\$\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\} — Zabelie\``), `${f} : titre sans la marque`);
   }
 });
 

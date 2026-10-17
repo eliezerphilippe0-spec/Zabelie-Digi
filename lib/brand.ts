@@ -22,11 +22,20 @@
 export const SITE_TITLE = "Zabelie — La marketplace haïtienne";
 
 export const SITE_DESCRIPTION =
-  "Achetez et vendez en Haïti : produits physiques, fichiers numériques, formations et services. Découvrez les offres et boutiques des vendeurs Zabelie.";
+  "Achetez et vendez en Haïti : produits physiques, fichiers numériques, formations et services de vendeurs haïtiens, avec des prix en gourdes.";
 
 /** Nom court — contrainte de plateforme : Android tronque au-delà de ~12
  *  caractères sous l'icône de l'écran d'accueil. */
 export const SITE_SHORT_NAME = "Zabelie";
+
+/** Texte alternatif de l'image de partage (`app/opengraph-image.tsx`), repris
+ *  par chaque page qui redonne cette image (`lib/meta-page.ts`). */
+export const OG_IMAGE_ALT = "Zabelie — makètplas ayisyen an";
+
+/** Profils officiels de Zabelie sur les réseaux, pour `sameAs` (JSON-LD de
+ *  l'accueil). VIDE tant que le porteur n'a pas donné les adresses exactes :
+ *  une adresse devinée relierait Zabelie au compte de quelqu'un d'autre. */
+export const PROFILS_SOCIAUX: readonly string[] = [];
 
 /** = `--color-chrome` de `app/zabelie-theme.css` — l'encre du CHROME (en-tête,
  *  pied, barre d'adresse, favicon), pas `--color-ink` qui est la surface

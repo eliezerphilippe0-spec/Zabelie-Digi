@@ -6,16 +6,19 @@ import { getMenuRayons, rayonsPeuples } from "@/lib/taxonomy";
 import { filterCategoryDirectory } from "@/lib/category-directory";
 import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
+import { partage } from "@/lib/meta-page";
 import { t } from "@/lib/i18n";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const [lang, { q }] = await Promise.all([getLang(), searchParams]);
   // Sans aucun rayon peuplé, la page n'a rien à indexer.
   const vide = rayonsPeuples(await getMenuRayons(lang)).length === 0;
+  const title = `${t(lang, "directory.title")} — Zabelie`;
+  const description = t(lang, "directory.intro");
+  const langue = metaLangue("/categories", lang);
   return {
-    title: `${t(lang, "directory.title")} — Zabelie`,
-    description: t(lang, "directory.intro"),
-    ...metaLangue("/categories", lang),
+    title, description, ...langue,
+    ...partage(lang, title, description, langue.alternates.canonical),
     ...(vide || (typeof q === "string" && q.trim()) ? { robots: { index: false, follow: true } } : {}),
   };
 }
