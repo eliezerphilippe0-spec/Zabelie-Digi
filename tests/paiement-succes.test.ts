@@ -344,3 +344,83 @@ test("S9 — la phrase dit la garantie, et RIEN de plus, en quatre langues", () 
   assert.ok(INTERDIT.test("Vandè verifye toupre w"));
   assert.ok(INTERDIT.test("Vendeurs vérifiés"));
 });
+
+/**
+ * ─────────── LA COCHE NE SE DONNE PAS ───────────
+ *
+ * ⚠️ SEC-01, audit du 2026-10-17 : `/paiement/succes` affichait « ✓ Paiement
+ * confirmé » à n'importe qui, avec ou sans session, avec un numéro de commande
+ * inventé. Vérifié en ligne, en visiteur. Le faux acheteur envoie la capture
+ * ou le lien au vendeur, et la page officielle lui sert de preuve.
+ *
+ * Seul le pixel était gardé par le statut lu en base (`tests/pixels`, X6) :
+ * le garde existait, il protégeait la publicité et pas le texte.
+ */
+
+/* Les commentaires citent « ✓ Paiement confirmé » : on les retire avant de
+ * mesurer des positions, sinon le garde serait jugé sur sa propre explication. */
+const sansCommentaires = (src: string) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+
+test("S10 — la coche et « Paiement confirmé » n'existent qu'APRÈS le garde `payee`", () => {
+  const src = sansCommentaires(readFileSync(PAGE, "utf8"));
+  assert.match(
+    src,
+    /const payee = !!ligne && \["paid", "delivered"\]\.includes\(ligne\.status\);/,
+    "« payée » ne vient plus du statut lu en base sous la session"
+  );
+  const debut = src.indexOf("export default async function");
+  const garde = src.indexOf("if (!payee) {", debut);
+  assert.ok(garde > -1, "le garde a disparu : la page confirme de nouveau un paiement qu'elle n'a pas vérifié");
+  const fin = src.indexOf("\n  }\n", garde);
+  const neutre = src.slice(garde, fin);
+  assert.match(neutre, /return \(/, "le garde ne rend plus de page neutre");
+  for (const interdit of ["✓", "pay.ok.", "commande.slice", "{ref"]) {
+    assert.ok(!neutre.includes(interdit), `la page neutre rend « ${interdit} » : elle confirme ou recopie l'URL`);
+  }
+  /* Tout ce qui confirme ou récompense un achat vient APRÈS le garde. */
+  for (const marque of ["✓", '"pay.ok.title"', "cleCorps(kind)", "<SellerPixels", "<ProductOffers"]) {
+    const i = src.indexOf(marque, debut);
+    assert.ok(i > fin, `« ${marque} » est rendu avant le garde \`payee\``);
+  }
+});
+
+test("S11 — la page neutre ne confirme rien, et renvoie là où l'état fait foi", () => {
+  /* Le kreyòl n'est pas dans le motif : « konfime » y sert de verbe ET de
+   * participe (« pa ka konfime » = ne peut pas confirmer). Il reste couvert
+   * par la comparaison au titre de succès et par le renvoi vers ses achats. */
+  const CONFIRME =
+    /(?<![\p{L}])(confirmée?|validée?|réussie?|confirmed|successful|confirmad[oa]|exitos[oa])(?![\p{L}])/iu;
+  for (const s of ["Paiement confirmé", "Payment confirmed", "Pago confirmado"]) {
+    assert.ok(CONFIRME.test(s), `le motif ne voit pas « ${s} »`);
+  }
+  const ACHATS: Record<string, string> = { fr: "Mes achats", ht: "Acha mwen yo", en: "My purchases", es: "Mis compras" };
+  for (const lang of LANGS) {
+    const d = DICT[lang] as Record<string, string>;
+    const titre = d["pay.check.title"];
+    const corps = d["pay.check.body"];
+    assert.ok(titre?.trim() && corps?.trim(), `pay.check.* manquante en ${lang}`);
+    assert.notEqual(titre, d["pay.ok.title"], `pay.check.title (${lang}) redit le titre de succès`);
+    assert.ok(
+      !CONFIRME.test(titre) && !CONFIRME.test(corps),
+      `pay.check.* (${lang}) affirme un paiement : « ${titre} » / « ${corps} »`
+    );
+    assert.ok(corps.includes(ACHATS[lang]), `pay.check.body (${lang}) ne renvoie plus vers « ${ACHATS[lang]} »`);
+  }
+});
+
+test("S12 — les pages de paiement restent hors index, et l'onglet n'affirme rien", () => {
+  for (const f of [PAGE, "app/paiement/en-attente/page.tsx", "app/paiement/echec/page.tsx"]) {
+    assert.match(
+      readFileSync(f, "utf8"),
+      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/,
+      `${f} peut être indexée`
+    );
+  }
+  /* Le titre de l'onglet est rendu AVANT la vérification : il doit être neutre. */
+  assert.doesNotMatch(
+    readFileSync(PAGE, "utf8"),
+    /export const metadata = \{ title: "[^"]*(réussi|confirmé)/,
+    "le titre de l'onglet affirme un paiement que la page n'a pas encore vérifié"
+  );
+});

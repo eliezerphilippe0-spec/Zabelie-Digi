@@ -194,6 +194,10 @@ jobs:
         if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.offers.config.ts
 
+      - name: Flash sales showcase on home and product page
+        if: steps.portee.outputs.docs_seulement != 'true'
+        run: npx playwright test --config=playwright.flash.config.ts
+
       - name: Haiti operations and support on mobile
         if: steps.portee.outputs.docs_seulement != 'true'
         run: npx playwright test --config=playwright.operations.config.ts

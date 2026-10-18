@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   const okMinute = await rateLimit(admin, `ai_desc:${user.id}`, 5, 60);
   if (!okMinute) {
     return NextResponse.json(
-      { error: "Trop de demandes — réessayez plus tard." },
+      { error: "Trop de demandes. Réessayez plus tard." },
       { status: 429 }
     );
   }
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
   if (!okJour) {
     if (!config) {
       return NextResponse.json(
-        { error: "Trop de demandes — réessayez plus tard." },
+        { error: "Trop de demandes. Réessayez plus tard." },
         { status: 429 }
       );
     }
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     );
     if (!okCap) {
       return NextResponse.json(
-        { error: "Trop de demandes — réessayez plus tard." },
+        { error: "Trop de demandes. Réessayez plus tard." },
         { status: 429 }
       );
     }
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
     );
     if (!inscrit) {
       return NextResponse.json(
-        { error: "Suggestion indisponible — réessayez." },
+        { error: "Suggestion indisponible. Réessayez." },
         { status: 502 }
       );
     }
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
     // Le détail (statut fournisseur) va au journal serveur, jamais au client.
     console.error("[ai-description]", e instanceof Error ? e.message : e);
     return NextResponse.json(
-      { error: "Suggestion indisponible — réessayez." },
+      { error: "Suggestion indisponible. Réessayez." },
       { status: 502 }
     );
   }

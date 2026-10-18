@@ -27,6 +27,9 @@ import { readFileSync } from "node:fs";
  *  `seller-pricing-panel` sert aussi `/vendre` : ses titres y suivent. */
 const FICHIERS = [
   "app/tableau-de-bord/page.tsx",
+  // Pages filles du tableau vendeur (docs/73) : leurs cartes suivent la même règle.
+  "app/tableau-de-bord/boutique/page.tsx",
+  "app/tableau-de-bord/compte/page.tsx",
   "components/seller-pricing-panel.tsx",
   "components/vendeur-premier-pas.tsx",
   "components/digital-seller-metrics.tsx",
@@ -52,7 +55,9 @@ test("T1 — chaque h2 des cartes de section porte `titre-section`, sans taille 
     }
   }
   // Un balayage qui ne voit rien réussit toujours : le nombre est le témoin.
-  assert.ok(vus >= 12, `seulement ${vus} h2 lus dans ${FICHIERS.length} fichiers — le motif ne voit plus les titres`);
+  // 10 et non 12 depuis docs/73 : « Codes promo » est devenu le h1 de sa page, et le
+  // titre de l'argent vient d'un composant. Ce seuil garde le DÉTECTEUR, pas la règle.
+  assert.ok(vus >= 10, `seulement ${vus} h2 lus dans ${FICHIERS.length} fichiers — le motif ne voit plus les titres`);
   assert.deepEqual(fautes, [], "Titre(s) de section hors du style unique :\n  " + fautes.join("\n  "));
 });
 

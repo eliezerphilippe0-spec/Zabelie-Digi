@@ -44,7 +44,7 @@ export function PayoutForm({
       if (!res.ok) {
         setMsg({ ok: false, text: data.error ?? "Échec de l'enregistrement" });
       } else if (data.duplicate) {
-        setMsg({ ok: true, text: "Ce reçu était déjà enregistré — aucun double débit." });
+        setMsg({ ok: true, text: "Ce reçu était déjà enregistré : aucun double débit." });
       } else {
         setMsg({
           ok: true,
@@ -53,7 +53,7 @@ export function PayoutForm({
         router.refresh();
       }
     } catch {
-      setMsg({ ok: false, text: "Erreur réseau — réessayez." });
+      setMsg({ ok: false, text: "Erreur réseau. Réessayez." });
     } finally {
       setBusy(false);
     }

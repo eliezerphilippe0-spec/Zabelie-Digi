@@ -19,10 +19,10 @@
 .universe-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
 .universe-grid > a { border-top: 1px solid var(--color-line); padding: 24px 16px 20px; background: var(--color-surface); border-radius: 0 0 12px 12px; }
 .universe-symbol { display: block; color: var(--color-accent); margin-bottom: 26px; }
-.universe-grid > a:last-child { background: var(--color-ink-soft); }
+.universe-grid > a.universe-recharges { background: var(--color-ink-soft); }
+.universe-grid-trois { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .home-discovery .home-catalogue-state { border-top: 1px solid var(--color-line); margin-top: 12px; padding-block: 32px; }
 .editorial-page .home-receipt > div { border-inline: 0; border-radius: 0; background: transparent; padding-inline: 0; }
-.editorial-page .home-help { padding-block: 30px; }
 .editorial-page #comment > div { border-radius: 12px; }
 .seller-landing { padding-block: 56px 80px; }
 .seller-intro { max-width: 740px; margin-bottom: 44px; }
@@ -66,6 +66,7 @@
  .home-discovery.editorial-page .launch-hero .home-hero-copy > .launch-note { font-size: 12px; }
  .launch-actions { gap: 10px 20px; margin-top: 22px; }
  .universe-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+ .universe-grid-trois > a:last-child { grid-column: 1 / -1; }
  .universe-grid > a { padding: 20px 14px; }
  .universe-symbol { margin-bottom: 20px; }
  .seller-landing { padding-block: 32px 48px; }

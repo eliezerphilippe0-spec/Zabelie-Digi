@@ -68,7 +68,8 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
   return (
     <div>
       <form onSubmit={create} className="flex flex-wrap items-end gap-2">
-        <div className="min-w-0 flex-1">
+        {/* Pleine largeur sur téléphone : à 360 px, partagé avec deux champs, il ne montrait que « PRO ». */}
+        <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
           <label className="text-xs text-mist" htmlFor="cp-code">Code</label>
           <input
             id="cp-code"
@@ -108,7 +109,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+          className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
         >
           {loading ? "…" : "Créer"}
         </button>

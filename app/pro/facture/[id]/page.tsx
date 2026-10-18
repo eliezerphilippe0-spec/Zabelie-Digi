@@ -8,6 +8,8 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { getProfessional } from "@/lib/business";
 import { siteUrl } from "@/lib/site-url";
 import { InvoiceEditor } from "@/components/business/invoice-editor";
+import { getLang } from "@/lib/i18n-server";
+import { facturationCopy } from "@/lib/facturation-copy";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Facture — Espace pro" };
@@ -17,7 +19,8 @@ export default async function InvoicePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, lang] = await Promise.all([params, getLang()]);
+  const labels = facturationCopy(lang);
   if (!isSupabaseConfigured()) notFound();
 
   const supabase = await createClient();
@@ -64,14 +67,15 @@ export default async function InvoicePage({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-2xl px-5 py-16">
-        <Link href="/pro" className="text-sm text-mist hover:underline">
-          ← Espace pro
+        <Link href="/pro" className="inline-flex min-h-11 items-center text-sm text-mist hover:underline">
+          {labels.back}
         </Link>
         <InvoiceEditor
           invoice={invoice}
           items={items ?? []}
-          clientName={client?.name ?? "Client"}
+          clientName={client?.name ?? labels.clientFallback}
           shareUrl={shareUrl}
+          labels={labels}
         />
       </main>
       <SiteFooter />

@@ -257,7 +257,8 @@ test("le formulaire vendeur ne rend JAMAIS d'image de pièce d'identité", () =>
 });
 
 test("le tableau de bord monte la section KYC, masquée sans 0079", () => {
-  const src = readFileSync("app/tableau-de-bord/page.tsx", "utf8");
+  // La section vit sur la page Compte depuis la refonte façon Chariow (docs/73).
+  const src = readFileSync("app/tableau-de-bord/compte/page.tsx", "utf8");
   assert.match(src, /\{dossierKyc && \(/);
   assert.match(src, /<KycForm[\s>]/);
 });

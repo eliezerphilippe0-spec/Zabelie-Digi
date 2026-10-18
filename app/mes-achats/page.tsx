@@ -122,7 +122,7 @@ export default async function MesAchatsPage({ searchParams }: {
   // Every service-role query below is explicitly scoped to this verified buyer id.
   const orderReader = createAdminClient();
   function queryOrders(withReference: boolean) {
-    const relation = kind ? "product:products!inner(id,title, slug, kind)" : "product:products(id,title, slug, kind)";
+    const relation = kind ? "product:products!orders_product_id_fkey!inner(id,title, slug, kind)" : "product:products!orders_product_id_fkey(id,title, slug, kind)";
     let query = orderReader.from("orders")
       .select(`id, ${withReference ? "order_ref," : ""} status, amount_htg, created_at, ${relation}`)
       .eq("buyer_id", buyerId);

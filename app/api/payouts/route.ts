@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       montant_invalide: "Montant invalide.",
       sous_minimum: `Le minimum est de ${data?.min_htg ?? 500} HTG.`,
       au_dessus_plafond: `Le maximum par demande est de ${data?.max_htg ?? 100000} HTG.`,
-      compte_suspendu: "Compte suspendu — retrait indisponible.",
+      compte_suspendu: "Compte suspendu : retrait indisponible.",
       portefeuille_absent: "Aucun portefeuille pour ce compte.",
       demande_en_cours: "Une demande est déjà en cours de traitement.",
       delai_non_ecoule: `Une nouvelle demande est possible après ${data?.cooldown_hours ?? 24} h.`,
@@ -68,10 +68,10 @@ export async function POST(req: Request) {
       // action pour le vendeur : attendre, corriger, ou déposer.
       kyc_requis:
         data?.kyc_statut === "pending"
-          ? "Vérification d'identité en cours — le retrait sera possible dès que votre dossier sera validé."
+          ? "Vérification d'identité en cours. Le retrait sera possible dès que votre dossier sera validé."
           : data?.kyc_statut === "rejected"
-            ? "Dossier d'identité refusé — corrigez-le depuis votre tableau de bord."
-            : "Vérification d'identité requise avant tout retrait — déposez vos pièces depuis votre tableau de bord.",
+            ? "Dossier d'identité refusé. Corrigez-le depuis votre tableau de bord."
+            : "Vérification d'identité requise avant tout retrait. Déposez vos pièces depuis votre tableau de bord.",
     };
     return NextResponse.json(
       {

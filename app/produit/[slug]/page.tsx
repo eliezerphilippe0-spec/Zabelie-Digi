@@ -30,7 +30,8 @@ import { getProductReviews } from "@/lib/reviews";
 import { identitesVerifiees } from "@/lib/identite-verifiee";
 import { BadgeIdentite } from "@/components/badge-identite";
 import { ReponseAvisForm } from "@/components/reponse-avis-form";
-import { offreFlashActive } from "@/lib/flash";
+import { offreFlashActive, unitesVendues } from "@/lib/flash";
+import { EclairFlash, StockFlash } from "@/components/ventes-flash";
 import { FlashCountdown } from "@/components/flash-countdown";
 import { BuyButton, type BuyOption } from "@/components/buy-button";
 import { exigeNumero, operateurDuRayon } from "@/lib/rechaj";
@@ -85,7 +86,7 @@ export async function generateMetadata({
   // Le prix et le vendeur AVANT le descriptif : c'est ce qui décide le clic
   // dans un fil de discussion, et WhatsApp tronque tôt.
   const blurb = product.blurb.replace(/\s+/g, " ").trim();
-  const description = `${price} · par ${product.creator}${blurb ? ` — ${blurb}` : ""}`;
+  const description = `${price} · par ${product.creator}${blurb ? `. ${blurb}` : ""}`;
 
   return {
     title,
@@ -234,6 +235,10 @@ export default async function ProductPage({
       ? createClient().then((c) => offreFlashActive(c, product.id))
       : Promise.resolve(null),
   ]);
+  /* Barre « déjà pris » (Jumia, Lightning Deals) : même comptage que le
+   * checkout (`flashEpuisee`). Seulement si l'offre a un plafond ; `null` si
+   * le comptage échoue — la barre ne s'affiche pas plutôt que de mentir. */
+  const flashVendues = flash && flash.unitesMax !== null ? await unitesVendues(createAdminClient(), product.id, flash) : null;
 
   /* Âge minimum (0115) — lu en base par l'ascendance du rayon, jamais déduit
    * du slug ici. Une lecture en échec rend 0 : la fiche n'affiche alors ni
@@ -508,13 +513,20 @@ export default async function ProductPage({
                 empilés seraient deux vérités. Le prix FAIT FOI au serveur du
                 checkout ; ceci est l'étalage. */}
             {flash ? (
-              <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
-                <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-on-brand">
-                  {t(lang, "product.flash.badge")}
-                </span>
-                <span className="line-through">{formatHTG(product.priceHTG)}</span>
-                <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
-              </p>
+              <div className="grid gap-2">
+                <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-on-brand">
+                    <EclairFlash className="h-3.5 w-3.5" />
+                    {t(lang, "product.flash.badge")}
+                  </span>
+                  <span className="line-through">{formatHTG(product.priceHTG)}</span>
+                  <span className="rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                    −{pourcentageRabais(product.priceHTG, flash.prixFlashHtg)}%
+                  </span>
+                  <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
+                </p>
+                <StockFlash lang={lang} unitesMax={flash.unitesMax} vendues={flashVendues} />
+              </div>
             ) : (
               compareHtg &&
               compareHtg > product.priceHTG && (
@@ -772,7 +784,7 @@ export default async function ProductPage({
           <div className="mt-6">
             <ShareButtons
               path={`/produit/${product.slug}`}
-              text={`${product.title} — ${formatHTG(product.priceHTG)} ${t(lang, "product.share")}`}
+              text={`${product.title}, ${formatHTG(product.priceHTG)} ${t(lang, "product.share")}`}
               waLabel={t(lang, "share.wa")}
               copyLabel={t(lang, "share.copy")}
               copiedLabel={t(lang, "share.copied")}

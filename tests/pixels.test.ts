@@ -87,8 +87,9 @@ test("X6 — rien ne se charge sans « oui » ; l'achat ne vient que d'une comma
   assert.match(comp, /if \(consentement !== "oui" \|\| charge\.current\) return;\s*charge\.current = true;\s*chargerPixels\(ids, evenement\);/);
   assert.equal(comp.match(/chargerPixels\(/g)?.length, 1, "un seul site d'appel, celui qui est gardé");
   const succes = readFileSync("app/paiement/succes/page.tsx", "utf8");
-  assert.match(succes, /sellerId: ligne && \["paid", "delivered"\]\.includes\(ligne\.status\) \?/);
-  assert.match(succes, /montantHtg: ligne && \["paid", "delivered"\]\.includes\(ligne\.status\) \?/);
+  assert.match(succes, /const payee = !!ligne && \["paid", "delivered"\]\.includes\(ligne\.status\);/);
+  assert.match(succes, /sellerId: payee && ligne \?/);
+  assert.match(succes, /montantHtg: payee && ligne \?/);
   const route = readFileSync("app/api/account/pixels/route.ts", "utf8");
   assert.match(route, /const id = idValide\(regie, brut\);\s*if \(!id\) return NextResponse\.json\([^;]{0,200}status: 422 \}\);/);
   assert.doesNotMatch(route, /createAdminClient/, "l'écriture passe par la session (RLS), pas par le service");

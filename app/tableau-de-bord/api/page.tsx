@@ -113,7 +113,7 @@ export default async function ApiPage() {
         />
         <h2 id="domaine" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "domain.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "domain.intro")}</p>
-        <Link href="/tableau-de-bord#profil-public" className="mt-1 inline-block text-sm text-mist underline">{t(lang, "domain.kyc")}</Link>
+        <Link href="/tableau-de-bord/compte#verification" className="mt-1 inline-block text-sm text-mist underline">{t(lang, "domain.kyc")}</Link>
         <DomainForm
           initial={domaine}
           labels={{

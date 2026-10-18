@@ -76,14 +76,19 @@ test("page : drapeau éteint = 404, session requise, noindex, lecture sous le JW
 });
 
 test("liens d'entrée : présents seulement quand le Studio est allumé", () => {
-  for (const fichier of ["app/tableau-de-bord/page.tsx", "app/vendre/page.tsx"]) {
-    const src = readFileSync(fichier, "utf8");
-    const liens = src.match(/href="\/tableau-de-bord\/creation"/g) ?? [];
-    assert.equal(liens.length, 1, `${fichier} : un lien attendu`);
-    assert.match(
-      src,
-      /\{creationActive\(lireEnvCreation\(\)\) && \(\s*<Link href="\/tableau-de-bord\/creation"/,
-      `${fichier} : le lien n'est pas gardé par le drapeau`
-    );
-  }
+  const vendre = readFileSync("app/vendre/page.tsx", "utf8");
+  assert.equal((vendre.match(/href="\/tableau-de-bord\/creation"/g) ?? []).length, 1, "app/vendre : un lien attendu");
+  assert.match(
+    vendre,
+    /\{creationActive\(lireEnvCreation\(\)\) && \(\s*<Link href="\/tableau-de-bord\/creation"/,
+    "app/vendre : le lien n'est pas gardé par le drapeau"
+  );
+  // Le tableau vendeur porte le lien dans son menu (docs/73), sous le même drapeau.
+  const menu = readFileSync("components/vendeur-shell.tsx", "utf8");
+  assert.equal((menu.match(/href: "\/tableau-de-bord\/creation"/g) ?? []).length, 1, "menu vendeur : un lien attendu");
+  assert.match(
+    menu,
+    /creationActive\(lireEnvCreation\(\)\)\s*\?\s*\[\{ cle: "creation", href: "\/tableau-de-bord\/creation"/,
+    "menu vendeur : le lien n'est pas gardé par le drapeau"
+  );
 });

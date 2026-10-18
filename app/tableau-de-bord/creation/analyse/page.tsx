@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { StudioShell } from "@/components/studio-shell";
+import { copieVentes } from "@/lib/digital-authoring/copy-ventes";
 import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getLang } from "@/lib/i18n-server";
@@ -37,7 +38,7 @@ export default async function AnalysePage() {
     <>
       <SiteNav />
       <main id="main">
-        <StudioShell labels={c} actif="analyse" retour={t(lang, "nav.dashboard")} quota={null}>
+        <StudioShell labels={c} ventes={copieVentes(lang)} actif="analyse" retour={t(lang, "nav.dashboard")} quota={null}>
           <h1 className="text-2xl font-semibold sm:text-3xl">{tb.analyseTitre}</h1>
           {opp === null ? (
             <p className="mt-4 text-sm text-mist">{tb.analyseIndisponible}</p>

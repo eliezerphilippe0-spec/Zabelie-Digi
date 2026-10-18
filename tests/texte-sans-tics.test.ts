@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DICT } from "../lib/i18n";
+import { readFileSync } from "node:fs";
+import { DICT, LANGS } from "../lib/i18n";
+import { annoncesDe } from "../components/barre-annonce";
 
 /**
  * PAS DE TICS DE TEXTE GÉNÉRÉ — demande du porteur du 2026-09-26 : « élimine
@@ -16,10 +18,16 @@ import { DICT } from "../lib/i18n";
  * d'arrêt du porteur (docs/25 §4). Seul son accompagnement — « Revenez très
  * vite ! » — l'était.
  *
- * Le tiret cadratin n'est PAS visé : c'est une ponctuation légitime en français
- * et en kreyòl (préambule de `.claude/skills/design-taste-frontend`, règle 3).
- * Le kreyòl n'a pas de motif ici : ses tics se jugent à l'oreille, par un
- * locuteur — les traductions suivent le français réécrit.
+ * ⚠️ LE TIRET CADRATIN, REVU LE 2026-10-17. Le 2026-09-26, il avait été laissé
+ * comme ponctuation légitime. Le porteur a ensuite demandé de retirer « toutes
+ * les traces IA » : le tiret employé comme LIAISON au milieu d'une phrase
+ * (« Trop de tentatives — réessayez ») est la plus reconnaissable. Il a été
+ * remplacé par un point, deux-points, une virgule ou des parenthèses, dans les
+ * quatre langues (X4). Il reste admis comme séparateur de titre d'onglet
+ * (« Mon panier — Zabelie »), et dans la politique « produits interdits », qui
+ * est versionnée et attestée par les vendeurs : sa prochaine version le retirera.
+ * Le kreyòl n'a pas de motif de mots ici : ses tics se jugent à l'oreille, par
+ * un locuteur. Les traductions suivent le français réécrit.
  */
 
 const TICS: Record<"fr" | "en" | "es", RegExp> = {
@@ -57,5 +65,40 @@ test("X3 — les exemptions désignent encore des libellés courts (sinon, les r
     const fr = (DICT.fr as Record<string, string>)[cle];
     assert.ok(fr !== undefined, `exemption périmée : ${cle}`);
     assert.ok(fr.split(/\s+/).length <= 3, `${cle} n'est plus un libellé court : « ${fr} »`);
+  }
+});
+
+/** Titres d'onglet (séparateur, pas liaison) et politique versionnée (lib/policy.ts). */
+const TIRET_ADMIS = /^(meta\..*\.title|etal\.meta\.title|policy\..*)$/;
+
+test("X4 — plus de tiret cadratin de liaison dans l'interface, en quatre langues", () => {
+  const fautes: string[] = [];
+  for (const lang of ["fr", "ht", "en", "es"] as const) {
+    for (const [cle, texte] of Object.entries(DICT[lang])) {
+      if (TIRET_ADMIS.test(cle)) continue;
+      if (/\S\s[—–]\s\S/.test(texte)) fautes.push(`${lang} ${cle} : ${texte.slice(0, 90)}`);
+    }
+  }
+  assert.deepEqual(fautes, [], "Un tiret relie deux idées : choisir le point, les deux-points, la virgule ou des parenthèses.\n  " + fautes.join("\n  "));
+});
+
+test("X5 — les objets d'e-mail ne portent ni émoji ni tiret de liaison", () => {
+  const src = readFileSync("lib/zabelie-email.ts", "utf8");
+  const objets = [...src.matchAll(/subject: `([^`]*)`/g)].map((m) => m[1]);
+  assert.ok(objets.length >= 5, `objets lus : ${objets.length}`);
+  for (const o of objets) {
+    assert.doesNotMatch(o, /[\u{1F300}-\u{1FAFF}\u{2705}\u{2728}]/u, `émoji dans l'objet « ${o} »`);
+    assert.doesNotMatch(o, /\s—\s/, `tiret de liaison dans l'objet « ${o} »`);
+  }
+});
+
+test("X6 — la barre d'annonce n'assemble pas ses textes avec un tiret", () => {
+  /* X4 ne lit que le dictionnaire : la barre colle deux libellés dans le
+   * composant (« Ouvrez votre boutique en ligne », « 0 HTG pour ouvrir »), et
+   * le tiret qui les reliait, sur chaque page, lui avait échappé. */
+  for (const lang of LANGS) {
+    for (const { texte } of annoncesDe(lang)) {
+      assert.doesNotMatch(texte, /\s[—–]\s/, `${lang} : « ${texte} »`);
+    }
   }
 });
