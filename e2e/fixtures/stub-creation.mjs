@@ -12,7 +12,12 @@ const appPort = Number(process.env.APP_PORT || 3011);
 const ids = {
   seller: "11400000-0000-4000-8000-000000000001",
   other: "11400000-0000-4000-8000-000000000002",
+  // Modération (« mise en ligne ») : un administrateur avec double authentification
+  // vérifiée, et un sans, comme le compte du porteur en production le 2026-10-18.
+  admin: "11400000-0000-4000-8000-000000000003",
+  adminSansMfa: "11400000-0000-4000-8000-000000000004",
 };
+const ADMINS = new Set([ids.admin, ids.adminSansMfa]);
 const CONFIG = { id: true, titre_max: 160, brief_max: 6000, sections_max: 12, section_max: 12000, total_max: 120000, projets_actifs_max: 10 };
 const EDITORIAUX = ["titre", "langue", "public_vise", "marche_diaspora", "brief", "contenu", "derniere_sauvegarde"];
 let projets = new Map();
@@ -74,7 +79,8 @@ function lignesVentes() {
 
 function token(role) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
-  return `${b({ alg: "HS256", typ: "JWT" })}.${b({ sub: ids[role], aal: "aal1", exp: 4102444800, iat: 1700000000, role: "authenticated" })}.fixture`;
+  const aal = role === "admin" ? { aal: "aal2", amr: [{ method: "totp", timestamp: 1700000000 }] } : { aal: "aal1" };
+  return `${b({ alg: "HS256", typ: "JWT" })}.${b({ sub: ids[role], ...aal, exp: 4102444800, iat: 1700000000, role: "authenticated" })}.fixture`;
 }
 
 const server = createServer(async (req, res) => {
@@ -128,13 +134,15 @@ const server = createServer(async (req, res) => {
 
   if (u.pathname === "/auth/v1/user") {
     if (!moi) return send({ message: "invalid" }, 401);
-    return send({ id: moi, aud: "authenticated", role: "authenticated", email: `${role}@example.ht`, app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
+    // Seul `admin` a un facteur vérifié : `adminSansMfa` reproduit le compte sans double authentification.
+    const factors = role === "admin" ? [{ id: "facteur-admin", status: "verified", factor_type: "totp", friendly_name: "test", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" }] : [];
+    return send({ id: moi, aud: "authenticated", role: "authenticated", email: `${role}@example.ht`, app_metadata: {}, user_metadata: {}, factors, created_at: "2026-01-01T00:00:00Z" });
   }
   if (u.pathname.startsWith("/auth/v1/")) return send({});
 
   if (u.pathname === "/rest/v1/profiles") {
     const id = eq("id") || moi;
-    return single([{ id, display_name: "Vandè Tès", role: "creator", tier: "standard", suspended_at: null, suspended_reason: null }]);
+    return single([{ id, display_name: ADMINS.has(id) ? "Admin Tès" : "Vandè Tès", role: ADMINS.has(id) ? "admin" : "creator", tier: "standard", suspended_at: null, suspended_reason: null }]);
   }
   if (u.pathname === "/rest/v1/zabelie_policy_acceptances") {
     return send([{ policy_version: "cgu-v1" }, { policy_version: "confidentialite-v3" }]);
@@ -397,14 +405,34 @@ const server = createServer(async (req, res) => {
         return send({ code: "23505", message: 'duplicate key value violates unique constraint "products_zabelie_authoring_project_unique"' }, 409);
       }
     }
-    const ligne = { ...b, id: randomUUID(), zabelie_authoring_project_id: lien };
+    // Les valeurs par défaut de la table (0001, 0040) : une fiche neuve est en stock, sans vente ni avis.
+    const ligne = { in_stock: true, sales_count: 0, rating_count: 0, rating_sum: 0, cover_url: null, category_id: null,
+      delivery_days: null, service_includes: null, ...b, id: randomUUID(), zabelie_authoring_project_id: lien, created_at: new Date().toISOString() };
     produits.set(ligne.id, ligne);
     return single([ligne]);
   }
+  // Modération : seul le service role écrit (la route admin), comme 0024.
+  if (u.pathname === "/rest/v1/products" && req.method === "PATCH") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for table products" }, 403);
+    const maj = await body();
+    const cibles = [...produits.values()].filter((x) => x.id === eq("id"));
+    for (const x of cibles) Object.assign(x, maj);
+    return single(cibles);
+  }
   if (u.pathname === "/rest/v1/products" && req.method === "GET") {
     const lien = eq("zabelie_authoring_project_id");
-    return single([...produits.values()].filter((x) =>
-      (role === "service" || x.seller_id === moi) && (!lien || x.zabelie_authoring_project_id === lien) && (!eq("id") || x.id === eq("id"))));
+    // RLS : le public lit les fiches publiées, le vendeur les siennes, le service role tout.
+    const lignes = [...produits.values()].filter((x) =>
+      (role === "service" || x.seller_id === moi || x.status === "published")
+      && (!lien || x.zabelie_authoring_project_id === lien)
+      && ["id", "slug", "status", "kind", "category"].every((k) => !u.searchParams.has(k) || String(x[k]) === eq(k))
+      && (!u.searchParams.has("in_stock") || String(x.in_stock) === eq("in_stock")))
+      .map((x) => ({ ...x, seller: { display_name: ADMINS.has(x.seller_id) ? "Admin Tès" : "Vandè Tès" }, sous_rayon: null }));
+    if (!objet()) {
+      res.writeHead(200, { "content-type": "application/json", "content-range": lignes.length ? `0-${lignes.length - 1}/${lignes.length}` : "*/0" });
+      return res.end(JSON.stringify(lignes));
+    }
+    return single(lignes);
   }
   if (u.pathname === "/rest/v1/product_assets") {
     if (role !== "service") return send({ code: "42501", message: "permission denied for table product_assets" }, 403);
@@ -420,8 +448,14 @@ const server = createServer(async (req, res) => {
       for (const [k, l] of livrables) if (l.product_id === eq("product_id") && retires.includes(k)) livrables.delete(k);
       return send([]);
     }
-    return single([...livrables.values()].filter((l) =>
-      (!eq("product_id") || l.product_id === eq("product_id")) && (!eq("storage_path") || l.storage_path === eq("storage_path"))));
+    const lignesLivrables = [...livrables.values()].filter((l) =>
+      (!eq("product_id") || l.product_id === eq("product_id")) && (!eq("storage_path") || l.storage_path === eq("storage_path")));
+    // `count: "exact", head: true` (la garde « pas de fichier sans livrable ») : le compte dans l'en-tête.
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json", "content-range": `*/${lignesLivrables.length}` });
+      return res.end();
+    }
+    return single(lignesLivrables);
   }
   if ((u.pathname === "/rest/v1/zabelie_digital_details" || u.pathname === "/rest/v1/zabelie_digital_studio") && req.method === "POST") {
     if (role !== "service") return send({ code: "42501", message: "permission denied" }, 403);
