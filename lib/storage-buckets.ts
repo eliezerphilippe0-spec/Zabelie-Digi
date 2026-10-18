@@ -43,3 +43,9 @@ export const VIDEO_BUCKET = "product-videos";
 
 /** Pièces d'identité vendeur. Privé — le titulaire seul lit son dossier. */
 export const KYC_BUCKET = "kyc-documents";
+
+/**
+ * PDF du Studio de création (0147). Privé — aucune policy, lecture par URL
+ * signée et courte, après contrôle de propriété ; PDF seulement, 20 Mo au plus.
+ */
+export const AUTHORING_BUCKET = "authoring-exports";

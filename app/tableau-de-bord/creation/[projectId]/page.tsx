@@ -11,6 +11,7 @@ import { choisirMoteur, creationActive, lireEnvCreation } from "@/lib/digital-au
 import { copieCreation } from "@/lib/digital-authoring/copy";
 import { TABLE_CONFIG, TABLE_PROJETS, limitesDepuisConfig, projetPourEditeur } from "@/lib/digital-authoring/api";
 import { LIMITES_DEFAUT } from "@/lib/digital-authoring/schema";
+import { COLONNES_EXPORT, TABLE_EXPORTS, exportPourClient } from "@/lib/digital-authoring/export";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Zabelie", robots: { index: false, follow: false } };
@@ -33,9 +34,11 @@ export default async function ProjetPage({ params }: { params: Promise<{ project
   const lang = await getLang();
   const c = copieCreation(lang);
   const supabase = await createClient();
-  const [{ data: ligne }, { data: config }] = await Promise.all([
+  const [{ data: ligne }, { data: config }, { data: dernierExport }] = await Promise.all([
     supabase.from(TABLE_PROJETS).select("*").eq("id", projectId).maybeSingle(),
     supabase.from(TABLE_CONFIG).select("*").maybeSingle(),
+    // Le dernier PDF du projet (0147), sous la RLS. Absent ou illisible : aucun.
+    supabase.from(TABLE_EXPORTS).select(COLONNES_EXPORT).eq("project_id", projectId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const projet = projetPourEditeur(ligne);
   if (!projet) notFound();
@@ -54,7 +57,8 @@ export default async function ProjetPage({ params }: { params: Promise<{ project
         <p className="mt-2 text-sm text-mist">{c.lien}</p>
         <h1 className="mt-1 break-words text-2xl font-semibold">{projet.titre}</h1>
         <div className="mt-6">
-          <AuthoringEditor initial={projet} labels={c} limites={limitesDepuisConfig(config) ?? LIMITES_DEFAUT} userId={user.id} ia={ia} quotaInitial={quota ?? null} />
+          <AuthoringEditor initial={projet} labels={c} limites={limitesDepuisConfig(config) ?? LIMITES_DEFAUT} userId={user.id} ia={ia} quotaInitial={quota ?? null}
+            lang={lang} exportInitial={exportPourClient(dernierExport)} />
         </div>
       </main>
       <SiteFooter />

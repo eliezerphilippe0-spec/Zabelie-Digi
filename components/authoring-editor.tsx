@@ -1,8 +1,11 @@
 "use client";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import { projetPourEditeur, type ProjetEditeur } from "@/lib/digital-authoring/api";
 import { rapprocherApresPerte } from "@/lib/digital-authoring/revision";
+import { ficheTest, regrouperParCode, type CodeControle, type Controle } from "@/lib/digital-authoring/quality";
+import { exportAJour, lireExportClient, tailleLisible, type ExportClient } from "@/lib/digital-authoring/export";
+import type { Lang } from "@/lib/i18n";
 import { ConfirmationEnvoi, EtatSuggestion, useSuggestions, type PlanPropose, type Quota } from "@/components/authoring-suggestion";
 import {
   brouillonDiffere,
@@ -27,9 +30,17 @@ import {
 /**
  * Éditeur du Studio de création éditoriale (docs/70, tâches 2.4 et 2.5).
  *
- * Trois étapes : le brief, le plan, la rédaction. La rédaction s'ouvre quand
- * le plan a été approuvé (STU 03). Tout texte est saisi et AFFICHÉ comme du
- * texte : aucun HTML interprété, jamais (STU 04, T12).
+ * Quatre étapes : le brief, le plan, la rédaction, la relecture. La rédaction
+ * s'ouvre quand le plan a été approuvé (STU 03). Tout texte est saisi et
+ * AFFICHÉ comme du texte : aucun HTML interprété, jamais (STU 04, T12).
+ *
+ * Relecture (tâche 4.2) : la fiche-test tourne en direct sur le texte de
+ * l'écran ; l'approbation enregistre d'abord, puis le serveur la refait sur
+ * le texte en base. Une approbation ne vaut que pour SA révision.
+ *
+ * PDF (tâche 4.3) : créé par le serveur depuis la révision approuvée, ouvert
+ * par un lien signé de cinq minutes, puis approuvé TEL QUEL : l'écran renvoie
+ * l'empreinte du fichier montré, et le bouton n'ouvre qu'après l'aperçu.
  *
  * Sauvegarde (STU 05) :
  *   - automatique une seconde après la dernière frappe, et par le bouton ;
@@ -47,6 +58,17 @@ type EnvoiSuivi = { revisionAttendue: number; jeton: string; version: number };
 
 const NON_ENREGISTRE: ReadonlySet<Statut> = new Set(["modifie", "envoi", "hors_ligne", "erreur", "conflit"]);
 
+/** Contrôles dont les détails sont une liste à montrer (extraits, caractères, marqueurs). */
+const AVEC_LISTE: ReadonlySet<CodeControle> = new Set([
+  "marqueur_inacheve", "caracteres_pdf", "paragraphe_repete", "chiffres_a_verifier", "liens_a_verifier",
+]);
+
+/** Un caractère refusé, montré avec son point de code : un espace invisible se voit ainsi. */
+function montrerCaractere(ch: string): string {
+  const cp = ch.codePointAt(0) ?? 0;
+  return `${ch} (U+${cp.toString(16).toUpperCase().padStart(4, "0")})`;
+}
+
 export function AuthoringEditor({
   initial,
   labels,
@@ -54,6 +76,8 @@ export function AuthoringEditor({
   userId,
   ia = false,
   quotaInitial = null,
+  lang = "fr",
+  exportInitial = null,
 }: {
   initial: ProjetEditeur;
   labels: CopieCreation;
@@ -62,6 +86,9 @@ export function AuthoringEditor({
   /** Suggestions ouvertes (drapeau, moteur, configuration) : sinon aucune trace d'IA à l'écran. */
   ia?: boolean;
   quotaInitial?: Quota | null;
+  lang?: Lang;
+  /** Le dernier PDF du projet, lu sous le JWT (0147) ; `null` s'il n'y en a pas. */
+  exportInitial?: ExportClient | null;
 }) {
   const e = labels.editeur;
   const ids = useId();
@@ -77,6 +104,13 @@ export function AuthoringEditor({
   const [revision, setRevision] = useState(initial.revision);
   const [planApprouve, setPlanApprouve] = useState<number | null>(initial.planApprouveRevision);
   const [archive, setArchive] = useState(initial.archive);
+  const [revisionApprouvee, setRevisionApprouvee] = useState<number | null>(initial.revisionApprouvee);
+  const [responsable, setResponsable] = useState(false);
+  const [approbation, setApprobation] = useState(false);
+  const [pdf, setPdf] = useState<ExportClient | null>(exportInitial);
+  const [rendu, setRendu] = useState(false);
+  const [apercuOuvert, setApercuOuvert] = useState(false);
+  const [approbationPdf, setApprobationPdf] = useState(false);
   const [statut, setStatut] = useState<Statut>("propre");
   const [message, setMessage] = useState<string | null>(null);
   const [proposition, setProposition] = useState<BrouillonLocal | null>(null);
@@ -270,6 +304,7 @@ export function AuthoringEditor({
     revRef.current = p.revision;
     setRevision(p.revision);
     setPlanApprouve(p.planApprouveRevision);
+    setRevisionApprouvee(p.revisionApprouvee);
     setArchive(p.archive);
   }
 
@@ -331,6 +366,86 @@ export function AuthoringEditor({
     if (await action({ action: "approuver_plan", revision: rev })) {
       setPlanApprouve(rev);
       setStatut("enregistre");
+    }
+  }
+
+  /** Approuver le guide : enregistrer, puis demander au serveur de refaire la fiche-test sur cette révision. */
+  async function approuverGuide() {
+    if (!responsable) return;
+    let rev: number | null = revRef.current;
+    if (statut !== "propre" && statut !== "enregistre") rev = await sauver();
+    if (rev === null) return;
+    setApprobation(true);
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approuver_guide", revision: rev, responsabilite: true }),
+      });
+      const d = await r.json().catch(() => null);
+      if (r.ok && typeof d?.resultat === "number") {
+        setRevisionApprouvee(d.resultat);
+        setResponsable(false); // une nouvelle approbation demandera une nouvelle confirmation
+        setMessage(null);
+      } else {
+        setMessage(typeof d?.error === "string" ? d.error : e.erreurSauvegarde);
+        if (d?.code === "conflit") setStatut("conflit");
+        if (d?.code === "archive") setArchive(true);
+      }
+    } catch {
+      setMessage(e.erreurSauvegarde);
+    } finally {
+      setApprobation(false);
+    }
+  }
+
+  /** Créer le PDF : le serveur le rend depuis la révision approuvée, le dépose, l'enregistre. */
+  async function creerPdf() {
+    setRendu(true);
+    setMessage(null);
+    try {
+      const r = await fetch(`${url}/exports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revision: revRef.current }),
+      });
+      const d = await r.json().catch(() => null);
+      const cree = r.ok ? lireExportClient(d?.export) : null;
+      if (cree) {
+        setPdf(cree);
+        setApercuOuvert(false); // un nouveau fichier se regarde avant d'être approuvé
+      } else {
+        setMessage(typeof d?.error === "string" ? d.error : labels.pdf.erreur);
+        if (d?.code === "conflit") setStatut("conflit");
+      }
+    } catch {
+      setMessage(labels.pdf.erreur);
+    } finally {
+      setRendu(false);
+    }
+  }
+
+  /** Approuver CE fichier : l'empreinte montrée part avec la demande (T28). */
+  async function approuverPdf() {
+    if (!pdf || !apercuOuvert) return;
+    setApprobationPdf(true);
+    try {
+      const r = await fetch(`/api/digital-authoring/exports/${pdf.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empreinte: pdf.empreinte }),
+      });
+      const d = await r.json().catch(() => null);
+      if (r.ok && typeof d?.approuveLe === "string") {
+        setPdf({ ...pdf, approuveLe: d.approuveLe });
+        setMessage(null);
+      } else {
+        setMessage(typeof d?.error === "string" ? d.error : e.erreurSauvegarde);
+      }
+    } catch {
+      setMessage(e.erreurSauvegarde);
+    } finally {
+      setApprobationPdf(false);
     }
   }
 
@@ -404,6 +519,70 @@ export function AuthoringEditor({
     conflit: `⚠ ${e.etatConflit}`,
   };
   const facultatifsRemplis = CHAMPS_BRIEF_FACULTATIFS.some((c) => brief[c].trim());
+
+  // La fiche suit la frappe sans la ralentir : sur un téléphone d'entrée de
+  // gamme, React la recalcule quand il a le temps (valeurs différées).
+  const r = labels.relecture;
+  const titreRelu = useDeferredValue(projet.titre);
+  const contenuRelu = useDeferredValue(contenu);
+  const fiche = useMemo(
+    () => ficheTest({ titre: titreRelu, contenu: contenuRelu, planApprouve: planApprouve !== null }),
+    [titreRelu, contenuRelu, planApprouve]
+  );
+  const cartesBloquantes = regrouperParCode(fiche.controles.filter((c) => c.niveau === "bloquant"));
+  const cartesConseils = regrouperParCode(fiche.controles.filter((c) => c.niveau === "conseil"));
+  const approuve = revisionApprouvee !== null && revisionApprouvee === revision && !NON_ENREGISTRE.has(statut);
+  const perime = revisionApprouvee !== null && !approuve;
+  const p = labels.pdf;
+  const pdfAJour = pdf !== null && approuve && exportAJour(pdf, { revision, revisionApprouvee });
+  // Port-au-Prince fixé : le serveur et le navigateur écrivent la même date (hydratation).
+  const dateLisible = (iso: string) =>
+    new Intl.DateTimeFormat(lang === "ht" ? "fr" : lang, { dateStyle: "long", timeStyle: "short", timeZone: "America/Port-au-Prince" }).format(new Date(iso));
+  const lienPdf = (id: string, doc: "guide" | "extrait", telecharger = false) =>
+    `/api/digital-authoring/exports/${id}?document=${doc}${telecharger ? "&telecharger=1" : ""}`;
+  const lienBouton = "bouton inline-flex min-h-11 items-center rounded-xl border border-line px-3 text-sm font-semibold";
+  const lieu = (c: Controle) => {
+    const titreSection = c.section === null ? "" : contenu.sections[c.section - 1]?.titre.trim();
+    return c.section === null ? r.guide : r.section.replace("{n}", String(c.section)) + (titreSection ? ` · ${titreSection}` : "");
+  };
+  const detailsDe = (c: Controle) =>
+    AVEC_LISTE.has(c.code) && c.details.length > 0 ? (
+      <ul className="mt-1 space-y-1 text-xs text-mist">
+        {c.details.map((d, k) => (
+          <li key={k} className="break-words">{c.code === "caracteres_pdf" ? montrerCaractere(d) : <q>{d}</q>}</li>
+        ))}
+      </ul>
+    ) : null;
+  const pluriels: Partial<Record<CodeControle, string>> = r.pluriels;
+  /** Une carte par problème : seul, il dit sa section ; répété, il liste ses sections. */
+  const carte = (groupe: Controle[]) => {
+    const [c] = groupe;
+    return (
+      <li key={c.code} className="rounded-xl border border-line p-3 text-sm" data-controle={c.code}>
+        {groupe.length === 1 ? (
+          <>
+            <span className="block text-xs text-mist">{lieu(c)}</span>
+            <p>{r.controles[c.code].replace("{n}", c.details[0] ?? "")}</p>
+            {detailsDe(c)}
+          </>
+        ) : (
+          <>
+            <p>{pluriels[c.code] ?? r.controles[c.code]}</p>
+            <ul className="mt-2 space-y-2">
+              {groupe.map((x, i) => (
+                <li key={i}>
+                  <span className="block text-xs text-mist">
+                    {lieu(x)}{x.code === "section_courte" ? ` · ${r.nCaracteres.replace("{n}", x.details[0] ?? "")}` : ""}
+                  </span>
+                  {detailsDe(x)}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </li>
+    );
+  };
   const champBrief = (cle: keyof Brief) => (
     <label key={cle} className="block text-sm">
       {e[cle]}
@@ -579,6 +758,96 @@ export function AuthoringEditor({
                 })}
               </div>
             </>
+          )}
+        </section>
+
+        <section aria-labelledby={`${ids}-relecture`} className="rounded-2xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-relecture`} className="text-lg font-semibold">{r.titre}</h2>
+          {planApprouve === null ? (
+            <p className="mt-1 text-sm text-mist">{r.verrou}</p>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-mist">{r.intro}</p>
+              <p data-preparation={fiche.preparation} className={`mt-3 text-sm font-semibold ${
+                fiche.preparation === "pas_pret" ? "text-danger-text" : fiche.preparation === "presque" ? "text-warning-text" : "text-success-text"
+              }`}>{fiche.preparation === "pas_pret" ? r.pasPret : fiche.preparation === "presque" ? r.presque : r.pret}</p>
+              {fiche.bloquants > 0 && (
+                <>
+                  <h3 className="mt-4 text-sm font-semibold">{r.bloquants}</h3>
+                  <ul className="mt-2 space-y-2">{cartesBloquantes.map(carte)}</ul>
+                </>
+              )}
+              {fiche.conseils > 0 && (
+                <details open={fiche.bloquants === 0} className="mt-4">
+                  <summary className="min-h-11 cursor-pointer text-sm font-semibold leading-[2.75rem]">{r.conseils} ({cartesConseils.length})</summary>
+                  <ul className="mt-2 space-y-2">{cartesConseils.map(carte)}</ul>
+                </details>
+              )}
+              {fiche.controles.length === 0 && <p className="mt-2 text-sm text-mist">{r.aucunPoint}</p>}
+
+              {approuve ? (
+                <p role="status" className="mt-4 text-sm font-semibold text-success-text">✓ {r.approuve.replace("{n}", String(revisionApprouvee))}</p>
+              ) : (
+                <div className="mt-4 border-t border-line pt-4">
+                  {perime && <p className="mb-3 text-sm text-warning-text">⚠ {r.perime.replace("{n}", String(revisionApprouvee))}</p>}
+                  {/* Jamais cochée d'avance : la confirmation est un geste du créateur. */}
+                  <label className="flex min-h-11 items-start gap-3 text-sm">
+                    <input type="checkbox" className="mt-0.5 size-5 shrink-0" checked={responsable}
+                      onChange={(v) => setResponsable(v.target.checked)} />
+                    <span>{r.responsabilite}</span>
+                  </label>
+                  <button type="button" onClick={() => void approuverGuide()}
+                    disabled={!responsable || fiche.bloquants > 0 || approbation || statut === "envoi"}
+                    className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                    {approbation ? r.approbation : r.approuver}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        <section aria-labelledby={`${ids}-pdf`} className="rounded-2xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-pdf`} className="text-lg font-semibold">{p.titre}</h2>
+          {!approuve ? (
+            <p className="mt-1 text-sm text-mist">{p.verrou}</p>
+          ) : !pdfAJour || !pdf ? (
+            <>
+              {pdf && <p className="mt-1 text-sm text-warning-text">⚠ {p.ancien}</p>}
+              <button type="button" onClick={() => void creerPdf()} disabled={rendu}
+                className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                {rendu ? p.creation : p.creer}
+              </button>
+            </>
+          ) : (
+            <div className="mt-3 space-y-4">
+              <div>
+                <p className="text-sm font-semibold">{p.guide.replace("{pages}", String(pdf.pages)).replace("{taille}", tailleLisible(pdf.taille, lang))}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <a href={lienPdf(pdf.id, "guide")} target="_blank" rel="noopener noreferrer" onClick={() => setApercuOuvert(true)}
+                    aria-label={`${p.apercu} ${p.nouvelOnglet}`} className={lienBouton}>{p.apercu}</a>
+                  <a href={lienPdf(pdf.id, "guide", true)} onClick={() => setApercuOuvert(true)} className={lienBouton}>{p.telecharger}</a>
+                </div>
+                <p className="mt-2 break-all text-xs text-mist">{p.empreinte.replace("{e}", `${pdf.empreinte.slice(0, 12)}…${pdf.empreinte.slice(-6)}`)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{p.extrait.replace("{pages}", String(pdf.extraitPages)).replace("{taille}", tailleLisible(pdf.extraitTaille, lang))}</p>
+                <p className="mt-1 text-xs text-mist">{p.extraitAide}</p>
+                <a href={lienPdf(pdf.id, "extrait")} target="_blank" rel="noopener noreferrer"
+                  aria-label={`${p.apercuExtrait} ${p.nouvelOnglet}`} className={`${lienBouton} mt-2`}>{p.apercuExtrait}</a>
+              </div>
+              {pdf.approuveLe ? (
+                <p role="status" className="text-sm font-semibold text-success-text">✓ {p.approuve.replace("{date}", dateLisible(pdf.approuveLe))}</p>
+              ) : (
+                <div className="border-t border-line pt-4">
+                  <p className="text-sm text-mist">{p.consigne}</p>
+                  <button type="button" onClick={() => void approuverPdf()} disabled={!apercuOuvert || approbationPdf}
+                    className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                    {approbationPdf ? p.approbation : p.approuver}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </section>
       </fieldset>
