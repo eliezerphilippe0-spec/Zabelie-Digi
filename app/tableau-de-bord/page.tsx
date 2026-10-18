@@ -749,9 +749,9 @@ export default async function DashboardPage({
         )}
       </section>
 
-      {/* Codes promo (V-13) */}
+      {/* Codes promo (V-13). L'ancre sert l'action rapide du Studio. */}
       {products.length > 0 && (
-        <section className="mt-10">
+        <section id="codes-promo" className="mt-10 scroll-mt-28">
           <h2 className="titre-section">Codes promo</h2>
           <p className="mt-1 text-xs text-mist">
             Créez un code (ex. <span className="code-lisible font-bold text-accent">PROMO50</span>),
