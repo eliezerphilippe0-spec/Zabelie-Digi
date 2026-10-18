@@ -1,5 +1,5 @@
 import type { Lang } from "@/lib/i18n";
-import type { MomentJournee } from "@/lib/digital-authoring/ventes";
+import type { MomentJournee } from "@/lib/moment-journee";
 
 /**
  * Textes de l'accueil du Studio façon Chariow (tasks/plan.md, phase T2).

@@ -27,7 +27,8 @@ test("la couverture est LUE en base — sans quoi il n'y a rien à afficher", ()
    * image et ne jamais demander la colonne. Le composant rendrait alors le
    * carré neutre pour tout le monde, ce qui ressemble à « aucun vendeur n'a
    * de photo » — un zéro qui n'est pas une mesure. */
-  assert.match(PAGE, /\.select\("id, slug, title, status, sales_count, cover_url"\)/);
+  // `kind` (docs/73) : la performance numérique ne s'affiche qu'à qui vend du numérique.
+  assert.match(PAGE, /\.select\("id, slug, title, status, sales_count, cover_url, kind"\)/);
   assert.match(PAGE, /cover_url: string \| null;/, "le type doit porter la colonne");
 });
 

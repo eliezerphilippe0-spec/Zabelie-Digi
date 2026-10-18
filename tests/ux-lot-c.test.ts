@@ -48,7 +48,8 @@ test("UC2 — profil public : cinq étiquettes reliées, aucune chaîne françai
 });
 
 test("UC3 — le tableau de bord fournit les étiquettes en langue de session", () => {
-  const src = lire("app/tableau-de-bord/page.tsx");
+  // Le formulaire de profil vit sur la page Ma boutique (docs/73).
+  const src = lire("app/tableau-de-bord/boutique/page.tsx");
   assert.match(src, /<ProfileForm[\s\S]{0,300}?labels=\{\{[\s\S]{0,400}?name: t\(lang, "profile\.name"\)/);
   assert.doesNotMatch(src, />\s*Voir mon profil →\s*</, "« Voir mon profil → » était en dur");
 });

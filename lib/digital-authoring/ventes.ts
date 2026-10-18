@@ -19,21 +19,8 @@ import { KIND_FILE } from "@/lib/product-kind";
  * déjà ce qu'il a le droit de voir. Aucune migration.
  */
 
-export type MomentJournee = "matin" | "apresMidi" | "soir";
-
-/**
- * Le moment de la journée À L'HEURE D'HAÏTI. Le serveur tourne en UTC : sans
- * fuseau, un vendeur du Cap lirait « Bonsoir » à 15 h.
- */
-export function momentDeLaJournee(maintenant: Date, fuseau = "America/Port-au-Prince"): MomentJournee {
-  const partie = new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: fuseau })
-    .formatToParts(maintenant)
-    .find((p) => p.type === "hour");
-  const heure = Number(partie?.value ?? 12) % 24;
-  if (heure >= 5 && heure < 12) return "matin";
-  if (heure >= 12 && heure < 18) return "apresMidi";
-  return "soir";
-}
+// La salutation sert aussi au tableau vendeur (docs/73) : elle vit à part.
+export { momentDeLaJournee, type MomentJournee } from "@/lib/moment-journee";
 
 /** Une commande telle que la lit `chargerVentesDigitales`. */
 export type LigneVente = {

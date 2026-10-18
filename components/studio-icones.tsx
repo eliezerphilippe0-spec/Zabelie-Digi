@@ -18,7 +18,14 @@ export type NomIcone =
   | "clients"
   | "calendrier"
   | "oeil"
-  | "oeilBarre";
+  | "oeilBarre"
+  | "produits"
+  | "commandes"
+  | "messages"
+  | "compte"
+  | "api"
+  | "images"
+  | "partage";
 
 const TRACES: Record<NomIcone, React.ReactNode> = {
   accueil: <path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" />,
@@ -93,6 +100,42 @@ const TRACES: Record<NomIcone, React.ReactNode> = {
     <>
       <path d="M9.9 6A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.6 7.3A16.5 16.5 0 0 0 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4.6-1.2" />
       <path d="M10 10.2a2.8 2.8 0 0 0 3.9 3.9M4 4l16 16" />
+    </>
+  ),
+  produits: (
+    <>
+      <path d="M12 3.5 20 7.8v8.4L12 20.5 4 16.2V7.8z" />
+      <path d="M4 7.8 12 12l8-4.2M12 12v8.5" />
+    </>
+  ),
+  commandes: (
+    <>
+      <path d="M3.5 6.5h10v9h-10zM13.5 9.5h3.6l3.4 3.4v2.6h-7" />
+      <circle cx="7.5" cy="17.5" r="1.8" />
+      <circle cx="16.5" cy="17.5" r="1.8" />
+    </>
+  ),
+  messages: <path d="M4.5 6a1.5 1.5 0 0 1 1.5-1.5h12A1.5 1.5 0 0 1 19.5 6v8.5A1.5 1.5 0 0 1 18 16h-7.5L6 19.5V16a1.5 1.5 0 0 1-1.5-1.5z" />,
+  compte: (
+    <>
+      <circle cx="12" cy="8.5" r="3.5" />
+      <path d="M5 19.5a7 7 0 0 1 14 0" />
+    </>
+  ),
+  api: <path d="m8.5 8-4 4 4 4m7-8 4 4-4 4M13.5 6l-3 12" />,
+  images: (
+    <>
+      <rect x="4" y="5" width="16" height="14" rx="2" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="m4.5 17 5-4.5 3.5 3 2.5-2 4 3.5" />
+    </>
+  ),
+  partage: (
+    <>
+      <circle cx="17" cy="6" r="2.3" />
+      <circle cx="7" cy="12" r="2.3" />
+      <circle cx="17" cy="18" r="2.3" />
+      <path d="m9 11 6-3.8M9 13l6 3.8" />
     </>
   ),
 };

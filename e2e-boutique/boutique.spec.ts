@@ -80,8 +80,9 @@ test("seller can open, edit and share the same public shop", async ({ page }) =>
     } });
     window.open = (url) => { void (window as unknown as { recordShopShare: (s: string) => Promise<void> }).recordShopShare(String(url)); return null; };
   });
-  await page.goto("/tableau-de-bord");
-  const shop = page.getByRole("region", { name: "Ma boutique" });
+  // La boutique a sa page depuis la refonte du tableau vendeur (docs/73).
+  await page.goto("/tableau-de-bord/boutique");
+  const shop = page.getByRole("region", { name: "Partager ma boutique" });
   await expect(shop).toBeVisible();
   await expect(shop.getByRole("link", { name: "Voir ma boutique", exact: true })).toHaveAttribute("href", "/boutik/atelye-lakay");
   await shop.getByRole("button", { name: "Copier le lien", exact: true }).click();
@@ -93,8 +94,9 @@ test("seller can open, edit and share the same public shop", async ({ page }) =>
   await expect(page).toHaveURL(/#profil-public$/);
   await expect(page.locator("#profil-public")).toBeInViewport();
   await page.locator('summary[aria-label="Mon compte"]').click();
-  await page.getByRole("link", { name: "Ma boutique", exact: true }).click();
-  await expect(page).toHaveURL(/#ma-boutique$/);
+  // Le menu de l'en-tête, pas celui du tableau (docs/73) qui porte le même libellé.
+  await page.getByRole("banner").getByRole("link", { name: "Ma boutique", exact: true }).click();
+  await expect(page).toHaveURL(/\/tableau-de-bord\/boutique$/);
   await expect(page.locator('summary[aria-label="Mon compte"]').locator("..")).not.toHaveAttribute("open", "");
   await expect.poll(async () => {
     const title = await page.locator("#ma-boutique-title").boundingBox();
@@ -122,10 +124,10 @@ test("legacy shop link, empty shop and Haitian Creole stay usable", async ({ pag
 
 test("a buyer without products can prepare the shop from the same account", async ({ page }) => {
   await connectAccount(page, false);
-  await page.goto("/tableau-de-bord");
-  const shop = page.getByRole("region", { name: "Ma boutique" });
+  await page.goto("/tableau-de-bord/boutique");
+  const shop = page.getByRole("region", { name: "Partager ma boutique" });
   await expect(shop).toBeVisible();
   await expect(shop.getByRole("link", { name: "Voir ma boutique", exact: true })).toHaveAttribute("href", "/createur/11111111-1111-1111-1111-111111111111");
   await page.locator('summary[aria-label="Mon compte"]').click();
-  await expect(page.getByRole("link", { name: "Ma boutique", exact: true })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: "Ma boutique", exact: true })).toBeVisible();
 });

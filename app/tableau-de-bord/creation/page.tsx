@@ -128,7 +128,7 @@ export default async function CreationPage({
     { cle: "vide", href: "?depart=vide#nouveau-projet", texte: c.entreeVide, icone: "nouveau" },
     { cle: "modele", href: "?depart=modele#nouveau-projet", texte: c.entreeModele, icone: "modele" },
     { cle: "analyse", href: "/tableau-de-bord/creation/analyse", texte: tb.entreeAnalyse, icone: "analyse" },
-    ...(nbProduits ? [{ cle: "promo", href: "/tableau-de-bord#codes-promo", texte: v.actionPromo, icone: "promo" as const }] : []),
+    ...(nbProduits ? [{ cle: "promo", href: "/tableau-de-bord/codes-promo", texte: v.actionPromo, icone: "promo" as const }] : []),
   ];
   const formats = [
     { cle: "ebook", titre: tb.formatEbook, desc: tb.formatEbookDesc, actif: true },

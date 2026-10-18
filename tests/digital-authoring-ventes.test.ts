@@ -82,10 +82,10 @@ test("T2.4 — textes : quatre langues complètes, sans tiret de liaison ni émo
   }
 });
 
-test("T2.5 — l'action « code promo » mène à une ancre qui existe", () => {
-  const tableau = readFileSync("app/tableau-de-bord/page.tsx", "utf8");
-  assert.match(tableau, /id="codes-promo"/);
+test("T2.5 — l'action « code promo » mène à une page qui existe", () => {
+  // Les codes promo ont leur page depuis la refonte du tableau vendeur (docs/73).
+  assert.ok(readFileSync("app/tableau-de-bord/codes-promo/page.tsx", "utf8").includes("export default"));
   const page = readFileSync("app/tableau-de-bord/creation/page.tsx", "utf8");
-  // Le tableau vendeur ne montre les codes promo qu'à qui a un produit : l'action suit la même condition.
-  assert.match(page, /nbProduits \? \[\{ cle: "promo", href: "\/tableau-de-bord#codes-promo"/);
+  // Un code promo ne s'applique qu'à des produits : l'action suit la même condition que le tableau vendeur.
+  assert.match(page, /nbProduits \? \[\{ cle: "promo", href: "\/tableau-de-bord\/codes-promo"/);
 });

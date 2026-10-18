@@ -55,7 +55,8 @@ test("lecture des réponses : 402 → prix à afficher ; image https seulement ;
 
 const COMPOSANT = readFileSync("components/studio-generator.tsx", "utf8");
 const PAGE = readFileSync("app/tableau-de-bord/studio/page.tsx", "utf8");
-const TABLEAU = readFileSync("app/tableau-de-bord/page.tsx", "utf8");
+// Le lien vers le Studio images vit dans le menu du tableau vendeur (docs/73).
+const TABLEAU = readFileSync("components/vendeur-shell.tsx", "utf8");
 
 test("le consentement ne part QUE du bouton qui affiche le prix", () => {
   // Un seul appel porte un prix, et il le prend dans l'état `payant`.
@@ -71,7 +72,7 @@ test("une clé neuve par demande, la même pour le consentement qui la suit", ()
 
 test("Studio éteint : ni page ni lien ; le tarif vient de la base", () => {
   assert.match(PAGE, /export default async function StudioPage\(\) \{\s*if \(!studioProvider\(\)\) notFound\(\);/);
-  assert.match(TABLEAU, /\{studioProvider\(\) && \(\s*<Link href="\/tableau-de-bord\/studio"/);
+  assert.match(TABLEAU, /studioProvider\(\)\s*\?\s*\[\{ cle: "studio", href: "\/tableau-de-bord\/studio"/);
   assert.match(PAGE, /const tarif = typeof cfg\?\.gratuit_jour === "number" && typeof cfg\?\.prix_image_htg === "number"/);
   // Seuls les produits DU vendeur, avec une photo https.
   assert.match(PAGE, /\.eq\("seller_id", user\.id\)\.like\("cover_url", "https:\/\/%"\)/);
