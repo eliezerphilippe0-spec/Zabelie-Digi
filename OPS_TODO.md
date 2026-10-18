@@ -162,7 +162,13 @@ Retour arrière : le Studio étant éteint, aucun n'est nécessaire. Ne pas supp
 
 ### Migration `0147_zabelie_authoring_exports.sql` — protocole d'application (PR 4, export PDF)
 
-⏳ **NON APPLIQUÉE.** Exige `0146`. « oui » du porteur requis avant l'application (C2-A). Additive : un bucket PRIVÉ
+✅ **APPLIQUÉE le 2026-10-18 à 12:19:11 UTC** sur « oui » du porteur (C2-A), avant la fusion de la PR 4 (#363, tête
+`be3c90c`, CI verte). Preuves : journal `20261018121911` ; SQL reçu = fichier (méthode 0086, `fa1c9e17…2ccc`,
+36 753 car.) ; ZB147 passées ; bucket `false` / 20971520 / `{application/pdf}` ; sonde 149 → 151 objets, aucun perdu
+(comparée avant) ; 13 objets `zabelie_authoring_%` présents ; RLS active, 0 export, 0 fichier ; registre 147 lignes
+(empreinte canonique `48c8c4eb…2d48`).
+
+Avant application : exige `0146`. « oui » du porteur requis avant l'application (C2-A). Additive : un bucket PRIVÉ
 `authoring-exports` (PDF seulement, 20 Mo, aucune policy), une table `zabelie_authoring_exports` (le vendeur lit les
 siens, n'en écrit aucun), une garde d'immuabilité, `zabelie_authoring_enregistrer_export(…)` exécutable par le
 **service role seul**, `zabelie_authoring_approuver_export(uuid, text)` sous `auth.uid()`, et la sonde redéfinie
