@@ -33,6 +33,26 @@ const OPPORTUNITES = {
   ],
 };
 let opportunitesVides = false;
+// Ventes digitales (phase T2, accueil façon Chariow) : un jeu de TEST au format de la lecture de
+// `lib/digital-authoring/ventes.ts` (commande, produit joint, crédits du grand livre). Dates relatives
+// à maintenant, pour que « 7 derniers jours » tienne quel que soit le jour du test.
+// `/__ventes?mode=pleines|aucune|erreur` ; « aucune » par défaut, comme un vendeur qui débute.
+let ventesMode = "aucune";
+const JOUR = 24 * 60 * 60 * 1000;
+const PRODUITS_VENDUS = [
+  { id: "11400000-0000-4000-8000-0000000000a1", title: "Lanse yon biznis sou entènèt", price_htg: 1500, cover_url: null, slug: "lanse-yon-biznis", net: 1425, ventes: [[1, "b1"], [2, "b2"], [4, "b3"], [12, "b4"], [30, "b1"]] },
+  { id: "11400000-0000-4000-8000-0000000000a2", title: "Resèt lakay Okap", price_htg: 750, cover_url: null, slug: "reset-lakay-okap", net: 712, ventes: [[3, "b5"], [9, "b2"], [20, "b6"]] },
+  { id: "11400000-0000-4000-8000-0000000000a3", title: "Aprann angle an 30 jou", price_htg: 1000, cover_url: null, slug: "aprann-angle", net: 950, ventes: [[6, "b7"], [40, "b8"]] },
+];
+function lignesVentes() {
+  const maintenant = Date.now();
+  return PRODUITS_VENDUS.flatMap(({ net, ventes, ...product }) =>
+    ventes.map(([jours, acheteur], i) => {
+      const quand = new Date(maintenant - jours * JOUR).toISOString();
+      return { id: `${product.id.slice(0, -2)}${i}${jours}`, buyer_id: acheteur, product,
+        wallet_transactions: [{ amount_htg: net, type: "credit", created_at: quand }] };
+    }));
+}
 
 function token(role) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -60,7 +80,8 @@ const server = createServer(async (req, res) => {
   // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
   if (jointureAmbigue(tableDe(u.pathname), u.searchParams.get("select"))) return send(REFUS_PGRST201, 300);
   if (u.pathname === "/__health") return send({ ok: true });
-  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); opportunitesVides = false; return send({ ok: true }); }
+  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); opportunitesVides = false; ventesMode = "aucune"; return send({ ok: true }); }
+  if (u.pathname === "/__ventes") { ventesMode = ["pleines", "aucune", "erreur"].includes(u.searchParams.get("mode")) ? u.searchParams.get("mode") : "aucune"; return send({ ok: true }); }
   if (u.pathname === "/__opportunites") { opportunitesVides = u.searchParams.get("mode") === "vide"; return send({ ok: true }); }
   if (u.pathname === "/__login") {
     const qui = Object.keys(ids).includes(u.searchParams.get("role")) ? u.searchParams.get("role") : "seller";
@@ -197,6 +218,17 @@ const server = createServer(async (req, res) => {
   if (u.pathname === "/rest/v1/rpc/zabelie_authoring_opportunites") {
     if (!moi) return send({ code: "42501", message: "permission denied" }, 401);
     return send(opportunitesVides ? { ...OPPORTUNITES, recherches: [], ventes: [] } : OPPORTUNITES);
+  }
+
+  // Ventes digitales : RLS simulée (le vendeur seulement), lecture ratée possible.
+  if (u.pathname === "/rest/v1/orders") {
+    if (ventesMode === "erreur") return send({ code: "XX000", message: "lecture impossible (jeu de test)" }, 500);
+    return send(ventesMode === "pleines" && moi === ids.seller ? lignesVentes() : []);
+  }
+  if (u.pathname === "/rest/v1/products" && req.method === "HEAD") {
+    const n = ventesMode === "pleines" && moi === ids.seller ? PRODUITS_VENDUS.length : 0;
+    res.writeHead(200, { "content-type": "application/json", "content-range": `*/${n}` });
+    return res.end();
   }
 
   if (u.pathname.startsWith("/rest/v1/rpc/")) return send([]);
