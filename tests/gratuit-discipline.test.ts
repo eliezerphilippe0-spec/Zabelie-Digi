@@ -137,7 +137,7 @@ test("G7 — la PUBLICATION d'un numérique accepte 0 et refuse le négatif", ()
   // Ma recherche initiale l'avait manqué : je grepais `price_htg`, la colonne,
   // alors que la validation porte sur `price`, la variable locale. Un motif ne
   // prouve rien sur ce qu'il n'a pas cherché — d'où ce garde.
-  const PRODUITS = code(readFileSync("app/api/products/route.ts", "utf8"));
+  const PRODUITS = code((readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8")));
   assert.ok(PRODUITS.length > 1000, "le fichier doit avoir été lu");
 
   // La condition ELLE-MÊME, pas le message : un libellé corrigé sans la

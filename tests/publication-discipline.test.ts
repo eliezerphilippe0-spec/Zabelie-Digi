@@ -28,7 +28,7 @@ const CREATION = join("app", "api", "products", "route.ts");
 const ASSET = join("app", "api", "products", "asset", "route.ts");
 
 test("les trois types de fiche naissent en brouillon", () => {
-  const src = readFileSync(CREATION, "utf8");
+  const src = (readFileSync(CREATION, "utf8") + readFileSync(join("lib", "product-draft.ts"), "utf8"));
 
   // Ancrage sur `pickByKind`, PAS sur le premier `status:` du fichier : celui-ci
   // est le code HTTP d'une réponse d'erreur (`{ status: 401 }`), et la première
@@ -55,7 +55,7 @@ test("les trois types de fiche naissent en brouillon", () => {
 });
 
 test("l'upload d'un livrable ne publie pas la fiche", () => {
-  const src = readFileSync(ASSET, "utf8");
+  const src = (readFileSync(ASSET, "utf8") + readFileSync(join("lib", "product-asset-confirm.ts"), "utf8"));
   assert.doesNotMatch(
     src,
     /update\(\s*\{\s*status:\s*["']published["']/,

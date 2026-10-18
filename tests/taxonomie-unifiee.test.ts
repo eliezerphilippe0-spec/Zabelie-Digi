@@ -37,7 +37,7 @@ test("aucune liste de catégories en dur ne revient", () => {
 });
 
 test("la validation serveur interroge la base, pas une constante", () => {
-  const src = readFileSync("app/api/products/route.ts", "utf8");
+  const src = (readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8"));
   assert.ok(
     src.includes("await normalizeCategory(supabase, category)"),
     "la validation n'est plus adossée à la base"

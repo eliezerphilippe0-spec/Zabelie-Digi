@@ -19,7 +19,8 @@ import { join } from "node:path";
  */
 
 const ROUTES = [
-  join("app", "api", "products", "route.ts"),
+  // La création numérique vit dans le module partagé (tâche 5.1 du Studio), appelé par la route.
+  join("lib", "product-draft.ts"),
   join("app", "api", "products", "physical", "route.ts"),
 ];
 

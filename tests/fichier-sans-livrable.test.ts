@@ -31,7 +31,7 @@ import { readFileSync } from "node:fs";
  */
 
 const PORTE = readFileSync("app/api/admin/product-status/route.ts", "utf8");
-const UPLOAD = readFileSync("app/api/products/asset/route.ts", "utf8");
+const UPLOAD = (readFileSync("app/api/products/asset/route.ts", "utf8") + readFileSync("lib/product-asset-confirm.ts", "utf8"));
 const CRON = readFileSync("app/api/fulfillment/sweep/route.ts", "utf8");
 const LIVRABLE_UI = readFileSync("components/upload-asset.tsx", "utf8");
 const MIG_BRUT = readFileSync("supabase/migrations/0059_fichier_sans_livrable.sql", "utf8");

@@ -43,10 +43,15 @@ function modules(dir: string, acc: string[] = []): string[] {
 
 const EN_DUR = /error:\s*\n?\s*"[^"]{6,}"/g;
 
+/* Les modules sortis d'une route restent comptés (tâche 5.1 du Studio,
+ * 2026-10-18) : déplacer un message en dur hors de `app/api` ne le traduit
+ * pas, et le plafond baisserait sans aucun travail réel. */
+const EXTRAITS = ["lib/product-draft.ts", "lib/product-asset-confirm.ts"];
+
 function compter(): { total: number; parFichier: Map<string, number> } {
   const parFichier = new Map<string, number>();
   let total = 0;
-  for (const f of modules("app/api")) {
+  for (const f of [...modules("app/api"), ...EXTRAITS]) {
     const n = (sansCommentaires(readFileSync(f, "utf8")).match(EN_DUR) ?? []).length;
     if (n > 0) {
       parFichier.set(f, n);
@@ -80,6 +85,8 @@ const PLAFOND = 212;
 const CONVERTIES = [
   // Le chemin du porteur : publier, acheter, mettre en ligne.
   "app/api/products/route.ts",
+  // Sa création de brouillon, extraite telle quelle (tâche 5.1 du Studio) : convertie elle aussi.
+  "lib/product-draft.ts",
   "app/api/checkout/route.ts",
   "app/api/admin/product-status/route.ts",
   // Administration — lot du 2026-08-22.

@@ -82,7 +82,7 @@ test("la route de publication APPELLE le garde", () => {
   // « code sans appelant » du CLAUDE.md. La fonction vit dans
   // lib/product-kind.ts (seul fichier autorisé aux littéraux de type) : seule
   // une vérification croisée peut prouver qu'elle atteint la frontière.
-  const route = readFileSync("app/api/products/route.ts", "utf8");
+  const route = (readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8"));
   assert.match(
     route,
     /isDigitalKind\(\s*kind\s*\)/,
