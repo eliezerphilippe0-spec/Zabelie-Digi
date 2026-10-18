@@ -115,7 +115,7 @@ export function KycForm({
               key={k}
               className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent"
             >
-              {busy === k ? labels.sending : `${labels.add} — ${libelle[k]}`}
+              {busy === k ? labels.sending : `${labels.add} : ${libelle[k]}`}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"

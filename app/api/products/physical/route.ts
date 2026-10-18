@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   const admin = createAdminClient();
   if (!(await rateLimit(admin, `product_physical:${user.id}`, 10))) {
     return NextResponse.json(
-      { error: "Trop de créations — réessayez dans une minute." },
+      { error: "Trop de créations. Réessayez dans une minute." },
       { status: 429 }
     );
   }
@@ -223,7 +223,7 @@ export async function POST(req: Request) {
   if (body.condition !== undefined && body.condition !== null &&
       body.condition !== "" && condition === null) {
     return NextResponse.json(
-      { error: "État inconnu — nef ou dezyem-men." },
+      { error: "État inconnu : choisissez nef ou dezyem-men." },
       { status: 422 }
     );
   }
@@ -424,7 +424,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "Deux lignes de compatibilité identiques (même modèle, même année de début) — retirez le doublon.",
+              "Deux lignes de compatibilité identiques (même modèle, même année de début). Retirez le doublon.",
           },
           { status: 422 }
         );

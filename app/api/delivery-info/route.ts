@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     // Les contraintes de bornes (0076) remontent ici — message générique,
     // le détail vit en base.
     return NextResponse.json(
-      { error: "Enregistrement refusé — vérifiez les champs." },
+      { error: "Enregistrement refusé. Vérifiez les champs." },
       { status: 422 }
     );
   }

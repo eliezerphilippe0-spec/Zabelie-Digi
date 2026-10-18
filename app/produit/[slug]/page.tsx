@@ -86,7 +86,7 @@ export async function generateMetadata({
   // Le prix et le vendeur AVANT le descriptif : c'est ce qui décide le clic
   // dans un fil de discussion, et WhatsApp tronque tôt.
   const blurb = product.blurb.replace(/\s+/g, " ").trim();
-  const description = `${price} · par ${product.creator}${blurb ? ` — ${blurb}` : ""}`;
+  const description = `${price} · par ${product.creator}${blurb ? `. ${blurb}` : ""}`;
 
   return {
     title,
@@ -784,7 +784,7 @@ export default async function ProductPage({
           <div className="mt-6">
             <ShareButtons
               path={`/produit/${product.slug}`}
-              text={`${product.title} — ${formatHTG(product.priceHTG)} ${t(lang, "product.share")}`}
+              text={`${product.title}, ${formatHTG(product.priceHTG)} ${t(lang, "product.share")}`}
               waLabel={t(lang, "share.wa")}
               copyLabel={t(lang, "share.copy")}
               copiedLabel={t(lang, "share.copied")}

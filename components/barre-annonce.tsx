@@ -38,7 +38,7 @@ const ANNONCES: Annonce[] = [
 
 /** Les annonces d'une langue, texte prêt à afficher. */
 export function annoncesDe(lang: Lang): { texte: string; href?: string }[] {
-  return ANNONCES.map((a) => ({ texte: a.cles.map((c) => t(lang, c)).join(" — "), href: a.href?.(lang) }));
+  return ANNONCES.map((a) => ({ texte: a.cles.map((c) => t(lang, c)).join(" : "), href: a.href?.(lang) }));
 }
 
 /** Environ 35 px par seconde quelle que soit la langue : la durée suit la longueur du texte. */

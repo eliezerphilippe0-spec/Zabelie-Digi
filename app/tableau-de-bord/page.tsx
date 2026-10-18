@@ -572,7 +572,7 @@ export default async function DashboardPage({
             submitting: "Envoi…",
             cancel: "Annuler",
             pending: "Une demande de retrait est en cours de traitement. Vous serez réglé par MonCash.",
-            networkError: "Réseau instable — réessayez.",
+            networkError: "Réseau instable. Réessayez.",
             success: "Demande enregistrée. Le montant est réservé en attendant le versement.",
           }}
         />

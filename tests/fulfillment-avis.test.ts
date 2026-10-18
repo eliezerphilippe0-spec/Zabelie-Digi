@@ -100,9 +100,9 @@ test("l'avis et le rappel portent la date, en kreyòl ET en français", () => {
       kr: new RegExp(`anvan\\s+${d}`, "iu"),
       fr: new RegExp(`avant le\\s+${d}`, "iu"),
     },
-    // « <date> — apre dat sa a » / « Après cette date »
+    // « <date> : apre dat sa a » / « Après cette date » (deux-points depuis le 2026-10-17, plus de tiret)
     reminder_buyer: {
-      kr: new RegExp(`${d}\\s*—\\s*apre`, "iu"),
+      kr: new RegExp(`${d}\\s*:\\s*apre`, "iu"),
       fr: new RegExp(`${d}[\\s\\S]{0,120}apr[eè]s cette date`, "iu"),
     },
   };

@@ -20,7 +20,7 @@ type Statut = "draft" | "sent" | "partially_paid" | "paid" | "overdue" | "void";
 
 const fr = {
   // Page /pro
-  proTitle: "Espace pro — Facturation",
+  proTitle: "Espace pro : facturation",
   demo: "Mode démo : configurez Supabase pour créer de vraies factures.",
   demoBody: "L'espace pro a besoin d'une base Supabase configurée.",
   login: "Connectez-vous pour facturer vos clients.",
@@ -118,7 +118,7 @@ export type FacturationCopy = typeof fr;
 export type PayInvoiceLabels = Pick<FacturationCopy, "payCta" | "redirecting" | "payUnavailable" | "network">;
 
 const ht: FacturationCopy = {
-  proTitle: "Espas pwofesyonèl — Fè m peye",
+  proTitle: "Espas pwofesyonèl : Fè m peye",
   demo: "Mòd demo : konfigire Supabase pou kreye vrè fakti.",
   demoBody: "Espas pwofesyonèl la bezwen yon baz Supabase ki konfigire.",
   login: "Konekte pou w ka fè fakti pou kliyan ou yo.",
@@ -209,7 +209,7 @@ const ht: FacturationCopy = {
 };
 
 const en: FacturationCopy = {
-  proTitle: "Pro space — Invoicing",
+  proTitle: "Pro space: invoicing",
   demo: "Demo mode: configure Supabase to create real invoices.",
   demoBody: "The pro space needs a configured Supabase database.",
   login: "Sign in to invoice your clients.",
@@ -300,7 +300,7 @@ const en: FacturationCopy = {
 };
 
 const es: FacturationCopy = {
-  proTitle: "Espacio profesional — Facturación",
+  proTitle: "Espacio profesional: facturación",
   demo: "Modo demo: configura Supabase para crear facturas reales.",
   demoBody: "El espacio profesional necesita una base Supabase configurada.",
   login: "Inicia sesión para facturar a tus clientes.",

@@ -268,16 +268,16 @@ export function buyerPurchaseEmail(input: {
   purchasesUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: `✅ Achat confirmé — ${input.productTitle}`,
+    subject: `Achat confirmé : ${input.productTitle}`,
     html: wrap(`
       <p><strong>Mèsi ! Acha ou konfime.</strong> / Merci ! Votre achat est confirmé.</p>
-      <p style="font-size:15px">${echapperHtml(input.productTitle)} — <strong>${echapperHtml(input.amountLabel)}</strong></p>
+      <p style="font-size:15px">${echapperHtml(input.productTitle)} : <strong>${echapperHtml(input.amountLabel)}</strong></p>
       <p><a href="${echapperHtml(input.purchasesUrl)}"
             style="display:inline-block;background:#d96a16;color:#fff;
                    padding:12px 20px;border-radius:10px;text-decoration:none;
                    font-weight:700">Telechaje / Télécharger mes achats</a></p>
-      <p style="font-size:13px;color:#77636b">Fichye ou disponib nan « Acha mwen yo »
-      — lien valable à tout moment, même si la connexion a coupé pendant l'achat.</p>
+      <p style="font-size:13px;color:#77636b">Fichye ou disponib nan « Acha mwen yo ».
+      Lien valable à tout moment, même si la connexion a coupé pendant l'achat.</p>
     `),
   };
 }
@@ -291,9 +291,9 @@ export function sellerSaleEmail(input: {
   orderRef?: string | null;
 }): { subject: string; html: string } {
   return {
-    subject: `🎉 Ou fè yon vant ! — ${input.productTitle}`,
+    subject: `Ou fè yon vant : ${input.productTitle}`,
     html: wrap(`
-      <p><strong>🎉 Félicitations — nouvelle vente !</strong></p>
+      <p><strong>Félicitations, nouvelle vente !</strong></p>
       <p style="font-size:15px">${echapperHtml(input.productTitle)}</p>
       ${input.orderRef ? `<p>Nimewo kòmand / N° de commande : <strong>${echapperHtml(input.orderRef)}</strong></p>` : ""}
       <p>Net vendeur crédité (en attente J+7) : <strong>${echapperHtml(input.netLabel)}</strong></p>
@@ -324,7 +324,7 @@ export function sellerSaleEmail(input: {
 
 const ligneCommande = (titre: string, ref?: string | null) =>
   `<p style="font-size:15px">${echapperHtml(titre)}${
-    ref ? ` — <strong>${echapperHtml(ref)}</strong>` : ""
+    ref ? ` · <strong>${echapperHtml(ref)}</strong>` : ""
   }</p>`;
 
 const boutonAchats = (url: string, libelle: string) =>
@@ -341,7 +341,7 @@ export function shippedNoticeEmail(input: {
   purchasesUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: `Vandè a di li remèt li — ${input.productTitle}`,
+    subject: `Vandè a di li remèt li : ${input.productTitle}`,
     html: wrap(`
       <p><strong>Vandè a di li remèt kòmand ou an.</strong><br>
       Le vendeur déclare avoir remis votre commande.</p>
@@ -354,7 +354,7 @@ export function shippedNoticeEmail(input: {
       ${boutonAchats(input.purchasesUrl, "Konfime / Signaler un problème")}
       <p style="font-size:13px;color:#77636b">Zabelie pa livre e pa verifye
       remèt la : nou anrejistre sa de pati yo deklare. Si ou pa resevwa anyen,
-      di l anvan dat la — se sèl fason lajan an rete bloke.</p>
+      di l anvan dat la : se sèl fason lajan an rete bloke.</p>
     `),
   };
 }
@@ -367,12 +367,12 @@ export function reminderNoticeEmail(input: {
   purchasesUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: `Rapèl — ou gen jiska ${input.deadlineLabel}`,
+    subject: `Rapèl : ou gen jiska ${input.deadlineLabel}`,
     html: wrap(`
       <p><strong>Rapèl : nou poko tande ou sou kòmand sa a.</strong><br>
       Rappel : nous n'avons pas encore eu votre réponse.</p>
       ${ligneCommande(input.productTitle, input.orderRef)}
-      <p><strong>${echapperHtml(input.deadlineLabel)}</strong> — apre dat sa a, n ap
+      <p><strong>${echapperHtml(input.deadlineLabel)}</strong> : apre dat sa a, n ap
       konsidere ou resevwa l.<br>
       <span style="color:#77636b">Après cette date, la commande sera réputée
       reçue.</span></p>
@@ -388,14 +388,14 @@ export function autoReceivedNoticeEmail(input: {
   purchasesUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: `Kòmand ou an konsidere resevwa — ${input.productTitle}`,
+    subject: `Kòmand ou an konsidere resevwa : ${input.productTitle}`,
     html: wrap(`
       <p><strong>San repons, nou konsidere ou resevwa kòmand sa a.</strong><br>
       Faute de réponse, la commande est réputée reçue.</p>
       ${ligneCommande(input.productTitle, input.orderRef)}
       <p>Vandè a ap resevwa lajan l.<br>
       <span style="color:#77636b">Le vendeur va être payé.</span></p>
-      <p style="font-size:13px;color:#77636b">Si sa se yon erè, ekri nou —
+      <p style="font-size:13px;color:#77636b">Si sa se yon erè, ekri nou :
       dosye a pase nan men yon moun, pa nan yon otomat. Si c'est une erreur,
       écrivez-nous : le dossier est repris à la main.</p>
       ${boutonAchats(input.purchasesUrl, "Wè kòmand mwen yo / Mes achats")}
