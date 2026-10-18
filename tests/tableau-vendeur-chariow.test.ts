@@ -112,7 +112,8 @@ test("C8 — aucun lien ne vise une ancre partie avec son bloc", () => {
   const anciennes = /\/tableau-de-bord#(ma-boutique|profil-public|codes-promo)\b/;
   const fautes = ["app", "components", "lib"].flatMap(fichiers).filter((f) => anciennes.test(lire(f)));
   assert.deepEqual(fautes, [], "liens vers une ancre déplacée : viser /tableau-de-bord/boutique, /compte ou /codes-promo");
-  assert.match(lire("components/site-nav.tsx"), /href="\/tableau-de-bord\/boutique"/);
+  // Avec l'ancre : depuis la même page déjà défilée, un lien sans ancre ne ramènerait pas au bloc.
+  assert.match(lire("components/site-nav.tsx"), /href="\/tableau-de-bord\/boutique#ma-boutique"/);
   assert.match(lire("app/tableau-de-bord/api/page.tsx"), /href="\/tableau-de-bord\/compte#verification"/);
   assert.match(lire(FILLES.compte), /<section id="verification"/);
 });

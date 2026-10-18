@@ -96,7 +96,7 @@ test("seller can open, edit and share the same public shop", async ({ page }) =>
   await page.locator('summary[aria-label="Mon compte"]').click();
   // Le menu de l'en-tête, pas celui du tableau (docs/73) qui porte le même libellé.
   await page.getByRole("banner").getByRole("link", { name: "Ma boutique", exact: true }).click();
-  await expect(page).toHaveURL(/\/tableau-de-bord\/boutique$/);
+  await expect(page).toHaveURL(/\/tableau-de-bord\/boutique#ma-boutique$/);
   await expect(page.locator('summary[aria-label="Mon compte"]').locator("..")).not.toHaveAttribute("open", "");
   await expect.poll(async () => {
     const title = await page.locator("#ma-boutique-title").boundingBox();
