@@ -4,7 +4,7 @@
 // projets (RLS), la sauvegarde compare la révision, un projet archivé ne se
 // modifie plus, l'approbation porte sur une révision exacte.
 import { createServer } from "node:http";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
 
 const port = Number(process.env.STUB_PORT || 15431);
@@ -12,7 +12,12 @@ const appPort = Number(process.env.APP_PORT || 3011);
 const ids = {
   seller: "11400000-0000-4000-8000-000000000001",
   other: "11400000-0000-4000-8000-000000000002",
+  // Modération (« mise en ligne ») : un administrateur avec double authentification
+  // vérifiée, et un sans, comme le compte du porteur en production le 2026-10-18.
+  admin: "11400000-0000-4000-8000-000000000003",
+  adminSansMfa: "11400000-0000-4000-8000-000000000004",
 };
+const ADMINS = new Set([ids.admin, ids.adminSansMfa]);
 const CONFIG = { id: true, titre_max: 160, brief_max: 6000, sections_max: 12, section_max: 12000, total_max: 120000, projets_actifs_max: 10 };
 const EDITORIAUX = ["titre", "langue", "public_vise", "marche_diaspora", "brief", "contenu", "derniere_sauvegarde"];
 let projets = new Map();
@@ -22,6 +27,20 @@ let revisions = new Map();
 let exportsPdf = new Map();
 let objets = new Map();
 const BUCKET_EXPORTS = "authoring-exports";
+// « Soumettre à la revue » (0148) : fiches, lignes de livrables et objets du bucket des fichiers vendus.
+let produits = new Map();
+let livrables = new Map();
+let fichiers = new Map();
+// Atelier numérique pré-rempli (5.3) : une ligne par fiche et par table, jamais écrasée.
+let ateliers = new Map();
+const BUCKET_FICHIERS = "product-files";
+// Taxonomie (zabelie_categories) : un département et un sous-rayon, au format des colonnes lues.
+const CATEGORIES = [
+  { id: "11400000-0000-4000-8000-0000000000c1", slug: "edikasyon", parent_id: null, level: 1, position: 1, active: true,
+    label_fr: "Éducation", label_kr: "Edikasyon", label_en: "Education", label_es: "Educación" },
+  { id: "11400000-0000-4000-8000-0000000000c2", slug: "gid-pratik", parent_id: "11400000-0000-4000-8000-0000000000c1", level: 2, position: 1, active: true,
+    label_fr: "Guides pratiques", label_kr: "Gid pratik", label_en: "Practical guides", label_es: "Guías prácticas" },
+];
 // Opportunités (0143) : un jeu de TEST, au format exact de la fonction ; `/__opportunites?mode=vide` le vide.
 const OPPORTUNITES = {
   jours: 30,
@@ -60,7 +79,8 @@ function lignesVentes() {
 
 function token(role) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
-  return `${b({ alg: "HS256", typ: "JWT" })}.${b({ sub: ids[role], aal: "aal1", exp: 4102444800, iat: 1700000000, role: "authenticated" })}.fixture`;
+  const aal = role === "admin" ? { aal: "aal2", amr: [{ method: "totp", timestamp: 1700000000 }] } : { aal: "aal1" };
+  return `${b({ alg: "HS256", typ: "JWT" })}.${b({ sub: ids[role], ...aal, exp: 4102444800, iat: 1700000000, role: "authenticated" })}.fixture`;
 }
 
 const server = createServer(async (req, res) => {
@@ -84,8 +104,18 @@ const server = createServer(async (req, res) => {
   // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
   if (jointureAmbigue(tableDe(u.pathname), u.searchParams.get("select"))) return send(REFUS_PGRST201, 300);
   if (u.pathname === "/__health") return send({ ok: true });
-  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); exportsPdf = new Map(); objets = new Map(); opportunitesVides = false; ventesMode = "aucune"; return send({ ok: true }); }
+  if (u.pathname === "/__reset") {
+    projets = new Map(); operations = new Map(); revisions = new Map(); exportsPdf = new Map(); objets = new Map();
+    produits = new Map(); livrables = new Map(); fichiers = new Map(); ateliers = new Map(); opportunitesVides = false; ventesMode = "aucune";
+    return send({ ok: true });
+  }
   if (u.pathname === "/__objets") return send([...objets.keys()]);
+  if (u.pathname === "/__fiches") {
+    return send({ produits: [...produits.values()], livrables: [...livrables.values()], ateliers: Object.fromEntries(ateliers),
+      fichiers: [...fichiers.entries()].map(([chemin, octets]) => ({ chemin, empreinte: createHash("sha256").update(octets).digest("hex") })) });
+  }
+  // La modération, simulée : met en vente toutes les fiches du jeu de test.
+  if (u.pathname === "/__publier") { for (const p of produits.values()) p.status = "published"; return send({ ok: true }); }
   if (u.pathname === "/__ventes") { ventesMode = ["pleines", "aucune", "erreur"].includes(u.searchParams.get("mode")) ? u.searchParams.get("mode") : "aucune"; return send({ ok: true }); }
   if (u.pathname === "/__opportunites") { opportunitesVides = u.searchParams.get("mode") === "vide"; return send({ ok: true }); }
   if (u.pathname === "/__login") {
@@ -104,13 +134,15 @@ const server = createServer(async (req, res) => {
 
   if (u.pathname === "/auth/v1/user") {
     if (!moi) return send({ message: "invalid" }, 401);
-    return send({ id: moi, aud: "authenticated", role: "authenticated", email: `${role}@example.ht`, app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" });
+    // Seul `admin` a un facteur vérifié : `adminSansMfa` reproduit le compte sans double authentification.
+    const factors = role === "admin" ? [{ id: "facteur-admin", status: "verified", factor_type: "totp", friendly_name: "test", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" }] : [];
+    return send({ id: moi, aud: "authenticated", role: "authenticated", email: `${role}@example.ht`, app_metadata: {}, user_metadata: {}, factors, created_at: "2026-01-01T00:00:00Z" });
   }
   if (u.pathname.startsWith("/auth/v1/")) return send({});
 
   if (u.pathname === "/rest/v1/profiles") {
     const id = eq("id") || moi;
-    return single([{ id, display_name: "Vandè Tès", role: "creator", tier: "standard", suspended_at: null, suspended_reason: null }]);
+    return single([{ id, display_name: ADMINS.has(id) ? "Admin Tès" : "Vandè Tès", role: ADMINS.has(id) ? "admin" : "creator", tier: "standard", suspended_at: null, suspended_reason: null }]);
   }
   if (u.pathname === "/rest/v1/zabelie_policy_acceptances") {
     return send([{ policy_version: "cgu-v1" }, { policy_version: "confidentialite-v3" }]);
@@ -177,6 +209,25 @@ const server = createServer(async (req, res) => {
     if (!p || p.seller_id !== moi || p.archived_at) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
     p.archived_at = new Date().toISOString();
     return send(p.archived_at);
+  }
+  // Suppression d'un projet archivé (0149) : vérifier rend les chemins, exécuter supprime en cascade.
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_supprimer_projet") {
+    const b = await body();
+    const p = projets.get(b.p_projet);
+    if (!moi || !p || p.seller_id !== moi) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
+    if (!p.archived_at) return send({ code: "P0001", message: "authoring_archive_requis" }, 400);
+    const jour = Date.now() - 24 * 60 * 60 * 1000;
+    const servi = [...operations.values()].some((o) => o.project_id === p.id && (["queued", "running"].includes(o.etat)
+      || (Date.parse(o.created_at) >= jour && !(["cancelled", "failed"].includes(o.etat) && !o.soumis_le))));
+    if (servi) return send({ code: "P0001", message: "authoring_suppression_demain" }, 400);
+    const lignes = [...exportsPdf.values()].filter((e) => e.project_id === p.id).flatMap((e) => [{ chemin: e.chemin }, { chemin: e.extrait_chemin }]);
+    if (b.p_executer) {
+      projets.delete(p.id);
+      for (const [k, e] of exportsPdf) if (e.project_id === p.id) exportsPdf.delete(k);
+      for (const [k, o] of operations) if (o.project_id === p.id) operations.delete(k);
+      for (const x of produits.values()) if (x.zabelie_authoring_project_id === p.id) x.zabelie_authoring_project_id = null;
+    }
+    return send(lignes);
   }
 
   // ── Opérations d'IA (0142) : rejeu par clé, instantané figé, bail à jeton ──
@@ -257,6 +308,20 @@ const server = createServer(async (req, res) => {
     objets.set(chemin, octets);
     return send({ Key: `${BUCKET_EXPORTS}/${chemin}`, Id: randomUUID() });
   }
+  // Retrait d'objets (suppression d'un projet) : le service role seul.
+  if (u.pathname === `/storage/v1/object/${BUCKET_EXPORTS}` && req.method === "DELETE") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const b = await body();
+    return send((b.prefixes ?? []).filter((c) => objets.delete(c)).map((name) => ({ name })));
+  }
+  // Lecture des octets par le service role seul : la soumission recopie le PDF approuvé.
+  if (u.pathname.startsWith(prefixeObjet) && req.method === "GET") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const octets = objets.get(decodeURIComponent(u.pathname.slice(prefixeObjet.length)));
+    if (!octets) return send({ message: "objet absent" }, 404);
+    res.writeHead(200, { "content-type": "application/pdf", "content-length": octets.length });
+    return res.end(octets);
+  }
   if (u.pathname.startsWith(prefixeSigne) && req.method === "POST") {
     if (role !== "service") return send({ message: "signature : service role seulement" }, 403);
     const chemin = decodeURIComponent(u.pathname.slice(prefixeSigne.length));
@@ -319,6 +384,106 @@ const server = createServer(async (req, res) => {
     const n = ventesMode === "pleines" && moi === ids.seller ? PRODUITS_VENDUS.length : 0;
     res.writeHead(200, { "content-type": "application/json", "content-range": `*/${n}` });
     return res.end();
+  }
+
+  // ── « Soumettre à la revue » (0148) ─────────────────────────────────────────
+  // Comme la base : écriture des fiches par le service role seul (0024), le
+  // vendeur ne lit que les siennes (RLS), un projet mène à UNE fiche (index
+  // unique partiel), et jamais au projet d'un autre vendeur (garde).
+  if (u.pathname === "/rest/v1/zabelie_categories") {
+    const filtres = ["id", "slug", "level", "label_fr", "active"].filter((c) => u.searchParams.has(c));
+    return send(CATEGORIES.filter((c) => filtres.every((k) => String(c[k]) === eq(k))));
+  }
+  if (u.pathname === "/rest/v1/products" && req.method === "POST") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for table products" }, 403);
+    const b = await body();
+    const lien = b.zabelie_authoring_project_id ?? null;
+    if (lien) {
+      const p = projets.get(lien);
+      if (!p || p.seller_id !== b.seller_id) return send({ code: "42501", message: "authoring_lien_autre_vendeur" }, 403);
+      if ([...produits.values()].some((x) => x.zabelie_authoring_project_id === lien)) {
+        return send({ code: "23505", message: 'duplicate key value violates unique constraint "products_zabelie_authoring_project_unique"' }, 409);
+      }
+    }
+    // Les valeurs par défaut de la table (0001, 0040) : une fiche neuve est en stock, sans vente ni avis.
+    const ligne = { in_stock: true, sales_count: 0, rating_count: 0, rating_sum: 0, cover_url: null, category_id: null,
+      delivery_days: null, service_includes: null, ...b, id: randomUUID(), zabelie_authoring_project_id: lien, created_at: new Date().toISOString() };
+    produits.set(ligne.id, ligne);
+    return single([ligne]);
+  }
+  // Modération : seul le service role écrit (la route admin), comme 0024.
+  if (u.pathname === "/rest/v1/products" && req.method === "PATCH") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for table products" }, 403);
+    const maj = await body();
+    const cibles = [...produits.values()].filter((x) => x.id === eq("id"));
+    for (const x of cibles) Object.assign(x, maj);
+    return single(cibles);
+  }
+  if (u.pathname === "/rest/v1/products" && req.method === "GET") {
+    const lien = eq("zabelie_authoring_project_id");
+    // RLS : le public lit les fiches publiées, le vendeur les siennes, le service role tout.
+    const lignes = [...produits.values()].filter((x) =>
+      (role === "service" || x.seller_id === moi || x.status === "published")
+      && (!lien || x.zabelie_authoring_project_id === lien)
+      && ["id", "slug", "status", "kind", "category"].every((k) => !u.searchParams.has(k) || String(x[k]) === eq(k))
+      && (!u.searchParams.has("in_stock") || String(x.in_stock) === eq("in_stock")))
+      .map((x) => ({ ...x, seller: { display_name: ADMINS.has(x.seller_id) ? "Admin Tès" : "Vandè Tès" }, sous_rayon: null }));
+    if (!objet()) {
+      res.writeHead(200, { "content-type": "application/json", "content-range": lignes.length ? `0-${lignes.length - 1}/${lignes.length}` : "*/0" });
+      return res.end(JSON.stringify(lignes));
+    }
+    return single(lignes);
+  }
+  if (u.pathname === "/rest/v1/product_assets") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for table product_assets" }, 403);
+    if (req.method === "POST") {
+      const b = await body();
+      if ([...livrables.values()].some((l) => l.storage_path === b.storage_path)) return send({ code: "23505", message: "duplicate key value" }, 409);
+      const l = { ...b, id: randomUUID() };
+      livrables.set(l.id, l);
+      return send([l], 201);
+    }
+    if (req.method === "DELETE") {
+      const retires = (u.searchParams.get("id") || "").replace(/^in\.\(|\)$/g, "").split(",").filter(Boolean);
+      for (const [k, l] of livrables) if (l.product_id === eq("product_id") && retires.includes(k)) livrables.delete(k);
+      return send([]);
+    }
+    const lignesLivrables = [...livrables.values()].filter((l) =>
+      (!eq("product_id") || l.product_id === eq("product_id")) && (!eq("storage_path") || l.storage_path === eq("storage_path")));
+    // `count: "exact", head: true` (la garde « pas de fichier sans livrable ») : le compte dans l'en-tête.
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json", "content-range": `*/${lignesLivrables.length}` });
+      return res.end();
+    }
+    return single(lignesLivrables);
+  }
+  if ((u.pathname === "/rest/v1/zabelie_digital_details" || u.pathname === "/rest/v1/zabelie_digital_studio") && req.method === "POST") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied" }, 403);
+    const b = await body();
+    const cle = `${u.pathname.split("/").pop()}:${b.product_id}`;
+    const produit = produits.get(b.product_id);
+    if (!produit || produit.status !== "draft") return send({ code: "23514", message: "digital_details_draft_required" }, 400);
+    // `ignoreDuplicates` : une ligne existante n'est jamais remplacée.
+    if (!ateliers.has(cle) || !(req.headers.prefer || "").includes("ignore-duplicates")) ateliers.set(cle, b);
+    return send([], 201);
+  }
+  const prefixeFichier = `/storage/v1/object/${BUCKET_FICHIERS}/`;
+  if (u.pathname.startsWith(prefixeFichier) && req.method === "POST") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const morceaux = [];
+    for await (const c of req) morceaux.push(c);
+    const chemin = decodeURIComponent(u.pathname.slice(prefixeFichier.length));
+    if (fichiers.has(chemin) && req.headers["x-upsert"] !== "true") return send({ statusCode: "409", error: "Duplicate", message: "The resource already exists" }, 400);
+    fichiers.set(chemin, Buffer.concat(morceaux));
+    return send({ Key: `${BUCKET_FICHIERS}/${chemin}`, Id: randomUUID() });
+  }
+  if (u.pathname === `/storage/v1/object/list/${BUCKET_FICHIERS}` && req.method === "POST") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const b = await body();
+    const dossier = `${String(b.prefix ?? "").replace(/\/$/, "")}/`;
+    return send([...fichiers.entries()]
+      .filter(([k]) => k.startsWith(dossier) && !k.slice(dossier.length).includes("/") && k.slice(dossier.length).includes(b.search ?? ""))
+      .map(([k, octets]) => ({ name: k.slice(dossier.length), id: randomUUID(), metadata: { size: octets.length, mimetype: "application/pdf" } })));
   }
 
   if (u.pathname.startsWith("/rest/v1/rpc/")) return send([]);

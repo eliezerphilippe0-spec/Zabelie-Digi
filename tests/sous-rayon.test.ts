@@ -87,7 +87,7 @@ function sansCommentaires(s: string): string {
 }
 
 test("SR4 — la route digitale VALIDE le sous-rayon contre le département canonique, et refuse sinon", () => {
-  const src = sansCommentaires(readFileSync("app/api/products/route.ts", "utf8"));
+  const src = sansCommentaires((readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8")));
   assert.match(src, /import \{ normalizeCategory, normalizeSousRayon \} from "@\/lib\/product-categories";/);
   // La LIAISON : validé contre `categorieCanonique`, pas contre la valeur brute du client.
   assert.match(src, /const sousRayon = await normalizeSousRayon\(supabase, body\.categoryId, categorieCanonique\);/);
@@ -95,7 +95,7 @@ test("SR4 — la route digitale VALIDE le sous-rayon contre le département cano
 });
 
 test("SR5 — la route ÉCRIT le sous-rayon validé, et le physique l'écrit aussi sur `products`", () => {
-  const digital = sansCommentaires(readFileSync("app/api/products/route.ts", "utf8"));
+  const digital = sansCommentaires((readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8")));
   assert.match(digital, /category: categorieCanonique,\s*category_id: sousRayon\.id,/);
   const physique = sansCommentaires(readFileSync("app/api/products/physical/route.ts", "utf8"));
   assert.match(physique, /category: departmentLabel,\s*category_id: category\.id,/);

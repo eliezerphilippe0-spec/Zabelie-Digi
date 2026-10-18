@@ -147,7 +147,7 @@ test("R4 — les fichiers surveillés par R3 existent tous", () => {
 test("R2 — la promotion à la publication borne bien sur « buyer »", () => {
   // Le cas nommé, en plus du contrôle général : si la route change de forme,
   // R1 pourrait cesser de la voir sans que personne s'en aperçoive.
-  const PUB = code(readFileSync("app/api/products/route.ts", "utf8"));
+  const PUB = code((readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8")));
   assert.match(
     PUB,
     /\.update\(\s*\{\s*role:\s*"creator"\s*\}\s*\)[\s\S]{0,160}\.eq\(\s*"role",\s*"buyer"\s*\)/,

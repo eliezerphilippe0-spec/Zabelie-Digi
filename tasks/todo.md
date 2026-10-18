@@ -243,7 +243,7 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 **Fichiers :** `supabase/migrations/0147_zabelie_authoring_exports.sql`, `app/api/digital-authoring/projects/[id]/exports/route.ts` (création), `app/api/digital-authoring/exports/[id]/route.ts` (lien signé, approbation), `lib/digital-authoring/export.ts`, `lib/storage-buckets.ts`, `components/authoring-editor.tsx` (étape « 5. Le PDF »), `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`, `tests/digital-authoring-api-exports.test.ts`, `e2e-creation/pdf.spec.ts`.
 **Taille :** M.
 **Mesuré (2026-10-16) :** le guide et son extrait gratuit sont rendus par le serveur depuis la révision approuvée, déposés dans le bucket privé `authoring-exports` (PDF seulement, 20 Mo, aucune policy) à un chemin adressé par le contenu, puis enregistrés par une fonction que seul le service role exécute ; la base recalcule le chemin et la route refuse de répondre s'il diffère. Rendre deux fois la même révision donne les mêmes octets et la même ligne. Aperçu et téléchargement par un lien signé de 5 minutes, jamais en cache, après lecture sous la RLS (l'export d'un autre : 404). L'écran montre pages, taille réelle et empreinte ; « Approuver ce PDF » n'ouvre qu'après l'aperçu et renvoie l'empreinte montrée. En e2e, les octets servis par le lien sont un PDF dont l'empreinte est celle de l'écran. 5 tests du module, 9 des routes, 10 cas SQL (EX1 à EX10, CI), 3 parcours e2e ; 19 mutations tuées sur 19.
-**Reste (5.3) :** la fermeture de compte garde les projets et les exports (comme les pièces KYC), et une suppression complète laisserait les fichiers du bucket : à traiter avec l'export et la suppression de compte. Durée de conservation des exports non acquis : décision D5, ouverte.
+**Traité en 5.3 :** la fermeture de compte ne garde plus les projets ni les PDF (purge quotidienne, 0149), et l'export de compte les contient. Durée de conservation des exports non acquis d'un compte OUVERT : décision D5, toujours ouverte.
 
 ### 4.4 Extrait gratuit automatique (idée 1, validée le 2026-10-16)
 **Description :** depuis la même révision que le guide : page de titre, sommaire complet, première section entière, puis une page de fin d'extrait qui dit ce que contient le guide complet (nombre de pages et de sections). Même moteur, même déterminisme, empreinte propre.
@@ -272,37 +272,42 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 5.1 Extraction sans changement de comportement
 **Description :** sortir la création de brouillon de `app/api/products/route.ts` et la confirmation d'actif de `app/api/products/asset/route.ts` en fonctions partagées ; les deux routes les appellent.
 **Critères :**
-- [ ] Tous les tests existants des deux routes passent sans modification.
-- [ ] Les réponses des routes sont identiques avant et après (test d'équivalence).
+- [x] Tous les tests existants des deux routes passent sans modification.
+- [x] Les réponses des routes sont identiques avant et après (test d'équivalence).
 **Vérification :** `npm test` complet ; e2e publication existants.
 **Dépendances :** aucune (peut avancer en parallèle de la phase 4).
 **Fichiers :** `lib/product-draft.ts`, `lib/product-asset-confirm.ts`, `app/api/products/route.ts`, `app/api/products/asset/route.ts`, `tests/product-draft-extraction.test.ts`.
 **Taille :** M.
+**Mesuré (2026-10-18) :** déplacement tel quel, les deux routes appellent les fonctions partagées. Les gardes qui lisaient les routes lisent aussi les modules extraits, et le cliquet des messages en dur les compte toujours (rien n'a baissé par simple déplacement). Avant le commit, treize scénarios de création et treize de confirmation rejoués contre l'ancienne route de `main` : réponses et écritures identiques. 5 tests (E1 à E5) gardent l'appel, les refus et les écritures.
 
 ### 5.2 « Soumettre à la revue » : un seul produit par projet
 **Description :** colonne additive `products.zabelie_authoring_project_id` + index unique partiel ; action idempotente qui crée ou retrouve le brouillon, dépose et confirme l'export approuvé, et laisse la modération existante décider. **Bloquée par C4 et D2.**
 **Critères :**
-- [ ] Deux soumissions simultanées, même clé puis clés différentes : un seul produit, aucune fiche orpheline (T19).
-- [ ] Panne entre dépôt et association : aucun produit public invalide, reprise prudente (T20) ; produit d'un autre vendeur refusé (T03).
-- [ ] Aucune publication automatique : le produit reste `draft`.
+- [x] Deux soumissions simultanées, même clé puis clés différentes : un seul produit, aucune fiche orpheline (T19).
+- [x] Panne entre dépôt et association : aucun produit public invalide, reprise prudente (T20) ; produit d'un autre vendeur refusé (T03).
+- [x] Aucune publication automatique : le produit reste `draft`.
 **Vérification :** test concurrent SQL en CI ; tests d'intégration avec panne injectée.
 **Dépendances :** 4.3, 5.1, C4, D2.
-**Fichiers :** `supabase/migrations/NNNN_zabelie_authoring_product_link.sql`, `app/api/digital-authoring/submit/route.ts`, `lib/digital-authoring/submit.ts`, `supabase/tests/authoring_submit_concurrent.sh`, `tests/digital-authoring-soumission.test.ts`.
+**Fichiers :** `supabase/migrations/0148_zabelie_authoring_product_link.sql`, `app/api/digital-authoring/projects/[id]/soumission/route.ts`, `lib/digital-authoring/soumission.ts`, `lib/product-draft.ts` (lien vers le projet), `components/authoring-soumission.tsx` et `components/authoring-editor.tsx` (étape « 6. La fiche produit »), `app/tableau-de-bord/creation/[projectId]/page.tsx`, `supabase/tests/authoring_product_link.test.sql`, `supabase/tests/authoring_submit_concurrent.sh`, `tests/digital-authoring-soumission.test.ts`, `e2e-creation/soumission.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-18) :** la route relit sous le JWT le projet, l'export désigné et la fiche déjà rattachée ; elle crée la fiche par la fonction partagée de 5.1 (mêmes règles que `/vendre` : prix, rayon et sous-rayon validés en base, attestation enregistrée avant la fiche), avec le lien vers le projet. L'unicité tient à l'insertion (index unique partiel de 0148) : la soumission perdante reçoit le refus d'unicité et reprend la fiche de la gagnante. Le PDF approuvé est relu au bucket privé, ses octets comparés à l'empreinte approuvée, puis recopié sous la fiche à un chemin déterministe (UUID version 8 tiré de l'empreinte) et confirmé par la logique de 5.1 : une reprise après panne retombe sur le même objet et la même ligne. Un nouveau PDF du même guide remplace l'ancien sur une fiche en brouillon (la ligne seulement, après confirmation du nouveau ; l'objet reste au stockage). Fiche publiée ou retirée : rien n'est touché. En base, la garde refuse le projet d'un autre vendeur et fige le lien. 11 tests de la route, 1 de la création partagée (E6), 6 cas SQL (PL1 à PL6) et le script concurrent (dix sessions, une fiche), exécutés en CI seulement, 3 parcours e2e (32 sur 32 dans la suite du Studio) ; 25 mutations tuées sur 25.
+**Reste :** 0148 n'est pas appliquée (protocole dans `OPS_TODO.md`, « oui » du porteur requis).
 
 ### 5.3 Atelier numérique, suppression et export de compte
 **Description :** extrait, résultats, prérequis, FAQ et détails numériques remplis via `parseDigitalStudio` et les contrats existants ; suppression et archivage de projet ; tables du Studio dans l'export de compte.
 **Critères :**
-- [ ] Suppression du projet après une release acquise : droit et livrable intacts (T21).
-- [ ] Paiement en attente, annulé ou remboursé : règles d'accès inchangées (T22) ; drapeaux absents ou schéma ancien : marketplace fonctionnelle (T24).
-- [ ] L'export de compte contient les projets du vendeur, sans données d'un autre.
+- [x] Suppression du projet après une release acquise : droit et livrable intacts (T21).
+- [x] Paiement en attente, annulé ou remboursé : règles d'accès inchangées (T22) ; drapeaux absents ou schéma ancien : marketplace fonctionnelle (T24).
+- [x] L'export de compte contient les projets du vendeur, sans données d'un autre.
 **Vérification :** SQL en CI ; tests de régression des téléchargements.
 **Dépendances :** 5.2.
-**Fichiers :** `lib/digital-authoring/listing.ts`, `app/api/account/export/route.ts`, `app/api/digital-authoring/projects/[id]/route.ts`, `supabase/tests/authoring_retention.test.sql`, `tests/digital-authoring-fiche.test.ts`.
+**Fichiers :** `supabase/migrations/0149_zabelie_authoring_suppression.sql`, `lib/digital-authoring/soumission.ts` (pré-remplissage, à la place du `listing.ts` prévu), `app/api/digital-authoring/projects/[id]/soumission/route.ts`, `app/api/digital-authoring/projects/[id]/route.ts` (DELETE), `app/api/digital-authoring/purge/route.ts` et `vercel.json` (cron), `app/api/account/export/route.ts`, `components/authoring-editor.tsx`, `supabase/tests/authoring_retention.test.sql`, `tests/digital-authoring-fiche.test.ts`, `tests/digital-authoring-suppression.test.ts`, `e2e-creation/suppression.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-18) :** à la soumission, les détails numériques (PDF, langue du guide, pages et sommaire) et l'atelier (aperçu = la première section, celle de l'extrait gratuit déjà approuvé ; résultats et prérequis du brief) sont écrits par les contrats existants `parseDigitalDetails` et `parseDigitalStudio`, seulement si la ligne manque : une soumission suivante n'écrase rien. Suppression : seulement un projet ARCHIVÉ (l'archivage ferme demandes, exports et soumissions, donc la vérification reste vraie), jamais un projet qui a servi aujourd'hui (les quotas se comptent sur les opérations, qui partent avec le projet : sans cette règle, supprimer rendrait des suggestions au vendeur et à la plateforme). Les PDF quittent le bucket privé AVANT les lignes, comme la purge KYC, et la route ne retire que des chemins du dossier du projet. La fiche, son fichier, sa version publiée et le droit de l'acheteur restent (T21, SQL). Un compte fermé voit ses projets purgés par un cron quotidien, indépendant du drapeau. L'export de compte ajoute projets, versions, PDF (sans chemin) et suggestions (sans jeton), bornés au vendeur ; une lecture ratée rend 503. Le code des téléchargements n'a pas changé (T22) ; la route classique ne nomme pas la colonne de 0148 (T24, E6). 4 tests de la fiche et de l'export, 7 de la suppression et de la purge, 7 cas SQL (RT1 à RT7, CI), 1 parcours e2e (33 sur 33 dans la suite du Studio) ; 26 mutations tuées sur 26.
+**Reste :** 0148 et 0149 ne sont pas appliquées (protocoles dans `OPS_TODO.md`).
 
 ## Checkpoint 5
-- [ ] Un projet → un produit, sous concurrence ; achats intacts.
+- [x] Un projet → un produit, sous concurrence ; achats intacts.
 - [ ] PR 5 relue ; migrations toujours non appliquées.
 
 ---

@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import { projetPourEditeur, type ProjetEditeur } from "@/lib/digital-authoring/api";
 import { rapprocherApresPerte } from "@/lib/digital-authoring/revision";
@@ -7,6 +8,9 @@ import { ficheTest, regrouperParCode, type CodeControle, type Controle } from "@
 import { exportAJour, lireExportClient, tailleLisible, type ExportClient } from "@/lib/digital-authoring/export";
 import type { Lang } from "@/lib/i18n";
 import { ConfirmationEnvoi, EtatSuggestion, useSuggestions, type PlanPropose, type Quota } from "@/components/authoring-suggestion";
+import { AuthoringSoumission } from "@/components/authoring-soumission";
+import type { FicheRattachee } from "@/lib/digital-authoring/soumission";
+import type { OptionCategorie, OptionSousRayon } from "@/lib/product-categories";
 import {
   brouillonDiffere,
   effacerBrouillon,
@@ -41,6 +45,9 @@ import {
  * PDF (tâche 4.3) : créé par le serveur depuis la révision approuvée, ouvert
  * par un lien signé de cinq minutes, puis approuvé TEL QUEL : l'écran renvoie
  * l'empreinte du fichier montré, et le bouton n'ouvre qu'après l'aperçu.
+ *
+ * Fiche produit (tâche 5.2) : « Soumettre à la revue » n'ouvre qu'avec le PDF
+ * approuvé de la révision courante ; la fiche naît en brouillon.
  *
  * Sauvegarde (STU 05) :
  *   - automatique une seconde après la dernière frappe, et par le bouton ;
@@ -78,6 +85,9 @@ export function AuthoringEditor({
   quotaInitial = null,
   lang = "fr",
   exportInitial = null,
+  rayons = [],
+  sousRayons = [],
+  ficheInitiale = null,
 }: {
   initial: ProjetEditeur;
   labels: CopieCreation;
@@ -89,9 +99,15 @@ export function AuthoringEditor({
   lang?: Lang;
   /** Le dernier PDF du projet, lu sous le JWT (0147) ; `null` s'il n'y en a pas. */
   exportInitial?: ExportClient | null;
+  /** Rayons et sous-rayons ouverts à la publication, lus en base par la page. */
+  rayons?: OptionCategorie[];
+  sousRayons?: OptionSousRayon[];
+  /** La fiche déjà rattachée au projet (0148), lue sous le JWT ; `null` s'il n'y en a pas. */
+  ficheInitiale?: FicheRattachee | null;
 }) {
   const e = labels.editeur;
   const ids = useId();
+  const router = useRouter();
   const url = `/api/digital-authoring/projects/${initial.id}`;
   const [projet, setProjet] = useState({
     titre: initial.titre,
@@ -111,6 +127,7 @@ export function AuthoringEditor({
   const [rendu, setRendu] = useState(false);
   const [apercuOuvert, setApercuOuvert] = useState(false);
   const [approbationPdf, setApprobationPdf] = useState(false);
+  const [suppression, setSuppression] = useState(false);
   const [statut, setStatut] = useState<Statut>("propre");
   const [message, setMessage] = useState<string | null>(null);
   const [proposition, setProposition] = useState<BrouillonLocal | null>(null);
@@ -452,6 +469,26 @@ export function AuthoringEditor({
   async function archiver() {
     if (!window.confirm(e.confirmerArchive)) return;
     if (await action({ action: "archiver" })) setArchive(true);
+  }
+
+  /** Suppression définitive (5.3) : seulement un projet archivé, et jamais sans confirmation. */
+  async function supprimerProjet() {
+    if (!window.confirm(e.confirmerSupprimerProjet)) return;
+    setSuppression(true);
+    setMessage(null);
+    try {
+      const r = await fetch(url, { method: "DELETE" });
+      if (r.ok) {
+        if (stock.current) effacerBrouillon(stock.current, userId, initial.id);
+        router.push("/tableau-de-bord/creation");
+        return;
+      }
+      const d = await r.json().catch(() => null);
+      setMessage(typeof d?.error === "string" ? d.error : e.erreurSauvegarde);
+    } catch {
+      setMessage(e.erreurSauvegarde);
+    }
+    setSuppression(false);
   }
 
   const majSection = (id: string, maj: Partial<Section>) => {
@@ -850,6 +887,9 @@ export function AuthoringEditor({
             </div>
           )}
         </section>
+
+        <AuthoringSoumission projetId={initial.id} labels={labels.soumission} rayons={rayons} sousRayons={sousRayons}
+          ficheInitiale={ficheInitiale} exportPret={pdfAJour && pdf?.approuveLe ? pdf.id : null} />
       </fieldset>
 
       {message && (
@@ -864,8 +904,11 @@ export function AuthoringEditor({
         </div>
       )}
 
-      {!archive && (
+      {!archive ? (
         <button type="button" onClick={archiver} disabled={statut === "envoi"} className="min-h-11 rounded-xl border border-line px-4 text-sm">{e.archiver}</button>
+      ) : (
+        <button type="button" onClick={() => void supprimerProjet()} disabled={suppression}
+          className="min-h-11 rounded-xl border border-line px-4 text-sm text-danger-text disabled:opacity-40">{e.supprimerProjet}</button>
       )}
 
       {/* Barre collante : sur un téléphone, l'état et le bouton restent sous le pouce. */}

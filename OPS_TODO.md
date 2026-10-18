@@ -188,6 +188,69 @@ Vérifications après application, en lecture :
 Connu, à traiter en 5.3 : la fermeture de compte garde projets et exports ; une suppression complète laisserait les
 fichiers du bucket (même situation que les pièces KYC). Conservation des exports non acquis : décision D5, ouverte.
 
+### Migration `0148_zabelie_authoring_product_link.sql` — protocole d'application (PR 5, « Soumettre à la revue »)
+
+✅ **APPLIQUÉE le 2026-10-18 à 22:10:16 UTC** sur « oui » du porteur (C2-A), avant la fusion de la PR 5 (#382, tête
+`4e4e445`, CI verte). Preuves : journal `20261018221016` ; SQL reçu = fichier (méthode 0086, `52531030…a93d`,
+28 949 car., aucun antislash) ; ZB148 passées ; sonde 151 → 153 objets, aucun perdu (comparée avant), seule absence
+toujours `zabelie_purge_sent_notices(integer)` ; 0 fiche rattachée, 10 fiches intactes, aucun rôle client n'écrit
+`products` ; registre 148 lignes, 146 appliquées (empreinte canonique `926938b6…f5e3`). La fusion de #382 demande
+encore son « oui ».
+
+Avant application : « oui » du porteur requis, puis un autre avant la fusion de la PR 5 (C2-A), même CI verte.
+Exige `0141`.
+
+C'est la première migration du Studio qui touche une table existante : `products`. Additive : une colonne nullable
+`zabelie_authoring_project_id` (clé étrangère vers `zabelie_authoring_projects`, `on delete set null`), un index unique
+partiel (un projet, une fiche), une garde `zabelie_products_projet_garde` (même vendeur que le projet, lien immuable une
+fois posé, pour tout rôle) et la sonde redéfinie (la garde et la colonne en plus). Aucune écriture accordée à un rôle
+client : `products` reste écrit par le service role seul (0024). Aucune table d'argent ni de commande n'est touchée,
+aucune ligne existante n'est modifiée. L'index se construit sous verrou d'écriture sur `products` : la table est petite,
+c'est l'affaire d'un instant, mais mieux vaut appliquer hors d'une heure de publication.
+
+Ordre proposé : CI verte sur la tête de la PR 5 (dont `sql-tests` : `authoring_product_link.test.sql` et
+`authoring_submit_concurrent.sh`, dix soumissions simultanées pour une seule fiche) → comparaison de la sonde (elle ne
+fait qu'ajouter) → application de `0148` → vérifications ci-dessous → registre interne inscrit à la main (empreinte
+canonique par `node scripts/zabelie-migration-hash.mjs`) → fusion. Le Studio reste éteint en production.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0148_zabelie_authoring_product_link.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB148` passées (la migration lève sinon).
+3. `select count(*) from products where zabelie_authoring_project_id is not null` : 0 (aucune fiche rattachée d'office).
+4. `select objet, present from zabelie_objets_requis() where objet in ('zabelie_products_projet_garde',
+   'products.zabelie_authoring_project_id')` : deux lignes, `present` vrai ; sonde 151 → 153 objets, aucun perdu.
+
+Retour arrière : le Studio étant éteint, aucun n'est nécessaire. Ne pas supprimer la colonne à la main : la route
+classique de publication ne la nomme pas et fonctionne avec ou sans elle.
+
+### Migration `0149_zabelie_authoring_suppression.sql` — protocole d'application (PR 5, suppression et purge)
+
+✅ **APPLIQUÉE le 2026-10-18 à 22:15:32 UTC** sur « oui » du porteur (C2-A), après `0148`, avant la fusion de la PR 5
+(#382, tête `e73e71c` : migration et code identiques à `4e4e445`, CI verte ; `sql-tests` vert sur `e73e71c`). Preuves :
+journal `20261018221532` ; SQL reçu = fichier (méthode 0086, `73631fd5…52d9`, 34 041 car., aucun antislash) ; ZB149
+passées ; sonde 153 → 156 objets, aucun perdu (comparée avant), seule absence toujours
+`zabelie_purge_sent_notices(integer)` ; droits vérifiés (suppression : `authenticated` oui, `anon` non ; purge : service
+role seul) ; 0 projet, 10 fiches intactes ; `zabelie_authoring_purge_candidats(10)` répond, 0 candidat ; registre
+149 lignes, 147 appliquées (empreinte canonique `0f7e2c5d…2a06`). Le cron part avec la fusion de #382.
+
+Avant application : « oui » du porteur requis (C2-A). Exige `0141`, `0142`, `0147` ; à appliquer après `0148`.
+
+Additive : quatre fonctions, aucune table ni colonne. `zabelie_authoring_supprimer_projet(uuid, boolean)` sous
+`auth.uid()` (projet archivé du vendeur, qui n'a pas servi aujourd'hui), `zabelie_authoring_purge_candidats(integer)` et
+`zabelie_authoring_purge_comptes_fermes(uuid[])` réservées au service role (projets des comptes `account_closed`), et une
+règle interne `zabelie_authoring_projet_utilise(uuid)` exécutable par aucun rôle client. La sonde est redéfinie avec les
+trois premières.
+
+Le cron `/api/digital-authoring/purge` (15 h 45 UTC) part avec la fusion. Tant que `0149` manque, il journalise
+`0149_absente` et ne fait rien. Il tourne même Studio éteint : un compte fermé se purge quand même.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0149_zabelie_authoring_suppression.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB149` passées (la migration lève sinon).
+3. Sonde : 153 → 156 objets, aucun perdu.
+4. Premier passage du cron dans les journaux Vercel : une ligne `[authoring/purge]`, `purges: 0` attendu (aucun compte
+   fermé n'a de projet du Studio aujourd'hui).
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347

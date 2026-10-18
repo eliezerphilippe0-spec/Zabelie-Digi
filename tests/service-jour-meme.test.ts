@@ -20,7 +20,7 @@ import { DICT, LANGS } from "@/lib/i18n";
  */
 
 test("la route accepte 0 jour et refuse le négatif", () => {
-  const src = readFileSync("app/api/products/route.ts", "utf8");
+  const src = (readFileSync("app/api/products/route.ts", "utf8") + readFileSync("lib/product-draft.ts", "utf8"));
   assert.ok(
     src.includes("d < 0 || d > 365"),
     "la borne basse n'est pas 0 — le délai « jour même » est refusé côté serveur"

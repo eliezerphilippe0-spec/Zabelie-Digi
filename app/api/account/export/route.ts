@@ -34,6 +34,29 @@ export async function GET() {
   ]);
   if (acceptances.error || !acceptances.data) return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
 
+  /* STUDIO DE CRÉATION (tâche 5.3) : les guides du vendeur, leurs versions,
+   * leurs PDF et les suggestions reçues. Bornés à SES lignes (`seller_id`).
+   * Ni chemin de stockage ni jeton de bail : ce sont des détails internes, pas
+   * ses données. Une lecture ratée rend 503 plutôt qu'un export qui se tairait
+   * sur ses guides ; des tables absentes (Studio jamais installé) rendent vide. */
+  const studio = await Promise.all([
+    admin.from("zabelie_authoring_projects")
+      .select("id, titre, langue, public_vise, marche_diaspora, brief, contenu, revision, plan_approuve_revision, revision_approuvee, revision_approuvee_le, created_at, updated_at, archived_at")
+      .eq("seller_id", user.id),
+    admin.from("zabelie_authoring_revisions")
+      .select("id, project_id, numero, titre, langue, public_vise, marche_diaspora, brief, contenu, created_at")
+      .eq("seller_id", user.id),
+    admin.from("zabelie_authoring_exports")
+      .select("id, project_id, revision, empreinte, taille, pages, extrait_empreinte, extrait_taille, extrait_pages, created_at, approuve_le")
+      .eq("seller_id", user.id),
+    admin.from("zabelie_authoring_operations")
+      .select("id, project_id, type, section_id, etat, fournisseur, resultat, code_erreur, created_at, termine_le")
+      .eq("seller_id", user.id),
+  ]);
+  const absente = (e: { code?: string } | null) => e?.code === "42P01" || e?.code === "PGRST205";
+  if (studio.some((r) => r.error && !absente(r.error))) return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
+  const [projetsStudio, revisionsStudio, exportsStudio, operationsStudio] = studio.map((r) => (r.error ? [] : r.data ?? []));
+
   let collections;
   try { collections = await exportCollections(supabase, user.id); }
   catch { return NextResponse.json({ error: t(lang, "collections.error") }, { status: 503 }); }
@@ -46,6 +69,12 @@ export async function GET() {
     orders_as_buyer: orders.data ?? [],
     wallet: wallet.data ?? null,
     legal_acknowledgements: acceptances.data,
+    studio_creation: {
+      projets: projetsStudio,
+      revisions: revisionsStudio,
+      exports_pdf: exportsStudio,
+      suggestions: operationsStudio,
+    },
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
