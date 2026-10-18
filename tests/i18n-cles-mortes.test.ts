@@ -47,12 +47,10 @@ const ROOTS = ["app", "components", "lib"];
  * contre-exemple longtemps après que l'espagnol soit devenu valide.
  */
 const SANS_APPELANT: Record<string, string> = {
-  "status.draft":
-    "Supplantée par une décision produit explicite, pas oubliée : " +
-    "`app/vendre/page.tsx:126` mappe tout ce qui n'est pas `published` sur " +
-    "`status.review`, parce qu'un vendeur qui lisait « Brouillon » croyait " +
-    "sa soumission échouée et resoumettait. Conservée si la revue humaine " +
-    "cesse un jour d'être systématique.",
+  /* `status.draft` en est sorti le 2026-10-18 : la modération l'affiche à
+   * l'administrateur, qui voit l'état réel. Le VENDEUR, lui, lit toujours
+   * `status.review` (`app/vendre/page.tsx`) : « Brouillon » lui faisait croire
+   * sa soumission échouée. */
   "home.badge":
     "Résidu de l'assainissement de l'accueil — le bandeau « La marketplace " +
     "haïtienne » a été retiré du hero. À supprimer ou à rebrancher, non " +

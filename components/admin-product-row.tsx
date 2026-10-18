@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const STATUSES = ["draft", "published", "archived"] as const;
+type Statut = (typeof STATUSES)[number];
+
+/** Libellés traduits par la page : la VALEUR envoyée au serveur reste `draft` / `published` / `archived`. */
+export type LibellesStatut = { statuts: Record<Statut, string>; nom: string };
 
 /**
  * Message de repli — utilisé UNIQUEMENT quand le serveur n'en fournit aucun.
@@ -20,12 +24,15 @@ export function AdminProductRow({
   title,
   seller,
   status,
+  labels,
   children,
 }: {
   id: string;
   title: string;
   seller: string;
   status: string;
+  /** `nom` contient `{titre}`, remplacé par le titre de la fiche. */
+  labels: LibellesStatut;
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -91,17 +98,19 @@ export function AdminProductRow({
         </div>
         {/* Le nom accessible porte le TITRE : un lecteur d'écran qui parcourt la
             liste entend « Statut de « … » » pour chaque fiche, pas une suite de
-            listes déroulantes sans nom (constaté le 2026-10-18). */}
+            listes déroulantes sans nom (constaté le 2026-10-18). Les choix sont
+            traduits ; la valeur envoyée au serveur ne change pas. */}
+        {/* 44 px de haut : la cible tactile minimale, au pouce sur un téléphone. */}
         <select
-          aria-label={`Statut de « ${title} »`}
+          aria-label={labels.nom.replace("{titre}", title)}
           value={value}
           disabled={saving}
           onChange={(e) => change(e.target.value)}
-          className="shrink-0 rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-accent disabled:opacity-60"
+          className="min-h-11 shrink-0 rounded-lg border border-line bg-ink/40 px-3 text-sm outline-none focus:border-accent disabled:opacity-60"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {labels.statuts[s]}
             </option>
           ))}
         </select>
