@@ -1249,6 +1249,8 @@ const fr = {
   "status.review": "En attente de revue",
   "status.review.hint": "Nous regardons chaque fiche avant sa mise en ligne. Inutile de la soumettre à nouveau.",
   "status.published": "Publié",
+  "status.archived": "Archivé",
+  "admin.status.aria": "Statut de « {titre} »",
 
   // BL-131 (revue P2) — mot de passe oublié.
   "auth.forgot": "Mot de passe oublié ?",
@@ -2627,6 +2629,8 @@ const ht: Record<I18nKey, string> = {
   "status.review": "N ap tann revizyon",
   "status.review.hint": "Nou gade chak fich anvan li parèt. Ou pa bezwen voye l ankò.",
   "status.published": "Pibliye",
+  "status.archived": "Achive",
+  "admin.status.aria": "Estati « {titre} »",
 
   "auth.forgot": "Modpas bliye ?",
   "forgot.title": "Modpas bliye",
@@ -4009,6 +4013,8 @@ const en = {
   "status.review": "Awaiting review",
   "status.review.hint": "We look at every listing before it goes live. No need to submit it again.",
   "status.published": "Published",
+  "status.archived": "Archived",
+  "admin.status.aria": "Status of “{titre}”",
 
   // Forgot / reset password
   "auth.forgot": "Forgot your password?",
@@ -5391,6 +5397,8 @@ const es = {
   "status.review": "En espera de revisión",
   "status.review.hint": "Revisamos cada anuncio antes de publicarlo. No hace falta volver a enviarlo.",
   "status.published": "Publicado",
+  "status.archived": "Archivado",
+  "admin.status.aria": "Estado de « {titre} »",
 
   // Contraseña olvidada / restablecer
   "auth.forgot": "¿Olvidaste tu contraseña?",

@@ -475,6 +475,10 @@ export default async function AdminPage({
                 title={p.title}
                 seller={one(p.seller)?.display_name ?? "—"}
                 status={p.status}
+                labels={{
+                  statuts: { draft: t(lang, "status.draft"), published: t(lang, "status.published"), archived: t(lang, "status.archived") },
+                  nom: t(lang, "admin.status.aria"),
+                }}
               >
                 {digitalByProduct.has(p.id) && <details className="mt-3 rounded-xl border border-line p-3">
                   <summary className="min-h-11 cursor-pointer font-semibold">{t("fr", "digital.edit.title")}</summary>
