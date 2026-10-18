@@ -190,8 +190,15 @@ fichiers du bucket (même situation que les pièces KYC). Conservation des expor
 
 ### Migration `0148_zabelie_authoring_product_link.sql` — protocole d'application (PR 5, « Soumettre à la revue »)
 
-⏳ **NON APPLIQUÉE.** « oui » du porteur requis avant l'application, puis un autre avant la fusion de la PR 5 (C2-A),
-même CI verte. Exige `0141`.
+✅ **APPLIQUÉE le 2026-10-18 à 22:10:16 UTC** sur « oui » du porteur (C2-A), avant la fusion de la PR 5 (#382, tête
+`4e4e445`, CI verte). Preuves : journal `20261018221016` ; SQL reçu = fichier (méthode 0086, `52531030…a93d`,
+28 949 car., aucun antislash) ; ZB148 passées ; sonde 151 → 153 objets, aucun perdu (comparée avant), seule absence
+toujours `zabelie_purge_sent_notices(integer)` ; 0 fiche rattachée, 10 fiches intactes, aucun rôle client n'écrit
+`products` ; registre 148 lignes, 146 appliquées (empreinte canonique `926938b6…f5e3`). La fusion de #382 demande
+encore son « oui ».
+
+Avant application : « oui » du porteur requis, puis un autre avant la fusion de la PR 5 (C2-A), même CI verte.
+Exige `0141`.
 
 C'est la première migration du Studio qui touche une table existante : `products`. Additive : une colonne nullable
 `zabelie_authoring_project_id` (clé étrangère vers `zabelie_authoring_projects`, `on delete set null`), un index unique
