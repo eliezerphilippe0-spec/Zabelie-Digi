@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     if (ref && !ref.startsWith("biz:")) {
       const { data: o } = await admin
         .from("orders")
-        .select("products(slug)")
+        .select("products!orders_product_id_fkey(slug)")
         .eq("id", ref)
         .maybeSingle();
       const prod = o?.products as unknown as { slug?: string } | { slug?: string }[] | null;
@@ -151,7 +151,7 @@ export async function GET(req: Request) {
     // Montant incohérent : paiement rejeté, aucune livraison.
     const { data: o } = await admin
       .from("orders")
-      .select("products(slug)")
+      .select("products!orders_product_id_fkey(slug)")
       .eq("id", orderId)
       .maybeSingle();
     const prod = o?.products as unknown as { slug?: string } | { slug?: string }[] | null;

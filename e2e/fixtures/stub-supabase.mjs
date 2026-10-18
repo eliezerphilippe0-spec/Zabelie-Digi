@@ -16,6 +16,7 @@
  */
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
 
 const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
@@ -172,6 +173,12 @@ const server = createServer((req, res) => {
         ? send(200, rows[0])
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
+
+  // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
+  if (jointureAmbigue(tableDe(url.pathname), url.searchParams.get("select"))) {
+    console.error("[stub] PGRST201", tableDe(url.pathname), url.searchParams.get("select"));
+    return send(300, REFUS_PGRST201);
+  }
 
   // The real limiter returns a boolean; an empty PostgREST result is an error.
   if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);

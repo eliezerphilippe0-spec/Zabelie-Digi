@@ -251,8 +251,8 @@ export default async function AdminPage({
             .from("orders")
             .select(
               withRef
-                ? "id, order_ref, status, amount_htg, created_at, product:products(title)"
-                : "id, status, amount_htg, created_at, product:products(title)"
+                ? "id, order_ref, status, amount_htg, created_at, product:products!orders_product_id_fkey(title)"
+                : "id, status, amount_htg, created_at, product:products!orders_product_id_fkey(title)"
             )
             .in("status", ["paid", "delivered", "disputed", "refunded"]);
           if (withRef && refQuery) q = q.eq("order_ref", refQuery);

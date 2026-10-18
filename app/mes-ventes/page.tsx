@@ -112,7 +112,7 @@ export default async function MesVentesPage() {
   const { data } = await supabase
     .from("zabelie_fulfillment")
     .select(
-      "order_id, status, shipped_at, order:orders!inner(id, order_ref, amount_htg, created_at, buyer_id, products!inner(title, seller_id))"
+      "order_id, status, shipped_at, order:orders!inner(id, order_ref, amount_htg, created_at, buyer_id, products!orders_product_id_fkey!inner(title, seller_id))"
     )
     .eq("order.products.seller_id", user.id)
     .order("created_at", { ascending: true });
