@@ -35,6 +35,11 @@ export async function createClient() {
             // Appelé depuis un Server Component : ignorable si un middleware
             // rafraîchit les sessions.
           }
+          // Les en-têtes anti-cache que @supabase/ssr ≥ 0.10 passe en second
+          // argument ne se posent pas d'ici : `cookies()` n'écrit pas d'en-tête.
+          // Le proxy les pose quand il rafraîchit la session
+          // (`lib/supabase/middleware.ts`), et une réponse qui lit `cookies()`
+          // est dynamique : Next la sert déjà en `private, no-store`.
         },
       },
     }
