@@ -225,8 +225,15 @@ classique de publication ne la nomme pas et fonctionne avec ou sans elle.
 
 ### Migration `0149_zabelie_authoring_suppression.sql` — protocole d'application (PR 5, suppression et purge)
 
-⏳ **NON APPLIQUÉE.** « oui » du porteur requis avant l'application (C2-A). Exige `0141`, `0142`, `0147` ; à appliquer
-après `0148`, dans la même séance.
+✅ **APPLIQUÉE le 2026-10-18 à 22:15:32 UTC** sur « oui » du porteur (C2-A), après `0148`, avant la fusion de la PR 5
+(#382, tête `e73e71c` : migration et code identiques à `4e4e445`, CI verte ; `sql-tests` vert sur `e73e71c`). Preuves :
+journal `20261018221532` ; SQL reçu = fichier (méthode 0086, `73631fd5…52d9`, 34 041 car., aucun antislash) ; ZB149
+passées ; sonde 153 → 156 objets, aucun perdu (comparée avant), seule absence toujours
+`zabelie_purge_sent_notices(integer)` ; droits vérifiés (suppression : `authenticated` oui, `anon` non ; purge : service
+role seul) ; 0 projet, 10 fiches intactes ; `zabelie_authoring_purge_candidats(10)` répond, 0 candidat ; registre
+149 lignes, 147 appliquées (empreinte canonique `0f7e2c5d…2a06`). Le cron part avec la fusion de #382.
+
+Avant application : « oui » du porteur requis (C2-A). Exige `0141`, `0142`, `0147` ; à appliquer après `0148`.
 
 Additive : quatre fonctions, aucune table ni colonne. `zabelie_authoring_supprimer_projet(uuid, boolean)` sous
 `auth.uid()` (projet archivé du vendeur, qui n'a pas servi aujourd'hui), `zabelie_authoring_purge_candidats(integer)` et
