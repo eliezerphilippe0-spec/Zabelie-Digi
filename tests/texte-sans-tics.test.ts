@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { DICT } from "../lib/i18n";
+import { DICT, LANGS } from "../lib/i18n";
+import { annoncesDe } from "../components/barre-annonce";
 
 /**
  * PAS DE TICS DE TEXTE GÉNÉRÉ — demande du porteur du 2026-09-26 : « élimine
@@ -88,5 +89,16 @@ test("X5 — les objets d'e-mail ne portent ni émoji ni tiret de liaison", () =
   for (const o of objets) {
     assert.doesNotMatch(o, /[\u{1F300}-\u{1FAFF}\u{2705}\u{2728}]/u, `émoji dans l'objet « ${o} »`);
     assert.doesNotMatch(o, /\s—\s/, `tiret de liaison dans l'objet « ${o} »`);
+  }
+});
+
+test("X6 — la barre d'annonce n'assemble pas ses textes avec un tiret", () => {
+  /* X4 ne lit que le dictionnaire : la barre colle deux libellés dans le
+   * composant (« Ouvrez votre boutique en ligne », « 0 HTG pour ouvrir »), et
+   * le tiret qui les reliait, sur chaque page, lui avait échappé. */
+  for (const lang of LANGS) {
+    for (const { texte } of annoncesDe(lang)) {
+      assert.doesNotMatch(texte, /\s[—–]\s/, `${lang} : « ${texte} »`);
+    }
   }
 });
