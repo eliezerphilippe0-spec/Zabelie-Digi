@@ -94,3 +94,12 @@ test("A7 — la barre n'est pas orange : l'accent reste aux boutons et aux prix"
   const puce = CSS.slice(CSS.indexOf(".annonce-item::before"), CSS.indexOf("}", CSS.indexOf(".annonce-item::before")));
   assert.match(puce, /background: var\(--color-brand\);/, "les losanges portent l'accent");
 });
+
+test("A8 — chaque lien de la barre et le bouton pause font 44 px de haut", () => {
+  /* Audit final du 2026-10-17 : à 36 px, chaque page gagnait huit cibles
+   * sous la taille au doigt que le site vise (44 px). */
+  const barre = CSS.slice(CSS.indexOf(".annonce {"), CSS.indexOf("}", CSS.indexOf(".annonce {")));
+  const lien = CSS.slice(CSS.indexOf(".annonce-lien {"), CSS.indexOf("}", CSS.indexOf(".annonce-lien {")));
+  assert.match(barre, /min-height: 44px;/, "la barre ne fait plus 44 px");
+  assert.match(lien, /min-height: 44px;/, "un lien de la barre est sous 44 px");
+});

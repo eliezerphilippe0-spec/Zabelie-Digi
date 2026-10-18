@@ -7,10 +7,13 @@
    (revue des couleurs du 2026-10-17). La barre prend l'indigo secondaire de
    l'en-tête (`chrome-2`, texte crème à 12,6:1) ; l'orange ne reste que sur
    les losanges qui séparent les messages. */
+/* 44 px : la taille au doigt que l'audit vise partout (36 px passait le
+   minimum WCAG AA, pas la cible du site ; mesuré à l'audit final du
+   2026-10-17, chaque page y gagnait huit petites cibles). */
 .annonce {
   display: flex;
   align-items: stretch;
-  min-height: 36px;
+  min-height: 44px;
   background: var(--color-chrome-2);
   color: var(--color-on-chrome);
   font-size: 12px;
@@ -58,7 +61,7 @@
 .annonce-lien {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
+  min-height: 44px;
   text-decoration: none;
 }
 .annonce-lien:hover,
