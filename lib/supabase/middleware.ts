@@ -35,7 +35,11 @@ export async function updateSession(request: NextRequest, reecriture?: URL) {
           name: string;
           value: string;
           options?: Record<string, unknown>;
-        }[]
+        }[],
+        // @supabase/ssr ≥ 0.10 : en-têtes à poser AVEC les cookies de session
+        // (`Cache-Control: private, no-store…`, `Expires`, `Pragma`). Sans eux, un
+        // CDN pourrait servir la session d'un utilisateur à un autre.
+        entetes: Record<string, string> = {}
       ) {
         // Forward refreshed cookies to this render as well as to the browser.
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
@@ -43,6 +47,7 @@ export async function updateSession(request: NextRequest, reecriture?: URL) {
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );
+        Object.entries(entetes).forEach(([nom, valeur]) => response.headers.set(nom, valeur));
       },
     },
   });
