@@ -133,7 +133,14 @@ pages.
 
 ### Migration `0146_zabelie_authoring_approbation.sql` — protocole d'application (PR 4, relecture)
 
-⏳ **NON APPLIQUÉE.** « oui » du porteur requis avant l'application, puis un autre avant la fusion de la PR 4 (C2-A),
+✅ **APPLIQUÉE le 2026-10-18 à 12:05:54 UTC** sur « oui » du porteur (C2-A), avant la fusion de la PR 4 (#363, tête
+`6d71224`, main fusionnée, CI verte). Preuves : journal `20261018120554` ; SQL reçu = fichier (méthode 0086,
+`cff6f512…41d0`, 31 453 car.) ; ZB146 passées ; sonde 148 → 149 objets, aucun perdu (comparée avant) ; 11 objets
+`zabelie_authoring_%` présents ; 0 projet approuvé d'office ; registre 146 lignes, 144 appliquées (empreinte
+canonique `f32e438a…5758`). Le premier essai a été refusé par le classifieur du mode auto ; le porteur a autorisé
+l'outil, rien n'avait été écrit entre-temps.
+
+Avant application : « oui » du porteur requis, puis un autre avant la fusion de la PR 4 (C2-A),
 même CI verte. Additive : deux colonnes nullables sur `zabelie_authoring_projects` (`revision_approuvee`,
 `revision_approuvee_le`, jamais accordées en écriture à un rôle client), une contrainte d'ensemble, la garde de `0141`
 redéfinie à l'identique plus deux lignes (une création ne naît jamais approuvée), une fonction
