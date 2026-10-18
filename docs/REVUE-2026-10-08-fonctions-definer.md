@@ -144,3 +144,14 @@ Les deux colonnes ne sont accordées en écriture à aucun rôle client (post-co
 | `zabelie_authoring_approuver_export` | `authenticated` | `auth.uid()` = propriétaire de l'export, compte actif | `approuve_le` et `approuve_empreinte`, une seule fois, si l'empreinte reçue est celle de l'export (T28) et si l'export porte la révision courante et approuvée (T18) | la date d'approbation |
 
 Les octets, leur empreinte et leur taille viennent du serveur : la route rend le PDF, le dépose dans le bucket privé `authoring-exports` (PDF seulement, 20 Mo, aucune policy), puis appelle l'enregistrement. Un vendeur ne peut ni exécuter cette fonction ni écrire une ligne d'export (post-condition `ZB147`). Une garde rend chaque export immuable et son approbation définitive, même pour le propriétaire de la base. `supabase/tests/authoring_exports.test.sql` (EX1 à EX10) prouve les refus, T18, T28 et l'immuabilité.
+
+## Ajout du 2026-10-18 — Studio de création éditoriale, suppression et purge (`0149`, non appliquée)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_authoring_supprimer_projet` | `authenticated` | `auth.uid()` = propriétaire du projet | rien quand `p_executer` est faux ; sinon la suppression de CE projet (révisions, opérations et exports en cascade ; lien produit à null), si le projet est archivé et n'a pas servi aujourd'hui, sous le verrou des demandes de suggestion | les chemins des PDF du projet |
+| `zabelie_authoring_purge_candidats` | `service_role` SEUL | aucune : lit les projets des comptes `account_closed` | rien | un projet par ligne, avec les chemins de ses PDF ; ceux qui ont servi aujourd'hui sont exclus |
+| `zabelie_authoring_purge_comptes_fermes` | `service_role` SEUL | aucune : revérifie compte fermé et usage du jour pour chaque identifiant reçu | la suppression des projets qui passent ces deux contrôles | le nombre de projets supprimés |
+| `zabelie_authoring_projet_utilise` | AUCUN rôle client | — | rien | un booléen, pour les trois fonctions ci-dessus |
+
+La règle « pas servi aujourd'hui » protège les quotas : ils se comptent sur les opérations, qui partent avec le projet. L'archivage ferme demandes, exports et soumissions : ce que la route vérifie avant de retirer les PDF reste vrai jusqu'à la suppression. Aucune fiche produit, aucun fichier vendu, aucune version ni aucun droit d'acheteur n'est touché. `supabase/tests/authoring_retention.test.sql` (RT1 à RT7) prouve les refus, T21 et la purge ; la post-condition `ZB149` prouve les droits.

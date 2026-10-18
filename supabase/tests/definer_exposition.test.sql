@@ -96,6 +96,11 @@ declare
     -- et approuvée (T18) ; compte actif. N'écrit que l'approbation, une fois.
     -- L'enregistrement d'un export n'est PAS ici : service role seul.
     'zabelie_authoring_approuver_export(p_export uuid, p_empreinte text):auth',
+    -- Studio, suppression (0149) : auth.uid() = propriétaire, projet ARCHIVÉ, pas servi
+    -- aujourd'hui (règle des quotas), sous le verrou des demandes. Rend les chemins
+    -- des PDF de CE projet ; ne supprime que ce projet (cascade), quand p_executer.
+    -- La purge des comptes fermés n'est PAS ici : service role seul.
+    'zabelie_authoring_supprimer_projet(p_projet uuid, p_executer boolean):auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',
