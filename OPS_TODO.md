@@ -216,6 +216,27 @@ Vérifications après application, en lecture :
 Retour arrière : le Studio étant éteint, aucun n'est nécessaire. Ne pas supprimer la colonne à la main : la route
 classique de publication ne la nomme pas et fonctionne avec ou sans elle.
 
+### Migration `0149_zabelie_authoring_suppression.sql` — protocole d'application (PR 5, suppression et purge)
+
+⏳ **NON APPLIQUÉE.** « oui » du porteur requis avant l'application (C2-A). Exige `0141`, `0142`, `0147` ; à appliquer
+après `0148`, dans la même séance.
+
+Additive : quatre fonctions, aucune table ni colonne. `zabelie_authoring_supprimer_projet(uuid, boolean)` sous
+`auth.uid()` (projet archivé du vendeur, qui n'a pas servi aujourd'hui), `zabelie_authoring_purge_candidats(integer)` et
+`zabelie_authoring_purge_comptes_fermes(uuid[])` réservées au service role (projets des comptes `account_closed`), et une
+règle interne `zabelie_authoring_projet_utilise(uuid)` exécutable par aucun rôle client. La sonde est redéfinie avec les
+trois premières.
+
+Le cron `/api/digital-authoring/purge` (15 h 45 UTC) part avec la fusion. Tant que `0149` manque, il journalise
+`0149_absente` et ne fait rien. Il tourne même Studio éteint : un compte fermé se purge quand même.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0149_zabelie_authoring_suppression.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB149` passées (la migration lève sinon).
+3. Sonde : 153 → 156 objets, aucun perdu.
+4. Premier passage du cron dans les journaux Vercel : une ligne `[authoring/purge]`, `purges: 0` attendu (aucun compte
+   fermé n'a de projet du Studio aujourd'hui).
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347

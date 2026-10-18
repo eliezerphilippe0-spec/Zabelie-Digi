@@ -140,7 +140,7 @@ Idées tirées des plateformes de produits digitaux et de formations (Gumroad, L
 ### Phase 5 — Rattachement à la marketplace (lot 6)
 - [x] 5.1 Extraire la création de brouillon et la confirmation d'actif (sans changement de comportement)
 - [x] 5.2 « Soumettre à la revue » : un seul produit par projet
-- [ ] 5.3 Atelier et détails numériques remplis ; suppression et export de compte
+- [x] 5.3 Atelier et détails numériques remplis ; suppression et export de compte
 
 **Checkpoint 5** — un projet mène à un seul produit, même sous concurrence ; panne après dépôt récupérable ; achats et versions acquises intacts ; PR 5.
 

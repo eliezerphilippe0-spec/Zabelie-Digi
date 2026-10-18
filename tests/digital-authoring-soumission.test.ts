@@ -38,10 +38,11 @@ const PROJET_PRET = {
   id: PROJET,
   titre: "Gid vann manje lakay",
   langue: "ht",
+  brief: { resultat: "Fè yon lis pri pou chak pla", prerequis: "Yon telefòn" },
   contenu: {
     objectif: "Vann plis chak semèn",
     sections: [
-      { id: "00000000-0000-4000-8000-0000000000d1", titre: "Kòmanse", resultat: "", corps: "" },
+      { id: "00000000-0000-4000-8000-0000000000d1", titre: "Kòmanse", resultat: "", corps: "Premye etap la se konnen kliyan ou." },
       { id: "00000000-0000-4000-8000-0000000000d2", titre: "Kenbe kliyan", resultat: "", corps: "" },
     ],
   },
@@ -51,7 +52,7 @@ const PROJET_PRET = {
   archived_at: null,
 };
 const EXPORT_APPROUVE = {
-  id: EXPORT, project_id: PROJET, revision: 5, empreinte: HASH, chemin: CHEMIN_EXPORT,
+  id: EXPORT, project_id: PROJET, revision: 5, empreinte: HASH, chemin: CHEMIN_EXPORT, pages: 34,
   approuve_le: "2026-10-18T10:00:00Z", approuve_empreinte: HASH,
 };
 const CORPS = { export: EXPORT, prix: 750, rayon: "edikasyon", sousRayon: null, attestation: true };
@@ -99,6 +100,7 @@ function fixture(o: Opts = {}) {
   });
   const lignesLivrables = o.livrables ?? [];
   const base = database((q: Query) => {
+    if (q.table === "zabelie_digital_details" || q.table === "zabelie_digital_studio") return { error: null };
     if (q.table !== "product_assets") throw new Error(`table inattendue (admin) ${q.table}`);
     const methodes = q.steps.map(([m]) => m);
     if (methodes.includes("maybeSingle")) {
@@ -169,7 +171,9 @@ function fixture(o: Opts = {}) {
 }
 
 const ecritures = (f: ReturnType<typeof fixture>) =>
-  f.base.queries.filter((q) => q.steps.some(([m]) => m === "insert" || m === "delete"));
+  f.base.queries.filter((q) => q.table === "product_assets" && q.steps.some(([m]) => m === "insert" || m === "delete"));
+const preremplissages = (f: ReturnType<typeof fixture>) =>
+  f.base.queries.filter((q) => q.table === "zabelie_digital_details" || q.table === "zabelie_digital_studio");
 
 test("S1 — gardes d'entrée : rien n'est lu ni écrit avant elles", async () => {
   const cas: [string, Opts, unknown, string, number, string][] = [
@@ -260,6 +264,17 @@ test("S3 — première soumission : fiche par la fonction partagée, PDF approuv
   const insertion = ecritures(f).find((q) => q.steps[0][0] === "insert")!;
   assert.deepEqual(v(insertion.steps[0]), ["insert", [{ product_id: PRODUIT, storage_path: CHEMIN_LIVRABLE, file_name: "Gid_vann_manje_lakay.pdf", size_bytes: OCTETS.length }]]);
   assert.ok(!ecritures(f).some((q) => q.steps[0][0] === "delete"), "rien à remplacer");
+
+  // 5.3 : l'atelier numérique pré-rempli, insertion seulement si la ligne manque.
+  const [details, atelier] = ["zabelie_digital_details", "zabelie_digital_studio"].map((t) => preremplissages(f).find((q) => q.table === t)!);
+  assert.deepEqual(v(details.steps), [["upsert", [{
+    product_id: PRODUIT, formats: "PDF", language: "Kreyòl ayisyen", compatibility: "", license: "",
+    contents: "34 paj\n• Kòmanse\n• Kenbe kliyan", updates: "",
+  }, { onConflict: "product_id", ignoreDuplicates: true }]]]);
+  assert.deepEqual(v(atelier.steps), [["upsert", [{
+    product_id: PRODUIT, mode: "file", preview: "Kòmanse\n\nPremye etap la se konnen kliyan ou.",
+    outcomes: "Fè yon lis pri pou chak pla", prerequisites: "Yon telefòn", include_updates: false, lessons: [], faq: [],
+  }, { onConflict: "product_id", ignoreDuplicates: true }]]]);
 });
 
 test("S4 — deux soumissions simultanées : la perdante reprend la fiche de la gagnante (T19)", async () => {
@@ -319,6 +334,7 @@ test("S6 — seuls les octets approuvés partent en vente (T28)", async () => {
   assert.deepEqual(corps.fiche, { slug: "gid-vann-manje-lakay-ab1cd", statut: "draft" }, "l'écran sait qu'une fiche existe");
   assert.equal(f.depots.length, 0);
   assert.equal(ecritures(f).length, 0);
+  assert.equal(preremplissages(f).length, 0, "rien n'est pré-rempli sans livrable confirmé");
 
   const depot = fixture({ depotErreur: true });
   const r2 = await depot.soumettre();
@@ -345,6 +361,7 @@ test("S7 — une fiche publiée ou retirée n'est pas touchée d'ici", async () 
     assert.deepEqual(await r.json(), { fiche: { slug: "gid-vann-manje-lakay-ab1cd", statut: status }, depose: false });
     assert.equal(f.creations.length + f.telechargements.length + f.depots.length, 0, status);
     assert.equal(ecritures(f).length, 0, status);
+    assert.equal(preremplissages(f).length, 0, `${status} : l'atelier d'une fiche publiée ne se touche pas d'ici`);
   }
 });
 

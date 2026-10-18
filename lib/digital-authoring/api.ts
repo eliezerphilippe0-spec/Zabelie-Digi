@@ -69,6 +69,9 @@ const REFUS_BASE: Record<string, { statut: number; cle: I18nKey }> = {
   authoring_export_introuvable: { statut: 404, cle: "authoring.export.introuvable" },
   authoring_export_perime: { statut: 409, cle: "authoring.export.perime" },
   authoring_empreinte_differente: { statut: 409, cle: "authoring.export.empreinte" },
+  // Suppression d'un projet (0149).
+  authoring_archive_requis: { statut: 409, cle: "authoring.suppression.archiveRequis" },
+  authoring_suppression_demain: { statut: 409, cle: "authoring.suppression.demain" },
 };
 
 export const TABLE_OPERATIONS = "zabelie_authoring_operations";

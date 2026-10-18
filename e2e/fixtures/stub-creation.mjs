@@ -26,6 +26,8 @@ const BUCKET_EXPORTS = "authoring-exports";
 let produits = new Map();
 let livrables = new Map();
 let fichiers = new Map();
+// Atelier numérique pré-rempli (5.3) : une ligne par fiche et par table, jamais écrasée.
+let ateliers = new Map();
 const BUCKET_FICHIERS = "product-files";
 // Taxonomie (zabelie_categories) : un département et un sous-rayon, au format des colonnes lues.
 const CATEGORIES = [
@@ -98,12 +100,12 @@ const server = createServer(async (req, res) => {
   if (u.pathname === "/__health") return send({ ok: true });
   if (u.pathname === "/__reset") {
     projets = new Map(); operations = new Map(); revisions = new Map(); exportsPdf = new Map(); objets = new Map();
-    produits = new Map(); livrables = new Map(); fichiers = new Map(); opportunitesVides = false; ventesMode = "aucune";
+    produits = new Map(); livrables = new Map(); fichiers = new Map(); ateliers = new Map(); opportunitesVides = false; ventesMode = "aucune";
     return send({ ok: true });
   }
   if (u.pathname === "/__objets") return send([...objets.keys()]);
   if (u.pathname === "/__fiches") {
-    return send({ produits: [...produits.values()], livrables: [...livrables.values()],
+    return send({ produits: [...produits.values()], livrables: [...livrables.values()], ateliers: Object.fromEntries(ateliers),
       fichiers: [...fichiers.entries()].map(([chemin, octets]) => ({ chemin, empreinte: createHash("sha256").update(octets).digest("hex") })) });
   }
   // La modération, simulée : met en vente toutes les fiches du jeu de test.
@@ -200,6 +202,25 @@ const server = createServer(async (req, res) => {
     p.archived_at = new Date().toISOString();
     return send(p.archived_at);
   }
+  // Suppression d'un projet archivé (0149) : vérifier rend les chemins, exécuter supprime en cascade.
+  if (u.pathname === "/rest/v1/rpc/zabelie_authoring_supprimer_projet") {
+    const b = await body();
+    const p = projets.get(b.p_projet);
+    if (!moi || !p || p.seller_id !== moi) return send({ code: "42501", message: "authoring_projet_introuvable" }, 403);
+    if (!p.archived_at) return send({ code: "P0001", message: "authoring_archive_requis" }, 400);
+    const jour = Date.now() - 24 * 60 * 60 * 1000;
+    const servi = [...operations.values()].some((o) => o.project_id === p.id && (["queued", "running"].includes(o.etat)
+      || (Date.parse(o.created_at) >= jour && !(["cancelled", "failed"].includes(o.etat) && !o.soumis_le))));
+    if (servi) return send({ code: "P0001", message: "authoring_suppression_demain" }, 400);
+    const lignes = [...exportsPdf.values()].filter((e) => e.project_id === p.id).flatMap((e) => [{ chemin: e.chemin }, { chemin: e.extrait_chemin }]);
+    if (b.p_executer) {
+      projets.delete(p.id);
+      for (const [k, e] of exportsPdf) if (e.project_id === p.id) exportsPdf.delete(k);
+      for (const [k, o] of operations) if (o.project_id === p.id) operations.delete(k);
+      for (const x of produits.values()) if (x.zabelie_authoring_project_id === p.id) x.zabelie_authoring_project_id = null;
+    }
+    return send(lignes);
+  }
 
   // ── Opérations d'IA (0142) : rejeu par clé, instantané figé, bail à jeton ──
   if (u.pathname === "/rest/v1/rpc/zabelie_authoring_demander") {
@@ -278,6 +299,12 @@ const server = createServer(async (req, res) => {
     const chemin = decodeURIComponent(u.pathname.slice(prefixeObjet.length));
     objets.set(chemin, octets);
     return send({ Key: `${BUCKET_EXPORTS}/${chemin}`, Id: randomUUID() });
+  }
+  // Retrait d'objets (suppression d'un projet) : le service role seul.
+  if (u.pathname === `/storage/v1/object/${BUCKET_EXPORTS}` && req.method === "DELETE") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const b = await body();
+    return send((b.prefixes ?? []).filter((c) => objets.delete(c)).map((name) => ({ name })));
   }
   // Lecture des octets par le service role seul : la soumission recopie le PDF approuvé.
   if (u.pathname.startsWith(prefixeObjet) && req.method === "GET") {
@@ -395,6 +422,16 @@ const server = createServer(async (req, res) => {
     }
     return single([...livrables.values()].filter((l) =>
       (!eq("product_id") || l.product_id === eq("product_id")) && (!eq("storage_path") || l.storage_path === eq("storage_path"))));
+  }
+  if ((u.pathname === "/rest/v1/zabelie_digital_details" || u.pathname === "/rest/v1/zabelie_digital_studio") && req.method === "POST") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied" }, 403);
+    const b = await body();
+    const cle = `${u.pathname.split("/").pop()}:${b.product_id}`;
+    const produit = produits.get(b.product_id);
+    if (!produit || produit.status !== "draft") return send({ code: "23514", message: "digital_details_draft_required" }, 400);
+    // `ignoreDuplicates` : une ligne existante n'est jamais remplacée.
+    if (!ateliers.has(cle) || !(req.headers.prefer || "").includes("ignore-duplicates")) ateliers.set(cle, b);
+    return send([], 201);
   }
   const prefixeFichier = `/storage/v1/object/${BUCKET_FICHIERS}/`;
   if (u.pathname.startsWith(prefixeFichier) && req.method === "POST") {

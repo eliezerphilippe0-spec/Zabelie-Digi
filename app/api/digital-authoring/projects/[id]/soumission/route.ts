@@ -20,6 +20,8 @@ import {
   SOUMISSIONS_MAX,
   cheminLivrable,
   descriptionDepuisGuide,
+  detailsDepuisGuide,
+  studioDepuisGuide,
   empreinteOctets,
   exportSoumettable,
   fichePourClient,
@@ -52,7 +54,9 @@ function prive(reponse: Response): Response {
  *   3. recopie le PDF approuvé, octets vérifiés contre l'empreinte approuvée,
  *      au chemin déterministe sous la fiche, puis le confirme par la logique
  *      de `app/api/products/asset`. Une reprise après panne retombe sur le
- *      même objet et la même ligne (T20).
+ *      même objet et la même ligne (T20) ;
+ *   4. pré-remplit les détails et l'atelier numériques de la fiche (5.3),
+ *      seulement s'ils manquent.
  *
  * Rien n'est publié : la fiche reste en brouillon, et une fiche sans livrable
  * ne peut pas être mise en vente (`/api/admin/product-status`). Une fiche
@@ -95,7 +99,7 @@ export async function POST(req: Request, ctx: Contexte) {
   const [{ data: ligneProjet, error: erreurProjet }, { data: ligneExport, error: erreurExport }, fiche0] = await Promise.all([
     supabase
       .from(TABLE_PROJETS)
-      .select("id, titre, langue, contenu, revision, plan_approuve_revision, revision_approuvee, archived_at")
+      .select("id, titre, langue, brief, contenu, revision, plan_approuve_revision, revision_approuvee, archived_at")
       .eq("id", id)
       .maybeSingle(),
     supabase.from(TABLE_EXPORTS).select(COLONNES_EXPORT_SOUMISSION).eq("id", entree.exportId).eq("project_id", id).maybeSingle(),
@@ -222,6 +226,18 @@ export async function POST(req: Request, ctx: Contexte) {
     const { error: erreurRetrait } = await admin.from("product_assets").delete().eq("product_id", ficheId).in("id", remplaces);
     if (erreurRetrait) console.error("[authoring] ancien PDF non retire de la fiche");
   }
+
+  // ── 4. L'atelier numérique pré-rempli (5.3), par ses contrats existants ─────
+  // Insertion seulement si la ligne manque : une soumission suivante n'écrase
+  // jamais ce que le vendeur a retouché. Un échec ne défait rien : il complète
+  // alors sa fiche à la main, comme pour une fiche de `/vendre`.
+  const details = detailsDepuisGuide(projet, exp.pages);
+  const atelier = studioDepuisGuide(projet);
+  const preremplissages = await Promise.all([
+    details && admin.from("zabelie_digital_details").upsert({ product_id: ficheId, ...details }, { onConflict: "product_id", ignoreDuplicates: true }),
+    atelier && admin.from("zabelie_digital_studio").upsert({ product_id: ficheId, ...atelier }, { onConflict: "product_id", ignoreDuplicates: true }),
+  ]);
+  if (!details || !atelier || preremplissages.some((r) => r && r.error)) console.error("[authoring] fiche non pre-remplie");
 
   return NextResponse.json({ fiche: sortie, depose: true }, { status: creee ? 201 : 200, headers: ENTETES_PRIVEES });
 }

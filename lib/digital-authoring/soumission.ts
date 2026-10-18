@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import type { ProjetEditeur } from "./api";
+import { parseDigitalDetails, type DigitalDetails } from "../digital-details";
+import { parseDigitalStudio, type DigitalStudio } from "../digital-studio";
 
 /**
  * Studio de création éditoriale — « Soumettre à la revue » (tâche 5.2 ;
@@ -105,9 +107,9 @@ export function lireEntreeSoumission(brut: unknown): EntreeSoumission | null {
 }
 
 /** Ce qu'on lit d'un export pour le soumettre : le chemin reste côté serveur. */
-export const COLONNES_EXPORT_SOUMISSION = "id, project_id, revision, empreinte, chemin, approuve_le, approuve_empreinte";
+export const COLONNES_EXPORT_SOUMISSION = "id, project_id, revision, empreinte, chemin, pages, approuve_le, approuve_empreinte";
 
-export type ExportSoumis = { id: string; revision: number; empreinte: string; chemin: string };
+export type ExportSoumis = { id: string; revision: number; empreinte: string; chemin: string; pages: number | null };
 
 /**
  * L'export qu'on peut soumettre : celui de CE projet, de la révision courante
@@ -128,7 +130,8 @@ export function exportSoumettable(
   }
   if (l.revision !== projet.revision || projet.revisionApprouvee !== projet.revision) return { ok: false, raison: "perime" };
   if (typeof l.approuve_le !== "string" || l.approuve_empreinte !== l.empreinte) return { ok: false, raison: "non_approuve" };
-  return { ok: true, export: { id: l.id, revision: l.revision, empreinte: l.empreinte, chemin: l.chemin } };
+  const pages = typeof l.pages === "number" && Number.isSafeInteger(l.pages) && l.pages > 0 ? l.pages : null;
+  return { ok: true, export: { id: l.id, revision: l.revision, empreinte: l.empreinte, chemin: l.chemin, pages } };
 }
 
 /** Ce que l'éditeur reçoit de la fiche rattachée : jamais l'identifiant interne seul. */
@@ -139,4 +142,54 @@ export function fichePourClient(ligne: unknown): FicheRattachee | null {
   const l = ligne as Record<string, unknown>;
   if (typeof l.slug !== "string" || typeof l.status !== "string") return null;
   return { slug: l.slug, statut: l.status };
+}
+
+// ── Tâche 5.3 : la fiche pré-remplie depuis le guide ─────────────────────────
+// Par les contrats EXISTANTS de l'atelier numérique (`parseDigitalDetails`,
+// `parseDigitalStudio`) : ce qui ne passe pas leur validation n'est pas
+// écrit. Le vendeur retouche ensuite tout dans ses produits ; une soumission
+// suivante n'écrase jamais ce qu'il a changé (insertion seulement si absent).
+
+const LANGUES: Record<ProjetEditeur["langue"], string> = { ht: "Kreyòl ayisyen", fr: "Français" };
+const PAGES: Record<ProjetEditeur["langue"], string> = { ht: "{n} paj", fr: "{n} pages" };
+
+/** Coupe un texte à `max` caractères, à une fin de mot quand c'est possible. */
+export function borner(texte: string, max: number): string {
+  const t = texte.trim();
+  if (t.length <= max) return t;
+  const coupe = t.slice(0, max - 1);
+  const fin = Math.max(coupe.lastIndexOf("\n"), coupe.lastIndexOf(" "));
+  return `${(fin > max / 2 ? coupe.slice(0, fin) : coupe).trimEnd()}…`;
+}
+
+/** Format, langue et contenu (pages, sommaire) : les faits que l'acheteur lit avant d'acheter. */
+export function detailsDepuisGuide(projet: Pick<ProjetEditeur, "langue" | "contenu">, pages: number | null): DigitalDetails | null {
+  const sommaire = projet.contenu.sections.map((s) => s.titre.trim()).filter(Boolean).map((t) => `• ${t}`).join("\n");
+  const volume = pages ? PAGES[projet.langue].replace("{n}", String(pages)) : "";
+  return parseDigitalDetails({
+    formats: "PDF",
+    language: LANGUES[projet.langue],
+    compatibility: "",
+    license: "",
+    contents: borner([volume, sommaire].filter(Boolean).join("\n"), 1600),
+    updates: "",
+  });
+}
+
+/**
+ * L'aperçu, les résultats et les prérequis. L'aperçu reprend la première
+ * section, celle que contient déjà l'extrait gratuit que le vendeur a vu et
+ * approuvé avec son PDF (4.4) : rien de plus n'est rendu public.
+ */
+export function studioDepuisGuide(projet: Pick<ProjetEditeur, "brief" | "contenu">): DigitalStudio | null {
+  const premiere = projet.contenu.sections[0];
+  return parseDigitalStudio({
+    mode: "file",
+    preview: premiere ? borner([premiere.titre, premiere.corps].map((x) => x.trim()).filter(Boolean).join("\n\n"), 6000) : "",
+    outcomes: borner(projet.brief.resultat, 1600),
+    prerequisites: borner(projet.brief.prerequis, 1200),
+    include_updates: false,
+    lessons: [],
+    faq: [],
+  });
 }

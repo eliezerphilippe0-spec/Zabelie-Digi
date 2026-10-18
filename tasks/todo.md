@@ -243,7 +243,7 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 **Fichiers :** `supabase/migrations/0147_zabelie_authoring_exports.sql`, `app/api/digital-authoring/projects/[id]/exports/route.ts` (création), `app/api/digital-authoring/exports/[id]/route.ts` (lien signé, approbation), `lib/digital-authoring/export.ts`, `lib/storage-buckets.ts`, `components/authoring-editor.tsx` (étape « 5. Le PDF »), `supabase/tests/authoring_exports.test.sql`, `tests/digital-authoring-export.test.ts`, `tests/digital-authoring-api-exports.test.ts`, `e2e-creation/pdf.spec.ts`.
 **Taille :** M.
 **Mesuré (2026-10-16) :** le guide et son extrait gratuit sont rendus par le serveur depuis la révision approuvée, déposés dans le bucket privé `authoring-exports` (PDF seulement, 20 Mo, aucune policy) à un chemin adressé par le contenu, puis enregistrés par une fonction que seul le service role exécute ; la base recalcule le chemin et la route refuse de répondre s'il diffère. Rendre deux fois la même révision donne les mêmes octets et la même ligne. Aperçu et téléchargement par un lien signé de 5 minutes, jamais en cache, après lecture sous la RLS (l'export d'un autre : 404). L'écran montre pages, taille réelle et empreinte ; « Approuver ce PDF » n'ouvre qu'après l'aperçu et renvoie l'empreinte montrée. En e2e, les octets servis par le lien sont un PDF dont l'empreinte est celle de l'écran. 5 tests du module, 9 des routes, 10 cas SQL (EX1 à EX10, CI), 3 parcours e2e ; 19 mutations tuées sur 19.
-**Reste (5.3) :** la fermeture de compte garde les projets et les exports (comme les pièces KYC), et une suppression complète laisserait les fichiers du bucket : à traiter avec l'export et la suppression de compte. Durée de conservation des exports non acquis : décision D5, ouverte.
+**Traité en 5.3 :** la fermeture de compte ne garde plus les projets ni les PDF (purge quotidienne, 0149), et l'export de compte les contient. Durée de conservation des exports non acquis d'un compte OUVERT : décision D5, toujours ouverte.
 
 ### 4.4 Extrait gratuit automatique (idée 1, validée le 2026-10-16)
 **Description :** depuis la même révision que le guide : page de titre, sommaire complet, première section entière, puis une page de fin d'extrait qui dit ce que contient le guide complet (nombre de pages et de sections). Même moteur, même déterminisme, empreinte propre.
@@ -296,16 +296,18 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 5.3 Atelier numérique, suppression et export de compte
 **Description :** extrait, résultats, prérequis, FAQ et détails numériques remplis via `parseDigitalStudio` et les contrats existants ; suppression et archivage de projet ; tables du Studio dans l'export de compte.
 **Critères :**
-- [ ] Suppression du projet après une release acquise : droit et livrable intacts (T21).
-- [ ] Paiement en attente, annulé ou remboursé : règles d'accès inchangées (T22) ; drapeaux absents ou schéma ancien : marketplace fonctionnelle (T24).
-- [ ] L'export de compte contient les projets du vendeur, sans données d'un autre.
+- [x] Suppression du projet après une release acquise : droit et livrable intacts (T21).
+- [x] Paiement en attente, annulé ou remboursé : règles d'accès inchangées (T22) ; drapeaux absents ou schéma ancien : marketplace fonctionnelle (T24).
+- [x] L'export de compte contient les projets du vendeur, sans données d'un autre.
 **Vérification :** SQL en CI ; tests de régression des téléchargements.
 **Dépendances :** 5.2.
-**Fichiers :** `lib/digital-authoring/listing.ts`, `app/api/account/export/route.ts`, `app/api/digital-authoring/projects/[id]/route.ts`, `supabase/tests/authoring_retention.test.sql`, `tests/digital-authoring-fiche.test.ts`.
+**Fichiers :** `supabase/migrations/0149_zabelie_authoring_suppression.sql`, `lib/digital-authoring/soumission.ts` (pré-remplissage, à la place du `listing.ts` prévu), `app/api/digital-authoring/projects/[id]/soumission/route.ts`, `app/api/digital-authoring/projects/[id]/route.ts` (DELETE), `app/api/digital-authoring/purge/route.ts` et `vercel.json` (cron), `app/api/account/export/route.ts`, `components/authoring-editor.tsx`, `supabase/tests/authoring_retention.test.sql`, `tests/digital-authoring-fiche.test.ts`, `tests/digital-authoring-suppression.test.ts`, `e2e-creation/suppression.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-18) :** à la soumission, les détails numériques (PDF, langue du guide, pages et sommaire) et l'atelier (aperçu = la première section, celle de l'extrait gratuit déjà approuvé ; résultats et prérequis du brief) sont écrits par les contrats existants `parseDigitalDetails` et `parseDigitalStudio`, seulement si la ligne manque : une soumission suivante n'écrase rien. Suppression : seulement un projet ARCHIVÉ (l'archivage ferme demandes, exports et soumissions, donc la vérification reste vraie), jamais un projet qui a servi aujourd'hui (les quotas se comptent sur les opérations, qui partent avec le projet : sans cette règle, supprimer rendrait des suggestions au vendeur et à la plateforme). Les PDF quittent le bucket privé AVANT les lignes, comme la purge KYC, et la route ne retire que des chemins du dossier du projet. La fiche, son fichier, sa version publiée et le droit de l'acheteur restent (T21, SQL). Un compte fermé voit ses projets purgés par un cron quotidien, indépendant du drapeau. L'export de compte ajoute projets, versions, PDF (sans chemin) et suggestions (sans jeton), bornés au vendeur ; une lecture ratée rend 503. Le code des téléchargements n'a pas changé (T22) ; la route classique ne nomme pas la colonne de 0148 (T24, E6). 4 tests de la fiche et de l'export, 7 de la suppression et de la purge, 7 cas SQL (RT1 à RT7, CI), 1 parcours e2e (33 sur 33 dans la suite du Studio) ; 26 mutations tuées sur 26.
+**Reste :** 0148 et 0149 ne sont pas appliquées (protocoles dans `OPS_TODO.md`).
 
 ## Checkpoint 5
-- [ ] Un projet → un produit, sous concurrence ; achats intacts.
+- [x] Un projet → un produit, sous concurrence ; achats intacts.
 - [ ] PR 5 relue ; migrations toujours non appliquées.
 
 ---

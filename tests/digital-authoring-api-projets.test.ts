@@ -244,9 +244,14 @@ test("la clé de service ne sert qu'au plafond de débit (décision C1-A)", () =
     const src = readFileSync(fichier, "utf8");
     const usages = (src.match(/createAdminClient\(\)/g) ?? []).length;
     const limiteur = (src.match(/rateLimit\(createAdminClient\(\)/g) ?? []).length;
+    // C1-A admet aussi le stockage : la suppression d'un projet (0149) retire SES PDF du bucket privé,
+    // et seulement sous cette forme (jamais une table, jamais un autre bucket).
+    const stockage = (src.match(/createAdminClient\(\)\.storage\.from\(AUTHORING_BUCKET\)\.remove\(/g) ?? []).length;
     assert.ok(usages > 0, `${fichier} : aucun usage lu — le contrôle regarderait le vide`);
-    assert.equal(usages, limiteur, `${fichier} : la clé de service sert ailleurs qu'au limiteur`);
+    assert.equal(usages, limiteur + stockage, `${fichier} : la clé de service sert ailleurs qu'au limiteur et au retrait des PDF`);
   }
+  const detail = readFileSync("app/api/digital-authoring/projects/[id]/route.ts", "utf8");
+  assert.equal((detail.match(/\.storage\.from\(AUTHORING_BUCKET\)\.remove\(/g) ?? []).length, 1, "un seul retrait d'objets : celui de la suppression");
 });
 
 test("création avec modèle : le plan part comme une sauvegarde sur la révision 1, dans la langue du guide", async () => {

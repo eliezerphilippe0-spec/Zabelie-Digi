@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { getLang } from "@/lib/i18n-server";
 import { erreurAvecLangue } from "@/lib/api-erreur";
 import { UUID_RE } from "@/lib/digital-studio";
+import { AUTHORING_BUCKET } from "@/lib/storage-buckets";
 import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
 import { lire, remplirBrief, schemaBrief, schemaContenu, schemaProjet } from "@/lib/digital-authoring/schema";
 import { revisionValide } from "@/lib/digital-authoring/revision";
@@ -31,6 +32,7 @@ type Contexte = { params: Promise<{ id: string }> };
  * POST  /api/digital-authoring/projects/[id]  { action: "approuver_plan", revision }
  *                                              | { action: "approuver_guide", revision, responsabilite: true }
  *                                              | { action: "archiver" }
+ * DELETE /api/digital-authoring/projects/[id]  → supprime un projet archivé (voir plus bas)
  *
  * La sauvegarde accepte un travail INCOMPLET (mode `brouillon`) ; l'approbation
  * du plan exige le brief et le plan complets, relus en base (mode `complet`).
@@ -225,4 +227,50 @@ export async function POST(req: Request, ctx: Contexte) {
     return erreurAvecLangue(lang, t.cle, t.statut, { code: t.code });
   }
   return NextResponse.json({ ok: true, resultat: data }, { headers: ENTETES_PRIVEES });
+}
+
+/**
+ * DELETE /api/digital-authoring/projects/[id]  → supprime un projet ARCHIVÉ
+ * (tâche 5.3, 0149 ; docs/70 §7.6).
+ *
+ * Deux appels à la même fonction, sous le JWT : le premier vérifie (le
+ * vendeur, l'archivage, aucun usage aujourd'hui) et rend les chemins des PDF ;
+ * la route retire ces objets du bucket privé (C1-A : la clé de service ne sert
+ * qu'au stockage) ; le second revérifie sous verrou et supprime. Les objets
+ * d'abord, les lignes ensuite, comme la purge KYC. Un projet archivé ne reçoit
+ * plus aucune demande : ce qui a été vérifié reste vrai entre les deux appels.
+ *
+ * La fiche produit et le fichier vendu ne bougent pas (T21) : ce sont des
+ * copies, et le lien produit passe à null (0148).
+ */
+export async function DELETE(_req: Request, ctx: Contexte) {
+  const a = await acces(ctx);
+  if ("reponse" in a) return a.reponse;
+  const { lang, id, supabase, user } = a;
+  if (!(await rateLimit(createAdminClient(), `authoring:suppression:${user.id}`, 10, 600))) {
+    return erreurAvecLangue(lang, "api.rate.limited", 429);
+  }
+  const refus = (error: { code?: string | null; message?: string | null }) => {
+    const t = traduireErreurBase(error);
+    if (t.statut === 500) console.error("[authoring] suppression refusee", error.code ?? "sans code");
+    return erreurAvecLangue(lang, t.cle, t.statut, { code: t.code });
+  };
+
+  const verification = await supabase.rpc("zabelie_authoring_supprimer_projet", { p_projet: id, p_executer: false });
+  if (verification.error) return refus(verification.error);
+  // Seulement sous le dossier de CE projet de CE vendeur : jamais un autre objet.
+  const dossier = `${user.id}/${id}/`;
+  const chemins = ((verification.data ?? []) as { chemin?: unknown }[])
+    .map((l) => l.chemin)
+    .filter((c): c is string => typeof c === "string" && c.startsWith(dossier) && !c.includes(".."));
+  if (chemins.length > 0) {
+    const { error } = await createAdminClient().storage.from(AUTHORING_BUCKET).remove(chemins);
+    if (error) {
+      console.error("[authoring] PDF non retires, projet garde");
+      return erreurAvecLangue(lang, "api.write.failed", 502);
+    }
+  }
+  const suppression = await supabase.rpc("zabelie_authoring_supprimer_projet", { p_projet: id, p_executer: true });
+  if (suppression.error) return refus(suppression.error);
+  return NextResponse.json({ ok: true }, { headers: ENTETES_PRIVEES });
 }

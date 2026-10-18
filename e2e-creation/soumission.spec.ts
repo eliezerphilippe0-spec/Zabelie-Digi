@@ -53,6 +53,7 @@ const sectionFiche = (page: Page) => page.getByRole("region", { name: "6. La fic
 
 type Fiches = {
   produits: Record<string, unknown>[];
+  ateliers: Record<string, Record<string, unknown>>;
   livrables: { product_id: string; storage_path: string; file_name: string; size_bytes: number }[];
   fichiers: { chemin: string; empreinte: string }[];
 };
@@ -88,6 +89,10 @@ test("soumettre : une fiche en brouillon, le PDF approuvé joint, puis reprise e
   expect(f.livrables[0].storage_path).toMatch(new RegExp(`^${VENDEUR}/${fiche.id}/liv-[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.pdf$`));
   expect(f.livrables[0].file_name).toBe("Lancer_sa_boutique_en_ligne.pdf");
   expect(f.fichiers).toEqual([{ chemin: f.livrables[0].storage_path, empreinte }]);
+  // 5.3 : l'atelier numérique pré-rempli depuis le guide (format, langue, sommaire, aperçu).
+  expect(f.ateliers[`zabelie_digital_details:${fiche.id}`]).toMatchObject({ formats: "PDF", language: "Français" });
+  expect(String(f.ateliers[`zabelie_digital_details:${fiche.id}`].contents)).toMatch(/^\d+ pages\n• /);
+  expect(f.ateliers[`zabelie_digital_studio:${fiche.id}`]).toMatchObject({ mode: "file", include_updates: false, outcomes: "Vendre en ligne" });
 
   // Reprise : la page relue montre la fiche ; remettre le PDF ne crée ni fiche ni ligne de plus (T20).
   await page.reload();

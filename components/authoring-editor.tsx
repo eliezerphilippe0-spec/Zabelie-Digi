@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import { projetPourEditeur, type ProjetEditeur } from "@/lib/digital-authoring/api";
 import { rapprocherApresPerte } from "@/lib/digital-authoring/revision";
@@ -106,6 +107,7 @@ export function AuthoringEditor({
 }) {
   const e = labels.editeur;
   const ids = useId();
+  const router = useRouter();
   const url = `/api/digital-authoring/projects/${initial.id}`;
   const [projet, setProjet] = useState({
     titre: initial.titre,
@@ -125,6 +127,7 @@ export function AuthoringEditor({
   const [rendu, setRendu] = useState(false);
   const [apercuOuvert, setApercuOuvert] = useState(false);
   const [approbationPdf, setApprobationPdf] = useState(false);
+  const [suppression, setSuppression] = useState(false);
   const [statut, setStatut] = useState<Statut>("propre");
   const [message, setMessage] = useState<string | null>(null);
   const [proposition, setProposition] = useState<BrouillonLocal | null>(null);
@@ -466,6 +469,26 @@ export function AuthoringEditor({
   async function archiver() {
     if (!window.confirm(e.confirmerArchive)) return;
     if (await action({ action: "archiver" })) setArchive(true);
+  }
+
+  /** Suppression définitive (5.3) : seulement un projet archivé, et jamais sans confirmation. */
+  async function supprimerProjet() {
+    if (!window.confirm(e.confirmerSupprimerProjet)) return;
+    setSuppression(true);
+    setMessage(null);
+    try {
+      const r = await fetch(url, { method: "DELETE" });
+      if (r.ok) {
+        if (stock.current) effacerBrouillon(stock.current, userId, initial.id);
+        router.push("/tableau-de-bord/creation");
+        return;
+      }
+      const d = await r.json().catch(() => null);
+      setMessage(typeof d?.error === "string" ? d.error : e.erreurSauvegarde);
+    } catch {
+      setMessage(e.erreurSauvegarde);
+    }
+    setSuppression(false);
   }
 
   const majSection = (id: string, maj: Partial<Section>) => {
@@ -881,8 +904,11 @@ export function AuthoringEditor({
         </div>
       )}
 
-      {!archive && (
+      {!archive ? (
         <button type="button" onClick={archiver} disabled={statut === "envoi"} className="min-h-11 rounded-xl border border-line px-4 text-sm">{e.archiver}</button>
+      ) : (
+        <button type="button" onClick={() => void supprimerProjet()} disabled={suppression}
+          className="min-h-11 rounded-xl border border-line px-4 text-sm text-danger-text disabled:opacity-40">{e.supprimerProjet}</button>
       )}
 
       {/* Barre collante : sur un téléphone, l'état et le bouton restent sous le pouce. */}
