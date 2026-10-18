@@ -89,7 +89,11 @@ export function AdminProductRow({
           <p className="truncate font-medium">{title}</p>
           <p className="text-xs text-mist">par {seller}</p>
         </div>
+        {/* Le nom accessible porte le TITRE : un lecteur d'écran qui parcourt la
+            liste entend « Statut de « … » » pour chaque fiche, pas une suite de
+            listes déroulantes sans nom (constaté le 2026-10-18). */}
         <select
+          aria-label={`Statut de « ${title} »`}
           value={value}
           disabled={saving}
           onChange={(e) => change(e.target.value)}
