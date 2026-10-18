@@ -95,7 +95,8 @@ test("C6 — les montants se masquent sans perdre leur place ni leur accent", ()
 test("C7 — l'action « code promo » n'existe qu'avec un produit, et la page le dit sans produit", () => {
   assert.match(ACCUEIL, /\.\.\.\(products\.length > 0\s*\? \[\{ cle: "promo", href: "\/tableau-de-bord\/codes-promo"/);
   const promo = lire(FILLES["codes-promo"]);
-  assert.match(promo, /\{nbProduits \? \(/);
+  assert.match(promo, /const aDesProduits = \(unProduit \?\? \[\]\)\.length > 0;/);
+  assert.match(promo, /\{aDesProduits \? \(/);
   assert.match(promo, /t\(lang, "vendeur\.promo\.sansProduit"\)/);
 });
 

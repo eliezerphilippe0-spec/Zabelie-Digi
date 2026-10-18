@@ -22,8 +22,9 @@ export default async function CodesPromoPage() {
   const lang = await getLang();
   const admin = createAdminClient();
 
-  const [{ count: nbProduits }, { data: cps }] = await Promise.all([
-    admin.from("products").select("id", { count: "exact", head: true }).eq("seller_id", user.id),
+  // Un seul produit suffit : la même lecture que l'accueil (sa liste de produits), pas un comptage à part.
+  const [{ data: unProduit }, { data: cps }] = await Promise.all([
+    admin.from("products").select("id").eq("seller_id", user.id).limit(1),
     admin
       .from("zabelie_coupons")
       .select("id, code, percent, product_id, max_uses, uses, expires_at, active")
@@ -32,6 +33,7 @@ export default async function CodesPromoPage() {
       .limit(20),
   ]);
   const coupons = (cps ?? []) as CouponItem[];
+  const aDesProduits = (unProduit ?? []).length > 0;
   const [avantCode, apresCode] = t(lang, "vendeur.promo.texte").split("{code}");
 
   return (
@@ -45,7 +47,7 @@ export default async function CodesPromoPage() {
             <span className="code-lisible font-bold text-accent">PROMO50</span>
             {apresCode}
           </p>
-          {nbProduits ? (
+          {aDesProduits ? (
             <div className="mt-6 rounded-2xl border border-line bg-surface/60 p-5">
               <ZabelieCouponManager coupons={coupons} />
             </div>
