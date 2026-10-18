@@ -36,10 +36,13 @@ function abonner(rappel: () => void) {
 export function MontantsMasquables({
   titre,
   masquer,
+  classeTitre = "text-lg font-semibold",
   children,
 }: {
   titre: string;
   masquer: string;
+  /** Le tableau vendeur passe `titre-section`, la règle de ses titres de carte. */
+  classeTitre?: string;
   children: ReactNode;
 }) {
   const masque = useSyncExternalStore(abonner, lire, () => false);
@@ -56,7 +59,7 @@ export function MontantsMasquables({
   return (
     <div data-masque={masque ? "" : undefined} className="group/montants">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="chiffres-titre" className="text-lg font-semibold">{titre}</h2>
+        <h2 id="chiffres-titre" className={classeTitre}>{titre}</h2>
         <button
           type="button"
           aria-pressed={masque}

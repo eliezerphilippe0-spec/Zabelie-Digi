@@ -99,6 +99,10 @@ const SURFACES_LIBRES = [
   "app/vendre/page.tsx",
   "app/vendre/physique/page.tsx",
   "app/tableau-de-bord/page.tsx",
+  // Pages filles du tableau vendeur (docs/73).
+  "app/tableau-de-bord/boutique/page.tsx",
+  "app/tableau-de-bord/compte/page.tsx",
+  "app/tableau-de-bord/codes-promo/page.tsx",
   "app/mes-ventes/page.tsx",
 ];
 

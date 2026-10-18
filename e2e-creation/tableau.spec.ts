@@ -80,7 +80,7 @@ test("accueil façon Chariow : salutation, actions, chiffres réels, classement,
   for (const nom of ["Créer un produit digital", "Partir d’un modèle", "Analyser un marché", "Créer un code promo"]) {
     await expect(actions.getByRole("link", { name: nom })).toBeVisible();
   }
-  await expect(actions.getByRole("link", { name: "Créer un code promo" })).toHaveAttribute("href", "/tableau-de-bord#codes-promo");
+  await expect(actions.getByRole("link", { name: "Créer un code promo" })).toHaveAttribute("href", "/tableau-de-bord/codes-promo");
 
   const chiffres = page.getByRole("region", { name: "Vos ventes de produits digitaux" });
   await expect(chiffres).toContainText(/11\s161 HTG/);

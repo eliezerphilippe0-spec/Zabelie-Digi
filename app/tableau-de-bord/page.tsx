@@ -4,17 +4,13 @@ import { DigitalSellerMetrics } from "@/components/digital-seller-metrics";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
-import { ShareButtons } from "@/components/share-buttons";
+import { VendeurShell } from "@/components/vendeur-shell";
+import { IconeStudio, type NomIcone } from "@/components/studio-icones";
+import { MontantsMasquables } from "@/components/montants-masquables";
 import { getCurrentUser, getSuspension } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
-import { ProfileForm } from "@/components/profile-form";
-import { DeliveryInfoForm } from "@/components/delivery-info-form";
-import { KycForm } from "@/components/kyc-form";
-import { lireDossierKyc } from "@/lib/kyc";
-import { isMissingTable } from "@/lib/product-media";
-import { getZonesActives, libelleZone } from "@/lib/zones";
 import { sommeHTG } from "@/lib/somme-htg";
 import { etapeVendeur, besoinDeGuidage, clesEtape } from "@/lib/vendeur-etape";
 import { VendeurPremierPas } from "@/components/vendeur-premier-pas";
@@ -23,16 +19,10 @@ import { hrefBoutique } from "@/lib/boutique-href";
 import { bornes, pageValide, nbPages, pageDansBornes } from "@/lib/pagination";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
-import { studioProvider } from "@/lib/studio-server";
-import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
-import { copieCreation } from "@/lib/digital-authoring/copy";
-import { t, type I18nKey } from "@/lib/i18n";
-import { AccountActions } from "@/components/account-actions";
+import { t, type I18nKey, type Lang } from "@/lib/i18n";
+import { DIGITAL_KINDS, type ProductKind } from "@/lib/product-kind";
+import { momentDeLaJournee } from "@/lib/moment-journee";
 import { PayoutRequest } from "@/components/payout-request";
-import {
-  ZabelieCouponManager,
-  type CouponItem,
-} from "@/components/zabelie-coupon-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +30,7 @@ export const dynamic = "force-dynamic";
 const PAGE_VENTES = 8;
 export const metadata = { title: "Tableau de bord — Zabelie", robots: { index: false, follow: false } };
 
+/** Les trois cas particuliers (démo, non connecté, suspendu) : sans menu. */
 function Shell({
   title,
   children,
@@ -53,6 +44,21 @@ function Shell({
       <main id="main" className="mx-auto max-w-5xl px-5 py-16">
         <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
         {children}
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+/** L'accueil, avec le menu du tableau vendeur (docs/73). */
+function Accueil({ lang, children }: { lang: Lang; children: React.ReactNode }) {
+  return (
+    <div className="bg-grain min-h-dvh">
+      <SiteNav />
+      <main id="main">
+        <VendeurShell lang={lang} actif="accueil">
+          {children}
+        </VendeurShell>
       </main>
       <SiteFooter />
     </div>
@@ -75,8 +81,15 @@ type ProductRow = {
   sales_count: number;
   /** Couverture publique. `null` = produit sans photo (le cas de départ). */
   cover_url: string | null;
+  kind: ProductKind;
 };
 
+/**
+ * /tableau-de-bord — l'accueil du vendeur, façon Chariow (docs/73, demande du
+ * porteur du 2026-10-17) : salutation à l'heure d'Haïti, actions rapides,
+ * alerte « À traiter », argent masquable, ventes et produits. La boutique, le
+ * compte et les codes promo ont leurs pages, derrière le menu.
+ */
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -87,12 +100,13 @@ export default async function DashboardPage({
      moyen de le savoir. C'est le registre de son argent — le même défaut que
      les files admin, sur la personne à qui la plateforme doit quelque chose. */
   const pageVentes = pageValide((await searchParams)?.ventes);
+  /* La langue est résolue d'abord : même les cas particuliers parlent celle
+     du vendeur (« Bonjour, » restait en français dans les quatre langues). */
+  const lang = await getLang();
   if (!isSupabaseConfigured()) {
     return (
-      <Shell title="Tableau de bord">
-        <p className="mt-4 text-sm text-mist">
-          Mode démo — connecte Supabase pour voir tes revenus et tes ventes.
-        </p>
+      <Shell title={t(lang, "nav.dashboard")}>
+        <p className="mt-4 text-sm text-mist">{t(lang, "vendeur.demo")}</p>
       </Shell>
     );
   }
@@ -100,13 +114,13 @@ export default async function DashboardPage({
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <Shell title="Tableau de bord">
-        <p className="mt-4 text-sm text-mist">Connecte-toi pour accéder à ton tableau de bord.</p>
+      <Shell title={t(lang, "nav.dashboard")}>
+        <p className="mt-4 text-sm text-mist">{t(lang, "vendeur.connexion")}</p>
         <Link
-          href="/connexion"
+          href="/connexion?next=/tableau-de-bord"
           className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
         >
-          Se connecter
+          {t(lang, "nav.login")}
         </Link>
       </Shell>
     );
@@ -115,29 +129,24 @@ export default async function DashboardPage({
   // Compte suspendu (modération) : accès au tableau de bord bloqué, motif
   // affiché. Le wallet reste intact (aucun gel de solde — cadre BRH) ; seul
   // l'accès et la visibilité catalogue sont coupés le temps de la suspension.
+  // Les pages filles (boutique, compte, codes promo) renvoient ici.
   const suspension = await getSuspension(user.id);
   if (suspension) {
     return (
-      <Shell title="Compte suspendu">
+      <Shell title={t(lang, "vendeur.suspendu.titre")}>
         <div className="mt-6 max-w-xl rounded-2xl border border-danger-text/40 bg-surface/60 p-6 text-sm">
           <p>
-            Votre compte a été suspendu le{" "}
-            <strong>
-              {new Date(suspension.suspendedAt).toLocaleDateString("fr-HT")}
-            </strong>{" "}
-            pour non-respect du règlement de Zabelie.
+            {t(lang, "vendeur.suspendu.texte").replace(
+              "{date}",
+              new Date(suspension.suspendedAt).toLocaleDateString("fr-HT")
+            )}
           </p>
           {suspension.reason && (
             <p className="mt-3 text-mist">
-              Motif : <span className="text-cloud">{suspension.reason}</span>
+              {t(lang, "vendeur.suspendu.motif").replace("{motif}", suspension.reason)}
             </p>
           )}
-          <p className="mt-3 text-mist">
-            Vos produits sont retirés du catalogue et vos gains restent
-            conservés. Si vous pensez qu&apos;il s&apos;agit d&apos;une erreur,
-            contactez l&apos;équipe pour faire appel — la suspension est
-            réversible.
-          </p>
+          <p className="mt-3 text-mist">{t(lang, "vendeur.suspendu.suite")}</p>
         </div>
       </Shell>
     );
@@ -158,23 +167,10 @@ export default async function DashboardPage({
      plafonné à 8 par construction : s'en servir pour dire « 8 ventes » à
      quelqu'un qui en a trente serait le défaut d'origine sous un autre nom. */
   let ventesTotal = 0;
-  let coupons: CouponItem[] = [];
-  // V-5 : coordonnées de livraison — `undefined` = 0076 non appliquée (le
-  // bloc ne se rend pas), sinon les valeurs (vides si jamais renseignées).
-  let livInfo:
-    | { full_name: string; phone: string; adres_liv: string }
-    | undefined;
-  // V-6 : dossier KYC — `null` = 0079 non appliquée, la section se tait.
-  let dossierKyc: Awaited<ReturnType<typeof lireDossierKyc>> = null;
-  let profile = {
-    display_name: user.displayName,
-    bio: "",
-    avatar_url: "",
-    country_code: "",
-    region_code: "",
-    zone_id: "",
-    pwen_repe: "",
-  };
+  /* Commandes payées que le vendeur n'a pas encore déclarées remises (0043 ;
+     les prestations passent par la même machine depuis 0068). `null` = lecture
+     impossible : l'alerte se tait plutôt que de dire « rien à faire ». */
+  let aTraiter: number | null = null;
 
   try {
     const admin = createAdminClient();
@@ -232,28 +228,6 @@ export default async function DashboardPage({
       netComplet = somme.complet;
     }
 
-    const { data: liv, error: livErr } = await admin
-      .from("zabelie_delivery_info")
-      .select("full_name, phone, adres_liv")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (!livErr) {
-      livInfo = {
-        full_name: liv?.full_name ?? "",
-        phone: liv?.phone ?? "",
-        adres_liv: liv?.adres_liv ?? "",
-      };
-    } else if (!isMissingTable(livErr)) {
-      console.error("[delivery-info] lecture échouée", livErr.code);
-    }
-
-    dossierKyc = await lireDossierKyc(admin, user.id);
-
-    const { data: prof } = await admin
-      .from("profiles")
-      .select("display_name, bio, avatar_url, country_code, region_code, zone_id, pwen_repe")
-      .eq("id", user.id)
-      .maybeSingle();
     /* L'adresse publique lisible (0083), lue À PART et sans bruit : la
        colonne n'existe qu'après application, et le code se déploie avant.
        Absente → `boutikSlug` reste null → `hrefBoutique` retombe sur
@@ -264,32 +238,20 @@ export default async function DashboardPage({
       .eq("id", user.id)
       .maybeSingle();
     boutikSlug = (slugRow as { boutik_slug?: string | null } | null)?.boutik_slug ?? null;
-    if (prof) {
-      profile = {
-        display_name: prof.display_name ?? user.displayName,
-        bio: prof.bio ?? "",
-        avatar_url: prof.avatar_url ?? "",
-        country_code: prof.country_code ?? "",
-        region_code: prof.region_code ?? "",
-        zone_id: prof.zone_id ?? "",
-        pwen_repe: prof.pwen_repe ?? "",
-      };
-    }
 
     const { data: prods } = await admin
       .from("products")
-      .select("id, slug, title, status, sales_count, cover_url")
+      .select("id, slug, title, status, sales_count, cover_url, kind")
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false });
     products = (prods ?? []) as ProductRow[];
 
-    const { data: cps } = await admin
-      .from("zabelie_coupons")
-      .select("id, code, percent, product_id, max_uses, uses, expires_at, active")
-      .eq("seller_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    coupons = (cps ?? []) as CouponItem[];
+    const { count: nbATraiter, error: errATraiter } = await admin
+      .from("zabelie_fulfillment")
+      .select("order_id, order:orders!inner(products!orders_product_id_fkey!inner(seller_id))", { count: "exact", head: true })
+      .eq("status", "awaiting_shipment")
+      .eq("order.products.seller_id", user.id);
+    aTraiter = errATraiter ? null : (nbATraiter ?? 0);
 
     const productIds = (prods ?? []).map((p) => (p as { id: string }).id);
     if (productIds.length > 0) {
@@ -321,11 +283,10 @@ export default async function DashboardPage({
     }
   } catch {
     return (
-      <Shell title={`Bonjour, ${user.displayName}`}>
-        <p className="mt-4 text-sm text-danger-text">
-          Données indisponibles (clé service role manquante côté serveur ?).
-        </p>
-      </Shell>
+      <Accueil lang={lang}>
+        <h1 className="text-2xl font-semibold sm:text-3xl">{user.displayName}</h1>
+        <p role="alert" className="mt-4 text-sm text-danger-text">{t(lang, "vendeur.indisponible")}</p>
+      </Accueil>
     );
   }
 
@@ -347,9 +308,6 @@ export default async function DashboardPage({
    * un montant qu'on ne sait pas interpréter — « Revenus nets » ne disait pas
    * sur quel intervalle, donc ne disait rien de vérifiable.
    */
-  /* La langue est résolue AVANT les métriques : elles traduisent désormais
-     leurs libellés, et `t()` est réservé au serveur (règle de lib/i18n.ts). */
-  const lang = await getLang();
   const pricingClient = createAdminClient();
   const sellerPricing = await readSellerPricing(pricingClient);
   const sellerLaunch = sellerPricing ? await readSellerLaunch(pricingClient, user.id, sellerPricing, user.createdAt) : null;
@@ -422,32 +380,6 @@ export default async function DashboardPage({
     },
   ];
 
-  // PR-Z3 (docs/33 §4) : la déclaration de zone (« Ki kote ou ye ? ») vit
-  // dans le formulaire de profil. Libellés précalculés côté serveur — un
-  // composant client ne lit pas les cookies de langue.
-  const zonesPourForm = (isSupabaseConfigured() ? await getZonesActives() : []).map((z) => ({
-    id: z.id,
-    parent_id: z.parent_id,
-    level: z.level,
-    label: libelleZone(z, lang),
-  }));
-  const zoneLabels = {
-    title: t(lang, "zone.form.title"),
-    hint: t(lang, "zone.form.hint"),
-    depatman: t(lang, "zone.level.depatman"),
-    komin: t(lang, "zone.level.komin"),
-    katye: t(lang, "zone.level.katye"),
-    pwen: t(lang, "zone.form.pwen"),
-    pwenPh: t(lang, "zone.form.pwen.ph"),
-    all: t(lang, "zone.filter.all"),
-    reqHint: t(lang, "zone.req.hint"),
-    reqPh: t(lang, "zone.req.ph"),
-    reqBtn: t(lang, "zone.req.btn"),
-    reqOk: t(lang, "zone.req.ok"),
-    reqDup: t(lang, "zone.req.dup"),
-    reqErr: t(lang, "zone.req.err"),
-  };
-
   /* PREMIERS PAS (2026-08-17). Décidé par une fonction pure, pas par une
    * cascade de ternaires dans le rendu — les quatre cas s'énumèrent et se
    * testent sans rendre quoi que ce soit. Le guidage passe AVANT les
@@ -480,8 +412,71 @@ export default async function DashboardPage({
         }
       : null;
 
+  /* FAÇON CHARIOW (docs/73). La salutation suit l'heure d'Haïti ; le nom est
+     celui de la boutique, souvent un nom d'enseigne (« Garaj Petyonvil ») :
+     on ne le coupe pas au premier mot. */
+  const salut = t(lang, `vendeur.salut.${momentDeLaJournee(new Date())}` as I18nKey).replace(
+    "{nom}",
+    user.displayName.trim().slice(0, 60)
+  );
+  const actions: { cle: string; href: string; texte: string; icone: NomIcone }[] = [
+    { cle: "physique", href: "/vendre/physique", texte: t(lang, "sell.physical.cta"), icone: "produits" },
+    { cle: "numerique", href: "/vendre", texte: t(lang, "seller.new"), icone: "nouveau" },
+    // Les codes promo ne s'appliquent qu'à des produits : sans produit, l'action n'a pas d'objet.
+    ...(products.length > 0
+      ? [{ cle: "promo", href: "/tableau-de-bord/codes-promo", texte: t(lang, "vendeur.action.promo"), icone: "promo" as const }]
+      : []),
+    { cle: "partager", href: "/tableau-de-bord/boutique", texte: t(lang, "vendeur.action.partager"), icone: "partage" },
+  ];
+  // La performance numérique ne parle qu'à un vendeur qui a un produit numérique.
+  const vendNumerique = products.some((p) => (DIGITAL_KINDS as readonly string[]).includes(p.kind));
+
   return (
-    <Shell title={`Bonjour, ${user.displayName}`}>
+    <Accueil lang={lang}>
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
+        <div className="min-w-0 sm:flex-1">
+          <h1 className="text-2xl font-semibold sm:text-3xl">{salut}</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.intro")}</p>
+        </div>
+        <Link
+          href={hrefBoutique({ id: user.id, boutikSlug })}
+          className="bouton inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-line px-4 text-sm font-semibold"
+        >
+          <IconeStudio nom="boutique" />
+          {t(lang, "shop.view")}
+        </Link>
+      </div>
+
+      {/* Une étiquette, pas un titre de carte : les `h2` du tableau portent `titre-section`. */}
+      <p id="actions-titre" className="mt-6 text-sm font-semibold">{t(lang, "vendeur.actions")}</p>
+      <ul aria-labelledby="actions-titre" className="mt-3 flex flex-wrap gap-2">
+        {actions.map((a) => (
+          <li key={a.cle}>
+            <Link
+              href={a.href}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-medium hover:border-cloud focus-visible:outline focus-visible:outline-2"
+            >
+              <IconeStudio nom={a.icone} className="h-5 w-5 text-brand" />
+              {a.texte}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      {aTraiter !== null && aTraiter > 0 && (
+        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand/40 bg-surface p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <IconeStudio nom="commandes" className="h-5 w-5 text-brand" />
+            {aTraiter === 1
+              ? t(lang, "vendeur.atraiter.un")
+              : t(lang, "vendeur.atraiter.n").replace("{n}", String(aTraiter))}
+          </p>
+          <Link href="/mes-ventes" className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">
+            {t(lang, "vendeur.atraiter.cta")}
+          </Link>
+        </div>
+      )}
+
       <SellerLaunchPanel launch={sellerLaunch} lang={lang} now={sellerLaunch?.observed_at ?? 0} />
       {premierPas && (
         <VendeurPremierPas
@@ -492,91 +487,77 @@ export default async function DashboardPage({
         />
       )}
 
-      <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-8 scroll-mt-28 rounded-2xl border border-line bg-surface p-5">
-        <h2 id="ma-boutique-title" className="titre-section">{t(lang, "shop.manage")}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
-        <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
-          {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
-        </Link>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
-          <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
-          {/* Le lien n'existe que si le Studio est allumé ET configuré : même prédicat que la page et les routes. */}
-          {studioProvider() && (
-            <Link href="/tableau-de-bord/studio" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "estidyo.lien")}</Link>
-          )}
-          {/* Studio de création éditoriale (docs/70) : même prédicat que sa page et ses routes. */}
-          {creationActive(lireEnvCreation()) && (
-            <Link href="/tableau-de-bord/creation" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{copieCreation(lang).lien}</Link>
-          )}
-          <Link href="/tableau-de-bord/api" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "apikeys.link")}</Link>
-        </div>
-        <div className="mt-4 border-t border-line pt-4">
-          <ShareButtons path={hrefBoutique({ id: user.id, boutikSlug })} text={t(lang, "creator.share.text", { name: profile.display_name })}
-            waLabel={t(lang, "share.wa")} copyLabel={t(lang, "share.copy")} copiedLabel={t(lang, "share.copied")} />
-        </div>
+      {/* L'ARGENT, masquable comme sur Chariow (même préférence de navigateur
+          que le Studio). Chaque valeur garde sa place et son accent ; son
+          double « ••••• » ne s'affiche que zone masquée. */}
+      <section id="argent" aria-labelledby="chiffres-titre" className="mt-8 scroll-mt-28">
+        <MontantsMasquables titre={t(lang, "vendeur.argent")} masquer={t(lang, "vendeur.masquer")} classeTitre="titre-section">
+          {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
+              largeur, et SEULE à porter le dégradé de la marque. */}
+          <div className="mt-3 rounded-2xl border border-line bg-surface-maroon/70 p-6">
+            <p className="text-xs uppercase tracking-wide text-mist">
+              {metriquePrincipale.label}
+            </p>
+            <p className="metric mt-1 text-4xl font-extrabold text-gradient sm:text-5xl group-data-[masque]/montants:hidden">
+              {metriquePrincipale.value}
+            </p>
+            <p className="metric mt-1 hidden text-4xl font-extrabold sm:text-5xl group-data-[masque]/montants:block">
+              <span aria-hidden="true">•••••</span>
+              <span className="sr-only">{t(lang, "vendeur.masque")}</span>
+            </p>
+            <p className="mt-1 text-xs text-mist">{metriquePrincipale.fenetre}</p>
+          </div>
+
+          {/* Les trois secondaires : plus petites, sans dégradé, en couleur pleine.
+              Quatre secondaires : la grille est PAIRE (2×2 sur 360 px), donc plus
+              de carte orpheline à mi-largeur à rattraper. */}
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {metriques.map((m) => (
+              <div
+                key={m.label}
+                className="rounded-2xl border border-line bg-surface-maroon/40 p-4"
+              >
+                <p className="text-xs uppercase tracking-wide text-mist">{m.label}</p>
+                {/* `text-lg` sur mobile, MESURÉ et pas choisi : à `text-xl`,
+                    « 124 600 HTG » se coupait en deux dans une carte de 167 px et
+                    « HTG » restait seul sur sa ligne. Reste honnête sur la limite —
+                    un cumul à sept chiffres passera bien sur deux lignes, que
+                    `leading-tight` garde compactes. */}
+                <p className="metric mt-1 text-lg font-bold leading-tight text-cloud sm:text-xl group-data-[masque]/montants:hidden">
+                  {m.value}
+                </p>
+                <p className="metric mt-1 hidden text-lg font-bold leading-tight text-cloud sm:text-xl group-data-[masque]/montants:block">
+                  <span aria-hidden="true">•••••</span>
+                  <span className="sr-only">{t(lang, "vendeur.masque")}</span>
+                </p>
+                {m.fenetre && <p className="mt-1 text-xs text-mist">{m.fenetre}</p>}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
+            <p className="text-sm text-mist">{t(lang, "vendeur.retrait.regle")}</p>
+            <PayoutRequest
+              disponibleHtg={balance}
+              hasPending={hasPendingPayout}
+              labels={{
+                open: t(lang, "vendeur.retrait.ouvrir"),
+                title: t(lang, "vendeur.retrait.titre"),
+                intro: t(lang, "vendeur.retrait.intro").replace("{montant}", formatHTG(balance)),
+                amount: t(lang, "vendeur.retrait.montant"),
+                submit: t(lang, "vendeur.retrait.envoyer"),
+                submitting: t(lang, "vendeur.retrait.envoi"),
+                cancel: t(lang, "vendeur.retrait.annuler"),
+                pending: t(lang, "vendeur.retrait.enCours"),
+                networkError: t(lang, "vendeur.retrait.reseau"),
+                success: t(lang, "vendeur.retrait.ok"),
+              }}
+            />
+          </div>
+        </MontantsMasquables>
       </section>
 
-      {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
-          largeur, et SEULE à porter le dégradé de la marque. */}
-      <div className="mt-8 rounded-2xl border border-line bg-surface-maroon/70 p-6">
-        <p className="text-xs uppercase tracking-wide text-mist">
-          {metriquePrincipale.label}
-        </p>
-        <p className="metric mt-1 text-4xl font-extrabold text-gradient sm:text-5xl">
-          {metriquePrincipale.value}
-        </p>
-        <p className="mt-1 text-xs text-mist">{metriquePrincipale.fenetre}</p>
-      </div>
-
-      {/* Les trois secondaires : plus petites, sans dégradé, en couleur pleine.
-          Quatre secondaires : la grille est PAIRE (2×2 sur 360 px), donc plus
-          de carte orpheline à mi-largeur à rattraper. */}
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {metriques.map((m) => (
-          <div
-            key={m.label}
-            className="rounded-2xl border border-line bg-surface-maroon/40 p-4"
-          >
-            <p className="text-xs uppercase tracking-wide text-mist">{m.label}</p>
-            {/* `text-lg` sur mobile, MESURÉ et pas choisi : à `text-xl`,
-                « 124 600 HTG » se coupait en deux dans une carte de 167 px et
-                « HTG » restait seul sur sa ligne. Reste honnête sur la limite —
-                un cumul à sept chiffres passera bien sur deux lignes, que
-                `leading-tight` garde compactes. */}
-            <p className="metric mt-1 text-lg font-bold leading-tight text-cloud sm:text-xl">
-              {m.value}
-            </p>
-            {m.fenetre && <p className="mt-1 text-xs text-mist">{m.fenetre}</p>}
-          </div>
-        ))}
-      </div>
-
-      <DigitalSellerMetrics sellerId={user.id} lang={lang}/>
-
-      <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
-        <p className="text-sm text-mist">
-          Chaque vente confirmée est créditée <strong>en attente</strong> et
-          devient <strong>disponible 7 jours plus tard</strong> (fenêtre
-          anti-fraude / remboursement).
-        </p>
-        <PayoutRequest
-          disponibleHtg={balance}
-          hasPending={hasPendingPayout}
-          labels={{
-            open: "Demander un retrait",
-            title: "Demande de retrait",
-            intro: `Disponible : ${formatHTG(balance)}. Le versement est effectué par MonCash après vérification ; vous recevrez la référence du reçu.`,
-            amount: "Montant à retirer (HTG)",
-            submit: "Envoyer la demande",
-            submitting: "Envoi…",
-            cancel: "Annuler",
-            pending: "Une demande de retrait est en cours de traitement. Vous serez réglé par MonCash.",
-            networkError: "Réseau instable. Réessayez.",
-            success: "Demande enregistrée. Le montant est réservé en attendant le versement.",
-          }}
-        />
-      </div>
+      {vendNumerique && <DigitalSellerMetrics sellerId={user.id} lang={lang}/>}
 
       {/* Ventes récentes */}
       <section id="ventes" className="mt-10 scroll-mt-24">
@@ -615,7 +596,7 @@ export default async function DashboardPage({
                   className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-xl border border-line bg-surface/60 px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm">{product?.title ?? "Produit"}</p>
+                    <p className="truncate text-sm">{product?.title ?? t(lang, "vendeur.nav.produits")}</p>
                     <p className="mt-0.5 text-xs text-mist">
                       {new Date(o.created_at).toLocaleDateString("fr-HT")}
                       {/* Le numéro que le vendeur cite à l'acheteur — WhatsApp. */}
@@ -667,21 +648,21 @@ export default async function DashboardPage({
       </section>
 
       {/* Mes produits */}
-      <section className="mt-10">
+      <section id="produits" className="mt-10 scroll-mt-24">
         <div className="flex items-center justify-between">
-          <h2 className="titre-section">Mes produits</h2>
+          <h2 className="titre-section">{t(lang, "vendeur.produits.titre")}</h2>
           <Link
             href="/vendre"
-            className="text-sm text-mist transition hover:text-cloud"
+            className="inline-flex min-h-11 items-center text-sm text-mist transition hover:text-cloud"
           >
-            + Publier
+            {t(lang, "vendeur.produits.publier")}
           </Link>
         </div>
         {products.length === 0 ? (
           <p className="mt-3 text-sm text-mist">
-            Aucun produit.{" "}
+            {t(lang, "vendeur.produits.aucun")}{" "}
             <Link href="/vendre" className="text-cloud underline">
-              Publier le premier
+              {t(lang, "vendeur.produits.premier")}
             </Link>
           </p>
         ) : (
@@ -748,108 +729,6 @@ export default async function DashboardPage({
           </ul>
         )}
       </section>
-
-      {/* Codes promo (V-13). L'ancre sert l'action rapide du Studio. */}
-      {products.length > 0 && (
-        <section id="codes-promo" className="mt-10 scroll-mt-28">
-          <h2 className="titre-section">Codes promo</h2>
-          <p className="mt-1 text-xs text-mist">
-            Créez un code (ex. <span className="code-lisible font-bold text-accent">PROMO50</span>),
-            partagez-le sur WhatsApp — la remise s&apos;applique automatiquement au
-            paiement. Valable sur tous vos produits.
-          </p>
-          <div className="mt-4 rounded-2xl border border-line bg-surface/60 p-5">
-            <ZabelieCouponManager coupons={coupons} />
-          </div>
-        </section>
-      )}
-
-      {/* Profil public */}
-      <section id="profil-public" className="mt-10 scroll-mt-28">
-        <div className="flex items-center justify-between">
-          <h2 className="titre-section">{t(lang, "dashboard.profile.public")}</h2>
-          <Link
-            href={hrefBoutique({ id: user.id, boutikSlug })}
-            className="text-sm text-mist transition hover:text-cloud"
-          >
-            {t(lang, "dashboard.profile.view")}
-          </Link>
-        </div>
-        <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-          <ProfileForm
-            initial={profile}
-            zones={zonesPourForm}
-            zoneLabels={zoneLabels}
-            labels={{
-              name: t(lang, "profile.name"),
-              avatar: t(lang, "profile.avatar"),
-              country: t(lang, "profile.country"),
-              department: t(lang, "profile.department"),
-              bio: t(lang, "profile.bio"),
-              optional: t(lang, "profile.optional"),
-            }}
-          />
-        </div>
-        {/* V-5 (docs/35) : coordonnées de livraison — table SÉPARÉE du profil
-            public, masquée tant que 0076 n'est pas appliquée. */}
-        {dossierKyc && (
-          <div className="max-w-lg">
-            <KycForm
-              statut={dossierKyc.statut}
-              deposes={dossierKyc.documents}
-              noteAdmin={dossierKyc.noteAdmin}
-              labels={{
-                title: t(lang, "kyc.title"),
-                why: t(lang, "kyc.why"),
-                pending: t(lang, "kyc.pending"),
-                approved: t(lang, "kyc.approved"),
-                rejected: t(lang, "kyc.rejected"),
-                cin: t(lang, "kyc.cin"),
-                paspo: t(lang, "kyc.paspo"),
-                selfie: t(lang, "kyc.selfie"),
-                add: t(lang, "kyc.add"),
-                sending: t(lang, "kyc.sending"),
-                error: t(lang, "sell.galerie.error"),
-                deposited: t(lang, "kyc.deposited"),
-              }}
-            />
-          </div>
-        )}
-        {livInfo !== undefined && (
-          <div className="max-w-lg">
-            <DeliveryInfoForm
-              initial={livInfo}
-              labels={{
-                title: t(lang, "profile.liv.title"),
-                fullName: t(lang, "profile.liv.fullname"),
-                phone: t(lang, "profile.liv.phone"),
-                adres: t(lang, "profile.liv.adres"),
-                hint: t(lang, "profile.liv.hint"),
-                save: t(lang, "profile.liv.save"),
-                saving: t(lang, "profile.liv.saving"),
-                saved: t(lang, "profile.liv.saved"),
-                error: t(lang, "sell.galerie.error"),
-              }}
-            />
-          </div>
-        )}
-      </section>
-
-      {/* Données & compte (RGPD) */}
-      <section className="mt-10">
-        <h2 className="titre-section">Mes données &amp; mon compte</h2>
-        <p className="mt-1 text-sm text-mist">
-          Téléchargez une copie de vos données ou supprimez votre compte. Voir
-          notre{" "}
-          <Link href="/confidentialite" className="text-cloud underline">
-            politique de confidentialité
-          </Link>
-          .
-        </p>
-        <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-          <AccountActions />
-        </div>
-      </section>
-    </Shell>
+    </Accueil>
   );
 }
