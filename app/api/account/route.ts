@@ -28,7 +28,7 @@ export async function DELETE() {
 
   const [purchases, sales, kyc, acceptances] = await Promise.all([
     admin.from("orders").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
-    admin.from("orders").select("id,products!inner(seller_id)", { count: "exact", head: true }).eq("products.seller_id", user.id),
+    admin.from("orders").select("id,products!orders_product_id_fkey!inner(seller_id)", { count: "exact", head: true }).eq("products.seller_id", user.id),
     admin.from("zabelie_kyc_documents").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     // 0046 is append-only, including its profile FK cascade. Keep the receipt
     // while closing and scrubbing identity rather than attempting deletion.

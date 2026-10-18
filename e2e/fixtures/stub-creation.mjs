@@ -5,6 +5,7 @@
 // modifie plus, l'approbation porte sur une révision exacte.
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
 
 const port = Number(process.env.STUB_PORT || 15431);
 const appPort = Number(process.env.APP_PORT || 3011);
@@ -56,6 +57,8 @@ const server = createServer(async (req, res) => {
   const role = Object.keys(ids).find((r) => token(r) === jwt) ?? (jwt === "cle-service-de-test" ? "service" : "anon");
   const moi = ids[role];
 
+  // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
+  if (jointureAmbigue(tableDe(u.pathname), u.searchParams.get("select"))) return send(REFUS_PGRST201, 300);
   if (u.pathname === "/__health") return send({ ok: true });
   if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); opportunitesVides = false; return send({ ok: true }); }
   if (u.pathname === "/__opportunites") { opportunitesVides = u.searchParams.get("mode") === "vide"; return send({ ok: true }); }

@@ -74,13 +74,13 @@ async function notifierUneCommande(
     let order: OrderForNotify | null;
     ({ data: order } = await admin
       .from("orders")
-      .select("id, order_ref, buyer_id, amount_htg, product:products(title, seller_id)")
+      .select("id, order_ref, buyer_id, amount_htg, product:products!orders_product_id_fkey(title, seller_id)")
       .eq("id", orderId)
       .single<OrderForNotify>());
     if (!order) {
       const retry = await admin
         .from("orders")
-        .select("id, buyer_id, amount_htg, product:products(title, seller_id)")
+        .select("id, buyer_id, amount_htg, product:products!orders_product_id_fkey(title, seller_id)")
         .eq("id", orderId)
         .single();
       if (!retry.data) return;
@@ -178,7 +178,7 @@ export async function renvoyerNotificationVente(
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, order_ref, amount_htg, product:products(title)")
+    .select("id, order_ref, amount_htg, product:products!orders_product_id_fkey(title)")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return false;

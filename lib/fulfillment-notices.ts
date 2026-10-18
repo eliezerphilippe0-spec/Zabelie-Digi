@@ -141,7 +141,7 @@ export async function envoyerAvisDus(
   const { data, error } = await admin
     .from("zabelie_fulfillment_notices")
     .select(
-      "id, order_id, kind, attempts, order:orders(order_ref, buyer_id, products(title), zabelie_fulfillment(shipped_at))"
+      "id, order_id, kind, attempts, order:orders(order_ref, buyer_id, products!orders_product_id_fkey(title), zabelie_fulfillment(shipped_at))"
     )
     .is("sent_at", null)
     .lte("due_at", new Date().toISOString())

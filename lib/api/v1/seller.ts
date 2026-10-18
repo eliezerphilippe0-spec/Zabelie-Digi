@@ -148,7 +148,7 @@ export async function sellerSales(input: z.infer<typeof SellerSalesInput>, ctx: 
   const c = cle(input.cursor);
   let q = ctx.admin
     .from("orders")
-    .select("id, order_ref, product_id, amount_htg, discount_htg, status, zabelie_payment_is_live, created_at, products!inner(seller_id)")
+    .select("id, order_ref, product_id, amount_htg, discount_htg, status, zabelie_payment_is_live, created_at, products!orders_product_id_fkey!inner(seller_id)")
     .eq("products.seller_id", ctx.sellerId)
     .in("status", input.status ? [input.status] : [...SALE_STATUSES]);
   if (c) q = q.or(apres(c));

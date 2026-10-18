@@ -297,7 +297,7 @@ export default async function DashboardPage({
       // on redemande sans elle (même motif que le catalogue).
       const first = await admin
         .from("orders")
-        .select("id, order_ref, amount_htg, created_at, status, product:products(title)",
+        .select("id, order_ref, amount_htg, created_at, status, product:products!orders_product_id_fkey(title)",
           { count: "exact" })
         .in("product_id", productIds)
         .in("status", ["paid", "delivered"])
@@ -308,7 +308,7 @@ export default async function DashboardPage({
       if (isMissingColumn(first.error)) {
         const retry = await admin
           .from("orders")
-          .select("id, amount_htg, created_at, status, product:products(title)",
+          .select("id, amount_htg, created_at, status, product:products!orders_product_id_fkey(title)",
             { count: "exact" })
           .in("product_id", productIds)
           .in("status", ["paid", "delivered"])

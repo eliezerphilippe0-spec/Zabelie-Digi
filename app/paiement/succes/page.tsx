@@ -47,7 +47,7 @@ async function detailsCommande(
     if (!user) return vide;
     const { data, error } = await supabase
       .from("orders")
-      .select("order_ref,product_id,buyer_id,status,amount_htg,product:products(kind,seller_id)")
+      .select("order_ref,product_id,buyer_id,status,amount_htg,product:products!orders_product_id_fkey(kind,seller_id)")
       .eq("buyer_id", user.id)
       .eq("id", orderId)
       .maybeSingle();

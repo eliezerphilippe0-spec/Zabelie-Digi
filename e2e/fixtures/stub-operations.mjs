@@ -1,5 +1,6 @@
 // Isolated test server: no production keys and loopback binding only.
 import {createServer} from "node:http";
+import {jointureAmbigue,REFUS_PGRST201,tableDe} from "./jointures-postgrest.mjs";
 const port=Number(process.env.STUB_PORT||15429),appPort=Number(process.env.APP_PORT||3059);
 const ids={buyer:"11300000-0000-4000-8000-000000000003",seller:"11300000-0000-4000-8000-000000000001",foreign:"11300000-0000-4000-8000-000000000004",admin:"11300000-0000-4000-8000-000000000005"};
 const order="11300000-0000-4000-8000-000000000020",caseId="11300000-0000-4000-8000-000000000030";
@@ -11,6 +12,8 @@ const server=createServer(async(req,res)=>{
  const single=rows=>req.headers.accept?.includes("pgrst.object")?send(rows[0]??null):send(rows);
  const body=async()=>{let s="";for await(const c of req)s+=c;return JSON.parse(s||"{}");};
  const jwt=(req.headers.authorization||"").replace("Bearer ","");const role=Object.keys(ids).find(r=>token(r)===jwt)||"buyer";
+ // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
+ if(jointureAmbigue(tableDe(u.pathname),u.searchParams.get("select")))return send(REFUS_PGRST201,300);
  if(u.pathname==="/__health")return send({ok:true});
  if(u.pathname==="/__reset"){messages=[];status="open";return send({ok:true});}
  if(u.pathname==="/__messages")return send(messages);
