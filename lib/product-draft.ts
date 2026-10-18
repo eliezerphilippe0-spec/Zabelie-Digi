@@ -52,12 +52,19 @@ export async function creerBrouillonProduit({
   supabase,
   user,
   body,
+  lienProjet,
 }: {
   req: Request;
   lang: Lang;
   supabase: Awaited<ReturnType<typeof createClient>>;
   user: { id: string; email?: string | null };
   body: CorpsBrouillon;
+  /**
+   * « Soumettre à la revue » (Studio, 0148) : le projet que la fiche représente.
+   * L'index unique partiel fait de l'insertion elle-même la garantie d'un seul
+   * produit par projet (T19). Absent pour la route de publication classique.
+   */
+  lienProjet?: string;
 }): Promise<NextResponse | BrouillonCree> {
   const { kind, category } = body;
   const price = Number(body.priceHTG);
@@ -287,9 +294,19 @@ export async function creerBrouillonProduit({
           service: "draft",
           physical: "draft",
         }) ?? "draft",
+      ...(lienProjet ? { zabelie_authoring_project_id: lienProjet } : {}),
     })
     .select("id, slug, status")
     .single();
+
+  // Une soumission simultanée a déjà créé LA fiche de ce projet : l'appelant
+  // la retrouve au lieu d'en créer une seconde (T19).
+  if (lienProjet && error?.code === "23505") {
+    return NextResponse.json(
+      { error: t(lang, "authoring.soumission.dejaSoumis"), code: "authoring_deja_soumis" },
+      { status: 409 }
+    );
+  }
 
   if (error || !product) {
     return NextResponse.json(

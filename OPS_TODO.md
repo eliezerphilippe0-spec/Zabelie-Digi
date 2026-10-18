@@ -188,6 +188,34 @@ Vérifications après application, en lecture :
 Connu, à traiter en 5.3 : la fermeture de compte garde projets et exports ; une suppression complète laisserait les
 fichiers du bucket (même situation que les pièces KYC). Conservation des exports non acquis : décision D5, ouverte.
 
+### Migration `0148_zabelie_authoring_product_link.sql` — protocole d'application (PR 5, « Soumettre à la revue »)
+
+⏳ **NON APPLIQUÉE.** « oui » du porteur requis avant l'application, puis un autre avant la fusion de la PR 5 (C2-A),
+même CI verte. Exige `0141`.
+
+C'est la première migration du Studio qui touche une table existante : `products`. Additive : une colonne nullable
+`zabelie_authoring_project_id` (clé étrangère vers `zabelie_authoring_projects`, `on delete set null`), un index unique
+partiel (un projet, une fiche), une garde `zabelie_products_projet_garde` (même vendeur que le projet, lien immuable une
+fois posé, pour tout rôle) et la sonde redéfinie (la garde et la colonne en plus). Aucune écriture accordée à un rôle
+client : `products` reste écrit par le service role seul (0024). Aucune table d'argent ni de commande n'est touchée,
+aucune ligne existante n'est modifiée. L'index se construit sous verrou d'écriture sur `products` : la table est petite,
+c'est l'affaire d'un instant, mais mieux vaut appliquer hors d'une heure de publication.
+
+Ordre proposé : CI verte sur la tête de la PR 5 (dont `sql-tests` : `authoring_product_link.test.sql` et
+`authoring_submit_concurrent.sh`, dix soumissions simultanées pour une seule fiche) → comparaison de la sonde (elle ne
+fait qu'ajouter) → application de `0148` → vérifications ci-dessous → registre interne inscrit à la main (empreinte
+canonique par `node scripts/zabelie-migration-hash.mjs`) → fusion. Le Studio reste éteint en production.
+
+Vérifications après application, en lecture :
+1. Registre : la ligne `0148_zabelie_authoring_product_link.sql`, et le décompte égal au nombre de fichiers du dépôt.
+2. Post-conditions `ZB148` passées (la migration lève sinon).
+3. `select count(*) from products where zabelie_authoring_project_id is not null` : 0 (aucune fiche rattachée d'office).
+4. `select objet, present from zabelie_objets_requis() where objet in ('zabelie_products_projet_garde',
+   'products.zabelie_authoring_project_id')` : deux lignes, `present` vrai ; sonde 151 → 153 objets, aucun perdu.
+
+Retour arrière : le Studio étant éteint, aucun n'est nécessaire. Ne pas supprimer la colonne à la main : la route
+classique de publication ne la nomme pas et fonctionne avec ou sans elle.
+
 ## Audit Etsy, lots 1 et 2 — en ligne le 14 octobre 2026
 
 Instruction directe : « fusionne ». Sont fusionnées, dans cet ordre : #347

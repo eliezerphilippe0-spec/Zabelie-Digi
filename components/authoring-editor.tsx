@@ -7,6 +7,9 @@ import { ficheTest, regrouperParCode, type CodeControle, type Controle } from "@
 import { exportAJour, lireExportClient, tailleLisible, type ExportClient } from "@/lib/digital-authoring/export";
 import type { Lang } from "@/lib/i18n";
 import { ConfirmationEnvoi, EtatSuggestion, useSuggestions, type PlanPropose, type Quota } from "@/components/authoring-suggestion";
+import { AuthoringSoumission } from "@/components/authoring-soumission";
+import type { FicheRattachee } from "@/lib/digital-authoring/soumission";
+import type { OptionCategorie, OptionSousRayon } from "@/lib/product-categories";
 import {
   brouillonDiffere,
   effacerBrouillon,
@@ -41,6 +44,9 @@ import {
  * PDF (tâche 4.3) : créé par le serveur depuis la révision approuvée, ouvert
  * par un lien signé de cinq minutes, puis approuvé TEL QUEL : l'écran renvoie
  * l'empreinte du fichier montré, et le bouton n'ouvre qu'après l'aperçu.
+ *
+ * Fiche produit (tâche 5.2) : « Soumettre à la revue » n'ouvre qu'avec le PDF
+ * approuvé de la révision courante ; la fiche naît en brouillon.
  *
  * Sauvegarde (STU 05) :
  *   - automatique une seconde après la dernière frappe, et par le bouton ;
@@ -78,6 +84,9 @@ export function AuthoringEditor({
   quotaInitial = null,
   lang = "fr",
   exportInitial = null,
+  rayons = [],
+  sousRayons = [],
+  ficheInitiale = null,
 }: {
   initial: ProjetEditeur;
   labels: CopieCreation;
@@ -89,6 +98,11 @@ export function AuthoringEditor({
   lang?: Lang;
   /** Le dernier PDF du projet, lu sous le JWT (0147) ; `null` s'il n'y en a pas. */
   exportInitial?: ExportClient | null;
+  /** Rayons et sous-rayons ouverts à la publication, lus en base par la page. */
+  rayons?: OptionCategorie[];
+  sousRayons?: OptionSousRayon[];
+  /** La fiche déjà rattachée au projet (0148), lue sous le JWT ; `null` s'il n'y en a pas. */
+  ficheInitiale?: FicheRattachee | null;
 }) {
   const e = labels.editeur;
   const ids = useId();
@@ -850,6 +864,9 @@ export function AuthoringEditor({
             </div>
           )}
         </section>
+
+        <AuthoringSoumission projetId={initial.id} labels={labels.soumission} rayons={rayons} sousRayons={sousRayons}
+          ficheInitiale={ficheInitiale} exportPret={pdfAJour && pdf?.approuveLe ? pdf.id : null} />
       </fieldset>
 
       {message && (

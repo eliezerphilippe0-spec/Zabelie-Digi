@@ -272,23 +272,26 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ### 5.1 Extraction sans changement de comportement
 **Description :** sortir la création de brouillon de `app/api/products/route.ts` et la confirmation d'actif de `app/api/products/asset/route.ts` en fonctions partagées ; les deux routes les appellent.
 **Critères :**
-- [ ] Tous les tests existants des deux routes passent sans modification.
-- [ ] Les réponses des routes sont identiques avant et après (test d'équivalence).
+- [x] Tous les tests existants des deux routes passent sans modification.
+- [x] Les réponses des routes sont identiques avant et après (test d'équivalence).
 **Vérification :** `npm test` complet ; e2e publication existants.
 **Dépendances :** aucune (peut avancer en parallèle de la phase 4).
 **Fichiers :** `lib/product-draft.ts`, `lib/product-asset-confirm.ts`, `app/api/products/route.ts`, `app/api/products/asset/route.ts`, `tests/product-draft-extraction.test.ts`.
 **Taille :** M.
+**Mesuré (2026-10-18) :** déplacement tel quel, les deux routes appellent les fonctions partagées. Les gardes qui lisaient les routes lisent aussi les modules extraits, et le cliquet des messages en dur les compte toujours (rien n'a baissé par simple déplacement). Avant le commit, treize scénarios de création et treize de confirmation rejoués contre l'ancienne route de `main` : réponses et écritures identiques. 5 tests (E1 à E5) gardent l'appel, les refus et les écritures.
 
 ### 5.2 « Soumettre à la revue » : un seul produit par projet
 **Description :** colonne additive `products.zabelie_authoring_project_id` + index unique partiel ; action idempotente qui crée ou retrouve le brouillon, dépose et confirme l'export approuvé, et laisse la modération existante décider. **Bloquée par C4 et D2.**
 **Critères :**
-- [ ] Deux soumissions simultanées, même clé puis clés différentes : un seul produit, aucune fiche orpheline (T19).
-- [ ] Panne entre dépôt et association : aucun produit public invalide, reprise prudente (T20) ; produit d'un autre vendeur refusé (T03).
-- [ ] Aucune publication automatique : le produit reste `draft`.
+- [x] Deux soumissions simultanées, même clé puis clés différentes : un seul produit, aucune fiche orpheline (T19).
+- [x] Panne entre dépôt et association : aucun produit public invalide, reprise prudente (T20) ; produit d'un autre vendeur refusé (T03).
+- [x] Aucune publication automatique : le produit reste `draft`.
 **Vérification :** test concurrent SQL en CI ; tests d'intégration avec panne injectée.
 **Dépendances :** 4.3, 5.1, C4, D2.
-**Fichiers :** `supabase/migrations/NNNN_zabelie_authoring_product_link.sql`, `app/api/digital-authoring/submit/route.ts`, `lib/digital-authoring/submit.ts`, `supabase/tests/authoring_submit_concurrent.sh`, `tests/digital-authoring-soumission.test.ts`.
+**Fichiers :** `supabase/migrations/0148_zabelie_authoring_product_link.sql`, `app/api/digital-authoring/projects/[id]/soumission/route.ts`, `lib/digital-authoring/soumission.ts`, `lib/product-draft.ts` (lien vers le projet), `components/authoring-soumission.tsx` et `components/authoring-editor.tsx` (étape « 6. La fiche produit »), `app/tableau-de-bord/creation/[projectId]/page.tsx`, `supabase/tests/authoring_product_link.test.sql`, `supabase/tests/authoring_submit_concurrent.sh`, `tests/digital-authoring-soumission.test.ts`, `e2e-creation/soumission.spec.ts`.
 **Taille :** M.
+**Mesuré (2026-10-18) :** la route relit sous le JWT le projet, l'export désigné et la fiche déjà rattachée ; elle crée la fiche par la fonction partagée de 5.1 (mêmes règles que `/vendre` : prix, rayon et sous-rayon validés en base, attestation enregistrée avant la fiche), avec le lien vers le projet. L'unicité tient à l'insertion (index unique partiel de 0148) : la soumission perdante reçoit le refus d'unicité et reprend la fiche de la gagnante. Le PDF approuvé est relu au bucket privé, ses octets comparés à l'empreinte approuvée, puis recopié sous la fiche à un chemin déterministe (UUID version 8 tiré de l'empreinte) et confirmé par la logique de 5.1 : une reprise après panne retombe sur le même objet et la même ligne. Un nouveau PDF du même guide remplace l'ancien sur une fiche en brouillon (la ligne seulement, après confirmation du nouveau ; l'objet reste au stockage). Fiche publiée ou retirée : rien n'est touché. En base, la garde refuse le projet d'un autre vendeur et fige le lien. 11 tests de la route, 1 de la création partagée (E6), 6 cas SQL (PL1 à PL6) et le script concurrent (dix sessions, une fiche), exécutés en CI seulement, 3 parcours e2e (32 sur 32 dans la suite du Studio) ; 25 mutations tuées sur 25.
+**Reste :** 0148 n'est pas appliquée (protocole dans `OPS_TODO.md`, « oui » du porteur requis).
 
 ### 5.3 Atelier numérique, suppression et export de compte
 **Description :** extrait, résultats, prérequis, FAQ et détails numériques remplis via `parseDigitalStudio` et les contrats existants ; suppression et archivage de projet ; tables du Studio dans l'export de compte.

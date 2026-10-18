@@ -4,7 +4,7 @@
 // projets (RLS), la sauvegarde compare la révision, un projet archivé ne se
 // modifie plus, l'approbation porte sur une révision exacte.
 import { createServer } from "node:http";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
 
 const port = Number(process.env.STUB_PORT || 15431);
@@ -22,6 +22,18 @@ let revisions = new Map();
 let exportsPdf = new Map();
 let objets = new Map();
 const BUCKET_EXPORTS = "authoring-exports";
+// « Soumettre à la revue » (0148) : fiches, lignes de livrables et objets du bucket des fichiers vendus.
+let produits = new Map();
+let livrables = new Map();
+let fichiers = new Map();
+const BUCKET_FICHIERS = "product-files";
+// Taxonomie (zabelie_categories) : un département et un sous-rayon, au format des colonnes lues.
+const CATEGORIES = [
+  { id: "11400000-0000-4000-8000-0000000000c1", slug: "edikasyon", parent_id: null, level: 1, position: 1, active: true,
+    label_fr: "Éducation", label_kr: "Edikasyon", label_en: "Education", label_es: "Educación" },
+  { id: "11400000-0000-4000-8000-0000000000c2", slug: "gid-pratik", parent_id: "11400000-0000-4000-8000-0000000000c1", level: 2, position: 1, active: true,
+    label_fr: "Guides pratiques", label_kr: "Gid pratik", label_en: "Practical guides", label_es: "Guías prácticas" },
+];
 // Opportunités (0143) : un jeu de TEST, au format exact de la fonction ; `/__opportunites?mode=vide` le vide.
 const OPPORTUNITES = {
   jours: 30,
@@ -84,8 +96,18 @@ const server = createServer(async (req, res) => {
   // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
   if (jointureAmbigue(tableDe(u.pathname), u.searchParams.get("select"))) return send(REFUS_PGRST201, 300);
   if (u.pathname === "/__health") return send({ ok: true });
-  if (u.pathname === "/__reset") { projets = new Map(); operations = new Map(); revisions = new Map(); exportsPdf = new Map(); objets = new Map(); opportunitesVides = false; ventesMode = "aucune"; return send({ ok: true }); }
+  if (u.pathname === "/__reset") {
+    projets = new Map(); operations = new Map(); revisions = new Map(); exportsPdf = new Map(); objets = new Map();
+    produits = new Map(); livrables = new Map(); fichiers = new Map(); opportunitesVides = false; ventesMode = "aucune";
+    return send({ ok: true });
+  }
   if (u.pathname === "/__objets") return send([...objets.keys()]);
+  if (u.pathname === "/__fiches") {
+    return send({ produits: [...produits.values()], livrables: [...livrables.values()],
+      fichiers: [...fichiers.entries()].map(([chemin, octets]) => ({ chemin, empreinte: createHash("sha256").update(octets).digest("hex") })) });
+  }
+  // La modération, simulée : met en vente toutes les fiches du jeu de test.
+  if (u.pathname === "/__publier") { for (const p of produits.values()) p.status = "published"; return send({ ok: true }); }
   if (u.pathname === "/__ventes") { ventesMode = ["pleines", "aucune", "erreur"].includes(u.searchParams.get("mode")) ? u.searchParams.get("mode") : "aucune"; return send({ ok: true }); }
   if (u.pathname === "/__opportunites") { opportunitesVides = u.searchParams.get("mode") === "vide"; return send({ ok: true }); }
   if (u.pathname === "/__login") {
@@ -257,6 +279,14 @@ const server = createServer(async (req, res) => {
     objets.set(chemin, octets);
     return send({ Key: `${BUCKET_EXPORTS}/${chemin}`, Id: randomUUID() });
   }
+  // Lecture des octets par le service role seul : la soumission recopie le PDF approuvé.
+  if (u.pathname.startsWith(prefixeObjet) && req.method === "GET") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const octets = objets.get(decodeURIComponent(u.pathname.slice(prefixeObjet.length)));
+    if (!octets) return send({ message: "objet absent" }, 404);
+    res.writeHead(200, { "content-type": "application/pdf", "content-length": octets.length });
+    return res.end(octets);
+  }
   if (u.pathname.startsWith(prefixeSigne) && req.method === "POST") {
     if (role !== "service") return send({ message: "signature : service role seulement" }, 403);
     const chemin = decodeURIComponent(u.pathname.slice(prefixeSigne.length));
@@ -319,6 +349,70 @@ const server = createServer(async (req, res) => {
     const n = ventesMode === "pleines" && moi === ids.seller ? PRODUITS_VENDUS.length : 0;
     res.writeHead(200, { "content-type": "application/json", "content-range": `*/${n}` });
     return res.end();
+  }
+
+  // ── « Soumettre à la revue » (0148) ─────────────────────────────────────────
+  // Comme la base : écriture des fiches par le service role seul (0024), le
+  // vendeur ne lit que les siennes (RLS), un projet mène à UNE fiche (index
+  // unique partiel), et jamais au projet d'un autre vendeur (garde).
+  if (u.pathname === "/rest/v1/zabelie_categories") {
+    const filtres = ["id", "slug", "level", "label_fr", "active"].filter((c) => u.searchParams.has(c));
+    return send(CATEGORIES.filter((c) => filtres.every((k) => String(c[k]) === eq(k))));
+  }
+  if (u.pathname === "/rest/v1/products" && req.method === "POST") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for table products" }, 403);
+    const b = await body();
+    const lien = b.zabelie_authoring_project_id ?? null;
+    if (lien) {
+      const p = projets.get(lien);
+      if (!p || p.seller_id !== b.seller_id) return send({ code: "42501", message: "authoring_lien_autre_vendeur" }, 403);
+      if ([...produits.values()].some((x) => x.zabelie_authoring_project_id === lien)) {
+        return send({ code: "23505", message: 'duplicate key value violates unique constraint "products_zabelie_authoring_project_unique"' }, 409);
+      }
+    }
+    const ligne = { ...b, id: randomUUID(), zabelie_authoring_project_id: lien };
+    produits.set(ligne.id, ligne);
+    return single([ligne]);
+  }
+  if (u.pathname === "/rest/v1/products" && req.method === "GET") {
+    const lien = eq("zabelie_authoring_project_id");
+    return single([...produits.values()].filter((x) =>
+      (role === "service" || x.seller_id === moi) && (!lien || x.zabelie_authoring_project_id === lien) && (!eq("id") || x.id === eq("id"))));
+  }
+  if (u.pathname === "/rest/v1/product_assets") {
+    if (role !== "service") return send({ code: "42501", message: "permission denied for table product_assets" }, 403);
+    if (req.method === "POST") {
+      const b = await body();
+      if ([...livrables.values()].some((l) => l.storage_path === b.storage_path)) return send({ code: "23505", message: "duplicate key value" }, 409);
+      const l = { ...b, id: randomUUID() };
+      livrables.set(l.id, l);
+      return send([l], 201);
+    }
+    if (req.method === "DELETE") {
+      const retires = (u.searchParams.get("id") || "").replace(/^in\.\(|\)$/g, "").split(",").filter(Boolean);
+      for (const [k, l] of livrables) if (l.product_id === eq("product_id") && retires.includes(k)) livrables.delete(k);
+      return send([]);
+    }
+    return single([...livrables.values()].filter((l) =>
+      (!eq("product_id") || l.product_id === eq("product_id")) && (!eq("storage_path") || l.storage_path === eq("storage_path"))));
+  }
+  const prefixeFichier = `/storage/v1/object/${BUCKET_FICHIERS}/`;
+  if (u.pathname.startsWith(prefixeFichier) && req.method === "POST") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const morceaux = [];
+    for await (const c of req) morceaux.push(c);
+    const chemin = decodeURIComponent(u.pathname.slice(prefixeFichier.length));
+    if (fichiers.has(chemin) && req.headers["x-upsert"] !== "true") return send({ statusCode: "409", error: "Duplicate", message: "The resource already exists" }, 400);
+    fichiers.set(chemin, Buffer.concat(morceaux));
+    return send({ Key: `${BUCKET_FICHIERS}/${chemin}`, Id: randomUUID() });
+  }
+  if (u.pathname === `/storage/v1/object/list/${BUCKET_FICHIERS}` && req.method === "POST") {
+    if (role !== "service") return send({ message: "bucket prive : service role seulement" }, 403);
+    const b = await body();
+    const dossier = `${String(b.prefix ?? "").replace(/\/$/, "")}/`;
+    return send([...fichiers.entries()]
+      .filter(([k]) => k.startsWith(dossier) && !k.slice(dossier.length).includes("/") && k.slice(dossier.length).includes(b.search ?? ""))
+      .map(([k, octets]) => ({ name: k.slice(dossier.length), id: randomUUID(), metadata: { size: octets.length, mimetype: "application/pdf" } })));
   }
 
   if (u.pathname.startsWith("/rest/v1/rpc/")) return send([]);

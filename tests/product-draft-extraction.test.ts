@@ -39,14 +39,17 @@ test("E1 — les deux routes appellent les fonctions partagées", () => {
   assert.match(actif, /product\.seller_id !== user\.id[\s\S]*product\.status !== "draft"[\s\S]*rateLimit\(admin, `digital-upload:\$\{user\.id\}`, 30\)[\s\S]*return confirmerLivrable/);
 });
 
-type Scenario = { rpcErreur?: { code?: string; message?: string } | null; limiteOk?: boolean; profilExiste?: boolean };
+type Scenario = { rpcErreur?: { code?: string; message?: string } | null; limiteOk?: boolean; profilExiste?: boolean; insertErreur?: { code: string; message: string } };
 
 function brouillon(s: Scenario = {}) {
   const ecritures: Query[] = [];
   const rpcs: [string, unknown][] = [];
   const db = database((q) => {
     if (q.table === "profiles" && q.steps.some(([m]) => m === "select")) return { data: s.profilExiste === false ? null : { id: MOI }, error: null };
-    if (q.table === "products") return { data: { id: PRODUIT, slug: "gid-vann-manje-abcde", status: "draft" }, error: null };
+    if (q.table === "products") {
+      if (s.insertErreur) return { data: null, error: s.insertErreur };
+      return { data: { id: PRODUIT, slug: "gid-vann-manje-abcde", status: "draft" }, error: null };
+    }
     return { data: null, error: null };
   });
   const admin = {
@@ -67,8 +70,8 @@ function brouillon(s: Scenario = {}) {
     "@/lib/policy": { POLICY_VERSION: "produits-interdits-v4" },
     "@/lib/pg-errors": { isMissingFunction: (e: { code?: string } | null) => e?.code === "PGRST202" },
   });
-  const appeler = (body: Record<string, unknown>) =>
-    mod.creerBrouillonProduit({ req: new Request("http://x/api/products"), lang: "fr", supabase: {}, user: { id: MOI, email: "vande@example.ht" }, body }) as Promise<unknown>;
+  const appeler = (body: Record<string, unknown>, lienProjet?: string) =>
+    mod.creerBrouillonProduit({ req: new Request("http://x/api/products"), lang: "fr", supabase: {}, user: { id: MOI, email: "vande@example.ht" }, body, lienProjet }) as Promise<unknown>;
   return { appeler, queries: db.queries, rpcs, ecritures };
 }
 
@@ -158,6 +161,29 @@ function livrable(objet: { name: string; metadata: { size?: number } } | null, e
     mod.confirmerLivrable({ admin, lang: "fr", user: { id: MOI }, product: { id: PRODUIT }, productId: PRODUIT, body: { path }, safeName: "gid.pdf", ext: "pdf" });
   return { appeler, chemin, queries: db.queries, supprimes };
 }
+
+const PROJET = "00000000-0000-4000-8000-0000000000b1";
+
+test("E6 — « Soumettre à la revue » : le lien vers le projet, et lui seul en plus (5.2)", async () => {
+  const b = brouillon();
+  await b.appeler(BASE, PROJET);
+  const ligne = (b.queries.find((q) => q.table === "products")!.steps[0][1] as Record<string, unknown>[])[0];
+  assert.equal(ligne.zabelie_authoring_project_id, PROJET);
+  assert.equal(ligne.status, "draft", "la soumission ne publie pas");
+  // Sans lien, la colonne n'est même pas nommée : la route classique marche sur un schéma sans 0148.
+  const classique = brouillon();
+  await classique.appeler(BASE);
+  const sans = (classique.queries.find((q) => q.table === "products")!.steps[0][1] as Record<string, unknown>[])[0];
+  assert.ok(!("zabelie_authoring_project_id" in sans));
+
+  // L'index unique refuse la seconde fiche du même projet : la réponse le dit, pour que la soumission la retrouve.
+  const doublon = { code: "23505", message: "duplicate key value violates unique constraint" };
+  let r = await refus(await brouillon({ insertErreur: doublon }).appeler(BASE, PROJET));
+  assert.deepEqual(r, { status: 409, corps: { error: "authoring.soumission.dejaSoumis", code: "authoring_deja_soumis" } });
+  // Hors soumission, la même erreur garde l'ancienne réponse.
+  r = await refus(await brouillon({ insertErreur: doublon }).appeler(BASE));
+  assert.deepEqual(r, { status: 500, corps: { error: doublon.message } });
+});
 
 test("E5 — la confirmation d'un livrable rend les mêmes réponses", async () => {
   const nom = "liv-00000000-0000-4000-8000-000000000001.pdf";
