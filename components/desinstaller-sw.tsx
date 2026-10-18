@@ -27,7 +27,7 @@ export function DesinstallerSW() {
       if (!("serviceWorker" in navigator)) {
         setEtat({
           phase: "impossible",
-          motif: "Ce navigateur ne gère pas les service workers — il n'y a donc rien à retirer.",
+          motif: "Ce navigateur ne gère pas les service workers : il n'y a donc rien à retirer.",
         });
         return;
       }

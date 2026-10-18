@@ -268,11 +268,14 @@ test.describe("Chemin de l'argent", () => {
     expect(decodeURIComponent(page.url())).toContain("next=/produit/");
   });
 
-  test("page succès affiche la confirmation", async ({ page }) => {
+  // SEC-01 : un numéro inventé ne donne ni coche, ni « Paiement confirmé », ni numéro recopié.
+  test("page succès ne confirme pas une commande qu'elle n'a pas vérifiée", async ({ page }) => {
     await page.goto("/paiement/succes?commande=abcdef12");
     await expect(
-      page.getByRole("heading", { name: /Paiement confirmé/ })
+      page.getByRole("heading", { name: /Vérifiez l'état de votre commande/ })
     ).toBeVisible();
+    await expect(page.getByText(/Paiement confirmé/)).toHaveCount(0);
+    await expect(page.getByText(/abcdef12/)).toHaveCount(0);
   });
 
   test("page échec montre le motif (montant rejeté)", async ({ page }) => {

@@ -27,7 +27,7 @@ export async function POST(
   // Débit borné par token (chaque appel crée une session MonCash payante).
   if (!(await rateLimit(admin, `biz-pay:${token}`, 8))) {
     return NextResponse.json(
-      { error: "Trop de tentatives — réessaie dans une minute." },
+      { error: "Trop de tentatives. Réessayez dans une minute." },
       { status: 429 }
     );
   }

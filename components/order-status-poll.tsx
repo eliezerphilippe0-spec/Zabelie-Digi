@@ -67,7 +67,7 @@ export function OrderStatusPoll({ orderId }: { orderId: string }) {
       const supabase = createClient();
       const { data } = await supabase
         .from("orders")
-        .select("status, products(slug)")
+        .select("status, products!orders_product_id_fkey(slug)")
         .eq("id", orderId)
         .abortSignal(signal)
         .maybeSingle();

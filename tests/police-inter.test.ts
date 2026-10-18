@@ -212,7 +212,7 @@ test("P8 — les quatre endroits où un code promo s'affiche ou se saisit l'empl
   assert.match(gestion, /className=\{`code-lisible[^`]*`\}>\s*\{c\.code\}/, "liste des codes du vendeur sans `code-lisible`");
 
   assert.match(
-    readFileSync("app/tableau-de-bord/page.tsx", "utf8"),
+    readFileSync("app/tableau-de-bord/codes-promo/page.tsx", "utf8"),
     /<span className="code-lisible[^"]*">PROMO50<\/span>/,
     "l'exemple « PROMO50 » du tableau de bord — un O et un 0 côte à côte — sans `code-lisible`"
   );

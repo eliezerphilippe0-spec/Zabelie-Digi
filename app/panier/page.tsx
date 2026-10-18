@@ -18,7 +18,7 @@ import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mon panier — Zabelie" };
+export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
 
 /**
  * Le panier — lecture par le CLIENT DE SESSION, la RLS de 0058 fait le tri.
@@ -41,7 +41,7 @@ export default async function PanierPage() {
   if (!user) {
     return (
       <Coquille titre={t(lang, "cart.title")}>
-        <p className="mt-4 text-sm text-mist">{t(lang, "purchases.login.b")}</p>
+        <p className="mt-4 text-sm text-mist">{t(lang, "cart.login.b")}</p>
         <Link
           href={`/connexion?next=${encodeURIComponent("/panier")}`}
           className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"

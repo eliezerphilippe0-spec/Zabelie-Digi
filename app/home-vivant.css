@@ -46,15 +46,14 @@
 /* ── Univers : cartes pleines, icône illustrée sur fond teinté ── */
 .home-discovery .universe-grid > a { border: 1px solid var(--color-line); border-radius: 18px; padding: 16px 16px 20px; }
 .universe-art { display: grid; place-items: center; height: 112px; margin-bottom: 18px; border-radius: 12px; background: var(--color-ink-soft); }
-/* Teintes posées en dur en clair : l'indigo et le bordeaux du thème sont trop
-   sombres pour teinter par mélange (mesuré au rendu : un gris terne). En
-   sombre, un mélange de tokens suffit. Aucun texte n'est posé sur ces fonds. */
-.universe-grid > a:nth-child(1) .universe-art { background: #f6e7dc; }
-.universe-grid > a:nth-child(2) .universe-art { background: #e7e6f0; }
-.universe-grid > a:nth-child(3) .universe-art { background: #efe3e4; }
-[data-theme="dark"] .universe-grid > a:nth-child(1) .universe-art { background: color-mix(in srgb, var(--color-brand) 14%, var(--color-surface)); }
-[data-theme="dark"] .universe-grid > a:nth-child(2) .universe-art { background: color-mix(in srgb, var(--color-cloud) 8%, var(--color-surface)); }
-[data-theme="dark"] .universe-grid > a:nth-child(3) .universe-art { background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface)); }
+/* Teintes par tokens (`--color-illus-1/2/3`, zabelie-theme.css) : elles
+   suivent le thème seules. Les valeurs claires restent des teintes choisies,
+   pas des mélanges : l'indigo et le bordeaux du thème sont trop sombres pour
+   teinter par mélange (mesuré au rendu : un gris terne). Aucun texte n'est
+   posé sur ces fonds. */
+.universe-grid > a:nth-child(1) .universe-art { background: var(--color-illus-1); }
+.universe-grid > a:nth-child(2) .universe-art { background: var(--color-illus-2); }
+.universe-grid > a:nth-child(3) .universe-art { background: var(--color-illus-3); }
 /* Recharges : la carte est déjà en `ink-soft` (editorial-marketplace.css). */
 .universe-grid > a:nth-child(4) .universe-art { background: var(--color-surface); }
 .universe-art .ua-forme { fill: var(--color-surface); stroke: var(--color-cloud); stroke-width: 2.5; }

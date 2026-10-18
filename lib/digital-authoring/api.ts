@@ -59,6 +59,16 @@ const REFUS_BASE: Record<string, { statut: number; cle: I18nKey }> = {
   authoring_quota_global: { statut: 429, cle: "authoring.ia.quotaGlobal" },
   authoring_operations_en_cours: { statut: 429, cle: "authoring.ia.enCours" },
   authoring_operation_non_annulable: { statut: 409, cle: "authoring.ia.nonAnnulable" },
+  // Approbation du guide avant export (0146).
+  authoring_responsabilite_requise: { statut: 422, cle: "authoring.approbation.responsabilite" },
+  authoring_guide_sans_plan: { statut: 409, cle: "authoring.approbation.sansPlan" },
+  authoring_guide_incomplet: { statut: 422, cle: "authoring.approbation.pasPret" },
+  authoring_marqueur_simulation: { statut: 422, cle: "authoring.approbation.pasPret" },
+  // Export PDF et approbation de l'export exact (0147).
+  authoring_guide_non_approuve: { statut: 409, cle: "authoring.export.nonApprouve" },
+  authoring_export_introuvable: { statut: 404, cle: "authoring.export.introuvable" },
+  authoring_export_perime: { statut: 409, cle: "authoring.export.perime" },
+  authoring_empreinte_differente: { statut: 409, cle: "authoring.export.empreinte" },
 };
 
 export const TABLE_OPERATIONS = "zabelie_authoring_operations";
@@ -126,6 +136,8 @@ export type ProjetEditeur = {
   /** Jeton de la dernière sauvegarde : dit « c'était nous » après une réponse perdue. */
   jeton: string | null;
   planApprouveRevision: number | null;
+  /** Révision approuvée avant export (0146) : ne vaut que si elle est la révision courante. */
+  revisionApprouvee: number | null;
   archive: boolean;
 };
 
@@ -159,6 +171,7 @@ export function projetPourEditeur(ligne: unknown): ProjetEditeur | null {
     revision: l.revision,
     jeton: typeof l.derniere_sauvegarde === "string" ? l.derniere_sauvegarde : null,
     planApprouveRevision: typeof l.plan_approuve_revision === "number" ? l.plan_approuve_revision : null,
+    revisionApprouvee: typeof l.revision_approuvee === "number" ? l.revision_approuvee : null,
     archive: Boolean(l.archived_at),
   };
 }

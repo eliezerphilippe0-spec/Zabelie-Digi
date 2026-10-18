@@ -16,8 +16,9 @@ test.beforeEach(async ({ request }) => {
 
 test("un guide en kreyòl naît d'un modèle, son plan s'approuve, sa rédaction se retrouve après rechargement", async ({ page }) => {
   await connecte(page, "seller", "ht", "/tableau-de-bord/creation");
-  await expect(page.getByRole("heading", { level: 1, name: "Kisa ou vle fè jodi a ?" })).toBeVisible();
-  await expect(page.getByText("Bonjou, Vandè.")).toBeVisible();
+  // La salutation suit l'heure d'Haïti (phase T2) : « Bonjou » le matin, « Bonswa » dès midi.
+  await expect(page.getByRole("heading", { level: 1, name: /^(Bonjou|Bonswa), Vandè$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Kisa ou vle fè jodi a ?" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Analize yon mache/ }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Kreye yon pwodui dijital/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /piblisite/i })).toHaveCount(0); // publicités abandonnées

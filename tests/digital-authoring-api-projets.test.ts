@@ -8,6 +8,7 @@ import * as api from "../lib/digital-authoring/api";
 import * as revision from "../lib/digital-authoring/revision";
 import * as digitalStudio from "../lib/digital-studio";
 import * as modeles from "../lib/digital-authoring/modeles";
+import * as quality from "../lib/digital-authoring/quality";
 
 /**
  * Studio de création éditoriale — routes des projets (docs/70, tâche 2.2).
@@ -33,6 +34,19 @@ type Opts = {
   majLignes?: Array<Record<string, unknown>>;
   actuel?: Record<string, unknown> | null;
   ligne?: Record<string, unknown> | null;
+  /** La ligne relue pour l'approbation du guide (tâche 4.2). */
+  guide?: Record<string, unknown> | null;
+};
+
+const COLONNES_GUIDE = "id, titre, contenu, revision, plan_approuve_revision, archived_at";
+/** Un guide approuvable : sections titrées et rédigées, plan approuvé, aucun bloquant. */
+const GUIDE_PRET = {
+  id: "00000000-0000-4000-8000-0000000000b1",
+  titre: "Gid vann manje",
+  contenu: { objectif: "Vann plis", sections: [{ id: "00000000-0000-4000-8000-0000000000d1", titre: "Kòmanse", resultat: "Konnen kote pou kòmanse", corps: "Premye etap la se konnen kliyan ou." }] },
+  revision: 5,
+  plan_approuve_revision: 2,
+  archived_at: null,
 };
 
 function fixture(o: Opts = {}) {
@@ -46,6 +60,7 @@ function fixture(o: Opts = {}) {
     if (q.table === api.TABLE_PROJETS) {
       const colonnes = String(q.steps.find(([m]) => m === "select")?.[1][0] ?? "");
       if (colonnes === "brief, contenu") return { data: o.ligne === undefined ? LIGNE_COMPLETE : o.ligne, error: null };
+      if (colonnes === COLONNES_GUIDE) return { data: o.guide === undefined ? GUIDE_PRET : o.guide, error: null };
       if (colonnes === "revision, derniere_sauvegarde, archived_at") return { data: o.actuel === undefined ? { revision: 7, derniere_sauvegarde: "autre", archived_at: null } : o.actuel, error: null };
       return { data: q.steps.some(([m]) => m === "maybeSingle") ? { id: PROJET, titre: "Gid" } : [{ id: PROJET }], error: null };
     }
@@ -80,6 +95,7 @@ function fixture(o: Opts = {}) {
     "@/lib/digital-authoring/revision": revision,
     "@/lib/digital-studio": digitalStudio,
     "@/lib/digital-authoring/modeles": modeles,
+    "@/lib/digital-authoring/quality": quality,
   };
   const liste = loadRoute("app/api/digital-authoring/projects/route.ts", deps);
   const detail = loadRoute("app/api/digital-authoring/projects/[id]/route.ts", deps);
@@ -280,4 +296,71 @@ test("approbation : brief et plan COMPLETS exigés, relus en base, avant la fonc
   const absent = fixture({ ligne: null });
   assert.equal((await absent.agir({ action: "approuver_plan", revision: 3 })).status, 404);
   assert.equal(absent.rpcs.length, 0);
+});
+
+test("approbation du guide : fiche-test refaite en base, révision exacte, responsabilité expresse", async () => {
+  const approuver = { action: "approuver_guide", revision: 5, responsabilite: true };
+  const f = fixture();
+  const ok = await f.agir(approuver);
+  assert.equal(ok.status, 200, "des conseils (guide court) n'empêchent pas l'approbation");
+  assert.deepEqual(simple(f.rpcs), [
+    { fn: "zabelie_authoring_approuver_revision", args: { p_projet: PROJET, p_revision: 5, p_responsabilite: true } },
+  ]);
+  assert.ok(f.gardes.every((g) => g.legal), "conditions acceptées exigées");
+
+  // Responsabilité : seul `true` passe, et rien n'est lu avant.
+  for (const responsabilite of [undefined, false, "true", 1]) {
+    const g = fixture();
+    const r = await g.agir({ action: "approuver_guide", revision: 5, responsabilite });
+    assert.equal(r.status, 422, String(responsabilite));
+    assert.equal((await json(r)).code, "authoring_responsabilite_requise");
+    assert.equal(g.rpcs.length + g.db.queries.filter((q) => q.table === api.TABLE_PROJETS).length, 0);
+  }
+  // Révision absente ou mal typée : 400, sans appel.
+  for (const revision of [undefined, "5", 0, 1.5]) {
+    const g = fixture();
+    assert.equal((await g.agir({ action: "approuver_guide", revision, responsabilite: true })).status, 400);
+    assert.equal(g.rpcs.length, 0);
+  }
+});
+
+test("approbation du guide : un bloquant en base rend la fiche, sans appeler la fonction", async () => {
+  const cas: Array<[string, Record<string, unknown> | null, number, string]> = [
+    ["marqueur oublié", { ...GUIDE_PRET, contenu: { ...GUIDE_PRET.contenu, sections: [{ ...GUIDE_PRET.contenu.sections[0], corps: "TODO : fini sa." }] } }, 422, "guide_pas_pret"],
+    ["simulation", { ...GUIDE_PRET, contenu: { ...GUIDE_PRET.contenu, sections: [{ ...GUIDE_PRET.contenu.sections[0], corps: "[SIMULASYON] Bouyon." }] } }, 422, "guide_pas_pret"],
+    ["section vide", { ...GUIDE_PRET, contenu: { ...GUIDE_PRET.contenu, sections: [{ ...GUIDE_PRET.contenu.sections[0], corps: "  " }] } }, 422, "guide_pas_pret"],
+    ["caractère sans dessin", { ...GUIDE_PRET, titre: "Gid " + String.fromCodePoint(0x1f600) }, 422, "guide_pas_pret"],
+    ["plan jamais approuvé", { ...GUIDE_PRET, plan_approuve_revision: null }, 422, "guide_pas_pret"],
+    ["texte modifié depuis", { ...GUIDE_PRET, revision: 6 }, 409, "conflit"],
+    ["archivé", { ...GUIDE_PRET, archived_at: "2026-10-16T00:00:00Z" }, 409, "archive"],
+    ["introuvable", null, 404, ""],
+  ];
+  for (const [nom, guide, statut, code] of cas) {
+    const f = fixture({ guide });
+    const r = await f.agir({ action: "approuver_guide", revision: 5, responsabilite: true });
+    assert.equal(r.status, statut, nom);
+    const d = await json(r);
+    if (code) assert.equal(d.code, code, nom);
+    if (code === "guide_pas_pret") {
+      assert.ok(d.fiche.bloquants > 0 && d.fiche.preparation === "pas_pret", nom);
+      assert.ok(d.fiche.controles.some((c: { niveau: string }) => c.niveau === "bloquant"), nom);
+    }
+    assert.equal(f.rpcs.length, 0, `${nom} : la fonction ne doit pas être appelée`);
+  }
+});
+
+test("approbation du guide : les refus de la base (0146) sont traduits, jamais bruts", async () => {
+  const cas: Array<[string, number, string]> = [
+    ["authoring_marqueur_simulation", 422, "authoring.approbation.pasPret"],
+    ["authoring_guide_incomplet", 422, "authoring.approbation.pasPret"],
+    ["authoring_guide_sans_plan", 409, "authoring.approbation.sansPlan"],
+    ["authoring_responsabilite_requise", 422, "authoring.approbation.responsabilite"],
+    ["authoring_revision_perimee", 409, "authoring.conflit"],
+  ];
+  for (const [message, statut, cle] of cas) {
+    const f = fixture({ rpcErreur: { code: "P0001", message } });
+    const r = await f.agir({ action: "approuver_guide", revision: 5, responsabilite: true });
+    assert.equal(r.status, statut, message);
+    assert.equal((await json(r)).error, cle, message);
+  }
 });

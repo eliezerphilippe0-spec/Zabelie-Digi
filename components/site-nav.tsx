@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SHOPPING_COPY } from "@/lib/shopping-ai-copy";
 import { BrandLogo } from "@/components/brand-logo";
+import { BarreAnnonce } from "@/components/barre-annonce";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PurgeBrouillonsCreation } from "@/components/purge-brouillons-creation";
 import { LangToggle } from "@/components/lang-toggle";
@@ -79,6 +80,9 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
       >
         {t(lang, "a11y.skip")}
       </a>
+      {/* BARRE D'ANNONCE — après le lien d'évitement, qui reste le premier
+          arrêt du clavier ; repliée avec l'en-tête au défilement. */}
+      <BarreAnnonce lang={lang} />
 
       <div className="mx-auto max-w-6xl px-5">
         {/* LIGNE 1 — logo · recherche · panier · compte */}
@@ -146,7 +150,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
                 <Link href="/tableau-de-bord" className={MENU_LINK}>
                   {t(lang, "nav.dashboard")}
                 </Link>
-                <Link href="/tableau-de-bord#ma-boutique" className={MENU_LINK}>{t(lang, "shop.manage")}</Link>
+                <Link href="/tableau-de-bord/boutique#ma-boutique" className={MENU_LINK}>{t(lang, "shop.manage")}</Link>
                 <Link href="/mes-achats" className={MENU_LINK}>
                   {t(lang, "pay.ok.cta")}
                 </Link>

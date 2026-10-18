@@ -6,6 +6,7 @@ import { editorialLanguagePath, editorialLangFromPath } from "@/lib/editorial-ro
 import { guideLanguagePath, guideLangFromPath } from "@/lib/guide-routing";
 import { cheminPourLangue } from "@/lib/langue-url";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
+import { NOMS_LANGUES } from "@/lib/noms-langues";
 
 /**
  * Libellés du sélecteur. Ils ne passent PAS par `t()` : le nom d'une langue
@@ -16,12 +17,7 @@ import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
  * `Record<Lang, …>` : ajouter une langue sans son libellé ne compile pas.
  */
 const ABBR: Record<Lang, string> = { fr: "FR", ht: "KR", en: "EN", es: "ES" };
-const NOM: Record<Lang, string> = {
-  fr: "Français",
-  ht: "Kreyòl ayisyen",
-  en: "English",
-  es: "Español",
-};
+const NOM = NOMS_LANGUES;
 
 // Conservé pendant une navigation cliente qui remonte la page et son en-tête.
 // N'est renseigné que par un clic utilisateur dans le navigateur.

@@ -16,6 +16,7 @@
  */
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
 
 const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
@@ -173,6 +174,12 @@ const server = createServer((req, res) => {
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
 
+  // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
+  if (jointureAmbigue(tableDe(url.pathname), url.searchParams.get("select"))) {
+    console.error("[stub] PGRST201", tableDe(url.pathname), url.searchParams.get("select"));
+    return send(300, REFUS_PGRST201);
+  }
+
   // The real limiter returns a boolean; an empty PostgREST result is an error.
   if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
 
@@ -227,6 +234,21 @@ const server = createServer((req, res) => {
 
 
   if (process.env.OFFERS_FIXTURE === "true" && offersFixture(req,url,send,single)) return;
+
+  // Ventes flash (0080) — opt-in : une offre vivante sur le produit publié,
+  // 1 050 HTG au lieu de 1 500, plafond de 10 unités dont 3 déjà prises
+  // (comptage HEAD des commandes, comme le checkout). Les autres suites
+  // gardent le prix normal.
+  if (process.env.FLASH_FIXTURE === "true") {
+    if (url.pathname === "/rest/v1/zabelie_flash_sales") {
+      const now = Date.now();
+      return single([{ id: "f1a5f1a5-0000-4000-8000-000000000001", product_id: PRODUCT_ID, prix_flash_htg: 1050, debut: new Date(now - 3600e3).toISOString(), fin: new Date(now + 3 * 3600e3).toISOString(), unites_max: 10 }]);
+    }
+    if (url.pathname === "/rest/v1/orders" && req.method === "HEAD") {
+      res.writeHead(200, { "content-type": "application/json", "content-range": "*/3" });
+      return res.end();
+    }
+  }
 
   if (process.env.PRICING_FIXTURE === "true") {
     if (url.pathname === "/rest/v1/zabelie_seller_pricing_config") return single([{

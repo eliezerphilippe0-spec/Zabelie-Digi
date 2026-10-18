@@ -96,10 +96,44 @@ Demande du porteur : « tu dois t'inspirer de Tunafrik, de CreateurSuite pour co
 
 **Checkpoint T** — tableau lisible à 360 px et sur ordinateur ; aucun chiffre inventé (état vide honnête tant que les seuils ne sont pas atteints) ; aucune entrée vers une fonction absente ; PR T (migration non appliquée).
 
+### Phase T2 — Accueil façon Chariow (demande du 2026-10-17)
+Demande du porteur, capture du tableau de Chariow à l'appui : « inspire-toi de Chariow pour le faire ». Ce qu'on reprend : la salutation selon l'heure, une rangée d'actions rapides, trois chiffres en cartes (revenu, 7 derniers jours, clients) qu'on peut masquer, « Produits les plus vendus », un menu à icônes, « Voir ma boutique ». Ce qu'on ne reprend pas : l'assistant IA, les automatisations, l'affiliation, le marketing (absents du Studio, donc absents du menu) et l'émoji de la salutation.
+
+Décisions prises :
+- **Produit digital** = `KIND_FILE`, comme l'univers « Digital » du catalogue.
+- **Chiffres** lus sous le JWT du vendeur (RLS de `0002` : commandes de ses produits, son grand livre), jamais par la clé de service : **aucune migration**. Ventes = commandes payées ou livrées de ses produits digitaux. Revenus = crédits de son grand livre sur ces commandes, la même définition que « Revenus nets » du tableau vendeur (commission déduite). « 7 derniers jours » se compte à la date du crédit. Clients = acheteurs distincts.
+- **Total complet ou signalé** : lecture par lots de 1 000 ; au-delà du plafond, le chiffre s'affiche « ≥ », comme sur le tableau vendeur.
+- **Masquer les montants** : préférence du navigateur seulement (Chariow le propose pour partager son écran).
+- Le menu garde ses entrées et ajoute des liens vers des pages qui existent : mes ventes, revenus (tableau vendeur), codes promo, centre d'aide.
+
+- [x] T2.1 Calculs purs (moment de la journée à l'heure d'Haïti, résumé des ventes, produits les plus vendus) et leurs tests
+- [x] T2.2 Lecture sous JWT, textes en quatre langues (module à part de `copy.ts`, que la phase 4 modifie)
+- [x] T2.3 Accueil : salutation, actions, cartes masquables, produits les plus vendus ; menu à icônes
+- [x] T2.4 Faux Supabase : ventes de test et état vide ; parcours e2e ; captures 360 px et bureau
+
+**Checkpoint T2** — état vide honnête sans vente ; aucun montant inventé ; montants masquables au clavier ; aucune entrée vers une fonction absente ; 360 px sans défilement horizontal.
+
 ### Phase 4 — Vérification et PDF (lot 5)
-- [ ] 4.1 Essai PDF borné (décision D1)
-- [ ] 4.2 Contrôles qualité et approbation de révision
-- [ ] 4.3 Export privé, approbation de l'export exact
+- [x] 4.1 Essai PDF borné (décision D1) : 34 pages, 84 Ko, inspectées ; moteur interne gardé (D1-A, rendu validé par le porteur le 2026-10-16)
+- [x] 4.2 Fiche-test de préparation (enrichie, idée 5) et approbation de révision — migration `0146` écrite, NON appliquée (« oui » requis)
+- [x] 4.3 Export privé, approbation de l'export exact — migration `0147` écrite, NON appliquée (« oui » requis)
+- [x] 4.4 Extrait gratuit automatique (idée 1)
+- [x] 4.5 Exemplaire au nom de l'acheteur (idée 3) — moteur seulement ; la remise à l'acheteur vient avec la phase 5
+
+Idées tirées des plateformes de produits digitaux et de formations (Gumroad, Leanpub, Udemy, Teachable, Kajabi, Skillshare, Amazon KDP, Selar, Chariow), proposées le 2026-10-16 ; **1, 3 et 5 validées** (« oui 1, 3, 5 ») :
+
+| # | Idée | Inspirée de | Statut |
+|---|---|---|---|
+| 1 | Extrait gratuit automatique (sommaire + première section) | Amazon « Look inside », Leanpub, aperçus Udemy | ✅ validée → 4.4 |
+| 2 | Page de vente remplie depuis le guide | Udemy, Teachable | proposée → phase 5 |
+| 3 | Exemplaire au nom de l'acheteur, en pied de page | marquage des PDF de Gumroad | ✅ validée → 4.5 |
+| 4 | Nouvelles versions gratuites pour les acheteurs | Leanpub | proposée → phase 5 |
+| 5 | Fiche-test de préparation avant export | revue qualité Udemy | ✅ validée → 4.2 |
+| 6 | Audio enregistré par le créateur | Audible, Tunafrik | proposée |
+| 7 | Kit de lancement WhatsApp / Facebook | Selar, Chariow, Gumroad | proposée (idée 5 de CreateurSuite) |
+| 8 | Prix au choix avec minimum, prix en dollars | Gumroad, Leanpub | règle commerciale à décider |
+| 9 | Guide → formation, quiz, attestation de fin | Teachable, Thinkific, Udemy | proposée |
+| 10 | Affiliés par produit | Gumroad, Selar | règle commerciale à décider |
 
 **Checkpoint 4** — PDF inspecté page par page ; export figé, nouvel export exigé après modification ; PR 4.
 

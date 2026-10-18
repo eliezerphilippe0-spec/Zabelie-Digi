@@ -113,7 +113,7 @@ export async function DELETE(
   }
   if (invoice.status !== "draft") {
     return NextResponse.json(
-      { error: "Facture déjà envoyée — non modifiable." },
+      { error: "Facture déjà envoyée : elle n'est plus modifiable." },
       { status: 422 }
     );
   }

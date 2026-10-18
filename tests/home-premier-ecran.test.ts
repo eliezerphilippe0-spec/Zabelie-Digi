@@ -8,8 +8,9 @@ import { readFileSync } from "node:fs";
  * Mesuré le 2026-09-26, jeu d'essai à 12 cartes : la première carte produit
  * commençait à y = 1 055 en 375 × 812 — en-tête, état des paiements, bannière
  * avec carte vedette, barre de confiance et « Eksplore òf yo » passaient devant.
- * Sur mobile, trois blocs marqués `.home-premier-ecran` (état des paiements,
- * bannière, première rangée) passent devant le reste. L'ordre du DOCUMENT ne
+ * Sur mobile, trois blocs marqués `.home-premier-ecran` (bannière, barre de
+ * confiance, première rangée — l'état des paiements avant le 2026-10-17)
+ * passent devant le reste. L'ordre du DOCUMENT ne
  * bouge pas (lecteurs d'écran, ordinateur, test S8).
  *
  * ⚠️ La carte vedette n'est PAS masquée. Une première version le faisait, en
@@ -33,7 +34,15 @@ function mobile(): string {
 
 test("P1 — les trois blocs du premier écran sont marqués, et eux seuls", () => {
   assert.match(page, /<main id="main">/, "la cible du lien d'évitement reste intacte (S5)");
-  assert.match(page, /<div className="home-premier-ecran"><MarketplaceStatus lang=\{lang\} \/><\/div>/);
+  /* Audit du 2026-10-17 : la PROMESSE avant la limite. La barre de confiance
+   * (dont le premier repère est le séquestre) prend la place de l'état des
+   * paiements dans le premier écran ; l'état la suit, en une ligne, toujours
+   * sur l'accueil. */
+  assert.match(page, /<div className="home-premier-ecran">\s*<TrustBar\s+compact/);
+  const confiance = page.indexOf("<TrustBar");
+  const etat = page.indexOf("<MarketplaceStatus lang={lang} />");
+  assert.ok(etat > confiance, "l'état des paiements doit suivre la promesse, pas la précéder");
+  assert.doesNotMatch(page, /home-premier-ecran"><MarketplaceStatus/, "l'état des paiements a repris la tête de page");
   assert.match(page, /<section className="home-premier-ecran mx-auto[^"]*">\s*<div\s+data-has-featured/);
   assert.match(page, /<div className="home-premier-ecran">\s*<HomeRow primary /, "la PREMIÈRE rangée doit être dans le bloc remonté");
   assert.equal((page.match(/home-premier-ecran/g) ?? []).length, 3, "trois blocs remontés, pas un de plus");

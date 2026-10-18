@@ -5,11 +5,13 @@ import { getMonCashAvailability, MONCASH_AVAILABILITY_LABELS } from "@/lib/payme
 export function MarketplaceStatus({ lang }: { lang: Lang }) {
   const status = getMonCashAvailability();
   if (status === "production") return null;
-  return <aside data-marketplace-status={status} className="mx-auto max-w-6xl px-5 pt-3">
-    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
-      <div><p className="font-semibold">{t(lang, "availability.opening")}</p>
-        <p className="mt-1 text-mist">{t(lang, MONCASH_AVAILABILITY_LABELS[status])}</p></div>
+  /* Une ligne, sous la confiance (audit du 2026-10-17) : la limite reste dite
+   * sur l'accueil, mais elle ne précède plus la promesse. Même contenu
+   * qu'avant, même lien vers le détail. */
+  return <aside data-marketplace-status={status} className="mx-auto max-w-6xl px-5 pt-2">
+    <p className="flex flex-wrap items-center gap-x-2 text-xs text-mist">
+      <span><span className="font-semibold text-cloud">{t(lang, "availability.opening")}</span> · {t(lang, MONCASH_AVAILABILITY_LABELS[status])}</span>
       <Link href="/recharges#paiements" className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, "availability.details")}</Link>
-    </div>
+    </p>
   </aside>;
 }

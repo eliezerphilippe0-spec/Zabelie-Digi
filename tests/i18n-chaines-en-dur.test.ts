@@ -90,15 +90,8 @@ const INVENTAIRE: Record<string, string[]> = {
   "app/produit/[slug]/page.tsx": [
     "Vérifiez votre modèle avant d&apos;acheter. En c",
   ],
-  "app/tableau-de-bord/page.tsx": [
-    "(fenêtre anti-fraude / remboursement).",
-    "Chaque vente confirmée est créditée",
-    "Mes données &amp; mon compte",
-    "Téléchargez une copie de vos données ou supprime",
-    // « Ventes récentes » traduite le 2026-09-02 (dashboard.sales.recent),
-    // trouvée par le premier passage ESLint du dépôt.
-    "politique de confidentialité",
-  ],
+  // app/tableau-de-bord/page.tsx : plus aucune chaîne en dur depuis la refonte
+  // façon Chariow (docs/73, 2026-10-18) ; retrait, données et compte passent par t().
   "components/account-actions.tsx": ["Exporter mes données"],
   "components/geo-map.tsx": [
     "Données agrégées par pays. Aucune position indiv",

@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
   if (!(await rateLimit(admin, `biz-client:${user.id}`, 20))) {
     return NextResponse.json(
-      { error: "Trop de créations — réessaie dans une minute." },
+      { error: "Trop de créations. Réessayez dans une minute." },
       { status: 429 }
     );
   }

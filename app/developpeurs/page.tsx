@@ -48,7 +48,7 @@ export default async function DevelopersPage() {
   const c = apiDocsCopy(lang);
   return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-4xl px-5 py-12">
     <h1 className="text-3xl font-black">{c.title}</h1><p className="mt-3 text-lg">{c.intro}</p><p className="mt-4 text-mist">{c.scope}</p>
-    <Link href={`/api/v1/openapi.json?lang=${lang}`} className="mt-6 inline-block font-semibold underline">{c.contract}</Link>
+    <Link href={`/api/v1/openapi.json?lang=${lang}`} className="mt-6 inline-flex min-h-11 items-center font-semibold underline">{c.contract}</Link>
     <h2 id="api-exemple" className="mt-10 text-xl font-bold">{c.start}</h2>
     {/* Défilant à 360 px : focusable et nommé, sinon le clavier ne peut pas
         faire défiler le code (axe, scrollable-region-focusable). */}
@@ -60,7 +60,7 @@ export default async function DevelopersPage() {
     <h2 id="api-vendeur" className="mt-14 scroll-mt-24 text-2xl font-bold">{c.sellerTitle}</h2>
     <p className="mt-3">{c.sellerIntro}</p>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerAuth}</p>
-    <Link href={`/api/v1/seller/openapi.json?lang=${lang}`} className="mt-4 inline-block font-semibold underline">{c.sellerContract}</Link>
+    <Link href={`/api/v1/seller/openapi.json?lang=${lang}`} className="mt-4 inline-flex min-h-11 items-center font-semibold underline">{c.sellerContract}</Link>
     <pre tabIndex={0} role="region" aria-labelledby="api-vendeur" className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{exempleVendeur}</code></pre>
     <ul className="mt-4 space-y-2">{SELLER_OPERATIONS.map(([name, e]) => <li key={name}><code className="break-all text-sm">POST /api/v1/seller/{name}</code> <span className="text-xs text-mist">({e.scope})</span></li>)}</ul>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerPrivacy}</p>
