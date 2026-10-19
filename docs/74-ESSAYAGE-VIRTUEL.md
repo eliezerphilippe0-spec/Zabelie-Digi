@@ -43,9 +43,23 @@ Utilisateurs :
 
 Les slugs autorisés sont des sous-rayons de **niveau 3** de l'arbre : `rad-fanm`, `rad-gason`, `rad-espo` et `rad-timoun` sont de niveau 2, sous les départements `mod-akseswa` et `espo-lwazi`, et il n'existe pas de niveau 4. Une fiche est éligible si son `category_id` désigne un sous-rayon autorisé. Une fiche rangée au seul niveau 2 (« Vêtements femme » sans sous-rayon) ou sans `category_id` n'est pas éligible : elle pourrait être de la lingerie.
 
+**Liste validée par le porteur le 2026-10-19.**
+
+### 2.2 Chaussures : fermées au départ, à l'essai
+
+FASHN ne prend pas les chaussures (son modèle n'accepte que hauts, bas et pièces entières). Genlook ne les annonce pas, sans les exclure. Les chaussures restent donc **fermées** au lancement, et une série d'essai passe chez Genlook pendant le test (§4.2). Si le rendu est bon, on ouvre les chaussures adultes ci-dessous, sur « oui » du porteur ; c'est une donnée à ajouter (liste de `lib/essayage/regles.ts` et table `zabelie_essayage_rayons`), plus une pièce « pieds » pour les fournisseurs.
+
+| Catégorie (niveau 2) | Sous-rayons candidats (niveau 3) |
+|---|---|
+| `soulye-fanm` | `sandal-fanm`, `talon`, `basket-fanm`, `balerin`, `bot-fanm`, `mil-klaket` |
+| `soulye-gason` | `basket-gason`, `soulye-vil`, `mokasen`, `sandal-gason`, `bot-gason`, `tong` |
+| `rad-espo` | `soulye-espo` |
+
+`soulye-timoun` et tous ses sous-rayons (bébé, fille, garçon, scolaires, baskets enfant) restent fermés dans tous les cas : photos de mineurs. Pour les chaussures, la photo de l'acheteur doit montrer les pieds, et ce qui fait renvoyer une paire est surtout la pointure, qu'un essai en image ne dit pas.
+
 ### Hors pilote
 
-Essayage par la caméra en direct (lunettes, maquillage, perruques), chaussures, accessoires, guide des tailles, photo d'une autre personne (cas « pour un proche » de la diaspora), avantage Elite, facturation aux vendeurs.
+Essayage par la caméra en direct (lunettes, maquillage, perruques, chaussures en 3D), chaussures tant que la série d'essai n'a pas conclu (§2.2), accessoires, guide des tailles, photo d'une autre personne (cas « pour un proche » de la diaspora), avantage Elite, facturation aux vendeurs.
 
 ## 3. Architecture
 
@@ -114,7 +128,8 @@ Conséquence : **le modèle maison peut servir au test**, qui est une évaluatio
    - **Genlook** si sa note est au moins égale à celle de FASHN (les deux excluent par écrit l'entraînement sur nos photos, voir §13) ;
    - sinon **FASHN** ;
    - le **modèle maison** seulement s'il est nettement le meilleur sur les peaux et morphologies haïtiennes, ou plus tard, quand le volume dépasse le seuil du §4.3, et dans les deux cas **après remplacement de l'analyseur de silhouette** (§4.1) et un nouveau test.
-4. Le résultat du test et le choix sont consignés ici, avant d'allumer le pilote.
+4. **Série chaussures**, chez Genlook seulement (FASHN ne les prend pas) : 5 photos en pied, pieds visibles, × 3 paires des sous-rayons candidats du §2.2, soit 15 essais (environ 0,60 $, ou sur les 10 essais offerts). Même notation à l'aveugle. En parallèle, le porteur envoie au support de Genlook la question écrite du §13. Ouverture sur « oui » seulement si le rendu des chaussures est jugé bon et si Genlook ne les déconseille pas.
+5. Le résultat du test et le choix sont consignés ici, avant d'allumer le pilote.
 
 ### 4.3 Seuils de rentabilité
 
@@ -255,6 +270,14 @@ Les deux fournisseurs interdisent d'envoyer la photo d'une autre personne sans s
 3. **Vendeurs pilotes** : la liste est à fournir par le porteur.
 4. **Plafond et quota** : 1 000 essais par mois et 5 par jour et par acheteur conviennent-ils ?
 5. **Seuil de décision** de la §7 : quel écart faut-il voir sur les refus et les litiges pour généraliser ?
+
+### Question écrite à envoyer au support de Genlook (par le porteur)
+
+Objet : *Footwear support in the Try-On API*
+
+> Hello, we run Zabelie, a marketplace in Haiti, and we are evaluating your Try-On API for a pilot. Does the API support footwear (sneakers, sandals, heels, boots) on a full-length photo of the shopper? If so, are there requirements for the product image (angle, background) and for the shopper photo (feet visible, resolution)? Thank you.
+
+La réponse est consignée ici, avec sa date, avant toute ouverture des chaussures (§2.2).
 
 ### Sources, relevées le 2026-10-19
 

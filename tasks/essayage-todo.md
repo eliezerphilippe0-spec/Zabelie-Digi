@@ -49,7 +49,7 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 
 ### Point de contrôle 1
 - [x] `npm test`, `tsc`, lint verts (1964/1964 le 2026-10-19).
-- [ ] Revue rapide avec le porteur : règles et sous-rayons conformes au §2.1.
+- [x] Revue rapide avec le porteur : règles et sous-rayons conformes au §2.1. (Liste validée le 2026-10-19 ; chaussures fermées au départ, série d'essai au §4.2.)
 
 ---
 
@@ -73,7 +73,7 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Dépendances :** 1.2. **Fichiers :** `lib/essayage/fournisseurs/fashn.ts`, `tests/essayage-fashn.test.ts`, `tests/fixtures/essayage/fashn-*.json`. **Taille :** S.
 
 ### 2.3 Outil de comparaison
-**Description :** `scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier> --produits <liste>`. À blanc par défaut : il compte les essais et annonce le coût par candidat, sans aucun appel. Avec `--payer` : il appelle, mesure le temps de chaque essai, et écrit dans un dossier **hors du dépôt** une planche HTML où les images sont mélangées et anonymisées, plus une clé de correspondance séparée, à ouvrir seulement après la notation.
+**Description :** `scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier> --produits <liste>` ; la série chaussures se lance à part, avec `--candidats genlook` seulement. À blanc par défaut : il compte les essais et annonce le coût par candidat, sans aucun appel. Avec `--payer` : il appelle, mesure le temps de chaque essai, et écrit dans un dossier **hors du dépôt** une planche HTML où les images sont mélangées et anonymisées, plus une clé de correspondance séparée, à ouvrir seulement après la notation.
 **Critères :**
 - [ ] Sans `--payer`, aucune requête réseau (vérifié par test).
 - [ ] Le script refuse d'écrire sa sortie dans le dépôt.
@@ -94,6 +94,8 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 - [ ] Coût annoncé à blanc, puis série payante lancée **avec l'accord du porteur**.
 - [ ] Notation à l'aveugle faite par le porteur et deux personnes ; résultat et choix consignés dans `docs/74` §4.2.
 - [ ] Si aucun candidat ne rend bien les clientes haïtiennes : arrêt du chantier et retour au porteur.
+- [ ] Série chaussures chez Genlook (15 essais, `docs/74` §4.2) notée à l'aveugle ; question écrite envoyée au support de Genlook par le porteur, réponse consignée au §13.
+- [ ] Si les chaussures sont retenues, sur « oui » : tâche à ouvrir pour les ajouter (liste de `lib/essayage/regles.ts`, pièce « pieds », table `zabelie_essayage_rayons`, catégorie côté fournisseur).
 
 ---
 
