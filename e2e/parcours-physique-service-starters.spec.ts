@@ -3,13 +3,19 @@ import { test, expect } from "@playwright/test";
 test("a seller receives actual service model buttons tied to active categories", async ({ request }) => {
   const session = { access_token: "vendeur-preparation-services", refresh_token: "test", token_type: "bearer", expires_at: 4102444800, expires_in: 3600, user: { id: "22222222-2222-2222-2222-222222222222", aud: "authenticated", role: "authenticated" } };
   const token = "base64-" + Buffer.from(JSON.stringify(session)).toString("base64url");
-  const res = await request.get("/vendre", { headers: { Cookie: `sb-127-auth-token=${token}; zabelie_lang=fr` } });
+  const headers = { Cookie: `sb-127-auth-token=${token}; zabelie_lang=fr` };
+  // Le formulaire ne s'ouvre qu'une fois le type choisi (2026-10-18) : « Service » ici.
+  const res = await request.get("/vendre?nouveau=prestation", { headers });
   expect(res.ok()).toBe(true);
   const html = await res.text();
   for (const title of ["10 visuels pour mon commerce", "Diagnostic téléphone ou ordinateur", "Diagnostic solaire ou onduleur"]) {
     expect(html).toMatch(new RegExp(`<button[^>]*>${title}</button>`));
   }
   expect(html).toMatch(/<option value="Digital &amp; services"/);
+  // Sans choix, la page ne montre que le choix du type.
+  const nu = await (await request.get("/vendre", { headers })).text();
+  expect(nu).toContain('id="nouveau"');
+  expect(nu).not.toMatch(/<button[^>]*>Diagnostic téléphone ou ordinateur<\/button>/);
 });
 
 test("the service guide is rendered in Creole and remains scoped to services", async ({ request }) => {
@@ -34,8 +40,10 @@ test("a service model sets the scope without carrying over price or deadline", a
   ]);
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/vendre");
+  // « Nouveau produit » demande le type d'abord (2026-10-18) : le choix « Service » ouvre le formulaire, type déjà choisi.
+  await page.locator("#nouveau").getByRole("link", { name: /^Service\b/ }).click();
+  await expect(page).toHaveURL(/\/vendre\?nouveau=prestation#nouveau$/);
   const starter = page.getByRole("button", { name: "Diagnostic téléphone ou ordinateur", exact: true });
-  if (!await starter.isVisible()) await page.locator("details").filter({ has: page.getByRole("button", { name: "Diagnostic téléphone ou ordinateur", exact: true, includeHidden: true }) }).locator("summary").click();
   await starter.click();
   await expect(page.getByRole("textbox", { name: "Titre du produit", exact: true })).toHaveValue("Diagnostic téléphone ou ordinateur");
   await expect(page.getByRole("combobox", { name: "Type de produit", exact: true })).toHaveValue("service");

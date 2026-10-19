@@ -11,7 +11,10 @@ import type { SellerPricing } from "@/lib/seller-pricing";
 import { ProductCommitmentEditor } from "@/components/product-commitment-editor";
 import { getProductCommitments } from "@/lib/product-commitments-server";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
-import { KIND_SERVICE as COMMITMENT_SERVICE, KIND_PHYSICAL as COMMITMENT_PHYSICAL } from "@/lib/product-kind";
+import { KIND_FILE, KIND_SERVICE as COMMITMENT_SERVICE, KIND_PHYSICAL as COMMITMENT_PHYSICAL } from "@/lib/product-kind";
+import { FILTRES_PRODUITS, NOUVEAU_FICHIER, NOUVEAU_PRESTATION, compterParFiltre, dansLeFiltre, hrefFiltre, hrefNouveau, lireFiltre, lireNouveau, type FiltreProduits } from "@/lib/seller-products-filter";
+import { VendeurShell } from "@/components/vendeur-shell";
+import type { I18nKey } from "@/lib/i18n";
 import { DigitalStudioEditor, DigitalDraftAction } from "@/components/digital-studio-editor";
 import { studioLabels } from "@/lib/digital-studio-labels";
 import type { DigitalStudio } from "@/lib/digital-studio";
@@ -51,7 +54,6 @@ import { RabaisManager } from "@/components/rabais-manager";
 import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
 import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
-import { copieCreation } from "@/lib/digital-authoring/copy";
 
 export const dynamic = "force-dynamic";
 // Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
@@ -98,81 +100,81 @@ function Shell({
       <SiteFooter />
     </div>
   );
+  /* VENDEUR CONNECTÉ : la rubrique « Produits » du tableau vendeur (docs/73),
+     dans le même cadre et le même menu que l'accueil du tableau. Le choix du
+     type (physique, fichier, service) et le filtre de la liste vivent dans la
+     page ; le lien « produit physique » n'a plus à flotter en tête. */
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
-      <main id="main" className="mx-auto max-w-4xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sell.title")}</h1>
-        {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
-        {/* Ces deux liens vivent dans le Shell : ils sont donc présents AUSSI
-            sur l'écran de connexion vendeur et en mode démo — c'est-à-dire aux
-            deux endroits où un vendeur arrive avant d'avoir un compte. Placés
-            plus bas, dans la branche authentifiée, ils manquaient exactement
-            là où on cherche à s'orienter. */}
-        <p className="mt-2 text-xs">
-          <Link
-            href={POLICY_PATH}
-            className="inline-flex min-h-11 items-center text-mist underline hover:text-cloud"
-          >
-            {t(lang, "policy.link")}
-          </Link>
-        </p>
-        <div className="mt-5 rounded-2xl border border-line bg-surface/40 p-5">
-          <p className="text-sm text-cloud">{t(lang, "sell.physical.q")}</p>
-          <Link
-            href="/vendre/physique"
-            className="bouton mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
-          >
-            {t(lang, "sell.physical.cta")}
-          </Link>
-        </div>
-        {/* LE TAUX DE COMMISSION — dans la Shell, donc sur les TROIS écrans :
-            démo, non connecté, connecté. C'est le point : la commission est ce
-            qui décide de s'inscrire, elle doit donc être lisible AVANT
-            l'inscription. Placée dans la branche authentifiée, elle serait
-            arrivée après la décision. */}
-        <CommissionAnnonce
-          taux={taux}
-          pricing={pricing}
-          lang={lang}
-          labels={{
-            title: t(lang, "sell.fee.title"),
-            ligne: t(lang, "sell.fee.line"),
-            exemple: t(lang, "sell.fee.example"),
-            gratuit: t(lang, "sell.fee.free"),
-          }}
-        />
+      <main id="main">
+        <VendeurShell lang={lang} actif="produits">
+          <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">{t(lang, "vendeur.nav.produits")}</h1>
+          {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
+          <p className="mt-2 text-xs">
+            <Link
+              href={POLICY_PATH}
+              className="inline-flex min-h-11 items-center text-mist underline hover:text-cloud"
+            >
+              {t(lang, "policy.link")}
+            </Link>
+          </p>
+          {/* LE TAUX DE COMMISSION — dans la Shell, donc sur les TROIS écrans :
+              démo, non connecté, connecté. C'est le point : la commission est ce
+              qui décide de s'inscrire, elle doit donc être lisible AVANT
+              l'inscription. Placée dans la branche authentifiée, elle serait
+              arrivée après la décision. */}
+          <CommissionAnnonce
+            taux={taux}
+            pricing={pricing}
+            lang={lang}
+            labels={{
+              title: t(lang, "sell.fee.title"),
+              ligne: t(lang, "sell.fee.line"),
+              exemple: t(lang, "sell.fee.example"),
+              gratuit: t(lang, "sell.fee.free"),
+            }}
+          />
 
-        <div className="mt-8">{children}</div>
+          <div className="mt-8">{children}</div>
 
-        {/* COMMENT VENDRE — les trois pas vendeur que l'accueil portait
-            jusqu'au 2026-09-04 (accueil premium §4.6). L'accueil garde un lien
-            (`/vendre#comment`) ; les pas acheteur sont sur /aide#comment. */}
-        <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
-          {t(lang, "home.how.sell")}
-        </h2>
-        <ol className="mt-4 grid gap-3">
-          {(
-            [
-              ["home.s1.t", "home.s1.b"],
-              ["home.s2.t", "home.s2.b"],
-              ["home.s3.t", "home.s3.b"],
-            ] as const
-          ).map(([tt, bb]) => (
-            <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
-              <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
-              <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
-            </li>
-          ))}
-        </ol>
+          {/* COMMENT VENDRE — les trois pas vendeur que l'accueil portait
+              jusqu'au 2026-09-04 (accueil premium §4.6). L'accueil garde un lien
+              (`/vendre#comment`) ; les pas acheteur sont sur /aide#comment. */}
+          <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+            {t(lang, "home.how.sell")}
+          </h2>
+          <ol className="mt-4 grid gap-3">
+            {(
+              [
+                ["home.s1.t", "home.s1.b"],
+                ["home.s2.t", "home.s2.b"],
+                ["home.s3.t", "home.s3.b"],
+              ] as const
+            ).map(([tt, bb]) => (
+              <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
+                <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
+                <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
+              </li>
+            ))}
+          </ol>
+        </VendeurShell>
       </main>
       <SiteFooter />
     </div>
   );
 }
 
-export default async function VendrePage() {
+export default async function VendrePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const lang = await getLang();
+  // Rubrique « Produits » (2026-10-18) : l'onglet de la liste et le formulaire à ouvrir.
+  const parametres = (await searchParams) ?? {};
+  const filtre = lireFiltre(parametres.type);
+  const nouveau = lireNouveau(parametres.nouveau);
   const starterCopy = serviceStarterCopy(lang);
   // Mesure : arriver ici EST le signal « CTA vendeur » — tous les chemins
   // (topbar, slide 3, rail, section finale) convergent sur cette page, et le
@@ -365,23 +367,53 @@ export default async function VendrePage() {
     errorNetwork: t(lang, "error.network"),
   };
 
+  const comptes = compterParFiltre(mine.map((p) => p.kind));
+  const LIBELLES_FILTRE: Record<FiltreProduits, I18nKey> = {
+    tous: "sell.filter.all",
+    physiques: "sell.filter.physical",
+    services: "sell.filter.service",
+    numeriques: "sell.filter.file",
+  };
+
   return (
     <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")} pricing={pricing}>
       <SellerLaunchPanel launch={launch} lang={lang} now={launch?.observed_at ?? 0} />
 
-      <nav aria-label={t(lang, "seller.workspace")} className="mb-6 flex flex-wrap gap-2">
-        {[["#mes-produits", "sell.mine.title"], ["/mes-ventes", "seller.orders"], ["/tableau-de-bord", "nav.dashboard"], ["/messages", "seller.messages"]].map(([href, key]) => (
-          <Link key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm">{t(lang, key as import("@/lib/i18n").I18nKey)}</Link>
-        ))}
+      {/* NOUVEAU PRODUIT — le type d'abord (2026-10-18). Le physique a sa page ;
+          le fichier et le service ouvrent ici le formulaire, type déjà choisi.
+          Le menu du tableau vendeur remplace l'ancienne rangée de liens.
+          `scroll-mt-32` ici et sur #mes-produits : replié, l'en-tête fait
+          108 px à 360 px ; 96 px laissaient le titre dessous. */}
+      <section id="nouveau" aria-labelledby="nouveau-titre" className="glass scroll-mt-32 rounded-2xl p-6">
+        <h2 id="nouveau-titre" className="text-lg font-semibold">{t(lang, "sell.new.title")}</h2>
+        <p className="mt-1 text-sm text-mist">{t(lang, "sell.new.hint")}</p>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+          {([
+            ["/vendre/physique", "sell.new.physical", "sell.new.physical.hint", null],
+            [hrefNouveau(NOUVEAU_FICHIER), "sell.new.file", "sell.new.file.hint", KIND_FILE],
+            [hrefNouveau(NOUVEAU_PRESTATION), "sell.new.service", "sell.new.service.hint", COMMITMENT_SERVICE],
+          ] as const).map(([href, titre, aide, type]) => (
+            <li key={href}>
+              <Link
+                href={href}
+                aria-current={type !== null && nouveau === type ? "true" : undefined}
+                className="flex h-full min-h-11 flex-col rounded-xl border border-line p-4 hover:border-cloud aria-[current=true]:border-brand"
+              >
+                <span className="text-sm font-semibold">{t(lang, titre)}</span>
+                <span className="mt-1 text-xs text-mist">{t(lang, aide)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
         {/* Studio de création éditoriale (docs/70) : seulement quand il est allumé. */}
         {creationActive(lireEnvCreation()) && (
-          <Link href="/tableau-de-bord/creation" className="inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm">{copieCreation(lang).lien}</Link>
+          <Link href="/tableau-de-bord/creation" className="mt-3 inline-flex min-h-11 items-center text-sm underline">{t(lang, "sell.new.studio")}</Link>
         )}
-      </nav>
-      <details open={mine.length === 0} className="glass rounded-2xl p-6">
-        <summary className="cursor-pointer text-lg font-semibold leading-11">{t(lang, "seller.new")}</summary>
-        <div className="mt-4 max-w-xl">
+        {nouveau && (
+        <div className="mt-6 max-w-xl border-t border-line pt-6">
         <PublishForm
+          key={nouveau}
+          kindInitial={nouveau}
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
           pricing={pricing}
@@ -441,9 +473,10 @@ export default async function VendrePage() {
           }}
         />
         </div>
-      </details>
+        )}
+      </section>
 
-      <div id="mes-produits" className="scroll-mt-24">
+      <div id="mes-produits" className="scroll-mt-32">
       {mineError && <p role="alert" className="mt-6 text-sm text-danger-text">{t(lang, "seller.load.error")}</p>}
       {mine.length > 0 && (
         <div className="mt-10">
@@ -451,8 +484,27 @@ export default async function VendrePage() {
           {mine.some((p) => p.status !== "published") && (
             <p className="mt-2 text-xs text-mist">{t(lang, "status.review.hint")}</p>
           )}
+          {/* Un onglet par type (2026-10-18) : la liste mêlait physique, fichiers
+              et services. Les données restent lues pour TOUTES les fiches (les
+              offres associées se choisissent entre types) ; seul l'affichage filtre. */}
+          <nav aria-label={t(lang, "sell.filter.aria")} className="mt-3">
+            <ul className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+              {FILTRES_PRODUITS.map((f) => (
+                <li key={f} className="shrink-0">
+                  <Link
+                    href={hrefFiltre(f)}
+                    aria-current={f === filtre ? "page" : undefined}
+                    className="flex min-h-11 items-center whitespace-nowrap rounded-full border border-line px-4 text-sm text-mist aria-[current=page]:border-cloud aria-[current=page]:bg-cloud aria-[current=page]:font-semibold aria-[current=page]:text-ink"
+                  >
+                    {t(lang, LIBELLES_FILTRE[f])} ({comptes[f]})
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          {comptes[filtre] === 0 && <p role="status" className="mt-4 text-sm text-mist">{t(lang, "sell.filter.empty")}</p>}
           <ul className="mt-3 space-y-2">
-            {mine.map((p, i) => (
+            {mine.map((p, i) => dansLeFiltre(p.kind, filtre) && (
               <li
                 key={p.slug}
                 id={`produit-${p.id}`}

@@ -61,8 +61,11 @@ export function PublishForm({
   aiActif = false,
   serviceStarters = [],
   starterLabels,
+  kindInitial,
 }: {
   labels: PublishFormLabels;
+  /** Le type déjà choisi par le vendeur (fichier ou service) ; il peut encore le changer. */
+  kindInitial?: DigitalKind;
   serviceStarters?: ServiceStarter[];
   starterLabels?: { heading: string; hint: string; confirmReplace: string };
   /**
@@ -100,7 +103,8 @@ export function PublishForm({
     // Le formulaire ne publie que des produits digitaux : `physical` a sa
     // propre route (`/vendre/physique`). Le type reste néanmoins celui de
     // l'énumération, pour que `isService` s'applique sans conversion.
-    kind: KIND_FILE as DigitalKind,
+    // `kindInitial` : le type choisi sous « Nouveau produit » (lib/seller-products-filter).
+    kind: kindInitial ?? (KIND_FILE as DigitalKind),
     category: "",
     categoryId: "",
     priceHTG: "",
