@@ -41,8 +41,10 @@ test("un service : créé par le vendeur, invisible en brouillon, publié par la
   // 1. Le vendeur remplit le formulaire de /vendre, comme sur zabelie.com.
   const vendeur = await connecte(browser, "seller", "/vendre");
   const v = vendeur.page;
+  // « Nouveau produit » demande le type d'abord : « Service » ouvre le formulaire, type déjà réglé.
+  await v.locator("#nouveau").getByRole("link", { name: /^Service\b/ }).click();
+  await expect(v.locator("#formulaire").getByRole("heading", { name: "Nouveau service", exact: true })).toBeVisible();
   await v.getByRole("textbox", { name: "Titre du produit" }).fill(TITRE);
-  await v.getByRole("combobox", { name: "Type de produit" }).selectOption({ label: "Service" });
   await v.getByRole("combobox", { name: "Catégorie", exact: true }).selectOption({ label: "Éducation" });
   await v.getByRole("spinbutton", { name: "Prix (HTG)" }).fill("500");
   await v.getByRole("textbox", { name: "Description" }).fill("Je retouche une photo de produit pour votre boutique, livrée le jour même.");

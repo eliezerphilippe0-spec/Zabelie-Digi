@@ -16,7 +16,7 @@ import { IconeStudio, type NomIcone } from "@/components/studio-icones";
  * suivent le même prédicat que leurs pages et leurs routes : éteints, ils
  * disparaissent du menu au lieu de mener à un 404.
  */
-export type RubriqueVendeur = "accueil" | "promo" | "boutique" | "compte";
+export type RubriqueVendeur = "accueil" | "produits" | "promo" | "boutique" | "compte";
 
 type Lien = { cle: string; href: string; texte: string; icone: NomIcone };
 

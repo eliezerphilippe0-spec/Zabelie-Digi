@@ -74,7 +74,7 @@ test("soumettre : une fiche en brouillon, le PDF approuvé joint, puis reprise e
   await soumettre.click();
   await expect(s.getByRole("status")).toHaveText("Fiche en attente de revue. Vous pouvez la compléter (photo, description) dans vos produits.");
   await expect(s.getByText("✓ La fiche contient ce PDF.")).toBeVisible();
-  await expect(s.getByRole("link", { name: "Voir mes produits" })).toHaveAttribute("href", "/vendre");
+  await expect(s.getByRole("link", { name: "Voir mes produits" })).toHaveAttribute("href", "/vendre?type=numeriques#mes-produits");
 
   // Ce que la « base » a reçu : UNE fiche en brouillon rattachée au projet, et le PDF approuvé, octet pour octet.
   const f = (await (await request.get(`${STUB}/__fiches`)).json()) as Fiches;
