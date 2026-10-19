@@ -153,17 +153,19 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 4.3 Fiche produit
 **Description :** dans `app/produit/[slug]/page.tsx`, pour un acheteur connecté : éligibilité (`zabelie_essayage_eligible`), groupe, exposition enregistrée dans les deux groupes, et le composant `EssayageBouton` sous `AddToCart` pour le groupe `essai` seulement. Rien pour les anonymes ni pour le vendeur de la fiche.
 **Critères :**
-- [ ] Bouton absent : interrupteur éteint, anonyme, groupe témoin, fiche non éligible, vendeur qui regarde sa propre fiche.
-- [ ] Une exposition par acheteur, fiche et jour, dans les deux groupes.
+- [x] Bouton absent : interrupteur éteint, anonyme, groupe témoin, fiche non éligible, vendeur qui regarde sa propre fiche.
+- [x] Une exposition par acheteur, fiche et jour, dans les deux groupes.
+**Fait le 2026-10-19 :** `lib/essayage/fiche.ts` décide, du moins cher au plus cher (interrupteur et fournisseur, visiteur, type, sous-rayon, puis la base), et note l'exposition dans les deux groupes ; une panne de la base cache le bouton sans casser la fiche. 6 tests, 9 mutations tuées. La fiche passe les mêmes libellés à « Ajouter au panier » et au bouton.
 **Vérification :** tests de source (comme `tests/vendre-produits-par-type.test.ts`) ; `npm run build`.
 **Dépendances :** 4.2. **Fichiers :** `app/produit/[slug]/page.tsx`, `lib/essayage/fiche.ts`, `components/essayage-bouton.tsx`, `tests/essayage-fiche.test.ts`. **Taille :** M.
 
 ### 4.4 Feuille d'essayage
 **Description :** `components/essayage-feuille.tsx` : consentement versionné (gardé sur l'appareil), choix ou prise de photo avec conseils (de face, en pied, bonne lumière), compression (`compresserImage`, côté long de 1 024 px au plus), envoi, attente visible, résultat avec « Aperçu généré par IA… », « Ajouter au panier », messages d'erreur (quota, pause, échec, délai). Option « Garder ma photo sur ce téléphone », décochée par défaut, et bouton pour l'effacer.
 **Critères :**
-- [ ] Sans consentement, aucune photo ne part.
-- [ ] La photo gardée sur l'appareil ne quitte l'appareil qu'au moment d'un essai, et l'effacement la supprime vraiment.
-- [ ] À 360 px : pas de défilement horizontal, cibles de 44 px, clair et sombre.
+- [x] Sans consentement, aucune photo ne part.
+- [x] La photo gardée sur l'appareil ne quitte l'appareil qu'au moment d'un essai, et l'effacement la supprime vraiment. (Effacement réel à revoir dans le navigateur, tâche 4.5.)
+- [ ] À 360 px : pas de défilement horizontal, cibles de 44 px, clair et sombre. (Cibles de 44 px tenues par test de source ; le reste se contrôle dans le navigateur avec la tâche 4.5.)
+**Fait le 2026-10-19 (code) :** `components/essayage-feuille.tsx` dans un `<dialog>` natif, `lib/essayage/photo-locale.ts` (consentement en localStorage, photo en IndexedDB), `lib/essayage/libelles.ts` (23 libellés en quatre langues). 9 tests de source, 8 mutations tuées. Écarts et ajouts : `appelSession` gagne une variante `appelAvecSession` (multipart et GET), pour ne pas réécrire la lecture des 401 et des refus ; `compresserImage` accepte un côté maximal plus court, jamais plus long (garde `image-pipeline` mise à jour) ; le message du plafond dit « en pause ce mois-ci », comme le critère 5 du §11. Le texte du consentement est un brouillon à faire valider (tâche 6.1).
 **Vérification :** tests de composant ou de source ; contrôle à 360 px dans le navigateur.
 **Dépendances :** 4.3. **Fichiers :** `components/essayage-feuille.tsx`, `lib/essayage/photo-locale.ts`, `lib/i18n.ts`, `tests/essayage-feuille.test.ts`. **Taille :** M.
 

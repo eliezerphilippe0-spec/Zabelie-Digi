@@ -150,7 +150,8 @@ test("la qualité est décidée par la TAILLE OBTENUE, pas par un réglage fixe"
 test("le grand côté est plafonné, et la sortie est du WebP", () => {
   assert.match(
     COMPRESS_CODE,
-    /Math\.min\(1, COVER_MAX_COTE \/ Math\.max\(bitmap\.width, bitmap\.height\)\)/
+    // Le plafond reste COVER_MAX_COTE : l'option `maxCote` (essayage virtuel) ne peut que le baisser.
+    /const cote = Math\.min\(COVER_MAX_COTE, options\.maxCote \?\? COVER_MAX_COTE\);\s*\n\s*const facteur = Math\.min\(1, cote \/ Math\.max\(bitmap\.width, bitmap\.height\)\)/
   );
   assert.match(COMPRESS_CODE, /canvas\.toBlob\(res, "image\/webp", q\)/);
 });

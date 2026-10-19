@@ -46,7 +46,7 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 - [x] 3.2 Migration 0150 : fonctions de réservation, de fin et d'exposition, garde `definer_exposition`
 - [x] 4.1 Cœur serveur de l'essai (orchestration testable)
 - [x] 4.2 Routes `POST /api/essayage` et `GET /api/essayage/[id]`
-- [ ] 4.3 Fiche produit : éligibilité, groupe, exposition, bouton
+- [x] 4.3 Fiche produit : éligibilité, groupe, exposition, bouton
 - [ ] 4.4 Feuille d'essayage : consentement, photo, envoi, attente, résultat
 - [ ] 4.5 E2E avec la simulation (faux Supabase), 360 px, 4 langues
 - [ ] 5.1 Administration : vendeurs pilotes, plafond, quota, pause, compteur
