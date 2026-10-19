@@ -42,9 +42,9 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 - [x] 2.2 Adaptateur FASHN
 - [x] 2.3 Outil de comparaison à blanc et payant, planche à l'aveugle
 - [ ] 2.4 (sur « oui ») Point d'accès GPU du modèle maison pour le test (évaluation seulement : analyseur sous licence non commerciale)
-- [ ] 3.1 Migration 0150 : tables, sous-rayons autorisés, RLS, sonde
-- [ ] 3.2 Migration 0150 : fonctions de réservation, de fin et d'exposition, garde `definer_exposition`
-- [ ] 4.1 Cœur serveur de l'essai (orchestration testable)
+- [x] 3.1 Migration 0150 : tables, sous-rayons autorisés, RLS, sonde
+- [x] 3.2 Migration 0150 : fonctions de réservation, de fin et d'exposition, garde `definer_exposition`
+- [x] 4.1 Cœur serveur de l'essai (orchestration testable)
 - [ ] 4.2 Routes `POST /api/essayage` et `GET /api/essayage/[id]`
 - [ ] 4.3 Fiche produit : éligibilité, groupe, exposition, bouton
 - [ ] 4.4 Feuille d'essayage : consentement, photo, envoi, attente, résultat

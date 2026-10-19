@@ -9,8 +9,12 @@ import { ErreurFournisseur, type ImageResultat } from "./types";
  * composant client.
  */
 
-/** Un résultat plus lourd que ça n'est pas une image d'essayage : on le refuse plutôt que de le transporter. */
-export const POIDS_MAX_RESULTAT = 10 * 1024 * 1024;
+/**
+ * Un résultat plus lourd que ça n'est pas une image d'essayage : on le refuse
+ * plutôt que de le transporter. 3 Mo, soit 4 Mo une fois en base64 : sous la
+ * limite de 4,5 Mo d'une RÉPONSE de fonction Vercel.
+ */
+export const POIDS_MAX_RESULTAT = 3 * 1024 * 1024;
 const TYPES_RESULTAT = ["image/png", "image/jpeg", "image/webp"] as const;
 
 /**

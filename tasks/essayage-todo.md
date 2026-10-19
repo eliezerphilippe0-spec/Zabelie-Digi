@@ -107,8 +107,8 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 3.1 Migration 0150 : tables
 **Description :** `supabase/migrations/0150_zabelie_essayage.sql` (avec `zabelie_migration_garde`) : `zabelie_essayage_config` (une ligne : `plafond_mois` 1000, `quota_jour` 5, `en_pause` false), `zabelie_essayage_vendeurs`, `zabelie_essayage_rayons` (amorcée avec les slugs du §2.1), `zabelie_essayage_essais`, `zabelie_essayage_expositions`. RLS activée partout ; aucun droit pour `anon` et `authenticated`, sauf la lecture de `zabelie_essayage_rayons`. Sonde `zabelie_objets_requis()` mise à jour.
 **Critères :**
-- [ ] `anon` et `authenticated` ne lisent ni n'écrivent aucune table d'essai (test SQL).
-- [ ] Aucune colonne ne peut contenir une photo ou un résultat (revue du schéma).
+- [x] `anon` et `authenticated` ne lisent ni n'écrivent aucune table d'essai (test SQL).
+- [x] Aucune colonne ne peut contenir une photo ou un résultat (revue du schéma).
 **Fait le 2026-10-19 :** tables, RLS, droits au rôle service seul, sous-rayons amorcés avec arrêt si l'arbre n'en rend pas quinze. Écart au plan : la sonde `zabelie_objets_requis()` passe aux tâches 4.1 et 4.2 (la garde `objets-requis-couverture` refuse une fonction surveillée sans appel `.rpc()`), et `zabelie_essayage_rayons` n'est lisible que par le rôle service. Recoupement TS : `tests/essayage-migration.test.ts`.
 **Vérification :** CI `sql-tests` ; `supabase/tests/zabelie_essayage.test.sql`.
 **Dépendances :** 1.1. **Fichiers :** `supabase/migrations/0150_zabelie_essayage.sql`, `supabase/tests/zabelie_essayage.test.sql`. **Taille :** M.
@@ -116,16 +116,16 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 3.2 Migration 0150 : fonctions
 **Description :** dans la même migration, `zabelie_essayage_eligible(produit)`, `zabelie_essayage_reserver(acheteur, produit, fournisseur)` (fiche publiée et physique, vendeur pilote actif, sous-rayon de niveau 3 autorisé, pause, quota du jour haïtien, plafond du mois hors échecs, verrou consultatif, insertion `en_cours`), `zabelie_essayage_terminer(essai, statut, travail)`, `zabelie_essayage_exposer(acheteur, produit, groupe)`. Toutes en `security definer`, `search_path` figé, accordées au rôle service seul ; ajoutées à la liste gelée de `definer_exposition` et à sa revue.
 **Critères :**
-- [ ] Le 6e essai du jour est refusé (`quota`) ; le compteur repart au jour haïtien suivant ; un échec ne compte pas.
-- [ ] 20 réservations simultanées au bord du plafond ne le dépassent jamais.
-- [ ] Une fiche de lingerie, d'enfant, sans sous-rayon, en brouillon ou d'un vendeur non pilote est refusée (`non_eligible`).
+- [x] Le 6e essai du jour est refusé (`quota`) ; le compteur repart au jour haïtien suivant ; un échec ne compte pas.
+- [x] 20 réservations simultanées au bord du plafond ne le dépassent jamais.
+- [x] Une fiche de lingerie, d'enfant, sans sous-rayon, en brouillon ou d'un vendeur non pilote est refusée (`non_eligible`).
 **Fait le 2026-10-19 :** cinq fonctions (`eligible`, `reserver`, `lancer`, `terminer`, `exposer`), rôle service seul. Écart au plan : aucune n'est exposée à `anon` ni `authenticated`, donc la liste gelée de `definer_exposition` ne change pas (le test le prouve) ; `lancer` s'ajoute pour noter le travail du fournisseur ; un essai abandonné compte (le fournisseur facture à la création). Concurrence : `supabase/tests/essayage_plafond_concurrent.sh` (20 acheteurs sur la dernière place du plafond, 10 demandes sur la dernière place du quota). Vérification en base : CI `sql-tests`.
 **Vérification :** CI `sql-tests` (dont `definer_exposition.test.sql`).
 **Dépendances :** 3.1. **Fichiers :** `supabase/migrations/0150_zabelie_essayage.sql`, `supabase/tests/zabelie_essayage.test.sql`, `supabase/tests/definer_exposition.test.sql`, `docs/REVUE-2026-10-08-fonctions-definer.md`. **Taille :** M.
 
 ### Point de contrôle 3
-- [ ] Branche poussée, PR en brouillon, CI `sql-tests` verte.
-- [ ] Migration **non appliquée** en production.
+- [x] Branche poussée, PR en brouillon, CI `sql-tests` verte. (PR #389, CI entière verte le 2026-10-19.)
+- [x] Migration **non appliquée** en production.
 
 ---
 
@@ -134,10 +134,11 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 4.1 Cœur serveur
 **Description :** `lib/essayage/serveur.ts` : `demarrerEssai()` et `suivreEssai()` avec leurs dépendances injectées (client de base, fournisseur, horloge), pour être testées sans réseau. Contrôle du type et du poids de la photo (JPEG, PNG, WebP ; plafond sous 4,5 Mo), réservation, appel du fournisseur, passage en `echec` au-delà de 60 s, résultat converti en `data:` sans écriture.
 **Critères :**
-- [ ] Chaque code de refus du §1.1 sort au bon moment.
-- [ ] Un échec ou un délai dépassé appelle `terminer(echec)`, et l'essai ne compte pas.
-- [ ] Aucune écriture dans Storage, aucun journal contenant l'image (garde en test).
-**Vérification :** `node --import tsx --test tests/essayage-serveur.test.ts`.
+- [x] Chaque code de refus du §1.1 sort au bon moment.
+- [x] Un échec ou un délai dépassé appelle `terminer(echec)`, et l'essai ne compte pas.
+- [x] Aucune écriture dans Storage, aucun journal contenant l'image (garde en test).
+**Fait le 2026-10-19 :** `lib/essayage/serveur.ts` (9 tests) et `lib/essayage/base.ts`, la vraie base par le client du rôle service (4 tests, dont la garde Storage et journal) ; 13 mutations tuées. Écarts au plan : la sonde `zabelie_objets_requis()` est redéfinie dans 0150 avec les cinq fonctions, puisque leurs appels `.rpc()` existent maintenant ; le résultat est plafonné à 3 Mo (au lieu de 10) pour tenir sous les 4,5 Mo d'une réponse Vercel ; le groupe témoin est aussi refusé côté serveur, pour qu'un appel direct à l'API ne fausse pas la mesure.
+**Vérification :** `node --import tsx --test tests/essayage-serveur.test.ts tests/essayage-base.test.ts`.
 **Dépendances :** 1.2, 3.2. **Fichiers :** `lib/essayage/serveur.ts`, `tests/essayage-serveur.test.ts`. **Taille :** M.
 
 ### 4.2 Routes
