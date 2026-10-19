@@ -109,6 +109,7 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Critères :**
 - [ ] `anon` et `authenticated` ne lisent ni n'écrivent aucune table d'essai (test SQL).
 - [ ] Aucune colonne ne peut contenir une photo ou un résultat (revue du schéma).
+**Fait le 2026-10-19 :** tables, RLS, droits au rôle service seul, sous-rayons amorcés avec arrêt si l'arbre n'en rend pas quinze. Écart au plan : la sonde `zabelie_objets_requis()` passe aux tâches 4.1 et 4.2 (la garde `objets-requis-couverture` refuse une fonction surveillée sans appel `.rpc()`), et `zabelie_essayage_rayons` n'est lisible que par le rôle service. Recoupement TS : `tests/essayage-migration.test.ts`.
 **Vérification :** CI `sql-tests` ; `supabase/tests/zabelie_essayage.test.sql`.
 **Dépendances :** 1.1. **Fichiers :** `supabase/migrations/0150_zabelie_essayage.sql`, `supabase/tests/zabelie_essayage.test.sql`. **Taille :** M.
 
@@ -118,6 +119,7 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 - [ ] Le 6e essai du jour est refusé (`quota`) ; le compteur repart au jour haïtien suivant ; un échec ne compte pas.
 - [ ] 20 réservations simultanées au bord du plafond ne le dépassent jamais.
 - [ ] Une fiche de lingerie, d'enfant, sans sous-rayon, en brouillon ou d'un vendeur non pilote est refusée (`non_eligible`).
+**Fait le 2026-10-19 :** cinq fonctions (`eligible`, `reserver`, `lancer`, `terminer`, `exposer`), rôle service seul. Écart au plan : aucune n'est exposée à `anon` ni `authenticated`, donc la liste gelée de `definer_exposition` ne change pas (le test le prouve) ; `lancer` s'ajoute pour noter le travail du fournisseur ; un essai abandonné compte (le fournisseur facture à la création). Concurrence : `supabase/tests/essayage_plafond_concurrent.sh` (20 acheteurs sur la dernière place du plafond, 10 demandes sur la dernière place du quota). Vérification en base : CI `sql-tests`.
 **Vérification :** CI `sql-tests` (dont `definer_exposition.test.sql`).
 **Dépendances :** 3.1. **Fichiers :** `supabase/migrations/0150_zabelie_essayage.sql`, `supabase/tests/zabelie_essayage.test.sql`, `supabase/tests/definer_exposition.test.sql`, `docs/REVUE-2026-10-08-fonctions-definer.md`. **Taille :** M.
 

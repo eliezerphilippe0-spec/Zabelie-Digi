@@ -90,13 +90,16 @@ Affichage du résultat, mention IA, « Ajouter au panier »
 |---|---|---|
 | `zabelie_essayage_config` | une ligne : `plafond_mois`, `quota_jour`, `en_pause` | lecture et écriture par le rôle service seul |
 | `zabelie_essayage_vendeurs` | `seller_id`, `actif`, `active_par`, `active_le` | rôle service seul |
-| `zabelie_essayage_rayons` | les sous-rayons autorisés (§2.1) | lecture publique, écriture par migration |
+| `zabelie_essayage_rayons` | les sous-rayons autorisés (§2.1) ; la migration s'arrête si l'arbre n'en rend pas quinze | lecture par le rôle service seul, écriture par migration |
 | `zabelie_essayage_essais` | `id`, `acheteur_id`, `produit_id`, `vendeur_id`, `fournisseur`, `travail_id`, `statut`, `cree_le`, `termine_le` | rôle service seul |
 | `zabelie_essayage_expositions` | `acheteur_id`, `produit_id`, `groupe`, `jour`, unique par trio | rôle service seul |
-| `zabelie_essayage_reserver(...)` | éligibilité, quota, plafond et insertion, en une transaction sous verrou | `security definer`, `search_path` figé, accordée au rôle service seul |
-| `zabelie_essayage_terminer(...)` | passe un essai en `reussi` ou `echec` | idem |
+| `zabelie_essayage_eligible(...)` | fiche publiée, physique, avec photo, vendeur pilote actif, sous-rayon ouvert, pas celle de l'acheteur | `security definer`, `search_path` figé, accordée au rôle service seul |
+| `zabelie_essayage_reserver(...)` | éligibilité, pause, plafond, quota et insertion, sous un verrou ; rend l'essai ou un refus | idem |
+| `zabelie_essayage_lancer(...)` | note une fois l'identifiant du travail chez le fournisseur | idem |
+| `zabelie_essayage_terminer(...)` | passe un essai en cours en `reussi` ou en `echec` avec sa raison, une fois | idem |
+| `zabelie_essayage_exposer(...)` | une exposition par acheteur, fiche et jour haïtien, fiche éligible seulement | idem |
 
-Aucune colonne ne contient de photo, d'URL de photo ou de résultat. Les fonctions `security definer` entrent dans la liste gelée du garde `definer_exposition` et dans sa revue. La sonde `zabelie_objets_requis()` les inclut. Le registre `zabelie_schema_migrations` est rempli à la main après application, selon la méthode 0086.
+Aucune colonne ne contient de photo, d'URL de photo ou de résultat. Seul un essai **échoué** ne compte ni dans le quota ni dans le plafond ; un essai abandonné « en cours » compte, car le fournisseur facture dès la création. Pourquoi tout au rôle service : un acheteur qui pourrait clore lui-même un essai le dirait « échoué » et obtiendrait des essais payants sans limite ; le serveur passe donc l'identité tirée de la session vérifiée. Aucune de ces fonctions n'est exposée à `anon` ni à `authenticated` : la liste gelée du garde `definer_exposition` ne change pas, et ce test le prouve. La sonde `zabelie_objets_requis()` les recevra avec leurs appels `.rpc()` (phase 4) : sans appelant, ce seraient des fantômes. Le registre `zabelie_schema_migrations` est rempli à la main après application, selon la méthode 0086.
 
 ## 4. Fournisseurs, coûts et choix
 
