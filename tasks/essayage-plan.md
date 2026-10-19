@@ -35,13 +35,13 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 
 ## Index des tâches
 
-- [ ] 0.1 Conditions de Genlook et FASHN (entraînement, conservation, droits sur les images) et licences de FASHN Human Parser et DWPose
+- [x] 0.1 Conditions de Genlook et FASHN (entraînement, conservation, droits sur les images) et licences de FASHN Human Parser et DWPose (fait le 2026-10-19)
 - [ ] 1.1 Règles pures : sous-rayons autorisés, groupes, interrupteurs, jour haïtien
 - [ ] 1.2 Adaptateur de fournisseur et fournisseur `simulation`
 - [ ] 2.1 Adaptateur Genlook
 - [ ] 2.2 Adaptateur FASHN
 - [ ] 2.3 Outil de comparaison à blanc et payant, planche à l'aveugle
-- [ ] 2.4 (sur « oui ») Point d'accès GPU du modèle maison pour le test
+- [ ] 2.4 (sur « oui ») Point d'accès GPU du modèle maison pour le test (évaluation seulement : analyseur sous licence non commerciale)
 - [ ] 3.1 Migration 0150 : tables, sous-rayons autorisés, RLS, sonde
 - [ ] 3.2 Migration 0150 : fonctions de réservation, de fin et d'exposition, garde `definer_exposition`
 - [ ] 4.1 Cœur serveur de l'essai (orchestration testable)
@@ -59,7 +59,9 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 | Risque | Impact | Parade |
 |---|---|---|
 | Rendu médiocre sur les peaux foncées | Élevé | Comparaison à l'aveugle dès la phase 2, avant d'allumer quoi que ce soit ; règle de choix du §4.2 |
-| Fournisseur qui entraîne ses modèles sur nos photos | Élevé | Tâche 0.1 ; pas de pilote sans un « non » écrit |
+| Fournisseur qui entraîne ses modèles sur nos photos | Levé | Tâche 0.1 : Genlook et FASHN l'excluent par écrit ; à relire si leurs conditions changent |
+| Modèle maison mis en production avec un composant non commercial | Élevé | Analyseur de silhouette sous licence NVIDIA SegFormer : test seulement ; remplacement et nouveau test avant toute production |
+| Photo d'acheteur gardée sans fin chez FASHN par son URL | Moyen | Envoi en base64, jamais en URL (tâche 2.2) |
 | Facture qui dépasse le budget | Moyen | Plafond tenu par la base, sous verrou, test de 20 réservations simultanées |
 | Administrateur sans double authentification | Moyen | Pas d'activation depuis l'interface tant qu'elle manque ; sinon, activation par SQL sur « oui » |
 | Catalogue vide | Moyen | Le pilote attend les fiches mode ; le code peut être prêt avant |
@@ -72,4 +74,4 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 ## Questions ouvertes (porteur)
 
 - Q2 à Q5 de la spécification : photo d'un proche exclue (proposé), vendeurs pilotes, plafond et quota, seuil de décision.
-- Q1, Q6 et Q7 sont traitées par la tâche 0.1.
+- Q1, Q6 et Q7 : réglées par la tâche 0.1 (`docs/74` §13).

@@ -66,8 +66,8 @@ Affichage du résultat, mention IA, « Ajouter au panier »
 
 - **Adaptateur** (`lib/essayage/fournisseurs/`) : `creer()`, `statut()`, `effacer()`, avec trois mises en œuvre dans le pilote : `genlook`, `fashn`, `simulation`. La simulation sert aux tests et à l'e2e : elle ne coûte rien et ne sort pas de la machine. Un quatrième, `maison`, s'ajoute sans toucher au reste si le modèle maison est retenu (§4).
 - **Interrupteurs** (même règle que le Studio : seule la valeur exacte `true` ouvre) : `ZABELIE_ESSAYAGE_ENABLED`, `ZABELIE_ESSAYAGE_FOURNISSEUR` (`genlook`, `fashn` ou `simulation` ; absent = aucun fournisseur, jamais de défaut qui dépenserait), `GENLOOK_API_KEY`, `FASHN_API_KEY`. Ajoutés à `.env.example`.
-- **FASHN** : `moderation_level: "conservative"` (bloque sous-vêtements et maillots), `return_base64: true` (le résultat n'est gardé qu'une heure chez eux).
-- **Genlook** : conservation des envois réglée au minimum (1 jour), effacement des images de l'acheteur après le résultat.
+- **FASHN** : `moderation_level: "conservative"` (bloque sous-vêtements et maillots), `return_base64: true` (le résultat n'est gardé qu'une heure chez eux). La photo de l'acheteur part **en base64, jamais en URL** : FASHN garde sans limite les URL envoyées dans l'historique des requêtes et n'offre pas de suppression en libre-service, alors que la copie d'une entrée base64 est effacée à la fin du traitement. La photo du produit, publique, peut partir en URL.
+- **Genlook** : conservation des envois réglée au minimum (1 jour), effacement des images de l'acheteur après le résultat (point de suppression de l'API).
 - **Taille des envois** : photo compressée côté client (côté long de 1 024 px au plus, quelques centaines de kilo-octets), sous la limite de 4,5 Mo des fonctions Vercel.
 
 ### 3.1 Données (migration `0150`, appliquée en production seulement sur « oui »)
@@ -97,18 +97,23 @@ Aucune colonne ne contient de photo, d'URL de photo ou de résultat. Les fonctio
 | Échecs | remboursés | non facturés | à nos frais |
 | Confidentialité | effacement des images d'un utilisateur, conservation réglable de 1 à 7 jours | résultat gardé 1 heure au plus (`return_base64`), filtre `conservative` | tout reste chez nous et chez l'hébergeur GPU |
 | Peaux foncées | à tester | à tester | à tester, et **corrigeable** : la licence permet de réentraîner sur des photos haïtiennes (avec consentement) |
-| Travail en plus | aucun | aucun | plusieurs semaines : service GPU, préparation des images, filtre de nudité et de mineurs, surveillance |
+| Travail en plus | aucun | aucun | plusieurs semaines : service GPU, préparation des images, filtre de nudité et de mineurs, surveillance, **et remplacement de l'analyseur de silhouette** (voir ci-dessous) |
 
-Licence du modèle maison : Apache-2.0, vérifiée sur le fichier `LICENSE` du dépôt officiel (« Copyright 2025 FASHN AI ») et sur la fiche Hugging Face, poids compris. Usage commercial permis. Deux composants tiers ont leur propre licence, **à vérifier avant tout usage commercial** : l'analyseur de corps « FASHN Human Parser » et le détecteur de pose DWPose. Les droits sur les données d'entraînement ne sont pas décrits. Besoin matériel : environ 8 Go de mémoire graphique, environ 5 secondes par image sur une H100.
+Licences du modèle maison, vérifiées aux sources le 2026-10-19 :
+- **Le modèle** (code et poids) : Apache-2.0, sur le fichier `LICENSE` du dépôt officiel (« Copyright 2025 FASHN AI ») et sur la fiche Hugging Face. Usage commercial permis.
+- **DWPose** (détecteur de pose) : Apache-2.0 (« Copyright 2023 IDEA »). YOLOX : Apache-2.0 d'après la liste du dépôt.
+- **FASHN Human Parser** (analyseur de silhouette, téléchargé automatiquement au premier usage) : **licence NVIDIA de SegFormer**, car il est affiné à partir de `nvidia/mit-b4`. Sa section 3.3 dit que l'œuvre et ses dérivés « only may be used or intended for use non-commercially », c'est-à-dire pour la recherche ou l'évaluation seulement.
+
+Conséquence : **le modèle maison peut servir au test**, qui est une évaluation. **Il ne peut pas servir en production** tant que l'analyseur n'est pas remplacé par un composant sous licence commerciale ; il faudrait alors refaire le test, car la qualité peut changer. Les droits sur les données d'entraînement du modèle ne sont pas décrits. Besoin matériel : environ 8 Go de mémoire graphique, environ 5 secondes par image sur une H100.
 
 ### 4.2 Le test et la règle de choix
 
 1. Les mêmes 20 photos (clientes haïtiennes, morphologies et teintes variées, accord écrit) × 5 vêtements des rayons autorisés passent chez les trois candidats, avec l'outil de comparaison.
 2. Le porteur et deux personnes de son choix notent chaque résultat **sans savoir de quel candidat il vient** : fidélité du vêtement (coupe, couleur, motif), rendu de la peau et des cheveux, morphologie respectée, défauts visibles (mains, visage).
 3. Règle :
-   - **Genlook** si sa note est au moins égale à celle de FASHN et s'il garantit par écrit ne pas entraîner ses modèles sur nos photos ;
-   - sinon **FASHN**, aux mêmes conditions ;
-   - le **modèle maison** seulement s'il est nettement le meilleur sur les peaux et morphologies haïtiennes, ou plus tard, quand le volume dépasse le seuil du §4.3.
+   - **Genlook** si sa note est au moins égale à celle de FASHN (les deux excluent par écrit l'entraînement sur nos photos, voir §13) ;
+   - sinon **FASHN** ;
+   - le **modèle maison** seulement s'il est nettement le meilleur sur les peaux et morphologies haïtiennes, ou plus tard, quand le volume dépasse le seuil du §4.3, et dans les deux cas **après remplacement de l'analyseur de silhouette** (§4.1) et un nouveau test.
 4. Le résultat du test et le choix sont consignés ici, avant d'allumer le pilote.
 
 ### 4.3 Seuils de rentabilité
@@ -125,9 +130,13 @@ Hypothèse : une machine GPU allumée en permanence à environ 580 $ par mois (L
 - l'adaptateur : changer de fournisseur, c'est changer `ZABELIE_ESSAYAGE_FOURNISSEUR` ;
 - deux fournisseurs testés dès le départ, donc un plan B prêt ;
 - rien d'important chez eux : ni règles, ni données, et les photos effacées au plus tôt ;
-- une sortie possible vers le modèle maison (licence Apache-2.0), sans réécrire le reste.
+- une sortie possible vers le modèle maison (licence Apache-2.0, une fois l'analyseur de silhouette remplacé), sans réécrire le reste.
 
-**À vérifier dans les conditions de chaque fournisseur avant le pilote** : à qui appartiennent les images générées, et si les photos envoyées servent à entraîner leurs modèles.
+**Ce que disent les conditions des fournisseurs** (lues le 2026-10-19, détail au §13) :
+- **Images générées** : elles appartiennent à Zabelie chez les deux. Genlook : « you own the try-on images generated from your content ». FASHN : « you own the outputs generated for you », et FASHN nous cède ses droits éventuels. La licence qu'ils gardent sert seulement à faire tourner le service.
+- **Entraînement** : exclu chez les deux, pour les photos envoyées comme pour les images générées.
+- **Rôles** : Zabelie est **responsable du traitement** des données de ses acheteurs, et le fournisseur est sous-traitant, au titre de son accord de traitement des données (DPA) : chez Genlook il est intégré aux conditions et s'obtient à `privacy@genlook.app` ; chez FASHN il est publié sur `fashn.ai/legal/dpa`. À nous donc la mention dans notre politique de confidentialité, le consentement, et l'inscription du fournisseur au registre des sous-traitants (`docs/69`).
+- **Sous-traitants des fournisseurs** : Genlook héberge et calcule dans l'Union européenne, mais certains traitements passent hors de l'Espace économique européen, et sa liste compte des services américains d'IA (Google Vertex AI, Comfy Cloud, Decart, Anthropic). FASHN annonce combiner sa technologie et des « services d'IA tiers », listés dans son DPA. Une photo d'acheteur peut donc passer chez un tiers du fournisseur : à dire dans le consentement et dans `/confidentialite`.
 
 ## 6. Commandes
 
@@ -225,18 +234,32 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 - **Compte GPU à la seconde** (RunPod ou équivalent) pour le modèle maison : quelques dollars pour le test.
 - **20 photos de clientes haïtiennes**, avec accord écrit, gardées hors du dépôt, et deux personnes pour la notation à l'aveugle.
 
-## 13. Questions ouvertes
+## 13. Questions ouvertes et réponses
 
-1. **Entraînement** : Genlook et FASHN utilisent-ils les photos reçues pour entraîner leurs modèles ? Il faut une réponse écrite « non » avant le pilote. Ni l'une ni l'autre page développeurs ne le dit.
+### Réponses de la phase 0 (tâche 0.1, lues aux sources le 2026-10-19)
+
+1. **Entraînement : non, chez les deux, par écrit.**
+   - Genlook, conditions §5 : « We do not use uploaded photos or generated results to train AI models. » Sa politique de confidentialité ajoute qu'il n'utilise ni les photos des clients ni les images générées pour entraîner des modèles.
+   - FASHN, conditions : « FASHN will not use Customer Content to train, fine-tune, or otherwise improve FASHN or third-party AI models », sauf adhésion volontaire par un accord séparé. Le « Customer Content » comprend les images générées.
+   - Conservation chez Genlook : photos et images générées effacées au bout de la durée réglée (1, 3 ou 7 jours au plus), originaux non traités sous 1 jour. Chez FASHN : entrée en base64 effacée à la fin du traitement (nettoyage de secours sous 1 jour), résultat en base64 disponible 60 minutes, résultat sur leur CDN 3 jours. Historique des requêtes gardé sans limite, sans image mais avec les URL envoyées, et sans suppression en libre-service (demande à `legal@fashn.ai`). D'où la règle du §3 : la photo de l'acheteur part en base64.
+6. **Images générées : elles appartiennent à Zabelie, chez les deux.**
+   - Genlook, conditions §5 : « As between you and Genlook, you own the try-on images generated from your content », sous réserve des droits des personnes représentées ; licence à Genlook limitée à fournir et sécuriser le service. Ses conditions nous interdisent aussi de présenter l'image générée comme une vraie photo de l'acheteur ou comme une garantie de taille, ce que fait déjà la mention « Aperçu généré par IA ».
+   - FASHN, conditions : « you own the outputs generated for you » ; FASHN nous cède ses droits éventuels ; sa licence sert seulement à faire tourner le service et prend fin à l'effacement ; pas d'usage marketing sans notre accord.
+7. **Composants du modèle maison** : DWPose et YOLOX sous Apache-2.0 ; **FASHN Human Parser sous licence NVIDIA de SegFormer, non commerciale** (recherche ou évaluation seulement). Conséquences au §4.1 : le modèle maison sert au test, pas à la production tant que l'analyseur n'est pas remplacé. Droits sur ses données d'entraînement : non décrits.
+
+Les deux fournisseurs interdisent d'envoyer la photo d'une autre personne sans son accord, et tout contenu impliquant des mineurs ou sexuellement explicite : cela conforte les choix du §2 (rayons fermés, « c'est ma photo, j'ai 18 ans ou plus »).
+
+### Encore ouvertes (porteur)
+
 2. **Photo d'une autre personne** (le proche en Haïti) : exclue du pilote. On s'en tient à « c'est ma photo, j'ai 18 ans ou plus ».
 3. **Vendeurs pilotes** : la liste est à fournir par le porteur.
 4. **Plafond et quota** : 1 000 essais par mois et 5 par jour et par acheteur conviennent-ils ?
 5. **Seuil de décision** de la §7 : quel écart faut-il voir sur les refus et les litiges pour généraliser ?
-6. **Droits sur les images générées** : à qui appartiennent-elles selon les conditions de Genlook et de FASHN ?
-7. **Composants tiers du modèle maison** : licences de l'analyseur « FASHN Human Parser » et de DWPose ; droits sur les données d'entraînement (non décrits).
 
-Sources, relevées le 2026-10-19 :
+### Sources, relevées le 2026-10-19
+
 - Prix et API : [Genlook, API](https://genlook.app/developers) (0,04 $ l'essai à l'unité, 20 $ les 1 000 par mois, 10 essais offerts, échecs remboursés), [FASHN, API](https://fashn.ai/products/api) et [doc v1.6](https://docs.fashn.ai/api-reference/tryon-v1-6) (0,075 $ l'image, échecs non facturés, modération `conservative`, `return_base64`).
-- Modèle maison : [annonce FASHN VTON v1.5](https://fashn.ai/blog/fashn-vton-1-5-open-source-release), [dépôt GitHub et fichier LICENSE](https://github.com/fashn-AI/fashn-vton-1.5), [fiche Hugging Face](https://huggingface.co/fashn-ai/fashn-vton-1.5).
+- Conditions et confidentialité : [Genlook, conditions](https://genlook.app/terms), [Genlook, confidentialité](https://genlook.app/privacy), [FASHN, conditions](https://fashn.ai/legal/terms-of-service), [FASHN, conservation des données](https://docs.fashn.ai/api-overview/data-retention-privacy), [FASHN, DPA](https://fashn.ai/legal/dpa).
+- Modèle maison : [annonce FASHN VTON v1.5](https://fashn.ai/blog/fashn-vton-1-5-open-source-release), [dépôt GitHub et fichier LICENSE](https://github.com/fashn-AI/fashn-vton-1.5), [fiche Hugging Face](https://huggingface.co/fashn-ai/fashn-vton-1.5), [FASHN Human Parser](https://huggingface.co/fashn-ai/fashn-human-parser), [licence NVIDIA de SegFormer](https://github.com/NVlabs/SegFormer/blob/master/LICENSE), [licence DWPose](https://github.com/IDEA-Research/DWPose/blob/onnx/LICENSE).
 - Licences des autres modèles ouverts (IDM-VTON et CatVTON non commerciaux) : [IDM-VTON](https://huggingface.co/yisol/IDM-VTON), [comparatif FASHN](https://fashn.ai/blog/comparing-the-top-4-open-source-virtual-try-on-viton-models).
 - Prix GPU : [RunPod](https://www.runpod.io/gpu-cloud/pricing) (L40S environ 0,79 $ de l'heure, facturation à la seconde).

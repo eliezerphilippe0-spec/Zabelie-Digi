@@ -18,8 +18,9 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 0.1 Conditions des fournisseurs et licences des composants
 **Description :** lire les conditions de Genlook et de FASHN (utilisation des photos pour l'entraînement, durée de conservation, droits sur les images générées), et les licences de FASHN Human Parser et de DWPose. Consigner les réponses, sources à l'appui, dans `docs/74` §13.
 **Critères :**
-- [ ] Q1, Q6 et Q7 ont une réponse sourcée, ou la mention « non écrit, à demander au fournisseur » avec le texte de la question à envoyer.
-- [ ] Si un fournisseur n'exclut pas l'entraînement, c'est signalé comme bloquant pour lui.
+- [x] Q1, Q6 et Q7 ont une réponse sourcée, ou la mention « non écrit, à demander au fournisseur » avec le texte de la question à envoyer. (Fait le 2026-10-19 : réponses sourcées pour les trois, `docs/74` §13.)
+- [x] Si un fournisseur n'exclut pas l'entraînement, c'est signalé comme bloquant pour lui. (Les deux l'excluent par écrit.)
+**Résultat :** l'analyseur de silhouette du modèle maison est sous licence non commerciale (NVIDIA SegFormer) : le modèle maison sert au test, pas à la production sans remplacement (`docs/74` §4.1). Chez FASHN, la photo de l'acheteur doit partir en base64 (`docs/74` §3).
 **Vérification :** relecture par le porteur.
 **Dépendances :** aucune. **Fichiers :** `docs/74-ESSAYAGE-VIRTUEL.md`. **Taille :** XS.
 
@@ -61,8 +62,9 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Dépendances :** 1.2. **Fichiers :** `lib/essayage/fournisseurs/genlook.ts`, `tests/essayage-genlook.test.ts`, `tests/fixtures/essayage/genlook-*.json`. **Taille :** S.
 
 ### 2.2 Adaptateur FASHN
-**Description :** `lib/essayage/fournisseurs/fashn.ts` : `POST /v1/run` (`tryon-v1.6`, `moderation_level: "conservative"`, `return_base64: true`, catégorie déduite du sous-rayon : `tops`, `bottoms` ou `one-pieces`), puis lecture du statut.
+**Description :** `lib/essayage/fournisseurs/fashn.ts` : `POST /v1/run` (`tryon-v1.6`, `moderation_level: "conservative"`, `return_base64: true`, catégorie déduite du sous-rayon : `tops`, `bottoms` ou `one-pieces`), puis lecture du statut. La photo de l'acheteur part en base64 (data URI), jamais en URL : FASHN garde les URL envoyées dans son historique, sans suppression en libre-service.
 **Critères :**
+- [ ] La photo de l'acheteur est envoyée en data URI ; aucune URL ne la désigne (test).
 - [ ] La catégorie envoyée suit le sous-rayon (une robe donne `one-pieces`, une jupe `bottoms`, une chemise `tops`).
 - [ ] Une réponse « bloqué par la modération » devient un `echec` de raison `moderation`.
 **Vérification :** `node --import tsx --test tests/essayage-fashn.test.ts`.
@@ -78,10 +80,11 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Dépendances :** 2.1, 2.2. **Fichiers :** `scripts/essayage-comparer.mjs`, `tests/essayage-comparer.test.mjs`. **Taille :** M.
 
 ### 2.4 (sur « oui ») Point d'accès GPU du modèle maison
-**Description :** un petit service qui fait tourner FASHN VTON v1.5 chez un hébergeur GPU à la seconde (RunPod ou équivalent), éteint entre deux séries, appelé par `--candidats maison`. Compte et carte : porteur. Mentions de licence Apache-2.0 conservées.
+**Description :** un petit service qui fait tourner FASHN VTON v1.5 chez un hébergeur GPU à la seconde (RunPod ou équivalent), éteint entre deux séries, appelé par `--candidats maison`. Compte et carte : porteur. Mentions de licence Apache-2.0 conservées. **Usage d'évaluation seulement** : l'analyseur de silhouette FASHN Human Parser est sous licence NVIDIA de SegFormer, non commerciale (tâche 0.1). Le service ne sert qu'au test et n'est jamais branché à l'application en l'état.
 **Critères :**
 - [ ] Une image de test revient du point d'accès ; le coût réel de la série est relevé.
-- [ ] Licences de Human Parser et DWPose vérifiées (tâche 0.1) avant la première image.
+- [x] Licences de Human Parser et DWPose vérifiées (tâche 0.1) avant la première image.
+- [ ] Le README du service dit en tête : évaluation seulement, analyseur sous licence non commerciale.
 **Vérification :** série de 3 essais annoncée puis lancée avec accord.
 **Dépendances :** 0.1, 2.3. **Fichiers :** `services/essayage-maison/` (Dockerfile, gestionnaire, README). **Taille :** M.
 
