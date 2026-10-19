@@ -43,7 +43,7 @@ test("un service : créé par le vendeur, invisible en brouillon, publié par la
   const v = vendeur.page;
   // « Nouveau produit » demande le type d'abord : « Service » ouvre le formulaire, type déjà réglé.
   await v.locator("#nouveau").getByRole("link", { name: /^Service\b/ }).click();
-  await expect(v.getByRole("combobox", { name: "Type de produit" })).toHaveValue("service");
+  await expect(v.locator("#formulaire").getByRole("heading", { name: "Nouveau service", exact: true })).toBeVisible();
   await v.getByRole("textbox", { name: "Titre du produit" }).fill(TITRE);
   await v.getByRole("combobox", { name: "Catégorie", exact: true }).selectOption({ label: "Éducation" });
   await v.getByRole("spinbutton", { name: "Prix (HTG)" }).fill("500");

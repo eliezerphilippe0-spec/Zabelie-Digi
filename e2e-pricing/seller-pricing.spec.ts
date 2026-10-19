@@ -32,7 +32,9 @@ for (const width of [1280, 390]) {
     await input.fill("1000");
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: "Vos liens et votre boutique" })).toContainText("834 HTG");
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: "Vos liens et votre boutique" })).toContainText("700 HTG");
-    await page.getByRole("combobox", { name: "Type de produit" }).selectOption("service");
+    // Le type se change par les cartes (audit UX-06) : même estimation pour un service.
+    await page.locator("#nouveau").getByRole("link", { name: /^Service\b/ }).click();
+    await page.getByRole("spinbutton", { name: /Prix.*HTG/ }).last().fill("1000");
     await expect(page.locator('[aria-live="polite"]').filter({ hasText: "Vos liens et votre boutique" })).toContainText("834 HTG");
     const dir = process.env.PRICING_QA_DIR || join(tmpdir(), "zabelie-pricing-qa");
     await mkdir(dir, { recursive: true });

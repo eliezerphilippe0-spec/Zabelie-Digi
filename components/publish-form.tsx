@@ -3,12 +3,7 @@
 import type { SellerPricing } from "@/lib/seller-pricing";
 import type { Lang } from "@/lib/i18n";
 import { useState } from "react";
-import {
-  isService,
-  KIND_FILE,
-  KIND_SERVICE,
-  type DigitalKind,
-} from "@/lib/product-kind";
+import { isService, type DigitalKind } from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
 import type { OptionCategorie, OptionSousRayon } from "@/lib/product-categories";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
@@ -24,9 +19,6 @@ import { serviceStarterDraft } from "@/lib/service-starter-draft";
 
 export type PublishFormLabels = {
   titlePh: string;
-  kindAria: string;
-  kindFile: string;
-  kindService: string;
   categoryAria: string;
   categoryEmpty: string;
   subcategoryAria: string;
@@ -61,11 +53,16 @@ export function PublishForm({
   aiActif = false,
   serviceStarters = [],
   starterLabels,
-  kindInitial,
+  kind,
 }: {
   labels: PublishFormLabels;
-  /** Le type déjà choisi par le vendeur (fichier ou service) ; il peut encore le changer. */
-  kindInitial?: DigitalKind;
+  /**
+   * Le type choisi par le vendeur sous « Nouveau produit » (fichier ou
+   * service). Il se change en choisissant une autre carte, plus ici : un
+   * sélecteur dans le formulaire contredisait la carte surlignée (audit
+   * du 2026-10-19, UX-06).
+   */
+  kind: DigitalKind;
   serviceStarters?: ServiceStarter[];
   starterLabels?: { heading: string; hint: string; confirmReplace: string };
   /**
@@ -103,8 +100,9 @@ export function PublishForm({
     // Le formulaire ne publie que des produits digitaux : `physical` a sa
     // propre route (`/vendre/physique`). Le type reste néanmoins celui de
     // l'énumération, pour que `isService` s'applique sans conversion.
-    // `kindInitial` : le type choisi sous « Nouveau produit » (lib/seller-products-filter).
-    kind: kindInitial ?? (KIND_FILE as DigitalKind),
+    // Le type choisi sous « Nouveau produit » (lib/seller-products-filter).
+    // Un modèle de service le remet à `service` : ils ne s'affichent que là.
+    kind,
     category: "",
     categoryId: "",
     priceHTG: "",
@@ -173,7 +171,9 @@ export function PublishForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      {starterLabels && serviceStarters.length > 0 && (
+      {/* Les modèles de service : sur le formulaire d'un service seulement.
+          Sur celui d'un fichier, ils changeaient la fiche en service. */}
+      {starterLabels && isService(form.kind) && serviceStarters.length > 0 && (
         <fieldset className="rounded-xl border border-line p-4">
           <legend className="px-1 text-sm font-semibold">{starterLabels.heading}</legend>
           <p className="mb-3 text-xs leading-relaxed text-mist">{starterLabels.hint}</p>
@@ -194,38 +194,27 @@ export function PublishForm({
         onChange={(e) => set("title", e.target.value)}
         required
       />
-      <div className="flex gap-3">
-        <select
-          className={input}
-          aria-label={labels.kindAria}
-          value={form.kind}
-          onChange={(e) => set("kind", e.target.value)}
-        >
-          <option value={KIND_FILE}>{labels.kindFile}</option>
-          <option value={KIND_SERVICE}>{labels.kindService}</option>
-        </select>
-        {/* BL-105 : liste fermée partagée avec le catalogue — un produit est
-            toujours atteignable via une puce (fini le texte libre invisible). */}
-        <select
-          className={input}
-          aria-label={labels.categoryAria}
-          value={form.category}
-          // Changer de département invalide le sous-rayon : il appartient au
-          // précédent, et le serveur le refuserait de toute façon.
-          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, categoryId: "" }))}
-          required
-        >
-          <option value="">{labels.categoryEmpty}</option>
-          {categories.map((c) => (
-            /* value = label_fr (la clé de jointure du catalogue), texte =
-               le libellé traduit. Les confondre rendrait introuvables les
-               produits publiés par un vendeur kreyòl. */
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* BL-105 : liste fermée partagée avec le catalogue — un produit est
+          toujours atteignable via une puce (fini le texte libre invisible). */}
+      <select
+        className={input}
+        aria-label={labels.categoryAria}
+        value={form.category}
+        // Changer de département invalide le sous-rayon : il appartient au
+        // précédent, et le serveur le refuserait de toute façon.
+        onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, categoryId: "" }))}
+        required
+      >
+        <option value="">{labels.categoryEmpty}</option>
+        {categories.map((c) => (
+          /* value = label_fr (la clé de jointure du catalogue), texte =
+             le libellé traduit. Les confondre rendrait introuvables les
+             produits publiés par un vendeur kreyòl. */
+          <option key={c.value} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
       {/* SOUS-RAYON (0098) — le second niveau, pour tout type. Ne s'affiche que
           si le département choisi en a : « Digital & services » propose ses
           feuilles de services (0057) et de recharge (0097) ; un département

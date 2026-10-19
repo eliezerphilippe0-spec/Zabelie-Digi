@@ -12,7 +12,7 @@ import { ProductCommitmentEditor } from "@/components/product-commitment-editor"
 import { getProductCommitments } from "@/lib/product-commitments-server";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
 import { KIND_FILE, KIND_SERVICE as COMMITMENT_SERVICE, KIND_PHYSICAL as COMMITMENT_PHYSICAL } from "@/lib/product-kind";
-import { FILTRES_PRODUITS, NOUVEAU_FICHIER, NOUVEAU_PRESTATION, compterParFiltre, dansLeFiltre, hrefFiltre, hrefNouveau, lireFiltre, lireNouveau, type FiltreProduits } from "@/lib/seller-products-filter";
+import { FILTRES_PRODUITS, NOUVEAU_FICHIER, NOUVEAU_PRESTATION, compterParFiltre, dansLeFiltre, estArchivee, hrefCreer, hrefFiltre, hrefNouveau, lireFiltre, lireNouveau, type FiltreProduits } from "@/lib/seller-products-filter";
 import { VendeurShell } from "@/components/vendeur-shell";
 import type { I18nKey } from "@/lib/i18n";
 import { DigitalStudioEditor, DigitalDraftAction } from "@/components/digital-studio-editor";
@@ -356,8 +356,11 @@ export default async function VendrePage({
   // en brouillon et attendent une revue humaine, le vendeur qui ne voit rien
   // conclut que sa soumission a échoué — et resoumet. On récolterait des
   // doublons avant la première vente. Le libellé dit donc ce qui se passe.
+  //
+  // Une fiche ARCHIVÉE a été retirée par la modération : « en revue » lui
+  // promettait une décision qui avait déjà été prise (audit 2026-10-19, UX-01).
   const statusLabel = (s: string) =>
-    s === "published" ? t(lang, "status.published") : t(lang, "status.review");
+    s === "published" ? t(lang, "status.published") : estArchivee(s) ? t(lang, "status.archived") : t(lang, "status.review");
   const uploadLabels = {
     sending: t(lang, "upload.sending"),
     replace: t(lang, "upload.replace"),
@@ -367,13 +370,17 @@ export default async function VendrePage({
     errorNetwork: t(lang, "error.network"),
   };
 
-  const comptes = compterParFiltre(mine.map((p) => p.kind));
+  const comptes = compterParFiltre(mine);
   const LIBELLES_FILTRE: Record<FiltreProduits, I18nKey> = {
     tous: "sell.filter.all",
     physiques: "sell.filter.physical",
     services: "sell.filter.service",
     numeriques: "sell.filter.file",
+    archivees: "sell.filter.archived",
   };
+  // « Archivés » n'apparaît que s'il y a des fiches retirées (ou si l'URL le demande).
+  const onglets = FILTRES_PRODUITS.filter((f) => f !== "archivees" || comptes.archivees > 0 || filtre === "archivees");
+  const creer = hrefCreer(filtre);
 
   return (
     <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.subtitle")} pricing={pricing}>
@@ -409,11 +416,18 @@ export default async function VendrePage({
         {creationActive(lireEnvCreation()) && (
           <Link href="/tableau-de-bord/creation" className="mt-3 inline-flex min-h-11 items-center text-sm underline">{t(lang, "sell.new.studio")}</Link>
         )}
+        {/* Les cartes mènent ICI (#formulaire, UX-03) : au téléphone, le choix
+            occupe l'écran et le formulaire restait dessous. Le type s'y lit en
+            titre ; il se change en revenant au choix (UX-06). */}
         {nouveau && (
-        <div className="mt-6 max-w-xl border-t border-line pt-6">
+        <div id="formulaire" className="mt-6 max-w-xl scroll-mt-32 border-t border-line pt-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4">
+          <h3 className="text-base font-semibold">{t(lang, nouveau === COMMITMENT_SERVICE ? "sell.form.service" : "sell.form.file")}</h3>
+          <Link href="/vendre#nouveau" className="inline-flex min-h-11 items-center text-sm underline">{t(lang, "sell.form.change")}</Link>
+        </div>
         <PublishForm
           key={nouveau}
-          kindInitial={nouveau}
+          kind={nouveau}
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
           pricing={pricing}
@@ -425,9 +439,6 @@ export default async function VendrePage({
           starterLabels={{ heading: starterCopy.heading, hint: starterCopy.hint, confirmReplace: starterCopy.confirmReplace }}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
-            kindAria: t(lang, "publish.kind.aria"),
-            kindFile: t(lang, "product.kind.file"),
-            kindService: t(lang, "product.kind.service"),
             categoryAria: t(lang, "publish.category.aria"),
             categoryEmpty: t(lang, "publish.category.empty"),
             subcategoryAria: t(lang, "publish.subcategory.aria"),
@@ -481,7 +492,7 @@ export default async function VendrePage({
       {mine.length > 0 && (
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-cloud">{t(lang, "sell.mine.title")}</h2>
-          {mine.some((p) => p.status !== "published") && (
+          {mine.some((p) => p.status !== "published" && !estArchivee(p.status)) && (
             <p className="mt-2 text-xs text-mist">{t(lang, "status.review.hint")}</p>
           )}
           {/* Un onglet par type (2026-10-18) : la liste mêlait physique, fichiers
@@ -489,7 +500,7 @@ export default async function VendrePage({
               offres associées se choisissent entre types) ; seul l'affichage filtre. */}
           <nav aria-label={t(lang, "sell.filter.aria")} className="mt-3">
             <ul className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-              {FILTRES_PRODUITS.map((f) => (
+              {onglets.map((f) => (
                 <li key={f} className="shrink-0">
                   <Link
                     href={hrefFiltre(f)}
@@ -502,9 +513,15 @@ export default async function VendrePage({
               ))}
             </ul>
           </nav>
-          {comptes[filtre] === 0 && <p role="status" className="mt-4 text-sm text-mist">{t(lang, "sell.filter.empty")}</p>}
+          {/* Un onglet vide mène au formulaire de son type (UX-07). */}
+          {comptes[filtre] === 0 && (
+            <p role="status" className="mt-4 text-sm text-mist">
+              {t(lang, "sell.filter.empty")}{" "}
+              {creer && <Link href={creer} className="inline-flex min-h-11 items-center font-semibold text-cloud underline">{t(lang, "sell.filter.empty.cta")}</Link>}
+            </p>
+          )}
           <ul className="mt-3 space-y-2">
-            {mine.map((p, i) => dansLeFiltre(p.kind, filtre) && (
+            {mine.map((p, i) => dansLeFiltre(p, filtre) && (
               <li
                 key={p.slug}
                 id={`produit-${p.id}`}
@@ -527,13 +544,19 @@ export default async function VendrePage({
                   )}
                   <span
                     className={
-                      p.status === "published"
+                      p.status === "published" || estArchivee(p.status)
                         ? "text-xs text-mist"
                         : "text-xs font-semibold text-warning-text"
                     }
                   >
                     {statusLabel(p.status)}
                   </span>
+                  {estArchivee(p.status) && (
+                    <p className="mt-1 text-xs text-mist">
+                      {t(lang, "sell.archived.hint")}{" "}
+                      <Link href="/aide" className="inline-flex min-h-11 items-center underline hover:text-cloud">{t(lang, "nav.help")}</Link>
+                    </p>
+                  )}
                   <div className="my-4 rounded-xl border border-line p-4">
                     <h3 className="font-semibold">{t(lang, "seller.ready.title")}</h3>
                     <ul className="mt-2 grid gap-2 sm:grid-cols-2">

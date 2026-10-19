@@ -42,11 +42,13 @@ test("a service model sets the scope without carrying over price or deadline", a
   await page.goto("/vendre");
   // « Nouveau produit » demande le type d'abord (2026-10-18) : le choix « Service » ouvre le formulaire, type déjà choisi.
   await page.locator("#nouveau").getByRole("link", { name: /^Service\b/ }).click();
-  await expect(page).toHaveURL(/\/vendre\?nouveau=prestation#nouveau$/);
+  // On arrive sur le formulaire (audit UX-03), titré par son type (UX-06), sans sélecteur de type.
+  await expect(page).toHaveURL(/\/vendre\?nouveau=prestation#formulaire$/);
+  await expect(page.locator("#formulaire").getByRole("heading", { name: "Nouveau service", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Type de produit" })).toHaveCount(0);
   const starter = page.getByRole("button", { name: "Diagnostic téléphone ou ordinateur", exact: true });
   await starter.click();
   await expect(page.getByRole("textbox", { name: "Titre du produit", exact: true })).toHaveValue("Diagnostic téléphone ou ordinateur");
-  await expect(page.getByRole("combobox", { name: "Type de produit", exact: true })).toHaveValue("service");
   await expect(page.getByRole("combobox", { name: "Sous-rayon (facultatif)", exact: true })).toHaveValue("services-repair");
   const price = page.getByRole("spinbutton", { name: "Prix (HTG)", exact: true });
   const deadline = page.getByRole("spinbutton", { name: "Délai de livraison en jours (0 = le jour même)", exact: true });
