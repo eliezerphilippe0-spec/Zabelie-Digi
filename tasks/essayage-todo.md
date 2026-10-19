@@ -163,8 +163,8 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Description :** `components/essayage-feuille.tsx` : consentement versionné (gardé sur l'appareil), choix ou prise de photo avec conseils (de face, en pied, bonne lumière), compression (`compresserImage`, côté long de 1 024 px au plus), envoi, attente visible, résultat avec « Aperçu généré par IA… », « Ajouter au panier », messages d'erreur (quota, pause, échec, délai). Option « Garder ma photo sur ce téléphone », décochée par défaut, et bouton pour l'effacer.
 **Critères :**
 - [x] Sans consentement, aucune photo ne part.
-- [x] La photo gardée sur l'appareil ne quitte l'appareil qu'au moment d'un essai, et l'effacement la supprime vraiment. (Effacement réel à revoir dans le navigateur, tâche 4.5.)
-- [ ] À 360 px : pas de défilement horizontal, cibles de 44 px, clair et sombre. (Cibles de 44 px tenues par test de source ; le reste se contrôle dans le navigateur avec la tâche 4.5.)
+- [x] La photo gardée sur l'appareil ne quitte l'appareil qu'au moment d'un essai, et l'effacement la supprime vraiment. (IndexedDB relue dans Chromium par l'e2e.)
+- [x] À 360 px : pas de défilement horizontal, cibles de 44 px, clair et sombre. (Mesuré dans Chromium par l'e2e de la tâche 4.5.)
 **Fait le 2026-10-19 (code) :** `components/essayage-feuille.tsx` dans un `<dialog>` natif, `lib/essayage/photo-locale.ts` (consentement en localStorage, photo en IndexedDB), `lib/essayage/libelles.ts` (23 libellés en quatre langues). 9 tests de source, 8 mutations tuées. Écarts et ajouts : `appelSession` gagne une variante `appelAvecSession` (multipart et GET), pour ne pas réécrire la lecture des 401 et des refus ; `compresserImage` accepte un côté maximal plus court, jamais plus long (garde `image-pipeline` mise à jour) ; le message du plafond dit « en pause ce mois-ci », comme le critère 5 du §11. Le texte du consentement est un brouillon à faire valider (tâche 6.1).
 **Vérification :** tests de composant ou de source ; contrôle à 360 px dans le navigateur.
 **Dépendances :** 4.3. **Fichiers :** `components/essayage-feuille.tsx`, `lib/essayage/photo-locale.ts`, `lib/i18n.ts`, `tests/essayage-feuille.test.ts`. **Taille :** M.
@@ -172,14 +172,15 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 4.5 E2E avec la simulation
 **Description :** le faux Supabase (`e2e/fixtures/stub-supabase.mjs`) répond aux fonctions d'essayage ; le projet `physique` démarre avec `ZABELIE_ESSAYAGE_ENABLED=true` et `ZABELIE_ESSAYAGE_FOURNISSEUR=simulation`. Spec `e2e/parcours-physique-essayage.spec.ts`.
 **Critères :**
-- [ ] Parcours complet : bouton, consentement, photo, attente, résultat avec la mention IA, ajout au panier.
-- [ ] Cas refusés : quota, pause, fiche non éligible, groupe témoin, anonyme.
-- [ ] 360 px et 4 langues sans défilement horizontal.
+- [x] Parcours complet : bouton, consentement, photo, attente, résultat avec la mention IA, ajout au panier.
+- [x] Cas refusés : quota, pause, fiche non éligible, groupe témoin, anonyme.
+- [x] 360 px et 4 langues sans défilement horizontal.
+**Fait le 2026-10-19 :** 5 scénarios dans `e2e/parcours-physique-essayage.spec.ts`, un acheteur par scénario, choisi pour son groupe de mesure. Le faux Supabase sert une robe d'un vendeur pilote (sous-rayon « wob ») et répond aux cinq fonctions de 0150 ; il rend ce qu'il a noté (`/__essayage`), et l'e2e vérifie que la photo n'est partie qu'une fois, vers `POST /api/essayage`, et que la base n'a reçu que des métadonnées. Projet `physique` entier : 78/78 vert.
 **Vérification :** `npx playwright test --project=physique` (tout le projet reste vert).
 **Dépendances :** 4.4. **Fichiers :** `e2e/fixtures/stub-supabase.mjs`, `e2e/parcours-physique-essayage.spec.ts`, `playwright.config.ts`. **Taille :** M.
 
 ### Point de contrôle 4
-- [ ] Toutes les suites vertes (unitaires, SQL, e2e), build propre.
+- [x] Toutes les suites vertes (unitaires, SQL, e2e), build propre. (Unitaires, e2e et build en local le 2026-10-19 ; SQL dans la CI de la PR #389.)
 - [ ] Démonstration au porteur dans le navigateur, à 360 px, avec la simulation.
 - [ ] Mutations ciblées sur l'éligibilité, le quota et le plafond : toutes tuées.
 
