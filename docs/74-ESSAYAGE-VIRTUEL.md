@@ -1,6 +1,6 @@
 # 74 — Essayage virtuel (pilote)
 
-Statut : **spécification à valider** (2026-10-19). Aucune ligne de code avant le « oui » du porteur sur ce document.
+Statut : **spécification à valider** (2026-10-19, version 2 : choix du fournisseur, modèle maison en troisième candidat, propriété et dépendance). Aucune ligne de code avant le « oui » du porteur sur ce document.
 
 ## 1. Objectif
 
@@ -9,7 +9,7 @@ Un acheteur connecté envoie une photo de lui et voit un vêtement d'un vendeur 
 Décisions du porteur (2026-10-19) :
 
 - **Accès** : vendeurs pilotes (5 à 10 vendeurs mode), activés un par un par l'administration. Plus tard, avantage Elite et option payante ; hors de ce pilote.
-- **Fournisseur** : comparer l'API Genlook et FASHN sur 20 photos de clientes haïtiennes avant de choisir. Le code ne dépend d'aucun des deux.
+- **Fournisseur** : Genlook en premier choix, FASHN en plan B, et notre propre modèle (FASHN VTON v1.5, open source) en troisième candidat. Le choix définitif se fait après un test sur 20 photos de clientes haïtiennes (§4). Le code ne dépend d'aucun d'eux.
 - **Paiement** : Zabelie paie, avec un plafond mensuel qui coupe l'essayage tout seul.
 
 Utilisateurs :
@@ -23,14 +23,14 @@ Utilisateurs :
 ### Dans le pilote
 
 1. **Éligibilité d'une fiche** : publiée, de type physique, vendeur pilote actif, sous-rayon dans la liste autorisée (§2.1), photo principale présente.
-2. **Bouton « Essayer sur moi »** sous « Ajouter au panier », pour un acheteur connecté du groupe essai (§5). Ni bouton ni appel pour les visiteurs anonymes.
+2. **Bouton « Essayer sur moi »** sous « Ajouter au panier », pour un acheteur connecté du groupe essai (§7). Ni bouton ni appel pour les visiteurs anonymes.
 3. **Consentement** avant la première photo, dans les 4 langues : c'est ma photo, j'ai 18 ans ou plus, j'accepte qu'elle parte chez le prestataire, qui l'efface. La version acceptée est gardée sur l'appareil.
 4. **Photo** : prise ou choisie sur le téléphone, compressée sur l'appareil (`lib/image-compress.ts`), puis envoyée. Option « Garder ma photo sur ce téléphone », décochée par défaut, avec un bouton pour l'effacer.
 5. **Résultat** : affiché avec la mention « Aperçu généré par IA. La coupe et la couleur réelles peuvent différer. », puis « Ajouter au panier ». Il n'est jamais conservé par Zabelie.
 6. **Limites** : quota par acheteur et par jour (5 par défaut), plafond mensuel global (1 000 par défaut), pause. Un essai échoué ne compte ni dans le quota ni dans le plafond.
 7. **Administration** : liste des vendeurs pilotes (ajouter, retirer), réglages (plafond, quota, pause), compteur du mois.
-8. **Mesure** : groupe essai et groupe témoin, expositions enregistrées, requête d'analyse documentée (§5).
-9. **Outil de comparaison** des fournisseurs : il fait passer N photos de personnes × M photos de produits chez chaque fournisseur, puis produit une planche à juger. Mode « à blanc » par défaut, qui annonce le coût sans rien dépenser.
+8. **Mesure** : groupe essai et groupe témoin, expositions enregistrées, requête d'analyse documentée (§7).
+9. **Outil de comparaison** des trois candidats (Genlook, FASHN, modèle maison) : il fait passer N photos de personnes × M photos de produits chez chacun, puis produit une planche à juger, avec le temps d'attente et le coût de chaque essai. Mode « à blanc » par défaut, qui annonce le coût sans rien dépenser.
 
 ### 2.1 Sous-rayons autorisés (taxonomie `zabelie_categories`, 0035 et 0077)
 
@@ -64,7 +64,7 @@ GET /api/essayage/[id]        (toutes les 2 s, 60 s au plus)
 Affichage du résultat, mention IA, « Ajouter au panier »
 ```
 
-- **Adaptateur** (`lib/essayage/fournisseurs/`) : `creer()`, `statut()`, `effacer()`, avec trois mises en œuvre : `genlook`, `fashn`, `simulation`. La simulation sert aux tests et à l'e2e : elle ne coûte rien et ne sort pas de la machine.
+- **Adaptateur** (`lib/essayage/fournisseurs/`) : `creer()`, `statut()`, `effacer()`, avec trois mises en œuvre dans le pilote : `genlook`, `fashn`, `simulation`. La simulation sert aux tests et à l'e2e : elle ne coûte rien et ne sort pas de la machine. Un quatrième, `maison`, s'ajoute sans toucher au reste si le modèle maison est retenu (§4).
 - **Interrupteurs** (même règle que le Studio : seule la valeur exacte `true` ouvre) : `ZABELIE_ESSAYAGE_ENABLED`, `ZABELIE_ESSAYAGE_FOURNISSEUR` (`genlook`, `fashn` ou `simulation` ; absent = aucun fournisseur, jamais de défaut qui dépenserait), `GENLOOK_API_KEY`, `FASHN_API_KEY`. Ajoutés à `.env.example`.
 - **FASHN** : `moderation_level: "conservative"` (bloque sous-vêtements et maillots), `return_base64: true` (le résultat n'est gardé qu'une heure chez eux).
 - **Genlook** : conservation des envois réglée au minimum (1 jour), effacement des images de l'acheteur après le résultat.
@@ -84,7 +84,52 @@ Affichage du résultat, mention IA, « Ajouter au panier »
 
 Aucune colonne ne contient de photo, d'URL de photo ou de résultat. Les fonctions `security definer` entrent dans la liste gelée du garde `definer_exposition` et dans sa revue. La sonde `zabelie_objets_requis()` les inclut. Le registre `zabelie_schema_migrations` est rempli à la main après application, selon la méthode 0086.
 
-## 4. Commandes
+## 4. Fournisseurs, coûts et choix
+
+### 4.1 Les trois candidats (relevé du 2026-10-19)
+
+| | Genlook (loué) | FASHN (loué) | Modèle maison |
+|---|---|---|---|
+| Ce que c'est | API de Genlook | API de FASHN (v1.6) | FASHN VTON v1.5, open source, sur un GPU loué à la seconde (RunPod ou équivalent) |
+| Prix d'un essai | 0,04 $ à l'unité, ou 20 $ par mois pour 1 000 puis 0,02 $ | 0,075 $ | environ 0,002 $ de calcul, si la machine tourne sans arrêt |
+| Pilote (1 000 essais par mois) | **20 $ par mois** | 75 $ au plus | environ 580 $ par mois si la machine reste allumée ; sinon, une longue attente au premier essai après une pause |
+| Test gratuit | 10 essais | aucun (achat minimum 7,50 $) | quelques dollars de calcul |
+| Échecs | remboursés | non facturés | à nos frais |
+| Confidentialité | effacement des images d'un utilisateur, conservation réglable de 1 à 7 jours | résultat gardé 1 heure au plus (`return_base64`), filtre `conservative` | tout reste chez nous et chez l'hébergeur GPU |
+| Peaux foncées | à tester | à tester | à tester, et **corrigeable** : la licence permet de réentraîner sur des photos haïtiennes (avec consentement) |
+| Travail en plus | aucun | aucun | plusieurs semaines : service GPU, préparation des images, filtre de nudité et de mineurs, surveillance |
+
+Licence du modèle maison : Apache-2.0, vérifiée sur le fichier `LICENSE` du dépôt officiel (« Copyright 2025 FASHN AI ») et sur la fiche Hugging Face, poids compris. Usage commercial permis. Deux composants tiers ont leur propre licence, **à vérifier avant tout usage commercial** : l'analyseur de corps « FASHN Human Parser » et le détecteur de pose DWPose. Les droits sur les données d'entraînement ne sont pas décrits. Besoin matériel : environ 8 Go de mémoire graphique, environ 5 secondes par image sur une H100.
+
+### 4.2 Le test et la règle de choix
+
+1. Les mêmes 20 photos (clientes haïtiennes, morphologies et teintes variées, accord écrit) × 5 vêtements des rayons autorisés passent chez les trois candidats, avec l'outil de comparaison.
+2. Le porteur et deux personnes de son choix notent chaque résultat **sans savoir de quel candidat il vient** : fidélité du vêtement (coupe, couleur, motif), rendu de la peau et des cheveux, morphologie respectée, défauts visibles (mains, visage).
+3. Règle :
+   - **Genlook** si sa note est au moins égale à celle de FASHN et s'il garantit par écrit ne pas entraîner ses modèles sur nos photos ;
+   - sinon **FASHN**, aux mêmes conditions ;
+   - le **modèle maison** seulement s'il est nettement le meilleur sur les peaux et morphologies haïtiennes, ou plus tard, quand le volume dépasse le seuil du §4.3.
+4. Le résultat du test et le choix sont consignés ici, avant d'allumer le pilote.
+
+### 4.3 Seuils de rentabilité
+
+Hypothèse : une machine GPU allumée en permanence à environ 580 $ par mois (L40S à environ 0,79 $ de l'heure). Elle devient moins chère que Genlook à partir d'environ 30 000 essais par mois (à 0,02 $ l'essai), et que FASHN à partir d'environ 8 000. Ces seuils sont à recalculer avec les prix du jour avant toute décision.
+
+## 5. Propriété et dépendance
+
+**À Zabelie** : tout le code (bouton, consentement, envoi, quotas, plafond, administration, mesure, adaptateur), les règles (qui, quels rayons, combien), les données du pilote dans notre base, et la relation avec l'acheteur, qui reste sur zabelie.com.
+
+**Loué** (avec Genlook ou FASHN) : le modèle qui habille la personne. Il tourne sur leurs serveurs et se paie à l'image. Prix, conditions et disponibilité peuvent changer.
+
+**Ce qui limite la dépendance** :
+- l'adaptateur : changer de fournisseur, c'est changer `ZABELIE_ESSAYAGE_FOURNISSEUR` ;
+- deux fournisseurs testés dès le départ, donc un plan B prêt ;
+- rien d'important chez eux : ni règles, ni données, et les photos effacées au plus tôt ;
+- une sortie possible vers le modèle maison (licence Apache-2.0), sans réécrire le reste.
+
+**À vérifier dans les conditions de chaque fournisseur avant le pilote** : à qui appartiennent les images générées, et si les photos envoyées servent à entraîner leurs modèles.
+
+## 6. Commandes
 
 ```bash
 npm test                                   # tests unitaires et gardes (node --test)
@@ -92,20 +137,22 @@ npx tsc --noEmit                           # types
 npx eslint <fichiers modifiés>             # lint
 npm run build                              # build de production, doit passer
 npx playwright test --project=physique     # e2e, fournisseur « simulation »
-node scripts/essayage-comparer.mjs --photos <dossier hors dépôt> --produits <liste>          # à blanc : coût annoncé
-node scripts/essayage-comparer.mjs --photos <dossier hors dépôt> --produits <liste> --payer  # appels réels, après accord
+node scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier hors dépôt> --produits <liste>          # à blanc : coût annoncé
+node scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier hors dépôt> --produits <liste> --payer  # appels réels, après accord
 ```
+
+Le candidat `maison` est un point d'accès HTTP vers FASHN VTON v1.5 sur un GPU loué à la seconde, éteint entre deux séries (`ZABELIE_ESSAYAGE_MAISON_URL`, `ZABELIE_ESSAYAGE_MAISON_CLE`, dans l'environnement local du porteur seulement). Il sert au test ; il n'entre dans l'application que s'il est retenu.
 
 Local Playwright : `PW_CHROMIUM_PATH` vers le headless shell 1208. Jamais de `npm ci` ni de `npm install` dans cette copie : son `node_modules` est une jonction partagée.
 
-## 5. Mesure
+## 7. Mesure
 
 - **Groupes** : pour une fiche éligible, un acheteur connecté est en groupe `essai` ou `temoin` selon un hachage stable de son identifiant (moitié-moitié). Le témoin voit la fiche sans bouton.
 - **Exposition** : première vue d'une fiche éligible par un acheteur, une fois par jour, dans les deux groupes.
 - **Indicateurs** par groupe, sur 4 à 6 semaines : ajout au panier, commande payée, livraison sans refus, litige ouvert. Requête SQL d'analyse versionnée dans ce document une fois le schéma écrit.
 - **Seuil de décision**, à fixer avant le lancement : le groupe essai doit faire mieux que le témoin sur les refus à la livraison et les litiges, pas seulement sur les clics.
 
-## 6. Style de code
+## 8. Style de code
 
 On écrit comme le reste du dépôt : noms et commentaires en français, pourquoi daté dans le commentaire, littéraux de type de produit seulement dans `lib/product-kind.ts`, textes seulement dans `lib/i18n.ts` (4 langues, garde des clés mortes), module pur testable séparé de l'accès réseau.
 
@@ -120,7 +167,7 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 }
 ```
 
-## 7. Tests
+## 9. Tests
 
 - **Unitaires** (`tests/essayage-*.test.ts`) : éligibilité (chaque sous-rayon autorisé et exclu, niveau 3, sans sous-rayon, vendeur inactif, fiche non publiée), lecture des interrupteurs, répartition des groupes (stable, environ 50/50), adaptateurs face à des réponses enregistrées.
 - **SQL** (`supabase/tests`, CI `sql-tests`) : quota du jour, plafond du mois, essais échoués non comptés, 20 réservations simultanées qui ne dépassent jamais le plafond, refus pour un acheteur anonyme, aucune lecture par `anon` ou `authenticated`.
@@ -128,7 +175,7 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 - **Gardes** : aucune route d'essayage n'écrit dans Supabase Storage ; aucun journal ne contient d'image ; `.env.example` complet.
 - **Mutations ciblées** sur l'éligibilité, le quota et le plafond : chacune doit faire échouer un test.
 
-## 8. Limites
+## 10. Limites
 
 **Toujours**
 - Interrupteurs éteints par défaut ; tout passe par le serveur, clés côté serveur seulement.
@@ -136,8 +183,11 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 - Mention « Aperçu généré par IA » sur chaque résultat.
 - Fournisseur `simulation` dans les tests et la CI.
 - Annoncer le coût et attendre l'accord avant tout appel payant (outil de comparaison compris).
+- Noter les résultats du test à l'aveugle, sans savoir de quel candidat vient l'image.
+- Vérifier la licence de chaque composant d'un modèle open source avant tout usage commercial, et garder les mentions de licence Apache-2.0.
 
 **Demander d'abord**
+- Créer le point d'accès GPU du modèle maison (compte, coût) ; le brancher dans l'application.
 - Appliquer la migration `0150` en production ; fusionner une PR.
 - Le texte du consentement, de la politique de confidentialité (`/confidentialite`) et des conditions de vente (aperçu non contractuel).
 - Ajouter le fournisseur retenu à la liste des sous-traitants (`docs/69-SOUS-TRAITANTS-RELEVE-2026-10-10.md`).
@@ -151,7 +201,7 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 - Appeler un fournisseur payant depuis un test, la CI ou une prévisualisation Vercel.
 - Utiliser l'image générée comme description du produit dans un litige : la photo du vendeur fait foi.
 
-## 9. Critères de réussite
+## 11. Critères de réussite
 
 1. Interrupteur éteint : aucun bouton, et `POST /api/essayage` répond 404.
 2. Fiche non éligible (lingerie, enfant, sans sous-rayon, vendeur non pilote, brouillon) : aucun bouton, et l'API refuse même appelée directement.
@@ -164,22 +214,30 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 9. Un même acheteur reste toujours dans le même groupe ; les expositions des deux groupes sont enregistrées.
 10. L'administration active ou retire un vendeur, change plafond, quota et pause, et voit le compteur du mois.
 11. Changer de fournisseur ne demande que de changer une variable d'environnement.
-12. L'outil de comparaison produit une planche par fournisseur, et le mode à blanc annonce le coût sans rien appeler.
+12. L'outil de comparaison produit une planche par candidat (Genlook, FASHN, modèle maison), avec temps d'attente et coût de chaque essai, et le mode à blanc annonce le coût sans rien appeler.
+13. Le résultat du test à l'aveugle et le choix du fournisseur sont consignés au §4.2 avant d'allumer le pilote.
 
-## 10. Préalables hors code (porteur)
+## 12. Préalables hors code (porteur)
 
 - **Double authentification de l'administrateur** sur `/securite` : sans elle, pas d'accès à la page d'administration, donc pas d'activation de vendeur depuis l'interface.
 - **Catalogue ouvert** : modération accessible, et fiches mode publiées par les vendeurs pilotes.
-- **Comptes chez Genlook et FASHN**, clés posées dans Vercel par le porteur ; carte pour les crédits (comparaison : moins de 5 $).
-- **20 photos de clientes haïtiennes**, avec accord écrit, gardées hors du dépôt.
+- **Comptes chez Genlook et FASHN**, clés posées dans Vercel par le porteur ; carte pour les crédits. Test de comparaison : environ 12,50 $ à avancer (pack Genlook de 5 $ et minimum FASHN de 7,50 $), en bonne partie réutilisables ensuite.
+- **Compte GPU à la seconde** (RunPod ou équivalent) pour le modèle maison : quelques dollars pour le test.
+- **20 photos de clientes haïtiennes**, avec accord écrit, gardées hors du dépôt, et deux personnes pour la notation à l'aveugle.
 
-## 11. Questions ouvertes
+## 13. Questions ouvertes
 
 1. **Entraînement** : Genlook et FASHN utilisent-ils les photos reçues pour entraîner leurs modèles ? Il faut une réponse écrite « non » avant le pilote. Ni l'une ni l'autre page développeurs ne le dit.
 2. **Photo d'une autre personne** (le proche en Haïti) : exclue du pilote. On s'en tient à « c'est ma photo, j'ai 18 ans ou plus ».
 3. **Vendeurs pilotes** : la liste est à fournir par le porteur.
 4. **Plafond et quota** : 1 000 essais par mois et 5 par jour et par acheteur conviennent-ils ?
-5. **Seuil de décision** de la §5 : quel écart faut-il voir sur les refus et les litiges pour généraliser ?
+5. **Seuil de décision** de la §7 : quel écart faut-il voir sur les refus et les litiges pour généraliser ?
 6. **Texte juridique** : relecture du consentement et de la mention « aperçu non contractuel » par un juriste ?
+7. **Droits sur les images générées** : à qui appartiennent-elles selon les conditions de Genlook et de FASHN ?
+8. **Composants tiers du modèle maison** : licences de l'analyseur « FASHN Human Parser » et de DWPose ; droits sur les données d'entraînement (non décrits).
 
-Sources prix et API, relevées le 2026-10-19 : [Genlook, API](https://genlook.app/developers) (0,04 $ l'essai à l'unité, 20 $ les 1 000 par mois, 10 essais offerts, échecs remboursés), [FASHN, API](https://fashn.ai/products/api) et [doc v1.6](https://docs.fashn.ai/api-reference/tryon-v1-6) (0,075 $ l'image, échecs non facturés, modération `conservative`, `return_base64`).
+Sources, relevées le 2026-10-19 :
+- Prix et API : [Genlook, API](https://genlook.app/developers) (0,04 $ l'essai à l'unité, 20 $ les 1 000 par mois, 10 essais offerts, échecs remboursés), [FASHN, API](https://fashn.ai/products/api) et [doc v1.6](https://docs.fashn.ai/api-reference/tryon-v1-6) (0,075 $ l'image, échecs non facturés, modération `conservative`, `return_base64`).
+- Modèle maison : [annonce FASHN VTON v1.5](https://fashn.ai/blog/fashn-vton-1-5-open-source-release), [dépôt GitHub et fichier LICENSE](https://github.com/fashn-AI/fashn-vton-1.5), [fiche Hugging Face](https://huggingface.co/fashn-ai/fashn-vton-1.5).
+- Licences des autres modèles ouverts (IDM-VTON et CatVTON non commerciaux) : [IDM-VTON](https://huggingface.co/yisol/IDM-VTON), [comparatif FASHN](https://fashn.ai/blog/comparing-the-top-4-open-source-virtual-try-on-viton-models).
+- Prix GPU : [RunPod](https://www.runpod.io/gpu-cloud/pricing) (L40S environ 0,79 $ de l'heure, facturation à la seconde).
