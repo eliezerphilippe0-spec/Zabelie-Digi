@@ -14,7 +14,7 @@ export type NomFournisseur = "genlook" | "fashn" | "simulation";
 export type TypePhoto = "image/jpeg" | "image/png" | "image/webp";
 
 /** La photo de l'acheteur : en mémoire, le temps de l'envoi. Jamais écrite côté Zabelie (docs/74 §10). */
-export type PhotoAcheteur = { octets: Uint8Array; type: TypePhoto };
+export type PhotoAcheteur = { octets: Uint8Array<ArrayBuffer>; type: TypePhoto };
 
 /** Le vêtement : la photo principale publique de la fiche, et ce qu'il couvre. */
 export type VetementEssaye = { imageUrl: string; titre: string; piece: PieceVetement };
@@ -34,8 +34,25 @@ export type EtatTravail =
   | { etat: "reussi"; image: ImageResultat }
   | { etat: "echec"; raison: RaisonEchec };
 
+/**
+ * Un refus du fournisseur, avec sa raison. Le message ne cite jamais la clé
+ * ni la photo : il peut finir dans un journal. `passagere` : panne réseau ou
+ * délai d'un appel, qu'un nouvel essai peut lever.
+ */
+export class ErreurFournisseur extends Error {
+  constructor(
+    readonly raison: RaisonEchec,
+    message: string,
+    readonly passagere = false,
+  ) {
+    super(message);
+    this.name = "ErreurFournisseur";
+  }
+}
+
 export interface FournisseurEssayage {
   readonly nom: NomFournisseur;
+  /** Lève `ErreurFournisseur` quand le fournisseur refuse (photo, modération, crédits, panne, délai). */
   creer(photo: PhotoAcheteur, vetement: VetementEssaye, signal?: AbortSignal): Promise<Travail>;
   /** Ne lève pas pour un travail inconnu ou abîmé : c'est un échec, que l'appelant compte comme tel. */
   statut(travail: Travail, signal?: AbortSignal): Promise<EtatTravail>;

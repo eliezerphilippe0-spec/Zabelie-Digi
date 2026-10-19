@@ -58,8 +58,9 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 2.1 Adaptateur Genlook
 **Description :** `lib/essayage/fournisseurs/genlook.ts` sur l'API documentée (envoi de la photo, essai à partir de l'URL de la photo principale, lecture du résultat, effacement des images de l'acheteur, conservation minimale). `fetch` seul, pas de SDK. Tests sur des réponses enregistrées (fichiers JSON), jamais sur le réseau.
 **Critères :**
-- [ ] Les trois états (`en_cours`, `reussi`, `echec`) sont lus correctement depuis des réponses enregistrées, y compris une erreur 4xx et un délai dépassé.
-- [ ] La clé ne sort jamais du serveur et n'apparaît dans aucun message d'erreur.
+- [x] Les trois états (`en_cours`, `reussi`, `echec`) sont lus correctement depuis des réponses enregistrées, y compris une erreur 4xx et un délai dépassé.
+- [x] La clé ne sort jamais du serveur et n'apparaît dans aucun message d'erreur.
+**Fait le 2026-10-19 :** 10 tests, 14 mutations tuées. Réponses rejouées d'après la documentation officielle (pas encore d'un vrai compte : le premier essai du test à l'aveugle confirmera les formes). Photo envoyée en fichier, gardée 1 jour, sous un identifiant neutre par essai (`zab_<uuid>`), effacée par `DELETE /customers/:id` ; résultat récupéré sans la clé ; panne passagère = « en cours ». Brique commune `lib/essayage/fournisseurs/http.ts`. Fournisseurs payants refusés sur une prévisualisation Vercel.
 **Vérification :** `node --import tsx --test tests/essayage-genlook.test.ts`.
 **Dépendances :** 1.2. **Fichiers :** `lib/essayage/fournisseurs/genlook.ts`, `tests/essayage-genlook.test.ts`, `tests/fixtures/essayage/genlook-*.json`. **Taille :** S.
 
