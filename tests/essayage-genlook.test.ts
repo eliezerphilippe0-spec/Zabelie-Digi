@@ -174,6 +174,10 @@ test("G8 — un résultat qui n'est pas une image, ou trop lourd, est un échec"
     const { f } = fauxFetch([termine(), r]);
     assert.deepEqual(await genlook({ cle: CLE, fetch: f }).statut({ fournisseur: "genlook", id: "g:zab_x" }), { etat: "echec", raison: "fournisseur" });
   }
+  // Une adresse de résultat sans chiffrement n'est même pas appelée.
+  const enClair = fauxFetch([json({ generationId: "g", status: "COMPLETED", resultImageUrl: "http://storage.googleapis.com/r.png" })]);
+  assert.deepEqual(await genlook({ cle: CLE, fetch: enClair.f }).statut({ fournisseur: "genlook", id: "g:zab_x" }), { etat: "echec", raison: "fournisseur" });
+  assert.equal(enClair.appels.length, 1);
 });
 
 test("G9 — effacer : photo et résultat de l'essai supprimés chez Genlook ; une panne ne remonte pas", async () => {

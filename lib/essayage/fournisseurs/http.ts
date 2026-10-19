@@ -44,6 +44,8 @@ export async function lireJson(res: Response): Promise<Record<string, unknown> |
  * le fournisseur, et la clé ne doit jamais lui parvenir.
  */
 export async function imageEnBase64(f: typeof fetch, url: string, delaiMs: number, signal?: AbortSignal): Promise<ImageResultat> {
+  // Jamais sans chiffrement : l'image pourrait être remplacée en chemin.
+  if (!url.startsWith("https://")) throw new ErreurFournisseur("fournisseur", "adresse de résultat non chiffrée");
   const res = await appeler(f, url, { method: "GET" }, delaiMs, signal);
   const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
   if (!res.ok || !(TYPES_RESULTAT as readonly string[]).includes(type)) throw new ErreurFournisseur("fournisseur", "résultat illisible");

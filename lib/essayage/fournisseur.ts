@@ -1,4 +1,5 @@
 import { essayageActif, type EnvEssayage } from "./flags";
+import { fashn } from "./fournisseurs/fashn";
 import { genlook } from "./fournisseurs/genlook";
 import { simulation } from "./fournisseurs/simulation";
 import type { FournisseurEssayage } from "./fournisseurs/types";
@@ -25,6 +26,7 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
   if (env.VERCEL_ENV === "preview") return null;
   const cleGenlook = env.GENLOOK_API_KEY?.trim();
   if (env.ZABELIE_ESSAYAGE_FOURNISSEUR === "genlook" && cleGenlook) return genlook({ cle: cleGenlook });
-  // `fashn` : branché par la tâche 2.2. D'ici là, aucun fournisseur.
+  const cleFashn = env.FASHN_API_KEY?.trim();
+  if (env.ZABELIE_ESSAYAGE_FOURNISSEUR === "fashn" && cleFashn) return fashn({ cle: cleFashn });
   return null;
 }

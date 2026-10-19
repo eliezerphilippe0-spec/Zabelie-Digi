@@ -37,9 +37,10 @@ test("F2 — la simulation s'allume hors production, et jamais en production", (
   assert.equal(lireFournisseur({ ZABELIE_ESSAYAGE_ENABLED: "true", ZABELIE_ESSAYAGE_FOURNISSEUR: "simulation", VERCEL_ENV: "production" }), null);
 });
 
-test("F3 — FASHN ne s'allume pas tant que son adaptateur n'est pas branché (tâche 2.2)", () => {
-  const env = { ZABELIE_ESSAYAGE_ENABLED: "true", ZABELIE_ESSAYAGE_FOURNISSEUR: "fashn", GENLOOK_API_KEY: "cle-de-test", FASHN_API_KEY: "cle-de-test" };
-  assert.equal(lireFournisseur(env), null);
+test("F3 — chaque fournisseur réel s'allume avec SA clé seulement", () => {
+  const cles = { GENLOOK_API_KEY: "cle-de-test", FASHN_API_KEY: "cle-de-test" };
+  assert.equal(lireFournisseur({ ZABELIE_ESSAYAGE_ENABLED: "true", ZABELIE_ESSAYAGE_FOURNISSEUR: "genlook", ...cles })?.nom, "genlook");
+  assert.equal(lireFournisseur({ ZABELIE_ESSAYAGE_ENABLED: "true", ZABELIE_ESSAYAGE_FOURNISSEUR: "fashn", ...cles })?.nom, "fashn");
 });
 
 test("F4 — la simulation passe par « en cours », puis rend une image à afficher en data:", async () => {

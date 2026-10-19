@@ -67,9 +67,10 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 2.2 Adaptateur FASHN
 **Description :** `lib/essayage/fournisseurs/fashn.ts` : `POST /v1/run` (`tryon-v1.6`, `moderation_level: "conservative"`, `return_base64: true`, catégorie déduite du sous-rayon : `tops`, `bottoms` ou `one-pieces`), puis lecture du statut. La photo de l'acheteur part en base64 (data URI), jamais en URL : FASHN garde les URL envoyées dans son historique, sans suppression en libre-service.
 **Critères :**
-- [ ] La photo de l'acheteur est envoyée en data URI ; aucune URL ne la désigne (test).
-- [ ] La catégorie envoyée suit le sous-rayon (une robe donne `one-pieces`, une jupe `bottoms`, une chemise `tops`).
-- [ ] Une réponse « bloqué par la modération » devient un `echec` de raison `moderation`.
+- [x] La photo de l'acheteur est envoyée en data URI ; aucune URL ne la désigne (test).
+- [x] La catégorie envoyée suit le sous-rayon (une robe donne `one-pieces`, une jupe `bottoms`, une chemise `tops`).
+- [x] Une réponse « bloqué par la modération » devient un `echec` de raison `moderation`.
+**Fait le 2026-10-19 :** 9 tests, 13 mutations tuées. Réponses rejouées d'après la documentation officielle. `PoseError` (pose non détectée) devient une photo à refaire. Garde commune : un résultat n'est récupéré qu'en `https://` (Genlook et FASHN).
 **Vérification :** `node --import tsx --test tests/essayage-fashn.test.ts`.
 **Dépendances :** 1.2. **Fichiers :** `lib/essayage/fournisseurs/fashn.ts`, `tests/essayage-fashn.test.ts`, `tests/fixtures/essayage/fashn-*.json`. **Taille :** S.
 
