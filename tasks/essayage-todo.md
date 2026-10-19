@@ -41,13 +41,14 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 1.2 Adaptateur et simulation
 **Description :** `lib/essayage/fournisseurs/types.ts` : l'interface `creer(photo, produit) → travail`, `statut(travail) → en_cours | reussi(image) | echec(raison)`, `effacer(travail)`, avec délais bornés. `simulation.ts` : rend une image fixe après un délai réglable, ou un échec à la demande, sans réseau. `lib/essayage/fournisseur.ts` : `lireFournisseur(env)` (exemple de la spec, §8).
 **Critères :**
-- [ ] Sans `ZABELIE_ESSAYAGE_FOURNISSEUR`, ou sans la clé du fournisseur choisi, `lireFournisseur` rend `null`.
-- [ ] La simulation passe par `en_cours` puis `reussi`, et sait échouer sur demande.
+- [x] Sans `ZABELIE_ESSAYAGE_FOURNISSEUR`, ou sans la clé du fournisseur choisi, `lireFournisseur` rend `null`.
+- [x] La simulation passe par `en_cours` puis `reussi`, et sait échouer sur demande.
+**Fait le 2026-10-19 :** 8 tests, 7 mutations tuées ; simulation sans état (le travail porte sa date et son issue) ; Genlook et FASHN rendent `null` jusqu'aux tâches 2.1 et 2.2. Variables inscrites au registre `docs/11-SECRETS.md` (garde RS1).
 **Vérification :** `node --import tsx --test tests/essayage-fournisseurs.test.ts`.
 **Dépendances :** 1.1. **Fichiers :** `lib/essayage/fournisseurs/types.ts`, `lib/essayage/fournisseurs/simulation.ts`, `lib/essayage/fournisseur.ts`, `tests/essayage-fournisseurs.test.ts`. **Taille :** M.
 
 ### Point de contrôle 1
-- [ ] `npm test`, `tsc`, lint verts.
+- [x] `npm test`, `tsc`, lint verts (1964/1964 le 2026-10-19).
 - [ ] Revue rapide avec le porteur : règles et sous-rayons conformes au §2.1.
 
 ---

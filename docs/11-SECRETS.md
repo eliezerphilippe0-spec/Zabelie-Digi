@@ -49,6 +49,8 @@
 | `TYPESAFE_API_KEY` | **facturable** — appels Jev ; serveur uniquement |
 | `HF_API_KEY_ID` | **facturable** — identifiant de clé Higgsfield (Studio Créatif) ; serveur uniquement |
 | `HF_API_KEY_SECRET` | **facturable** — secret de clé Higgsfield, inséparable de `HF_API_KEY_ID` ; serveur uniquement |
+| `GENLOOK_API_KEY` | **facturable** — essais virtuels Genlook (docs/74) ; donne aussi accès aux photos d'acheteurs encore conservées chez Genlook ; serveur uniquement |
+| `FASHN_API_KEY` | **facturable** — essais virtuels FASHN (docs/74) ; donne aussi accès à l'historique des requêtes chez FASHN ; serveur uniquement |
 | `SEARCH_FINGERPRINT_SALT` | ré-identifier les empreintes de recherche |
 
 ⚠️ **`SUPABASE_SERVICE_ROLE_KEY` n'est pas un secret parmi d'autres, c'est la
@@ -105,6 +107,8 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `ZABELIE_AUTHORING_ENABLED` | `true` (valeur exacte) ouvre le parcours manuel de création éditoriale (docs/70) ; indépendante de `ZABELIE_STUDIO_ENABLED` ; ne pas poser avant l'application des migrations du chantier |
 | `ZABELIE_AUTHORING_AI_ENABLED` | `true` (valeur exacte) ouvre les suggestions ; sans effet si `ZABELIE_AUTHORING_ENABLED` est fermée |
 | `ZABELIE_AUTHORING_AI_PROVIDER` | moteur des suggestions : `mock` (simulation, refusée sur un déploiement de production) ; toute autre valeur = aucun moteur ⚠️ **dépense** le jour où un fournisseur réel s'y ajoute (tâche 3.4) |
+| `ZABELIE_ESSAYAGE_ENABLED` | `true` (valeur exacte) allume l'essayage virtuel (docs/74) ; ne pas poser avant l'application de la migration 0150 et l'activation des vendeurs pilotes |
+| `ZABELIE_ESSAYAGE_FOURNISSEUR` | `simulation` (refusée sur un déploiement de production), `genlook` ou `fashn` ; toute autre valeur = aucun fournisseur ⚠️ **dépense** avec `genlook` ou `fashn` (chaque essai réussi est facturé) |
 
 ### 2.3 — Publiques par nature (`NEXT_PUBLIC_`, lisibles dans le navigateur)
 

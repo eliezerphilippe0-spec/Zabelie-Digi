@@ -37,7 +37,7 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 
 - [x] 0.1 Conditions de Genlook et FASHN (entraînement, conservation, droits sur les images) et licences de FASHN Human Parser et DWPose (fait le 2026-10-19)
 - [x] 1.1 Règles pures : sous-rayons autorisés, groupes, interrupteurs, jour haïtien
-- [ ] 1.2 Adaptateur de fournisseur et fournisseur `simulation`
+- [x] 1.2 Adaptateur de fournisseur et fournisseur `simulation`
 - [ ] 2.1 Adaptateur Genlook
 - [ ] 2.2 Adaptateur FASHN
 - [ ] 2.3 Outil de comparaison à blanc et payant, planche à l'aveugle
