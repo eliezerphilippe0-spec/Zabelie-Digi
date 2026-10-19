@@ -232,9 +232,8 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 3. **Vendeurs pilotes** : la liste est à fournir par le porteur.
 4. **Plafond et quota** : 1 000 essais par mois et 5 par jour et par acheteur conviennent-ils ?
 5. **Seuil de décision** de la §7 : quel écart faut-il voir sur les refus et les litiges pour généraliser ?
-6. **Texte juridique** : relecture du consentement et de la mention « aperçu non contractuel » par un juriste ?
-7. **Droits sur les images générées** : à qui appartiennent-elles selon les conditions de Genlook et de FASHN ?
-8. **Composants tiers du modèle maison** : licences de l'analyseur « FASHN Human Parser » et de DWPose ; droits sur les données d'entraînement (non décrits).
+6. **Droits sur les images générées** : à qui appartiennent-elles selon les conditions de Genlook et de FASHN ?
+7. **Composants tiers du modèle maison** : licences de l'analyseur « FASHN Human Parser » et de DWPose ; droits sur les données d'entraînement (non décrits).
 
 Sources, relevées le 2026-10-19 :
 - Prix et API : [Genlook, API](https://genlook.app/developers) (0,04 $ l'essai à l'unité, 20 $ les 1 000 par mois, 10 essais offerts, échecs remboursés), [FASHN, API](https://fashn.ai/products/api) et [doc v1.6](https://docs.fashn.ai/api-reference/tryon-v1-6) (0,075 $ l'image, échecs non facturés, modération `conservative`, `return_base64`).
