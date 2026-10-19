@@ -100,7 +100,15 @@ export async function suivreEssai(
   const depasse = (deps.maintenant ?? Date.now)() - ligne.creeLe > DUREE_MAX_ESSAI_MS;
   if (!ligne.travailId) return depasse ? clore("delai") : { etat: "en_cours" };
 
-  const etat = await deps.fournisseur.statut({ fournisseur: ligne.fournisseur, id: ligne.travailId });
+  let etat;
+  try {
+    etat = await deps.fournisseur.statut({ fournisseur: ligne.fournisseur, id: ligne.travailId });
+  } catch (e) {
+    // Fournisseur injoignable : le sondage suivant réessaie. Passé le délai, l'essai
+    // est clos en échec, sinon il resterait « en cours » et compterait pour l'acheteur.
+    if (depasse) return clore("delai");
+    throw e;
+  }
   if (etat.etat === "en_cours") return depasse ? clore("delai") : { etat: "en_cours" };
   if (etat.etat === "echec") return clore(etat.raison);
   await deps.base.terminer(ligne.id, "reussi");

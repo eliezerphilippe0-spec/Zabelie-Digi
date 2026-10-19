@@ -144,8 +144,9 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 4.2 Routes
 **Description :** `app/api/essayage/route.ts` (POST : interrupteur, session, compte actif via `requireActiveAccount`, limite de débit `rateLimit`, `demarrerEssai`) et `app/api/essayage/[id]/route.ts` (GET : seul l'auteur de l'essai le suit, `suivreEssai`). 404 quand l'interrupteur est éteint, 401 sans session.
 **Critères :**
-- [ ] Interrupteur éteint : 404 ; anonyme : 401 ; essai d'un autre acheteur : 404.
-- [ ] Les messages d'erreur viennent de `lib/i18n.ts` dans la langue de l'acheteur.
+- [x] Interrupteur éteint : 404 ; anonyme : 401 ; essai d'un autre acheteur : 404.
+- [x] Les messages d'erreur viennent de `lib/i18n.ts` dans la langue de l'acheteur.
+**Fait le 2026-10-19 :** les deux routes, et `lib/essayage/reponses.ts`, la table qui donne à chaque refus et à chaque échec son statut HTTP et sa phrase (11 messages en quatre langues). 11 tests de routes sur les vraies routes et le vrai cœur, 16 mutations tuées, build propre. Ajouts au plan : le POST exige les conditions acceptées (la photo part chez un sous-traitant), comme le paiement et l'IA ; deux limites de débit au démarrage, 6 par minute et 20 par jour, parce qu'un échec ne compte pas dans le quota et que des photos refusées en boucle feraient travailler le fournisseur sans fin ; le suivi est limité à 60 par minute. Correction du cœur : un fournisseur injoignable après 60 s clôt l'essai en « délai » (test S7b), sinon l'essai restait en cours et comptait pour l'acheteur.
 **Vérification :** tests de routes ; `npm run build`.
 **Dépendances :** 4.1. **Fichiers :** `app/api/essayage/route.ts`, `app/api/essayage/[id]/route.ts`, `tests/essayage-routes.test.ts`, `lib/i18n.ts`. **Taille :** M.
 

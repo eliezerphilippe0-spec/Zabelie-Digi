@@ -167,6 +167,18 @@ test("S7 — au-delà de 60 secondes, l'essai échoue en « délai » et ne comp
   assert.ok(journal.includes(`terminer:${ESSAI_ID}:echec:delai`) && journal.includes("effacer"));
 });
 
+test("S7b — fournisseur injoignable : l'erreur remonte avant 60 s, l'essai est clos en « délai » après", async () => {
+  let t = 7_000_000;
+  const injoignable: FournisseurEssayage = { ...simulation({ delaiMs: 10 * 60_000, maintenant: () => t }), async statut() { throw new ErreurFournisseur("fournisseur", "réseau", true); } };
+  const { base, journal } = fausseBase({ maintenant: () => t });
+  await demarrerEssai({ base, fournisseur: injoignable }, { acheteurId: ACHETEUR, produitId: PRODUIT, photo: { octets: JPEG, type: "image/jpeg" } });
+  await assert.rejects(suivreEssai({ base, fournisseur: injoignable, maintenant: () => t }, ACHETEUR, ESSAI_ID), /réseau/);
+  assert.ok(!journal.some((l) => l.startsWith("terminer")), "avant le délai, l'essai reste en cours");
+  t += DUREE_MAX_ESSAI_MS + 1;
+  assert.deepEqual(await suivreEssai({ base, fournisseur: injoignable, maintenant: () => t }, ACHETEUR, ESSAI_ID), { etat: "echec", raison: "delai" });
+  assert.ok(journal.includes(`terminer:${ESSAI_ID}:echec:delai`));
+});
+
 test("S8 — l'essai d'un autre acheteur, un identifiant abîmé, ou un autre fournisseur", async () => {
   const { base } = fausseBase();
   await demarrerEssai({ base, fournisseur: simulation({ delaiMs: 0 }) }, { acheteurId: ACHETEUR, produitId: PRODUIT, photo: { octets: JPEG, type: "image/jpeg" } });
