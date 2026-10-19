@@ -548,6 +548,9 @@ const server = createServer((req, res) => {
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    // Audit 2026-10-19 (UX-01) : un vendeur dont une fiche a été retirée par la modération.
+    if (sellerPreparation && token.includes("-archive")) rows = [...rows,
+      { ...PRODUCT, id: "cccccccc-0000-4000-8000-000000000384", slug: "service-retire", title: "Service retiré test", kind: "service", status: "archived", product_assets: [], delivery_days: 1, service_includes: ["Une séance"] }];
     if (BOUTIQUE_FIXTURE && (id === DIGITAL_ID || slug === "formation-studio-test")) return single([SHOP_PRODUCTS[1]]);
     if (id === DIGITAL_ID || slug === "formation-studio-test") return single([{ ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", kind: "fichier", product_assets: [{ id: ASSET_ID }], seller_id: SELLER_ID }]);
     // Produit dédié aux pixels (0123) : son vendeur, et lui seul, a un pixel.

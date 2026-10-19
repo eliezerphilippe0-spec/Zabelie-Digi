@@ -102,7 +102,7 @@ export function AuthoringSoumission({
               </div>
             )
           )}
-          <Link href="/vendre" className="inline-flex min-h-11 items-center text-sm underline">{s.voir}</Link>
+          <Link href="/vendre?type=numeriques#mes-produits" className="inline-flex min-h-11 items-center text-sm underline">{s.voir}</Link>
         </div>
       ) : !exportPret ? (
         <p className="mt-1 text-sm text-mist">{s.verrou}</p>

@@ -421,7 +421,7 @@ export default async function DashboardPage({
   );
   const actions: { cle: string; href: string; texte: string; icone: NomIcone }[] = [
     { cle: "physique", href: "/vendre/physique", texte: t(lang, "sell.physical.cta"), icone: "produits" },
-    { cle: "numerique", href: "/vendre", texte: t(lang, "seller.new"), icone: "nouveau" },
+    { cle: "numerique", href: "/vendre#nouveau", texte: t(lang, "seller.new"), icone: "nouveau" },
     // Les codes promo ne s'appliquent qu'à des produits : sans produit, l'action n'a pas d'objet.
     ...(products.length > 0
       ? [{ cle: "promo", href: "/tableau-de-bord/codes-promo", texte: t(lang, "vendeur.action.promo"), icone: "promo" as const }]
