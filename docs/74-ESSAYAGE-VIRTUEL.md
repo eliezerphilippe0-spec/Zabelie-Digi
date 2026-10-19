@@ -34,14 +34,14 @@ Utilisateurs :
 
 ### 2.1 Sous-rayons autorisés (taxonomie `zabelie_categories`, 0035 et 0077)
 
-| Département | Autorisés | Exclus |
+| Catégorie (niveau 2) | Sous-rayons autorisés (niveau 3) | Exclus |
 |---|---|---|
 | `rad-fanm` | `wob`, `blouz-chemizye`, `pantalon-djin-fanm`, `jip`, `ansanm-taye`, `ves-manto-fanm`, `rad-tradisyonel` | `lenjri`, `mayo-beny` |
 | `rad-gason` | `chemiz`, `mayo-polo`, `pantalon-djin-gason`, `chot`, `kostim`, `ves-gason` | `souvetman-gason` |
 | `rad-espo` | `mayo-chot-espo`, `sivetman` | `soulye-espo`, `akseswa-espo` |
 | `rad-timoun` et tout le reste | aucun | tout |
 
-Une fiche rangée au niveau 3 hérite de son parent de niveau 2. Une fiche sans sous-rayon (rangée au seul département) n'est pas éligible : elle pourrait être de la lingerie.
+Les slugs autorisés sont des sous-rayons de **niveau 3** de l'arbre : `rad-fanm`, `rad-gason`, `rad-espo` et `rad-timoun` sont de niveau 2, sous les départements `mod-akseswa` et `espo-lwazi`, et il n'existe pas de niveau 4. Une fiche est éligible si son `category_id` désigne un sous-rayon autorisé. Une fiche rangée au seul niveau 2 (« Vêtements femme » sans sous-rayon) ou sans `category_id` n'est pas éligible : elle pourrait être de la lingerie.
 
 ### Hors pilote
 
@@ -178,7 +178,7 @@ export function lireFournisseur(env: EnvEssayage): FournisseurEssayage | null {
 
 ## 9. Tests
 
-- **Unitaires** (`tests/essayage-*.test.ts`) : éligibilité (chaque sous-rayon autorisé et exclu, niveau 3, sans sous-rayon, vendeur inactif, fiche non publiée), lecture des interrupteurs, répartition des groupes (stable, environ 50/50), adaptateurs face à des réponses enregistrées.
+- **Unitaires** (`tests/essayage-*.test.ts`) : éligibilité (chaque sous-rayon autorisé et exclu, fiche rangée au seul niveau 2, sans sous-rayon, vendeur inactif, fiche non publiée), lecture des interrupteurs, répartition des groupes (stable, environ 50/50), adaptateurs face à des réponses enregistrées.
 - **SQL** (`supabase/tests`, CI `sql-tests`) : quota du jour, plafond du mois, essais échoués non comptés, 20 réservations simultanées qui ne dépassent jamais le plafond, refus pour un acheteur anonyme, aucune lecture par `anon` ou `authenticated`.
 - **E2E** (`e2e/parcours-physique-essayage.spec.ts`, fournisseur `simulation`) : bouton visible ou absent selon les cas, consentement, envoi, attente, résultat avec la mention IA, quota atteint, pause, 360 px sans défilement horizontal, cibles de 44 px, 4 langues.
 - **Gardes** : aucune route d'essayage n'écrit dans Supabase Storage ; aucun journal ne contient d'image ; `.env.example` complet.

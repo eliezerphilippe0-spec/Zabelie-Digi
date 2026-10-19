@@ -29,11 +29,12 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ## Phase 1 — Fondation
 
 ### 1.1 Règles pures
-**Description :** `lib/essayage/regles.ts` : les sous-rayons autorisés (slugs de niveau 2, §2.1) et la règle du niveau 3 (hérite du parent), le groupe d'un acheteur (hachage stable, `essai` ou `temoin`), le jour haïtien d'un instant, les codes de refus (`interrupteur`, `anonyme`, `non_eligible`, `quota`, `plafond`, `pause`, `photo`). `lib/essayage/flags.ts` : `lireEnvEssayage()` et `essayageActif()`, sur le modèle de `lib/digital-authoring/flags.ts` (seule la valeur exacte `true` ouvre). Variables ajoutées à `.env.example`.
+**Description :** `lib/essayage/regles.ts` : les sous-rayons autorisés (slugs de niveau 3, §2.1 ; une fiche rangée au seul niveau 2 est fermée), le groupe d'un acheteur (hachage stable, `essai` ou `temoin`), le jour haïtien d'un instant, les codes de refus (`interrupteur`, `anonyme`, `non_eligible`, `quota`, `plafond`, `pause`, `photo`). `lib/essayage/flags.ts` : `lireEnvEssayage()` et `essayageActif()`, sur le modèle de `lib/digital-authoring/flags.ts` (seule la valeur exacte `true` ouvre). Variables ajoutées à `.env.example`.
 **Critères :**
-- [ ] Chaque sous-rayon autorisé passe ; `lenjri`, `mayo-beny`, `souvetman-gason`, `soulye-espo`, `akseswa-espo` et tout `rad-timoun` sont refusés ; une fiche sans sous-rayon est refusée.
-- [ ] Le groupe d'un même identifiant ne change jamais ; sur 10 000 identifiants, chaque groupe fait 50 % ± 2.
-- [ ] `"1"`, `"TRUE"`, `"true "` laissent fermé ; `simulation` est refusé quand `VERCEL_ENV=production`.
+- [x] Chaque sous-rayon autorisé passe ; `lenjri`, `mayo-beny`, `souvetman-gason`, `soulye-espo`, `akseswa-espo` et tout `rad-timoun` sont refusés ; une fiche sans sous-rayon est refusée.
+- [x] Le groupe d'un même identifiant ne change jamais ; sur 10 000 identifiants, chaque groupe fait 50 % ± 2.
+- [x] `"1"`, `"TRUE"`, `"true "` laissent fermé ; `simulation` est refusé quand `VERCEL_ENV=production`.
+**Fait le 2026-10-19 :** 10 tests (liste confrontée à l'arbre réel des migrations 0035 et 0077, groupes figés), 5 mutations tuées.
 **Vérification :** `node --import tsx --test tests/essayage-regles.test.ts` ; `tests/env-example-complet.test.ts` vert.
 **Dépendances :** aucune. **Fichiers :** `lib/essayage/regles.ts`, `lib/essayage/flags.ts`, `tests/essayage-regles.test.ts`, `.env.example`. **Taille :** M.
 
@@ -106,7 +107,7 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Dépendances :** 1.1. **Fichiers :** `supabase/migrations/0150_zabelie_essayage.sql`, `supabase/tests/zabelie_essayage.test.sql`. **Taille :** M.
 
 ### 3.2 Migration 0150 : fonctions
-**Description :** dans la même migration, `zabelie_essayage_eligible(produit)`, `zabelie_essayage_reserver(acheteur, produit, fournisseur)` (fiche publiée et physique, vendeur pilote actif, sous-rayon autorisé avec la règle du niveau 3, pause, quota du jour haïtien, plafond du mois hors échecs, verrou consultatif, insertion `en_cours`), `zabelie_essayage_terminer(essai, statut, travail)`, `zabelie_essayage_exposer(acheteur, produit, groupe)`. Toutes en `security definer`, `search_path` figé, accordées au rôle service seul ; ajoutées à la liste gelée de `definer_exposition` et à sa revue.
+**Description :** dans la même migration, `zabelie_essayage_eligible(produit)`, `zabelie_essayage_reserver(acheteur, produit, fournisseur)` (fiche publiée et physique, vendeur pilote actif, sous-rayon de niveau 3 autorisé, pause, quota du jour haïtien, plafond du mois hors échecs, verrou consultatif, insertion `en_cours`), `zabelie_essayage_terminer(essai, statut, travail)`, `zabelie_essayage_exposer(acheteur, produit, groupe)`. Toutes en `security definer`, `search_path` figé, accordées au rôle service seul ; ajoutées à la liste gelée de `definer_exposition` et à sa revue.
 **Critères :**
 - [ ] Le 6e essai du jour est refusé (`quota`) ; le compteur repart au jour haïtien suivant ; un échec ne compte pas.
 - [ ] 20 réservations simultanées au bord du plafond ne le dépassent jamais.
