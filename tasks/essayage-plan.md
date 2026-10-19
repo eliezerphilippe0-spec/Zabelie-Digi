@@ -40,7 +40,7 @@ Chaque phase se termine par un point de contrôle (tests, build, revue). Les pha
 - [x] 1.2 Adaptateur de fournisseur et fournisseur `simulation`
 - [x] 2.1 Adaptateur Genlook
 - [x] 2.2 Adaptateur FASHN
-- [ ] 2.3 Outil de comparaison à blanc et payant, planche à l'aveugle
+- [x] 2.3 Outil de comparaison à blanc et payant, planche à l'aveugle
 - [ ] 2.4 (sur « oui ») Point d'accès GPU du modèle maison pour le test (évaluation seulement : analyseur sous licence non commerciale)
 - [ ] 3.1 Migration 0150 : tables, sous-rayons autorisés, RLS, sonde
 - [ ] 3.2 Migration 0150 : fonctions de réservation, de fin et d'exposition, garde `definer_exposition`

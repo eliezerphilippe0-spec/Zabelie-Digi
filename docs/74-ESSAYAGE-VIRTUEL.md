@@ -161,8 +161,8 @@ npx tsc --noEmit                           # types
 npx eslint <fichiers modifiés>             # lint
 npm run build                              # build de production, doit passer
 npx playwright test --project=physique     # e2e, fournisseur « simulation »
-node scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier hors dépôt> --produits <liste>          # à blanc : coût annoncé
-node scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier hors dépôt> --produits <liste> --payer  # appels réels, après accord
+node --import tsx scripts/essayage-comparer.ts --candidats genlook,fashn --photos <dossier hors dépôt> --produits <produits.json>                                    # à blanc : coût annoncé
+node --import tsx scripts/essayage-comparer.ts --candidats genlook,fashn --photos <dossier hors dépôt> --produits <produits.json> --sortie <dossier hors dépôt> --payer  # appels réels, après accord
 ```
 
 Le candidat `maison` est un point d'accès HTTP vers FASHN VTON v1.5 sur un GPU loué à la seconde, éteint entre deux séries (`ZABELIE_ESSAYAGE_MAISON_URL`, `ZABELIE_ESSAYAGE_MAISON_CLE`, dans l'environnement local du porteur seulement). Il sert au test ; il n'entre dans l'application que s'il est retenu.

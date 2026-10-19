@@ -75,13 +75,14 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Dépendances :** 1.2. **Fichiers :** `lib/essayage/fournisseurs/fashn.ts`, `tests/essayage-fashn.test.ts`, `tests/fixtures/essayage/fashn-*.json`. **Taille :** S.
 
 ### 2.3 Outil de comparaison
-**Description :** `scripts/essayage-comparer.mjs --candidats genlook,fashn,maison --photos <dossier> --produits <liste>` ; la série chaussures se lance à part, avec `--candidats genlook` seulement. À blanc par défaut : il compte les essais et annonce le coût par candidat, sans aucun appel. Avec `--payer` : il appelle, mesure le temps de chaque essai, et écrit dans un dossier **hors du dépôt** une planche HTML où les images sont mélangées et anonymisées, plus une clé de correspondance séparée, à ouvrir seulement après la notation.
+**Description :** `node --import tsx scripts/essayage-comparer.ts --candidats genlook,fashn --photos <dossier> --produits <produits.json> --sortie <dossier>` ; la série chaussures se lance à part, avec `--candidats genlook` seulement. À blanc par défaut : il compte les essais et annonce le coût par candidat, sans aucun appel. Avec `--payer` : il appelle, mesure le temps de chaque essai, et écrit dans un dossier **hors du dépôt** une planche HTML où les images sont mélangées et anonymisées, plus une clé de correspondance séparée, à ouvrir seulement après la notation.
 **Critères :**
-- [ ] Sans `--payer`, aucune requête réseau (vérifié par test).
-- [ ] Le script refuse d'écrire sa sortie dans le dépôt.
-- [ ] La planche ne révèle pas le candidat ; la clé reconstitue les notes par candidat.
-**Vérification :** `node --test tests/essayage-comparer.test.mjs` ; essai à blanc sur un dossier de 3 photos factices.
-**Dépendances :** 2.1, 2.2. **Fichiers :** `scripts/essayage-comparer.mjs`, `tests/essayage-comparer.test.mjs`. **Taille :** M.
+- [x] Sans `--payer`, aucune requête réseau (vérifié par test).
+- [x] Le script refuse d'écrire sa sortie dans le dépôt.
+- [x] La planche ne révèle pas le candidat ; la clé reconstitue les notes par candidat.
+**Fait le 2026-10-19 :** 9 tests, 10 mutations tuées ; essai à blanc réel (3 photos factices : 12 essais, 0,24 $ Genlook, 0,45 $ FASHN annoncés, aucun appel) ; sortie dans le dépôt refusée. Script en TypeScript lancé avec `tsx` (comme `scripts/scanner-fichiers.ts`) pour réutiliser les adaptateurs eux-mêmes. Sorties : `planche.html` (lettres, sans fournisseur ni durée), `notes.csv`, `cle-a-ouvrir-apres-notation.json`, `resume.json` (coût réel : essais réussis seulement). Le candidat `maison` est refusé tant que la tâche 2.4 n'est pas faite.
+**Vérification :** `node --import tsx --test tests/essayage-comparer.test.ts` ; essai à blanc sur un dossier de 3 photos factices.
+**Dépendances :** 2.1, 2.2. **Fichiers :** `scripts/essayage-comparer.ts`, `tests/essayage-comparer.test.ts`. **Taille :** M.
 
 ### 2.4 (sur « oui ») Point d'accès GPU du modèle maison
 **Description :** un petit service qui fait tourner FASHN VTON v1.5 chez un hébergeur GPU à la seconde (RunPod ou équivalent), éteint entre deux séries, appelé par `--candidats maison`. Compte et carte : porteur. Mentions de licence Apache-2.0 conservées. **Usage d'évaluation seulement** : l'analyseur de silhouette FASHN Human Parser est sous licence NVIDIA de SegFormer, non commerciale (tâche 0.1). Le service ne sert qu'au test et n'est jamais branché à l'application en l'état.
