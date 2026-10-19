@@ -57,7 +57,7 @@ export default async function DevelopersPage() {
     <ul className="mt-4 space-y-2">{PUBLIC_OPERATIONS.map(([name]) => <li key={name}><code className="break-all text-sm">POST /api/v1/{name}</code></li>)}</ul>
     <h2 className="mt-10 text-xl font-bold">{c.limits}</h2>
     {[c.details,c.quota,c.access,c.empty,c.texts,c.delivery].map(text => <p key={text} className="mt-4 text-sm leading-relaxed text-mist">{text}</p>)}
-    <h2 id="api-vendeur" className="mt-14 scroll-mt-24 text-2xl font-bold">{c.sellerTitle}</h2>
+    <h2 id="api-vendeur" className="mt-14 scroll-mt-32 text-2xl font-bold">{c.sellerTitle}</h2>
     <p className="mt-3">{c.sellerIntro}</p>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerAuth}</p>
     <Link href={`/api/v1/seller/openapi.json?lang=${lang}`} className="mt-4 inline-flex min-h-11 items-center font-semibold underline">{c.sellerContract}</Link>

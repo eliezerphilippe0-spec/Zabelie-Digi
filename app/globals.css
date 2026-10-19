@@ -9,9 +9,8 @@
 @import "./zabelie-theme.css"; /* SOURCE UNIQUE des design tokens */
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+  /* `scroll-behavior: smooth` vit dans le bloc `no-preference` de la couche
+     utilities, plus bas : le glissé des ancres respecte le mouvement réduit. */
   body {
     background-color: var(--color-bg-3);
     color: var(--color-cloud);
@@ -126,6 +125,11 @@
      sous `prefers-reduced-motion: reduce` — la garde ci-dessous reste, par
      ceinture et bretelles. */
   @media (prefers-reduced-motion: no-preference) {
+    /* Sauts d'ancre glissés ; en mouvement réduit, saut direct (liens, lien
+       d'évitement, AncreAuChargement — qui ne force aucun `behavior`). */
+    html {
+      scroll-behavior: smooth;
+    }
     .reveal {
       animation: zbReveal var(--motion-slow) var(--ease) both;
       animation-delay: var(--reveal-delay, 0ms);

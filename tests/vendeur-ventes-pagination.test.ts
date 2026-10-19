@@ -67,7 +67,7 @@ test("les liens portent l'ancre — pas de retour en haut d'une page longue", ()
    * ventes renvoie le vendeur au titre, et il doit re-défiler à chaque clic. */
   assert.match(PAGE, /\/tableau-de-bord\?ventes=\$\{ventesPage - 1\}#ventes/);
   assert.match(PAGE, /\/tableau-de-bord\?ventes=\$\{ventesPage \+ 1\}#ventes/);
-  assert.match(PAGE, /<section id="ventes" className="mt-10 scroll-mt-24">/);
+  assert.match(PAGE, /<section id="ventes" className="mt-10 scroll-mt-32">/);
 });
 
 test("les liens du pied respectent la cible tactile de 44 px", () => {
