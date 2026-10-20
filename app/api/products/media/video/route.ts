@@ -134,7 +134,9 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (insErr || !ligne) {
-      await admin.storage.from(VIDEO_BUCKET).remove([path]);
+      // Une réponse perdue après COMMIT, ou une confirmation concurrente,
+      // peut déjà avoir enregistré ce chemin. Conserver l'objet, comme les
+      // livrables numériques ; seul le hors-contrat AVANT insertion se retire.
       return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
     }
     const { data: pub } = admin.storage.from(VIDEO_BUCKET).getPublicUrl(path);

@@ -599,3 +599,57 @@ requis n'est absent et aucune purge d'avis n'est activée par ce lot.
 **Publication :** [PR #325](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/325),
 avec statut, commit de déploiement et contrôles du domaine dans sa description.
 Les changements de suivi après application ne modifient aucun SQL appliqué.
+
+## 11. Petit lot de corrections après inventaire — 20 octobre 2026
+
+Demande du porteur : compléter l'existant sur branche dédiée, tests puis PR
+de validation humaine, sans fusion, déploiement de production, paiement réel
+ni écriture en base de production. Référence inventoriée : `68c191e` de `main`.
+Les mesures du 4 octobre ci-dessus restent historiques ; aucune nouvelle
+mesure de données de production n'a été effectuée pour ce lot.
+
+**Inventaire statique avant correction :** 68 pages App Router, 111 routes API,
+150 migrations, 290 fichiers `tests/**/*.test.ts`, 95 fichiers SQL
+`supabase/tests/*.test.sql` et 56 specs `e2e*/**/*.spec.ts` suivis par Git.
+Lecture de `CLAUDE.md`, `docs/25`, `docs/26`, de cet inventaire et d'`OPS_TODO`.
+GitHub : aucune PR ouverte lors du relevé ; 100 PR fermées récentes examinées,
+avec recherches ciblées dans l'historique.
+
+| Chemin | Implémentation et données existantes | Tests et PR déjà fusionnées |
+|---|---|---|
+| Inscription | `components/connexion-form.tsx`, `/connexion?mode=signup`, `safeNext`, création `profiles` et acceptations juridiques par triggers | Auth navigateur, `safe-next`, #265, #325, #346 |
+| Publication et médias | Brouillons via `/api/products`, publication humaine `/api/admin/product-status`, `products`, `product_assets`, `zabelie_product_media` (`0073`), versions et droits digitaux (`0104`) | `galerie-photos`, `product-media`, `api-publication`, `publication-discipline`, #324, #384 |
+| Stripe | Checkout idempotent, webhook signé, confirmation et réconciliation serveur ; `payments`, `orders`, escrow, commandes groupées et support (`0113`, `0128`) | `stripe-config`, `stripe-webhook`, `stripe-reconcile`, SQL, #267, #268 |
+| Supabase | Gardes de compte, propriété, RLS, droits des fonctions, clés publiques contrôlées, jointures commandes/produits explicites | `config-supabase`, `api-auth-coverage`, SQL `definer_exposition`, #332, #354, #357, #378 |
+
+**Deux corrections P1, sans nouvelle table, migration ni moteur :**
+
+- `/inscription` renvoie temporairement (307) vers `/connexion?mode=signup`.
+  Le retour interne `next` passe par `safeNext` ; les autres paramètres ne sont
+  pas propagés. Le formulaire, l'authentification et les consentements restent
+  ceux de `/connexion`. La suite Auth existante couvre également cet alias.
+- Après une tentative d'insertion de photo ou vidéo, une réponse perdue peut
+  suivre un COMMIT réussi. Les routes médias ne suppriment plus alors le
+  fichier Storage susceptible d'être référencé, suivant le précédent de
+  `lib/product-asset-confirm.ts`. Le HTTP 500 est conservé ; une vidéo invalide
+  détectée avant insertion reste supprimée. Un vrai rejet peut laisser un objet
+  orphelin : tout nettoyage ultérieur doit prouver l'absence de référence.
+
+**Litiges Stripe différés, manque confirmé :** `charge.dispute.created` est
+encore acquitté comme événement ignoré par `/api/stripe/webhook`. Le support et
+les litiges acheteur existent déjà (`0113`) malgré l'ancien en-tête de `docs/28`
+qui annonce une simple spécification ; ne pas reconstruire leurs tables.
+`zabelie_stripe_payment_failed` ne gèle pas un paiement confirmé et
+`zabelie_report_not_received` exige un acheteur et son suivi de remise.
+Changer uniquement `orders.status` ne gèle pas la maturation ; réutiliser son
+verrou de livraison serait insuffisant car la réception peut le lever.
+Une correction sûre exige une transaction couvrant paiements groupés, escrow,
+réception, maturation et résolution. Ce lot ne prétend pas la fournir.
+
+**Vérification :** les nouveaux tests médias échouent sur les deux suppressions
+initiales puis passent après correction ; ils exécutent les vraies routes avec
+E/S factices, dont COMMIT simulé suivi d'erreur réseau ou de réponse vide.
+L'alias est vérifié avec retours internes et malveillants ; les résultats
+complets de compilation, lint, suites et CI sont consignés dans la PR.
+Relecture indépendante du code et 51 tests ciblés réussis avant publication
+de la PR. Aucun contrôle local ne vaut attestation de l'état de la production.

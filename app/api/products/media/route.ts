@@ -179,8 +179,9 @@ export async function POST(req: Request) {
     .select("id")
     .single();
   if (insErr || !ligne) {
-    // L'objet ne doit pas rester orphelin : on nettoie, puis on échoue.
-    await admin.storage.from(MEDIA_BUCKET).remove([path]);
+    // Une réponse perdue peut suivre le COMMIT : l'objet est alors référencé.
+    // Comme pour les livrables numériques, conserver l'objet après une
+    // tentative d'insertion ; un nettoyage doit prouver l'absence de référence.
     return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
   }
 

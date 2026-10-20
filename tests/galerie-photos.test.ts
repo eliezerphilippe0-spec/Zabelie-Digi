@@ -96,13 +96,27 @@ function galerie(options: {
   actif?: boolean;
   cadence?: boolean;
   dejaEnGalerie?: number;
+  video?: boolean;
+  videoBytes?: number;
+  videoType?: string;
+  insertion?: "erreur_apres_commit" | "vide_apres_commit" | "refus";
 } = {}) {
   const envois: { bucket: string; path: string; contentType?: string }[] = [];
   const retraits: { bucket: string; paths: string[] }[] = [];
+  const lignes: { storage_path: string }[] = [];
+  const videoPath = `${PRODUIT}/galerie/vid-00000000-0000-4000-8000-000000000001.mp4`;
   const db = database((query: Query) => {
     const op = (nom: string) => query.steps.find(([m]) => m === nom)?.[1];
     if (query.table === "products") return { data: { id: PRODUIT, seller_id: USER }, error: null };
-    if (query.table === "zabelie_product_media" && op("insert")) return { data: { id: "media-neuf" }, error: null };
+    if (query.table === "zabelie_product_media" && op("insert")) {
+      // La base a commité AVANT la perte de réponse : une erreur de transport
+      // ne prouve pas que la ligne est absente.
+      if (options.insertion !== "refus") lignes.push(op("insert")![0] as { storage_path: string });
+      if (options.insertion === "erreur_apres_commit") return { data: null, error: { code: "", message: "TypeError: fetch failed" } };
+      if (options.insertion === "vide_apres_commit") return { data: null, error: null };
+      if (options.insertion === "refus") return { data: null, error: { code: "P0001", message: "ZB073" } };
+      return { data: { id: "media-neuf" }, error: null };
+    }
     if (query.table === "zabelie_product_media" && op("delete")) return { error: null };
     if (query.table === "zabelie_product_media" && op("single"))
       return { data: { id: "media-1", kind: "image", storage_path: `${PRODUIT}/galerie/a.png` }, error: null };
@@ -122,12 +136,15 @@ function galerie(options: {
           retraits.push({ bucket, paths: [...paths] });
           return { error: null };
         },
+        list: async () => ({ data: [{ name: videoPath.split("/").pop(), metadata: {
+          size: options.videoBytes ?? 1024, mimetype: options.videoType ?? "video/mp4",
+        } }], error: null }),
         getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${path}` } }),
       }),
     },
   };
   const refus = Response.json({ error: "api.suspended", code: "suspended" }, { status: 403 });
-  const route = loadRoute("app/api/products/media/route.ts", {
+  const route = loadRoute(options.video ? "app/api/products/media/video/route.ts" : "app/api/products/media/route.ts", {
     "@/lib/supabase/server": {
       createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: USER } } }) } }),
     },
@@ -148,8 +165,49 @@ function galerie(options: {
       method: "DELETE",
       body: JSON.stringify({ productId: PRODUIT, mediaId: "media-1" }),
     }));
-  return { poster, retirer, envois, retraits, queries: db.queries };
+  const confirmerVideo = () => route.POST(new Request("https://zabelie.test/api/products/media/video", {
+    method: "POST", body: JSON.stringify({ productId: PRODUIT, step: "confirme", path: videoPath }),
+  }));
+  return { poster, retirer, confirmerVideo, envois, retraits, lignes, videoPath, queries: db.queries };
 }
+
+for (const video of [false, true]) {
+  test(`${video ? "vidéo" : "photo"} : une réponse perdue après commit ne détruit pas le média référencé`, async () => {
+    for (const insertion of ["erreur_apres_commit", "vide_apres_commit"] as const) {
+      const g = galerie({ video, insertion });
+      const r = video ? await g.confirmerVideo() : await g.poster(png(800, 600), "photo.png", "image/png");
+      assert.equal(r.status, 500, "aucune réussite inventée quand la réponse est incertaine");
+      assert.equal(g.lignes.length, 1, "la ligne simulée existe après commit");
+      assert.equal(g.retraits.length, 0, `${video ? "vidéo" : "image"} : l'objet référencé reste disponible`);
+    }
+  });
+
+  test(`${video ? "vidéo" : "photo"} : le succès conserve l'objet et un refus d'insertion ne déclenche aucun nettoyage aveugle`, async () => {
+    const ok = galerie({ video });
+    const response = video ? await ok.confirmerVideo() : await ok.poster(png(800, 600), "photo.png", "image/png");
+    assert.equal(response.status, 200);
+    assert.equal(ok.lignes.length, 1);
+    assert.equal(ok.retraits.length, 0);
+    const refus = galerie({ video, insertion: "refus" });
+    const rejected = video ? await refus.confirmerVideo() : await refus.poster(png(800, 600), "photo.png", "image/png");
+    assert.equal(rejected.status, 500);
+    assert.equal(refus.lignes.length, 0);
+    assert.equal(refus.retraits.length, 0, "un autre appel peut déjà avoir enregistré le même chemin vidéo");
+  });
+}
+
+test("vidéo hors contrat : objet supprimé avant toute tentative d'insertion", async () => {
+  for (const option of [{ videoBytes: 0 }, { videoBytes: media.MAX_VIDEO_BYTES + 1 }, { videoType: "text/html" }]) {
+    const g = galerie({ video: true, ...option });
+    assert.equal((await g.confirmerVideo()).status, 422);
+    assert.equal(g.lignes.length, 0);
+    assert.equal(g.queries.some(q => q.steps.some(([method]) => method === "insert")), false);
+    assert.deepEqual(g.retraits, [{ bucket: media.VIDEO_BUCKET, paths: [g.videoPath] }]);
+  }
+  const dejaConfirmee = galerie({ video: true, dejaEnGalerie: 1 });
+  assert.equal((await dejaConfirmee.confirmerVideo()).status, 422);
+  assert.equal(dejaConfirmee.retraits.length, 0, "une confirmation répétée ne supprime pas la vidéo existante");
+});
 
 test("SEC-02 — du HTML nommé .png et annoncé image/png est refusé, et RIEN n'est envoyé", async () => {
   const g = galerie();
