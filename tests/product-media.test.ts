@@ -79,12 +79,15 @@ test("route media : auth, propriété, plafond app-side AVANT upload, 503 sans 0
   assert.match(ROUTE, /isMissingTable\(countErr\)[\s\S]{0,300}status: 503/);
 });
 
-test("route media : nom de fichier SERVEUR, jamais celui du client, et nettoyage sur échec d'insertion", () => {
+test("route media : nom de fichier SERVEUR et conservation après tentative d'insertion", () => {
   assert.match(ROUTE, /crypto\.randomUUID\(\)/);
   assert.ok(!/file\.name(?!\.split)/.test(ROUTE.replace(/file\.name\.split/g, "OK")),
     "le nom client ne doit servir qu'à extraire l'extension");
-  // L'objet stocké ne survit pas à une ligne absente : remove AVANT le 500.
-  assert.match(ROUTE, /\.remove\(\[path\]\)[\s\S]{0,200}status: 500/);
+  // Une réponse absente ne prouve pas une ligne absente : les routes exécutées
+  // dans galerie-photos.test.ts couvrent le commit suivi d'une réponse perdue.
+  const insertion = ROUTE.slice(ROUTE.indexOf("const { data: ligne, error: insErr }"), ROUTE.indexOf("export async function DELETE"));
+  assert.ok(insertion.includes("if (insErr || !ligne)"));
+  assert.doesNotMatch(insertion, /\.remove\(/);
 });
 
 test("route media : cette route n'accepte QUE des images — la vidéo attend la tranche B (lien signé)", () => {
