@@ -88,7 +88,7 @@ function Shell({
             <ol className="seller-steps">{([
               ["home.s1.t", "home.s1.b"], ["home.s2.t", "home.s2.b"], ["home.s3.t", "home.s3.b"],
             ] as const).map(([title, body], index) => <li key={title}><span className="step-number" aria-hidden="true">0{index + 1}</span><div><h3>{t(lang, title)}</h3><p>{t(lang, body)}</p></div></li>)}</ol>
-            <div className="seller-physical"><p>{t(lang, "sell.physical.q")}</p><Link href="/vendre/physique" className="editorial-link">{t(lang, "sell.physical.cta")}<span aria-hidden="true">↗</span></Link></div>
+            <div className="seller-physical"><p>{t(lang, "sell.physical.q")}</p><Link href="/vendre/physique" className="editorial-link">{t(lang, "sell.physical.cta")}<span aria-hidden="true">→</span></Link></div>
             <Link href={POLICY_PATH} className="editorial-link seller-policy">{t(lang, "policy.link")}</Link>
           </section>
           <aside className="seller-decision">
@@ -577,8 +577,12 @@ export default async function VendrePage({
                   {p.status === "draft" && (
                     <PhotoPrincipale productId={p.id} initialUrl={p.cover_url} labels={photoLabels} />
                   )}
+                  {p.status === "published" && (
+                    <p className="mt-3 text-xs text-mist">{t(lang, "sell.galerie.reviewHint")}</p>
+                  )}
                   <GalerieManager
                     productId={p.id}
+                    readOnly={estArchivee(p.status)}
                     initial={(galeries[i] ?? [])
                       .filter((m) => m.kind === "image")
                       .map((m) => ({ id: m.id, url: m.url }))}

@@ -180,9 +180,28 @@ test("E6 — « Soumettre à la revue » : le lien vers le projet, et lui seul e
   const doublon = { code: "23505", message: "duplicate key value violates unique constraint" };
   let r = await refus(await brouillon({ insertErreur: doublon }).appeler(BASE, PROJET));
   assert.deepEqual(r, { status: 409, corps: { error: "authoring.soumission.dejaSoumis", code: "authoring_deja_soumis" } });
-  // Hors soumission, la même erreur garde l'ancienne réponse.
+  // Hors soumission, le détail SQL reste privé.
   r = await refus(await brouillon({ insertErreur: doublon }).appeler(BASE));
-  assert.deepEqual(r, { status: 500, corps: { error: doublon.message } });
+  assert.deepEqual(r, { status: 500, corps: { error: "api.unavailable" } });
+});
+
+test("prix : la capacité integer est vérifiée avant toute écriture, sans nouveau plafond commercial", async () => {
+  for (const priceHTG of [2147483647.5, 2147483648, Number.MAX_SAFE_INTEGER]) {
+    const b = brouillon();
+    const r = await refus(await b.appeler({ ...BASE, priceHTG }));
+    assert.equal(r.status, 400);
+    assert.deepEqual(r.corps, { error: "api.price.invalid" });
+    assert.equal(b.rpcs.length, 0);
+    assert.equal(b.queries.length, 0);
+  }
+  for (const priceHTG of [0, 2147483647.4]) {
+    const b = brouillon();
+    const r = await b.appeler({ ...BASE, priceHTG });
+    assert.ok(!(r instanceof Response));
+    const insertion = b.queries.find((q) => q.table === "products")!;
+    const ligne = (insertion.steps[0][1] as Record<string, unknown>[])[0];
+    assert.equal(ligne.price_htg, Math.round(priceHTG));
+  }
 });
 
 test("E5 — la confirmation d'un livrable rend les mêmes réponses", async () => {
@@ -190,7 +209,7 @@ test("E5 — la confirmation d'un livrable rend les mêmes réponses", async () 
   const hors = livrable({ name: nom, metadata: { size: 10 } });
   let r = await hors.appeler(`${MOI}/autre/liv-00000000-0000-4000-8000-000000000001.pdf`);
   assert.equal(r.status, 400);
-  assert.deepEqual(await r.json(), { error: "Chemin invalide" });
+  assert.deepEqual(await r.json(), { error: "api.params.invalid" });
 
   r = await livrable(null).appeler();
   assert.equal(r.status, 404);

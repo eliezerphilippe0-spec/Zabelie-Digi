@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTable } from "@/lib/product-media";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,8 +15,7 @@ export const dynamic = "force-dynamic";
  *
  * La règle vit dans le trigger ZB080 (bornes de config, chevauchement,
  * plafond par vendeur) : cette route vérifie la PROPRIÉTÉ et traduit les
- * refus. Un `raise` de ZB080 arrive ici comme une erreur portant son
- * message — on le rend tel quel, il porte le détail. Sans 0080 : 503.
+ * refus sans exposer le message SQL. Sans 0080 : 503.
  */
 async function session() {
   const supabase = await createClient();
@@ -39,7 +39,7 @@ async function produitDuVendeur(userId: string, productId: string) {
 export async function POST(req: Request) {
   const user = await session();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return erreurTraduite("api.auth.required", 401);
   }
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
@@ -53,37 +53,37 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Corps JSON requis" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return erreurTraduite("api.params.invalid", 400);
 
   const prix = Number(body.prixFlashHTG);
   const duree = Number(body.dureeH);
   if (
     typeof body.productId !== "string" ||
-    !Number.isInteger(prix) ||
+    !Number.isSafeInteger(prix) ||
     prix <= 0 ||
     !Number.isInteger(duree) ||
     duree <= 0
   ) {
-    return NextResponse.json(
-      { error: "productId, prixFlashHTG (entier) et dureeH (entier) requis" },
-      { status: 400 }
-    );
+    return erreurTraduite("api.params.invalid", 400);
   }
   const unites =
     body.unitesMax === undefined || body.unitesMax === null
       ? null
       : Number(body.unitesMax);
-  if (unites !== null && (!Number.isInteger(unites) || unites <= 0)) {
-    return NextResponse.json({ error: "unitesMax invalide" }, { status: 400 });
+  if (unites !== null && (!Number.isInteger(unites) || unites <= 0 || unites > 2147483647)) {
+    return erreurTraduite("api.params.invalid", 400);
   }
+  const finMs = Date.now() + duree * 3600_000;
+  if (!Number.isFinite(finMs) || Math.abs(finMs) > 8_640_000_000_000_000) return erreurTraduite("api.params.invalid", 400);
 
   const ctx = await produitDuVendeur(user.id, body.productId);
   if (!ctx) {
-    return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
+    return erreurTraduite("api.product.notfound", 404);
   }
 
-  const fin = new Date(Date.now() + duree * 3600_000).toISOString();
+  const fin = new Date(finMs).toISOString();
   const { data, error } = await ctx.admin
     .from("zabelie_flash_sales")
     .insert({
@@ -97,13 +97,10 @@ export async function POST(req: Request) {
 
   if (error) {
     if (isMissingTable(error)) {
-      return NextResponse.json(
-        { error: "Ventes flash non activées (0080 à appliquer)." },
-        { status: 503 }
-      );
+      return erreurTraduite("api.unavailable", 503);
     }
-    // Les refus ZB080 portent leur raison — on la transmet.
-    return NextResponse.json({ error: error.message }, { status: 422 });
+    console.error("[flash] création refusée", error.code);
+    return erreurTraduite("api.write.failed", 422);
   }
   return NextResponse.json({ ok: true, id: data.id, fin: data.fin });
 }
@@ -111,22 +108,23 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const user = await session();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return erreurTraduite("api.auth.required", 401);
   }
 
   let body: { productId?: string };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Corps JSON requis" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return erreurTraduite("api.params.invalid", 400);
   if (typeof body.productId !== "string") {
-    return NextResponse.json({ error: "productId requis" }, { status: 400 });
+    return erreurTraduite("api.params.invalid", 400);
   }
 
   const ctx = await produitDuVendeur(user.id, body.productId);
   if (!ctx) {
-    return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
+    return erreurTraduite("api.product.notfound", 404);
   }
 
   const { error } = await ctx.admin
@@ -138,12 +136,10 @@ export async function DELETE(req: Request) {
 
   if (error) {
     if (isMissingTable(error)) {
-      return NextResponse.json(
-        { error: "Ventes flash non activées (0080 à appliquer)." },
-        { status: 503 }
-      );
+      return erreurTraduite("api.unavailable", 503);
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[flash] annulation refusée", error.code);
+    return erreurTraduite("api.write.failed", 500);
   }
   return NextResponse.json({ ok: true });
 }

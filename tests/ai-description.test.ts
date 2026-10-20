@@ -234,7 +234,8 @@ test("route : surplus (docs/34) — repli GRATUIT, consentement 402, facturation
 });
 
 test("route : la langue vient du serveur (cookie), jamais du corps de requête", () => {
-  assert.match(ROUTE, /lang: await getLang\(\)/);
+  assert.match(ROUTE, /const lang = await getLang\(\)/);
+  assert.match(ROUTE, /genererDescription\(\{[\s\S]{0,100}lang,/);
   assert.ok(!/body\.lang/.test(ROUTE), "la langue ne se prend pas du client");
 });
 

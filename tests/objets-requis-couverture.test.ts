@@ -74,6 +74,10 @@ const APPELES_DEPUIS_SQL: Record<string, string> = {
     "appelée à l'intérieur d'autres fonctions SQL (0047), jamais par le code TS — mais le capteur de demande en dépend, donc elle reste surveillée",
   zabelie_confirm_group_payment:
     "appelée par la branche groupe de confirm_payment (0128), jamais par le code TS — mais sans elle, un panier encaissé ne confirme aucune commande",
+  zabelie_product_cover_review_guard:
+    "appelée par le trigger zabelie_product_cover_review (0152), jamais comme RPC : une couverture modifiée retire atomiquement la fiche de la vente",
+  zabelie_product_media_guard:
+    "appelée par le trigger zabelie_product_media_guard_trg (0073/0152), jamais comme RPC : quotas et retour en revue de la galerie sont atomiques",
 };
 
 function fichiers(racine: string): string[] {

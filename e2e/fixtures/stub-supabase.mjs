@@ -17,6 +17,7 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
+import { createMediaReviewFixture } from "./media-review.mjs";
 
 const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
@@ -59,6 +60,7 @@ const PRODUCT = {
   in_stock: true,
   seller: { display_name: "Garaj Petyonvil" },
 };
+const mediaReviewFixture = createMediaReviewFixture({ baseProduct: PRODUCT, sellerId: SELLER_ID });
 
 
 /* ── Essayage virtuel (docs/74, tâche 4.5) ─────────────────────────────────
@@ -199,6 +201,7 @@ const server = createServer((req, res) => {
 
   // The real limiter returns a boolean; an empty PostgREST result is an error.
   if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
+  if (mediaReviewFixture(req, res, url, send, single)) return;
 
   // These fixture accounts explicitly represent users who accepted both
   // current documents. This is simulated data, not evidence for a real user.

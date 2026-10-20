@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveAccount } from "@/lib/auth";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 import {
   SURPLUS_DEFAUTS,
   enregistrerSurplus,
@@ -29,10 +30,11 @@ export const dynamic = "force-dynamic";
  * choisit pas la langue d'un autre.
  */
 export async function POST(req: Request) {
+  const lang = await getLang();
   const fournisseur = aiProviderDisponible();
   if (!fournisseur) {
     return NextResponse.json(
-      { error: "Assistant de rédaction non activé." },
+      { error: t(lang, "api.unavailable") },
       { status: 503 }
     );
   }
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   }
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
@@ -56,12 +58,12 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
   if (title.length < 2 || title.length > AI_TITLE_MAX) {
-    return NextResponse.json({ error: "Titre requis" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "ai.desc.needTitle") }, { status: 400 });
   }
   const category =
     typeof body.category === "string" && body.category.trim()
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
   const okMinute = await rateLimit(admin, `ai_desc:${user.id}`, 5, 60);
   if (!okMinute) {
     return NextResponse.json(
-      { error: "Trop de demandes. Réessayez plus tard." },
+      { error: t(lang, "api.rate.limited") },
       { status: 429 }
     );
   }
@@ -96,7 +98,7 @@ export async function POST(req: Request) {
   if (!okJour) {
     if (!config) {
       return NextResponse.json(
-        { error: "Trop de demandes. Réessayez plus tard." },
+        { error: t(lang, "ai.desc.limit") },
         { status: 429 }
       );
     }
@@ -105,7 +107,7 @@ export async function POST(req: Request) {
     if (body.surplusOk !== true) {
       return NextResponse.json(
         {
-          error: "Quota gratuit du jour atteint.",
+          error: t(lang, "ai.desc.surplus").replace("{prix}", String(config.prixSurplusHtg)),
           prixHtg: config.prixSurplusHtg,
         },
         { status: 402 }
@@ -120,7 +122,7 @@ export async function POST(req: Request) {
     );
     if (!okCap) {
       return NextResponse.json(
-        { error: "Trop de demandes. Réessayez plus tard." },
+        { error: t(lang, "ai.desc.limit") },
         { status: 429 }
       );
     }
@@ -132,7 +134,7 @@ export async function POST(req: Request) {
     );
     if (!inscrit) {
       return NextResponse.json(
-        { error: "Suggestion indisponible. Réessayez." },
+        { error: t(lang, "ai.desc.error") },
         { status: 502 }
       );
     }
@@ -143,14 +145,14 @@ export async function POST(req: Request) {
       title,
       category,
       keywords,
-      lang: await getLang(),
+      lang,
     });
     return NextResponse.json({ description });
   } catch (e) {
     // Le détail (statut fournisseur) va au journal serveur, jamais au client.
     console.error("[ai-description]", e instanceof Error ? e.message : e);
     return NextResponse.json(
-      { error: "Suggestion indisponible. Réessayez." },
+      { error: t(lang, "ai.desc.error") },
       { status: 502 }
     );
   }

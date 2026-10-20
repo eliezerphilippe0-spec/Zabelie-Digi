@@ -104,38 +104,41 @@ export async function POST(req: Request) {
   // The profile lock serializes this transaction with account closure; the
   // snapshot check prevents overwriting a decision made during the upload.
   // The existing document and submission are recorded together (0130).
-  let result: { ok?: boolean; id?: string; code?: string } | null = null;
+  let rawResult: unknown = null;
   let registrationError: { code?: string; message?: string } | null = null;
   try {
     const { data, error } = await admin.rpc("zabelie_register_kyc_document", {
       p_user_id: user.id, p_kind: kind, p_storage_path: path, p_expected: sub,
     });
-    result = data;
+    rawResult = data;
     registrationError = error;
   } catch {
     registrationError = { code: "registration_unavailable" };
   }
-  if (registrationError || !result?.ok || !result.id) {
-    // A lost RPC response can follow a committed transaction. Never delete
-    // its file: verify the existing metadata before removing an upload.
-    try {
-      const { data: recorded, error: readError } = await admin.from("zabelie_kyc_documents")
-        .select("id").eq("user_id", user.id).eq("storage_path", path).maybeSingle();
-      if (readError) throw new Error("cleanup_status_unavailable");
-      if (!recorded) {
+  const result = rawResult && typeof rawResult === "object" && !Array.isArray(rawResult)
+    ? rawResult as Record<string, unknown> : null;
+  const refusalCode = result?.code === "account_inactive" || result?.code === "conflict" || result?.code === "locked"
+    ? result.code : null;
+  if (registrationError || result?.ok !== true || typeof result.id !== "string" || !result.id || refusalCode) {
+    // An absent row cannot prove that an interrupted transaction will not
+    // commit later. Only a conclusive refusal before INSERT (0130), or a
+    // missing PostgREST RPC entry before dispatch, permits removing the file.
+    const refusal = !registrationError && result?.ok === false && result.id === undefined ? refusalCode : null;
+    if (refusal || registrationError?.code === "PGRST202") {
+      try {
         const { error: removeError } = await admin.storage.from(KYC_BUCKET).remove([path]);
         if (removeError) throw new Error("cleanup_failed");
+      } catch {
+        console.error("[kyc] upload_cleanup_unavailable");
+        return erreurTraduite("api.unavailable", 503);
       }
-    } catch {
-      console.error("[kyc] upload_cleanup_unavailable");
-      return erreurTraduite("api.unavailable", 503);
     }
     if (registrationError && isMissingFunction(registrationError)) {
       console.error("[kyc] MIGRATION 0130 NON APPLIQUÉE — dépôt atomique indisponible");
       return erreurTraduite("api.feature.off", 503);
     }
-    if (result?.code === "account_inactive") return erreurTraduite("api.suspended", 403);
-    if (result?.code === "conflict" || result?.code === "locked") return erreurTraduite("api.kyc.locked", 409);
+    if (refusal === "account_inactive") return erreurTraduite("api.suspended", 403);
+    if (refusal === "conflict" || refusal === "locked") return erreurTraduite("api.kyc.locked", 409);
     return erreurTraduite("api.write.failed", 503);
   }
 

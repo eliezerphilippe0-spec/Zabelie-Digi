@@ -2,14 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   MIGRATIONS_REQUISES,
+  OBJETS_MEDIAS_0152,
   verdictObjets,
   verifierSchemaRequis,
+  verifierPresenceObjets,
 } from "../lib/schema-requis";
 import { isMissingFunction } from "../lib/pg-errors";
 
 const AUTRES = [
   { filename: "0042_order_ref.sql" },
   { filename: "0045_profile_on_signup.sql" },
+  { filename: "0151_zabelie_stripe_disputes.sql" },
+  { filename: "0152_zabelie_product_media_review.sql" },
 ];
 const AVEC_0046 = [...AUTRES, { filename: "0046_policy_acceptance.sql" }];
 
@@ -59,8 +63,8 @@ test("lecture impossible → indéterminé, JAMAIS ok", () => {
 });
 
 test("journal vide mais lisible → manquant, pas indéterminé", () => {
-  // Ce n'est pas une panne : aucune migration enregistrée signifie bien
-  // qu'aucune n'est appliquée.
+  // Ce n'est pas une panne : les dépendances ne sont pas déclarées au registre.
+  // Cela ne constitue pas une observation des objets réellement présents.
   const v = verifierSchemaRequis({ lignes: [] });
   assert.equal(v.statut, "manquant");
 });
@@ -75,6 +79,7 @@ test("la liste des requises ne contient que du bloquant", () => {
   assert.equal(fichiers.includes("0045_profile_on_signup.sql"), false);
   assert.equal(fichiers.includes("0047_search_demand.sql"), false);
   assert.ok(fichiers.includes("0046_policy_acceptance.sql"));
+  assert.ok(fichiers.includes("0151_zabelie_stripe_disputes.sql"));
 });
 
 /**
@@ -121,7 +126,7 @@ test("le CONSTAT prime sur la DÉCLARATION", () => {
 
 test("tous les objets présents → ok, par constat", () => {
   const v = verdictObjets({
-    objets: [{ objet: "f(x)", present: true, pourquoi: "peu importe" }],
+    objets: OBJETS_COMPLETS,
     lignesRegistre: [],
   });
   assert.equal(v.source, "présence");
@@ -132,10 +137,10 @@ test("0048 non appliquée → repli sur le registre, ÉTIQUETÉ comme tel", () =
   const v = verdictObjets({
     objets: null,
     erreurObjets: { message: "function does not exist" },
-    lignesRegistre: [{ filename: "0046_policy_acceptance.sql" }],
+    lignesRegistre: JOURNAL_0151,
   });
   assert.equal(v.source, "registre", "le repli doit se déclarer");
-  assert.equal(v.statut, "ok");
+  assert.equal(v.statut, "indetermine");
   assert.match(
     v.message,
     /repli sur le registre/,
@@ -151,4 +156,131 @@ test("ni constat ni registre → indéterminé, jamais ok", () => {
     erreurRegistre: { message: "permission denied" },
   });
   assert.equal(v.statut, "indetermine");
+});
+
+const OBJETS_0151 = [
+  "zabelie_record_stripe_dispute(text,text,text,text,text,text,bigint,text,boolean)",
+  "zabelie_stripe_dispute_event_immutable()",
+  "zabelie_stripe_dispute_events",
+  "zabelie_stripe_dispute_event_immutable",
+  "zabelie_stripe_dispute_event_no_truncate",
+  "escrow_entries.dispute_frozen_at",
+  "zabelie_operations_config.stripe_dispute_freeze_enabled",
+].map((objet) => ({ objet, present: true, pourquoi: "dépendance Stripe 0151" }));
+const JOURNAL_0151 = AVEC_0046;
+const OBJETS_COMPLETS = [...OBJETS_0151, ...OBJETS_MEDIAS_0152.map((objet) => ({ objet, present: true, pourquoi: "revue des médias 0152" }))];
+
+test("0151 : une ancienne sonde entièrement verte ne constate pas les nouveaux objets", () => {
+  const v = verdictObjets({
+    objets: [{ objet: "fonction_historique()", present: true, pourquoi: "ancienne sonde" }],
+    lignesRegistre: JOURNAL_0151,
+  });
+  assert.equal(v.source, "présence");
+  assert.equal(v.statut, "indetermine");
+  assert.match(v.message, /0151/);
+  assert.match(v.message, /non vérifi|incomplète/);
+});
+
+test("0151 : chaque dépendance omise reste non vérifiée, même si le registre la déclare", () => {
+  for (const objet of OBJETS_0151) {
+    const v = verdictObjets({
+      objets: OBJETS_COMPLETS.filter((row) => row.objet !== objet.objet),
+      lignesRegistre: JOURNAL_0151,
+    });
+    assert.equal(v.statut, "indetermine", objet.objet);
+    assert.ok(v.message.includes(objet.objet), objet.objet);
+  }
+});
+
+test("0151 : une dépendance explicitement absente est distinguée d'une sonde incomplète", () => {
+  const v = verdictObjets({
+    objets: [{ ...OBJETS_0151[0], present: false }],
+    lignesRegistre: JOURNAL_0151,
+  });
+  assert.equal(v.statut, "manquant");
+  assert.ok(v.message.includes(OBJETS_0151[0].objet));
+});
+
+test("0151 : une erreur avec des lignes présentes interdit de conclure au constat", () => {
+  const v = verdictObjets({
+    objets: OBJETS_0151,
+    erreurObjets: { message: "réponse partielle" },
+    lignesRegistre: JOURNAL_0151,
+  });
+  assert.equal(v.statut, "indetermine");
+  assert.match(v.message, /non vérifi/);
+});
+
+test("0151 : le registre complet seul ne prouve pas la présence des objets", () => {
+  const v = verdictObjets({ objets: null, lignesRegistre: JOURNAL_0151 });
+  assert.equal(v.source, "registre");
+  assert.equal(v.statut, "indetermine");
+  assert.match(v.message, /non vérifi/);
+});
+
+test("0151 : son absence du registre est nommée sans prétendre observer la base", () => {
+  const v = verifierSchemaRequis({ lignes: AVEC_0046.filter((row) => row.filename !== "0151_zabelie_stripe_disputes.sql") });
+  assert.equal(v.statut, "manquant");
+  assert.deepEqual(v.statut === "manquant" ? v.manquantes : [], ["0151_zabelie_stripe_disputes.sql"]);
+});
+
+test("0151 : le constat complet prime sur un registre indisponible", () => {
+  const v = verdictObjets({
+    objets: OBJETS_COMPLETS,
+    lignesRegistre: null,
+    erreurRegistre: { message: "registre indisponible" },
+  });
+  assert.equal(v.source, "présence");
+  assert.equal(v.statut, "ok");
+});
+
+test("0151 : un objet historique absent garde son diagnostic", () => {
+  const v = verdictObjets({
+    objets: [...OBJETS_0151, { objet: "fonction_historique()", present: false, pourquoi: "fonction métier indisponible" }],
+    lignesRegistre: JOURNAL_0151,
+  });
+  assert.equal(v.statut, "manquant");
+  assert.match(v.message, /fonction_historique\(\).*fonction métier indisponible/);
+});
+
+test("une garde de route vérifie uniquement son sous-ensemble, sans exiger Stripe", () => {
+  const objet = "garde_media_synthetique()";
+  const requis = [objet];
+  assert.equal(verifierPresenceObjets({ objets: [{ objet, present: true, pourquoi: "test" }], requis }).statut, "ok");
+  assert.equal(verifierPresenceObjets({ objets: OBJETS_0151, requis }).statut, "indetermine");
+  assert.equal(verifierPresenceObjets({ objets: [{ objet, present: false, pourquoi: "test" }], requis }).statut, "manquant");
+  assert.equal(verifierPresenceObjets({ objets: null, requis }).statut, "indetermine");
+  assert.equal(verifierPresenceObjets({ objets: [{ objet, present: true, pourquoi: "test" }], erreur: { message: "partielle" }, requis }).statut, "indetermine");
+});
+
+test("un sous-ensemble non booléen ou dupliqué reste indéterminé", () => {
+  const objet = "garde_media_synthetique()";
+  const requis = [objet];
+  const ligne = { objet, present: true, pourquoi: "test" };
+  assert.equal(verifierPresenceObjets({ objets: [ligne, ligne], requis }).statut, "indetermine");
+  assert.equal(verifierPresenceObjets({ objets: [{ ...ligne, present: null as unknown as boolean }], requis }).statut, "indetermine");
+});
+
+test("0152 : une sonde 0151 complète ne prouve pas les gardes de revue média", () => {
+  const v = verdictObjets({ objets: OBJETS_0151, lignesRegistre: JOURNAL_0151 });
+  assert.equal(v.statut, "indetermine");
+  assert.match(v.message, /0152/);
+});
+
+test("0152 : la dépendance média doit être déclarée au registre", () => {
+  const v = verifierSchemaRequis({ lignes: AVEC_0046.filter((row) => row.filename !== "0152_zabelie_product_media_review.sql") });
+  assert.equal(v.statut, "manquant");
+  assert.deepEqual(v.statut === "manquant" ? v.manquantes : [], ["0152_zabelie_product_media_review.sql"]);
+});
+
+test("0152 : chaque garde omise reste indéterminée et une route n'exige pas Stripe", () => {
+  for (const objet of OBJETS_MEDIAS_0152) {
+    const v = verdictObjets({ objets: OBJETS_COMPLETS.filter((row) => row.objet !== objet), lignesRegistre: JOURNAL_0151 });
+    assert.equal(v.statut, "indetermine");
+    assert.ok(v.message.includes(objet));
+  }
+  assert.equal(verifierPresenceObjets({
+    objets: OBJETS_MEDIAS_0152.map((objet) => ({ objet, present: true, pourquoi: "test" })),
+    requis: OBJETS_MEDIAS_0152,
+  }).statut, "ok");
 });

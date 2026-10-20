@@ -26,7 +26,7 @@ test("un média vidéo vit dans le bucket vidéo, tout le reste dans les couvert
   assert.equal(bucketDuMedia("image"), MEDIA_BUCKET);
 });
 
-test("tous les sites vidéo adressent le bucket vidéo — téléversement, confirmation, lecture, suppression", () => {
+test("tous les sites vidéo adressent le bucket vidéo — téléversement, confirmation, lecture et refus hors contrat", () => {
   const route = readFileSync("app/api/products/media/video/route.ts", "utf8");
   assert.equal((route.match(/\.from\(MEDIA_BUCKET\)/g) ?? []).length, 0, "route vidéo : un appel vise encore les couvertures");
   // Lien signé, lecture des métadonnées, refus avant insertion, URL publique.
@@ -38,5 +38,7 @@ test("tous les sites vidéo adressent le bucket vidéo — téléversement, conf
   assert.match(lecture, /url: supabase\.storage\.from\(bucketDuMedia\(m\.kind\)\)\.getPublicUrl\(m\.storage_path\)/);
   const suppression = readFileSync("app/api/products/media/route.ts", "utf8");
   assert.match(suppression, /\.select\("id, kind, storage_path"\)/);
-  assert.match(suppression, /storage\.from\(bucketDuMedia\(media\.kind\)\)\.remove\(\[media\.storage_path\]\)/);
+  // Une ancienne confirmation peut réattacher le chemin après le DELETE DB.
+  // Le cas concurrent exécuté dans galerie-photos garde alors l'objet référencé.
+  assert.doesNotMatch(suppression.slice(suppression.indexOf("export async function DELETE")), /\.remove\(/);
 });

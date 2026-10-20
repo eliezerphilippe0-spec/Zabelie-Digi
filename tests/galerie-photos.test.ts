@@ -92,29 +92,58 @@ test("chaque format reconnu a son extension, et la liste est fermée", () => {
 
 const USER = "vendeur-1";
 const PRODUIT = "produit-1";
+const OBJETS_REVUE = [
+  "zabelie_product_cover_review_guard()", "zabelie_product_cover_review",
+  "zabelie_product_media_guard()", "zabelie_product_media_guard_trg",
+].map(objet => ({ objet, present: true, pourquoi: "revue des médias" }));
+type ReponseRpc = { data?: unknown; error?: unknown; throws?: boolean };
+type GardesMedias = {
+  connecte?: boolean; proprietaire?: boolean; actif?: boolean; statut?: string;
+  cadence?: boolean; cadenceRpc?: ReponseRpc; sondeRpc?: ReponseRpc;
+};
+function rpcMedias(options: GardesMedias) {
+  const cadences: Record<string, unknown>[] = [];
+  const sondes: string[] = [];
+  return {
+    cadences, sondes,
+    rpc: (name: string, args: Record<string, unknown> = {}) => {
+      if (name === "zabelie_objets_requis") {
+        sondes.push(name);
+        if (options.sondeRpc?.throws) return Promise.reject(new Error("sonde indisponible"));
+        return Promise.resolve({ data: options.sondeRpc ? options.sondeRpc.data : OBJETS_REVUE, error: options.sondeRpc?.error ?? null });
+      }
+      assert.equal(name, "zabelie_rate_limit");
+      cadences.push({ ...args });
+      return { abortSignal: async () => {
+        if (options.cadenceRpc?.throws) throw new Error("réponse de cadence perdue");
+        return { data: options.cadenceRpc ? options.cadenceRpc.data : options.cadence !== false, error: options.cadenceRpc?.error ?? null };
+      } };
+    },
+  };
+}
 
-function galerie(options: {
-  connecte?: boolean;
-  proprietaire?: boolean;
-  actif?: boolean;
-  cadence?: boolean;
-  cadenceRpc?: { data?: unknown; error?: unknown; throws?: boolean };
+function galerie(options: GardesMedias & {
   dejaEnGalerie?: number;
   video?: boolean;
   videoBytes?: number;
   videoType?: string;
   insertion?: "erreur_apres_commit" | "vide_apres_commit" | "refus";
+  suppression?: "erreur_apres_commit" | "vide_apres_commit" | "refus" | "mauvais_id";
+  mediaVideo?: boolean;
+  apresSuppression?: () => Promise<void>;
 } = {}) {
   const envois: { bucket: string; path: string; contentType?: string }[] = [];
   const retraits: { bucket: string; paths: string[] }[] = [];
   const lignes: { storage_path: string }[] = [];
-  const cadences: Record<string, unknown>[] = [];
+  const compteur = rpcMedias(options);
   const liensSignes: { bucket: string; path: string }[] = [];
   const lecturesStockage: string[] = [];
   const videoPath = `${PRODUIT}/galerie/vid-00000000-0000-4000-8000-000000000001.mp4`;
-  const db = database((query: Query) => {
+  const objets = new Set([videoPath, `${PRODUIT}/galerie/a.png`]);
+  let referenceRetiree = false;
+  const db = database(async (query: Query) => {
     const op = (nom: string) => query.steps.find(([m]) => m === nom)?.[1];
-    if (query.table === "products") return { data: { id: PRODUIT, seller_id: options.proprietaire === false ? "autre-vendeur" : USER }, error: null };
+    if (query.table === "products") return { data: { id: PRODUIT, seller_id: options.proprietaire === false ? "autre-vendeur" : USER, status: options.statut ?? "draft" }, error: null };
     if (query.table === "zabelie_product_media" && op("insert")) {
       // La base a commité AVANT la perte de réponse : une erreur de transport
       // ne prouve pas que la ligne est absente.
@@ -124,22 +153,21 @@ function galerie(options: {
       if (options.insertion === "refus") return { data: null, error: { code: "P0001", message: "ZB073" } };
       return { data: { id: "media-neuf" }, error: null };
     }
-    if (query.table === "zabelie_product_media" && op("delete")) return { error: null };
+    if (query.table === "zabelie_product_media" && op("delete")) {
+      referenceRetiree = options.suppression !== "refus";
+      if (referenceRetiree) await options.apresSuppression?.();
+      if (options.suppression === "erreur_apres_commit" || options.suppression === "refus") return { data: null, error: { code: "", message: "réponse perdue" } };
+      if (options.suppression === "vide_apres_commit") return { data: null, error: null };
+      return { data: { id: options.suppression === "mauvais_id" ? "autre-media" : "media-1" }, error: null };
+    }
     if (query.table === "zabelie_product_media" && op("single"))
-      return { data: { id: "media-1", kind: "image", storage_path: `${PRODUIT}/galerie/a.png` }, error: null };
+      return { data: { id: "media-1", kind: options.mediaVideo ? "video" : "image", storage_path: options.mediaVideo ? videoPath : `${PRODUIT}/galerie/a.png` }, error: null };
     if (query.table === "zabelie_product_media") return { count: options.dejaEnGalerie ?? 0, error: null };
     throw new Error("requête inattendue " + query.table);
   });
   const admin = {
     ...db,
-    rpc: (name: string, args: Record<string, unknown>) => {
-      assert.equal(name, "zabelie_rate_limit");
-      cadences.push({ ...args });
-      return { abortSignal: async () => {
-        if (options.cadenceRpc?.throws) throw new Error("réponse de cadence perdue");
-        return { data: options.cadenceRpc ? options.cadenceRpc.data : options.cadence !== false, error: options.cadenceRpc?.error ?? null };
-      } };
-    },
+    rpc: compteur.rpc,
     storage: {
       from: (bucket: string) => ({
         createSignedUploadUrl: async (path: string) => {
@@ -148,11 +176,13 @@ function galerie(options: {
         },
         upload: async (path: string, _f: unknown, opts: { contentType?: string }) => {
           envois.push({ bucket, path, contentType: opts?.contentType });
+          objets.add(path);
           return { error: null };
         },
         remove: async (paths: string[]) => {
           // Copie dans le royaume du test : le tableau vient du contexte vm de la route.
           retraits.push({ bucket, paths: [...paths] });
+          for (const path of paths) objets.delete(path);
           return { error: null };
         },
         list: async (folder: string, { search }: { search: string }) => {
@@ -166,7 +196,7 @@ function galerie(options: {
     },
   };
   const refus = Response.json({ error: "api.suspended", code: "suspended" }, { status: 403 });
-  const route = loadRoute(options.video ? "app/api/products/media/video/route.ts" : "app/api/products/media/route.ts", {
+  const dependances = {
     "@/lib/supabase/server": {
       createClient: async () => ({ auth: { getUser: async () => ({ data: { user: options.connecte === false ? null : { id: USER } } }) } }),
     },
@@ -175,25 +205,28 @@ function galerie(options: {
     "@/lib/zabelie-rate-limit": { rateLimit },
     "@/lib/image-limits": limites,
     "@/lib/product-media": media,
-  });
+  };
+  const route = loadRoute(options.video ? "app/api/products/media/video/route.ts" : "app/api/products/media/route.ts", dependances);
+  let videoRoute = options.video ? route : undefined;
   const poster = (octets: Octets, nom: string, type: string) => {
     const form = new FormData();
     form.set("productId", PRODUIT);
     form.set("file", new File([octets], nom, { type }));
     return route.POST(new Request("https://zabelie.test/api/products/media", { method: "POST", body: form }));
   };
-  const retirer = () =>
+  const retirer = (body: unknown = { productId: PRODUIT, mediaId: "media-1" }, brut = false) =>
     route.DELETE(new Request("https://zabelie.test/api/products/media", {
       method: "DELETE",
-      body: JSON.stringify({ productId: PRODUIT, mediaId: "media-1" }),
+      body: brut ? String(body) : JSON.stringify(body),
     }));
   const demanderVideo = (productId = PRODUIT) => route.POST(new Request("https://zabelie.test/api/products/media/video", {
     method: "POST", body: JSON.stringify({ productId, step: "demande", ext: "mp4" }),
   }));
-  const confirmerVideo = (path = videoPath) => route.POST(new Request("https://zabelie.test/api/products/media/video", {
+  const confirmerVideo = (path = videoPath) => (videoRoute ??= loadRoute("app/api/products/media/video/route.ts", dependances)).POST(new Request("https://zabelie.test/api/products/media/video", {
     method: "POST", body: JSON.stringify({ productId: PRODUIT, step: "confirme", path }),
   }));
-  return { poster, retirer, demanderVideo, confirmerVideo, envois, retraits, lignes, videoPath, cadences, liensSignes, lecturesStockage, queries: db.queries };
+  const envoyerVideo = (body: unknown, brut = false) => route.POST(new Request("https://zabelie.test/api/products/media/video", { method: "POST", body: brut ? String(body) : JSON.stringify(body) }));
+  return { poster, retirer, demanderVideo, confirmerVideo, envoyerVideo, envois, retraits, lignes, videoPath, objets, referenceRetiree: () => referenceRetiree, cadences: compteur.cadences, sondes: compteur.sondes, liensSignes, lecturesStockage, queries: db.queries };
 }
 
 test("vidéo : une cadence refusée interdit demande et confirmation avant tout accès produit ou Storage", async () => {
@@ -366,7 +399,9 @@ test("SEC-05 — un compte suspendu ne retire plus de photo : ni ligne ni objet 
   const ok = galerie();
   const r2 = await ok.retirer();
   assert.equal(r2.status, 200);
-  assert.deepEqual(ok.retraits, [{ bucket: media.MEDIA_BUCKET, paths: [`${PRODUIT}/galerie/a.png`] }]);
+  assert.deepEqual(await r2.json(), { ok: true, status: "draft" });
+  assert.equal(ok.referenceRetiree(), true);
+  assert.deepEqual(ok.retraits, [], "le retrait de référence ne détruit aucun objet potentiellement réattaché");
 });
 
 test("un compte suspendu n'ajoute pas de photo non plus", async () => {
@@ -378,31 +413,59 @@ test("un compte suspendu n'ajoute pas de photo non plus", async () => {
 
 // ── La photo principale : même lecteur, même type réel ──────────────────────
 
-function couverture() {
-  const envois: { path: string; contentType?: string }[] = [];
+function couverture(options: GardesMedias & {
+  miseAJour?: "erreur_apres_commit" | "vide_apres_commit" | "absente" | "mauvais_id" | "mauvais_statut";
+  archivePendantEnvoi?: boolean;
+  proprietaireChangePendantEnvoi?: boolean;
+} = {}) {
+  const envois: { path: string; contentType?: string; upsert?: boolean }[] = [];
+  const retraits: string[][] = [];
+  const objets = new Map<string, Uint8Array>([[`${PRODUIT}/cover.webp`, webp(100, 100)]]);
+  const fiche = { id: PRODUIT, seller_id: options.proprietaire === false ? "autre-vendeur" : USER, status: options.statut ?? "draft", cover_url: `https://cdn.test/${PRODUIT}/cover.webp` };
+  const compteur = rpcMedias(options);
   const db = database((query: Query) => {
-    if (query.table === "products" && query.steps.some(([m]) => m === "update")) return { error: null };
-    if (query.table === "products") return { data: { id: PRODUIT, seller_id: USER }, error: null };
+    if (query.table === "products" && query.steps.some(([m]) => m === "update")) {
+      const cible = query.steps.every(([m, args]) => {
+        if (m !== "eq" && m !== "neq") return true;
+        const valeur = fiche[args[0] as keyof typeof fiche];
+        return m === "eq" ? valeur === args[1] : valeur !== args[1];
+      });
+      if (!cible || options.miseAJour === "absente") return { data: null, error: null };
+      const patch = query.steps.find(([m]) => m === "update")![1][0] as Partial<typeof fiche>;
+      Object.assign(fiche, patch);
+      if (options.miseAJour === "erreur_apres_commit") return { data: null, error: { message: "réponse perdue" } };
+      if (options.miseAJour === "vide_apres_commit") return { data: null, error: null };
+      return { data: { id: options.miseAJour === "mauvais_id" ? "autre-produit" : fiche.id, status: options.miseAJour === "mauvais_statut" ? "published" : fiche.status }, error: null };
+    }
+    if (query.table === "products") return { data: { ...fiche }, error: null };
     throw new Error("requête inattendue " + query.table);
   });
   const admin = {
     ...db,
+    rpc: compteur.rpc,
     storage: {
       from: () => ({
-        upload: async (path: string, _f: unknown, opts: { contentType?: string }) => {
-          envois.push({ path, contentType: opts?.contentType });
+        upload: async (path: string, file: File, opts: { contentType?: string; upsert?: boolean }) => {
+          envois.push({ path, contentType: opts?.contentType, upsert: opts?.upsert });
+          if (!opts?.upsert && objets.has(path)) return { error: { message: "objet déjà présent" } };
+          objets.set(path, new Uint8Array(await file.arrayBuffer()));
+          if (options.archivePendantEnvoi) fiche.status = "archived";
+          if (options.proprietaireChangePendantEnvoi) fiche.seller_id = "nouveau-vendeur";
           return { error: null };
         },
+        remove: async (paths: string[]) => { retraits.push([...paths]); for (const path of paths) objets.delete(path); return { error: null }; },
         getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${path}` } }),
       }),
     },
   };
   const route = loadRoute("app/api/products/cover/route.ts", {
     "@/lib/supabase/server": {
-      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: USER } } }) } }),
+      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: options.connecte === false ? null : { id: USER } } }) } }),
     },
     "@/lib/supabase/admin": { createAdminClient: () => admin },
-    "@/lib/auth": { requireActiveAccount: async () => null },
+    "@/lib/auth": { requireActiveAccount: async () => options.actif === false ? Response.json({ error: "suspended" }, { status: 403 }) : null },
+    "@/lib/zabelie-rate-limit": { rateLimit },
+    "@/lib/product-media": media,
     "@/lib/image-limits": limites,
     "@/lib/storage-buckets": { MEDIA_BUCKET: media.MEDIA_BUCKET },
   });
@@ -412,19 +475,156 @@ function couverture() {
     form.set("file", new File([octets], nom, { type }));
     return route.POST(new Request("https://zabelie.test/api/products/cover", { method: "POST", body: form }));
   };
-  return { poster, envois };
+  return { poster, envois, retraits, objets, fiche, queries: db.queries, cadences: compteur.cadences, sondes: compteur.sondes };
 }
 
 test("photo principale : type et extension déduits du contenu, pas du nom ni du type annoncés", async () => {
   const c = couverture();
   const r = await c.poster(webp(1200, 900), "photo.jpg", "image/jpeg");
   assert.equal(r.status, 200);
-  assert.deepEqual(c.envois, [{ path: `${PRODUIT}/cover.webp`, contentType: "image/webp" }]);
+  assert.equal(c.envois.length, 1);
+  assert.match(c.envois[0].path, new RegExp(`^${PRODUIT}/cover-[0-9a-f-]{36}\\.webp$`));
+  assert.equal(c.envois[0].contentType, "image/webp");
+  assert.equal(c.envois[0].upsert, false);
   const faux = couverture();
   const r2 = await faux.poster(html, "photo.jpg", "image/jpeg");
   assert.equal(r2.status, 422);
   assert.equal((await r2.json()).error, "api.image.unreadable");
   assert.equal(faux.envois.length, 0);
+});
+
+test("SEC-01 — sonde ancienne, partielle, négative ou indisponible : aucun média public n'est écrit ni signé", async () => {
+  const cas: ReponseRpc[] = [
+    { data: null }, { data: [] }, { data: OBJETS_REVUE.slice(0, 3) },
+    { data: [...OBJETS_REVUE, OBJETS_REVUE[0]] }, { data: OBJETS_REVUE, error: {} }, { throws: true },
+    ...OBJETS_REVUE.map((_, index) => ({ data: OBJETS_REVUE.map((objet, i) => ({ ...objet, present: i !== index })) })),
+  ];
+  for (const sondeRpc of cas) {
+    const photo = galerie({ sondeRpc });
+    const retrait = galerie({ sondeRpc });
+    const video = galerie({ video: true, sondeRpc });
+    const confirme = galerie({ video: true, sondeRpc });
+    const cover = couverture({ sondeRpc });
+    for (const reponse of [await photo.poster(png(800, 600), "photo.png", "image/png"), await retrait.retirer(),
+      await video.demanderVideo(), await confirme.confirmerVideo(), await cover.poster(png(800, 600), "photo.png", "image/png")]) {
+      assert.equal(reponse.status, 503);
+    }
+    for (const g of [photo, retrait, video, confirme]) {
+      assert.deepEqual([g.envois.length, g.retraits.length, g.lignes.length, g.liensSignes.length, g.lecturesStockage.length], [0, 0, 0, 0, 0]);
+      assert.equal(g.referenceRetiree(), false);
+      assert.equal(g.sondes.length, 1);
+    }
+    assert.deepEqual([cover.envois.length, cover.retraits.length], [0, 0]);
+  }
+});
+
+test("SEC-01 — archived ou statut inconnu ferme tous les chemins média avant Storage", async () => {
+  for (const [statut, attendu] of [["archived", 409], ["unknown", 503]] as const) {
+    const photo = galerie({ statut }); const retrait = galerie({ statut });
+    const video = galerie({ video: true, statut }); const confirme = galerie({ video: true, statut });
+    const cover = couverture({ statut });
+    for (const response of [await photo.poster(png(800, 600), "a.png", "image/png"), await retrait.retirer(),
+      await video.demanderVideo(), await confirme.confirmerVideo(), await cover.poster(png(800, 600), "a.png", "image/png")]) assert.equal(response.status, attendu);
+    assert.deepEqual([photo.envois.length, retrait.retraits.length, video.liensSignes.length, confirme.lecturesStockage.length, cover.envois.length], [0, 0, 0, 0, 0]);
+    assert.equal(retrait.referenceRetiree(), false);
+  }
+});
+
+test("SEC-01 — une mutation réussie annonce le brouillon pour une fiche initialement publiée", async () => {
+  const photo = galerie({ statut: "published" }); const retrait = galerie({ statut: "published" });
+  const video = galerie({ video: true, statut: "published" }); const cover = couverture({ statut: "published" });
+  for (const response of [await photo.poster(png(800, 600), "a.png", "image/png"), await retrait.retirer(),
+    await video.confirmerVideo(), await cover.poster(png(800, 600), "a.png", "image/png")]) {
+    assert.equal(response.status, 200); assert.equal((await response.json()).status, "draft");
+  }
+  assert.equal(cover.fiche.status, "draft");
+});
+
+test("photo principale : la cadence de galerie ferme avant lecture produit et utilise le budget existant", async () => {
+  for (const options of [{ cadence: false }, { cadenceRpc: { data: null } }, { cadenceRpc: { throws: true } }]) {
+    const c = couverture(options);
+    assert.equal((await c.poster(png(800, 600), "a.png", "image/png")).status, 429);
+    assert.deepEqual([c.queries.length, c.sondes.length, c.envois.length], [0, 0, 0]);
+    assert.deepEqual(c.cadences, [{ p_key: `galerie:${USER}`, p_limit: 20, p_window_seconds: 60 }]);
+  }
+});
+
+test("photo principale : deux envois simultanés gardent les octets approuvés et reçoivent deux URLs distinctes", async () => {
+  const c = couverture({ statut: "published" });
+  const approuve = c.objets.get(`${PRODUIT}/cover.webp`);
+  const reponses = await Promise.all([c.poster(webp(800, 600), "a.webp", "image/webp"), c.poster(webp(900, 600), "b.webp", "image/webp")]);
+  const urls = [];
+  for (const response of reponses) { assert.equal(response.status, 200); urls.push((await response.json()).coverUrl); }
+  assert.notEqual(urls[0], urls[1]);
+  assert.deepEqual(c.objets.get(`${PRODUIT}/cover.webp`), approuve, "aucune écriture ne remplace l'objet déjà approuvé");
+  assert.equal(c.objets.size, 3);
+  assert.equal(c.envois.every(envoi => envoi.upsert === false), true);
+  assert.ok(urls.includes(c.fiche.cover_url));
+  assert.deepEqual(c.cadences, Array.from({ length: 2 }, () => ({ p_key: `galerie:${USER}`, p_limit: 20, p_window_seconds: 60 })));
+  assert.equal(c.retraits.length, 0);
+});
+
+test("photo principale : une écriture vide, ambiguë ou une autre ligne ne prétend jamais réussir et garde les objets", async () => {
+  for (const miseAJour of ["erreur_apres_commit", "vide_apres_commit", "absente", "mauvais_id", "mauvais_statut"] as const) {
+    const c = couverture({ statut: "published", miseAJour });
+    assert.equal((await c.poster(png(800, 600), "a.png", "image/png")).status, 500, miseAJour);
+    assert.equal(c.objets.size, 2); assert.equal(c.retraits.length, 0);
+    if (miseAJour === "erreur_apres_commit" || miseAJour === "vide_apres_commit") {
+      assert.equal(c.fiche.status, "draft");
+      assert.equal(c.fiche.cover_url, `https://cdn.test/${c.envois[0].path}`);
+    }
+  }
+});
+
+test("photo principale : un archivage ou changement de propriétaire pendant l'envoi garde la couverture approuvée", async () => {
+  for (const options of [{ archivePendantEnvoi: true }, { proprietaireChangePendantEnvoi: true }]) {
+    const c = couverture({ statut: "published", ...options });
+    assert.equal((await c.poster(png(800, 600), "a.png", "image/png")).status, 500);
+    assert.equal(c.fiche.status, options.archivePendantEnvoi ? "archived" : "published");
+    assert.equal(c.fiche.cover_url, `https://cdn.test/${PRODUIT}/cover.webp`);
+    assert.equal(c.objets.size, 2); assert.equal(c.retraits.length, 0);
+  }
+});
+
+test("photo principale : session, compte actif et propriété restent obligatoires", async () => {
+  for (const [options, status] of [[{ connecte: false }, 401], [{ actif: false }, 403], [{ proprietaire: false }, 404]] as const) {
+    const c = couverture(options); assert.equal((await c.poster(png(800, 600), "a.png", "image/png")).status, status);
+    assert.equal(c.envois.length, 0); assert.equal(c.sondes.length, 0);
+  }
+});
+
+test("retrait : une réponse vide, perdue ou portant un autre identifiant rend 500 sans détruire le fichier", async () => {
+  for (const suppression of ["erreur_apres_commit", "vide_apres_commit", "refus", "mauvais_id"] as const) {
+    const g = galerie({ suppression, mediaVideo: true });
+    assert.equal((await g.retirer()).status, 500);
+    assert.equal(g.retraits.length, 0); assert.equal(g.objets.has(g.videoPath), true);
+  }
+});
+
+test("retrait : une ancienne confirmation vidéo concurrente conserve son objet et revient en revue", async () => {
+  let confirmation: Response | undefined;
+  const g = galerie({ statut: "published", mediaVideo: true, apresSuppression: async () => { confirmation = await g.confirmerVideo(); } });
+  const retrait = await g.retirer();
+  assert.equal(retrait.status, 200); assert.equal(confirmation?.status, 200);
+  assert.equal(g.referenceRetiree(), true); assert.equal(g.lignes[0].storage_path, g.videoPath);
+  assert.equal(g.objets.has(g.videoPath), true, "la ligne recréée ne doit jamais pointer un objet supprimé");
+  assert.equal(g.retraits.length, 0);
+  assert.equal((await confirmation!.json()).status, "draft");
+});
+
+test("vidéo et retrait : JSON valide de mauvais type refusé avant toute lecture ou mutation", async () => {
+  for (const body of [null, [], false, 1, "x", {}, { productId: 42, step: "demande", mediaId: "m" }, { productId: PRODUIT, step: false, mediaId: [] }]) {
+    const v = galerie({ video: true }); const d = galerie();
+    assert.equal((await v.envoyerVideo(body)).status, 400);
+    assert.equal((await d.retirer(body)).status, 400);
+    assert.deepEqual([v.queries.length, d.queries.length, v.liensSignes.length, d.retraits.length], [0, 0, 0, 0]);
+  }
+  for (const body of ["", "{"]) {
+    const v = galerie({ video: true }); const d = galerie();
+    assert.equal((await v.envoyerVideo(body, true)).status, 400);
+    assert.equal((await d.retirer(body, true)).status, 400);
+    assert.deepEqual([v.queries.length, d.queries.length], [0, 0]);
+  }
 });
 
 test("aucune des deux routes ne laisse le client choisir le type stocké", () => {
@@ -503,12 +703,8 @@ test("UX-02 — la photo principale ENVOYÉE est celle du compresseur, vers la r
   );
 });
 
-test("UX-02 — la page ne propose la photo principale que sur un BROUILLON (SEC-01)", () => {
-  /* La condition et le composant, liés : un `{true && <PhotoPrincipale` ou un
-   * rendu hors condition rendrait la photo d'une fiche publiée modifiable
-   * sans nouvelle revue. */
-  assert.match(VENDRE, /\{p\.status === "draft" && \(\s*\n\s*<PhotoPrincipale[\s>]/);
-  assert.equal((VENDRE.match(/<PhotoPrincipale[\s>]/g) ?? []).length, 1, "un seul rendu, celui sous condition");
+test("UX-02 — la page utilise une seule photo principale liée au produit ; la révision est contrôlée au serveur", () => {
+  assert.equal((VENDRE.match(/<PhotoPrincipale[\s>]/g) ?? []).length, 1, "un seul rendu de photo principale");
   assert.match(VENDRE, /<PhotoPrincipale productId=\{p\.id\} initialUrl=\{p\.cover_url\}/);
 });
 
