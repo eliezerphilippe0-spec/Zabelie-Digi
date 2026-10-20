@@ -29,7 +29,9 @@ test("un média vidéo vit dans le bucket vidéo, tout le reste dans les couvert
 test("tous les sites vidéo adressent le bucket vidéo — téléversement, confirmation, lecture, suppression", () => {
   const route = readFileSync("app/api/products/media/video/route.ts", "utf8");
   assert.equal((route.match(/\.from\(MEDIA_BUCKET\)/g) ?? []).length, 0, "route vidéo : un appel vise encore les couvertures");
-  assert.equal((route.match(/\.from\(VIDEO_BUCKET\)/g) ?? []).length, 5);
+  // Lien signé, lecture des métadonnées, refus avant insertion, URL publique.
+  // Le nettoyage après insertion incertaine est volontairement supprimé.
+  assert.equal((route.match(/\.from\(VIDEO_BUCKET\)/g) ?? []).length, 4);
   const ecran = readFileSync("components/galerie-manager.tsx", "utf8");
   assert.match(ecran, /\.storage\.from\(VIDEO_BUCKET\)\s*\.uploadToSignedUrl\(/);
   const lecture = readFileSync("lib/product-media.ts", "utf8");
