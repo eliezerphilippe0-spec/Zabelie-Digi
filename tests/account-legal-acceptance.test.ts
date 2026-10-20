@@ -8,6 +8,7 @@ import { ACCOUNT_LEGAL_VERSIONS, CONDITIONS_VERSION, CONFIDENTIALITE_VERSION, in
 import { loadRoute, database } from "./helpers/route-harness";
 import { t } from "../lib/i18n";
 import { appelSession } from "../lib/appel-session";
+import * as collectionExport from "../lib/collection-export";
 
 // Fingerprints archive the exact canonical documents behind these receipt IDs.
 // A document/identity change needs a NEW version, fingerprint and SQL migration;
@@ -158,20 +159,34 @@ test("callback preserves confirmed receipts and safe next; expired codes never r
 });
 
 test("account export includes only the caller's immutable receipt versions/dates and reports read failures", async () => {
+  const receipts = [
+    { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
+    { policy_version: "confidentialite-v1", accepted_at: "2026-10-05T00:00:00Z" },
+  ];
   for (const fail of [false, true]) {
-    const db = database(query => ({ data: query.table === "zabelie_policy_acceptances" ? [{ policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" }] : [], error: fail && query.table === "zabelie_policy_acceptances" ? {} : null }));
+    const db = database(query => {
+      if (query.table === "profiles" || query.table === "wallets") return { data: null, error: null };
+      const rows = query.table === "zabelie_policy_acceptances" ? receipts : [];
+      const [from, to] = (query.steps.find(([method]) => method === "range")?.[1] ?? [0, rows.length - 1]) as number[];
+      // A deliberately smaller API cap than the requested page proves that
+      // both existing receipts survive the real shared paginator.
+      return { data: rows.slice(from, Math.min(to + 1, from + 1)), count: rows.length, error: fail && query.table === "zabelie_policy_acceptances" ? {} : null };
+    });
     class ExportResponse extends Response { static json = Response.json; }
     const route = loadRoute("app/api/account/export/route.ts", {
       "next/server": { NextResponse: ExportResponse },
-      "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "self", email: "self@test.local" } } }) } }) },
+      "@/lib/supabase/server": { createClient: async () => ({ ...db, auth: { getUser: async () => ({ data: { user: { id: "self", email: "self@test.local" } } }) } }) },
       "@/lib/supabase/admin": { createAdminClient: () => db },
-      "@/lib/collection-export": { exportCollections: async () => ({}) },
+      "@/lib/collection-export": collectionExport,
     });
     const response = await route.GET();
     assert.equal(response.status, fail ? 503 : 200);
-    if (!fail) assert.deepEqual((await response.json()).legal_acknowledgements, [{ policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" }]);
-    const receipt = db.queries.find(q => q.table === "zabelie_policy_acceptances")!;
-    assert.ok(receipt.steps.some(([name, args]) => name === "select" && args[0] === "policy_version,accepted_at"));
-    assert.ok(receipt.steps.some(([name, args]) => name === "eq" && args[0] === "user_id" && args[1] === "self"));
+    if (!fail) assert.deepEqual((await response.json()).legal_acknowledgements, receipts);
+    const pages = db.queries.filter(q => q.table === "zabelie_policy_acceptances");
+    assert.equal(pages.length, fail ? 1 : 2);
+    for (const receipt of pages) {
+      assert.ok(receipt.steps.some(([name, args]) => name === "select" && args[0] === "policy_version,accepted_at"));
+      assert.ok(receipt.steps.some(([name, args]) => name === "eq" && args[0] === "user_id" && args[1] === "self"));
+    }
   }
 });

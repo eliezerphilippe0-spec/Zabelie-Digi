@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { database, loadRoute } from "./helpers/route-harness";
 import { borner, detailsDepuisGuide, studioDepuisGuide } from "../lib/digital-authoring/soumission";
 import { DIGITAL_DETAIL_LIMITS } from "../lib/digital-details";
+import * as collectionExport from "../lib/collection-export";
 
 /**
  * Studio de création éditoriale — la fiche pré-remplie depuis le guide, et
@@ -47,16 +48,19 @@ function exportCompte(o: { erreur?: string; absente?: boolean } = {}) {
     const studio = q.table.startsWith("zabelie_authoring_");
     if (studio && o.absente) return { data: null, error: { code: "42P01" } };
     if (studio && q.table === o.erreur) return { data: null, error: { code: "XX000" } };
-    if (q.table === "zabelie_policy_acceptances") return { data: [{ policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" }], error: null };
-    if (q.table === "zabelie_authoring_projects") return { data: [{ id: "p1", titre: "Gid" }], error: null };
-    return { data: [], error: null };
+    if (q.table === "profiles" || q.table === "wallets") return { data: null, error: null };
+    const rows = q.table === "zabelie_policy_acceptances"
+      ? [{ policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" }]
+      : q.table === "zabelie_authoring_projects" ? [{ id: "p1", titre: "Gid" }, { id: "p2", titre: "Dezyèm gid" }] : [];
+    const [from, to] = (q.steps.find(([method]) => method === "range")?.[1] ?? [0, rows.length - 1]) as number[];
+    return { data: rows.slice(from, Math.min(to + 1, from + 1)), count: rows.length, error: null };
   });
   class ExportResponse extends Response { static json = Response.json; }
   const route = loadRoute("app/api/account/export/route.ts", {
     "next/server": { NextResponse: ExportResponse },
-    "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "self", email: "self@test.local" } } }) } }) },
+    "@/lib/supabase/server": { createClient: async () => ({ ...db, auth: { getUser: async () => ({ data: { user: { id: "self", email: "self@test.local" } } }) } }) },
     "@/lib/supabase/admin": { createAdminClient: () => db },
-    "@/lib/collection-export": { exportCollections: async () => ({}) },
+    "@/lib/collection-export": collectionExport,
   });
   return { route, db };
 }
@@ -66,13 +70,15 @@ test("F3 — l'export de compte contient le Studio du vendeur, et seulement le s
   const r = await route.GET();
   assert.equal(r.status, 200);
   const corps = await r.json();
-  assert.deepEqual(corps.studio_creation, { projets: [{ id: "p1", titre: "Gid" }], revisions: [], exports_pdf: [], suggestions: [] });
+  assert.deepEqual(corps.studio_creation, { projets: [{ id: "p1", titre: "Gid" }, { id: "p2", titre: "Dezyèm gid" }], revisions: [], exports_pdf: [], suggestions: [] });
   for (const table of ["zabelie_authoring_projects", "zabelie_authoring_revisions", "zabelie_authoring_exports", "zabelie_authoring_operations"]) {
-    const q = db.queries.find((x) => x.table === table)!;
-    assert.ok(q, `${table} lue`);
-    assert.deepEqual(v(q.steps.filter(([m]) => m === "eq")), [["eq", ["seller_id", "self"]]], `${table} bornée au vendeur`);
-    const colonnes = String(q.steps.find(([m]) => m === "select")![1][0]);
-    assert.doesNotMatch(colonnes, /\*|chemin|bail_jeton|seller_id/, `${table} : ni chemin de stockage, ni jeton, ni étoile`);
+    const pages = db.queries.filter((x) => x.table === table);
+    assert.equal(pages.length, table === "zabelie_authoring_projects" ? 2 : 1, `${table} lue jusqu'à son total`);
+    for (const q of pages) {
+      assert.deepEqual(v(q.steps.filter(([m]) => m === "eq")), [["eq", ["seller_id", "self"]]], `${table} bornée au vendeur sur chaque page`);
+      const colonnes = String(q.steps.find(([m]) => m === "select")![1][0]);
+      assert.doesNotMatch(colonnes, /\*|chemin|bail_jeton|seller_id/, `${table} : ni chemin de stockage, ni jeton, ni étoile`);
+    }
   }
 });
 
