@@ -177,7 +177,7 @@ Local Playwright : `PW_CHROMIUM_PATH` vers le headless shell 1208. Jamais de `np
 
 - **Groupes** : pour une fiche éligible, un acheteur connecté est en groupe `essai` ou `temoin` selon un hachage stable de son identifiant (moitié-moitié). Le témoin voit la fiche sans bouton.
 - **Exposition** : première vue d'une fiche éligible par un acheteur, une fois par jour, dans les deux groupes.
-- **Indicateurs** par groupe, sur 4 à 6 semaines : ajout au panier, commande payée, livraison sans refus, litige ouvert. Requête SQL d'analyse versionnée dans ce document une fois le schéma écrit.
+- **Indicateurs** par groupe, sur 4 à 6 semaines : ajout au panier, commande payée, livraison sans refus, litige ouvert. Requête d'analyse, en lecture seule : `supabase/analyses/essayage_mesure.sql` (éditeur SQL de Supabase, ou `psql -f`), vérifiée en CI sur un cas construit à la main (`supabase/tests/essayage_mesure.test.sql`). L'unité est la paire (acheteur, fiche) à sa première exposition ; les commandes comptées sont celles créées à partir de ce jour. Deux limites, écrites dans la requête : le panier n'a pas d'historique (un article payé en sort), donc « au panier » est une borne basse ; un refus à la remise apparaît comme un remboursement, sans être distingué des autres.
 - **Seuil de décision**, à fixer avant le lancement : le groupe essai doit faire mieux que le témoin sur les refus à la livraison et les litiges, pas seulement sur les clics.
 
 ## 8. Style de code

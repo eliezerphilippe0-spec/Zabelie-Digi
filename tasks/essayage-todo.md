@@ -215,7 +215,7 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 6.2 Mesure
 **Description :** requête SQL d'analyse (par groupe : expositions, ajouts au panier, commandes payées, livrées sans refus, litiges) versionnée dans `docs/74` §7, avec le seuil de décision choisi par le porteur (Q5).
 **Critères :**
-- [ ] La requête tourne sur les tables de 0150 et sur les commandes existantes, en lecture seule.
+- [ ] La requête tourne sur les tables de 0150 et sur les commandes existantes, en lecture seule. (Écrite le 2026-10-19 : `supabase/analyses/essayage_mesure.sql`, et son test CI `supabase/tests/essayage_mesure.test.sql` sur un cas construit à la main ; à cocher au premier `sql-tests` vert. Le seuil de décision attend toujours le porteur, question 5.)
 **Vérification :** exécution sur la base de test de la CI.
 **Dépendances :** 3.2. **Fichiers :** `docs/74-ESSAYAGE-VIRTUEL.md`. **Taille :** S.
 
