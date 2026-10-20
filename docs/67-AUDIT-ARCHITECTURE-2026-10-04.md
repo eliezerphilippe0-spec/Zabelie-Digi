@@ -612,8 +612,11 @@ mesure de données de production n'a été effectuée pour ce lot.
 150 migrations, 290 fichiers `tests/**/*.test.ts`, 95 fichiers SQL
 `supabase/tests/*.test.sql` et 56 specs `e2e*/**/*.spec.ts` suivis par Git.
 Lecture de `CLAUDE.md`, `docs/25`, `docs/26`, de cet inventaire et d'`OPS_TODO`.
-GitHub : aucune PR ouverte lors du relevé ; 100 PR fermées récentes examinées,
-avec recherches ciblées dans l'historique.
+GitHub (liste REST directe) : trois PR Dependabot préexistantes ouvertes,
+`#385` (mises à jour mineures), `#386` (ESLint) et `#387` (TypeScript), sans
+recouvrement avec ce lot ; 100 PR fermées récentes examinées, avec recherches
+ciblées dans l'historique. Une recherche du connecteur omettait ces trois PR :
+la liste REST fait foi pour ce relevé. La PR de ce lot s'ajoute à ces trois PR.
 
 | Chemin | Implémentation et données existantes | Tests et PR déjà fusionnées |
 |---|---|---|
