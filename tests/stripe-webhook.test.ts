@@ -13,7 +13,7 @@ function fixture(options: {
   const route = loadRoute("app/api/stripe/webhook/route.ts", {
     "@/lib/stripe": { verifyStripeWebhook: () => {
       if (options.signatureError) throw new Error("bad signature");
-      return { id: "evt_test", type: options.type ?? "checkout.session.async_payment_succeeded", data: { object: {
+      return { id: "evt_test", livemode: false, type: options.type ?? "checkout.session.async_payment_succeeded", data: { object: {
         id: "cs_test", mode: "payment", metadata: { order_id: "order" }, payment_intent: "pi_test",
         payment_status: options.paid === false ? "unpaid" : "paid", amount_total: options.amount ?? 1250, currency: options.currency ?? "usd",
       } } };
@@ -39,6 +39,7 @@ for (const type of ["checkout.session.completed", "checkout.session.async_paymen
     assert.equal(f.calls[0].name, "confirm_payment");
     assert.equal(f.calls[0].args.p_usd_cents, 1250);
     assert.equal(f.calls[0].args.p_idempotency_key, "order");
+    assert.equal((f.calls[0].args.p_raw as Record<string, unknown>).stripe_livemode, false);
     assert.deepEqual(f.deliveries, ["order"]);
     assert.deepEqual(f.webhooks, ["planifie"], "la vente confirmée doit planifier les webhooks vendeur (0122)");
   });

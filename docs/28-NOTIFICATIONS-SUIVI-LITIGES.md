@@ -1,6 +1,8 @@
 # Notifications, suivi acheteur et litiges — spec (chantier 5)
 
-> **Statut : spec, rien d'implémenté.** Réécriture 2026-08-07 du brouillon
+> **Statut historique : spec du 2026-08-07.** L'addendum du 2026-10-20 en fin
+> de document décrit le lot Stripe proposé ; les sections M0–M3 ci-dessous
+> ne constituent pas un inventaire actuel du code. Réécriture du brouillon
 > « doc 24 » (numéro pris par `24-API-V1.md`), après revue règle 7 : quatre
 > dérives récurrentes purgées (`ZB-`, cinq états, arbitrage A ouvert, Trust
 > Score différé), deux collisions structurelles résolues (§1.2, §3.4).
@@ -198,3 +200,77 @@ cherche à éviter.
 
 Ce qu'il faudra trancher le moment venu : qui écrit ce message, à quel moment
 de la transition, et ce qu'il promet exactement sur le remboursement.
+
+## Addendum du 2026-10-20 — reçus et garde Stripe (migration 0151 proposée)
+
+Base inventoriée : `main` à `68c191e57b8251e6f46cd27918ef027e20f0f1bd`,
+avec lecture de `docs/26` et `docs/67`. Vérification des PR ouvertes par REST :
+`#385`–`#387` concernent les dépendances ; `#390` porte l'inscription et les
+médias. Ce lot part directement de `main` et ne reprend aucun de ces correctifs.
+
+Inventaire avant ce lot : le webhook existant traite trois événements Checkout
+et confirme via `confirm_payment`. `0128` gère déjà les paniers avec une commande
+meneuse Stripe et des enfants `rail=groupe` partageant le PaymentIntent. `0081`
+porte déjà les escrows vendeur et affilié, `0043` la maturation et le suivi de
+remise. `0113` porte les dossiers clients et la file d'opérations. Le dossier
+client exige un auteur identifié : un événement Stripe ne doit pas usurper
+cet auteur ni créer un deuxième dossier. Les fonctions de remboursement et
+les retraits existants restent les seuls chemins comptables.
+
+Ce lot complète ces mécanismes :
+
+- Le webhook vérifie toujours le corps brut signé, puis traite les cinq types
+  `charge.dispute.created`, `updated`, `closed`, `funds_withdrawn` et
+  `funds_reinstated`. Les identifiants Stripe simples ou développés sont
+  normalisés ; les métadonnées de commande et les pièces du litige sont ignorées.
+- `zabelie_stripe_dispute_events` est un journal technique immuable, distinct
+  d'un dossier client : identifiant d'événement unique, identifiants opérateur,
+  type, état, devise, montant en unité mineure opérateur et mode test/réel.
+  Aucune conversion USD/HTG. Le journal survit à la purge de `payments.raw`.
+- La RPC de service `zabelie_record_stripe_dispute` conserve aussi les reçus
+  non rapprochés ou incompatibles. Le webhook répond 503 dans ces cas et en cas
+  de réponse DB perdue. Un événement rejoué retrouve le reçu ; un même ID avec
+  un contenu différent est refusé. Un PaymentIntent absent reste journalisé.
+- Le rapprochement exige une seule meneuse `rail=stripe` et son paiement
+  confirmé. Un groupe est vérifié avant de protéger tous ses escrows, vendeurs
+  et affiliés compris. Les nouveaux paiements conservent le booléen Stripe
+  `livemode` vérifié côté serveur ; le flag historique des commandes ne prouve
+  pas ce mode. Une incompatibilité observable est soumise à revue.
+- Le marqueur `escrow_entries.dispute_frozen_at` est indépendant du verrou de
+  livraison. La maturation l'exclut sur la même ligne verrouillée, et une
+  réception manuelle ou automatique ne l'efface pas. Aucun solde, ledger,
+  statut de paiement ou de commande n'est modifié par le reçu.
+- Un état terminal (`won`, `warning_closed`, `prevented`) reçu avant une
+  création retardataire empêche un nouveau gel pour ce litige. Aucun événement
+  ne libère automatiquement un gel déjà posé ; plusieurs litiges du même
+  paiement restent distincts. Aucun ordre strict n'est déduit de `event.created`.
+- Un montant litigieux supérieur au paiement initial reste un signal de revue,
+  sans empêcher la protection des escrows liés au seul PaymentIntent rapproché.
+- La file et la page `/admin/operations` existantes ajoutent une ligne par
+  litige, avec les états reçus et l'état du gel. Sans rapprochement unique,
+  commande et montant HTG sont inconnus, jamais remplacés par zéro.
+
+**Activation et limites.** `stripe_dispute_freeze_enabled=false` par défaut dans
+la configuration d'opérations existante. Le journal et sa visibilité sont
+prévus dès installation ; la rétention reste dormante conformément à `docs/26`
+§0, jusqu'à validation juridique et décision humaine distincte. La migration
+est proposée en PR, sans application en production dans cette intervention.
+L'abonnement de l'endpoint Stripe aux cinq événements doit aussi être vérifié
+lors d'une future mise en service ; aucune configuration opérateur n'est
+changée ici.
+
+Après maturation ou versement, le lot conserve la preuve pour examen humain :
+aucun débit compensatoire, remboursement automatique ou blocage du portefeuille
+global du vendeur. La procédure humaine de résolution/dégel reste à valider
+avant toute activation du gel. Ce lot n'implémente pas la machine de dossiers
+M3 proposée historiquement, ni un nouveau service financier.
+
+Validation prévue : tests de la vraie route sans réseau, rendu réel de la page
+admin, permissions/RLS, rejeux et réponses ambiguës, rapprochement groupé,
+réception manuelle/automatique, invariance comptable, cas après maturation et
+versement ; mutation retirant la garde de maturation et courses à deux sessions.
+Ces tests s'exécutent sur des fixtures locales ou la base éphémère de CI.
+
+Sources primaires : [Stripe — webhooks](https://docs.stripe.com/webhooks),
+[Dispute object](https://docs.stripe.com/api/disputes/object),
+[Disputes API](https://docs.stripe.com/disputes/api).

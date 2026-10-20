@@ -17,15 +17,25 @@ export default async function OperationsPage({searchParams}:{searchParams:Promis
  ]);
  const rows=(queue.data?.rows??[]) as Operation[];const total=Number(queue.data?.total??0);const stats=metrics.data as MarketMetrics|null;
  return <AdminShell title="Ventes à suivre en Haïti" actif="/admin/operations" userName={user.displayName}>
- <p className="mt-3 max-w-2xl text-sm text-mist">Paiements, remise en main propre, dossiers clients et versements vendeurs. Les montants sont en gourdes ; les dates suivent l’heure de Port-au-Prince.</p>
+ <p className="mt-3 max-w-2xl text-sm text-mist">Paiements, litiges Stripe, remise en main propre, dossiers clients et versements vendeurs. Les montants sont en gourdes ; les dates suivent l’heure de Port-au-Prince.</p>
  <div className="mt-6"><ReconcileAction/></div>
  <div className="mt-4 flex flex-wrap gap-4 text-sm"><Link className="inline-flex min-h-11 items-center underline" href="/admin#zelle">Vérifier un dépôt Zelle</Link><Link className="inline-flex min-h-11 items-center underline" href="/admin/livraisons">Suivi des remises</Link><Link className="inline-flex min-h-11 items-center underline" href="/admin#commandes">Décisions de remboursement</Link></div>
  <section className="mt-8"><h2 className="text-xl font-bold">Dossiers à traiter</h2>
  {queue.error?<p role="alert" className="mt-3 text-danger-text">La file est indisponible. Cela ne signifie pas qu’il n’y a aucun incident.</p>:<>
  <p className="mt-2 text-sm text-mist">{total} situations à traiter. Une commande peut nécessiter plusieurs actions.</p>
  {rows.length===0?<p className="mt-4">Aucune situation dans cette page de la file.</p>:<ol className="mt-4 space-y-3">{rows.map(row=><li key={row.kind+row.id} className="rounded-2xl border border-line p-4">
- <div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">{operationLabels[row.kind]}</h3><span className="numeric">{formatHTG(row.amount_htg)}</span></div>
+ <div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">{operationLabels[row.kind]}</h3><span className="numeric">{row.amount_htg===null?"Montant à rapprocher":<>{row.kind==="stripe_dispute"&&"Commande liée : "}{formatHTG(row.amount_htg)}</>}</span></div>
  <p className="mt-2 break-all text-xs text-mist">{row.reference??row.id} · {row.rail??"HTG"} · {new Date(row.since).toLocaleString("fr-HT",{timeZone:"America/Port-au-Prince"})}</p>
+ {row.kind==="stripe_dispute"&&<>
+ <dl className="mt-3 space-y-1 text-sm">
+ <div><dt className="inline font-semibold">États Stripe reçus : </dt><dd className="inline break-all">{row.stripe_status??"À rapprocher"}</dd></div>
+ <div><dt className="inline font-semibold">Gel de maturation : </dt><dd className="inline">{row.freeze_active?"Actif":row.freeze_enabled===false?"Désactivé":row.freeze_enabled===true?"Activé, aucun gel actif":"État indisponible"}</dd></div>
+ <div><dt className="inline font-semibold">Examen humain : </dt><dd className="inline">{row.requires_review===false?"Non requis":"Requis"}</dd></div>
+ {row.stripe_event_type&&<div><dt className="inline font-semibold">Événements Stripe reçus : </dt><dd className="inline break-all">{row.stripe_event_type}</dd></div>}
+ {row.payment_intent_id&&<div><dt className="inline font-semibold">Paiement Stripe : </dt><dd className="inline break-all">{row.payment_intent_id}</dd></div>}
+ </dl>
+ {!row.order_id&&<p className="mt-2 text-sm text-mist">Commande à rapprocher avant toute décision.</p>}
+ </>}
  <Link className="mt-2 inline-flex min-h-11 items-center text-sm underline" href={operationHref(row)}>Consulter et suivre</Link>
  {row.kind==="refund"&&row.order_id&&<RefundReceiptForm orderId={row.order_id}/>}
  </li>)}</ol>}
