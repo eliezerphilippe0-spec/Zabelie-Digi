@@ -95,7 +95,7 @@ export default async function BoutiquePage() {
           <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "shop.manage")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.boutique.intro")}</p>
 
-          <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-28 rounded-2xl border border-line bg-surface p-5">
+          <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
             <h2 id="ma-boutique-title" className="titre-section">{t(lang, "vendeur.action.partager")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
             <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
@@ -112,7 +112,7 @@ export default async function BoutiquePage() {
           </section>
 
           {/* Profil public */}
-          <section id="profil-public" className="mt-10 scroll-mt-28">
+          <section id="profil-public" className="mt-10 scroll-mt-32">
             <div className="flex items-center justify-between">
               <h2 className="titre-section">{t(lang, "dashboard.profile.public")}</h2>
               <Link

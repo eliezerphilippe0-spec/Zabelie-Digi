@@ -84,7 +84,7 @@ function Shell({
         <div className="seller-intro"><h1>{t(lang, "sell.landing.title")}</h1><p>{t(lang, "sell.landing.body")}</p></div>
         <div className="seller-layout">
           <section aria-labelledby="comment">
-            <h2 id="comment" className="scroll-mt-24">{t(lang, "home.how.sell")}</h2>
+            <h2 id="comment" className="scroll-mt-32">{t(lang, "home.how.sell")}</h2>
             <ol className="seller-steps">{([
               ["home.s1.t", "home.s1.b"], ["home.s2.t", "home.s2.b"], ["home.s3.t", "home.s3.b"],
             ] as const).map(([title, body], index) => <li key={title}><span className="step-number" aria-hidden="true">0{index + 1}</span><div><h3>{t(lang, title)}</h3><p>{t(lang, body)}</p></div></li>)}</ol>
@@ -141,7 +141,7 @@ function Shell({
           {/* COMMENT VENDRE — les trois pas vendeur que l'accueil portait
               jusqu'au 2026-09-04 (accueil premium §4.6). L'accueil garde un lien
               (`/vendre#comment`) ; les pas acheteur sont sur /aide#comment. */}
-          <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+          <h2 id="comment" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
             {t(lang, "home.how.sell")}
           </h2>
           <ol className="mt-4 grid gap-3">
@@ -525,7 +525,7 @@ export default async function VendrePage({
               <li
                 key={p.slug}
                 id={`produit-${p.id}`}
-                className="scroll-mt-24 flex flex-col items-stretch gap-4 rounded-2xl border border-line bg-surface/60 p-5 text-sm"
+                className="scroll-mt-32 flex flex-col items-stretch gap-4 rounded-2xl border border-line bg-surface/60 p-5 text-sm"
               >
                 <div className="min-w-0">
                   {/* Correctif audit : un produit brouillon (BL-103, fichier

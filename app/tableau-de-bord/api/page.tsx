@@ -83,7 +83,7 @@ export default async function ApiPage() {
             error: t(lang, "error.generic"),
           }}
         />
-        <h2 id="webhooks" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "webhooks.title")}</h2>
+        <h2 id="webhooks" className="mt-12 scroll-mt-32 text-xl font-semibold">{t(lang, "webhooks.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "webhooks.intro")}</p>
         <WebhooksManager
           points={points}
@@ -101,7 +101,7 @@ export default async function ApiPage() {
             pending: t(lang, "webhooks.pending"), delivered: t(lang, "webhooks.delivered"), dead: t(lang, "webhooks.dead"),
           }}
         />
-        <h2 id="pixels" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "pixels.title")}</h2>
+        <h2 id="pixels" className="mt-12 scroll-mt-32 text-xl font-semibold">{t(lang, "pixels.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "pixels.intro")}</p>
         <PixelsForm
           initial={{ meta: px?.meta_pixel_id ?? "", google: px?.google_tag_id ?? "", tiktok: px?.tiktok_pixel_id ?? "" }}
@@ -111,7 +111,7 @@ export default async function ApiPage() {
             save: t(lang, "pixels.save"), saving: t(lang, "pixels.saving"), saved: t(lang, "pixels.saved"), error: t(lang, "error.generic"),
           }}
         />
-        <h2 id="domaine" className="mt-12 scroll-mt-24 text-xl font-semibold">{t(lang, "domain.title")}</h2>
+        <h2 id="domaine" className="mt-12 scroll-mt-32 text-xl font-semibold">{t(lang, "domain.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "domain.intro")}</p>
         <Link href="/tableau-de-bord/compte#verification" className="mt-1 inline-block text-sm text-mist underline">{t(lang, "domain.kyc")}</Link>
         <DomainForm

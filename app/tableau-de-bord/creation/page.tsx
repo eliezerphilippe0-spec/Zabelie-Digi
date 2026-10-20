@@ -275,7 +275,7 @@ export default async function CreationPage({
           </ul>
 
           {depart && (
-            <section id="nouveau-projet" aria-labelledby="nouveau-projet-titre" className="mt-6 scroll-mt-28 rounded-2xl border border-line bg-surface p-5">
+            <section id="nouveau-projet" aria-labelledby="nouveau-projet-titre" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
               <h2 id="nouveau-projet-titre" className="text-lg font-semibold">{c.formTitre}</h2>
               <p className="mt-3 text-sm font-semibold">{tb.formatTitre}</p>
               <ul className="mt-2 grid gap-2 sm:grid-cols-3">
@@ -307,7 +307,7 @@ export default async function CreationPage({
           {aVendu && blocVentes}
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
-            <section id="mes-projets" aria-labelledby="mes-projets-titre" className="min-w-0 scroll-mt-28">
+            <section id="mes-projets" aria-labelledby="mes-projets-titre" className="min-w-0 scroll-mt-32">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 id="mes-projets-titre" className="text-lg font-semibold">{c.projets}</h2>
                 {max !== null && (
