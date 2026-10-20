@@ -23,10 +23,18 @@ const TYPES_RESULTAT = ["image/png", "image/jpeg", "image/webp"] as const;
  * cite ni l'adresse complète ni les en-têtes.
  */
 export async function appeler(f: typeof fetch, url: string, init: RequestInit, delaiMs: number, signal?: AbortSignal): Promise<Response> {
-  const borne = signal ? AbortSignal.any([signal, AbortSignal.timeout(delaiMs)]) : AbortSignal.timeout(delaiMs);
+  // Une minuterie ordinaire, pas `AbortSignal.timeout` : celle-ci ne retient pas la boucle
+  // d'événements, et Node pouvait s'arrêter avec l'appel encore en attente (vu en CI, test X7).
+  // Elle retient la boucle pendant l'appel, puis est relâchée : elle borne encore la lecture du corps.
+  const minuterie = new AbortController();
+  const id = setTimeout(() => minuterie.abort(new DOMException("délai dépassé", "TimeoutError")), delaiMs);
+  const borne = signal ? AbortSignal.any([signal, minuterie.signal]) : minuterie.signal;
   try {
-    return await f(url, { ...init, signal: borne });
+    const res = await f(url, { ...init, signal: borne });
+    id.unref?.();
+    return res;
   } catch {
+    clearTimeout(id);
     if (borne.aborted) throw new ErreurFournisseur("delai", "délai dépassé", true);
     throw new ErreurFournisseur("fournisseur", "fournisseur injoignable", true);
   }
