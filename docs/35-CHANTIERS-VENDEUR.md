@@ -100,6 +100,21 @@ téléphone de contact est probablement plus important que l'adresse postale
 sur ce terrain (les livraisons haïtiennes se coordonnent par téléphone) —
 le formulaire portera les deux.
 
+**Correctif proposé le 20 octobre 2026 — conservation des coordonnées.**
+Le formulaire existant de la page Compte transmet les trois champs textuels
+à `/api/delivery-info`. La route refuse les corps non objet et les champs
+présents non textuels avant tout upsert : une entrée illégitime ne devient
+plus un retrait silencieux des coordonnées. Une chaîne vide reste un retrait
+volontaire ; les champs omis conservent la sémantique de remplacement existante
+(null). Nettoyage des espaces et plafonds 120/30/240 inchangés. Les erreurs
+utilisent les traductions existantes dans les quatre langues.
+
+Le client reste celui de la session et `user_id` vient de l'identité Auth.
+La table et les policies de `0076` ne changent pas. Tests comportementaux de
+la vraie route dans `tests/delivery-info.test.ts`, en complément des tests RLS
+SQL existants. Aucune livraison opérée par Zabelie, nouvelle collecte, migration
+ou intervention en production ; validation humaine en PR, sans merge ni déploiement.
+
 ## V-6 — KYC vendeur — ARBITRÉ le 2026-08-15, livré
 
 Arbitrages porteur : « **bloque le retrait** » (pas la publication — l'argent
