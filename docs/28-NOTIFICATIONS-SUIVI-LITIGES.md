@@ -240,10 +240,13 @@ Ce lot complète ces mécanismes :
   livraison. La maturation l'exclut sur la même ligne verrouillée, et une
   réception manuelle ou automatique ne l'efface pas. Aucun solde, ledger,
   statut de paiement ou de commande n'est modifié par le reçu.
-- Un état terminal (`won`, `warning_closed`, `prevented`) reçu avant une
+- Un état `won` ou `warning_closed` reçu avant une
   création retardataire empêche un nouveau gel pour ce litige. Aucun événement
   ne libère automatiquement un gel déjà posé ; plusieurs litiges du même
   paiement restent distincts. Aucun ordre strict n'est déduit de `event.created`.
+- `prevented` peut correspondre à un remboursement automatique opérateur (RDR).
+  Il conserve donc la protection des escrows en attente et la revue humaine,
+  sans remboursement supplémentaire par Zabelie.
 - Un montant litigieux supérieur au paiement initial reste un signal de revue,
   sans empêcher la protection des escrows liés au seul PaymentIntent rapproché.
 - La file et la page `/admin/operations` existantes ajoutent une ligne par
@@ -273,4 +276,6 @@ Ces tests s'exécutent sur des fixtures locales ou la base éphémère de CI.
 
 Sources primaires : [Stripe — webhooks](https://docs.stripe.com/webhooks),
 [Dispute object](https://docs.stripe.com/api/disputes/object),
-[Disputes API](https://docs.stripe.com/disputes/api).
+[Disputes API](https://docs.stripe.com/disputes/api),
+[Radar — résolution des litiges](https://docs.stripe.com/radar/rules/disputes),
+[Sigma — statuts RDR](https://docs.stripe.com/data/query-disputes-and-fraud-data).

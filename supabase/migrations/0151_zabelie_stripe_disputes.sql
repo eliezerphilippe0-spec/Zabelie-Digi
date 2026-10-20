@@ -187,9 +187,11 @@ begin
   select count(*) filter(where status='matured'),count(*) filter(where status='reversed')
     into v_matured,v_reversed from escrow_entries where order_id=any(v_orders);
   select exists(select 1 from zabelie_stripe_dispute_events
-    where dispute_id=p_dispute_id and dispute_status in('won','warning_closed','prevented'))
+    where dispute_id=p_dispute_id and dispute_status in('won','warning_closed'))
     into v_terminal_no_new_hold;
-  -- A resolved/prevented dispute delivered before created prevents a new hold.
+  -- A won/closed inquiry delivered before created prevents a new hold.
+  -- "prevented" can mean an operator refund (RDR), so it still requires a
+  -- conservative hold when enabled; this function never refunds it again.
   -- Terminal/closed receipts NEVER clear a hold already placed (human decision).
   if coalesce(v_enabled,false) and not v_terminal_no_new_hold then
     update escrow_entries set dispute_frozen_at=coalesce(dispute_frozen_at,v_receipt.received_at)

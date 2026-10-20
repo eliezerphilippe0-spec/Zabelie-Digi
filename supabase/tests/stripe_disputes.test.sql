@@ -228,15 +228,27 @@ do $$ declare r jsonb; s jsonb:=pg_temp.sd_money_snapshot(); begin
 end $$;
 select pg_temp.sd_sale('warning_closed');
 select pg_temp.sd_sale('prevented');
-do $$ declare n text; r jsonb; s jsonb:=pg_temp.sd_money_snapshot(); begin
- foreach n in array array['warning_closed','prevented'] loop
-   r:=pg_temp.sd_event(n||'_closed','pi_'||n,'dp_'||n,n,'charge.dispute.closed');
-   assert r->>'reason'='terminal_recorded','SD6: resolved/prevented state not recognised';
-   r:=pg_temp.sd_event(n||'_created','pi_'||n,'dp_'||n);
-   assert r->>'reason'='terminal_recorded' and (r->>'frozen_count')::integer=0,'SD6: stale created froze resolved/prevented dispute';
-   assert not exists(select 1 from escrow_entries where order_id=(select id from sd_ids where name=n) and dispute_frozen_at is not null),'SD6: terminal status created hold';
- end loop;
+do $$ declare r jsonb; s jsonb:=pg_temp.sd_money_snapshot(); begin
+ r:=pg_temp.sd_event('warning_closed_closed','pi_warning_closed','dp_warning_closed','warning_closed','charge.dispute.closed');
+ assert r->>'reason'='terminal_recorded','SD6: closed inquiry not recognised';
+ r:=pg_temp.sd_event('warning_closed_created','pi_warning_closed','dp_warning_closed');
+ assert r->>'reason'='terminal_recorded' and (r->>'frozen_count')::integer=0,'SD6: stale created froze closed inquiry';
+ assert not exists(select 1 from escrow_entries where order_id=(select id from sd_ids where name='warning_closed') and dispute_frozen_at is not null),'SD6: closed inquiry created hold';
  assert pg_temp.sd_money_snapshot()=s,'SD6: terminal receipt moved money';
+end $$;
+
+-- "prevented" includes Rapid Dispute Resolution operator refunds. It is not
+-- evidence that seller funds remain available: hold and human review only.
+do $$ declare r jsonb; stamp timestamptz; s jsonb:=pg_temp.sd_money_snapshot(); begin
+ r:=pg_temp.sd_event('prevented_closed','pi_prevented','dp_prevented','prevented','charge.dispute.closed');
+ assert (r->>'ok')::boolean and (r->>'frozen_count')::integer=1
+   and (r->>'requires_review')::boolean,'SD6: prevented/RDR bypassed protection';
+ select dispute_frozen_at into stamp from escrow_entries where order_id=(select id from sd_ids where name='prevented');
+ assert stamp is not null,'SD6: prevented/RDR did not hold pending funds';
+ r:=pg_temp.sd_event('prevented_created','pi_prevented','dp_prevented');
+ assert (r->>'ok')::boolean and (r->>'frozen_count')::integer=0,'SD6: prevented replay changed hold';
+ assert (select dispute_frozen_at=stamp from escrow_entries where order_id=(select id from sd_ids where name='prevented')),'SD6: prevented timestamp reset';
+ assert pg_temp.sd_money_snapshot()=s,'SD6: prevented/RDR moved money twice';
 end $$;
 
 -- SD7: independent disputes on one payment; won for A does not suppress B.
