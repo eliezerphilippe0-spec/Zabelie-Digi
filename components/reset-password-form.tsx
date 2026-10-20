@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, createPasswordWriter, createRecoveryClient } from "@/lib/supabase/client";
 
 export type ResetPasswordLabels = {
   title: string;
@@ -21,6 +21,43 @@ export type ResetPasswordLabels = {
 
 type Status = "checking" | "ready" | "invalid" | "done";
 
+type Recovery = {
+  userId: string;
+  tokens: { access_token: string; refresh_token: string };
+};
+
+/** Aucun repli sur la session déjà connectée : seuls les jetons obtenus du
+ * lien, puis vérifiés par Auth, peuvent ouvrir le formulaire. */
+async function openRecovery(): Promise<Recovery | null> {
+  const params = new URLSearchParams(window.location.search);
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  if ([params, fragment].some(p => ["error", "error_code", "error_description"].some(k => p.has(k)))) return null;
+  const code = params.get("code");
+  const access_token = fragment.get("access_token");
+  const refresh_token = fragment.get("refresh_token");
+  if (params.has("code") && !code) return null;
+  if (code && (access_token || refresh_token || fragment.has("type"))) return null;
+  if (!code && (fragment.get("type") !== "recovery" || !access_token || !refresh_token)) return null;
+
+  const supabase = createRecoveryClient();
+  try {
+    // Ce client ne détecte pas l'URL : il n'y a qu'un consommateur du code.
+    // L'échange garde l'origine et le cookie PKCE du formulaire d'envoi.
+    const { data, error } = code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : await supabase.auth.setSession({ access_token: access_token!, refresh_token: refresh_token! });
+    if (error || !data.user || !data.session) return null;
+    const tokens = { access_token: data.session.access_token, refresh_token: data.session.refresh_token };
+    if (!tokens.access_token || !tokens.refresh_token) return null;
+    const verified = await supabase.auth.getUser(tokens.access_token);
+    if (verified.error || !verified.data.user || verified.data.user.id !== data.user.id
+      || verified.data.user.id !== data.session.user.id) return null;
+    return { userId: verified.data.user.id, tokens };
+  } finally {
+    await supabase.auth.dispose();
+  }
+}
+
 export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("checking");
@@ -28,79 +65,77 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const opening = useRef<Promise<Recovery | null> | null>(null);
+  const recovery = useRef<Recovery | null>(null);
+  const busy = useRef(false);
+  const mounted = useRef(false);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    /* CETTE PAGE OUVRE LA SESSION ELLE-MÊME (correctif 2026-08-11).
-     *
-     * Elle supposait qu'/auth/callback avait déjà fait le travail. Or ce
-     * callback ne traite que la forme PKCE (`?code=`) : quand Supabase
-     * renvoie les jetons dans le FRAGMENT (`#access_token=…&type=recovery`),
-     * le serveur ne les voit pas — un fragment n'est jamais transmis. Le
-     * visiteur atterrissait sans session : « rien ne se passe ».
-     *
-     * Les deux formes sont désormais couvertes :
-     *   • fragment → le client supabase le consomme au chargement
-     *     (`detectSessionInUrl`), d'où la seconde lecture après un tick ;
-     *   • `?code=` → échange explicite ici, sur la MÊME origine que le
-     *     formulaire d'envoi, donc avec son cookie `code_verifier`.
-     */
-    const supabase = createClient();
+    mounted.current = true;
     let vivant = true;
-
-    (async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      if (code) {
-        try {
-          await supabase.auth.exchangeCodeForSession(code);
-        } catch {
-          /* Lien expiré ou déjà consommé (double-clic, préfetch d'antivirus
-           * de messagerie) : on retombe sur la lecture ci-dessous, qui
-           * affichera « lien invalide » — un message, jamais un écran mort. */
-        }
-      }
-
-      let { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        // Course avec `detectSessionInUrl` : le fragment peut n'être
-        // consommé qu'au tick suivant. Une seule seconde chance, pas une
-        // boucle — un écran qui tourne sans fin est pire qu'un refus clair.
-        await new Promise((r) => setTimeout(r, 400));
-        data = (await supabase.auth.getUser()).data;
-      }
+    // StrictMode rejoue l'effet : réutiliser la même opération, sans rejouer
+    // un code à usage unique ni conserver de preuve entre deux visites.
+    opening.current ??= openRecovery();
+    opening.current.catch(() => null).then(result => {
       if (!vivant) return;
-
-      // L'URL porte les jetons : on les efface de la barre d'adresse une
-      // fois la session ouverte (historique, captures, épaule du voisin).
-      if (data.user && (window.location.hash || window.location.search)) {
+      recovery.current = result;
+      // Nettoyer aussi les liens refusés, sans journaliser leurs jetons.
+      if (window.location.hash || window.location.search) {
         window.history.replaceState({}, "", window.location.pathname);
       }
-      setStatus(data.user ? "ready" : "invalid");
-    })();
+      setStatus(result ? "ready" : "invalid");
+    });
 
     return () => {
       vivant = false;
+      mounted.current = false;
+      recovery.current = null;
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
     };
   }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const proof = recovery.current;
+    if (status !== "ready" || !proof || busy.current) return;
     if (password !== confirm) {
       setMsg(labels.mismatch);
       return;
     }
+    busy.current = true;
     setLoading(true);
     setMsg(null);
+    let writer: ReturnType<typeof createPasswordWriter> | undefined;
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ password });
+      const current = await createClient().auth.getUser();
+      if (current.error || current.data.user?.id !== proof.userId) {
+        recovery.current = null;
+        if (mounted.current) setStatus("invalid");
+        return;
+      }
+      // updateUser lit sa session au moment de l'appel. Le client mémoire
+      // garde donc les jetons validés, même si un autre onglet se connecte.
+      writer = createPasswordWriter();
+      const bound = await writer.auth.setSession(proof.tokens);
+      if (bound.error || bound.data.user?.id !== proof.userId || bound.data.session?.user.id !== proof.userId) {
+        recovery.current = null;
+        if (mounted.current) setStatus("invalid");
+        return;
+      }
+      const { error } = await writer.auth.updateUser({ password });
       if (error) throw error;
-      setStatus("done");
-      setTimeout(() => router.push("/connexion"), 2000);
+      recovery.current = null;
+      if (mounted.current) {
+        setStatus("done");
+        redirectTimer.current = setTimeout(() => router.push("/connexion"), 2000);
+      }
     } catch {
-      setMsg(labels.errorGeneric);
+      if (mounted.current) setMsg(labels.errorGeneric);
     } finally {
-      setLoading(false);
+      await writer?.auth.dispose();
+      busy.current = false;
+      if (mounted.current) setLoading(false);
     }
   }
 
