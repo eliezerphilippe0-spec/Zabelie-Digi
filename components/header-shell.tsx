@@ -13,15 +13,28 @@ import { useEffect, useRef } from "react";
  *
  * ⚠️ AUCUNE animation de hauteur — la règle du brief est « transform et
  * opacity seulement ». Le pli est instantané (`display: none`), ce qui coûte
- * un seul reflow et rien pendant le défilement. Hystérésis (120 px pour
- * plier, 40 px pour déplier) : sans elle, un défilement lent autour du seuil
- * fait battre l'en-tête.
+ * un reflow au moment du pli et rien pendant le défilement. Hystérésis (120 px
+ * pour plier, 40 à 100 px pour déplier, voir plus bas) : sans elle, un
+ * défilement lent autour du seuil fait battre l'en-tête.
  *
  * Écouteur `passive`, une seule lecture de `scrollY` par événement, un seul
  * `toggleAttribute` quand l'état CHANGE : c'est tout ce que ce composant
  * coûte à un Android d'entrée de gamme. Il rend le `<header>` lui-même pour
  * que le serveur puisse y déposer son contenu tel quel (children).
+ *
+ * LE PLI NE DÉPLACE PAS LA PAGE (2026-10-19). L'en-tête est collant, donc
+ * dans le flux : en se repliant (202 → 108 px à 360 px), il remontait tout le
+ * contenu de 94 px. Une arrivée sur ancre depuis une autre page, en-tête
+ * encore déplié, posait la section à sa marge, puis le pli la glissait sous
+ * l'en-tête (mesuré : 2 px du haut au lieu de 128). Au pli, la hauteur perdue
+ * est rendue en `margin-bottom` : la page ne bouge plus, ni au défilement ni
+ * après un saut d'ancre. En remontant, cette réserve apparaîtrait sous
+ * l'en-tête replié : le dépli se fait donc dès qu'elle entrerait à l'écran
+ * (seuil = réserve, bornée à 40–100 px pour garder 20 px d'hystérésis).
  */
+const SEUIL_PLI = 120;
+const DEPLI_MIN = 40;
+const DEPLI_MAX = SEUIL_PLI - 20;
 export function HeaderShell({
   children,
   className,
@@ -35,12 +48,17 @@ export function HeaderShell({
     const el = ref.current;
     if (!el) return;
     let compact = false;
+    let reserve = 0;
     const lire = () => {
       const y = window.scrollY;
-      const suivant = compact ? y > 40 : y > 120;
+      const depli = Math.min(Math.max(reserve, DEPLI_MIN), DEPLI_MAX);
+      const suivant = compact ? y > depli : y > SEUIL_PLI;
       if (suivant !== compact) {
         compact = suivant;
+        const avant = el.offsetHeight;
         el.toggleAttribute("data-compact", compact);
+        reserve = compact ? Math.max(0, avant - el.offsetHeight) : 0;
+        el.style.marginBottom = reserve ? `${reserve}px` : "";
       }
     };
     window.addEventListener("scroll", lire, { passive: true });

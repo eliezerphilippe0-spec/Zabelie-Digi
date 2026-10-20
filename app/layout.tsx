@@ -12,6 +12,7 @@ import { SITE_TITLE, SITE_DESCRIPTION, BRAND_INK, brandIconUrl } from "@/lib/bra
 import { ThemeProvider } from "@/components/theme-provider";
 import { THEME_COOKIE, THEME_INIT_SCRIPT, readThemePreference, resolveTheme } from "@/lib/theme";
 import { RecoveryCatcher } from "@/components/recovery-catcher";
+import { AncreAuChargement } from "@/components/ancre-au-chargement";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 
 // Polices AUTO-HÉBERGÉES par Next (servies depuis notre domaine) — supprime la
@@ -143,6 +144,9 @@ export default async function RootLayout({
             rien et ne se déclenche que sur `type=recovery`. */}
         <DocumentLanguage />
         <RecoveryCatcher />
+        {/* `app/loading.tsx` fait arriver le contenu après le squelette :
+            le navigateur a déjà renoncé au #fragment. On le rattrape. */}
+        <AncreAuChargement />
         <ConnectivityNotice labels={(() => { const { disconnected, reconnect, offlineLink, resume } = marketplaceCopy(lang); return { disconnected, reconnect, offlineLink, resume }; })()}/>
         {children}
         </ThemeProvider>

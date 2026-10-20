@@ -357,8 +357,8 @@ export default async function HomePage() {
         {products.length > 0 && <MarketplaceUniverses lang={lang} />}
         {/* Cible de « Talents » (menu compte + pied de page) : posée sur une
             balise du FLUX, avant la rangée des services, jamais en prop d'une
-            rangée qui peut s'effacer. `scroll-mt-24` compense l'en-tête collant. */}
-        <div id="talents" className="scroll-mt-24" aria-hidden="true" />
+            rangée qui peut s'effacer. `scroll-mt-32` compense l'en-tête collant. */}
+        <div id="talents" className="scroll-mt-32" aria-hidden="true" />
         {services.length > 0 && (
           <HomeRow discovery={discovery} title={t(lang, "sec.services")} href="/catalogue?univers=services" more={t(lang, "home.all")} items={services} cardLabels={cardLabels} />
         )}
@@ -428,7 +428,7 @@ export default async function HomePage() {
             la carte « Ouvrez votre boutique » descendue ici, et « Comment ça
             marche » réduit à deux liens vers /aide et /vendre, qui portent les
             étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
-        <section id="comment" className="mx-auto max-w-6xl scroll-mt-24 px-5 pb-24 pt-10">
+        <section id="comment" className="mx-auto max-w-6xl scroll-mt-32 px-5 pb-24 pt-10">
           <div className="home-final rounded-2xl p-6 text-center text-on-chrome sm:p-10">
             <h2 className="mx-auto max-w-2xl text-2xl tracking-tight sm:text-3xl">{t(lang, "rail.shop.t")}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-on-chrome">{t(lang, "home.final.sub")}</p>

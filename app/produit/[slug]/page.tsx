@@ -755,7 +755,7 @@ export default async function ProductPage({
               la question vient quand l'acheteur hésite encore, pas quand il
               a déjà décidé de transmettre la fiche. */}
           {product.creatorId && (
-            <div id="contacter-vendeur" className="mt-6 scroll-mt-24 rounded-2xl border border-line bg-surface/40 p-4">
+            <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-4">
               <h2 className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</h2>
               {peutEcrire ? (
                 <MessageForm
