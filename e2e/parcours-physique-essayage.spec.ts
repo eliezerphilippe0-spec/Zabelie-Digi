@@ -165,9 +165,12 @@ test("essayage — quota du jour et pause : le message du serveur, dans la feuil
     const accepter = f.getByRole("button", { name: "J'accepte et je continue" });
     if (await accepter.isVisible()) await accepter.click();
     await envoyerPhoto(page);
-    await expect(f.getByRole("alert")).toHaveText(new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    const alerte = f.getByRole("alert");
+    await expect(alerte.locator("p")).toHaveText(message);
+    // Réessayer échouerait encore : la feuille propose de fermer.
+    await expect(alerte.getByRole("button", { name: "Réessayer" })).toHaveCount(0);
     await sansDebordement(page);
-    await f.getByRole("button", { name: "Fermer" }).click();
+    await alerte.getByRole("button", { name: "Fermer" }).click();
     await expect(f).toHaveCount(0);
   }
 });

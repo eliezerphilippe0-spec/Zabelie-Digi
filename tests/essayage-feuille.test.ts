@@ -89,6 +89,13 @@ test("FE8 — 44 px : chaque bouton et chaque libellé cliquable a min-h-11", ()
   }
 });
 
+test("FE10 — quota, plafond, pause ou fiche non éligible : « Fermer » au lieu de « Réessayer », qui échouerait encore", () => {
+  assert.match(FEUILLE, /const REFUS_DEFINITIFS = \["quota", "plafond", "pause", "non_eligible"\];/);
+  assert.match(FEUILLE, /return echouer\(issue\.error, REFUS_DEFINITIFS\.includes\(issue\.code \?\? ""\)\);/);
+  assert.match(bloc("erreur"), /\{definitif \? \(\s*<button[^>]*onClick=\{\(\) => dialogue\.current\?\.close\(\)\}>\{labels\.fermer\}<\/button>\s*\) : \(\s*<button[^>]*onClick=\{\(\) => setEtape\("photo"\)\}>\{labels\.reessayer\}/);
+  assert.match(FEUILLE, /setMessage\(texte \?\? labels\.erreur\);\s*setDefinitif\(fin\);/);
+});
+
 test("FE9 — libellés : présents et distincts dans les quatre langues, mention IA du §2", () => {
   for (const lang of LANGS) {
     const l = libellesEssayage(lang, "Robe");

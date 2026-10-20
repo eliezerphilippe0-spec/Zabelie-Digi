@@ -29,6 +29,8 @@ type Etape = "consentement" | "photo" | "attente" | "resultat" | "erreur";
 type Suivi = { etat: "en_cours" } | { etat: "reussi"; image: string } | { etat: "echec" | "expire"; error?: string };
 
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Refus qui ne changeront pas en réessayant tout de suite : la feuille propose de fermer. */
+const REFUS_DEFINITIFS = ["quota", "plafond", "pause", "non_eligible"];
 
 export function EssayageFeuille({
   produitId,
@@ -51,6 +53,7 @@ export function EssayageFeuille({
   const [image, setImage] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [definitif, setDefinitif] = useState(false);
 
   useEffect(() => {
     const d = dialogue.current;
@@ -77,9 +80,10 @@ export function EssayageFeuille({
     };
   }, [etape]);
 
-  function echouer(texte: string | undefined) {
+  function echouer(texte: string | undefined, fin = false) {
     if (!ouverte.current) return;
     setMessage(texte ?? labels.erreur);
+    setDefinitif(fin);
     setEtape("erreur");
   }
 
@@ -121,7 +125,7 @@ export function EssayageFeuille({
     const issue = await appelAvecSession<{ essai: string }>("/api/essayage", { method: "POST", body: form });
     if (issue.etat === "connexion") return router.push(issue.vers);
     if (issue.etat === "reseau") return echouer(labels.reseau);
-    if (issue.etat === "refus") return echouer(issue.error);
+    if (issue.etat === "refus") return echouer(issue.error, REFUS_DEFINITIFS.includes(issue.code ?? ""));
     await suivre(issue.data.essai);
   }
 
@@ -218,7 +222,11 @@ export function EssayageFeuille({
       {etape === "erreur" && (
         <section className="mt-4" role="alert">
           <p className="text-sm text-danger-text">{message}</p>
-          <button type="button" className={`${principal} mt-4`} onClick={() => setEtape("photo")}>{labels.reessayer}</button>
+          {definitif ? (
+            <button type="button" className={`${principal} mt-4`} onClick={() => dialogue.current?.close()}>{labels.fermer}</button>
+          ) : (
+            <button type="button" className={`${principal} mt-4`} onClick={() => setEtape("photo")}>{labels.reessayer}</button>
+          )}
         </section>
       )}
     </dialog>
