@@ -15,7 +15,8 @@
 --   E11 ni anon ni authenticated ne lisent une table ni n'exécutent une fonction ;
 --       le rôle service n'écrit les essais que par les fonctions ;
 --   E12 un vendeur pilote désactivé ferme ses fiches ;
---   E13 aucune colonne ne peut tenir une photo, une URL ou un résultat.
+--   E13 aucune colonne ne peut tenir une photo, une URL ou un résultat ;
+--   E14 le compteur du mois haïtien de l'administration suit la règle de la réservation.
 begin;
 
 insert into auth.users (id, email) values
@@ -84,6 +85,10 @@ declare
   v_e2 uuid;
   v_n integer;
   v_jour timestamptz := date_trunc('day', now() at time zone 'America/Port-au-Prince') at time zone 'America/Port-au-Prince';
+  v_mois timestamptz := date_trunc('month', now() at time zone 'America/Port-au-Prince') at time zone 'America/Port-au-Prince';
+  v_reussis integer;
+  v_en_cours integer;
+  v_echecs integer;
 begin
   -- E1
   assert (select count(*) from zabelie_essayage_rayons) = 15, 'E1 KO compte';
@@ -205,6 +210,22 @@ begin
   assert not zabelie_essayage_eligible(v_P1, v_A), 'E12 KO désactivé';
   update zabelie_essayage_vendeurs set actif = true where seller_id = v_S;
   assert zabelie_essayage_eligible(v_P1, v_A), 'E12 KO réactivé';
+
+  -- E14 : le compteur du mois suit la règle de la réservation ; un essai du mois passé n'y est pas.
+  select count(*) filter (where statut = 'reussi')::integer, count(*) filter (where statut = 'en_cours')::integer,
+         count(*) filter (where statut = 'echec')::integer
+    into v_reussis, v_en_cours, v_echecs
+    from zabelie_essayage_essais where cree_le >= v_mois;
+  assert v_reussis > 0 and v_echecs > 0, 'E14 KO jeu de test';
+  assert (select count(*) from zabelie_essayage_compteur()) = 1, 'E14 KO une seule ligne';
+  assert (select reussis = v_reussis and en_cours = v_en_cours and echecs = v_echecs and plafond = 1000 and quota = 100 and not pause
+            from zabelie_essayage_compteur()), 'E14 KO compteur';
+  insert into zabelie_essayage_essais (acheteur_id, produit_id, vendeur_id, fournisseur, statut, cree_le, termine_le)
+  values (v_B, v_P1, v_S, 'genlook', 'reussi', v_mois - interval '1 minute', v_mois - interval '1 minute');
+  assert (select reussis = v_reussis from zabelie_essayage_compteur()), 'E14 KO mois passé compté';
+  update zabelie_essayage_config set en_pause = true where id;
+  assert (select pause from zabelie_essayage_compteur()), 'E14 KO pause';
+  update zabelie_essayage_config set en_pause = false where id;
 end;
 $$;
 
@@ -226,7 +247,8 @@ begin
       'select * from zabelie_essayage_reserver(''00000000-0000-0000-0000-0000000e0003'', ''00000000-0000-0000-0000-0000000e1001'', ''simulation'')',
       'select zabelie_essayage_lancer(gen_random_uuid(), ''x'')',
       'select zabelie_essayage_terminer(gen_random_uuid(), ''reussi'')',
-      'select zabelie_essayage_exposer(''00000000-0000-0000-0000-0000000e0003'', ''00000000-0000-0000-0000-0000000e1001'', ''essai'')'
+      'select zabelie_essayage_exposer(''00000000-0000-0000-0000-0000000e0003'', ''00000000-0000-0000-0000-0000000e1001'', ''essai'')',
+      'select * from zabelie_essayage_compteur()'
     ] loop
       v_r := pg_temp.essayer(v_role, v_sql);
       assert v_r like '42501 %', 'E11 KO ' || v_role || ' — ' || v_sql || ' — ' || v_r;

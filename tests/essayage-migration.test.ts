@@ -14,7 +14,7 @@ import { REFUS_ESSAYAGE, SOUS_RAYONS_ESSAYAGE } from "../lib/essayage/regles";
 const SQL = readFileSync("supabase/migrations/0150_zabelie_essayage.sql", "utf8");
 const sansCommentaires = SQL.replace(/--[^\n]*/g, "");
 const TABLES = ["config", "vendeurs", "rayons", "essais", "expositions"].map((t) => `public.zabelie_essayage_${t}`);
-const FONCTIONS = ["eligible(uuid, uuid)", "reserver(uuid, uuid, text)", "lancer(uuid, text)", "terminer(uuid, text, text)", "exposer(uuid, uuid, text)"].map((f) => `public.zabelie_essayage_${f}`);
+const FONCTIONS = ["eligible(uuid, uuid)", "reserver(uuid, uuid, text)", "lancer(uuid, text)", "terminer(uuid, text, text)", "exposer(uuid, uuid, text)", "compteur()"].map((f) => `public.zabelie_essayage_${f}`);
 
 test("M1 — la migration amorce EXACTEMENT les sous-rayons de lib/essayage/regles.ts", () => {
   const liste = /and c\.slug in \(([^)]*)\)/.exec(sansCommentaires);
@@ -67,4 +67,20 @@ test("M6 — seul un essai échoué ne compte pas : un essai abandonné « en co
     assert.doesNotMatch(c, /interval/, "pas de délai qui ferait sortir un essai abandonné du compte");
   }
   assert.match(sansCommentaires, /pg_advisory_xact_lock\(hashtext\('zabelie_essayage_essais'\)\)/);
+});
+
+test("M7 — chaque fonction ouvre et ferme son corps par $$ (un « $ » seul casse la migration, et seule la CI le verrait)", () => {
+  const blocs = [...SQL.matchAll(/^create (?:or replace )?function [\s\S]*?^\$\$;$/gm)].map((m) => m[0]);
+  const declarees = SQL.match(/^create (?:or replace )?function /gm) ?? [];
+  assert.equal(blocs.length, declarees.length, "chaque fonction se ferme par une ligne « $$; »");
+  for (const b of blocs) {
+    assert.match(b, /\bas \$\$$/m, b.split("\n")[0]);
+    assert.equal((b.match(/\$\$/g) ?? []).length, 2, `${b.split("\n")[0]} : un $$ qui ouvre, un qui ferme`);
+  }
+  assert.equal((SQL.match(/\$\$/g) ?? []).length % 2, 0, "des $$ appariés");
+  for (const fichier of ["supabase/tests/zabelie_essayage.test.sql"]) {
+    const t = readFileSync(fichier, "utf8");
+    assert.doesNotMatch(t, /^\$;$/m, `${fichier} : « $; » au lieu de « $$; »`);
+    assert.equal((t.match(/\$\$/g) ?? []).length % 2, 0, `${fichier} : des $$ appariés`);
+  }
 });

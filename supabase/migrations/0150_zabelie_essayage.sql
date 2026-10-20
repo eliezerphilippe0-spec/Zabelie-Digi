@@ -239,16 +239,34 @@ begin
 end;
 $$;
 
+-- ── Compteur du mois haïtien, pour l'administration (tâche 5.1) ─────────────
+-- Même règle que la réservation : le mois haïtien, et un échec ne compte pas
+-- dans le plafond (il est rendu à part). Une seule ligne, avec les réglages.
+create function public.zabelie_essayage_compteur()
+returns table (reussis integer, en_cours integer, echecs integer, plafond integer, quota integer, pause boolean, modifie timestamptz)
+language sql stable security definer set search_path = public, pg_temp as $$
+  select count(e.id) filter (where e.statut = 'reussi')::integer,
+         count(e.id) filter (where e.statut = 'en_cours')::integer,
+         count(e.id) filter (where e.statut = 'echec')::integer,
+         c.plafond_mois, c.quota_jour, c.en_pause, c.modifie_le
+    from public.zabelie_essayage_config c
+    left join public.zabelie_essayage_essais e
+      on e.cree_le >= date_trunc('month', now() at time zone 'America/Port-au-Prince') at time zone 'America/Port-au-Prince'
+   group by c.plafond_mois, c.quota_jour, c.en_pause, c.modifie_le;
+$$;
+
 revoke all on function public.zabelie_essayage_eligible(uuid, uuid) from public, anon, authenticated;
 revoke all on function public.zabelie_essayage_reserver(uuid, uuid, text) from public, anon, authenticated;
 revoke all on function public.zabelie_essayage_lancer(uuid, text) from public, anon, authenticated;
 revoke all on function public.zabelie_essayage_terminer(uuid, text, text) from public, anon, authenticated;
 revoke all on function public.zabelie_essayage_exposer(uuid, uuid, text) from public, anon, authenticated;
+revoke all on function public.zabelie_essayage_compteur() from public, anon, authenticated;
 grant execute on function public.zabelie_essayage_eligible(uuid, uuid) to service_role;
 grant execute on function public.zabelie_essayage_reserver(uuid, uuid, text) to service_role;
 grant execute on function public.zabelie_essayage_lancer(uuid, text) to service_role;
 grant execute on function public.zabelie_essayage_terminer(uuid, text, text) to service_role;
 grant execute on function public.zabelie_essayage_exposer(uuid, uuid, text) to service_role;
+grant execute on function public.zabelie_essayage_compteur() to service_role;
 
 -- ── Sonde de présence (`/api/admin/coherence`) ───────────────────────────
 -- Redéfinition COMPLÈTE de la sonde de 0149, avec les cinq fonctions de 0150
@@ -308,6 +326,7 @@ as $$
       ('zabelie_essayage_lancer(uuid,text)', 'sans elle, un essai cree chez le fournisseur n''est plus suivi (0150) : il echoue au bout de 60 s, deja facture'),
       ('zabelie_essayage_terminer(uuid,text,text)', 'sans elle, un essai ne se clot plus (0150) : les echecs comptent dans le quota et le plafond'),
       ('zabelie_essayage_exposer(uuid,uuid,text)', 'sans elle, la mesure du pilote perd ses expositions (0150) : resultats faux, silencieux'),
+      ('zabelie_essayage_compteur()', 'sans elle, l''administration ne voit plus le compteur du mois (0150) : le panneau rend une erreur, l''essayage continue'),
       ('zabelie_submit_support(uuid,uuid,uuid,text,text,text)', 'les demandes et reponses du support'),
       ('zabelie_accept_account_legal(text,text,boolean,boolean)', 'enregistre les deux déclarations explicites de la première session OAuth (0133)'),
       ('zabelie_record_refund_receipt(uuid,uuid,text,text,timestamp with time zone)', 'sans elle, le retour effectif des fonds ne peut plus etre documente'),
@@ -582,7 +601,7 @@ begin
   foreach v_f in array array[
     'public.zabelie_essayage_eligible(uuid,uuid)', 'public.zabelie_essayage_reserver(uuid,uuid,text)',
     'public.zabelie_essayage_lancer(uuid,text)', 'public.zabelie_essayage_terminer(uuid,text,text)',
-    'public.zabelie_essayage_exposer(uuid,uuid,text)'
+    'public.zabelie_essayage_exposer(uuid,uuid,text)', 'public.zabelie_essayage_compteur()'
   ] loop
     if has_function_privilege('anon', v_f, 'EXECUTE') or has_function_privilege('authenticated', v_f, 'EXECUTE')
        or not has_function_privilege('service_role', v_f, 'EXECUTE') then
@@ -594,7 +613,7 @@ begin
      or has_table_privilege('service_role', 'public.zabelie_essayage_essais', 'INSERT') then
     raise exception 'ZB150 : droits des essais incorrects';
   end if;
-  if (select count(*) from zabelie_objets_requis() where objet like 'zabelie_essayage_%' and present) <> 5 then
+  if (select count(*) from zabelie_objets_requis() where objet like 'zabelie_essayage_%' and present) <> 6 then
     raise exception 'ZB150 : sonde non à jour';
   end if;
 end;

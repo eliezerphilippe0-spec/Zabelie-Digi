@@ -28,7 +28,7 @@ Utilisateurs :
 4. **Photo** : prise ou choisie sur le téléphone, compressée sur l'appareil (`lib/image-compress.ts`), puis envoyée. Option « Garder ma photo sur ce téléphone », décochée par défaut, avec un bouton pour l'effacer.
 5. **Résultat** : affiché avec la mention « Aperçu généré par IA. La coupe et la couleur réelles peuvent différer. », puis « Ajouter au panier ». Il n'est jamais conservé par Zabelie.
 6. **Limites** : quota par acheteur et par jour (5 par défaut), plafond mensuel global (1 000 par défaut), pause. Un essai échoué ne compte ni dans le quota ni dans le plafond.
-7. **Administration** : liste des vendeurs pilotes (ajouter, retirer), réglages (plafond, quota, pause), compteur du mois.
+7. **Administration** (`/admin/essayage`, rôle admin avec double authentification) : liste des vendeurs pilotes (ajouter, retirer), réglages (plafond, quota, pause), compteur du mois. Chaque geste va au journal d'audit.
 8. **Mesure** : groupe essai et groupe témoin, expositions enregistrées, requête d'analyse documentée (§7).
 9. **Outil de comparaison** des trois candidats (Genlook, FASHN, modèle maison) : il fait passer N photos de personnes × M photos de produits chez chacun, puis produit une planche à juger, avec le temps d'attente et le coût de chaque essai. Mode « à blanc » par défaut, qui annonce le coût sans rien dépenser.
 
@@ -98,8 +98,9 @@ Affichage du résultat, mention IA, « Ajouter au panier »
 | `zabelie_essayage_lancer(...)` | note une fois l'identifiant du travail chez le fournisseur | idem |
 | `zabelie_essayage_terminer(...)` | passe un essai en cours en `reussi` ou en `echec` avec sa raison, une fois | idem |
 | `zabelie_essayage_exposer(...)` | une exposition par acheteur, fiche et jour haïtien, fiche éligible seulement | idem |
+| `zabelie_essayage_compteur()` | pour l'administration : réussis, en cours et échecs du mois haïtien, avec les réglages ; même règle que la réservation | idem |
 
-Aucune colonne ne contient de photo, d'URL de photo ou de résultat. Seul un essai **échoué** ne compte ni dans le quota ni dans le plafond ; un essai abandonné « en cours » compte, car le fournisseur facture dès la création. Pourquoi tout au rôle service : un acheteur qui pourrait clore lui-même un essai le dirait « échoué » et obtiendrait des essais payants sans limite ; le serveur passe donc l'identité tirée de la session vérifiée. Aucune de ces fonctions n'est exposée à `anon` ni à `authenticated` : la liste gelée du garde `definer_exposition` ne change pas, et ce test le prouve. La sonde `zabelie_objets_requis()` les recevra avec leurs appels `.rpc()` (phase 4) : sans appelant, ce seraient des fantômes. Le registre `zabelie_schema_migrations` est rempli à la main après application, selon la méthode 0086.
+Aucune colonne ne contient de photo, d'URL de photo ou de résultat. Seul un essai **échoué** ne compte ni dans le quota ni dans le plafond ; un essai abandonné « en cours » compte, car le fournisseur facture dès la création. Pourquoi tout au rôle service : un acheteur qui pourrait clore lui-même un essai le dirait « échoué » et obtiendrait des essais payants sans limite ; le serveur passe donc l'identité tirée de la session vérifiée. Aucune de ces fonctions n'est exposée à `anon` ni à `authenticated` : la liste gelée du garde `definer_exposition` ne change pas, et ce test le prouve. La sonde `zabelie_objets_requis()` les surveille toutes les six, redéfinie dans 0150 avec leurs appels `.rpc()` (`lib/essayage/base.ts`, `lib/essayage/admin.ts`). Le registre `zabelie_schema_migrations` est rempli à la main après application, selon la méthode 0086.
 
 ## 4. Fournisseurs, coûts et choix
 

@@ -30,5 +30,6 @@ bash "$ROOT/supabase/tests/kyc_depot_concurrent.sh"
 bash "$ROOT/supabase/tests/authoring_quota_concurrent.sh"
 bash "$ROOT/supabase/tests/authoring_submit_concurrent.sh"
 bash "$ROOT/supabase/tests/essayage_plafond_concurrent.sh"
+bash "$ROOT/supabase/tests/essayage_mutations.sh"
 
 echo "✓ tests SQL money-path OK"

@@ -181,8 +181,8 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 
 ### Point de contrôle 4
 - [x] Toutes les suites vertes (unitaires, SQL, e2e), build propre. (Unitaires, e2e et build en local le 2026-10-19 ; SQL dans la CI de la PR #389.)
-- [ ] Démonstration au porteur dans le navigateur, à 360 px, avec la simulation.
-- [ ] Mutations ciblées sur l'éligibilité, le quota et le plafond : toutes tuées.
+- [x] Démonstration au porteur dans le navigateur, à 360 px, avec la simulation. (Faite le 2026-10-19 : parcours, témoin, quota, pause. Défaut vu et corrigé : « Réessayer » après un refus durable, commit 61e07d7.)
+- [ ] Mutations ciblées sur l'éligibilité, le quota et le plafond : toutes tuées. (Côté code : toutes tuées. Côté SQL : `supabase/tests/essayage_mutations.sh`, 15 mutants d'éligibilité, pause, plafond, quota et compteur, joué par la CI `sql-tests` ; à cocher quand elle le dit.)
 
 ---
 
@@ -191,9 +191,10 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 ### 5.1 Vendeurs pilotes et réglages
 **Description :** section « Essayage virtuel » dans `/admin` : ajouter ou retirer un vendeur pilote, changer plafond, quota et pause, voir le compteur du mois (réussis, échecs, plafond restant). Route `app/api/admin/essayage/route.ts` sur le modèle de `app/api/admin/user-status` (`getAdminUser`, double authentification).
 **Critères :**
-- [ ] Sans session administrateur avec double authentification : 403.
-- [ ] Un vendeur retiré n'a plus de bouton sur ses fiches dès le rendu suivant.
-- [ ] Le compteur du mois correspond aux essais réussis et en cours.
+- [x] Sans session administrateur avec double authentification : 403.
+- [x] Un vendeur retiré n'a plus de bouton sur ses fiches dès le rendu suivant.
+- [x] Le compteur du mois correspond aux essais réussis et en cours.
+**Fait le 2026-10-19 :** page `/admin/essayage` (entrée « Essayage » du menu), composant `app/admin/essayage/essayage-admin.tsx`, route `POST /api/admin/essayage` (ajouter, retirer, régler ; journal d'audit `essayage.*`), `lib/essayage/admin.ts`. 0150 gagne `zabelie_essayage_compteur()` (rôle service seul, sonde à six fonctions, test SQL E14). 9 tests, 13 mutations tuées ; e2e MFA : 403 sans double authentification, page lisible après, sans écriture. Écarts au plan : une page à part, comme les autres outils (`/admin/kyc`, `/admin/zones`), plutôt qu'une section de plus dans `/admin` ; libellés en français seulement, convention de l'administration (exclue du cliquet des chaînes en dur) ; retirer un pilote le passe à inactif (historique gardé), le rajouter le réactive. Le vendeur retiré : sa fiche se ferme parce que `zabelie_essayage_eligible` exige `actif` (test SQL E12) et que la fiche est rendue à chaque visite.
 **Vérification :** tests de route ; e2e administration avec le faux MFA existant (`e2e/fixtures/stub-mfa.mjs`).
 **Dépendances :** 3.2, 4.3. **Fichiers :** `app/admin/page.tsx`, `components/admin/essayage-panneau.tsx`, `app/api/admin/essayage/route.ts`, `tests/essayage-admin.test.ts`, `lib/i18n.ts`. **Taille :** M.
 
