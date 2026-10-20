@@ -144,6 +144,10 @@ begin
   assert n=0, 'MR6: client gallery delete accepted';
   reset role;
   update products set cover_url='https://cdn.test/private-new.webp' where id='25200000-0000-4000-8000-000000000003';
+  assert (select status='draft' from products where id='25200000-0000-4000-8000-000000000003'), 'MR6: cover update did not enter review';
+  -- Changer de rôle ne vide pas le JWT. Un anon réel n'a pas le sub du
+  -- vendeur : le conserver éprouverait sa policy de lecture propriétaire.
+  set local request.jwt.claim.sub='';
   set local role anon;
   assert not exists(select 1 from products where id='25200000-0000-4000-8000-000000000003'), 'MR6: revised product stayed public';
   assert not exists(select 1 from zabelie_product_media where id='35200000-0000-4000-8000-000000000003'), 'MR6: revised media stayed public';
