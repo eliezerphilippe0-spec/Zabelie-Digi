@@ -42,8 +42,9 @@ test("connexion réussie : session transmise au serveur et conservée après rec
 });
 
 test("inscription avec confirmation : métadonnées envoyées, aucune fausse session", async ({ page, context }) => {
-  await page.goto("/connexion");
-  await page.getByRole("button",{name:t("fr","auth.tab.signup"),exact:true}).click();
+  await page.goto("/inscription?next=%2Fvendre");
+  await expect(page).toHaveURL(/\/connexion\?mode=signup&next=%2Fvendre$/);
+  await expect(page.getByRole("heading", { level: 1, name: t("fr", "auth.tab.signup") })).toBeVisible();
   await page.locator("#auth-name").fill("Créateur test");
   await fill(page,"new@example.test");
   await acceptDocuments(page);
@@ -53,6 +54,19 @@ test("inscription avec confirmation : métadonnées envoyées, aucune fausse ses
   await expect(page.locator('[role="status"]')).toHaveText(t("fr", "auth.signup.success"));
   expect((await context.cookies()).some((c)=>/^sb-127-auth-token(?:\.\d+)?$/.test(c.name))).toBe(false);
 });
+
+for (const lang of ["fr", "ht", "en", "es"] as const) {
+  test(`alias inscription sur mobile : ${lang}`, async ({ page, context }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await context.addCookies([{ name: "zabelie_lang", value: lang, url: "http://127.0.0.1:3003" }]);
+    const response = await page.goto("/inscription?next=https%3A%2F%2Fpiege.test&mode=signin");
+    expect((await response?.request().redirectedFrom()?.response())?.status()).toBe(307);
+    await expect(page).toHaveURL("http://127.0.0.1:3003/connexion?mode=signup&next=%2F");
+    await expect(page.getByRole("heading", { level: 1, name: t(lang, "auth.tab.signup") })).toBeVisible();
+    await expect(page.locator("#auth-name")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
 
 test("adresse déjà inscrite : bascule vers Connexion sans bouton bloqué", async ({ page }) => {
   await page.goto("/connexion");

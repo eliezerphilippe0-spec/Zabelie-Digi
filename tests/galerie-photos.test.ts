@@ -11,6 +11,7 @@ import {
 } from "../lib/image-limits";
 import * as media from "../lib/product-media";
 import { database, loadRoute, type Query } from "./helpers/route-harness";
+import { rateLimit } from "../lib/zabelie-rate-limit";
 
 /**
  * LES PHOTOS DE `/vendre` — revue du 2026-10-08 (UX-01, SEC-02, SEC-05, RES-01).
@@ -93,16 +94,36 @@ const USER = "vendeur-1";
 const PRODUIT = "produit-1";
 
 function galerie(options: {
+  connecte?: boolean;
+  proprietaire?: boolean;
   actif?: boolean;
   cadence?: boolean;
+  cadenceRpc?: { data?: unknown; error?: unknown; throws?: boolean };
   dejaEnGalerie?: number;
+  video?: boolean;
+  videoBytes?: number;
+  videoType?: string;
+  insertion?: "erreur_apres_commit" | "vide_apres_commit" | "refus";
 } = {}) {
   const envois: { bucket: string; path: string; contentType?: string }[] = [];
   const retraits: { bucket: string; paths: string[] }[] = [];
+  const lignes: { storage_path: string }[] = [];
+  const cadences: Record<string, unknown>[] = [];
+  const liensSignes: { bucket: string; path: string }[] = [];
+  const lecturesStockage: string[] = [];
+  const videoPath = `${PRODUIT}/galerie/vid-00000000-0000-4000-8000-000000000001.mp4`;
   const db = database((query: Query) => {
     const op = (nom: string) => query.steps.find(([m]) => m === nom)?.[1];
-    if (query.table === "products") return { data: { id: PRODUIT, seller_id: USER }, error: null };
-    if (query.table === "zabelie_product_media" && op("insert")) return { data: { id: "media-neuf" }, error: null };
+    if (query.table === "products") return { data: { id: PRODUIT, seller_id: options.proprietaire === false ? "autre-vendeur" : USER }, error: null };
+    if (query.table === "zabelie_product_media" && op("insert")) {
+      // La base a commité AVANT la perte de réponse : une erreur de transport
+      // ne prouve pas que la ligne est absente.
+      if (options.insertion !== "refus") lignes.push(op("insert")![0] as { storage_path: string });
+      if (options.insertion === "erreur_apres_commit") return { data: null, error: { code: "", message: "TypeError: fetch failed" } };
+      if (options.insertion === "vide_apres_commit") return { data: null, error: null };
+      if (options.insertion === "refus") return { data: null, error: { code: "P0001", message: "ZB073" } };
+      return { data: { id: "media-neuf" }, error: null };
+    }
     if (query.table === "zabelie_product_media" && op("delete")) return { error: null };
     if (query.table === "zabelie_product_media" && op("single"))
       return { data: { id: "media-1", kind: "image", storage_path: `${PRODUIT}/galerie/a.png` }, error: null };
@@ -111,8 +132,20 @@ function galerie(options: {
   });
   const admin = {
     ...db,
+    rpc: (name: string, args: Record<string, unknown>) => {
+      assert.equal(name, "zabelie_rate_limit");
+      cadences.push({ ...args });
+      return { abortSignal: async () => {
+        if (options.cadenceRpc?.throws) throw new Error("réponse de cadence perdue");
+        return { data: options.cadenceRpc ? options.cadenceRpc.data : options.cadence !== false, error: options.cadenceRpc?.error ?? null };
+      } };
+    },
     storage: {
       from: (bucket: string) => ({
+        createSignedUploadUrl: async (path: string) => {
+          liensSignes.push({ bucket, path });
+          return { data: { path, token: "jeton-factice" }, error: null };
+        },
         upload: async (path: string, _f: unknown, opts: { contentType?: string }) => {
           envois.push({ bucket, path, contentType: opts?.contentType });
           return { error: null };
@@ -122,18 +155,24 @@ function galerie(options: {
           retraits.push({ bucket, paths: [...paths] });
           return { error: null };
         },
+        list: async (folder: string, { search }: { search: string }) => {
+          lecturesStockage.push(`${folder}/${search}`);
+          return { data: [{ name: search, metadata: {
+            size: options.videoBytes ?? 1024, mimetype: options.videoType ?? "video/mp4",
+          } }], error: null };
+        },
         getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${path}` } }),
       }),
     },
   };
   const refus = Response.json({ error: "api.suspended", code: "suspended" }, { status: 403 });
-  const route = loadRoute("app/api/products/media/route.ts", {
+  const route = loadRoute(options.video ? "app/api/products/media/video/route.ts" : "app/api/products/media/route.ts", {
     "@/lib/supabase/server": {
-      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: USER } } }) } }),
+      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: options.connecte === false ? null : { id: USER } } }) } }),
     },
     "@/lib/supabase/admin": { createAdminClient: () => admin },
     "@/lib/auth": { requireActiveAccount: async () => (options.actif === false ? refus : null) },
-    "@/lib/zabelie-rate-limit": { rateLimit: async () => options.cadence !== false },
+    "@/lib/zabelie-rate-limit": { rateLimit },
     "@/lib/image-limits": limites,
     "@/lib/product-media": media,
   });
@@ -148,8 +187,100 @@ function galerie(options: {
       method: "DELETE",
       body: JSON.stringify({ productId: PRODUIT, mediaId: "media-1" }),
     }));
-  return { poster, retirer, envois, retraits, queries: db.queries };
+  const demanderVideo = (productId = PRODUIT) => route.POST(new Request("https://zabelie.test/api/products/media/video", {
+    method: "POST", body: JSON.stringify({ productId, step: "demande", ext: "mp4" }),
+  }));
+  const confirmerVideo = (path = videoPath) => route.POST(new Request("https://zabelie.test/api/products/media/video", {
+    method: "POST", body: JSON.stringify({ productId: PRODUIT, step: "confirme", path }),
+  }));
+  return { poster, retirer, demanderVideo, confirmerVideo, envois, retraits, lignes, videoPath, cadences, liensSignes, lecturesStockage, queries: db.queries };
 }
+
+test("vidéo : une cadence refusée interdit demande et confirmation avant tout accès produit ou Storage", async () => {
+  for (const step of ["demande", "confirme"]) {
+    const g = galerie({ video: true, cadence: false });
+    const response = step === "demande" ? await g.demanderVideo() : await g.confirmerVideo();
+    assert.equal(response.status, 429, step);
+    assert.equal((await response.json()).error, "api.rate.limited");
+    assert.equal(g.queries.length, 0);
+    assert.deepEqual([g.liensSignes.length, g.lecturesStockage.length, g.lignes.length, g.retraits.length], [0, 0, 0, 0]);
+  }
+});
+
+test("vidéo : les deux étapes utilisent la cadence de galerie par vendeur et gardent le chemin signé", async () => {
+  const g = galerie({ video: true });
+  const demande = await g.demanderVideo();
+  assert.equal(demande.status, 200);
+  const { path, token } = await demande.json();
+  assert.equal(token, "jeton-factice");
+  assert.equal((await g.confirmerVideo(path)).status, 200);
+  assert.deepEqual(g.cadences, Array.from({ length: 2 }, () => ({ p_key: `galerie:${USER}`, p_limit: 20, p_window_seconds: 60 })));
+  assert.deepEqual(g.liensSignes, [{ bucket: media.VIDEO_BUCKET, path }]);
+  assert.deepEqual(g.lecturesStockage, [path]);
+  assert.equal(g.lignes[0].storage_path, path);
+  assert.equal(g.retraits.length, 0);
+});
+
+test("vidéo : une réponse RPC de cadence indécidable ne délivre aucun nouveau lien", async () => {
+  for (const cadenceRpc of [{ data: null }, { data: "true" }, { data: true, error: {} }, { throws: true }]) {
+    const g = galerie({ video: true, cadenceRpc });
+    assert.equal((await g.demanderVideo("autre-produit")).status, 429);
+    assert.equal(g.queries.length, 0);
+    assert.equal(g.liensSignes.length, 0);
+    assert.deepEqual(g.cadences, [{ p_key: `galerie:${USER}`, p_limit: 20, p_window_seconds: 60 }]);
+  }
+});
+
+test("vidéo : identité, suspension et propriété restent obligatoires aux deux étapes", async () => {
+  for (const [options, status] of [[{ connecte: false }, 401], [{ actif: false }, 403], [{ proprietaire: false }, 404]] as const) {
+    for (const step of ["demande", "confirme"]) {
+      const g = galerie({ video: true, ...options });
+      assert.equal((await (step === "demande" ? g.demanderVideo() : g.confirmerVideo())).status, status);
+      assert.equal(g.liensSignes.length, 0);
+      assert.equal(g.lecturesStockage.length, 0);
+      assert.equal(g.lignes.length, 0);
+      if (status !== 404) assert.equal(g.cadences.length, 0);
+    }
+  }
+});
+
+for (const video of [false, true]) {
+  test(`${video ? "vidéo" : "photo"} : une réponse perdue après commit ne détruit pas le média référencé`, async () => {
+    for (const insertion of ["erreur_apres_commit", "vide_apres_commit"] as const) {
+      const g = galerie({ video, insertion });
+      const r = video ? await g.confirmerVideo() : await g.poster(png(800, 600), "photo.png", "image/png");
+      assert.equal(r.status, 500, "aucune réussite inventée quand la réponse est incertaine");
+      assert.equal(g.lignes.length, 1, "la ligne simulée existe après commit");
+      assert.equal(g.retraits.length, 0, `${video ? "vidéo" : "image"} : l'objet référencé reste disponible`);
+    }
+  });
+
+  test(`${video ? "vidéo" : "photo"} : le succès conserve l'objet et un refus d'insertion ne déclenche aucun nettoyage aveugle`, async () => {
+    const ok = galerie({ video });
+    const response = video ? await ok.confirmerVideo() : await ok.poster(png(800, 600), "photo.png", "image/png");
+    assert.equal(response.status, 200);
+    assert.equal(ok.lignes.length, 1);
+    assert.equal(ok.retraits.length, 0);
+    const refus = galerie({ video, insertion: "refus" });
+    const rejected = video ? await refus.confirmerVideo() : await refus.poster(png(800, 600), "photo.png", "image/png");
+    assert.equal(rejected.status, 500);
+    assert.equal(refus.lignes.length, 0);
+    assert.equal(refus.retraits.length, 0, "un autre appel peut déjà avoir enregistré le même chemin vidéo");
+  });
+}
+
+test("vidéo hors contrat : objet supprimé avant toute tentative d'insertion", async () => {
+  for (const option of [{ videoBytes: 0 }, { videoBytes: media.MAX_VIDEO_BYTES + 1 }, { videoType: "text/html" }]) {
+    const g = galerie({ video: true, ...option });
+    assert.equal((await g.confirmerVideo()).status, 422);
+    assert.equal(g.lignes.length, 0);
+    assert.equal(g.queries.some(q => q.steps.some(([method]) => method === "insert")), false);
+    assert.deepEqual(g.retraits, [{ bucket: media.VIDEO_BUCKET, paths: [g.videoPath] }]);
+  }
+  const dejaConfirmee = galerie({ video: true, dejaEnGalerie: 1 });
+  assert.equal((await dejaConfirmee.confirmerVideo()).status, 422);
+  assert.equal(dejaConfirmee.retraits.length, 0, "une confirmation répétée ne supprime pas la vidéo existante");
+});
 
 test("SEC-02 — du HTML nommé .png et annoncé image/png est refusé, et RIEN n'est envoyé", async () => {
   const g = galerie();
