@@ -731,7 +731,7 @@ modifier tout le parcours.
 | UX-01 | Corrigé et testé | Compression navigateur et `COVER_MAX_OCTETS` partagés ; vraie route et scénario galerie |
 | UX-02 | Corrigé et testé | `PhotoPrincipale` sur les brouillons des trois types ; la préparation mesure `cover_url` |
 | UX-03 | Réserve produit et opérationnelle | Le bloc « quand/comment je suis payé » reste à valider avec le porteur ; ne pas promettre un versement ni activer un rail depuis un texte |
-| SEC-01 | Défaut code réel, **en cours dans le nouveau lot** | Médias/couverture d'une fiche publiée : revue transactionnelle et garde de dépendance à éprouver ; aucune clôture avant SHA et résultats du lot |
+| SEC-01 | Correctif dans la PR #396, validation humaine attendue | Médias/couverture d'une fiche publiée : revue transactionnelle, garde avant Storage, tests réels de concurrence/RLS ; SHA et résultats finaux consignés dans la PR |
 | SEC-02 | Corrigé et testé côté code | En-tête réel, dimensions, MIME et limite communs ; 0134 est la migration existante, son état de production reste un relevé historique |
 | UX-04 | Décision commerciale ouverte | Critères Elite / annonce du palier : `CommissionAnnonce`, modèle dormant 0108 et `docs/71` ; ne pas inventer les critères ou changer les taux |
 | UX-05 | Corrigé localement dans le nouveau lot, validation finale attendue | Attestation avant le bouton, libellés visibles associés aux champs ; erreur globale annoncée et associée au formulaire, sans inventer de diagnostic serveur par champ |
@@ -837,6 +837,28 @@ Les verrous ordonnent les commits de publication et de révision ; ils ne
 prouvent pas que l'écran de l'administrateur affichait la même révision au
 clic. Aucune version attendue ni nouveau moteur de modération n'est inventé.
 
+#### Complément de validation navigateur
+
+Le parcours de tarification pouvait remplir le champ Prix de l'ancienne
+instance pendant la navigation vers Service ; son remplacement effaçait
+ensuite cette saisie. La course a été reproduite en retenant la réponse de
+navigation, puis le test attend le titre et le contrôle propres au service.
+Les montants attendus restent identiques ; aucun retry ni délai arbitraire
+n'est ajouté. Les huit parcours de cette suite passent localement.
+
+Le contrôle des ventes flash a révélé un défaut d'hydratation réel :
+`FlashCountdown` calculait le premier texte avec deux `Date.now()` distincts,
+côté serveur et navigateur. Deux horloges séparées de sept secondes suffisent
+à faire échouer le test de rendu ; les cas navigateur décalé et déjà expiré
+reproduisent l'erreur React. Le correctif rend le premier HTML déterministe,
+puis utilise l'horloge cliente avec un instantané stable et un abonnement
+nettoyé au dernier démontage. Les assertions `pageerror` sont conservées.
+La fenêtre de prix reste contrôlée par le serveur au checkout.
+
+La [PR #396](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/396)
+porte le SHA et les résultats globaux de ce lot, ainsi que les limites de
+mise en service ; son ouverture n'applique aucune migration.
+
 ### 12.4 Réserves d'exploitation et décisions : aucune activation implicite
 
 | Sujet | Ce qui existe / reste à prouver | Décision ou preuve attendue |
@@ -853,7 +875,7 @@ clic. Aucune version attendue ni nouveau moteur de modération n'est inventé.
 
 **Frontière de clôture.** Les six lots fusionnés sont livrés et testés. SEC-01,
 la vérification des dépendances et les corrections secondaires nommées sont
-préparés localement dans un lot distinct, en attente de son SHA et de sa CI.
+proposés dans la PR #396 ; son SHA et sa CI font foi avant validation humaine.
 Les réserves et les améliorations non réalisées restent explicitement ouvertes ; les
 opportunités ne sont pas transformées en engagement. L'application de 0151,
 l'activation du gel, les données de production, les paiements réels et les
