@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { repartirApresReponse } from "@/lib/webhooks-apres";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyStripeWebhook } from "@/lib/stripe";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
       event.type === "charge.dispute.funds_reinstated") {
     const dispute = event.data.object;
     if (!dispute || typeof dispute !== "object") {
-      return NextResponse.json({ error: "Litige incompatible" }, { status: 400 });
+      return erreurTraduite("api.params.invalid", 400);
     }
     const paymentIntent = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id ?? null;
     const charge = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         !Number.isSafeInteger(dispute.amount) || dispute.amount <= 0 ||
         typeof dispute.currency !== "string" || !/^[a-z]{3}$/.test(dispute.currency) ||
         typeof dispute.status !== "string" || !/^[a-z_]{1,64}$/.test(dispute.status)) {
-      return NextResponse.json({ error: "Litige incompatible" }, { status: 400 });
+      return erreurTraduite("api.params.invalid", 400);
     }
     try {
       // No metadata chooses an order, no raw evidence is retained, no Stripe
@@ -41,14 +42,12 @@ export async function POST(req: Request) {
         p_amount_usd_cents: dispute.amount, p_currency: dispute.currency, p_livemode: event.livemode,
       });
       if (error || data?.event_id !== event.id || data?.ok !== true) {
-        return NextResponse.json({ error: "Traitement du litige indisponible" }, {
-          status: !error && data?.event_id === event.id && data?.retryable === false ? 409 : 503,
-        });
+        return erreurTraduite("api.unavailable", !error && data?.event_id === event.id && data?.retryable === false ? 409 : 503);
       }
       return NextResponse.json({ received: true, status: data.reason, duplicate: data.duplicate === true });
     } catch {
       // A lost reply is ambiguous: retry the same immutable event ID.
-      return NextResponse.json({ error: "Traitement du litige indisponible" }, { status: 503 });
+      return erreurTraduite("api.unavailable", 503);
     }
   }
 

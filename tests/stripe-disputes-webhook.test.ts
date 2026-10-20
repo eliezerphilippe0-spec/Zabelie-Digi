@@ -15,6 +15,7 @@ function fixture(options: {
       amount: 1250, currency: "usd", metadata: { order_id: "untrusted-order" }, evidence: { customer_name: "not persisted" }, ...options.dispute } },
     ...options.event };
   const route = loadRoute("app/api/stripe/webhook/route.ts", {
+    "@/lib/api-erreur": { erreurTraduite: async (key: string, status: number) => Response.json({ error: key }, { status }) },
     "@/lib/stripe": { verifyStripeWebhook: (payload: string, signature: string) => {
       verified.push([payload, signature]);
       if (options.signatureError) throw Error("bad signature");
