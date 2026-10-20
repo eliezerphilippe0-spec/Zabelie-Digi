@@ -28,6 +28,7 @@ export default async function OperationsPage({searchParams}:{searchParams:Promis
  <p className="mt-2 break-all text-xs text-mist">{row.reference??row.id} · {row.rail??"HTG"} · {new Date(row.since).toLocaleString("fr-HT",{timeZone:"America/Port-au-Prince"})}</p>
  {row.kind==="stripe_dispute"&&<>
  <dl className="mt-3 space-y-1 text-sm">
+ <div><dt className="inline font-semibold">Litige Stripe : </dt><dd className="inline break-all">{row.id}</dd></div>
  <div><dt className="inline font-semibold">États Stripe reçus : </dt><dd className="inline break-all">{row.stripe_status??"À rapprocher"}</dd></div>
  <div><dt className="inline font-semibold">Gel de maturation : </dt><dd className="inline">{row.freeze_active?"Actif":row.freeze_enabled===false?"Désactivé":row.freeze_enabled===true?"Activé, aucun gel actif":"État indisponible"}</dd></div>
  <div><dt className="inline font-semibold">Examen humain : </dt><dd className="inline">{row.requires_review===false?"Non requis":"Requis"}</dd></div>

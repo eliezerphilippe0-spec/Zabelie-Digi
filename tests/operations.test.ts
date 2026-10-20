@@ -79,9 +79,10 @@ test("la page distingue un gel actif, activé sans gel et inconnu ; elle n’ajo
     [{ freeze_active: true, freeze_enabled: false }, "Actif"],
     [{ freeze_active: null, freeze_enabled: null }, "État indisponible"],
   ] as const) {
-    const { html, amounts } = await renderPage([{ ...row, ...diagnostics, order_id: "commande", amount_htg: 1800 }]);
+    const { html, amounts } = await renderPage([{ ...row, ...diagnostics, order_id: "commande", reference: "ZB-261020-ABCDE", amount_htg: 1800 }]);
     assert.ok(html.includes(`Gel de maturation : </dt><dd class="inline">${label}</dd>`));
     assert.deepEqual(amounts, [1800]);
+    assert.match(html, /Litige Stripe : <\/dt><dd[^>]*>dp_fixture<\/dd>/, "l’identifiant du litige doit rester visible même quand une référence de commande existe");
     assert.match(html, /Commande liée : 1800 HTG/);
     assert.match(html, /href="\/assistance\/commande\/commande"/);
     assert.doesNotMatch(html, /Commande à rapprocher|data-refund-receipt/);
