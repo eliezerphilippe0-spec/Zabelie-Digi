@@ -43,3 +43,39 @@ test("mouvement réduit : aucune animation, tout est déjà à sa place", async 
     expect(await rangee.locator(sel).first().evaluate((el) => getComputedStyle(el).animationName), sel).toBe("none");
   }
 });
+
+test("horloge client décalée : hydratation sans erreur et compteur toujours vivant", async ({ page }) => {
+  await page.addInitScript(() => {
+    const realNow = Date.now.bind(Date);
+    Date.now = () => realNow() + 30_000;
+  });
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  for (const path of ["/", "/produit/filtre-huile-corolla"]) {
+    await page.goto(path);
+    const timer = page.getByText(/Se termine dans \d+:\d\d:\d\d/);
+    await expect(timer).toBeVisible();
+    const initial = await timer.textContent();
+    await expect.poll(() => timer.textContent()).not.toBe(initial);
+    expect(errors).toEqual([]);
+  }
+});
+
+test("expiration pendant le chargement : le compteur disparaît sans erreur d'hydratation", async ({ page }) => {
+  await page.addInitScript(() => {
+    const realNow = Date.now.bind(Date);
+    Date.now = () => realNow() + 4 * 3600_000;
+  });
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  for (const path of ["/", "/produit/filtre-huile-corolla"]) {
+    await page.goto(path, { waitUntil: "networkidle" });
+    await expect(page.getByText(/Se termine dans \d+:\d\d/)).toHaveCount(0);
+    // Cette interaction exige une application hydratée, sans masquer pageerror.
+    await page.locator("header:visible").getByRole("button", { name: "Mettre les annonces en pause", exact: true }).click();
+    await expect(page.locator("header:visible").getByRole("button", { name: "Relancer les annonces", exact: true })).toBeVisible();
+    await expect(page.locator("header:visible .annonce")).toHaveAttribute("data-pause", "");
+    await expect(page.getByText(/Se termine dans \d+:\d\d/)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  }
+});

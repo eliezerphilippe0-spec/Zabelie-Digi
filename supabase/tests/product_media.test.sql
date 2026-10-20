@@ -56,6 +56,11 @@ end $$;
 insert into zabelie_product_media (product_id, kind, storage_path)
 values ('00000000-0000-0000-0000-0000000e0011', 'image', 'd/1.jpg');
 
+-- Depuis 0152, chaque changement média renvoie une fiche publiée en revue.
+-- M1/M2 ont préparé la galerie ; l'humain la publie avant la lecture publique.
+update products set status='published'
+ where id='00000000-0000-0000-0000-0000000e0010';
+
 -- ── M3 — RLS ────────────────────────────────────────────────────────────────
 do $$
 declare v_pub int; v_draft int;

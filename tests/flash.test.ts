@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { database, loadRoute } from "./helpers/route-harness";
+import { t, type Lang, type I18nKey } from "../lib/i18n";
 
 /**
  * Ventes flash (docs/37 §B, migration 0080) — ce qui doit rester vrai.
@@ -99,5 +101,55 @@ test("la suite SQL éprouve les cinq familles de refus", () => {
       SQL_TESTS.includes(marqueur),
       `supabase/tests/flash.test.sql doit porter ${marqueur}`
     );
+  }
+});
+
+test("les vraies routes flash traduisent les refus sans exposer les erreurs SQL", async () => {
+  for (const lang of ["fr", "ht", "en", "es"] as Lang[]) {
+    for (const methode of ["POST", "DELETE"] as const) {
+      for (const code of ["P0001", "42P01"]) {
+        const db = database((q) => q.table === "products"
+          ? { data: { id: "produit", seller_id: "vendeur", price_htg: 100, status: "published" } }
+          : { error: { code, message: "private_constraint_detail" } });
+        const route = loadRoute("app/api/products/flash/route.ts", {
+          "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "vendeur" } } }) } }) },
+          "@/lib/supabase/admin": { createAdminClient: () => db },
+          "@/lib/auth": { requireActiveAccount: async () => null },
+          "@/lib/product-media": { isMissingTable: (error: { code: string }) => error.code === "42P01" },
+          "@/lib/api-erreur": { erreurTraduite: async (key: I18nKey, status: number) => Response.json({ error: t(lang, key) }, { status }) },
+        });
+        const response = await route[methode](new Request("http://local/api/products/flash", {
+          method: methode, body: JSON.stringify({ productId: "produit", prixFlashHTG: 50, dureeH: 1 }),
+        }));
+        assert.equal(response.status, code === "42P01" ? 503 : methode === "POST" ? 422 : 500);
+        assert.deepEqual(await response.json(), { error: t(lang, code === "42P01" ? "api.unavailable" : "api.write.failed") });
+      }
+    }
+  }
+});
+
+test("flash : formes JSON et date hors capacité sont refusées avant toute lecture ou écriture", async () => {
+  const valide = { productId: "produit", prixFlashHTG: 50, dureeH: 1 };
+  for (const methode of ["POST", "DELETE"] as const) {
+    const cas: unknown[] = [null, [], "texte", 42, true];
+    if (methode === "POST") cas.push(
+      { ...valide, dureeH: Number.MAX_VALUE },
+      { ...valide, dureeH: 8_640_000_000_000_000 },
+      { ...valide, unitesMax: 2147483648 },
+      { ...valide, prixFlashHTG: Number.MAX_SAFE_INTEGER + 1 },
+    );
+    for (const body of cas) {
+      let acces = 0;
+      const route = loadRoute("app/api/products/flash/route.ts", {
+        "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "vendeur" } } }) } }) },
+        "@/lib/supabase/admin": { createAdminClient: () => { acces++; throw new Error("Unexpected database access"); } },
+        "@/lib/auth": { requireActiveAccount: async () => null },
+        "@/lib/api-erreur": { erreurTraduite: async (key: string, status: number) => Response.json({ error: key }, { status }) },
+      });
+      const response = await route[methode](new Request("http://local/api/products/flash", { method: methode, body: JSON.stringify(body) }));
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { error: "api.params.invalid" });
+      assert.equal(acces, 0);
+    }
   }
 });

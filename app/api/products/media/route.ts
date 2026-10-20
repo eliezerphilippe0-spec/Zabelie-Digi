@@ -16,8 +16,8 @@ import {
 import {
   MAX_IMAGES_PER_PRODUCT,
   MEDIA_BUCKET,
-  bucketDuMedia,
   isMissingTable,
+  revisionMediasDisponible,
 } from "@/lib/product-media";
 
 export const runtime = "nodejs";
@@ -39,7 +39,7 @@ export const dynamic = "force-dynamic";
 /**
  * Galerie produit (V-1A, docs/35).
  *   POST   (multipart : productId, file)  — ajoute UNE photo (≤ 6/produit).
- *   DELETE { productId, mediaId }         — retire une photo (stockage + ligne).
+ *   DELETE { productId, mediaId }         — retire une photo ou vidéo de la fiche.
  *
  * Réservé au vendeur propriétaire, compte actif. Le plafond est REDIT en base
  * (ZB073) : la vérification app-side seule se contournerait par appels
@@ -55,7 +55,7 @@ async function verifierProprietaire(
 ) {
   const { data: product } = await admin
     .from("products")
-    .select("id, seller_id")
+    .select("id, seller_id, status")
     .eq("id", productId)
     .single();
   if (!product || product.seller_id !== userId) return null;
@@ -136,6 +136,12 @@ export async function POST(req: Request) {
   if (!product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
+  if (product.status === "archived") {
+    return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 409 });
+  }
+  if (!["draft", "published"].includes(product.status) || !(await revisionMediasDisponible(admin))) {
+    return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
+  }
 
   // Plafond lisible AVANT l'upload (le trigger ZB073 reste le juge de paix).
   const { count, error: countErr } = await admin
@@ -186,7 +192,7 @@ export async function POST(req: Request) {
   }
 
   const { data: pub } = admin.storage.from(MEDIA_BUCKET).getPublicUrl(path);
-  return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl });
+  return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl, status: "draft" });
 }
 
 export async function DELETE(req: Request) {
@@ -202,13 +208,15 @@ export async function DELETE(req: Request) {
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
 
-  let body: { productId?: string; mediaId?: string };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
-  if (!body.productId || !body.mediaId) {
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+    !("productId" in body) || typeof body.productId !== "string" || !body.productId ||
+    !("mediaId" in body) || typeof body.mediaId !== "string" || !body.mediaId) {
     return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
   }
 
@@ -217,8 +225,14 @@ export async function DELETE(req: Request) {
   if (!product) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
+  if (product.status === "archived") {
+    return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 409 });
+  }
+  if (!["draft", "published"].includes(product.status) || !(await revisionMediasDisponible(admin))) {
+    return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
+  }
 
-  // La ligne d'abord (elle porte le chemin), le stockage ensuite.
+  // Seule la référence de cette fiche peut être retirée.
   const { data: media, error: readErr } = await admin
     .from("zabelie_product_media")
     .select("id, kind, storage_path")
@@ -229,16 +243,19 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: t(lang, "api.media.notfound") }, { status: 404 });
   }
 
-  const { error: delErr } = await admin
+  const { data: deleted, error: delErr } = await admin
     .from("zabelie_product_media")
     .delete()
-    .eq("id", media.id);
-  if (delErr) {
+    .eq("id", media.id)
+    .eq("product_id", product.id)
+    .select("id")
+    .maybeSingle();
+  if (delErr || !deleted || deleted.id !== media.id) {
     return NextResponse.json({ error: t(lang, "api.delete.failed") }, { status: 500 });
   }
-  // Best-effort : un objet orphelin au stockage est un déchet, pas une faille.
-  // Le bucket se déduit du type : une vidéo vit dans `product-videos` (0120).
-  await admin.storage.from(bucketDuMedia(media.kind)).remove([media.storage_path]);
+  // Une ancienne confirmation vidéo peut réattacher ce chemin après DELETE.
+  // Le conserver : même une relecture d'absence laisserait cette course ouverte.
+  // Un nettoyage ultérieur doit aussi exclure les confirmations encore possibles.
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, status: "draft" });
 }

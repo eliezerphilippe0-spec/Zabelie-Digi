@@ -44,7 +44,7 @@ export async function confirmerLivrable({
     `^${user.id}/${product.id}/liv-[0-9a-fA-F-]{36}\\.${ext}$`
   );
   if (!attendu.test(path)) {
-    return NextResponse.json({ error: "Chemin invalide" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
   }
 
   /* L'objet RÉELLEMENT téléversé — jamais la taille annoncée par le client.
@@ -58,7 +58,7 @@ export async function confirmerLivrable({
   const objet = (objets ?? []).find((o) => o.name === nom);
   if (listErr || !objet) {
     return NextResponse.json(
-      { error: "Fichier introuvable au stockage" },
+      { error: t(lang, "api.file.missing") },
       { status: 404 }
     );
   }
@@ -68,7 +68,7 @@ export async function confirmerLivrable({
     // contrat, et jamais de livrable à zéro octet vendu comme un ebook.
     await admin.storage.from(BUCKET).remove([path]);
     return NextResponse.json(
-      { error: "Fichier refusé : 50 Mo maximum, et non vide." },
+      { error: t(lang, "api.file.size") },
       { status: 422 }
     );
   }

@@ -35,12 +35,12 @@ export function UploadAsset({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null);
 
   async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size === 0 || file.size > 50 * 1024 * 1024) { setMsg(labels.error); e.target.value = ""; return; }
+    if (file.size === 0 || file.size > 50 * 1024 * 1024) { setMsg({ text: labels.error, error: true }); e.target.value = ""; return; }
     setLoading(true);
     setMsg(null);
     try {
@@ -51,7 +51,7 @@ export function UploadAsset({
       });
       const lien = await demande.json();
       if (!demande.ok || !lien.path || !lien.token) {
-        setMsg(typeof lien.error === "string" ? lien.error : labels.error);
+        setMsg({ text: typeof lien.error === "string" ? lien.error : labels.error, error: true });
         return;
       }
 
@@ -62,7 +62,7 @@ export function UploadAsset({
           contentType: file.type || "application/octet-stream",
         });
       if (upErr) {
-        setMsg(labels.error);
+        setMsg({ text: labels.error, error: true });
         return;
       }
 
@@ -78,13 +78,13 @@ export function UploadAsset({
       });
       const data = await confirme.json();
       if (!confirme.ok) {
-        setMsg(typeof data.error === "string" ? data.error : labels.error);
+        setMsg({ text: typeof data.error === "string" ? data.error : labels.error, error: true });
         return;
       }
-      setMsg(labels.saved);
+      setMsg({ text: labels.saved, error: false });
       router.refresh();
     } catch {
-      setMsg(labels.errorNetwork);
+      setMsg({ text: labels.errorNetwork, error: true });
     } finally {
       setLoading(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -106,7 +106,7 @@ export function UploadAsset({
       >
         {loading ? labels.sending : labels.add}
       </button>
-      {msg && <p className="mt-1 text-xs text-mist">{msg}</p>}
+      {msg && <p role={msg.error ? "alert" : "status"} className={`mt-1 text-sm ${msg.error ? "text-danger-text" : "text-mist"}`}>{msg.text}</p>}
     </div>
   );
 }

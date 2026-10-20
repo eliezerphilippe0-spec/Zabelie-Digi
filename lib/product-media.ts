@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { OBJETS_MEDIAS_0152, verifierPresenceObjets } from "@/lib/schema-requis";
 
 /**
  * Galerie produit (V-1A, docs/35) — lecture tolérante et URL dérivée.
@@ -23,6 +24,20 @@ export function bucketDuMedia(kind: string): string {
   return kind === "video" ? VIDEO_BUCKET : MEDIA_BUCKET;
 }
 export const MAX_IMAGES_PER_PRODUCT = 6;
+
+/** Une ancienne sonde verte ne prouve pas la protection de la revue des médias. */
+export async function revisionMediasDisponible(client: SupabaseClient): Promise<boolean> {
+  try {
+    const { data, error } = await client.rpc("zabelie_objets_requis");
+    return verifierPresenceObjets({
+      objets: data,
+      erreur: error,
+      requis: OBJETS_MEDIAS_0152,
+    }).statut === "ok";
+  } catch {
+    return false;
+  }
+}
 
 /** Arbitrages porteur du 2026-08-15 (« 60s et 50 Mo ok ») — V-1B, docs/35. */
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;

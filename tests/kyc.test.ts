@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { KYC_BUCKET, KYC_TYPE_PAR_EXTENSION, estTypeKyc, kycRequisPourRetrait, signatureKycValide } from "../lib/kyc";
+import { isMissingFunction } from "../lib/pg-errors";
 import { refus } from "./refus-forme";
 import { database, loadRoute } from "./helpers/route-harness";
 
@@ -98,7 +99,8 @@ const USER = "13000000-0000-4000-8000-000000000001";
 const pending = (): Submission => ({ status: "pending", submitted_at: "2026-10-05T10:00:00.000001Z", decided_at: null });
 function depotFixture(options: {
   initial?: Submission | null; upload?: (state: { sub: Submission | null; active: boolean }) => void;
-  rpcError?: boolean; missingRpc?: boolean; lostResponse?: boolean; invalidResult?: boolean;
+  rpcError?: boolean; missingRpc?: boolean | "42883"; lostResponse?: boolean; invalidResult?: boolean;
+  rpcReplyError?: boolean; lateCommit?: boolean; undecidableResult?: unknown;
   readError?: boolean; cleanupError?: boolean;
 } = {}) {
   const state = { sub: options.initial === undefined ? pending() : options.initial, active: true };
@@ -106,6 +108,7 @@ function depotFixture(options: {
   const objects = new Set<string>();
   const removed: string[] = [];
   const calls: Record<string, unknown>[] = [];
+  let finishRegistration: (() => void) | undefined;
   const db = database(query => {
     const operation = (name: string) => query.steps.find(([method]) => method === name)?.[1];
     if (query.table === "zabelie_kyc_submissions" && operation("select")) return { data: state.sub ? { ...state.sub } : null, error: null };
@@ -139,8 +142,17 @@ function depotFixture(options: {
       const path = args.p_storage_path as string;
       assert.match(path, new RegExp(`^${USER}/[0-9a-f-]{36}\\.jpg$`));
       calls.push(args);
-      if (options.missingRpc) return { error: { code: "PGRST202" }, data: null };
+      if (options.missingRpc) return { error: { code: options.missingRpc === true ? "PGRST202" : options.missingRpc }, data: null };
       if (options.rpcError) throw new Error("offline");
+      if (options.rpcReplyError) return { data: options.undecidableResult ?? null, error: { code: "", message: "TypeError: fetch failed" } };
+      if (options.lateCommit) {
+        finishRegistration = () => {
+          documents.set(path, "document-late");
+          state.sub = { status: "pending", submitted_at: "2026-10-05T11:00:00.000001Z", decided_at: null };
+        };
+        return { data: null, error: { code: "", message: "response lost while transaction is in flight" } };
+      }
+      if (Object.hasOwn(options, "undecidableResult")) return { data: options.undecidableResult, error: null };
       if (!state.active) return { data: { ok: false, code: "account_inactive" }, error: null };
       if (state.sub?.status === "approved") return { data: { ok: false, code: "locked" }, error: null };
       if (JSON.stringify(state.sub) !== JSON.stringify(args.p_expected)) return { data: { ok: false, code: "conflict" }, error: null };
@@ -156,7 +168,7 @@ function depotFixture(options: {
     "@/lib/auth": { requireActiveAccount: async () => null },
     "@/lib/api-erreur": { erreurTraduite: (error: string, status: number) => Response.json({ error }, { status }) },
     "@/lib/product-media": { isMissingTable: () => false },
-    "@/lib/pg-errors": { isMissingFunction: (error: { code?: string }) => error.code === "PGRST202" },
+    "@/lib/pg-errors": { isMissingFunction },
     "@/lib/kyc": { KYC_BUCKET, KYC_EXTENSIONS: new Set(["jpg"]), KYC_MAX_BYTES: 1000, KYC_TYPE_PAR_EXTENSION, estTypeKyc, signatureKycValide },
   });
   const execute = () => {
@@ -164,7 +176,7 @@ function depotFixture(options: {
     form.set("file", new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0]), "synthetic document"], "fixture.jpg", { type: "image/jpeg" }));
     return route.POST(new Request("https://zabelie.test/api/kyc", { method: "POST", body: form }));
   };
-  return { state, documents, objects, removed, calls, execute };
+  return { state, documents, objects, removed, calls, queries: db.queries, execute, finishRegistration: () => finishRegistration?.() };
 }
 
 test("dépôt atomique : une pièce nominale ou un dossier refusé peuvent être soumis sans exposer leur URL", async () => {
@@ -202,25 +214,53 @@ test("dépôt atomique : une ancienne lecture pending ne remplace pas un nouveau
   assert.equal((await f.execute()).status, 409); assert.deepEqual(f.state.sub, newer); assert.equal(f.objects.size, 0);
 });
 
-test("dépôt atomique : RPC absente ou panne avant commit nettoie le stockage et rend 503", async () => {
-  for (const options of [{ missingRpc: true }, { rpcError: true }]) {
+test("dépôt atomique : RPC absente du cache ne démarre aucune transaction et nettoie l'objet", async () => {
+  const f = depotFixture({ missingRpc: true }); assert.equal((await f.execute()).status, 503);
+  assert.equal(f.objects.size, 0); assert.equal(f.documents.size, 0); assert.deepEqual(f.state.sub, pending());
+});
+
+test("dépôt atomique : erreur transport ou réponse indécidable garde l'objet sans relecture d'absence", async () => {
+  const cases = [
+    { rpcError: true }, { rpcReplyError: true }, { missingRpc: "42883" as const },
+    { rpcReplyError: true, undecidableResult: { ok: false, code: "locked" } },
+    ...[null, undefined, [], {}, false, "locked", { ok: false }, { ok: false, code: "unknown" },
+      { ok: true }, { ok: true, id: 12 }, { ok: "yes", id: "document" }, { code: "locked" },
+      { ok: false, code: "locked", id: "document" },
+      ...["account_inactive", "conflict", "locked"].map(code => ({ ok: true, id: "document", code }))].map(undecidableResult => ({ undecidableResult })),
+  ];
+  for (const options of cases) {
     const f = depotFixture(options); assert.equal((await f.execute()).status, 503);
-    assert.equal(f.objects.size, 0); assert.equal(f.documents.size, 0); assert.deepEqual(f.state.sub, pending());
+    assert.equal(f.objects.size, 1); assert.equal(f.documents.size, 0); assert.equal(f.removed.length, 0);
+    assert.ok(!f.queries.some(query => query.table === "zabelie_kyc_documents"), "une lecture vide ne prouve pas que la transaction est finie");
   }
+});
+
+test("dépôt atomique : une réponse perdue avant COMMIT tardif ne détruit pas la future pièce référencée", async () => {
+  const f = depotFixture({ lateCommit: true });
+  assert.equal((await f.execute()).status, 503);
+  assert.equal(f.documents.size, 0, "la transaction initiale n'est pas encore visible à la réponse HTTP");
+  f.finishRegistration();
+  assert.equal(f.documents.size, 1, "la transaction initiale peut terminer après la réponse HTTP");
+  assert.equal(f.objects.size, 1, "la pièce doit encore exister après ce COMMIT tardif");
+  assert.equal(f.removed.length, 0);
+  assert.ok(!f.queries.some(query => query.table === "zabelie_kyc_documents"));
 });
 
 test("dépôt atomique : une réponse perdue après commit ne supprime jamais la pièce déjà enregistrée", async () => {
   for (const options of [{ lostResponse: true }, { invalidResult: true }]) {
     const f = depotFixture(options); assert.equal((await f.execute()).status, 503);
     assert.equal(f.documents.size, 1); assert.equal(f.objects.size, 1); assert.equal(f.removed.length, 0);
+    assert.ok(!f.queries.some(query => query.table === "zabelie_kyc_documents"));
   }
 });
 
-test("dépôt atomique : une panne de lecture ou de nettoyage ne prétend pas avoir supprimé la pièce", async () => {
-  for (const options of [{ rpcError: true, readError: true }, { rpcError: true, cleanupError: true }]) {
-    const f = depotFixture(options); assert.equal((await f.execute()).status, 503);
-    assert.equal(f.objects.size, 1); assert.equal(f.removed.length, 0);
-  }
+test("dépôt atomique : un refus métier fiable ne dépend pas d'une relecture, et un nettoyage refusé reste visible", async () => {
+  const decision = { ...pending(), status: "approved" as const, decided_at: "2026-10-05T10:30:00Z" };
+  const refuse = depotFixture({ readError: true, upload: state => { state.sub = decision; } });
+  assert.equal((await refuse.execute()).status, 409); assert.equal(refuse.objects.size, 0); assert.equal(refuse.removed.length, 1);
+  assert.ok(!refuse.queries.some(query => query.table === "zabelie_kyc_documents"));
+  const echec = depotFixture({ cleanupError: true, upload: state => { state.sub = decision; } });
+  assert.equal((await echec.execute()).status, 503); assert.equal(echec.objects.size, 1); assert.equal(echec.removed.length, 0);
 });
 
 test("revue : réservée aux admins, URLs SIGNÉES seulement, refus motivé, décision journalisée", () => {

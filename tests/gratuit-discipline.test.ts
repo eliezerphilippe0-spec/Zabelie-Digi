@@ -144,7 +144,7 @@ test("G7 — la PUBLICATION d'un numérique accepte 0 et refuse le négatif", ()
   // condition laisserait le mur debout en affichant le contraire.
   assert.match(
     PRODUITS,
-    /!Number\.isFinite\(price\)\s*\|\|\s*price\s*<\s*0\s*\)/,
+    /!Number\.isFinite\(price\)\s*\|\|\s*price\s*<\s*0(?=\s*(?:\|\||\)))/,
     "la publication numérique doit refuser price < 0, jamais price < 1"
   );
   assert.doesNotMatch(

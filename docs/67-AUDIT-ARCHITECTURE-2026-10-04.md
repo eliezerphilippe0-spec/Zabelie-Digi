@@ -674,3 +674,210 @@ Le helper et sa RPC atomique ne sont pas recréés ; aucun schéma ne change.
 Le traitement Stripe est proposé séparément dans la PR #391 (`docs/28`) et
 ne fait pas partie de cette branche. Les limites de production restent celles
 énoncées au début de ce §11.
+
+## 12. Matrice de clôture des constats connus — 20 octobre 2026
+
+Cette section réconcilie les constats des §3–11, de la
+[revue de `/vendre`](REVUE-2026-10-08-vendre.md), de
+[docs/55](55-audit-priorites-2026-09-08.md) et de
+[docs/72](72-ANGLES-MORTS-EXPLOITATION-2026-10-17.md). Elle ne remplace pas leurs
+mesures historiques et n'est pas une nouvelle mesure de la production.
+
+**Référence livrée :** `main` à
+`56b76a6763f0e3e158f6b3bb1f1084719a5850d0`, arbre
+`42a240e62f604e81c6d624dedb5811a8de7c7f96`. Les six PR #390 à #395 sont
+fusionnées. La liste REST directe ne relève plus que les trois PR de dépendances
+#385, #386 et #387 ; aucun lot fonctionnel parallèle ne doit être recréé.
+
+La [CI de main](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39453341741)
+a ses trois checks `build`, `e2e` et `sql-tests` verts.
+Le [check post-déploiement](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39453341899)
+est également vert. Ces métadonnées GitHub ne prouvent ni l'application de 0151,
+ni la configuration Stripe, ni une transaction réelle. L'arbre est identique
+à celui de la
+[validation combinée](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39451209757) :
+2 132 tests unitaires et un test ClamAV, 378 cas navigateur dont 22 Auth,
+96 fichiers SQL et 16 mutations détectées. Dans ce run combiné, 377 cas
+navigateur passent directement et un cas préexistant d'apparence passe au
+premier retry ; aucun échec final ni test ignoré.
+
+### 12.1 Livré et testé : ne pas reconstruire
+
+| Constat | État du code à la référence ci-dessus | Preuve et limite |
+|---|---|---|
+| Alias `/inscription` absent | Corrigé, PR #390 : 307 relatif vers `/connexion?mode=signup`, retour interne contrôlé par `safeNext` | `tests/inscription-route.test.ts`, Auth navigateur ; formulaire et acceptations existants réutilisés |
+| Photo/vidéo supprimée après INSERT dont la réponse est perdue | Corrigé, PR #390 : conserver l'objet susceptible d'être référencé | `tests/galerie-photos.test.ts` ; un nettoyage futur doit prouver l'absence de référence |
+| Demandes vidéo non confirmées sans limite de cadence | Corrigé dans #390 : même budget atomique que les photos, refus si compteur indécidable | Vraies routes et helper testés avec E/S factices ; aucun second limiteur |
+| Événements de litige Stripe ignorés | Code livré, PR #391 : cinq types signés, reçus immuables, rapprochement unique, file admin, garde de maturation dormante | `tests/stripe-disputes-webhook.test.ts`, `tests/operations.test.ts`, SQL SD1–SD13 et deux ordres de concurrence ; mise en service non attestée |
+| Pixels effacés par corps JSON invalide | Corrigé, PR #392 : refus avant upsert, effacement volontaire conservé | `tests/pixels-route.test.ts` |
+| Récupération de mot de passe utilisant une ancienne session | Corrigé, PR #393 : identité du lien vérifiée, writer mémoire lié à cette session | `tests/reset-password-form.test.ts`, `e2e-auth/reinitialisation.spec.ts` ; aucun envoi d'e-mail réel par ces tests |
+| Coordonnées de remise effacées par corps/type invalide | Corrigé, PR #394 : refus avant écriture, identité Auth et remplacement explicite conservés | `tests/delivery-info.test.ts` ; aucune livraison opérée par Zabelie |
+| Export de compte partiel annoncé comme complet | Corrigé, PR #395 : erreurs bloquantes, pagination et décompte exact sur les familles existantes | `tests/account-export.test.ts`, tests collections/juridiques ; les lectures ne constituent pas un instantané transactionnel |
+| Retry du checkout, session opérateur non persistée, trace digitale ignorée (§7) | Corrigés avant les six lots, §8–10 : clé de création et PK existante, `persistPaymentSession`, trace avant URL | Suites checkout/panier/download ; aucun nouveau checkout ni paiement réel nécessaire pour reproduire les refus |
+| Reprise numérique, réservation physique incertaine, course KYC, IPv4 mappée privée (§9) | Correctifs existants à conserver : reprise seule, session non exposée après libération, RPC KYC atomique, résolution IP filtrée | §9–10 et suites checkout/KYC/webhooks ; aucune preuve d'incident financier réel déduite |
+| KYC orphelin et durée partant de la décision (§4.1) | Correctifs existants 0127/0131 : stockage protégé, conservation pendant la relation et délai depuis clôture | §10, suites KYC/fermeture ; l'état actuel des fichiers de production n'a pas été relu |
+| Rayons vides, langue et surface indexable (§3–5) | Filtre `rayonsPeuples`, garde sitemap, URLs publiques par langue et métadonnées existent | `app/categories/page.tsx`, `app/sitemap.ts`, `lib/langue-url.ts`, suites taxonomie/SEO ; ne pas créer une seconde taxonomie ou couche de routes |
+| Publication, support, remboursements, RLS et mesures admin | Mécanismes existants, dont 0113 : publication humaine, dossiers par commande, retour documenté, séparation vendeur et métriques | Suites publication, droits RPC/RLS et opérations ; ni le support ni le ledger ne doivent être reconstruits à partir de l'ancienne spec M3 |
+
+### 12.2 Revue initiale de `/vendre` : liste finie des 21 constats
+
+Les numéros ci-dessous sont ceux du rapport du 8 octobre. « Opportunité »
+désigne une amélioration mesurée ou proposée, sans nouveau défaut P0/P1 démontré
+dans cette clôture. « Reste code » n'est pas une autorisation implicite de
+modifier tout le parcours.
+
+| ID | Classe et état | Ancre actuelle / suite bornée |
+|---|---|---|
+| UX-01 | Corrigé et testé | Compression navigateur et `COVER_MAX_OCTETS` partagés ; vraie route et scénario galerie |
+| UX-02 | Corrigé et testé | `PhotoPrincipale` sur les brouillons des trois types ; la préparation mesure `cover_url` |
+| UX-03 | Réserve produit et opérationnelle | Le bloc « quand/comment je suis payé » reste à valider avec le porteur ; ne pas promettre un versement ni activer un rail depuis un texte |
+| SEC-01 | Correctif dans la PR #396, validation humaine attendue | Médias/couverture d'une fiche publiée : revue transactionnelle, garde avant Storage, tests réels de concurrence/RLS ; SHA et résultats finaux consignés dans la PR |
+| SEC-02 | Corrigé et testé côté code | En-tête réel, dimensions, MIME et limite communs ; 0134 est la migration existante, son état de production reste un relevé historique |
+| UX-04 | Décision commerciale ouverte | Critères Elite / annonce du palier : `CommissionAnnonce`, modèle dormant 0108 et `docs/71` ; ne pas inventer les critères ou changer les taux |
+| UX-05 | Corrigé localement dans le nouveau lot, validation finale attendue | Attestation avant le bouton, libellés visibles associés aux champs ; erreur globale annoncée et associée au formulaire, sans inventer de diagnostic serveur par champ |
+| UX-06 | Corrigé localement sur les chemins du rapport, validation finale attendue | Asset et sa confirmation, flash et description IA traduits ; clés existantes réutilisées et trois messages de fichier ajoutés dans les quatre langues ; cliquet conservé |
+| UX-07 | Opportunité de fiabilité 3G | Envoi direct signé existant ; pas de progression/reprise ni `accept` sur `UploadAsset`, message de taille générique ; aucune seconde chaîne Storage à créer |
+| UX-08 | Opportunité produit | Ordre de l'espace connecté et poids des portes de création à arbitrer ; pas de nouvelle page vendeur parallèle |
+| UI-01 | Opportunité UI | Petits textes/focus à reprendre dans les composants existants ; les mesures du 8 octobre n'ont pas été remesurées ici |
+| RES-01 | Galerie corrigée ; complément local du lien dans le nouveau lot | Galerie et lien « Lire les règles » portent `min-h-11` ; aucune nouvelle mesure tactile réelle prétendue |
+| RES-02 | Opportunité performance | Imports clients statiques encore présents ; poids actuel non remesuré, optimisation à valider par mesure avant/après |
+| SEC-03 | Corrigé localement dans le nouveau lot, validation finale attendue | Brouillon et flash : message traduit, aucun détail SQL client ; journal limité au code d'erreur. L'erreur d'INSERT ambiguë n'affirme pas que rien n'a été enregistré |
+| SEC-04 | Corrigé localement dans le nouveau lot, validation finale attendue | Prix du brouillon borné à la capacité `integer` après arrondi ; zéro conservé et aucun plafond commercial ajouté. Flash : unités `integer`, prix `bigint` limité à la précision sûre JS, date représentable avant accès DB |
+| SEC-05 | Corrigé et testé | Compte actif pour suppression, budget galerie existant ; le complément vidéo de #390 ferme aussi les demandes non confirmées |
+| UX-09 | Opportunité de feedback | Statut de revue visible après retour ; message explicite de succès encore à ajouter si retenu |
+| UI-02 | Corrigé localement dans le nouveau lot, validation finale attendue | `UploadAsset` distingue message de danger/`alert` et succès/`status` ; aucun changement de protocole d'envoi |
+| UI-03 | Corrigé localement dans le nouveau lot, validation finale attendue | Flèche `→` sur le lien interne physique ; aucun nouveau parcours |
+| UI-04 | Opportunité éditoriale | Harmonisation vouvoiement/graphie kreyòl à vérifier dans le dictionnaire ; aucune clôture textuelle globale prétendue |
+| RES-03 | Opportunité à borner par le volume | Galerie déjà lue en parallèle ; liste vendeur encore sans pagination, plusieurs autres lectures séquentielles ; ne pas confondre avec la correction d'export #395 |
+
+### 12.3 Reste de sécurité opérationnelle du schéma
+
+**Défaut confirmé, nouveau lot en cours :** une version pré-0151 de
+`zabelie_objets_requis()` peut rendre uniquement ses anciens objets tous
+présents. `verdictObjets` annonçait alors un schéma complet, bien que cette
+réponse ne dise rien des sept objets Stripe. Le repli registre n'exigeait que
+0046. Une sonde de disponibilité publique verte ne démontre pas la présence
+du nouveau RPC.
+
+Le correctif local réutilise `lib/schema-requis.ts` et sa suite existante :
+ancienne sonde ou résultat indécidable → `indetermine`, objet explicitement
+absent → `manquant`, présence de tous les objets attendus → `ok`. Les
+diagnostics explicites des objets historiques restent conservés. Le helper
+pur `verifierPresenceObjets` permet à une route de vérifier son seul
+sous-ensemble de dépendances, sans lui imposer Stripe. Le verdict admin et le
+registre contrôlent aussi 0152 et ses quatre gardes média ; la liste exportée
+`OBJETS_MEDIAS_0152` est partagée avec les routes. Sans présence attestée de
+ces gardes, une mutation de couverture, photo ou vidéo peut répondre 503
+avant Storage : la fusion du code ne dispense pas de sa dépendance de schéma.
+La forme
+`source/statut/message` de `schemaRequis` et le HTTP de `coherence` sont
+conservés ; `readyz` reste une sonde de disponibilité des catégories.
+
+Preuve locale avant correction : 18 tests exécutés, 5 échecs comportementaux.
+Une seconde reproduction 0152 a fait échouer ses deux cas avant correction.
+Après correction : 23 tests de schéma réussis. L'ensemble ciblé final de 13
+suites compte 112 tests réussis, aucun échec ni test ignoré : schéma et sa
+couverture, migrations, brouillon, flash, IA/facturation, cliquet i18n, gratuit,
+acceptations, service jour même, choix des types vendeur et discipline des types.
+Les refus SQL traduits sont exercés dans les quatre langues sur les vraies
+routes flash ; les corps JSON incompatibles, dates non représentables et
+débordements techniques sont refusés avant accès DB. Ce résultat local ne remplace
+pas la validation globale et le SHA final à consigner dans la PR du nouveau lot.
+Il n'affirme pas que 0151 ou 0152 manque en production et n'applique aucune migration.
+
+Le relevé public anonyme livré séparément (`cloture-pages-publiques.json`)
+porte sur 60 URL : 59 réponses 200 et l'alias 307 relatif attendu, aucun titre
+manquant et un H1 par document HTML ; robots et sitemap répondent 200.
+Ce contrôle HTTP ne remplace ni les parcours connectés ni une relecture de base.
+
+Le sitemap annonçait encore `/fr/categories` et `/ht/categories` quand le
+répertoire vide portait `noindex`. Le lot réutilise `rayonsPeuples` et la
+lecture existante du menu pour omettre ces entrées. Quatre appels au vrai
+générateur couvrent vide, rayons vides, rayon peuplé et panne ; trois cas
+échouaient avant correction. Les autres routes statiques restent disponibles.
+
+#### Contrat du lot : revue des médias et conservation des fichiers
+
+`0152_zabelie_product_media_review.sql` étend le garde de galerie existant
+aux INSERT/UPDATE/DELETE, sous verrou du produit. Ajout/retrait d'un média
+ou changement effectif de couverture remet atomiquement une fiche publiée
+en brouillon ; les fiches archivées refusent ces mutations. Les quotas
+existants de six photos et une vidéo sont comptés après verrouillage.
+Les livrables et versions numériques immuables gardent leurs mécanismes.
+La couverture reçoit un chemin UUID neuf, sans écrasement, et partage la
+cadence de galerie. Le vendeur est averti et le statut est rafraîchi après
+les quatre mutations de galerie ; les contrôles archivés sont désactivés.
+
+Les quatre attestations 0152, dont les triggers actifs et leurs événements,
+sont exigées avant toute opération Storage. Sans migration attestée, les
+mutations répondent 503 ; leur lecture reste disponible. L'application de
+0152 doit être planifiée et validée séparément avant la mise en service du
+code. Elle n'est pas effectuée ici ; le fichier de migration est la source
+de ce lot, sans régénération globale du vieux `schema.sql`.
+
+Le retrait ne détruit plus l'objet Storage : une ancienne confirmation vidéo
+peut réattacher ce chemin après DELETE. Cette course a été reproduite sur
+les deux vraies routes avec E/S factices. Une simple relecture d'absence ne
+la ferme pas. Les réponses d'écriture incertaines conservent aussi les
+objets ; un retrait de fiche n'est donc pas une garantie d'effacement de
+l'ancienne URL publique. Aucun quota commercial global ou nettoyage général
+n'est ajouté : le manifeste paginé de `storage-recovery` existe déjà, et les
+purges KYC/Authoring gardent leurs propres règles.
+
+Le dépôt KYC avait la même ambiguïté après sa RPC : une transaction pouvait
+committer après la relecture vide qui autorisait la suppression. Le lot
+conserve le fichier sur réponse inconnue, invalide ou contradictoire et
+répond 503. Seul un refus métier conclusif avant INSERT, ou `PGRST202` avant
+dispatch, permet le nettoyage. Les 23 tests KYC passent ; trois régressions
+étaient démontrées avant correction. Le rejeu média contre `56b76a6` fait
+échouer 12 cas sur 44 ; les six nouveaux parcours navigateur passent sans
+retry. Les preuves finales SQL et le SHA du lot sont à lire dans sa PR.
+
+Les verrous ordonnent les commits de publication et de révision ; ils ne
+prouvent pas que l'écran de l'administrateur affichait la même révision au
+clic. Aucune version attendue ni nouveau moteur de modération n'est inventé.
+
+#### Complément de validation navigateur
+
+Le parcours de tarification pouvait remplir le champ Prix de l'ancienne
+instance pendant la navigation vers Service ; son remplacement effaçait
+ensuite cette saisie. La course a été reproduite en retenant la réponse de
+navigation, puis le test attend le titre et le contrôle propres au service.
+Les montants attendus restent identiques ; aucun retry ni délai arbitraire
+n'est ajouté. Les huit parcours de cette suite passent localement.
+
+Le contrôle des ventes flash a révélé un défaut d'hydratation réel :
+`FlashCountdown` calculait le premier texte avec deux `Date.now()` distincts,
+côté serveur et navigateur. Deux horloges séparées de sept secondes suffisent
+à faire échouer le test de rendu ; les cas navigateur décalé et déjà expiré
+reproduisent l'erreur React. Le correctif rend le premier HTML déterministe,
+puis utilise l'horloge cliente avec un instantané stable et un abonnement
+nettoyé au dernier démontage. Les assertions `pageerror` sont conservées.
+La fenêtre de prix reste contrôlée par le serveur au checkout.
+
+La [PR #396](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/396)
+porte le SHA et les résultats globaux de ce lot, ainsi que les limites de
+mise en service ; son ouverture n'applique aucune migration.
+
+### 12.4 Réserves d'exploitation et décisions : aucune activation implicite
+
+| Sujet | Ce qui existe / reste à prouver | Décision ou preuve attendue |
+|---|---|---|
+| Stripe 0151 | Reçus et garde dormante livrés ; pas de procédure de résolution/dégel implémentée, file toujours en revue humaine | Checklist de mise en service dans `docs/28` ; application vérifiée, cinq événements configurés et test signé isolé ; décision humaine avant tout gel |
+| Juridique et fonds | Clauses techniques, conservation KYC et acceptations codées ; identité/adresse de l'exploitant, qualification des fonds/BRH et garanties contractuelles ne se déduisent pas du dépôt | Faits du porteur et validation du conseil ; rétention au-delà de J+7 dormante selon `docs/26` |
+| Rails et recette réelle | Checkout, rapprochement et protocole `docs/22` existent | Configuration et première vente/remise/versement/remboursement avec acteurs et montant autorisés ; aucune recette réelle exécutée par cette clôture |
+| Cadence de rapprochement | Workflow facultatif toutes les cinq minutes et bail existants, cron quotidien de secours | Vérifier activation et exécutions dans le cadre autorisé ; ne pas recréer un ordonnanceur ni promettre une cadence exacte |
+| Notifications, alertes et scanner | Outbox, expéditeurs, indicateurs de présence de configuration, scanner et tests synthétiques existent | Fournisseurs, clés, domaine d'envoi, hébergement et preuve réelle d'acheminement/analyse ; ne pas créer une deuxième file à partir de M1 historique |
+| Sauvegarde et reprise | Scripts de sauvegarde/Storage et restauration synthétique en CI existent | Copie chiffrée indépendante et restauration réelle isolée chronométrée ; RPO/RTO à mesurer ; CI fictive ne clôt pas cette réserve |
+| Prévisualisations | Aucun accès de configuration effectué ici | Vérifier séparation Preview/Production avant tout essai connecté ; absence de preuve ne signifie pas fuite établie |
+| Catalogue et exploitation humaine | Publication, métriques géographiques et entonnoir admin existent ; couverture visiteurs/conversion encore partielle | Vraies offres, vendeurs, routine quotidienne et second opérateur à fournir/organiser ; aucun produit, avis ou chiffre fictif |
+| Opportunités de docs/72 | Push, instrumentation complémentaire et seuils antifraude proposés | Besoin, collecte minimale et paramètres à décider avant un nouveau lot ; ne pas recréer les mesures admin existantes |
+
+**Frontière de clôture.** Les six lots fusionnés sont livrés et testés. SEC-01,
+la vérification des dépendances et les corrections secondaires nommées sont
+proposés dans la PR #396 ; son SHA et sa CI font foi avant validation humaine.
+Les réserves et les améliorations non réalisées restent explicitement ouvertes ; les
+opportunités ne sont pas transformées en engagement. L'application de 0151,
+l'activation du gel, les données de production, les paiements réels et les
+décisions commerciales/juridiques ne sont pas exécutés par cette section.
+`0056` reste volontairement gelée ; cette clôture ne recommande pas de l'appliquer.

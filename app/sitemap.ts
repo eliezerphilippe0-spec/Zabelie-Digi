@@ -6,7 +6,7 @@ import type { MetadataRoute } from "next";
 import { getProductsForSitemap } from "@/lib/products";
 import { getBoutikSlug } from "@/lib/creators";
 import { hrefBoutique } from "@/lib/boutique-href";
-import { getMenuRayons } from "@/lib/taxonomy";
+import { getMenuRayons, rayonsPeuples } from "@/lib/taxonomy";
 import { siteUrl } from "@/lib/site-url";
 import { LANGS_INDEXEES, cheminLocalise, estCheminLocalisable } from "@/lib/langue-url";
 
@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
    * ne confirmaient pas. Une seule fonction décide désormais. */
   const base = siteUrl();
   const products = await getProductsForSitemap().catch(() => []);
+  const rayons = await getMenuRayons("fr").catch(() => []);
 
   /* UNE ENTRÉE PAR LANGUE INDEXÉE (`/ht/…`, `/fr/…` — lib/langue-url.ts),
    * chacune avec ses alternates. Une page qui n'a pas d'adresse par langue
@@ -47,6 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/produits-interdits",
     "/developpeurs",
   ].filter((path) => {
+    if (path === "/categories") return rayonsPeuples(rayons).length > 0;
     if (!path.startsWith("/catalogue")) return true;
     const universe = catalogueUniverse(new URL(path, base).searchParams.get("univers"));
     return universe ? products.some((p) => p.kind === CATALOGUE_UNIVERSES[universe].kind) : products.length > 0;
@@ -86,7 +88,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const creatorRoutes: MetadataRoute.Sitemap = creators.flatMap((c) => declinaisons(hrefBoutique(c), 0.6));
 
   // Only stocked departments belong in the discovery sitemap. No invented lastModified dates.
-  const rayons = await getMenuRayons("fr").catch(() => []);
   const rayonRoutes: MetadataRoute.Sitemap = rayons.filter((r) => !r.vide).flatMap((r) => declinaisons(r.href, 0.6));
 
   const guideRoutes: MetadataRoute.Sitemap = LANGS.flatMap((lang) => [undefined, ...BUYING_GUIDES.map((guide) => guide.slug)].map((slug) => ({
