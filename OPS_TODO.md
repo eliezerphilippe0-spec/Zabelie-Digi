@@ -1,5 +1,24 @@
 # OPS_TODO — Zabelie
 
+## Pixels vendeur — refus des requêtes invalides (20 octobre 2026)
+
+Lot proposé sur `fix/pixels-corps-invalide`, depuis `main` `68c191e`, après
+lecture de `docs/26`, `docs/67` et des cinq PR ouvertes : aucun chevauchement
+avec #390 (inscription/médias), #391 (litiges Stripe) ou #385–#387 (dépendances).
+`PUT /api/account/pixels` transformait un JSON illisible, un tableau ou un
+identifiant numérique en trois pixels nuls, puis annonçait un succès.
+La route refuse désormais ces entrées avant tout upsert : 400 si JSON illisible,
+422 si forme ou type invalide, avec les messages déjà traduits. L'enregistrement
+valide, l'effacement volontaire par chaîne vide et la sémantique existante des
+champs omis (remis à null dans ce PUT de remplacement) sont conservés.
+
+`tests/pixels-route.test.ts` exécute la vraie route avec E/S simulées, contrôle
+l'absence d'écriture sur refus et conserve les cas positifs, les gardes de compte
+et le client de session. Réutilisation de `idValide`, des trois contraintes et de
+la RLS de `0123` ; aucun nouveau compteur, objet SQL, route ou formulaire.
+PR de validation humaine uniquement : aucun merge, déploiement, accès aux données
+de production ou paiement réel. Les résultats de CI seront portés dans la PR.
+
 ## Création éditoriale (Zabelie Studio) — décisions (15 octobre 2026)
 
 Lot 0 fait, en lecture seule : `docs/70-CHANTIER-CREATION-EDITORIALE.md`

@@ -26,10 +26,20 @@ export async function PUT(req: Request) {
   const bloque = await requireActiveAccount(user.id);
   if (bloque) return bloque;
 
-  let corps: Partial<Record<Regie, unknown>> = {};
-  try { corps = await req.json(); } catch { /* corps absent : tout vide */ }
+  // Un corps illisible n'est pas une demande d'effacer les trois pixels.
+  let brutCorps: unknown;
+  try { brutCorps = await req.json(); } catch {
+    return NextResponse.json({ error: t(lang, "api.json.invalid"), code: "invalid_json" }, { status: 400 });
+  }
+  if (!brutCorps || typeof brutCorps !== "object" || Array.isArray(brutCorps)) {
+    return NextResponse.json({ error: t(lang, "api.params.invalid"), code: "invalid_body" }, { status: 422 });
+  }
+  const corps = brutCorps as Partial<Record<Regie, unknown>>;
   const ligne: Record<string, string | null> = { seller_id: user.id };
   for (const regie of Object.keys(CHAMPS) as Regie[]) {
+    if (corps[regie] !== undefined && typeof corps[regie] !== "string") {
+      return NextResponse.json({ error: t(lang, "pixels.err.format"), code: "invalid_format", field: regie }, { status: 422 });
+    }
     const brut = typeof corps[regie] === "string" ? (corps[regie] as string).trim() : "";
     if (!brut) { ligne[CHAMPS[regie]] = null; continue; }
     const id = idValide(regie, brut);
