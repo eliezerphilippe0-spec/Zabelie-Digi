@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { safeNext } from "@/lib/safe-next";
 
 export const dynamic = "force-dynamic";
@@ -11,5 +10,10 @@ export function GET(req: Request) {
   if (url.searchParams.has("next")) {
     destination.searchParams.set("next", safeNext(url.searchParams.get("next")));
   }
-  return NextResponse.redirect(destination);
+  // Une destination relative conserve l'origine du navigateur, même si Next
+  // normalise l'hôte de req.url (127.0.0.1 → localhost dans le harnais Auth).
+  return new Response(null, {
+    status: 307,
+    headers: { Location: destination.pathname + destination.search },
+  });
 }

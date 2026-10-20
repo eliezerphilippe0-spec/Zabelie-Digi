@@ -626,7 +626,9 @@ avec recherches ciblées dans l'historique.
 
 - `/inscription` renvoie temporairement (307) vers `/connexion?mode=signup`.
   Le retour interne `next` passe par `safeNext` ; les autres paramètres ne sont
-  pas propagés. Le formulaire, l'authentification et les consentements restent
+  pas propagés. Le `Location` relatif préserve l'origine et les cookies du
+  navigateur, même si Next normalise l'hôte de la requête côté serveur.
+  Le formulaire, l'authentification et les consentements restent
   ceux de `/connexion`. La suite Auth existante couvre également cet alias.
 - Après une tentative d'insertion de photo ou vidéo, une réponse perdue peut
   suivre un COMMIT réussi. Les routes médias ne suppriment plus alors le
