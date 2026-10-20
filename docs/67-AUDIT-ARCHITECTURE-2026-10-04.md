@@ -625,7 +625,7 @@ la liste REST fait foi pour ce relevé. La PR de ce lot s'ajoute à ces trois PR
 | Stripe | Checkout idempotent, webhook signé, confirmation et réconciliation serveur ; `payments`, `orders`, escrow, commandes groupées et support (`0113`, `0128`) | `stripe-config`, `stripe-webhook`, `stripe-reconcile`, SQL, #267, #268 |
 | Supabase | Gardes de compte, propriété, RLS, droits des fonctions, clés publiques contrôlées, jointures commandes/produits explicites | `config-supabase`, `api-auth-coverage`, SQL `definer_exposition`, #332, #354, #357, #378 |
 
-**Deux corrections P1, sans nouvelle table, migration ni moteur :**
+**Deux corrections P1 initiales, sans nouvelle table, migration ni moteur :**
 
 - `/inscription` renvoie temporairement (307) vers `/connexion?mode=signup`.
   Le retour interne `next` passe par `safeNext` ; les autres paramètres ne sont
@@ -658,3 +658,19 @@ L'alias est vérifié avec retours internes et malveillants ; les résultats
 complets de compilation, lint, suites et CI sont consignés dans la PR.
 Relecture indépendante du code et 51 tests ciblés réussis avant publication
 de la PR. Aucun contrôle local ne vaut attestation de l'état de la production.
+
+**Complément de la même PR, 20 octobre 2026 : cadence vidéo.** Après nouvelle
+lecture des routes et des PR ouvertes, la route vidéo émettait des liens
+d'envoi uniques sans appeler le limiteur, alors que la galerie photo le fait.
+Le plafond d'une vidéo confirmée ne limite pas les demandes non confirmées.
+La vraie route, avec E/S factices et cadence refusée, acceptait encore les
+demandes ; trois nouveaux tests échouaient avant la correction.
+Les étapes `demande` et `confirme` passent désormais par `rateLimit` avant
+toute lecture produit/média ou opération Storage. Elles partagent le budget
+de galerie existant des photos : 20 appels par vendeur et par fenêtre de
+60 secondes, quel que soit le produit. Une panne ou une réponse indécidable
+du compteur interdit l'accès ; le HTTP 429 réutilise les traductions existantes.
+Le helper et sa RPC atomique ne sont pas recréés ; aucun schéma ne change.
+Le traitement Stripe est proposé séparément dans la PR #391 (`docs/28`) et
+ne fait pas partie de cette branche. Les limites de production restent celles
+énoncées au début de ce §11.

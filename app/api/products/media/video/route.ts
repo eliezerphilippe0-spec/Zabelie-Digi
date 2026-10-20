@@ -4,6 +4,7 @@ import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { rateLimit } from "@/lib/zabelie-rate-limit";
 import {
   MAX_VIDEO_BYTES,
   VIDEO_BUCKET,
@@ -53,6 +54,11 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+  // Même budget de galerie que les photos, partagé par vendeur entre les
+  // produits et les deux étapes. Un lien signé sans confirmation coûte aussi.
+  if (!(await rateLimit(admin, `galerie:${user.id}`, 20))) {
+    return NextResponse.json({ error: t(lang, "api.rate.limited") }, { status: 429 });
+  }
   const { data: product } = await admin
     .from("products")
     .select("id, seller_id")
