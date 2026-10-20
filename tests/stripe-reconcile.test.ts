@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type Stripe from "stripe";
 import { reconcileStripe, type StripeReconcileDeps } from "../lib/stripe-reconcile";
+import { loadRoute } from "./helpers/route-harness";
 function fixture(session: Partial<Stripe.Checkout.Session> = {}, fail?: string) {
  const calls: string[]=[];
  const deps:StripeReconcileDeps={
@@ -45,4 +46,21 @@ test("a slow provider leaves unexamined payments for a later rotation",async()=>
  f.deps.listPending=async()=>Array.from({length:3},()=>({order_id:"order",idempotency_key:"order",raw:{stripe_session_id:"cs_saved"}}));
  const retrieve=f.deps.retrieve;f.deps.retrieve=async id=>{time+=100;return retrieve(id);};
  const r=await reconcileStripe(f.deps);assert.equal(r.scanned,1);assert.equal(r.deferred,2);assert.equal(r.confirmed,1);
+});
+
+test("provider-verified reconciliation preserves Stripe mode for future dispute matching", async () => {
+ const calls: {name:string;args:Record<string,unknown>}[]=[];
+ const stripeModule=loadRoute("lib/stripe-reconcile.ts", {
+  "./fulfillment":{ouvrirSuiviLivraison:async()=>undefined},
+  "./zabelie-notify":{notifyOrderPaid:async()=>undefined},
+ }) as unknown as {liveStripeDeps:(admin:unknown)=>StripeReconcileDeps};
+ const deps=stripeModule.liveStripeDeps({rpc:async(name:string,args:Record<string,unknown>)=>{
+  calls.push({name,args});return {data:{status:"confirmed"},error:null};
+ }});
+ for(const livemode of [false,true]) {
+  await deps.confirm({order_id:"order",idempotency_key:"order",raw:null},
+   {id:"cs_verified",payment_intent:"pi_verified",amount_total:1250,currency:"usd",livemode} as Stripe.Checkout.Session);
+  assert.equal(calls.at(-1)?.name,"confirm_payment");
+  assert.equal((calls.at(-1)?.args.p_raw as Record<string,unknown>).stripe_livemode,livemode);
+ }
 });

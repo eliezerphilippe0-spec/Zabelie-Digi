@@ -56,7 +56,7 @@ export function liveStripeDeps(admin: SupabaseClient): StripeReconcileDeps {
         p_idempotency_key: order.idempotency_key,
         p_provider_ref: typeof session.payment_intent === "string" ? session.payment_intent : session.id,
         p_usd_cents: session.amount_total,
-        p_raw: { stripe_session_id: session.id, reconciliation: true, amount_total: session.amount_total, currency: session.currency },
+        p_raw: { stripe_session_id: session.id, stripe_livemode: session.livemode, reconciliation: true, amount_total: session.amount_total, currency: session.currency },
       });
       if (error) return { error: "confirmation_unavailable" };
       if (data?.status === "confirmed") {
