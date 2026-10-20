@@ -61,6 +61,23 @@ const PRODUCT = {
 };
 
 
+/* ── Essayage virtuel (docs/74, tâche 4.5) ─────────────────────────────────
+ * Une robe d'un vendeur pilote, au sous-rayon « wob ». Les comptes d'essai
+ * sont choisis pour leur groupe de mesure (lib/essayage/regles.ts) : …001 est
+ * au témoin, les autres à l'essai. Les fonctions d'essayage passent par la
+ * clé de service : le scénario se lit donc à l'identifiant de l'acheteur,
+ * jamais au jeton. Aucune photo n'arrive ici : elle va du serveur Next au
+ * fournisseur « simulation », qui ne sort pas de la machine. */
+export const ROBE_ID = "e55a1000-0000-4000-8000-0000000000a1";
+export const ROBE_SLUG = "wob-lakay-test";
+const ROBE_VENDEUR = "e55a1000-0000-4000-8000-000000000100";
+const ROBE = { ...PRODUCT, id: ROBE_ID, slug: ROBE_SLUG, title: "Wòb lakay", category: "Mode", seller_id: ROBE_VENDEUR, seller: { display_name: "Atelye Mod" }, sous_rayon: { slug: "wob" } };
+/** En production, les photos principales sont en https (Storage Supabase) ; l'essayage refuse le reste. */
+const ROBE_COUVERTURE_HTTPS = "https://exemple.supabase.co/storage/v1/object/public/covers/wob-lakay.png";
+const ESSAYAGE_COMPTES = new Set([1, 2, 3, 4, 5, 6, 7].map((n) => `e55a1000-0000-4000-8000-${String(n).padStart(12, "0")}`));
+const ESSAYAGE_REFUS = { "e55a1000-0000-4000-8000-000000000004": "quota", "e55a1000-0000-4000-8000-000000000005": "pause" };
+const essayage = { essais: new Map(), expositions: new Map() };
+const jourHaiti = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Port-au-Prince" });
 
 const OFFER_SOURCE = "44444444-4444-4444-4444-444444444444";
 const OFFER_TARGETS = ["66666666-6666-6666-6666-666666666661","66666666-6666-6666-6666-666666666662","66666666-6666-6666-6666-666666666663"];
@@ -187,7 +204,7 @@ const server = createServer((req, res) => {
   // current documents. This is simulated data, not evidence for a real user.
   if (url.pathname === "/rest/v1/zabelie_policy_acceptances") {
     const owner = url.searchParams.get("user_id")?.replace(/^eq\./, "");
-    return send(200, [BUYER_ID, SELLER_ID].includes(owner) ? [
+    return send(200, [BUYER_ID, SELLER_ID].includes(owner) || ESSAYAGE_COMPTES.has(owner) ? [
       { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
       { policy_version: "confidentialite-v3", accepted_at: "2026-10-05T00:00:00Z" },
     ] : []);
@@ -314,6 +331,43 @@ const server = createServer((req, res) => {
   const history = token.includes("historique-test") || eq(url, "buyer_id") === HISTORY_ID;
   const historyError = token.includes("historique-erreur") || eq(url, "buyer_id") === HISTORY_ERROR_ID;
   const sellerPreparation = token.includes("vendeur-preparation");
+  const compteEssayage = /essayage-([0-9a-f-]{36})/.exec(token)?.[1];
+  const essayageCompte = compteEssayage && ESSAYAGE_COMPTES.has(compteEssayage) ? compteEssayage : null;
+
+  // ── Essayage virtuel : les cinq fonctions de 0150, la table des essais, et une lecture pour les tests.
+  if (url.pathname === "/__essayage") return send(200, { essais: [...essayage.essais.values()], expositions: [...essayage.expositions.values()] });
+  if (url.pathname.startsWith("/rest/v1/rpc/zabelie_essayage_")) {
+    let texte = "";
+    req.on("data", (c) => (texte += c));
+    return req.on("end", () => {
+      const p = JSON.parse(texte || "{}");
+      const nom = url.pathname.slice("/rest/v1/rpc/".length);
+      if (nom === "zabelie_essayage_eligible") return send(200, p.p_produit === ROBE_ID && p.p_acheteur !== ROBE_VENDEUR);
+      if (nom === "zabelie_essayage_exposer") {
+        const jour = jourHaiti();
+        const cle = `${p.p_acheteur}|${p.p_produit}|${jour}`;
+        if (!essayage.expositions.has(cle)) essayage.expositions.set(cle, { acheteur: p.p_acheteur, produit: p.p_produit, jour, groupe: p.p_groupe });
+        return send(200, null);
+      }
+      if (nom === "zabelie_essayage_reserver") {
+        if (p.p_produit !== ROBE_ID) return send(200, [{ essai: null, refus: "non_eligible" }]);
+        const refus = ESSAYAGE_REFUS[p.p_acheteur];
+        if (refus) return send(200, [{ essai: null, refus }]);
+        const id = crypto.randomUUID();
+        essayage.essais.set(id, { id, acheteur_id: p.p_acheteur, produit_id: p.p_produit, fournisseur: p.p_fournisseur, travail_id: null, statut: "en_cours", raison: null, cree_le: new Date().toISOString() });
+        return send(200, [{ essai: id, refus: null }]);
+      }
+      const essai = essayage.essais.get(p.p_essai);
+      if (!essai) return send(400, { code: "P0001", message: "essai inconnu" });
+      if (nom === "zabelie_essayage_lancer") essai.travail_id = p.p_travail;
+      else if (nom === "zabelie_essayage_terminer" && essai.statut === "en_cours") Object.assign(essai, { statut: p.p_statut, raison: p.p_raison ?? null });
+      return send(200, null);
+    });
+  }
+  if (url.pathname === "/rest/v1/zabelie_essayage_essais") {
+    const e = essayage.essais.get(eq(url, "id"));
+    return single(e && e.acheteur_id === eq(url, "acheteur_id") ? [{ id: e.id, fournisseur: e.fournisseur, travail_id: e.travail_id, statut: e.statut, raison: e.raison, cree_le: e.cree_le }] : []);
+  }
 
   if (url.pathname === "/__gift-writes") {
     const orderId = url.searchParams.get("order_id");
@@ -389,7 +443,7 @@ const server = createServer((req, res) => {
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
     return send(200, {
-      id: sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID,
+      id: essayageCompte ?? (sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID),
       aud: "authenticated",
       role: "authenticated",
       email: "achte@example.ht",
@@ -556,6 +610,11 @@ const server = createServer((req, res) => {
     // Produit dédié aux pixels (0123) : son vendeur, et lui seul, a un pixel.
     if (slug === "pixel-test" || id === PIXEL_PRODUCT) return single([{ ...PRODUCT, id: PIXEL_PRODUCT, slug: "pixel-test", title: "Produit pixel", seller_id: PIXEL_SELLER }]);
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
+    if (slug === ROBE_SLUG || id === ROBE_ID) {
+      // supabase-js retire les espaces du `select` : « title,cover_url,sous_rayon:… ».
+      const lectureEssayage = (url.searchParams.get("select") ?? "").replace(/\s/g, "").startsWith("title,cover_url,sous_rayon");
+      return single([lectureEssayage ? { title: ROBE.title, cover_url: ROBE_COUVERTURE_HTTPS, sous_rayon: ROBE.sous_rayon } : ROBE]);
+    }
     if (slug) rows = rows.filter((row) => row.slug === slug);
     if (id) rows = rows.filter((row) => row.id === id);
     if (status) rows = rows.filter((row) => row.status === status);

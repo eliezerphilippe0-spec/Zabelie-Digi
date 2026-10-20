@@ -34,6 +34,9 @@ const STUB_ENV = {
   NEXT_PUBLIC_SUPABASE_URL: STUB_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "cle-anon-de-test",
   SUPABASE_SERVICE_ROLE_KEY: "cle-service-de-test",
+  // Essayage virtuel (docs/74) : le fournisseur « simulation » seulement, qui ne sort pas de la machine.
+  ZABELIE_ESSAYAGE_ENABLED: "true",
+  ZABELIE_ESSAYAGE_FOURNISSEUR: "simulation",
   PORT: "3001",
 };
 

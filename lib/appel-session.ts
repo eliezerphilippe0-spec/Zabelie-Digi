@@ -85,13 +85,22 @@ export async function appelSession<T = Record<string, unknown>>(
   corps: unknown,
   ici: string = iciMeme(),
 ): Promise<IssueAppel<T>> {
+  return appelAvecSession<T>(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) }, ici);
+}
+
+/**
+ * La même porte pour un appel qui n'est pas un POST JSON : l'envoi d'une
+ * photo en multipart, ou un sondage en GET (l'essayage virtuel, `lib/essayage`).
+ * Les quatre issues et leur lecture restent celles de `appelSession`.
+ */
+export async function appelAvecSession<T = Record<string, unknown>>(
+  url: string,
+  init: RequestInit,
+  ici: string = iciMeme(),
+): Promise<IssueAppel<T>> {
   let res: Response;
   try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(corps),
-    });
+    res = await fetch(url, init);
   } catch {
     // LE SEUL `reseau` du fichier. Si cette ligne se met à couvrir autre
     // chose, le mensonge de 2026-09-05 revient par la fenêtre.

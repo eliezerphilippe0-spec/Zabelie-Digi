@@ -32,6 +32,7 @@ export const MENU_ADMIN: { label: string; href: string; cle: keyof Counts | null
   { label: "Zones", href: "/admin/zones", cle: null },
   { label: "Vérifications", href: "/admin/kyc", cle: null },
   { label: "Domaines", href: "/admin/domaines", cle: null },
+  { label: "Essayage", href: "/admin/essayage", cle: null },
   { label: "Retraits colis", href: "/admin/points-retrait", cle: null },
 ];
 
