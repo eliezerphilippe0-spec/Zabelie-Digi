@@ -881,3 +881,54 @@ opportunités ne sont pas transformées en engagement. L'application de 0151,
 l'activation du gel, les données de production, les paiements réels et les
 décisions commerciales/juridiques ne sont pas exécutés par cette section.
 `0056` reste volontairement gelée ; cette clôture ne recommande pas de l'appliquer.
+
+## 13. Reprise du formulaire fichier/service — 20 octobre 2026
+
+Le lot étend `PublishForm` dans `/vendre` pour les fichiers et services, en
+réutilisant `useSessionDraft`, `purgerBrouillons` et `POST /api/products`.
+`lib/publish-draft.ts` borne et valide le brouillon ; les messages de
+`lib/publish-draft-copy.ts` couvrent les quatre langues. Aucun second éditeur,
+service de stockage ou chemin de création n'est ajouté.
+
+Les trois cartes « Nouveau produit » et « Changer de type » utilisent des
+liens natifs `<a>`. Avec Next 16.4.0, le retour fichier → service → fichier
+dupliquait l'ancre en `#formulaire#formulaire` malgré un `href` correct.
+Le chargement complet du document lors de ces changements est accepté ;
+les modifications du brouillon sont écrites synchroniquement dans l'onglet.
+
+Les champs restent dans le `sessionStorage` de l'onglet pendant 30 minutes,
+durée contrôlée à la restauration. Le contenu restauré est traité comme une
+entrée non fiable : version, forme, tailles, compte et type sont vérifiés ;
+les catégories sont rapprochées de la taxonomie active. La clé et le montage
+du formulaire sont isolés par compte et `kind`. La purge existante retire les
+champs des autres comptes, ou tous ces champs après déconnexion, au premier
+affichage de l'en-tête correspondant. Aucune attestation n'est conservée :
+l'acceptation des règles doit être cochée à nouveau.
+
+Un booléen de vérification sans texte privé utilise le préfixe séparé
+`zabelie:publish-review:v1:`. Comme les marqueurs du checkout, il survit à
+l'expiration des champs et à leur purge lors d'un changement de compte ou
+d'une déconnexion. Il est posé avant le POST. Seul un succès explicite valide
+efface le brouillon et ce marqueur ; une réponse ambiguë bloque une nouvelle
+création et invite à vérifier « Mes produits », puis à reprendre manuellement.
+Aucun renvoi automatique n'a lieu au rechargement. Les refus conclusifs avant
+INSERT permettent de corriger la saisie. Le paramètre facultatif
+`expectedActorId` est comparé à l'identité Auth par la route existante avant
+la création ; il ne remplace ni l'authentification ni les contrôles serveur.
+
+Cette reprise n'apporte pas d'idempotence SQL ni de coordination entre
+plusieurs onglets. Elle ne garantit pas une récupération après fermeture de
+l'onglet ou refus du stockage : un message demande alors de garder la page
+ouverte. Les marqueurs locaux ne prouvent jamais l'absence d'un produit en
+base.
+
+Validation locale : suite unitaire à 2 183 tests passants, puis 26 tests ciblés
+repassés après les derniers ajustements ; build TypeScript réussi, lint sans
+erreur ni nouvel avertissement, 88 paires de contraste conformes. Chrome a
+passé 14 parcours sans retry (11 de reprise et 3 modèles de services existants),
+dont les deux slugs limites du générateur serveur, à 390 et 1 280 px sans
+débordement horizontal ni erreur JavaScript. Les POST navigateur sont simulés ;
+les quatre tests de route exécutent le handler avec son helper substitué.
+La CI du SHA de la PR reste la preuve de validation globale, notamment pour
+les consommateurs checkout du hook partagé. Aucune migration, action sur les
+données de production ou paiement réel n'est exécuté par ce lot.

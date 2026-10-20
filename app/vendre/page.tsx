@@ -394,6 +394,8 @@ export default async function VendrePage({
       <section id="nouveau" aria-labelledby="nouveau-titre" className="glass scroll-mt-32 rounded-2xl p-6">
         <h2 id="nouveau-titre" className="text-lg font-semibold">{t(lang, "sell.new.title")}</h2>
         <p className="mt-1 text-sm text-mist">{t(lang, "sell.new.hint")}</p>
+        {/* Navigation document : Next 16.4 met l'ancre initiale en cache puis la
+            duplique au retour vers un type. Le brouillon survit en session. */}
         <ul className="mt-4 grid gap-3 sm:grid-cols-3">
           {([
             ["/vendre/physique", "sell.new.physical", "sell.new.physical.hint", null],
@@ -401,14 +403,14 @@ export default async function VendrePage({
             [hrefNouveau(NOUVEAU_PRESTATION), "sell.new.service", "sell.new.service.hint", COMMITMENT_SERVICE],
           ] as const).map(([href, titre, aide, type]) => (
             <li key={href}>
-              <Link
+              <a
                 href={href}
                 aria-current={type !== null && nouveau === type ? "true" : undefined}
                 className="flex h-full min-h-11 flex-col rounded-xl border border-line p-4 hover:border-cloud aria-[current=true]:border-brand"
               >
                 <span className="text-sm font-semibold">{t(lang, titre)}</span>
                 <span className="mt-1 text-xs text-mist">{t(lang, aide)}</span>
-              </Link>
+              </a>
             </li>
           ))}
         </ul>
@@ -423,10 +425,11 @@ export default async function VendrePage({
         <div id="formulaire" className="mt-6 max-w-xl scroll-mt-32 border-t border-line pt-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4">
           <h3 className="text-base font-semibold">{t(lang, nouveau === COMMITMENT_SERVICE ? "sell.form.service" : "sell.form.file")}</h3>
-          <Link href="/vendre#nouveau" className="inline-flex min-h-11 items-center text-sm underline">{t(lang, "sell.form.change")}</Link>
+          <a href="/vendre#nouveau" className="inline-flex min-h-11 items-center text-sm underline">{t(lang, "sell.form.change")}</a>
         </div>
         <PublishForm
-          key={nouveau}
+          key={`${user.id}:${nouveau}`}
+          actorId={user.id}
           kind={nouveau}
           tier={tier}
           rateBpsEnVigueur={taux[tier]}

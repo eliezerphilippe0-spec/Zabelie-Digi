@@ -2,7 +2,7 @@
 
 import type { SellerPricing } from "@/lib/seller-pricing";
 import type { Lang } from "@/lib/i18n";
-import { useState } from "react";
+import { useEffect, useRef, useState, type SetStateAction } from "react";
 import { isService, type DigitalKind } from "@/lib/product-kind";
 import { useRouter } from "next/navigation";
 import type { OptionCategorie, OptionSousRayon } from "@/lib/product-categories";
@@ -16,6 +16,10 @@ import { POLICY_PATH } from "@/lib/policy";
 import Link from "next/link";
 import type { ServiceStarter } from "@/lib/service-starters";
 import { serviceStarterDraft } from "@/lib/service-starter-draft";
+import { useSessionDraft } from "@/lib/use-session-draft";
+import { cleanPublishCategories, initialPublishDraft, publishDraftKey, publishReviewKey, validPublishDraft,
+  PUBLISH_DRAFT_LIMITS, type PublishDraft, type PublishFields } from "@/lib/publish-draft";
+import { publishDraftCopy } from "@/lib/publish-draft-copy";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -43,6 +47,7 @@ export type PublishFormLabels = {
 };
 
 export function PublishForm({
+  actorId,
   labels,
   categories,
   sousRayons = [],
@@ -55,6 +60,7 @@ export function PublishForm({
   starterLabels,
   kind,
 }: {
+  actorId: string;
   labels: PublishFormLabels;
   /**
    * Le type choisi par le vendeur sous « Nouveau produit » (fichier ou
@@ -95,23 +101,36 @@ export function PublishForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [policyOk, setPolicyOk] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    // Le formulaire ne publie que des produits digitaux : `physical` a sa
-    // propre route (`/vendre/physique`). Le type reste néanmoins celui de
-    // l'énumération, pour que `isService` s'applique sans conversion.
-    // Le type choisi sous « Nouveau produit » (lib/seller-products-filter).
-    // Un modèle de service le remet à `service` : ils ne s'affichent que là.
-    kind,
-    category: "",
-    categoryId: "",
-    priceHTG: "",
-    description: "",
-    deliveryDays: "",
-    serviceIncludes: "",
-  });
+  const [done, setDone] = useState(false);
+  const submitting = useRef(false);
+  const mounted = useRef(true);
+  const suggestionRevision = useRef(0);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  const draftKey = publishDraftKey(actorId, kind);
+  const [draft, setDraft, clearDraft, ready, persistence] = useSessionDraft<PublishDraft>(draftKey,
+    initialPublishDraft(actorId, kind), (v): v is PublishDraft => validPublishDraft(v, actorId, kind));
+  // This minimal marker outlives the private text's 30-minute expiry. A lost
+  // response may hide a COMMIT; expiry must never silently allow another POST.
+  const [review, setReview, clearReview, reviewReady, reviewPersistence] = useSessionDraft<boolean>(
+    publishReviewKey(actorId, kind), false, (v): v is boolean => typeof v === "boolean", Number.POSITIVE_INFINITY);
+  const form = cleanPublishCategories(draft.form, categories, sousRayons);
+  const copy = publishDraftCopy(lang);
+  const uncertain = draft.verificationRequired || review;
+  const locked = loading || !ready || !reviewReady || uncertain || done;
 
-  function set<K extends keyof typeof form>(k: K, v: string) {
+  function setForm(next: SetStateAction<PublishFields>) {
+    if (!mounted.current) return;
+    setDraft(previous => ({ ...previous, form: typeof next === "function"
+      ? next(cleanPublishCategories(previous.form, categories, sousRayons)) : next }));
+  }
+
+  function set<K extends keyof typeof PUBLISH_DRAFT_LIMITS>(k: K, v: string) {
+    // maxLength does not constrain number inputs; bound the stored strings too.
+    if (v.length > PUBLISH_DRAFT_LIMITS[k]) return;
     setForm((f) => ({ ...f, [k]: v }));
   }
 
@@ -120,18 +139,28 @@ export function PublishForm({
         !window.confirm(starterLabels!.confirmReplace)) return;
     setError(null);
     setPolicyOk(false);
+    suggestionRevision.current += 1;
+    setRevision(suggestionRevision.current);
     setForm(serviceStarterDraft(starter));
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (locked || submitting.current) return;
+    submitting.current = true;
     setLoading(true);
     setError(null);
+    suggestionRevision.current += 1;
+    setRevision(suggestionRevision.current);
+    // Save synchronously before contacting the server; never replay on reload.
+    setReview(true);
+    setDraft(previous => ({ ...previous, form, verificationRequired: true }));
     try {
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          expectedActorId: actorId,
           title: form.title,
           kind: form.kind,
           category: form.category,
@@ -150,27 +179,72 @@ export function PublishForm({
         }),
       });
       const data = await res.json();
+      if (!mounted.current) return;
       if (!res.ok) {
-        setError(data.error ?? labels.errorGeneric);
+        setError(typeof data?.error === "string" ? data.error : labels.errorGeneric);
+        // These explicit refusals occur before INSERT in the existing route.
+        // All other/invalid responses remain ambiguous, including HTTP 500.
+        if ([400, 401, 403, 429].includes(res.status)) {
+          setReview(false);
+          setDraft(previous => ({ ...previous, verificationRequired: false }));
+        }
         return;
       }
+      // slugify may leave a leading or doubled hyphen after truncation. Keep
+      // its existing server contract while excluding URL path delimiters.
+      if (!data || typeof data.slug !== "string" || !/^[a-z0-9-]+$/.test(data.slug)
+        || !["draft", "published"].includes(data.status)) {
+        setError(labels.errorGeneric);
+        return;
+      }
+      setDone(true);
+      clearDraft();
+      clearReview();
       // BL-103 : un produit « fichier » naît en brouillon (invisible au
       // public tant que le livrable n'est pas uploadé) → on renvoie vers la
       // liste « Mes produits » où se trouve le bouton d'upload.
       router.push(data.status === "draft" ? "/vendre" : `/produit/${data.slug}`);
       router.refresh();
     } catch {
-      setError(labels.errorNetwork);
+      if (mounted.current) setError(labels.errorNetwork);
     } finally {
-      setLoading(false);
+      submitting.current = false;
+      if (mounted.current) setLoading(false);
     }
   }
 
   const input =
     "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
 
+  if (done) return <p role="status" className="text-sm text-mist">{labels.submitting}</p>;
+
   return (
     <form onSubmit={submit} className="space-y-3" aria-describedby={error ? "publish-error" : undefined}>
+      {ready && reviewReady && <div className="space-y-2 rounded-xl border border-line p-3">
+        <p role="status" className="text-xs text-mist">{persistence === "saved" && reviewPersistence === "saved" ? copy.saved : copy.unavailable}</p>
+        <button type="button" disabled={locked} className="min-h-11 text-sm underline disabled:opacity-60"
+          onClick={() => {
+            if (!window.confirm(copy.confirmDiscard)) return;
+            suggestionRevision.current += 1;
+            setRevision(suggestionRevision.current);
+            setDraft(initialPublishDraft(actorId, kind));
+            clearDraft();
+            setPolicyOk(false);
+            setError(null);
+          }}>{copy.discard}</button>
+      </div>}
+      {uncertain && !loading && <div role="alert" className="space-y-2 rounded-xl border border-line p-3 text-sm">
+        <p>{copy.uncertain}</p>
+        <Link href="/vendre#mes-produits" className="inline-flex min-h-11 items-center underline">{copy.checkProducts}</Link>
+        <button type="button" disabled={loading || !ready || !reviewReady} className="block min-h-11 text-left underline disabled:opacity-60"
+          onClick={() => {
+            setReview(false);
+            setDraft(previous => ({ ...previous, verificationRequired: false }));
+            setPolicyOk(false);
+            setError(null);
+          }}>{copy.resume}</button>
+      </div>}
+      <fieldset disabled={locked} className="min-w-0 space-y-3">
       {/* Les modèles de service : sur le formulaire d'un service seulement.
           Sur celui d'un fichier, ils changeaient la fiche en service. */}
       {starterLabels && isService(form.kind) && serviceStarters.length > 0 && (
@@ -191,6 +265,7 @@ export function PublishForm({
         placeholder={labels.titlePh}
         aria-label={labels.titlePh}
         value={form.title}
+        maxLength={PUBLISH_DRAFT_LIMITS.title}
         onChange={(e) => set("title", e.target.value)}
         required
       /></label>
@@ -267,15 +342,19 @@ export function PublishForm({
         aria-label={labels.descriptionPh}
         aria-describedby={!isService(form.kind) ? "digital-description-guide" : undefined}
         value={form.description}
+        maxLength={PUBLISH_DRAFT_LIMITS.description}
         onChange={(e) => set("description", e.target.value)}
       /></label>
       {!isService(form.kind) && <p id="digital-description-guide" className="text-xs leading-relaxed text-mist">{labels.digitalHint}</p>}
       <AiDescriptionHelp
+        key={revision}
         actif={aiActif}
         title={form.title}
         category={form.category || undefined}
         labels={labels.ai}
-        onSuggestion={(texte) => set("description", texte)}
+        onSuggestion={(texte) => {
+          if (suggestionRevision.current === revision) set("description", texte);
+        }}
       />
       {isService(form.kind) && (
         <div className="space-y-3 rounded-xl border border-line/60 p-4">
@@ -296,6 +375,7 @@ export function PublishForm({
             placeholder={labels.includesPh}
             aria-label={labels.includesAria}
             value={form.serviceIncludes}
+            maxLength={PUBLISH_DRAFT_LIMITS.serviceIncludes}
             onChange={(e) => set("serviceIncludes", e.target.value)}
           /></label>
         </div>
@@ -325,6 +405,7 @@ export function PublishForm({
       >
         {loading ? labels.submitting : labels.submit}
       </button>
+      </fieldset>
       {error && <p id="publish-error" role="alert" className="text-sm text-danger-text">{error}</p>}
 
       <p className="text-center text-xs text-mist">{labels.footerHint}</p>

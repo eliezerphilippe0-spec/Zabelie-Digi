@@ -32,6 +32,8 @@ import { isMissingFunction } from "@/lib/pg-errors";
  */
 
 export type CorpsBrouillon = {
+  /** Optional browser precondition: reject a stale form after account change. */
+  expectedActorId?: string;
   title?: string;
   description?: string;
   kind?: DigitalKind;

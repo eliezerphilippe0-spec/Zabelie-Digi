@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { purgerBrouillons } from "@/lib/digital-authoring/local-draft-purge";
+import { PUBLISH_DRAFT_PREFIX } from "@/lib/publish-draft";
 
 /**
  * Purge des brouillons locaux du Studio de création (décision D6, docs/70).
@@ -19,6 +20,9 @@ export function PurgeBrouillonsCreation({ garder }: { garder: string | null }) {
     } catch {
       /* stockage indisponible : il n'y a rien à purger */
     }
+    try {
+      purgerBrouillons(window.sessionStorage, garder, PUBLISH_DRAFT_PREFIX);
+    } catch { /* stockage de session indisponible */ }
   }, [garder]);
   return null;
 }
