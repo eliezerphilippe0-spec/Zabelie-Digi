@@ -1,5 +1,43 @@
 # OPS_TODO — Zabelie
 
+## Création numérique — type du prix JSON (21 octobre 2026)
+
+Petit lot sur `fix/creation-prix-json`, base `main 9574764`, après #401.
+Inventaire : `docs/26` §0, `docs/67`, POST `/api/products`, helper partagé
+`creerBrouillonProduit`, soumission Studio, formulaires et tables existants,
+tests d'extraction et de mise en ligne. Les clients inventoriés envoient un
+nombre JSON ; aucune exigence de chaîne numérique. #402 ajoute un skill
+distinct ; les autres PR ouvertes sont les dépendances #385–#387.
+
+P1 de validation monétaire reproduit localement avec le vrai POST et le vrai
+helper : `false`, `null` ou `[]` deviennent zéro via `Number(priceHTG)` et
+créent une fiche à zéro HTG. La fiche reste en brouillon pour revue humaine ;
+aucune mise en vente ou perte réelle n'est déduite de cette contrepreuve.
+
+Objectif : exiger un prix JSON de type nombre avant normalisation de catégorie,
+attestation, cadence, promotion du profil et INSERT. Conserver exactement le
+gratuit numérique explicite, les arrondis numériques et la borne integer
+après arrondi. Réutiliser le helper commun ; ne pas ajouter une seconde règle
+dans la route ni un nouveau moteur de prix. Physique, stocks, délai de service
+et proposition de quartier restent hors portée.
+
+Arrêt : PR de validation humaine après contrepreuves, tests du vrai helper,
+parcours navigateur existants et CI du SHA final ; cinq tours de correction
+au plus. Aucune nouvelle route, table, migration, dépendance ou traduction.
+L'autorisation de fusion #401 ne concerne que cette PR ; aucune fusion,
+production, donnée métier réelle ou paiement réel dans le présent lot.
+
+Validation locale : 2 244/2 244 unitaires sans échec, ignoré ou annulé,
+dont dix nouveaux tests du vrai helper ; 31/31 ciblés. Le fichier navigateur
+complet passe : six tests, six tentatives, un worker, aucun retry, en 27,6 s.
+Les douze POST invalides ne créent aucune fiche ; les six témoins numériques
+conservent gratuité, arrondi et borne, et les trois parcours antérieurs passent.
+Avant correction, le vrai POST accepte `false` et crée un brouillon à zéro ;
+six tests unitaires ajoutés échouent comme attendu. Types, build et contraste
+88/88 réussis ; lint sans erreur ni nouvelle alerte (dix existantes sous
+Windows), lint ciblé sans avertissement. Relectures indépendantes runtime,
+tests et documentation sans blocage. CI exacte du SHA final à porter dans la PR.
+
 ## Profil public — identité du formulaire (21 octobre 2026)
 
 Petit lot sur `fix/profil-identite-session`, base `main d9b8e52`, après #400.

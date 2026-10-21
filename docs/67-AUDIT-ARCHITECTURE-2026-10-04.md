@@ -1150,3 +1150,59 @@ des requêtes volontairement refusées sont distinguées des erreurs inattendues
 Relectures indépendantes sans blocage ; la CI exacte du SHA final est portée
 dans la PR de validation humaine. Aucune fusion, mise en production, écriture
 sur des données réelles ou paiement réel dans ce lot.
+
+## 18. Création numérique — type du prix JSON (21 octobre 2026)
+
+Inventaire repris sur `main 9574764`, après #401 : `docs/26` §0, POST
+`/api/products`, helper `creerBrouillonProduit`, soumission Studio, formulaires,
+tables et tests existants. Les PR ouvertes #385–#387 concernent les dépendances
+et #402 un skill distinct ; aucun correctif équivalent de création numérique.
+Les deux appelants inventoriés transmettent déjà un nombre JSON : `PublishForm`
+convertit son champ et le Studio valide `entree.prix` avant le helper partagé.
+
+P1 de validation monétaire confirmé avec le vrai POST et le vrai helper,
+contre un stockage local doublé : `Number(priceHTG)` transforme `false`, `null`
+et `[]` en zéro, puis crée une fiche à zéro HTG. `true`, `[1]` et les chaînes
+numériques sont aussi convertis. La fiche reste en brouillon pour revue
+humaine ; cette contrepreuve ne démontre ni mise en vente automatique,
+contournement RLS, ni perte réelle en production.
+
+Deux lignes du helper changent : le prix est conservé tel que reçu et son
+type doit être `number`, avant normalisation de catégorie, client métier,
+attestation, cadence, promotion de profil et INSERT. Les types non numériques
+reçoivent le refus 400 traduit existant. Les contrôles de session et de compte
+restent prioritaires dans les routes ; aucune seconde règle n'est ajoutée au
+Studio qui valide déjà ce type.
+
+Le nombre zéro, les fractions numériques avec `Math.round` et la capacité
+integer après arrondi sont conservés exactement. Ainsi `0.4` reste arrondi à
+zéro et `2147483647.4` à la borne existante : ce lot ne change pas la politique
+de gratuité ni d'arrondi. Création physique, stocks, délai de service et
+proposition de quartier restent hors portée. Aucune route, table, migration,
+dépendance ou traduction ajoutée.
+
+Dix tests ajoutés au fichier d'extraction existant exécutent le vrai helper
+pour fichier et service, avec une fixture neuve par valeur. Avant correction,
+six nouveaux cas échouent comme attendu ; les contrôles déjà refusés passent.
+Après correction, 31 tests ciblés passent avec les routes numérique et physique
+existantes. Les refus vérifient l'absence réelle de requêtes, RPC et autres
+E/S métier ; les nombres valides vérifient une seule INSERT en brouillon,
+le vendeur, le prix arrondi et l'attestation unique.
+
+Trois cas sont ajoutés au fichier de mise en ligne existant, sans configuration
+ni fixture nouvelle. Ils passent par le vrai POST, relisent les fiches du
+stockage doublé après chaque refus et contrôlent les prix numériques sauvegardés.
+Avant correction, le premier booléen obtient HTTP 200 et une fiche à zéro,
+ce qui fait échouer l'attente 400. Les trois parcours antérieurs de création,
+modération et Studio restent dans cette même suite. La validation locale
+globale et la CI du SHA final sont consignées dans la PR de revue humaine.
+Aucune fusion ni action de production, donnée réelle ou paiement réel dans ce lot.
+
+Validation locale finale : 2 244/2 244 unitaires, sans échec, ignoré ou annulé ;
+six parcours navigateur, six tentatives, un worker et zéro retry en 27,6 s.
+Les douze POST invalides sont refusés sans INSERT ; les six témoins numériques
+et les trois parcours antérieurs passent. Types, build et contraste 88/88
+réussissent ; lint sans erreur ni nouvelle alerte (dix existantes sous Windows),
+lint ciblé sans avertissement. Relectures indépendantes du runtime, du harnais
+et de la documentation sans blocage. La CI globale reste à confirmer sur le
+SHA final dans la PR.
