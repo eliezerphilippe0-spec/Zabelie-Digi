@@ -44,7 +44,8 @@ test("publication drafts have independent account/type keys and fresh mutable fi
   assert.equal(publishReviewKey(ACTOR, KIND_FILE).startsWith(PUBLISH_DRAFT_PREFIX), false);
   assert.equal(new Set([
     publishReviewKey(ACTOR, KIND_FILE), publishReviewKey(ACTOR, KIND_SERVICE), publishReviewKey(OTHER, KIND_FILE),
-  ]).size, 3, "a durable marker cannot be shared across accounts or product types");
+    publishReviewKey(ACTOR, KIND_PHYSICAL), publishReviewKey(OTHER, KIND_PHYSICAL),
+  ]).size, 5, "a durable marker cannot be shared across accounts or product types");
   assert.deepEqual(file, {
     v: 1, actorId: ACTOR,
     form: { title: "", category: "", categoryId: "", priceHTG: "", description: "", deliveryDays: "", serviceIncludes: "", kind: KIND_FILE },

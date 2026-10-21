@@ -1,5 +1,56 @@
 # OPS_TODO — Zabelie
 
+## Création physique — réponse perdue (21 octobre 2026)
+
+Lot sur `fix/physique-reprise-creation`, depuis `main` `a5a5001`, après
+inventaire de `docs/26`, `docs/67`, des fonctions, routes, tables, tests et PR.
+Seules les PR de dépendances #385–#387 sont ouvertes ; aucun lot physique
+équivalent en attente. La création physique et le retry de photo existent.
+
+P1 confirmé : le POST peut créer la fiche, puis sa réponse se perdre. Sans
+identifiant confirmé côté formulaire, le clic suivant crée une seconde fiche.
+Objectif : marquer l'envoi avant le POST, bloquer une nouvelle création après
+réponse indécidable et rechargement, permettre la vérification de Mes produits
+puis un acquittement explicite avec nouvelle attestation. Ce marqueur ne
+prétend pas apporter une idempotence SQL ni une coordination entre onglets.
+
+Réutiliser `useSessionDraft`, le marqueur `publishReviewKey` et ses traductions,
+la création `draft`, les variantes/stock/compatibilités et `retryPhoto` sur
+l'identifiant confirmé. Aucun brouillon de champs physiques ou de photo,
+nouvelle route, table, migration, dépendance ou couche de support.
+
+Garde d'identité facultative `expectedActorId` dans le POST existant : après
+authentification et suspension/acceptation légale, avant les effets métier
+de création (client métier, cadence, attestation, lecture produit, INSERT).
+Les lectures internes de contrôle du compte restent prioritaires. Les anciens
+clients sans précondition restent compatibles, l'auteur vient de la session.
+
+Seuls les refus 400/401/403/429, avant INSERT dans cette route, libèrent la
+création. Un 422 peut venir du fitment après INSERT et compensation non
+confirmée : il demeure indécidable, comme les 5xx, erreurs réseau et succès
+mal formés. Préserver le retry de photo et ignorer les callbacks après démontage.
+
+Arrêt visé : tests positifs/négatifs, contrepreuve avant/après, compilation,
+relecture indépendante et CI verte sur une PR de validation humaine. Bilan
+après cinq tours de correction au plus. L'autorisation de fusion #398 était
+spécifique : aucune fusion, mise en production, action sur les données réelles
+ou paiement dans ce nouveau lot. Résultats définitifs à porter dans la PR.
+
+Validation locale : 2 201 tests unitaires passants, dont les 10 nouveaux cas
+du vrai handler ; 42 cas ciblés physiques et 13 du pipeline image revérifiés.
+Compilation TypeScript réussie, lint sans erreur ni nouvel avertissement
+(10 préexistants sous Windows), 88 paires de contraste conformes. Les neuf
+nouveaux scénarios navigateur passent avec les trois parcours vendeurs par
+type et les dix parcours de confiance existants, deux workers, zéro retry
+(22/22). Les deux mocks de succès photo existants portent le contrat complet
+de la vraie API (`ok`, `productId`, `slug`) ; leurs assertions sont conservées.
+Le POST réellement terminé
+et perdu ne laisse qu'un produit après rechargement, contre deux avant.
+Relectures croisées runtime/tests sans blocage ; la fixture est isolée des
+anciens comptes et des réessais. Les preuves utilisent Auth/REST/Storage
+simulés et ne remplacent pas les tests SQL existants. CI finale du SHA dans
+la PR avant mise en relecture, aucune fusion dans ce lot.
+
 ## Support — identité du formulaire (21 octobre 2026)
 
 Lot sur `fix/support-identite-formulaire`, depuis `main` `e9812ac`, après

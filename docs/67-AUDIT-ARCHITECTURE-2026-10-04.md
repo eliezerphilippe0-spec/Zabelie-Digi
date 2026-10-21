@@ -980,3 +980,57 @@ relecture indépendante sans blocage ; la CI globale du commit reste requise.
 La validation définitive du SHA est portée dans la PR ; aucun merge,
 déploiement, accès aux données de production, migration ou paiement réel
 dans ce lot.
+
+## 15. Création physique — réponse perdue (21 octobre 2026)
+
+Inventaire repris sur `main a5a5001`, après fusion de #398 : formulaire et
+page physiques, POST `/api/products/physical`, route de photo `cover`, tables
+produit/extension/variantes/stock/fitment de `0036` et caractéristiques de
+`0074`, tests physiques et mécanisme de publication de #397 existent. Aucun
+équivalent ouvert parmi les PR ; seules #385–#387 concernent les dépendances.
+
+P1 confirmé avec le vrai composant et le vrai handler, E/S substituées : le
+POST termine ses écritures, la réponse se perd, `createdProductId` reste nul
+dans le formulaire et le clic suivant crée une seconde fiche. La reprise de
+photo, une fois l'identifiant confirmé, réutilisait déjà la même fiche.
+
+Le lot étend ce formulaire et réutilise `publishReviewKey`, `useSessionDraft`
+et les messages de vérification existants. Seul un booléen de prudence est
+gardé dans la session, par compte/type, sans expiration automatique ; aucune
+photo, saisie physique ou attestation n'est sauvegardée. Le marqueur est
+écrit avant POST. Une réponse indécidable bloque une nouvelle création après
+rechargement jusqu'à vérification de Mes produits et acquittement explicite,
+qui remet l'attestation à faux. Ce n'est ni une clé d'idempotence SQL ni une
+coordination entre onglets. Un stockage refusé ne garantit pas la reprise.
+
+La page remonte le formulaire par compte, qui transmet `expectedActorId`.
+Le POST compare cette précondition facultative à l'utilisateur Auth, après
+les contrôles existants de suspension/acceptation légale et avant les effets
+métier (cadence, attestation, lectures produit, INSERT). Les lectures internes
+du compte restent prioritaires. Les anciens clients restent compatibles ;
+la session reste la seule source d'identité et de propriété.
+
+La frontière de refus demeure prudente : 400/401/403/429 précèdent INSERT et
+autorisent une nouvelle saisie ; 422 peut provenir du fitment après INSERT,
+avec DELETE de compensation non confirmé. Il reste indécidable, comme 5xx,
+perte réseau ou succès mal formé. L'identifiant confirmé doit être un UUID
+valide ; la reprise de photo réutilise ce produit et les callbacks démontés
+ne doivent plus naviguer ou réécrire l'état local.
+
+Validation locale : 2 201 tests unitaires passants (+10 handlers physiques),
+compilation TypeScript réussie, lint sans erreur ni nouvel avertissement,
+88 paires de contraste conformes. Les neuf nouveaux scénarios navigateur
+passent avec les trois parcours vendeurs par type et les dix parcours de
+confiance existants, en parallèle à deux workers et sans retry (22/22).
+Les deux mocks photo de succès sont alignés sur le contrat API complet
+(`ok`, `productId`, `slug`), sans affaiblir les assertions de reprise.
+Avant correction, le vrai POST terminé puis
+perdu crée deux UUID après rechargement ; après correction, un seul produit,
+avec vérification exigée et nouvelle attestation après acquittement. Les
+relectures runtime et tests ne trouvent aucun blocage ; Auth/REST/Storage
+sont doublés localement, les refus ambigus sont injectés après un vrai 200.
+
+Les détails avant/après, leurs limites et la CI du SHA final sont portés
+dans la PR. Aucune nouvelle table, migration, route applicative, dépendance,
+écriture de production ou paiement réel ; validation humaine sans fusion
+ni déploiement dans ce lot.

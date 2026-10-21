@@ -3,7 +3,7 @@
 import type { SellerPricing } from "@/lib/seller-pricing";
 import type { Lang } from "@/lib/i18n";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import {
@@ -18,6 +18,11 @@ import {
   type Compression,
 } from "@/lib/image-compress";
 import Link from "next/link";
+import { UUID_RE } from "@/lib/collections";
+import { KIND_PHYSICAL } from "@/lib/product-kind";
+import { publishReviewKey } from "@/lib/publish-draft";
+import { publishDraftCopy } from "@/lib/publish-draft-copy";
+import { useSessionDraft } from "@/lib/use-session-draft";
 
 /**
  * Création d'un produit physique (chantier B — UI vendeur).
@@ -48,6 +53,7 @@ type Fitment = { modelId: string; yearStart: string; yearEnd: string };
 const CURRENT_YEAR = new Date().getFullYear();
 
 export function PhysicalProductForm({
+  actorId,
   listingLabels,
   tier = "standard",
   rateBpsEnVigueur,
@@ -61,6 +67,7 @@ export function PhysicalProductForm({
   specsEtendues = false,
   specsLabels,
 }: {
+  actorId: string;
   listingLabels: {
     description: string;
     descriptionHint: string;
@@ -115,6 +122,13 @@ export function PhysicalProductForm({
   };
 }) {
   const router = useRouter();
+  const mounted = useRef(true);
+  const submitting = useRef(false);
+  const [review, setReview, clearReview, reviewReady, reviewPersistence] = useSessionDraft<boolean>(
+    publishReviewKey(actorId, KIND_PHYSICAL), false,
+    (value): value is boolean => typeof value === "boolean", Number.POSITIVE_INFINITY,
+  );
+  const reviewCopy = publishDraftCopy(lang);
   const [categories, setCategories] = useState<Category[]>([]);
   const [models, setModels] = useState<VehicleModel[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -149,6 +163,11 @@ export function PhysicalProductForm({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
     return () => { if (photoPreview) URL.revokeObjectURL(photoPreview); };
   }, [photoPreview]);
 
@@ -159,10 +178,11 @@ export function PhysicalProductForm({
         return r.json();
       })
       .then((d) => {
+        if (!mounted.current) return;
         setCategories(d.categories ?? []);
         setModels(d.models ?? []);
       })
-      .catch(() => setLoadError(true));
+      .catch(() => { if (mounted.current) setLoadError(true); });
   }, []);
 
   // Arbre aplati → options groupées par département (remontée des parent_id).
@@ -198,6 +218,7 @@ export function PhysicalProductForm({
    * gain AVANT de valider, et l'attente se paie pendant qu'il remplit le
    * reste du formulaire plutôt qu'au moment critique de la soumission. */
   async function selectPhoto(f: File | null) {
+    if (!mounted.current) return;
     setPhotoPreview(null);
     setPhoto(null);
     setError(null);
@@ -209,26 +230,32 @@ export function PhysicalProductForm({
     setCompressing(true);
     try {
       const c = await compresserImage(f);
+      if (!mounted.current) return;
       setPhoto(c.fichier);
       setCompression(c);
       setPhotoPreview(URL.createObjectURL(c.fichier));
     } catch {
-      setError(listingLabels.photoPrepareError);
+      if (mounted.current) setError(listingLabels.photoPrepareError);
     } finally {
-      setCompressing(false);
+      if (mounted.current) setCompressing(false);
     }
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (busy || compressing || createdProductId) return;
+    if (!mounted.current || submitting.current || busy || compressing || createdProductId || !reviewReady || review) return;
+    submitting.current = true;
     setBusy(true);
     setError(null);
+    // Persist only this safety marker, before the server can create a product.
+    // A lost response must not turn reload into permission for another POST.
+    setReview(true);
     try {
       const res = await fetch("/api/products/physical", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          expectedActorId: actorId,
           title,
           description: description || undefined,
           priceHTG: Number(price),
@@ -264,18 +291,30 @@ export function PhysicalProductForm({
         }),
       });
       const data = await res.json();
+      if (!mounted.current) return;
       if (!res.ok) {
-        setError(data.error ?? listingLabels.error);
+        setError(typeof data?.error === "string" ? data.error : listingLabels.error);
+        // Physical fitment can fail with 422 AFTER INSERT and a best-effort
+        // rollback, so that status must keep the verification requirement.
+        if ([400, 401, 403, 429].includes(res.status)) setReview(false);
+        return;
+      }
+      if (!data || data.ok !== true || typeof data.productId !== "string" || !UUID_RE.test(data.productId)
+        || typeof data.slug !== "string" || !/^[a-z0-9-]+$/.test(data.slug)) {
+        setError(listingLabels.error);
         return;
       }
       setCreatedProductId(data.productId);
       // Keep the existing draft on upload failure and offer an explicit retry.
       if (photo && !(await uploadPhoto(data.productId, photo))) return;
+      if (!mounted.current) return;
+      clearReview();
       router.push(`/vendre#produit-${data.productId}`);
     } catch {
-      setError(listingLabels.network);
+      if (mounted.current) setError(listingLabels.network);
     } finally {
-      setBusy(false);
+      submitting.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
 
@@ -285,30 +324,40 @@ export function PhysicalProductForm({
       fd.append("productId", productId);
       fd.append("file", file);
       const response = await fetch("/api/products/cover", { method: "POST", body: fd });
+      if (!mounted.current) return false;
       if (!response.ok) throw new Error("cover-upload-failed");
       return true;
     } catch {
-      setError(listingLabels.photoFailed);
+      if (mounted.current) setError(listingLabels.photoFailed);
       return false;
     }
   }
 
   async function retryPhoto() {
-    if (!createdProductId || !photo || busy || compressing) return;
+    if (!mounted.current || submitting.current || !createdProductId || !UUID_RE.test(createdProductId) || !photo || busy || compressing) return;
+    submitting.current = true;
     setBusy(true);
     setError(null);
     try {
       if (await uploadPhoto(createdProductId, photo)) {
+        if (!mounted.current) return;
+        clearReview();
         router.push(`/vendre#produit-${createdProductId}`);
       }
     } finally {
-      setBusy(false);
+      submitting.current = false;
+      if (mounted.current) setBusy(false);
     }
   }
+
+  const storageWarning = reviewReady && reviewPersistence === "unavailable"
+    ? <p role="status" className="text-sm text-mist">{reviewCopy.physicalUnavailable}</p>
+    : null;
 
   if (createdProductId) {
     return (
       <section className="space-y-4 rounded-2xl border border-line bg-surface/40 p-5" aria-labelledby="draft-saved">
+        {storageWarning}
         <h2 id="draft-saved" className="font-semibold">{listingLabels.saved}</h2>
         <p className="text-sm text-mist">{listingLabels.draftNote}</p>
         {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
@@ -333,6 +382,23 @@ export function PhysicalProductForm({
     );
   }
 
+  if (reviewReady && review && !busy) {
+    return (
+      <section className="space-y-4 rounded-2xl border border-line bg-surface/40 p-5">
+        {storageWarning}
+        <p role="alert" className="text-sm">{reviewCopy.uncertain}</p>
+        {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
+        <a href="/vendre#mes-produits" className="inline-flex min-h-11 items-center text-sm underline">{reviewCopy.checkProducts}</a>
+        <button type="button" className="block min-h-11 text-left text-sm underline"
+          onClick={() => {
+            setReview(false);
+            setPolicyOk(false);
+            setError(null);
+          }}>{reviewCopy.resume}</button>
+      </section>
+    );
+  }
+
   if (loadError) {
     return (
       <p className="rounded-xl border border-danger/50 bg-surface/60 p-4 text-sm text-danger-text">
@@ -343,6 +409,8 @@ export function PhysicalProductForm({
 
   return (
     <form onSubmit={submit} className="space-y-5">
+      {storageWarning}
+      <fieldset disabled={busy || !reviewReady || review} className="min-w-0 space-y-5">
       {/* ── 1. PHOTO ─────────────────────────────────────────────────── */}
       <label className="block">
         <span className="text-sm font-semibold">Photo du produit</span>
@@ -676,6 +744,7 @@ export function PhysicalProductForm({
         {busy ? listingLabels.creating : listingLabels.draft}
       </button>
       <p className="text-xs text-mist">{listingLabels.draftNote}</p>
+      </fieldset>
     </form>
   );
 }

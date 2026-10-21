@@ -24,6 +24,15 @@ const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
 const digitalFacts = new Map();
 const digitalStudios = new Map();
 const digitalProgress = new Map();
+// Publication physique : journal isolé par titre de scénario, sans reset
+// partagé entre tests parallèles. Les contraintes SQL restent testées en CI.
+const physicalCreationRows = [];
+const physicalCreationWrites = [];
+const physicalCreationVariants = [];
+const physicalCreationStocks = [];
+const physicalCreationExtensions = [];
+const physicalCreationUploads = [];
+const PHYSICAL_CREATION_PREFIX = "Reprise physique ";
 const HISTORY_ID = "88888888-8888-8888-8888-000000000100";
 const HISTORY_ERROR_ID = "88888888-8888-8888-8888-000000000101";
 const DIGITAL_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001";
@@ -202,6 +211,31 @@ const server = createServer((req, res) => {
   // The real limiter returns a boolean; an empty PostgREST result is an error.
   if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
   if (mediaReviewFixture(req, res, url, send, single)) return;
+  if (url.pathname === "/__physical-creations") {
+    const title = url.searchParams.get("title");
+    const writes = physicalCreationWrites.filter(row => !title || row.title === title);
+    const ids = new Set(writes.map(row => row.id));
+    const variants = physicalCreationVariants.filter(row => ids.has(row.product_id));
+    return send(200, { products: writes, active: physicalCreationRows.filter(row => ids.has(row.id)),
+      extensions: physicalCreationExtensions.filter(row => ids.has(row.product_id)), variants,
+      stocks: physicalCreationStocks.filter(row => variants.some(variant => variant.id === row.variant_id)),
+      uploads: physicalCreationUploads.filter(row => ids.has(row.product_id)) });
+  }
+  const physicalCover = /^\/storage\/v1\/object\/product-covers\/([^/]+)\/(.+)$/.exec(url.pathname);
+  if (physicalCover && physicalCreationRows.some(row => row.id === physicalCover[1])) {
+    physicalCreationUploads.push({ product_id: physicalCover[1], path: physicalCover[0] });
+    req.resume(); return send(200, { Key: `product-covers/${physicalCover[1]}/${physicalCover[2]}` });
+  }
+  if (["/rest/v1/zabelie_physical_products", "/rest/v1/zabelie_stock"].includes(url.pathname) && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const input = JSON.parse(text || "{}");
+      const rows = Array.isArray(input) ? input : [input];
+      if (url.pathname.endsWith("zabelie_physical_products")) physicalCreationExtensions.push(...rows.filter(row => physicalCreationRows.some(product => product.id === row.product_id)));
+      else physicalCreationStocks.push(...rows.filter(row => physicalCreationVariants.some(variant => variant.id === row.variant_id)));
+      return send(201, []);
+    });
+  }
 
   // These fixture accounts explicitly represent users who accepted both
   // current documents. This is simulated data, not evidence for a real user.
@@ -605,6 +639,27 @@ const server = createServer((req, res) => {
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    if (req.method === "POST") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const input = JSON.parse(text || "{}");
+        if (input.kind !== "physical" || !input.title?.startsWith(PHYSICAL_CREATION_PREFIX)) return single(rows);
+        const product = { ...PRODUCT, ...input, id: crypto.randomUUID(), cover_url: null, product_assets: [] };
+        physicalCreationRows.push(product); physicalCreationWrites.push({ ...product });
+        return single([product]);
+      });
+    }
+    const createdPhysical = physicalCreationRows.find(row => row.id === id || row.slug === slug);
+    if (createdPhysical) rows = [createdPhysical];
+    else if (sellerPreparation && token.includes("physical-recovery")) rows = [...rows, ...physicalCreationRows];
+    if (req.method === "PATCH" && createdPhysical) {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => { Object.assign(createdPhysical, JSON.parse(text || "{}")); single([createdPhysical]); });
+    }
+    if (req.method === "DELETE" && createdPhysical) {
+      physicalCreationRows.splice(physicalCreationRows.indexOf(createdPhysical), 1);
+      return send(200, []);
+    }
     // Audit 2026-10-19 (UX-01) : un vendeur dont une fiche a été retirée par la modération.
     if (sellerPreparation && token.includes("-archive")) rows = [...rows,
       { ...PRODUCT, id: "cccccccc-0000-4000-8000-000000000384", slug: "service-retire", title: "Service retiré test", kind: "service", status: "archived", product_assets: [], delivery_days: 1, service_includes: ["Une séance"] }];
@@ -645,15 +700,24 @@ const server = createServer((req, res) => {
 
   if (url.pathname.startsWith("/rest/v1/zabelie_product_variants")) {
     if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);
-    return send(200, [
-      {
-        id: "55555555-5555-5555-5555-555555555555",
-        options: null,
-        price_htg: 1500,
-        position: 1,
-        zabelie_stock: { quantity_available: 4 },
-      },
-    ]);
+    const fallback = [{
+      id: "55555555-5555-5555-5555-555555555555", options: null, price_htg: 1500,
+      position: 1, zabelie_stock: { quantity_available: 4 },
+    }];
+    if (req.method === "POST") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const input = JSON.parse(text || "[]"); const rows = Array.isArray(input) ? input : [input];
+        const created = rows.filter(row => physicalCreationRows.some(product => product.id === row.product_id)).map(row => ({ ...row, id: crypto.randomUUID() }));
+        physicalCreationVariants.push(...created); return send(created.length ? 201 : 200, created.length ? created : fallback);
+      });
+    }
+    const productId = eq(url, "product_id");
+    if (physicalCreationRows.some(product => product.id === productId)) {
+      return send(200, physicalCreationVariants.filter(variant => variant.product_id === productId)
+        .map(variant => ({ ...variant, zabelie_stock: physicalCreationStocks.find(stock => stock.variant_id === variant.id) ?? null })));
+    }
+    return send(200, fallback);
   }
   if (url.pathname.startsWith("/rest/v1/zabelie_product_fitment")) {
     if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);

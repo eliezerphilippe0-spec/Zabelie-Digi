@@ -130,6 +130,8 @@ export default async function VendrePhysiquePage() {
         ) : (
           <div className="mt-8">
             <PhysicalProductForm
+              key={user.id}
+              actorId={user.id}
               listingLabels={{
                 description: t(lang, "sell.physical.description"),
                 descriptionHint: t(lang, "sell.physical.description.hint"),
