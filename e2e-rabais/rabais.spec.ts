@@ -14,6 +14,32 @@ async function connect(page: Page, seller = true) {
 }
 test.beforeEach(async ({ request }) => { await request.post("http://127.0.0.1:15427/__discount-reset"); });
 
+test("non-number JSON prices cannot change the seller variant discount", async ({ page, request }) => {
+  await connect(page);
+  const readVariant = async () => {
+    const response = await request.get("http://127.0.0.1:15427/rest/v1/zabelie_product_variants?id=eq.55555555-5555-5555-5555-555555555555");
+    expect(response.status()).toBe(200);
+    const variants = await response.json();
+    expect(variants).toHaveLength(1);
+    return { price_htg: variants[0].price_htg, compare_at_htg: variants[0].compare_at_htg };
+  };
+  // This mutable fixture is reset by beforeEach and its config uses one worker.
+  // The fake RPC would really apply a coerced price of 1, so checking the
+  // stored variant proves more than checking an API error response alone.
+  const baseline = await readVariant();
+  expect(baseline).toEqual({ price_htg: 2000, compare_at_htg: null });
+  for (const newPriceHTG of [true, [1], [[1]], "1"]) {
+    const response = await page.request.post("/api/products/discount", { data: {
+      productId: "44444444-4444-4444-4444-444444444444",
+      variantId: "55555555-5555-5555-5555-555555555555", newPriceHTG,
+    } });
+    const after = await readVariant();
+    console.info("discount JSON rejection", JSON.stringify({ newPriceHTG, status: response.status(), before: baseline, after }));
+    expect(response.status()).toBe(400);
+    expect(after).toEqual(baseline);
+  }
+});
+
 for (const width of [390, 1280]) {
   test("seller discount is visible and charged on the chosen variant at " + width + "px", async ({ page, request }) => {
     const pageErrors: string[] = [];

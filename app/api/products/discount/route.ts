@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingFunction } from "@/lib/pg-errors";
+import { UUID_RE } from "@/lib/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,15 +43,17 @@ export async function POST(req: Request) {
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
 
-  let body: { productId?: string; newPriceHTG?: number; variantId?: string };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
-  const prix = Number(body.newPriceHTG);
-  if (!body.productId || !Number.isSafeInteger(prix) || prix <= 0 || prix > 2147483647 ||
-    (body.variantId !== undefined && (typeof body.variantId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.variantId)))) {
+  const { productId, newPriceHTG: prix, variantId } =
+    body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+  if (typeof productId !== "string" || !UUID_RE.test(productId) ||
+    typeof prix !== "number" || !Number.isSafeInteger(prix) || prix <= 0 || prix > 2147483647 ||
+    (variantId !== undefined && (typeof variantId !== "string" || !UUID_RE.test(variantId)))) {
     return NextResponse.json(
       { error: "productId et nouveau prix (entier HTG) requis" },
       { status: 400 }
@@ -58,11 +61,11 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = body.variantId ? await admin.rpc("zabelie_set_variant_discount", {
-    p_user_id: user.id, p_product_id: body.productId, p_variant_id: body.variantId, p_new_price_htg: prix,
+  const { data, error } = variantId ? await admin.rpc("zabelie_set_variant_discount", {
+    p_user_id: user.id, p_product_id: productId, p_variant_id: variantId, p_new_price_htg: prix,
   }) : await admin.rpc("zabelie_set_discount", {
     p_user_id: user.id,
-    p_product_id: body.productId,
+    p_product_id: productId,
     p_new_price_htg: prix,
   });
   if (error) {
@@ -97,22 +100,25 @@ export async function DELETE(req: Request) {
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
 
-  let body: { productId?: string; variantId?: string };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
-  if (!body.productId || (body.variantId !== undefined && (typeof body.variantId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.variantId)))) {
+  const { productId, variantId } =
+    body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
+  if (typeof productId !== "string" || !UUID_RE.test(productId) ||
+    (variantId !== undefined && (typeof variantId !== "string" || !UUID_RE.test(variantId)))) {
     return NextResponse.json({ error: "productId requis" }, { status: 400 });
   }
 
   const admin = createAdminClient();
-  const { data, error } = body.variantId ? await admin.rpc("zabelie_clear_variant_discount", {
-    p_user_id: user.id, p_product_id: body.productId, p_variant_id: body.variantId,
+  const { data, error } = variantId ? await admin.rpc("zabelie_clear_variant_discount", {
+    p_user_id: user.id, p_product_id: productId, p_variant_id: variantId,
   }) : await admin.rpc("zabelie_clear_discount", {
     p_user_id: user.id,
-    p_product_id: body.productId,
+    p_product_id: productId,
   });
   if (error) {
     if (isMissingFunction(error)) {
