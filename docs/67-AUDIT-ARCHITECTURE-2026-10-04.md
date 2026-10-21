@@ -1076,3 +1076,18 @@ le booléen obtenait HTTP 200 et modifiait réellement le prix du stub de 2 000
 à 1 HTG. Compilation TypeScript, lint sans nouvelle alerte et 88 paires de
 contraste passent ; relecture indépendante sans blocage. Les résultats
 unitaires et CI globaux sont à lire sur le SHA final dans la PR.
+
+Le premier run CI échoue avant les rabais dans l'attente d'un ancien parcours
+physique. Une sonde DOM contrôlée reproduit un interleaving du helper : le
+champ disparaît entre la lecture de l'alerte et `isEditable`, empêchant de
+relire l'alerte déjà visible. Une attente unique sur l'union des deux cibles
+remplace ce poll ; le titre doit être activé et non readonly. Aucun délai,
+retry ou contrôle métier n'est assoupli, et aucun formulaire n'est modifié.
+Cette stabilisation ajoute uniquement un second fichier E2E au périmètre ;
+les neuf parcours physiques et la CI finale restent à confirmer sur leur SHA.
+
+Après cet ajustement de test, la sonde positive/négative et les neuf parcours
+physiques passent sans retry à deux workers, dont les cas EN/ES auparavant
+en échec. Types, lint ciblé et 29 tests ciblés sont verts ; aucun runtime ni
+build applicatif supplémentaire n'a été modifié. La CI finale du nouveau
+commit est la preuve globale attendue dans la PR.

@@ -38,6 +38,22 @@ blocage. Les suites unitaires et CI globales du SHA final sont portées dans
 la PR. Arrêt visé : PR prête à relire après validation, cinq tours de
 correction au plus ; aucun élargissement aux autres formulaires.
 
+La première CI passe build/SQL mais échoue dans le helper d'attente du
+parcours physique antérieur, avant la configuration rabais. Une sonde DOM
+déterministe reproduit la course : après une lecture d'alerte négative,
+l'hydratation retire le champ ; son `isEditable` attend alors ce champ et
+bloque la relecture de l'alerte désormais visible. Le helper utilise une
+union de locators dans une seule attente, avec titre activé et non readonly.
+Même délai et mêmes assertions métier, sans retry ajouté ni changement du
+formulaire. Les témoins et les neuf cas physiques doivent être revérifiés
+avant la nouvelle CI du SHA final.
+
+Validation de cette stabilisation : la sonde refuse toujours les états
+désactivé et readonly ; les neuf parcours physiques passent en 38,3 s,
+deux workers et zéro retry. Types, lint ciblé et 29 cas ciblés (rabais,
+cliquet i18n et harnais existant) passent aussi. Le runtime et le build
+applicatif sont inchangés ; seule la CI du nouveau SHA reste requise.
+
 PR de validation humaine uniquement : aucune fusion, mise en production,
 migration de production, donnée réelle ou paiement. L'autorisation de fusion
 #399 était spécifique à cette PR. Résultats définitifs à porter dans la PR.
