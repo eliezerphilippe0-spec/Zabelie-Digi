@@ -1020,8 +1020,11 @@ ne doivent plus naviguer ou réécrire l'état local.
 Validation locale : 2 201 tests unitaires passants (+10 handlers physiques),
 compilation TypeScript réussie, lint sans erreur ni nouvel avertissement,
 88 paires de contraste conformes. Les neuf nouveaux scénarios navigateur
-passent avec les trois parcours vendeurs existants, en parallèle à deux
-workers et sans retry (12/12). Avant correction, le vrai POST terminé puis
+passent avec les trois parcours vendeurs par type et les dix parcours de
+confiance existants, en parallèle à deux workers et sans retry (22/22).
+Les deux mocks photo de succès sont alignés sur le contrat API complet
+(`ok`, `productId`, `slug`), sans affaiblir les assertions de reprise.
+Avant correction, le vrai POST terminé puis
 perdu crée deux UUID après rechargement ; après correction, un seul produit,
 avec vérification exigée et nouvelle attestation après acquittement. Les
 relectures runtime et tests ne trouvent aucun blocage ; Auth/REST/Storage

@@ -59,7 +59,9 @@ for (const failure of ["http", "network"] as const) {
       }
       creations++;
       expect(route.request().postDataJSON().title).toBe("Lampe rechargeable");
-      return route.fulfill({ json: { productId: PRODUCT_ID } });
+      // Même contrat de succès que le vrai POST physique ; une réponse
+      // incomplète doit déclencher la vérification, pas la reprise de photo.
+      return route.fulfill({ json: { ok: true, productId: PRODUCT_ID, slug: "lampe-rechargeable-test" } });
     });
     await page.route("**/api/products/cover", async (route) => {
       uploads++;

@@ -41,7 +41,10 @@ du vrai handler ; 42 cas ciblés physiques et 13 du pipeline image revérifiés.
 Compilation TypeScript réussie, lint sans erreur ni nouvel avertissement
 (10 préexistants sous Windows), 88 paires de contraste conformes. Les neuf
 nouveaux scénarios navigateur passent avec les trois parcours vendeurs par
-type existants, deux workers, zéro retry (12/12). Le POST réellement terminé
+type et les dix parcours de confiance existants, deux workers, zéro retry
+(22/22). Les deux mocks de succès photo existants portent le contrat complet
+de la vraie API (`ok`, `productId`, `slug`) ; leurs assertions sont conservées.
+Le POST réellement terminé
 et perdu ne laisse qu'un produit après rechargement, contre deux avant.
 Relectures croisées runtime/tests sans blocage ; la fixture est isolée des
 anciens comptes et des réessais. Les preuves utilisent Auth/REST/Storage
