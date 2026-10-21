@@ -48,6 +48,6 @@ export default async function OrderSupportPage({params,searchParams}:{params:Pro
   {order.status==="refunded"&&<p className="mt-4 rounded-xl border border-line p-4 text-sm">{receiptResult.data?labels.refundRecorded:labels.refundPending}</p>}
   {messages.length>0&&<section className="mt-6"><h2 className="font-semibold">{labels.history}</h2><ol className="mt-3 space-y-3">{messages.map(m=><li key={m.id} className="rounded-xl border border-line p-4"><p className="text-xs text-mist">{labels[m.author_role]} · {date(m.created_at)}</p><p className="mt-2 whitespace-pre-wrap break-words text-sm">{m.body}</p></li>)}</ol></section>}
   <nav className="mt-4 flex gap-5">{page>1&&<Link className="inline-flex min-h-11 items-center underline" href={"?page="+(page-1)}>{labels.newer}</Link>}{more&&<Link className="inline-flex min-h-11 items-center underline" href={"?page="+(page+1)}>{labels.older}</Link>}</nav>
-  <SupportCaseForm orderId={id} actorId={user.id} labels={labels} isAdmin={isAdmin}/>
+  <SupportCaseForm key={`${user.id}:${id}:${isAdmin?"admin":"participant"}`} orderId={id} actorId={user.id} labels={labels} isAdmin={isAdmin}/>
  </main><SiteFooter/></div>;
 }

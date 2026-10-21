@@ -1,13 +1,10 @@
 "use client";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { caseStatuses, supportReasons } from "@/lib/support-case";
 import { useSessionDraft } from "@/lib/use-session-draft";
 import type { SupportCopy } from "@/lib/support-copy";
 type Draft = { message: string; requestId: string; reason: typeof supportReasons[number]; status: typeof caseStatuses[number] };
-const subscribe=()=>()=>undefined;
-const clientReady=()=>true;
-const serverReady=()=>false;
 const empty: Draft = {message:"",requestId:"",reason:"debited",status:"open"};
 function validDraft(v: unknown): v is Draft {
  if (!v || typeof v !== "object") return false;
@@ -18,12 +15,16 @@ function validDraft(v: unknown): v is Draft {
 }
 export function SupportCaseForm({orderId, actorId, labels, isAdmin=false}: {orderId:string;actorId:string;labels:SupportCopy;isAdmin?:boolean}) {
  const router=useRouter();
- const ready=useSyncExternalStore(subscribe,clientReady,serverReady);
- const [draft,setDraft,clear]=useSessionDraft<Draft>("zabelie:case:"+actorId+":"+orderId,empty,validDraft);
+ const [draft,setDraft,clear,ready]=useSessionDraft<Draft>("zabelie:case:"+actorId+":"+orderId,empty,validDraft);
  const [busy,setBusy]=useState(false); const locked=useRef(false);
  const [notice,setNotice]=useState("");
+ const mounted=useRef(true);
+ useEffect(()=>{
+   mounted.current=true;
+   return()=>{mounted.current=false;};
+ },[]);
  async function send(e:React.FormEvent) {
-   e.preventDefault(); if(locked.current) return;
+   e.preventDefault(); if(!ready||locked.current) return;
    if(!navigator.onLine) {setNotice(labels.offline);return;}
    locked.current=true;setBusy(true);setNotice("");
    const requestId=draft.requestId || crypto.randomUUID();
@@ -31,11 +32,12 @@ export function SupportCaseForm({orderId, actorId, labels, isAdmin=false}: {orde
    try {
      const response=await fetch(isAdmin?"/api/admin/support":"/api/support/cases",{
        method:"POST",headers:{"Content-Type":"application/json"},signal:AbortSignal.timeout(15000),
-       body:JSON.stringify({orderId,requestId,message:draft.message,...(isAdmin?{status:draft.status}:{reason:draft.reason})}),
+       body:JSON.stringify({orderId,requestId,expectedActorId:actorId,message:draft.message,...(isAdmin?{status:draft.status}:{reason:draft.reason})}),
      });
+     if(!mounted.current) return;
      if(!response.ok) throw new Error("unconfirmed");
      clear();setDraft(empty);setNotice(labels.saved);router.refresh();
-   }catch {setNotice(labels.error);}finally{locked.current=false;setBusy(false);}
+   }catch {if(mounted.current) setNotice(labels.error);}finally{locked.current=false;if(mounted.current) setBusy(false);}
  }
  return <form onSubmit={send} className="mt-6 space-y-4 rounded-2xl border border-line p-5">
    <label className="block text-sm font-semibold">{isAdmin?labels.status:labels.reason}

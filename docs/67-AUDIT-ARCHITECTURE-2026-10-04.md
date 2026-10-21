@@ -932,3 +932,51 @@ les quatre tests de route exécutent le handler avec son helper substitué.
 La CI du SHA de la PR reste la preuve de validation globale, notamment pour
 les consommateurs checkout du hook partagé. Aucune migration, action sur les
 données de production ou paiement réel n'est exécuté par ce lot.
+
+## 14. Support — identité du formulaire (21 octobre 2026)
+
+Un formulaire resté ouvert pour A pouvait transmettre son texte privé sous
+l'identité de B après un changement de session, lorsque B était lui aussi
+participant à la commande ou administrateur. Les gardes de participation et
+de rôle étaient correctes ; elles ne reliaient pas l'envoi à l'identité
+affichée lors de la saisie. Le défaut a été reproduit avec le vrai composant
+et les vrais handlers, en remplaçant uniquement leurs E/S.
+
+Le lot étend `SupportCaseForm`, `supportInput`, `caseUpdateInput` et les
+routes `POST /api/support/cases` et `POST /api/admin/support`. Le paramètre
+facultatif `expectedActorId` doit correspondre à la session vérifiée avant
+création d'un client privilégié, limiteur, audit ou RPC. Son absence conserve
+la compatibilité des anciens clients ; ce paramètre ne confère aucun droit.
+L'identité de l'auteur provient toujours de la session, avec les contrôles
+participant, admin/MFA et SQL existants.
+
+Le formulaire attend la restauration effective de `useSessionDraft`. Sa clé
+React inclut acteur, commande et mode ; les réponses tardives d'un exemplaire
+démonté ne doivent ni effacer un nouveau brouillon ni rafraîchir une autre vue.
+La clé de sessionStorage, la durée de 30 minutes, les requestId et les messages
+traduits restent ceux de l'existant. Le lot n'ajoute aucune purge de support.
+
+Les trois tables de `0113`, le dossier unique par commande, les messages
+append-only et le rejeu exact par acteur/requestId sont réutilisés. Aucun
+nouveau moteur de support, endpoint applicatif, objet SQL ou service externe.
+
+Contrepreuves navigateur sur `e9812ac` : les deux envois sous une autre
+identité autorisée renvoient 200 et enregistrent le texte de A sous B ; une
+réponse ancienne, après navigation React aller-retour, efface le nouveau
+brouillon au rechargement. Auth/REST/RPC restent simulés en boucle locale ;
+le cas tardif reçoit la vraie réponse réseau avant de retenir sa résolution
+JavaScript. Le rejeu navigateur vérifie le même requestId et un message dans
+le stub ; il ne constitue pas une nouvelle preuve d'idempotence SQL.
+
+Validation locale : 2 191 tests unitaires passants, 19 cas de routes support
+revérifiés sur leur état final, compilation TypeScript réussie, lint sans
+erreur ni nouvel avertissement (10 avertissements préexistants sous Windows)
+et 88 paires de contraste conformes. Les 11 parcours support passent sans
+retry : les quatre existants, les changements d'identité en quatre langues
+à 360 px et en administration à 1 280 px, le rejeu après réponse perdue et
+la réponse tardive après navigation. Captures mobile/desktop relues et
+relecture indépendante sans blocage ; la CI globale du commit reste requise.
+
+La validation définitive du SHA est portée dans la PR ; aucun merge,
+déploiement, accès aux données de production, migration ou paiement réel
+dans ce lot.

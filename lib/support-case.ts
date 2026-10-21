@@ -3,10 +3,12 @@ export const supportReasons = ["debited", "not_received", "wrong", "digital", "o
 export const caseStatuses = ["open", "waiting_buyer", "waiting_seller", "resolved"] as const;
 export const supportInput = z.object({
   orderId: z.string().uuid(), requestId: z.string().uuid(),
+  expectedActorId: z.string().uuid().optional(),
   reason: z.enum(supportReasons), message: z.string().trim().min(10).max(2000),
 }).strict();
 export const caseUpdateInput = z.object({
   orderId: z.string().uuid(), requestId: z.string().uuid(),
+  expectedActorId: z.string().uuid().optional(),
   status: z.enum(caseStatuses), message: z.string().trim().min(10).max(2000),
 }).strict();
 export type SupportCase = {
