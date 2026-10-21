@@ -1034,3 +1034,60 @@ Les détails avant/après, leurs limites et la CI du SHA final sont portés
 dans la PR. Aucune nouvelle table, migration, route applicative, dépendance,
 écriture de production ou paiement réel ; validation humaine sans fusion
 ni déploiement dans ce lot.
+
+## 16. Rabais — type du prix JSON (21 octobre 2026)
+
+Inventaire sur `main 762b496`, après #399 : `RabaisManager` envoie un nombre
+JSON à POST `/api/products/discount` et retire le barré par DELETE sur la même
+route. Les quatre RPC de `0075`/`0109`, avec les gardes de `0112`, contrôlent
+la propriété, la baisse stricte, les variantes et le flash actif ; elles
+modifient les tables produit/variantes existantes. Le prix barré vient du
+prix pratiqué, jamais d'un champ client. `tests/rabais.test.ts`, les tests SQL
+rabais et les trois parcours de `playwright.rabais.config.ts` existent déjà.
+Les seules PR ouvertes à l'inventaire sont #385–#387 de dépendances.
+
+P1 confirmé par le vrai handler avec E/S simulées : `Number(newPriceHTG)`
+transforme `true`, `[1]` et `[[1]]` en 1 HTG, avant une RPC produit ou variante.
+Les gardes SQL voient ensuite un prix numériquement valide et ne peuvent plus
+reconnaître le type JSON original. Aucun accès à la production ni incident
+réel n'est déduit de cette contrepreuve locale.
+
+Le correctif exige un prix JSON de type nombre, entier positif, sûr et dans
+la capacité existante de 2 147 483 647 HTG. Les chaînes numériques, booléens,
+tableaux et objets sont refusés ; le nombre 1 demeure valide. POST et DELETE
+refusent aussi les corps non objets et les identifiants invalides avant le
+client métier et les RPC, en réutilisant `UUID_RE`. L'identité vient toujours
+de la session ; Auth et les contrôles existants de compte restent prioritaires.
+Leurs lectures internes ne sont pas supprimées.
+
+La route, les règles SQL, les paramètres des quatre RPC, les messages et les
+réponses métier sont réutilisés. Aucun autre endpoint de prix, interface,
+objet SQL, migration, dépendance ou moteur de rabais n'est ajouté. Les tests
+du handler et les parcours existants doivent conserver les montants valides,
+le retrait du seul barré et les refus métier. La validation finale du SHA sera
+portée dans la PR de revue humaine, sans fusion ni action de production.
+
+Validation locale ciblée : 27 cas unitaires passent (18 nouveaux, quatre
+rabais existants, cinq cliquet i18n), ainsi que quatre E2E sans retry sur un
+build neuf. Le cas HTTP négatif lit la variante inchangée après chacun des
+quatre corps coercibles ; les parcours existants conservent prix affichés,
+prix commandés et retrait du seul barré à 390/1 280 px. Avant correction,
+le booléen obtenait HTTP 200 et modifiait réellement le prix du stub de 2 000
+à 1 HTG. Compilation TypeScript, lint sans nouvelle alerte et 88 paires de
+contraste passent ; relecture indépendante sans blocage. Les résultats
+unitaires et CI globaux sont à lire sur le SHA final dans la PR.
+
+Le premier run CI échoue avant les rabais dans l'attente d'un ancien parcours
+physique. Une sonde DOM contrôlée reproduit un interleaving du helper : le
+champ disparaît entre la lecture de l'alerte et `isEditable`, empêchant de
+relire l'alerte déjà visible. Une attente unique sur l'union des deux cibles
+remplace ce poll ; le titre doit être activé et non readonly. Aucun délai,
+retry ou contrôle métier n'est assoupli, et aucun formulaire n'est modifié.
+Cette stabilisation ajoute uniquement un second fichier E2E au périmètre ;
+les neuf parcours physiques et la CI finale restent à confirmer sur leur SHA.
+
+Après cet ajustement de test, la sonde positive/négative et les neuf parcours
+physiques passent sans retry à deux workers, dont les cas EN/ES auparavant
+en échec. Types, lint ciblé et 29 tests ciblés sont verts ; aucun runtime ni
+build applicatif supplémentaire n'a été modifié. La CI finale du nouveau
+commit est la preuve globale attendue dans la PR.

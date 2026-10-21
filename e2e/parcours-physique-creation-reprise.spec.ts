@@ -41,8 +41,11 @@ async function settled(page: Page, lang: Lang = "fr") {
   await expect(page.getByRole("heading", { level: 1, name: t(lang, "sell.physical.title"), exact: true })).toBeVisible();
   // Une page rechargée peut d'abord montrer le HTML du formulaire désactivé,
   // avant que le marqueur de session décide entre saisie et vérification.
-  await expect.poll(async () => (await page.getByText(publishDraftCopy(lang).uncertain, { exact: true }).isVisible())
-    || await form(page).getByRole("textbox", { name: "Titre", exact: true }).isEditable().catch(() => false)).toBe(true);
+  // Le champ peut disparaître pendant l'hydratation : une seule attente
+  // observe les deux issues sans rester bloquée sur un champ déjà retiré.
+  const readyTitle = form(page).getByRole("textbox", { name: "Titre", exact: true })
+    .and(page.locator(":enabled:not([readonly])"));
+  await expect(page.getByText(publishDraftCopy(lang).uncertain, { exact: true }).or(readyTitle)).toBeVisible();
 }
 
 async function fill(page: Page, title: string, attest = true) {

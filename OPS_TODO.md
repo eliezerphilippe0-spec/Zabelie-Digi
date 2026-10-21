@@ -1,5 +1,63 @@
 # OPS_TODO — Zabelie
 
+## Rabais — validation des prix JSON (21 octobre 2026)
+
+Lot sur `fix/rabais-prix-json`, depuis `main` `762b496`, après lecture de
+`docs/26` §0, `docs/67`, de la route, de son appelant, des quatre RPC et des
+tests existants. À l'inventaire, seules #385–#387 de dépendances restent
+ouvertes ; aucun lot de rabais équivalent. #399 est fusionnée et en ligne.
+
+P1 reproduit avec le vrai handler et des E/S simulées : `true`, `[1]` et
+`[[1]]` deviennent le nombre 1 via `Number(newPriceHTG)` ; les chemins produit
+et variante appellent leur RPC avec un prix de 1 HTG. La propriété reste
+contrôlée en SQL, mais la forme JSON invalide a déjà été perdue. Le gestionnaire
+vendeur existant envoie un nombre JSON ; aucun contrat inventorié ne réclame
+une chaîne numérique.
+
+Objectif : exiger un nombre entier positif dans la capacité existante,
+valider le corps objet et les UUID avant le client métier et les RPC. Garder
+Auth et les contrôles de compte prioritaires, les quatre RPC, les prix barrés,
+la baisse stricte, les refus de flash et les réponses métier existantes.
+Réutiliser `UUID_RE` ; aucune nouvelle couche de tarification, interface,
+table, migration, dépendance ou route applicative.
+
+Validation visée : contrepreuve rouge avant le correctif, tests du vrai
+handler avec absence de RPC sur refus et témoins valides produit/variante,
+parcours navigateur rabais existants, suite unitaire, build et CI du SHA final.
+Les preuves utilisent des E/S locales simulées ; les règles SQL sont celles
+des migrations existantes et de leurs tests isolés.
+
+Validation locale ciblée : 27/27 cas passent (18 nouveaux du vrai handler,
+quatre rabais existants et cinq cliquet i18n). Les quatre E2E rabais passent
+sans retry, dont le nouveau refus HTTP avec lecture du prix inchangé et les
+trois parcours existants à 390/1 280 px. Avant correction, ce même test
+constatait HTTP 200 et une variante passée de 2 000 à 1 HTG. Compilation avec
+TypeScript et 88 paires de contraste réussies ; lint sans erreur ni nouvel
+avertissement (10 préexistants sous Windows). Relecture indépendante sans
+blocage. Les suites unitaires et CI globales du SHA final sont portées dans
+la PR. Arrêt visé : PR prête à relire après validation, cinq tours de
+correction au plus ; aucun élargissement aux autres formulaires.
+
+La première CI passe build/SQL mais échoue dans le helper d'attente du
+parcours physique antérieur, avant la configuration rabais. Une sonde DOM
+déterministe reproduit la course : après une lecture d'alerte négative,
+l'hydratation retire le champ ; son `isEditable` attend alors ce champ et
+bloque la relecture de l'alerte désormais visible. Le helper utilise une
+union de locators dans une seule attente, avec titre activé et non readonly.
+Même délai et mêmes assertions métier, sans retry ajouté ni changement du
+formulaire. Les témoins et les neuf cas physiques doivent être revérifiés
+avant la nouvelle CI du SHA final.
+
+Validation de cette stabilisation : la sonde refuse toujours les états
+désactivé et readonly ; les neuf parcours physiques passent en 38,3 s,
+deux workers et zéro retry. Types, lint ciblé et 29 cas ciblés (rabais,
+cliquet i18n et harnais existant) passent aussi. Le runtime et le build
+applicatif sont inchangés ; seule la CI du nouveau SHA reste requise.
+
+PR de validation humaine uniquement : aucune fusion, mise en production,
+migration de production, donnée réelle ou paiement. L'autorisation de fusion
+#399 était spécifique à cette PR. Résultats définitifs à porter dans la PR.
+
 ## Création physique — réponse perdue (21 octobre 2026)
 
 Lot sur `fix/physique-reprise-creation`, depuis `main` `a5a5001`, après
