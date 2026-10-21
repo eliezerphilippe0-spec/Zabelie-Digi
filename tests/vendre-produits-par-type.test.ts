@@ -109,7 +109,7 @@ test("P5 — le type d'abord : physique vers sa page, fichier et service vers le
   assert.match(PAGE, /\[hrefNouveau\(NOUVEAU_PRESTATION\), "sell\.new\.service"/);
   // Le formulaire n'est rendu que si un type est choisi, sous l'ancre des cartes (UX-03).
   assert.match(PAGE, /\{nouveau && \(\s*<div id="formulaire" className="[^"]*\bscroll-mt-32\b[^"]*">/);
-  assert.match(PAGE, /<PublishForm\s+key=\{nouveau\}\s+kind=\{nouveau\}/);
+  assert.match(PAGE, /<PublishForm\s+key=\{`\$\{user.id\}:\$\{nouveau\}`\}\s+actorId=\{user.id\}\s+kind=\{nouveau\}/);
   // Replié, l'en-tête fait 108 px à 360 px : une marge de 96 px laissait le titre dessous.
   assert.match(PAGE, /<section id="nouveau"[^>]*\bscroll-mt-32\b/);
   assert.match(PAGE, /<div id="mes-produits" className="scroll-mt-32">/);
@@ -117,7 +117,7 @@ test("P5 — le type d'abord : physique vers sa page, fichier et service vers le
 
 test("P5b — UX-06 : le type se lit en titre du formulaire, et se change en revenant au choix", () => {
   assert.match(PAGE, /<h3[^>]*>\{t\(lang, nouveau === COMMITMENT_SERVICE \? "sell\.form\.service" : "sell\.form\.file"\)\}<\/h3>/);
-  assert.match(PAGE, /<Link href="\/vendre#nouveau"[^>]*>\{t\(lang, "sell\.form\.change"\)\}<\/Link>/);
+  assert.match(PAGE, /<a href="\/vendre#nouveau"[^>]*>\{t\(lang, "sell\.form\.change"\)\}<\/a>/);
   // Plus de sélecteur de type dans le formulaire : il contredisait la carte surlignée.
   assert.doesNotMatch(FORMULAIRE, /kindAria|kindFile|kindService|set\("kind"/);
   assert.doesNotMatch(PAGE, /kindAria|kindInitial|publish\.kind\.aria/);

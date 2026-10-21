@@ -46,6 +46,7 @@ export function useSessionDraft<T>(key: string | undefined, initial: T, validate
   const [value, setValue] = useState<T>(initial);
   const valueRef = useRef(initial);
   const [loadedKey, setLoadedKey] = useState<string | undefined>(undefined);
+  const [persistence, setPersistence] = useState<"saved" | "unavailable">("unavailable");
   useEffect(() => {
     if (!key) return;
     let restored = initialRef.current;
@@ -57,14 +58,16 @@ export function useSessionDraft<T>(key: string | undefined, initial: T, validate
         else sessionStorage.removeItem(key);
       }
     } catch { /* Storage is optional. */ }
+    let saved: "saved" | "unavailable" = "unavailable";
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), value: restored }));
+      saved = "saved";
+    } catch { /* Editing remains possible without browser storage. */ }
     valueRef.current = restored;
     setValue(restored);
     setLoadedKey(key);
+    setPersistence(saved);
   }, [key, maxAge]);
-  useEffect(() => {
-    if (!key || loadedKey !== key) return;
-    try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), value })); } catch {}
-  }, [key, loadedKey, value]);
   const update = (next: SetStateAction<T>) => {
     const resolved = typeof next === "function" ? (next as (previous: T) => T)(valueRef.current) : next;
     valueRef.current = resolved;
@@ -72,9 +75,17 @@ export function useSessionDraft<T>(key: string | undefined, initial: T, validate
     // A full-page gateway navigation may happen before React's next effect.
     // Persist the safety flag (and ordinary drafts) during the user action.
     if (key && loadedKey === key) {
-      try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), value: resolved })); } catch {}
+      try {
+        sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), value: resolved }));
+        setPersistence("saved");
+      } catch { setPersistence("unavailable"); }
     }
   };
-  const clear = () => { if (key) { try { sessionStorage.removeItem(key); } catch {} } };
-  return [value, update, clear, !key || loadedKey === key] as const;
+  const clear = () => {
+    // All writes happen during restoration or update, so no later effect can
+    // recreate a draft after clear (notably after a confirmed server success).
+    if (key) { try { sessionStorage.removeItem(key); } catch {} }
+  };
+  return [value, update, clear, !key || loadedKey === key,
+    !key ? "disabled" : loadedKey !== key ? "loading" : persistence] as const;
 }
