@@ -13,6 +13,9 @@ export async function POST(req: Request) {
  if (authError || !user) return erreurTraduite("api.auth.required",401);
  let body; try { body = supportInput.safeParse(await req.json()); } catch { return erreurTraduite("api.json.invalid",400); }
  if (!body.success) return erreurTraduite("api.params.invalid",400);
+ if (body.data.expectedActorId !== undefined && body.data.expectedActorId !== user.id) {
+   return erreurTraduite("api.auth.required",403);
+ }
  const admin = createAdminClient();
  if (!await rateLimit(admin,"support:" + user.id,10)) return erreurTraduite("api.rate.limited",429);
  // The participant endpoint never grants admin authority from a role claim.

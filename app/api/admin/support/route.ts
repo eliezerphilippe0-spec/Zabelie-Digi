@@ -10,6 +10,9 @@ export async function POST(req: Request) {
  if (!user || user.role !== "admin") return erreurTraduite("api.access.denied",403);
  let body; try { body=caseUpdateInput.safeParse(await req.json()); } catch {return erreurTraduite("api.json.invalid",400);}
  if (!body.success) return erreurTraduite("api.params.invalid",400);
+ if (body.data.expectedActorId !== undefined && body.data.expectedActorId !== user.id) {
+   return erreurTraduite("api.auth.required",403);
+ }
  const trace = await exigerTraceAdmin(createAdminClient(), {actorId:user.id,action:"support.reply_attempt",targetType:"order",targetId:body.data.orderId});
  if (!trace) return erreurTraduite("api.unavailable",503);
  const {data,error}=await createAdminClient().rpc("zabelie_submit_support",{

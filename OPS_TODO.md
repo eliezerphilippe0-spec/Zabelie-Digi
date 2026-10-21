@@ -1,5 +1,46 @@
 # OPS_TODO — Zabelie
 
+## Support — identité du formulaire (21 octobre 2026)
+
+Lot sur `fix/support-identite-formulaire`, depuis `main` `e9812ac`, après
+inventaire de `docs/26`, `docs/67`, des formulaires, des routes, des RPC et des
+tests existants. Seules les PR de dépendances #385–#387 étaient ouvertes ;
+aucun lot de support équivalent n'était en attente.
+
+Objectif vérifiable : un formulaire affiché pour A, envoyé après passage de la
+session à B pourtant participant légitime ou administrateur, est refusé avant
+tout client privilégié, limiteur, audit ou mutation de support. Le texte privé
+reste dans le brouillon de A. Les appels correspondant à la session et les
+anciens clients omettant la précondition continuent de fonctionner.
+
+Le lot étend les deux schémas, les deux routes et le formulaire existants ;
+son montage est isolé par acteur, commande et mode. L'authentification, la
+participation à la commande, le contrôle admin/MFA et l'idempotence SQL de
+`0113` restent les sources d'autorité. La clé de stockage et les requestId
+sont conservés ; aucune seconde couche d'authentification ou de support.
+
+Périmètre : cinq fichiers runtime, tests ciblés et navigateur, documentation.
+Arrêt visé : validations vertes et PR de relecture humaine, avec bilan après
+cinq tours de correction au plus. Aucune fusion, migration, modification
+d'environnement, donnée de production ou paiement réel dans ce lot.
+Contrepreuves sur le build de `e9812ac` : HTTP 200 et texte de A enregistré
+sous B pour un participant et un administrateur ; après une navigation React,
+une ancienne réponse efface aussi le nouveau brouillon de la même commande.
+Les tests exécutent le vrai composant et les handlers avec Auth/REST/RPC
+simulés en boucle locale. La réponse tardive retient seulement la résolution
+JavaScript après la fin de la requête réseau, afin de vérifier le démontage.
+Les résultats définitifs et les limites de ces preuves sont consignés dans
+la PR ; son SHA reste la référence pour la validation globale.
+
+Validation locale : 2 191 tests unitaires passants, puis 19 cas de routes
+support revérifiés sur leur état final ; compilation avec TypeScript réussie,
+lint sans erreur ni nouvel avertissement (10 avertissements préexistants sous
+Windows), 88 paires de contraste conformes. Les 11 parcours support passent
+sans retry, dont les cinq changements de compte en FR/HT/EN/ES à 360 px ou
+en administration à 1 280 px, le rejeu et la réponse tardive. Relecture
+indépendante du runtime et des tests sans blocage. La CI globale reste à
+contrôler sur le commit de la PR avant sa mise en relecture.
+
 ## Pixels vendeur — refus des requêtes invalides (20 octobre 2026)
 
 Lot proposé sur `fix/pixels-corps-invalide`, depuis `main` `68c191e`, après
