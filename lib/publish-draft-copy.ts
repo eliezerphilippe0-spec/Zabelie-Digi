@@ -3,6 +3,7 @@ import type { Lang } from "@/lib/i18n";
 const fr = {
   saved: "Brouillon conservé dans cet onglet pendant 30 minutes.",
   unavailable: "Le stockage de cet onglet est indisponible. Gardez cette page ouverte pour conserver votre saisie.",
+  physicalUnavailable: "Le stockage de cet onglet est indisponible. Aucun champ ni photo n’est sauvegardé. Après un rechargement, vérifiez vos produits avant de créer à nouveau.",
   discard: "Effacer le brouillon",
   confirmDiscard: "Effacer les champs de ce brouillon ?",
   uncertain: "La création doit être vérifiée. Consultez vos produits avant de recommencer.",
@@ -15,6 +16,7 @@ export type PublishDraftCopy = typeof fr;
 const ht: PublishDraftCopy = {
   saved: "Bouyon an konsève nan onglet sa a pandan 30 minit.",
   unavailable: "Espas depo onglet sa a pa disponib. Kenbe paj sa a ouvè pou konsève sa ou antre yo.",
+  physicalUnavailable: "Espas depo onglet sa a pa disponib. Okenn chan ni foto pa anrejistre. Apre ou rechaje paj la, verifye pwodui ou yo anvan ou kreye yon lòt.",
   discard: "Efase bouyon an",
   confirmDiscard: "Efase chan bouyon sa a yo?",
   uncertain: "Verifye si pwodui a te kreye. Gade pwodui ou yo anvan ou rekòmanse.",
@@ -25,6 +27,7 @@ const ht: PublishDraftCopy = {
 const en: PublishDraftCopy = {
   saved: "Draft kept in this tab for 30 minutes.",
   unavailable: "Storage for this tab is unavailable. Keep this page open to preserve what you have entered.",
+  physicalUnavailable: "Storage for this tab is unavailable. No fields or photos are saved. After reloading, check your products before creating another.",
   discard: "Clear the draft",
   confirmDiscard: "Clear the fields in this draft?",
   uncertain: "The creation needs to be verified. Check your products before starting again.",
@@ -35,6 +38,7 @@ const en: PublishDraftCopy = {
 const es: PublishDraftCopy = {
   saved: "Borrador conservado en esta pestaña durante 30 minutos.",
   unavailable: "El almacenamiento de esta pestaña no está disponible. Mantén esta página abierta para conservar lo que has introducido.",
+  physicalUnavailable: "El almacenamiento de esta pestaña no está disponible. No se guardan campos ni fotos. Después de recargar, revisa tus productos antes de crear otro.",
   discard: "Borrar el borrador",
   confirmDiscard: "¿Borrar los campos de este borrador?",
   uncertain: "Hay que verificar la creación. Consulta tus productos antes de volver a empezar.",

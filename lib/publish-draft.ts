@@ -1,5 +1,5 @@
 import { UUID_RE } from "./collections";
-import { isDigitalKind, type DigitalKind } from "./product-kind";
+import { isDigitalKind, type DigitalKind, type ProductKind } from "./product-kind";
 
 export const PUBLISH_DRAFT_PREFIX = "zabelie:publish:v1:";
 
@@ -50,7 +50,7 @@ export function publishDraftKey(actorId: string, kind: DigitalKind): string {
 }
 
 /** Non-private safety marker: account/logout draft purges must not lose it. */
-export function publishReviewKey(actorId: string, kind: DigitalKind): string {
+export function publishReviewKey(actorId: string, kind: ProductKind): string {
   return `zabelie:publish-review:v1:${actorId}:${kind}`;
 }
 
