@@ -124,6 +124,8 @@ export default async function BoutiquePage() {
             </div>
             <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
               <ProfileForm
+                key={user.id}
+                actorId={user.id}
                 initial={profile}
                 zones={zonesPourForm}
                 zoneLabels={zoneLabels}

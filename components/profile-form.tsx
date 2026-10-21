@@ -42,11 +42,13 @@ export type ProfileLabels = {
 };
 
 export function ProfileForm({
+  actorId,
   initial,
   zones = [],
   zoneLabels,
   labels,
 }: {
+  actorId: string;
   initial: {
     display_name: string;
     bio: string;
@@ -130,7 +132,7 @@ export function ProfileForm({
         // `zone_id` part TOUJOURS, même vide : c'est ce qui déclenche le
         // trigger de cohérence côté base (zone posée → region_code dérivé ;
         // zone vide → le département saisi ci-dessous reste maître).
-        body: JSON.stringify({ ...form, zone_id: zq || zk || "" }),
+        body: JSON.stringify({ ...form, expectedActorId: actorId, zone_id: zq || zk || "" }),
       });
       const data = await res.json();
       setMsg(res.ok ? "Profil mis à jour." : (data.error ?? "Échec."));
