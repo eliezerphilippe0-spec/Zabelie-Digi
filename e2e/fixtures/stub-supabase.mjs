@@ -33,6 +33,9 @@ const physicalCreationStocks = [];
 const physicalCreationExtensions = [];
 const physicalCreationUploads = [];
 const PHYSICAL_CREATION_PREFIX = "Reprise physique ";
+// Chaque test profil crée deux UUID propres ; aucun état/reset global partagé.
+const profileIdentityScenarios = new Map();
+const profileIdentityActors = new Map();
 const HISTORY_ID = "88888888-8888-8888-8888-000000000100";
 const HISTORY_ERROR_ID = "88888888-8888-8888-8888-000000000101";
 const DIGITAL_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001";
@@ -202,6 +205,44 @@ const server = createServer((req, res) => {
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
 
+  if (url.pathname === "/__profile-identity") {
+    if (req.method === "POST") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const input = JSON.parse(text);
+        if (profileIdentityScenarios.has(input.scenario)) return send(409, { error: "scenario exists" });
+        const profiles = [input.actorA, input.actorB].map((id, index) => ({
+          id, display_name: `Profil ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}`,
+          bio: `Présentation fictive ${index ? "B" : "A"}`, avatar_url: null,
+          country_code: index ? "US" : "HT", region_code: index ? null : "HT-OU",
+          zone_id: null, pwen_repe: `Repère fictif ${index ? "B" : "A"}`,
+          role: "creator", tier: "standard", boutik_slug: null, suspended_at: null, suspended_reason: null,
+        }));
+        const scenario = { profiles, writes: [], slugReads: [] };
+        profileIdentityScenarios.set(input.scenario, scenario);
+        for (const profile of profiles) profileIdentityActors.set(profile.id, { profile, scenario });
+        return send(200, scenario);
+      });
+    }
+    return send(200, profileIdentityScenarios.get(url.searchParams.get("scenario")) ?? null);
+  }
+  const identityProfile = url.pathname === "/rest/v1/profiles" ? profileIdentityActors.get(eq(url, "id")) : null;
+  if (identityProfile) {
+    const { profile, scenario } = identityProfile;
+    if (req.method === "PATCH") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const patch = JSON.parse(text);
+        if (url.searchParams.get("boutik_slug") === "is.null" && profile.boutik_slug !== null) return send(200, []);
+        scenario.writes.push({ id: profile.id, kind: Object.hasOwn(patch, "boutik_slug") ? "slug" : "profile", patch });
+        Object.assign(profile, patch);
+        return send(200, []);
+      });
+    }
+    if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
+    return single([profile]);
+  }
+
   // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
   if (jointureAmbigue(tableDe(url.pathname), url.searchParams.get("select"))) {
     console.error("[stub] PGRST201", tableDe(url.pathname), url.searchParams.get("select"));
@@ -370,6 +411,8 @@ const server = createServer((req, res) => {
   const sellerPreparation = token.includes("vendeur-preparation");
   const compteEssayage = /essayage-([0-9a-f-]{36})/.exec(token)?.[1];
   const essayageCompte = compteEssayage && ESSAYAGE_COMPTES.has(compteEssayage) ? compteEssayage : null;
+  const profileIdentityId = /profile-identity-([0-9a-f-]{36})/.exec(token)?.[1];
+  const profileIdentityActor = profileIdentityActors.has(profileIdentityId) ? profileIdentityId : null;
 
   // ── Essayage virtuel : les cinq fonctions de 0150, la table des essais, et une lecture pour les tests.
   if (url.pathname === "/__essayage") return send(200, { essais: [...essayage.essais.values()], expositions: [...essayage.expositions.values()] });
@@ -480,7 +523,7 @@ const server = createServer((req, res) => {
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
     return send(200, {
-      id: essayageCompte ?? (sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID),
+      id: profileIdentityActor ?? essayageCompte ?? (sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID),
       aud: "authenticated",
       role: "authenticated",
       email: "achte@example.ht",

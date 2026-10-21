@@ -1091,3 +1091,62 @@ physiques passent sans retry à deux workers, dont les cas EN/ES auparavant
 en échec. Types, lint ciblé et 29 tests ciblés sont verts ; aucun runtime ni
 build applicatif supplémentaire n'a été modifié. La CI finale du nouveau
 commit est la preuve globale attendue dans la PR.
+
+## 17. Profil public — identité attendue du formulaire (21 octobre 2026)
+
+Inventaire repris sur `main d9b8e52`, après #400 : l'unique appelant
+`/tableau-de-bord/boutique`, `ProfileForm` et POST `/api/profile` existent.
+La route utilise `auth.getUser()`, UPDATE `profiles` sous RLS puis attribution
+du slug best-effort. Nom réservé, géographie et cohérence de zone restent
+portés par leurs validations et les migrations `0015`, `0045`, `0069`, `0083`
+et leurs tests existants. Aucun doublon parmi les PR ouvertes #385–#387 de
+dépendances ; #397–#400 corrigent d'autres parcours.
+
+P1 confirmé avec le vrai composant et le vrai handler, E/S locales doublées :
+un formulaire du compte A reste ouvert, la session devient B, puis les champs
+A écrasent le profil B et alimentent son attribution de slug. Le filtre
+`id = user.id` continue de fonctionner ; ce défaut d'intention après changement
+de compte ne démontre aucun contournement RLS ni incident réel en production.
+
+La page transmet désormais `actorId` et remonte le formulaire par `key=user.id`.
+Le composant envoie `expectedActorId`. La route valide cette précondition
+facultative avec `UUID_RE` puis la compare à l'utilisateur vérifié, avant
+toute UPDATE, client métier de slug ou attribution. Identité différente : 403 ;
+identité mal formée ou corps non objet : 400, avec les traductions existantes.
+Auth reste prioritaire et la propriété continue de provenir de la session.
+Un ancien client sans précondition conserve son contrat ; cette compatibilité
+ne garantit pas l'intention d'un formulaire externe qui ne transmet aucun ID.
+
+Aucun stockage, brouillon, RPC, endpoint applicatif, objet SQL, migration ou dépendance
+ajouté. Les validations de nom/géographie, les erreurs ZB069 et le caractère
+best-effort du slug sont conservés. La proposition de zone du même composant
+reste hors de ce petit lot ; aucune protection de tous les formulaires n'est
+revendiquée.
+
+Les quinze nouveaux tests exécutent le vrai handler avec E/S doublées : 11
+passent avant correction et quatre échouent comme attendu (changement de
+compte, types d'identité, null et traductions des refus). Après correction,
+52 tests ciblés passent avec les tests existants de profils, zones et slug.
+
+La contrepreuve navigateur sur l'ancien build obtient 200, une UPDATE de B
+et une attribution de slug B avec les champs A ; A reste inchangé. Les six
+parcours finaux passent ensuite en 29,3 s à deux workers sans retry : refus 403
+visible dans les quatre langues à 360 px sans aucun effet de profil/slug,
+succès par compte et compatibilité historique à 1 280 px, puis changement SSR
+vers B après une vraie sauvegarde A dont seule la livraison JS est retardée.
+Le marqueur de document et la réponse RSC empêchent un faux vert par reload.
+
+Le test de remontage est éprouvé séparément : retirer seulement `key=user.id`
+et reconstruire laisse les champs A après ce refresh B ; le test échoue
+précisément sur ce nom, après succès du POST et des témoins document/RSC.
+La clé est restaurée, les empreintes des trois sources runtime correspondent
+à celles de la suite unitaire, et un nouveau build précède les six cas finaux.
+
+Validation locale globale : 2 234 unitaires sans échec/ignoré/annulé, types et
+build réussis, contraste 88/88, lint sans erreur ni nouvelle alerte et lint
+ciblé sans avertissement. Captures mobile/desktop relues ; pageerror,
+console, overlay et débordement contrôlés. Les erreurs console 403 attendues
+des requêtes volontairement refusées sont distinguées des erreurs inattendues.
+Relectures indépendantes sans blocage ; la CI exacte du SHA final est portée
+dans la PR de validation humaine. Aucune fusion, mise en production, écriture
+sur des données réelles ou paiement réel dans ce lot.

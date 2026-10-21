@@ -1,5 +1,50 @@
 # OPS_TODO — Zabelie
 
+## Profil public — identité du formulaire (21 octobre 2026)
+
+Petit lot sur `fix/profil-identite-session`, base `main d9b8e52`, après #400.
+Inventaire : `docs/26` §0 et `docs/67`, unique appelant Ma boutique,
+`ProfileForm`, POST `/api/profile`, `profiles`, attribution de slug et
+géographie existantes, tests de profils/zones/slug et PR ouvertes. Seules
+#385–#387 de dépendances sont ouvertes ; aucun correctif profil équivalent.
+
+P1 reproduit localement : formulaire initial du compte A, session vérifiée B,
+POST200 puis UPDATE du profil B et attribution de slug B avec les champs A.
+Le filtre RLS sur l'utilisateur de session est conservé ; le défaut concerne
+l'intention du formulaire après changement de compte, pas un contournement RLS.
+
+Objectif vérifiable : envoyer `expectedActorId` depuis le compte de la page,
+remonter le formulaire par identité et refuser un compte différent avant toute
+UPDATE ou attribution de slug. Précondition facultative pour conserver les
+anciens clients ; UUID validé avec `UUID_RE`, refus avec les traductions
+existantes, propriété toujours issue de `auth.getUser()`.
+
+Arrêt : PR de validation humaine, cinq tours de correction au plus. Tests
+réels du handler avec E/S doublées, contrepreuve avant/après, parcours
+navigateur mobile/desktop et suites existantes. Garder validations de nom,
+géographie et slug best-effort. Aucun brouillon, nouvelle route, objet SQL,
+migration ou dépendance. La proposition de zone du même composant reste hors
+de ce lot ; aucune extension aux autres formulaires.
+
+Aucune fusion ni mise en production dans ce lot, aucun accès aux données
+réelles ni paiement réel. L'autorisation de fusion #400 concernait cette PR.
+
+Validation locale : 2 234/2 234 unitaires sans échec/ignoré/annulé, dont 15
+nouveaux cas du vrai handler ; 52/52 ciblés avec profils/zones/slug existants.
+Types et build final réussis, contraste 88/88, lint sans erreur ni nouvel
+avertissement (10 existants sous Windows), lint ciblé sans avertissement.
+Les six parcours navigateur passent sur build final restauré : 29,3 s,
+deux workers, zéro retry ; refus traduit FR/HT/EN/ES à 360 px sans UPDATE ni
+slug, profils A/B inchangés, succès A/A et B/B, client ancien à 1 280 px et
+remontage après vrai refresh SSR dans le même document.
+
+Contrepreuves : avant correction, 11/15 nouveaux tests passent et le vrai
+POST navigateur obtient 200 en écrasant B avec les champs A ; retirer ensuite
+seulement la clé de remontage laisse les champs A après le refresh B et fait
+échouer le test dédié. Clé restaurée et empreintes des trois sources runtime
+identiques à celles des 2 234 unitaires avant reconstruction finale. Relectures
+indépendantes runtime/harnais sans blocage. CI du SHA final à porter dans la PR.
+
 ## Rabais — validation des prix JSON (21 octobre 2026)
 
 Lot sur `fix/rabais-prix-json`, depuis `main` `762b496`, après lecture de
