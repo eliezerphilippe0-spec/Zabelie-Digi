@@ -1325,3 +1325,94 @@ overlay ou débordement horizontal. Types, build et contraste 88/88 réussissent
 lint sans erreur ni nouvelle alerte (dix existantes sous Windows), ciblé sans
 avertissement. Relecture indépendante sans blocage ; CI du SHA final à vérifier
 avant fusion, sondes publiques après le déploiement automatique existant.
+
+## 21. Fermeture de compte — identité de l'écran (22 octobre 2026)
+
+Inventaire sur `main da18726`, après #405 livré et vérifié : docs/26 §0,
+DELETE `/api/account`, unique `AccountActions` et son montage sur la page
+Compte, contrôles backend de compte/KYC/confidentialité et harnais existants.
+Les cinq PR ouvertes lors de l'inventaire (quartier #405 alors en cours,
+dépendances #385–#387 et skill #402) ne corrigent pas ce chemin. Les anciens
+correctifs de fermeture/conservation et les registres d'API V1/vendeur sont
+relus ; aucune intégration externe de fermeture sans corps n'est documentée.
+
+P1 d'intégrité confirmé avec le vrai DELETE et le vrai écran, sur doubles
+locaux uniquement : A ouvre Compte, les cookies deviennent B sans navigation,
+le dialogue générique est confirmé, puis HTTP 200 ferme B. Avec quatre
+compteurs fiables 0/0/0/2, le profil B est nettoyé et marqué account_closed,
+ses données ciblées sont traitées, son Auth est anonymisé/banni puis déconnecté
+globalement. Avec quatre zéros, Auth deleteUser(B) est appelé puis la session
+est déconnectée. Les effets réels reçus par le stub sont vérifiés avant
+l'assertion attendue 403 qui échoue. Aucune perte en production, violation RLS
+ou action sur un compte réel n'est déduite de cette preuve.
+
+L'écran reçoit désormais actorId depuis la session SSR et se remonte avec
+key=user.id ; il transmet expectedActorId dans le DELETE JSON. Après Auth,
+avant même createAdminClient, la route exige un objet et un UUID attendu :
+absence ou format invalide →400, divergence avec user.id →403. La session
+vérifiée reste seule source du compte cible. UUID_RE et les traductions déjà
+importées sont réutilisés ; aucun nouvel état global ou effet React ajouté.
+
+La précondition est obligatoire pour cette action irréversible. Un ancien
+JavaScript sans corps pouvait encore fermer B si le garde restait facultatif.
+Faute de contrat externe imposant ce format, corps absent/vide, objet vide ou
+autre objet sans identité sont maintenant refusés avant tout effet ; recharger
+l'écran fournit le nouveau protocole. Les scénarios métier antérieurs sont
+adaptés à ce protocole avec une vraie Request JSON et un UUID courant, sans
+affaiblir leurs assertions de comptabilité, KYC, purge ou erreurs fiables.
+
+Les quatre compteurs, leur vérification d'erreur/null, la suppression si tous
+sont à zéro, l'anonymisation sinon, les filtres par utilisateur, les pages de
+destinataires, la fermeture KYC, les reçus conservés, les métadonnées nettoyées
+et la déconnexion globale restent identiques. Aucune nouvelle réauthentification,
+règle de conservation, migration, table ou voie parallèle. L'export de données
+et les coordonnées privées ne changent pas dans ce lot.
+
+Le harnais existant observe désormais chaque ID Auth, filtre SQL, création
+admin et signOut. Les deux branches et les identités concordantes A/A et B/B
+restent témoins ; des cibles forgées ne changent pas le propriétaire. La version
+finale des tests de contrat compte 21 cas, dont 13 anciens scénarios métier :
+avant patch, six refus attendus rougissent et quinze cas passent. Auth absente
+ou en erreur garde sa priorité sur JSON et identité ; les quatre traductions
+existantes sont vérifiées. Les preuves initiales sont conservées séparément.
+
+Le fichier navigateur et le stub A/B existants sont étendus par un mode
+facultatif de fermeture, isolé par scénario. Ils observent les quatre compteurs
+et les opérations reçues sans fabriquer un refus d'identité. Les onze parcours
+profil/quartier sont conservés. La contrepreuve ancienne conserve aussi une
+erreur CSP secondaire après succès, due à la divergence locale 127.0.0.1/
+localhost lors du POST signout ; ce transport est diagnostiqué séparément,
+sans modifier le serveur signout ou la politique CSP. Le premier run corrigé
+conserve cette limite même sur localhost : son fetch suit un 303 vers HTTPS
+local, sans serveur TLS. Le composant utilise désormais redirect:manual sur
+ce seul POST, dont il ignore déjà la réponse, puis garde router.push('/') et
+refresh. Le vrai POST serveur, sa révocation et ses cookies restent exercés.
+Les témoins UI doivent observer le POST 303, l'accueil et les cookies Auth
+absents ; aucun mock, réécriture de Location ou exception CSP n'est ajouté.
+Le test de déconnexion existant vérifie toujours l'endpoint et la méthode POST,
+en autorisant ces options supplémentaires. Les seules lectures SSR tardives
+du journal d'observation sont distinguées de l'état métier, qui reste comparé
+intégralement. Le run initial corrigé 15/18 est conservé comme diagnostic.
+
+Le run suivant16/18 valide les quatre vrais succès UI, mais son contrôle de
+console révèle les images fictives HTTP de l'accueil bloquées par img-src.
+Le stub réutilise maintenant pour PRODUCT le même PNG dataURI déjà employé
+par SHOP_PRODUCTS, centralisé sans double lecture ni copie de fixture. Le
+point de service HTTP reste disponible ; la CSP et les contrôles console
+restent stricts. Ce run intermédiaire est conservé séparément.
+
+Validation locale finale : 2 271/2 271 unitaires, 59/59 ciblés métier voisins,
+31/31 compte/déconnexion ; dix-huit parcours, dix-huit tentatives, zéro retry
+en40,6 s. Quatre divergences403 et quatre anciens corps400 n'ont aucun effet ;
+les quatre succès UI A/A et B/B exercent deux anonymisations, deux suppressions,
+le vrai POST signout303, l'accueil et les cookies Auth absents. Annuler le
+dialogue n'envoie aucun DELETE. Les onze anciens parcours restent verts.
+Aucun défaut JS, console inattendue, overlay ou débordement ; captures360 et
+1280 relues. Types, build et contraste88/88 passent ; lint sans erreur ni
+nouvelle alerte (dix existantes Windows), ciblé sans avertissement. La preuve
+navigateur utilise Auth/PostgREST fictifs ; elle ne démontre pas les cascades
+ou la RLS SQL réelle. Les anciennes preuves rouges restent archivées.
+
+Validation finale, revue indépendante, CI du SHA exact, fusion normale et
+sondes publiques seront consignées dans la PR. Aucune donnée réelle, paiement
+réel, migration distante ou déploiement manuel ; l'audit entier reste ouvert.

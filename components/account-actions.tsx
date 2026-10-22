@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function AccountActions() {
+export function AccountActions({ actorId }: { actorId: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -19,7 +19,11 @@ export function AccountActions() {
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/account", { method: "DELETE" });
+      const res = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expectedActorId: actorId }),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Échec de la suppression.");
@@ -29,7 +33,8 @@ export function AccountActions() {
        * donc supprimer son compte laissait vivantes les sessions ouvertes
        * ailleurs. Hors de l'énoncé de la mission, mais dans son esprit —
        * un compte supprimé ne doit survivre nulle part. */
-      await fetch("/api/auth/signout", { method: "POST" });
+      // Le routeur affiche l'accueil ; le POST n'a pas à suivre son renvoi 303.
+      await fetch("/api/auth/signout", { method: "POST", redirect: "manual" });
       router.push("/");
       router.refresh();
     } catch (e) {
