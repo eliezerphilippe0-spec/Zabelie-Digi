@@ -1,0 +1,10 @@
+{
+  "name": "@zabelie/eslint-root-glob",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "picomatch": "4.0.7",
+    "tinyglobby": "0.2.17"
+  }
+}

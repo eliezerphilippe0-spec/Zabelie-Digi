@@ -1672,3 +1672,42 @@ passent directement contre les fixtures locales ; aucune pièce réelle ni
 base distante. Revue logique indépendante favorable, sans preuve de RLS ou de
 verrous SQL tirée des stubs. CI complète sur le SHA final, fusion normale et
 vérification du commit public restent à consigner dans la PR.
+
+## 26. Outillage ESLint — chaîne braces (22 octobre 2026)
+
+Inventaire sur main f2b9f401 après #385 : cinq alertes hautes npm complètes,
+zéro de production. Elles proviennent toutes de GHSA-vfj7-8cjw-p6xm :
+eslint-config-next → plugin Next → fast-glob 3.3.1 → micromatch 4.0.8 →
+braces 3.0.3. L'[avis](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+n'indique aucune version corrigée ; le registre npm conserve 3.0.3 en latest.
+Les PR 386/387 ne retirent pas cette chaîne. Aucun appel applicatif ni flux
+de production vers braces identifié ; le risque d'outillage reste suivi.
+
+Le plugin Next utilise seulement globSync dans get-root-dirs. Réutilisation
+de tinyglobby 0.2.17 et picomatch 4.0.7 déjà installés, au moyen d'un adaptateur
+local privé et d'un override limité au plugin 16.4.2. Le remplacement nu est
+écarté : expandDirectories, le format absolu, les slashs finaux et l'inclusion
+des dossiers liés diffèrent. Le contrat testé
+doit préserver les racines et le diagnostic réel no-html-link-for-pages,
+ou refuser explicitement les formes non prises en charge : plages à accolades
+et motifs vides. Les littéraux gardent leur forme par stat ; les dossiers liés
+sont observés via fs puis filtrés, sans remplacer le parcours ni ses garde-cycles.
+Le paquet privé est une dépendance directe nommée fast-glob et l'override
+référence $fast-glob : npm ci et npm ls ne résolvaient pas un chemin file
+transitif depuis le même parent. Aucun script post-installation ou réglage npm.
+Quatre exceptions de style no-require-imports documentent les imports CJS ;
+aucune règle Next désactivée, copie de braces, exclusion d'avis ou rétrogradation.
+Contrepreuves, installation reproductible, audits, revue et CI à consigner.
+
+Validation locale finale : installation propre et graphe npm valides ; audits
+complet et production zéro vulnérabilité. Dix-huit contrats réels du plugin
+passent sans saut, dont motifs absolus, accolades littérales, liens lexicaux,
+racines système et diagnostic no-html-link-for-pages. Les témoins ont détecté
+deux défauts d'accolades avant correction et une inclusion indue de lien sous
+mutation ; les journaux rouges restent distincts des résultats finaux verts.
+Suite complète 2 300/2 300, build Next 16.4.2, types après build, contraste 88/88,
+lint sans erreur ni nouvelle alerte (dix existantes Windows). Revue logique
+indépendante favorable ; montage d'installation vérifié avec npm 10.9.9 et
+11.13.0 sous Windows/Node 24. CI exacte Linux/Node 22 et publication à consigner
+dans la PR ; aucune correction amont de braces ni exploitation reproduite
+n'est revendiquée.
