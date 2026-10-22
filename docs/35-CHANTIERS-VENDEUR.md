@@ -176,6 +176,17 @@ pièce, standard KYC courant) : la paire reste de deux documents avec photo,
 sans exiger de posséder deux titres. Le nombre requis vit en config
 (`docs_requis`, défaut 2).
 
+**22 octobre 2026 — identité de l'écran de dépôt.** Le multipart KYC exige
+`expectedActorId`, UUID de l'utilisateur fourni par la page Compte au
+formulaire. Après authentification et garde compte actif/accord légal,
+absence ou format invalide →422 ; divergence avec la session →403 avant
+validation de pièce, lecture du dossier par le handler, stockage et RPC.
+La session reste l'unique propriétaire ; la clé SSR `user.id` remonte le
+formulaire lorsqu'un refresh RSC change de compte. Les anciens écrans sans
+identité doivent être rechargés. Bucket privé, chemin serveur, signatures,
+limites, RPC0130, conservation0131 et nettoyage prudent restent inchangés.
+Preuves sur fichiers entièrement fictifs et validation dans docs/67 §23.
+
 ## Ordre proposé
 
 V-1A (en cours) → V-2 → V-4 → V-5 → V-1B (après arbitrages) → V-3 (après

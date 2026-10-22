@@ -1505,3 +1505,69 @@ archivée sous sa tête initiale, sans réécriture de son résultat flaky.
 CI du SHA exact, fusion normale et sondes publiques seront consignées dans
 la PR. Aucune donnée réelle, paiement,
 migration distante ou déploiement manuel ; l'audit entier reste ouvert.
+
+## 23. Pièces KYC privées — identité de l'écran (22 octobre 2026)
+
+Inventaire sur main28d1b2ff, après #407 fusionnée et publiquement vérifiée :
+docs/26 §0, docs/35 V-6, unique POST /api/kyc, KycForm et montage Compte,
+bucket privé0079, RPC atomique0130, conservation0131, tests de dépôt et SQL
+existants. Les PR325/396 traitent concurrence/conservation ; aucun contrat
+externe de multipart sans identité n'est identifié. Aucun fournisseur,
+endpoint, table, policy, migration, dépendance ou règle de retrait ajouté.
+
+P1 d'attribution privée confirmé sur le vrai handler local puis navigateur :
+écran Compte A, cookies devenus B sans navigation et sélection d'un PNG
+entièrement fictif. Avant l'attente403 rouge, le POST200 stocke les1065octets
+et le digest observés sous le chemin privé B ; la RPC reçoit user_idB et le
+snapshot B exact, crée le document B et met son dossier en attente. A reste
+intact. L'unitaire observe le même effet avec59octets synthétiques. Aucune
+approbation, URL publique, violation RLS ou donnée réelle n'est démontrée.
+
+La seconde contrepreuve utilise le vrai LangToggle FR→EN : réponse RSC200,
+nouvelle lecture SSR B, titre anglais et sentinelle du même document. La liste
+garde pourtant la CIN de A au lieu du passeport de B avant l'attente rouge.
+Le diagnostic initial de corps multipart CDP indisponible est conservé ;
+les effets serveur et métadonnées prouvent la première cause indépendamment.
+
+Le multipart porte désormais expectedActorId obligatoire, fourni par actorId
+SSR, et le montage porte key=user.id. Après Auth, garde actif/légal et parsing
+multipart, UUID absent/mal formé →422, divergence →403. UUID_RE et traductions
+existantes sont réutilisés. Refus avant validation/signature de pièce, SELECT
+de dépôt, stockage et RPC ; le parsing reçoit nécessairement le multipart et
+le garde conserve ses propres lectures, sans promesse de zéro octet ou E/S.
+La session reste l'unique propriétaire ; anciens écrans sans identité à
+recharger. Types, tailles, MIME serveur, bucket privé, chemin aléatoire,
+verrou/snapshot, refus approved et nettoyage conservateur des COMMIT ambigus
+restent inchangés. Aucun assouplissement de la conservation ou des paiements.
+
+Le seul depotFixture existant est étendu aux acteurs A/B. Les23anciens corps
+de tests gardent leurs assertions ; leur builder valide fournit explicitement
+l'identité, les envois bruts restent bruts. Six cas donnent avant patch29tests,
+26verts et3rouges : attribution B démontrée et deux refus du nouveau protocole
+obligatoire, sans présenter ces derniers comme deux incidents indépendants.
+Les preuves avant correction sont conservées. Résultats finaux, revue, CI du
+SHA exact, fusion normale et sondes publiques seront consignés après contrôle.
+
+Validation locale :88/88 tests ciblés, dont29KYC. Trente parcours et30
+tentatives, deux workers, zéro retry/flaky/échec/ignoré en66,3 s ; les24anciens
+restent verts. Treize POST KYC : quatre divergences403 dans les quatre langues,
+six identités absentes/mal formées/File422 sans effet, puis trois succès200
+(A/A, B/B, B après vrai refresh RSC). Exactement trois objets privés fictifs
+et trois RPC, digest du File PNG vérifié ; A inchangé. Chaque formulaire porte
+un seul expectedActorId textuel égal à l'acteur attendu, observé en transmettant
+les méthodes natives FormData sans modifier fetch ou les valeurs. Seuls les
+journaux de GET sont exclus des comparaisons ; les refus stale vérifient aussi
+zéro lecture du snapshot KYC de dépôt à quatre colonnes, sans masquer les
+lectures actif/légal. Le stub ne prouve pas les verrous ou la RLS SQL.
+
+Aucun défaut JS, avertissement console, console inattendue, overlay ou
+débordement ;20erreurs HTTP403 attendues couvrent les cinq API testées, dont
+quatre KYC. Captures360/1280 relues, aucune pièce affichée en image. Types,
+build et contraste88/88 passent ; lint sans erreur ni nouvelle alerte (dix
+existantes Windows), ciblé sans avertissement. Revue logique indépendante sans
+blocage. Suite globale :2 282/2 282 unitaires, sans échec/ignoré/annulé en303,7 s.
+CI du SHA exact, fusion normale et sondes publiques restent à consigner dans
+la PR. Aucune donnée réelle, paiement, migration distante ou déploiement manuel.
+L'écart de texte « suppression après décision » dans kyc.why est un candidat
+distinct, identifié pendant la relecture des captures ; aucune règle de
+conservation n'est modifiée par le présent lot. L'audit entier reste ouvert.

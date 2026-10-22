@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { erreurTraduite } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
+import { UUID_RE } from "@/lib/collections";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTable } from "@/lib/product-media";
 import { isMissingFunction } from "@/lib/pg-errors";
@@ -18,7 +19,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/kyc  (multipart : kind, file) — le vendeur dépose UNE pièce.
+ * POST /api/kyc (multipart : expectedActorId, kind, file) — dépôt d'UNE pièce.
  *
  * Le fichier va dans un bucket PRIVÉ (0079, aucune policy) : il n'existe
  * aucune URL publique vers une pièce d'identité, à aucun moment. Le chemin
@@ -44,6 +45,14 @@ export async function POST(req: Request) {
     form = await req.formData();
   } catch {
     return erreurTraduite("api.form.invalid", 400);
+  }
+  // L'identité de l'écran est une précondition ; la session reste propriétaire.
+  const expectedActorId = form.get("expectedActorId");
+  if (typeof expectedActorId !== "string" || !UUID_RE.test(expectedActorId)) {
+    return erreurTraduite("api.params.invalid", 422);
+  }
+  if (expectedActorId !== user.id) {
+    return erreurTraduite("api.auth.required", 403);
   }
   const kind = form.get("kind");
   const file = form.get("file");

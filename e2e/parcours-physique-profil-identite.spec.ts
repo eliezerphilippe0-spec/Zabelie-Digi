@@ -1,6 +1,8 @@
 import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { t, type Lang } from "../lib/i18n";
+import type { KycType } from "../lib/kyc";
 
 // Vrais page/composant/POST ; seuls Auth/PostgREST sont simulés localement.
 // Le journal prouve les effets du handler, pas les règles SQL/RLS de production.
@@ -9,7 +11,15 @@ type Profile = { id: string; display_name: string; bio: string; avatar_url: stri
 type ProfileState = { profiles: Profile[]; writes: { id: string; kind: string; patch: Record<string, unknown> }[]; slugReads: { id: string }[];
   zones?: { id: string; parent_id: string | null; level: string }[];
   zoneRequests?: { tokenActorId: string; row: { id: string; requester: string; komin_id: string; nom_propose: string; status: string } }[];
-  accountClosure?: ClosureState; deliveryInfo?: DeliveryState };
+  accountClosure?: ClosureState; deliveryInfo?: DeliveryState; kyc?: KycState };
+type KycSubmission = { user_id: string; status: string; submitted_at: string; decided_at: string | null; decided_by: string | null; note_admin: string | null };
+type KycDocument = { id: string; user_id: string; kind: KycType; storage_path: string; created_at: string };
+type KycObject = { user_id: string; bucket: string; path: string; sha256: string; size: number; contentType: string };
+type KycState = { submissions: KycSubmission[]; documents: KycDocument[]; objects: KycObject[];
+  reads: { table: string; owner: string; select: string; serviceRole: boolean; rows: Record<string, unknown>[] }[];
+  uploads: (KycObject & { multipart: boolean; fileName: string; serviceRole: boolean })[];
+  rpcs: { name: string; args: { p_user_id: string; p_kind: KycType; p_storage_path: string; p_expected: Record<string, unknown> }; result: { ok: boolean; id: string }; serviceRole: boolean }[];
+  removals: { path: string; serviceRole: boolean }[] };
 type DeliveryRow = { user_id: string; full_name: string | null; phone: string | null; adres_liv: string | null; updated_at?: string };
 type DeliveryState = { rows: DeliveryRow[];
   reads: { tokenActorId: string | null; requestedActorId: string; select: string | null; serviceRole: boolean; row: DeliveryRow | null }[];
@@ -29,6 +39,7 @@ const diagnostics = new WeakMap<Page, { errors: string[]; console: { type: strin
 const expectedZoneRefusals = new WeakSet<Page>();
 const expectedAccountRefusals = new WeakSet<Page>();
 const expectedDeliveryRefusals = new WeakSet<Page>();
+const expectedKycRefusals = new WeakSet<Page>();
 test.beforeEach(async ({ page }) => {
   const result = { errors: [] as string[], console: [] as { type: string; text: string; url: string }[] };
   diagnostics.set(page, result);
@@ -45,15 +56,16 @@ test.afterEach(async ({ page }) => {
   expect(result.console.filter(message => !(message.type === "error" && /\b403\b/.test(message.text)
     && (message.url.includes("/api/profile") || (expectedZoneRefusals.has(page) && message.url.includes("/api/zones/request"))
       || (expectedAccountRefusals.has(page) && message.url.endsWith("/api/account"))
-      || (expectedDeliveryRefusals.has(page) && message.url.endsWith("/api/delivery-info")))))).toEqual([]);
+      || (expectedDeliveryRefusals.has(page) && message.url.endsWith("/api/delivery-info"))
+      || (expectedKycRefusals.has(page) && message.url.endsWith("/api/kyc")))))).toEqual([]);
   await expect(page.locator("nextjs-portal, [data-nextjs-dialog-overlay], [data-nextjs-error-overlay]")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-async function fixture(request: APIRequestContext, withZones = false, accountClosure?: ClosureMode, deliveryInfo = false) {
+async function fixture(request: APIRequestContext, withZones = false, accountClosure?: ClosureMode, deliveryInfo = false, kyc = false) {
   const scenario = randomUUID(), actorA = randomUUID(), actorB = randomUUID();
   const initialized = await request.post(`${STUB}/__profile-identity`, { data: { scenario, actorA, actorB,
-    ...(withZones ? { withZones: true } : {}), ...(accountClosure ? { accountClosure } : {}), ...(deliveryInfo ? { deliveryInfo: true } : {}) } });
+    ...(withZones ? { withZones: true } : {}), ...(accountClosure ? { accountClosure } : {}), ...(deliveryInfo ? { deliveryInfo: true } : {}), ...(kyc ? { kyc: true } : {}) } });
   expect(initialized.status()).toBe(200);
   return { actorA, actorB, state: async (): Promise<ProfileState> => (await request.get(`${STUB}/__profile-identity?scenario=${scenario}`)).json() };
 }
@@ -536,4 +548,153 @@ test("livraison : le refresh LangToggle remonte B dans le même document avant s
   expect(after.deliveryInfo!.upserts).toEqual([{ tokenActorId: f.actorB, serviceRole: false, row: { ...b, updated_at: expect.any(String) } }]);
   expect(after.deliveryInfo!.rows.find(row => row.user_id === f.actorA)).toEqual(a);
   console.log(JSON.stringify({ scenario: "comptes fictifs : livraison après refresh B sauvegardée", expectedActorId: f.actorB, upserts: after.deliveryInfo!.upserts }));
+});
+
+const KYC_PNG = readFileSync("e2e/fixtures/cover.png");
+const KYC_SHA256 = createHash("sha256").update(KYC_PNG).digest("hex");
+const kycSection = (page: Page) => page.locator("#verification");
+const kycInput = (page: Page, kind: KycType, lang: Lang = "fr") => kycSection(page).getByLabel(`${t(lang, "kyc.add")} : ${t(lang, `kyc.${kind}`)}`, { exact: true });
+const kycPieceText = (kind: KycType, lang: Lang = "fr") => `${t(lang, `kyc.${kind}`)} — ${t(lang, "kyc.deposited")}`;
+const kycResponse = (page: Page) => page.waitForResponse(response => new URL(response.url()).pathname === "/api/kyc" && response.request().method() === "POST");
+const fictitiousKycFile = (actor: "A" | "B") => ({ name: `identite-fictive-${actor}.png`, mimeType: "image/png", buffer: KYC_PNG });
+async function openKyc(page: Page, kind: KycType, lang: Lang = "fr") {
+  await page.goto(`${ACCOUNT_ORIGIN}/tableau-de-bord/compte`, { waitUntil: "networkidle" });
+  await expect(kycSection(page).getByRole("heading", { name: t(lang, "kyc.title"), exact: true })).toBeVisible();
+  await expect(kycSection(page).getByRole("listitem")).toHaveText([kycPieceText(kind, lang)]);
+  await expect(kycSection(page).getByText(t(lang, "kyc.pending"), { exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    const forms: FormData[] = [];
+    (window as unknown as { kycObservedForms: FormData[] }).kycObservedForms = forms;
+    for (const method of ["set", "append"] as const) {
+      const original = FormData.prototype[method];
+      FormData.prototype[method] = function (this: FormData, ...args: [string, string | Blob, string?]) {
+        const result = Reflect.apply(original, this, args);
+        if (!forms.includes(this)) forms.push(this);
+        return result;
+      };
+    }
+  });
+}
+async function observedKycIntent(page: Page, kind: KycType, actor: "A" | "B") {
+  // CDP n'expose pas ce corps multipart avec File. Observer les mutations
+  // natives de FormData, sans remplacer fetch ni modifier un argument.
+  const forms = await page.evaluate(({ kind, fileName }) => {
+    return (window as unknown as { kycObservedForms: FormData[] }).kycObservedForms
+      .filter(form => form.get("kind") === kind && form.get("file") instanceof File && (form.get("file") as File).name === fileName)
+      .map(form => ({ values: form.getAll("expectedActorId").map(value => typeof value === "string" ? value : { file: true }) }));
+  }, { kind, fileName: fictitiousKycFile(actor).name });
+  expect(forms).toHaveLength(1);
+  expect(forms[0].values).toHaveLength(1);
+  expect(typeof forms[0].values[0]).toBe("string");
+  return { expectedActorId: forms[0].values[0] as string, cardinality: forms[0].values.length };
+}
+function assertNoKycEffects(before: ProfileState, after: ProfileState) {
+  const effects = (state: ProfileState) => ({ ...state, kyc: Object.fromEntries(Object.entries(state.kyc!).filter(([key]) => key !== "reads")) });
+  expect(effects(after)).toEqual(effects(before));
+}
+function assertKycUploaded(before: ProfileState, after: ProfileState, owner: string, kind: KycType, id: string) {
+  const initial = before.kyc!, saved = after.kyc!, sub = initial.submissions.find(row => row.user_id === owner)!;
+  const upload = saved.uploads.at(-1)!;
+  expect(saved.uploads).toHaveLength(initial.uploads.length + 1);
+  expect(saved.uploads.slice(0, -1)).toEqual(initial.uploads);
+  expect(upload).toMatchObject({ user_id: owner, bucket: "kyc-documents", sha256: KYC_SHA256, size: KYC_PNG.length,
+    contentType: "image/png", multipart: true, serviceRole: true });
+  expect(upload.path).toMatch(new RegExp(`^${owner}/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\\.png$`));
+  expect(saved.objects).toEqual([...initial.objects, { user_id: owner, bucket: "kyc-documents", path: upload.path, sha256: KYC_SHA256, size: KYC_PNG.length, contentType: "image/png" }]);
+  expect(saved.documents).toEqual([...initial.documents, { id, user_id: owner, kind, storage_path: upload.path, created_at: expect.any(String) }]);
+  expect(saved.rpcs).toEqual([...initial.rpcs, { name: "zabelie_register_kyc_document", serviceRole: true,
+    args: { p_user_id: owner, p_kind: kind, p_storage_path: upload.path,
+      p_expected: { status: sub.status, submitted_at: sub.submitted_at, decided_at: sub.decided_at, decided_by: sub.decided_by } }, result: { ok: true, id } }]);
+  expect(saved.submissions).toEqual(initial.submissions.map(row => row.user_id === owner
+    ? { ...row, status: "pending", submitted_at: expect.any(String), decided_at: null, decided_by: null } : row));
+  expect(saved.submissions.find(row => row.user_id === owner)!.submitted_at).not.toBe(sub.submitted_at);
+  // Tous les autres champs restent identiques, y compris d'éventuels futurs
+  // journaux d'effets ; seules les lectures GET sont diagnostiques.
+  expect({ ...after, kyc: { ...saved, reads: initial.reads, uploads: initial.uploads, objects: initial.objects,
+    documents: initial.documents, rpcs: initial.rpcs, submissions: initial.submissions } }).toEqual(before);
+}
+
+for (const [lang, width] of [["fr", 360], ["ht", 1280], ["en", 360], ["es", 1280]] as const) {
+  test(`KYC : écran A sous cookies B refuse le fichier privé (${lang})`, async ({ page, request }) => {
+    const f = await fixture(request, false, undefined, false, true);
+    await page.setViewportSize({ width, height: 900 }); await session(page, f.actorA, lang, "localhost"); await openKyc(page, "cin", lang);
+    const before = await f.state(); await session(page, f.actorB, lang, "localhost"); expectedKycRefusals.add(page);
+    const pending = kycResponse(page); await kycInput(page, "selfie", lang).setInputFiles(fictitiousKycFile("A"));
+    const response = await pending, body = await response.json(), after = await f.state();
+    console.log(JSON.stringify({ scenario: "comptes fictifs : fichier KYC A vers session B", lang, status: response.status(),
+      actorA: f.actorA, actorB: f.actorB, fileSha256: KYC_SHA256, uploads: after.kyc!.uploads, rpcs: after.kyc!.rpcs }));
+    if (response.status() === 200) {
+      expect(body).toEqual({ ok: true, id: expect.any(String), kind: "selfie" });
+      assertKycUploaded(before, after, f.actorB, "selfie", body.id);
+    }
+    expect(response.status()).toBe(403);
+    expect(await observedKycIntent(page, "selfie", "A")).toEqual({ expectedActorId: f.actorA, cardinality: 1 });
+    expect(body.error).toBe(t(lang, "api.auth.required"));
+    assertNoKycEffects(before, after);
+    const newReads = after.kyc!.reads.slice(before.kyc!.reads.length);
+    expect(newReads.some(read => read.owner === f.actorB && read.table === "profiles" && read.serviceRole)).toBe(true);
+    expect(newReads.some(read => read.owner === f.actorB && read.table === "zabelie_policy_acceptances" && read.rows.length === 2)).toBe(true);
+    expect(newReads.filter(read => read.table === "zabelie_kyc_submissions" && read.select.replace(/\s/g, "") === "status,submitted_at,decided_at,decided_by")).toEqual([]);
+    await expect(kycSection(page).getByText(t(lang, "api.auth.required"), { exact: true })).toBeVisible();
+    await expect(kycInput(page, "selfie", lang)).toBeEnabled();
+    await expect(kycSection(page).locator("img")).toHaveCount(0);
+    if (lang === "fr" || lang === "ht") await captureAtTop(page, `kyc-identite-refus-${width}.png`);
+  });
+}
+
+test("KYC : dépôts A et B restent privés, anciens formulaires refusés sans upload", async ({ page, request }) => {
+  for (const actor of ["A", "B"] as const) {
+    const f = await fixture(request, false, undefined, false, true), actorId = actor === "A" ? f.actorA : f.actorB;
+    const initialKind = actor === "A" ? "cin" : "paspo", kind = actor === "A" ? "paspo" : "cin";
+    await session(page, actorId, "fr", "localhost"); await openKyc(page, initialKind);
+    const before = await f.state(), pending = kycResponse(page);
+    await kycInput(page, kind).setInputFiles(fictitiousKycFile(actor));
+    const response = await pending, body = await response.json();
+    expect(response.status()).toBe(200); expect(body).toEqual({ ok: true, id: expect.any(String), kind });
+    const intent = await observedKycIntent(page, kind, actor);
+    expect(intent).toEqual({ expectedActorId: actorId, cardinality: 1 });
+    await expect(kycSection(page).getByRole("listitem")).toHaveText([kycPieceText(initialKind), kycPieceText(kind)]);
+    await expect(kycSection(page).locator("img")).toHaveCount(0);
+    const saved = await f.state(); assertKycUploaded(before, saved, actorId, kind, body.id);
+    const refusals: number[] = [];
+    for (const intent of [undefined, "acteur-malforme", { name: "acteur-fictif.txt", mimeType: "text/plain", buffer: Buffer.from(actorId) }]) {
+      const current = await f.state();
+      const refused = await page.request.post(`${ACCOUNT_ORIGIN}/api/kyc`, { multipart: {
+        kind: "selfie", file: fictitiousKycFile(actor), ...(intent === undefined ? {} : { expectedActorId: intent }),
+      } });
+      refusals.push(refused.status()); expect(refused.status()).toBe(422);
+      expect((await refused.json()).error).toBe(t("fr", "api.params.invalid"));
+      assertNoKycEffects(current, await f.state());
+    }
+    console.log(JSON.stringify({ scenario: "comptes fictifs : dépôt KYC autorisé", actor, owner: actorId, intent, uploads: saved.kyc!.uploads, rpcs: saved.kyc!.rpcs, legacyStatuses: refusals }));
+  }
+});
+
+test("KYC : le refresh LangToggle remonte les pièces B dans le même document", async ({ page, request }) => {
+  const f = await fixture(request, false, undefined, false, true);
+  await page.setViewportSize({ width: 1280, height: 900 }); await session(page, f.actorA, "fr", "localhost"); await openKyc(page, "cin");
+  const beforeRefresh = await f.state(), docB = beforeRefresh.kyc!.documents.find(doc => doc.user_id === f.actorB)!;
+  const sentinel = randomUUID(); await page.evaluate(value => { document.documentElement.dataset.kycIdentityDocument = value; }, sentinel);
+  await session(page, f.actorB, "fr", "localhost");
+  const pendingRsc = page.waitForResponse(response => new URL(response.url()).pathname === "/tableau-de-bord/compte" && response.request().headers().rsc === "1");
+  const menu = page.locator("header:visible details").filter({ has: page.getByRole("button", { name: "Français FR", exact: true, includeHidden: true }) });
+  await menu.locator("summary").click(); await menu.getByRole("button", { name: "English EN", exact: true }).click();
+  const rsc = await pendingRsc; expect(rsc.status()).toBe(200); expect(rsc.headers()["content-type"]).toContain("text/x-component");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { level: 1, name: t("en", "vendeur.nav.compte"), exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.dataset.kycIdentityDocument)).toBe(sentinel);
+  const refreshed = await f.state(), reads = refreshed.kyc!.reads.slice(beforeRefresh.kyc!.reads.length);
+  const bRead = reads.find(read => read.owner === f.actorB && read.table === "zabelie_kyc_documents" && read.serviceRole);
+  expect(bRead?.select.replace(/\s/g, "")).toBe("id,kind"); expect(bRead?.rows).toEqual([{ id: docB.id, kind: "paspo" }]);
+  console.log(JSON.stringify({ scenario: "comptes fictifs : pièces KYC refresh SSR B", rscStatus: rsc.status(), sameDocument: true,
+    newReads: reads, serverDocuments: bRead?.rows, browserPieces: await kycSection(page).getByRole("listitem").allTextContents(), uploads: refreshed.kyc!.uploads }));
+  await expect(kycSection(page).getByRole("listitem")).toHaveText([kycPieceText("paspo", "en")]);
+  const pending = kycResponse(page); await kycInput(page, "selfie", "en").setInputFiles(fictitiousKycFile("B"));
+  const response = await pending, body = await response.json();
+  expect(response.status()).toBe(200); expect(body).toEqual({ ok: true, id: expect.any(String), kind: "selfie" });
+  const intent = await observedKycIntent(page, "selfie", "B");
+  expect(intent).toEqual({ expectedActorId: f.actorB, cardinality: 1 });
+  await expect(kycSection(page).getByRole("listitem")).toHaveText([kycPieceText("paspo", "en"), kycPieceText("selfie", "en")]);
+  const after = await f.state(); assertKycUploaded(refreshed, after, f.actorB, "selfie", body.id);
+  console.log(JSON.stringify({ scenario: "comptes fictifs : dépôt KYC après refresh B", intent, uploads: after.kyc!.uploads, rpcs: after.kyc!.rpcs }));
 });

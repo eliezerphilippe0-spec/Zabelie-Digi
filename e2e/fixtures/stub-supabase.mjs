@@ -16,11 +16,16 @@
  */
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
 import { createMediaReviewFixture } from "./media-review.mjs";
 
 const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
+const POLICY_ACCEPTANCE_FIXTURE = [
+  { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
+  { policy_version: "confidentialite-v3", accepted_at: "2026-10-05T00:00:00Z" },
+];
 const digitalFacts = new Map();
 const digitalStudios = new Map();
 const digitalProgress = new Map();
@@ -53,7 +58,8 @@ export const ORDER_ID = "33333333-3333-3333-3333-333333333333";
 export const PRODUCT_ID = "44444444-4444-4444-4444-444444444444";
 export const SLUG = "filtre-huile-corolla";
 
-const COVER_PNG = "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64");
+const PNG_FIXTURE = readFileSync(new URL("./cover.png", import.meta.url));
+const COVER_PNG = "data:image/png;base64," + PNG_FIXTURE.toString("base64");
 const PRODUCT = {
   id: PRODUCT_ID,
   slug: SLUG,
@@ -235,6 +241,19 @@ const server = createServer((req, res) => {
             reads: [], upserts: [],
           };
         }
+        if (input.kyc === true) {
+          const documents = profiles.map((profile, index) => {
+            const id = crypto.randomUUID();
+            return { id, user_id: profile.id, kind: index ? "paspo" : "cin", storage_path: `${profile.id}/${id}.png`, created_at: "2026-10-05T10:00:00Z" };
+          });
+          scenario.kyc = {
+            submissions: profiles.map((profile, index) => ({ user_id: profile.id, status: "pending",
+              submitted_at: `2026-10-05T1${index}:00:00.000001Z`, decided_at: null, decided_by: null, note_admin: null })),
+            documents, objects: documents.map(doc => ({ user_id: doc.user_id, bucket: "kyc-documents", path: doc.storage_path,
+              sha256: createHash("sha256").update(PNG_FIXTURE).digest("hex"), size: PNG_FIXTURE.length, contentType: "image/png" })),
+            reads: [], uploads: [], rpcs: [], removals: [],
+          };
+        }
         if (["history", "empty"].includes(input.accountClosure)) {
           scenario.accountClosure = {
             mode: input.accountClosure, events: [], profileReads: [],
@@ -271,8 +290,66 @@ const server = createServer((req, res) => {
       });
     }
     if (scenario.accountClosure) scenario.accountClosure.profileReads.push({ actorId: profile.id, select: url.searchParams.get("select") });
+    if (scenario.kyc) scenario.kyc.reads.push({ table: "profiles", owner: profile.id, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  const kycOwner = eq(url, "user_id"), kycState = profileIdentityActors.get(kycOwner)?.scenario.kyc;
+  if (kycState && req.method === "GET" && ["/rest/v1/zabelie_kyc_submissions", "/rest/v1/zabelie_kyc_documents"].includes(url.pathname)) {
+    const table = url.pathname.slice("/rest/v1/".length), select = url.searchParams.get("select") ?? "*";
+    const rows = (table === "zabelie_kyc_submissions" ? kycState.submissions : kycState.documents).filter(row => row.user_id === kycOwner)
+      .map(row => select === "*" ? { ...row } : Object.fromEntries(select.split(",").map(key => key.trim()).filter(key => Object.hasOwn(row, key)).map(key => [key, row[key]])));
+    kycState.reads.push({ table, owner: kycOwner, select, serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows });
+    return single(rows);
+  }
+  const kycUpload = /^\/storage\/v1\/object\/kyc-documents\/([^/]+)\/(.+)$/.exec(url.pathname);
+  const uploadState = profileIdentityActors.get(kycUpload?.[1])?.scenario.kyc;
+  if (uploadState && kycUpload && req.method === "POST") {
+    const chunks = []; req.on("data", chunk => chunks.push(chunk));
+    return req.on("end", async () => {
+      try {
+        const contentType = req.headers["content-type"] ?? "", bytes = Buffer.concat(chunks);
+        const multipart = contentType.startsWith("multipart/form-data");
+        const fields = multipart ? await new Request("http://stub.test/upload", { method: "POST", headers: { "content-type": contentType }, body: bytes }).formData() : null;
+        const file = fields ? [...fields.values()].find(value => value instanceof File) : new File([bytes], kycUpload[2], { type: contentType });
+        if (!(file instanceof File)) return send(400, { error: "fixture upload has no File" });
+        const object = { user_id: kycUpload[1], bucket: "kyc-documents", path: `${kycUpload[1]}/${kycUpload[2]}`,
+          sha256: createHash("sha256").update(Buffer.from(await file.arrayBuffer())).digest("hex"), size: file.size, contentType: file.type };
+        uploadState.uploads.push({ ...object, multipart, fileName: file.name, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+        uploadState.objects.push(object);
+        return send(200, { Key: `kyc-documents/${object.path}`, Id: crypto.randomUUID() });
+      } catch { return send(400, { error: "fixture upload parsing failed" }); }
+    });
+  }
+  if (url.pathname === "/rest/v1/rpc/zabelie_register_kyc_document" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const args = JSON.parse(text), state = profileIdentityActors.get(args.p_user_id)?.scenario.kyc;
+      if (!state) return single([]);
+      // Journal et effet de fixture seulement : aucune garde expectedActorId,
+      // aucun verrou, contrôle de snapshot ou règle RLS SQL n'est simulé.
+      const id = crypto.randomUUID(), now = new Date().toISOString();
+      state.documents.push({ id, user_id: args.p_user_id, kind: args.p_kind, storage_path: args.p_storage_path, created_at: now });
+      Object.assign(state.submissions.find(row => row.user_id === args.p_user_id), { status: "pending", submitted_at: now, decided_at: null, decided_by: null });
+      const result = { ok: true, id };
+      state.rpcs.push({ name: "zabelie_register_kyc_document", args, result, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+      return send(200, result);
+    });
+  }
+  if (url.pathname === "/storage/v1/object/kyc-documents" && req.method === "DELETE") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const paths = JSON.parse(text).prefixes;
+      for (const path of paths) {
+        const state = profileIdentityActors.get(path.split("/")[0])?.scenario.kyc;
+        if (!state) continue;
+        state.removals.push({ path, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+        state.objects = state.objects.filter(object => object.path !== path);
+      }
+      return send(200, []);
+    });
   }
 
   const deliveryOwner = eq(url, "user_id");
@@ -396,10 +473,11 @@ const server = createServer((req, res) => {
   // current documents. This is simulated data, not evidence for a real user.
   if (url.pathname === "/rest/v1/zabelie_policy_acceptances") {
     const owner = url.searchParams.get("user_id")?.replace(/^eq\./, "");
-    return send(200, [BUYER_ID, SELLER_ID].includes(owner) || ESSAYAGE_COMPTES.has(owner) ? [
-      { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
-      { policy_version: "confidentialite-v3", accepted_at: "2026-10-05T00:00:00Z" },
-    ] : []);
+    const state = profileIdentityActors.get(owner)?.scenario.kyc;
+    const rows = [BUYER_ID, SELLER_ID].includes(owner) || ESSAYAGE_COMPTES.has(owner) || state ? POLICY_ACCEPTANCE_FIXTURE : [];
+    if (state) state.reads.push({ table: "zabelie_policy_acceptances", owner, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: rows.map(row => ({ ...row })) });
+    return send(200, rows);
   }
 
   // RPC : expiration des réservations. Renvoie 0 — le cas « rien à libérer »,
