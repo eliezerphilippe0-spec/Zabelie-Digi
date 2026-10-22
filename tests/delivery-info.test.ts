@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { LANGS, t, type Lang } from "../lib/i18n";
 import { POLITIQUE } from "../lib/policy-privacy";
 import { isMissingTable } from "../lib/product-media";
+import { UUID_RE } from "../lib/collections";
 import { database, loadRoute } from "./helpers/route-harness";
 
 /**
@@ -66,44 +67,73 @@ test("la politique de confidentialité décrit la collecte, dans les quatre lang
   }
 });
 
-const TITULAIRE = "synthetic-session-owner";
+const TITULAIRE = "11400000-0000-4000-8000-000000000001";
+const AUTRE_TITULAIRE = "11400000-0000-4000-8000-000000000002";
 const COORDONNEES = { fullName: "Jan Test", phone: "+509 37 00 00 00", adresLiv: "12 Ri Test" };
 const ENREGISTREES = {
   user_id: TITULAIRE, full_name: COORDONNEES.fullName, phone: COORDONNEES.phone, adres_liv: COORDONNEES.adresLiv,
 };
+const AUTRES_ENREGISTREES = {
+  user_id: AUTRE_TITULAIRE, full_name: "Marie Test", phone: "+509 38 00 00 00", adres_liv: "34 Ri Lòt Test",
+};
+// Utilisé explicitement par les cas métier ; envoyer(raw) ne corrige jamais un corps invalide.
+const corpsValide = (fields: Record<string, unknown> = {}, actorId = TITULAIRE) => ({ expectedActorId: actorId, ...fields });
 
 /** La vraie route avec les vrais messages et prédicat de schéma ; seules
  * les E/S Auth/PostgREST sont doubles. La ligne existante rend une perte
  * visible, au lieu de vérifier seulement qu'un appel upsert a eu lieu. */
-function livraison(options: { lang?: Lang; connecte?: boolean; dbError?: { code: string; message: string } } = {}) {
+function livraison(options: {
+  lang?: Lang; connecte?: boolean; actorId?: string; authError?: { message: string };
+  dbError?: { code: string; message: string };
+} = {}) {
   const lang = options.lang ?? "fr";
-  let stockees: Record<string, unknown> = { ...ENREGISTREES };
+  const actorId = options.actorId ?? TITULAIRE;
+  const lignes: Record<string, Record<string, unknown>> = {
+    [TITULAIRE]: { ...ENREGISTREES }, [AUTRE_TITULAIRE]: { ...AUTRES_ENREGISTREES },
+  };
   const ecritures: Record<string, unknown>[] = [];
+  const evenements: string[] = [];
   const db = database(query => {
+    evenements.push("upsert");
     assert.equal(query.table, "zabelie_delivery_info");
     const upsert = query.steps.find(([method]) => method === "upsert");
     assert.ok(upsert, "les coordonnées restent écrites par le client de session soumis à la RLS");
     const ligne = { ...(upsert[1][0] as Record<string, unknown>) };
     ecritures.push(ligne);
-    if (!options.dbError) stockees = { ...stockees, ...ligne };
+    // Le double applique la même frontière own-row que la session : une cible forgée ne passe pas.
+    assert.equal(ligne.user_id, actorId);
+    assert.ok(Object.hasOwn(lignes, actorId), "la session doit viser l'une des deux lignes fictives");
+    if (!options.dbError) lignes[actorId] = { ...lignes[actorId], ...ligne };
     return { data: null, error: options.dbError ?? null };
   });
   const route = loadRoute("app/api/delivery-info/route.ts", {
     "@/lib/i18n-server": { getLang: async () => lang },
     "@/lib/i18n": { t },
     "@/lib/product-media": { isMissingTable },
+    "@/lib/collections": { UUID_RE },
     "@/lib/supabase/server": { createClient: async () => ({
       ...db,
-      auth: { getUser: async () => ({ data: { user: options.connecte === false ? null : { id: TITULAIRE } }, error: null }) },
+      auth: { getUser: async () => {
+        evenements.push("auth");
+        return { data: { user: options.connecte === false ? null : { id: actorId } }, error: options.authError ?? null };
+      } },
     }) },
   });
   return {
-    ecritures, queries: db.queries,
-    stockees: () => stockees,
+    ecritures, evenements, queries: db.queries,
+    stockees: (id = TITULAIRE) => lignes[id],
+    toutesLesLignes: () => lignes,
     envoyer: (raw: string) => route.POST(new Request("https://zabelie.test/api/delivery-info", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: raw,
     })),
   };
+}
+
+function aucuneEcriture(f: ReturnType<typeof livraison>) {
+  assert.deepEqual(f.evenements, ["auth"]);
+  assert.equal(f.queries.length, 0);
+  assert.deepEqual(f.ecritures, []);
+  assert.deepEqual(f.toutesLesLignes(), { [TITULAIRE]: ENREGISTREES, [AUTRE_TITULAIRE]: AUTRES_ENREGISTREES });
 }
 
 test("delivery-info : les formes invalides ne peuvent pas effacer les coordonnées enregistrées", async () => {
@@ -125,7 +155,7 @@ test("delivery-info : un champ connu non textuel est refusé avant toute écritu
     for (const field of ["fullName", "phone", "adresLiv"] as const) {
       for (const value of [50937000000, null, true, false, [], [COORDONNEES[field]], {}]) {
         const f = livraison({ lang });
-        const response = await f.envoyer(JSON.stringify({ ...COORDONNEES, [field]: value }));
+        const response = await f.envoyer(JSON.stringify(corpsValide({ ...COORDONNEES, [field]: value })));
         assert.equal(response.status, 422, `${lang} ${field} : ${JSON.stringify(value)}`);
         assert.deepEqual(await response.json(), { error: t(lang, "api.params.invalid") });
         assert.equal(f.queries.length, 0);
@@ -163,10 +193,10 @@ test("delivery-info : l'authentification précède la lecture du corps et toute 
 test("delivery-info : les chaînes valides sont normalisées pour le seul titulaire de la session", async () => {
   for (const lang of LANGS) {
     const f = livraison({ lang });
-    const response = await f.envoyer(JSON.stringify({
+    const response = await f.envoyer(JSON.stringify(corpsValide({
       fullName: ` ${COORDONNEES.fullName} `, phone: ` ${COORDONNEES.phone} `, adresLiv: `\t${COORDONNEES.adresLiv}\n`,
       user_id: "synthetic-other-owner", seller_id: "synthetic-other-seller",
-    }));
+    })));
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ok: true });
     assert.equal(f.ecritures.length, 1);
@@ -179,7 +209,7 @@ test("delivery-info : les chaînes valides sont normalisées pour le seul titula
 
 test("delivery-info : les limites existantes de 120, 30 et 240 caractères sont conservées", async () => {
   const f = livraison();
-  const response = await f.envoyer(JSON.stringify({ fullName: "N".repeat(130), phone: "5".repeat(40), adresLiv: "R".repeat(250) }));
+  const response = await f.envoyer(JSON.stringify(corpsValide({ fullName: "N".repeat(130), phone: "5".repeat(40), adresLiv: "R".repeat(250) })));
   assert.equal(response.status, 200);
   assert.equal(f.ecritures.length, 1);
   assert.equal(f.ecritures[0].full_name, "N".repeat(120));
@@ -189,7 +219,7 @@ test("delivery-info : les limites existantes de 120, 30 et 240 caractères sont 
 
 test("delivery-info : les chaînes vides effacent volontairement les coordonnées", async () => {
   const f = livraison();
-  const response = await f.envoyer(JSON.stringify({ fullName: "", phone: " \t ", adresLiv: " \n " }));
+  const response = await f.envoyer(JSON.stringify(corpsValide({ fullName: "", phone: " \t ", adresLiv: " \n " })));
   assert.equal(response.status, 200);
   assert.equal(f.ecritures.length, 1);
   assert.equal(f.ecritures[0].full_name, null);
@@ -200,7 +230,7 @@ test("delivery-info : les chaînes vides effacent volontairement les coordonnée
 test("delivery-info : les champs omis conservent le remplacement existant par null", async () => {
   for (const body of [{}, { fullName: COORDONNEES.fullName }]) {
     const f = livraison();
-    const response = await f.envoyer(JSON.stringify(body));
+    const response = await f.envoyer(JSON.stringify(corpsValide(body)));
     assert.equal(response.status, 200);
     assert.equal(f.ecritures.length, 1);
     assert.equal(f.ecritures[0].full_name, "fullName" in body ? COORDONNEES.fullName : null);
@@ -216,11 +246,89 @@ test("delivery-info : une table absente ou une contrainte refusée ne produisent
       ["23514", 422, "api.write.failed"],
     ] as const) {
       const f = livraison({ lang, dbError: { code, message: "synthetic private database details" } });
-      const response = await f.envoyer(JSON.stringify(COORDONNEES));
+      const response = await f.envoyer(JSON.stringify(corpsValide(COORDONNEES)));
       assert.equal(response.status, status);
       assert.deepEqual(await response.json(), { error: t(lang, key) });
       assert.equal(f.ecritures.length, 1);
       assert.deepEqual(f.stockees(), ENREGISTREES);
+    }
+  }
+});
+
+test("delivery-info : un ancien formulaire A ne remplace pas les coordonnées de la session B, dans les quatre langues", async () => {
+  for (const lang of LANGS) {
+    const f = livraison({ lang, actorId: AUTRE_TITULAIRE });
+    const response = await f.envoyer(JSON.stringify(corpsValide(COORDONNEES)));
+    if (response.status === 200) {
+      // Contrepreuve causale sur l'ancienne route : le handler a réellement écrit A dans la ligne B.
+      assert.equal(f.ecritures.length, 1);
+      assert.equal(f.ecritures[0].user_id, AUTRE_TITULAIRE);
+      assert.equal(f.stockees(AUTRE_TITULAIRE).full_name, COORDONNEES.fullName);
+      assert.equal(f.stockees(AUTRE_TITULAIRE).phone, COORDONNEES.phone);
+      assert.equal(f.stockees(AUTRE_TITULAIRE).adres_liv, COORDONNEES.adresLiv);
+      assert.deepEqual(f.stockees(TITULAIRE), ENREGISTREES);
+    }
+    assert.equal(response.status, 403, JSON.stringify({ lang, session: AUTRE_TITULAIRE, expectedActorId: TITULAIRE, ecritures: f.ecritures, lignes: f.toutesLesLignes() }));
+    assert.deepEqual(await response.json(), { error: t(lang, "api.auth.required") });
+    aucuneEcriture(f);
+  }
+});
+
+test("delivery-info : les anciens corps sans identité attendue sont refusés sans effacer les coordonnées", async () => {
+  for (const lang of LANGS) {
+    for (const body of [{}, COORDONNEES, { user_id: TITULAIRE, phone: COORDONNEES.phone }]) {
+      const f = livraison({ lang });
+      const response = await f.envoyer(JSON.stringify(body));
+      assert.equal(response.status, 422, JSON.stringify({ lang, body, ecritures: f.ecritures }));
+      assert.deepEqual(await response.json(), { error: t(lang, "api.params.invalid") });
+      aucuneEcriture(f);
+    }
+  }
+});
+
+test("delivery-info : une identité attendue mal formée est refusée avant toute écriture", async () => {
+  for (const lang of LANGS) {
+    for (const expectedActorId of [null, "", "invalide", 12, false, [], {}, [TITULAIRE], ` ${TITULAIRE} `]) {
+      const f = livraison({ lang });
+      const response = await f.envoyer(JSON.stringify({ ...COORDONNEES, expectedActorId }));
+      assert.equal(response.status, 422, JSON.stringify({ lang, expectedActorId, ecritures: f.ecritures }));
+      assert.deepEqual(await response.json(), { error: t(lang, "api.params.invalid") });
+      aucuneEcriture(f);
+    }
+  }
+});
+
+test("delivery-info : A/A et B/B écrivent seulement leur propre ligne malgré des cibles forgées", async () => {
+  for (const actorId of [TITULAIRE, AUTRE_TITULAIRE]) {
+    const otherId = actorId === TITULAIRE ? AUTRE_TITULAIRE : TITULAIRE;
+    const f = livraison({ actorId });
+    const autreAvant = { ...f.stockees(otherId) };
+    const response = await f.envoyer(JSON.stringify(corpsValide({
+      fullName: " Nouveau titulaire ", phone: " +509 39 00 00 00 ", adresLiv: " 56 Ri Test ",
+      user_id: otherId, userId: otherId, id: otherId, seller_id: otherId,
+    }, actorId)));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true });
+    assert.deepEqual(f.evenements, ["auth", "upsert"]);
+    assert.equal(f.queries.length, 1);
+    assert.equal(f.ecritures.length, 1);
+    const { updated_at, ...ligne } = f.ecritures[0];
+    assert.equal(typeof updated_at, "string");
+    assert.ok(Number.isFinite(Date.parse(updated_at as string)));
+    assert.deepEqual(ligne, { user_id: actorId, full_name: "Nouveau titulaire", phone: "+509 39 00 00 00", adres_liv: "56 Ri Test" });
+    assert.deepEqual(f.stockees(actorId), f.ecritures[0]);
+    assert.deepEqual(f.stockees(otherId), autreAvant);
+  }
+});
+
+test("delivery-info : une erreur Auth sans utilisateur reste prioritaire sur JSON et identité attendue", async () => {
+  for (const lang of LANGS) {
+    for (const raw of ["{", "", "{}", JSON.stringify(corpsValide(COORDONNEES))]) {
+      const f = livraison({ lang, connecte: false, authError: { message: "synthetic auth details" } });
+      const response = await f.envoyer(raw);
+      assert.equal(response.status, 401);
+      assert.deepEqual(await response.json(), { error: t(lang, "api.auth.required") });
+      aucuneEcriture(f);
     }
   }
 });
