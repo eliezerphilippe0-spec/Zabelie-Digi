@@ -34,7 +34,7 @@ function fixture(options: Options = {}) {
         return { data: { id: PRODUCT, slug: "piece-de-rechange-1234" }, error: null };
       }
       if (query.table === "zabelie_physical_products" && options.physicalError) return { data: null, error: { code: "08006" } };
-      if (query.table === "zabelie_product_variants") return { data: [{ id: "variant-created", position: 0 }], error: null };
+      if (query.table === "zabelie_product_variants") return { data: (insert as unknown[]).map((_, position) => ({ id: position === 0 ? "variant-created" : `variant-created-${position}`, position })), error: null };
       if (query.table === "zabelie_product_fitment" && options.fitmentError) return { data: null, error: { code: options.fitmentError } };
       return { data: null, error: null };
     }
@@ -174,4 +174,95 @@ test("the existing cascade compensation still removes the product after an exten
   assert.equal((await f.send({ ...BODY, expectedActorId: ACTOR })).status, 500);
   assert.deepEqual(f.events.slice(-3), ["insert:products", "insert:zabelie_physical_products", "delete:products"]);
   assert.equal(f.products.size, 0);
+});
+
+test("physical product prices reject coercible JSON types before attestation or product writes", async () => {
+  for (const priceHTG of [true, [1], [[1]], "1", "1500", "1e3", "0x10"]) {
+    const f = fixture();
+    const response = await f.send({ ...BODY, priceHTG });
+    assert.equal(response.status, 400, JSON.stringify(priceHTG));
+    assert.deepEqual(await response.json(), { error: "Prix entier en gourdes requis (≥ 1 HTG)." });
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate"]);
+    assert.equal(f.queries.length, 0);assert.equal(f.policyCalls.length, 0);assert.equal(f.products.size, 0);
+  }
+});
+
+test("physical product prices preserve existing missing, empty, zero, negative and fractional refusals", async () => {
+  for (const priceHTG of [undefined, null, false, [], "", " ", {}, 0, -1, 1.5]) {
+    const f = fixture();
+    assert.equal((await f.send({ ...BODY, priceHTG })).status, 400);
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate"]);
+    assert.equal(f.queries.length, 0);assert.equal(f.policyCalls.length, 0);assert.equal(f.products.size, 0);
+  }
+});
+
+test("physical integer prices preserve product, default variant and stock values", async () => {
+  for (const priceHTG of [1, 1500, 2147483647]) {
+    const f = fixture();
+    assert.equal((await f.send({ ...BODY, priceHTG })).status, 200);
+    const product = f.products.get(PRODUCT) as Record<string, unknown>;
+    assert.equal(product.price_htg, priceHTG);assert.equal(product.seller_id, ACTOR);
+    assert.equal(product.status, "draft");assert.equal(product.kind, KIND_PHYSICAL);
+    assert.equal(product.category_id, CATEGORY);
+    const variants = plain(argument(f.queries.find(q => q.table === "zabelie_product_variants")!, "insert")) as Record<string, unknown>[];
+    assert.equal(variants.length, 1);assert.equal(variants[0].price_htg, priceHTG);
+    assert.deepEqual(variants[0].options, {});
+    assert.deepEqual(plain(argument(f.queries.find(q => q.table === "zabelie_stock")!, "insert")), [{ variant_id: "variant-created", quantity_available: BODY.quantity }]);
+    assert.equal(f.policyCalls.length, 1);
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories", "insert:products", "insert:zabelie_physical_products", "insert:zabelie_product_variants", "insert:zabelie_stock"]);
+  }
+});
+
+test("physical variant prices reject coercible JSON types before any product writes", async () => {
+  for (const priceHTG of [true, [1], [[1]], "1", "1500", "1e3", "0x10"]) {
+    const f = fixture();
+    const response = await f.send({ ...BODY, variants: [{ label: "Petit", priceHTG, quantity: 2 }] });
+    assert.equal(response.status, 422, JSON.stringify(priceHTG));
+    assert.deepEqual(await response.json(), { error: "Variante « Petit » : prix entier ≥ 1 HTG requis." });
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+    assert.deepEqual(f.queries.map(q => q.table), ["zabelie_categories"]);
+    assert.equal(f.policyCalls.length, 1);assert.equal(f.products.size, 0);
+  }
+});
+
+test("an invalid later physical variant cannot leave partially created rows", async () => {
+  const f = fixture();
+  assert.equal((await f.send({ ...BODY, variants: [{ label: "Petit", priceHTG: 1500, quantity: 2 }, { label: "Grand", priceHTG: true, quantity: 3 }] })).status, 422);
+  assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+  assert.deepEqual(f.queries.map(q => q.table), ["zabelie_categories"]);
+  assert.equal(f.policyCalls.length, 1);assert.equal(f.products.size, 0);
+});
+
+test("physical variant prices preserve existing missing, empty, zero, negative and fractional refusals", async () => {
+  for (const priceHTG of [undefined, null, false, [], "", " ", {}, 0, -1, 1.5]) {
+    const f = fixture();
+    assert.equal((await f.send({ ...BODY, variants: [{ label: "Petit", priceHTG, quantity: 2 }] })).status, 422);
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+    assert.deepEqual(f.queries.map(q => q.table), ["zabelie_categories"]);
+    assert.equal(f.policyCalls.length, 1);assert.equal(f.products.size, 0);
+  }
+});
+
+test("physical integer variant prices preserve every price, position and stock quantity", async () => {
+  const variantsIn = [{ label: "Petit", priceHTG: 1, quantity: 0 }, { label: "Moyen", priceHTG: 1500, quantity: 3 }, { label: "Grand", priceHTG: 2147483647, quantity: 100000 }];
+  const f = fixture();
+  assert.equal((await f.send({ ...BODY, variants: variantsIn })).status, 200);
+  const product = f.products.get(PRODUCT) as Record<string, unknown>;
+  assert.equal(product.price_htg, BODY.priceHTG);assert.equal(product.seller_id, ACTOR);assert.equal(product.status, "draft");
+  const variants = plain(argument(f.queries.find(q => q.table === "zabelie_product_variants")!, "insert")) as Record<string, unknown>[];
+  assert.deepEqual(variants, variantsIn.map((v, position) => ({ product_id: PRODUCT, sku: "Z-11300000-" + (position + 1), options: { variante: v.label }, price_htg: v.priceHTG, position })));
+  assert.deepEqual(plain(argument(f.queries.find(q => q.table === "zabelie_stock")!, "insert")), variantsIn.map((v, position) => ({ variant_id: position === 0 ? "variant-created" : `variant-created-${position}`, quantity_available: v.quantity })));
+  assert.equal(f.policyCalls.length, 1);
+});
+
+test("authentication, account, form identity and cadence remain prior to invalid physical prices", async () => {
+  const anonymous = fixture({ authenticated: false });
+  assert.equal((await anonymous.send({ ...BODY, priceHTG: true })).status, 401);assert.deepEqual(anonymous.events, ["auth"]);
+  const account = fixture({ accountRefusal: { status: 403, code: "suspended" } });
+  assert.equal((await account.send({ ...BODY, priceHTG: true })).status, 403);assert.deepEqual(account.events, ["auth", "account"]);
+  const identity = fixture({ actorId: OTHER });
+  assert.equal((await identity.send({ ...BODY, priceHTG: true, expectedActorId: ACTOR })).status, 403);assert.deepEqual(identity.events, ["auth", "account"]);
+  const limited = fixture({ rate: false });
+  assert.equal((await limited.send({ ...BODY, priceHTG: true })).status, 429);assert.deepEqual(limited.events, ["auth", "account", "admin", "rate"]);
+  for (const f of [anonymous, account, identity, limited]) { assert.equal(f.queries.length, 0);assert.equal(f.policyCalls.length, 0);assert.equal(f.products.size, 0); }
 });

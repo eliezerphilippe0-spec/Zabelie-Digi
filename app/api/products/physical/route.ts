@@ -100,12 +100,12 @@ export async function POST(req: Request) {
     typeof body.title === "string" ? body.title.trim().slice(0, 140) : "";
   const description =
     typeof body.description === "string" ? body.description.slice(0, 5000) : null;
-  const price = Number(body.priceHTG);
+  const price = body.priceHTG;
   const quantity = Number(body.quantity);
   if (!title) {
     return NextResponse.json({ error: "Titre requis." }, { status: 400 });
   }
-  if (!Number.isInteger(price) || price < 1) {
+  if (typeof price !== "number" || !Number.isInteger(price) || price < 1) {
     return NextResponse.json(
       { error: "Prix entier en gourdes requis (≥ 1 HTG)." },
       { status: 400 }
@@ -260,7 +260,7 @@ export async function POST(req: Request) {
   const variants: { label: string; priceHTG: number; quantity: number }[] = [];
   for (const v of variantsIn) {
     const label = typeof v.label === "string" ? v.label.trim().slice(0, 80) : "";
-    const vPrice = Number(v.priceHTG);
+    const vPrice = v.priceHTG;
     const vQty = Number(v.quantity);
     if (!label) {
       return NextResponse.json(
@@ -268,7 +268,7 @@ export async function POST(req: Request) {
         { status: 422 }
       );
     }
-    if (!Number.isInteger(vPrice) || vPrice < 1) {
+    if (typeof vPrice !== "number" || !Number.isInteger(vPrice) || vPrice < 1) {
       return NextResponse.json(
         { error: `Variante « ${label} » : prix entier ≥ 1 HTG requis.` },
         { status: 422 }

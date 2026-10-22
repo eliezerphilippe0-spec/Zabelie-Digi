@@ -1,5 +1,43 @@
 # OPS_TODO — Zabelie
 
+## Création physique — type JSON des prix (22 octobre 2026)
+
+Petit lot sur `fix/physique-prix-json`, base `main 6477600`, après #403.
+Inventaire : docs/26 §0, docs/67, POST `/api/products/physical`, formulaire,
+tables produit/extension/variantes/stock, tests de route et parcours physiques.
+Les PR ouvertes #385–#387 concernent les dépendances et #402 un skill distinct.
+
+Objectif vérifiable : les prix JSON non numériques du produit et des variantes
+doivent être refusés par les réponses existantes, avant toute INSERT de fiche,
+extension, variante ou stock. Reproduire d'abord le vrai POST avec `true`
+converti en 1 HTG. Une fiche créée reste en brouillon pour revue humaine ;
+aucune vente ni perte réelle n'est déduite du constat de code.
+
+Conserver nombres entiers, minimum 1 HTG, prix sauvegardés, stocks, propriété
+de session et ordre des gardes. Le refus produit conserve Auth, compte et
+cadence ; le refus variante conserve aussi attestation et lecture catégorie.
+Ne pas déplacer ces opérations ni créer de règle de prix parallèle.
+
+Arrêt : PR de validation humaine après contrepreuves, tests réels du handler,
+fichier navigateur existant et CI du SHA final ; cinq tours au plus. Périmètre :
+une route, ses deux fichiers de tests existants, docs/67 et ce journal.
+Quantités, dimensions, compatibilité véhicule, demandes de quartier, prix
+numériques/digitaux et politique d'arrondi restent hors portée. Aucune nouvelle
+route, table, migration, fixture, configuration, dépendance ou traduction.
+Aucune fusion ni action de production, donnée réelle ou paiement réel.
+
+Validation locale : 2 252/2 252 unitaires sans échec, ignoré ou annulé,
+dont huit nouveaux cas ; 46/46 ciblés. Avant correction, trois tests de route
+échouent et les deux vrais POST navigateur obtiennent 200/prix 1 HTG en draft.
+Après correction, 12/12 parcours passent en 50,4 s à deux workers sans retry :
+18 refus sans INSERT et six témoins numériques, puis neuf anciens parcours.
+Types, build et contraste 88/88 réussis ; lint sans erreur ni nouvelle alerte
+(dix existantes sous Windows), lint ciblé sans avertissement. Relectures
+indépendantes sans blocage. Le premier typecheck a eu TS6053 sur `.next/types`
+pendant un build concurrent ; le contrôle séquentiel après génération passe,
+sans modification du code ou de la configuration. Le journal initial reste
+conservé ; la CI globale exacte du SHA final est à consigner dans la PR.
+
 ## Création numérique — type du prix JSON (21 octobre 2026)
 
 Petit lot sur `fix/creation-prix-json`, base `main 9574764`, après #401.

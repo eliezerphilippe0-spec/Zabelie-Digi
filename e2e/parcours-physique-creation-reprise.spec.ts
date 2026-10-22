@@ -82,6 +82,69 @@ async function locked(page: Page, lang: Lang = "fr") {
   await expect(page.getByRole("button", { name: copy.resume, exact: true })).toBeVisible();
 }
 
+for (const variantPrice of [false, true]) {
+  test(`physique : prix JSON ${variantPrice ? "variante" : "produit"} non numérique ne crée aucune fiche`, async ({ page }) => {
+    await session(page);
+    await page.goto("/vendre/physique"); await settled(page);
+    const title = scenarioTitle(`prix JSON ${variantPrice ? "variante" : "produit"}`);
+    const before = await state(page, title);
+    expect(before.products).toEqual([]);
+    for (const priceHTG of [true, [1], [[1]], "1500", false, null, [], 0, 750.4]) {
+      const response = await page.request.post("/api/products/physical", { data: {
+        title, priceHTG: variantPrice ? 1500 : priceHTG, quantity: 3,
+        categorySlug: "wob", policyAccepted: true,
+        ...(variantPrice ? { variants: [{ label: "Modèle test", priceHTG, quantity: 2 }] } : {}),
+      } });
+      const saved = await state(page, title);
+      console.log(JSON.stringify({ scenario: "prix JSON physique fictif", field: variantPrice ? "variant" : "product",
+        receivedPriceJSON: priceHTG, status: response.status(), productWrites: saved.products.length,
+        productPrices: saved.products.map((product: { price_htg: number }) => product.price_htg),
+        statuses: saved.products.map((product: { status: string }) => product.status),
+        extensionWrites: saved.extensions.length,
+        variantPrices: saved.variants.map((variant: { price_htg: number }) => variant.price_htg), stocks: saved.stocks }));
+      expect(response.status()).toBe(variantPrice ? 422 : 400);
+      expect((await response.json()).error).toBe(variantPrice
+        ? "Variante « Modèle test » : prix entier ≥ 1 HTG requis."
+        : "Prix entier en gourdes requis (≥ 1 HTG).");
+      expect(saved).toEqual(before);
+    }
+  });
+}
+
+test("physique : prix JSON numériques conservent prix, variantes et stocks en brouillon", async ({ page }) => {
+  await session(page);
+  await page.goto("/vendre/physique"); await settled(page);
+  for (const priceHTG of [1, 1500, 2147483647]) {
+    for (const explicitVariants of [false, true]) {
+      const title = scenarioTitle(`prix numérique ${priceHTG} ${explicitVariants ? "variantes" : "défaut"}`);
+      expect((await state(page, title)).products).toEqual([]);
+      const response = await page.request.post("/api/products/physical", { data: {
+        title, priceHTG, quantity: 3, categorySlug: "wob", policyAccepted: true,
+        ...(explicitVariants ? { variants: [
+          { label: "Petit", priceHTG, quantity: 2 }, { label: "Grand", priceHTG: 1500, quantity: 4 },
+        ] } : {}),
+      } });
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body).toMatchObject({ ok: true, productId: expect.any(String), slug: expect.any(String) });
+      const saved = await state(page, title);
+      console.log(JSON.stringify({ scenario: "prix numériques physiques fictifs", priceHTG, explicitVariants,
+        products: saved.products, extensions: saved.extensions, variants: saved.variants, stocks: saved.stocks }));
+      expect(saved.products).toHaveLength(1); expect(saved.active).toHaveLength(1); expect(saved.extensions).toHaveLength(1);
+      expect(saved.products[0]).toMatchObject({ id: body.productId, seller_id: ACTOR, kind: KIND_PHYSICAL, price_htg: priceHTG, status: "draft" });
+      expect(saved.active[0]).toMatchObject({ id: body.productId, price_htg: priceHTG, status: "draft" });
+      expect(saved.extensions[0].product_id).toBe(body.productId);
+      expect(saved.variants.map((variant: { price_htg: number }) => variant.price_htg)).toEqual(explicitVariants ? [priceHTG, 1500] : [priceHTG]);
+      expect(saved.stocks).toHaveLength(explicitVariants ? 2 : 1);
+      for (const [index, variant] of saved.variants.entries()) {
+        expect(variant.product_id).toBe(body.productId);
+        expect(saved.stocks.find((stock: { variant_id: string }) => stock.variant_id === variant.id))
+          .toMatchObject({ quantity_available: explicitVariants ? [2, 4][index] : 3 });
+      }
+    }
+  }
+});
+
 test("physique : un POST réellement créé puis perdu ne crée pas un second produit après reload", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await session(page);
