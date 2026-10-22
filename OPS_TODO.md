@@ -1,5 +1,43 @@
 # OPS_TODO — Zabelie
 
+## Coordonnées privées — identité du formulaire (22 octobre 2026)
+
+Lot autonome sur `fix/livraison-identite-session`, base `main e764547`, après
+#406, sa CI complète, sa revue et sa mise en ligne vérifiée en lecture seule.
+Inventaire : docs/26 §0, docs/67 §21, unique POST /api/delivery-info, unique
+DeliveryInfoForm et montage Compte, table/policies0076 et tests existants.
+Les PR de dépendances et le skill distinct restent hors périmètre.
+
+Objectif : reproduire avec deux comptes fictifs l'écran A sous cookies B,
+observer le vrai upsert et les deux lignes privées ; puis refuser l'écrasement
+par une identité d'écran obligatoire avant écriture. Prouver aussi le vrai
+refresh RSC B dans le même document via LangToggle : l'actorId et la clé SSR
+doivent remplacer les états de formulaire A par les coordonnées B.
+
+Préserver Auth avant lecture JSON,400 JSON invalide,422 formes/types,
+normalisation120/30/240, champs facultatifs et remplacement par null,
+erreurs503/422 et client de SESSION soumis à la RLS. Aucun contrat externe
+sans identité identifié ; les anciens écrans devront se recharger. Pas de
+changement de règle Auth, de lecture vendeur, de conservation ou de livraison.
+
+Périmètre : trois sources existantes, tests/delivery-info.test.ts, parcours
+profil-identite et stub A/B existants, docs/35, docs/67 et ce journal.
+Aucune nouvelle route, table, policy, RPC, migration, dépendance ou harnais.
+Arrêt par lot : cinq tours au plus ; contrepreuves avant correction, tests
+ciblés/globaux, revue indépendante, PR, CI du SHA exact, fusion normale puis
+sondes publiques. Aucune donnée réelle, paiement ou migration distante ;
+aucun déploiement manuel. La lecture vendeur réelle n'est pas déduite du stub.
+
+Validation locale finale :2 276/2 276 unitaires,61/61 ciblés ;19 cas livraison
+dont14 anciens préservés. Vingt-quatre parcours,24 tentatives, deux workers,
+zéro retry en59,8 s. Quatre403 et six422 sans écriture ; cinq upserts autorisés
+incluent deux sauvegardes, deux effacements et B après vrai refresh RSC dans
+le même document, sans altérer A. Aucun défaut JS, console inattendue, overlay
+ou débordement ; captures360/1280 relues. Types, build, contraste88/88 et lint
+ciblé sans alerte ; lint global sans erreur ni nouvelle alerte (dix existantes
+Windows). Revue indépendante favorable ; contrepreuves et diagnostic CDP
+initial conservés. CI exacte, fusion et sondes seront consignées dans la PR.
+
 ## Fermeture de compte — identité de l'écran (22 octobre 2026)
 
 Lot autonome sur `fix/fermeture-identite-session`, base `main da18726`, après

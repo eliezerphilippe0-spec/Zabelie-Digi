@@ -115,6 +115,18 @@ la vraie route dans `tests/delivery-info.test.ts`, en complément des tests RLS
 SQL existants. Aucune livraison opérée par Zabelie, nouvelle collecte, migration
 ou intervention en production ; validation humaine en PR, sans merge ni déploiement.
 
+**Correctif du 22 octobre 2026 — identité du formulaire.** La précondition
+`expectedActorId` est désormais obligatoire pour `/api/delivery-info` : UUID
+absent ou mal formé →422, divergence avec la session Auth →403, avant upsert.
+Les anciens écrans sans identité doivent être rechargés. Les trois champs
+métier restent facultatifs : une identité valide seule conserve le remplacement
+par null. Le formulaire reçoit l'acteur SSR et une clé par utilisateur pour
+réinitialiser son état lors d'un changement de compte par refresh RSC.
+Les deux défauts sont reproduits localement avec le vrai écran/handler et des
+comptes fictifs. Aucun changement de collecte, de client de session, de RLS0076
+ou de lecture vendeur. Validation technique et fusion autonomes autorisées par
+le porteur ; preuves et résultats dans docs/67 §22 et la PR du lot.
+
 ## V-6 — KYC vendeur — ARBITRÉ le 2026-08-15, livré
 
 Arbitrages porteur : « **bloque le retrait** » (pas la publication — l'argent

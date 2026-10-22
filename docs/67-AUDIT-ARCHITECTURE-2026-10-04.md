@@ -1416,3 +1416,75 @@ ou la RLS SQL réelle. Les anciennes preuves rouges restent archivées.
 Validation finale, revue indépendante, CI du SHA exact, fusion normale et
 sondes publiques seront consignées dans la PR. Aucune donnée réelle, paiement
 réel, migration distante ou déploiement manuel ; l'audit entier reste ouvert.
+
+## 22. Coordonnées privées — identité du formulaire (22 octobre 2026)
+
+Inventaire sur `main e764547`, après #406 fusionnée et publiquement vérifiée :
+docs/26 §0, docs/35 V-5, unique POST /api/delivery-info et DeliveryInfoForm,
+montage Compte, table/policies0076 et tests unitaires/SQL existants. Aucun
+appelant externe de ce POST ni contrat d'API publique sans identité identifié.
+Les PR ouvertes de dépendances et du skill distinct ne traitent pas ce chemin.
+Aucun nouveau carnet, destinataire par commande ou service de livraison.
+
+P1 d'intégrité/confidentialité confirmé localement : vrai écran Compte A,
+trois saisies fictives privées, cookies devenus B sans navigation, puis vrai
+POST200 et upsert sous le token de session B. Sa ligne B reçoit les trois
+valeurs A ; la ligne A reste intacte. Ces effets sont vérifiés avant l'attente
+403 rouge. La preuve ne démontre aucune lecture vendeur, violation RLS ou
+fuite en production : seuls Auth/PostgREST sont doublés localement.
+
+Une seconde contrepreuve emploie le vrai LangToggle FR→EN : réponse RSC200
+text/x-component, nouvelle lecture SSR filtrée B et ses trois valeurs, titre
+anglais et sentinelle du même document. Le formulaire conserve pourtant les
+champs saisis sous A avant l'attente des valeurs B qui échoue. Le premier essai
+de ce cas conserve son diagnostic CDP de corps indisponible ; les observations
+serveur et document remplacent cette lecture de transport, sans mock RSC ni
+reload complet. Aucun POST après ce refresh n'est exécuté sur l'ancien build.
+
+Le formulaire reçoit désormais actorId et key=user.id depuis la page SSR ;
+le POST envoie expectedActorId. Après Auth et forme JSON, avant normalisation
+et upsert, UUID absent/mal formé →422, divergence avec user.id →403. UUID_RE
+et traductions existantes sont réutilisés. La précondition est obligatoire :
+les anciens écrans sans identité doivent être rechargés. L'identité attendue
+n'est jamais utilisée comme user_id écrit ; cette propriété reste la session.
+
+Les trois champs métier restent facultatifs ; identité valide seule ou
+chaînes vides conserve l'effacement par null. Types textuels, trim, plafonds
+120/30/240,400 JSON invalide,422 métier et503 table absente sont inchangés.
+Le client de session et la RLS0076 restent en place. La lecture Compte reste
+filtrée par user.id ; mes-ventes et la priorité des destinataires par commande
+ne changent pas. Aucune nouvelle collecte, règle Auth, policy, table, migration,
+RPC, dépendance ou infrastructure parallèle.
+
+Le harnais livraison() existant observe deux UUID, deux lignes, Auth et upsert.
+Les quatorze anciens cas gardent leurs assertions ; leurs corps métier portent
+explicitement l'identité valide, tandis qu'envoyer(raw) reste brut. Cinq cas
+complémentaires donnent avant patch19 tests,16 verts et3 rouges causaux :
+écrasement B, objet sans identité et identité mal formée. Ces deux derniers
+expriment le nouveau protocole requis, sans qualifier l'ancien effacement
+documenté de défaut indépendant. Auth absente/erreur sans utilisateur reste
+prioritaire ; aucune nouvelle sémantique Auth n'est imposée.
+
+Le stub A/B et le fichier navigateur existants sont étendus en mode opt-in :
+deux lignes et journaux des vrais GET/upserts, token et service-role observés,
+aucune garde d'identité ou RLS simulée. Les dix-huit anciens parcours restent
+conservés ; six nouveaux couvrent quatre langues, succès A/A et B/B, effacement,
+anciens corps refusés et vrai refresh RSC B avant enregistrement B. L'état
+entier est comparé hors seul journal de lectures diagnostique, sans masquer
+les autres opérations. Les tests SQL existants restent la preuve des policies.
+
+Validation locale finale :2 276/2 276 unitaires, sans échec/ignoré/annulé,
+61/61 ciblés, dont19 cas livraison. Vingt-quatre parcours et24 tentatives,
+deux workers, zéro retry en59,8 s ; les dix-huit anciens restent verts. Les
+quinze POST livraison comportent quatre divergences403 et six anciens corps/
+identités mal formées422 sans effet, puis cinq upserts autorisés : deux
+sauvegardes A/A et B/B, deux effacements (vides et omissions), et le POST B
+après vrai refresh RSC B, sans altération de A. Chaque token et propriétaire
+correspond ; l'ID fourni comme cible forgée reste ignoré. Aucun défaut JS,
+console inattendue, overlay ou débordement ; captures360/1280 relues. Types,
+build et contraste88/88 passent ; lint sans erreur ni nouvelle alerte (dix
+existantes Windows), ciblé sans avertissement. Revue indépendante sans blocage.
+
+CI du SHA exact, fusion normale et sondes publiques seront consignées dans
+la PR. Aucune donnée réelle, paiement,
+migration distante ou déploiement manuel ; l'audit entier reste ouvert.

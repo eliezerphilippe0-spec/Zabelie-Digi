@@ -9,7 +9,11 @@ type Profile = { id: string; display_name: string; bio: string; avatar_url: stri
 type ProfileState = { profiles: Profile[]; writes: { id: string; kind: string; patch: Record<string, unknown> }[]; slugReads: { id: string }[];
   zones?: { id: string; parent_id: string | null; level: string }[];
   zoneRequests?: { tokenActorId: string; row: { id: string; requester: string; komin_id: string; nom_propose: string; status: string } }[];
-  accountClosure?: ClosureState };
+  accountClosure?: ClosureState; deliveryInfo?: DeliveryState };
+type DeliveryRow = { user_id: string; full_name: string | null; phone: string | null; adres_liv: string | null; updated_at?: string };
+type DeliveryState = { rows: DeliveryRow[];
+  reads: { tokenActorId: string | null; requestedActorId: string; select: string | null; serviceRole: boolean; row: DeliveryRow | null }[];
+  upserts: { tokenActorId: string | null; serviceRole: boolean; row: DeliveryRow }[] };
 type ClosureMode = "history" | "empty";
 type ClosureState = {
   mode: ClosureMode;
@@ -24,6 +28,7 @@ type ClosureState = {
 const diagnostics = new WeakMap<Page, { errors: string[]; console: { type: string; text: string; url: string }[] }>();
 const expectedZoneRefusals = new WeakSet<Page>();
 const expectedAccountRefusals = new WeakSet<Page>();
+const expectedDeliveryRefusals = new WeakSet<Page>();
 test.beforeEach(async ({ page }) => {
   const result = { errors: [] as string[], console: [] as { type: string; text: string; url: string }[] };
   diagnostics.set(page, result);
@@ -39,15 +44,16 @@ test.afterEach(async ({ page }) => {
   // Chromium reports deliberately refused stale POSTs as console errors.
   expect(result.console.filter(message => !(message.type === "error" && /\b403\b/.test(message.text)
     && (message.url.includes("/api/profile") || (expectedZoneRefusals.has(page) && message.url.includes("/api/zones/request"))
-      || (expectedAccountRefusals.has(page) && message.url.endsWith("/api/account")))))).toEqual([]);
+      || (expectedAccountRefusals.has(page) && message.url.endsWith("/api/account"))
+      || (expectedDeliveryRefusals.has(page) && message.url.endsWith("/api/delivery-info")))))).toEqual([]);
   await expect(page.locator("nextjs-portal, [data-nextjs-dialog-overlay], [data-nextjs-error-overlay]")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-async function fixture(request: APIRequestContext, withZones = false, accountClosure?: ClosureMode) {
+async function fixture(request: APIRequestContext, withZones = false, accountClosure?: ClosureMode, deliveryInfo = false) {
   const scenario = randomUUID(), actorA = randomUUID(), actorB = randomUUID();
   const initialized = await request.post(`${STUB}/__profile-identity`, { data: { scenario, actorA, actorB,
-    ...(withZones ? { withZones: true } : {}), ...(accountClosure ? { accountClosure } : {}) } });
+    ...(withZones ? { withZones: true } : {}), ...(accountClosure ? { accountClosure } : {}), ...(deliveryInfo ? { deliveryInfo: true } : {}) } });
   expect(initialized.status()).toBe(200);
   return { actorA, actorB, state: async (): Promise<ProfileState> => (await request.get(`${STUB}/__profile-identity?scenario=${scenario}`)).json() };
 }
@@ -387,3 +393,147 @@ for (const mode of ["history", "empty"] as const) {
     }
   });
 }
+
+const deliveryForm = (page: Page) => page.locator("#livraison form");
+const deliveryFields = (page: Page, lang: Lang = "fr") => ({
+  fullName: deliveryForm(page).getByRole("textbox", { name: t(lang, "profile.liv.fullname"), exact: true }),
+  phone: deliveryForm(page).getByRole("textbox", { name: t(lang, "profile.liv.phone"), exact: true }),
+  adresLiv: deliveryForm(page).getByRole("textbox", { name: t(lang, "profile.liv.adres"), exact: true }),
+});
+const deliveryBody = (row: DeliveryRow) => ({ fullName: row.full_name ?? "", phone: row.phone ?? "", adresLiv: row.adres_liv ?? "" });
+const deliveryResponse = (page: Page) => page.waitForResponse(response => new URL(response.url()).pathname === "/api/delivery-info" && response.request().method() === "POST");
+async function expectDeliveryFields(page: Page, row: DeliveryRow, lang: Lang = "fr") {
+  const fields = deliveryFields(page, lang);
+  await expect(fields.fullName).toHaveValue(row.full_name ?? "");
+  await expect(fields.phone).toHaveValue(row.phone ?? "");
+  await expect(fields.adresLiv).toHaveValue(row.adres_liv ?? "");
+}
+async function fillDelivery(page: Page, values: { fullName: string; phone: string; adresLiv: string }, lang: Lang = "fr") {
+  const fields = deliveryFields(page, lang);
+  await fields.fullName.fill(values.fullName); await fields.phone.fill(values.phone); await fields.adresLiv.fill(values.adresLiv);
+}
+async function openDelivery(page: Page, row: DeliveryRow, lang: Lang = "fr") {
+  await page.goto(`${ACCOUNT_ORIGIN}/tableau-de-bord/compte`, { waitUntil: "networkidle" });
+  await expect(page.getByRole("heading", { level: 1, name: t(lang, "vendeur.nav.compte"), exact: true })).toBeVisible();
+  await expectDeliveryFields(page, row, lang);
+}
+function assertNoDeliveryEffects(before: ProfileState, after: ProfileState) {
+  const effects = (state: ProfileState) => ({ ...state,
+    deliveryInfo: Object.fromEntries(Object.entries(state.deliveryInfo!).filter(([key]) => key !== "reads")) });
+  expect(effects(after)).toEqual(effects(before));
+}
+
+for (const [lang, width] of [["fr", 360], ["ht", 1280], ["en", 360], ["es", 1280]] as const) {
+  test(`livraison : formulaire A sous cookies B refuse les coordonnées privées (${lang})`, async ({ page, request }) => {
+    const f = await fixture(request, false, undefined, true);
+    const initial = await f.state(), a = initial.deliveryInfo!.rows.find(row => row.user_id === f.actorA)!;
+    await page.setViewportSize({ width, height: 900 }); await session(page, f.actorA, lang, "localhost"); await openDelivery(page, a, lang);
+    const values = { fullName: `Saisie privée A ${f.actorA.slice(0, 8)}`, phone: "+509 3700 0099", adresLiv: "Adresse privée saisie depuis A" };
+    await fillDelivery(page, values, lang);
+    const before = await f.state();
+    expect(before.deliveryInfo!.reads.some(read => read.requestedActorId === f.actorA && read.serviceRole && read.row?.user_id === f.actorA)).toBe(true);
+    await session(page, f.actorB, lang, "localhost"); expectedDeliveryRefusals.add(page);
+    const pending = deliveryResponse(page);
+    await deliveryForm(page).getByRole("button", { name: t(lang, "profile.liv.save"), exact: true }).click();
+    const response = await pending, body = await response.json(), after = await f.state();
+    const expectedActorId = response.request().postDataJSON().expectedActorId ?? null;
+    console.log(JSON.stringify({ scenario: "comptes fictifs : livraison A vers session B", lang, status: response.status(), expectedActorId,
+      actorA: f.actorA, actorB: f.actorB, upserts: after.deliveryInfo!.upserts }));
+    // Constater le vrai200 et l'écrasement B avant l'attente403 du build ancien.
+    if (response.status() === 200) {
+      expect(body).toEqual({ ok: true });
+      expect(after.deliveryInfo!.upserts).toEqual([{ tokenActorId: f.actorB, serviceRole: false,
+        row: { user_id: f.actorB, full_name: values.fullName, phone: values.phone, adres_liv: values.adresLiv, updated_at: expect.any(String) } }]);
+      expect(after.deliveryInfo!.rows.find(row => row.user_id === f.actorB))
+        .toMatchObject({ user_id: f.actorB, full_name: values.fullName, phone: values.phone, adres_liv: values.adresLiv });
+      expect(after.deliveryInfo!.rows.find(row => row.user_id === f.actorA)).toEqual(a);
+    }
+    expect(response.status()).toBe(403);
+    expect(expectedActorId).toBe(f.actorA);
+    expect(body.error).toBe(t(lang, "api.auth.required"));
+    assertNoDeliveryEffects(before, after);
+    await expect(deliveryForm(page).getByText(t(lang, "sell.galerie.error"), { exact: true })).toBeVisible();
+    await expect(deliveryForm(page).getByRole("button", { name: t(lang, "profile.liv.save"), exact: true })).toBeEnabled();
+    if (lang === "fr" || lang === "ht") await captureAtTop(page, `livraison-identite-refus-${width}.png`);
+  });
+}
+
+test("livraison : sauvegardes A et B, effacement et anciens corps refusés sans upsert", async ({ page, request }) => {
+  for (const actor of ["A", "B"] as const) {
+    const f = await fixture(request, false, undefined, true), initial = await f.state();
+    const actorId = actor === "A" ? f.actorA : f.actorB, otherId = actor === "A" ? f.actorB : f.actorA;
+    const row = initial.deliveryInfo!.rows.find(row => row.user_id === actorId)!;
+    await session(page, actorId, "fr", "localhost"); await openDelivery(page, row);
+    const values = { fullName: `Destinataire modifié ${actor}`, phone: `Téléphone privé ${actor}`, adresLiv: `Adresse privée modifiée ${actor}` };
+    await fillDelivery(page, values);
+    let pending = deliveryResponse(page);
+    await deliveryForm(page).getByRole("button", { name: t("fr", "profile.liv.save"), exact: true }).click();
+    const response = await pending;
+    expect(response.status()).toBe(200);
+    expect(response.request().postDataJSON()).toEqual({ ...values, expectedActorId: actorId });
+    await expect(deliveryForm(page).getByText(t("fr", "profile.liv.saved"), { exact: true })).toBeVisible();
+    let after = await f.state();
+    expect(after.deliveryInfo!.upserts).toEqual([{ tokenActorId: actorId, serviceRole: false,
+      row: { user_id: actorId, full_name: values.fullName, phone: values.phone, adres_liv: values.adresLiv, updated_at: expect.any(String) } }]);
+    if (actor === "A") {
+      await fillDelivery(page, { fullName: "", phone: "", adresLiv: "" });
+      pending = deliveryResponse(page);
+      await deliveryForm(page).getByRole("button", { name: t("fr", "profile.liv.save"), exact: true }).click();
+      expect((await pending).status()).toBe(200);
+    } else {
+      // Champs omis = effacement conservé ; user_id forgé ne choisit jamais le propriétaire.
+      expect((await page.request.post(`${ACCOUNT_ORIGIN}/api/delivery-info`, { data: { expectedActorId: actorId, user_id: otherId } })).status()).toBe(200);
+    }
+    after = await f.state();
+    expect(after.deliveryInfo!.rows.find(row => row.user_id === actorId)).toMatchObject({ full_name: null, phone: null, adres_liv: null });
+    expect(after.deliveryInfo!.rows.find(row => row.user_id === otherId)).toEqual(initial.deliveryInfo!.rows.find(row => row.user_id === otherId));
+    expect(after.deliveryInfo!.upserts).toHaveLength(2);
+    expect(after.deliveryInfo!.upserts.every(write => write.tokenActorId === actorId && write.row.user_id === actorId && !write.serviceRole)).toBe(true);
+    for (const data of [{}, { fullName: "Ancien client sans acteur" }, { expectedActorId: "pas-un-uuid", fullName: "Acteur malformé" }]) {
+      const before = await f.state();
+      const refused = await page.request.post(`${ACCOUNT_ORIGIN}/api/delivery-info`, { data });
+      expect(refused.status()).toBe(422);
+      expect((await refused.json()).error).toBe(t("fr", "api.params.invalid"));
+      assertNoDeliveryEffects(before, await f.state());
+    }
+    console.log(JSON.stringify({ scenario: "comptes fictifs : livraison autorisée et effacée", actor, upserts: after.deliveryInfo!.upserts, legacyRefusals: 3 }));
+  }
+});
+
+test("livraison : le refresh LangToggle remonte B dans le même document avant son POST", async ({ page, request }) => {
+  const f = await fixture(request, false, undefined, true), initial = await f.state();
+  const a = initial.deliveryInfo!.rows.find(row => row.user_id === f.actorA)!, b = initial.deliveryInfo!.rows.find(row => row.user_id === f.actorB)!;
+  await page.setViewportSize({ width: 1280, height: 900 }); await session(page, f.actorA, "fr", "localhost"); await openDelivery(page, a);
+  const typedA = { fullName: "Saisie privée A avant refresh", phone: "+509 3700 0044", adresLiv: "Adresse saisie A avant refresh" };
+  await fillDelivery(page, typedA);
+  const beforeRefresh = await f.state();
+  const sentinel = randomUUID(); await page.evaluate(value => { document.documentElement.dataset.deliveryIdentityDocument = value; }, sentinel);
+  await session(page, f.actorB, "fr", "localhost");
+  const pendingRsc = page.waitForResponse(response => new URL(response.url()).pathname === "/tableau-de-bord/compte" && response.request().headers().rsc === "1");
+  const menu = page.locator("header:visible details").filter({ has: page.getByRole("button", { name: "Français FR", exact: true, includeHidden: true }) });
+  await menu.locator("summary").click(); await menu.getByRole("button", { name: "English EN", exact: true }).click();
+  const rsc = await pendingRsc; expect(rsc.status()).toBe(200);
+  expect(rsc.headers()["content-type"]).toContain("text/x-component");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { level: 1, name: t("en", "vendeur.nav.compte"), exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.dataset.deliveryIdentityDocument)).toBe(sentinel);
+  const refreshed = await f.state();
+  const newReads = refreshed.deliveryInfo!.reads.slice(beforeRefresh.deliveryInfo!.reads.length);
+  const bRead = newReads.find(read => read.requestedActorId === f.actorB && read.serviceRole);
+  expect(bRead?.row).toEqual(b);
+  expect(bRead?.select?.replace(/\s/g, "")).toBe("full_name,phone,adres_liv");
+  console.log(JSON.stringify({ scenario: "comptes fictifs : livraison refresh SSR B", rscStatus: rsc.status(), sameDocument: true,
+    rscContentType: rsc.headers()["content-type"], newReads, serverFullName: b.full_name,
+    browserFullName: await deliveryFields(page, "en").fullName.inputValue(), upserts: refreshed.deliveryInfo!.upserts }));
+  await expectDeliveryFields(page, b, "en");
+  const pending = deliveryResponse(page);
+  await deliveryForm(page).getByRole("button", { name: t("en", "profile.liv.save"), exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(200);
+  expect(response.request().postDataJSON()).toEqual({ ...deliveryBody(b), expectedActorId: f.actorB });
+  await expect(deliveryForm(page).getByText(t("en", "profile.liv.saved"), { exact: true })).toBeVisible();
+  const after = await f.state();
+  expect(after.deliveryInfo!.upserts).toEqual([{ tokenActorId: f.actorB, serviceRole: false, row: { ...b, updated_at: expect.any(String) } }]);
+  expect(after.deliveryInfo!.rows.find(row => row.user_id === f.actorA)).toEqual(a);
+  console.log(JSON.stringify({ scenario: "comptes fictifs : livraison après refresh B sauvegardée", expectedActorId: f.actorB, upserts: after.deliveryInfo!.upserts }));
+});

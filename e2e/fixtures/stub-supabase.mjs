@@ -226,6 +226,15 @@ const server = createServer((req, res) => {
             { id: crypto.randomUUID(), parent_id: departmentId, level: "komin", slug: "komin-fictive", label_kr: "Komin tès", label_fr: "Commune fictive", label_en: "Test commune", label_es: "Comuna ficticia" },
           ], zoneRequests: [],
         } : {}) };
+        if (input.deliveryInfo === true) {
+          scenario.deliveryInfo = {
+            rows: profiles.map((profile, index) => ({ user_id: profile.id,
+              full_name: `Destinataire fictif ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}`,
+              phone: index ? "+1 555 000 0002" : "+509 3700 0001",
+              adres_liv: `Adresse privée fictive ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}` })),
+            reads: [], upserts: [],
+          };
+        }
         if (["history", "empty"].includes(input.accountClosure)) {
           scenario.accountClosure = {
             mode: input.accountClosure, events: [], profileReads: [],
@@ -264,6 +273,34 @@ const server = createServer((req, res) => {
     if (scenario.accountClosure) scenario.accountClosure.profileReads.push({ actorId: profile.id, select: url.searchParams.get("select") });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  const deliveryOwner = eq(url, "user_id");
+  const deliveryScenario = profileIdentityActors.get(deliveryOwner)?.scenario.deliveryInfo;
+  if (deliveryScenario && url.pathname === "/rest/v1/zabelie_delivery_info" && req.method === "GET") {
+    const row = deliveryScenario.rows.find(row => row.user_id === deliveryOwner);
+    const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+    deliveryScenario.reads.push({ tokenActorId: profileIdentityActors.has(tokenId) ? tokenId : null,
+      requestedActorId: deliveryOwner, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", row: row ? { ...row } : null });
+    return single(row ? [row] : []);
+  }
+  if (url.pathname === "/rest/v1/zabelie_delivery_info" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      // Observer le vrai token et la vraie ligne upsert ; aucune garde
+      // expectedActorId, contrainte ou politique RLS n'est reproduite ici.
+      const row = JSON.parse(text);
+      const state = profileIdentityActors.get(row.user_id)?.scenario.deliveryInfo;
+      if (!state) return single([]);
+      const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+      state.upserts.push({ tokenActorId: profileIdentityActors.has(tokenId) ? tokenId : null,
+        serviceRole: req.headers.authorization === "Bearer cle-service-de-test", row: { ...row } });
+      const existing = state.rows.find(saved => saved.user_id === row.user_id);
+      if (existing) Object.assign(existing, row);
+      else state.rows.push(row);
+      return send(201, []);
+    });
   }
 
   // Fermeture : observer les E/S réelles pour les seuls UUID opt-in. Aucun

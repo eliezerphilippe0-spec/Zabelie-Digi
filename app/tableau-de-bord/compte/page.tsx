@@ -88,6 +88,8 @@ export default async function ComptePage() {
           {livInfo !== undefined && (
             <section id="livraison" className="max-w-lg scroll-mt-32">
               <DeliveryInfoForm
+                key={user.id}
+                actorId={user.id}
                 initial={livInfo}
                 labels={{
                   title: t(lang, "profile.liv.title"),

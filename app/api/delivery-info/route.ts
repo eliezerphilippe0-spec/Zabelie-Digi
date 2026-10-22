@@ -3,12 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { isMissingTable } from "@/lib/product-media";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { UUID_RE } from "@/lib/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/delivery-info  { fullName?, phone?, adresLiv? }
+ * POST /api/delivery-info  { expectedActorId, fullName?, phone?, adresLiv? }
  * Coordonnées de livraison du compte connecté (V-5, docs/35).
  *
  * CLIENT DE SESSION, jamais le service-role : la RLS de
@@ -38,6 +39,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 422 });
   }
   const body = raw as Record<string, unknown>;
+  // L'écran doit encore appartenir à la session qui va écrire ces données privées.
+  // L'identité de session reste seule source du user_id sauvegardé.
+  if (typeof body.expectedActorId !== "string" || !UUID_RE.test(body.expectedActorId)) {
+    return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 422 });
+  }
+  if (body.expectedActorId !== user.id) {
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 403 });
+  }
   if (["fullName", "phone", "adresLiv"].some(key => body[key] !== undefined && typeof body[key] !== "string")) {
     return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 422 });
   }

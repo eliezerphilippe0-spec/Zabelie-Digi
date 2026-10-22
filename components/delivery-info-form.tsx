@@ -21,9 +21,11 @@ export type DeliveryLabels = {
  * `hint` dit au titulaire exactement qui les verra, et quand.
  */
 export function DeliveryInfoForm({
+  actorId,
   initial,
   labels,
 }: {
+  actorId: string;
   initial: { full_name: string; phone: string; adres_liv: string };
   labels: DeliveryLabels;
 }) {
@@ -40,6 +42,7 @@ export function DeliveryInfoForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          expectedActorId: actorId,
           fullName: form.full_name,
           phone: form.phone,
           adresLiv: form.adres_liv,
