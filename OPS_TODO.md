@@ -1,5 +1,74 @@
 # OPS_TODO — Zabelie
 
+## Pièces KYC privées — identité de l'écran (22 octobre 2026)
+
+Lot autonome sur `fix/kyc-identite-session`, base `main 28d1b2ff`, après #407
+fusionnée sur sa CI2 complète sans retry et vérifiée publiquement. Inventaire
+lecture seule : docs/26 §0, docs/35 V-6, docs/67 §22, unique POST /api/kyc,
+unique KycForm et montage Compte, bucket privé, RPC0130 et rétention0131,
+harnais23cas existant et tests SQL de dépôt/concurrence/restrict/rétention.
+Les PR325/396 protègent concurrence/conservation, sans identité de l'écran ;
+aucun contrat externe de multipart sans identité n'est identifié.
+
+Objectif : confirmer sur vrai écran/handler local qu'un écran A
+sous cookies B peut déposer un fichier entièrement fictif dans le chemin
+privé B et l'enregistrer dans le dossier pending B. Observer fichier/digest,
+chemin, propriétaire RPC, snapshot et métadonnées, sans prétendre approbation,
+lecture par tiers, perte ou fuite réelle. Prouver aussi les pièces A conservées
+après vrai refresh RSC B dans le même document, via LangToggle existant.
+
+Confirmé par les deux contrepreuves avant patch : expectedActorId UUID
+obligatoire dans le multipart (absence/
+format422, divergence403), actorId/key SSR. Préserver Auth et compte actif/
+accord légal avant parsing ; refuser avant lecture dossier, stockage et RPC.
+Le garde de compte garde ses lectures internes ; ne pas promettre zéro E/S
+de cette étape. Garder types/signatures/tailles, bucket privé, chemin serveur,
+locks/snapshot, refus approved, pending, purge/conservation et nettoyage
+prudent des réponses ambiguës. Anciens écrans sans identité à recharger.
+
+Périmètre : trois sources existantes, tests/kyc.test.ts, fichier navigateur
+et stub A/B existants, docs/35, docs/67 et ce journal. Aucun nouvel endpoint,
+fournisseur KYC, table, policy, RPC, migration, harnais ou règle de retrait.
+Arrêt par lot : cinq tours au plus ; contrepreuves avant correction, tests
+ciblés/globaux, revue indépendante, PR, CI exacte sans retry, fusion normale
+puis sondes publiques. Aucun vrai document d'identité, compte, paiement,
+écriture de données production, migration distante ou déploiement manuel.
+
+Le navigateur avant patch observe le vrai dépôt200 des1065octets PNG fictifs
+A sous le chemin privé B, RPCownerB/snapshotB, document et dossierpending B,
+A inchangé, avant l'attente403 rouge. Le vrai refresh RSC B dans le même
+document conserve la CIN A au lieu du passeport B avant l'attente rouge.
+L'unitaire observe aussi l'attribution B (59octets synthétiques). Les23anciens
+tests passent ; trois rouges sur29 incluent deux refus du nouveau protocole,
+sans présenter ces derniers comme deux incidents métier indépendants. Les
+preuves et le diagnostic CDP initial sont conservés. Les trois sources sont
+corrigées ;88/88 tests ciblés passent, dont29KYC. Types, build et contraste
+88/88 passent ; lint sans erreur ni nouvelle alerte (dix existantes Windows).
+Trente parcours,30tentatives, zéro retry/flaky/échec/ignoré en66,3 s ; les
+24anciens restent verts. Treize POST KYC : quatre403 et six422 sans effet,
+trois200 avec exactement trois fichiers fictifs privés et trois RPC ; compte
+A inchangé après refresh B et dépôt B. Aucun défaut JS, console inattendue,
+overlay ou débordement ; captures360/1280 relues. Revue logique favorable ;
+suite globale2 282/2 282, sans échec/ignoré/annulé en303,7 s. CI exacte puis
+fusion et sondes restent à consigner. L'écart de texte « suppression après
+décision » observé dans kyc.why est un candidat distinct du présent lot.
+
+CI initiale39813807287, tête d613ea1d : le journal complet révèle450tests
+uniques mais451tentatives, un flaky ancien de repli du bandeau. La lecture
+large de header voit deux éléments ; le retry passe. Les30cas d'identité
+passent directement. Cette CI ne satisfait pas la porte zéro retry : aucune
+fusion. Logs conservés ; périmètre étendu au seul test existant du bandeau,
+sans source applicative, CSS, configuration, timeout ou retries modifiés.
+Vérifier un unique en-tête accessible avant défilement et ses attributs réels,
+puis répétitions ciblées et nouvelle CI normale sur la tête modifiée.
+
+Après synchronisation du témoin : les cinq cas bandeau passent chacun trois
+fois,15exécutions et15tentatives, zéro retry/flaky/échec/ignoré en39,8 s. Les
+huit unités bandeau, les types et le lint ciblé passent ; les quatre autres
+cas et assertions CSS sont conservés. Sources applicatives et build identiques.
+La nouvelle tête doit encore obtenir sa CI complète ; aucun vert initial ne
+remplace cette exigence. Première preuve avec flaky conservée.
+
 ## Coordonnées privées — identité du formulaire (22 octobre 2026)
 
 Lot autonome sur `fix/livraison-identite-session`, base `main e764547`, après

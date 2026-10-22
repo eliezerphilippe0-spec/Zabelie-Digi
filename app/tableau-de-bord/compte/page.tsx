@@ -63,6 +63,8 @@ export default async function ComptePage() {
           {dossierKyc && (
             <section id="verification" className="max-w-lg scroll-mt-32">
               <KycForm
+                key={user.id}
+                actorId={user.id}
                 statut={dossierKyc.statut}
                 deposes={dossierKyc.documents}
                 noteAdmin={dossierKyc.noteAdmin}

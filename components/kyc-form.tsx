@@ -30,11 +30,13 @@ export type KycLabels = {
  * sans dire ce qu'elle garde, c'est demander une faveur.
  */
 export function KycForm({
+  actorId,
   statut,
   deposes,
   noteAdmin,
   labels,
 }: {
+  actorId: string;
   statut: KycStatut;
   deposes: { id: string; kind: KycType }[];
   noteAdmin: string | null;
@@ -56,6 +58,7 @@ export function KycForm({
     setError(null);
     try {
       const form = new FormData();
+      form.set("expectedActorId", actorId);
       form.set("kind", kind);
       form.set("file", file);
       const res = await fetch("/api/kyc", { method: "POST", body: form });
