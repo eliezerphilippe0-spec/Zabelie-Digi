@@ -1571,3 +1571,21 @@ la PR. Aucune donnée réelle, paiement, migration distante ou déploiement manu
 L'écart de texte « suppression après décision » dans kyc.why est un candidat
 distinct, identifié pendant la relecture des captures ; aucune règle de
 conservation n'est modifiée par le présent lot. L'audit entier reste ouvert.
+
+Le journal de la CI initiale39813807287 sur d613ea1d révèle450tests uniques,
+451tentatives et un flaky ancien (repli du bandeau, e2e/barre-annonce.spec.ts).
+Le locator large header rencontre deux en-têtes avant l'attente de l'attribut ;
+le retry passe. Les30cas d'identité sont directs. Le contexte ne prouve pas
+une duplication persistante d'en-têtes visibles ni un défaut produit. La
+fusion reste suspendue, même si l'agrégat devient vert. Extension bornée au
+seul fichier de test existant : observer un unique en-tête accessible avant
+défilement, garder les assertions d'attribut et de bandeau caché, puis répétitions
+ciblées et nouvelle CI exacte. Aucun changement de runtime/CSS/configuration,
+timeout ou nombre de retries ; première preuve conservée avec son flaky.
+
+Après cette synchronisation, les cinq cas bandeau passent chacun trois fois :
+15exécutions et15tentatives, zéro retry/flaky/échec/ignoré en39,8 s. Les huit
+unités bandeau, les types et le lint ciblé passent. Les quatre autres cas et
+leurs attentes CSS restent inchangés ; aucun rebuild applicatif n'est requis
+pour ce seul témoin. Une nouvelle CI complète sur la tête supplémentaire est
+requise avant toute fusion ; l'ancienne preuve450/451 reste inchangée.

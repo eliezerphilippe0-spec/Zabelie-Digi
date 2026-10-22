@@ -53,6 +53,22 @@ suite globale2 282/2 282, sans échec/ignoré/annulé en303,7 s. CI exacte puis
 fusion et sondes restent à consigner. L'écart de texte « suppression après
 décision » observé dans kyc.why est un candidat distinct du présent lot.
 
+CI initiale39813807287, tête d613ea1d : le journal complet révèle450tests
+uniques mais451tentatives, un flaky ancien de repli du bandeau. La lecture
+large de header voit deux éléments ; le retry passe. Les30cas d'identité
+passent directement. Cette CI ne satisfait pas la porte zéro retry : aucune
+fusion. Logs conservés ; périmètre étendu au seul test existant du bandeau,
+sans source applicative, CSS, configuration, timeout ou retries modifiés.
+Vérifier un unique en-tête accessible avant défilement et ses attributs réels,
+puis répétitions ciblées et nouvelle CI normale sur la tête modifiée.
+
+Après synchronisation du témoin : les cinq cas bandeau passent chacun trois
+fois,15exécutions et15tentatives, zéro retry/flaky/échec/ignoré en39,8 s. Les
+huit unités bandeau, les types et le lint ciblé passent ; les quatre autres
+cas et assertions CSS sont conservés. Sources applicatives et build identiques.
+La nouvelle tête doit encore obtenir sa CI complète ; aucun vert initial ne
+remplace cette exigence. Première preuve avec flaky conservée.
+
 ## Coordonnées privées — identité du formulaire (22 octobre 2026)
 
 Lot autonome sur `fix/livraison-identite-session`, base `main e764547`, après

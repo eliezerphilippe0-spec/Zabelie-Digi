@@ -40,7 +40,10 @@ test("le premier arrêt du clavier reste le lien d'évitement", async ({ page })
 test("la barre se replie avec l'en-tête au défilement", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 700 });
   await page.goto("/catalogue");
+  const entete = page.getByRole("banner");
+  await expect(entete).toHaveCount(1);
+  await expect(entete).toBeVisible();
   await page.mouse.wheel(0, 800);
-  await expect(page.locator("header")).toHaveAttribute("data-compact", "");
+  await expect(entete).toHaveAttribute("data-compact", "");
   await expect(page.getByRole("marquee", { name: "Annonces" })).toBeHidden();
 });
