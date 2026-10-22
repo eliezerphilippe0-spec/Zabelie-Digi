@@ -18,15 +18,18 @@ export type PayoutRequestLabels = {
 
 /**
  * Demande de retrait par le vendeur (chantier 0, lot 0.b).
- * Tous les contrôles sont en base : ce formulaire n'envoie qu'un montant.
+ * Les contrôles métier restent en base ; l'identité attendue lie le montant
+ * au compte affiché, sans choisir le portefeuille à débiter.
  * Les libellés arrivent en props (règle i18n : jamais de dictionnaire dans un
  * composant client, cf. lib/i18n.ts).
  */
 export function PayoutRequest({
+  actorId,
   disponibleHtg,
   hasPending,
   labels,
 }: {
+  actorId: string;
   disponibleHtg: number;
   hasPending: boolean;
   labels: PayoutRequestLabels;
@@ -65,7 +68,7 @@ export function PayoutRequest({
       const res = await fetch("/api/payouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountHtg: amount }),
+        body: JSON.stringify({ amountHtg: amount, expectedActorId: actorId }),
       });
       const data = await res.json();
       if (!res.ok) {

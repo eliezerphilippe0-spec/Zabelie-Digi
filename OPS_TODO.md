@@ -1,5 +1,47 @@
 # OPS_TODO — Zabelie
 
+## Demande de retrait — identité du formulaire (22 octobre 2026)
+
+Objectif vérifiable sur fix/retrait-identite-formulaire, base main 247fc659 :
+un formulaire rendu pour A sous une session désormais B reçoit 403 avant
+création du client administratif et avant tout appel zabelie_request_payout.
+Après rechargement du tableau de bord B, un nouveau formulaire vide transmet
+l'identité B et la demande rejoint la RPC existante, avec user.id de session.
+L'identifiant attendu est une précondition, jamais une identité de confiance.
+
+Inventaire : un seul appelant PayoutRequest, monté sur le tableau de bord ;
+aucune précondition d'identité dans la route actuelle ni écoute globale Auth
+qui retire ce formulaire après un changement de cookies. La dernière RPC
+métier, 0079, contrôle minimum/plafond, KYC, suspension, unicité, délai et solde
+sous verrou ; elle peut immobiliser le solde et recouvrer les frais IA avant
+le versement externe manuel. Les tests SQL payout_requests, ai_surplus et kyc
+existent et seront conservés. Les gardes UUID, traductions et harnais de tests
+Auth/PostgREST existent aussi : les réutiliser. Aucun incident réel allégué.
+
+Périmètre : route payouts, composant payout-request et son unique montage,
+contrats du vrai handler, parcours navigateur et extension du faux Supabase
+existant, ce journal et docs/67. Arrêt ferme : cinq tours de correction au
+plus. D'abord contrepreuves locales sur l'ancien comportement ; ensuite
+refus sans effet A/B, absence/format invalide, anonymat, succès même compte,
+refus métier et rafraîchissement B, dans les quatre langues à 360 px.
+Revue indépendante, tests complets, lint, build puis types, CI exacte sans
+retry, fusion normale et vérification du commit servi et protections publiques.
+Les anciens corps sans identité seront refusés ; aucun autre appelant trouvé.
+Aucun changement de montant, règle financière, RPC, table, migration, paiement
+réel, donnée de production, secret ou déploiement manuel.
+
+Deux contrepreuves navigateur causales avant patch : POST montant seul sous
+session B accepté pour B ; puis vrai refresh RSC B dans le même document qui
+conserve le montant 100 et l'erreur A. Le premier lancement sans headless shell
+est un échec d'instrument distinct, remplacé par Chrome déjà installé sans
+nouvelle dépendance. Quatre rouges API et six témoins verts sont conservés.
+Après patch : 16/16 contrats du vrai handler et 2 317/2 317 unités passent,
+build Next 16.4.2 puis types, contraste 88/88, audit npm complet zéro alerte.
+Lint zéro erreur, dix avertissements existants et aucun nouveau. Deux revues
+indépendantes favorables ; suffixe métier depuis la normalisation du montant
+comparé à la base et identique. Les 352 parcours locaux de la configuration
+principale et la CI de tête restent à consigner dans la PR avant fusion.
+
 ## Outillage ESLint — cinq alertes liées à braces (22 octobre 2026)
 
 Objectif vérifiable sur fix/outillage-braces-securite, base main f2b9f401 :
