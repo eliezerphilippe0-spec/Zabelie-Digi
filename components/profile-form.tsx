@@ -98,7 +98,7 @@ export function ProfileForm({
       const res = await fetch("/api/zones/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kominId: zk, nom: reqNom.trim() }),
+        body: JSON.stringify({ expectedActorId: actorId, kominId: zk, nom: reqNom.trim() }),
       });
       if (res.ok) {
         setReqMsg(zoneLabels.reqOk);
