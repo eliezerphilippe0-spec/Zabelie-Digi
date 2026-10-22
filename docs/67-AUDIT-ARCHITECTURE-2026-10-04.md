@@ -1271,3 +1271,57 @@ blocage. Un premier typecheck a rencontré TS6053 car le build lancé en parall�
 régénérait `.next/types` ; le contrôle séquentiel après build passe sans retouche
 du code ni de la configuration. Le journal initial est conservé comme raté
 d'instrument. La CI globale reste à confirmer sur le SHA final de la PR.
+
+## 20. Demande de quartier — identité du formulaire (22 octobre 2026)
+
+Inventaire repris sur `main 8a6cbd5`, après #404 et sa CI main verte :
+docs/26 §0, unique appelant `ProfileForm`, route `/api/zones/request`,
+table/demandes modérées de 0070 et tests existants. Le profil reçoit déjà
+`actorId` et se remonte sur changement d'utilisateur depuis #401 ; ce mécanisme
+est réutilisé. Aucun doublon trouvé parmi les PR ouvertes #385–#387 et #402.
+RLS, index anti-doublon pending, garde ZB070 et décision administrative finale
+existent déjà : aucune table, migration, RPC ou voie admin n'est ajoutée.
+
+P2 d'attribution reproduit avec le vrai formulaire : A le remplit, les cookies
+deviennent ceux de B sans rechargement, puis le POST obtient 200 et inscrit
+une proposition pending sous B avec le nom saisi par A. Les profils et zones
+restent inchangés. Cette preuve locale observe les E/S du handler avec
+Auth/PostgREST doublés ; elle ne démontre ni contournement RLS, ni création
+automatique de quartier, ni incident de production ou paiement.
+
+Le formulaire transmet désormais son `expectedActorId`. Après authentification
+et lecture JSON, la route refuse une identité mal formée avec 400 et une
+identité différente de la session avec 403, avant toute INSERT. Elle réutilise
+UUID_RE et les traductions existantes. La session vérifiée reste seule source
+de `requester` ; les champs requester/status envoyés par le client sont ignorés.
+La précondition est facultative pour les anciens clients, qui restent liés à
+leur session sans bénéficier de cette liaison à l'intention du formulaire.
+Les corps non objets et champs non textuels sont refusés sans exception trim.
+Les limites 2–80 caractères, le trim, les succès A/A et B/B et les réponses
+23505→409, ZB070→400 et panne→500 conservent leur contrat existant.
+
+Onze tests du vrai handler sont ajoutés aux sept contrôles existants. Avant
+correction, cinq échouent comme attendu ; après correction, les 50 tests
+ciblés passent. Le fichier navigateur existant garde ses six anciens parcours
+et reçoit quatre refus multilingues à 360 px et un témoin A/A, B/B et client
+ancien. Un mode facultatif du stub existant fournit deux zones fictives et
+journalise token et INSERT par scénario isolé ; il ne simule pas la preuve
+SQL de modération. La contrepreuve FR échoue sur 200 au lieu de 403 avant
+correction, sans retry. Les refus doivent laisser journaux, profils et zones
+inchangés ; les témoins doivent rester pending sous leur session.
+
+Philippe autorise désormais les petits lots successifs, la validation technique
+autonome et la fusion après revue/CI verte. Chaque lot conserve une PR et la
+vérification du SHA exact avant fusion normale, puis des sondes publiques en
+lecture seule. Aucun accès en écriture aux données réelles, paiement réel,
+migration distante ou déploiement manuel ; aucune clôture de l'audit entier
+n'est revendiquée. Les résultats finaux sont consignés dans la PR du lot.
+
+Validation locale finale : 2 263/2 263 unitaires sans échec, ignoré ou annulé ;
+50/50 ciblés. Les onze parcours profil passent en 43,6 s à deux workers, onze
+tentatives et zéro retry : quatre refus quartier sans INSERT, trois demandes
+autorisées, puis les six anciens cas profil. Aucun pageerror, console inattendue,
+overlay ou débordement horizontal. Types, build et contraste 88/88 réussissent ;
+lint sans erreur ni nouvelle alerte (dix existantes sous Windows), ciblé sans
+avertissement. Relecture indépendante sans blocage ; CI du SHA final à vérifier
+avant fusion, sondes publiques après le déploiement automatique existant.

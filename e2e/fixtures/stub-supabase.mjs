@@ -214,11 +214,17 @@ const server = createServer((req, res) => {
         const profiles = [input.actorA, input.actorB].map((id, index) => ({
           id, display_name: `Profil ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}`,
           bio: `Présentation fictive ${index ? "B" : "A"}`, avatar_url: null,
-          country_code: index ? "US" : "HT", region_code: index ? null : "HT-OU",
+          country_code: index && !input.withZones ? "US" : "HT", region_code: index && !input.withZones ? null : "HT-OU",
           zone_id: null, pwen_repe: `Repère fictif ${index ? "B" : "A"}`,
           role: "creator", tier: "standard", boutik_slug: null, suspended_at: null, suspended_reason: null,
         }));
-        const scenario = { profiles, writes: [], slugReads: [] };
+        const departmentId = crypto.randomUUID();
+        const scenario = { profiles, writes: [], slugReads: [], ...(input.withZones ? {
+          zones: [
+            { id: departmentId, parent_id: null, level: "depatman", slug: "depatman-fictif", label_kr: "Depatman tès", label_fr: "Département fictif", label_en: "Test department", label_es: "Departamento ficticio" },
+            { id: crypto.randomUUID(), parent_id: departmentId, level: "komin", slug: "komin-fictive", label_kr: "Komin tès", label_fr: "Commune fictive", label_en: "Test commune", label_es: "Comuna ficticia" },
+          ], zoneRequests: [],
+        } : {}) };
         profileIdentityScenarios.set(input.scenario, scenario);
         for (const profile of profiles) profileIdentityActors.set(profile.id, { profile, scenario });
         return send(200, scenario);
@@ -413,6 +419,22 @@ const server = createServer((req, res) => {
   const essayageCompte = compteEssayage && ESSAYAGE_COMPTES.has(compteEssayage) ? compteEssayage : null;
   const profileIdentityId = /profile-identity-([0-9a-f-]{36})/.exec(token)?.[1];
   const profileIdentityActor = profileIdentityActors.has(profileIdentityId) ? profileIdentityId : null;
+  const identityScenario = profileIdentityActors.get(profileIdentityActor)?.scenario;
+  if (identityScenario?.zones && url.pathname === "/rest/v1/zabelie_zones" && req.method === "GET") {
+    const id = eq(url, "id");
+    return single(identityScenario.zones.filter(zone => !id || zone.id === id));
+  }
+  if (identityScenario?.zones && url.pathname === "/rest/v1/zabelie_zone_requests" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      // Journal d'E/S par scénario : il observe le vrai corps INSERT et son
+      // token, sans prétendre reproduire les triggers, l'index ou la RLS SQL.
+      const input = JSON.parse(text);
+      const row = { id: crypto.randomUUID(), status: "pending", ...input };
+      identityScenario.zoneRequests.push({ tokenActorId: profileIdentityActor, row });
+      return send(201, []);
+    });
+  }
 
   // ── Essayage virtuel : les cinq fonctions de 0150, la table des essais, et une lecture pour les tests.
   if (url.pathname === "/__essayage") return send(200, { essais: [...essayage.essais.values()], expositions: [...essayage.expositions.values()] });

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { UUID_RE } from "@/lib/collections";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,15 +25,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  let body: { kominId?: string; nom?: string };
+  let body: { expectedActorId?: unknown; kominId?: unknown; nom?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
 
-  const kominId = body.kominId?.trim() || "";
-  const nom = body.nom?.trim() || "";
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return erreurTraduite("api.params.invalid", 400);
+  }
+  // Précondition du formulaire, jamais une source de propriété. Les anciens
+  // clients restent compatibles ; la session vérifiée demeure le demandeur.
+  if (body.expectedActorId !== undefined) {
+    if (typeof body.expectedActorId !== "string" || !UUID_RE.test(body.expectedActorId)) {
+      return erreurTraduite("api.params.invalid", 400);
+    }
+    if (body.expectedActorId !== user.id) return erreurTraduite("api.auth.required", 403);
+  }
+
+  const kominId = typeof body.kominId === "string" ? body.kominId.trim() : "";
+  const nom = typeof body.nom === "string" ? body.nom.trim() : "";
   if (!kominId || nom.length < 2 || nom.length > 80) {
     return NextResponse.json(
       { error: "kominId et nom (2 à 80 caractères) requis" },

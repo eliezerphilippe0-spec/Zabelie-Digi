@@ -1,5 +1,39 @@
 # OPS_TODO — Zabelie
 
+## Demande de quartier — identité du formulaire (22 octobre 2026)
+
+Lot autonome sur `fix/quartier-identite-session`, base `main 8a6cbd5`, après
+#404 et sa CI main verte. Philippe autorise désormais les petits lots successifs
+avec validation technique autonome et fusion après revue/CI, sans attente de
+confirmation ; les données réelles et paiements réels restent exclus.
+
+Objectif : reproduire le vrai formulaire du compte A sous session B, puis
+refuser sa demande avant INSERT avec une précondition facultative
+`expectedActorId`, déjà employée par la sauvegarde du même profil. La propriété
+reste issue de `auth.getUser()`. Préserver succès A/A et B/B, clients anciens,
+RLS, ZB070, anti-doublon et modération humaine existants de la migration0070.
+L'éventuel défaut concerne l'attribution d'une proposition modérée, pas un
+contournement RLS ni une création automatique de quartier.
+
+Périmètre : route vendeur, unique appelant ProfileForm, tests existants et
+observabilité minimale du stub local si nécessaire, docs/67 et ce journal.
+Valider les corps non objets et l'identité sans nouvelle règle de zone ni
+nouvelle traduction. Aucune table, migration, dépendance ou fonction parallèle.
+Arrêt par lot : cinq tours au plus ; vrais handler/formulaire, contrepreuve,
+tests globaux, revue séparée, PR, CI exacte, fusion normale puis sondes publiques.
+Le lot suivant ne sera implémenté qu'après cette clôture ; les pistes de types
+JSON des quantités physiques peuvent être inventoriées en lecture seule.
+
+Validation locale finale : 2 263/2 263 unitaires, sans échec, ignoré ou annulé ;
+50/50 ciblés. Onze parcours profil, onze tentatives, deux workers, zéro retry
+en 43,6 s : quatre refus quartier sans INSERT et trois demandes autorisées,
+puis les six anciens cas profil passent. Aucune erreur JS, console inattendue,
+surcouche framework ou débordement. Types, build et contraste 88/88 réussis ;
+lint sans erreur (dix avertissements existants sous Windows), ciblé sans alerte.
+Contrepreuves avant correction : cinq tests de route rouges et un vrai POST
+200 avec attribution B au lieu du refus403. Revue indépendante sans blocage.
+La CI globale du SHA final et les sondes après fusion seront liées dans la PR.
+
 ## Création physique — type JSON des prix (22 octobre 2026)
 
 Petit lot sur `fix/physique-prix-json`, base `main 6477600`, après #403.

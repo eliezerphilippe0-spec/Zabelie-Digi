@@ -6,8 +6,11 @@ import { t, type Lang } from "../lib/i18n";
 // Le journal prouve les effets du handler, pas les règles SQL/RLS de production.
 const STUB = "http://127.0.0.1:15421";
 type Profile = { id: string; display_name: string; bio: string; avatar_url: string | null; country_code: string; region_code: string | null; zone_id: string | null; pwen_repe: string; boutik_slug: string | null };
-type ProfileState = { profiles: Profile[]; writes: { id: string; kind: string; patch: Record<string, unknown> }[]; slugReads: { id: string }[] };
+type ProfileState = { profiles: Profile[]; writes: { id: string; kind: string; patch: Record<string, unknown> }[]; slugReads: { id: string }[];
+  zones?: { id: string; parent_id: string | null; level: string }[];
+  zoneRequests?: { tokenActorId: string; row: { id: string; requester: string; komin_id: string; nom_propose: string; status: string } }[] };
 const diagnostics = new WeakMap<Page, { errors: string[]; console: { type: string; text: string; url: string }[] }>();
+const expectedZoneRefusals = new WeakSet<Page>();
 test.beforeEach(async ({ page }) => {
   const result = { errors: [] as string[], console: [] as { type: string; text: string; url: string }[] };
   diagnostics.set(page, result);
@@ -20,15 +23,16 @@ test.afterEach(async ({ page }) => {
   const result = diagnostics.get(page)!;
   await test.info().attach("profile-browser-diagnostics", { body: JSON.stringify(result, null, 2), contentType: "application/json" });
   expect(result.errors).toEqual([]);
-  // Chromium reports the deliberately refused stale POST as a console error.
-  expect(result.console.filter(message => !(message.type === "error" && message.url.includes("/api/profile") && /\b403\b/.test(message.text)))).toEqual([]);
+  // Chromium reports deliberately refused stale POSTs as console errors.
+  expect(result.console.filter(message => !(message.type === "error" && /\b403\b/.test(message.text)
+    && (message.url.includes("/api/profile") || (expectedZoneRefusals.has(page) && message.url.includes("/api/zones/request")))))).toEqual([]);
   await expect(page.locator("nextjs-portal, [data-nextjs-dialog-overlay], [data-nextjs-error-overlay]")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-async function fixture(request: APIRequestContext) {
+async function fixture(request: APIRequestContext, withZones = false) {
   const scenario = randomUUID(), actorA = randomUUID(), actorB = randomUUID();
-  const initialized = await request.post(`${STUB}/__profile-identity`, { data: { scenario, actorA, actorB } });
+  const initialized = await request.post(`${STUB}/__profile-identity`, { data: { scenario, actorA, actorB, ...(withZones ? { withZones: true } : {}) } });
   expect(initialized.status()).toBe(200);
   return { actorA, actorB, state: async (): Promise<ProfileState> => (await request.get(`${STUB}/__profile-identity?scenario=${scenario}`)).json() };
 }
@@ -56,6 +60,71 @@ async function captureAtTop(page: Page, name: string) {
   await page.screenshot({ path: test.info().outputPath(name), fullPage: true });
 }
 const profileResponse = (page: Page) => page.waitForResponse(response => new URL(response.url()).pathname === "/api/profile" && response.request().method() === "POST");
+
+async function prepareZoneRequest(page: Page, initial: ProfileState, name: string, lang: Lang = "fr") {
+  const zones = page.getByRole("group", { name: t(lang, "zone.form.title"), exact: true });
+  await zones.getByRole("combobox", { name: t(lang, "zone.level.depatman"), exact: true }).selectOption(initial.zones![0].id);
+  await zones.getByRole("combobox", { name: t(lang, "zone.level.komin"), exact: true }).selectOption(initial.zones![1].id);
+  await zones.getByPlaceholder(t(lang, "zone.req.ph"), { exact: true }).fill(name);
+}
+const zoneResponse = (page: Page) => page.waitForResponse(response => new URL(response.url()).pathname === "/api/zones/request" && response.request().method() === "POST");
+
+for (const lang of ["fr", "ht", "en", "es"] as const) {
+  test(`quartier : formulaire A sous cookies B refuse la demande (${lang})`, async ({ page, request }) => {
+    const f = await fixture(request, true); const initial = await f.state();
+    await page.setViewportSize({ width: 360, height: 900 }); await session(page, f.actorA, lang);
+    await openProfile(page, initial.profiles[0].display_name, lang);
+    const name = `Quartier privé A ${lang}`;
+    await prepareZoneRequest(page, initial, name, lang);
+    const before = await f.state();
+    await session(page, f.actorB, lang); expectedZoneRefusals.add(page);
+    const pending = zoneResponse(page);
+    await page.getByRole("button", { name: t(lang, "zone.req.btn"), exact: true }).click();
+    const response = await pending; const body = await response.json(); const after = await f.state();
+    console.log(JSON.stringify({ scenario: "comptes fictifs : demande quartier A vers session B", lang,
+      status: response.status(), expectedActorId: response.request().postDataJSON().expectedActorId ?? null,
+      actorA: f.actorA, actorB: f.actorB, zoneRequests: after.zoneRequests,
+      profilesUnchanged: JSON.stringify(after.profiles) === JSON.stringify(before.profiles),
+      zonesUnchanged: JSON.stringify(after.zones) === JSON.stringify(before.zones) }));
+    expect(response.status()).toBe(403);
+    expect(after).toEqual(before);
+    expect(response.request().postDataJSON().expectedActorId).toBe(f.actorA);
+    expect(body.error).toBe(t(lang, "api.auth.required"));
+    await expect(page.getByText(t(lang, "zone.req.err"), { exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder(t(lang, "zone.req.ph"), { exact: true })).toHaveValue(name);
+    if (lang === "fr") await captureAtTop(page, "quartier-identite-refus-360.png");
+  });
+}
+
+test("quartier : demandes A et B et client ancien restent attribuées à leur compte", async ({ page, request }) => {
+  const f = await fixture(request, true); const initial = await f.state();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  for (const [index, actorId] of [f.actorA, f.actorB].entries()) {
+    await session(page, actorId); await openProfile(page, initial.profiles[index].display_name);
+    const name = `Quartier fictif ${index}`;
+    await prepareZoneRequest(page, initial, name);
+    const pending = zoneResponse(page);
+    await page.getByRole("button", { name: t("fr", "zone.req.btn"), exact: true }).click();
+    const response = await pending; expect(response.status()).toBe(200);
+    expect(response.request().postDataJSON().expectedActorId).toBe(actorId);
+    await expect(page.getByText(t("fr", "zone.req.ok"), { exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder(t("fr", "zone.req.ph"), { exact: true })).toHaveValue("");
+    const saved = await f.state();
+    expect(saved.zoneRequests).toHaveLength(index + 1);
+    expect(saved.zoneRequests![index]).toMatchObject({ tokenActorId: actorId,
+      row: { requester: actorId, komin_id: initial.zones![1].id, nom_propose: name, status: "pending" } });
+    expect(saved.profiles).toEqual(initial.profiles); expect(saved.zones).toEqual(initial.zones); expect(saved.writes).toEqual([]);
+  }
+  const legacy = await page.request.post("/api/zones/request", { data: { kominId: initial.zones![1].id, nom: "Quartier ancien client B" } });
+  expect(legacy.status()).toBe(200);
+  const saved = await f.state();
+  expect(saved.zoneRequests).toHaveLength(3);
+  expect(saved.zoneRequests![2]).toMatchObject({ tokenActorId: f.actorB,
+    row: { requester: f.actorB, komin_id: initial.zones![1].id, nom_propose: "Quartier ancien client B", status: "pending" } });
+  expect(saved.profiles).toEqual(initial.profiles); expect(saved.zones).toEqual(initial.zones); expect(saved.writes).toEqual([]);
+  console.log(JSON.stringify({ scenario: "comptes fictifs : demandes quartier nominales et ancien client", zoneRequests: saved.zoneRequests, zones: saved.zones }));
+  await captureAtTop(page, "quartier-identite-succes-1280.png");
+});
 
 for (const lang of ["fr", "ht", "en", "es"] as const) {
   test(`profil : formulaire A sous cookies B refuse toute écriture (${lang})`, async ({ page, request }) => {
