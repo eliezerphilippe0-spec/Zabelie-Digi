@@ -78,7 +78,7 @@ export default async function AidePage() {
             2026-09-04 (accueil premium §4.6) : l'accueil n'en garde qu'un
             lien (`/aide#comment`), les étapes vivent ici, où l'on vient
             pour comprendre. Les pas vendeur sont sur /vendre#comment. */}
-        <h2 id="comment" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+        <h2 id="comment" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
           {t(lang, "home.how.buy")}
         </h2>
         <ol className="mt-4 grid gap-3">
@@ -97,7 +97,7 @@ export default async function AidePage() {
         </ol>
 
         <section aria-labelledby="probleme" className="mt-12">
-          <h2 id="probleme" className="scroll-mt-24 text-2xl font-bold tracking-tight">
+          <h2 id="probleme" className="scroll-mt-32 text-2xl font-bold tracking-tight">
             {t(lang, "aide.problem.title")}
           </h2>
           <ol className="mt-4 grid gap-3">
@@ -125,7 +125,7 @@ export default async function AidePage() {
           <h2 className="text-xl font-bold">{t(lang, "guides.title")}</h2>
           <ul className="mt-3">{BUYING_GUIDES.map((guide) => <li key={guide.slug}><Link href={guideHref(lang, guide.slug)} className="inline-flex min-h-11 items-center text-base underline underline-offset-4">{t(lang, guide.title)}</Link></li>)}</ul>
         </section>
-        <h2 id="faq" className="mt-12 scroll-mt-24 text-2xl font-bold tracking-tight">
+        <h2 id="faq" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
           {t(lang, "sec.faq")}
         </h2>
         <div className="mt-6">

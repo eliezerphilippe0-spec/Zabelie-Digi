@@ -1,5 +1,541 @@
 # OPS_TODO — Zabelie
 
+## Information KYC — conservation annoncée (22 octobre 2026)
+
+Lot autonome sur fix/kyc-information-conservation, base main f307396c,
+après #408 fusionnée, arbre testé identique, livraison publique et six
+protections vérifiées. Inventaire : clé kyc.why dans les quatre dictionnaires,
+unique montage Compte/KycForm, confidentialité §9, migration0131 et ses tests
+SQL, tests de politique et six parcours KYC existants. Le texte affiche une
+suppression après décision ; la règle existante part de la clôture du compte.
+Ce constat porte sur la cohérence de l'information, sans conclusion juridique
+ni relecture de la configuration ou des fichiers de production.
+
+Objectif vérifiable : les quatre notices affichées expliquent la conservation
+pendant la relation de compte, puis cinq ans après sa fermeture, avec décision
+KYC sans effet sur le départ du délai ; les parcours existants restent verts.
+Réutiliser les clés et tests existants, sans nouveau test qui recopierait ces
+phrases. Périmètre : lib/i18n.ts, docs/35, docs/67 et ce journal, quatre fichiers.
+Aucune durée, policy, version légale, purge, route, composant ou table changé.
+
+Arrêt ferme : cinq tours au plus ; relecture sémantique contre la politique
+et0131, tests ciblés existants, types/build/lint, six parcours KYC/rendu,
+revue indépendante, PR et CI exacte sans retry, fusion normale puis sondes
+publiques. Aucun vrai document, donnée de production, paiement, migration
+distante ou déploiement manuel.
+
+Validation locale :81/81 tests ciblés existants, zéro échec/ignoré. Six parcours
+KYC existants, six tentatives, zéro retry/flaky/échec/ignoré en31,7 s dans les
+quatre langues. Types après build, build, contraste88/88 et lint passent,
+sans nouvelle alerte (dix existantes Windows). La revue confirme que seul le
+contenu des quatre clés change dans i18n ; reste du fichier strictement
+identique. Aucun nouveau test ni aucune modification des tests/stubs/configs.
+Revue finale et CI exacte puis fusion/sondes publiques à consigner.
+
+Diagnostics des six cas : aucun défaut JS, avertissement ou console inattendue,
+overlay ou débordement ; quatre403 attendus. Captures FR360/HT1280 relues,
+nouvelle information lisible ; EN/ES couverts par les parcours. Le diagnostic
+initial de filtre vide compte zéro test exécuté et reste archivé séparément.
+
+## Pièces KYC privées — identité de l'écran (22 octobre 2026)
+
+Lot autonome sur `fix/kyc-identite-session`, base `main 28d1b2ff`, après #407
+fusionnée sur sa CI2 complète sans retry et vérifiée publiquement. Inventaire
+lecture seule : docs/26 §0, docs/35 V-6, docs/67 §22, unique POST /api/kyc,
+unique KycForm et montage Compte, bucket privé, RPC0130 et rétention0131,
+harnais23cas existant et tests SQL de dépôt/concurrence/restrict/rétention.
+Les PR325/396 protègent concurrence/conservation, sans identité de l'écran ;
+aucun contrat externe de multipart sans identité n'est identifié.
+
+Objectif : confirmer sur vrai écran/handler local qu'un écran A
+sous cookies B peut déposer un fichier entièrement fictif dans le chemin
+privé B et l'enregistrer dans le dossier pending B. Observer fichier/digest,
+chemin, propriétaire RPC, snapshot et métadonnées, sans prétendre approbation,
+lecture par tiers, perte ou fuite réelle. Prouver aussi les pièces A conservées
+après vrai refresh RSC B dans le même document, via LangToggle existant.
+
+Confirmé par les deux contrepreuves avant patch : expectedActorId UUID
+obligatoire dans le multipart (absence/
+format422, divergence403), actorId/key SSR. Préserver Auth et compte actif/
+accord légal avant parsing ; refuser avant lecture dossier, stockage et RPC.
+Le garde de compte garde ses lectures internes ; ne pas promettre zéro E/S
+de cette étape. Garder types/signatures/tailles, bucket privé, chemin serveur,
+locks/snapshot, refus approved, pending, purge/conservation et nettoyage
+prudent des réponses ambiguës. Anciens écrans sans identité à recharger.
+
+Périmètre : trois sources existantes, tests/kyc.test.ts, fichier navigateur
+et stub A/B existants, docs/35, docs/67 et ce journal. Aucun nouvel endpoint,
+fournisseur KYC, table, policy, RPC, migration, harnais ou règle de retrait.
+Arrêt par lot : cinq tours au plus ; contrepreuves avant correction, tests
+ciblés/globaux, revue indépendante, PR, CI exacte sans retry, fusion normale
+puis sondes publiques. Aucun vrai document d'identité, compte, paiement,
+écriture de données production, migration distante ou déploiement manuel.
+
+Le navigateur avant patch observe le vrai dépôt200 des1065octets PNG fictifs
+A sous le chemin privé B, RPCownerB/snapshotB, document et dossierpending B,
+A inchangé, avant l'attente403 rouge. Le vrai refresh RSC B dans le même
+document conserve la CIN A au lieu du passeport B avant l'attente rouge.
+L'unitaire observe aussi l'attribution B (59octets synthétiques). Les23anciens
+tests passent ; trois rouges sur29 incluent deux refus du nouveau protocole,
+sans présenter ces derniers comme deux incidents métier indépendants. Les
+preuves et le diagnostic CDP initial sont conservés. Les trois sources sont
+corrigées ;88/88 tests ciblés passent, dont29KYC. Types, build et contraste
+88/88 passent ; lint sans erreur ni nouvelle alerte (dix existantes Windows).
+Trente parcours,30tentatives, zéro retry/flaky/échec/ignoré en66,3 s ; les
+24anciens restent verts. Treize POST KYC : quatre403 et six422 sans effet,
+trois200 avec exactement trois fichiers fictifs privés et trois RPC ; compte
+A inchangé après refresh B et dépôt B. Aucun défaut JS, console inattendue,
+overlay ou débordement ; captures360/1280 relues. Revue logique favorable ;
+suite globale2 282/2 282, sans échec/ignoré/annulé en303,7 s. CI exacte puis
+fusion et sondes restent à consigner. L'écart de texte « suppression après
+décision » observé dans kyc.why est un candidat distinct du présent lot.
+
+CI initiale39813807287, tête d613ea1d : le journal complet révèle450tests
+uniques mais451tentatives, un flaky ancien de repli du bandeau. La lecture
+large de header voit deux éléments ; le retry passe. Les30cas d'identité
+passent directement. Cette CI ne satisfait pas la porte zéro retry : aucune
+fusion. Logs conservés ; périmètre étendu au seul test existant du bandeau,
+sans source applicative, CSS, configuration, timeout ou retries modifiés.
+Vérifier un unique en-tête accessible avant défilement et ses attributs réels,
+puis répétitions ciblées et nouvelle CI normale sur la tête modifiée.
+
+Après synchronisation du témoin : les cinq cas bandeau passent chacun trois
+fois,15exécutions et15tentatives, zéro retry/flaky/échec/ignoré en39,8 s. Les
+huit unités bandeau, les types et le lint ciblé passent ; les quatre autres
+cas et assertions CSS sont conservés. Sources applicatives et build identiques.
+La nouvelle tête doit encore obtenir sa CI complète ; aucun vert initial ne
+remplace cette exigence. Première preuve avec flaky conservée.
+
+## Coordonnées privées — identité du formulaire (22 octobre 2026)
+
+Lot autonome sur `fix/livraison-identite-session`, base `main e764547`, après
+#406, sa CI complète, sa revue et sa mise en ligne vérifiée en lecture seule.
+Inventaire : docs/26 §0, docs/67 §21, unique POST /api/delivery-info, unique
+DeliveryInfoForm et montage Compte, table/policies0076 et tests existants.
+Les PR de dépendances et le skill distinct restent hors périmètre.
+
+Objectif : reproduire avec deux comptes fictifs l'écran A sous cookies B,
+observer le vrai upsert et les deux lignes privées ; puis refuser l'écrasement
+par une identité d'écran obligatoire avant écriture. Prouver aussi le vrai
+refresh RSC B dans le même document via LangToggle : l'actorId et la clé SSR
+doivent remplacer les états de formulaire A par les coordonnées B.
+
+Préserver Auth avant lecture JSON,400 JSON invalide,422 formes/types,
+normalisation120/30/240, champs facultatifs et remplacement par null,
+erreurs503/422 et client de SESSION soumis à la RLS. Aucun contrat externe
+sans identité identifié ; les anciens écrans devront se recharger. Pas de
+changement de règle Auth, de lecture vendeur, de conservation ou de livraison.
+
+Périmètre : trois sources existantes, tests/delivery-info.test.ts, parcours
+profil-identite et stub A/B existants, docs/35, docs/67 et ce journal.
+Aucune nouvelle route, table, policy, RPC, migration, dépendance ou harnais.
+Arrêt par lot : cinq tours au plus ; contrepreuves avant correction, tests
+ciblés/globaux, revue indépendante, PR, CI du SHA exact, fusion normale puis
+sondes publiques. Aucune donnée réelle, paiement ou migration distante ;
+aucun déploiement manuel. La lecture vendeur réelle n'est pas déduite du stub.
+
+Validation locale finale :2 276/2 276 unitaires,61/61 ciblés ;19 cas livraison
+dont14 anciens préservés. Vingt-quatre parcours,24 tentatives, deux workers,
+zéro retry en59,8 s. Quatre403 et six422 sans écriture ; cinq upserts autorisés
+incluent deux sauvegardes, deux effacements et B après vrai refresh RSC dans
+le même document, sans altérer A. Aucun défaut JS, console inattendue, overlay
+ou débordement ; captures360/1280 relues. Types, build, contraste88/88 et lint
+ciblé sans alerte ; lint global sans erreur ni nouvelle alerte (dix existantes
+Windows). Revue indépendante favorable ; contrepreuves et diagnostic CDP
+initial conservés. CI exacte, fusion et sondes seront consignées dans la PR.
+
+La première CI de la tête3bc43eda est officiellement verte, mais comporte
+un flaky ancien du bandeau :444 tests uniques,445 tentatives. Le refus de
+fusion est maintenu. Périmètre de validation étendu au seul fichier existant
+e2e/barre-annonce.spec.ts : lectures CSS ponctuelles remplacées par les
+assertions Playwright qui attendent les mêmes valeurs exactes, sans changer
+composant, CSS, configuration, timeout ou nombre de retries. Une chaîne vide
+est compatible avec un nœud remplacé pendant le montage ; aucune cause produit
+n'est démontrée. Logs initiaux conservés, essais répétés ciblés puis nouvelle
+CI normale sur la tête modifiée avant toute fusion.
+
+Après synchronisation CSS : les cinq cas existants passent chacun trois fois,
+quinze exécutions et tentatives, zéro retry/flaky/échec/ignoré en52,9 s. Les
+huit unités bandeau, types et lint ciblé passent. Le build applicatif reste
+identique ; seule la nouvelle CI doit confirmer la tête supplémentaire.
+
+## Fermeture de compte — identité de l'écran (22 octobre 2026)
+
+Lot autonome sur `fix/fermeture-identite-session`, base `main da18726`, après
+#405, sa CI complète et la santé publique du commit fusionné vérifiées. Le
+suivi du workflow postdéploiement reste archivé séparément ; aucun signal de
+régression. L'inventaire lecture seule des routes, appelants, tables, tests et
+PR place la fermeture du mauvais compte avant le durcissement P2 des quantités.
+
+Objectif : reproduire avec comptes fictifs le véritable écran Compte ouvert
+sous A, cookies devenus B, dialogue confirmé, puis observer le vrai DELETE et
+ses effets Auth/PostgREST. Si confirmé, lier l'action à l'utilisateur affiché
+par la précondition `expectedActorId`, déjà éprouvée pour profil et quartier,
+rendue obligatoire ici pour cette action irréversible. La session vérifiée
+reste seule autorité pour le compte cible.
+
+Préserver les deux branches : suppression Auth si quatre compteurs exacts à
+zéro, sinon fermeture/anonymisation avec reçus et pièces conservés. Maintenir
+les erreurs fiables, protection KYC/comptabilité, ordre de fermeture, purges,
+métadonnées et déconnexion globale. Aucune réauthentification ou règle de
+conservation nouvelle. Aucun contrat externe sans corps n'a été trouvé : les
+anciens écrans sans identité sont refusés avec 400 avant tout effet et doivent
+être rechargés. La revue indépendante écarte la variante facultative, qui
+laisserait le vieux JavaScript exposé au même défaut.
+
+Périmètre : DELETE existant, AccountActions et son unique page appelante,
+tests/backend-account-guards.test.ts et deconnexion.test.ts, parcours
+profil-identite et stub locaux existants, docs/67 et ce journal.
+Aucun nouvel endpoint, table, RPC, migration,
+dépendance ou infrastructure parallèle. Les coordonnées privées restent dans
+un lot distinct. Aucune donnée réelle ni paiement ; aucun déploiement manuel.
+
+Arrêt par lot : cinq tours au plus ; contrepreuves avant correction, vrais
+handler/écran, tests ciblés/globaux, revue indépendante, PR, CI du SHA final,
+fusion normale avec SHA attendu puis sondes publiques en lecture seule.
+
+Un succès réel du premier run corrigé a révélé un renvoi 303 suivi par fetch
+avant la navigation déjà effectuée par le routeur. Le composant ne suivra plus
+ce renvoi ; le vrai POST serveur, révocation et cookies restent exercés. Revue
+indépendante favorable ; les témoins UI devront observer ce POST 303, l'accueil
+et l'absence des cookies Auth. Aucun changement au serveur signout ou à la CSP.
+
+Validation locale finale : 2 271/2 271 unitaires, 59/59 ciblés métier voisins
+et 31/31 compte/déconnexion. Les dix-huit parcours passent en 40,6 s, dix-huit
+tentatives, deux workers, zéro retry : quatre divergences403 et quatre corps
+sans identité400 sans effet, quatre succès UI complets (deux de chaque mode),
+annulation sans DELETE et les onze anciens parcours conservés. Aucun défaut
+JS, console inattendue, overlay ou débordement ; captures360/1280 relues.
+Types, build et contraste88/88 réussis ; lint sans erreur ni nouvelle alerte
+(dix existantes sous Windows), ciblé sans avertissement. Les runs15/18 puis
+16/18 sont conservés ; le dernier écart était le PNG fictif HTTP de l'accueil,
+remplacé par le même PNG dataURI déjà utilisé dans le stub, sans exception CSP.
+Revue indépendante, CI du SHA exact et sondes publiques seront liées dans la PR.
+
+## Demande de quartier — identité du formulaire (22 octobre 2026)
+
+Lot autonome sur `fix/quartier-identite-session`, base `main 8a6cbd5`, après
+#404 et sa CI main verte. Philippe autorise désormais les petits lots successifs
+avec validation technique autonome et fusion après revue/CI, sans attente de
+confirmation ; les données réelles et paiements réels restent exclus.
+
+Objectif : reproduire le vrai formulaire du compte A sous session B, puis
+refuser sa demande avant INSERT avec une précondition facultative
+`expectedActorId`, déjà employée par la sauvegarde du même profil. La propriété
+reste issue de `auth.getUser()`. Préserver succès A/A et B/B, clients anciens,
+RLS, ZB070, anti-doublon et modération humaine existants de la migration0070.
+L'éventuel défaut concerne l'attribution d'une proposition modérée, pas un
+contournement RLS ni une création automatique de quartier.
+
+Périmètre : route vendeur, unique appelant ProfileForm, tests existants et
+observabilité minimale du stub local si nécessaire, docs/67 et ce journal.
+Valider les corps non objets et l'identité sans nouvelle règle de zone ni
+nouvelle traduction. Aucune table, migration, dépendance ou fonction parallèle.
+Arrêt par lot : cinq tours au plus ; vrais handler/formulaire, contrepreuve,
+tests globaux, revue séparée, PR, CI exacte, fusion normale puis sondes publiques.
+Le lot suivant ne sera implémenté qu'après cette clôture ; les pistes de types
+JSON des quantités physiques peuvent être inventoriées en lecture seule.
+
+Validation locale finale : 2 263/2 263 unitaires, sans échec, ignoré ou annulé ;
+50/50 ciblés. Onze parcours profil, onze tentatives, deux workers, zéro retry
+en 43,6 s : quatre refus quartier sans INSERT et trois demandes autorisées,
+puis les six anciens cas profil passent. Aucune erreur JS, console inattendue,
+surcouche framework ou débordement. Types, build et contraste 88/88 réussis ;
+lint sans erreur (dix avertissements existants sous Windows), ciblé sans alerte.
+Contrepreuves avant correction : cinq tests de route rouges et un vrai POST
+200 avec attribution B au lieu du refus403. Revue indépendante sans blocage.
+La CI globale du SHA final et les sondes après fusion seront liées dans la PR.
+
+## Création physique — type JSON des prix (22 octobre 2026)
+
+Petit lot sur `fix/physique-prix-json`, base `main 6477600`, après #403.
+Inventaire : docs/26 §0, docs/67, POST `/api/products/physical`, formulaire,
+tables produit/extension/variantes/stock, tests de route et parcours physiques.
+Les PR ouvertes #385–#387 concernent les dépendances et #402 un skill distinct.
+
+Objectif vérifiable : les prix JSON non numériques du produit et des variantes
+doivent être refusés par les réponses existantes, avant toute INSERT de fiche,
+extension, variante ou stock. Reproduire d'abord le vrai POST avec `true`
+converti en 1 HTG. Une fiche créée reste en brouillon pour revue humaine ;
+aucune vente ni perte réelle n'est déduite du constat de code.
+
+Conserver nombres entiers, minimum 1 HTG, prix sauvegardés, stocks, propriété
+de session et ordre des gardes. Le refus produit conserve Auth, compte et
+cadence ; le refus variante conserve aussi attestation et lecture catégorie.
+Ne pas déplacer ces opérations ni créer de règle de prix parallèle.
+
+Arrêt : PR de validation humaine après contrepreuves, tests réels du handler,
+fichier navigateur existant et CI du SHA final ; cinq tours au plus. Périmètre :
+une route, ses deux fichiers de tests existants, docs/67 et ce journal.
+Quantités, dimensions, compatibilité véhicule, demandes de quartier, prix
+numériques/digitaux et politique d'arrondi restent hors portée. Aucune nouvelle
+route, table, migration, fixture, configuration, dépendance ou traduction.
+Aucune fusion ni action de production, donnée réelle ou paiement réel.
+
+Validation locale : 2 252/2 252 unitaires sans échec, ignoré ou annulé,
+dont huit nouveaux cas ; 46/46 ciblés. Avant correction, trois tests de route
+échouent et les deux vrais POST navigateur obtiennent 200/prix 1 HTG en draft.
+Après correction, 12/12 parcours passent en 50,4 s à deux workers sans retry :
+18 refus sans INSERT et six témoins numériques, puis neuf anciens parcours.
+Types, build et contraste 88/88 réussis ; lint sans erreur ni nouvelle alerte
+(dix existantes sous Windows), lint ciblé sans avertissement. Relectures
+indépendantes sans blocage. Le premier typecheck a eu TS6053 sur `.next/types`
+pendant un build concurrent ; le contrôle séquentiel après génération passe,
+sans modification du code ou de la configuration. Le journal initial reste
+conservé ; la CI globale exacte du SHA final est à consigner dans la PR.
+
+## Création numérique — type du prix JSON (21 octobre 2026)
+
+Petit lot sur `fix/creation-prix-json`, base `main 9574764`, après #401.
+Inventaire : `docs/26` §0, `docs/67`, POST `/api/products`, helper partagé
+`creerBrouillonProduit`, soumission Studio, formulaires et tables existants,
+tests d'extraction et de mise en ligne. Les clients inventoriés envoient un
+nombre JSON ; aucune exigence de chaîne numérique. #402 ajoute un skill
+distinct ; les autres PR ouvertes sont les dépendances #385–#387.
+
+P1 de validation monétaire reproduit localement avec le vrai POST et le vrai
+helper : `false`, `null` ou `[]` deviennent zéro via `Number(priceHTG)` et
+créent une fiche à zéro HTG. La fiche reste en brouillon pour revue humaine ;
+aucune mise en vente ou perte réelle n'est déduite de cette contrepreuve.
+
+Objectif : exiger un prix JSON de type nombre avant normalisation de catégorie,
+attestation, cadence, promotion du profil et INSERT. Conserver exactement le
+gratuit numérique explicite, les arrondis numériques et la borne integer
+après arrondi. Réutiliser le helper commun ; ne pas ajouter une seconde règle
+dans la route ni un nouveau moteur de prix. Physique, stocks, délai de service
+et proposition de quartier restent hors portée.
+
+Arrêt : PR de validation humaine après contrepreuves, tests du vrai helper,
+parcours navigateur existants et CI du SHA final ; cinq tours de correction
+au plus. Aucune nouvelle route, table, migration, dépendance ou traduction.
+L'autorisation de fusion #401 ne concerne que cette PR ; aucune fusion,
+production, donnée métier réelle ou paiement réel dans le présent lot.
+
+Validation locale : 2 244/2 244 unitaires sans échec, ignoré ou annulé,
+dont dix nouveaux tests du vrai helper ; 31/31 ciblés. Le fichier navigateur
+complet passe : six tests, six tentatives, un worker, aucun retry, en 27,6 s.
+Les douze POST invalides ne créent aucune fiche ; les six témoins numériques
+conservent gratuité, arrondi et borne, et les trois parcours antérieurs passent.
+Avant correction, le vrai POST accepte `false` et crée un brouillon à zéro ;
+six tests unitaires ajoutés échouent comme attendu. Types, build et contraste
+88/88 réussis ; lint sans erreur ni nouvelle alerte (dix existantes sous
+Windows), lint ciblé sans avertissement. Relectures indépendantes runtime,
+tests et documentation sans blocage. CI exacte du SHA final à porter dans la PR.
+
+## Profil public — identité du formulaire (21 octobre 2026)
+
+Petit lot sur `fix/profil-identite-session`, base `main d9b8e52`, après #400.
+Inventaire : `docs/26` §0 et `docs/67`, unique appelant Ma boutique,
+`ProfileForm`, POST `/api/profile`, `profiles`, attribution de slug et
+géographie existantes, tests de profils/zones/slug et PR ouvertes. Seules
+#385–#387 de dépendances sont ouvertes ; aucun correctif profil équivalent.
+
+P1 reproduit localement : formulaire initial du compte A, session vérifiée B,
+POST200 puis UPDATE du profil B et attribution de slug B avec les champs A.
+Le filtre RLS sur l'utilisateur de session est conservé ; le défaut concerne
+l'intention du formulaire après changement de compte, pas un contournement RLS.
+
+Objectif vérifiable : envoyer `expectedActorId` depuis le compte de la page,
+remonter le formulaire par identité et refuser un compte différent avant toute
+UPDATE ou attribution de slug. Précondition facultative pour conserver les
+anciens clients ; UUID validé avec `UUID_RE`, refus avec les traductions
+existantes, propriété toujours issue de `auth.getUser()`.
+
+Arrêt : PR de validation humaine, cinq tours de correction au plus. Tests
+réels du handler avec E/S doublées, contrepreuve avant/après, parcours
+navigateur mobile/desktop et suites existantes. Garder validations de nom,
+géographie et slug best-effort. Aucun brouillon, nouvelle route, objet SQL,
+migration ou dépendance. La proposition de zone du même composant reste hors
+de ce lot ; aucune extension aux autres formulaires.
+
+Aucune fusion ni mise en production dans ce lot, aucun accès aux données
+réelles ni paiement réel. L'autorisation de fusion #400 concernait cette PR.
+
+Validation locale : 2 234/2 234 unitaires sans échec/ignoré/annulé, dont 15
+nouveaux cas du vrai handler ; 52/52 ciblés avec profils/zones/slug existants.
+Types et build final réussis, contraste 88/88, lint sans erreur ni nouvel
+avertissement (10 existants sous Windows), lint ciblé sans avertissement.
+Les six parcours navigateur passent sur build final restauré : 29,3 s,
+deux workers, zéro retry ; refus traduit FR/HT/EN/ES à 360 px sans UPDATE ni
+slug, profils A/B inchangés, succès A/A et B/B, client ancien à 1 280 px et
+remontage après vrai refresh SSR dans le même document.
+
+Contrepreuves : avant correction, 11/15 nouveaux tests passent et le vrai
+POST navigateur obtient 200 en écrasant B avec les champs A ; retirer ensuite
+seulement la clé de remontage laisse les champs A après le refresh B et fait
+échouer le test dédié. Clé restaurée et empreintes des trois sources runtime
+identiques à celles des 2 234 unitaires avant reconstruction finale. Relectures
+indépendantes runtime/harnais sans blocage. CI du SHA final à porter dans la PR.
+
+## Rabais — validation des prix JSON (21 octobre 2026)
+
+Lot sur `fix/rabais-prix-json`, depuis `main` `762b496`, après lecture de
+`docs/26` §0, `docs/67`, de la route, de son appelant, des quatre RPC et des
+tests existants. À l'inventaire, seules #385–#387 de dépendances restent
+ouvertes ; aucun lot de rabais équivalent. #399 est fusionnée et en ligne.
+
+P1 reproduit avec le vrai handler et des E/S simulées : `true`, `[1]` et
+`[[1]]` deviennent le nombre 1 via `Number(newPriceHTG)` ; les chemins produit
+et variante appellent leur RPC avec un prix de 1 HTG. La propriété reste
+contrôlée en SQL, mais la forme JSON invalide a déjà été perdue. Le gestionnaire
+vendeur existant envoie un nombre JSON ; aucun contrat inventorié ne réclame
+une chaîne numérique.
+
+Objectif : exiger un nombre entier positif dans la capacité existante,
+valider le corps objet et les UUID avant le client métier et les RPC. Garder
+Auth et les contrôles de compte prioritaires, les quatre RPC, les prix barrés,
+la baisse stricte, les refus de flash et les réponses métier existantes.
+Réutiliser `UUID_RE` ; aucune nouvelle couche de tarification, interface,
+table, migration, dépendance ou route applicative.
+
+Validation visée : contrepreuve rouge avant le correctif, tests du vrai
+handler avec absence de RPC sur refus et témoins valides produit/variante,
+parcours navigateur rabais existants, suite unitaire, build et CI du SHA final.
+Les preuves utilisent des E/S locales simulées ; les règles SQL sont celles
+des migrations existantes et de leurs tests isolés.
+
+Validation locale ciblée : 27/27 cas passent (18 nouveaux du vrai handler,
+quatre rabais existants et cinq cliquet i18n). Les quatre E2E rabais passent
+sans retry, dont le nouveau refus HTTP avec lecture du prix inchangé et les
+trois parcours existants à 390/1 280 px. Avant correction, ce même test
+constatait HTTP 200 et une variante passée de 2 000 à 1 HTG. Compilation avec
+TypeScript et 88 paires de contraste réussies ; lint sans erreur ni nouvel
+avertissement (10 préexistants sous Windows). Relecture indépendante sans
+blocage. Les suites unitaires et CI globales du SHA final sont portées dans
+la PR. Arrêt visé : PR prête à relire après validation, cinq tours de
+correction au plus ; aucun élargissement aux autres formulaires.
+
+La première CI passe build/SQL mais échoue dans le helper d'attente du
+parcours physique antérieur, avant la configuration rabais. Une sonde DOM
+déterministe reproduit la course : après une lecture d'alerte négative,
+l'hydratation retire le champ ; son `isEditable` attend alors ce champ et
+bloque la relecture de l'alerte désormais visible. Le helper utilise une
+union de locators dans une seule attente, avec titre activé et non readonly.
+Même délai et mêmes assertions métier, sans retry ajouté ni changement du
+formulaire. Les témoins et les neuf cas physiques doivent être revérifiés
+avant la nouvelle CI du SHA final.
+
+Validation de cette stabilisation : la sonde refuse toujours les états
+désactivé et readonly ; les neuf parcours physiques passent en 38,3 s,
+deux workers et zéro retry. Types, lint ciblé et 29 cas ciblés (rabais,
+cliquet i18n et harnais existant) passent aussi. Le runtime et le build
+applicatif sont inchangés ; seule la CI du nouveau SHA reste requise.
+
+PR de validation humaine uniquement : aucune fusion, mise en production,
+migration de production, donnée réelle ou paiement. L'autorisation de fusion
+#399 était spécifique à cette PR. Résultats définitifs à porter dans la PR.
+
+## Création physique — réponse perdue (21 octobre 2026)
+
+Lot sur `fix/physique-reprise-creation`, depuis `main` `a5a5001`, après
+inventaire de `docs/26`, `docs/67`, des fonctions, routes, tables, tests et PR.
+Seules les PR de dépendances #385–#387 sont ouvertes ; aucun lot physique
+équivalent en attente. La création physique et le retry de photo existent.
+
+P1 confirmé : le POST peut créer la fiche, puis sa réponse se perdre. Sans
+identifiant confirmé côté formulaire, le clic suivant crée une seconde fiche.
+Objectif : marquer l'envoi avant le POST, bloquer une nouvelle création après
+réponse indécidable et rechargement, permettre la vérification de Mes produits
+puis un acquittement explicite avec nouvelle attestation. Ce marqueur ne
+prétend pas apporter une idempotence SQL ni une coordination entre onglets.
+
+Réutiliser `useSessionDraft`, le marqueur `publishReviewKey` et ses traductions,
+la création `draft`, les variantes/stock/compatibilités et `retryPhoto` sur
+l'identifiant confirmé. Aucun brouillon de champs physiques ou de photo,
+nouvelle route, table, migration, dépendance ou couche de support.
+
+Garde d'identité facultative `expectedActorId` dans le POST existant : après
+authentification et suspension/acceptation légale, avant les effets métier
+de création (client métier, cadence, attestation, lecture produit, INSERT).
+Les lectures internes de contrôle du compte restent prioritaires. Les anciens
+clients sans précondition restent compatibles, l'auteur vient de la session.
+
+Seuls les refus 400/401/403/429, avant INSERT dans cette route, libèrent la
+création. Un 422 peut venir du fitment après INSERT et compensation non
+confirmée : il demeure indécidable, comme les 5xx, erreurs réseau et succès
+mal formés. Préserver le retry de photo et ignorer les callbacks après démontage.
+
+Arrêt visé : tests positifs/négatifs, contrepreuve avant/après, compilation,
+relecture indépendante et CI verte sur une PR de validation humaine. Bilan
+après cinq tours de correction au plus. L'autorisation de fusion #398 était
+spécifique : aucune fusion, mise en production, action sur les données réelles
+ou paiement dans ce nouveau lot. Résultats définitifs à porter dans la PR.
+
+Validation locale : 2 201 tests unitaires passants, dont les 10 nouveaux cas
+du vrai handler ; 42 cas ciblés physiques et 13 du pipeline image revérifiés.
+Compilation TypeScript réussie, lint sans erreur ni nouvel avertissement
+(10 préexistants sous Windows), 88 paires de contraste conformes. Les neuf
+nouveaux scénarios navigateur passent avec les trois parcours vendeurs par
+type et les dix parcours de confiance existants, deux workers, zéro retry
+(22/22). Les deux mocks de succès photo existants portent le contrat complet
+de la vraie API (`ok`, `productId`, `slug`) ; leurs assertions sont conservées.
+Le POST réellement terminé
+et perdu ne laisse qu'un produit après rechargement, contre deux avant.
+Relectures croisées runtime/tests sans blocage ; la fixture est isolée des
+anciens comptes et des réessais. Les preuves utilisent Auth/REST/Storage
+simulés et ne remplacent pas les tests SQL existants. CI finale du SHA dans
+la PR avant mise en relecture, aucune fusion dans ce lot.
+
+## Support — identité du formulaire (21 octobre 2026)
+
+Lot sur `fix/support-identite-formulaire`, depuis `main` `e9812ac`, après
+inventaire de `docs/26`, `docs/67`, des formulaires, des routes, des RPC et des
+tests existants. Seules les PR de dépendances #385–#387 étaient ouvertes ;
+aucun lot de support équivalent n'était en attente.
+
+Objectif vérifiable : un formulaire affiché pour A, envoyé après passage de la
+session à B pourtant participant légitime ou administrateur, est refusé avant
+tout client privilégié, limiteur, audit ou mutation de support. Le texte privé
+reste dans le brouillon de A. Les appels correspondant à la session et les
+anciens clients omettant la précondition continuent de fonctionner.
+
+Le lot étend les deux schémas, les deux routes et le formulaire existants ;
+son montage est isolé par acteur, commande et mode. L'authentification, la
+participation à la commande, le contrôle admin/MFA et l'idempotence SQL de
+`0113` restent les sources d'autorité. La clé de stockage et les requestId
+sont conservés ; aucune seconde couche d'authentification ou de support.
+
+Périmètre : cinq fichiers runtime, tests ciblés et navigateur, documentation.
+Arrêt visé : validations vertes et PR de relecture humaine, avec bilan après
+cinq tours de correction au plus. Aucune fusion, migration, modification
+d'environnement, donnée de production ou paiement réel dans ce lot.
+Contrepreuves sur le build de `e9812ac` : HTTP 200 et texte de A enregistré
+sous B pour un participant et un administrateur ; après une navigation React,
+une ancienne réponse efface aussi le nouveau brouillon de la même commande.
+Les tests exécutent le vrai composant et les handlers avec Auth/REST/RPC
+simulés en boucle locale. La réponse tardive retient seulement la résolution
+JavaScript après la fin de la requête réseau, afin de vérifier le démontage.
+Les résultats définitifs et les limites de ces preuves sont consignés dans
+la PR ; son SHA reste la référence pour la validation globale.
+
+Validation locale : 2 191 tests unitaires passants, puis 19 cas de routes
+support revérifiés sur leur état final ; compilation avec TypeScript réussie,
+lint sans erreur ni nouvel avertissement (10 avertissements préexistants sous
+Windows), 88 paires de contraste conformes. Les 11 parcours support passent
+sans retry, dont les cinq changements de compte en FR/HT/EN/ES à 360 px ou
+en administration à 1 280 px, le rejeu et la réponse tardive. Relecture
+indépendante du runtime et des tests sans blocage. La CI globale reste à
+contrôler sur le commit de la PR avant sa mise en relecture.
+
+## Pixels vendeur — refus des requêtes invalides (20 octobre 2026)
+
+Lot proposé sur `fix/pixels-corps-invalide`, depuis `main` `68c191e`, après
+lecture de `docs/26`, `docs/67` et des cinq PR ouvertes : aucun chevauchement
+avec #390 (inscription/médias), #391 (litiges Stripe) ou #385–#387 (dépendances).
+`PUT /api/account/pixels` transformait un JSON illisible, un tableau ou un
+identifiant numérique en trois pixels nuls, puis annonçait un succès.
+La route refuse désormais ces entrées avant tout upsert : 400 si JSON illisible,
+422 si forme ou type invalide, avec les messages déjà traduits. L'enregistrement
+valide, l'effacement volontaire par chaîne vide et la sémantique existante des
+champs omis (remis à null dans ce PUT de remplacement) sont conservés.
+
+`tests/pixels-route.test.ts` exécute la vraie route avec E/S simulées, contrôle
+l'absence d'écriture sur refus et conserve les cas positifs, les gardes de compte
+et le client de session. Réutilisation de `idValide`, des trois contraintes et de
+la RLS de `0123` ; aucun nouveau compteur, objet SQL, route ou formulaire.
+PR de validation humaine uniquement : aucun merge, déploiement, accès aux données
+de production ou paiement réel. Les résultats de CI seront portés dans la PR.
+
 ## Création éditoriale (Zabelie Studio) — décisions (15 octobre 2026)
 
 Lot 0 fait, en lecture seule : `docs/70-CHANTIER-CREATION-EDITORIALE.md`

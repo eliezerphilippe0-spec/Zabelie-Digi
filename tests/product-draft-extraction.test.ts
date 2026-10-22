@@ -42,6 +42,7 @@ test("E1 — les deux routes appellent les fonctions partagées", () => {
 type Scenario = { rpcErreur?: { code?: string; message?: string } | null; limiteOk?: boolean; profilExiste?: boolean; insertErreur?: { code: string; message: string } };
 
 function brouillon(s: Scenario = {}) {
+  const events: string[] = [];
   const ecritures: Query[] = [];
   const rpcs: [string, unknown][] = [];
   const db = database((q) => {
@@ -54,17 +55,19 @@ function brouillon(s: Scenario = {}) {
   });
   const admin = {
     ...db,
-    async rpc(nom: string, args: unknown) { rpcs.push([nom, args]); return { error: s.rpcErreur ?? null }; },
+    async rpc(nom: string, args: unknown) { events.push("rpc:" + nom); rpcs.push([nom, args]); return { error: s.rpcErreur ?? null }; },
   };
   const mod = loadRoute("lib/product-draft.ts", {
     "@/lib/product-categories": {
-      normalizeCategory: async (_s: unknown, c: unknown) => (c === "edikasyon" ? "Éducation" : null),
-      normalizeSousRayon: async (_s: unknown, id: unknown) =>
-        id === undefined || id === null ? { ok: true, id: null } : id === SOUS_RAYON ? { ok: true, id } : { ok: false },
+      normalizeCategory: async (_s: unknown, c: unknown) => { events.push("category"); return c === "edikasyon" ? "Éducation" : null; },
+      normalizeSousRayon: async (_s: unknown, id: unknown) => {
+        events.push("subcategory");
+        return id === undefined || id === null ? { ok: true, id: null } : id === SOUS_RAYON ? { ok: true, id } : { ok: false };
+      },
     },
     "@/lib/product-kind": productKind,
-    "@/lib/zabelie-rate-limit": { rateLimit: async () => s.limiteOk !== false },
-    "@/lib/supabase/admin": { createAdminClient: () => admin },
+    "@/lib/zabelie-rate-limit": { rateLimit: async () => { events.push("rate"); return s.limiteOk !== false; } },
+    "@/lib/supabase/admin": { createAdminClient: () => { events.push("admin"); return admin; } },
     "@/lib/payment-utils": { slugify: () => "gid-vann-manje" },
     "@/lib/geo/country-backfill": { backfillCountry: async () => undefined, countryFromRequest: () => null },
     "@/lib/policy": { POLICY_VERSION: "produits-interdits-v4" },
@@ -72,7 +75,7 @@ function brouillon(s: Scenario = {}) {
   });
   const appeler = (body: Record<string, unknown>, lienProjet?: string) =>
     mod.creerBrouillonProduit({ req: new Request("http://x/api/products"), lang: "fr", supabase: {}, user: { id: MOI, email: "vande@example.ht" }, body, lienProjet }) as Promise<unknown>;
-  return { appeler, queries: db.queries, rpcs, ecritures };
+  return { appeler, queries: db.queries, rpcs, ecritures, events };
 }
 
 const BASE = { title: "Gid vann manje", description: "Yon gid", kind: productKind.KIND_FILE, category: "edikasyon", priceHTG: 750.4, policyAccepted: true };
@@ -180,17 +183,74 @@ test("E6 — « Soumettre à la revue » : le lien vers le projet, et lui seul e
   const doublon = { code: "23505", message: "duplicate key value violates unique constraint" };
   let r = await refus(await brouillon({ insertErreur: doublon }).appeler(BASE, PROJET));
   assert.deepEqual(r, { status: 409, corps: { error: "authoring.soumission.dejaSoumis", code: "authoring_deja_soumis" } });
-  // Hors soumission, la même erreur garde l'ancienne réponse.
+  // Hors soumission, le détail SQL reste privé.
   r = await refus(await brouillon({ insertErreur: doublon }).appeler(BASE));
-  assert.deepEqual(r, { status: 500, corps: { error: doublon.message } });
+  assert.deepEqual(r, { status: 500, corps: { error: "api.unavailable" } });
 });
+
+test("prix : la capacité integer est vérifiée avant toute écriture, sans nouveau plafond commercial", async () => {
+  for (const priceHTG of [2147483647.5, 2147483648, Number.MAX_SAFE_INTEGER]) {
+    const b = brouillon();
+    const r = await refus(await b.appeler({ ...BASE, priceHTG }));
+    assert.equal(r.status, 400);
+    assert.deepEqual(r.corps, { error: "api.price.invalid" });
+    assert.equal(b.rpcs.length, 0);
+    assert.equal(b.queries.length, 0);
+  }
+  for (const priceHTG of [0, 2147483647.4]) {
+    const b = brouillon();
+    const r = await b.appeler({ ...BASE, priceHTG });
+    assert.ok(!(r instanceof Response));
+    const insertion = b.queries.find((q) => q.table === "products")!;
+    const ligne = (insertion.steps[0][1] as Record<string, unknown>[])[0];
+    assert.equal(ligne.price_htg, Math.round(priceHTG));
+  }
+});
+
+for (const kind of [productKind.KIND_FILE, productKind.KIND_SERVICE]) {
+  for (const [label, prices] of [
+    ["valeurs vides ou fausses", [null, false, "", " ", []]],
+    ["booléen et tableaux coercibles", [true, [0], [1], [[1]]]],
+    ["chaînes numériques", ["0", "1", "750.4", "1e3", "0x10"]],
+    ["prix absents, objets ou non finis", [undefined, {}, { price: 0 }, NaN, Infinity, -Infinity]],
+  ] as const) {
+    test(`prix JSON ${kind} : ${label}, refus avant toute E/S métier`, async () => {
+      for (const priceHTG of prices) {
+        const b = brouillon();
+        const r = await refus(await b.appeler({ ...BASE, kind, priceHTG }));
+        assert.equal(r.status, 400);
+        assert.deepEqual(r.corps, { error: "api.price.invalid" });
+        assert.deepEqual(b.events, [], "aucune catégorie, attestation, cadence ou création de client métier");
+        assert.equal(b.queries.length, 0, "aucun profil ni produit lu ou écrit");
+        assert.equal(b.rpcs.length, 0);
+      }
+    });
+  }
+
+  test(`prix JSON ${kind} : gratuit, arrondi et borne existants sont conservés`, async () => {
+    for (const priceHTG of [0, 1, 0.4, 0.5, 750.4, 750.5, 2147483647.4]) {
+      const b = brouillon();
+      const r = await b.appeler({ ...BASE, kind, priceHTG });
+      assert.ok(!(r instanceof Response));
+      const insertions = b.queries.filter(q => q.table === "products" && q.steps.some(([method]) => method === "insert"));
+      assert.equal(insertions.length, 1);
+      const product = v(insertions[0].steps.find(([method]) => method === "insert")![1][0]);
+      assert.equal(product.price_htg, Math.round(priceHTG));
+      assert.equal(product.status, "draft");
+      assert.equal(product.seller_id, MOI);
+      assert.equal(product.kind, kind);
+      assert.equal(b.rpcs.length, 1, "l'attestation reste enregistrée une seule fois");
+      assert.deepEqual(b.events, ["category", "subcategory", "admin", "rpc:zabelie_record_policy_acceptance", "rate"]);
+    }
+  });
+}
 
 test("E5 — la confirmation d'un livrable rend les mêmes réponses", async () => {
   const nom = "liv-00000000-0000-4000-8000-000000000001.pdf";
   const hors = livrable({ name: nom, metadata: { size: 10 } });
   let r = await hors.appeler(`${MOI}/autre/liv-00000000-0000-4000-8000-000000000001.pdf`);
   assert.equal(r.status, 400);
-  assert.deepEqual(await r.json(), { error: "Chemin invalide" });
+  assert.deepEqual(await r.json(), { error: "api.params.invalid" });
 
   r = await livrable(null).appeler();
   assert.equal(r.status, 404);

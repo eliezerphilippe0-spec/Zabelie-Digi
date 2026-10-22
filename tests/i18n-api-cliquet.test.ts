@@ -88,6 +88,8 @@ const CONVERTIES = [
   // Sa création de brouillon, extraite telle quelle (tâche 5.1 du Studio) : convertie elle aussi.
   "lib/product-draft.ts",
   "app/api/checkout/route.ts",
+  // Coordonnées privées de remise — validation traduite, 20 octobre 2026.
+  "app/api/delivery-info/route.ts",
   "app/api/admin/product-status/route.ts",
   // Administration — lot du 2026-08-22.
   "app/api/admin/coherence/route.ts",

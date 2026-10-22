@@ -38,6 +38,11 @@ import { exigeNumero, operateurDuRayon } from "@/lib/rechaj";
 import { lireAgeMinimum } from "@/lib/age-minimum";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AddToCart } from "@/components/add-to-cart";
+import { EssayageBouton } from "@/components/essayage-bouton";
+import { boutonEssayage } from "@/lib/essayage/fiche";
+import { baseEssayage } from "@/lib/essayage/base";
+import { lireEnvEssayage } from "@/lib/essayage/flags";
+import { libellesEssayage } from "@/lib/essayage/libelles";
 import { getPhysicalView } from "@/lib/products-physical";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
@@ -262,6 +267,12 @@ export default async function ProductPage({
     ? (await (await createClient()).auth.getUser()).data.user
     : null;
   const estVendeur = visiteur?.id === product.creatorId;
+  /* Essayage virtuel (docs/74, tâche 4.3) : interrupteur, visiteur connecté
+   * qui n'est pas le vendeur, fiche éligible en base ; l'exposition est notée
+   * dans les deux groupes, le bouton ne s'affiche que pour le groupe « essai ». */
+  const essayage = isSupabaseConfigured()
+    ? await boutonEssayage({ env: lireEnvEssayage(), base: () => baseEssayage(createAdminClient()) }, product, visiteur?.id)
+    : false;
   // Badge « Identité vérifiée » (0138) : vide sur toute erreur, jamais inventé.
   const identiteVerifiee = product.creatorId ? (await identitesVerifiees([product.creatorId])).has(product.creatorId) : false;
   // Pixels publicitaires du vendeur (0123) : chargés seulement après consentement.
@@ -295,6 +306,15 @@ export default async function ProductPage({
     prixHtg: flash ? flash.prixFlashHtg : product.priceHTG,
     disponible: physical ? physical.variants.some((v) => v.available > 0) : null,
   });
+
+  const libellesPanier = {
+    add: t(lang, "cart.add"),
+    adding: t(lang, "cart.adding"),
+    added: t(lang, "cart.added"),
+    seeCart: t(lang, "cart.see"),
+    signin: t(lang, "nav.login"),
+    error: t(lang, "error.generic"),
+  };
 
   return (
     <div className="bg-grain min-h-dvh">
@@ -690,17 +710,8 @@ export default async function ProductPage({
               {/* Le panier ne remplace pas l'achat direct : il ajoute le cas
                   « je prends plusieurs choses ». Bouton secondaire, sous le
                   primaire — la hiérarchie dit le chemin recommandé. */}
-              <AddToCart
-                productId={product.id}
-                labels={{
-                  add: t(lang, "cart.add"),
-                  adding: t(lang, "cart.adding"),
-                  added: t(lang, "cart.added"),
-                  seeCart: t(lang, "cart.see"),
-                  signin: t(lang, "nav.login"),
-                  error: t(lang, "error.generic"),
-                }}
-              />
+              <AddToCart productId={product.id} labels={libellesPanier} />
+              {essayage && <EssayageBouton produitId={product.id} labels={libellesEssayage(lang, product.title)} panier={libellesPanier} />}
             </div>
             {/* Mention de livraison — dépend du type. Elle était affichée
                 inconditionnellement (« Livraison instantanée après
@@ -755,7 +766,7 @@ export default async function ProductPage({
               la question vient quand l'acheteur hésite encore, pas quand il
               a déjà décidé de transmettre la fiche. */}
           {product.creatorId && (
-            <div id="contacter-vendeur" className="mt-6 scroll-mt-24 rounded-2xl border border-line bg-surface/40 p-4">
+            <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-4">
               <h2 className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</h2>
               {peutEcrire ? (
                 <MessageForm

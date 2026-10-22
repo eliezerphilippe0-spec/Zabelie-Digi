@@ -432,7 +432,7 @@ export default async function AdminPage({
       </section>
 
       {/* Comptes d'essai (0101) — la marque qui sépare vos tests du public */}
-      <section id="essai" className="mt-10 scroll-mt-24">
+      <section id="essai" className="mt-10 scroll-mt-32">
         <h2 className="text-lg font-semibold">Comptes d&apos;essai</h2>
         <p className="mt-1 text-xs text-mist">
           Un compte marqué <strong>publie, achète et remet normalement</strong> —
@@ -461,7 +461,7 @@ export default async function AdminPage({
       </section>
 
       {/* Modération produits */}
-      <section id="produits" className="mt-10 scroll-mt-24">
+      <section id="produits" className="mt-10 scroll-mt-32">
         <h2 className="text-lg font-semibold">Modération des produits</h2>
         {digitalReadError && <p role="alert" className="mt-3 text-sm text-danger-text">{t("fr", "error.generic")}</p>}
         {products.length === 0 ? (
@@ -495,7 +495,7 @@ export default async function AdminPage({
       </section>
 
       {/* Commandes : remboursement + litiges */}
-      <section id="commandes" className="mt-10 scroll-mt-24">
+      <section id="commandes" className="mt-10 scroll-mt-32">
         <h2 className="text-lg font-semibold">Commandes</h2>
         <p className="mt-1 text-xs text-mist">
           Rembourser annule l&apos;escrow (avant maturité : aucun solde fantôme).
@@ -569,7 +569,7 @@ export default async function AdminPage({
 
       {/* Virements Zelle en attente de confirmation manuelle */}
       {zelleQueue.length > 0 && (
-        <section id="zelle" className="mt-10 scroll-mt-24">
+        <section id="zelle" className="mt-10 scroll-mt-32">
           <h2 className="text-lg font-semibold">Paiements Zelle à confirmer</h2>
           <p className="mt-1 text-xs text-mist">
             Vérifiez le relevé bancaire (montant exact + mémo) avant de
@@ -621,7 +621,7 @@ export default async function AdminPage({
 
       {/* Recharges téléphoniques : Zelle à confirmer + remboursements (checkpoint humain) */}
       {topupQueue.length > 0 && (
-        <section id="rechaj" className="mt-10 scroll-mt-24">
+        <section id="rechaj" className="mt-10 scroll-mt-32">
           <h2 className="text-lg font-semibold">Recharges — actions requises</h2>
           <p className="mt-1 text-xs text-mist">
             Zelle : vérifier le relevé (montant exact + mémo) avant de confirmer

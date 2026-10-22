@@ -421,7 +421,7 @@ export default async function DashboardPage({
   );
   const actions: { cle: string; href: string; texte: string; icone: NomIcone }[] = [
     { cle: "physique", href: "/vendre/physique", texte: t(lang, "sell.physical.cta"), icone: "produits" },
-    { cle: "numerique", href: "/vendre", texte: t(lang, "seller.new"), icone: "nouveau" },
+    { cle: "numerique", href: "/vendre#nouveau", texte: t(lang, "seller.new"), icone: "nouveau" },
     // Les codes promo ne s'appliquent qu'à des produits : sans produit, l'action n'a pas d'objet.
     ...(products.length > 0
       ? [{ cle: "promo", href: "/tableau-de-bord/codes-promo", texte: t(lang, "vendeur.action.promo"), icone: "promo" as const }]
@@ -490,7 +490,7 @@ export default async function DashboardPage({
       {/* L'ARGENT, masquable comme sur Chariow (même préférence de navigateur
           que le Studio). Chaque valeur garde sa place et son accent ; son
           double « ••••• » ne s'affiche que zone masquée. */}
-      <section id="argent" aria-labelledby="chiffres-titre" className="mt-8 scroll-mt-28">
+      <section id="argent" aria-labelledby="chiffres-titre" className="mt-8 scroll-mt-32">
         <MontantsMasquables titre={t(lang, "vendeur.argent")} masquer={t(lang, "vendeur.masquer")} classeTitre="titre-section">
           {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
               largeur, et SEULE à porter le dégradé de la marque. */}
@@ -560,7 +560,7 @@ export default async function DashboardPage({
       {vendNumerique && <DigitalSellerMetrics sellerId={user.id} lang={lang}/>}
 
       {/* Ventes récentes */}
-      <section id="ventes" className="mt-10 scroll-mt-24">
+      <section id="ventes" className="mt-10 scroll-mt-32">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="titre-section">{t(lang, "dashboard.sales.recent")}</h2>
           {/* Le compte RÉEL, pas la longueur de la page. Sans lui, « 8 » est
@@ -648,7 +648,7 @@ export default async function DashboardPage({
       </section>
 
       {/* Mes produits */}
-      <section id="produits" className="mt-10 scroll-mt-24">
+      <section id="produits" className="mt-10 scroll-mt-32">
         <div className="flex items-center justify-between">
           <h2 className="titre-section">{t(lang, "vendeur.produits.titre")}</h2>
           <Link

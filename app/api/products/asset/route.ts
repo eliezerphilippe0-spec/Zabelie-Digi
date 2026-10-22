@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
   }
 
   // Compte suspendu (modération) : action bloquée même si la session est
@@ -80,13 +80,13 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Corps JSON requis" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
 
   const productId = typeof body.productId === "string" ? body.productId : "";
   const step = body.step === "demande" || body.step === "confirme" ? body.step : null;
   if (!UUID_RE.test(productId) || !step) {
-    return NextResponse.json({ error: "productId et step requis" }, { status: 400 });
+    return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
   }
 
   // Nom d'affichage : c'est lui que l'acheteur verra à l'enregistrement. Il ne
@@ -96,8 +96,7 @@ export async function POST(req: Request) {
   if (!safeName || safeName.length > 200 || !ALLOWED_EXTENSIONS.has(ext)) {
     return NextResponse.json(
       {
-        error:
-          "Type de fichier non autorisé. Formats acceptés : documents (PDF, Office, ePub), audio, vidéo, images/design, archives (ZIP, RAR, 7z).",
+        error: t(lang, "api.file.type"),
       },
       { status: 422 }
     );
@@ -112,7 +111,7 @@ export async function POST(req: Request) {
     .eq("id", productId)
     .single();
   if (prodErr || !product || product.seller_id !== user.id) {
-    return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
+    return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
 
   if (!isDownloadable(product.kind) || product.status !== "draft") {
@@ -135,7 +134,7 @@ export async function POST(req: Request) {
       .from(BUCKET)
       .createSignedUploadUrl(path);
     if (error || !data) {
-      return NextResponse.json({ error: "Lien d'envoi indisponible" }, { status: 502 });
+      return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
     }
     return NextResponse.json({ ok: true, path: data.path, token: data.token });
   }

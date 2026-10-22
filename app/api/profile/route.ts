@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { checkDisplayName } from "@/lib/display-name";
 import { attribuerSlug } from "@/lib/boutik-slug-attribution";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { UUID_RE } from "@/lib/collections";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +23,7 @@ export async function POST(req: Request) {
   }
 
   let body: {
+    expectedActorId?: unknown;
     display_name?: string;
     bio?: string;
     avatar_url?: string;
@@ -33,6 +36,18 @@ export async function POST(req: Request) {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+  }
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return erreurTraduite("api.params.invalid", 400);
+  }
+  // Précondition du formulaire, jamais une source d'identité ou de propriété.
+  // Les anciens clients restent compatibles ; Auth précède toute lecture du corps.
+  if (body.expectedActorId !== undefined) {
+    if (typeof body.expectedActorId !== "string" || !UUID_RE.test(body.expectedActorId)) {
+      return erreurTraduite("api.params.invalid", 400);
+    }
+    if (body.expectedActorId !== user.id) return erreurTraduite("api.auth.required", 403);
   }
 
   // La base remplacerait silencieusement un nom refusé (0045) — ici on le dit.

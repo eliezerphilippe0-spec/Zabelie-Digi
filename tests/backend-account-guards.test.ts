@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { readSuspension, AccountStatusUnavailable } from "../lib/account-suspension";
 import { loadRoute, database } from "./helpers/route-harness";
+import { UUID_RE } from "../lib/collections";
+import { LANGS, t, type Lang } from "../lib/i18n";
 
 function moderationFixture(options: { closed?: boolean; readError?: boolean; writeError?: string } = {}) {
   const effects: string[] = [];
@@ -117,17 +119,27 @@ test("checkout rejects suspended sellers and unavailable seller status before in
   }
 });
 
-function accountFixture(options: { count?: number | null; kyc?: number | null; acceptances?: number | null; acceptanceError?: boolean; kycError?: boolean; kycCloseError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number } = {}) {
+const ACCOUNT_A = "11300000-0000-4000-8000-000000000001";
+const ACCOUNT_B = "11300000-0000-4000-8000-000000000002";
+
+function accountFixture(options: { count?: number | null; kyc?: number | null; acceptances?: number | null; acceptanceError?: boolean; kycError?: boolean; kycCloseError?: boolean; readError?: boolean; deleteError?: boolean; authError?: boolean; profileError?: boolean; pages?: number; actor?: string | null; identityError?: boolean; lang?: Lang } = {}) {
+  const actor = options.actor === undefined ? ACCOUNT_A : options.actor;
   const actions: string[] = [];
+  const events: string[] = [];
+  const authCalls: { method: string; id: string; patch?: Record<string, unknown> }[] = [];
+  const signOuts: { actor: string | null; options: unknown }[] = [];
+  const recipientPages: string[][] = [];
+  let adminCreations = 0;
   let profile: Record<string, unknown> = {};
   let metadata: Record<string, unknown> = {};
   const kycClosures: { patch: Record<string, unknown>; filters: unknown[][] }[] = [];
   const db = database(query => {
+    events.push("query:" + query.table);
     const step = (name: string) => query.steps.find(([s]) => s === name)?.[1];
     if (query.table === "profiles") {
       actions.push("close-profile");
       profile = step("update")?.[0] as Record<string, unknown>;
-      return { data: options.profileError ? null : { id: "user" }, error: null };
+      return { data: options.profileError ? null : { id: actor }, error: null };
     }
     if (step("delete")) {
       actions.push("remove-" + query.table);
@@ -135,7 +147,9 @@ function accountFixture(options: { count?: number | null; kyc?: number | null; a
     }
     if (step("range")) {
       const offset = step("range")![0] as number;
-      return { data: offset === 0 && options.pages ? Array.from({ length: 500 }, (_, i) => ({ id: "order-" + i })) : [{ id: "last" }], error: null };
+      const data = offset === 0 && options.pages ? Array.from({ length: 500 }, (_, i) => ({ id: "order-" + i })) : options.count === 0 ? [] : [{ id: "last" }];
+      recipientPages.push(data.map(row => row.id));
+      return { data, error: null };
     }
     if (query.table === "zabelie_kyc_submissions" && step("update")) {
       actions.push("close-kyc");
@@ -151,19 +165,34 @@ function accountFixture(options: { count?: number | null; kyc?: number | null; a
     return { count: options.count === undefined ? 1 : options.count, error: options.readError ? { message: "offline" } : null };
   });
   const route = loadRoute("app/api/account/route.ts", {
+    "@/lib/i18n-server": { getLang: async () => options.lang ?? "fr" },
+    "@/lib/i18n": { t },
+    "@/lib/collections": { UUID_RE },
     "@/lib/supabase/server": { createClient: async () => ({ auth: {
-      getUser: async () => ({ data: { user: { id: "user", user_metadata: { full_name: "Private", avatar_url: "private.jpg" } } }, error: null }),
-      signOut: async () => { actions.push("sign-out"); return { error: null }; },
-    } }) },
-    "@/lib/supabase/admin": { createAdminClient: () => ({ ...db, auth: { admin: {
-      deleteUser: async () => { actions.push("delete-auth"); return { error: options.deleteError ? {} : null }; },
-      updateUserById: async (_id: string, patch: Record<string, unknown>) => {
-        actions.push("scrub-auth"); metadata = patch;
-        return { error: options.authError ? {} : null };
+      getUser: async () => {
+        events.push("auth");
+        return { data: { user: actor === null ? null : { id: actor, user_metadata: { full_name: "Private", avatar_url: "private.jpg" } } }, error: options.identityError ? { message: "synthetic identity unavailable" } : null };
       },
-    } } }) },
+      signOut: async (signOutOptions: unknown) => { actions.push("sign-out"); events.push("sign-out"); signOuts.push({ actor, options: signOutOptions }); return { error: null }; },
+    } }) },
+    "@/lib/supabase/admin": { createAdminClient: () => {
+      adminCreations++;events.push("admin");
+      return { ...db, auth: { admin: {
+        deleteUser: async (id: string) => { actions.push("delete-auth"); authCalls.push({ method: "deleteUser", id }); return { error: options.deleteError ? {} : null }; },
+        updateUserById: async (id: string, patch: Record<string, unknown>) => {
+          actions.push("scrub-auth"); metadata = patch; authCalls.push({ method: "updateUserById", id, patch });
+          return { error: options.authError ? {} : null };
+        },
+      } } };
+    } },
   });
-  return { route, actions, db, profile: () => profile, metadata: () => metadata, kycClosures };
+  const request = (body?: string) => new Request("https://example.test/api/account", { method: "DELETE", ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body }) });
+  const sendRaw = (body?: string) => route.DELETE(request(body));
+  const matchingBody = () => JSON.stringify({ expectedActorId: actor });
+  return { route: { ...route, DELETE: (req: Request = request(matchingBody())) => route.DELETE(req) }, sendRaw,
+    send: (body?: unknown) => sendRaw(body === undefined ? matchingBody() : JSON.stringify(body)),
+    actions, events, authCalls, signOuts, recipientPages, adminCreations: () => adminCreations,
+    db, profile: () => profile, metadata: () => metadata, kycClosures };
 }
 
 test("account closure clears storefront location, identity, metadata and all recipient pages", async () => {
@@ -203,7 +232,7 @@ test("a never-sold account WITH immutable legal receipts closes without deleting
   assert.ok(!f.actions.includes("delete-auth"));
   assert.ok(!f.actions.includes("remove-zabelie_policy_acceptances"));
   const query = f.db.queries.find(q => q.table === "zabelie_policy_acceptances");
-  assert.ok(query?.steps.some(([s, a]) => s === "eq" && a[0] === "user_id" && a[1] === "user"));
+  assert.ok(query?.steps.some(([s, a]) => s === "eq" && a[0] === "user_id" && a[1] === ACCOUNT_A));
 });
 
 test("a never-sold account WITH identity documents is anonymized, never deleted (no orphan KYC files)", async () => {
@@ -228,7 +257,7 @@ test("closing an account also closes a PENDING identity dossier independently of
   assert.equal(patch.status, "rejected");
   assert.ok(typeof patch.decided_at === "string" && !Number.isNaN(Date.parse(patch.decided_at as string)), "la décision administrative reste datée");
   assert.equal(patch.note_admin, "Compte fermé avant décision");
-  assert.deepEqual(filters, [["user_id", "user"], ["status", "pending"]], "seul un dossier EN ATTENTE de CE compte est clos");
+  assert.deepEqual(filters, [["user_id", ACCOUNT_A], ["status", "pending"]], "seul un dossier EN ATTENTE de CE compte est clos");
   assert.ok(f.actions.indexOf("close-kyc") > f.actions.indexOf("close-profile"));
   const echec = accountFixture({ count: 0, kyc: 1, kycCloseError: true });
   assert.equal((await echec.route.DELETE()).status, 503, "un échec de clôture du dossier n'est jamais annoncé comme un succès");
@@ -240,5 +269,128 @@ test("account closure reports database and Auth failures instead of claiming suc
     const f = accountFixture(options);
     assert.equal((await f.route.DELETE()).status, 503);
     assert.ok(!f.actions.includes("sign-out"));
+  }
+});
+
+function noAccountClosure(f: ReturnType<typeof accountFixture>) {
+  assert.deepEqual(f.events, ["auth"]);
+  assert.equal(f.adminCreations(), 0);assert.equal(f.db.queries.length, 0);
+  assert.deepEqual(f.actions, []);assert.deepEqual(f.authCalls, []);assert.deepEqual(f.signOuts, []);
+}
+
+function closureEvidence(f: ReturnType<typeof accountFixture>) {
+  return JSON.stringify({ adminCreations: f.adminCreations(), actions: f.actions,
+    authCalls: f.authCalls.map(({ method, id }) => ({ method, id })), signOuts: f.signOuts,
+    filters: f.db.queries.map(query => ({ table: query.table, filters: query.steps.filter(([method]) => method === "eq" || method === "in") })) });
+}
+
+function closureQueriesBelongTo(f: ReturnType<typeof accountFixture>, actor: string) {
+  let recipientPage = 0;
+  const recipientPages = f.recipientPages.filter(ids => ids.length > 0);
+  for (const query of f.db.queries) {
+    if (query.table === "zabelie_order_recipients") {
+      const filter = query.steps.find(([method]) => method === "in")?.[1];
+      assert.ok(filter, "recipient removal is bounded to the IDs read for this buyer");
+      assert.equal(filter[0], "order_id");
+      assert.deepEqual(JSON.parse(JSON.stringify(filter[1])), recipientPages[recipientPage++]);
+      continue;
+    }
+    const column = query.table === "profiles" ? "id" : query.table === "orders"
+      ? query.steps.some(([method, args]) => method === "eq" && args[0] === "products.seller_id") ? "products.seller_id" : "buyer_id"
+      : "user_id";
+    assert.ok(query.steps.some(([method, args]) => method === "eq" && args[0] === column && args[1] === actor), `${query.table} must stay scoped to ${actor}`);
+  }
+  assert.equal(recipientPage, recipientPages.length);
+}
+
+for (const mode of ["anonymized", "deleted"] as const) {
+  test(`an old account screen cannot ${mode === "deleted" ? "delete" : "anonymize"} the newly authenticated account`, async () => {
+    const f = accountFixture({ actor: ACCOUNT_B, count: 0, ...(mode === "anonymized" ? { acceptances: 2 } : {}) });
+    const response = await f.send({ expectedActorId: ACCOUNT_A });
+    assert.equal(response.status, 403, closureEvidence(f));
+    assert.deepEqual(await response.json(), { error: t("fr", "api.auth.required") });
+    noAccountClosure(f);
+  });
+}
+
+test("matching account identities preserve both closure modes and ignore forged target accounts", async () => {
+  for (const actor of [ACCOUNT_A, ACCOUNT_B]) {
+    const other = actor === ACCOUNT_A ? ACCOUNT_B : ACCOUNT_A;
+    for (const mode of ["anonymized", "deleted"] as const) {
+      const f = accountFixture({ actor, ...(mode === "deleted" ? { count: 0 } : { count: 1, pages: 2 }) });
+      const response = await f.send({ expectedActorId: actor, userId: other, id: other });
+      assert.equal(response.status, 200);assert.deepEqual(await response.json(), { ok: true, mode });
+      assert.equal(f.adminCreations(), 1);assert.deepEqual(f.events.slice(0, 2), ["auth", "admin"]);
+      assert.deepEqual(f.authCalls.map(({ method, id }) => ({ method, id })), [{ method: mode === "deleted" ? "deleteUser" : "updateUserById", id: actor }]);
+      assert.deepEqual(JSON.parse(JSON.stringify(f.signOuts)), [{ actor, options: { scope: "global" } }]);
+      closureQueriesBelongTo(f, actor);
+      if (mode === "anonymized") {
+        assert.equal(f.profile().suspended_reason, "account_closed");
+        assert.equal(f.metadata().email, `deleted+${actor}@deleted.invalid`);
+        assert.equal(f.metadata().ban_duration, "876000h");
+        assert.equal(f.actions.filter(action => action === "remove-zabelie_order_recipients").length, 2);
+        assert.ok(!f.actions.includes("delete-auth"));
+      } else {
+        assert.deepEqual(f.actions, ["delete-auth", "sign-out"]);
+        assert.equal(f.db.queries.length, 4);
+      }
+    }
+  }
+});
+
+test("cached bodyless clients and objects without the required closure identity fail before every effect", async () => {
+  for (const body of [undefined, "", "{}", JSON.stringify({ id: ACCOUNT_A, userId: ACCOUNT_A }), JSON.stringify({ actorId: ACCOUNT_A })]) {
+    const f = accountFixture({ actor: ACCOUNT_B, count: 0 });
+    assert.equal((await f.sendRaw(body)).status, 400, closureEvidence(f));
+    noAccountClosure(f);
+  }
+});
+
+test("malformed closure identities fail without creating the admin client or reading account data", async () => {
+  for (const expectedActorId of [null, "", "not-an-id", 12, false, [], {}, [ACCOUNT_A], ` ${ACCOUNT_A} `]) {
+    const f = accountFixture({ actor: ACCOUNT_A });
+    assert.equal((await f.send({ expectedActorId })).status, 400, closureEvidence(f));
+    noAccountClosure(f);
+  }
+});
+
+test("nonempty invalid JSON and non-object closure bodies cannot have any account effect", async () => {
+  for (const body of ["{", "null", "[]", "true", "17", '"texte"', '""']) {
+    const f = accountFixture({ actor: ACCOUNT_A });
+    assert.equal((await f.sendRaw(body)).status, 400, closureEvidence(f));
+    noAccountClosure(f);
+  }
+});
+
+test("missing or failed authentication remains prior to closure JSON and expected identity", async () => {
+  for (const options of [{ actor: null }, { actor: ACCOUNT_B, identityError: true }]) {
+    for (const body of [undefined, "", "{}", "{", "null", JSON.stringify({ expectedActorId: ACCOUNT_A })]) {
+      const f = accountFixture(options);
+      const response = await f.sendRaw(body);
+      assert.equal(response.status, 401);assert.deepEqual(await response.json(), { error: t("fr", "api.auth.required") });
+      noAccountClosure(f);
+    }
+  }
+});
+
+test("closure identity refusals and existing Auth and database errors use the four real translations", async () => {
+  for (const lang of LANGS) {
+    const anonymous = accountFixture({ actor: null, lang });
+    const absent = await anonymous.sendRaw("{");
+    assert.equal(absent.status, 401);assert.deepEqual(await absent.json(), { error: t(lang, "api.auth.required") });noAccountClosure(anonymous);
+    const unavailable = accountFixture({ actor: ACCOUNT_A, lang, count: null });
+    const failed = await unavailable.send({ expectedActorId: ACCOUNT_A });
+    assert.equal(failed.status, 503);assert.deepEqual(await failed.json(), { error: t(lang, "api.unavailable") });
+    assert.equal(unavailable.adminCreations(), 1);assert.deepEqual(unavailable.actions, []);assert.deepEqual(unavailable.authCalls, []);assert.deepEqual(unavailable.signOuts, []);
+    closureQueriesBelongTo(unavailable, ACCOUNT_A);
+    const mismatch = accountFixture({ actor: ACCOUNT_B, lang });
+    const refused = await mismatch.send({ expectedActorId: ACCOUNT_A });
+    assert.equal(refused.status, 403, closureEvidence(mismatch));assert.deepEqual(await refused.json(), { error: t(lang, "api.auth.required") });noAccountClosure(mismatch);
+    const malformed = accountFixture({ actor: ACCOUNT_A, lang });
+    const invalid = await malformed.send({ expectedActorId: false });
+    assert.equal(invalid.status, 400);assert.deepEqual(await invalid.json(), { error: t(lang, "api.params.invalid") });noAccountClosure(malformed);
+    const missing = accountFixture({ actor: ACCOUNT_A, lang });
+    const bodyless = await missing.sendRaw();
+    assert.equal(bodyless.status, 400);assert.deepEqual(await bodyless.json(), { error: t(lang, "api.params.invalid") });noAccountClosure(missing);
   }
 });

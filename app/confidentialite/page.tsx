@@ -46,7 +46,7 @@ function riche(texte: string): React.ReactNode[] {
 
 function Section({ titre, ancre, blocs, lang, children }: { titre: string; ancre?: string; blocs: Bloc[]; lang: Parameters<typeof resoudre>[1]; children?: React.ReactNode }) {
   return (
-    <section id={ancre} className="mt-10 scroll-mt-24">
+    <section id={ancre} className="mt-10 scroll-mt-32">
       <h2 className="text-xl font-bold tracking-tight">{titre}</h2>
       <div className="mt-3 space-y-3 text-base leading-relaxed text-mist">
         {blocs.map((bloc, i) =>

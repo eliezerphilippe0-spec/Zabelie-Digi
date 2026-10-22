@@ -108,7 +108,7 @@ test("plus AUCUN signOut client dans le dépôt — le faux-semblant est fermé"
     );
   }
   // Et la suppression de compte passe par le MÊME endpoint.
-  assert.match(COMPTE, /fetch\("\/api\/auth\/signout", \{ method: "POST" \}\)/);
+  assert.match(COMPTE_CODE, /fetch\("\/api\/auth\/signout", \{[^}]*method: "POST"[^}]*\}\)/);
 });
 
 test("la déconnexion est atteignable sur MOBILE — le terrain visé", () => {

@@ -60,6 +60,7 @@ export function GalerieManager({
   productId,
   initial,
   initialVideo = null,
+  readOnly = false,
   max,
   labels,
 }: {
@@ -67,6 +68,7 @@ export function GalerieManager({
   initial: MediaItem[];
   /** La vidéo existante (une seule), ou null. */
   initialVideo?: MediaItem | null;
+  readOnly?: boolean;
   max: number;
   labels: GalerieLabels;
 }) {
@@ -82,7 +84,7 @@ export function GalerieManager({
    * téléphone (2 à 5 Mo) partait telle quelle et le stockage, plafonné à
    * 1,5 Mo, la refusait (revue du 2026-10-08, UX-01). */
   async function ajouter(file: File | null) {
-    if (!file) return;
+    if (!file || readOnly) return;
     setBusy(true);
     setError(null);
     try {
@@ -114,7 +116,7 @@ export function GalerieManager({
   }
 
   async function ajouterVideo(file: File | null) {
-    if (!file) return;
+    if (!file || readOnly) return;
     setError(null);
     // Les deux bornes AVANT tout octet envoyé — le serveur revérifie le
     // poids sur l'objet réel, mais un refus local ne coûte aucune donnée.
@@ -161,6 +163,7 @@ export function GalerieManager({
         return;
       }
       setVideo({ id: data.id, url: data.url });
+      router.refresh();
     } catch {
       setError(labels.error);
     } finally {
@@ -169,7 +172,7 @@ export function GalerieManager({
   }
 
   async function retirerVideo() {
-    if (!video) return;
+    if (!video || readOnly) return;
     setBusy(true);
     setError(null);
     try {
@@ -183,6 +186,7 @@ export function GalerieManager({
         return;
       }
       setVideo(null);
+      router.refresh();
     } catch {
       setError(labels.error);
     } finally {
@@ -191,6 +195,7 @@ export function GalerieManager({
   }
 
   async function retirer(mediaId: string) {
+    if (readOnly) return;
     setBusy(true);
     setError(null);
     try {
@@ -236,7 +241,7 @@ export function GalerieManager({
                 />
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || readOnly}
                   onClick={() => retirer(m.id)}
                   className="block min-h-11 w-full text-center text-xs text-mist underline hover:text-danger-text disabled:opacity-50"
                 >
@@ -253,7 +258,7 @@ export function GalerieManager({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="sr-only"
-              disabled={busy}
+              disabled={busy || readOnly}
               onChange={(e) => {
                 ajouter(e.target.files?.[0] ?? null);
                 e.target.value = "";
@@ -272,7 +277,7 @@ export function GalerieManager({
             />
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || readOnly}
               onClick={retirerVideo}
               className="min-h-11 text-xs text-mist underline hover:text-danger-text disabled:opacity-50"
             >
@@ -286,7 +291,7 @@ export function GalerieManager({
               type="file"
               accept="video/mp4,video/webm"
               className="sr-only"
-              disabled={busy}
+              disabled={busy || readOnly}
               onChange={(e) => {
                 ajouterVideo(e.target.files?.[0] ?? null);
                 e.target.value = "";

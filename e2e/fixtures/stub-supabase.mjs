@@ -16,13 +16,31 @@
  */
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { jointureAmbigue, REFUS_PGRST201, tableDe } from "./jointures-postgrest.mjs";
+import { createMediaReviewFixture } from "./media-review.mjs";
 
 const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
+const POLICY_ACCEPTANCE_FIXTURE = [
+  { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
+  { policy_version: "confidentialite-v3", accepted_at: "2026-10-05T00:00:00Z" },
+];
 const digitalFacts = new Map();
 const digitalStudios = new Map();
 const digitalProgress = new Map();
+// Publication physique : journal isolé par titre de scénario, sans reset
+// partagé entre tests parallèles. Les contraintes SQL restent testées en CI.
+const physicalCreationRows = [];
+const physicalCreationWrites = [];
+const physicalCreationVariants = [];
+const physicalCreationStocks = [];
+const physicalCreationExtensions = [];
+const physicalCreationUploads = [];
+const PHYSICAL_CREATION_PREFIX = "Reprise physique ";
+// Chaque test profil crée deux UUID propres ; aucun état/reset global partagé.
+const profileIdentityScenarios = new Map();
+const profileIdentityActors = new Map();
 const HISTORY_ID = "88888888-8888-8888-8888-000000000100";
 const HISTORY_ERROR_ID = "88888888-8888-8888-8888-000000000101";
 const DIGITAL_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaa001";
@@ -40,6 +58,8 @@ export const ORDER_ID = "33333333-3333-3333-3333-333333333333";
 export const PRODUCT_ID = "44444444-4444-4444-4444-444444444444";
 export const SLUG = "filtre-huile-corolla";
 
+const PNG_FIXTURE = readFileSync(new URL("./cover.png", import.meta.url));
+const COVER_PNG = "data:image/png;base64," + PNG_FIXTURE.toString("base64");
 const PRODUCT = {
   id: PRODUCT_ID,
   slug: SLUG,
@@ -54,13 +74,31 @@ const PRODUCT = {
   seller_id: SELLER_ID,
   delivery_days: null,
   service_includes: null,
-  cover_url: "http://127.0.0.1:15421/cover.png",
+  cover_url: COVER_PNG,
   status: "published",
   in_stock: true,
   seller: { display_name: "Garaj Petyonvil" },
 };
+const mediaReviewFixture = createMediaReviewFixture({ baseProduct: PRODUCT, sellerId: SELLER_ID });
 
 
+/* ── Essayage virtuel (docs/74, tâche 4.5) ─────────────────────────────────
+ * Une robe d'un vendeur pilote, au sous-rayon « wob ». Les comptes d'essai
+ * sont choisis pour leur groupe de mesure (lib/essayage/regles.ts) : …001 est
+ * au témoin, les autres à l'essai. Les fonctions d'essayage passent par la
+ * clé de service : le scénario se lit donc à l'identifiant de l'acheteur,
+ * jamais au jeton. Aucune photo n'arrive ici : elle va du serveur Next au
+ * fournisseur « simulation », qui ne sort pas de la machine. */
+export const ROBE_ID = "e55a1000-0000-4000-8000-0000000000a1";
+export const ROBE_SLUG = "wob-lakay-test";
+const ROBE_VENDEUR = "e55a1000-0000-4000-8000-000000000100";
+const ROBE = { ...PRODUCT, id: ROBE_ID, slug: ROBE_SLUG, title: "Wòb lakay", category: "Mode", seller_id: ROBE_VENDEUR, seller: { display_name: "Atelye Mod" }, sous_rayon: { slug: "wob" } };
+/** En production, les photos principales sont en https (Storage Supabase) ; l'essayage refuse le reste. */
+const ROBE_COUVERTURE_HTTPS = "https://exemple.supabase.co/storage/v1/object/public/covers/wob-lakay.png";
+const ESSAYAGE_COMPTES = new Set([1, 2, 3, 4, 5, 6, 7].map((n) => `e55a1000-0000-4000-8000-${String(n).padStart(12, "0")}`));
+const ESSAYAGE_REFUS = { "e55a1000-0000-4000-8000-000000000004": "quota", "e55a1000-0000-4000-8000-000000000005": "pause" };
+const essayage = { essais: new Map(), expositions: new Map() };
+const jourHaiti = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Port-au-Prince" });
 
 const OFFER_SOURCE = "44444444-4444-4444-4444-444444444444";
 const OFFER_TARGETS = ["66666666-6666-6666-6666-666666666661","66666666-6666-6666-6666-666666666662","66666666-6666-6666-6666-666666666663"];
@@ -127,7 +165,7 @@ const discountVariants = [
 ].map(v => ({ ...v, product_id: PRODUCT_ID, active: true, zabelie_stock: { quantity_available: 4 } }));
 
 const SHOP_PRODUCTS = [
-  { ...PRODUCT, cover_url: "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64") },
+  PRODUCT,
   { ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", description: "Apprenez à préparer votre première offre avec un guide et des leçons.", kind: "fichier", cover_url: null, product_assets: [{ id: ASSET_ID }] },
   { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-boutique-test", title: "Conseil pour votre projet", description: "Une consultation pour organiser vos prochaines étapes.", kind: "service", cover_url: null, delivery_days: 2, service_includes: ["Une consultation"] },
 ].map(product => ({ ...product, seller: { display_name: "Atelye Lakay" } }));
@@ -174,6 +212,228 @@ const server = createServer((req, res) => {
         : send(406, { code: "PGRST116", message: "no rows" })
       : send(200, rows);
 
+  if (url.pathname === "/__profile-identity") {
+    if (req.method === "POST") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const input = JSON.parse(text);
+        if (profileIdentityScenarios.has(input.scenario)) return send(409, { error: "scenario exists" });
+        const profiles = [input.actorA, input.actorB].map((id, index) => ({
+          id, display_name: `Profil ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}`,
+          bio: `Présentation fictive ${index ? "B" : "A"}`, avatar_url: null,
+          country_code: index && !input.withZones ? "US" : "HT", region_code: index && !input.withZones ? null : "HT-OU",
+          zone_id: null, pwen_repe: `Repère fictif ${index ? "B" : "A"}`,
+          role: "creator", tier: "standard", boutik_slug: null, suspended_at: null, suspended_reason: null,
+        }));
+        const departmentId = crypto.randomUUID();
+        const scenario = { profiles, writes: [], slugReads: [], ...(input.withZones ? {
+          zones: [
+            { id: departmentId, parent_id: null, level: "depatman", slug: "depatman-fictif", label_kr: "Depatman tès", label_fr: "Département fictif", label_en: "Test department", label_es: "Departamento ficticio" },
+            { id: crypto.randomUUID(), parent_id: departmentId, level: "komin", slug: "komin-fictive", label_kr: "Komin tès", label_fr: "Commune fictive", label_en: "Test commune", label_es: "Comuna ficticia" },
+          ], zoneRequests: [],
+        } : {}) };
+        if (input.deliveryInfo === true) {
+          scenario.deliveryInfo = {
+            rows: profiles.map((profile, index) => ({ user_id: profile.id,
+              full_name: `Destinataire fictif ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}`,
+              phone: index ? "+1 555 000 0002" : "+509 3700 0001",
+              adres_liv: `Adresse privée fictive ${index ? "B" : "A"} ${input.scenario.slice(0, 8)}` })),
+            reads: [], upserts: [],
+          };
+        }
+        if (input.kyc === true) {
+          const documents = profiles.map((profile, index) => {
+            const id = crypto.randomUUID();
+            return { id, user_id: profile.id, kind: index ? "paspo" : "cin", storage_path: `${profile.id}/${id}.png`, created_at: "2026-10-05T10:00:00Z" };
+          });
+          scenario.kyc = {
+            submissions: profiles.map((profile, index) => ({ user_id: profile.id, status: "pending",
+              submitted_at: `2026-10-05T1${index}:00:00.000001Z`, decided_at: null, decided_by: null, note_admin: null })),
+            documents, objects: documents.map(doc => ({ user_id: doc.user_id, bucket: "kyc-documents", path: doc.storage_path,
+              sha256: createHash("sha256").update(PNG_FIXTURE).digest("hex"), size: PNG_FIXTURE.length, contentType: "image/png" })),
+            reads: [], uploads: [], rpcs: [], removals: [],
+          };
+        }
+        if (["history", "empty"].includes(input.accountClosure)) {
+          scenario.accountClosure = {
+            mode: input.accountClosure, events: [], profileReads: [],
+            counts: Object.fromEntries(profiles.map(profile => [profile.id, { purchases: 0, sales: 0, kyc: 0, acceptances: input.accountClosure === "history" ? 2 : 0 }])),
+            authUsers: profiles.map((profile, index) => ({ id: profile.id, email: `fictif-${profile.id}@example.test`,
+              user_metadata: { name: `Compte fictif ${index ? "B" : "A"}`, phone: `Téléphone fictif ${index ? "B" : "A"}` }, deleted: false, ban_duration: null })),
+            kycSubmissions: input.accountClosure === "history" ? profiles.map(profile => ({ user_id: profile.id, status: "pending", note_admin: null, decided_at: null })) : [],
+            favorites: profiles.map(profile => ({ user_id: profile.id, product_id: PRODUCT_ID })),
+            follows: profiles.map(profile => ({ user_id: profile.id, seller_id: SELLER_ID })),
+          };
+        }
+        profileIdentityScenarios.set(input.scenario, scenario);
+        for (const profile of profiles) profileIdentityActors.set(profile.id, { profile, scenario });
+        return send(200, scenario);
+      });
+    }
+    return send(200, profileIdentityScenarios.get(url.searchParams.get("scenario")) ?? null);
+  }
+  const identityProfile = url.pathname === "/rest/v1/profiles" ? profileIdentityActors.get(eq(url, "id")) : null;
+  if (identityProfile) {
+    const { profile, scenario } = identityProfile;
+    if (req.method === "PATCH") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const patch = JSON.parse(text);
+        if (url.searchParams.get("boutik_slug") === "is.null" && profile.boutik_slug !== null) return send(200, []);
+        scenario.writes.push({ id: profile.id, kind: Object.hasOwn(patch, "boutik_slug") ? "slug" : "profile", patch });
+        Object.assign(profile, patch);
+        if (scenario.accountClosure) {
+          scenario.accountClosure.events.push({ actorId: profile.id, kind: "profile.update", patch });
+          return single([profile]);
+        }
+        return send(200, []);
+      });
+    }
+    if (scenario.accountClosure) scenario.accountClosure.profileReads.push({ actorId: profile.id, select: url.searchParams.get("select") });
+    if (scenario.kyc) scenario.kyc.reads.push({ table: "profiles", owner: profile.id, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
+    if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
+    return single([profile]);
+  }
+
+  const kycOwner = eq(url, "user_id"), kycState = profileIdentityActors.get(kycOwner)?.scenario.kyc;
+  if (kycState && req.method === "GET" && ["/rest/v1/zabelie_kyc_submissions", "/rest/v1/zabelie_kyc_documents"].includes(url.pathname)) {
+    const table = url.pathname.slice("/rest/v1/".length), select = url.searchParams.get("select") ?? "*";
+    const rows = (table === "zabelie_kyc_submissions" ? kycState.submissions : kycState.documents).filter(row => row.user_id === kycOwner)
+      .map(row => select === "*" ? { ...row } : Object.fromEntries(select.split(",").map(key => key.trim()).filter(key => Object.hasOwn(row, key)).map(key => [key, row[key]])));
+    kycState.reads.push({ table, owner: kycOwner, select, serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows });
+    return single(rows);
+  }
+  const kycUpload = /^\/storage\/v1\/object\/kyc-documents\/([^/]+)\/(.+)$/.exec(url.pathname);
+  const uploadState = profileIdentityActors.get(kycUpload?.[1])?.scenario.kyc;
+  if (uploadState && kycUpload && req.method === "POST") {
+    const chunks = []; req.on("data", chunk => chunks.push(chunk));
+    return req.on("end", async () => {
+      try {
+        const contentType = req.headers["content-type"] ?? "", bytes = Buffer.concat(chunks);
+        const multipart = contentType.startsWith("multipart/form-data");
+        const fields = multipart ? await new Request("http://stub.test/upload", { method: "POST", headers: { "content-type": contentType }, body: bytes }).formData() : null;
+        const file = fields ? [...fields.values()].find(value => value instanceof File) : new File([bytes], kycUpload[2], { type: contentType });
+        if (!(file instanceof File)) return send(400, { error: "fixture upload has no File" });
+        const object = { user_id: kycUpload[1], bucket: "kyc-documents", path: `${kycUpload[1]}/${kycUpload[2]}`,
+          sha256: createHash("sha256").update(Buffer.from(await file.arrayBuffer())).digest("hex"), size: file.size, contentType: file.type };
+        uploadState.uploads.push({ ...object, multipart, fileName: file.name, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+        uploadState.objects.push(object);
+        return send(200, { Key: `kyc-documents/${object.path}`, Id: crypto.randomUUID() });
+      } catch { return send(400, { error: "fixture upload parsing failed" }); }
+    });
+  }
+  if (url.pathname === "/rest/v1/rpc/zabelie_register_kyc_document" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const args = JSON.parse(text), state = profileIdentityActors.get(args.p_user_id)?.scenario.kyc;
+      if (!state) return single([]);
+      // Journal et effet de fixture seulement : aucune garde expectedActorId,
+      // aucun verrou, contrôle de snapshot ou règle RLS SQL n'est simulé.
+      const id = crypto.randomUUID(), now = new Date().toISOString();
+      state.documents.push({ id, user_id: args.p_user_id, kind: args.p_kind, storage_path: args.p_storage_path, created_at: now });
+      Object.assign(state.submissions.find(row => row.user_id === args.p_user_id), { status: "pending", submitted_at: now, decided_at: null, decided_by: null });
+      const result = { ok: true, id };
+      state.rpcs.push({ name: "zabelie_register_kyc_document", args, result, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+      return send(200, result);
+    });
+  }
+  if (url.pathname === "/storage/v1/object/kyc-documents" && req.method === "DELETE") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const paths = JSON.parse(text).prefixes;
+      for (const path of paths) {
+        const state = profileIdentityActors.get(path.split("/")[0])?.scenario.kyc;
+        if (!state) continue;
+        state.removals.push({ path, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+        state.objects = state.objects.filter(object => object.path !== path);
+      }
+      return send(200, []);
+    });
+  }
+
+  const deliveryOwner = eq(url, "user_id");
+  const deliveryScenario = profileIdentityActors.get(deliveryOwner)?.scenario.deliveryInfo;
+  if (deliveryScenario && url.pathname === "/rest/v1/zabelie_delivery_info" && req.method === "GET") {
+    const row = deliveryScenario.rows.find(row => row.user_id === deliveryOwner);
+    const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+    deliveryScenario.reads.push({ tokenActorId: profileIdentityActors.has(tokenId) ? tokenId : null,
+      requestedActorId: deliveryOwner, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", row: row ? { ...row } : null });
+    return single(row ? [row] : []);
+  }
+  if (url.pathname === "/rest/v1/zabelie_delivery_info" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      // Observer le vrai token et la vraie ligne upsert ; aucune garde
+      // expectedActorId, contrainte ou politique RLS n'est reproduite ici.
+      const row = JSON.parse(text);
+      const state = profileIdentityActors.get(row.user_id)?.scenario.deliveryInfo;
+      if (!state) return single([]);
+      const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+      state.upserts.push({ tokenActorId: profileIdentityActors.has(tokenId) ? tokenId : null,
+        serviceRole: req.headers.authorization === "Bearer cle-service-de-test", row: { ...row } });
+      const existing = state.rows.find(saved => saved.user_id === row.user_id);
+      if (existing) Object.assign(existing, row);
+      else state.rows.push(row);
+      return send(201, []);
+    });
+  }
+
+  // Fermeture : observer les E/S réelles pour les seuls UUID opt-in. Aucun
+  // refus d'identité, trigger, cascade SQL ou mécanisme de RLS n'est simulé.
+  const closureOwner = eq(url, "buyer_id") ?? eq(url, "products.seller_id") ?? eq(url, "user_id");
+  const closureScenario = profileIdentityActors.get(closureOwner)?.scenario;
+  const closure = closureScenario?.accountClosure;
+  if (closure) {
+    const table = url.pathname.slice("/rest/v1/".length);
+    const metric = table === "orders" ? (eq(url, "buyer_id") ? "purchases" : "sales")
+      : table === "zabelie_kyc_documents" ? "kyc" : table === "zabelie_policy_acceptances" ? "acceptances" : null;
+    if (req.method === "HEAD" && metric) {
+      const count = closure.counts[closureOwner][metric];
+      closure.events.push({ actorId: closureOwner, kind: "count", metric, count });
+      res.writeHead(200, { "content-type": "application/json", "content-range": `*/${count}` });
+      return res.end();
+    }
+    if (table === "zabelie_kyc_submissions") {
+      if (req.method === "PATCH") {
+        let text = ""; req.on("data", chunk => text += chunk);
+        return req.on("end", () => {
+          const patch = JSON.parse(text);
+          closure.events.push({ actorId: closureOwner, kind: "kyc.update", patch });
+          closure.kycSubmissions.filter(row => row.user_id === closureOwner && row.status === eq(url, "status")).forEach(row => Object.assign(row, patch));
+          return send(200, []);
+        });
+      }
+      return single(closure.kycSubmissions.filter(row => row.user_id === closureOwner));
+    }
+    if (table === "zabelie_kyc_documents") return single([]);
+    if (req.method === "DELETE" && ["zabelie_favorites", "zabelie_shop_follows"].includes(table)) {
+      const key = table === "zabelie_favorites" ? "favorites" : "follows";
+      closure.events.push({ actorId: closureOwner, kind: `${key}.delete` });
+      closure[key] = closure[key].filter(row => row.user_id !== closureOwner);
+      return send(200, []);
+    }
+    if (table === "orders" && req.method === "GET") {
+      closure.events.push({ actorId: closureOwner, kind: "orders.read" });
+      return single([]); // Les deux modes déclarent exactement zéro achat.
+    }
+  }
+  const closureAuthId = /^\/auth\/v1\/admin\/users\/([0-9a-f-]{36})$/.exec(url.pathname)?.[1];
+  const closureAuth = profileIdentityActors.get(closureAuthId)?.scenario.accountClosure;
+  if (closureAuth && ["PUT", "DELETE"].includes(req.method)) {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const patch = JSON.parse(text || "{}");
+      const user = closureAuth.authUsers.find(user => user.id === closureAuthId);
+      closureAuth.events.push({ actorId: closureAuthId, kind: req.method === "DELETE" ? "auth.delete" : "auth.update", patch,
+        serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+      if (req.method === "DELETE") user.deleted = true;
+      else Object.assign(user, patch, { user_metadata: { ...user.user_metadata, ...patch.user_metadata } });
+      return send(200, user);
+    });
+  }
+
   // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
   if (jointureAmbigue(tableDe(url.pathname), url.searchParams.get("select"))) {
     console.error("[stub] PGRST201", tableDe(url.pathname), url.searchParams.get("select"));
@@ -182,15 +442,42 @@ const server = createServer((req, res) => {
 
   // The real limiter returns a boolean; an empty PostgREST result is an error.
   if (url.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(200, true);
+  if (mediaReviewFixture(req, res, url, send, single)) return;
+  if (url.pathname === "/__physical-creations") {
+    const title = url.searchParams.get("title");
+    const writes = physicalCreationWrites.filter(row => !title || row.title === title);
+    const ids = new Set(writes.map(row => row.id));
+    const variants = physicalCreationVariants.filter(row => ids.has(row.product_id));
+    return send(200, { products: writes, active: physicalCreationRows.filter(row => ids.has(row.id)),
+      extensions: physicalCreationExtensions.filter(row => ids.has(row.product_id)), variants,
+      stocks: physicalCreationStocks.filter(row => variants.some(variant => variant.id === row.variant_id)),
+      uploads: physicalCreationUploads.filter(row => ids.has(row.product_id)) });
+  }
+  const physicalCover = /^\/storage\/v1\/object\/product-covers\/([^/]+)\/(.+)$/.exec(url.pathname);
+  if (physicalCover && physicalCreationRows.some(row => row.id === physicalCover[1])) {
+    physicalCreationUploads.push({ product_id: physicalCover[1], path: physicalCover[0] });
+    req.resume(); return send(200, { Key: `product-covers/${physicalCover[1]}/${physicalCover[2]}` });
+  }
+  if (["/rest/v1/zabelie_physical_products", "/rest/v1/zabelie_stock"].includes(url.pathname) && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const input = JSON.parse(text || "{}");
+      const rows = Array.isArray(input) ? input : [input];
+      if (url.pathname.endsWith("zabelie_physical_products")) physicalCreationExtensions.push(...rows.filter(row => physicalCreationRows.some(product => product.id === row.product_id)));
+      else physicalCreationStocks.push(...rows.filter(row => physicalCreationVariants.some(variant => variant.id === row.variant_id)));
+      return send(201, []);
+    });
+  }
 
   // These fixture accounts explicitly represent users who accepted both
   // current documents. This is simulated data, not evidence for a real user.
   if (url.pathname === "/rest/v1/zabelie_policy_acceptances") {
     const owner = url.searchParams.get("user_id")?.replace(/^eq\./, "");
-    return send(200, [BUYER_ID, SELLER_ID].includes(owner) ? [
-      { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
-      { policy_version: "confidentialite-v3", accepted_at: "2026-10-05T00:00:00Z" },
-    ] : []);
+    const state = profileIdentityActors.get(owner)?.scenario.kyc;
+    const rows = [BUYER_ID, SELLER_ID].includes(owner) || ESSAYAGE_COMPTES.has(owner) || state ? POLICY_ACCEPTANCE_FIXTURE : [];
+    if (state) state.reads.push({ table: "zabelie_policy_acceptances", owner, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: rows.map(row => ({ ...row })) });
+    return send(200, rows);
   }
 
   // RPC : expiration des réservations. Renvoie 0 — le cas « rien à libérer »,
@@ -314,6 +601,65 @@ const server = createServer((req, res) => {
   const history = token.includes("historique-test") || eq(url, "buyer_id") === HISTORY_ID;
   const historyError = token.includes("historique-erreur") || eq(url, "buyer_id") === HISTORY_ERROR_ID;
   const sellerPreparation = token.includes("vendeur-preparation");
+  const compteEssayage = /essayage-([0-9a-f-]{36})/.exec(token)?.[1];
+  const essayageCompte = compteEssayage && ESSAYAGE_COMPTES.has(compteEssayage) ? compteEssayage : null;
+  const profileIdentityId = /profile-identity-([0-9a-f-]{36})/.exec(token)?.[1];
+  const profileIdentityActor = profileIdentityActors.has(profileIdentityId) ? profileIdentityId : null;
+  const identityScenario = profileIdentityActors.get(profileIdentityActor)?.scenario;
+  if (identityScenario?.accountClosure && url.pathname === "/auth/v1/logout") {
+    identityScenario.accountClosure.events.push({ actorId: profileIdentityActor, kind: "auth.signout", scope: url.searchParams.get("scope") });
+    return send(200, {});
+  }
+  if (identityScenario?.zones && url.pathname === "/rest/v1/zabelie_zones" && req.method === "GET") {
+    const id = eq(url, "id");
+    return single(identityScenario.zones.filter(zone => !id || zone.id === id));
+  }
+  if (identityScenario?.zones && url.pathname === "/rest/v1/zabelie_zone_requests" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      // Journal d'E/S par scénario : il observe le vrai corps INSERT et son
+      // token, sans prétendre reproduire les triggers, l'index ou la RLS SQL.
+      const input = JSON.parse(text);
+      const row = { id: crypto.randomUUID(), status: "pending", ...input };
+      identityScenario.zoneRequests.push({ tokenActorId: profileIdentityActor, row });
+      return send(201, []);
+    });
+  }
+
+  // ── Essayage virtuel : les cinq fonctions de 0150, la table des essais, et une lecture pour les tests.
+  if (url.pathname === "/__essayage") return send(200, { essais: [...essayage.essais.values()], expositions: [...essayage.expositions.values()] });
+  if (url.pathname.startsWith("/rest/v1/rpc/zabelie_essayage_")) {
+    let texte = "";
+    req.on("data", (c) => (texte += c));
+    return req.on("end", () => {
+      const p = JSON.parse(texte || "{}");
+      const nom = url.pathname.slice("/rest/v1/rpc/".length);
+      if (nom === "zabelie_essayage_eligible") return send(200, p.p_produit === ROBE_ID && p.p_acheteur !== ROBE_VENDEUR);
+      if (nom === "zabelie_essayage_exposer") {
+        const jour = jourHaiti();
+        const cle = `${p.p_acheteur}|${p.p_produit}|${jour}`;
+        if (!essayage.expositions.has(cle)) essayage.expositions.set(cle, { acheteur: p.p_acheteur, produit: p.p_produit, jour, groupe: p.p_groupe });
+        return send(200, null);
+      }
+      if (nom === "zabelie_essayage_reserver") {
+        if (p.p_produit !== ROBE_ID) return send(200, [{ essai: null, refus: "non_eligible" }]);
+        const refus = ESSAYAGE_REFUS[p.p_acheteur];
+        if (refus) return send(200, [{ essai: null, refus }]);
+        const id = crypto.randomUUID();
+        essayage.essais.set(id, { id, acheteur_id: p.p_acheteur, produit_id: p.p_produit, fournisseur: p.p_fournisseur, travail_id: null, statut: "en_cours", raison: null, cree_le: new Date().toISOString() });
+        return send(200, [{ essai: id, refus: null }]);
+      }
+      const essai = essayage.essais.get(p.p_essai);
+      if (!essai) return send(400, { code: "P0001", message: "essai inconnu" });
+      if (nom === "zabelie_essayage_lancer") essai.travail_id = p.p_travail;
+      else if (nom === "zabelie_essayage_terminer" && essai.statut === "en_cours") Object.assign(essai, { statut: p.p_statut, raison: p.p_raison ?? null });
+      return send(200, null);
+    });
+  }
+  if (url.pathname === "/rest/v1/zabelie_essayage_essais") {
+    const e = essayage.essais.get(eq(url, "id"));
+    return single(e && e.acheteur_id === eq(url, "acheteur_id") ? [{ id: e.id, fournisseur: e.fournisseur, travail_id: e.travail_id, statut: e.statut, raison: e.raison, cree_le: e.cree_le }] : []);
+  }
 
   if (url.pathname === "/__gift-writes") {
     const orderId = url.searchParams.get("order_id");
@@ -388,13 +734,15 @@ const server = createServer((req, res) => {
 
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
+    const closureUser = identityScenario?.accountClosure?.authUsers.find(user => user.id === profileIdentityActor);
+    if (closureUser?.deleted) return send(401, { message: "User not found", error_code: "user_not_found" });
     return send(200, {
-      id: sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID,
+      id: profileIdentityActor ?? essayageCompte ?? (sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID),
       aud: "authenticated",
       role: "authenticated",
-      email: "achte@example.ht",
+      email: closureUser?.email ?? "achte@example.ht",
       app_metadata: {},
-      user_metadata: {},
+      user_metadata: closureUser?.user_metadata ?? {},
       created_at: "2026-01-01T00:00:00Z",
     });
   }
@@ -548,11 +896,40 @@ const server = createServer((req, res) => {
       { ...PRODUCT, id: "77777777-7777-7777-7777-777777777777", slug: "guide-test", title: "Guide vendeur test", kind: "fichier", status: "draft", product_assets: [], cover_url: null },
       { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-test", title: "Prestation vendeur test", kind: "service", status: "draft", product_assets: [], delivery_days: 0, service_includes: ["Une consultation"] },
     ] : [PRODUCT];
+    if (req.method === "POST") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const input = JSON.parse(text || "{}");
+        if (input.kind !== "physical" || !input.title?.startsWith(PHYSICAL_CREATION_PREFIX)) return single(rows);
+        const product = { ...PRODUCT, ...input, id: crypto.randomUUID(), cover_url: null, product_assets: [] };
+        physicalCreationRows.push(product); physicalCreationWrites.push({ ...product });
+        return single([product]);
+      });
+    }
+    const createdPhysical = physicalCreationRows.find(row => row.id === id || row.slug === slug);
+    if (createdPhysical) rows = [createdPhysical];
+    else if (sellerPreparation && token.includes("physical-recovery")) rows = [...rows, ...physicalCreationRows];
+    if (req.method === "PATCH" && createdPhysical) {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => { Object.assign(createdPhysical, JSON.parse(text || "{}")); single([createdPhysical]); });
+    }
+    if (req.method === "DELETE" && createdPhysical) {
+      physicalCreationRows.splice(physicalCreationRows.indexOf(createdPhysical), 1);
+      return send(200, []);
+    }
+    // Audit 2026-10-19 (UX-01) : un vendeur dont une fiche a été retirée par la modération.
+    if (sellerPreparation && token.includes("-archive")) rows = [...rows,
+      { ...PRODUCT, id: "cccccccc-0000-4000-8000-000000000384", slug: "service-retire", title: "Service retiré test", kind: "service", status: "archived", product_assets: [], delivery_days: 1, service_includes: ["Une séance"] }];
     if (BOUTIQUE_FIXTURE && (id === DIGITAL_ID || slug === "formation-studio-test")) return single([SHOP_PRODUCTS[1]]);
     if (id === DIGITAL_ID || slug === "formation-studio-test") return single([{ ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", kind: "fichier", product_assets: [{ id: ASSET_ID }], seller_id: SELLER_ID }]);
     // Produit dédié aux pixels (0123) : son vendeur, et lui seul, a un pixel.
     if (slug === "pixel-test" || id === PIXEL_PRODUCT) return single([{ ...PRODUCT, id: PIXEL_PRODUCT, slug: "pixel-test", title: "Produit pixel", seller_id: PIXEL_SELLER }]);
     if (id === GIFT_PRODUCT) return single([{ ...PRODUCT, id: GIFT_PRODUCT }]);
+    if (slug === ROBE_SLUG || id === ROBE_ID) {
+      // supabase-js retire les espaces du `select` : « title,cover_url,sous_rayon:… ».
+      const lectureEssayage = (url.searchParams.get("select") ?? "").replace(/\s/g, "").startsWith("title,cover_url,sous_rayon");
+      return single([lectureEssayage ? { title: ROBE.title, cover_url: ROBE_COUVERTURE_HTTPS, sous_rayon: ROBE.sous_rayon } : ROBE]);
+    }
     if (slug) rows = rows.filter((row) => row.slug === slug);
     if (id) rows = rows.filter((row) => row.id === id);
     if (status) rows = rows.filter((row) => row.status === status);
@@ -580,15 +957,24 @@ const server = createServer((req, res) => {
 
   if (url.pathname.startsWith("/rest/v1/zabelie_product_variants")) {
     if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);
-    return send(200, [
-      {
-        id: "55555555-5555-5555-5555-555555555555",
-        options: null,
-        price_htg: 1500,
-        position: 1,
-        zabelie_stock: { quantity_available: 4 },
-      },
-    ]);
+    const fallback = [{
+      id: "55555555-5555-5555-5555-555555555555", options: null, price_htg: 1500,
+      position: 1, zabelie_stock: { quantity_available: 4 },
+    }];
+    if (req.method === "POST") {
+      let text = ""; req.on("data", chunk => text += chunk);
+      return req.on("end", () => {
+        const input = JSON.parse(text || "[]"); const rows = Array.isArray(input) ? input : [input];
+        const created = rows.filter(row => physicalCreationRows.some(product => product.id === row.product_id)).map(row => ({ ...row, id: crypto.randomUUID() }));
+        physicalCreationVariants.push(...created); return send(created.length ? 201 : 200, created.length ? created : fallback);
+      });
+    }
+    const productId = eq(url, "product_id");
+    if (physicalCreationRows.some(product => product.id === productId)) {
+      return send(200, physicalCreationVariants.filter(variant => variant.product_id === productId)
+        .map(variant => ({ ...variant, zabelie_stock: physicalCreationStocks.find(stock => stock.variant_id === variant.id) ?? null })));
+    }
+    return send(200, fallback);
   }
   if (url.pathname.startsWith("/rest/v1/zabelie_product_fitment")) {
     if (BOUTIQUE_FIXTURE && eq(url, "product_id") !== PRODUCT_ID) return send(200, []);

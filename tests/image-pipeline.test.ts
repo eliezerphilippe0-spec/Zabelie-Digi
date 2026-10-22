@@ -150,7 +150,8 @@ test("la qualité est décidée par la TAILLE OBTENUE, pas par un réglage fixe"
 test("le grand côté est plafonné, et la sortie est du WebP", () => {
   assert.match(
     COMPRESS_CODE,
-    /Math\.min\(1, COVER_MAX_COTE \/ Math\.max\(bitmap\.width, bitmap\.height\)\)/
+    // Le plafond reste COVER_MAX_COTE : l'option `maxCote` (essayage virtuel) ne peut que le baisser.
+    /const cote = Math\.min\(COVER_MAX_COTE, options\.maxCote \?\? COVER_MAX_COTE\);\s*\n\s*const facteur = Math\.min\(1, cote \/ Math\.max\(bitmap\.width, bitmap\.height\)\)/
   );
   assert.match(COMPRESS_CODE, /canvas\.toBlob\(res, "image\/webp", q\)/);
 });
@@ -165,12 +166,14 @@ test("les bornes sont cohérentes : cible < max toléré, dimension crédible", 
 
 test("la compression a lieu À LA SÉLECTION, et le fichier ENVOYÉ est le compressé", () => {
   /* Comprimer sans poser le résultat dans l'état enverrait l'original : le
-   * gain serait affiché au vendeur sans exister. La liaison est ici. */
+   * gain serait affiché au vendeur sans exister. Vérifier cette liaison,
+   * sans imposer l'adjacence : la garde de démontage peut les séparer. */
   assert.match(
     FORM,
-    /const c = await compresserImage\(f\);\s*\n\s*setPhoto\(c\.fichier\);/,
+    /const c = await compresserImage\(f\);[\s\S]{0,160}setPhoto\(c\.fichier\);/,
     "le fichier retenu doit être celui que le compresseur a produit"
   );
+  assert.doesNotMatch(FORM, /setPhoto\(f\)/, "l'original ne doit jamais remplacer le fichier compressé");
 });
 
 test("le vendeur voit le poids AVANT et APRÈS, en kreyòl", () => {

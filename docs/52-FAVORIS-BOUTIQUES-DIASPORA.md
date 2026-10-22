@@ -12,6 +12,14 @@
 - L’acheteur relit le destinataire dans ses achats. Le vendeur le voit pour la commande payée et les états de suivi ultérieurs, jamais pour un simple paiement en attente. En cas d’erreur de lecture, l’écran vendeur ne remplace pas silencieusement le destinataire par l’adresse de l’acheteur.
 - Les données nouvelles sont exportées avec pagination et effacées à la suppression/anonymisation du compte. La confidentialité décrit ce fonctionnement dans les quatre langues.
 
+## Fiabilité de l'export de compte (20 octobre 2026)
+
+`/api/account/export` réutilise le lecteur de collections pour paginer aussi les produits, commandes, reçus d'acceptation et données du Studio. Chaque page conserve le filtre du titulaire, les colonnes sélectionnées et un ordre unique. La progression suit le nombre de lignes effectivement reçu, même si le plafond de l'API est inférieur aux 500 lignes demandées, jusqu'au décompte exact.
+
+Une erreur, une liste illisible, un décompte absent ou changeant, une page répétée ou une fin prématurée rendent 503 sans pièce jointe ; aucune donnée déjà lue n'est présentée comme un fichier complet. L'absence légitime du profil ou du portefeuille reste `null`. Les tables Studio absentes dès la première lecture restent facultatives. L'accès à l'export reste ouvert aux comptes suspendus et ne dépend pas d'une nouvelle acceptation des règlements.
+
+Ces lectures ne constituent pas un instantané transactionnel : les changements de cardinalité sont détectés, mais des modifications concurrentes conservant le même nombre de lignes peuvent intervenir entre deux pages. Les tests de route utilisent des données synthétiques, couvrent les dix familles paginées au-delà de 1 000 lignes et vérifient les filtres à chaque page.
+
 ## Base et déploiement
 
 Migration `0102_collections_destinataire.sql`, créée via le CLI puis numérotée selon la convention séquentielle du dépôt. Trois tables avec RLS dès création, droits explicites et index des relations. Aucune écriture client sur les destinataires ; aucun droit anonyme sur les trois tables. Les favoris ne peuvent référencer que des produits publiés lisibles. Les suivis passent par la projection publique existante des boutiques. Le déclencheur du destinataire n’accepte qu’une commande physique en attente.

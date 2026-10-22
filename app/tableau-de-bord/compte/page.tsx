@@ -61,8 +61,10 @@ export default async function ComptePage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.compte.intro")}</p>
 
           {dossierKyc && (
-            <section id="verification" className="max-w-lg scroll-mt-28">
+            <section id="verification" className="max-w-lg scroll-mt-32">
               <KycForm
+                key={user.id}
+                actorId={user.id}
                 statut={dossierKyc.statut}
                 deposes={dossierKyc.documents}
                 noteAdmin={dossierKyc.noteAdmin}
@@ -86,8 +88,10 @@ export default async function ComptePage() {
           {/* V-5 (docs/35) : coordonnées de livraison — table SÉPARÉE du profil
               public, masquée tant que 0076 n'est pas appliquée. */}
           {livInfo !== undefined && (
-            <section id="livraison" className="max-w-lg scroll-mt-28">
+            <section id="livraison" className="max-w-lg scroll-mt-32">
               <DeliveryInfoForm
+                key={user.id}
+                actorId={user.id}
                 initial={livInfo}
                 labels={{
                   title: t(lang, "profile.liv.title"),
@@ -105,7 +109,7 @@ export default async function ComptePage() {
           )}
 
           {/* Données & compte (RGPD) */}
-          <section id="donnees" className="mt-10 scroll-mt-28">
+          <section id="donnees" className="mt-10 scroll-mt-32">
             <h2 className="titre-section">{t(lang, "vendeur.donnees.titre")}</h2>
             <p className="mt-1 text-sm text-mist">
               {avantLien}
@@ -115,7 +119,7 @@ export default async function ComptePage() {
               {apresLien}
             </p>
             <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-              <AccountActions />
+              <AccountActions key={user.id} actorId={user.id} />
             </div>
           </section>
         </VendeurShell>

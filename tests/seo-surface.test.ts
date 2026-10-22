@@ -2,6 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { loadRoute } from "./helpers/route-harness";
+import { rayonsPeuples, type RayonMenu } from "../lib/taxonomy";
+import * as langueUrl from "../lib/langue-url";
+import * as editorial from "../lib/editorial-routing";
+import * as univers from "../lib/catalogue-universes";
+import * as guides from "../lib/buying-guides";
+import { LANGS } from "../lib/i18n";
+import { hrefBoutique } from "../lib/boutique-href";
 
 /**
  * LA SURFACE INDEXABLE — quatre gardes, dont une qui protège une ABSENCE.
@@ -208,3 +216,46 @@ test("N5 — le sitemap construit l'URL vendeur par hrefBoutique, jamais en dur"
       "app/createur/[id]/page.tsx canonicalise vers /boutik/<slug>."
   );
 });
+
+for (const etat of ["vide", "rayons_vides", "peuple", "panne"] as const) {
+  test(`N6 — sitemap exécuté : répertoire ${etat}, autres routes et langues préservées`, async () => {
+    let lecturesMenu = 0;
+    const rayon: RayonMenu = { slug: "numerique", label: "Numérique", href: "/catalogue?cat=Numerique", vide: etat !== "peuple", enfants: [] };
+    const route = loadRoute("app/sitemap.ts", {
+      "@/lib/editorial-routing": editorial,
+      "@/lib/catalogue-universes": univers,
+      "@/lib/buying-guides": guides,
+      "@/lib/i18n": { LANGS },
+      "@/lib/products": { getProductsForSitemap: async () => {
+        if (etat === "panne") throw new Error("catalogue indisponible");
+        return [{ slug: "guide-local", creatorId: "vendeur", kind: "fichier" }];
+      } },
+      "@/lib/creators": { getBoutikSlug: async () => "atelier-demo" },
+      "@/lib/boutique-href": { hrefBoutique },
+      "@/lib/taxonomy": { rayonsPeuples, getMenuRayons: async (lang: string) => {
+        lecturesMenu++; assert.equal(lang, "fr");
+        if (etat === "panne") throw new Error("taxonomie indisponible");
+        return etat === "vide" ? [] : [rayon];
+      } },
+      "@/lib/site-url": { siteUrl: () => "https://zabelie.test" },
+      "@/lib/langue-url": langueUrl,
+    });
+    const lignes = await route.default() as unknown as { url: string; alternates?: { languages: Record<string, string> } }[];
+    const urls = lignes.map(ligne => ligne.url);
+    assert.equal(lecturesMenu, 1, "la taxonomie existante est lue une seule fois");
+    for (const lang of ["ht", "fr"]) {
+      const categorie = `https://zabelie.test/${lang}/categories`;
+      assert.equal(urls.includes(categorie), etat === "peuple", "une page noindex vide ne doit pas être annoncée");
+      for (const chemin of ["/vendre", "/ouvrir-ma-boutique", "/developpeurs"]) assert.ok(urls.includes(`https://zabelie.test/${lang}${chemin}`));
+      assert.equal(urls.includes(`https://zabelie.test/${lang}/produit/guide-local`), etat !== "panne");
+      assert.equal(urls.includes(`https://zabelie.test/${lang}/catalogue`), etat !== "panne");
+      assert.equal(urls.includes(`https://zabelie.test/${lang}/catalogue?univers=numerique`), etat !== "panne");
+      assert.equal(urls.includes(`https://zabelie.test/${lang}/catalogue?univers=objets`), false);
+    }
+    assert.ok(!urls.includes("https://zabelie.test/en/categories"));
+    assert.ok(!urls.includes("https://zabelie.test/es/categories"));
+    if (etat === "peuple") assert.deepEqual(JSON.parse(JSON.stringify(lignes.find(ligne => ligne.url === "https://zabelie.test/fr/categories")?.alternates)), {
+      languages: { ht: "https://zabelie.test/ht/categories", fr: "https://zabelie.test/fr/categories", "x-default": "https://zabelie.test/fr/categories" },
+    });
+  });
+}

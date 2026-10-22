@@ -33,7 +33,7 @@ export type Compression = {
 };
 
 /**
- * Réduit une image à `COVER_MAX_COTE` sur son grand côté et la ré-encode en
+ * Réduit une image à `COVER_MAX_COTE` (ou `options.maxCote`) sur son grand côté et la ré-encode en
  * WebP, en baissant la qualité jusqu'à passer sous la cible.
  *
  * ⚠️ NE JETTE JAMAIS et ne rend jamais plus lourd. En cas d'échec — format
@@ -41,7 +41,7 @@ export type Compression = {
  * D'ORIGINE. Un vendeur bloqué par un compresseur qui refuse sa photo serait
  * un défaut pire que la photo lourde : le plafond serveur, lui, tiendra.
  */
-export async function compresserImage(source: File): Promise<Compression> {
+export async function compresserImage(source: File, options: { maxCote?: number } = {}): Promise<Compression> {
   const echec = (): Compression => ({
     fichier: source,
     avant: source.size,
@@ -60,7 +60,9 @@ export async function compresserImage(source: File): Promise<Compression> {
   }
 
   try {
-    const facteur = Math.min(1, COVER_MAX_COTE / Math.max(bitmap.width, bitmap.height));
+    // Un appelant peut demander un côté plus court (l'essayage : 1 024 px), jamais plus long.
+    const cote = Math.min(COVER_MAX_COTE, options.maxCote ?? COVER_MAX_COTE);
+    const facteur = Math.min(1, cote / Math.max(bitmap.width, bitmap.height));
     const largeur = Math.round(bitmap.width * facteur);
     const hauteur = Math.round(bitmap.height * facteur);
 

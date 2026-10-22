@@ -34,6 +34,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
 
+  if (body?.expectedActorId !== undefined && body.expectedActorId !== user.id) {
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 403 });
+  }
   const resultat = await creerBrouillonProduit({ req, lang, supabase, user, body });
   // Un refus est la réponse que la route rendait ; `Response` : NextResponse en hérite.
   if (resultat instanceof Response) return resultat;

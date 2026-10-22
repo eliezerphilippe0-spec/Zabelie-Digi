@@ -90,6 +90,10 @@ createServer(async (req, res) => {
     return send(404, {});
   }
   if (url.pathname === "/rest/v1/profiles" && user) return send(200, { role: user.role, display_name: "MFA fixture", tier: "standard" });
+  // Essayage virtuel (0150) : le compteur du mois est une LECTURE (fonction stable), servie avant le décompte des écritures.
+  if (url.pathname === "/rest/v1/rpc/zabelie_essayage_compteur") {
+    return send(200, [{ reussis: 12, en_cours: 1, echecs: 3, plafond: 1000, quota: 5, pause: false, modifie: "2026-10-19T12:00:00Z" }]);
+  }
   if (url.pathname.startsWith("/rest/v1/")) {
     if (token === "cle-service-de-test" && req.method !== "GET" && req.method !== "HEAD") writes++;
     if (url.pathname.includes("/rpc/")) return send(200, 0);

@@ -4,11 +4,13 @@ import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { rateLimit } from "@/lib/zabelie-rate-limit";
 import {
   MAX_VIDEO_BYTES,
   VIDEO_BUCKET,
   cheminVideoValide,
   isMissingTable,
+  revisionMediasDisponible,
 } from "@/lib/product-media";
 
 export const runtime = "nodejs";
@@ -42,24 +44,37 @@ export async function POST(req: Request) {
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
 
-  let body: { productId?: string; step?: string; ext?: string; path?: string };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
-  if (!body.productId) {
+  if (!body || typeof body !== "object" || Array.isArray(body) ||
+    !("productId" in body) || typeof body.productId !== "string" || !body.productId ||
+    !("step" in body) || typeof body.step !== "string" || !["demande", "confirme"].includes(body.step)) {
     return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
   }
 
   const admin = createAdminClient();
+  // Même budget de galerie que les photos, partagé par vendeur entre les
+  // produits et les deux étapes. Un lien signé sans confirmation coûte aussi.
+  if (!(await rateLimit(admin, `galerie:${user.id}`, 20))) {
+    return NextResponse.json({ error: t(lang, "api.rate.limited") }, { status: 429 });
+  }
   const { data: product } = await admin
     .from("products")
-    .select("id, seller_id")
+    .select("id, seller_id, status")
     .eq("id", body.productId)
     .single();
   if (!product || product.seller_id !== user.id) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
+  }
+  if (product.status === "archived") {
+    return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 409 });
+  }
+  if (!["draft", "published"].includes(product.status) || !(await revisionMediasDisponible(admin))) {
+    return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
   }
 
   // Une seule vidéo par produit (redit en base par ZB073).
@@ -84,7 +99,7 @@ export async function POST(req: Request) {
   }
 
   if (body.step === "demande") {
-    const ext = body.ext === "webm" ? "webm" : "mp4";
+    const ext = "ext" in body && body.ext === "webm" ? "webm" : "mp4";
     // Nom SERVEUR — le lien signé ne vaut que pour ce chemin précis.
     const path = `${product.id}/galerie/vid-${crypto.randomUUID()}.${ext}`;
     const { data, error } = await admin.storage
@@ -97,7 +112,7 @@ export async function POST(req: Request) {
   }
 
   if (body.step === "confirme") {
-    const path = String(body.path ?? "");
+    const path = "path" in body && typeof body.path === "string" ? body.path : "";
     if (!cheminVideoValide(product.id, path)) {
       return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
     }
@@ -134,11 +149,13 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (insErr || !ligne) {
-      await admin.storage.from(VIDEO_BUCKET).remove([path]);
+      // Une réponse perdue après COMMIT, ou une confirmation concurrente,
+      // peut déjà avoir enregistré ce chemin. Conserver l'objet, comme les
+      // livrables numériques ; seul le hors-contrat AVANT insertion se retire.
       return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
     }
     const { data: pub } = admin.storage.from(VIDEO_BUCKET).getPublicUrl(path);
-    return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl });
+    return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl, status: "draft" });
   }
 
   return NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });

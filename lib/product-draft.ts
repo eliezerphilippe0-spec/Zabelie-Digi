@@ -32,6 +32,8 @@ import { isMissingFunction } from "@/lib/pg-errors";
  */
 
 export type CorpsBrouillon = {
+  /** Optional browser precondition: reject a stale form after account change. */
+  expectedActorId?: string;
   title?: string;
   description?: string;
   kind?: DigitalKind;
@@ -67,7 +69,7 @@ export async function creerBrouillonProduit({
   lienProjet?: string;
 }): Promise<NextResponse | BrouillonCree> {
   const { kind, category } = body;
-  const price = Number(body.priceHTG);
+  const price = body.priceHTG;
   // BL-117 (C-11) : mêmes gardes que les routes d'argent — bornes de taille
   // (anti-spam du catalogue public) et prix ≥ 1 (un CreatePayment MonCash à
   // 0 HTG finit en 502 confus côté acheteur).
@@ -103,7 +105,8 @@ export async function creerBrouillonProduit({
    * frais » : arbitrage du porteur, pas décision d'implémentation.
    *
    * Le négatif reste refusé : `price < 0`. */
-  if (!title || !isDigitalKind(kind) || !Number.isFinite(price) || price < 0) {
+  // Capacité technique de products.price_htg (integer), pas un plafond commercial.
+  if (!title || !isDigitalKind(kind) || typeof price !== "number" || !Number.isFinite(price) || price < 0 || Math.round(price) > 2147483647) {
     return NextResponse.json(
       { error: t(lang, "api.price.invalid") },
       { status: 400 }
@@ -309,8 +312,9 @@ export async function creerBrouillonProduit({
   }
 
   if (error || !product) {
+    console.error("[products] création refusée", error?.code ?? "empty_response");
     return NextResponse.json(
-      { error: error?.message ?? "Création échouée" },
+      { error: t(lang, "api.unavailable") },
       { status: 500 }
     );
   }

@@ -4,6 +4,8 @@ import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { revisionMediasDisponible } from "@/lib/product-media";
 import {
   COVER_MAX_OCTETS,
   COVER_MAX_DIMENSION,
@@ -54,6 +56,11 @@ export async function POST(req: Request) {
   }
   const accountRefusal = await requireActiveAccount(user.id);
   if (accountRefusal) return accountRefusal;
+
+  const admin = createAdminClient();
+  if (!(await rateLimit(admin, `galerie:${user.id}`, 20))) {
+    return NextResponse.json({ error: t(lang, "api.rate.limited") }, { status: 429 });
+  }
 
   let form: FormData;
   try {
@@ -110,38 +117,48 @@ export async function POST(req: Request) {
     );
   }
 
-  const admin = createAdminClient();
   // Propriété : seul le vendeur du produit peut poser sa photo.
   const { data: product } = await admin
     .from("products")
-    .select("id, seller_id")
+    .select("id, seller_id, status")
     .eq("id", productId)
     .single();
   if (!product || product.seller_id !== user.id) {
     return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
+  if (product.status === "archived") {
+    return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 409 });
+  }
+  if (!["draft", "published"].includes(product.status) || !(await revisionMediasDisponible(admin))) {
+    return NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
+  }
 
   // Nom de fichier SERVEUR (pas de path traversal), extension et type
   // déduits du format LU.
-  const path = `${product.id}/cover.${EXTENSION_DU_FORMAT[format]}`;
+  // Chemin neuf : un upload en vol ne remplace jamais les octets approuvés.
+  const path = `${product.id}/cover-${crypto.randomUUID()}.${EXTENSION_DU_FORMAT[format]}`;
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: true, contentType: format });
+    .upload(path, file, { upsert: false, contentType: format });
   if (upErr) {
     return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
   }
 
   const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(path);
-  // Cache-buster : upsert garde le même chemin, le CDN servirait l'ancienne.
-  const coverUrl = `${pub.publicUrl}?v=${Date.now()}`;
+  const coverUrl = pub.publicUrl;
 
-  const { error: updErr } = await admin
+  const { data: updated, error: updErr } = await admin
     .from("products")
-    .update({ cover_url: coverUrl })
-    .eq("id", product.id);
-  if (updErr) {
+    .update({ cover_url: coverUrl, status: "draft" })
+    .eq("id", product.id)
+    .eq("seller_id", user.id)
+    .neq("status", "archived")
+    .select("id, status")
+    .maybeSingle();
+  if (updErr || !updated || updated.id !== product.id || updated.status !== "draft") {
+    // Un COMMIT peut encore aboutir après une réponse perdue : ne pas supprimer.
     return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, coverUrl });
+  return NextResponse.json({ ok: true, coverUrl, status: "draft" });
 }

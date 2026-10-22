@@ -8,6 +8,8 @@ import { KIND_PHYSICAL } from "@/lib/product-kind";
 import { POLICY_VERSION } from "@/lib/policy";
 import { isMissingFunction } from "@/lib/pg-errors";
 import { specsEtenduesDisponibles } from "@/lib/products-physical";
+import { UUID_RE } from "@/lib/collections";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,15 +51,8 @@ export async function POST(req: Request) {
   const accountRefusal = await requireActiveAccount(user.id, { legalAcceptance: true });
   if (accountRefusal) return accountRefusal;
 
-  const admin = createAdminClient();
-  if (!(await rateLimit(admin, `product_physical:${user.id}`, 10))) {
-    return NextResponse.json(
-      { error: "Trop de créations. Réessayez dans une minute." },
-      { status: 429 }
-    );
-  }
-
   let body: {
+    expectedActorId?: unknown;
     title?: unknown;
     description?: unknown;
     priceHTG?: unknown;
@@ -80,18 +75,37 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return erreurTraduite("api.params.invalid", 400);
+  }
+  // Le compte reste contrôlé en premier ; l'identité du formulaire précède
+  // les effets de création, y compris la cadence et l'attestation.
+  if (body.expectedActorId !== undefined) {
+    if (typeof body.expectedActorId !== "string" || !UUID_RE.test(body.expectedActorId)) {
+      return erreurTraduite("api.params.invalid", 400);
+    }
+    if (body.expectedActorId !== user.id) return erreurTraduite("api.auth.required", 403);
+  }
+
+  const admin = createAdminClient();
+  if (!(await rateLimit(admin, `product_physical:${user.id}`, 10))) {
+    return NextResponse.json(
+      { error: "Trop de créations. Réessayez dans une minute." },
+      { status: 429 }
+    );
+  }
 
   // ── Champs de base (mêmes bornes que /api/products, BL-117) ───────────────
   const title =
     typeof body.title === "string" ? body.title.trim().slice(0, 140) : "";
   const description =
     typeof body.description === "string" ? body.description.slice(0, 5000) : null;
-  const price = Number(body.priceHTG);
+  const price = body.priceHTG;
   const quantity = Number(body.quantity);
   if (!title) {
     return NextResponse.json({ error: "Titre requis." }, { status: 400 });
   }
-  if (!Number.isInteger(price) || price < 1) {
+  if (typeof price !== "number" || !Number.isInteger(price) || price < 1) {
     return NextResponse.json(
       { error: "Prix entier en gourdes requis (≥ 1 HTG)." },
       { status: 400 }
@@ -246,7 +260,7 @@ export async function POST(req: Request) {
   const variants: { label: string; priceHTG: number; quantity: number }[] = [];
   for (const v of variantsIn) {
     const label = typeof v.label === "string" ? v.label.trim().slice(0, 80) : "";
-    const vPrice = Number(v.priceHTG);
+    const vPrice = v.priceHTG;
     const vQty = Number(v.quantity);
     if (!label) {
       return NextResponse.json(
@@ -254,7 +268,7 @@ export async function POST(req: Request) {
         { status: 422 }
       );
     }
-    if (!Number.isInteger(vPrice) || vPrice < 1) {
+    if (typeof vPrice !== "number" || !Number.isInteger(vPrice) || vPrice < 1) {
       return NextResponse.json(
         { error: `Variante « ${label} » : prix entier ≥ 1 HTG requis.` },
         { status: 422 }

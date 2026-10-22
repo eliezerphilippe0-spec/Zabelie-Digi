@@ -11,7 +11,7 @@ async function code(request: APIRequestContext) {
 }
 async function denied(request: APIRequestContext) {
   expect((await request.get("/api/admin/menu-counts")).status()).toBe(403);
-  for (const route of ["refund", "confirm-zelle", "payouts/settle", "product-status", "topup/refunds"]) {
+  for (const route of ["refund", "confirm-zelle", "payouts/settle", "product-status", "topup/refunds", "essayage"]) {
     expect((await request.post(`/api/admin/${route}`, { data: {} })).status(), route).toBe(403);
   }
 }
@@ -51,6 +51,25 @@ test("compte déjà protégé : challenge requis sans nouvelle clé", async ({ p
   await page.getByLabel("Code à six chiffres").fill(await code(request));
   await page.getByRole("button", { name: "Vérifier et accéder" }).click();
   await expect(page).toHaveURL(/\/admin$/);
+});
+
+test("essayage virtuel : la page d'administration après la double authentification, sans rien écrire", async ({ page, context }) => {
+  const request = context.request;
+  await signIn(context, { verified: true });
+  await page.goto("/admin/essayage");
+  await expect(page).toHaveURL(/\/securite/);
+  // Même entrée que « compte déjà protégé » : le champ prêt, puis le code.
+  await page.goto("/securite");
+  await expect(page.getByLabel("Code à six chiffres")).toBeVisible();
+  await page.getByLabel("Code à six chiffres").fill(await code(request));
+  await page.getByRole("button", { name: "Vérifier et accéder" }).click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await page.goto("/admin/essayage");
+  await expect(page.getByRole("heading", { level: 1, name: "Essayage virtuel" })).toBeVisible();
+  await expect(page.locator("[data-essayage-compteur]")).toHaveText("12 réussis, 1 en cours, 3 échecs (non comptés). Plafond 1000, reste 987.");
+  await expect(page.getByText("Aucun vendeur pilote : aucune fiche ne propose l'essayage.")).toBeVisible();
+  await expect(page.getByRole("spinbutton", { name: "Quota par acheteur et par jour" })).toHaveValue("5");
+  await expect(page.getByRole("navigation", { name: "Navigation admin" }).getByRole("link", { name: "Essayage", exact: true })).toBeVisible();
 });
 
 test("configuration abandonnée : rechargement et reprise possibles", async ({ page, context }) => {

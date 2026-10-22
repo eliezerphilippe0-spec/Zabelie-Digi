@@ -100,6 +100,33 @@ téléphone de contact est probablement plus important que l'adresse postale
 sur ce terrain (les livraisons haïtiennes se coordonnent par téléphone) —
 le formulaire portera les deux.
 
+**Correctif proposé le 20 octobre 2026 — conservation des coordonnées.**
+Le formulaire existant de la page Compte transmet les trois champs textuels
+à `/api/delivery-info`. La route refuse les corps non objet et les champs
+présents non textuels avant tout upsert : une entrée illégitime ne devient
+plus un retrait silencieux des coordonnées. Une chaîne vide reste un retrait
+volontaire ; les champs omis conservent la sémantique de remplacement existante
+(null). Nettoyage des espaces et plafonds 120/30/240 inchangés. Les erreurs
+utilisent les traductions existantes dans les quatre langues.
+
+Le client reste celui de la session et `user_id` vient de l'identité Auth.
+La table et les policies de `0076` ne changent pas. Tests comportementaux de
+la vraie route dans `tests/delivery-info.test.ts`, en complément des tests RLS
+SQL existants. Aucune livraison opérée par Zabelie, nouvelle collecte, migration
+ou intervention en production ; validation humaine en PR, sans merge ni déploiement.
+
+**Correctif du 22 octobre 2026 — identité du formulaire.** La précondition
+`expectedActorId` est désormais obligatoire pour `/api/delivery-info` : UUID
+absent ou mal formé →422, divergence avec la session Auth →403, avant upsert.
+Les anciens écrans sans identité doivent être rechargés. Les trois champs
+métier restent facultatifs : une identité valide seule conserve le remplacement
+par null. Le formulaire reçoit l'acteur SSR et une clé par utilisateur pour
+réinitialiser son état lors d'un changement de compte par refresh RSC.
+Les deux défauts sont reproduits localement avec le vrai écran/handler et des
+comptes fictifs. Aucun changement de collecte, de client de session, de RLS0076
+ou de lecture vendeur. Validation technique et fusion autonomes autorisées par
+le porteur ; preuves et résultats dans docs/67 §22 et la PR du lot.
+
 ## V-6 — KYC vendeur — ARBITRÉ le 2026-08-15, livré
 
 Arbitrages porteur : « **bloque le retrait** » (pas la publication — l'argent
@@ -137,7 +164,8 @@ rechargée à chaque consultation. Aucune surface ne rend d'image — vérifié 
 test. Rétention bornée et purgée par cron (`/api/kyc/purge`, déclaré dans
 `vercel.json` — une purge sans appelant ne purge rien).
 
-⚠️ **La DURÉE de rétention reste à confirmer** : défaut prudent de 90 jours
+**Historique du 15 août 2026 — remplacé par 0131 (voir mise à jour ci-dessous).**
+La durée de rétention restait alors à confirmer : défaut prudent de 90 jours
 après décision, en table de config, modifiable par `UPDATE`. C'est le seul
 des trois arbitrages qui n'a pas été rendu ; il est au registre.
 
@@ -148,6 +176,26 @@ schéma accepte donc `cin`, `paspo` **et `selfie`** (photo du vendeur tenant sa
 pièce, standard KYC courant) : la paire reste de deux documents avec photo,
 sans exiger de posséder deux titres. Le nombre requis vit en config
 (`docs_requis`, défaut 2).
+
+**22 octobre 2026 — identité de l'écran de dépôt.** Le multipart KYC exige
+`expectedActorId`, UUID de l'utilisateur fourni par la page Compte au
+formulaire. Après authentification et garde compte actif/accord légal,
+absence ou format invalide →422 ; divergence avec la session →403 avant
+validation de pièce, lecture du dossier par le handler, stockage et RPC.
+La session reste l'unique propriétaire ; la clé SSR `user.id` remonte le
+formulaire lorsqu'un refresh RSC change de compte. Les anciens écrans sans
+identité doivent être rechargés. Bucket privé, chemin serveur, signatures,
+limites, RPC0130, conservation0131 et nettoyage prudent restent inchangés.
+Preuves sur fichiers entièrement fictifs et validation dans docs/67 §23.
+
+**22 octobre 2026 — information de conservation.** Le résumé affiché avant
+le dépôt explique désormais dans les quatre langues la règle déjà publiée
+au §9 de confidentialité et codée par0131 : conservation pendant la relation
+de compte, puis cinq ans après sa fermeture ; la décision KYC ne déclenche
+pas le délai. La mention historique des90jours après décision ci-dessus
+n'est plus la règle actuelle. Seuls les libellés existants sont corrigés,
+sans durée, purge, politique publiée ou version d'acceptation modifiée.
+Inventaire, relecture et résultats dans docs/67 §24.
 
 ## Ordre proposé
 

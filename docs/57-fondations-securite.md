@@ -34,6 +34,27 @@ Ouvrir https://zabelie.com/securite après connexion, scanner le QR avec l'appli
 
 La protection des mots de passe compromis reste à activer dans Supabase Auth. Supabase la réserve au forfait Pro et supérieur : vérifier le forfait et obtenir l'accord de dépense avant toute montée de forfait. Aucune modification de forfait effectuée.
 
+### Récupération de compte — correctif proposé le 20 octobre 2026
+
+La page existante `/reinitialiser-mot-de-passe` consomme explicitement le code
+PKCE ou le fragment `type=recovery`, une seule fois même sous React StrictMode.
+Un échange échoué, un lien portant une erreur ou une visite sans preuve ne peut
+pas être remplacé par la session déjà connectée. L'identité est vérifiée par
+Auth avec le jeton obtenu avant de rendre le formulaire disponible ; l'URL est
+ensuite nettoyée. Recharger cette URL nettoyée demande un nouveau lien.
+
+Avant la soumission, le compte courant doit toujours correspondre. L'écriture
+utilise ensuite le SDK Auth dans une session en mémoire liée aux jetons validés,
+sans lecture ou écriture de cookie : une connexion concurrente ne peut pas
+rediriger le changement vers un autre compte. Les clients temporaires sont
+libérés. Les réglages du client habituel, OAuth, l'origine apex/www, les messages
+traduits et le noindex restent ceux de l'existant.
+
+Les tests de composant et les parcours `e2e-auth/reinitialisation.spec.ts`
+emploient seulement des comptes et un service Auth locaux factices. Aucun e-mail,
+mot de passe réel, réglage Auth, migration ou donnée de production n'est modifié.
+Cette proposition reste soumise à validation humaine en PR, sans merge ni déploiement.
+
 ## Paiements et supervision
 
 La CI rejoue les tests SQL sur PostgreSQL : montants, idempotence, confirmation et cohérence du registre vendeur. Ces tests utilisent des données de test et ne contactent pas MonCash pour facturer.

@@ -1,4 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
+import { KIND_FILE, KIND_SERVICE } from "../lib/product-kind";
+import { t } from "../lib/i18n";
 
 /**
  * MISE EN LIGNE, de bout en bout : une fiche créée par un vendeur n'apparaît
@@ -37,12 +39,57 @@ async function catalogue(browser: Browser) {
 type Fiche = { id: string; title: string; status: string; kind: string; price_htg: number };
 const fiches = async (page: Page) => (await (await page.request.get(`${STUB}/__fiches`)).json()).produits as Fiche[];
 
+for (const kind of [KIND_FILE, KIND_SERVICE]) {
+  test(`prix JSON ${kind} : un type non numérique ne crée aucune fiche`, async ({ browser }) => {
+    // Le reset existant est séquentiel : cette configuration garde un worker.
+    const vendeur = await connecte(browser, "seller", "/vendre");
+    try {
+      const before = await fiches(vendeur.page);
+      expect(before).toEqual([]);
+      for (const priceHTG of [false, null, [], true, [1], "750"]) {
+        const response = await vendeur.page.request.post("/api/products", { data: {
+          title: `Prix JSON fictif ${kind}`, description: "Contrepreuve locale sans production",
+          kind, category: "Éducation", priceHTG, policyAccepted: true,
+        } });
+        const after = await fiches(vendeur.page);
+        console.log(JSON.stringify({ scenario: "prix JSON fictif", kind, receivedPriceJSON: priceHTG, status: response.status(),
+          productWrites: after.length - before.length, storedPrices: after.map(product => product.price_htg), statuses: after.map(product => product.status) }));
+        expect(response.status()).toBe(400);
+        expect((await response.json()).error).toBe(t("fr", "api.price.invalid"));
+        expect(after).toEqual(before);
+      }
+    } finally { await vendeur.contexte.close(); }
+  });
+}
+
+test("prix JSON numériques : gratuit explicite et arrondi existant restent inchangés pour fichier et service", async ({ browser }) => {
+  const vendeur = await connecte(browser, "seller", "/vendre");
+  try {
+    let count = 0;
+    for (const kind of [KIND_FILE, KIND_SERVICE]) {
+      for (const priceHTG of [0, 750.4, 2147483647.4]) {
+        const title = `Prix numérique fictif ${kind} ${priceHTG}`;
+        const response = await vendeur.page.request.post("/api/products", { data: {
+          title, description: "Contrôle local des nombres JSON", kind, category: "Éducation", priceHTG, policyAccepted: true,
+        } });
+        expect(response.status()).toBe(200);
+        const saved = await fiches(vendeur.page);
+        expect(saved).toHaveLength(++count);
+        const product = saved.find(product => product.title === title);
+        expect(product).toMatchObject({ kind, status: "draft", price_htg: Math.round(priceHTG) });
+      }
+    }
+  } finally { await vendeur.contexte.close(); }
+});
+
 test("un service : créé par le vendeur, invisible en brouillon, publié par la modération, visible au catalogue", async ({ browser }) => {
   // 1. Le vendeur remplit le formulaire de /vendre, comme sur zabelie.com.
   const vendeur = await connecte(browser, "seller", "/vendre");
   const v = vendeur.page;
+  // « Nouveau produit » demande le type d'abord : « Service » ouvre le formulaire, type déjà réglé.
+  await v.locator("#nouveau").getByRole("link", { name: /^Service\b/ }).click();
+  await expect(v.locator("#formulaire").getByRole("heading", { name: "Nouveau service", exact: true })).toBeVisible();
   await v.getByRole("textbox", { name: "Titre du produit" }).fill(TITRE);
-  await v.getByRole("combobox", { name: "Type de produit" }).selectOption({ label: "Service" });
   await v.getByRole("combobox", { name: "Catégorie", exact: true }).selectOption({ label: "Éducation" });
   await v.getByRole("spinbutton", { name: "Prix (HTG)" }).fill("500");
   await v.getByRole("textbox", { name: "Description" }).fill("Je retouche une photo de produit pour votre boutique, livrée le jour même.");
