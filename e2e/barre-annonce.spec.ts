@@ -10,15 +10,15 @@ for (const width of [360, 1280]) {
     await expect(barre).toBeVisible();
     await expect(barre.getByText("Le vendeur n'est payé qu'après la remise").first()).toBeVisible();
     const piste = barre.locator(".annonce-piste");
-    expect(await piste.evaluate((el) => getComputedStyle(el).animationName)).toBe("annonce-defile");
+    await expect(piste).toHaveCSS("animation-name", "annonce-defile");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
     const bouton = page.getByRole("button", { name: "Mettre les annonces en pause" });
     await bouton.click();
-    expect(await piste.evaluate((el) => getComputedStyle(el).animationPlayState)).toBe("paused");
+    await expect(piste).toHaveCSS("animation-play-state", "paused");
     await page.getByRole("button", { name: "Relancer les annonces" }).click();
     await page.mouse.move(0, 700);
-    expect(await piste.evaluate((el) => getComputedStyle(el).animationPlayState)).toBe("running");
+    await expect(piste).toHaveCSS("animation-play-state", "running");
   });
 }
 
@@ -26,7 +26,7 @@ test("mouvement réduit : la barre est immobile, une seule copie, sans bouton", 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/catalogue");
   const barre = page.getByRole("marquee", { name: "Annonces" });
-  expect(await barre.locator(".annonce-piste").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+  await expect(barre.locator(".annonce-piste")).toHaveCSS("animation-name", "none");
   await expect(barre.getByRole("button")).toHaveCount(0);
   await expect(barre.locator('.annonce-groupe[aria-hidden="true"]')).toBeHidden();
 });

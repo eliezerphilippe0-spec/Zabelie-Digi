@@ -38,6 +38,21 @@ ciblé sans alerte ; lint global sans erreur ni nouvelle alerte (dix existantes
 Windows). Revue indépendante favorable ; contrepreuves et diagnostic CDP
 initial conservés. CI exacte, fusion et sondes seront consignées dans la PR.
 
+La première CI de la tête3bc43eda est officiellement verte, mais comporte
+un flaky ancien du bandeau :444 tests uniques,445 tentatives. Le refus de
+fusion est maintenu. Périmètre de validation étendu au seul fichier existant
+e2e/barre-annonce.spec.ts : lectures CSS ponctuelles remplacées par les
+assertions Playwright qui attendent les mêmes valeurs exactes, sans changer
+composant, CSS, configuration, timeout ou nombre de retries. Une chaîne vide
+est compatible avec un nœud remplacé pendant le montage ; aucune cause produit
+n'est démontrée. Logs initiaux conservés, essais répétés ciblés puis nouvelle
+CI normale sur la tête modifiée avant toute fusion.
+
+Après synchronisation CSS : les cinq cas existants passent chacun trois fois,
+quinze exécutions et tentatives, zéro retry/flaky/échec/ignoré en52,9 s. Les
+huit unités bandeau, types et lint ciblé passent. Le build applicatif reste
+identique ; seule la nouvelle CI doit confirmer la tête supplémentaire.
+
 ## Fermeture de compte — identité de l'écran (22 octobre 2026)
 
 Lot autonome sur `fix/fermeture-identite-session`, base `main da18726`, après

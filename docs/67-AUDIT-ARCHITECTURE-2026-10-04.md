@@ -1485,6 +1485,23 @@ console inattendue, overlay ou débordement ; captures360/1280 relues. Types,
 build et contraste88/88 passent ; lint sans erreur ni nouvelle alerte (dix
 existantes Windows), ciblé sans avertissement. Revue indépendante sans blocage.
 
+La première CI39806033558 sur3bc43eda est officiellement verte mais ne satisfait
+pas la porte zéro retry :444 tests uniques,445 tentatives, un flaky ancien du
+bandeau à1280px. Les24parcours d'identité passent directement. Une lecture CSS
+ponctuelle reçoit une chaîne vide ; un remplacement de nœud pendant le montage
+est compatible avec ce résultat, sans cause produit démontrée. La fusion est
+suspendue. Les quatre assertions CSS de e2e/barre-annonce.spec.ts emploient
+désormais toHaveCSS avec les mêmes propriétés/valeurs exactes et attente
+standard ; aucun changement de composant, CSS, configuration, timeout ou
+nombre de retries. Logs initiaux conservés ; répétitions ciblées puis nouvelle
+CI sur la tête exacte sont exigées. Ce seul fichier de test étend le lot.
+
+Les cinq cas bandeau passent ensuite chacun trois fois :15exécutions et
+15tentatives, zéro retry/flaky/échec/ignoré en52,9 s. Les huit unités bandeau,
+le contrôle des types et le lint ciblé passent ; aucun rebuild applicatif
+n'est requis pour cette modification du test. La première preuve CI reste
+archivée sous sa tête initiale, sans réécriture de son résultat flaky.
+
 CI du SHA exact, fusion normale et sondes publiques seront consignées dans
 la PR. Aucune donnée réelle, paiement,
 migration distante ou déploiement manuel ; l'audit entier reste ouvert.
