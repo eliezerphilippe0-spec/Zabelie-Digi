@@ -1,5 +1,56 @@
 # OPS_TODO — Zabelie
 
+## Outillage ESLint — cinq alertes liées à braces (22 octobre 2026)
+
+Objectif vérifiable sur fix/outillage-braces-securite, base main f2b9f401 :
+retirer la chaîne vulnérable plugin Next → fast-glob → micromatch → braces,
+obtenir zéro alerte npm complète et conserver les règles applicatives et Next.
+Les cinq alertes sont la propagation d'un seul avis GHSA-vfj7-8cjw-p6xm ;
+braces 3.0.3 reste la dernière version publiée et aucun correctif n'est annoncé.
+Les PR 386/387 gardent cette chaîne ; 341 traitait brace-expansion, autre paquet.
+
+Réutiliser tinyglobby 0.2.17 et picomatch 4.0.7, déjà présents dans l'outillage,
+par un adaptateur local privé limité à globSync pour les racines Next. Override
+limité au plugin Next 16.4.2 ; aucun changement de règle, de Next ou de version
+majeure. Préserver les racines littérales/absolues, la normalisation Windows et
+la sélection par motifs. Les formes hors contrat doivent échouer explicitement
+plutôt que réduire silencieusement la couverture ; pas d'alias nu, car ses
+valeurs par défaut changeraient les racines. Préserver la forme des chemins
+littéraux par stat ; compléter les dossiers liés omis par fdir via son
+adaptateur fs, sans modifier sa résolution ou ses protections de cycles.
+La dépendance locale directe fast-glob et la référence $fast-glob évitent
+le désaccord des chemins file relatifs entre installation et npm ls.
+Quatre exceptions locales de style no-require-imports sont nécessaires aux
+imports CommonJS synchrones du plugin ; aucune règle Next désactivée.
+Aucun fork ou patch de braces.
+Retirer cet adaptateur lorsque le plugin Next amont éliminera cette chaîne,
+après audit complet et passage des mêmes contrats sur une installation propre.
+
+Périmètre : package.json et lock, deux fichiers de l'adaptateur sous scripts/,
+un test d'intégration, ce journal et docs/67, sept fichiers. Arrêt ferme : cinq
+tours au plus ; contrepreuve sur l'ancien graphe, installation npm ci isolée
+puis réelle, audit complet/production, tests du vrai getRootDirs et diagnostic
+réel de la règle Next, suite unitaire, lint, build puis types et CI exacte.
+Revue indépendante, fusion normale, comparaison d'arbre et sondes publiques.
+Aucune exclusion d'avis, rétrogradation, nouvelle règle métier, donnée réelle,
+paiement, migration distante, changement de secret ou déploiement manuel.
+
+Validation locale finale : npm ci et npm ls --all sortent en zéro ; audits
+complet et production zéro vulnérabilité. Dix-neuf contrats du vrai plugin
+et de no-html-link-for-pages passent, y compris junctions et chemins Windows ;
+2 301/2 301 tests unitaires, zéro échec/ignoré. Build Next 16.4.2, types après
+build, contraste 88/88 et lint sans erreur ni nouvelle alerte (dix existantes
+Windows). Deux contrepreuves rouges sur les accolades et une sur le filtrage
+des liens sont conservées ; le code correct a été restauré avant validation.
+Un dernier témoin EACCES a démontré l'erreur de lecture masquée par fdir :
+les trois opérations fs synchrones sont observées, et toute erreur autre
+qu'ENOENT est propagée après le parcours. Ce témoin passe après correction.
+Revue logique indépendante favorable. Installation du montage npm 10.9.9 et
+11.13.0 prouvée en fixtures Windows/Node 24, sans option de structure cachée ;
+CI exacte Linux/Node 22, fusion normale et sondes publiques à consigner en PR.
+La CI verte de 6241e51 (2 300 unités, 450 parcours sans retry) est historique ;
+elle précède ce dernier garde et ne valide pas la nouvelle tête.
+
 ## Dépendances — correctif de sécurité dans la PR 385 (22 octobre 2026)
 
 Objectif vérifiable : réutiliser la PR 385 existante pour corriger l'alerte
