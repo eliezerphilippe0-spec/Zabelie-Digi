@@ -3,6 +3,7 @@ import { t } from "@/lib/i18n";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { UUID_RE } from "@/lib/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +19,26 @@ export const dynamic = "force-dynamic";
  * fermeture (0131) : c'est la purge planifiée qui les retire, pas la fermeture du
  * compte. `0127` interdit en base la suppression d'un profil qui a des
  * pièces, quel que soit le chemin. */
-export async function DELETE() {
+export async function DELETE(req: Request) {
   const lang = await getLang();
   const unavailable = () => NextResponse.json({ error: t(lang, "api.unavailable") }, { status: 503 });
   const supabase = await createClient();
   const { data: { user }, error: identityError } = await supabase.auth.getUser();
   if (identityError || !user) return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 401 });
+
+  const invalid = () => NextResponse.json({ error: t(lang, "api.params.invalid") }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return invalid();
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return invalid();
+  // Précondition obligatoire de l'écran pour cette action irréversible ;
+  // la session reste seule source de l'identifiant du compte à fermer.
+  const { expectedActorId } = body as { expectedActorId?: unknown };
+  if (typeof expectedActorId !== "string" || !UUID_RE.test(expectedActorId)) return invalid();
+  if (expectedActorId !== user.id) return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 403 });
   const admin = createAdminClient();
 
   const [purchases, sales, kyc, acceptances] = await Promise.all([

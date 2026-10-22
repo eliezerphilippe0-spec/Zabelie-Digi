@@ -1,5 +1,58 @@
 # OPS_TODO — Zabelie
 
+## Fermeture de compte — identité de l'écran (22 octobre 2026)
+
+Lot autonome sur `fix/fermeture-identite-session`, base `main da18726`, après
+#405, sa CI complète et la santé publique du commit fusionné vérifiées. Le
+suivi du workflow postdéploiement reste archivé séparément ; aucun signal de
+régression. L'inventaire lecture seule des routes, appelants, tables, tests et
+PR place la fermeture du mauvais compte avant le durcissement P2 des quantités.
+
+Objectif : reproduire avec comptes fictifs le véritable écran Compte ouvert
+sous A, cookies devenus B, dialogue confirmé, puis observer le vrai DELETE et
+ses effets Auth/PostgREST. Si confirmé, lier l'action à l'utilisateur affiché
+par la précondition `expectedActorId`, déjà éprouvée pour profil et quartier,
+rendue obligatoire ici pour cette action irréversible. La session vérifiée
+reste seule autorité pour le compte cible.
+
+Préserver les deux branches : suppression Auth si quatre compteurs exacts à
+zéro, sinon fermeture/anonymisation avec reçus et pièces conservés. Maintenir
+les erreurs fiables, protection KYC/comptabilité, ordre de fermeture, purges,
+métadonnées et déconnexion globale. Aucune réauthentification ou règle de
+conservation nouvelle. Aucun contrat externe sans corps n'a été trouvé : les
+anciens écrans sans identité sont refusés avec 400 avant tout effet et doivent
+être rechargés. La revue indépendante écarte la variante facultative, qui
+laisserait le vieux JavaScript exposé au même défaut.
+
+Périmètre : DELETE existant, AccountActions et son unique page appelante,
+tests/backend-account-guards.test.ts et deconnexion.test.ts, parcours
+profil-identite et stub locaux existants, docs/67 et ce journal.
+Aucun nouvel endpoint, table, RPC, migration,
+dépendance ou infrastructure parallèle. Les coordonnées privées restent dans
+un lot distinct. Aucune donnée réelle ni paiement ; aucun déploiement manuel.
+
+Arrêt par lot : cinq tours au plus ; contrepreuves avant correction, vrais
+handler/écran, tests ciblés/globaux, revue indépendante, PR, CI du SHA final,
+fusion normale avec SHA attendu puis sondes publiques en lecture seule.
+
+Un succès réel du premier run corrigé a révélé un renvoi 303 suivi par fetch
+avant la navigation déjà effectuée par le routeur. Le composant ne suivra plus
+ce renvoi ; le vrai POST serveur, révocation et cookies restent exercés. Revue
+indépendante favorable ; les témoins UI devront observer ce POST 303, l'accueil
+et l'absence des cookies Auth. Aucun changement au serveur signout ou à la CSP.
+
+Validation locale finale : 2 271/2 271 unitaires, 59/59 ciblés métier voisins
+et 31/31 compte/déconnexion. Les dix-huit parcours passent en 40,6 s, dix-huit
+tentatives, deux workers, zéro retry : quatre divergences403 et quatre corps
+sans identité400 sans effet, quatre succès UI complets (deux de chaque mode),
+annulation sans DELETE et les onze anciens parcours conservés. Aucun défaut
+JS, console inattendue, overlay ou débordement ; captures360/1280 relues.
+Types, build et contraste88/88 réussis ; lint sans erreur ni nouvelle alerte
+(dix existantes sous Windows), ciblé sans avertissement. Les runs15/18 puis
+16/18 sont conservés ; le dernier écart était le PNG fictif HTTP de l'accueil,
+remplacé par le même PNG dataURI déjà utilisé dans le stub, sans exception CSP.
+Revue indépendante, CI du SHA exact et sondes publiques seront liées dans la PR.
+
 ## Demande de quartier — identité du formulaire (22 octobre 2026)
 
 Lot autonome sur `fix/quartier-identite-session`, base `main 8a6cbd5`, après

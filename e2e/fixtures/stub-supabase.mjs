@@ -53,6 +53,7 @@ export const ORDER_ID = "33333333-3333-3333-3333-333333333333";
 export const PRODUCT_ID = "44444444-4444-4444-4444-444444444444";
 export const SLUG = "filtre-huile-corolla";
 
+const COVER_PNG = "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64");
 const PRODUCT = {
   id: PRODUCT_ID,
   slug: SLUG,
@@ -67,7 +68,7 @@ const PRODUCT = {
   seller_id: SELLER_ID,
   delivery_days: null,
   service_includes: null,
-  cover_url: "http://127.0.0.1:15421/cover.png",
+  cover_url: COVER_PNG,
   status: "published",
   in_stock: true,
   seller: { display_name: "Garaj Petyonvil" },
@@ -158,7 +159,7 @@ const discountVariants = [
 ].map(v => ({ ...v, product_id: PRODUCT_ID, active: true, zabelie_stock: { quantity_available: 4 } }));
 
 const SHOP_PRODUCTS = [
-  { ...PRODUCT, cover_url: "data:image/png;base64," + readFileSync(new URL("./cover.png", import.meta.url)).toString("base64") },
+  PRODUCT,
   { ...PRODUCT, id: DIGITAL_ID, slug: "formation-studio-test", title: "Formation studio", description: "Apprenez à préparer votre première offre avec un guide et des leçons.", kind: "fichier", cover_url: null, product_assets: [{ id: ASSET_ID }] },
   { ...PRODUCT, id: "66666666-6666-6666-6666-666666666666", slug: "service-boutique-test", title: "Conseil pour votre projet", description: "Une consultation pour organiser vos prochaines étapes.", kind: "service", cover_url: null, delivery_days: 2, service_includes: ["Une consultation"] },
 ].map(product => ({ ...product, seller: { display_name: "Atelye Lakay" } }));
@@ -225,6 +226,17 @@ const server = createServer((req, res) => {
             { id: crypto.randomUUID(), parent_id: departmentId, level: "komin", slug: "komin-fictive", label_kr: "Komin tès", label_fr: "Commune fictive", label_en: "Test commune", label_es: "Comuna ficticia" },
           ], zoneRequests: [],
         } : {}) };
+        if (["history", "empty"].includes(input.accountClosure)) {
+          scenario.accountClosure = {
+            mode: input.accountClosure, events: [], profileReads: [],
+            counts: Object.fromEntries(profiles.map(profile => [profile.id, { purchases: 0, sales: 0, kyc: 0, acceptances: input.accountClosure === "history" ? 2 : 0 }])),
+            authUsers: profiles.map((profile, index) => ({ id: profile.id, email: `fictif-${profile.id}@example.test`,
+              user_metadata: { name: `Compte fictif ${index ? "B" : "A"}`, phone: `Téléphone fictif ${index ? "B" : "A"}` }, deleted: false, ban_duration: null })),
+            kycSubmissions: input.accountClosure === "history" ? profiles.map(profile => ({ user_id: profile.id, status: "pending", note_admin: null, decided_at: null })) : [],
+            favorites: profiles.map(profile => ({ user_id: profile.id, product_id: PRODUCT_ID })),
+            follows: profiles.map(profile => ({ user_id: profile.id, seller_id: SELLER_ID })),
+          };
+        }
         profileIdentityScenarios.set(input.scenario, scenario);
         for (const profile of profiles) profileIdentityActors.set(profile.id, { profile, scenario });
         return send(200, scenario);
@@ -242,11 +254,70 @@ const server = createServer((req, res) => {
         if (url.searchParams.get("boutik_slug") === "is.null" && profile.boutik_slug !== null) return send(200, []);
         scenario.writes.push({ id: profile.id, kind: Object.hasOwn(patch, "boutik_slug") ? "slug" : "profile", patch });
         Object.assign(profile, patch);
+        if (scenario.accountClosure) {
+          scenario.accountClosure.events.push({ actorId: profile.id, kind: "profile.update", patch });
+          return single([profile]);
+        }
         return send(200, []);
       });
     }
+    if (scenario.accountClosure) scenario.accountClosure.profileReads.push({ actorId: profile.id, select: url.searchParams.get("select") });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  // Fermeture : observer les E/S réelles pour les seuls UUID opt-in. Aucun
+  // refus d'identité, trigger, cascade SQL ou mécanisme de RLS n'est simulé.
+  const closureOwner = eq(url, "buyer_id") ?? eq(url, "products.seller_id") ?? eq(url, "user_id");
+  const closureScenario = profileIdentityActors.get(closureOwner)?.scenario;
+  const closure = closureScenario?.accountClosure;
+  if (closure) {
+    const table = url.pathname.slice("/rest/v1/".length);
+    const metric = table === "orders" ? (eq(url, "buyer_id") ? "purchases" : "sales")
+      : table === "zabelie_kyc_documents" ? "kyc" : table === "zabelie_policy_acceptances" ? "acceptances" : null;
+    if (req.method === "HEAD" && metric) {
+      const count = closure.counts[closureOwner][metric];
+      closure.events.push({ actorId: closureOwner, kind: "count", metric, count });
+      res.writeHead(200, { "content-type": "application/json", "content-range": `*/${count}` });
+      return res.end();
+    }
+    if (table === "zabelie_kyc_submissions") {
+      if (req.method === "PATCH") {
+        let text = ""; req.on("data", chunk => text += chunk);
+        return req.on("end", () => {
+          const patch = JSON.parse(text);
+          closure.events.push({ actorId: closureOwner, kind: "kyc.update", patch });
+          closure.kycSubmissions.filter(row => row.user_id === closureOwner && row.status === eq(url, "status")).forEach(row => Object.assign(row, patch));
+          return send(200, []);
+        });
+      }
+      return single(closure.kycSubmissions.filter(row => row.user_id === closureOwner));
+    }
+    if (table === "zabelie_kyc_documents") return single([]);
+    if (req.method === "DELETE" && ["zabelie_favorites", "zabelie_shop_follows"].includes(table)) {
+      const key = table === "zabelie_favorites" ? "favorites" : "follows";
+      closure.events.push({ actorId: closureOwner, kind: `${key}.delete` });
+      closure[key] = closure[key].filter(row => row.user_id !== closureOwner);
+      return send(200, []);
+    }
+    if (table === "orders" && req.method === "GET") {
+      closure.events.push({ actorId: closureOwner, kind: "orders.read" });
+      return single([]); // Les deux modes déclarent exactement zéro achat.
+    }
+  }
+  const closureAuthId = /^\/auth\/v1\/admin\/users\/([0-9a-f-]{36})$/.exec(url.pathname)?.[1];
+  const closureAuth = profileIdentityActors.get(closureAuthId)?.scenario.accountClosure;
+  if (closureAuth && ["PUT", "DELETE"].includes(req.method)) {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const patch = JSON.parse(text || "{}");
+      const user = closureAuth.authUsers.find(user => user.id === closureAuthId);
+      closureAuth.events.push({ actorId: closureAuthId, kind: req.method === "DELETE" ? "auth.delete" : "auth.update", patch,
+        serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+      if (req.method === "DELETE") user.deleted = true;
+      else Object.assign(user, patch, { user_metadata: { ...user.user_metadata, ...patch.user_metadata } });
+      return send(200, user);
+    });
   }
 
   // Une jointure commandes → produits sans clé nommée : refusée comme en production (0111).
@@ -420,6 +491,10 @@ const server = createServer((req, res) => {
   const profileIdentityId = /profile-identity-([0-9a-f-]{36})/.exec(token)?.[1];
   const profileIdentityActor = profileIdentityActors.has(profileIdentityId) ? profileIdentityId : null;
   const identityScenario = profileIdentityActors.get(profileIdentityActor)?.scenario;
+  if (identityScenario?.accountClosure && url.pathname === "/auth/v1/logout") {
+    identityScenario.accountClosure.events.push({ actorId: profileIdentityActor, kind: "auth.signout", scope: url.searchParams.get("scope") });
+    return send(200, {});
+  }
   if (identityScenario?.zones && url.pathname === "/rest/v1/zabelie_zones" && req.method === "GET") {
     const id = eq(url, "id");
     return single(identityScenario.zones.filter(zone => !id || zone.id === id));
@@ -544,13 +619,15 @@ const server = createServer((req, res) => {
 
   // ── Auth ────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith("/auth/v1/user")) {
+    const closureUser = identityScenario?.accountClosure?.authUsers.find(user => user.id === profileIdentityActor);
+    if (closureUser?.deleted) return send(401, { message: "User not found", error_code: "user_not_found" });
     return send(200, {
       id: profileIdentityActor ?? essayageCompte ?? (sellerPreparation ? SELLER_ID : historyError ? HISTORY_ERROR_ID : history ? HISTORY_ID : BUYER_ID),
       aud: "authenticated",
       role: "authenticated",
-      email: "achte@example.ht",
+      email: closureUser?.email ?? "achte@example.ht",
       app_metadata: {},
-      user_metadata: {},
+      user_metadata: closureUser?.user_metadata ?? {},
       created_at: "2026-01-01T00:00:00Z",
     });
   }

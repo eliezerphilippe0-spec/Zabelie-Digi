@@ -115,7 +115,7 @@ export default async function ComptePage() {
               {apresLien}
             </p>
             <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-              <AccountActions />
+              <AccountActions key={user.id} actorId={user.id} />
             </div>
           </section>
         </VendeurShell>
