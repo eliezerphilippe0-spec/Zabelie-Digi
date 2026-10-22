@@ -1634,3 +1634,41 @@ relues, nouvelle information lisible ; EN/ES couverts par les parcours, sans
 revue visuelle dédiée revendiquée. Le premier filtre n'a sélectionné aucun
 cas ; ce diagnostic est conservé séparément et ne représente aucun échec
 de test. Les six cas réellement exécutés passent directement.
+
+## 25. Dépendances — réutilisation de la PR 385 (22 octobre 2026)
+
+Après livraison publique de #409, l'audit npm de production sur main be890065
+signale une critique Next.js 16.4.0 et arrête le job avant types, tests et build.
+Le prémerge, vert avec zéro vulnérabilité à 17:09:50Z, reste distinct de ce
+nouveau résultat à 17:25:24Z. Ni défaillance de compilation ni exploitation
+production ne sont établies par cet audit.
+
+La PR #385 propose déjà Next.js et eslint-config-next 16.4.2 ainsi que
+Supabase JS 2.118.0. Réutilisation de ce groupe existant, intégration de main
+par fusion normale, aucun doublon. Le verrou conserve sharp 0.35.5 ; les
+composants Next/Supabase associés suivent leurs versions couplées. Les PR
+majeures ESLint/TypeScript et la skill restent distinctes. Aucun changement
+de route, fonction applicative, table, test, migration, configuration ou secret.
+
+Sources mainteneur : [avis images](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw),
+[avis Server Actions](https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r)
+et [release 16.4.2](https://github.com/vercel/next.js/releases/tag/v16.4.2).
+Les deux correctifs commencent en 16.4.1 ; 16.4.2 est le patch proposé par npm
+et déjà porté par #385. Installation, audit, suites existantes, compilation,
+revue indépendante, CI exacte puis sondes publiques restent à consigner.
+
+Revue du [diff Supabase 2.118.0](https://github.com/supabase/supabase-js/releases/tag/v2.118.0) :
+typage PostgREST et options Storage opt-in non utilisées ici, sans modification
+du code d'exécution Auth inspecté. Le verrou change 18 versions, sans ajout
+ni suppression de paquet ; SSR et Node restent compatibles. Après npm ci,
+l'audit de production au seuil CI rend zéro vulnérabilité ; l'audit complet
+conserve cinq alertes hautes dans l'outillage ESLint, distinctes. Aucun retour
+à une ancienne majeure ni affaiblissement de l'audit n'est appliqué.
+
+Validation locale : 2 282/2 282 tests unitaires existants, build Next 16.4.2,
+types après build, contraste 88/88 et lint sans erreur ni nouvelle alerte
+(dix existantes Windows). Trente parcours existants d'identité Compte/KYC
+passent directement contre les fixtures locales ; aucune pièce réelle ni
+base distante. Revue logique indépendante favorable, sans preuve de RLS ou de
+verrous SQL tirée des stubs. CI complète sur le SHA final, fusion normale et
+vérification du commit public restent à consigner dans la PR.

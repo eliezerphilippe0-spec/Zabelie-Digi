@@ -1,5 +1,38 @@
 # OPS_TODO — Zabelie
 
+## Dépendances — correctif de sécurité dans la PR 385 (22 octobre 2026)
+
+Objectif vérifiable : réutiliser la PR 385 existante pour corriger l'alerte
+critique Next.js qui arrête l'audit de production sur main be890065 après
+#409. Intégrer ce main dans sa branche par fusion normale, conserver Next.js
+et eslint-config-next 16.4.2 ainsi que Supabase JS 2.118.0 déjà proposés,
+puis obtenir audit de production, tests et compilation verts sur la tête
+exacte. Les cinq lots 405–409 restent intégralement présents.
+
+Inventaire : deux fichiers de dépendances dans #385 ; #386 (ESLint majeur),
+#387 (TypeScript majeur) et #402 (skill) sont des sujets distincts. Les avis
+GHSA-2464-fhr4-w9xw et GHSA-p3m5-59mp-jv5r concernent Next 16.4.0 ; aucun
+incident ou exploit production n'est démontré. sharp 0.35.5 est déjà verrouillé.
+Les tests Auth/PostgREST/Storage, identité Compte et KYC existent et sont
+réutilisés. Aucune route, table, migration ou nouvelle infrastructure.
+
+Périmètre : package.json, package-lock.json, ce journal et docs/67, quatre
+fichiers. Arrêt ferme : cinq tours au plus ; installation reproductible,
+audit au seuil CI sans affaiblissement, suite unitaire existante, lint,
+contraste, build puis types, parcours navigateur existants, revue indépendante
+et CI complète sans retry/flaky sur le SHA final. Fusion normale puis commit
+servi, readyz et six protections publiques. Pas de force push, mise à jour
+majeure, npm audit fix --force, changement de secret/configuration, donnée
+réelle, paiement, migration distante ou déploiement manuel.
+
+Validation locale du groupe intégré : npm ci reproductible ; audit de
+production zéro vulnérabilité, audit complet cinq alertes hautes d'outillage
+distinctes. Les 2 282 tests unitaires existants passent en 54,7 s, puis build
+Next 16.4.2, types après build, contraste 88/88 et lint sans erreur ni nouvelle
+alerte (dix existantes Windows). Les 30 parcours d'identité Compte/KYC passent
+directement, sans nouveau test ni configuration. Revue du diff indépendante
+favorable ; CI du SHA final, fusion et sondes publiques à consigner dans la PR.
+
 ## Information KYC — conservation annoncée (22 octobre 2026)
 
 Lot autonome sur fix/kyc-information-conservation, base main f307396c,
