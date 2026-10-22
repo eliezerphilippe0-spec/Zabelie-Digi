@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Interop synchrone du plugin tiers.
 const { isAbsolute, parse, posix, relative, resolve } = require("node:path");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Interop synchrone du plugin tiers.
-const { realpathSync, statSync } = require("node:fs");
+const { readdirSync, realpathSync, statSync } = require("node:fs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Même moteur de motifs que tinyglobby.
 const picomatch = require("picomatch");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Interop synchrone du plugin tiers.
@@ -34,7 +34,7 @@ function globSync(pattern, options = {}) {
     try {
       return statSync(pattern).isDirectory() ? [pattern] : [];
     } catch (error) {
-      if (error.code === "ENOENT" || error.code === "ENOTDIR") return [];
+      if (error.code === "ENOENT") return [];
       throw error;
     }
   }
@@ -42,6 +42,19 @@ function globSync(pattern, options = {}) {
   const absolute = options.absolute ?? isAbsolute(pattern);
   const cwd = resolve(options.cwd || process.cwd());
   const links = [];
+  let failure;
+  // fdir masque les erreurs de lecture par défaut. Conserver le contrat de
+  // fast-glob : seul ENOENT est ignoré, jamais un accès refusé ou une erreur IO.
+  const observe = (operation) => (...args) => {
+    try {
+      return operation(...args);
+    } catch (error) {
+      if (error.code !== "ENOENT") failure ??= error;
+      throw error;
+    }
+  };
+  const readRealpath = observe(realpathSync);
+  const readStat = observe(statSync);
   const paths = findDirectories(pattern, {
     ...options,
     absolute,
@@ -49,15 +62,18 @@ function globSync(pattern, options = {}) {
     // fdir suit les liens mais omet le dossier lié lui-même. Observer leur
     // résolution conserve ses protections de parcours et son contrôle des cycles.
     fs: {
+      readdirSync: observe(readdirSync),
+      statSync: readStat,
       realpathSync(path) {
-        const target = realpathSync(path);
-        if (statSync(target).isDirectory()) {
+        const target = readRealpath(path);
+        if (readStat(target).isDirectory()) {
           links.push((absolute ? path : relative(cwd, path)).replace(/\\/g, "/"));
         }
         return target;
       },
     },
   });
+  if (failure) throw failure;
   const withoutDirectoryMark = (path) => path.endsWith("/") && path !== parse(path).root.replace(/\\/g, "/") ? path.slice(0, -1) : path;
   const matches = picomatch(withoutDirectoryMark(posix.normalize(pattern)), { dot: false, nonegate: true, posix: true });
   const roots = paths.map(withoutDirectoryMark);

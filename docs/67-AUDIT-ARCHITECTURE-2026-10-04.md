@@ -1700,14 +1700,21 @@ aucune règle Next désactivée, copie de braces, exclusion d'avis ou rétrograd
 Contrepreuves, installation reproductible, audits, revue et CI à consigner.
 
 Validation locale finale : installation propre et graphe npm valides ; audits
-complet et production zéro vulnérabilité. Dix-huit contrats réels du plugin
+complet et production zéro vulnérabilité. Dix-neuf contrats réels du plugin
 passent sans saut, dont motifs absolus, accolades littérales, liens lexicaux,
 racines système et diagnostic no-html-link-for-pages. Les témoins ont détecté
 deux défauts d'accolades avant correction et une inclusion indue de lien sous
 mutation ; les journaux rouges restent distincts des résultats finaux verts.
-Suite complète 2 300/2 300, build Next 16.4.2, types après build, contraste 88/88,
+Suite complète 2 301/2 301, build Next 16.4.2, types après build, contraste 88/88,
 lint sans erreur ni nouvelle alerte (dix existantes Windows). Revue logique
 indépendante favorable ; montage d'installation vérifié avec npm 10.9.9 et
 11.13.0 sous Windows/Node 24. CI exacte Linux/Node 22 et publication à consigner
 dans la PR ; aucune correction amont de braces ni exploitation reproduite
 n'est revendiquée.
+
+Dernier garde : contrairement à fast-glob, fdir masque par défaut les erreurs
+de lecture. Le témoin réel getRootDirs avec EACCES synthétique échouait ; les
+trois opérations fs synchrones sont désormais observées et la première erreur
+autre qu'ENOENT propagée, sans changer parcours ou garde-cycles. Les 19 contrats
+et la suite finale passent. La CI verte de 6241e51 (2 300 unités, 450 parcours
+sans retry) reste une preuve antérieure ; la nouvelle tête exige sa propre CI.

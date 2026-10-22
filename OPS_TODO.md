@@ -36,15 +36,20 @@ Aucune exclusion d'avis, rétrogradation, nouvelle règle métier, donnée réel
 paiement, migration distante, changement de secret ou déploiement manuel.
 
 Validation locale finale : npm ci et npm ls --all sortent en zéro ; audits
-complet et production zéro vulnérabilité. Dix-huit contrats du vrai plugin
+complet et production zéro vulnérabilité. Dix-neuf contrats du vrai plugin
 et de no-html-link-for-pages passent, y compris junctions et chemins Windows ;
-2 300/2 300 tests unitaires, zéro échec/ignoré. Build Next 16.4.2, types après
+2 301/2 301 tests unitaires, zéro échec/ignoré. Build Next 16.4.2, types après
 build, contraste 88/88 et lint sans erreur ni nouvelle alerte (dix existantes
 Windows). Deux contrepreuves rouges sur les accolades et une sur le filtrage
 des liens sont conservées ; le code correct a été restauré avant validation.
+Un dernier témoin EACCES a démontré l'erreur de lecture masquée par fdir :
+les trois opérations fs synchrones sont observées, et toute erreur autre
+qu'ENOENT est propagée après le parcours. Ce témoin passe après correction.
 Revue logique indépendante favorable. Installation du montage npm 10.9.9 et
 11.13.0 prouvée en fixtures Windows/Node 24, sans option de structure cachée ;
 CI exacte Linux/Node 22, fusion normale et sondes publiques à consigner en PR.
+La CI verte de 6241e51 (2 300 unités, 450 parcours sans retry) est historique ;
+elle précède ce dernier garde et ne valide pas la nouvelle tête.
 
 ## Dépendances — correctif de sécurité dans la PR 385 (22 octobre 2026)
 

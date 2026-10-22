@@ -241,6 +241,31 @@ test("règle Next réelle : NextLink et les liens externes restent acceptés", (
   ]) assert.deepEqual(verify(code), []);
 });
 
+test("glob Next : un accès refusé ne devient pas une racine silencieusement ignorée", (t) => {
+  const f = applications(t);
+  const code = `
+    const assert = require('node:assert/strict');
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const blocked = path.resolve('apps');
+    const original = fs.readdirSync;
+    fs.readdirSync = function(directory, ...args) {
+      if (path.resolve(String(directory)) === blocked) {
+        throw Object.assign(new Error('Accès refusé synthétique'), { code: 'EACCES' });
+      }
+      return original.call(this, directory, ...args);
+    };
+    const { createRequire } = require('node:module');
+    const fromPlugin = createRequire(${JSON.stringify(pluginManifest)});
+    const { getRootDirs } = fromPlugin('./dist/utils/get-root-dirs.js');
+    assert.throws(() => getRootDirs({ cwd: process.cwd(), settings: { next: { rootDir: 'apps/*' } } }), { code: 'EACCES' });
+  `;
+  const child = spawnSync(process.execPath, ["-e", code], { cwd: f.cwd, encoding: "utf8", timeout: 5000 });
+  assert.ifError(child.error);
+  assert.equal(child.signal, null);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+});
+
 test("graphe réel du plugin : motifs imbriqués bornés sans charger braces ou micromatch", (t) => {
   const f = applications(t);
   const code = `
