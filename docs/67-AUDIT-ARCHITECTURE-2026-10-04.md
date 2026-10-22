@@ -1206,3 +1206,68 @@ réussissent ; lint sans erreur ni nouvelle alerte (dix existantes sous Windows)
 lint ciblé sans avertissement. Relectures indépendantes du runtime, du harnais
 et de la documentation sans blocage. La CI globale reste à confirmer sur le
 SHA final dans la PR.
+
+## 19. Création physique — type JSON des prix (22 octobre 2026)
+
+Inventaire repris sur `main 6477600`, après #403 : docs/26 §0, route physique,
+unique formulaire appelant, tables `products`, `zabelie_physical_products`,
+`zabelie_product_variants`, `zabelie_stock`, catégories et tests existants.
+Le formulaire sérialise déjà des nombres pour le prix produit et les variantes.
+Les PR ouvertes #385–#387 concernent les dépendances, #402 un skill distinct ;
+aucun correctif équivalent. #399 protège la reprise de création et #403 les
+prix numériques/digitaux : ces mécanismes ne sont pas reconstruits.
+
+P1 de validation monétaire reproduit par deux vrais POST locaux avec services
+Auth/PostgREST doublés : `true` devient 1 via `Number()`. Pour le prix produit,
+HTTP 200 crée une fiche à 1 HTG, son extension, sa variante par défaut et son
+stock. Pour le prix d'une variante, HTTP 200 crée le produit à 1 500 HTG mais
+sa variante à 1 HTG avec le stock demandé. Les fiches restent en brouillon
+pour revue humaine ; aucune vente automatique, perte réelle ou violation RLS
+n'est déduite de cette preuve. Les contraintes SQL reçoivent déjà le nombre
+converti ; cette contrepreuve locale ne prétend pas éprouver ces contraintes.
+
+Quatre lignes applicatives changent dans la route existante : chaque prix
+reste tel que reçu, et le garde exige `typeof ... === "number"` avant les
+contrôles integer et minimum existants. Les refus gardent HTTP 400 pour le
+produit, 422 pour une variante, ainsi que leurs messages. Aucun nouvel arrondi,
+plafond commercial ou helper parallèle. Les entiers positifs valides, y compris
+1 HTG, les prix sauvegardés et la variante par défaut restent identiques.
+Les chaînes numériques d'un client externe sont désormais refusées ; aucune
+exigence de ce format n'a été trouvée dans les appelants inventoriés.
+
+Les effets antérieurs restent à leur place : Auth, compte, identité attendue,
+client admin et cadence précèdent le refus du prix produit ; attestation et
+lecture catégorie précèdent aussi le refus d'une variante. Aucune INSERT de
+produit, extension, variante ou stock ne doit avoir lieu après ces refus.
+Quantités, dimensions, compatibilité véhicule et politique d'arrondi numérique
+restent hors portée ; aucune nouvelle route, table, migration, fixture,
+configuration, dépendance ou traduction. Aucune fusion ni action de production,
+donnée réelle ou paiement réel dans ce lot.
+
+Huit cas sont ajoutés au fichier de tests du vrai handler : trois échouent
+avant correction comme attendu, quinze des dix-huit passent. Le contrôle d'une
+variante invalide placée après une variante valide empêche un faux vert limité
+au premier élément. La fixture existante renvoie désormais chaque ID/position
+créé, puis les tests vérifient chaque prix, position et quantité de stock.
+Après correction, 46 tests ciblés passent avec spécifications physiques et
+routes numériques existantes. Les assertions vérifient événements et requêtes
+réelles du double, ce qui détecte aussi une INSERT suivie d'une compensation.
+
+Trois cas HTTP sont ajoutés au fichier de reprise physique existant, sans
+fixture ni configuration nouvelle. Deux rouges avant correction relisent les
+produits/extensions/variantes/stocks, puis échouent sur 200 au lieu de 400/422.
+Les témoins numériques et les neuf parcours antérieurs restent dans la suite.
+La validation locale globale et la CI du SHA final seront consignées dans la PR
+de revue humaine ; aucune clôture de l'audit entier n'est revendiquée.
+
+Validation locale finale : 2 252/2 252 unitaires sans échec, ignoré ou annulé ;
+12/12 parcours physiques, douze tentatives, deux workers et zéro retry en
+50,4 s. Les dix-huit refus n'écrivent aucune fiche, extension, variante ou stock ;
+les six créations numériques témoins conservent leurs prix et quantités, puis
+les neuf anciens cas passent. Types, build et contraste 88/88 réussissent ;
+lint sans erreur ni nouvelle alerte (dix existantes sous Windows), lint ciblé
+sans avertissement. Relectures indépendantes runtime/tests/documentation sans
+blocage. Un premier typecheck a rencontré TS6053 car le build lancé en parallèle
+régénérait `.next/types` ; le contrôle séquentiel après build passe sans retouche
+du code ni de la configuration. Le journal initial est conservé comme raté
+d'instrument. La CI globale reste à confirmer sur le SHA final de la PR.
