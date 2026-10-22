@@ -1,5 +1,42 @@
 # OPS_TODO — Zabelie
 
+## Information KYC — conservation annoncée (22 octobre 2026)
+
+Lot autonome sur fix/kyc-information-conservation, base main f307396c,
+après #408 fusionnée, arbre testé identique, livraison publique et six
+protections vérifiées. Inventaire : clé kyc.why dans les quatre dictionnaires,
+unique montage Compte/KycForm, confidentialité §9, migration0131 et ses tests
+SQL, tests de politique et six parcours KYC existants. Le texte affiche une
+suppression après décision ; la règle existante part de la clôture du compte.
+Ce constat porte sur la cohérence de l'information, sans conclusion juridique
+ni relecture de la configuration ou des fichiers de production.
+
+Objectif vérifiable : les quatre notices affichées expliquent la conservation
+pendant la relation de compte, puis cinq ans après sa fermeture, avec décision
+KYC sans effet sur le départ du délai ; les parcours existants restent verts.
+Réutiliser les clés et tests existants, sans nouveau test qui recopierait ces
+phrases. Périmètre : lib/i18n.ts, docs/35, docs/67 et ce journal, quatre fichiers.
+Aucune durée, policy, version légale, purge, route, composant ou table changé.
+
+Arrêt ferme : cinq tours au plus ; relecture sémantique contre la politique
+et0131, tests ciblés existants, types/build/lint, six parcours KYC/rendu,
+revue indépendante, PR et CI exacte sans retry, fusion normale puis sondes
+publiques. Aucun vrai document, donnée de production, paiement, migration
+distante ou déploiement manuel.
+
+Validation locale :81/81 tests ciblés existants, zéro échec/ignoré. Six parcours
+KYC existants, six tentatives, zéro retry/flaky/échec/ignoré en31,7 s dans les
+quatre langues. Types après build, build, contraste88/88 et lint passent,
+sans nouvelle alerte (dix existantes Windows). La revue confirme que seul le
+contenu des quatre clés change dans i18n ; reste du fichier strictement
+identique. Aucun nouveau test ni aucune modification des tests/stubs/configs.
+Revue finale et CI exacte puis fusion/sondes publiques à consigner.
+
+Diagnostics des six cas : aucun défaut JS, avertissement ou console inattendue,
+overlay ou débordement ; quatre403 attendus. Captures FR360/HT1280 relues,
+nouvelle information lisible ; EN/ES couverts par les parcours. Le diagnostic
+initial de filtre vide compte zéro test exécuté et reste archivé séparément.
+
 ## Pièces KYC privées — identité de l'écran (22 octobre 2026)
 
 Lot autonome sur `fix/kyc-identite-session`, base `main 28d1b2ff`, après #407
