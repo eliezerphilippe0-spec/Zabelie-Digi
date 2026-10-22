@@ -1589,3 +1589,48 @@ unités bandeau, les types et le lint ciblé passent. Les quatre autres cas et
 leurs attentes CSS restent inchangés ; aucun rebuild applicatif n'est requis
 pour ce seul témoin. Une nouvelle CI complète sur la tête supplémentaire est
 requise avant toute fusion ; l'ancienne preuve450/451 reste inchangée.
+
+Mise à jour de livraison : #408 fusionnée à16:58:33Z sur f307396c, arbre
+fa3ed82f identique au testé. CI2 39816444153, tête f2503966 :2 282unitaires
+et450parcours/450tentatives, zéro retry/flaky/échec/ignoré ;97fichiers SQL,
+152migrations vérifiées en environnement isolé, concurrence/restauration
+et scans verts. Déploiement automatique Vercel Ready : commit attendu et
+readyz200oktrue au17e contrôle, puis six protections publiques réussies.
+La première CI avec451tentatives reste conservée ; aucune donnée réelle,
+migration distante, paiement ou mise en ligne manuelle.
+
+## 24. Information KYC — conservation annoncée (22 octobre 2026)
+
+Inventaire sur main f307396c, après #408 livrée et publiquement vérifiée :
+les quatre clés kyc.why, leur montage unique Compte/KycForm, confidentialité
+§9 et0131, tests de politique/rétention et six parcours KYC existants. Les
+quatre notices annonçaient une suppression après décision ; la politique et
+le code conservent pendant la relation de compte, puis cinq années calendaires
+après clôture, sans départ du délai lors d'une décision. Ce constat de texte
+ne démontre ni purge immédiate, ni perte de fichier ou violation juridique.
+La configuration et les fichiers de production ne sont pas relus ici.
+
+Les quatre libellés existants expliquent désormais le même déclencheur et
+la même durée que la politique. Retrait conditionnel, accès privé/admin et
+lien temporaire restent dans le résumé. Aucun composant, endpoint, table,
+policy, durée, règle de purge, document juridique ou version d'acceptation
+modifié ; docs/35 marque son ancien délai comme historique. Quatre fichiers
+seulement, sans nouvelle infrastructure ni nouveau test recopiant le texte.
+Relecture sémantique indépendante favorable ; validations existantes, revue
+du diff exact, PR/CI normale puis sondes publiques à consigner.
+
+Validation locale :81/81 tests ciblés existants (KYC, politique/rétention,
+i18n/clés et gardes compte), sans échec/ignoré. Six parcours KYC et six
+tentatives, deux workers, zéro retry/flaky/échec/ignoré en31,7 s, dans les
+quatre langues. Types après build, build, contraste88/88 et lint passent,
+sans erreur ni nouvelle alerte (dix existantes Windows). Le diff mécanique
+du dictionnaire porte exactement les quatre valeurs annoncées ; tous les
+tests, stubs et configurations sont identiques à la base. Revue finale et
+CI sur la tête exacte, fusion normale et sondes publiques restent à consigner.
+
+Diagnostics des six cas : zéro erreur JS, avertissement, console inattendue,
+overlay ou débordement, quatre HTTP403 volontaires. Captures FR360/HT1280
+relues, nouvelle information lisible ; EN/ES couverts par les parcours, sans
+revue visuelle dédiée revendiquée. Le premier filtre n'a sélectionné aucun
+cas ; ce diagnostic est conservé séparément et ne représente aucun échec
+de test. Les six cas réellement exécutés passent directement.

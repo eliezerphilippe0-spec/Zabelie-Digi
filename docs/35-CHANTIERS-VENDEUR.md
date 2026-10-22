@@ -164,7 +164,8 @@ rechargée à chaque consultation. Aucune surface ne rend d'image — vérifié 
 test. Rétention bornée et purgée par cron (`/api/kyc/purge`, déclaré dans
 `vercel.json` — une purge sans appelant ne purge rien).
 
-⚠️ **La DURÉE de rétention reste à confirmer** : défaut prudent de 90 jours
+**Historique du 15 août 2026 — remplacé par 0131 (voir mise à jour ci-dessous).**
+La durée de rétention restait alors à confirmer : défaut prudent de 90 jours
 après décision, en table de config, modifiable par `UPDATE`. C'est le seul
 des trois arbitrages qui n'a pas été rendu ; il est au registre.
 
@@ -186,6 +187,15 @@ formulaire lorsqu'un refresh RSC change de compte. Les anciens écrans sans
 identité doivent être rechargés. Bucket privé, chemin serveur, signatures,
 limites, RPC0130, conservation0131 et nettoyage prudent restent inchangés.
 Preuves sur fichiers entièrement fictifs et validation dans docs/67 §23.
+
+**22 octobre 2026 — information de conservation.** Le résumé affiché avant
+le dépôt explique désormais dans les quatre langues la règle déjà publiée
+au §9 de confidentialité et codée par0131 : conservation pendant la relation
+de compte, puis cinq ans après sa fermeture ; la décision KYC ne déclenche
+pas le délai. La mention historique des90jours après décision ci-dessus
+n'est plus la règle actuelle. Seuls les libellés existants sont corrigés,
+sans durée, purge, politique publiée ou version d'acceptation modifiée.
+Inventaire, relecture et résultats dans docs/67 §24.
 
 ## Ordre proposé
 
