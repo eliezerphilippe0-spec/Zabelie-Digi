@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { UUID_RE } from "@/lib/collections";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/payouts  { amountHtg }  — demande de retrait par le VENDEUR.
+ * POST /api/payouts { amountHtg, expectedActorId } — demande du VENDEUR.
  * Chantier 0, lot 0.b (docs/19) : la voie de sortie dont l'absence est au cœur
  * du dossier BRH.
  *
  * Le portefeuille n'est JAMAIS fourni par le client : la fonction en base le
- * résout depuis l'utilisateur authentifié. Tous les contrôles (minimum,
+ * résout depuis l'utilisateur authentifié. Les contrôles métier (minimum,
  * plafond, délai, suspension, solde disponible) sont en base, sous verrou.
  */
 export async function POST(req: Request) {
@@ -20,12 +22,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
 
-  let body: { amountHtg?: number };
+  let body: { amountHtg?: number; expectedActorId?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
+
+  // L'écran doit encore appartenir à la session qui immobilisera ce solde.
+  // L'identifiant attendu ne choisit jamais le propriétaire transmis à la RPC.
+  if (!body || typeof body !== "object" || Array.isArray(body)
+    || typeof body.expectedActorId !== "string" || !UUID_RE.test(body.expectedActorId)) {
+    return erreurTraduite("api.params.invalid", 422);
+  }
+  if (body.expectedActorId !== user.id) return erreurTraduite("api.auth.required", 403);
 
   const amount = Number(body.amountHtg);
   if (!Number.isInteger(amount) || amount <= 0) {

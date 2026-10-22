@@ -241,6 +241,15 @@ const server = createServer((req, res) => {
             reads: [], upserts: [],
           };
         }
+        if (input.payouts === true) {
+          // Soldes strictement fictifs : ce mode observe le vrai handler et
+          // ses appels RPC, sans reproduire les contrôles financiers SQL.
+          scenario.payouts = {
+            wallets: profiles.map((profile, index) => ({ id: crypto.randomUUID(), owner_id: profile.id,
+              balance_htg: index ? 9000 : 7000, pending_htg: 0 })),
+            requests: [], rpcs: [], reads: [], refusalOnce: input.payoutRefusalOnce === true,
+          };
+        }
         if (input.kyc === true) {
           const documents = profiles.map((profile, index) => {
             const id = crypto.randomUUID();
@@ -289,11 +298,53 @@ const server = createServer((req, res) => {
         return send(200, []);
       });
     }
+    if (scenario.payouts && req.method === "GET") {
+      scenario.payouts.reads.push({ table: "profiles", owner: profile.id,
+        select: url.searchParams.get("select"), rows: [{ ...profile }] });
+      return single([profile]);
+    }
     if (scenario.accountClosure) scenario.accountClosure.profileReads.push({ actorId: profile.id, select: url.searchParams.get("select") });
     if (scenario.kyc) scenario.kyc.reads.push({ table: "profiles", owner: profile.id, select: url.searchParams.get("select"),
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  const payoutOwner = eq(url, "owner_id") ?? eq(url, "seller_id");
+  const payoutWalletId = eq(url, "wallet_id");
+  const payoutScenario = profileIdentityActors.get(payoutOwner)?.scenario.payouts
+    ?? [...profileIdentityScenarios.values()].find(scenario => scenario.payouts?.wallets.some(wallet => wallet.id === payoutWalletId))?.payouts;
+  if (payoutScenario && req.method === "GET") {
+    const table = url.pathname.slice("/rest/v1/".length);
+    const tables = ["wallets", "payouts", "products", "escrow_entries", "wallet_transactions"];
+    if (tables.includes(table)) {
+      const rows = table === "wallets" ? payoutScenario.wallets.filter(wallet => wallet.owner_id === payoutOwner)
+        : table === "payouts" ? payoutScenario.requests.filter(row => row.wallet_id === payoutWalletId) : [];
+      payoutScenario.reads.push({ table, owner: payoutOwner, wallet_id: payoutWalletId,
+        select: url.searchParams.get("select"), rows: rows.map(row => ({ ...row })) });
+      return single(rows);
+    }
+  }
+  if (url.pathname === "/rest/v1/rpc/zabelie_request_payout" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const args = JSON.parse(text), state = profileIdentityActors.get(args.p_user_id)?.scenario.payouts;
+      if (!state) return single([]);
+      const wallet = state.wallets.find(row => row.owner_id === args.p_user_id);
+      let result;
+      if (state.refusalOnce) {
+        state.refusalOnce = false;
+        result = { ok: false, reason: "sous_minimum", min_htg: 500 };
+      } else {
+        const id = crypto.randomUUID();
+        wallet.balance_htg -= args.p_amount_htg;
+        state.requests.push({ id, wallet_id: wallet.id, amount_htg: args.p_amount_htg, status: "requested" });
+        result = { ok: true, payout_id: id, balance_htg: wallet.balance_htg, frais_ia_regles_htg: 0 };
+      }
+      state.rpcs.push({ name: "zabelie_request_payout", args,
+        serviceRole: req.headers.authorization === "Bearer cle-service-de-test", result });
+      return send(200, result);
+    });
   }
 
   const kycOwner = eq(url, "user_id"), kycState = profileIdentityActors.get(kycOwner)?.scenario.kyc;

@@ -1718,3 +1718,56 @@ trois opérations fs synchrones sont désormais observées et la première erreu
 autre qu'ENOENT propagée, sans changer parcours ou garde-cycles. Les 19 contrats
 et la suite finale passent. La CI verte de 6241e51 (2 300 unités, 450 parcours
 sans retry) reste une preuve antérieure ; la nouvelle tête exige sa propre CI.
+
+## 27. Demande de retrait — identité du formulaire (22 octobre 2026)
+
+Lot sur fix/retrait-identite-formulaire, base main 247fc659 après #410.
+Inventaire : unique montage PayoutRequest dans le tableau de bord, unique
+appelant POST /api/payouts, gardes UUID et erreurs traduites déjà disponibles.
+Les PR ouvertes 386/387 (dépendances) et 402 (skill), les anciens lots frais
+IA/KYC et les gardes Compte/profil ne corrigent pas ce chemin. Aucun listener
+Auth global ne retire le formulaire déjà rendu lors d'un changement de cookies.
+
+Contrepreuve du vrai handler : dans les quatre langues, expectedActorId=A
+sous session vérifiée B obtient 200 et appelle zabelie_request_payout pour B,
+au lieu du refus 403 sans client administratif attendu. Six témoins positifs
+préservent demande même compte, anonymat, montant et réponses métier/KYC.
+Contrepreuve navigateur à 360 px : vrai tableau de bord et formulaire A,
+cookies B sans navigation, corps montant seul, RPC locale pour B et demande
+requested B ; le modèle fictif passe de 9 000 à 8 500, A reste à 7 000.
+Autre rouge : un vrai refresh RSC FR→EN rend profil/portefeuille B dans le même
+document, mais conserve le champ A à 100 et son message de refus métier.
+Ces observations locales ne prouvent ni incident réel ni ledger/RLS distante.
+Une première tentative navigateur n'a pas démarré faute de headless shell ;
+elle reste distincte de la contrepreuve obtenue avec Chrome déjà installé.
+
+Correction limitée à trois fichiers applicatifs : le serveur rend actorId et
+key=user.id ; le formulaire envoie expectedActorId ; la route impose un UUID
+valide (422 absent/malformé), compare à la session (403 divergent), avant
+validation du montant et création du client administratif. Les messages de
+ces nouveaux refus réutilisent les quatre dictionnaires. p_user_id reste
+exclusivement user.id de session. La clé React remonte un formulaire fermé
+et vide quand le compte rendu change. Les anciens écrans sans identité doivent
+être rechargés : les accepter garderait accessible le défaut reproduit.
+
+Aucun changement de la normalisation du montant, des plafonds/minimums, des
+commissions, du délai, du KYC, de la RPC, des tables ou du ledger. La RPC 0079
+conserve ses contrôles sous verrou et le recouvrement IA ; le versement externe
+reste séparé. Les suites SQL payout_requests, kyc, ai_surplus_reglement et
+studio_facturation existent. Leurs résultats isolés, la CI de tête et la
+publication après fusion normale sont à consigner dans la PR.
+
+Validation ajoutée : 16 contrats du vrai handler (harnais existant), six
+parcours navigateur, extension opt-in du faux Supabase existant avec comptes
+et soldes synthétiques isolés par scénario. Le double de RPC ne contient
+aucun garde expectedActorId et ne remplace pas le test du handler. Toute preuve
+de refus compare les appels et états avant/après ; le cas refresh exige le même
+document, les lectures B, l'effacement de l'état A et une nouvelle demande B.
+Les 16 contrats et 2 317 unités passent après patch, build Next 16.4.2 puis
+types, contraste 88/88, audit npm complet zéro alerte, lint zéro erreur et dix
+avertissements existants. Deux revues logiques indépendantes sont favorables ;
+suffixe métier depuis la normalisation du montant identique à la base. Les
+352 parcours principaux locaux et la CI exacte restent à consigner dans la PR
+avant fusion ; aucune preuve d'une autre tête n'est réutilisée comme vert.
+Aucun appel financier réel, migration distante, donnée de production, secret,
+nouveau service, dépendance ou déploiement manuel.

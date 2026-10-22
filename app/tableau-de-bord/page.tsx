@@ -538,6 +538,8 @@ export default async function DashboardPage({
           <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
             <p className="text-sm text-mist">{t(lang, "vendeur.retrait.regle")}</p>
             <PayoutRequest
+              key={user.id}
+              actorId={user.id}
               disponibleHtg={balance}
               hasPending={hasPendingPayout}
               labels={{
