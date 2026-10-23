@@ -101,7 +101,7 @@ export async function POST(req: Request) {
   const description =
     typeof body.description === "string" ? body.description.slice(0, 5000) : null;
   const price = body.priceHTG;
-  const quantity = Number(body.quantity);
+  const quantity = body.quantity;
   if (!title) {
     return NextResponse.json({ error: "Titre requis." }, { status: 400 });
   }
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (!Number.isInteger(quantity) || quantity < 0 || quantity > 100000) {
+  if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 0 || quantity > 100000) {
     return NextResponse.json(
       { error: "Quantité en stock requise (0 à 100 000)." },
       { status: 400 }
@@ -261,7 +261,7 @@ export async function POST(req: Request) {
   for (const v of variantsIn) {
     const label = typeof v.label === "string" ? v.label.trim().slice(0, 80) : "";
     const vPrice = v.priceHTG;
-    const vQty = Number(v.quantity);
+    const vQty = v.quantity;
     if (!label) {
       return NextResponse.json(
         { error: "Chaque variante doit avoir un libellé." },
@@ -274,7 +274,7 @@ export async function POST(req: Request) {
         { status: 422 }
       );
     }
-    if (!Number.isInteger(vQty) || vQty < 0 || vQty > 100000) {
+    if (typeof vQty !== "number" || !Number.isInteger(vQty) || vQty < 0 || vQty > 100000) {
       return NextResponse.json(
         { error: `Variante « ${label} » : quantité invalide.` },
         { status: 422 }
