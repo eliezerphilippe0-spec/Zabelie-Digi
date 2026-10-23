@@ -401,3 +401,195 @@ test("physical quantity refusals preserve authentication, cadence, attestation a
     assert.equal(f.products.size, 0);assert.equal(f.events.some(event => event.startsWith("insert:")), false);
   }
 });
+
+test("physical variant entries reject malformed JSON records before any product write", async () => {
+  const valid = { label: "Petit", priceHTG: 1500, quantity: 2 };
+  for (const entry of [null, {}, false, 0, 12, "texte", [], [{}]]) {
+    for (const variants of [[entry], [valid, entry]]) {
+      const f = fixture();
+      const response = await f.send({ ...BODY, variants });
+      assert.equal(response.status, 422, JSON.stringify({ variants }));
+      assert.deepEqual(await response.json(), { error: "Chaque variante doit avoir un libellé." });
+      assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+      assert.deepEqual(f.queries.map(query => query.table), ["zabelie_categories"]);
+      assert.equal(f.queries.some(query => query.steps.some(([method]) => method === "insert" || method === "delete")), false);
+      assert.deepEqual(f.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+      assert.equal(f.products.size, 0);
+    }
+  }
+});
+
+test("physical fitment entries reject malformed JSON records before model reads or product writes", async () => {
+  const valid = { modelId: MODEL, yearStart: 2000 };
+  for (const entry of [null, {}, false, 0, 12, "texte", [], [{}]]) {
+    for (const fitment of [[entry], [valid, entry]]) {
+      const f = fixture();
+      const response = await f.send({ ...BODY, fitment });
+      assert.equal(response.status, 422, JSON.stringify({ fitment }));
+      assert.deepEqual(await response.json(), { error: "Compatibilité : modèle et année de début requis." });
+      assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+      assert.deepEqual(f.queries.map(query => query.table), ["zabelie_categories"]);
+      assert.equal(f.queries.some(query => query.steps.some(([method]) => method === "insert" || method === "delete")), false);
+      assert.deepEqual(f.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+      assert.equal(f.products.size, 0);
+    }
+  }
+});
+
+test("physical list size limits remain prior to malformed entries", async () => {
+  const variants = Array.from({ length: 20 }, () => ({ label: "Petit", priceHTG: 1500, quantity: 2 }));
+  const fitment = Array.from({ length: 40 }, () => ({ modelId: MODEL, yearStart: 2000 }));
+  for (const [body, error] of [
+    [{ ...BODY, variants: [null, ...variants] }, "Maximum 20 variantes."],
+    [{ ...BODY, variants: [...variants, null] }, "Maximum 20 variantes."],
+    [{ ...BODY, fitment: [null, ...fitment] }, "Maximum 40 compatibilités."],
+    [{ ...BODY, fitment: [...fitment, null] }, "Maximum 40 compatibilités."],
+  ] as [unknown, string][]) {
+    const f = fixture();
+    const response = await f.send(body);
+    assert.equal(response.status, 422);
+    assert.deepEqual(await response.json(), { error });
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+    assert.deepEqual(f.queries.map(query => query.table), ["zabelie_categories"]);
+    assert.equal(f.queries.some(query => query.steps.some(([method]) => method === "insert" || method === "delete")), false);
+    assert.deepEqual(f.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+    assert.equal(f.products.size, 0);
+  }
+});
+
+test("physical malformed entries preserve authentication, account, identity and validation priority", async () => {
+  for (const body of [{ ...BODY, variants: [null] }, { ...BODY, fitment: [null] }]) {
+    const anonymous = fixture({ authenticated: false });
+    const anonymousResponse = await anonymous.send(body);
+    assert.equal(anonymousResponse.status, 401);
+    assert.deepEqual(await anonymousResponse.json(), { error: "Authentification requise" });
+    assert.deepEqual(anonymous.events, ["auth"]);
+    assert.equal(anonymous.queries.length, 0);assert.equal(anonymous.policyCalls.length, 0);assert.equal(anonymous.products.size, 0);
+
+    for (const refusal of [
+      { status: 403, code: "suspended" },
+      { status: 403, code: "legal_acceptance_required" },
+      { status: 503, code: "account_status_unavailable" },
+    ]) {
+      const account = fixture({ accountRefusal: refusal });
+      const response = await account.send(body);
+      assert.equal(response.status, refusal.status);
+      assert.deepEqual(await response.json(), { code: refusal.code });
+      assert.deepEqual(account.events, ["auth", "account"]);
+      assert.deepEqual(account.accounts, [{ id: ACTOR, options: { legalAcceptance: true } }]);
+      assert.equal(account.queries.length, 0);assert.equal(account.policyCalls.length, 0);assert.equal(account.products.size, 0);
+    }
+
+    const identity = fixture({ actorId: OTHER });
+    const identityResponse = await identity.send({ ...body, expectedActorId: ACTOR });
+    assert.equal(identityResponse.status, 403);
+    assert.deepEqual(await identityResponse.json(), { error: "api.auth.required" });
+    assert.deepEqual(identity.events, ["auth", "account"]);
+    assert.deepEqual(identity.accounts, [{ id: OTHER, options: { legalAcceptance: true } }]);
+    assert.equal(identity.queries.length, 0);assert.equal(identity.policyCalls.length, 0);assert.equal(identity.products.size, 0);
+
+    const limited = fixture({ rate: false });
+    const limitedResponse = await limited.send(body);
+    assert.equal(limitedResponse.status, 429);
+    assert.deepEqual(await limitedResponse.json(), { error: "Trop de créations. Réessayez dans une minute." });
+    assert.deepEqual(limited.events, ["auth", "account", "admin", "rate"]);
+    assert.equal(limited.queries.length, 0);assert.equal(limited.policyCalls.length, 0);assert.equal(limited.products.size, 0);
+
+    const attestation = fixture();
+    const policyResponse = await attestation.send({ ...body, policyAccepted: false });
+    assert.equal(policyResponse.status, 400);
+    assert.deepEqual(await policyResponse.json(), { error: "Vous devez accepter les règles de vente.", code: "policy_required" });
+    assert.deepEqual(attestation.events, ["auth", "account", "admin", "rate"]);
+    assert.equal(attestation.queries.length, 0);assert.equal(attestation.policyCalls.length, 0);assert.equal(attestation.products.size, 0);
+
+    const outage = fixture({ policyError: true });
+    const outageResponse = await outage.send(body);
+    assert.equal(outageResponse.status, 503);
+    assert.deepEqual(await outageResponse.json(), {
+      error: "La publication n'a pas abouti. Rien n'a été enregistré — réessayez dans un instant.",
+      code: "policy_unavailable",
+    });
+    assert.deepEqual(outage.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance"]);
+    assert.deepEqual(outage.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+    assert.equal(outage.queries.length, 0);assert.equal(outage.products.size, 0);
+
+    const category = fixture({ category: false });
+    const categoryResponse = await category.send(body);
+    assert.equal(categoryResponse.status, 422);
+    assert.deepEqual(await categoryResponse.json(), { error: "Catégorie inconnue ou non ouverte à la vente." });
+    assert.deepEqual(category.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories"]);
+    assert.deepEqual(category.queries.map(query => query.table), ["zabelie_categories"]);
+    assert.equal(category.queries.some(query => query.steps.some(([method]) => method === "insert" || method === "delete")), false);
+    assert.deepEqual(category.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+    assert.equal(category.products.size, 0);
+  }
+});
+
+test("physical valid variant and fitment records preserve draft, IDs, prices, stocks and years", async () => {
+  const otherModel = "11300000-0000-4000-8000-000000000031";
+  const variants = [
+    { label: "Petit", priceHTG: 1, quantity: 0 },
+    { label: "Moyen", priceHTG: 1500, quantity: 3 },
+    { label: "Grand", priceHTG: 2147483647, quantity: 100000 },
+  ];
+  const f = fixture({ modelCount: 2 });
+  const response = await f.send({ ...BODY, expectedActorId: ACTOR, quantity: 0, variants, fitment: [
+    { modelId: MODEL, yearStart: 2000 },
+    { modelId: otherModel, yearStart: 2010, yearEnd: 2020 },
+  ] });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, productId: PRODUCT, slug: "piece-de-rechange-1234" });
+  assert.deepEqual([...f.products.keys()], [PRODUCT]);
+  const product = f.products.get(PRODUCT) as Record<string, unknown>;
+  assert.equal(product.seller_id, ACTOR);assert.equal(product.price_htg, BODY.priceHTG);assert.equal(product.title, BODY.title);
+  assert.equal(product.description, null);assert.equal(product.status, "draft");assert.equal(product.kind, KIND_PHYSICAL);
+  assert.equal(product.category_id, CATEGORY);assert.equal(product.category, "Pièces");
+  assert.deepEqual(plain(argument(f.queries.find(query => query.table === "zabelie_physical_products")!, "insert")), {
+    product_id: PRODUCT, category_id: CATEGORY, weight_grams: 500, fragile: false,
+  });
+  assert.deepEqual(plain(argument(f.queries.find(query => query.table === "zabelie_product_variants")!, "insert")),
+    variants.map((variant, position) => ({ product_id: PRODUCT, sku: "Z-11300000-" + (position + 1),
+      options: { variante: variant.label }, price_htg: variant.priceHTG, position })));
+  assert.deepEqual(plain(argument(f.queries.find(query => query.table === "zabelie_stock")!, "insert")),
+    variants.map((variant, position) => ({ variant_id: position === 0 ? "variant-created" : `variant-created-${position}`,
+      quantity_available: variant.quantity })));
+  assert.deepEqual(plain(argument(f.queries.find(query => query.table === "zabelie_product_fitment")!, "insert")), [
+    { product_id: PRODUCT, vehicle_model_id: MODEL, year_start: 2000, year_end: null },
+    { product_id: PRODUCT, vehicle_model_id: otherModel, year_start: 2010, year_end: 2020 },
+  ]);
+  assert.deepEqual(plain(f.queries.find(query => query.table === "zabelie_vehicle_models")!.steps), [
+    ["select", ["id", { count: "exact", head: true }]],
+    ["in", ["id", [MODEL, otherModel]]],
+    ["eq", ["active", true]],
+  ]);
+  assert.deepEqual(f.queries.map(query => query.table), ["zabelie_categories", "zabelie_vehicle_models", "products", "zabelie_physical_products", "zabelie_product_variants", "zabelie_stock", "zabelie_product_fitment"]);
+  assert.equal(f.queries.some(query => query.steps.some(([method]) => method === "delete")), false);
+  assert.deepEqual(f.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+  assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories", "read:zabelie_vehicle_models", "insert:products", "insert:zabelie_physical_products", "insert:zabelie_product_variants", "insert:zabelie_stock", "insert:zabelie_product_fitment"]);
+});
+
+test("physical omitted, empty and non-array optional lists preserve the default variant", async () => {
+  for (const lists of [
+    {}, { variants: [], fitment: [] },
+    ...[null, {}, false, 0, 12, "texte"].map(value => ({ variants: value, fitment: value })),
+  ]) {
+    const f = fixture();
+    const response = await f.send({ ...BODY, ...lists });
+    assert.equal(response.status, 200, JSON.stringify(lists));
+    assert.deepEqual(await response.json(), { ok: true, productId: PRODUCT, slug: "piece-de-rechange-1234" });
+    assert.deepEqual([...f.products.keys()], [PRODUCT]);
+    const product = f.products.get(PRODUCT) as Record<string, unknown>;
+    assert.equal(product.seller_id, ACTOR);assert.equal(product.price_htg, BODY.priceHTG);
+    assert.equal(product.status, "draft");assert.equal(product.kind, KIND_PHYSICAL);assert.equal(product.category_id, CATEGORY);
+    assert.deepEqual(plain(argument(f.queries.find(query => query.table === "zabelie_product_variants")!, "insert")), [
+      { product_id: PRODUCT, sku: "Z-11300000", options: {}, price_htg: BODY.priceHTG, position: 0 },
+    ]);
+    assert.deepEqual(plain(argument(f.queries.find(query => query.table === "zabelie_stock")!, "insert")), [
+      { variant_id: "variant-created", quantity_available: BODY.quantity },
+    ]);
+    assert.deepEqual(f.queries.map(query => query.table), ["zabelie_categories", "products", "zabelie_physical_products", "zabelie_product_variants", "zabelie_stock"]);
+    assert.equal(f.queries.some(query => query.steps.some(([method]) => method === "delete")), false);
+    assert.deepEqual(f.policyCalls, [{ p_user_id: ACTOR, p_version: POLICY_VERSION }]);
+    assert.deepEqual(f.events, ["auth", "account", "admin", "rate", "rpc:zabelie_record_policy_acceptance", "read:zabelie_categories", "insert:products", "insert:zabelie_physical_products", "insert:zabelie_product_variants", "insert:zabelie_stock"]);
+  }
+});
