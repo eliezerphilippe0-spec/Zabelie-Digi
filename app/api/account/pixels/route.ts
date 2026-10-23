@@ -4,6 +4,7 @@ import { requireActiveAccount } from "@/lib/auth";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { idValide, type Regie } from "@/lib/pixels";
+import { UUID_RE } from "@/lib/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +35,14 @@ export async function PUT(req: Request) {
   if (!brutCorps || typeof brutCorps !== "object" || Array.isArray(brutCorps)) {
     return NextResponse.json({ error: t(lang, "api.params.invalid"), code: "invalid_body" }, { status: 422 });
   }
-  const corps = brutCorps as Partial<Record<Regie, unknown>>;
+  const corps = brutCorps as Partial<Record<Regie, unknown>> & { expectedActorId?: unknown };
+  // Précondition de l'écran rendu ; le propriétaire reste celui vérifié par Auth.
+  if (typeof corps.expectedActorId !== "string" || !UUID_RE.test(corps.expectedActorId)) {
+    return NextResponse.json({ error: t(lang, "api.params.invalid"), code: "invalid_body" }, { status: 422 });
+  }
+  if (corps.expectedActorId !== user.id) {
+    return NextResponse.json({ error: t(lang, "api.auth.required") }, { status: 403 });
+  }
   const ligne: Record<string, string | null> = { seller_id: user.id };
   for (const regie of Object.keys(CHAMPS) as Regie[]) {
     if (corps[regie] !== undefined && typeof corps[regie] !== "string") {

@@ -260,6 +260,15 @@ const server = createServer((req, res) => {
             max_uses: index ? 8 : 5, uses: 0, expires_at: "2028-01-01T00:00:00Z", active: true, created_at: "2026-10-05T10:00:00Z" })),
             reads: [], inserts: [], updates: [], refusalOnce: input.couponRefusalOnce === true };
         }
+        if (input.pixels === true) {
+          // Deux configurations non vides, isolées par scénario. Le double
+          // observe les E/S du vrai PUT ; aucun garde d'identité n'est copié.
+          scenario.pixels = { rows: profiles.map((profile, index) => ({ seller_id: profile.id,
+            meta_pixel_id: index ? "223456789012345" : "123456789012345",
+            google_tag_id: index ? "G-B123456789" : "G-A123456789",
+            tiktok_pixel_id: index ? "C5ABCDEF0123456789AB" : "C4ABCDEF0123456789AB" })),
+            reads: [], upserts: [] };
+        }
         if (input.kyc === true) {
           const documents = profiles.map((profile, index) => {
             const id = crypto.randomUUID();
@@ -317,6 +326,8 @@ const server = createServer((req, res) => {
     if (scenario.kyc) scenario.kyc.reads.push({ table: "profiles", owner: profile.id, select: url.searchParams.get("select"),
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (scenario.coupons) scenario.coupons.reads.push({ table: "profiles", owner: profile.id, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
+    if (scenario.pixels) scenario.pixels.reads.push({ table: "profiles", owner: profile.id, select: url.searchParams.get("select"),
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
@@ -536,7 +547,7 @@ const server = createServer((req, res) => {
   // current documents. This is simulated data, not evidence for a real user.
   if (url.pathname === "/rest/v1/zabelie_policy_acceptances") {
     const owner = url.searchParams.get("user_id")?.replace(/^eq\./, "");
-    const state = profileIdentityActors.get(owner)?.scenario.kyc;
+    const state = profileIdentityActors.get(owner)?.scenario.kyc ?? profileIdentityActors.get(owner)?.scenario.pixels;
     const rows = [BUYER_ID, SELLER_ID].includes(owner) || ESSAYAGE_COMPTES.has(owner) || state ? POLICY_ACCEPTANCE_FIXTURE : [];
     if (state) state.reads.push({ table: "zabelie_policy_acceptances", owner, select: url.searchParams.get("select"),
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: rows.map(row => ({ ...row })) });
@@ -669,6 +680,26 @@ const server = createServer((req, res) => {
   const profileIdentityId = /profile-identity-([0-9a-f-]{36})/.exec(token)?.[1];
   const profileIdentityActor = profileIdentityActors.has(profileIdentityId) ? profileIdentityId : null;
   const identityScenario = profileIdentityActors.get(profileIdentityActor)?.scenario;
+  if (identityScenario?.pixels && req.method === "GET" && ["/rest/v1/zabelie_seller_pixels", "/rest/v1/zabelie_api_keys",
+    "/rest/v1/zabelie_webhook_endpoints", "/rest/v1/zabelie_webhook_deliveries", "/rest/v1/zabelie_seller_domains"].includes(url.pathname)) {
+    const table = url.pathname.slice("/rest/v1/".length);
+    const rows = table === "zabelie_seller_pixels" ? identityScenario.pixels.rows.filter(row => row.seller_id === profileIdentityActor) : [];
+    identityScenario.pixels.reads.push({ table, owner: profileIdentityActor, select: url.searchParams.get("select"),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: rows.map(row => ({ ...row })) });
+    return single(rows);
+  }
+  if (identityScenario?.pixels && url.pathname === "/rest/v1/zabelie_seller_pixels" && req.method === "POST") {
+    let text = ""; req.on("data", chunk => text += chunk);
+    return req.on("end", () => {
+      const input = JSON.parse(text), state = identityScenario.pixels;
+      let row = state.rows.find(candidate => candidate.seller_id === input.seller_id);
+      const before = row ? { ...row } : null;
+      if (row) Object.assign(row, input);
+      else { row = { ...input }; state.rows.push(row); }
+      state.upserts.push({ tokenActorId: profileIdentityActor, input, before, row: { ...row } });
+      return send(201, []);
+    });
+  }
   const couponOwner = eq(url, "seller_id") ?? profileIdentityActor;
   const couponScenario = profileIdentityActors.get(couponOwner)?.scenario.coupons;
   if (couponScenario && req.method === "GET" && ["/rest/v1/products", "/rest/v1/zabelie_coupons"].includes(url.pathname)) {
