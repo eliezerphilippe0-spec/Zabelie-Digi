@@ -1272,6 +1272,50 @@ régénérait `.next/types` ; le contrôle séquentiel après build passe sans r
 du code ni de la configuration. Le journal initial est conservé comme raté
 d'instrument. La CI globale reste à confirmer sur le SHA final de la PR.
 
+### 19.1 Complément — type JSON des quantités (23 octobre 2026)
+
+Lot séparé sur fix/quantites-json-physique, base main b14e40fb après #411.
+Inventaire des routes, appelants, tables, tests, PR et docs/26 repris : #399
+traite la reprise et #404 les prix, aucune correction équivalente du stock.
+L'unique formulaire physique sérialise déjà Number(quantity) et les variantes
+avec Number(v.quantity || 0). Les stocks SQL 0036 sont entiers non négatifs.
+
+Deux contrepreuves du vrai handler avant patch : quantity=true obtient 200
+et crée un stock 1 ; après une variante valide de stock 2, une seconde avec
+quantity=true obtient également 200 et crée les stocks [2, 1]. Trois témoins
+positifs de la sélection passent, dont bornes numériques et variantes.
+Il s'agit d'une validation JSON P2 ; les produits restent en brouillon.
+Aucune survente, vente réelle, écriture distante ou faille RLS démontrée.
+
+Correction de quatre lignes dans la route existante : garder chaque quantité
+reçue, exiger le type number avant les contrôles integer et bornes 0..100000.
+Produit invalide : 400 ; variante invalide : 422 ; messages existants conservés.
+Booléens, null, chaînes et tableaux sont refusés au lieu d'être convertis.
+Les clients externes doivent transmettre un nombre JSON ; aucun appelant
+exigeant une chaîne n'est inventorié. Zéro reste un stock valide, y compris
+pour une variante laissée vide puis sérialisée à zéro par le formulaire.
+
+Auth, compte, identité et cadence restent antérieurs au refus produit.
+Une variante invalide reste refusée après attestation et lecture catégorie,
+avant toute INSERT produit/extension/variante/stock ; aucune absence globale
+d'effets n'est revendiquée, car cadence et attestation gardent leurs effets.
+Prix, publication, options, identifiants/positions des variantes, réservations,
+fitment, tables et SQL inchangés. Aucun nouveau helper, stub, service ou paquet.
+
+Sept contrats ajoutés au test du vrai handler existant : types JSON, bornes,
+refus numériques, variante invalide après une valide, ordre des contrôles et
+stocks exacts par variante. Les 25 contrats ciblés passent. Revue indépendante,
+suite complète, build puis types, lint, parcours physiques existants et CI de
+tête exacte sont à consigner dans la PR. Vendredi : préparation seulement,
+aucune fusion sans exception explicite à la règle PRE-DEPLOY de la skill.
+
+Validation locale : 2 324/2 324 unités sans saut/échec/annulation, build
+Next 16.4.2 puis types, lint sans erreur ni nouvelle alerte (dix existantes).
+Revue indépendante favorable ; réversion en mémoire des quatre lignes rend
+la route entière identique à la base. Les parcours existants et CI de tête
+exacte restent à consigner dans la PR, sans reprendre les résultats d'une
+autre branche comme preuve de celle-ci.
+
 ## 20. Demande de quartier — identité du formulaire (22 octobre 2026)
 
 Inventaire repris sur `main 8a6cbd5`, après #404 et sa CI main verte :

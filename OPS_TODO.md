@@ -4048,3 +4048,35 @@ vers l'écart entre la page et la réalité, qui est le pire endroit où le
 loger, parce que plus personne ne l'y voit.
 
 Ne rien construire qui **aggrave** l'un ou l'autre sans avis écrit.
+
+## Création physique — type JSON des quantités (23 octobre 2026)
+
+Objectif vérifiable sur fix/quantites-json-physique, base main b14e40fb :
+refuser toute quantité JSON non numérique, en base (400) comme en variante
+(422), avant tout INSERT produit/extension/variante/stock. Préserver les
+entiers de 0 à 100 000, les variantes, prix, options, identifiants de stock,
+ordre des contrôles et création en brouillon. La cadence garde son effet
+existant ; une variante invalide reste refusée après attestation et catégorie.
+
+Inventaire : une route et un formulaire physiques, qui envoie déjà de vrais
+nombres ; aucun doublon de PR. #399 traite la reprise, #404 les prix JSON.
+La coercition Number accepte encore true, null, chaînes et tableaux. Stock
+entier déjà contrôlé en SQL 0036 ; aucune vente/rupture réelle démontrée : P2.
+Réutiliser les 18 contrats du vrai handler et les parcours physiques existants.
+
+Périmètre : quatre lignes de route, sept contrats supplémentaires dans le test
+existant, ce journal et docs/67 §19.1. Arrêt ferme : cinq tours de correction
+au plus. Contrepreuves avant patch, bornes et variantes positives, refus sans
+INSERT y compris après une variante valide, suite unitaire, lint, build puis
+types, parcours existants et CI exacte sans retry. Revue indépendante.
+Prix, fitment, réservations, SQL, publication et interfaces hors périmètre.
+Aucun service, paquet, helper, migration distante, donnée de production,
+secret ou paiement réel. Vendredi : PR préparée, aucune fusion sans exception
+explicite à la règle PRE-DEPLOY de la skill zabelie-maintenance.
+
+Contrepreuves acquises avant patch : 200 avec stock 1 pour true en quantité
+produit, 200 et stocks [2, 1] pour une seconde variante true ; trois témoins
+positifs passent. Après patch : 25/25 contrats physiques, 2 324/2 324 unités,
+build Next 16.4.2 puis types, lint zéro erreur et dix alertes préexistantes.
+Revue indépendante favorable. Parcours physiques et CI de tête exacte restent
+à consigner dans la PR. Les quatre lignes sont le seul changement applicatif.
