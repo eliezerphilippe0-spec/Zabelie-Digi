@@ -125,12 +125,28 @@ tout passe par la clé de service, et la clé était morte. Le chemin acheteur
 les routes `/api/products/asset` échouent dans les journaux ; les lectures
 publiques, servies par URL, peuvent continuer un temps.
 
-**Gestes** (procédure éprouvée le 2026-08-14) :
-1. Supabase → Settings → API Keys → régénérer la clé de service.
-2. Vercel → `SUPABASE_SERVICE_ROLE_KEY`, **Production ET Preview** (deux
-   environnements, l'un ne met pas l'autre à jour), retaper, redéployer.
-3. **Prouver** : téléverser une image de test et lire le `201` dans les
-   journaux Supabase — c'est la preuve du 14 août, pas « ça a l'air bon ».
+**Gestes** (incident du 2026-08-14 ; séparation des environnements précisée
+le 2026-10-23) :
+
+1. Après diagnostic confirmé et autorisation de rotation, identifier le
+   projet Supabase de l’environnement touché, puis régénérer sa clé de
+   service dans Settings → API Keys.
+2. Vercel → `SUPABASE_SERVICE_ROLE_KEY` : remplacer la clé dans la portée
+   correspondant à cet environnement. **La clé de
+   production reste en Production.** Preview doit utiliser un projet distinct,
+   des données synthétiques et ses propres clés ; ne pas y recopier la clé
+   de production pour débloquer un test. Vérifier aussi les surcharges de
+   branche avant le redéploiement autorisé. Si l’isolation est inconnue,
+   suspendre les essais connectés.
+3. **Prouver** : après vérification de l’isolation, téléverser une image de
+   test dans le projet de test et lire le `201` dans ses journaux. Un contrôle
+   de production demande une autorisation distincte ; la preuve historique
+   du 14 août ne valide pas l’isolation actuelle.
+
+Les déploiements Preview déjà créés restent à inventorier : modifier la
+portée d’une variable ne démontre pas qu’ils ont perdu leur ancien accès.
+Le retrait d’une URL et la révocation d’une clé sont deux gestes distincts,
+à préparer selon les autorisations de configuration et de rotation existantes.
 
 ## 6. RPO / RTO — délibérément vides
 
