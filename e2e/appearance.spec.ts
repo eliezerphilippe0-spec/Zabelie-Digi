@@ -49,6 +49,10 @@ for (const width of [320, 390, 1440]) {
       : page.locator("header:visible").getByRole("link", { name: "Digital", exact: true });
     await digital.click();
     await expect(page).toHaveURL(/univers=numerique/);
+    // L'URL et le thème racine changent avant le remplacement du SiteNav de
+    // chargement : attendre le catalogue final avant d'ouvrir son menu.
+    await expect(page.getByRole("heading", { level: 1, name: "Produits digitaux", exact: true })).toBeVisible();
+    await expect(search).toBeEnabled();
     await page.emulateMedia({ colorScheme: "dark" });
     await expect(root).toHaveAttribute("data-theme", "dark");
     await trigger.click();
