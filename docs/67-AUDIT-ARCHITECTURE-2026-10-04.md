@@ -683,6 +683,10 @@ Cette section réconcilie les constats des §3–11, de la
 [docs/72](72-ANGLES-MORTS-EXPLOITATION-2026-10-17.md). Elle ne remplace pas leurs
 mesures historiques et n'est pas une nouvelle mesure de la production.
 
+**Réconciliation du 23 octobre 2026 :** le [§30](#30-réconciliation-des-livraisons-et-frontière-de-clôture-23-octobre-2026)
+donne l'état livré jusqu'à #415 et les réserves maintenues. Les attentes
+ci-dessous restent des relevés datés ; le dernier lot encore local figure au §31.
+
 **Référence livrée :** `main` à
 `56b76a6763f0e3e158f6b3bb1f1084719a5850d0`, arbre
 `42a240e62f604e81c6d624dedb5811a8de7c7f96`. Les six PR #390 à #395 sont
@@ -1929,3 +1933,146 @@ coupons) passent en 21 tentatives, sans retry. Les 468 parcours CI sont encore
 attendus : la CI de tête exacte sera consignée dans la PR avant fusion.
 Deux passes à ce stade, raté de fixture puis correction applicative ; arrêt
 ferme à cinq tours. Aucune donnée de production ni migration distante.
+
+## 30. Réconciliation des livraisons et frontière de clôture (23 octobre 2026)
+
+La référence publiée et validée est désormais
+[`cdef62f4824c571a373959633262c7b7b6bd3e38`](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/commit/cdef62f4824c571a373959633262c7b7b6bd3e38),
+arbre `389aace53951174808d0fe7433a98857ece74710`, après
+[#415](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/415).
+Les mentions « validation attendue », « sans fusion » et « PR en préparation »
+des sections précédentes décrivent leur état daté de préparation ; elles ne
+constituent plus le statut courant de ces lots. Le dernier correctif du §31
+reste local et n'est pas inclus dans cette référence publiée. La clôture
+technique finale du périmètre est préparée ; sa revue est favorable, sa PR
+et sa CI exacte restent à consigner. Aucune validation future n'est annoncée acquise.
+
+### 30.1 Matrice finie des constats techniques
+
+| Périmètre | Réconciliation |
+|---|---|
+| §12.1, huit constats des six lots initiaux | #390–#395 sont livrés : inscription, conservation des médias après réponse perdue, cadence vidéo, litiges Stripe côté code, formats pixels, réinitialisation, coordonnées et export. |
+| §12.1, cinq familles préexistantes | Checkout/persistance, reprise/KYC/IP, conservation KYC, taxonomie/SEO et publication/support/RLS/mesures sont conservés ; aucune reconstruction à entreprendre. |
+| §12.2, douze constats corrigés | UX-01, UX-02, SEC-01, SEC-02, UX-05, UX-06, RES-01, SEC-03, SEC-04, SEC-05, UI-02 et UI-03 : correctifs existants et lot #396 livrés. |
+| §12.3 | Verdict de schéma, gardes médias, conservation prudente, sitemap et hydratation Flash livrés par #396 ; leur mise en service distante reste distincte. |
+
+Les dix-neuf lots des §13–29, sous-sections 19.1/19.2 comprises, sont intégrés
+dans la référence publiée. Les PR conservent les contrepreuves, résultats
+finaux et limites propres à chaque tête ; leurs nombres de tests cumulatifs
+ne doivent pas être additionnés.
+
+| Section | PR livrée | Commit main |
+|---|---|---|
+| 13 — reprise fichier/service | [#397](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/397) | `e9812ac` |
+| 14 — support et identité | [#398](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/398) | `a5a5001` |
+| 15 — création physique incertaine | [#399](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/399) | `762b496` |
+| 16 — prix des rabais | [#400](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/400) | `d9b8e52` |
+| 17 — profil public | [#401](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/401) | `9574764` |
+| 18 — prix numérique | [#403](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/403) | `6477600` |
+| 19 — prix physique | [#404](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/404) | `8a6cbd5` |
+| 19.1 — quantités physiques | [#413](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/413) | `2098b31` |
+| 19.2 — entrées structurées physiques | [#414](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/414) | `f83c1d6` |
+| 20 — demande de quartier | [#405](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/405) | `da18726` |
+| 21 — fermeture de compte | [#406](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/406) | `e764547` |
+| 22 — coordonnées privées | [#407](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/407) | `28d1b2f` |
+| 23 — dépôt KYC | [#408](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/408) | `f307396` |
+| 24 — information de conservation KYC | [#409](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/409) | `be89006` |
+| 25 — Next.js et Supabase | [#385](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/385) | `f2b9f40` |
+| 26 — chaîne braces de l'outillage | [#410](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/410) | `247fc65` |
+| 27 — demande de retrait | [#411](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/411) | `b14e40f` |
+| 28 — coupons et identité | [#412](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/412) | `1cc8a2b` |
+| 29 — pixels et identité | [#415](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/pull/415) | `cdef62f` |
+
+### 30.2 Preuves de la référence publiée
+
+La [nouvelle CI main 39950553886](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39950553886),
+tentative 1 sur cdef62f, est terminée avec succès : 2 351 unités ; 468 E2E
+uniques en 468 tentatives initiales, sans retry, flaky, échec ou saut. Dix
+configurations mesurées : 364, 8, 5, 4, 7, 6, 11, 2, 39 et 22.
+Les trois jobs et leurs 47 étapes réussissent. SQL : 97 fichiers, 152 migrations
+en base isolée, huit gardes et restauration synthétique. ClamAV réel 1/1 est
+distinct des E2E. Build/types, contraste 88/88 et audit npm de production
+zéro vulnérabilité passent ; lint Linux sans erreur et neuf avertissements
+préexistants. Aucun audit npm complet supplémentaire n'est déduit de ce run.
+
+Le [workflow après déploiement 39950553889](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39950553889)
+réussit aussi sur ce commit, tentative 1. Livraison attendue, readyz sain,
+six protections publiques et Vercel Ready ont été vérifiés ; ces sondes ne
+prouvent ni les parcours connectés de production ni la disponibilité continue.
+
+Recette publique du 23 octobre, toujours sur la référence publiée cdef62f :
+57 URL issues des 60 historiques, 56 réponses 200 et l’alias inscription
+307 relatif attendu. Les 54 documents HTML 200 ont titre et H1 ; robots et
+sitemap répondent 200 (38 URL déclarées). Trois écrans privés/de création
+sont exclus du relevé ; aucune soumission ni redirection suivie. Ce contrôle
+GET ne valide pas le correctif admin encore local.
+
+Les anciens rouges, ratés de fixture et retries restent historiques.
+Notamment, #396 conserve son retry navigateur ; #400 conserve sa tentative
+de workflow 2 ; l'échec d'audit de main #409 n'est pas transformé en vert par
+le correctif ultérieur #385. Les preuves intermédiaires flaky de #407, #408
+et #413 restent distinctes de leurs nouvelles validations. La dernière CI
+verte ne réécrit aucun de ces résultats.
+
+### 30.3 Hors de cette clôture technique
+
+Sept opportunités facultatives restent au registre, sans nouveau P0/P1
+démontré par leur seule présence : UX-07 (fiabilité d'envoi), UX-08 (ordre de
+l'espace vendeur), UI-01 (petits textes/focus), RES-02 (poids client), UX-09
+(feedback de soumission), UI-04 (relecture éditoriale) et RES-03 (pagination
+selon volume). Les deux décisions UX-03 (versements) et UX-04 (critères Elite)
+restent au porteur ; elles ne deviennent pas une spécification implicite.
+
+Les neuf réserves d'exploitation du §12.4 restent séparées :
+
+1. Schéma et litiges Stripe : mise en service 0151, événements signés,
+   résolution/dégel humains ; conserver aussi la dépendance média 0152 du §12.3.
+2. Juridique, exploitant et qualification des fonds.
+3. Rails et recette réelle avec acteurs et montant autorisés.
+4. Activation et exécutions du rapprochement existant.
+5. Acheminement des notifications/alertes et scanner en exploitation.
+6. Sauvegarde indépendante et restauration isolée chronométrée, RPO/RTO.
+7. Séparation Preview/Production avant essai connecté.
+8. Catalogue réel, routine humaine et second opérateur.
+9. Besoins et paramètres push, mesure complémentaire et antifraude de docs/72.
+
+Le dernier contrôle 0152 du 20 octobre constatait son absence à cette date ;
+aucune observation actuelle n'en est déduite. Sans attestation des objets
+requis, les mutations média gardent leur refus avant Storage. Publication
+et readyz ne prouvent pas l'application de 0151/0152. Le rejeu des migrations
+en CI isolée, y compris 0056, n'autorise aucune application distante ; 0056
+reste volontairement gelée. Aucune donnée métier, opération financière réelle
+ou décision juridique n'est clôturée par les tests et sondes ci-dessus.
+
+## 31. Statut administrateur — vérifier l'effet de la mutation (23 octobre 2026)
+
+Dernier lot encore local sur `fix/admin-statut-verifie`, base publiée cdef62f.
+L'unique [route product-status](../app/api/admin/product-status/route.ts) pouvait
+annoncer un succès et journaliser product.set_status sans ligne produit modifiée.
+Le vrai handler est exercé avec le [harnais existant](../tests/helpers/route-harness.ts),
+sans nouveau moteur de modération ni objet SQL.
+
+Contrepreuves avant patch : quinze contrats, cinq verts et dix rouges.
+Huit absences couvrent draft/archived dans les quatre langues ; les deux
+autres contrats couvrent la disparition après lecture de publication et les
+formes JSON/identifiants incompatibles. Ces observations locales ne démontrent
+aucun incident de production.
+
+Un seul fichier applicatif change, quatorze ajouts et cinq suppressions :
+corps traité comme unknown, garde objet et UUID_RE réutilisé ; l'UPDATE
+demande select("id").maybeSingle(). Sans ligne retournée, réponse 404 traduite
+avant journaliserActeAdmin. Auth admin reste prioritaire ; livrables et analyse
+restent bloquants seulement pour published. Les statuts, erreurs métier et
+journal du succès effectif sont conservés. Ce retour de ligne ne constitue
+pas une transaction atomique entre publication et audit.
+
+Après correction, 47 tests ciblés passent, dont les
+[quinze nouveaux contrats](../tests/admin-product-status-route.test.ts).
+La suite complète locale passe : 2 366/2 366 unités, sans échec ni saut.
+Lint sans erreur et dix avertissements Windows préexistants, audit npm de
+production zéro vulnérabilité ; revue indépendante favorable. Build puis
+types réussissent ; les douze parcours MFA existants passent en douze
+tentatives initiales, sans retry, flaky, échec ou saut. Les 468 E2E
+de la nouvelle tête ne sont pas annoncés acquis : PR et CI exacte après le
+premier commit restent à consigner avant clôture finale de ce lot. Aucune
+fusion, publication ou validation future de cette branche n'est annoncée ici.
