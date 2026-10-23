@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeCouponCode } from "@/lib/zabelie-coupons";
+import { UUID_RE } from "@/lib/collections";
+import { erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +13,7 @@ export const dynamic = "force-dynamic";
  * ne modifie que SES codes. Le pourcentage est borné 1–90 en base.
  *
  * GET    → liste ses codes.
- * POST   { code, percent, productId?, maxUses?, expiresAt? } → crée.
+ * POST   { code, percent, expectedActorId, productId?, maxUses?, expiresAt? } → crée.
  * PATCH  { id, active } → active/désactive.
  */
 
@@ -45,12 +47,21 @@ export async function POST(req: Request) {
     productId?: string | null;
     maxUses?: number | null;
     expiresAt?: string | null;
+    expectedActorId?: unknown;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
   }
+
+  // Une remise ne doit pas être créée depuis l'écran d'un autre compte.
+  // Le propriétaire reste exclusivement l'utilisateur vérifié par Auth.
+  if (!body || typeof body !== "object" || Array.isArray(body)
+    || typeof body.expectedActorId !== "string" || !UUID_RE.test(body.expectedActorId)) {
+    return erreurTraduite("api.params.invalid", 422);
+  }
+  if (body.expectedActorId !== user.id) return erreurTraduite("api.auth.required", 403);
 
   const code = normalizeCouponCode(body.code ?? "");
   if (!code) {
