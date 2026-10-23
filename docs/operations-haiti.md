@@ -98,6 +98,20 @@ La CI répète dump → restauration PostgreSQL avec **données fictives** : com
 
 ## Antivirus et exploitation
 
+### Séparation des environnements avant les essais connectés
+
+Utiliser un projet Supabase distinct avec des données synthétiques pour
+Preview, ses clés propres et des rails de paiement/envoi de test. L’URL,
+la clé publique et la clé de service doivent toutes viser ce projet ; un
+domaine Preview protégé par SSO ne prouve pas cette séparation. Vérifier
+les valeurs effectives et les surcharges de branche dans un contrôle privé,
+sans publier de secret. Tant que ce contrôle manque, conserver les essais
+isolés de CI et ne pas tester les mutations depuis une Preview connectée.
+La procédure de [remplacement d’une clé Storage](38-RUNBOOK.md#5-la-clé-storage-casse-à-nouveau)
+préserve cette séparation et traite les anciens déploiements séparément.
+
+### Scanner et contrôles de mise en ligne
+
 Le contrôle ClamAV réel et la vérification du service Linux sont déjà intégrés à la CI. Sur l’hôte du scanner, utiliser scripts/verifier-antivirus.mjs suivant son aide et le guide d’exploitation existant. Une CI verte ne signifie pas que le scanner tourne en production : conserver la preuve du service actif, des signatures fraîches, du refus d’un fichier de test et de la reprise après arrêt.
 
 Avant mise en ligne : vérifier la migration avec la sonde d’objets requis et le rapport de cohérence existants ; vérifier le cron, la session MFA, l’envoi des avis déjà configurés et l’absence de régression des achats. Refaire une restauration réelle isolée avant de déclarer la reprise opérationnelle.

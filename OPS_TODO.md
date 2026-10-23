@@ -22,6 +22,12 @@ le dossier privé hors Git. `0056` reste gelée ; aucune migration, variable,
 dépense, opération financière ou notification n’est exécutée par ce lot.
 Les états préparatoires des livraisons ci-dessous restent historiques.
 
+Actualisation du même lot : le runbook d’incident ne recommande plus de
+recopier la clé de service de production dans Preview. Il exige un projet
+de test distinct et la vérification des anciens déploiements ; les entrées
+partagées observées ne prouvent pas leur destination effective. La correction
+est documentaire : aucun projet, secret, variable ou déploiement n’est modifié.
+
 ## Clôture technique bornée et dernier lot admin (23 octobre 2026)
 
 Référence publiée : #415, main cdef62f, arbre 389aace53951174808d0fe7433a98857ece74710.
