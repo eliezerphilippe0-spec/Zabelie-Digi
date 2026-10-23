@@ -1893,3 +1893,39 @@ passent, lint zéro erreur (dix avertissements existants), audit complet zéro
 vulnérabilité et contraste 88/88. Build, types, parcours complets et CI exacte
 seront consignés dans la PR avant livraison. Vendredi : PR préparée seulement,
 aucune fusion sans exception explicite à la règle PRE-DEPLOY de la skill.
+
+## 29. Pixels vendeur — identité du formulaire (23 octobre 2026)
+
+Lot P2 de cohérence de configuration sur fix/pixels-identite-formulaire,
+base main f83c1d63 après #414. Inventaire : unique PUT /api/account/pixels,
+unique montage PixelsForm dans tableau-de-bord/api, table existante
+zabelie_seller_pixels et politiques 0123. Les formats protégés par #392 sont
+conservés ; les trois PUT directs du parcours clés API fournissent désormais
+l'identité attendue. Aucun incident, fuite ou contournement RLS allégué.
+
+Avant patch, le vrai handler donne 10 tests verts et trois rouges sur 13.
+Dans les quatre langues, un formulaire A sous session B reçoit 200 et remplace
+les pixels de B, dont un retrait TikTok involontaire ; A reste intact.
+Six essais navigateur sans retry donnent cinq rouges métier et un nominal
+vert. Le vrai refresh RSC lit B dans le même document, mais garde les champs
+et l'erreur A. Un premier lancement a subi six redirections légales dues à
+la fixture : ce raté d'instrument reste séparé des contrepreuves métier.
+
+Trois fichiers applicatifs changent : identité rendue et clé React par compte,
+expectedActorId dans le PUT, puis garde serveur réutilisant UUID_RE après
+Auth, compte actif et JSON objet, avant les formats et toute requête pixels.
+UUID absent, invalide ou malformé : 422 invalid_body ; divergence avec la session :
+403. Le propriétaire de l'upsert reste exclusivement user.id. La clé remonte
+les champs et messages du compte B ; les anciens écrans doivent être rechargés.
+Upsert, RLS, consentement et scripts publicitaires restent inchangés.
+
+Après patch : 21/21 tests ciblés passent, soit 13 contrats du handler et huit
+tests pixels existants. Les 2 351 unités passent sans échec ni saut dans le
+contexte local autorisé ; un contraste isolé documente la restriction de
+fichiers qui fait échouer un test ESLint inchangé et sauter deux liens.
+Build puis types et revue indépendante favorables ; lint zéro erreur et dix
+avertissements préexistants. Les 21 parcours locaux (pixels, clés API et
+coupons) passent en 21 tentatives, sans retry. Les 468 parcours CI sont encore
+attendus : la CI de tête exacte sera consignée dans la PR avant fusion.
+Deux passes à ce stade, raté de fixture puis correction applicative ; arrêt
+ferme à cinq tours. Aucune donnée de production ni migration distante.

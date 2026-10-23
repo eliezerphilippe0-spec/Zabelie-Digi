@@ -6,7 +6,7 @@ type Valeurs = { meta: string; google: string; tiktok: string };
 type Labels = Record<"meta" | "google" | "tiktok" | "metaHint" | "googleHint" | "tiktokHint" | "save" | "saving" | "saved" | "error", string>;
 
 /** Les trois identifiants de pixel du vendeur. Vide = pixel retiré. */
-export function PixelsForm({ initial, labels }: { initial: Valeurs; labels: Labels }) {
+export function PixelsForm({ actorId, initial, labels }: { actorId: string; initial: Valeurs; labels: Labels }) {
   const [v, setV] = useState<Valeurs>(initial);
   const [etat, setEtat] = useState<"repos" | "envoi" | "ok" | "erreur">("repos");
   const [message, setMessage] = useState("");
@@ -15,7 +15,7 @@ export function PixelsForm({ initial, labels }: { initial: Valeurs; labels: Labe
     e.preventDefault();
     setEtat("envoi");
     try {
-      const res = await fetch("/api/account/pixels", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(v) });
+      const res = await fetch("/api/account/pixels", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...v, expectedActorId: actorId }) });
       const corps = await res.json().catch(() => ({}));
       if (!res.ok) { setEtat("erreur"); setMessage(corps.error ?? labels.error); return; }
       setV({ meta: corps.meta ?? "", google: corps.google ?? "", tiktok: corps.tiktok ?? "" });

@@ -1,5 +1,31 @@
 # OPS_TODO — Zabelie
 
+## Pixels vendeur — identité du formulaire (23 octobre 2026)
+
+Objectif P2 sur fix/pixels-identite-formulaire, base main f83c1d63 : un écran
+A sous session B reçoit 403 avant toute requête pixels, et un refresh RSC B
+remonte les champs et messages liés à B. UUID attendu obligatoire : 422
+invalid_body s'il manque ou est malformé. Le propriétaire reste user.id.
+Inventaire et preuves détaillés dans docs/67, §29 ; aucun doublon avec #392.
+
+Périmètre : trois fichiers applicatifs existants, contrats du vrai handler,
+six parcours navigateur, fixture Supabase optionnelle, trois PUT directs du
+parcours clés API adaptés et documentation. Upsert, table/RLS 0123,
+consentement et scripts inchangés ; anciens écrans à recharger. Aucun incident,
+fuite ou contournement RLS allégué ; aucun accès aux paiements ou données réels.
+
+Contrepreuves : handler 10 verts/3 rouges ; A/B écrit B dans les quatre langues.
+Navigateur : six essais sans retry, cinq rouges métier/un nominal vert ; RSC
+lit B sans remplacer le document, mais conserve A et son erreur. Le lancement
+préalable avec six redirections légales est un raté de fixture distinct.
+Après correction : 21/21 ciblés passent (13 handler + 8 pixels existants).
+Validation locale : 2 351 unités sans échec ni saut dans le contexte autorisé,
+build puis types réussis, revue favorable et 21 parcours en 21 tentatives,
+sans retry. Le raté ESLint sous restrictions de fichiers et son contraste
+19/19 sont conservés séparément. Reste la CI exacte, 468 E2E attendus sans
+retry avant fusion ; aucun vert anticipé.
+Deux passes utilisées, dont le raté de fixture ; arrêt ferme à cinq tours.
+
 ## Codes promo — identité du formulaire (23 octobre 2026)
 
 Objectif vérifiable sur fix/coupons-identite-formulaire, base main b14e40fb :

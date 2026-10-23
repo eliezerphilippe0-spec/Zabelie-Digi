@@ -114,9 +114,11 @@ test("un point webhook s'ajoute (secret affiché une fois), refuse le http, se d
 test("les pixels du vendeur s'enregistrent ; un identifiant hors format est refusé", async ({ page }) => {
   await connecte(page);
   await page.goto("/tableau-de-bord/api#pixels", { waitUntil: "networkidle" });
-  expect((await page.request.put("/api/account/pixels", { data: { meta: "123;alert(1)" } })).status()).toBe(422);
-  expect((await page.request.put("/api/account/pixels", { data: { google: "UA-123-1" } })).status()).toBe(422);
-  const ok = await page.request.put("/api/account/pixels", { data: { meta: " 123456789012345 ", google: "g-ab12cd34ef", tiktok: "" } });
+  const metaRefuse = await page.request.put("/api/account/pixels", { data: { meta: "123;alert(1)", expectedActorId: "11111111-1111-1111-1111-111111111111" } });
+  expect(metaRefuse.status()).toBe(422); expect((await metaRefuse.json()).code).toBe("invalid_format");
+  const googleRefuse = await page.request.put("/api/account/pixels", { data: { google: "UA-123-1", expectedActorId: "11111111-1111-1111-1111-111111111111" } });
+  expect(googleRefuse.status()).toBe(422); expect((await googleRefuse.json()).code).toBe("invalid_format");
+  const ok = await page.request.put("/api/account/pixels", { data: { meta: " 123456789012345 ", google: "g-ab12cd34ef", tiktok: "", expectedActorId: "11111111-1111-1111-1111-111111111111" } });
   expect(ok.status()).toBe(200);
   expect(await ok.json()).toMatchObject({ meta: "123456789012345", google: "G-AB12CD34EF", tiktok: null });
 });

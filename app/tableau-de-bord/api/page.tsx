@@ -104,6 +104,8 @@ export default async function ApiPage() {
         <h2 id="pixels" className="mt-12 scroll-mt-32 text-xl font-semibold">{t(lang, "pixels.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "pixels.intro")}</p>
         <PixelsForm
+          key={user.id}
+          actorId={user.id}
           initial={{ meta: px?.meta_pixel_id ?? "", google: px?.google_tag_id ?? "", tiktok: px?.tiktok_pixel_id ?? "" }}
           labels={{
             meta: t(lang, "pixels.meta"), google: t(lang, "pixels.google"), tiktok: t(lang, "pixels.tiktok"),
