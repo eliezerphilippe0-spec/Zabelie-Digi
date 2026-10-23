@@ -4117,3 +4117,34 @@ positifs passent. Après patch : 25/25 contrats physiques, 2 324/2 324 unités,
 build Next 16.4.2 puis types, lint zéro erreur et dix alertes préexistantes.
 Revue indépendante favorable. Parcours physiques et CI de tête exacte restent
 à consigner dans la PR. Les quatre lignes sont le seul changement applicatif.
+
+## Création physique — entrées structurées (23 octobre 2026)
+
+Objectif vérifiable sur `fix/physique-entrees-structurees`, base main 2098b312 :
+refuser une entrée variante ou fitment non objet avant lecture de propriété,
+avec les messages 422 existants. P2 de robustesse, aucune perte réelle ou
+faille RLS démontrée. #399, #404, #413 et #103 restent préservées.
+
+Contrepreuves avant correction : 31 tests du vrai handler, 29 succès et deux
+échecs TypeError sur `label` / `modelId` avec `[null]`, pas un faux retour 500.
+Deux gardes locales d'objet non nul et non tableau, douze lignes de route ;
+aucun helper, service, paquet, table ou migration ajouté.
+
+Après correction : 33/33 ciblés (31 physiques, deux assertions de source
+fitment-doublon), sans exécution PostgreSQL ou preuve de RLS déduite.
+Les matrices exercent null et les autres formes invalides, d'abord seules
+puis après une entrée valide ; limites 20/40, priorités et nominal exact.
+Réutiliser le fichier de contrats et les parcours physiques existants.
+
+Auth, compte, identité, cadence, attestation et catégorie gardent leur ordre.
+Cadence et attestation conservent leurs effets : pas de promesse d'absence
+globale d'écriture. Les racines variants/fitment non tableaux restent ignorées.
+Prix, quantités, années normalisées, draft, 23505 et prudence Form422 inchangés.
+
+Périmètre limité à quatre fichiers : route, test existant, docs/67 §19.2 et
+ce journal. Arrêt ferme : cinq tours de correction. Validation locale :
+2 347 unités, build puis types, lint sans erreur (dix avertissements existants),
+12 parcours physiques en 12 tentatives sans retry/échec/ignoré. CI exacte à confirmer.
+PR préparée pour validation ; aucune fusion ou livraison annoncée. L'exception
+du vendredi précédente était limitée à #412/#413, pas une autorisation générale.
+Aucune donnée de production, secret, migration distante ou paiement réel.

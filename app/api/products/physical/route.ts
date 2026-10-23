@@ -259,6 +259,12 @@ export async function POST(req: Request) {
   }
   const variants: { label: string; priceHTG: number; quantity: number }[] = [];
   for (const v of variantsIn) {
+    if (!v || typeof v !== "object" || Array.isArray(v)) {
+      return NextResponse.json(
+        { error: "Chaque variante doit avoir un libellé." },
+        { status: 422 }
+      );
+    }
     const label = typeof v.label === "string" ? v.label.trim().slice(0, 80) : "";
     const vPrice = v.priceHTG;
     const vQty = v.quantity;
@@ -293,6 +299,12 @@ export async function POST(req: Request) {
   }
   const fitment: { modelId: string; yearStart: number; yearEnd: number | null }[] = [];
   for (const f of fitmentIn) {
+    if (!f || typeof f !== "object" || Array.isArray(f)) {
+      return NextResponse.json(
+        { error: "Compatibilité : modèle et année de début requis." },
+        { status: 422 }
+      );
+    }
     const modelId = typeof f.modelId === "string" ? f.modelId : "";
     const yearStart = Number(f.yearStart);
     const yearEnd =

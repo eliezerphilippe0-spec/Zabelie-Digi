@@ -1316,6 +1316,39 @@ la route entière identique à la base. Les parcours existants et CI de tête
 exacte restent à consigner dans la PR, sans reprendre les résultats d'une
 autre branche comme preuve de celle-ci.
 
+### 19.2 Création physique — forme des entrées structurées (23 octobre 2026)
+
+Petit lot P2 sur `fix/physique-entrees-structurees`, base `main 2098b312`.
+La route et les tests physiques existants sont étendus ; aucun doublon de
+#399 (reprise), #404 (prix) ou #413 (quantités). #103 reste préservée.
+
+Avant correction : 31 tests du vrai handler, 29 succès et deux TypeError sur
+`label` et `modelId` avec `variants: [null]` et `fitment: [null]` en tête.
+Ce sont des exceptions réelles, pas des réponses 500 fabriquées par le harnais.
+Aucun incident réel ni P1 établi.
+
+Deux gardes refusent les entrées non objets, nulles ou tableaux avant toute
+lecture de propriété, avec les messages 422 existants. Douze lignes de route,
+sans helper, service, paquet ou SQL ajouté. Les champs optionnels variants et
+fitment absents ou non tableaux restent ignorés comme avant.
+
+Auth, compte, identité, cadence, attestation et catégorie gardent leur ordre.
+Cadence et attestation conservent leurs effets ; aucune absence globale
+d'écriture n'est revendiquée. Prix, quantités, normalisation des années,
+brouillon, traitement 23505 et prudence du formulaire sur 422 sont inchangés.
+
+Après correction : 33/33 ciblés, soit 31 contrats physiques et deux assertions
+de source fitment-doublon. Matrices de formes invalides en tête et après une
+entrée valide, limites de 20 variantes et 40 compatibilités, priorités et
+création nominale exacte sont couvertes dans les tests existants.
+
+Périmètre : quatre fichiers, route, test physique, ce document et OPS_TODO.
+Arrêt ferme après cinq tours. Validation locale : 2 347 unités, build puis
+types, lint sans erreur (dix avertissements existants), 12 parcours physiques
+en 12 tentatives, zéro retry/échec/ignoré. CI exacte à confirmer dans la PR.
+PR en préparation, aucune fusion ni publication de ce lot.
+L'exception du vendredi précédente concernait seulement #412 et #413.
+
 ## 20. Demande de quartier — identité du formulaire (22 octobre 2026)
 
 Inventaire repris sur `main 8a6cbd5`, après #404 et sa CI main verte :
