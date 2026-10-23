@@ -6,6 +6,7 @@ import { getAdminUser } from "@/lib/auth";
 import { journaliserActeAdmin } from "@/lib/admin-audit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDownloadable, type ProductKind } from "@/lib/product-kind";
+import { UUID_RE } from "@/lib/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,15 +24,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t(lang, "api.access.denied") }, { status: 403 });
   }
 
-  let body: { productId?: string; status?: string };
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: t(lang, "api.json.invalid") }, { status: 400 });
   }
 
-  const { productId, status } = body;
-  if (!productId || !status || !ALLOWED.includes(status as (typeof ALLOWED)[number])) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: t(lang, "api.status.invalid") }, { status: 400 });
+  }
+  const { productId, status } = body as { productId?: unknown; status?: unknown };
+  if (typeof productId !== "string" || !UUID_RE.test(productId) || typeof status !== "string" || !ALLOWED.includes(status as (typeof ALLOWED)[number])) {
     return NextResponse.json(
       { error: t(lang, "api.status.invalid") },
       { status: 400 }
@@ -99,13 +103,18 @@ export async function POST(req: Request) {
     }
   }
 
-  const { error } = await admin
+  const { data: produitModifie, error } = await admin
     .from("products")
     .update({ status })
-    .eq("id", productId);
+    .eq("id", productId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.code === "23514" ? t(lang, "studio.fileLimit") + " " + t(lang, "studio.error") : t(lang, "error.generic") }, { status: error.code === "23514" ? 422 : 500 });
+  }
+  if (!produitModifie) {
+    return NextResponse.json({ error: t(lang, "api.product.notfound") }, { status: 404 });
   }
   await journaliserActeAdmin(admin, {
     actorId: user.id,

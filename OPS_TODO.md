@@ -1,5 +1,35 @@
 # OPS_TODO — Zabelie
 
+## Clôture technique bornée et dernier lot admin (23 octobre 2026)
+
+Référence publiée : #415, main cdef62f, arbre 389aace53951174808d0fe7433a98857ece74710.
+La [CI main 39950553886](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39950553886)
+réussit en tentative 1 : 2 351 unités et 468 E2E en 468 tentatives initiales,
+sans retry/flaky/échec/saut. Les 47 étapes des trois jobs, SQL isolé et
+restauration passent. Le [workflow public 39950553889](https://github.com/eliezerphilippe0-spec/Zabelie-Digi/actions/runs/39950553889)
+réussit ; commit attendu, readyz et six protections vérifiés. ClamAV reste
+distinct des E2E. Les anciens états d'attente et retries restent historiques.
+
+[docs/67 §30](docs/67-AUDIT-ARCHITECTURE-2026-10-04.md#30-réconciliation-des-livraisons-et-frontière-de-clôture-23-octobre-2026)
+réconcilie les constats et livraisons sans reconstruire l'existant.
+Sept opportunités facultatives, deux décisions métier et neuf réserves
+d'exploitation restent hors clôture : aucune activation 0151/0152, recette
+financière réelle ou décision juridique n'est déduite des validations.
+Le contrôle 0152 du 20 octobre reste daté ; 0056 demeure gelée en production.
+
+Dernier correctif local sur fix/admin-statut-verifie : product-status valide
+objet/UUID avant UPDATE et exige une ligne retournée avant succès/audit,
+sinon 404 pour le produit absent.
+Une route modifiée (14 ajouts/5 suppressions), harnais réutilisé et quinze
+nouveaux contrats ; avant patch 5 verts/10 rouges, après patch 47 ciblés verts.
+Suite locale 2 366/2 366 sans échec/saut ; lint zéro erreur et dix avertissements
+Windows existants, audit production zéro vulnérabilité et revue favorable.
+Build puis types réussis ; douze parcours MFA en douze tentatives initiales,
+sans retry/flaky/échec/saut. Les 468 E2E de la nouvelle tête, la PR et sa CI
+exacte restent à consigner. Détails au §31. Clôture finale
+préparée sous ces réserves, sans fusion ou publication annoncée de cette branche.
+Aucun nouveau chantier au-delà de ce périmètre.
+
 ## Pixels vendeur — identité du formulaire (23 octobre 2026)
 
 Objectif P2 sur fix/pixels-identite-formulaire, base main f83c1d63 : un écran
