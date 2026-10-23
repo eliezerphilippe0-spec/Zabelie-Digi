@@ -1,5 +1,42 @@
 # OPS_TODO — Zabelie
 
+## Codes promo — identité du formulaire (23 octobre 2026)
+
+Objectif vérifiable sur fix/coupons-identite-formulaire, base main b14e40fb :
+un formulaire rendu pour A sous une session devenue B reçoit 403 avant toute
+requête sur zabelie_coupons. Le rafraîchissement RSC B remonte un formulaire
+vide lié à B ; sa création utilise toujours user.id vérifié par Auth.
+L'identifiant attendu reste une précondition, jamais un propriétaire fourni.
+
+Inventaire : POST et montage uniques, aucun correctif ou PR équivalent.
+La RLS 0012 protège le propriétaire courant, mais une remise active sans
+product_id s'applique à tous ses produits ; elle ne connaît pas l'intention
+d'un écran A conservé. Aucun incident réel allégué. Réutiliser UUID_RE,
+erreurTraduite, le harnais du vrai handler et le faux Supabase navigateur.
+
+Périmètre : route coupons, gestionnaire et son montage, contrats du handler,
+parcours navigateur et extension optionnelle de la fixture existante, ce
+journal et docs/67. Arrêt ferme : cinq tours de correction au plus.
+Contrepreuves sur l'ancien comportement, refus sans écriture A/B, formats,
+anonymat, succès A/A et B/B, règles existantes et vrai refresh dans les quatre
+langues à 360 px. Revue indépendante, suite unitaire, lint, build puis types,
+parcours complets et CI de tête exacte sans retry avant livraison.
+Les anciens corps sans identité seront refusés ; aucun autre appelant trouvé.
+PATCH, calculs/remises, panier, consommation, SQL et paiements hors périmètre.
+Aucune donnée de production, migration distante, secret ou livraison manuelle.
+Vendredi : préparer la PR vérifiable ; aucune fusion sans exception explicite
+à la règle PRE-DEPLOY de la skill zabelie-maintenance.
+
+Contrepreuves acquises avant patch : quatre rouges du vrai handler (200 et
+INSERT B au lieu de 403), plus vrai formulaire navigateur A sous cookies B
+et vrai refresh RSC B dans le même document conservant saisie et erreur A.
+Après patch : 17/17 contrats et 2 334/2 334 unités, build Next 16.4.2 puis
+types, contraste 88/88, audit complet zéro vulnérabilité. Lint zéro erreur,
+dix avertissements existants. Revue indépendante favorable ; GET/PATCH et
+suffixe métier depuis normalizeCouponCode identiques à la base. Les doubles
+ne prouvent pas la RLS ; les SQL existants couvrent la consommation. La suite
+navigateur complète et la CI de tête exacte restent à consigner dans la PR.
+
 ## Demande de retrait — identité du formulaire (22 octobre 2026)
 
 Objectif vérifiable sur fix/retrait-identite-formulaire, base main 247fc659 :

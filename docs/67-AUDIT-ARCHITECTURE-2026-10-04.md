@@ -1815,3 +1815,48 @@ suffixe métier depuis la normalisation du montant identique à la base. Les
 avant fusion ; aucune preuve d'une autre tête n'est réutilisée comme vert.
 Aucun appel financier réel, migration distante, donnée de production, secret,
 nouveau service, dépendance ou déploiement manuel.
+
+## 28. Codes promo — identité du formulaire (23 octobre 2026)
+
+Lot sur fix/coupons-identite-formulaire, base main b14e40fb après #411.
+Inventaire : unique POST /api/coupons et unique montage du gestionnaire,
+aucune PR équivalente ; /api/coupons/validate et les API vendeur externes
+restent distincts. GET/PATCH utilisent le client authentifié. Le PATCH filtre
+l'ID et la RLS 0012 impose auth.uid() = seller_id ; aucun filtre vendeur
+supplémentaire n'est revendiqué. La RLS protège le propriétaire de session,
+mais ne connaît pas l'intention du compte qui a rendu un ancien formulaire.
+
+Contrepreuve du vrai handler dans les quatre langues : écran attendu A sous
+session B crée avec 200 un code B actif, product_id null. Le coupon peut alors
+s'appliquer à tous les produits B selon la logique existante, sans être un
+contournement RLS. Le navigateur reproduit le vrai INSERT depuis le formulaire
+A sous cookies B. Un autre rouge prouve qu'un refresh RSC FR→EN dans le même
+document lit bien profil/produits/codes B, mais conserve ANCIEN-A, remise 35,
+maximum 7 et erreur A. Aucune observation ne porte sur des données réelles.
+
+Correction limitée à trois fichiers applicatifs : actorId et key=user.id au
+montage serveur ; expectedActorId dans le POST ; précondition UUID obligatoire
+après Auth/JSON, avant normalisation et toute requête coupons. Identité absente
+ou malformée : 422 ; identité divergente : 403 ; erreurs issues des quatre
+dictionnaires existants. seller_id reste exclusivement user.id vérifié par
+Auth. Le refresh vers B remonte un formulaire vide, remise initiale 10 et
+erreur effacée. Les anciens écrans sans identité doivent être rechargés.
+
+GET, PATCH et le suffixe métier depuis normalizeCouponCode sont identiques à
+la base ; normalisation, pourcentages, produit, plafond d'utilisations,
+expiration, calcul HTG, validation panier et consommation restent inchangés.
+Aucun nouveau service, helper, paquet, table, migration ou règle financière.
+Les doubles locaux ne prouvent pas la RLS PostgreSQL. Les tests SQL existants
+zabelie_coupons et payment_idempotency couvrent la consommation ; aucune
+nouvelle preuve RLS propriétaire n'est annoncée.
+
+Validation ajoutée : 17 contrats du vrai handler et six parcours navigateur
+avec extension opt-in de la fixture Supabase existante, sans garde d'identité
+dans le double. Refus : comparaison complète de l'état non vide des deux
+comptes, hors lectures diagnostiques. Succès A/A et B/B, options, normalisation,
+doublon et PATCH nominal ; refresh B exige même document et lectures B avant
+réinitialisation et nouvelle création B. Les 17 contrats et 2 334 unités
+passent, lint zéro erreur (dix avertissements existants), audit complet zéro
+vulnérabilité et contraste 88/88. Build, types, parcours complets et CI exacte
+seront consignés dans la PR avant livraison. Vendredi : PR préparée seulement,
+aucune fusion sans exception explicite à la règle PRE-DEPLOY de la skill.
