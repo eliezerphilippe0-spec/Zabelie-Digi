@@ -49,7 +49,7 @@ export default async function CodesPromoPage() {
           </p>
           {aDesProduits ? (
             <div className="mt-6 rounded-2xl border border-line bg-surface/60 p-5">
-              <ZabelieCouponManager coupons={coupons} />
+              <ZabelieCouponManager key={user.id} coupons={coupons} actorId={user.id} />
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-line p-5 text-sm">

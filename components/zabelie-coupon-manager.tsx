@@ -19,7 +19,7 @@ export type CouponItem = {
  * Le vendeur partage son code sur WhatsApp ; la validation et la remise
  * réelles se font côté serveur au checkout.
  */
-export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
+export function ZabelieCouponManager({ coupons, actorId }: { coupons: CouponItem[]; actorId: string }) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [percent, setPercent] = useState(10);
@@ -39,6 +39,7 @@ export function ZabelieCouponManager({ coupons }: { coupons: CouponItem[] }) {
           code,
           percent,
           maxUses: maxUses ? Number(maxUses) : null,
+          expectedActorId: actorId,
         }),
       });
       const data = await res.json();
