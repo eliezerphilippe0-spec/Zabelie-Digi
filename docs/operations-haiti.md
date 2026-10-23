@@ -25,9 +25,34 @@ Les brouillons de support restent dans l’onglet, sous une clé propre au compt
 
 La réconciliation interroge les opérateurs depuis le serveur. Stripe vérifie l’identifiant de session, la commande, le mode, la devise et le montant ; la RPC financière revérifie le montant attendu et l’idempotence. Seule une expiration formelle permet d’annuler une session Stripe impayée. Une erreur réseau conserve la commande en attente.
 
-La sélection tourne sur les paiements les moins récemment examinés. Les seuils internes vivent dans zabelie_operations_config : 30 minutes pour l’alerte de paiement, 20 paiements par rail et passage, cible de suivi de 48 heures. Ils ne modifient ni tarifs ni plafonds financiers. Le cron quotidien existant reste quotidien ; le bouton administrateur permet une vérification supplémentaire.
+La sélection tourne sur les paiements les moins récemment examinés. Les seuils internes vivent dans zabelie_operations_config : 30 minutes pour l’alerte de paiement, 20 paiements par rail et passage, cible de suivi de 48 heures. Ils ne modifient ni tarifs ni plafonds financiers. Le cron Vercel quotidien reste le filet de secours. L’ordonnanceur GitHub optionnel demande un passage toutes les cinq minutes sur le même worker ; mesurer ses passages réels, car cette cadence n’est pas garantie. Son activation et ses limites sont décrites dans [docs/04](04-DEPLOIEMENT.md). Le bouton administrateur permet une vérification supplémentaire, qui peut modifier les paiements.
 
 Une file vide après une erreur de lecture n’est jamais présentée comme une absence d’incidents. Les métriques excluent les commandes gratuites, sandbox, comptes de test et achats du vendeur à lui-même. Les achats confirmés exigent à la fois une commande payée/livrée et un paiement confirmé. Les zones sont celles déclarées par les vendeurs, pas une mesure de livraison effective. Les recherches sans résultat restent accessibles depuis le panneau existant.
+
+## Routine quotidienne et relève
+
+Le titulaire et son suppléant sont désignés par le porteur avant l’ouverture commerciale. Chaque personne utilise son propre compte avec MFA ; aucun partage de session ni de secret. Réserver quinze minutes de contrôle par jour et une relève en cas d’absence. Cette routine ne remplace pas la surveillance des alertes ni une permanence adaptée aux commandes réelles.
+
+| Temps indicatif | Lecture et décision attendue |
+|---|---|
+| 0–3 min | Lire la dernière livraison `main`, le workflow après déploiement et les erreurs déjà journalisées. Noter le commit servi, la date et tout contrôle inaccessible comme **non vérifié**. Le [runbook d’incident](38-RUNBOOK.md) reste la procédure d’escalade. |
+| 3–7 min | Consulter la file `/admin/operations` sous MFA : paiements anciens, dossiers/litiges, justificatifs de remboursement et versements. Séparer essais et opérations réelles. Noter volume, ancienneté et prochaine action ; une décision financière suit les autorisations existantes. |
+| 7–10 min | Lire les derniers passages du [rapprochement](../.github/workflows/reconcile.yml), leurs compteurs, les intervalles entre passages et le journal du filet Vercel. Signaler un échec, un silence ou un écart supérieur à quinze minutes ; un succès isolé ne prouve pas la cadence. Vérifier les résultats de cohérence déjà produits, sans lancer de rattrapage pour établir le constat. |
+| 10–13 min | Vérifier les preuves d’acheminement des avis/alertes, la santé du scanner selon [son guide existant](../ops/antivirus/README.md), la date de la dernière sauvegarde indépendante et de sa restauration isolée (§ ci-dessous). Zéro message/fichier ou une CI verte ne prouve pas le fonctionnement en production. |
+| 13–15 min | Consigner le bilan dans un dossier privé hors Git, attribuer chaque action au titulaire ou au suppléant et fixer le prochain point de contrôle. Si le créneau ne suffit pas, assurer la relève plutôt que déclarer la file traitée. |
+
+Un contrôle de lecture n’appelle ni `/api/reconcile` (même en GET), ni le bouton de rapprochement : ils rattrapent des paiements. `/api/admin/coherence` peut envoyer des alertes. Lire leurs résultats existants ou faire des SELECT agrégés revus ; ne pas déclencher de paiement, notification, analyse de fichier ou purge pour remplir la fiche. Les migrations, secrets, dépenses, remboursements et dégels restent soumis à leurs validations ; `0056` demeure gelée.
+
+Fiche de relève, à remplir dans le dossier privé :
+
+- Date/heure UTC et locale, titulaire, suppléant disponible et commit observé.
+- Livraison/santé : résultat, source datée et contrôles non vérifiés.
+- File : compteurs réels séparés des essais, plus ancienne échéance et action requise.
+- Réconciliation : lien du dernier passage, intervalle observé, erreurs/divergences et résultat de cohérence déjà produit.
+- Avis/scanner : preuve datée de réception ou de santé ; sauvegarde/restauration : référence privée et dates, RPO/RTO mesurés ou **inconnus**.
+- Incident/décision : référence privée, responsable, autorisation requise et prochain contrôle. Ne conserver aucun secret, donnée de carte ou document KYC dans cette fiche.
+
+La routine documentée ne suffit pas à clôturer l’exploitation : conserver des fiches réellement effectuées, une relève exercée, une alerte effectivement reçue et les preuves de reprise. Les décisions restantes sont suivies dans le [registre unique](../OPS_TODO.md), sans nouvelle file ni tableau de bord.
 
 ## Recette financière réelle, à consigner avant ouverture commerciale
 

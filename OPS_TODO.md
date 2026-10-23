@@ -1,5 +1,27 @@
 # OPS_TODO — Zabelie
 
+## Exploitation : routine et preuves à réunir (23 octobre 2026)
+
+La [routine quotidienne et sa fiche de relève](docs/operations-haiti.md#routine-quotidienne-et-relève)
+complètent le runbook existant. Réutiliser `/admin/operations`, les journaux de
+rapprochement, l’outbox, le guide antivirus et les scripts de reprise ; aucune
+nouvelle fonction, table, file ou automatisation n’est nécessaire pour ce lot.
+L’ordonnanceur GitHub demande cinq minutes, sans garantir cette fréquence ;
+mesurer les intervalles et signaler le silence. Les endpoints de rapprochement
+et de cohérence peuvent produire des effets de bord : lire les résultats déjà
+produits pour le contrôle quotidien.
+
+| Décision ou preuve | Depuis | Ce qu’elle bloque |
+|---|---|---|
+| Titulaire, suppléant avec MFA et première relève réellement effectuée | 17 octobre 2026, docs/72 §7 | Continuité du support et traitement quotidien des dossiers ; la documentation seule ne prouve pas une permanence |
+| Cadence réellement tenue, résultat du filet Vercel et alerte de silence reçue | Contrôle d’exploitation du 23 octobre 2026 | Clôture de la réserve de réconciliation ; ne pas ajouter un second worker ou changer un secret pour masquer un retard |
+| Pièces et preuves des neuf familles de docs/67 §30.3 | Inventaire technique du 23 octobre 2026 | Clôture opérationnelle : schéma distant, qualification juridique, recette réelle, notifications/scanner, sauvegarde/restauration et séparation Preview/Production restent à attester séparément |
+
+Les mesures détaillées de production et les fiches nominatives restent dans
+le dossier privé hors Git. `0056` reste gelée ; aucune migration, variable,
+dépense, opération financière ou notification n’est exécutée par ce lot.
+Les états préparatoires des livraisons ci-dessous restent historiques.
+
 ## Clôture technique bornée et dernier lot admin (23 octobre 2026)
 
 Référence publiée : #415, main cdef62f, arbre 389aace53951174808d0fe7433a98857ece74710.
