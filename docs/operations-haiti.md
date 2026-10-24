@@ -69,6 +69,20 @@ Démarrer ensuite une instance Supabase locale isolée, sans secrets de paiement
 
 La restauration refuse les buckets déjà présents, ne remplace pas d’objets et relit chaque fichier restauré pour comparer son empreinte. Une interruption impose de repartir sur une nouvelle instance vide. Vérifier ensuite connexion, commande historique, fichier privé acheté, droits d’un autre compte et cohérence des portefeuilles. Mesurer la durée réelle et la date de la sauvegarde restaurée.
 
+Un objet historique peut dépasser une limite de bucket abaissée après son
+téléversement. Après vérification complète de l’export, le script crée chaque
+bucket avec ses restrictions sauvegardées et attend la confirmation de sa
+création. Si nécessaire, il élargit ensuite temporairement sa seule limite de
+taille au plus grand objet vérifié du bucket, copie et relit les objets, puis
+réapplique les réglages sauvegardés exacts. La visibilité et les MIME autorisés
+restent identiques ; le plafond global du serveur continue de s’appliquer.
+Le bloc `finally` tente ce rétablissement même après une erreur de copie,
+de relecture ou une réponse perdue à l’élargissement. Un échec de copie,
+d’empreinte ou de rétablissement ne certifie jamais la restauration. Une
+création refusée ou non confirmée ne déclenche aucune mise à jour du bucket.
+Après une interruption, utiliser une nouvelle instance vide ; le script
+n’efface pas les éléments partiellement restaurés pour permettre un rejeu.
+
 La CI répète dump → restauration PostgreSQL avec **données fictives** : commandes, messages, justificatif, permissions RPC et isolation des comptes. Les tests Storage exercent export, corruption, restauration et relecture avec un adaptateur simulé. Ils ne prouvent pas la récupérabilité d’une sauvegarde de production.
 
 ## Antivirus et exploitation

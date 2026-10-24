@@ -65,15 +65,41 @@ export async function restoreStorage(client,directory,target) {
  const destination=localTarget(target);
  const m=await verifyStorage(directory);
  if(new URL(m.source).origin===destination) throw Error("Source and restore target must differ.");
+ // Bound the verified restore just like export, before any target write.
+ const objects=new Map(m.buckets.map(b=>[b.id,[]]));let bytes=0;
+ if(m.objects.length>100000)fail();
+ for(const b of m.buckets){
+  if(typeof b.id!=="string" || !b.id || (b.fileSizeLimit!=null&&(!Number.isSafeInteger(b.fileSizeLimit)||b.fileSizeLimit<0)))fail();
+ }
+ for(const o of m.objects){
+  if(!Number.isSafeInteger(o.size)||o.size<0)fail();
+  bytes+=o.size;if(bytes>10*1024**3)fail();objects.get(o.bucket).push(o);
+ }
  // No overwrites: an isolated target must not already contain these buckets.
  const existing=check(await client.storage.listBuckets());
  if(existing.some(b=>m.buckets.some(saved=>saved.id===b.id))) throw Error("Target buckets already exist; restore refused.");
- for(const b of m.buckets)check(await client.storage.createBucket(b.id,{public:b.public,fileSizeLimit:b.fileSizeLimit,allowedMimeTypes:b.allowedMimeTypes}));
- for(const o of m.objects){
-  const body=await readFile(join(resolve(directory),"objects",o.file));
-  check(await client.storage.from(o.bucket).upload(o.path,body,{contentType:o.contentType,upsert:false}));
-  const restored=check(await client.storage.from(o.bucket).download(o.path));
-  if(hash(Buffer.from(await restored.arrayBuffer()))!==o.sha256)fail();
+ for(const b of m.buckets){
+  const saved={public:b.public,fileSizeLimit:b.fileSizeLimit,allowedMimeTypes:b.allowedMimeTypes};
+  const entries=objects.get(b.id);const largest=entries.reduce((max,o)=>Math.max(max,o.size),0);
+  const widened=b.fileSizeLimit!=null&&largest>b.fileSizeLimit;
+  // Confirm creation with saved restrictions before any temporary update: a
+  // lost create response must not leave wider limits or update a racing bucket.
+  check(await client.storage.createBucket(b.id,saved));
+  try{
+   // Historical bytes can predate a lower limit. The server's global limit
+   // still applies; a lost update response is covered by the reset below.
+   if(widened)check(await client.storage.updateBucket(b.id,{...saved,fileSizeLimit:largest}));
+   for(const o of entries){
+    const body=await readFile(join(resolve(directory),"objects",o.file));
+    check(await client.storage.from(o.bucket).upload(o.path,body,{contentType:o.contentType,upsert:false}));
+    const restored=check(await client.storage.from(o.bucket).download(o.path));
+    if(hash(Buffer.from(await restored.arrayBuffer()))!==o.sha256)fail();
+   }
+  }finally{
+   // Reapply exact saved restrictions even after a failed upload or readback.
+   // An update error must propagate, never certify a successful recovery.
+   if(widened)check(await client.storage.updateBucket(b.id,saved));
+  }
  }
  return {buckets:m.buckets.length,objects:m.objects.length,verifiedDownloads:m.objects.length};
 }
