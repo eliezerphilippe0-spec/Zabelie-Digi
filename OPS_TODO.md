@@ -1,5 +1,41 @@
 # OPS_TODO — Zabelie
 
+## Reprise Storage — objets historiques et limite de bucket (23 octobre 2026)
+
+Lot P1 local sur `fix/storage-restore-historical-limit`, base main `c15ebce66`.
+Le script existant refusait un objet exporté avant une baisse de limite du
+bucket : la contrepreuve synthétique mesure 20 octets pour une limite de 8.
+Réutiliser export, manifeste, empreintes et restauration locale existants ;
+aucune nouvelle route, table, migration ou procédure de sauvegarde parallèle.
+Inventaire et preuves : [docs/67 §32](docs/67-AUDIT-ARCHITECTURE-2026-10-04.md#32-reprise-storage--objets-historiques-plus-grands-que-la-limite-du-bucket-23-octobre-2026).
+
+Créer le bucket avec ses restrictions sauvegardées, confirmer cette création,
+puis élargir seulement sa limite de taille au maximum vérifié pendant la copie
+et la relecture SHA-256. Le bloc `finally` réapplique les réglages exacts,
+même après erreur ; un échec de rétablissement interdit toute réussite.
+Visibilité, MIME et plafond global restent inchangés ; aucun écrasement.
+Une création concurrente ou non confirmée ne déclenche aucune mise à jour.
+Après interruption, repartir sur une nouvelle instance locale vide.
+
+Preuves locales : contrepreuve initiale 5/13, puis 13/13 ; revue indépendante
+et cas de réponses perdues : 11/16 avant correction, puis 16/16 ciblés,
+sans échec ni saut. ESLint ciblé et contrôle de diff réussissent.
+Préflight 21/21 et TypeScript complet réussissent ; lint complet sans erreur,
+dix avertissements dans des fichiers inchangés. Suite complète sous
+restrictions Windows : 2 378 tests, 2 375 réussites, un échec du test existant
+ESLint Next (zéro diagnostic au lieu d’un), deux sauts de jonctions `EPERM`.
+Le fichier concerné passe ensuite 19/19 sans saut avec les permissions de
+fichiers nécessaires, environnement assaini et garde réseau identiques.
+Le premier bilan reste un échec ; il n’est pas remplacé par ce contrôle ciblé.
+La CI de la tête exacte reste à consigner.
+
+Répétition réelle locale du 23 octobre (America/Toronto) : cinq buckets et
+un objet copiés dans une instance isolée neuve, empreinte SHA-256 relue et
+réglages sauvegardés exacts vérifiés. La preuve privée est distincte des tests
+synthétiques. Les parcours Auth/applicatifs, l’automatisation et les autres
+réserves opérationnelles restent ouverts ; aucune fusion, publication ou
+clôture globale n’est annoncée.
+
 ## Clôture technique bornée et dernier lot admin (23 octobre 2026)
 
 Référence publiée : #415, main cdef62f, arbre 389aace53951174808d0fe7433a98857ece74710.

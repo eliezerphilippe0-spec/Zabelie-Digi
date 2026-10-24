@@ -2076,3 +2076,64 @@ tentatives initiales, sans retry, flaky, échec ou saut. Les 468 E2E
 de la nouvelle tête ne sont pas annoncés acquis : PR et CI exacte après le
 premier commit restent à consigner avant clôture finale de ce lot. Aucune
 fusion, publication ou validation future de cette branche n'est annoncée ici.
+
+## 32. Reprise Storage — objets historiques plus grands que la limite du bucket (23 octobre 2026)
+
+Lot P1 local sur `fix/storage-restore-historical-limit`, base main `c15ebce66`.
+Le [script de reprise existant](../scripts/storage-recovery.mjs) créait les
+buckets avec leur limite sauvegardée avant toute copie. Un objet historique
+valide peut pourtant précéder une baisse de cette limite. La contrepreuve
+est synthétique : 20 octets exportés pour une limite de bucket de 8 ; la
+restauration échouait malgré l’intégrité vérifiée des octets.
+
+Réutiliser le manifeste, le garde loopback, le refus des buckets existants,
+`upsert:false` et la relecture SHA-256. Le correctif vérifie les tailles
+entières sûres et limites numériques avant les écritures, avec les bornes
+existantes d’export de 10 GiB et 100 000 objets. Chaque bucket est créé avec
+ses restrictions exactes, puis, seulement après confirmation, sa limite de
+taille est ajustée au plus grand objet vérifié si nécessaire. Cette mise à
+jour, les copies et les relectures sont dans un `try/finally` : les réglages
+exacts sont réappliqués avant de passer au bucket suivant ou de réussir.
+Visibilité et MIME autorisés sont conservés ; aucun plafond global n’est
+relevé. Le refus du serveur reste bloquant.
+
+Les [contrats du script](../tests/storage-recovery.test.ts) mesurent export et
+restauration des octets, corruption, traversal/doublons, cible distante,
+limites suffisantes ou absentes, limites invalides, erreurs d’upload et
+exceptions, échec de téléchargement ou d’empreinte, refus global et échec
+du rétablissement. Les réponses perdues sont couvertes : création ambiguë
+laisse les restrictions d’origine sans mise à jour non confirmée ; création
+concurrente refusée ne touche pas son bucket ; élargissement appliqué avant
+perte de réponse provoque le rétablissement exact sans upload.
+
+Contrepreuves avant le premier correctif : 5/13 passent, 8 échouent ; puis
+13/13. La revue indépendante a soulevé l’ambiguïté de création d’un bucket
+déjà élargi. Les contrats étendus donnent 11/16 avant sa correction et 16/16
+ensuite, sans saut. Préflight 21/21, TypeScript complet, ESLint ciblé et contrôle
+de diff réussissent ; lint complet sans erreur et dix avertissements dans des
+fichiers inchangés. Suite complète sous restrictions Windows : 2 378 tests,
+2 375 réussites, un échec et deux sauts. L’échec du
+[test existant du plugin Next](../tests/eslint-glob.test.ts#L227) est
+`messages.length` égal à zéro au lieu d’un ; les deux sauts refusent la
+création de jonctions avec `EPERM`. Un second contrôle limité à ce fichier,
+avec les permissions de fichiers nécessaires et les mêmes environnement
+assaini et garde réseau, passe 19/19 sans échec ni saut. Le premier bilan
+complet reste rouge ; aucune suite complète verte n’est déduite de cette
+reprise ciblée. La CI de la tête exacte reste à consigner. Ces nombres
+décrivent des étapes successives ; ils ne s’additionnent pas.
+
+Périmètre limité au script, à son fichier de tests et à la documentation
+existante : aucune route, table, migration, dépendance ou sauvegarde en double.
+Une erreur de rétablissement interdit la réussite, même après copie et
+empreinte valides. Après interruption, repartir sur une instance locale vide
+selon le [runbook existant](operations-haiti.md#répétition-isolée) ; aucune
+suppression ou reprise par écrasement n’est ajoutée.
+
+Répétition réelle locale du 23 octobre (America/Toronto), consignée séparément
+dans la preuve privée : cinq buckets et un objet restaurés dans une instance
+isolée neuve, empreinte SHA-256 de l’objet relue et réglages sauvegardés exacts
+des cinq buckets vérifiés. Aucun identifiant de bucket, chemin d’objet ou
+secret n’est publié. Ce résultat ne valide pas encore les parcours Auth et
+applicatifs ni l’automatisation des sauvegardes. Les autres réserves
+opérationnelles, la recette financière, la fusion et la publication restent
+distinctes de cette preuve.
