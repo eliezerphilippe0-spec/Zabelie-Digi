@@ -107,18 +107,22 @@ begin
   raise notice 'B3 OK — un produit suffit, la promotion de role n''est pas exigee';
 end $$;
 
--- ── B4. La fiche ne porte QUE les sept champs de vitrine ───────────────────
+-- ── B4. La fiche ne porte QUE les champs de vitrine DÉCLARÉS ───────────────
 -- Assertion sur les CLÉS, pas sur une valeur : une colonne ajoutée demain à
--- `jsonb_build_object` sans qu'on y pense fera rougir ce test.
+-- `jsonb_build_object` sans qu'on y pense fera rougir ce test. 0153 (#5) a
+-- ajouté trois signaux de confiance DÉLIBÉRÉS, non sensibles — created_at
+-- (ancienneté « membre depuis »), rating_sum / rating_count (note agrégée
+-- brute des produits publiés) — déclarés ci-dessous ; toute AUTRE clé reste
+-- une fuite à arbitrer, pas à découvrir.
 do $$
 declare v jsonb; v_cles text; v_attendu text;
 begin
   v := zabelie_boutik_public('00000000-0000-0000-0000-0000000b0001'::uuid, null);
   select string_agg(k, ',' order by k) into v_cles from jsonb_object_keys(v) k;
-  v_attendu := 'avatar_url,bio,boutik_slug,display_name,id,pwen_repe,zone_id';
+  v_attendu := 'avatar_url,bio,boutik_slug,created_at,display_name,id,pwen_repe,rating_count,rating_sum,zone_id';
   assert v_cles = v_attendu,
     format('B4 KO : la fiche publique porte « %s » au lieu de « %s » — toute cle en plus est une fuite a arbitrer, pas a decouvrir', v_cles, v_attendu);
-  raise notice 'B4 OK — sept champs, ni suspended_*, ni country_code, ni region_code, ni role';
+  raise notice 'B4 OK — dix champs declares (dont created_at + rating_* de 0153), ni suspended_*, ni country_code, ni region_code, ni role';
 end $$;
 
 -- ── B5. Le chemin de PRIVILÈGE, sous le rôle réel du client SSR ────────────
