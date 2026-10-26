@@ -6,6 +6,7 @@ import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
 import { revisionMediasDisponible } from "@/lib/product-media";
+import { logSellerFunnel } from "@/lib/metrics";
 import {
   COVER_MAX_OCTETS,
   COVER_MAX_DIMENSION,
@@ -146,6 +147,7 @@ export async function POST(req: Request) {
     // vendeurs sans aucun signal côté ops (audit REA 2026-10-26, #3). Bucket +
     // message Supabase seulement — aucune donnée personnelle.
     console.error(`[cover] upload storage échoué (bucket ${BUCKET}): ${upErr.message}`);
+    logSellerFunnel("cover_upload", { ok: false, reason: "storage_502" });
     return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
   }
 
@@ -162,8 +164,10 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (updErr || !updated || updated.id !== product.id || updated.status !== "draft") {
     // Un COMMIT peut encore aboutir après une réponse perdue : ne pas supprimer.
+    logSellerFunnel("cover_upload", { ok: false, reason: "write_500" });
     return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
   }
 
+  logSellerFunnel("cover_upload", { ok: true });
   return NextResponse.json({ ok: true, coverUrl, status: "draft" });
 }

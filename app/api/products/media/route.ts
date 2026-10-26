@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { logSellerFunnel } from "@/lib/metrics";
 import {
   COVER_MAX_DIMENSION,
   COVER_MAX_OCTETS,
@@ -177,6 +178,7 @@ export async function POST(req: Request) {
     // de chemin vendeur non instrumenté décrit dans lib/storage-buckets.ts).
     // Bucket + message Supabase seulement — aucune donnée personnelle.
     console.error(`[media] upload storage échoué (bucket ${MEDIA_BUCKET}): ${upErr.message}`);
+    logSellerFunnel("gallery_upload", { ok: false, reason: "storage_502" });
     return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
   }
 
@@ -194,9 +196,11 @@ export async function POST(req: Request) {
     // Une réponse perdue peut suivre le COMMIT : l'objet est alors référencé.
     // Comme pour les livrables numériques, conserver l'objet après une
     // tentative d'insertion ; un nettoyage doit prouver l'absence de référence.
+    logSellerFunnel("gallery_upload", { ok: false, reason: "write_500" });
     return NextResponse.json({ error: t(lang, "api.write.failed") }, { status: 500 });
   }
 
+  logSellerFunnel("gallery_upload", { ok: true });
   const { data: pub } = admin.storage.from(MEDIA_BUCKET).getPublicUrl(path);
   return NextResponse.json({ ok: true, id: ligne.id, url: pub.publicUrl, status: "draft" });
 }

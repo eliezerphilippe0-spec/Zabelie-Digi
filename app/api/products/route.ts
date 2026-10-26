@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { creerBrouillonProduit, type CorpsBrouillon } from "@/lib/product-draft";
+import { logSellerFunnel } from "@/lib/metrics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,12 @@ export async function POST(req: Request) {
   }
   const resultat = await creerBrouillonProduit({ req, lang, supabase, user, body });
   // Un refus est la réponse que la route rendait ; `Response` : NextResponse en hérite.
-  if (resultat instanceof Response) return resultat;
+  if (resultat instanceof Response) {
+    // Tunnel vendeur (#3) : la tentative d'un compte actif a échoué. Le motif
+    // est le code de statut, jamais une donnée personnelle.
+    logSellerFunnel("product_created", { ok: false, reason: `http_${resultat.status}` });
+    return resultat;
+  }
+  logSellerFunnel("product_created", { ok: true, kind: typeof body?.kind === "string" ? body.kind : undefined });
   return NextResponse.json({ slug: resultat.slug, status: resultat.status });
 }

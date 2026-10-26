@@ -205,6 +205,9 @@ function galerie(options: GardesMedias & {
     "@/lib/zabelie-rate-limit": { rateLimit },
     "@/lib/image-limits": limites,
     "@/lib/product-media": media,
+    // Tunnel vendeur (#3) : le harnais stube les imports non listés ; sans ce
+    // stub, logSellerFunnel serait undefined et la route lèverait.
+    "@/lib/metrics": { logSellerFunnel: () => {} },
   };
   const route = loadRoute(options.video ? "app/api/products/media/video/route.ts" : "app/api/products/media/route.ts", dependances);
   let videoRoute = options.video ? route : undefined;
@@ -468,6 +471,7 @@ function couverture(options: GardesMedias & {
     "@/lib/product-media": media,
     "@/lib/image-limits": limites,
     "@/lib/storage-buckets": { MEDIA_BUCKET: media.MEDIA_BUCKET },
+    "@/lib/metrics": { logSellerFunnel: () => {} },
   });
   const poster = (octets: Octets, nom: string, type: string) => {
     const form = new FormData();

@@ -31,8 +31,15 @@ const SOUS_RAYON = "00000000-0000-4000-8000-0000000000d1";
 test("E1 — les deux routes appellent les fonctions partagées", () => {
   const creation = readFileSync("app/api/products/route.ts", "utf8");
   assert.match(creation, /const resultat = await creerBrouillonProduit\(\{ req, lang, supabase, user, body \}\);/);
-  assert.match(creation, /if \(resultat instanceof Response\) return resultat;\s*\n\s*return NextResponse\.json\(\{ slug: resultat\.slug, status: resultat\.status \}\);/,
+  // Un refus reste renvoyé tel quel ; le succès ne rend TOUJOURS que slug+statut.
+  // Le tunnel vendeur (#3) n'ajoute qu'une OBSERVATION (logSellerFunnel), jamais
+  // un champ de réponse — l'invariant « la route ne rend que le slug et le
+  // statut » tient donc toujours, et les deux issues sont mesurées.
+  assert.match(creation, /if \(resultat instanceof Response\) \{[\s\S]{0,240}return resultat;\s*\n\s*\}/);
+  assert.match(creation, /return NextResponse\.json\(\{ slug: resultat\.slug, status: resultat\.status \}\);/,
     "la route ne rend que le slug et le statut, comme avant l'extraction");
+  assert.match(creation, /logSellerFunnel\("product_created", \{ ok: false/, "l'échec de création doit être mesuré (#3)");
+  assert.match(creation, /logSellerFunnel\("product_created", \{ ok: true/, "le succès de création doit être mesuré (#3)");
   const actif = readFileSync("app/api/products/asset/route.ts", "utf8");
   assert.match(actif, /return confirmerLivrable\(\{ admin, lang, user, product, productId, body, safeName, ext \}\);/);
   // La propriété, le brouillon et la cadence restent vérifiés AVANT, dans la route.
