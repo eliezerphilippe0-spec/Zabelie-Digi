@@ -754,6 +754,12 @@ export default async function ProductPage({
 
           <ul className="mt-6 space-y-2 text-sm text-mist">
             <li>{t(lang, "product.secure")}</li>
+            {/* Promesse d'escrow, formulée sur l'ARGENT (jamais sur la qualité
+                du vendeur, ce qui déclencherait promesse-vendeur) et adossée au
+                vrai : maturation J+7 (0006), fenêtre qui « laisse le temps d'un
+                remboursement » (vendeur.retrait.regle), sans « remboursement
+                garanti » (faq.a5). Vraie pour tous les product_kind. */}
+            <li>{t(lang, "product.protege")}</li>
             {/* Ligne de mode de remise. Absente sur un produit physique : la
                 mention de livraison sous le prix dit déjà ce que le vendeur
                 déclare, et rien d'autre n'est vrai — Zabelie ne livre pas.
