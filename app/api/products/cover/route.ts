@@ -141,6 +141,11 @@ export async function POST(req: Request) {
     .from(BUCKET)
     .upload(path, file, { upsert: false, contentType: format });
   if (upErr) {
+    // L'échec de stockage ne doit PAS être muet : sans ce journal, un bucket
+    // absent ou une clé service-role fausse bloque la couverture de tous les
+    // vendeurs sans aucun signal côté ops (audit REA 2026-10-26, #3). Bucket +
+    // message Supabase seulement — aucune donnée personnelle.
+    console.error(`[cover] upload storage échoué (bucket ${BUCKET}): ${upErr.message}`);
     return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
   }
 

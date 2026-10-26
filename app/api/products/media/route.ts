@@ -171,6 +171,12 @@ export async function POST(req: Request) {
     .from(MEDIA_BUCKET)
     .upload(path, file, { contentType: format });
   if (upErr) {
+    // L'échec de stockage ne doit PAS être muet : un bucket absent ou une clé
+    // service-role fausse bloque la photo de tous les vendeurs, et sans ce
+    // journal l'équipe n'a aucun signal (audit REA 2026-10-26, #3 ; le défaut
+    // de chemin vendeur non instrumenté décrit dans lib/storage-buckets.ts).
+    // Bucket + message Supabase seulement — aucune donnée personnelle.
+    console.error(`[media] upload storage échoué (bucket ${MEDIA_BUCKET}): ${upErr.message}`);
     return NextResponse.json({ error: t(lang, "api.upload.failed") }, { status: 502 });
   }
 
