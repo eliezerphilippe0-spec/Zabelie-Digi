@@ -204,9 +204,14 @@ migration `unaccent` et porte déjà la normalisation).*
    destructif. État final **vérifié identique** au `0152` de `main` (PR #396) :
    trigger média `BEFORE INSERT/UPDATE/DELETE` (`tgtype=31`) lié à
    `zabelie_product_media_guard()`, trigger couverture (`tgtype=19`) sur
-   `products.cover_url`, deux gardes `service_role` seul. **Reste à réconcilier**
-   (hygiène, non bloquant) : les lignes de registre `0150`–`0153` ont été
-   insérées en base, sans fichier `registre_ligne_*` sur le disque.
+   `products.cover_url`, deux gardes `service_role` seul. ✅ **Réconcilié le
+   2026-10-26** : les lignes de registre `0150`–`0153`, d'abord insérées à la
+   main, sont désormais portées par `0154_registre_0150_0153.sql` (forme
+   `0089`/`0097`) — le registre redevient reproductible depuis le disque.
+   `0154` appliquée (no-op en prod, `on conflict do nothing`), post-condition
+   4/4 verte ; registre contigu `0149→0154`, 154 fichiers = 154 lignes. `0154`
+   est la nouvelle frontière (inscrite à la main, en attente d'un futur
+   porteur — une migration ne peut pas porter sa propre empreinte).
 2. **Variable d'env** `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` (#1) — vérifier le
    plan Supabase, puis poser la variable. *Bloque : la perf image de tout le
    catalogue.*
