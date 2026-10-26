@@ -297,3 +297,102 @@ proxy m'en empêche.
   recherche.
 * **Qui opère quoi.** Aucune entité juridique identifiée pour aucun des sept
   concurrents. Même trou que pour Kobara.
+
+---
+
+## 6. Mise à jour du 2026-10-26 — seconde passe (WebSearch), et ce qu'elle change
+
+> Demandée par le porteur : « qu'est-ce que tu trouves [sur] nos concurrents »,
+> puis « comment en tirer parti pour une longueur d'avance ». Ce qui suit est de
+> l'**analyse** ; prix, positionnement et recrutement restent des zones d'arrêt
+> (`docs/25` §4). Rien n'est tranché ici.
+
+### ⚠️ 6.0 Même avertissement, outil différent
+
+Cette passe utilise **WebSearch (US-only)**, pas `WebFetch` (toujours bloqué par
+le proxy) ni Firecrawl (clé de nouveau révoquée). Conséquences : **aucune page
+n'a été ouverte** ici non plus, les descriptions des sites sont **auto-déclarées
+dans les snippets**, et l'index US est **biaisé contre le contenu haïtien**. La
+consigne de durcissement de §0 tient mot pour mot : **ouvrir les pages dans un
+navigateur humain, en kreyòl.** Un « introuvable » ci-dessous ne prouve pas une
+absence — c'est la règle « sans appelant n'est jamais une conclusion de grep »,
+transposée au web une fois de plus.
+
+### 6.1 Ce que cette passe CONFIRME de §1–§5
+
+* **Tchotchom = passerelle de paiement**, pas marketplace (SB FAST SERVICES,
+  « n'est pas une banque ») — exactement le classement de §2. Confirmé.
+* **Le vrai concurrent est le commerce social informel** (§5) — et cette fois
+  c'est étayé par une **source non marketing crédible** : le guide commercial
+  officiel US ([trade.gov](https://www.trade.gov/country-commercial-guides/haiti-ecommerce))
+  écrit que *la plupart des entreprises n'ont pas de site, beaucoup tiennent une
+  page Facebook/Instagram, depuis le COVID certains vendeurs prennent les
+  commandes par WhatsApp, et le paiement en ligne n'est offert que par quelques
+  entreprises*. La §5 cesse d'être une intuition : c'est documenté.
+* **Klasyo** (§3) reste le concurrent numérique identifié, et le marché HTG du
+  produit numérique existe bien.
+
+### 6.2 Ce que cette passe AJOUTE
+
+* **Commission Klasyo = 15 %** (auto-déclaré sur sa page). Donnée que §3 n'avait
+  pas. ⚠️ **Elle retourne partiellement 4.1** : sur le **numérique**, Zabelie
+  (10 % / 6 %) est **moins cher que Klasyo**, pas plus. L'écart frontal de 4.1
+  (plancher 2 %) est une annonce de **Bemane** sur le **physique** — deux marchés
+  différents. Le prix n'est un handicap que sur le physique, face à une
+  affirmation non vérifiée.
+* **Deux généralistes absents de §1**, auto-déclarés, non ouverts :
+  **Boukan Market** (`boukanmarket.com`, « premier marketplace fait pour Haïti »,
+  achat/vente MonCash, rayons dont **produits numériques**, gratuit pour vendre)
+  et **Haiti Market** (`marketplacehaiti.com`, « acheter et vendre produits et
+  services », MonCash non confirmé). À ouvrir et dater.
+* **CAS — Charles Access Services** (`cas-haiti.github.io`, Cap-Haïtien) : modèle
+  **conciergerie d'import** — on paie en MonCash, ils achètent sur Amazon/Shein.
+  Voisin d'Ubuy (§1), pas un marché de vendeurs locaux.
+
+### 6.3 Ce qui reste NON CONFIRMÉ
+
+* **Bemane, MvinHT, KawBiz** : aucune trace exploitable dans cette passe
+  (US-only). Ni confirmés ni infirmés — cohérent avec le fait que §1/§3 n'avaient
+  pas pu ouvrir leurs pages. Le **plancher à 2 % de Bemane reste une affirmation
+  de Bemane**, toujours non mesurée.
+
+### 6.4 Pistes de différenciation — « longueur d'avance » (analyse, non tranché)
+
+Le fil conducteur, et il prolonge 4.6 : **l'avance ne viendra PAS d'ajouter des
+fonctionnalités.** Zabelie en a déjà plus que tous ces concurrents (escrow,
+registre, paiement réconcilié, talents, lien payable). `docs/46` le dit — les
+briques existent, elles ne sont assemblées autour d'aucune vente que quelqu'un
+cherche à faire, et **rien avant la première gourde**. Courir la course aux
+features, c'est « poser un filet sur un chemin que personne n'emprunte ».
+
+Les leviers, par avance réelle (défendable = difficile à copier + douleur réelle
++ déjà construit) :
+
+1. **L'escrow comme promesse de une.** C'est le seul fossé qu'aucun concurrent
+   ne comble vite : le commerce WhatsApp n'offre aucun recours, Klasyo
+   « encaisse et reverse » sans protection acheteur, les généralistes ne
+   l'annoncent pas. Prolonge **4.6 exactement** : c'est un travail de
+   **formulation** (le dire, en kreyòl, sur l'accueil et la fiche), borné par
+   `tests/promesse-vendeur.test.ts`, **pas de construction**.
+2. **Le wedge numérique/talents.** Moins cher que Klasyo (6.2) + escrow qu'il
+   n'a pas + aucune logistique → le chemin le plus court vers la première
+   gourde (neutralise l'avantage livraison de Bemane, cf. 4.4).
+3. **Le couloir « diaspora paie un vendeur local ».** Personne n'y est
+   positionné ; Zabelie a Zelle + MonCash + `facture/[token]`.
+4. **La fiabilité du paiement, DÉMONTRÉE.** Préalable, pas option :
+   `docs/49` mesure 14/14 paiements MonCash échoués. Tant que ça, tous les
+   leviers ci-dessus sont théoriques. Retourné en arme : « la marketplace où
+   MonCash marche vraiment » (idempotence, confirmation serveur-à-serveur,
+   réconciliation — sur-construit vs des plugins Shopify/Bubble).
+5. **Les signaux de confiance, déjà livrés.** `0153` (fusionné le 2026-10-26)
+   met note agrégée + ancienneté sur la vitrine ; + badge identité vérifiée
+   (`0138`). L'opposé du vendeur WhatsApp anonyme — prolonge 4.7.
+
+**Séquence suggérée (le porteur tranche)** : (1) faire aboutir UNE vraie
+transaction numérique de bout en bout ; (2) habiller l'escrow en promesse, en
+kreyòl ; (3) recruter 10–20 vendeurs numérique/talents là où ils sont déjà
+(groupes FB/WhatsApp) ; (4) ensuite seulement, couloir diaspora puis physique.
+
+⚠️ **Zone d'arrêt** : commission, positionnement, promesse commerciale et
+recrutement sont au porteur. Ces leviers sont des options à arbitrer, pas des
+décisions prises, et aucun code n'est écrit sur cette base sans feu vert.
