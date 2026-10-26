@@ -91,8 +91,8 @@
 - **Localisation.** Couche littérale `ilike '%terme%'` **sensible aux accents** (`lib/recherche-synonymes.ts:180-185`, appelée `lib/products.ts:318,534`) ; le rattrapage trigramme ne se déclenche **que si zéro résultat** (`app/catalogue/page.tsx:111`) ; les « suggestions » ne portent que sur des libellés de rayons, pas sur les produits (`components/search-box.tsx:58-64`).
 - **Pourquoi (haïtien).** « vandè »/« vande », « batri »/« batery » ne s'alignent pas ; dès qu'un seul résultat littéral existe, le fuzzy ne tourne jamais et les variantes restent invisibles. Même famille que le piège `\b`/accents de `CLAUDE.md` (ici côté données, pas regex). Sur un marché kreyòl mobile, beaucoup de requêtes à l'oreille ratent leur cible.
 - **Principe REA.** P2 (langue réelle) + A2 (facettes/suggestions).
-- **Solution (option).** Normaliser les accents en couche 1 (ou `unaccent`), déclencher le fuzzy dès « peu de résultats », autocomplétion sur les produits. ⚠️ Peut demander une **extension/vue base** → zone d'arrêt base.
-- **Statut.** `vérifié` (`catalogue:111` lu) ; couche `ilike`/suggestions `rapporté`.
+- **Solution — ✅ CORRIGÉ en CODE (commit `c67477d`), AUCUNE migration.** Correction d'une erreur de ce rapport : il n'y a pas de « zone d'arrêt base » ici. Le dépôt résout **déjà** l'insensibilité aux accents — `zabelie_search_normalize` (via `translate`, et `0047` **interdit explicitement** `unaccent`, qui est `STABLE` et corromprait silencieusement les index d'expression), et `zabelie_search_fuzzy` est déjà accent-insensible sur index trigramme. Le seul gap était côté code : le fuzzy ne se déclenchait qu'à **zéro** résultat littéral. Correctif livré : déclenchement dès « moins de 3 » résultats, approchants **dédoublonnés** contre les exacts, libellé adapté (`catalog.fuzzy.more`), capteur de demande (`manque`) réservé au vrai zéro. Reste ouvert (non fait, sans migration) : l'autocomplétion produit pendant la frappe.
+- **Statut.** `vérifié` et **corrigé** (`app/catalogue/page.tsx`, i18n 4 langues ; `tsc`/tests/build verts).
 
 **8. Pas d'estimation de livraison/zone pour un produit physique.**
 - **Localisation.** Le badge délai (`⏱️`) n'existe **que** pour un service (`app/produit/[slug]/page.tsx:375-384`) ; la zone de livraison est toujours nulle (`:293-299`, repli « à convenir »).
@@ -160,7 +160,7 @@
 ## Décisions rendues au porteur (zones d'arrêt — rien n'est tranché)
 
 1. **Variable d'env** `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` (#1) — vérifier le plan Supabase, puis poser la variable. *Bloque : la perf image de tout le catalogue.*
-2. **Base** : colonnes/vue pour les signaux de confiance vitrine (#5) et pour la recherche accent-insensible (#7). *Bloque : confiance acheteur et trouvabilité.*
+2. **Base** : colonnes/vue pour les signaux de confiance vitrine (#5 — migration `0153` rédigée, à appliquer). *Bloque : confiance acheteur.* (#7 N'est PAS ici : corrigé en code, le dépôt interdit la migration `unaccent` et porte déjà la normalisation.)
 3. **Argent/affichage** : correctif `usdHint` en flash (#6) et checkout groupé + quantité (#4). *Bloque : cohérence de prix et conversion multi-articles.*
 4. **Positionnement** : le CTA plein cadre du bas d'accueil est vendeur, pas acheteur (`app/page.tsx:431-447`). *Arbitrage acheteur/vendeur — à trancher par le porteur.*
 
