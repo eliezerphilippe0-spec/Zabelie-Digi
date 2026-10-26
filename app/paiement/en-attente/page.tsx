@@ -30,6 +30,11 @@ export default async function EnAttentePage({
         <p className="mt-3 text-mist">
           {t(lang, "pay.wait.body")}
         </p>
+        {/* L'escrow dit là où l'acheteur vient d'avancer son argent et attend
+            (audit REA #5, ampleur checkout). product.protege est money-framed
+            et vrai pour tous les kinds (maturation J+7) : pas de gate par type
+            ici, la page ignore le kind et la phrase reste vraie partout. */}
+        <p className="mt-4 text-sm text-mist">{t(lang, "product.protege")}</p>
         <div className="mt-8 flex flex-col gap-3">
           {commande && <OrderPaymentRecovery orderId={commande} labels={marketplaceCopy(lang)} />}
           <Link
