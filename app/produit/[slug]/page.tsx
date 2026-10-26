@@ -447,7 +447,7 @@ export default async function ProductPage({
               d'une autre liste) et ordre de lecture faux. */}
           {physical && physical.fitment.length > 0 && (
             <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
-              <p className="text-sm font-semibold">Compatible avec</p>
+              <p className="text-sm font-semibold">{t(lang, "product.fitment.title")}</p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {physical.fitment.map((f, i) => (
                   <li
@@ -461,8 +461,7 @@ export default async function ProductPage({
                 ))}
               </ul>
               <p className="mt-3 text-sm text-mist">
-                Vérifiez votre modèle avant d&apos;acheter. En cas de doute,
-                contactez le vendeur.
+                {t(lang, "product.fitment.note")}
               </p>
             </div>
           )}
@@ -627,11 +626,12 @@ export default async function ProductPage({
                   options: buildBuyOptions(lang, flash ? flash.prixFlashHtg : v.priceHTG),
                 }))}
                 stockLabels={{
-                  chooseVariant: "Choisir",
-                  outOfStock: "Rupture de stock",
-                  lastUnits: "Plus que {n} en stock",
-                  inStock: "{n} en stock",
-                  variantOut: "Indisponible",
+                  chooseVariant: t(lang, "product.stock.choose"),
+                  outOfStock: t(lang, "product.stock.out"),
+                  lastUnits: t(lang, "product.stock.last"),
+                  inStock: t(lang, "product.stock.in"),
+                  variantOut: t(lang, "product.stock.variantOut"),
+                  variantDefault: t(lang, "product.variant.default"),
                 }}
                 options={buildBuyOptions(lang, flash ? flash.prixFlashHtg : product.priceHTG)}
                 othersLabel={t(lang, "pay.other")}

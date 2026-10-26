@@ -71,6 +71,7 @@ const CLASSEMENT: Record<string, Classement> = {
   // badge n'est PAS : une garantie sur les produits.
   "seller.identite.aide": { colonne: "status" },
   "digital.check": { horsSujet: "Conseil à l’acheteur : vérifier format, compatibilité et licence. Ne qualifie pas le vendeur de vérifié." },
+  "product.fitment.note": { horsSujet: "Invite l’acheteur à vérifier la compatibilité du modèle et à contacter le vendeur en cas de doute (audit REA 2026-10-26, #2). Aucune promesse de la plateforme sur le vendeur." },
   "guides.diaspora.prepare.body": { horsSujet: "Le destinataire et l’acheteur vérifient les coordonnées ; les modalités sont à convenir avec le vendeur. Aucun badge ni contrôle vendeur promis." },
   "guides.digital.check.body": { horsSujet: "L’acheteur vérifie les caractéristiques déclarées et demande un aperçu. Il ne s’agit pas d’une certification de ces caractéristiques par Zabelie." },
   "guides.digital.intro": { horsSujet: "Invitation à vérifier contenu, outils et usages autorisés avant achat. La vérification incombe au lecteur, sans promesse sur le vendeur." },
