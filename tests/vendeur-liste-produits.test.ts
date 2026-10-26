@@ -75,26 +75,34 @@ test("le statut affiché est TRADUIT, jamais la valeur de la base", () => {
     !/\{p\.sales_count\} ventes · \{p\.status\}/.test(PAGE),
     "la valeur brute de la colonne ne doit plus atteindre l'écran"
   );
+  // Trois voies (audit REA 2026-10-26, #9) : publié · archivé · le reste en
+  // revue. La condition porte sur `published` puis `estArchivee`, jamais sur
+  // la valeur brute.
   assert.match(
     PAGE,
-    /p\.status === "published"\s*\n\s*\? t\(lang, "status\.published"\)\s*\n\s*: t\(lang, "status\.review"\)/
+    /p\.status === "published"\s*\n\s*\? t\(lang, "status\.published"\)\s*\n\s*: estArchivee\(p\.status\)\s*\n\s*\? t\(lang, "status\.archived"\)\s*\n\s*: t\(lang, "status\.review"\)/
   );
 });
 
-test("tout ce qui n'est pas publié est « en revue » — décision de produit", () => {
-  /* Même règle qu'`app/vendre` : un vendeur qui lisait « Brouillon » croyait
-   * sa soumission échouée et resoumettait. La condition porte donc sur
-   * `published`, PAS sur `draft` — sinon un statut futur (`suspended`,
-   * `archived`) tomberait dans « publié » par défaut. */
+test("une fiche archivée n'est PAS « en revue » — décision de produit", () => {
+  /* Même règle qu'`app/vendre` (UX-01) : un vendeur qui lisait « Brouillon »
+   * croyait sa soumission échouée et resoumettait, donc non publié = « en
+   * revue ». MAIS une fiche ARCHIVÉE a été retirée par la modération — « en
+   * revue » lui promet une décision déjà prise. Elle a donc sa propre branche,
+   * via le même helper que `app/vendre`, et la condition ne teste jamais
+   * `draft` (sinon un statut inconnu passerait pour publié). */
   assert.ok(
     !/p\.status === "draft"/.test(PAGE),
     "tester `draft` laisserait tout statut inconnu passer pour publié"
   );
+  assert.match(PAGE, /estArchivee\(p\.status\)\s*\n\s*\? t\(lang, "status\.archived"\)/,
+    "l'archivé doit avoir sa propre branche, pas tomber dans « en revue »");
+  assert.match(PAGE, /import \{ estArchivee \} from "@\/lib\/seller-products-filter"/);
 });
 
-test("les deux libellés de statut existent dans les quatre langues", () => {
+test("les trois libellés de statut existent dans les quatre langues", () => {
   for (const l of ["fr", "ht", "en", "es"] as const) {
-    for (const k of ["status.published", "status.review"]) {
+    for (const k of ["status.published", "status.review", "status.archived"]) {
       const v = (DICT[l] as Record<string, string>)[k];
       assert.ok(typeof v === "string" && v.trim(), `${k} absente en ${l}`);
     }
