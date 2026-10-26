@@ -4,6 +4,7 @@ import {
   getProductsBySeller,
   type ProductView,
 } from "@/lib/products";
+import { noteAffichee } from "@/lib/note-affichee";
 
 export type CreatorProfile = {
   id: string;
@@ -20,6 +21,16 @@ export type CreatorProfile = {
    * `/createur/<id>`, qui ne cesse jamais de fonctionner.
    */
   boutikSlug: string | null;
+  /**
+   * Signaux de confiance de la vitrine (0153, audit REA #5). `null` quand la
+   * migration n'est pas encore appliquée — le code déployé avant elle reçoit
+   * l'ancienne forme de `zabelie_boutik_public`, sans ces clés, et la vitrine
+   * s'affiche simplement sans eux (comme pour zone/slug avant 0084).
+   */
+  memberSince: string | null;
+  /** Moyenne affichée de la boutique, ou `null` sous le seuil (lib/note-affichee). */
+  ratingAvg: number | null;
+  ratingCount: number;
   products: ProductView[];
 };
 
@@ -48,6 +59,11 @@ type FichePublique = {
   zone_id: string | null;
   pwen_repe: string | null;
   boutik_slug: string | null;
+  // Ajoutés par 0153. Optionnels : absents tant que la migration n'est pas
+  // appliquée (ancienne forme de la fonction) et dans le repli d'avant-0084.
+  created_at?: string | null;
+  rating_sum?: number | null;
+  rating_count?: number | null;
 };
 
 /**
@@ -122,6 +138,12 @@ async function versCreatorProfile(
     zoneId: fiche.zone_id ?? null,
     pwenRepe: fiche.pwen_repe ?? null,
     boutikSlug: fiche.boutik_slug ?? null,
+    memberSince: fiche.created_at ?? null,
+    // Le seuil d'affichage (3 avis) vit dans lib/note-affichee, source unique :
+    // la fonction rend les agrégats bruts, la moyenne se décide ici comme pour
+    // les fiches produit.
+    ratingAvg: noteAffichee(fiche.rating_sum ?? 0, fiche.rating_count ?? 0),
+    ratingCount: fiche.rating_count ?? 0,
     products,
   };
 }
