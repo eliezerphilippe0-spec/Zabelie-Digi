@@ -82,6 +82,10 @@ export default async function ZellePage({
         </p>
         <h1 className="mt-2 text-2xl font-extrabold">{t(lang, "zelle.title")}</h1>
         <p className="mt-3 text-sm text-mist">{t(lang, "zelle.sub")}</p>
+        {/* Rail semi-manuel : l'acheteur s'apprête à envoyer un Zelle et
+            attend la confirmation. L'escrow (money-framed, vrai pour tous les
+            kinds) le rassure sur le sort de son argent — audit REA #5. */}
+        <p className="mt-3 text-sm text-mist">{t(lang, "product.protege")}</p>
 
         <dl className="mt-8 space-y-4 rounded-2xl border border-line bg-surface/60 p-6">
           <div>
