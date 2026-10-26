@@ -32,7 +32,7 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 | # | Priorité | État | Commit / note |
 |---|---|---|---|
 | 2 | 🔴 | ✅ **FAIT** | `da9934f` — bloc d'achat en 4 langues |
-| 3 | 🔴 | ◑ **PARTIEL** | `b5cffb8` — échec d'upload journalisé ; la métrique de tunnel vendeur reste à faire |
+| 3 | 🔴 | ✅ **FAIT** | `b5cffb8` échec d'upload journalisé + `f98570f` métrique de tunnel vendeur (création/couverture/galerie, OK & KO, zéro PII) |
 | 6 | 🟠 | ✅ **FAIT** | `111fb15` — ≈USD sur le prix flash |
 | 7 | 🟠 | ✅ **FAIT** | `c67477d` — fuzzy dès « peu de résultats », **en code, sans migration** |
 | 9a | 🟡 | ✅ **FAIT** | `4085fc8` — statut « archivé » au tableau de bord |
@@ -79,7 +79,7 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 - **Solution (option).** Passer ces chaînes par `lib/i18n.ts` (4 langues) comme le reste de la fiche.
 - **Statut.** `vérifié` (lignes 629-635 lues) ; variante/compat `rapporté`.
 
-**3. ◑ PARTIEL (`b5cffb8`) — L'échec d'upload photo est muet côté ops.**
+**3. ✅ FAIT (`b5cffb8` + `f98570f`) — L'échec d'upload photo est muet côté ops.**
 - **Localisation.** `app/api/products/media/route.ts:173-175` : `if (upErr) { return …("api.upload.failed"), status 502 }` — **aucun `console.error`**, contrairement au cas « table absente » juste au-dessus (`:155`). Idem `app/api/products/cover/route.ts:143-145`.
 - **Pourquoi (haïtien).** Si un bucket manque ou la clé service-role est fausse/périmée, **chaque vendeur** voit « Envoi de l'image échoué » et **l'équipe n'a aucun signal**. C'est la cicatrice du 2026-08-11 sous une autre forme : l'upload lui-même est réparé (compression navigateur, erreurs lisibles), mais le chemin vendeur reste non instrumenté — `lib/storage-buckets.ts` le dit déjà de lui-même.
 - **Principe REA.** P7 — les échecs vendeur doivent être visibles.
@@ -153,7 +153,7 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 | P4 risque perçu / escrow visible | **bon** (escrow dit sur la fiche et le panier) | incohérence flash #6 ✅ |
 | P5 suivi lisible | **bon** côté acheteur (`mes-achats`) | statut vendeur : #9a ✅ ; #9b ⏳ |
 | P6 data-light / 3G | à risque | #1 ⏳, #10 ⏳ |
-| P7 vendeur tenu, échecs visibles | partiel | upload muet #3 ◑ (journalisé ; métrique à faire) ; litiges invisibles au vendeur (annexe) ⏳ |
+| P7 vendeur tenu, échecs visibles | tunnel mesuré | upload muet #3 ✅ (journalisé + métrique OK/KO) ; litiges invisibles au vendeur (annexe) ⏳ |
 | A1 preuve sociale vérifiée | vitrine enrichie | #5 ✍️ (migration `0153` à appliquer) |
 | A2 facettes | filtres présents ; rattrapage fuzzy #7 ✅ | suggestions produits encore absentes ⏳ |
 | A3 checkout minimal | — | #4 ⏳ |
