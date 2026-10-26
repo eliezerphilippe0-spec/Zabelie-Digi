@@ -36,7 +36,7 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 | 6 | 🟠 | ✅ **FAIT** | `111fb15` — ≈USD sur le prix flash |
 | 7 | 🟠 | ✅ **FAIT** | `c67477d` — fuzzy dès « peu de résultats », **en code, sans migration** |
 | 9a | 🟡 | ✅ **FAIT** | `4085fc8` — statut « archivé » au tableau de bord |
-| 5 | 🟠 | ✍️ **MIGRATION RÉDIGÉE** | `7db9df8` — `0153` **non appliquée** (code livré) ; à appliquer par le porteur |
+| 5 | 🟠 | ✅ **FAIT (appliquée)** | `7db9df8` code + migration `0153` **APPLIQUÉE en prod le 2026-10-26** sur demande du porteur (registre inscrit, `journal_supabase`) |
 | 1 | 🔴 | ⏳ **OUVERT** | variable d'env (plan Supabase) — décision porteur |
 | 4 | 🔴 | ⏳ **OUVERT** | checkout groupé + quantité — zone d'arrêt argent |
 | 8 | 🟠 | ⏳ **OUVERT** | dépend de la migration `0043` non appliquée |
@@ -97,7 +97,7 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 
 ---
 
-**5. ✍️ MIGRATION `0153` RÉDIGÉE, NON APPLIQUÉE (`7db9df8`) — La vitrine boutique n'a aucun signal de confiance.**
+**5. ✅ FAIT — migration `0153` APPLIQUÉE en prod le 2026-10-26 (`7db9df8`) — La vitrine boutique n'a aucun signal de confiance.**
 - **Localisation.** `components/boutique-vue.tsx:70-84` n'affiche que nom + nombre de produits + badge éventuel ; le modèle `lib/creators.ts:8-24` (`CreatorProfile`) **ne porte ni note, ni ancienneté, ni ventes totales**, et la vue publique `zabelie_boutik_public` n'expose pas ces colonnes.
 - **Pourquoi (haïtien).** Sur un marché « trust-first » sans réputation établie, l'acheteur décide **à l'aveugle** : ni avis, ni « membre depuis », ni volume de ventes. Le seul signal fort (le badge Identité vérifiée) n'apparaît que s'il existe, et rien n'indique qu'une vérification existe quand elle manque.
 - **Principe REA.** A1 — preuve sociale vérifiée ; faute de volume, l'ancienneté et l'identité portent la confiance.
@@ -154,7 +154,7 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 | P5 suivi lisible | **bon** côté acheteur (`mes-achats`) | statut vendeur : #9a ✅ ; #9b ⏳ |
 | P6 data-light / 3G | à risque | #1 ⏳, #10 ⏳ |
 | P7 vendeur tenu, échecs visibles | tunnel mesuré | upload muet #3 ✅ (journalisé + métrique OK/KO) ; litiges invisibles au vendeur (annexe) ⏳ |
-| A1 preuve sociale vérifiée | vitrine enrichie | #5 ✍️ (migration `0153` à appliquer) |
+| A1 preuve sociale vérifiée | vitrine enrichie | #5 ✅ (migration `0153` appliquée en prod le 2026-10-26) |
 | A2 facettes | filtres présents ; rattrapage fuzzy #7 ✅ | suggestions produits encore absentes ⏳ |
 | A3 checkout minimal | — | #4 ⏳ |
 | A4 cohérence = confiance | incohérence flash #6 ✅ | divergences de format de date (annexe) ⏳ |
@@ -187,9 +187,15 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 liste ; #7 n'y a jamais eu sa place (corrigé en code — le dépôt interdit la
 migration `unaccent` et porte déjà la normalisation).*
 
-1. **Appliquer la migration `0153`** (#5) — rédigée, non appliquée ; son bloc
-   `do $$` s'auto-vérifie à l'exécution. *Débloque : les signaux de confiance
-   de la vitrine, dont le code est déjà déployable.*
+1. ✅ **FAIT — `0153` appliquée en prod le 2026-10-26** (#5), sur instruction
+   directe du porteur. Fonction `zabelie_boutik_public` enrichie, vérifiée sur
+   un créateur réel, registre inscrit (`applied_by` renseigné,
+   `journal_supabase`). ⚠️ **Nouvel écart d'ops rendu au porteur** : la prod
+   était à **0149** ; `0153` a été appliquée **hors ordre** à sa demande, donc
+   **`0150` (essayage), `0151` (litiges Stripe) et `0152` (revue médias)
+   restent EN ATTENTE** en production. La ligne de registre de `0153` a été
+   insérée en base (pas de fichier `registre_ligne_0153` sur le disque) : à
+   réconcilier avec l'application de `0150`–`0152`.
 2. **Variable d'env** `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` (#1) — vérifier le
    plan Supabase, puis poser la variable. *Bloque : la perf image de tout le
    catalogue.*
