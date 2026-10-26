@@ -21,6 +21,7 @@ function publication(authenticated = true) {
       created.push(args);
       return { id: "product-created", slug: "guide-reel-12345", status: "draft" };
     } },
+    "@/lib/metrics": { logSellerFunnel: () => {} },
   });
   return {
     created, activeAccounts, user, supabase,

@@ -73,6 +73,27 @@ export async function BoutiqueVue({
             <p className="mt-1 text-sm text-mist">
               {creator.products.length} {tn(lang, creator.products.length, "creator.products.label.one", "creator.products.label")}
             </p>
+            {/* Signaux de confiance (audit REA #5) : note agrégée de la boutique
+                (même seuil et mêmes libellés que les fiches) et ancienneté.
+                Rien ne s'affiche tant que 0153 n'est pas appliquée ou sous le
+                seuil d'avis — pas de ligne vide, pas de « ★ null ». */}
+            {(creator.ratingAvg !== null || creator.memberSince) && (
+              <p className="mt-1 text-sm text-mist">
+                {creator.ratingAvg !== null && (
+                  <>
+                    <span className="text-accent">★</span> {creator.ratingAvg} (
+                    {creator.ratingCount} {tn(lang, creator.ratingCount, "product.reviews.badge.one", "product.reviews.badge")})
+                  </>
+                )}
+                {creator.ratingAvg !== null && creator.memberSince && " · "}
+                {creator.memberSince && (
+                  <>
+                    {t(lang, "creator.member.since")}{" "}
+                    {new Date(creator.memberSince).toLocaleDateString(lang === "ht" ? "fr-HT" : lang, { year: "numeric", month: "long" })}
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </div>
 

@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 /**
- * LES SKILLS DE GOÛT SONT DES TIERS ; LEUR PRÉAMBULE ZABELIE EST LE NÔTRE.
+ * LES SKILLS SONT DES TIERS ; LEUR PRÉAMBULE ZABELIE EST LE NÔTRE.
  *
  * Chaque fichier sous `.claude/skills/<nom>/SKILL.md` = frontmatter amont +
  * BLOC ZABELIE + corps amont verbatim. Deux façons de perdre la précédence
@@ -18,6 +18,11 @@ import { join } from "node:path";
  * ancrée sur l'empreinte qu'il cite, et empreinte RECALCULÉE du fichier
  * reconstitué sans le bloc. Et T0 refuse un lien symbolique : un lien est
  * exactement la forme que prend le remplacement.
+ *
+ * Un skill peut livrer des guides à côté de SKILL.md (REA, 2026-10-26 : sept
+ * `references/*.md`). Ils n'ont pas de bloc, et c'est précisément pourquoi
+ * T3b les tient par empreinte : un guide retouché, ou un fichier ajouté sans
+ * avoir été lu, ne laisserait sinon aucune trace.
  */
 
 const RACINE = join(import.meta.dirname, "..");
@@ -27,6 +32,20 @@ const SKILLS = join(RACINE, ".claude/skills");
 const INSTALLES: Record<string, string> = {
   "design-taste-frontend": "aa194351b246b8b4799099d4ed7b033d29eab6e6e3d58d8d2172978be7b3ec89",
   "redesign-existing-projects": "98ad3e5b051bfb71b2795f7e8a6aa0d32b51ee095606c098a4b2822ac07926c9",
+  "reverse-engineer-anything": "8866a9102de4ca5d6110e280a5d53fa67f0600d26b75cfaff4e9b252af631bcf",
+};
+
+/** Les fichiers livrés à côté de SKILL.md, copiés verbatim, avec leur empreinte. */
+const ANNEXES: Record<string, Record<string, string>> = {
+  "reverse-engineer-anything": {
+    "references/android-applications.md": "24ecaa1798eb4f28591884a7deb68df31e90313865515a23e3b466403f1abc39",
+    "references/connection-and-recovery.md": "3c2049047f2e9c01a224d71c1b54fbf429a98cdf8e691e9058d67ec4bc1df616",
+    "references/environments.md": "83e041f0a5243172af69eaadf62da0699617add3ff1d46b294e4bba7ece9d95f",
+    "references/evidence-workflows.md": "f44b68acc6ebaa60c1f5d0670e4f9ff7212d351a0ecc6e6ca77ce38b9177ea57",
+    "references/javascript-applications.md": "619cfd15ffdf466452cc32002ae357fefec59d5dcad4c9dfc27630138f0f719d",
+    "references/native-and-artifacts.md": "966c118218e6bca0de486008cb2142f70a27051541ac3e05aac8f0902a4c2bdc",
+    "references/runtime-observation.md": "e207a912470a1a56dc02316eb7b040ac50b4d763f2273e97a6811863d9051d74",
+  },
 };
 
 const DEBUT = "<!-- ═══";
@@ -78,6 +97,25 @@ for (const [nom, empreinte] of Object.entries(INSTALLES)) {
       "corps amont modifié, ou bloc mal placé — mettre à jour l'empreinte ET le bloc, jamais l'un sans l'autre"
     );
   });
+
+  test(`T3b [${nom}] — chaque fichier à côté de SKILL.md est une annexe listée, et elle EST l'amont`, () => {
+    const attendues = ANNEXES[nom] ?? {};
+    const dossier = join(SKILLS, nom);
+    const presents: string[] = [];
+    for (const rel of readdirSync(dossier, { recursive: true }) as string[]) {
+      const chemin = rel.split("\\").join("/");
+      const st = lstatSync(join(dossier, rel));
+      assert.ok(!st.isSymbolicLink(), `${nom}/${chemin} est un lien symbolique`);
+      if (st.isDirectory() || chemin === "SKILL.md") continue;
+      presents.push(chemin);
+      assert.ok(chemin in attendues, `${nom}/${chemin} est là sans être listé — pas d'empreinte, pas de lecture`);
+      const contenu = readFileSync(join(dossier, rel), "utf8").replace(/\r\n/g, "\n");
+      assert.equal(createHash("sha256").update(contenu).digest("hex"), attendues[chemin], `${nom}/${chemin} n'est plus l'amont`);
+    }
+    for (const chemin of Object.keys(attendues)) {
+      assert.ok(presents.includes(chemin), `${nom}/${chemin} est listé mais absent du disque`);
+    }
+  });
 }
 
 test("T4 — les points de précédence nomment ce qu'ils protègent", () => {
@@ -92,5 +130,20 @@ test("T4 — les points de précédence nomment ce qu'ils protègent", () => {
   assert.match(blocR, /design-taste-frontend\/SKILL\.md/, "le bloc redesign doit renvoyer aux huit points du bloc principal");
   for (const ancre of ["Font swap", "picsum", "inertia", "RÈGLE DES RAYONS"]) {
     assert.ok(blocR.includes(ancre), `le bloc redesign ne refuse plus « ${ancre} »`);
+  }
+  // REA : chaque ancre est un refus qu'un usage naïf du skill franchirait.
+  const rea = lireSkill("reverse-engineer-anything");
+  const blocE = rea.slice(rea.indexOf(DEBUT), rea.indexOf(FIN));
+  for (const ancre of [
+    "rea-agents@latest", // dépendance tierce : proposer, ne pas lancer
+    "N'EST PAS UNE API PUBLIQUE", // une API privée ne passe pas l'étape 0
+    "docs/03 §9",
+    "NatCash ⛔",
+    "RÈGLE DURE N°5", // AgentEnv écrit sur l'instance visée
+    "docs/11-SECRETS.md",
+    "COMMITENT", // captures et bundles : données personnelles
+    "vandè", // la recherche de chaînes se vérifie en kreyòl
+  ]) {
+    assert.ok(blocE.includes(ancre), `le bloc REA ne cite plus « ${ancre} »`);
   }
 });

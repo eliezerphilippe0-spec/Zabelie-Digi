@@ -51,8 +51,14 @@ leur contenu** (périmètre, palette, tiret cadratin, dépendances, polices), et
 `tests/skill-taste.test.ts` garde chaque préambule contre un remplacement en
 place. ⚠️ **`npx skills add` remplace le fichier par un lien symbolique vers
 l'amont brut** — mesuré le 2026-09-02 ; la garde l'a vu, et refuse tout lien.
-Un troisième skill s'installe en le LISANT, en lui écrivant son préambule, et
-en l'ajoutant à la liste du test — jamais par la commande seule.
+Tout nouveau skill s'installe en le LISANT, en lui écrivant son préambule, et
+en l'ajoutant à la liste du test — jamais par la commande seule. Troisième,
+installé ainsi le 2026-10-26 : `reverse-engineer-anything` (REA, MIT, avec
+sept guides `references/` tenus par empreinte). **Instructions seules, aucun
+outil REA branché** — `npx rea-agents` est une dépendance tierce, zone
+d'arrêt. Son préambule ferme surtout ceci : **une API trouvée par
+rétro-ingénierie n'est pas une API publique**, elle ne passe pas l'étape 0 de
+`docs/03` §9.
 
 ## Règle zéro — la primauté de l'instruction directe
 

@@ -106,16 +106,27 @@ export default async function CataloguePage({
   // journal en dernier. Un terme n'est consigné comme MANQUANT que si les
   // deux couches ont échoué — sinon on irait recruter un vendeur pour un
   // produit qu'on a déjà, mal orthographié.
+  // Le rattrapage approximatif (zabelie_search_fuzzy, insensible aux accents
+  // via zabelie_search_normalize) se déclenchait seulement à ZÉRO résultat
+  // littéral : dès qu'un seul produit exact existait, les variantes écrites à
+  // l'oreille — « batri »/« batery », « vandè »/« vande » — restaient
+  // invisibles (audit REA 2026-10-26, #7). On l'ouvre à « peu de résultats »
+  // et on DÉDOUBLONNE contre les exacts. Le capteur de demande (`manque`),
+  // lui, reste réservé au VRAI zéro : un miss enregistré sur 2 résultats
+  // irait recruter un vendeur pour un produit qu'on a déjà.
+  const SEUIL_RESULTATS_APPROCHANTS = 3;
   let approchants: typeof products = [];
   let manque = false;
-  if (q && page === 1 && products.length === 0 && !priceRangeInvalid) {
+  if (q && page === 1 && products.length < SEUIL_RESULTATS_APPROCHANTS && !priceRangeInvalid) {
     const ids = await searchFuzzyProductIds(q);
     if (ids.length > 0) {
       approchants = (
         await getPublishedProductsPage({ productIds: productIds ? ids.filter((id) => productIds.includes(id)) : ids, category: activeCat, kind: selection?.kind, zoneId, minPrice, maxPrice, sort, page: 1 })
       ).items;
     }
-    if (approchants.length === 0 && minPrice === undefined && maxPrice === undefined && !zoneId) {
+    // Un approchant déjà rendu en résultat exact ne se répète pas.
+    approchants = approchants.filter((a) => !products.some((p) => p.slug === a.slug));
+    if (products.length === 0 && approchants.length === 0 && minPrice === undefined && maxPrice === undefined && !zoneId) {
       manque = true;
       // Sans poivre serveur, `sessionFingerprint` rend `null` et on
       // N'ENREGISTRE PAS : un journal ré-identifiable serait pire que pas de
@@ -401,13 +412,15 @@ export default async function CataloguePage({
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
-        {products.length === 0 && approchants.length > 0 ? (
-          /* Couche 2 : rien d'exact, mais la similarité a rattrapé. On le DIT
-             — présenter un approchant comme un résultat exact fait douter de
-             tout le catalogue. */
+        {approchants.length > 0 ? (
+          /* Couche 2 : la similarité a rattrapé (accents, frappe). On le DIT —
+             présenter un approchant comme un résultat exact fait douter de tout
+             le catalogue. Déclenché aussi quand quelques exacts existent déjà
+             (audit #7) ; le libellé le dit alors autrement, et la section vit
+             sous la grille des exacts. */
           <>
             <p className="mb-4 rounded-xl border border-line bg-surface/40 px-4 py-3 text-sm text-mist">
-              {t(lang, "catalog.fuzzy")}
+              {t(lang, products.length === 0 ? "catalog.fuzzy" : "catalog.fuzzy.more")}
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {approchants.map((p) => (

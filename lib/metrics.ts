@@ -48,3 +48,41 @@ export function logLanding(event: LandingEvent, data?: Record<string, string>) {
   // journal Vercel horodate déjà chaque ligne).
   console.log(`[metrics:landing] ${JSON.stringify({ event, ...data })}`);
 }
+
+/**
+ * TUNNEL VENDEUR — création d'une fiche, puis upload couverture et galerie,
+ * chacun en OK et en KO (audit REA 2026-10-26, #3).
+ *
+ * Pourquoi il manquait : le chemin acheteur était instrumenté, le chemin
+ * vendeur non (`CLAUDE.md`, `lib/storage-buckets.ts`). `sell_cta_clicked`
+ * mesurait le CLIC sur « vendre » ; rien après. Un vendeur qui échoue à
+ * l'upload ne laissait aucune trace, et « personne n'essaie » et « tout le
+ * monde échoue » rendaient le même silence.
+ *
+ * On journalise DONC les deux issues de chaque étape — l'absence de signal est
+ * un signal (corollaire d'observabilité de `CLAUDE.md`) : un `ok:false` en
+ * rafale dit « bucket ou clé cassés », un vide total dit « personne n'arrive
+ * jusqu'ici ».
+ *
+ * ZÉRO PII, comme la mesure de la landing : ni `user_id`, ni `product_id`, ni
+ * nom de fichier. Le `reason` est un bucket technique (code de statut HTTP,
+ * libellé d'étape), jamais une donnée personnelle. `kind` est le TYPE de
+ * produit (physical/file/service), pas une identité.
+ */
+export type SellerFunnelEvent = "product_created" | "cover_upload" | "gallery_upload";
+
+export const SELLER_FUNNEL_EVENTS: ReadonlySet<string> = new Set([
+  "product_created",
+  "cover_upload",
+  "gallery_upload",
+] satisfies SellerFunnelEvent[]);
+
+export function logSellerFunnel(
+  event: SellerFunnelEvent,
+  data: { ok: boolean; reason?: string; kind?: string }
+) {
+  const charge: Record<string, string | boolean> = { event, ok: data.ok };
+  if (data.reason) charge.reason = data.reason;
+  if (data.kind) charge.kind = data.kind;
+  console.log(`[metrics:seller] ${JSON.stringify(charge)}`);
+}

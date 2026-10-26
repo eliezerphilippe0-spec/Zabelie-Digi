@@ -60,6 +60,7 @@ export type StockLabels = {
   lastUnits: string;   // contient {n}
   inStock: string;     // contient {n}
   variantOut: string;
+  variantDefault: string; // libellé d'une variante sans nom
 };
 
 /**
@@ -470,7 +471,7 @@ export function BuyButton({
                           : "border-line text-mist hover:border-brand/50"
                       } ${out ? "cursor-not-allowed line-through opacity-50" : ""}`}
                     >
-                      {v.label ?? "Standard"}{" "}
+                      {v.label ?? stockLabels.variantDefault}{" "}
                       <span className="ml-2 text-xs opacity-80">
                         {v.compareHTG && v.compareHTG > v.priceHTG ? <><s className="mr-2">{fmtHtg(v.compareHTG)}</s>{" "}</> : null}
                         {fmtHtg(v.priceHTG)}

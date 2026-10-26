@@ -21,6 +21,7 @@ import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { getLang } from "@/lib/i18n-server";
 import { t, type I18nKey, type Lang } from "@/lib/i18n";
 import { DIGITAL_KINDS, type ProductKind } from "@/lib/product-kind";
+import { estArchivee } from "@/lib/seller-products-filter";
 import { momentDeLaJournee } from "@/lib/moment-journee";
 import { PayoutRequest } from "@/components/payout-request";
 
@@ -712,13 +713,16 @@ export default async function DashboardPage({
                   {/* STATUT LISIBLE. La ligne affichait la valeur BRUTE de la
                       base — « published », « draft » — à quelqu'un qui ne lit
                       pas l'anglais et n'a pas à connaître notre schéma. Même
-                      décision que `app/vendre` : tout ce qui n'est pas publié
-                      est « en revue », parce qu'un vendeur qui lisait
-                      « Brouillon » croyait sa soumission échouée. */}
+                      décision que `app/vendre` (UX-01) : non publié = « en
+                      revue », SAUF une fiche archivée (retirée par la
+                      modération), à qui « en revue » promettait une décision
+                      déjà prise (audit REA 2026-10-26, #9). */}
                   <span className="mt-0.5 block text-xs text-mist">
                     {p.status === "published"
                       ? t(lang, "status.published")
-                      : t(lang, "status.review")}
+                      : estArchivee(p.status)
+                        ? t(lang, "status.archived")
+                        : t(lang, "status.review")}
                   </span>
                 </Link>
 
