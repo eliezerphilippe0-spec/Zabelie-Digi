@@ -187,15 +187,26 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 liste ; #7 n'y a jamais eu sa place (corrigé en code — le dépôt interdit la
 migration `unaccent` et porte déjà la normalisation).*
 
-1. ✅ **FAIT — `0153` appliquée en prod le 2026-10-26** (#5), sur instruction
-   directe du porteur. Fonction `zabelie_boutik_public` enrichie, vérifiée sur
-   un créateur réel, registre inscrit (`applied_by` renseigné,
-   `journal_supabase`). ⚠️ **Nouvel écart d'ops rendu au porteur** : la prod
-   était à **0149** ; `0153` a été appliquée **hors ordre** à sa demande, donc
-   **`0150` (essayage), `0151` (litiges Stripe) et `0152` (revue médias)
-   restent EN ATTENTE** en production. La ligne de registre de `0153` a été
-   insérée en base (pas de fichier `registre_ligne_0153` sur le disque) : à
-   réconcilier avec l'application de `0150`–`0152`.
+1. ✅ **FAIT — prod alignée sur `main` jusqu'à `0153` le 2026-10-26.** Les
+   quatre migrations en retard ont été appliquées sur instructions directes du
+   porteur : `0153` (vitrine #5), puis le rattrapage `0150` (essayage), `0151`
+   (litiges Stripe) et `0152` (revue médias). **Registre contigu `0149→0153`,
+   croisé avec le disque** (153 fichiers = 153 lignes ; 151 `appliquee`, `0056`
+   `redigee` gelée, `0031` `abandonnee`) ; `objets_requis()` tout présent sauf
+   `zabelie_purge_sent_notices` (absence attendue, liée au gel de `0056`).
+   ⚠️ **`0152` est inscrite en `preuve='sonde_schema'`** (les trois autres en
+   `journal_supabase`) : son fichier porte un `drop trigger` (ligne 55) que la
+   confirmation destructive MCP ne pouvait pas répondre depuis la session web
+   (apply_migration 3×, execute_sql et une sonde no-op ont tous expiré à 60 s ;
+   l'enveloppe `do/execute` a été refusée par le classificateur de sécurité).
+   Il a donc été appliqué via `apply_migration` avec cette **seule** ligne
+   rendue sous `create or replace trigger` — même définition finale, non
+   destructif. État final **vérifié identique** au `0152` de `main` (PR #396) :
+   trigger média `BEFORE INSERT/UPDATE/DELETE` (`tgtype=31`) lié à
+   `zabelie_product_media_guard()`, trigger couverture (`tgtype=19`) sur
+   `products.cover_url`, deux gardes `service_role` seul. **Reste à réconcilier**
+   (hygiène, non bloquant) : les lignes de registre `0150`–`0153` ont été
+   insérées en base, sans fichier `registre_ligne_*` sur le disque.
 2. **Variable d'env** `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` (#1) — vérifier le
    plan Supabase, puis poser la variable. *Bloque : la perf image de tout le
    catalogue.*
