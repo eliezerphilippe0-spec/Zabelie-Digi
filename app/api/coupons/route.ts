@@ -21,6 +21,9 @@ export const dynamic = "force-dynamic";
  * de Postgres — le journal garde le code.
  */
 
+/** Codes Postgres d'une saisie refusée par la base — pas d'une panne. */
+const SAISIE_REFUSEE = new Set(["23503", "22P02", "22007", "22003", "23514"]);
+
 async function requireUser() {
   const supabase = await createClient();
   const {
@@ -91,10 +94,17 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    // Par CODE (`lib/pg-errors.ts`) : 23505 = l'unicité (vendeur, code).
+    // Par CODE (`lib/pg-errors.ts`), jamais par le texte.
+    // 23505 : l'unicité (vendeur, code) — le vendeur choisit un autre code.
     if (error.code === "23505") return erreurTraduite("api.coupon.exists", 422);
+    // La base refuse la SAISIE : produit inconnu (23503), identifiant ou date
+    // mal formés (22P02, 22007), nombre hors bornes (22003), contrainte de
+    // valeur (23514). Ce n'est pas une panne : 422, rien au journal.
+    if (SAISIE_REFUSEE.has(error.code ?? "")) return erreurTraduite("api.params.invalid", 422);
+    // Le reste est une panne : 500, et le CODE seul au journal (le message de
+    // Postgres peut citer la valeur saisie).
     console.error("[coupons] création refusée", error.code);
-    return erreurTraduite("api.write.failed", 422);
+    return erreurTraduite("api.write.failed", 500);
   }
   return NextResponse.json({ ok: true, coupon: data });
 }

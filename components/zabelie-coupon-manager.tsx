@@ -72,8 +72,14 @@ export function ZabelieCouponManager({
   const [rafraichit, demarrerRafraichissement] = useTransition();
   const [ligneRafraichie, setLigneRafraichie] = useState<string | null>(null);
 
+  // Bouton occupé = `aria-disabled`, jamais `disabled` : un bouton désactivé
+  // pendant l'appel PERD le focus (il tombe sur `body`), et après un échec le
+  // clavier ne sait plus où il est. Le double envoi est donc refusé ICI.
+  const occupee = (id: string) => enCours.has(id) || (rafraichit && ligneRafraichie === id);
+
   async function create(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError(null);
     const issue = await appelSession("/api/coupons", {
@@ -98,6 +104,7 @@ export function ZabelieCouponManager({
   }
 
   async function toggle(id: string, active: boolean) {
+    if (occupee(id)) return;
     setEnCours((s) => new Set(s).add(id));
     setErreurs((e) => {
       const reste = { ...e };
@@ -128,8 +135,6 @@ export function ZabelieCouponManager({
       return n;
     });
   }
-
-  const occupee = (id: string) => enCours.has(id) || (rafraichit && ligneRafraichie === id);
 
   return (
     <div>
@@ -176,8 +181,8 @@ export function ZabelieCouponManager({
         </div>
         <button
           type="submit"
-          disabled={loading}
-          className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+          aria-disabled={loading}
+          className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 aria-disabled:opacity-60"
         >
           {loading ? labels.creating : labels.create}
         </button>
@@ -197,7 +202,9 @@ export function ZabelieCouponManager({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <span id={`cp-${c.id}`} className={`code-lisible font-extrabold ${c.active ? "text-accent" : "text-mist line-through"}`}>
+                  {/* `break-all` : un code de 24 caractères sans tiret ne se coupe
+                      nulle part ailleurs, et passait sous le bouton à 360 px. */}
+                  <span id={`cp-${c.id}`} className={`code-lisible break-all font-extrabold ${c.active ? "text-accent" : "text-mist line-through"}`}>
                     {c.code}
                   </span>
                   <span className="ml-2 text-mist">
@@ -207,10 +214,10 @@ export function ZabelieCouponManager({
                 <button
                   type="button"
                   onClick={() => toggle(c.id, !c.active)}
-                  disabled={occupee(c.id)}
+                  aria-disabled={occupee(c.id)}
                   aria-busy={occupee(c.id)}
                   aria-describedby={`cp-${c.id}`}
-                  className="min-h-11 shrink-0 rounded-lg border border-line px-3 text-sm font-medium text-mist transition hover:border-brand/50 hover:text-cloud disabled:opacity-60"
+                  className="min-h-11 shrink-0 rounded-lg border border-line px-3 text-sm font-medium text-mist transition hover:border-brand/50 hover:text-cloud aria-disabled:opacity-60"
                 >
                   {occupee(c.id) ? labels.toggling : c.active ? labels.deactivate : labels.reactivate}
                 </button>

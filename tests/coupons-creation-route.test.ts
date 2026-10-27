@@ -16,6 +16,7 @@ type Options = { actor?: string | null; lang?: Lang; error?: { code?: string; me
 function fixture(options: Options = {}) {
   const actor = options.actor === undefined ? A : options.actor;
   const events: string[] = [];
+  const journal: unknown[][] = [];
   const rows: Record<string, unknown>[] = [];
   const db = database(query => {
     const insert = query.steps.find(([name]) => name === "insert");
@@ -43,11 +44,11 @@ function fixture(options: Options = {}) {
     "@/lib/collections": { UUID_RE },
     "@/lib/api-erreur": { erreurTraduite: async (key: I18nKey, status: number) =>
       Response.json({ error: t(options.lang ?? "fr", key) }, { status }) },
-  }, {}, { console: { ...console, error() {} } });
+  }, {}, { console: { ...console, error: (...args: unknown[]) => { journal.push(args); } } });
   const sendRaw = (body: string, method = "POST") => route[method](new Request("https://example.test/api/coupons", {
     method, headers: { "Content-Type": "application/json" }, body,
   }));
-  return { events, rows, get queries() { return JSON.parse(JSON.stringify(db.queries)); }, route, sendRaw,
+  return { events, rows, journal, get queries() { return JSON.parse(JSON.stringify(db.queries)); }, route, sendRaw,
     send: (body: unknown, method = "POST") => sendRaw(JSON.stringify(body), method) };
 }
 function untouched(f: ReturnType<typeof fixture>) {
@@ -159,20 +160,33 @@ test("coupons: real applicability keeps store-wide coupons inside the verified s
   assert.equal(couponApplies(coupon, PRODUCT, A), false);
 });
 
-test("coupons: duplicate and database refusals are translated, never the raw Postgres text", async () => {
+test("coupons: insert refusals are CLASSIFIED — duplicate, refused input, outage — never the raw Postgres text", async () => {
+  // Seconde passe (m1) : tout refus autre que 23505 devenait 422 « Réessayez ».
+  // Une saisie refusée par la base n'est pas une panne, et une panne n'est
+  // pas la faute du vendeur.
+  const SAISIE = "Synthetic refused input: Key (product_id)=(PRIVATE-VALUE)";
   for (const lang of LANGS) {
-    for (const [error, cle] of [
-      [{ code: "23505", message: "duplicate key value violates unique constraint" }, "api.coupon.exists"],
-      [{ code: "XX000", message: "Synthetic database refusal" }, "api.write.failed"],
+    for (const [error, status, cle, journalise] of [
+      [{ code: "23505", message: "duplicate key value violates unique constraint" }, 422, "api.coupon.exists", false],
+      [{ code: "23503", message: SAISIE }, 422, "api.params.invalid", false],
+      [{ code: "22P02", message: SAISIE }, 422, "api.params.invalid", false],
+      [{ code: "22007", message: SAISIE }, 422, "api.params.invalid", false],
+      [{ code: "22003", message: SAISIE }, 422, "api.params.invalid", false],
+      [{ code: "23514", message: SAISIE }, 422, "api.params.invalid", false],
+      [{ code: "XX000", message: "Synthetic database outage PRIVATE-VALUE" }, 500, "api.write.failed", true],
+      [{ message: "Synthetic outage without code PRIVATE-VALUE" }, 500, "api.write.failed", true],
     ] as const) {
       const f = fixture({ error, lang });
       const response = await f.send({ expectedActorId: A, code: "PROMO50", percent: 50 });
-      assert.equal(response.status, 422);
+      assert.equal(response.status, status, JSON.stringify(error));
       const body = await response.json();
       assert.deepEqual(body, { error: t(lang, cle) });
-      assert.doesNotMatch(JSON.stringify(body), /Synthetic|duplicate key/);
+      assert.doesNotMatch(JSON.stringify(body), /Synthetic|duplicate key|PRIVATE/);
       assert.equal(f.queries.length, 1);
       assert.deepEqual(f.rows, []);
+      // Le journal : une ligne pour une panne, aucune pour une saisie ; jamais le message.
+      assert.equal(f.journal.length, journalise ? 1 : 0, JSON.stringify({ error, journal: f.journal }));
+      assert.doesNotMatch(JSON.stringify(f.journal), /PRIVATE|Synthetic/, "le message de Postgres est au journal");
     }
   }
 });
