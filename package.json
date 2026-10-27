@@ -43,7 +43,7 @@
     "typescript": "^5.7.0"
   },
   "overrides": {
-    "@next/eslint-plugin-next@16.4.2": {
+    "@next/eslint-plugin-next@16.4.3": {
       "fast-glob": "$fast-glob"
     },
     "postcss": "^8.5.10",
