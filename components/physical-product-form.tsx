@@ -608,7 +608,7 @@ export function PhysicalProductForm({
           />
         </label>
 
-        {/* `justify-end` : « Kantite ki nan stock » passe sur deux lignes à
+        {/* `justify-end` : « Kantite ki an estòk » passe sur deux lignes à
             360 px, « Pri (HTG) » non — les deux champs restent alignés. */}
         <div className="grid grid-cols-2 gap-3">
           <label className="flex min-w-0 flex-col justify-end">
