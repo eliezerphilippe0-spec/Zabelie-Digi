@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { loadRoute, database } from "./helpers/route-harness";
 import { DICT, LANGS, t } from "../lib/i18n";
 import { formatHTG } from "../lib/sample-data";
@@ -462,4 +462,38 @@ test("PP4 — chaque « Retirer » reçoit ses libellés traduits, titre compris
   const payer = tous(arbre).find((n) => n.type === "CartPayAll");
   assert.ok(payer, "le paiement groupé ouvert doit s'afficher");
   assert.equal((payer!.props.labels as Record<string, string>).network, DICT.ht["error.network"]);
+});
+
+// ─────────────────────────────── Squelette ─────────────────────────────────
+// Mutations éprouvées : la vignette fantôme passe à `h-12 w-12` ; le `<main>`
+// du squelette passe à `max-w-6xl`. Rouges toutes deux.
+
+test("PL1 — `/panier` a son squelette, à la forme du panier et dans la même coquille", () => {
+  assert.ok(existsSync("app/panier/loading.tsx"), "sans lui, `/panier` retombe sur le squelette de l'ACCUEIL");
+  const src = readFileSync("app/panier/loading.tsx", "utf8");
+  assert.doesNotMatch(src, /SkeletonGrid|SkeletonCard/, "une grille de cartes est la forme de l'accueil, pas du panier");
+  const mod = loadRoute("app/panier/loading.tsx", {
+    "react/jsx-runtime": JSX,
+    "@/components/site-nav": { SiteNav: "SiteNav" },
+    "@/components/skeleton": { SkeletonBlock: "SkeletonBlock", SkeletonPage: "SkeletonPage" },
+  }) as unknown as { default(): El };
+  const arbre = mod.default();
+  assert.equal(arbre.type, "SkeletonPage", "l'attente doit être annoncée (aria-busy du squelette partagé)");
+  const noeuds = tous(arbre);
+  assert.ok(noeuds.some((n) => n.type === "SiteNav"));
+  const lignes = noeuds.filter((n) => n.type === "li");
+  assert.ok(lignes.length >= 2 && lignes.length <= 3, `${lignes.length} lignes fantômes`);
+  for (const li of lignes) {
+    assert.ok(
+      tous(li).some((n) => n.type === "SkeletonBlock" && /(?<![\w:/-])h-16\b/.test(classe(n)) && /(?<![\w:/-])w-16\b/.test(classe(n))),
+      "chaque ligne fantôme a sa vignette carrée de 64 px"
+    );
+  }
+  // La LIAISON avec la vraie page : même conteneur `<main>`, lu dans page.tsx.
+  const coquille = /<main id="main" className="([^"]*)">/.exec(readFileSync("app/panier/page.tsx", "utf8"));
+  assert.ok(coquille, "la coquille de page.tsx est introuvable");
+  const main = noeuds.find((n) => n.type === "main");
+  assert.equal(main?.props.id, "main");
+  assert.equal(classe(main!), coquille![1], "le squelette et la page n'ont plus la même largeur : la page sauterait");
+  assert.equal(texte(arbre).trim(), "", "un squelette ne porte aucun texte");
 });
