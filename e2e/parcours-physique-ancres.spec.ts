@@ -58,6 +58,25 @@ async function arrivee(page: Page, id: string) {
   }), id);
 }
 
+/** Les chemins que Next a PRÉCHARGÉS depuis l'ouverture de la page. À poser
+ *  avant `goto` : un lien déjà visible au chargement est préchargé tout de suite. */
+function suivrePrechargements(page: Page): Set<string> {
+  const vus = new Set<string>();
+  page.on("response", (r) => {
+    if (r.request().headers()["next-router-prefetch"] !== undefined) vus.add(new URL(r.url()).pathname);
+  });
+  return vus;
+}
+
+/** Ouvre le menu du compte et ATTEND que la page visée soit préchargée : c'est
+ *  le préchargement qui apporte le squelette validé avant la page. Un clic
+ *  trop rapide, sans préchargement, reçoit la page complète d'un coup et ne
+ *  prouve rien (mesuré : vert avant comme après le relais). */
+async function menuCompteVers(page: Page, precharges: Set<string>, chemin: string) {
+  await page.locator('header summary[aria-label="Mon compte"]').click();
+  await expect.poll(() => precharges.has(chemin), { message: `${chemin} jamais préchargé` }).toBe(true);
+}
+
 function sousLEntete({ cible, entete, replie }: { cible: number; entete: number; replie: boolean }) {
   expect(replie, "l'en-tête doit être replié après le saut").toBe(true);
   expect(cible, "la section ne doit pas finir sous l'en-tête").toBeGreaterThanOrEqual(entete);
@@ -70,6 +89,54 @@ test("lien d'une autre page vers /vendre#mes-produits : la section arrive sous l
   await page.locator('a[href="/vendre#mes-produits"]:visible').first().click();
   await page.waitForURL(/\/vendre#mes-produits$/);
   sousLEntete(await arrivee(page, "mes-produits"));
+});
+
+/* Navigation CLIENTE vers une ancre d'un segment qui a son propre `loading.tsx`
+ * (audit du système de design, 2026-10-27). Next valide d'abord le squelette,
+ * cherche le fragment dans le squelette, ne le trouve pas, et tient l'intention
+ * pour traitée (`layout-router.js` : « A missing hash target is still a handled
+ * scroll intent ») : sans relais, la page reste en haut. Le lien est celui du
+ * menu du compte, dans l'en-tête (`site-nav.tsx`). */
+test("navigation cliente du tableau de bord vers /tableau-de-bord/boutique#ma-boutique : la section arrive sous l'en-tête replié", async ({ page }) => {
+  await connecte(page);
+  const precharges = suivrePrechargements(page);
+  await page.goto("/tableau-de-bord", { waitUntil: "networkidle" });
+  await menuCompteVers(page, precharges, "/tableau-de-bord/boutique");
+  await page.locator('a[href="/tableau-de-bord/boutique#ma-boutique"]:visible').first().click();
+  await page.waitForURL(/\/tableau-de-bord\/boutique#ma-boutique$/);
+  sousLEntete(await arrivee(page, "ma-boutique"));
+});
+
+/* Le même lien, pris HORS du segment `/tableau-de-bord` : c'est l'entrée dans
+ * le segment qui fait valider son squelette d'abord. Depuis le tableau de bord
+ * lui-même (test ci-dessus), Next garde la page affichée et défile seul — le
+ * relais ne doit alors RIEN faire de plus. Mesuré avant le relais : celui-ci
+ * rouge 5 fois sur 5, celui-là vert 5 fois sur 5. */
+test("navigation cliente depuis /vendre vers /tableau-de-bord/boutique#ma-boutique : la section arrive sous l'en-tête replié", async ({ page }) => {
+  await connecte(page);
+  const precharges = suivrePrechargements(page);
+  await page.goto("/vendre", { waitUntil: "networkidle" });
+  await menuCompteVers(page, precharges, "/tableau-de-bord/boutique");
+  await page.locator('a[href="/tableau-de-bord/boutique#ma-boutique"]:visible').first().click();
+  await page.waitForURL(/\/tableau-de-bord\/boutique#ma-boutique$/);
+  sousLEntete(await arrivee(page, "ma-boutique"));
+});
+
+/* Le chemin ACHETEUR : « Réessayer » de la page d'échec de paiement mène à
+ * `/produit/<slug>#acheter`, segment qui a son `loading.tsx` depuis l'audit
+ * UX du 2026-09-02. Lien visible, donc préchargé, donc squelette validé
+ * d'abord : l'acheteur qui vient d'échouer à payer arrivait en haut de la
+ * fiche, pas sur le bloc d'achat. `#acheter` porte `scroll-mt-44` : la cible
+ * se pose à sa marge, sous l'en-tête replié. */
+test("« Réessayer » après un échec de paiement : la fiche produit arrive sur #acheter", async ({ page }) => {
+  await page.goto("/paiement/echec?produit=filtre-huile-corolla", { waitUntil: "networkidle" });
+  await page.locator('a[href="/produit/filtre-huile-corolla#acheter"]:visible').first().click();
+  await page.waitForURL(/\/produit\/filtre-huile-corolla#acheter$/);
+  const { cible, entete, replie } = await arrivee(page, "acheter");
+  const marge = await page.evaluate(() => parseFloat(getComputedStyle(document.getElementById("acheter")!).scrollMarginTop));
+  expect(replie, "l'en-tête doit être replié après le saut").toBe(true);
+  expect(cible, "le bloc d'achat ne doit pas finir sous l'en-tête").toBeGreaterThanOrEqual(entete);
+  expect(Math.abs(cible - marge), `le bloc d'achat doit se poser à sa marge (${marge} px), pas ailleurs`).toBeLessThanOrEqual(24);
 });
 
 test("chargement complet de /vendre#mes-produits : la page descend jusqu'à la section", async ({ page }) => {
