@@ -119,3 +119,75 @@ test("F2 — recherche, recharge, code promo et profil gardent l'anneau de focus
     assert.ok(!ETEINT.test(src), `${f} : un utilitaire éteint de nouveau l'anneau de focus global`);
   }
 });
+
+// ── m4 — l'orange est aux CTA et aux prix, le « sélectionné » est l'encre ───
+/*
+ * Brief §3.1 : « UN accent orange réservé aux CTA et aux prix ». Trois états
+ * SÉLECTIONNÉS l'empruntaient (onglet actif de /mes-achats, vignette active
+ * de la galerie, variante choisie) quand le dépôt a déjà son motif — l'encre,
+ * `bg-cloud text-ink` (catalogue, navigation vendeur). Et le prix de la fiche,
+ * lui, était en encre quand la carte produit le met en orange.
+ *
+ * Chaque garde lit la classe DANS la branche commandée par la même condition
+ * que l'attribut ARIA de l'état : l'état annoncé et l'état peint ne peuvent
+ * plus diverger sans rougir.
+ *
+ * Mutations éprouvées :
+ *   onglet actif remis en `border-brand bg-brand text-on-brand`            → S1 rouge
+ *   vignette : condition `i === principale` → `i === 0` dans la classe     → S2 rouge
+ *   variante active remise en `border-brand bg-brand/10 text-cloud`        → S3 rouge
+ *   prix de la fiche remis en `text-cloud`                                 → S4 rouge
+ */
+
+function brancheActive(src: string, re: RegExp, quoi: string): string[] {
+  const m = src.match(re);
+  assert.ok(m, `${quoi} : la condition qui commande l'état et sa classe sont introuvables (ou ne sont plus la même)`);
+  return m[1].split(/\s+/);
+}
+const encre = (c: string[], quoi: string) => {
+  assert.ok(!c.some((x) => /brand/.test(x)), `${quoi} : l'orange est revenu sur un état sélectionné (« ${c.join(" ")} »)`);
+};
+
+test("S1 — l'onglet actif de /mes-achats est à l'encre, commandé par aria-current", () => {
+  const src = code(lire("app/mes-achats/page.tsx"));
+  const c = brancheActive(
+    src,
+    /aria-current=\{v === view \? "page" : undefined\}\s*className=\{`[^`]*\$\{v === view \? "([^"]*)" : "[^"]*"\}`\}/,
+    "onglet de /mes-achats"
+  );
+  assert.ok(c.includes("bg-cloud") && c.includes("text-ink"), `onglet actif : « ${c.join(" ")} »`);
+  encre(c, "onglet de /mes-achats");
+});
+
+test("S2 — la vignette active de la galerie est à l'encre, et son état est annoncé (aria-pressed)", () => {
+  const src = code(lire("components/galerie-produit.tsx"));
+  const c = brancheActive(
+    src,
+    /aria-pressed=\{i === principale\}\s*className=\{`[^`]*\$\{\s*i === principale \? "([^"]*)" : "[^"]*"\s*\}`\}/,
+    "vignette de la galerie"
+  );
+  assert.ok(c.includes("border-cloud"), `vignette active : « ${c.join(" ")} »`);
+  encre(c, "vignette de la galerie");
+});
+
+test("S3 — la variante choisie est à l'encre, commandée par le même `active` que aria-pressed", () => {
+  const src = code(lire("components/buy-button.tsx"));
+  assert.match(src, /const active = v\.id === variantId;/);
+  const c = brancheActive(
+    src,
+    /aria-pressed=\{active\}[\s\S]{0,200}?className=\{`[^`]*\$\{\s*active\s*\? "([^"]*)"\s*: "[^"]*"\s*\}/,
+    "variante"
+  );
+  assert.ok(c.includes("bg-cloud") && c.includes("text-ink"), `variante active : « ${c.join(" ")} »`);
+  encre(c, "variante");
+});
+
+test("S4 — le prix de la fiche est en orange de texte, comme sur la carte produit", () => {
+  const src = code(lire("app/produit/[slug]/page.tsx"));
+  // L'élément qui REND le prix affiché et débité, pas une classe ailleurs.
+  const m = src.match(/<p className="([^"]*)">(?:(?!<\/p>)[\s\S])*?\{formatHTG\(flash \? flash\.prixFlashHtg : product\.priceHTG\)\}/);
+  assert.ok(m, "le paragraphe du prix est introuvable");
+  const c = m[1].split(/\s+/);
+  assert.ok(c.includes("text-accent") && !c.includes("text-cloud"), `prix de la fiche : « ${m[1]} »`);
+  assert.match(code(lire("components/product-card.tsx")), /numeric font-bold text-accent/, "la carte produit, référence du prix, a changé");
+});

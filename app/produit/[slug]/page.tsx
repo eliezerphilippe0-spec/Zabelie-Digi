@@ -558,8 +558,10 @@ export default async function ProductPage({
               )
             )}
             {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
-                l'achat ne se rend pas en dégradé transparent. */}
-            <p className="numeric text-3xl font-extrabold text-cloud">
+                l'achat ne se rend pas en dégradé transparent. En `text-accent`,
+                comme sur la carte produit : l'orange est réservé aux CTA et aux
+                PRIX (brief §3.1 ; audit 2026-10-27, m4), 4,73:1 sur crème. */}
+            <p className="numeric text-3xl font-extrabold text-accent">
               {physical && physical.variants.length > 1 && !flash ? <span className="mr-2 text-sm font-normal">{t(lang, "product.price.from")}{" "}</span> : null}
               {/* L'équivalent ≈USD porte sur le prix RÉELLEMENT affiché et
                   débité (le prix flash s'il y en a un), pas sur le prix plein :

@@ -467,7 +467,7 @@ export function BuyButton({
                       onClick={() => { setVariantId(v.id); setApplied(null); setCouponError(false); }}
                       className={`rounded-xl border px-3 py-2 text-sm transition ${
                         active
-                          ? "border-brand bg-brand/10 text-cloud"
+                          ? "border-cloud bg-cloud text-ink"
                           : "border-line text-mist hover:border-brand/50"
                       } ${out ? "cursor-not-allowed line-through opacity-50" : ""}`}
                     >

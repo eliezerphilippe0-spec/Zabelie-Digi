@@ -244,7 +244,7 @@ export default async function MesAchatsPage({ searchParams }: {
     <Shell>
       <nav aria-label={t(lang, "purchases.views")} className="mt-8 flex flex-wrap gap-2">
         {PURCHASE_VIEWS.map((v) => <Link key={v} href={purchaseHref(v)} aria-current={v === view ? "page" : undefined}
-          className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold ${v === view ? "border-brand bg-brand text-on-brand" : "border-line text-mist hover:text-cloud"}`}>
+          className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold ${v === view ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:text-cloud"}`}>
           {t(lang, purchaseViewKeys[v])}
         </Link>)}
       </nav>

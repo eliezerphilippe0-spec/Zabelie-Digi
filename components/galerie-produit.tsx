@@ -74,8 +74,9 @@ export function GalerieProduit({
               type="button"
               onClick={() => setPrincipale(i)}
               aria-label={`${alt} ${i + 1}`}
+              aria-pressed={i === principale}
               className={`relative shrink-0 overflow-hidden rounded-xl border ${
-                i === principale ? "border-brand" : "border-line"
+                i === principale ? "border-cloud" : "border-line"
               }`}
             >
               {m.type === "img" ? (
