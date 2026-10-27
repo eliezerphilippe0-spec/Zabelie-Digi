@@ -42,7 +42,9 @@ export async function extractShoppingIntent(previous: ShoppingIntent, message: s
   if (raw.length > 5000) throw new Error("shopping_output_invalid");
   const intent = ShoppingIntentSchema.parse(JSON.parse(raw));
   // A currency conversion is forbidden even if the extractor ignores its prompt.
-  if (/(?:\b(?:usd|cad|eur|dollars?)\b|[$€])/iu.test(message)
-    && !/\b(?:htg|gourdes?|goud)\b/iu.test(message)) intent.budgetHtg = null;
+  // Letter lookarounds on an accent-free copy: `\b` misses kreyòl « dòla » and Spanish « dólares ».
+  const plain = message.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (/(?<!\p{L})(?:usd|cad|eur|euros?|dollars?|dolares?|dola)(?!\p{L})|[$€]/iu.test(plain)
+    && !/(?<!\p{L})(?:htg|gourdes?|goud)(?!\p{L})/iu.test(plain)) intent.budgetHtg = null;
   return intent;
 }
