@@ -9,7 +9,7 @@ const A = "11300000-0000-4000-8000-000000000051";
 const B = "11300000-0000-4000-8000-000000000052";
 const PRODUCT = "11300000-0000-4000-8000-000000000053";
 const COUPON = "11300000-0000-4000-8000-000000000054";
-type Options = { actor?: string | null; lang?: Lang; error?: string };
+type Options = { actor?: string | null; lang?: Lang; error?: { code?: string; message: string }; patchRows?: number };
 
 /** The actual handler and coupon helpers; only Auth/PostgREST I/O is replaced.
  * Real RLS is not exercised here; existing SQL tests cover consumption. */
@@ -19,7 +19,11 @@ function fixture(options: Options = {}) {
   const rows: Record<string, unknown>[] = [];
   const db = database(query => {
     const insert = query.steps.find(([name]) => name === "insert");
-    if (options.error) return { data: null, error: { message: options.error } };
+    if (options.error) return { data: null, error: options.error };
+    // PATCH relit les lignes modifiées (`.select("id")`) : RLS peut n'en toucher aucune.
+    if (query.steps.some(([name]) => name === "update")) {
+      return { data: Array.from({ length: options.patchRows ?? 1 }, () => ({ id: COUPON })), error: null };
+    }
     if (insert) {
       const row: Record<string, unknown> = { id: COUPON, active: true, uses: 0, ...insert[1][0] as Record<string, unknown> };
       rows.push(JSON.parse(JSON.stringify(row)));
@@ -39,7 +43,7 @@ function fixture(options: Options = {}) {
     "@/lib/collections": { UUID_RE },
     "@/lib/api-erreur": { erreurTraduite: async (key: I18nKey, status: number) =>
       Response.json({ error: t(options.lang ?? "fr", key) }, { status }) },
-  });
+  }, {}, { console: { ...console, error() {} } });
   const sendRaw = (body: string, method = "POST") => route[method](new Request("https://example.test/api/coupons", {
     method, headers: { "Content-Type": "application/json" }, body,
   }));
@@ -92,11 +96,11 @@ test("coupons: matching A/A and B/B preserve normalization, boundaries and verif
 });
 
 test("coupons: anonymous operations still fail before reading the body or querying coupons", async () => {
-  for (const method of ["POST", "GET", "PATCH"]) {
-    const f = fixture({ actor: null });
+  for (const lang of LANGS) for (const method of ["POST", "GET", "PATCH"]) {
+    const f = fixture({ actor: null, lang });
     const response = await f.route[method]({ json() { throw new Error("Anonymous body read"); } });
     assert.equal(response.status, 401);
-    assert.deepEqual(await response.json(), { error: "Authentification requise" });
+    assert.deepEqual(await response.json(), { error: t(lang, "api.auth.required") });
     untouched(f);
   }
 });
@@ -118,20 +122,22 @@ test("coupons: stale identity precedes code and percentage validation", async ()
   untouched(f);
 });
 
-test("coupons: existing invalid code and percentage refusals retain their messages", async () => {
-  for (const code of ["", "ab", "avec espace", "?PROMO", "A".repeat(25)]) {
-    const f = fixture();
-    const response = await f.send({ expectedActorId: A, code, percent: 50 });
-    assert.equal(response.status, 422);
-    assert.deepEqual(await response.json(), { error: "Code invalide : 3–24 caractères, lettres/chiffres/tirets." });
-    untouched(f);
-  }
-  for (const percent of [undefined, null, 0, -1, 91, 1.5, "bad"]) {
-    const f = fixture();
-    const response = await f.send({ expectedActorId: A, code: "PROMO50", percent });
-    assert.equal(response.status, 422);
-    assert.deepEqual(await response.json(), { error: "Remise entre 1 et 90 %." });
-    untouched(f);
+test("coupons: existing invalid code and percentage refusals, now in the seller's language", async () => {
+  for (const lang of LANGS) {
+    for (const code of ["", "ab", "avec espace", "?PROMO", "A".repeat(25)]) {
+      const f = fixture({ lang });
+      const response = await f.send({ expectedActorId: A, code, percent: 50 });
+      assert.equal(response.status, 422);
+      assert.deepEqual(await response.json(), { error: t(lang, "api.coupon.code") });
+      untouched(f);
+    }
+    for (const percent of [undefined, null, 0, -1, 91, 1.5, "bad"]) {
+      const f = fixture({ lang });
+      const response = await f.send({ expectedActorId: A, code: "PROMO50", percent });
+      assert.equal(response.status, 422);
+      assert.deepEqual(await response.json(), { error: t(lang, "api.coupon.percent") });
+      untouched(f);
+    }
   }
 });
 
@@ -153,15 +159,50 @@ test("coupons: real applicability keeps store-wide coupons inside the verified s
   assert.equal(couponApplies(coupon, PRODUCT, A), false);
 });
 
-test("coupons: duplicate and database refusals keep existing responses without stored rows", async () => {
-  for (const [error, message] of [["duplicate key value violates unique constraint", "Ce code existe déjà dans votre boutique."],
-    ["Synthetic database refusal", "Synthetic database refusal"]]) {
-    const f = fixture({ error });
-    const response = await f.send({ expectedActorId: A, code: "PROMO50", percent: 50 });
-    assert.equal(response.status, 422);
-    assert.deepEqual(await response.json(), { error: message });
-    assert.equal(f.queries.length, 1);
-    assert.deepEqual(f.rows, []);
+test("coupons: duplicate and database refusals are translated, never the raw Postgres text", async () => {
+  for (const lang of LANGS) {
+    for (const [error, cle] of [
+      [{ code: "23505", message: "duplicate key value violates unique constraint" }, "api.coupon.exists"],
+      [{ code: "XX000", message: "Synthetic database refusal" }, "api.write.failed"],
+    ] as const) {
+      const f = fixture({ error, lang });
+      const response = await f.send({ expectedActorId: A, code: "PROMO50", percent: 50 });
+      assert.equal(response.status, 422);
+      const body = await response.json();
+      assert.deepEqual(body, { error: t(lang, cle) });
+      assert.doesNotMatch(JSON.stringify(body), /Synthetic|duplicate key/);
+      assert.equal(f.queries.length, 1);
+      assert.deepEqual(f.rows, []);
+    }
+  }
+});
+
+test("coupons: GET and PATCH database failures are translated, never the raw Postgres text", async () => {
+  for (const lang of LANGS) {
+    const get = fixture({ error: { code: "XX000", message: "Synthetic read failure" }, lang });
+    const lu = await get.route.GET();
+    assert.equal(lu.status, 500);
+    assert.deepEqual(await lu.json(), { error: t(lang, "api.read.failed") });
+    const patch = fixture({ error: { code: "XX000", message: "Synthetic write failure" }, lang });
+    const ecrit = await patch.send({ id: COUPON, active: false }, "PATCH");
+    assert.equal(ecrit.status, 500);
+    assert.deepEqual(await ecrit.json(), { error: t(lang, "api.write.failed") });
+  }
+});
+
+test("coupons: a PATCH that RLS lets touch NO row is a translated 404, not a silent success", async () => {
+  for (const lang of LANGS) {
+    const f = fixture({ patchRows: 0, lang });
+    const response = await f.send({ id: COUPON, active: false }, "PATCH");
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: t(lang, "api.coupon.notfound") });
+  }
+  for (const body of [null, {}, { id: COUPON }, { id: COUPON, active: "false" }]) {
+    const f = fixture();
+    const response = await f.send(body, "PATCH");
+    assert.equal(response.status, 400, JSON.stringify(body));
+    assert.deepEqual(await response.json(), { error: t("fr", "api.params.invalid") });
+    assert.deepEqual(f.queries, []);
   }
 });
 
@@ -175,7 +216,7 @@ test("coupons: GET and PATCH retain the authenticated client and existing query 
   const patch = fixture();
   assert.deepEqual(await (await patch.send({ id: COUPON, active: false }, "PATCH")).json(), { ok: true });
   assert.deepEqual(patch.queries, [{ table: "zabelie_coupons", steps: [
-    ["update", [{ active: false }]], ["eq", ["id", COUPON]],
+    ["update", [{ active: false }]], ["eq", ["id", COUPON]], ["select", ["id"]],
   ] }]);
   assert.deepEqual(patch.rows, []);
 });

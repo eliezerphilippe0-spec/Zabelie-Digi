@@ -15,6 +15,10 @@ export const dynamic = "force-dynamic";
  * GET    → liste ses codes.
  * POST   { code, percent, expectedActorId, productId?, maxUses?, expiresAt? } → crée.
  * PATCH  { id, active } → active/désactive.
+ *
+ * Chaque refus part dans la langue du vendeur (`erreurTraduite`, audit du
+ * 2026-10-27, M4) : l'écran affiche `error` tel quel. Jamais `error.message`
+ * de Postgres — le journal garde le code.
  */
 
 async function requireUser() {
@@ -27,19 +31,22 @@ async function requireUser() {
 
 export async function GET() {
   const { supabase, user } = await requireUser();
-  if (!user) return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+  if (!user) return erreurTraduite("api.auth.required", 401);
 
   const { data, error } = await supabase
     .from("zabelie_coupons")
     .select("id, code, percent, product_id, max_uses, uses, expires_at, active, created_at")
     .order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[coupons] lecture impossible", error.code);
+    return erreurTraduite("api.read.failed", 500);
+  }
   return NextResponse.json({ coupons: data ?? [] });
 }
 
 export async function POST(req: Request) {
   const { supabase, user } = await requireUser();
-  if (!user) return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+  if (!user) return erreurTraduite("api.auth.required", 401);
 
   let body: {
     code?: string;
@@ -52,7 +59,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   // Une remise ne doit pas être créée depuis l'écran d'un autre compte.
@@ -64,18 +71,10 @@ export async function POST(req: Request) {
   if (body.expectedActorId !== user.id) return erreurTraduite("api.auth.required", 403);
 
   const code = normalizeCouponCode(body.code ?? "");
-  if (!code) {
-    return NextResponse.json(
-      { error: "Code invalide : 3–24 caractères, lettres/chiffres/tirets." },
-      { status: 422 }
-    );
-  }
+  if (!code) return erreurTraduite("api.coupon.code", 422);
   const percent = Number(body.percent);
   if (!Number.isInteger(percent) || percent < 1 || percent > 90) {
-    return NextResponse.json(
-      { error: "Remise entre 1 et 90 %." },
-      { status: 422 }
-    );
+    return erreurTraduite("api.coupon.percent", 422);
   }
 
   const { data, error } = await supabase
@@ -92,32 +91,41 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    const msg = error.message.includes("duplicate")
-      ? "Ce code existe déjà dans votre boutique."
-      : error.message;
-    return NextResponse.json({ error: msg }, { status: 422 });
+    // Par CODE (`lib/pg-errors.ts`) : 23505 = l'unicité (vendeur, code).
+    if (error.code === "23505") return erreurTraduite("api.coupon.exists", 422);
+    console.error("[coupons] création refusée", error.code);
+    return erreurTraduite("api.write.failed", 422);
   }
   return NextResponse.json({ ok: true, coupon: data });
 }
 
 export async function PATCH(req: Request) {
   const { supabase, user } = await requireUser();
-  if (!user) return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+  if (!user) return erreurTraduite("api.auth.required", 401);
 
   let body: { id?: string; active?: boolean };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
-  if (!body.id || typeof body.active !== "boolean") {
-    return NextResponse.json({ error: "id et active requis" }, { status: 400 });
+  if (!body || typeof body !== "object" || !body.id || typeof body.active !== "boolean") {
+    return erreurTraduite("api.params.invalid", 400);
   }
 
-  const { error } = await supabase
+  // `.select("id")` : sous RLS, un code d'un AUTRE vendeur (écran resté ouvert
+  // sur un autre compte) ou un code disparu ne met à jour AUCUNE ligne, sans
+  // erreur. Sans relire ce qui a changé, la bascule annonçait un succès qui
+  // n'avait pas eu lieu.
+  const { data: modifies, error } = await supabase
     .from("zabelie_coupons")
     .update({ active: body.active })
-    .eq("id", body.id); // RLS : seulement ses propres codes
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    .eq("id", body.id) // RLS : seulement ses propres codes
+    .select("id");
+  if (error) {
+    console.error("[coupons] bascule refusée", error.code);
+    return erreurTraduite("api.write.failed", 500);
+  }
+  if (!modifies || modifies.length === 0) return erreurTraduite("api.coupon.notfound", 404);
   return NextResponse.json({ ok: true });
 }
