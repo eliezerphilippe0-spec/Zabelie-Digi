@@ -10,6 +10,10 @@ import { getZonesActives, libelleZone } from "@/lib/zones";
 import { siteUrl } from "@/lib/site-url";
 import { hrefBoutique } from "@/lib/boutique-href";
 import { qrBoutique } from "@/lib/boutique-qr";
+import { createClient } from "@/lib/supabase/server";
+import { commandesPour100Vues, jourHaiti, totalVues } from "@/lib/boutik-visites-calcul";
+import { LIMITE_VENTES_LUES, STATUTS_VENTE_REELLE, estVenteReelle, type LigneVente } from "@/lib/vendeur-clients";
+import { LOCALE_DATE } from "@/lib/facturation-copy";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -62,6 +66,37 @@ export default async function BoutiquePage() {
     .maybeSingle();
   const boutikSlug = (slugRow as { boutik_slug?: string | null } | null)?.boutik_slug ?? null;
   const qr = qrBoutique({ id: user.id, boutikSlug });
+
+  /* PR-Z2 (docs/75 §5.A) : vues des 30 derniers jours. CLIENT DE SESSION — la
+     RLS de 0155 ne montre que les lignes du vendeur. Table absente (0155 pas
+     encore appliquée) ou lecture en échec → section masquée, rien d'inventé.
+     Les commandes suivent la définition de « Mes clients » (vente réelle). */
+  const maintenant = new Date();
+  const depuis = jourHaiti(maintenant, -29);
+  const { data: vis, error: visErr } = await (await createClient())
+    .from("zabelie_boutik_visites")
+    .select("jour, vues")
+    .eq("seller_id", user.id)
+    .gte("jour", depuis);
+  let mesure: { vues: number; commandes: number; pour100: number | null } | null = null;
+  if (!visErr) {
+    const seuil = maintenant.getTime() - 30 * 86_400_000;
+    const { data: ventes, error: ventesErr } = await admin
+      .from("orders")
+      .select("buyer_id, product_id, amount_htg, status, zabelie_payment_is_live, created_at, products!orders_product_id_fkey!inner(seller_id, title)")
+      .eq("products.seller_id", user.id)
+      .in("status", [...STATUTS_VENTE_REELLE])
+      .eq("zabelie_payment_is_live", true)
+      .gt("amount_htg", 0)
+      .gte("created_at", new Date(seuil).toISOString())
+      .limit(LIMITE_VENTES_LUES);
+    if (!ventesErr) {
+      const vues = totalVues((vis ?? []) as { jour: string; vues: number }[], depuis);
+      const commandes = ((ventes ?? []) as unknown as LigneVente[])
+        .filter((l) => estVenteReelle(l, user.id) && Date.parse(l.created_at) >= seuil).length;
+      mesure = { vues, commandes, pour100: commandesPour100Vues(commandes, vues) };
+    }
+  }
 
   // PR-Z3 (docs/33 §4) : la déclaration de zone (« Ki kote ou ye ? ») vit
   // dans le formulaire de profil. Libellés précalculés côté serveur — un
@@ -125,6 +160,26 @@ export default async function BoutiquePage() {
               </div>
             </div>
           </section>
+
+          {mesure && (
+            <section id="visites" aria-labelledby="visites-titre" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
+              <h2 id="visites-titre" className="titre-section">{t(lang, "vendeur.visites.titre")}</h2>
+              <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+                {([
+                  ["vendeur.visites.vues", String(mesure.vues)],
+                  ["vendeur.visites.commandes", String(mesure.commandes)],
+                  ["vendeur.visites.taux", mesure.pour100 === null ? "—"
+                    : mesure.pour100.toLocaleString(LOCALE_DATE[lang], { minimumFractionDigits: 1, maximumFractionDigits: 1 })],
+                ] as const).map(([cle, valeur]) => (
+                  <div key={cle}>
+                    <dt className="text-sm text-mist">{t(lang, cle)}</dt>
+                    <dd className="mt-1 text-2xl font-semibold tabular-nums">{valeur}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 max-w-2xl text-xs leading-relaxed text-mist">{t(lang, "vendeur.visites.aide")}</p>
+            </section>
+          )}
 
           {/* Profil public */}
           <section id="profil-public" className="mt-10 scroll-mt-32">

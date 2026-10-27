@@ -12,6 +12,8 @@ import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
 import type { CreatorProfile } from "@/lib/creators";
 import { identitesVerifiees } from "@/lib/identite-verifiee";
 import { BadgeIdentite } from "@/components/badge-identite";
+import { headers } from "next/headers";
+import { compterVisite } from "@/lib/boutik-visites";
 
 /**
  * LA VITRINE D'UN VENDEUR — une vue, deux adresses.
@@ -45,6 +47,8 @@ export async function BoutiqueVue({
   const pixels = await lirePixelsVendeur(creator.id);
   // Badge « Identité vérifiée » (0138) : vide sur toute erreur, jamais inventé.
   const identiteVerifiee = (await identitesVerifiees([creator.id])).has(creator.id);
+  // docs/75 §5.A (PR-Z2) : une vue comptée APRÈS la réponse, jamais bloquante.
+  compterVisite(creator.id, await headers());
 
   return (
     <div className="bg-grain min-h-dvh">
