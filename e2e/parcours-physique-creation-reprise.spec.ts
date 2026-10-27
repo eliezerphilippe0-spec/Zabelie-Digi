@@ -51,9 +51,9 @@ async function settled(page: Page, lang: Lang = "fr") {
 // Les libellés du formulaire sont traduits (audit 2026-10-27, M3) : les
 // sélecteurs suivent la langue de la session, comme `submit`.
 async function fill(page: Page, title: string, attest = true, lang: Lang = "fr") {
-  const debut = (s: string) => new RegExp("^" + s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   await form(page).getByRole("textbox", { name: t(lang, "publish.physical.titleLabel"), exact: true }).fill(title);
-  await form(page).getByRole("spinbutton", { name: debut(t(lang, "publish.price.ph")) }).fill("1500");
+  // Nom EXACT : l'estimation du net est sortie du <label> (aria-describedby).
+  await form(page).getByRole("spinbutton", { name: t(lang, "publish.price.ph"), exact: true }).fill("1500");
   await form(page).getByRole("spinbutton", { name: t(lang, "publish.physical.quantity"), exact: true }).fill("3");
   await form(page).getByRole("combobox", { name: t(lang, "publish.category.aria"), exact: true }).selectOption("wob");
   if (attest) await policy(page).check();
