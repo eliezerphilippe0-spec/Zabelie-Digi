@@ -2377,6 +2377,30 @@ lui-même ; le produit l'attend en brouillon.
 | **Cinq clés i18n mortes à trancher** (`home.badge`, `sec.free.badge`, `product.pay.loading`, `order.ref`, `status.draft`) | 2026-08-03 | Rien — la plus légère du registre, et elle est ici pour cette raison : sans la trace, elle a le même poids visuel que D-4. |
 | **« NatCash — bientôt » sur l'accueil** (`footer.natcash`, bandeau paiement + pied de page) | 2026-08-10 | Rien mécaniquement — mais la règle dure n°2 classe NatCash ⛔ (aucune API publique) et la pastille engage un calendrier qui ne dépend pas de nous (revue accueil, UX-02). Trois options : (a) retirer la pastille ; (b) reformuler sans promesse de calendrier (« pas encore disponible ») ; (c) l'assumer comme signal de demande. Zone d'arrêt promesse commerciale : rien ne bouge sans arbitrage. |
 | **16 rayons « bientôt » ou repli à 4** | 2026-08-10 | Rien — conséquence assumée de l'activation 16/16 du 2026-08-10 (revue accueil, UX-05) : « bientôt » est le mot le plus répété du premier écran. Le SQL de repli à 4 est au journal des rayons ci-dessous ; l'alternative sans retour arrière est la première publication réelle (`docs/22`), qui éteint les badges du rayon concerné. |
+| **Idempotence serveur du paiement groupé** (audit du 2026-10-27, M9) — options A clé de tentative + unicité en base · B un seul groupe en préparation par acheteur · C limiteur à 1/min · D rien avant la 1re vente. Détail : section « M9 » juste sous ce tableau | 2026-10-27 | L'ouverture **automatique** du panier groupé à la première vente réelle (`0128`) sans garde serveur : deux onglets ou un renvoi après coupure ouvrent deux groupes, deux sessions opérateur et deux réservations de stock pour le même panier |
+
+### M9 — idempotence serveur du paiement groupé (2026-10-27)
+
+Faits (lus dans le code) : `/api/panier/payer` ouvre un nouveau groupe à chaque
+appel (`app/api/panier/payer/route.ts`, appel `zabelie_group_create`), la
+fonction insère sans condition (`0128`), aucune contrainte d'unicité sur
+`zabelie_order_groups`, seul frein le limiteur à 5 appels par minute. Le verrou
+client posé par le lot 5 (`components/cart-pay-all.tsx`) arrête le double clic
+sur une même page, pas deux onglets ni un renvoi après coupure. Recommandation
+publique (Baymard, « People still double-click online ») : désactiver au premier
+clic ET faire ignorer par le serveur les commandes identiques, les deux.
+
+- **A — clé de tentative + unicité en base** (invariant 1 de `docs/03` tel qu'écrit) :
+  le client envoie une clé UUID gardée en `sessionStorage`, le serveur dérive l'id
+  du groupe de `(acheteur, clé)` comme `checkoutOrderId`, un conflit relit le groupe
+  existant et rend sa redirection. Une migration, ~60 lignes de route, ~15 côté client.
+- **B — un seul groupe `preparation` par acheteur** : index unique partiel, réutilisation
+  d'un groupe `pending` récent. Plus court, mais deux onglets légitimes se bloquent et un
+  groupe resté en préparation après un plantage bloque l'acheteur.
+- **C — limiteur à 1/min** : une ligne, pas de l'idempotence ; palliatif seulement.
+- **D — rien maintenant** : acceptable tant que le panier groupé est fermé ; à trancher
+  AVANT la première vente réelle, qui l'ouvre seule.
+
 
 ## ✅ RÉSOLU — « la panne d'inscription » n'était pas une panne
 
