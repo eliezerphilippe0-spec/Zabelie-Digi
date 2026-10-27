@@ -44,7 +44,12 @@
 .home-vitrine-tile:nth-of-type(4) { left: 72%; top: 45%; background: #17123a; color: #fffdf9; border-color: #17123a; }
 
 /* ── Univers : cartes pleines, icône illustrée sur fond teinté ── */
-.home-discovery .universe-grid > a { border: 1px solid var(--color-line); border-radius: 18px; padding: 16px 16px 20px; }
+.home-discovery .universe-grid > a { position: relative; border: 1px solid var(--color-line); border-radius: 18px; padding: 16px 16px 20px; }
+/* Survol : le liseré d'accent et l'ombre vivent sur un CALQUE dont seule
+   l'opacité change (règle du thème : transform et opacity, rien d'autre). Ils
+   étaient animés en border-color et box-shadow — deux repeints par image sur un
+   Android d'entrée de gamme. Le calque couvre la bordure (inset -1px). */
+.home-discovery .universe-grid > a::after { content: ""; position: absolute; inset: -1px; border: 1px solid var(--color-accent); border-radius: inherit; box-shadow: 0 16px 30px -22px color-mix(in srgb, var(--color-chrome) 45%, transparent); opacity: 0; pointer-events: none; }
 .universe-art { display: grid; place-items: center; height: 112px; margin-bottom: 18px; border-radius: 12px; background: var(--color-ink-soft); }
 /* Teintes par tokens (`--color-illus-1/2/3`, zabelie-theme.css) : elles
    suivent le thème seules. Les valeurs claires restent des teintes choisies,
@@ -123,7 +128,8 @@
   .home-vitrine-tile:nth-of-type(2) { animation-delay: 250ms; }
   .home-vitrine-tile:nth-of-type(3) { animation-delay: 300ms; }
   .home-vitrine-tile:nth-of-type(4) { animation-delay: 350ms; }
-  .home-discovery .universe-grid > a { transition: translate var(--motion-base) var(--ease), border-color var(--motion-base), box-shadow var(--motion-base), background-color var(--motion-base); }
+  .home-discovery .universe-grid > a { transition: translate var(--motion-base) var(--ease); }
+  .home-discovery .universe-grid > a::after { transition: opacity var(--motion-base) var(--ease); }
   .universe-art > svg { transition: scale var(--motion-base) var(--ease), rotate var(--motion-base) var(--ease); }
   .home-vitrine-tile { transition: translate var(--motion-base) var(--ease); }
   /* Apparition au défilement — transform SEUL (règle 2 de l'en-tête). Sans
@@ -138,7 +144,8 @@
   }
 }
 @media (hover: hover) {
-  .home-discovery .universe-grid > a:hover { translate: 0 -4px; box-shadow: 0 16px 30px -22px rgba(23, 18, 58, .45); }
+  .home-discovery .universe-grid > a:hover { translate: 0 -4px; }
+  .home-discovery .universe-grid > a:hover::after { opacity: 1; }
   .home-discovery .universe-grid > a:hover .universe-art > svg { scale: 1.08; rotate: -3deg; }
   .home-vitrine-tile:hover { translate: 0 -6px; }
 }
