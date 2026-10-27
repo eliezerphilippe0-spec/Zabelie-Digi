@@ -881,10 +881,11 @@ const server = createServer((req, res) => {
     let body = ""; req.on("data", c => body += c);
     return req.on("end", () => {
       const slug = JSON.parse(body || "{}").p_slug;
-      // PR-Z2 : une vitrine par test (`visites-<uuid>`), pour que les appels au
-      // compteur de deux tests parallèles ne se mélangent pas.
-      const vitrine = /^visites-([0-9a-f-]{36})$/.exec(slug ?? "");
-      if (vitrine) return send(200, { id: vitrine[1], display_name: "Boutik vizit fiktif", bio: "", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: slug });
+      // PR-Z2 : une vitrine par test (`v-<uuid sans tirets>`, 34 caractères :
+      // un slug en compte 40 au plus), pour que les appels au compteur de deux
+      // tests parallèles ne se mélangent pas.
+      const vitrine = /^v-([0-9a-f]{8})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{12})$/.exec(slug ?? "");
+      if (vitrine) return send(200, { id: vitrine.slice(1).join("-"), display_name: "Boutik vizit fiktif", bio: "", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: slug });
       if (!BOUTIQUE_FIXTURE) return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
       const empty = slug === "boutique-vide";
       send(200, { id: empty ? "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" : SELLER_ID, display_name: "Atelye Lakay", bio: "Des ressources pour apprendre et préparer votre projet.\nBoutique de démonstration pour les tests.", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: empty ? "boutique-vide" : "atelye-lakay" });

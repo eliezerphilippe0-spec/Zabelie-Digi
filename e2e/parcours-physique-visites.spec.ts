@@ -17,7 +17,7 @@ const appels = async (request: APIRequestContext, vendeur: string) =>
 
 test("vitrine : un vrai navigateur compte une vue ; robot, aperçu WhatsApp et navigateur sans écran, non", async ({ browser, request }) => {
   const vendeur = randomUUID();
-  const adresse = `/boutik/visites-${vendeur}`;
+  const adresse = `/boutik/v-${vendeur.replaceAll("-", "")}`;
   const baseURL = test.info().project.use.baseURL;
   const visiter = async (userAgent?: string) => {
     const ctx = await browser.newContext({ baseURL, ...(userAgent ? { userAgent } : {}) });
@@ -33,7 +33,7 @@ test("vitrine : un vrai navigateur compte une vue ; robot, aperçu WhatsApp et n
 
   await visiter("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)");
   await visiter("WhatsApp/2.24.21.80 A");
-  await visiter(); // HeadlessChrome du harnais
+  await visiter("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/129.0.0.0 Safari/537.36");
   await visiter(CHROME_ANDROID);
   await expect.poll(async () => (await appels(request, vendeur)).length).toBe(2);
   await new Promise((r) => setTimeout(r, 1500));
