@@ -3082,7 +3082,7 @@ const ht: Record<I18nKey, string> = {
   "vendeur.retrait.ouvrir": "Mande yon retrè",
   "vendeur.retrait.titre": "Demann retrè",
   "vendeur.retrait.intro": "Disponib : {montant}. Yo voye lajan an pa MonCash apre verifikasyon ; w ap resevwa referans resi a.",
-  "vendeur.retrait.montant": "Kantite pou retire (HTG)",
+  "vendeur.retrait.montant": "Montan pou retire (HTG)",
   "vendeur.retrait.envoyer": "Voye demann lan",
   "vendeur.retrait.envoi": "N ap voye…",
   "vendeur.retrait.annuler": "Anile",
@@ -4062,7 +4062,7 @@ const en = {
   "zelle.ref.ph": "Zelle confirmation reference (optional)",
   "zelle.sent": "I have sent the payment",
   "zelle.done":
-    "Thank you! We are verifying your transfer. Your file will appear under « My purchases » as soon as it is confirmed.",
+    "Thank you! We are verifying your transfer. Your file will appear under “My purchases” as soon as it is confirmed.",
   "zelle.envoi": "Sending…",
   "zelle.err.introuvable": "We can't find this Zelle payment on your account. Check that you are signed in with the account that placed the order.",
   "zelle.err.dejaTraite": "This payment has already been processed. Check its status under “My purchases”.",
@@ -4155,7 +4155,7 @@ const en = {
   "faq.a1": "Choose a product, then check the available payment methods and total amount on its page before confirming your purchase.",
   "faq.q2": "When do I receive my purchase?",
   "faq.a2":
-    "It depends on the product. A file is available under « My purchases » as soon as payment is confirmed. For a service, the seller contacts you after payment. For a physical product, handover happens as arranged with the seller: Zabelie does not store products or provide delivery.",
+    "It depends on the product. A file is available under “My purchases” as soon as payment is confirmed. For a service, the seller contacts you after payment. For a physical product, handover happens as arranged with the seller: Zabelie does not store products or provide delivery.",
   "faq.q3": "How do I sell on Zabelie?",
   "faq.a3": "Create an account and prepare your offer. Signup and your storefront have no subscription. See fees and launch terms in the Sell workspace.",
   "faq.a3.floor": "Create an account and prepare your offer. Signup and your storefront have no subscription. See fees and launch terms in the Sell workspace. Commission rounding is in your favour.",
