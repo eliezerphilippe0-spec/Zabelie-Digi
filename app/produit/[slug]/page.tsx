@@ -22,6 +22,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { formatHTG } from "@/lib/sample-data";
 import { getProductView, isSupabaseConfigured } from "@/lib/products";
+import { getLibellesRayons, libelleRayon } from "@/lib/taxonomy";
 import { createClient } from "@/lib/supabase/server";
 import { listerMedias } from "@/lib/product-media";
 import { lireComparePrix, pourcentageRabais } from "@/lib/product-discount";
@@ -289,6 +290,9 @@ export default async function ProductPage({
   const commitments = commitmentApplicable ? await getProductCommitments([product.id]) : null;
   const trustLabels = marketplaceCopy(lang);
   const kindKey = kindLabelKey(product.kind, product.id);
+  // Rayon dans la langue du visiteur ; `product.category` (label_fr) reste la
+  // valeur stockée. Même source que l'en-tête, mémoïsée par requête.
+  const rayonAffiche = libelleRayon(product.category, await getLibellesRayons(lang));
   const deliveryBulletKey = bulletKey(product.kind, product.id);
   // La zone de livraison n'a pas encore de colonne : seul le repli « à
   // convenir » est atteignable aujourd'hui pour un produit physique.
@@ -367,9 +371,11 @@ export default async function ProductPage({
                 {t(lang, kindKey)}
               </span>
             )}
-            <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
-              {product.category}
-            </span>
+            {rayonAffiche && (
+              <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
+                {rayonAffiche}
+              </span>
+            )}
             {/* `!= null` et non truthy : 0 (« le jour même ») est une
                 valeur MOINS un manque — le test truthy le masquait. */}
             {isService(product.kind, product.id) && product.deliveryDays != null && (

@@ -303,6 +303,77 @@ export function rayonsPeuples(menu: RayonMenu[]): RayonMenu[] {
   return menu.filter((r) => !r.vide).map((r) => ({ ...r, enfants: rayonsPeuples(r.enfants) }));
 }
 
+// ═══════ Libellé AFFICHÉ d'un rayon stocké (audit M6, 2026-10-27) ═══════════
+
+/**
+ * `products.category` porte le label_fr du DÉPARTEMENT : c'est la clé de
+ * jointure du catalogue (`?cat=<label_fr>`, `eq("category", …)`), invariante
+ * par langue. L'afficher telle quelle montrait du français à un acheteur
+ * kreyòl, anglais ou espagnol, sous un en-tête qui, lui, était traduit.
+ *
+ * AUCUNE seconde table de traduction : les libellés sont ceux du MENU
+ * (`construireMenu`, donc `labelFor` et les colonnes `label_*` de la base),
+ * et la clé est la valeur `cat` du lien que ce même menu calcule. La barre du
+ * catalogue est ainsi traduite par la valeur exacte sur laquelle l'en-tête
+ * filtre : le texte suit la langue, le filtre ne bouge pas.
+ *
+ * On ne lit que la racine : `products.category` est un département (la
+ * publication ne propose que le niveau 1, `lireRayonsPublication`).
+ */
+export function libellesParValeur(menu: RayonMenu[]): Map<string, string> {
+  const libelles = new Map<string, string>();
+  for (const r of menu) {
+    const debut = r.href.indexOf("?");
+    const valeur = debut < 0 ? null : new URLSearchParams(r.href.slice(debut + 1)).get("cat");
+    if (valeur && r.label && !libelles.has(valeur)) libelles.set(valeur, r.label);
+  }
+  return libelles;
+}
+
+/**
+ * Le texte à afficher pour une valeur stockée. Repli : la valeur brute (un
+ * libellé orphelin d'avant l'unification, un rayon inactif, la base
+ * injoignable) — jamais une chaîne vide, jamais un rayon sans nom.
+ */
+export function libelleRayon(valeur: string, libelles: ReadonlyMap<string, string>): string {
+  return libelles.get(valeur) || valeur;
+}
+
+/** Une puce de la barre des rayons : ce qui FILTRE, et ce qu'on LIT. */
+export type PuceRayon = { valeur: string; libelle: string };
+
+/**
+ * Les puces de la barre, triées sur le libellé AFFICHÉ, dans la langue du
+ * visiteur : trier sur le label_fr puis afficher du kreyòl rendrait une barre
+ * visiblement en désordre. La valeur, elle, reste celle de la base.
+ */
+export function pucesRayons(
+  valeurs: string[],
+  libelles: ReadonlyMap<string, string>,
+  lang: Lang
+): PuceRayon[] {
+  return valeurs
+    .map((valeur) => ({ valeur, libelle: libelleRayon(valeur, libelles) }))
+    .sort((a, b) => a.libelle.localeCompare(b.libelle, lang));
+}
+
+/**
+ * Depuis la base, sans lecture de plus : `getMenuRayons` est mémoïsé par
+ * requête, et l'en-tête (`SiteNav`) lit déjà ce menu sur chaque page.
+ *
+ * Ne rejette JAMAIS : le catalogue lance cette promesse tôt et l'attend plus
+ * loin ; un rejet entre-temps serait une promesse orpheline. En cas d'échec,
+ * map vide, donc les valeurs brutes s'affichent, et on le DIT.
+ */
+export async function getLibellesRayons(lang: Lang): Promise<Map<string, string>> {
+  try {
+    return libellesParValeur(await getMenuRayons(lang));
+  } catch (e) {
+    console.error("[taxonomie] libellés des rayons indisponibles", String(e));
+    return new Map();
+  }
+}
+
 
 /**
  * Lit `zabelie_categories` en tolérant l'absence de `label_es` (`0052` non

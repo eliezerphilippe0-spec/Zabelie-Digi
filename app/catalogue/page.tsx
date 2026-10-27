@@ -16,7 +16,7 @@ import {
 } from "@/lib/products";
 import { sessionFingerprint } from "@/lib/search-demand";
 import { headers } from "next/headers";
-import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
+import { getCategoryFacets, getLibellesRayons, libelleRayon, pucesRayons, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
 import { partage } from "@/lib/meta-page";
@@ -32,7 +32,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const [raw, lang] = await Promise.all([searchParams, getLang()]);
   const { univers, cat, sous, page } = parseCatalogueSearch(raw);
   const titleKey = univers ? CATALOGUE_UNIVERSES[univers].title : "catalog.title";
-  const title = `${cat && cat !== "Tout" ? `${cat} — ` : ""}${t(lang, titleKey)} — Zabelie`;
+  // Le rayon du titre suit la langue ; en français (défaut, crawlers) il reste
+  // le label_fr, donc le titre indexé ne change pas.
+  const title = `${cat && cat !== "Tout" ? `${libelleRayon(cat, await getLibellesRayons(lang))} — ` : ""}${t(lang, titleKey)} — Zabelie`;
   const description = t(lang, univers === "objets" ? "catalog.seo.objects" : univers === "numerique" ? "catalog.seo.digital" : univers === "services" ? "catalog.seo.services" : "catalog.seo.all");
   const langue = metaLangue(catalogueCanonical(raw), lang);
   const canonical = langue.alternates.canonical;
@@ -67,6 +69,10 @@ export default async function CataloguePage({
     getCatalogueCategories(selection?.kind),
     isSupabaseConfigured() ? getZonesActives() : Promise.resolve([] as Zone[]),
   ]);
+  // Libellés traduits des rayons : lancés ici, attendus au rendu. Même menu que
+  // l'en-tête (mémoïsé par requête), donc aucune lecture de plus, et la
+  // lecture court pendant les requêtes produits au lieu de s'y ajouter.
+  const libellesRayons = getLibellesRayons(lang);
 
   // PR-Z3 (docs/33 §4) : la zone active est la plus PROFONDE choisie —
   // katye > komin > depatman — APRÈS validation de cohérence : la cascade
@@ -158,7 +164,15 @@ export default async function CataloguePage({
   const nbPages = Math.max(1, Math.ceil(total / CATALOGUE_PAGE_SIZE));
   const serviceGuide = serviceStarterCopy(lang);
 
-  const CATEGORIES = ["Tout", ...categories];
+  /* M6 — la VALEUR filtre (label_fr en base, « Tout » pour l'absence de
+     filtre : l'URL ne change pas), le LIBELLÉ s'affiche dans la langue du
+     visiteur. « Tout » en tête, comme sur les grandes marketplaces. */
+  const libelles = await libellesRayons;
+  const libelleActif = activeCat === "Tout" ? t(lang, "catalog.cat.all") : libelleRayon(activeCat, libelles);
+  const PUCES = [
+    { valeur: "Tout", libelle: t(lang, "catalog.cat.all") },
+    ...pucesRayons(categories, libelles, lang),
+  ];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
   // opposées : reformuler d'un côté, publier de l'autre.
@@ -220,7 +234,7 @@ export default async function CataloguePage({
         <p className="mt-2 text-sm text-mist">
           {totalExact ? total : `≥ ${total}`} {tn(lang, total, "catalog.results.one", "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
-          {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
+          {activeCat !== "Tout" ? ` · ${libelleActif}` : ""}
           {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}
           {zoneActive ? ` · ${libelleZone(zoneActive, lang)}` : ""}.
         </p>
@@ -310,7 +324,7 @@ export default async function CataloguePage({
               name="zd"
               defaultValue={zd ?? ""}
               aria-label={t(lang, "zone.level.depatman")}
-              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base focus:border-accent"
             >
               <option value="">{t(lang, "zone.filter.all")}</option>
               {depatmans.map((z) => (
@@ -324,7 +338,7 @@ export default async function CataloguePage({
                 name="zk"
                 defaultValue={zkValide ?? ""}
                 aria-label={t(lang, "zone.level.komin")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.komin")}</option>
                 {komins.map((z) => (
@@ -339,7 +353,7 @@ export default async function CataloguePage({
                 name="zq"
                 defaultValue={zqValide ?? ""}
                 aria-label={t(lang, "zone.level.katye")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.katye")}</option>
                 {katyes.map((z) => (
@@ -361,52 +375,77 @@ export default async function CataloguePage({
         </details>
 
         {/* Filtres catégories — masqués tant qu'il n'y a rien à filtrer :
-            une seule puce « Tout » n'est pas un filtre, c'est du décor. */}
+            une seule puce « Tout » n'est pas un filtre, c'est du décor.
+            Mobile : UNE rangée qui défile au pouce (le défilement reste dans
+            la barre, `-mx-5 px-5` la fait courir jusqu'aux bords sans
+            déborder de la page) ; `py-1` laisse la place à l'anneau de focus,
+            que `overflow` rognerait sinon. À partir de md, la barre revient à
+            la ligne : sans écran tactile, un défilement sans barre visible est
+            un rayon qu'on n'atteint pas. */}
         {categories.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <Link
-              key={c}
-              href={catHref(c)}
-              className={`inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm transition ${
-                c === activeCat
-                  ? "border-transparent bg-cloud text-ink"
-                  : "border-line text-mist hover:border-accent/50 hover:text-cloud"
-              }`}
-            >
-              {c}
-            </Link>
-          ))}
-        </div>
+          <nav aria-label={t(lang, "catalog.cat.nav")} className="-mx-5 mt-4 overflow-x-auto px-5 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:overflow-visible">
+            <ul className="flex gap-2 md:flex-wrap">
+              {PUCES.map(({ valeur, libelle }) => (
+                <li key={valeur} className="shrink-0">
+                  <Link
+                    href={catHref(valeur)}
+                    aria-current={valeur === activeCat ? "true" : undefined}
+                    className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full border px-4 text-sm transition ${
+                      valeur === activeCat
+                        ? "border-transparent bg-cloud text-ink"
+                        : "border-line text-mist hover:border-accent/50 hover:text-cloud"
+                    }`}
+                  >
+                    {libelle}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
 
         {/* Second niveau : les rayons du département actif. N'apparaît que
             s'il y a de quoi choisir — un seul rayon n'est pas une navigation,
-            et zéro rayon ne doit rien afficher du tout (V-13). */}
+            et zéro rayon ne doit rien afficher du tout (V-13).
+            La pastille reste compacte À L'ŒIL ; c'est le lien qui porte les
+            44 px (`min-h-11`), la pastille est dessinée par le span. */}
         {facettes.length > 1 && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-            <Link
-              href={sousHref(null)}
-              className={`rounded-full px-3 py-1 text-xs transition ${
-                !sous ? "bg-cloud text-ink" : "text-mist hover:text-cloud"
-              }`}
-            >
-              {t(lang, "catalog.allShelves")}
-            </Link>
-            {facettes.map((f) => (
-              <Link
-                key={f.slug}
-                href={sousHref(f.slug)}
-                className={`rounded-full px-3 py-1 text-xs transition ${
-                  f.slug === sous ? "bg-cloud text-ink" : "text-mist hover:text-cloud"
-                }`}
-              >
-                {f.label}{" "}
-                <span className={f.slug === sous ? "text-ink/60" : "text-mist"}>
-                  {f.count}
-                </span>
-              </Link>
-            ))}
+          <div className="mt-3 border-t border-line pt-2">
+            <nav aria-label={libelleActif} className="-mx-5 overflow-x-auto px-5 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:overflow-visible">
+              <ul className="flex gap-2 md:flex-wrap">
+                <li className="shrink-0">
+                  <Link
+                    href={sousHref(null)}
+                    aria-current={!sous ? "true" : undefined}
+                    className="group inline-flex min-h-11 items-center whitespace-nowrap"
+                  >
+                    <span className={`rounded-full px-3 py-1 text-xs transition ${
+                      !sous ? "bg-cloud text-ink" : "text-mist group-hover:text-cloud"
+                    }`}>
+                      {t(lang, "catalog.allShelves")}
+                    </span>
+                  </Link>
+                </li>
+                {facettes.map((f) => (
+                  <li key={f.slug} className="shrink-0">
+                    <Link
+                      href={sousHref(f.slug)}
+                      aria-current={f.slug === sous ? "true" : undefined}
+                      className="group inline-flex min-h-11 items-center whitespace-nowrap"
+                    >
+                      <span className={`rounded-full px-3 py-1 text-xs transition ${
+                        f.slug === sous ? "bg-cloud text-ink" : "text-mist group-hover:text-cloud"
+                      }`}>
+                        {f.label}{" "}
+                        <span className={f.slug === sous ? "text-ink/60" : "text-mist"}>
+                          {f.count}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         )}
       </section>
@@ -469,14 +508,16 @@ export default async function CataloguePage({
                   <p className="text-xs uppercase tracking-wide text-mist">
                     {t(lang, "catalog.miss.shelves")}
                   </p>
-                  <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  <div className="mt-2 flex flex-wrap justify-center gap-x-2">
                     {facettes.slice(0, 6).map((f) => (
                       <Link
                         key={f.slug}
                         href={hrefFor({ sous: f.slug, q: null, page: 1 })}
-                        className="rounded-full border border-line px-3 py-1 text-xs text-mist hover:text-cloud"
+                        className="group inline-flex min-h-11 items-center"
                       >
-                        {f.label} {f.count}
+                        <span className="rounded-full border border-line px-3 py-1 text-xs text-mist group-hover:text-cloud">
+                          {f.label} {f.count}
+                        </span>
                       </Link>
                     ))}
                   </div>
@@ -512,7 +553,7 @@ export default async function CataloguePage({
                vide muet (landing v2). */
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}
+                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? libelleActif : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : libelleActif}
               </p>
               <p className="mx-auto mt-2 max-w-md text-sm text-mist">
                 {t(lang, "catalog.cat0.b")}
