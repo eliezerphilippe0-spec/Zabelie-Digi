@@ -3609,7 +3609,7 @@ const en = {
   "home.b2.t": "Pay on Zabelie",
   "home.b2.b": "The total is shown on the product page. For a physical product or a service, the seller is paid only after handover: never pay hand to hand.",
   "home.b3.t": "Confirm receipt",
-  "home.b3.b": "In « My purchases », confirm receipt once you have the product or the service has been provided, or report a problem before the displayed deadline. A file is available there as soon as payment is confirmed.",
+  "home.b3.b": "In “My purchases”, confirm receipt once you have the product or the service has been provided, or report a problem before the displayed deadline. A file is available there as soon as payment is confirmed.",
   "catalog.cat0.t": "This department opens soon",
   "catalog.cat0.b": "The first sellers are setting up. Do you sell here? The spot is open.",
   "home.all": "See all",
@@ -4162,7 +4162,7 @@ const en = {
   "faq.q4": "When does the seller get their money?",
   "faq.a4": "The net amount is credited immediately as « pending ». It becomes available 7 days after payment confirmation (fraud protection) and, for a physical product or a service, not before handover: confirmed by the buyer, or automatically at the displayed deadline unless disputed.",
   "faq.q5": "What if something goes wrong?",
-  "faq.a5": "Every order is traceable in « My purchases ». If the seller declares a handover you have not received, report it before the displayed deadline: their payment stays blocked during the review. Any refund goes to your original payment method; reporting an issue does not guarantee an automatic refund.",
+  "faq.a5": "Every order is traceable in “My purchases”. If the seller declares a handover you have not received, report it before the displayed deadline: their payment stays blocked during the review. Any refund goes to your original payment method; reporting an issue does not guarantee an automatic refund.",
   "footer.help": "Help",
 
   // Founder
