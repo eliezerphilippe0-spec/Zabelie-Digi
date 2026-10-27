@@ -425,6 +425,10 @@ réversibilité.
 | **PR-Z2** | Compteur de visites + conversion | **Oui**, rédigée **non appliquée** | (1) RLS : `anon` 0 ligne, autre vendeur 0 ligne ; (2) `authenticated` ne peut pas incrémenter (`revoke` testé) ; (3) robot filtré ; (4) erreur du compteur → page rendue quand même ; (5) migration inscrite au registre avec SHA-256 ; (6) application **par le porteur** |
 | **PR-Z4** | Signaux de demande : abonnés, « dans des paniers », recherches ratées par catégorie | **Oui**, rédigée **non appliquée** | (1) les fonctions ne rendent que des entiers ou des termes agrégés (test de forme JSON, aucun uuid) ; (2) seuil « moins de 3 » et seuil d'anonymat respectés ; (3) `anon` refusé ; (4) croisé A/B ; (5) application par le porteur |
 
+**Avancement.**
+- **PR-Z5** — PR #426, fusionnée le 2026-10-27 (`590fa0c`). A trouvé un vrai défaut : le garde-fou de devise ratait « dola » (kreyòl) et « dólares » ; corrigé, avec le cas du brief et la preuve de confinement.
+- **PR-Z1** — 2026-10-27. QR dans `/tableau-de-bord/boutique` (`lib/boutique-qr.ts`) et affiche A5 `/tableau-de-bord/boutique/affiche`. `uqr@0.1.3` épinglé après audit (aucune dépendance ni script d'installation ; écart 0.1.2 → 0.1.3 relu ligne à ligne). Décodage indépendant (sharp + jsQR, hors dépôt) : les deux adresses relues à l'identique. Poids ajouté : 0,7 à 2 Ko compressés. Le domaine personnalisé n'est pas encodé : le QR mène toujours à `zabelie.com`.
+
 **Ce qui n'a pas de PR, volontairement :** couleurs personnalisées (A5),
 bouton WhatsApp direct vers le vendeur (A6), abonnements (§7), tout ce qui est
 au §6.

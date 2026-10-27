@@ -1,0 +1,40 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   AFFICHE A5 DE LA BOUTIQUE — docs/75 §5.A (PR-Z1), V-24 A3.
+
+   Noir sur blanc quel que soit le thème de l'écran : c'est du PAPIER, comme le
+   QR qu'elle porte (`QR_ENCRE` / `QR_FOND`, lib/boutique-qr.ts). Ces deux
+   valeurs ne sont pas des couleurs d'interface et restent hors des tokens.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.affiche {
+  page: affiche-a5;
+  background: #fff;
+  color: #000;
+}
+
+.affiche-url {
+  overflow-wrap: anywhere;
+}
+
+@page affiche-a5 {
+  size: A5 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .affiche,
+  .affiche * {
+    visibility: visible;
+  }
+  .affiche {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+  }
+}

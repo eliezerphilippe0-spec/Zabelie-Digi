@@ -9,6 +9,7 @@ import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { getZonesActives, libelleZone } from "@/lib/zones";
 import { siteUrl } from "@/lib/site-url";
 import { hrefBoutique } from "@/lib/boutique-href";
+import { qrBoutique } from "@/lib/boutique-qr";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -60,6 +61,7 @@ export default async function BoutiquePage() {
     .eq("id", user.id)
     .maybeSingle();
   const boutikSlug = (slugRow as { boutik_slug?: string | null } | null)?.boutik_slug ?? null;
+  const qr = qrBoutique({ id: user.id, boutikSlug });
 
   // PR-Z3 (docs/33 §4) : la déclaration de zone (« Ki kote ou ye ? ») vit
   // dans le formulaire de profil. Libellés précalculés côté serveur — un
@@ -108,6 +110,19 @@ export default async function BoutiquePage() {
             <div className="mt-4 border-t border-line pt-4">
               <ShareButtons path={hrefBoutique({ id: user.id, boutikSlug })} text={t(lang, "creator.share.text", { name: profile.display_name })}
                 waLabel={t(lang, "share.wa")} copyLabel={t(lang, "share.copy")} copiedLabel={t(lang, "share.copied")} />
+            </div>
+            {/* docs/75 §5.A (PR-Z1) : la même adresse, à imprimer ou à montrer. */}
+            <div id="qr" className="mt-4 flex flex-wrap items-center gap-5 border-t border-line pt-4">
+              {/* eslint-disable-next-line @next/next/no-img-element -- SVG en data: généré côté serveur, rien à optimiser */}
+              <img src={qr.dataUrl} alt={t(lang, "vendeur.qr.alt", { url: qr.url })} width={160} height={160} className="size-40 rounded-lg border border-line" />
+              <div className="min-w-0 max-w-sm">
+                <h3 className="text-sm font-semibold">{t(lang, "vendeur.qr.titre")}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-mist">{t(lang, "vendeur.qr.aide")}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <a href={qr.dataUrl} download={qr.fichier} className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold text-accent">{t(lang, "vendeur.qr.telecharger")}</a>
+                  <Link href="/tableau-de-bord/boutique/affiche" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "vendeur.qr.affiche")}</Link>
+                </div>
+              </div>
             </div>
           </section>
 
