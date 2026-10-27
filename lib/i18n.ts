@@ -2587,7 +2587,7 @@ const ht: Record<I18nKey, string> = {
   "vendeur.compte.supprimer.confirmer": "Wi, efase l nèt",
   "vendeur.compte.supprimer.annuler": "Anile",
   "vendeur.compte.supprimer.encours": "N ap efase…",
-  "vendeur.compte.supprimer.echec": "Efasman an pa pase. Eseye ankò nan yon ti moman.",
+  "vendeur.compte.supprimer.echec": "Nou pa rive efase kont lan. Eseye ankò nan yon ti moman.",
 
   "share.wa": "Pataje sou WhatsApp",
   "share.copy": "Kopye lyen an",

@@ -96,7 +96,7 @@ test("C3 — l'appel DELETE n'est lié qu'au bouton de confirmation, dans l'enca
   // Le premier bouton ne fait qu'ouvrir l'encadré.
   assert.match(SRC, /onClick=\{\(\) => setConfirmation\(true\)\}/);
   // L'appel vit dans `supprimer`, et `supprimer` n'est branché qu'une fois, sous `{confirmation && (`.
-  assert.match(SRC, /async function supprimer\(\) \{\s*setBusy\(true\);\s*setMsg\(null\);\s*const issue = await appelAvecSession\("\/api\/account", \{\s*method: "DELETE",/);
+  assert.match(SRC, /async function supprimer\(\) \{\s*if \(busy\) return;\s*setBusy\(true\);\s*setMsg\(null\);\s*const issue = await appelAvecSession\("\/api\/account", \{\s*method: "DELETE",/);
   assert.equal((SRC.match(/onClick=\{supprimer\}/g) ?? []).length, 1);
   assert.match(SRC, /\{confirmation && \(\s*<div[\s\S]*?onClick=\{supprimer\}/);
   // La route et ce qu'elle reçoit ne changent pas.
@@ -134,4 +134,19 @@ test("C7 — la page passe les neuf libellés par t()", () => {
   ]) {
     assert.match(page, new RegExp(`${prop}: t\\(lang, "${cle.replace(/\./g, "\\.")}"\\)`), prop);
   }
+});
+
+test("C8 — après un échec, le focus reste dans l'encadré : boutons `aria-disabled`, jamais `disabled` (m4)", () => {
+  // Un bouton `disabled` pendant l'appel perdait le focus (tombé sur `body`) :
+  // après un refus, Échap — écouté par l'encadré — ne fermait plus rien.
+  assert.doesNotMatch(SRC, /(?<![-\w])disabled=\{busy\}/, "bouton `disabled` pendant l'appel");
+  assert.match(SRC, /onClick=\{supprimer\}\s*aria-disabled=\{busy\}/);
+  assert.match(SRC, /onClick=\{annuler\}\s*aria-disabled=\{busy\}/);
+  // La garde du second envoi est dans le handler, puisque le bouton reste actif.
+  assert.match(SRC, /async function supprimer\(\) \{\s*if \(busy\) return;/);
+  assert.match(SRC, /function annuler\(\) \{\s*if \(busy\) return;/);
+  // Rendu : l'état d'attente ne retire pas les boutons du parcours clavier.
+  const html = rendre("fr", true);
+  assert.doesNotMatch(html, /<button[^>]* disabled=""/, "un bouton de l'encadré est rendu `disabled`");
+  assert.match(html, /<button[^>]*aria-disabled="false"[^>]*>[^<]*<\/button>/);
 });
