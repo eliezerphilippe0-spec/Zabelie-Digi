@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Bouton } from "@/components/bouton";
 import { SiteNav } from "@/components/site-nav";
 import { OrderStatusPoll, OrderPaymentRecovery } from "@/components/order-status-poll";
 import { marketplaceCopy } from "@/lib/marketplace-copy";
@@ -37,15 +37,12 @@ export default async function EnAttentePage({
         <p className="mt-4 text-sm text-mist">{t(lang, "product.protege")}</p>
         <div className="mt-8 flex flex-col gap-3">
           {commande && <OrderPaymentRecovery orderId={commande} labels={marketplaceCopy(lang)} />}
-          <Link
-            href="/mes-achats"
-            className="bouton rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-semibold text-cloud"
-          >
+          <Bouton href="/mes-achats" variante="secondaire">
             {t(lang, "pay.wait.cta")}
-          </Link>
-          <Link href="/catalogue" className="inline-flex min-h-11 items-center text-sm text-mist hover:text-cloud">
+          </Bouton>
+          <Bouton href="/catalogue" variante="discret">
             {t(lang, "pay.back")}
-          </Link>
+          </Bouton>
         </div>
       </main>
     </div>

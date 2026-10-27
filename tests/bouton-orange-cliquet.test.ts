@@ -106,8 +106,7 @@ const INVENTAIRE: Record<string, number> = {
   "app/messages/page.tsx": 1,
   "app/not-found.tsx": 1,
   "app/page.tsx": 1,
-  "app/paiement/echec/page.tsx": 2,
-  "app/paiement/succes/page.tsx": 2,
+  // app/paiement/{succes,echec} : 2 + 2 → 0, migrés vers <Bouton> (lot 6, m5).
   "app/panier/page.tsx": 3,
   "app/pro/page.tsx": 1,
   "app/produit/[slug]/page.tsx": 1,

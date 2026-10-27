@@ -3,7 +3,7 @@ import { lirePixelsVendeur } from "@/lib/pixels-server";
 import { ProductOffers } from "@/components/product-offers";
 import { publicOffers } from "@/lib/product-offers-server";
 import { offerCopy } from "@/lib/product-offer-copy";
-import Link from "next/link";
+import { Bouton } from "@/components/bouton";
 import { SiteNav } from "@/components/site-nav";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
@@ -137,18 +137,10 @@ export default async function SuccesPage({
           <h1 className="text-2xl font-extrabold">{t(lang, "pay.check.title")}</h1>
           <p className="mt-3 text-mist">{t(lang, "pay.check.body")}</p>
           <div className="mt-8 flex flex-col gap-3">
-            <Link
-              href="/mes-achats"
-              className="bouton inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-            >
-              {t(lang, "pay.wait.cta")}
-            </Link>
-            <Link
-              href="/catalogue"
-              className="inline-flex min-h-11 items-center justify-center text-sm text-mist hover:text-cloud"
-            >
+            <Bouton href="/mes-achats">{t(lang, "pay.wait.cta")}</Bouton>
+            <Bouton href="/catalogue" variante="discret">
               {t(lang, "pay.back")}
-            </Link>
+            </Bouton>
           </div>
         </main>
       </div>
@@ -217,18 +209,10 @@ export default async function SuccesPage({
           className="reveal mt-8 flex flex-col gap-3"
           style={{ ["--reveal-delay" as string]: "380ms" }}
         >
-          <Link
-            href="/mes-achats"
-            className="bouton inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-          >
-            {t(lang, "pay.ok.cta")}
-          </Link>
-          <Link
-            href="/catalogue"
-            className="inline-flex min-h-11 items-center justify-center text-sm text-mist hover:text-cloud"
-          >
+          <Bouton href="/mes-achats">{t(lang, "pay.ok.cta")}</Bouton>
+          <Bouton href="/catalogue" variante="discret">
             {t(lang, "pay.back")}
-          </Link>
+          </Bouton>
         </div>
         <ProductOffers offers={offers} copy={offerCopy(lang)} afterPurchase/>
       </main>

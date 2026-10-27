@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Bouton } from "@/components/bouton";
 import { SiteNav } from "@/components/site-nav";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -34,23 +34,15 @@ export default async function EchecPage({
         )}
         <div className="mt-8 flex flex-col gap-3">
           {produit && (
-            <Link
-              href={`/produit/${encodeURIComponent(produit)}#acheter`}
-              className="bouton rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-            >
+            <Bouton href={`/produit/${encodeURIComponent(produit)}#acheter`}>
               {t(lang, "pay.retry")}
-            </Link>
+            </Bouton>
           )}
-          <Link
-            href="/catalogue"
-            className={
-              produit
-                ? "bouton rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
-                : "bouton rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-            }
-          >
+          {/* Un seul CTA orange par écran : le catalogue passe en secondaire
+              dès que « Réessayer » existe. */}
+          <Bouton href="/catalogue" variante={produit ? "secondaire" : "primaire"}>
             {t(lang, "pay.back")}
-          </Link>
+          </Bouton>
         </div>
       </main>
     </div>
