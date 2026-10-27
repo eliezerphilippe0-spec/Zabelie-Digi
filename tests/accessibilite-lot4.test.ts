@@ -191,3 +191,87 @@ test("S4 — le prix de la fiche est en orange de texte, comme sur la carte prod
   assert.ok(c.includes("text-accent") && !c.includes("text-cloud"), `prix de la fiche : « ${m[1]} »`);
   assert.match(code(lire("components/product-card.tsx")), /numeric font-bold text-accent/, "la carte produit, référence du prix, a changé");
 });
+
+// ── M10 — cibles tactiles de 44 px ──────────────────────────────────────────
+/*
+ * MESURÉ à 360 px (sauf mention) : « Tout voir » de l'accueil 59 × 20 px ;
+ * questions de /aide 24 px ; « Enregistrer » du profil 42 px ; variantes,
+ * champ et bouton du code promo sous 44 px ; à 768 et 1 280 px, liens du pied
+ * à 28 px et titres de rubrique du pied à 20 px.
+ *
+ * Même convention que `tests/cibles-tactiles` : `min-h-11` dans le
+ * `className` DE L'ÉLÉMENT qui reçoit le geste. Et quand la cible grandit
+ * sans que la page doive bouger, la compensation (`-my-*`) est gardée AVEC
+ * elle : l'une sans l'autre est soit une petite cible, soit une page qui saute.
+ *
+ * Mutations éprouvées :
+ *   « Tout voir » sans `min-h-11`                                     → C1 rouge
+ *   FAQ : `-my-2.5` retiré (la carte grandirait de 20 px)            → C2 rouge
+ *   pied : `md:min-h-7` remis sur les liens                          → C3 rouge
+ *   profil : `min-h-11` retiré de « Enregistrer »                    → C4 rouge
+ *   achat : `min-h-11` retiré du bouton « Appliquer »                → C5 rouge
+ */
+
+const T44 = "min-h-11";
+/** Une hauteur minimale REPRISE à une largeur donnée (`md:min-h-7`, `lg:min-h-0`). */
+const REPRISE = /^(?:[\w-]+:)+min-h-/;
+
+test("C1 — « Tout voir » des rangées de l'accueil : 44 × 44 px au moins, la rangée garde sa hauteur", () => {
+  const src = code(lire("app/page.tsx"));
+  const m = src.match(/<Link href=\{href\} className="([^"]*)">\s*\{more\}\s*<\/Link>/);
+  assert.ok(m, "le lien « Tout voir » de HomeRow est introuvable");
+  const c = m[1].split(/\s+/);
+  for (const a of [T44, "min-w-11", "inline-flex", "items-center", "-my-3"]) assert.ok(c.includes(a), `« Tout voir » sans « ${a} » : « ${m[1]} »`);
+});
+
+test("C2 — les questions de la FAQ (/aide) : 44 px, compensés pour que la carte ne bouge pas", () => {
+  const src = code(lire("components/faq-list.tsx"));
+  const sommaires = balises(src, "summary");
+  assert.equal(sommaires.length, 1, "un <summary> par question, rendu par la boucle");
+  const c = classes(sommaires[0]);
+  assert.ok(c.includes(T44), `question sans ${T44} : « ${c.join(" ")} »`);
+  // La paire : autant de rembourrage ajouté que de marge rendue.
+  const py = c.find((x) => /^py-/.test(x));
+  assert.ok(py && c.includes(`-my-${py.slice(3)}`), `rembourrage et compensation désaccordés : « ${c.join(" ")} »`);
+});
+
+test("C3 — pied de page : liens à 44 px à toutes les largeurs, titres de rubrique aussi", () => {
+  const pied = code(lire("components/site-footer.tsx"));
+  const lien = pied.match(/const LIEN =\s*"([^"]*)";/);
+  assert.ok(lien, "la classe commune des liens du pied est introuvable");
+  const c = lien[1].split(/\s+/);
+  assert.ok(c.includes(T44), `liens du pied sans ${T44}`);
+  assert.deepEqual(c.filter((x) => REPRISE.test(x)), [], "une largeur reprend la hauteur des liens du pied");
+  // Chaque lien des rubriques emploie bien cette classe.
+  const liens = [...pied.matchAll(/<Link href=[^>]*className=\{([^}]*)\}/g)].map((m) => m[1]);
+  assert.ok(liens.length >= 15, `témoin : ${liens.length} liens lus`);
+  for (const l of liens) assert.match(l, /^`?\$?\{?LIEN\b|^LIEN$/, `lien du pied hors de la classe commune : ${l}`);
+  const rubrique = code(lire("components/footer-section.tsx"));
+  const s = balises(rubrique, "summary");
+  assert.equal(s.length, 1);
+  const cs = classes(s[0]);
+  assert.ok(cs.includes(T44), "titre de rubrique sans min-h-11");
+  assert.deepEqual(cs.filter((x) => REPRISE.test(x)), [], "une largeur reprend la hauteur du titre de rubrique");
+  assert.ok(cs.includes("md:-my-3"), "sans compensation, le titre de rubrique pousse les colonnes de 24 px sur ordinateur");
+});
+
+test("C4 — profil : chaque bouton fait 44 px", () => {
+  const boutons = balises(code(lire("components/profile-form.tsx")), "button");
+  assert.equal(boutons.length, 2, "« Enregistrer » et la demande de katye");
+  for (const b of boutons) assert.ok(classes(b).includes(T44), `bouton du profil sans ${T44} : « ${classes(b).join(" ")} »`);
+});
+
+test("C5 — achat : variantes, code promo, « Appliquer » et autres moyens de paiement à 44 px", () => {
+  const src = code(lire("components/buy-button.tsx"));
+  const cibles: Array<[string, RegExp]> = [
+    ["variante", /aria-pressed=\{active\}[\s\S]{0,200}?className=\{`([^`$]*)/],
+    ["champ du code promo", /<input\s+value=\{code\}(?:(?!<input|\/>)[\s\S]){0,600}className="([^"]*)"/],
+    ["« Appliquer »", /onClick=\{applyCoupon\}(?:(?!<button|<\/button>)[\s\S]){0,200}className="([^"]*)"/],
+    ["autre moyen de paiement", /onClick=\{\(\) => handleBuy\(o\)\}(?:(?!<button|<\/button>)[\s\S]){0,200}className="([^"]*)"/],
+  ];
+  for (const [quoi, re] of cibles) {
+    const m = src.match(re);
+    assert.ok(m, `${quoi} : élément introuvable`);
+    assert.ok(m[1].split(/\s+/).includes(T44), `${quoi} sans ${T44} : « ${m[1]} »`);
+  }
+});

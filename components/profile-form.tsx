@@ -321,7 +321,7 @@ export function ProfileForm({
                   type="button"
                   onClick={demanderKatye}
                   disabled={reqBusy || reqNom.trim().length < 2}
-                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
+                  className="min-h-11 whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
                 >
                   {reqBusy ? "…" : zoneLabels.reqBtn}
                 </button>
@@ -334,7 +334,7 @@ export function ProfileForm({
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-cloud px-5 py-2.5 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="min-h-11 rounded-xl bg-cloud px-5 py-2.5 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
       >
         {loading ? "…" : "Enregistrer"}
       </button>

@@ -465,7 +465,7 @@ export function BuyButton({
                       disabled={out}
                       aria-pressed={active}
                       onClick={() => { setVariantId(v.id); setApplied(null); setCouponError(false); }}
-                      className={`rounded-xl border px-3 py-2 text-sm transition ${
+                      className={`min-h-11 rounded-xl border px-3 py-2 text-sm transition ${
                         active
                           ? "border-cloud bg-cloud text-ink"
                           : "border-line text-mist hover:border-brand/50"
@@ -582,13 +582,13 @@ export function BuyButton({
             placeholder={coupon.placeholder}
             aria-label={coupon.placeholder}
             maxLength={24}
-            className="code-lisible min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60"
+            className="code-lisible min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60"
           />
           <button
             type="button"
             onClick={applyCoupon}
             disabled={checking || !code.trim()}
-            className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-50"
+            className="min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-50"
           >
             {checking ? "…" : coupon.apply}
           </button>
@@ -628,7 +628,7 @@ export function BuyButton({
                 key={cleOption(o)}
                 onClick={() => handleBuy(o)}
                 disabled={busy || soldOut || selectedOut || achatBloque}
-                className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
+                className="min-h-11 w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
               >
                 {loadingRail === cleOption(o) ? loadingLabel : o.label}
               </button>
