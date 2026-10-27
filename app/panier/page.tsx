@@ -19,6 +19,7 @@ import type { Lang } from "@/lib/i18n";
 import { CardImage } from "@/components/card-image";
 import { coverUrlAt } from "@/lib/product-image";
 import { hrefBoutique } from "@/lib/boutique-href";
+import { getBoutikSlug } from "@/lib/creators";
 
 export const dynamic = "force-dynamic";
 
@@ -119,7 +120,10 @@ export default async function PanierPage() {
     (l) => isProductKind(l.product!.kind) && isDownloadable(l.product!.kind, l.product_id)
   );
   const aRemettre = items.filter((l) => !aTelecharger.includes(l));
-  const commitments = await getProductCommitments(aRemettre.map(l => l.product_id));
+  const [commitments, slugs] = await Promise.all([
+    getProductCommitments(aRemettre.map(l => l.product_id)),
+    slugsDesBoutiques(items.map((l) => l.product!.seller_id)),
+  ]);
   const trustLabels = marketplaceCopy(lang);
   const groupes = [
     { cle: "cart.group.download" as const, lignes: aTelecharger, escrow: false },
@@ -201,7 +205,7 @@ export default async function PanierPage() {
                         </svg>
                         <span>{t(lang, "product.by")}</span>
                         <Link
-                          href={hrefBoutique({ id: b.vendeurId, boutikSlug: null })}
+                          href={hrefBoutique({ id: b.vendeurId, boutikSlug: slugs.get(b.vendeurId) ?? null })}
                           className="inline-flex min-h-11 min-w-0 items-center font-semibold text-cloud transition hover:text-accent"
                         >
                           <span className="truncate">{b.nom}</span>
@@ -237,10 +241,15 @@ export default async function PanierPage() {
                               )}
                             </Link>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-3">
+                              {/* À 360 px, un prix à six chiffres à droite ne
+                                  laissait au titre qu'environ 90 px : deux
+                                  lignes coupaient vers 20 caractères. Sous `sm`,
+                                  le prix passe SOUS le titre ; au-dessus, il
+                                  reste aligné à droite. */}
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                 <Link
                                   href={`/produit/${l.product!.slug}`}
-                                  className="line-clamp-2 break-words font-semibold text-cloud transition hover:text-accent"
+                                  className="line-clamp-2 min-w-0 break-words font-semibold text-cloud transition hover:text-accent"
                                 >
                                   {l.product!.title}
                                 </Link>
@@ -293,6 +302,8 @@ export default async function PanierPage() {
                   error: t(lang, "cart.pay.all.error"),
                   network: t(lang, "error.network"),
                   age: t(lang, "cart.pay.all.age"),
+                  stalled: t(lang, "cart.pay.all.stalled"),
+                  reload: t(lang, "cart.pay.all.reload"),
                 }}
               />
               <p className="mt-3 text-center text-xs text-mist">{t(lang, "cart.note.group")}</p>
@@ -319,6 +330,29 @@ async function lirePanierConfig(): Promise<{ max_articles: number } | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * L'adresse publique de chaque boutique du panier, `/boutik/<slug>`, au lieu
+ * de `/createur/<id>` : une même boutique n'a plus deux adresses selon la
+ * page d'où l'on vient.
+ *
+ * Lu par la porte PUBLIQUE déjà employée par le sitemap (`getBoutikSlug` →
+ * `zabelie_boutik_public`, 0084) : lecture seule, client de session, fonction
+ * qui ne rend que les sept champs de vitrine d'un profil marchand. Le slug
+ * n'est jamais lu dans `profiles` directement : la liste blanche de 0015 le
+ * réserve. Une lecture par BOUTIQUE (pas par ligne), en parallèle : le coût
+ * connu du sitemap, à passer en lot (une fonction SQL qui rend les slugs) si
+ * les paniers venaient à compter des dizaines de vendeurs. Un échec rend
+ * `null`, et `hrefBoutique` retombe sur `/createur/<id>`, qui ne cesse
+ * jamais de marcher.
+ */
+async function slugsDesBoutiques(vendeurs: string[]): Promise<Map<string, string | null>> {
+  const uniques = [...new Set(vendeurs)];
+  const paires = await Promise.all(
+    uniques.map(async (id) => [id, await getBoutikSlug(id).catch(() => null)] as const)
+  );
+  return new Map(paires);
 }
 
 /**

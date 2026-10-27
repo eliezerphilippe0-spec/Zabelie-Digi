@@ -29,6 +29,10 @@ import { hrefBoutique } from "../lib/boutique-href";
  *        `finally` ne relâche plus le verrou
  *   PR2  le succès ne relit plus le serveur
  *   PR3  `if (verrou.current) return;` → `if (false) return;` (retrait)
+ *   PR3  m4 : `disabled={envoi}` remis à la place d'`aria-disabled`
+ *   PF9  m4 : `disabled={bloque}` remis (PF1-PF3, PF5, PF7, PF9) ; garde du gestionnaire inatteignable
+ *   PF7  m3 : la minuterie ne signale plus ; délai ramené à 3 s ; le signal relâche le verrou
+ *   PF8  m3 : `visibilitychange` ignoré ; `assign` refusé relâche le verrou ; `pageshow` garde la surveillance
  *   PI1  une langue perd `{title}`
  *   `cart-pay-all.tsx` remis tel que sur `main` : PF1–PF6 rouges.
  *   `remove-from-cart.tsx` remis tel que sur `main` : PR1–PR3 rouges.
@@ -93,7 +97,7 @@ const OPTIONS = [
   { rail: "kobara", kobaraProvider: "natcash", label: "NatCash" },
   { rail: "kobara", kobaraProvider: "moncash", label: "MonCash par Kobara" },
 ];
-const LIBELLES = { title: "T", note: "N", coupon: "C", loading: "CHARGEMENT", error: "ERREUR", network: "RESEAU", age: "AGE" };
+const LIBELLES = { title: "T", note: "N", coupon: "C", loading: "CHARGEMENT", error: "ERREUR", network: "RESEAU", age: "AGE", stalled: "BLOQUE", reload: "RECHARGER" };
 
 type Reponse = Record<string, unknown>;
 function monterPayerTout() {
@@ -103,10 +107,28 @@ function monterPayerTout() {
   const rejets: ((e: unknown) => void)[] = [];
   const parties: string[] = [];
   const ecoute: Record<string, (e: { persisted: boolean }) => void> = {};
+  // Minuteries et écoutes de visibilité : déclenchées À LA MAIN par le test.
+  const minuteries = new Map<number, { fn: () => void; ms: number }>();
+  let prochaine = 1;
+  const visibilite: { etat: string; ecoute: (() => void) | null } = { etat: "hidden", ecoute: null };
+  const etat = { rechargements: 0, assignLeve: false };
   const fenetre = {
-    location: { assign: (u: string) => parties.push(u) },
+    location: {
+      assign: (u: string) => {
+        if (etat.assignLeve) throw new Error("navigation refusée");
+        parties.push(u); // la page ne part pas : c'est le cas que m3 couvre
+      },
+      reload: () => { etat.rechargements++; },
+    },
     addEventListener: (type: string, fn: (e: { persisted: boolean }) => void) => { ecoute[type] = fn; },
     removeEventListener() {},
+    setTimeout: (fn: () => void, ms: number) => { minuteries.set(prochaine, { fn, ms }); return prochaine++; },
+    clearTimeout: (id: number) => { minuteries.delete(id); },
+  };
+  const doc = {
+    get visibilityState() { return visibilite.etat; },
+    addEventListener: (type: string, fn: () => void) => { if (type === "visibilitychange") visibilite.ecoute = fn; },
+    removeEventListener: (type: string, fn: () => void) => { if (type === "visibilitychange" && visibilite.ecoute === fn) visibilite.ecoute = null; },
   };
   const mod = loadRoute("components/cart-pay-all.tsx", {
     react: f.react,
@@ -117,27 +139,31 @@ function monterPayerTout() {
         return new Promise<Reponse>((oui, non) => { enAttente.push(oui); rejets.push(non); });
       },
     },
-  }, {}, { window: fenetre }) as unknown as { CartPayAll(p: unknown): El };
+  }, {}, { window: fenetre, document: doc }) as unknown as { CartPayAll(p: unknown): El };
   const rendre = () => { f.debut(); return mod.CartPayAll({ options: OPTIONS, labels: LIBELLES }); };
-  return { rendre, appels, enAttente, rejets, parties, ecoute };
+  return { rendre, appels, enAttente, rejets, parties, ecoute, minuteries, visibilite, etat };
 }
-const clic = (b: El) => (b.props.onClick as () => Promise<void>)();
+const clic = (b: El) => (b.props.onClick as () => Promise<void> | void)();
+/** Laisse s'écouler les suites de promesses (le gestionnaire ne rend rien). */
+const vider = () => new Promise<void>((r) => setImmediate(r));
+const desactive = (b: El) => b.props["aria-disabled"] === true;
 
 test("PF1 — M9 : un double clic n'envoie qu'UNE demande de paiement groupé", async () => {
   const m = monterPayerTout();
   const [premier] = boutons(m.rendre());
   // Les deux clics viennent du MÊME rendu : c'est exactement le double clic,
   // le second arrive avant que React ait repeint quoi que ce soit.
-  const a = clic(premier);
-  const b = clic(premier);
+  void clic(premier);
+  void clic(premier);
   assert.equal(m.appels.length, 1, "le second clic a ouvert une seconde demande : deux groupes, deux réservations de stock");
   m.enAttente[0]({ etat: "ok", data: { redirectUrl: "https://moncash.test/pay" } });
-  await Promise.all([a, b]);
+  await vider();
   assert.deepEqual(m.parties, ["https://moncash.test/pay"]);
   // Parti vers l'opérateur : le verrou reste fermé, aucun bouton ne repart.
   const apres = boutons(m.rendre());
-  assert.ok(apres.every((x) => x.props.disabled === true));
-  await clic(apres[1]);
+  assert.ok(apres.every(desactive));
+  void clic(apres[1]);
+  await vider();
   assert.equal(m.appels.length, 1);
 });
 
@@ -148,7 +174,7 @@ test("PF2 — seul le bouton cliqué dit « chargement » ; les autres sont dés
   const b = boutons(m.rendre());
   assert.deepEqual(b.map(texte), ["MonCash", "CHARGEMENT", "MonCash par Kobara"],
     "deux options Kobara partagent `rail` : le chargement doit être indexé sur l'option, pas sur le rail");
-  assert.ok(b.every((x) => x.props.disabled === true), "pendant la demande, aucun autre moyen ne part");
+  assert.ok(b.every(desactive), "pendant la demande, aucun autre moyen ne part");
   assert.deepEqual(b.map((x) => x.props["aria-busy"]), [false, true, false]);
 });
 
@@ -162,16 +188,16 @@ test("PF3 — chaque issue d'échec relâche le verrou et se dit dans une alerte
   ] as const) {
     const m = monterPayerTout();
     const [premier] = boutons(m.rendre());
-    const p = clic(premier);
+    void clic(premier);
     if (issue === "leve") m.rejets[0](new Error("panne"));
     else m.enAttente[0](issue as Reponse);
-    await p;
+    await vider();
     const arbre = m.rendre();
     const alerte = tous(arbre).find((n) => n.props.role === "alert");
     assert.equal(alerte && texte(alerte), attendu, `issue ${JSON.stringify(issue)}`);
     const apres = boutons(arbre);
     assert.deepEqual(apres.map(texte), ["MonCash", "NatCash", "MonCash par Kobara"]);
-    assert.ok(apres.every((x) => x.props.disabled === false), `issue ${JSON.stringify(issue)} : boutons restés bloqués`);
+    assert.ok(apres.every((x) => x.props["aria-disabled"] === false), `issue ${JSON.stringify(issue)} : boutons restés bloqués`);
     // Le verrou est RELÂCHÉ : un nouveau clic repart.
     void clic(apres[0]);
     assert.equal(m.appels.length, 2, `issue ${JSON.stringify(issue)} : le verrou n'a pas été relâché`);
@@ -193,9 +219,9 @@ test("PF4 — le premier moyen est le CTA plein, les suivants en contour ; tous 
 test("PF5 — retour arrière depuis l'opérateur (bfcache) : la page n'affiche plus un chargement fantôme", async () => {
   const m = monterPayerTout();
   const [premier] = boutons(m.rendre());
-  const p = clic(premier);
+  void clic(premier);
   m.enAttente[0]({ etat: "ok", data: { redirectUrl: "https://moncash.test/pay" } });
-  await p;
+  await vider();
   // Un `pageshow` ordinaire (premier affichage) ne touche à rien.
   m.ecoute.pageshow({ persisted: false });
   assert.equal(texte(boutons(m.rendre())[0]), "CHARGEMENT");
@@ -204,7 +230,7 @@ test("PF5 — retour arrière depuis l'opérateur (bfcache) : la page n'affiche 
   m.ecoute.pageshow({ persisted: true });
   const b = boutons(m.rendre());
   assert.equal(texte(b[0]), "MonCash");
-  assert.ok(b.every((x) => x.props.disabled === false));
+  assert.ok(b.every((x) => x.props["aria-disabled"] === false));
   // Le libellé ET le verrou : un bouton qui a l'air actif mais n'envoie rien
   // serait pire qu'un chargement fantôme.
   void clic(b[0]);
@@ -221,6 +247,88 @@ test("PF6 — le verrou est posé AVANT tout `await`, sur la condition qui comma
   const pose = src.search(/verrou\.current = true;/);
   const attente = src.search(/await appelSession/);
   assert.ok(pose > 0 && attente > pose, "le verrou doit précéder l'appel");
+});
+
+/** Mène un paiement jusqu'au départ (`assign`), page restée affichée. */
+async function partiSansQuitter(m: ReturnType<typeof monterPayerTout>) {
+  void clic(boutons(m.rendre())[0]);
+  m.enAttente[0]({ etat: "ok", data: { redirectUrl: "https://moncash.test/pay" } });
+  await vider();
+}
+const alerteBloquee = (arbre: unknown) =>
+  tous(arbre).find((n) => n.props.role === "alert" && texte(n).includes("BLOQUE"));
+
+test("PF7 — m3 : la page n'est pas partie ; après le délai, l'écran dit de recharger, et le verrou TIENT", async () => {
+  const m = monterPayerTout();
+  await partiSansQuitter(m);
+  assert.equal(alerteBloquee(m.rendre()), undefined, "rien à dire tant que le départ peut encore aboutir");
+  const [minuterie] = [...m.minuteries.values()];
+  assert.ok(minuterie, "aucune surveillance du départ");
+  assert.ok(minuterie.ms >= 15_000, `délai de ${minuterie.ms} ms : un « rechargez » trop tôt interromprait un départ lent en 3G`);
+  minuterie.fn();
+  const arbre = m.rendre();
+  const alerte = alerteBloquee(arbre);
+  assert.ok(alerte, "après le délai, l'écran reste muet sur « Préparation du paiement… »");
+  const recharger = boutons(alerte).find((b) => texte(b) === "RECHARGER");
+  assert.ok(recharger, "pas de bouton de rechargement");
+  assert.match(classe(recharger!), /(?<![\w:/-])min-h-11\b/);
+  (recharger!.props.onClick as () => void)();
+  assert.equal(m.etat.rechargements, 1);
+  // Le groupe existe côté serveur : aucun moyen de paiement ne repart.
+  const moyens = boutons(arbre).filter((b) => b !== recharger);
+  assert.ok(moyens.every(desactive));
+  for (const b of moyens) void clic(b);
+  await vider();
+  assert.equal(m.appels.length, 1, "un second groupe s'ouvrirait : la moitié serveur attend l'arbitrage M9");
+});
+
+test("PF8 — m3 : retour au premier plan (une application a capté l'adresse), ou navigation refusée : dit tout de suite", async () => {
+  const m = monterPayerTout();
+  await partiSansQuitter(m);
+  m.visibilite.etat = "hidden";
+  m.visibilite.ecoute?.();
+  assert.equal(alerteBloquee(m.rendre()), undefined, "passer en arrière-plan n'est pas un échec");
+  m.visibilite.etat = "visible";
+  assert.ok(m.visibilite.ecoute, "aucune écoute du retour au premier plan");
+  m.visibilite.ecoute!();
+  assert.ok(alerteBloquee(m.rendre()));
+  // bfcache : la page restaurée oublie tout, surveillance comprise.
+  m.ecoute.pageshow({ persisted: true });
+  assert.equal(alerteBloquee(m.rendre()), undefined);
+  assert.equal(m.minuteries.size, 0, "la minuterie survit à la restauration");
+  assert.equal(m.visibilite.ecoute, null, "l'écoute de visibilité survit à la restauration");
+
+  const refus = monterPayerTout();
+  refus.etat.assignLeve = true;
+  await partiSansQuitter(refus);
+  assert.ok(alerteBloquee(refus.rendre()), "navigation refusée : l'écran doit le dire sans attendre");
+  void clic(boutons(refus.rendre())[0]);
+  await vider();
+  assert.equal(refus.appels.length, 1, "navigation refusée : le verrou ne se relâche pas pour autant");
+});
+
+test("PF9 — m4 : le bouton cliqué reste focalisable (aria-disabled, jamais disabled) ; le garde du gestionnaire tient l'âge", async () => {
+  const m = monterPayerTout();
+  void clic(boutons(m.rendre())[0]);
+  for (const b of boutons(m.rendre())) {
+    assert.equal(b.props.disabled, undefined, "`disabled` jette le focus clavier sur <body>");
+    assert.equal(b.props["aria-disabled"], true);
+  }
+  // Attestation d'âge demandée par le serveur, case non cochée : refusé AVANT tout appel.
+  m.enAttente[0]({ etat: "refus", statut: 422, code: "age_attestation_requise", error: "AGE REQUIS" });
+  await vider();
+  let arbre = m.rendre();
+  assert.ok(boutons(arbre).every(desactive));
+  void clic(boutons(arbre)[0]);
+  await vider();
+  assert.equal(m.appels.length, 1, "case non cochée : aucun appel ne doit partir");
+  const caseAge = tous(arbre).find((n) => n.type === "input" && n.props.type === "checkbox")!;
+  (caseAge.props.onChange as (e: unknown) => void)({ target: { checked: true } });
+  arbre = m.rendre();
+  assert.ok(boutons(arbre).every((b) => b.props["aria-disabled"] === false));
+  void clic(boutons(arbre)[0]);
+  assert.equal(m.appels.length, 2);
+  assert.equal(m.appels[1].ageAttestation, true);
 });
 
 // ─────────────────────────────── Retirer ───────────────────────────────────
@@ -299,6 +407,11 @@ test("PR3 — le bouton fait 44 px, porte le titre dans son nom accessible, et n
   assert.equal(b.props["aria-label"], "Retirer « Pagne » du panier");
   assert.match(classe(b), /(?<![\w:/-])min-h-11\b/);
   void clic(b);
+  // m4 : le bouton activé reste focalisable ; le verrou refuse le second envoi.
+  const pendant = boutons(m.rendre())[0];
+  assert.equal(pendant.props.disabled, undefined, "`disabled` jette le focus clavier sur <body>");
+  assert.equal(pendant.props["aria-disabled"], true);
+  void clic(pendant);
   void clic(b);
   assert.equal(m.appels.length, 1);
 });
@@ -322,6 +435,8 @@ test("PI1 — les libellés du retrait existent dans les quatre langues et nomme
 //   PP3  source de vignette à 640 px ; `tabIndex={-1}` retiré ; une image
 //        rendue aussi pour les produits SANS photo (`{true ? (`)
 //   PP4  le nom accessible de « Retirer » perd le titre
+//   PP5  m9 : `boutikSlug: null` remis ; `.catch` de la lecture du slug retiré
+//   PP6  360 px : `flex-col` retiré de la rangée titre + prix
 
 type Ligne = { product_id: string; product: Record<string, unknown> };
 const LIGNES: Ligne[] = [
@@ -331,8 +446,13 @@ const LIGNES: Ligne[] = [
   { product_id: "d", product: { slug: "chapo", title: "Chapo pay", price_htg: 900, kind: "physical", cover_url: null, seller_id: "s2", creator: { display_name: "Atelye Jacmel" } } },
 ];
 
-function monterPage(lang = "ht", ouvert = false) {
+/** `getBoutikSlug` doublé : s1 a une adresse publique, s2 n'en a pas. */
+type Slugs = (id: string) => Promise<string | null>;
+const SLUGS: Slugs = async (id) => (id === "s1" ? "lakay" : null);
+
+function monterPage(lang = "ht", ouvert = false, slugs: Slugs = SLUGS) {
   const largeurs: number[] = [];
+  const slugsDemandes: string[] = [];
   const page = loadRoute("app/panier/page.tsx", {
     "react/jsx-runtime": JSX,
     "next/link": { default: "a" },
@@ -365,8 +485,9 @@ function monterPage(lang = "ht", ouvert = false) {
     "@/lib/payment-utils": { usdCentsFromHtg: () => 0, formatUsd: () => "" },
     "@/lib/product-image": { coverUrlAt: (u: string | null, w: number) => { largeurs.push(w); return u; } },
     "@/lib/boutique-href": { hrefBoutique },
+    "@/lib/creators": { getBoutikSlug: (id: string) => { slugsDemandes.push(id); return slugs(id); } },
   }) as unknown as { default(): Promise<El>; generateMetadata(): Promise<{ title: string; robots: unknown }> };
-  return { page, largeurs };
+  return { page, largeurs, slugsDemandes };
 }
 
 /** Les enfants DIRECTS d'un élément (tableaux de `map` aplatis). */
@@ -385,7 +506,7 @@ function boutiques(section: El) {
   return tous(section)
     .filter((n) => n.type === "div" && enfants(n).some((c) => c.type === "ul"))
     .map((carte) => ({
-      nom: texte(tous(carte).find((n) => n.type === "a" && String(n.props.href).startsWith("/createur/"))),
+      nom: texte(tous(carte).find((n) => n.type === "a" && /^\/(boutik|createur)\//.test(String(n.props.href)))),
       produits: tous(carte).filter((n) => n.type === "li").map((li) => tous(li).find((n) => n.type === "a")!.props.href),
     }));
 }
@@ -461,7 +582,43 @@ test("PP4 — chaque « Retirer » reçoit ses libellés traduits, titre compris
   assert.equal(pagne.retry, DICT.ht["offline.retry"]);
   const payer = tous(arbre).find((n) => n.type === "CartPayAll");
   assert.ok(payer, "le paiement groupé ouvert doit s'afficher");
-  assert.equal((payer!.props.labels as Record<string, string>).network, DICT.ht["error.network"]);
+  const lp = payer!.props.labels as Record<string, string>;
+  assert.equal(lp.network, DICT.ht["error.network"]);
+  assert.equal(lp.stalled, DICT.ht["cart.pay.all.stalled"]);
+  assert.equal(lp.reload, DICT.ht["cart.pay.all.reload"]);
+});
+
+test("PP5 — m9 : la boutique est liée à son adresse publique /boutik/<slug>, et retombe sur /createur/<id> sans slug ou en panne", async () => {
+  const liens = async (slugs?: Slugs) => {
+    const m = monterPage("ht", false, slugs);
+    const arbre = await m.page.default();
+    const hrefs = tous(arbre).filter((n) => n.type === "a" && /^\/(boutik|createur)\//.test(String(n.props.href))).map((n) => String(n.props.href));
+    return { hrefs, demandes: m.slugsDemandes };
+  };
+  const normal = await liens();
+  // Lakay apparaît dans deux modes de remise (une carte chacun), Atelye Jacmel dans un.
+  assert.deepEqual(normal.hrefs.sort(), ["/boutik/lakay", "/boutik/lakay", "/createur/s2"]);
+  assert.deepEqual(normal.demandes.sort(), ["s1", "s2"], "une lecture par boutique, pas par ligne");
+  const panne = await liens(async () => { throw new Error("PGRST"); });
+  assert.deepEqual(panne.hrefs.sort(), ["/createur/s1", "/createur/s1", "/createur/s2"], "une panne de lecture ne doit pas casser le panier");
+});
+
+test("PP6 — 360 px : sous `sm`, le prix passe SOUS le titre ; au-dessus, il reste à droite", async () => {
+  const { page } = monterPage();
+  const arbre = await page.default();
+  const rangees = tous(arbre).filter((n) => {
+    const e = enfants(n);
+    return n.type === "div" && e.some((c) => c.type === "a" && /(?<![\w:/-])line-clamp-2\b/.test(classe(c)))
+      && e.some((c) => c.type === "span" && /\bnumeric\b/.test(classe(c)));
+  });
+  assert.equal(rangees.length, LIGNES.length, "une rangée titre + prix par ligne");
+  for (const r of rangees) {
+    // Ce qui COMMANDE la disposition : la direction de base et sa bascule.
+    assert.match(classe(r), /(?<![\w:/-])flex-col(?![\w-])/, "sous `sm`, le prix doit passer sous le titre");
+    assert.match(classe(r), /(?<![\w-])sm:flex-row(?![\w-])/, "au-dessus de `sm`, le prix revient à droite");
+    const e = enfants(r);
+    assert.ok(e.findIndex((c) => c.type === "a") < e.findIndex((c) => c.type === "span"), "le prix vient après le titre");
+  }
 });
 
 // ─────────────────────────────── Squelette ─────────────────────────────────

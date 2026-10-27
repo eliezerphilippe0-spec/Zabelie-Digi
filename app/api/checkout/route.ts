@@ -584,7 +584,11 @@ export async function POST(req: Request) {
 
   // A public retry must keep its attempt key. The orders primary key stops
   // concurrent submissions in Postgres before any second operator call.
-  // Grouped orders already have their server-only group concurrency guard.
+  // Grouped orders carry NO attempt key here, and NO server-side guard stops
+  // two groups for the same cart: `zabelie_group_create` (0128) inserts
+  // unconditionally, the only brake is the 5/min limiter of /api/panier/payer.
+  // Open decision M9 (OPS_TODO registry, 2026-10-27); the client lock of
+  // components/cart-pay-all.tsx only covers a double tap on one page.
   if (!groupe && !validCheckoutKey(checkoutKeyInput)) {
     return NextResponse.json(
       { error: t(lang, "api.checkout.refresh"), code: "checkout_key_required" },

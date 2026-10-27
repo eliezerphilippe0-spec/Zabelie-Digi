@@ -25,7 +25,7 @@ export default function Loading() {
               <li key={i} className="flex gap-3 p-4">
                 <SkeletonBlock className="h-16 w-16 flex-none" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                     <SkeletonBlock className="h-4 w-3/5" />
                     <SkeletonBlock className="h-4 w-20" />
                   </div>

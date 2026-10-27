@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { appelSession } from "@/lib/appel-session";
+import type { IssueAppel } from "@/lib/appel-session";
 
 export type OptionPanier = {
   rail: "moncash" | "kobara" | "stripe";
@@ -22,9 +23,18 @@ function cleOptionPanier(o: OptionPanier): string {
 }
 
 const CTA_PLEIN =
-  "inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
 const CTA_CONTOUR =
-  "inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface/60 px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface/60 px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
+
+/**
+ * Délai au-delà duquel une page restée affichée après le départ vers
+ * l'opérateur est présumée bloquée. Large à dessein : en 3G lente, la page de
+ * l'opérateur met couramment plus de dix secondes à remplacer celle-ci, et un
+ * « rechargez » affiché trop tôt ferait INTERROMPRE un départ qui aboutissait.
+ * Le retour au premier plan (`visibilitychange`), lui, n'attend pas.
+ */
+const DELAI_SANS_DEPART_MS = 20_000;
 
 /**
  * PAYER TOUT LE PANIER (0128) — un seul paiement, plusieurs vendeurs.
@@ -51,14 +61,41 @@ const CTA_CONTOUR =
  * fermé quand on part vers l'opérateur ou vers la connexion : la page s'en va.
  *
  * Ce verrou est la moitié CLIENT. L'autre moitié, que le serveur ignore un
- * second groupe identique, touche l'argent et attend l'arbitrage du porteur.
+ * second groupe identique, touche l'argent et attend l'arbitrage du porteur
+ * (M9, registre d'`OPS_TODO.md`).
+ *
+ * ─── QUAND LA PAGE NE PART PAS (relecture du 2026-10-27, m3) ────────────────
+ * Une fois le groupe ouvert côté serveur, le verrou ne se relâche PLUS : un
+ * second clic ouvrirait un second groupe. Or la navigation vers l'opérateur
+ * peut échouer sans que la page parte (« arrêter » touché en 3G lente, URL
+ * captée par une application Android, réponse qui n'est pas une page). Au lieu
+ * de rester muet sur « Préparation du paiement… », l'écran dit alors quoi
+ * faire : recharger, ce qui rend une page neuve sans rien relancer.
+ *
+ * ─── LE FOCUS (m4) ──────────────────────────────────────────────────────────
+ * Un `disabled` posé sur le bouton qu'on vient d'activer jette le focus
+ * clavier sur `<body>`. Les moyens de paiement portent donc `aria-disabled`
+ * et restent focalisables ; le clic est refusé dans le gestionnaire. Ce refus
+ * lit l'état du RENDU, que le second clic d'un double clic n'a pas encore vu :
+ * la vraie protection reste le verrou de `payer()`.
  */
 export function CartPayAll({
   options,
   labels,
 }: {
   options: OptionPanier[];
-  labels: { title: string; note: string; coupon: string; loading: string; error: string; network: string; age: string };
+  labels: {
+    title: string;
+    note: string;
+    coupon: string;
+    loading: string;
+    error: string;
+    network: string;
+    age: string;
+    /** La page de paiement ne s'est pas ouverte : recharger avant de réessayer. */
+    stalled: string;
+    reload: string;
+  };
 }) {
   // Clé de l'option cliquée : SEUL ce bouton dit « chargement », les autres
   // sont simplement désactivés.
@@ -67,7 +104,10 @@ export function CartPayAll({
   const [code, setCode] = useState("");
   const [ageDemande, setAgeDemande] = useState(false);
   const [ageAtteste, setAgeAtteste] = useState(false);
+  const [sansDepart, setSansDepart] = useState(false);
   const verrou = useRef(false);
+  // Arrête la surveillance du départ (minuterie et écoute de visibilité).
+  const surveillance = useRef<(() => void) | null>(null);
 
   // Retour arrière depuis l'opérateur : un navigateur qui restaure la page
   // depuis son cache (bfcache) restaure aussi le verrou et « Préparation du
@@ -76,12 +116,44 @@ export function CartPayAll({
   useEffect(() => {
     function auRetour(e: PageTransitionEvent) {
       if (!e.persisted) return;
+      surveillance.current?.();
+      surveillance.current = null;
       verrou.current = false;
       setEnCours(null);
+      setSansDepart(false);
     }
     window.addEventListener("pageshow", auRetour);
-    return () => window.removeEventListener("pageshow", auRetour);
+    return () => {
+      window.removeEventListener("pageshow", auRetour);
+      surveillance.current?.();
+    };
   }, []);
+
+  /* La page devait partir. Si elle est toujours là après le délai, ou si elle
+   * revient au premier plan (une application a capté l'adresse), on le dit.
+   * Le verrou, lui, reste fermé. */
+  function surveillerDepart() {
+    const signaler = () => setSansDepart(true);
+    const minuterie = window.setTimeout(signaler, DELAI_SANS_DEPART_MS);
+    const auPremierPlan = () => {
+      if (document.visibilityState === "visible") signaler();
+    };
+    document.addEventListener("visibilitychange", auPremierPlan);
+    surveillance.current = () => {
+      window.clearTimeout(minuterie);
+      document.removeEventListener("visibilitychange", auPremierPlan);
+    };
+  }
+
+  function partirVers(url: string) {
+    surveillerDepart();
+    try {
+      window.location.assign(url);
+    } catch {
+      // Rien n'est parti, mais le groupe existe côté serveur : pas de relâche.
+      setSansDepart(true);
+    }
+  }
 
   function echec(message: string) {
     verrou.current = false;
@@ -94,8 +166,9 @@ export function CartPayAll({
     verrou.current = true;
     setEnCours(cleOptionPanier(o));
     setMsg(null);
+    let issue: IssueAppel<{ redirectUrl?: string }>;
     try {
-      const issue = await appelSession<{ redirectUrl?: string }>(
+      issue = await appelSession<{ redirectUrl?: string }>(
         "/api/panier/payer",
         {
           rail: o.rail,
@@ -105,24 +178,25 @@ export function CartPayAll({
         },
         "/panier",
       );
-      if (issue.etat === "connexion") {
-        window.location.assign(issue.vers);
-        return;
-      }
-      if (issue.etat === "reseau") {
-        echec(labels.network);
-        return;
-      }
-      if (issue.etat !== "ok" || !issue.data.redirectUrl) {
-        if (issue.etat === "refus" && issue.code === "age_attestation_requise") setAgeDemande(true);
-        echec((issue.etat === "refus" ? issue.error : null) ?? labels.error);
-        return;
-      }
-      // Vers l'opérateur. Le retour est vérifié serveur-à-serveur (invariant b).
-      window.location.assign(issue.data.redirectUrl);
     } catch {
       echec(labels.error);
+      return;
     }
+    if (issue.etat === "connexion") {
+      window.location.assign(issue.vers);
+      return;
+    }
+    if (issue.etat === "reseau") {
+      echec(labels.network);
+      return;
+    }
+    if (issue.etat !== "ok" || !issue.data.redirectUrl) {
+      if (issue.etat === "refus" && issue.code === "age_attestation_requise") setAgeDemande(true);
+      echec((issue.etat === "refus" ? issue.error : null) ?? labels.error);
+      return;
+    }
+    // Vers l'opérateur. Le retour est vérifié serveur-à-serveur (invariant b).
+    partirVers(issue.data.redirectUrl);
   }
 
   const bloque = enCours !== null || (ageDemande && !ageAtteste);
@@ -159,8 +233,11 @@ export function CartPayAll({
             <button
               key={cle}
               type="button"
-              onClick={() => payer(o)}
-              disabled={bloque}
+              onClick={() => {
+                if (bloque) return;
+                void payer(o);
+              }}
+              aria-disabled={bloque}
               aria-busy={enCours === cle}
               className={forme}
             >
@@ -170,6 +247,18 @@ export function CartPayAll({
         })}
       </div>
       {msg && <p role="alert" className="mt-2 text-sm text-danger-text">{msg}</p>}
+      {sansDepart && (
+        <div role="alert" className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-cloud">
+          <span>{labels.stalled}</span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line px-4 font-semibold text-cloud transition hover:border-brand/60"
+          >
+            {labels.reload}
+          </button>
+        </div>
+      )}
     </section>
   );
 }
