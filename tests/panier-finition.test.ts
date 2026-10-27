@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { loadRoute } from "./helpers/route-harness";
+import { DICT, LANGS } from "../lib/i18n";
 
 /**
  * FINITION DU PANIER — audit du 2026-10-27 (M9 côté client, m11, prix,
@@ -20,7 +21,13 @@ import { loadRoute } from "./helpers/route-harness";
  *   PF5  `pageshow` restauré ne relâche plus le verrou. ⚠️ Cette mutation est
  *        d'abord restée VERTE : PF5 ne lisait que le libellé et `disabled`.
  *        Il clique désormais, et compte les demandes.
+ *   PR1  l'échec du retrait ne pose plus l'erreur ; `catch` retiré ;
+ *        `finally` ne relâche plus le verrou
+ *   PR2  le succès ne relit plus le serveur
+ *   PR3  `if (verrou.current) return;` → `if (false) return;` (retrait)
+ *   PI1  une langue perd `{title}`
  *   `cart-pay-all.tsx` remis tel que sur `main` : PF1–PF6 rouges.
+ *   `remove-from-cart.tsx` remis tel que sur `main` : PR1–PR3 rouges.
  */
 
 type El = { type: unknown; props: Record<string, unknown> };
@@ -210,4 +217,95 @@ test("PF6 — le verrou est posé AVANT tout `await`, sur la condition qui comma
   const pose = src.search(/verrou\.current = true;/);
   const attente = src.search(/await appelSession/);
   assert.ok(pose > 0 && attente > pose, "le verrou doit précéder l'appel");
+});
+
+// ─────────────────────────────── Retirer ───────────────────────────────────
+
+const L_RETRAIT = { remove: "Retirer", aria: "Retirer « Pagne » du panier", error: "PAS RETIRE", offline: "HORS LIGNE", retry: "Réessayer" };
+
+function monterRetrait() {
+  const f = fauxReact();
+  const appels: { url: string; init: Reponse }[] = [];
+  const enAttente: ((r: Reponse) => void)[] = [];
+  const rejets: ((e: unknown) => void)[] = [];
+  let relectures = 0;
+  const parties: string[] = [];
+  const mod = loadRoute("components/remove-from-cart.tsx", {
+    react: f.react,
+    "react/jsx-runtime": JSX,
+    "next/navigation": { useRouter: () => ({ refresh: () => { relectures++; } }) },
+    "@/lib/appel-session": {
+      appelAvecSession: (url: string, init: Reponse) => {
+        appels.push({ url, init });
+        return new Promise<Reponse>((oui, non) => { enAttente.push(oui); rejets.push(non); });
+      },
+    },
+  }, {}, { window: { location: { assign: (u: string) => parties.push(u) } } }) as unknown as { RemoveFromCart(p: unknown): El };
+  const rendre = () => { f.debut(); return mod.RemoveFromCart({ productId: "p 1", labels: L_RETRAIT }); };
+  return { rendre, appels, enAttente, rejets, parties, relectures: () => relectures };
+}
+
+test("PR1 — m11 : hors ligne, le retrait raté se DIT (alerte, cause, « Réessayer ») au lieu de rien", async () => {
+  for (const [issue, attendu] of [
+    [{ etat: "reseau" }, "HORS LIGNE"],
+    [{ etat: "refus", statut: 503, error: "Panier indisponible" }, "PAS RETIRE"],
+    ["leve", "PAS RETIRE"],
+  ] as const) {
+    const m = monterRetrait();
+    const p = clic(boutons(m.rendre())[0]);
+    assert.equal(m.appels[0].url, "/api/panier?productId=p%201");
+    assert.equal(m.appels[0].init.method, "DELETE");
+    if (issue === "leve") m.rejets[0](new TypeError("Failed to fetch"));
+    else m.enAttente[0](issue as Reponse);
+    await p; // une promesse rejetée non gérée ferait échouer cette ligne
+    const arbre = m.rendre();
+    const alerte = tous(arbre).find((n) => n.props.role === "alert");
+    assert.ok(alerte, `issue ${JSON.stringify(issue)} : aucune alerte, l'échec est muet`);
+    assert.match(texte(alerte), new RegExp(attendu));
+    assert.equal(m.relectures(), 0, "un échec ne relit pas la page comme si le retrait avait eu lieu");
+    const reessayer = boutons(alerte).find((b) => texte(b) === "Réessayer");
+    assert.ok(reessayer, "pas de « Réessayer »");
+    assert.match(classe(reessayer!), /(?<![\w:/-])min-h-11\b/);
+    // « Réessayer » relance le MÊME geste : le verrou a été relâché.
+    void clic(reessayer!);
+    assert.equal(m.appels.length, 2);
+    assert.equal(m.appels[1].url, m.appels[0].url);
+  }
+});
+
+test("PR2 — succès : la page relit le serveur ; connexion : on part se connecter", async () => {
+  const ok = monterRetrait();
+  const p = clic(boutons(ok.rendre())[0]);
+  ok.enAttente[0]({ etat: "ok", data: { ok: true } });
+  await p;
+  assert.equal(ok.relectures(), 1);
+  assert.equal(tous(ok.rendre()).find((n) => n.props.role === "alert"), undefined);
+
+  const cx = monterRetrait();
+  const q = clic(boutons(cx.rendre())[0]);
+  cx.enAttente[0]({ etat: "connexion", vers: "/connexion?next=%2Fpanier" });
+  await q;
+  assert.deepEqual(cx.parties, ["/connexion?next=%2Fpanier"]);
+});
+
+test("PR3 — le bouton fait 44 px, porte le titre dans son nom accessible, et ne part qu'une fois", () => {
+  const m = monterRetrait();
+  const [b] = boutons(m.rendre());
+  assert.equal(texte(b), "Retirer");
+  assert.equal(b.props["aria-label"], "Retirer « Pagne » du panier");
+  assert.match(classe(b), /(?<![\w:/-])min-h-11\b/);
+  void clic(b);
+  void clic(b);
+  assert.equal(m.appels.length, 1);
+});
+
+test("PI1 — les libellés du retrait existent dans les quatre langues et nomment l'article", () => {
+  for (const lang of LANGS) {
+    for (const cle of ["cart.remove.aria", "cart.remove.error", "cart.remove.offline"] as const) {
+      const s = DICT[lang][cle];
+      assert.ok(s && s.includes("{title}"), `${lang} ${cle} ne nomme pas l'article`);
+    }
+    // Le nom accessible CONTIENT le libellé visible (WCAG 2.5.3, « label in name »).
+    assert.ok(DICT[lang]["cart.remove.aria"].startsWith(DICT[lang]["cart.remove"]), `${lang} : « ${DICT[lang]["cart.remove.aria"]} »`);
+  }
 });

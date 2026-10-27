@@ -187,7 +187,13 @@ export default async function PanierPage() {
                     {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
                     <RemoveFromCart
                       productId={l.product_id}
-                      label={t(lang, "cart.remove")}
+                      labels={{
+                        remove: t(lang, "cart.remove"),
+                        aria: t(lang, "cart.remove.aria", { title: l.product!.title }),
+                        error: t(lang, "cart.remove.error", { title: l.product!.title }),
+                        offline: t(lang, "cart.remove.offline", { title: l.product!.title }),
+                        retry: t(lang, "offline.retry"),
+                      }}
                     />
                   </li>
                 ))}
