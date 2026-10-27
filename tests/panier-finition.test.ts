@@ -29,6 +29,8 @@ import { hrefBoutique } from "../lib/boutique-href";
  *        `finally` ne relâche plus le verrou
  *   PR2  le succès ne relit plus le serveur
  *   PR3  `if (verrou.current) return;` → `if (false) return;` (retrait)
+ *   PR3  m4 : `disabled={envoi}` remis à la place d'`aria-disabled`
+ *   PF9  m4 : `disabled={bloque}` remis (PF1-PF3, PF5, PF9) ; garde du gestionnaire inatteignable
  *   PI1  une langue perd `{title}`
  *   `cart-pay-all.tsx` remis tel que sur `main` : PF1–PF6 rouges.
  *   `remove-from-cart.tsx` remis tel que sur `main` : PR1–PR3 rouges.
@@ -121,23 +123,27 @@ function monterPayerTout() {
   const rendre = () => { f.debut(); return mod.CartPayAll({ options: OPTIONS, labels: LIBELLES }); };
   return { rendre, appels, enAttente, rejets, parties, ecoute };
 }
-const clic = (b: El) => (b.props.onClick as () => Promise<void>)();
+const clic = (b: El) => (b.props.onClick as () => Promise<void> | void)();
+/** Laisse s'écouler les suites de promesses (le gestionnaire ne rend rien). */
+const vider = () => new Promise<void>((r) => setImmediate(r));
+const desactive = (b: El) => b.props["aria-disabled"] === true;
 
 test("PF1 — M9 : un double clic n'envoie qu'UNE demande de paiement groupé", async () => {
   const m = monterPayerTout();
   const [premier] = boutons(m.rendre());
   // Les deux clics viennent du MÊME rendu : c'est exactement le double clic,
   // le second arrive avant que React ait repeint quoi que ce soit.
-  const a = clic(premier);
-  const b = clic(premier);
+  void clic(premier);
+  void clic(premier);
   assert.equal(m.appels.length, 1, "le second clic a ouvert une seconde demande : deux groupes, deux réservations de stock");
   m.enAttente[0]({ etat: "ok", data: { redirectUrl: "https://moncash.test/pay" } });
-  await Promise.all([a, b]);
+  await vider();
   assert.deepEqual(m.parties, ["https://moncash.test/pay"]);
   // Parti vers l'opérateur : le verrou reste fermé, aucun bouton ne repart.
   const apres = boutons(m.rendre());
-  assert.ok(apres.every((x) => x.props.disabled === true));
-  await clic(apres[1]);
+  assert.ok(apres.every(desactive));
+  void clic(apres[1]);
+  await vider();
   assert.equal(m.appels.length, 1);
 });
 
@@ -148,7 +154,7 @@ test("PF2 — seul le bouton cliqué dit « chargement » ; les autres sont dés
   const b = boutons(m.rendre());
   assert.deepEqual(b.map(texte), ["MonCash", "CHARGEMENT", "MonCash par Kobara"],
     "deux options Kobara partagent `rail` : le chargement doit être indexé sur l'option, pas sur le rail");
-  assert.ok(b.every((x) => x.props.disabled === true), "pendant la demande, aucun autre moyen ne part");
+  assert.ok(b.every(desactive), "pendant la demande, aucun autre moyen ne part");
   assert.deepEqual(b.map((x) => x.props["aria-busy"]), [false, true, false]);
 });
 
@@ -162,16 +168,16 @@ test("PF3 — chaque issue d'échec relâche le verrou et se dit dans une alerte
   ] as const) {
     const m = monterPayerTout();
     const [premier] = boutons(m.rendre());
-    const p = clic(premier);
+    void clic(premier);
     if (issue === "leve") m.rejets[0](new Error("panne"));
     else m.enAttente[0](issue as Reponse);
-    await p;
+    await vider();
     const arbre = m.rendre();
     const alerte = tous(arbre).find((n) => n.props.role === "alert");
     assert.equal(alerte && texte(alerte), attendu, `issue ${JSON.stringify(issue)}`);
     const apres = boutons(arbre);
     assert.deepEqual(apres.map(texte), ["MonCash", "NatCash", "MonCash par Kobara"]);
-    assert.ok(apres.every((x) => x.props.disabled === false), `issue ${JSON.stringify(issue)} : boutons restés bloqués`);
+    assert.ok(apres.every((x) => x.props["aria-disabled"] === false), `issue ${JSON.stringify(issue)} : boutons restés bloqués`);
     // Le verrou est RELÂCHÉ : un nouveau clic repart.
     void clic(apres[0]);
     assert.equal(m.appels.length, 2, `issue ${JSON.stringify(issue)} : le verrou n'a pas été relâché`);
@@ -193,9 +199,9 @@ test("PF4 — le premier moyen est le CTA plein, les suivants en contour ; tous 
 test("PF5 — retour arrière depuis l'opérateur (bfcache) : la page n'affiche plus un chargement fantôme", async () => {
   const m = monterPayerTout();
   const [premier] = boutons(m.rendre());
-  const p = clic(premier);
+  void clic(premier);
   m.enAttente[0]({ etat: "ok", data: { redirectUrl: "https://moncash.test/pay" } });
-  await p;
+  await vider();
   // Un `pageshow` ordinaire (premier affichage) ne touche à rien.
   m.ecoute.pageshow({ persisted: false });
   assert.equal(texte(boutons(m.rendre())[0]), "CHARGEMENT");
@@ -204,7 +210,7 @@ test("PF5 — retour arrière depuis l'opérateur (bfcache) : la page n'affiche 
   m.ecoute.pageshow({ persisted: true });
   const b = boutons(m.rendre());
   assert.equal(texte(b[0]), "MonCash");
-  assert.ok(b.every((x) => x.props.disabled === false));
+  assert.ok(b.every((x) => x.props["aria-disabled"] === false));
   // Le libellé ET le verrou : un bouton qui a l'air actif mais n'envoie rien
   // serait pire qu'un chargement fantôme.
   void clic(b[0]);
@@ -221,6 +227,30 @@ test("PF6 — le verrou est posé AVANT tout `await`, sur la condition qui comma
   const pose = src.search(/verrou\.current = true;/);
   const attente = src.search(/await appelSession/);
   assert.ok(pose > 0 && attente > pose, "le verrou doit précéder l'appel");
+});
+
+test("PF9 — m4 : le bouton cliqué reste focalisable (aria-disabled, jamais disabled) ; le garde du gestionnaire tient l'âge", async () => {
+  const m = monterPayerTout();
+  void clic(boutons(m.rendre())[0]);
+  for (const b of boutons(m.rendre())) {
+    assert.equal(b.props.disabled, undefined, "`disabled` jette le focus clavier sur <body>");
+    assert.equal(b.props["aria-disabled"], true);
+  }
+  // Attestation d'âge demandée par le serveur, case non cochée : refusé AVANT tout appel.
+  m.enAttente[0]({ etat: "refus", statut: 422, code: "age_attestation_requise", error: "AGE REQUIS" });
+  await vider();
+  let arbre = m.rendre();
+  assert.ok(boutons(arbre).every(desactive));
+  void clic(boutons(arbre)[0]);
+  await vider();
+  assert.equal(m.appels.length, 1, "case non cochée : aucun appel ne doit partir");
+  const caseAge = tous(arbre).find((n) => n.type === "input" && n.props.type === "checkbox")!;
+  (caseAge.props.onChange as (e: unknown) => void)({ target: { checked: true } });
+  arbre = m.rendre();
+  assert.ok(boutons(arbre).every((b) => b.props["aria-disabled"] === false));
+  void clic(boutons(arbre)[0]);
+  assert.equal(m.appels.length, 2);
+  assert.equal(m.appels[1].ageAttestation, true);
 });
 
 // ─────────────────────────────── Retirer ───────────────────────────────────
@@ -299,6 +329,11 @@ test("PR3 — le bouton fait 44 px, porte le titre dans son nom accessible, et n
   assert.equal(b.props["aria-label"], "Retirer « Pagne » du panier");
   assert.match(classe(b), /(?<![\w:/-])min-h-11\b/);
   void clic(b);
+  // m4 : le bouton activé reste focalisable ; le verrou refuse le second envoi.
+  const pendant = boutons(m.rendre())[0];
+  assert.equal(pendant.props.disabled, undefined, "`disabled` jette le focus clavier sur <body>");
+  assert.equal(pendant.props["aria-disabled"], true);
+  void clic(pendant);
   void clic(b);
   assert.equal(m.appels.length, 1);
 });
@@ -461,7 +496,8 @@ test("PP4 — chaque « Retirer » reçoit ses libellés traduits, titre compris
   assert.equal(pagne.retry, DICT.ht["offline.retry"]);
   const payer = tous(arbre).find((n) => n.type === "CartPayAll");
   assert.ok(payer, "le paiement groupé ouvert doit s'afficher");
-  assert.equal((payer!.props.labels as Record<string, string>).network, DICT.ht["error.network"]);
+  const lp = payer!.props.labels as Record<string, string>;
+  assert.equal(lp.network, DICT.ht["error.network"]);
 });
 
 // ─────────────────────────────── Squelette ─────────────────────────────────

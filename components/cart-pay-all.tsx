@@ -22,9 +22,9 @@ function cleOptionPanier(o: OptionPanier): string {
 }
 
 const CTA_PLEIN =
-  "inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
 const CTA_CONTOUR =
-  "inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface/60 px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface/60 px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
 
 /**
  * PAYER TOUT LE PANIER (0128) — un seul paiement, plusieurs vendeurs.
@@ -52,6 +52,13 @@ const CTA_CONTOUR =
  *
  * Ce verrou est la moitié CLIENT. L'autre moitié, que le serveur ignore un
  * second groupe identique, touche l'argent et attend l'arbitrage du porteur.
+ *
+ * ─── LE FOCUS (m4) ──────────────────────────────────────────────────────────
+ * Un `disabled` posé sur le bouton qu'on vient d'activer jette le focus
+ * clavier sur `<body>`. Les moyens de paiement portent donc `aria-disabled`
+ * et restent focalisables ; le clic est refusé dans le gestionnaire. Ce refus
+ * lit l'état du RENDU, que le second clic d'un double clic n'a pas encore vu :
+ * la vraie protection reste le verrou de `payer()`.
  */
 export function CartPayAll({
   options,
@@ -159,8 +166,11 @@ export function CartPayAll({
             <button
               key={cle}
               type="button"
-              onClick={() => payer(o)}
-              disabled={bloque}
+              onClick={() => {
+                if (bloque) return;
+                void payer(o);
+              }}
+              aria-disabled={bloque}
               aria-busy={enCours === cle}
               className={forme}
             >

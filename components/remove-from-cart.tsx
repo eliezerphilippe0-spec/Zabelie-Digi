@@ -30,6 +30,11 @@ export type RemoveFromCartLabels = {
  *   • `refus`     → le retrait n'a PAS eu lieu, et l'écran le dit ;
  *   • `reseau`    → idem, en nommant la vraie cause.
  * Dans les deux derniers cas, « Réessayer » relance le même geste.
+ *
+ * Pendant l'envoi, les boutons portent `aria-disabled` et non `disabled` :
+ * désactiver le bouton qu'on vient d'activer jetterait le focus clavier sur
+ * `<body>` (relecture du 2026-10-27, m4). Le clic est alors refusé par le
+ * verrou, qui est la vraie protection.
  */
 export function RemoveFromCart({
   productId,
@@ -79,11 +84,11 @@ export function RemoveFromCart({
       <button
         type="button"
         onClick={retirer}
-        disabled={envoi}
+        aria-disabled={envoi}
         aria-busy={envoi}
         aria-label={labels.aria}
         aria-describedby={erreur ? idErreur : undefined}
-        className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-line px-4 text-sm text-mist transition hover:border-danger hover:text-danger-text disabled:opacity-60"
+        className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-line px-4 text-sm text-mist transition hover:border-danger hover:text-danger-text aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
       >
         {labels.remove}
       </button>
@@ -93,8 +98,8 @@ export function RemoveFromCart({
           <button
             type="button"
             onClick={retirer}
-            disabled={envoi}
-            className="inline-flex min-h-11 items-center font-semibold text-cloud underline underline-offset-2 disabled:opacity-60"
+            aria-disabled={envoi}
+            className="inline-flex min-h-11 items-center font-semibold text-cloud underline underline-offset-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
           >
             {labels.retry}
           </button>
