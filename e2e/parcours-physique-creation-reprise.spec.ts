@@ -43,16 +43,19 @@ async function settled(page: Page, lang: Lang = "fr") {
   // avant que le marqueur de session décide entre saisie et vérification.
   // Le champ peut disparaître pendant l'hydratation : une seule attente
   // observe les deux issues sans rester bloquée sur un champ déjà retiré.
-  const readyTitle = form(page).getByRole("textbox", { name: "Titre", exact: true })
+  const readyTitle = form(page).getByRole("textbox", { name: t(lang, "publish.physical.titleLabel"), exact: true })
     .and(page.locator(":enabled:not([readonly])"));
   await expect(page.getByText(publishDraftCopy(lang).uncertain, { exact: true }).or(readyTitle)).toBeVisible();
 }
 
-async function fill(page: Page, title: string, attest = true) {
-  await form(page).getByRole("textbox", { name: "Titre", exact: true }).fill(title);
-  await form(page).getByRole("spinbutton", { name: /^Prix \(HTG\)/ }).fill("1500");
-  await form(page).getByRole("spinbutton", { name: "Quantité en stock", exact: true }).fill("3");
-  await form(page).getByRole("combobox", { name: "Catégorie", exact: true }).selectOption("wob");
+// Les libellés du formulaire sont traduits (audit 2026-10-27, M3) : les
+// sélecteurs suivent la langue de la session, comme `submit`.
+async function fill(page: Page, title: string, attest = true, lang: Lang = "fr") {
+  const debut = (s: string) => new RegExp("^" + s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  await form(page).getByRole("textbox", { name: t(lang, "publish.physical.titleLabel"), exact: true }).fill(title);
+  await form(page).getByRole("spinbutton", { name: debut(t(lang, "publish.price.ph")) }).fill("1500");
+  await form(page).getByRole("spinbutton", { name: t(lang, "publish.physical.quantity"), exact: true }).fill("3");
+  await form(page).getByRole("combobox", { name: t(lang, "publish.category.aria"), exact: true }).selectOption("wob");
   if (attest) await policy(page).check();
 }
 
@@ -204,7 +207,7 @@ for (const [lang, status, malformed, width] of [
       await route.fulfill({ status, json: malformed ? { ok: true, productId: "identifiant-invalide", slug: "reprise" } : { error: "Réponse après écriture possible" } });
     });
     await page.goto("/vendre/physique"); await settled(page, lang);
-    await fill(page, title); await submit(page, lang).click(); await locked(page, lang);
+    await fill(page, title, true, lang); await submit(page, lang).click(); await locked(page, lang);
     await page.reload(); await settled(page, lang); await locked(page, lang);
     expect(posts).toBe(1); expect((await state(page, title)).products).toHaveLength(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
