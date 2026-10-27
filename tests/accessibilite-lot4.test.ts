@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { loadRoute } from "./helpers/route-harness";
 
 /**
  * AUDIT DU 2026-10-27, LOT 4 — accessibilité des formulaires, états
@@ -38,6 +39,10 @@ const classes = (el: string): string[] => (el.match(/className="([^"]*)"/)?.[1] 
  *   `min-h-11` retiré du libellé                                        → K2 rouge
  *   `{busy ? labels.sending` → `{false ? labels.sending`               → K3 rouge
  *   `role="alert"` retiré de l'erreur                                   → K3 rouge
+ *   `disabled={busy !== null}` remis sur le champ                       → K4 rouge
+ *   garde du clic rendue inatteignable (`if (false)`)                   → K4 rouge
+ *   garde de `deposer` retirée (`busy !== null` ôté)                    → K4 rouge
+ *   `aria-disabled` jamais posé (`aria-disabled={undefined}`)           → K4 rouge
  */
 
 const KYC = code(lire("components/kyc-form.tsx"));
@@ -64,6 +69,104 @@ test("K3 — l'envoi est annoncé (role=status, présente avant l'envoi) et l'é
   // Le texte du succès vient de l'envoi réussi, pas d'ailleurs.
   assert.match(KYC, /setPieces\(\(p\) => \[\.\.\.p, \{ id: data\.id, kind \}\]\);\s*setDepose\(`\$\{libelle\[kind\]\} — \$\{labels\.deposited\}`\);/);
   assert.match(KYC, /\{error && <p role="alert" className="[^"]*">\{error\}<\/p>\}/);
+});
+
+/*
+ * K4 — LE FOCUS NE TOMBE PAS SUR `body` PENDANT L'ENVOI (relecture du
+ * 2026-10-27, m4). Le champ se désactivait (`disabled`) dès l'envoi : le
+ * navigateur retire alors le focus de l'élément désactivé, et l'utilisateur
+ * au clavier repartait du haut de la page, succès comme échec.
+ *
+ * Éprouvé sur le COMPOSANT RÉEL, rendu avec un `useState` minimal et un
+ * `fetch` dont on tient la réponse : on lit les props que React recevrait,
+ * on déclenche les gestionnaires tels quels. Aucune regex ne peut dire
+ * qu'un clic n'ouvre plus le sélecteur ; un `preventDefault` appelé, si.
+ */
+type El = { type: unknown; props: Record<string, unknown> & { children?: unknown } };
+function champsFichier(n: unknown, out: El[] = []): El[] {
+  if (Array.isArray(n)) n.forEach((x) => champsFichier(x, out));
+  else if (n && typeof n === "object" && "props" in n) {
+    const el = n as El;
+    if (el.type === "input" && el.props.type === "file") out.push(el);
+    champsFichier(el.props.children, out);
+  }
+  return out;
+}
+function texteStatut(n: unknown): string | null {
+  if (Array.isArray(n)) {
+    for (const x of n) { const t = texteStatut(x); if (t !== null) return t; }
+    return null;
+  }
+  if (!n || typeof n !== "object" || !("props" in n)) return null;
+  const el = n as El;
+  if (el.props.role === "status") return [el.props.children].flat().join("");
+  return texteStatut(el.props.children);
+}
+
+function monterKyc() {
+  const etats: unknown[] = [];
+  let curseur = 0;
+  const react = {
+    useState(init: unknown) {
+      const i = curseur++;
+      if (!(i in etats)) etats[i] = init;
+      return [etats[i], (v: unknown) => { etats[i] = typeof v === "function" ? (v as (p: unknown) => unknown)(etats[i]) : v; }];
+    },
+  };
+  const el = (type: unknown, props: El["props"]) => ({ type, props });
+  const appels: unknown[] = [];
+  let repondre: (r: unknown) => void = () => {};
+  const fetch = (...args: unknown[]) => { appels.push(args); return new Promise((r) => { repondre = r; }); };
+  const mod = loadRoute("components/kyc-form.tsx", { react, "react/jsx-runtime": { jsx: el, jsxs: el } }, {}, { fetch }) as unknown as {
+    KycForm: (p: unknown) => unknown;
+  };
+  const labels = { title: "t", why: "w", pending: "p", approved: "a", rejected: "r", cin: "CIN", paspo: "Paspò",
+    selfie: "Selfie", add: "Ajoute", sending: "Envoi…", error: "Erreur", deposited: "depoze" };
+  const rendre = () => { curseur = 0; return mod.KycForm({ actorId: "acteur", statut: "pending", deposes: [], noteAdmin: null, labels }); };
+  return { rendre, appels, repondre: (r: unknown) => repondre(r) };
+}
+
+test("K4 — pendant l'envoi le champ reste focalisable (aria-disabled), le clic n'ouvre rien, un second fichier est refusé", async () => {
+  const k = monterKyc();
+  const fichier = new File(["x"], "cin.png", { type: "image/png" });
+  const avant = champsFichier(k.rendre());
+  assert.equal(avant.length, 3, "trois champs de pièce");
+  for (const c of avant) assert.equal(c.props["aria-disabled"], undefined, "un champ est marqué indisponible hors envoi");
+
+  // Envoi de la CIN.
+  (avant[0].props.onChange as (e: unknown) => void)({ target: { files: [fichier], value: "C:\\cin.png" } });
+  assert.equal(k.appels.length, 1, "le dépôt n'est pas parti");
+  const pendant = champsFichier(k.rendre());
+  for (const c of pendant) {
+    assert.ok(!c.props.disabled, "un champ est `disabled` pendant l'envoi : le focus tombe sur body");
+    assert.equal(c.props["aria-disabled"], true, "pendant l'envoi, le champ doit s'annoncer indisponible");
+  }
+  assert.equal(texteStatut(k.rendre()), "Envoi…");
+  // Un clic (souris, Entrée, Espace) sur un autre champ n'ouvre pas le sélecteur…
+  let empeche = 0;
+  (pendant[1].props.onClick as (e: unknown) => void)({ preventDefault: () => { empeche++; } });
+  assert.equal(empeche, 1, "pendant l'envoi, le clic ouvre encore le sélecteur de fichier");
+  // … et un fichier posé sans clic ne part pas.
+  (pendant[1].props.onChange as (e: unknown) => void)({ target: { files: [fichier], value: "x" } });
+  assert.equal(k.appels.length, 1, "un second envoi est parti pendant le premier");
+
+  // Fin de l'envoi : tout redevient disponible, et le clic ouvre de nouveau.
+  k.repondre({ ok: true, json: async () => ({ id: "piece-1" }) });
+  await new Promise((r) => setTimeout(r, 0));
+  const apres = champsFichier(k.rendre());
+  for (const c of apres) assert.equal(c.props["aria-disabled"], undefined, "un champ reste indisponible après l'envoi");
+  let apresEmpeche = 0;
+  (apres[1].props.onClick as (e: unknown) => void)({ preventDefault: () => { apresEmpeche++; } });
+  assert.equal(apresEmpeche, 0, "après l'envoi, le sélecteur ne s'ouvre plus");
+  assert.equal(texteStatut(k.rendre()), "CIN — depoze");
+
+  // Et sur un ÉCHEC : même retour, rien ne reste bloqué.
+  (apres[1].props.onChange as (e: unknown) => void)({ target: { files: [fichier], value: "x" } });
+  assert.equal(k.appels.length, 2, "le second dépôt, après le premier, doit partir");
+  for (const c of champsFichier(k.rendre())) assert.ok(!c.props.disabled && c.props["aria-disabled"] === true);
+  k.repondre({ ok: false, json: async () => ({ error: "refus" }) });
+  await new Promise((r) => setTimeout(r, 0));
+  for (const c of champsFichier(k.rendre())) assert.equal(c.props["aria-disabled"], undefined, "un champ reste indisponible après un échec");
 });
 
 // ── m2 — l'échec de paiement est annoncé ───────────────────────────────────
