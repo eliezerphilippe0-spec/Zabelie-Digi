@@ -112,13 +112,9 @@ const INVENTAIRE: Record<string, string[]> = {
     "Espèces",
     "Le montant est déjà réservé sur le solde du vend",
   ],
-  "components/physical-product-form.tsx": [
-    "Catégorie",
-    "Compatibilité véhicule",
-    "Modèle…",
-    "Quantité en stock",
-    "Une pièce sans compatibilité est presque invenda",
-  ],
+  // components/physical-product-form.tsx : plus aucune chaîne en dur depuis
+  // l'audit du 2026-10-27 (M3) — libellés, aides, placeholders, aria-label et
+  // optgroup arrivent traduits en props ; garde `tests/formulaire-physique`.
 };
 
 // ── Le scanner lui-même, éprouvé AVANT qu'on lui fasse confiance ────────────

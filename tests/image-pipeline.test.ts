@@ -9,6 +9,7 @@ import {
   COVER_MAX_DIMENSION,
   dimensionsDepuisEntete,
 } from "../lib/image-limits";
+import { t } from "../lib/i18n";
 
 /**
  * PIPELINE D'IMAGES (2026-08-15) — ce qui doit rester vrai.
@@ -176,12 +177,26 @@ test("la compression a lieu À LA SÉLECTION, et le fichier ENVOYÉ est le compr
   assert.doesNotMatch(FORM, /setPhoto\(f\)/, "l'original ne doit jamais remplacer le fichier compressé");
 });
 
-test("le vendeur voit le poids AVANT et APRÈS, en kreyòl", () => {
-  assert.match(FORM, /poidsLisible\(compression\.avant\)[\s\S]{0,200}poidsLisible\(compression\.apres\)/);
-  assert.match(FORM, /N ap prepare foto a/);
+test("le vendeur voit le poids AVANT et APRÈS, dans sa langue — kreyòl d'abord", () => {
+  /* Ces messages étaient écrits EN DUR en kreyòl dans le composant (audit du
+   * 2026-10-27, M3) : un vendeur francophone, anglophone ou hispanophone les
+   * lisait en kreyòl. Ils passent par `lib/i18n.ts` ; ce test garde à la fois
+   * la CONDITION qui les commande dans le composant, la LIAISON clé → libellé
+   * dans la page, et le texte kreyòl d'origine dans le dictionnaire. */
+  const PAGE = readFileSync("app/vendre/physique/page.tsx", "utf8");
+  // Compression en cours → message « préparation ».
+  assert.match(FORM, /\{compressing && \(\s*<p[^>]*>\{labels\.photoPreparing\}/);
+  assert.match(PAGE, /photoPreparing: t\(lang, "sell\.galerie\.preparing"\)/);
+  assert.equal(t("ht", "sell.galerie.preparing"), "N ap prepare foto a…");
+  // Gain réel → avant puis après, sous la condition qui le prouve.
+  assert.match(FORM, /compression\.apres < compression\.avant[\s\S]{0,200}poidsLisible\(compression\.avant\)[\s\S]{0,200}poidsLisible\(compression\.apres\)/);
+  assert.match(PAGE, /photoReduced: t\(lang, "publish\.physical\.photo\.reduced"\)/);
   // Le cas « déjà légère » est dit aussi — sinon l'absence de message se lit
   // comme une panne.
-  assert.match(FORM, /compression\.apres >= compression\.avant[\s\S]{0,200}Foto a deja lejè/);
+  assert.match(FORM, /compression\.apres >= compression\.avant[\s\S]{0,200}labels\.photoLight\.replace\("\{poids\}", poidsLisible\(compression\.avant\)\)/);
+  assert.match(PAGE, /photoLight: t\(lang, "publish\.physical\.photo\.light"\)/);
+  assert.match(t("ht", "publish.physical.photo.light"), /^Foto a deja lejè \(\{poids\}\)/);
+  assert.match(t("ht", "publish.physical.photo.reduced"), /^Foto a pare : \{avant\} → \{apres\}\./);
 });
 
 test("poidsLisible bascule Ko → Mo là où un écran de 360 px le demande", async () => {
