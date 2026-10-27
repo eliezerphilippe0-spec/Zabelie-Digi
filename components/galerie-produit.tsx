@@ -74,7 +74,10 @@ export function GalerieProduit({
               type="button"
               onClick={() => setPrincipale(i)}
               aria-label={`${alt} ${i + 1}`}
-              aria-pressed={i === principale}
+              // La vignette AFFICHÉE est l'élément courant d'un ensemble où un
+              // seul l'est : `aria-current`, pas `aria-pressed`, qui annoncerait
+              // autant de bascules indépendantes que de vignettes.
+              aria-current={i === principale ? "true" : undefined}
               className={`relative shrink-0 overflow-hidden rounded-xl border ${
                 i === principale ? "border-cloud" : "border-line"
               }`}

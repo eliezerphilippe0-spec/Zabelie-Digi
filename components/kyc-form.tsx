@@ -55,7 +55,10 @@ export function KycForm({
   };
 
   async function deposer(kind: KycType, file: File | null) {
-    if (!file) return;
+    // Un envoi à la fois : le champ reste ACTIF pendant l'envoi (voir plus
+    // bas), donc c'est ici que se tient la garde — y compris contre un
+    // fichier posé sans clic (glisser, `setInputFiles`).
+    if (!file || busy !== null) return;
     setBusy(kind);
     setError(null);
     setDepose(null);
@@ -71,7 +74,7 @@ export function KycForm({
         return;
       }
       setPieces((p) => [...p, { id: data.id, kind }]);
-      setDepose(`${libelle[kind]} : ${labels.deposited}`);
+      setDepose(`${libelle[kind]} — ${labels.deposited}`);
     } catch {
       setError(labels.error);
     } finally {
@@ -109,7 +112,7 @@ export function KycForm({
         <ul className="text-xs text-mist">
           {pieces.map((p) => (
             <li key={p.id}>
-              {libelle[p.kind]} : {labels.deposited}
+              {libelle[p.kind]} — {labels.deposited}
             </li>
           ))}
         </ul>
@@ -119,20 +122,28 @@ export function KycForm({
           (`hidden`) : `display: none` les rendait injoignables au clavier, et
           le retrait d'argent attend ce dossier (audit 2026-10-27, M8). Même
           motif que `photo-principale.tsx` : 44 px, anneau de focus dessiné sur
-          le libellé (`has-[:focus-visible]`). */}
+          le libellé (`has-[:focus-visible]`).
+          Pendant l'envoi, le champ n'est PAS `disabled` : désactiver l'élément
+          qui a le focus le renvoie sur `body`, et l'utilisateur au clavier
+          repart du haut de la page (relecture du 2026-10-27). Il porte
+          `aria-disabled`, le clic n'ouvre plus le sélecteur, et `deposer`
+          refuse un second fichier : le focus reste où il était. */}
       {statut !== "approved" && (
         <div className="flex flex-wrap gap-2">
           {(["cin", "paspo", "selfie"] as KycType[]).map((k) => (
             <label
               key={k}
-              className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent"
+              className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent has-aria-disabled:cursor-wait"
             >
               {busy === k ? labels.sending : `${labels.add} : ${libelle[k]}`}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
                 className="sr-only"
-                disabled={busy !== null}
+                aria-disabled={busy !== null || undefined}
+                onClick={(e) => {
+                  if (busy !== null) e.preventDefault();
+                }}
                 onChange={(e) => {
                   deposer(k, e.target.files?.[0] ?? null);
                   e.target.value = "";
