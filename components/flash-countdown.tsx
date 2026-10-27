@@ -49,7 +49,7 @@ export function FlashCountdown({ fin, prefix }: { fin: string; prefix: string })
   const deux = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <span className="numeric text-xs font-bold text-brand">
+    <span className="numeric text-xs font-bold text-accent">
       {prefix} {h > 0 ? `${h}:${deux(m)}:${deux(s)}` : `${m}:${deux(s)}`}
     </span>
   );

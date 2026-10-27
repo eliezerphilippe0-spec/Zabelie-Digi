@@ -89,7 +89,7 @@ export function KycForm({
       <p
         className={
           statut === "approved"
-            ? "text-xs font-semibold text-brand"
+            ? "text-xs font-semibold text-success-text"
             : statut === "rejected"
               ? "text-xs font-semibold text-danger-text"
               : "text-xs text-mist"

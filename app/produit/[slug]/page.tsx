@@ -539,7 +539,7 @@ export default async function ProductPage({
                     {t(lang, "product.flash.badge")}
                   </span>
                   <span className="line-through">{formatHTG(product.priceHTG)}</span>
-                  <span className="rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                  <span className="rounded-full border border-accent px-2 py-0.5 text-xs font-bold text-accent">
                     −{pourcentageRabais(product.priceHTG, flash.prixFlashHtg)}%
                   </span>
                   <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
@@ -551,7 +551,7 @@ export default async function ProductPage({
               compareHtg > product.priceHTG && (
                 <p className="text-sm text-mist">
                   <span className="line-through">{formatHTG(compareHtg)}</span>
-                  <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                  <span className="ml-2 rounded-full border border-accent px-2 py-0.5 text-xs font-bold text-accent">
                     −{pourcentageRabais(compareHtg, product.priceHTG)}%
                   </span>
                 </p>
