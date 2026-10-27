@@ -280,3 +280,21 @@ test("catalogue — puces et facettes : 44 px au pouce, une rangée qui défile 
     for (const c of classesDesLiens(bloc)) assert.ok(c.includes("whitespace-nowrap"), `${nom} : libellé coupé en deux lignes`);
   }
 });
+
+// ── m3 : l'anneau de focus ──────────────────────────────────────────────────
+
+test("m3 — les listes de zone gardent l'anneau de focus global", () => {
+  /* `outline-none` retirait l'anneau de `app/globals.css` (2 px d'accent,
+   * `:focus-visible`) et le remplaçait par une bordure de 1 px. */
+  const form = CATALOGUE.match(/<form\b[^>]*>(?:(?!<\/form>)[\s\S])*?name="zd"[\s\S]*?<\/form>/);
+  assert.ok(form, "formulaire de zone introuvable");
+  const listes = [...form[0].matchAll(/<select\b[\s\S]*?className="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
+  assert.equal(listes.length, 3);
+  for (const c of listes) {
+    assert.ok(
+      !c.some((k) => /^(?:[a-z-]+:)?(?:outline-none|outline-0|outline-hidden)$/.test(k)),
+      `liste de zone qui efface l'anneau de focus : « ${c.join(" ")} »`
+    );
+  }
+  assert.match(readFileSync("app/globals.css", "utf8"), /:focus-visible \{\s*outline: 2px solid var\(--color-accent\);/);
+});

@@ -324,7 +324,7 @@ export default async function CataloguePage({
               name="zd"
               defaultValue={zd ?? ""}
               aria-label={t(lang, "zone.level.depatman")}
-              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base focus:border-accent"
             >
               <option value="">{t(lang, "zone.filter.all")}</option>
               {depatmans.map((z) => (
@@ -338,7 +338,7 @@ export default async function CataloguePage({
                 name="zk"
                 defaultValue={zkValide ?? ""}
                 aria-label={t(lang, "zone.level.komin")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.komin")}</option>
                 {komins.map((z) => (
@@ -353,7 +353,7 @@ export default async function CataloguePage({
                 name="zq"
                 defaultValue={zqValide ?? ""}
                 aria-label={t(lang, "zone.level.katye")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base focus:border-accent"
               >
                 <option value="">{t(lang, "zone.level.katye")}</option>
                 {katyes.map((z) => (
