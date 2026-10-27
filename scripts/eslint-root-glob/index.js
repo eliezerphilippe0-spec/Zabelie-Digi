@@ -8,7 +8,7 @@ const picomatch = require("picomatch");
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Interop synchrone du plugin tiers.
 const { globSync: findDirectories } = require("tinyglobby");
 
-// Contrat CommonJS étroit de get-root-dirs dans @next/eslint-plugin-next 16.4.2.
+// Contrat CommonJS étroit de get-root-dirs dans @next/eslint-plugin-next 16.4.3 (dist identique à 16.4.2, vérifié le 2026-10-27).
 // Ce module n'est pas une réimplémentation générale de fast-glob.
 function globSync(pattern, options = {}) {
   if (typeof pattern !== "string" || pattern.length === 0) {
