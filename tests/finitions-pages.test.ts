@@ -29,9 +29,13 @@ test("F1 — les pages privées portent noindex, comme mes-achats et favoris", (
     "app/mes-achats/page.tsx",
     "app/favoris/page.tsx",
   ]) {
+    /* Deux formes admises : l'objet fixe, ou `generateMetadata` quand le titre
+     * d'onglet suit la langue (le panier, depuis le 2026-10-27). La seconde
+     * est ancrée sur le `return` de la fonction elle-même, qui se ferme juste
+     * après : un `robots` posé ailleurs dans le fichier ne la satisfait pas. */
     assert.match(
       lire(f),
-      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/,
+      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};|export async function generateMetadata\(\) \{\s*const lang = await getLang\(\);\s*return \{ title: `[^`]*`, robots: \{ index: false, follow: false \} \};\s*\}/,
       `${f} peut être indexée`
     );
   }

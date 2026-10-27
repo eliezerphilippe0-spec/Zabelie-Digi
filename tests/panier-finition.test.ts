@@ -497,3 +497,17 @@ test("PL1 — `/panier` a son squelette, à la forme du panier et dans la même 
   assert.equal(classe(main!), coquille![1], "le squelette et la page n'ont plus la même largeur : la page sauterait");
   assert.equal(texte(arbre).trim(), "", "un squelette ne porte aucun texte");
 });
+
+// ─────────────────────────────── Titre d'onglet ────────────────────────────
+// Mutations éprouvées : titre remis en dur (« Mon panier — Zabelie ») ;
+// `robots: { index: true }`. Rouges toutes deux (et F1 de
+// `tests/finitions-pages.test.ts` pour la seconde).
+
+test("PT1 — le titre d'onglet suit la langue, et la page reste noindex", async () => {
+  for (const lang of LANGS) {
+    const meta = await monterPage(lang).page.generateMetadata();
+    assert.equal(meta.title, `${DICT[lang]["cart.title"]} — Zabelie`);
+    assert.deepEqual(JSON.parse(JSON.stringify(meta.robots)), { index: false, follow: false });
+  }
+  assert.doesNotMatch(readFileSync("app/panier/page.tsx", "utf8"), /export const metadata\b/, "un titre fixe est revenu");
+});

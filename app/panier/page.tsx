@@ -21,7 +21,14 @@ import { coverUrlAt } from "@/lib/product-image";
 import { hrefBoutique } from "@/lib/boutique-href";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
+
+/* Titre d'onglet dans la langue de l'acheteur : il était écrit en dur
+ * (« Mon panier — Zabelie ») pour un produit kreyòl d'abord. `noindex`
+ * reste : un panier est une page privée. */
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "cart.title")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 /* Vignette de ligne : un carré de 64 px, comme Etsy et Amazon, dimensions
  * posées (aucun saut de mise en page) et chargement différé (`CardImage`).
