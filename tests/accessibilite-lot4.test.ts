@@ -62,7 +62,7 @@ test("K3 — l'envoi est annoncé (role=status, présente avant l'envoi) et l'é
   // La région existe TOUJOURS dans la rangée, et c'est `busy` qui la remplit.
   assert.match(KYC, /<p role="status" className="sr-only">\s*\{busy \? labels\.sending : \(depose \?\? ""\)\}\s*<\/p>/);
   // Le texte du succès vient de l'envoi réussi, pas d'ailleurs.
-  assert.match(KYC, /setPieces\(\(p\) => \[\.\.\.p, \{ id: data\.id, kind \}\]\);\s*setDepose\(`\$\{libelle\[kind\]\} : \$\{labels\.deposited\}`\);/);
+  assert.match(KYC, /setPieces\(\(p\) => \[\.\.\.p, \{ id: data\.id, kind \}\]\);\s*setDepose\(`\$\{libelle\[kind\]\} — \$\{labels\.deposited\}`\);/);
   assert.match(KYC, /\{error && <p role="alert" className="[^"]*">\{error\}<\/p>\}/);
 });
 

@@ -71,7 +71,7 @@ export function KycForm({
         return;
       }
       setPieces((p) => [...p, { id: data.id, kind }]);
-      setDepose(`${libelle[kind]} : ${labels.deposited}`);
+      setDepose(`${libelle[kind]} — ${labels.deposited}`);
     } catch {
       setError(labels.error);
     } finally {
@@ -109,7 +109,7 @@ export function KycForm({
         <ul className="text-xs text-mist">
           {pieces.map((p) => (
             <li key={p.id}>
-              {libelle[p.kind]} : {labels.deposited}
+              {libelle[p.kind]} — {labels.deposited}
             </li>
           ))}
         </ul>
