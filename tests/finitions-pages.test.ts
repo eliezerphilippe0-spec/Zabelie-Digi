@@ -30,9 +30,10 @@ test("F1 — les pages privées portent noindex, comme mes-achats et favoris", (
     "app/favoris/page.tsx",
   ]) {
     /* Deux formes, AUSSI strictes l'une que l'autre : l'objet statique, ou
-     * l'objet RENDU par `generateMetadata` (titre traduit — /mes-achats
-     * depuis le 2026-10-27). Next interdit les deux exports ensemble ; la
-     * seconde est lue dans le `return` de la fonction, pas n'importe où. */
+     * l'objet RENDU par `generateMetadata` (titre traduit — /mes-achats, /tableau-de-bord
+     * et /panier depuis le 2026-10-27). Next interdit les deux exports
+     * ensemble ; la seconde est lue dans le `return` de la fonction, pas
+     * n'importe où dans le fichier. */
     const src = lire(f);
     const statique = /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/.test(src);
     const corps = src.match(/export async function generateMetadata\(\)[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
