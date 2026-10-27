@@ -637,7 +637,7 @@ export function BuyButton({
         </div>
       )}
 
-      {error && <p className="mt-2 text-center text-xs text-danger-text">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-center text-xs text-danger-text">{error}</p>}
     </div>
   );
 }

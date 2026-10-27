@@ -65,3 +65,20 @@ test("K3 — l'envoi est annoncé (role=status, présente avant l'envoi) et l'é
   assert.match(KYC, /setPieces\(\(p\) => \[\.\.\.p, \{ id: data\.id, kind \}\]\);\s*setDepose\(`\$\{libelle\[kind\]\} : \$\{labels\.deposited\}`\);/);
   assert.match(KYC, /\{error && <p role="alert" className="[^"]*">\{error\}<\/p>\}/);
 });
+
+// ── m2 — l'échec de paiement est annoncé ───────────────────────────────────
+/*
+ * `cart-pay-all.tsx` annonçait son erreur (`role="alert"`), `buy-button.tsx`
+ * — le même chemin, depuis la fiche — non : un acheteur au lecteur d'écran
+ * appuyait sur « Payer » et n'entendait rien.
+ *
+ * Mutation éprouvée : `role="alert"` retiré de l'erreur                → P1 rouge
+ */
+
+const BOUTON = code(lire("components/buy-button.tsx"));
+
+test("P1 — l'erreur de paiement de la fiche est annoncée, comme celle du panier", () => {
+  // L'élément rendu PAR la condition `error &&`, pas un rôle ailleurs dans le fichier.
+  assert.match(BOUTON, /\{error && <p role="alert" className="[^"]*">\{error\}<\/p>\}/);
+  assert.match(code(lire("components/cart-pay-all.tsx")), /\{msg && <p role="alert" /, "le panier a perdu le motif de référence");
+});
