@@ -1,8 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { loadRoute } from "./helpers/route-harness";
-import { DICT, LANGS } from "../lib/i18n";
+import { loadRoute, database } from "./helpers/route-harness";
+import { DICT, LANGS, t } from "../lib/i18n";
+import { formatHTG } from "../lib/sample-data";
+import { isDownloadable, isProductKind } from "../lib/product-kind";
+import { marketplaceCopy } from "../lib/marketplace-copy";
+import { hrefBoutique } from "../lib/boutique-href";
 
 /**
  * FINITION DU PANIER — audit du 2026-10-27 (M9 côté client, m11, prix,
@@ -308,4 +312,154 @@ test("PI1 — les libellés du retrait existent dans les quatre langues et nomme
     // Le nom accessible CONTIENT le libellé visible (WCAG 2.5.3, « label in name »).
     assert.ok(DICT[lang]["cart.remove.aria"].startsWith(DICT[lang]["cart.remove"]), `${lang} : « ${DICT[lang]["cart.remove.aria"]} »`);
   }
+});
+
+// ─────────────────────────────── La page ───────────────────────────────────
+// La page est EXÉCUTÉE (doublures de Supabase et des composants), puis son
+// arbre est lu. Mutations éprouvées, chacune rouge puis restaurée :
+//   PP1  `parBoutique` range toutes les lignes sous un seul vendeur
+//   PP2  le prix de ligne, puis le total, repassent en `text-cloud`
+//   PP3  source de vignette à 640 px ; `tabIndex={-1}` retiré ; une image
+//        rendue aussi pour les produits SANS photo (`{true ? (`)
+//   PP4  le nom accessible de « Retirer » perd le titre
+
+type Ligne = { product_id: string; product: Record<string, unknown> };
+const LIGNES: Ligne[] = [
+  { product_id: "a", product: { slug: "guide", title: "Guide PDF", price_htg: 500, kind: "fichier", cover_url: "https://cdn.test/a.jpg", seller_id: "s1", creator: { display_name: "Lakay" } } },
+  { product_id: "b", product: { slug: "pagne", title: "Pagne brodé", price_htg: 2500, kind: "physical", cover_url: null, seller_id: "s2", creator: { display_name: "Atelye Jacmel" } } },
+  { product_id: "c", product: { slug: "sac", title: "Sac latanye", price_htg: 1750, kind: "physical", cover_url: "https://cdn.test/c.jpg", seller_id: "s1", creator: { display_name: "Lakay" } } },
+  { product_id: "d", product: { slug: "chapo", title: "Chapo pay", price_htg: 900, kind: "physical", cover_url: null, seller_id: "s2", creator: { display_name: "Atelye Jacmel" } } },
+];
+
+function monterPage(lang = "ht", ouvert = false) {
+  const largeurs: number[] = [];
+  const page = loadRoute("app/panier/page.tsx", {
+    "react/jsx-runtime": JSX,
+    "next/link": { default: "a" },
+    "@/components/product-commitment-details": { ProductCommitmentDetails: "PCD" },
+    "@/lib/product-commitments-server": { getProductCommitments: async () => new Map() },
+    "@/lib/marketplace-copy": { marketplaceCopy },
+    "@/components/site-nav": { SiteNav: "SiteNav" },
+    "@/components/site-footer": { SiteFooter: "SiteFooter" },
+    "@/components/remove-from-cart": { RemoveFromCart: "RemoveFromCart" },
+    "@/components/cart-pay-all": { CartPayAll: "CartPayAll" },
+    "@/components/card-image": { CardImage: "CardImage" },
+    "@/lib/supabase/server": {
+      createClient: async () => ({
+        ...database(() => ({ data: LIGNES, error: null })),
+        auth: { getUser: async () => ({ data: { user: { id: "acheteur" } } }) },
+      }),
+    },
+    "@/lib/supabase/admin": {
+      createAdminClient: () => ({
+        ...database(() => ({ data: { max_articles: 10 }, error: null })),
+        rpc: async () => ({ data: ouvert, error: null }),
+      }),
+    },
+    "@/lib/sample-data": { formatHTG },
+    "@/lib/i18n-server": { getLang: async () => lang },
+    "@/lib/i18n": { t },
+    "@/lib/product-kind": { isProductKind, isDownloadable },
+    "@/lib/stripe": { isStripeEnabled: () => false },
+    "@/lib/kobara": { isKobaraEnabled: () => false },
+    "@/lib/payment-utils": { usdCentsFromHtg: () => 0, formatUsd: () => "" },
+    "@/lib/product-image": { coverUrlAt: (u: string | null, w: number) => { largeurs.push(w); return u; } },
+    "@/lib/boutique-href": { hrefBoutique },
+  }) as unknown as { default(): Promise<El>; generateMetadata(): Promise<{ title: string; robots: unknown }> };
+  return { page, largeurs };
+}
+
+/** Les enfants DIRECTS d'un élément (tableaux de `map` aplatis). */
+function enfants(n: El): El[] {
+  const out: El[] = [];
+  const plat = (x: unknown) => {
+    if (Array.isArray(x)) x.forEach(plat);
+    else if (x && typeof x === "object") out.push(x as El);
+  };
+  plat(n.props.children);
+  return out;
+}
+
+/** Les cartes de boutique d'une section : le nom en tête, les produits dans l'ordre. */
+function boutiques(section: El) {
+  return tous(section)
+    .filter((n) => n.type === "div" && enfants(n).some((c) => c.type === "ul"))
+    .map((carte) => ({
+      nom: texte(tous(carte).find((n) => n.type === "a" && String(n.props.href).startsWith("/createur/"))),
+      produits: tous(carte).filter((n) => n.type === "li").map((li) => tous(li).find((n) => n.type === "a")!.props.href),
+    }));
+}
+
+test("PP1 — m11 : l'affichage est rangé PAR BOUTIQUE dans chaque mode de remise, sans perdre ni doubler une ligne", async () => {
+  const { page } = monterPage();
+  const arbre = await page.default();
+  const sections = tous(arbre).filter((n) => n.type === "section");
+  assert.equal(sections.length, 2, "à télécharger + à remettre");
+  assert.deepEqual(boutiques(sections[0]), [{ nom: "Lakay", produits: ["/produit/guide"] }]);
+  // Ordre d'ajout conservé : Atelye Jacmel apparaît d'abord (pagne), puis Lakay (sac).
+  assert.deepEqual(boutiques(sections[1]), [
+    { nom: "Atelye Jacmel", produits: ["/produit/pagne", "/produit/chapo"] },
+    { nom: "Lakay", produits: ["/produit/sac"] },
+  ]);
+  // Le lien de boutique passe par la fonction unique du dépôt.
+  assert.ok(tous(arbre).some((n) => n.type === "a" && n.props.href === hrefBoutique({ id: "s2", boutikSlug: null })));
+});
+
+test("PP2 — les prix (lignes ET total) sont en orange de texte, et le total n'a pas bougé", async () => {
+  const { page } = monterPage();
+  const noeuds = tous(await page.default());
+  const prix = noeuds.filter((n) => n.type === "span" && /\bnumeric\b/.test(classe(n)));
+  assert.equal(prix.length, LIGNES.length + 1, "une étiquette de prix par ligne, plus le total");
+  for (const p of prix) {
+    assert.match(classe(p), /(?<![\w:/-])text-accent(?![\w-])/, `prix « ${texte(p)} » hors de l'orange de texte`);
+    assert.doesNotMatch(classe(p), /(?<![\w:/-])text-cloud\b/);
+  }
+  const somme = LIGNES.reduce((n, l) => n + Number(l.product.price_htg), 0);
+  assert.equal(texte(prix.at(-1)), formatHTG(somme), "présentation seule : le total reste la somme des lignes");
+  assert.deepEqual(
+    prix.slice(0, -1).map(texte).sort(),
+    LIGNES.map((l) => formatHTG(Number(l.product.price_htg))).sort()
+  );
+});
+
+test("PP3 — vignette carrée de 64 px, différée, hors tabulation ; sans photo, un aplat honnête", async () => {
+  const { page, largeurs } = monterPage();
+  const arbre = await page.default();
+  const vignettes = tous(arbre).filter((n) => n.type === "a" && n.props.tabIndex === -1);
+  assert.equal(vignettes.length, LIGNES.length, "une vignette par ligne");
+  for (const v of vignettes) {
+    assert.equal(v.props["aria-hidden"], "true", "la vignette doublerait le lien du titre au lecteur d'écran");
+    assert.match(classe(v), /(?<![\w:/-])h-16\b/);
+    assert.match(classe(v), /(?<![\w:/-])w-16\b/);
+  }
+  const images = tous(arbre).filter((n) => n.type === "CardImage");
+  assert.deepEqual(images.map((i) => i.props.src).sort(), ["https://cdn.test/a.jpg", "https://cdn.test/c.jpg"]);
+  for (const i of images) {
+    assert.equal(i.props.size, 64, "dimensions explicites : aucun saut de mise en page");
+    assert.equal(i.props.alt, "");
+  }
+  assert.ok(largeurs.length >= LIGNES.length && largeurs.every((w) => w === 128), `source demandée à ${largeurs} px`);
+  // Les lignes sans photo : aucune image, ni réelle ni de remplissage.
+  const sansPhoto = vignettes.filter((x) => ["/produit/pagne", "/produit/chapo"].includes(String(x.props.href)));
+  assert.equal(sansPhoto.length, 2, "le cas sans photo doit être réellement examiné");
+  for (const v of sansPhoto) {
+    assert.ok(!tous(v).some((n) => n.type === "CardImage" || n.type === "img"), "une image de remplissage ferait croire à la marchandise");
+  }
+  // Titre limité à deux lignes : exactement les titres des lignes.
+  const titres = tous(arbre).filter((n) => n.type === "a" && /(?<![\w:/-])line-clamp-2\b/.test(classe(n))).map(texte);
+  assert.deepEqual(titres.sort(), LIGNES.map((l) => String(l.product.title)).sort());
+});
+
+test("PP4 — chaque « Retirer » reçoit ses libellés traduits, titre compris, et le paiement groupé son message réseau", async () => {
+  const { page } = monterPage("ht", true);
+  const arbre = await page.default();
+  const retraits = tous(arbre).filter((n) => n.type === "RemoveFromCart");
+  assert.equal(retraits.length, LIGNES.length);
+  const pagne = retraits.find((r) => r.props.productId === "b")!.props.labels as Record<string, string>;
+  assert.equal(pagne.aria, "Retire « Pagne brodé » nan panyen an");
+  assert.equal(pagne.offline, "Nou pa t ka retire « Pagne brodé » : koneksyon an pa pase.");
+  assert.equal(pagne.retry, DICT.ht["offline.retry"]);
+  const payer = tous(arbre).find((n) => n.type === "CartPayAll");
+  assert.ok(payer, "le paiement groupé ouvert doit s'afficher");
+  assert.equal((payer!.props.labels as Record<string, string>).network, DICT.ht["error.network"]);
 });

@@ -16,9 +16,20 @@ import { isStripeEnabled } from "@/lib/stripe";
 import { isKobaraEnabled } from "@/lib/kobara";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
+import { CardImage } from "@/components/card-image";
+import { coverUrlAt } from "@/lib/product-image";
+import { hrefBoutique } from "@/lib/boutique-href";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
+
+/* Vignette de ligne : un carré de 64 px, comme Etsy et Amazon, dimensions
+ * posées (aucun saut de mise en page) et chargement différé (`CardImage`).
+ * Quand les transformations d'image sont actives (`lib/product-image.ts`),
+ * la source est demandée au double (écrans 2×) et non à la largeur d'une
+ * carte de catalogue (640 px) ; sans elles, l'URL d'origine est servie. */
+const VIGNETTE = 64;
+const VIGNETTE_SOURCE = VIGNETTE * 2;
 
 /**
  * Le panier — lecture par le CLIENT DE SESSION, la RLS de 0058 fait le tri.
@@ -55,7 +66,7 @@ export default async function PanierPage() {
   const { data: lignes, error } = await supabase
     .from("zabelie_cart_items")
     .select(
-      "product_id, added_at, product:products(slug, title, price_htg, kind, creator:profiles!products_seller_id_fkey(display_name))"
+      "product_id, added_at, product:products(slug, title, price_htg, kind, cover_url, seller_id, creator:profiles!products_seller_id_fkey(display_name))"
     )
     .order("added_at", { ascending: false });
 
@@ -69,6 +80,8 @@ export default async function PanierPage() {
        * ce type l'omettait : la donnée arrivait et se perdait. Le groupement
        * ci-dessous ne coûte donc aucune requête de plus. */
       kind: string;
+      cover_url: string | null;
+      seller_id: string;
       creator: { display_name: string | null } | null;
     } | null;
   };
@@ -161,48 +174,103 @@ export default async function PanierPage() {
                   {t(lang, "trust.2.b")}
                 </p>
               )}
-              <ul className="divide-y divide-line rounded-2xl border border-line bg-surface/40">
-                {g.lignes.map((l) => (
-                  <li
-                    key={l.product_id}
-                    className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4"
-                  >
-                    <div className="min-w-0 flex-1 basis-full sm:basis-auto">
-                      <Link
-                        href={`/produit/${l.product!.slug}`}
-                        className="font-semibold text-cloud transition hover:text-accent"
-                      >
-                        {l.product!.title}
-                      </Link>
-                      {l.product!.creator?.display_name && (
-                        <p className="text-xs text-mist">
-                          {t(lang, "product.by")} {l.product!.creator.display_name}
-                        </p>
-                      )}
-                    </div>
-                    <span className="numeric shrink-0 font-bold text-cloud">
-                      {formatHTG(l.product!.price_htg)}
-                    </span>
-                    <Link href={`/produit/${l.product!.slug}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
-                    {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
-                    <RemoveFromCart
-                      productId={l.product_id}
-                      labels={{
-                        remove: t(lang, "cart.remove"),
-                        aria: t(lang, "cart.remove.aria", { title: l.product!.title }),
-                        error: t(lang, "cart.remove.error", { title: l.product!.title }),
-                        offline: t(lang, "cart.remove.offline", { title: l.product!.title }),
-                        retry: t(lang, "offline.retry"),
-                      }}
-                    />
-                  </li>
+              {/* PAR BOUTIQUE, comme Etsy : à l'intérieur d'un mode de remise,
+                  une carte par vendeur, son nom UNE fois en tête au lieu de
+                  « par … » sous chaque ligne. Présentation seule : les mêmes
+                  lignes, dans le même ordre d'ajout, et aucun montant ne
+                  change. */}
+              <div className="grid gap-3">
+                {parBoutique(g.lignes).map((b) => (
+                  <div key={b.vendeurId} className="rounded-2xl border border-line bg-surface/40">
+                    {b.nom && (
+                      <p className="flex items-center gap-2 border-b border-line px-4 text-sm text-mist">
+                        <svg
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                          className="h-4 w-4 flex-none fill-none stroke-current"
+                          strokeWidth="1.8"
+                        >
+                          <path d="M4 10h16M5 10V20h14V10M3 10l2-6h14l2 6M10 20v-5h4v5" />
+                        </svg>
+                        <span>{t(lang, "product.by")}</span>
+                        <Link
+                          href={hrefBoutique({ id: b.vendeurId, boutikSlug: null })}
+                          className="inline-flex min-h-11 min-w-0 items-center font-semibold text-cloud transition hover:text-accent"
+                        >
+                          <span className="truncate">{b.nom}</span>
+                        </Link>
+                      </p>
+                    )}
+                    <ul className="divide-y divide-line">
+                      {b.lignes.map((l) => {
+                        const vignette = coverUrlAt(l.product!.cover_url, VIGNETTE_SOURCE);
+                        return (
+                          <li key={l.product_id} className="flex gap-3 p-4">
+                            {/* La vignette mène à la fiche, comme le titre ; hors
+                                de l'ordre de tabulation et du lecteur d'écran,
+                                pour ne pas annoncer deux fois le même lien. */}
+                            <Link
+                              href={`/produit/${l.product!.slug}`}
+                              tabIndex={-1}
+                              aria-hidden="true"
+                              className="relative block h-16 w-16 flex-none overflow-hidden rounded-lg bg-line"
+                            >
+                              {vignette ? (
+                                <CardImage src={vignette} alt="" size={VIGNETTE} />
+                              ) : (
+                                // Pas de photo : un aplat neutre et l'icône du
+                                // produit, jamais une image de remplissage qui
+                                // ferait croire à la marchandise.
+                                <span className="flex h-full w-full items-center justify-center text-mist">
+                                  <svg viewBox="0 0 48 48" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                                    <path d="M12 16h24l3 25H9l3-25Z" />
+                                    <path d="M18 17v-5a6 6 0 0 1 12 0v5" />
+                                  </svg>
+                                </span>
+                              )}
+                            </Link>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <Link
+                                  href={`/produit/${l.product!.slug}`}
+                                  className="line-clamp-2 break-words font-semibold text-cloud transition hover:text-accent"
+                                >
+                                  {l.product!.title}
+                                </Link>
+                                {/* Même orange de texte que la carte produit
+                                    (`text-accent`) : un prix se reconnaît d'une
+                                    page à l'autre. */}
+                                <span className="numeric shrink-0 font-bold text-accent">
+                                  {formatHTG(l.product!.price_htg)}
+                                </span>
+                              </div>
+                              <div className="mt-3 flex flex-wrap items-start gap-3">
+                                <Link href={`/produit/${l.product!.slug}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
+                                <RemoveFromCart
+                                  productId={l.product_id}
+                                  labels={{
+                                    remove: t(lang, "cart.remove"),
+                                    aria: t(lang, "cart.remove.aria", { title: l.product!.title }),
+                                    error: t(lang, "cart.remove.error", { title: l.product!.title }),
+                                    offline: t(lang, "cart.remove.offline", { title: l.product!.title }),
+                                    retry: t(lang, "offline.retry"),
+                                  }}
+                                />
+                              </div>
+                              {g.escrow && <div className="mt-3"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </section>
           ))}
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
-            <span className="numeric text-xl font-extrabold text-cloud">
+            <span className="numeric text-xl font-extrabold text-accent">
               {formatHTG(total)}
             </span>
           </div>
@@ -244,6 +312,24 @@ async function lirePanierConfig(): Promise<{ max_articles: number } | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Les lignes d'un groupe, rangées PAR BOUTIQUE (vendeur), dans l'ordre où la
+ * première ligne de chaque boutique apparaît. Présentation seule : chaque
+ * ligne ressort une fois et une seule, telle quelle ; rien n'est additionné.
+ */
+function parBoutique<L extends { product: { seller_id: string; creator: { display_name: string | null } | null } | null }>(
+  lignes: L[]
+): { vendeurId: string; nom: string | null; lignes: L[] }[] {
+  const boutiques = new Map<string, { vendeurId: string; nom: string | null; lignes: L[] }>();
+  for (const l of lignes) {
+    const vendeurId = l.product!.seller_id;
+    const b = boutiques.get(vendeurId);
+    if (b) b.lignes.push(l);
+    else boutiques.set(vendeurId, { vendeurId, nom: l.product!.creator?.display_name ?? null, lignes: [l] });
+  }
+  return [...boutiques.values()];
 }
 
 /** Les rails du paiement groupé, dans l'ordre de la fiche produit. Zelle n'y
