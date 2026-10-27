@@ -321,6 +321,15 @@ const server = createServer((req, res) => {
             delivery: [{ user_id: buyers[0], full_name: "Wilson Pierre-Fictif", phone: "+509 3700 0009", adres_liv: "Adresse privée fictive C1" }],
           };
         }
+        if (input.signaux === true || input.signaux === "fuite") {
+          // PR-Z4 : réponse de zabelie_vendeur_signaux (0156). « fuite » rend un
+          // compte EXACT de 2 paniers, que la page doit refuser (section tue).
+          scenario.signaux = { reads: [], reponse: { fenetre_jours: 30, abonnes: 2,
+            paniers: input.signaux === "fuite"
+              ? [{ titre: "Batri fiktif", paniers: 2, moins_de_3: false }]
+              : [{ titre: "Panno solè fiktif", paniers: 4, moins_de_3: false }, { titre: "Batri fiktif", paniers: null, moins_de_3: true }],
+            recherches: [{ terme: "konvètisè", sessions: 5, mon_rayon: true }, { terme: "jeneratè", sessions: 6, mon_rayon: false }] } };
+        }
         if (input.visites === true) {
           // PR-Z2 : 60 + 40 vues dans les 30 jours, et une ligne de 45 jours
           // (999 vues) que la page doit écarter d'elle-même : le stub ne filtre pas.
@@ -368,6 +377,18 @@ const server = createServer((req, res) => {
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  // PR-Z4 : signaux de demande, appelés par la SESSION du vendeur. Sans
+  // `signaux` dans le scénario, la fonction répond ABSENTE (0156 pas encore
+  // appliquée), comme le vrai PostgREST.
+  if (url.pathname === "/rest/v1/rpc/zabelie_vendeur_signaux") {
+    const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+    const acteur = profileIdentityActors.get(tokenId);
+    const s = acteur?.scenario.signaux;
+    if (!s) return send(404, { code: "PGRST202", message: "Could not find the function public.zabelie_vendeur_signaux without parameters in the schema cache" });
+    s.reads.push({ tokenActorId: tokenId, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+    return send(200, s.reponse);
   }
 
   // PR-Z2 : lecture des visites par le vendeur. Sans `visites` dans le

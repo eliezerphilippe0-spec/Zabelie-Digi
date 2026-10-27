@@ -155,3 +155,11 @@ Les octets, leur empreinte et leur taille viennent du serveur : la route rend le
 | `zabelie_authoring_projet_utilise` | AUCUN rôle client | — | rien | un booléen, pour les trois fonctions ci-dessus |
 
 La règle « pas servi aujourd'hui » protège les quotas : ils se comptent sur les opérations, qui partent avec le projet. L'archivage ferme demandes, exports et soumissions : ce que la route vérifie avant de retirer les PDF reste vrai jusqu'à la suppression. Aucune fiche produit, aucun fichier vendu, aucune version ni aucun droit d'acheteur n'est touché. `supabase/tests/authoring_retention.test.sql` (RT1 à RT7) prouve les refus, T21 et la purge ; la post-condition `ZB149` prouve les droits.
+
+## Ajout du 2026-10-27 — Signaux de demande du vendeur (`0156`, docs/75 §5.C)
+
+| Fonction | Rôle | Identité | Écrit | Rend |
+|----------|------|----------|-------|------|
+| `zabelie_vendeur_signaux` | `authenticated` | `auth.uid()`, compte actif (`seller_is_active`) ; `42501` sinon | rien | trois totaux sur SA boutique : le nombre d'abonnés ; pour ses produits, le nombre de paniers distincts depuis 30 jours (hors son propre panier et hors comptes d'essai), **jamais la valeur exacte sous 3** (`moins_de_3`) ; les termes cherchés sans résultat sous **les règles de `0143`** (même configuration : personnes distinctes ≥ max(5, seuil configuré, `min_sessions`), jours distincts ≥ seuil, pas de chiffres en série, ni `@`, `/` ou lien, hors liste d'exclusion), son rayon d'abord. Jamais un compte, un panier ni une session |
+
+Elle ne crée pas de règle nouvelle pour les recherches : elle reprend celles de `zabelie_authoring_opportunites`, lues dans la même configuration, pour que les deux surfaces ne divergent pas. `supabase/tests/vendeur_signaux.test.sql` (S1 à S4) prouve les totaux, les seuils, l'absence d'identifiant dans la réponse, l'isolation entre vendeurs et les refus (`anon`, session absente, compte suspendu).

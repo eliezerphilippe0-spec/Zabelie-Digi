@@ -101,6 +101,11 @@ declare
     -- des PDF de CE projet ; ne supprime que ce projet (cascade), quand p_executer.
     -- La purge des comptes fermés n'est PAS ici : service role seul.
     'zabelie_authoring_supprimer_projet(p_projet uuid, p_executer boolean):auth',
+    -- Signaux de demande du vendeur (0156, docs/75 §5.C) : auth.uid() seul fait
+    -- l'identité, compte actif exigé. N'écrit rien. Rend des TOTAUX sur sa seule
+    -- boutique (abonnés ; paniers depuis 30 jours, sans valeur sous 3) et les
+    -- recherches ratées sous les règles de 0143 ; jamais un acheteur ni une session.
+    'zabelie_vendeur_signaux():auth',
     -- Prédicat de la policy de lecture des profils (0137) : à soi, marchand
     -- ou interlocuteur par auth.uid(). Rend un booléen, jamais une donnée.
     'zabelie_profil_lisible(p_id uuid):anon,auth',
