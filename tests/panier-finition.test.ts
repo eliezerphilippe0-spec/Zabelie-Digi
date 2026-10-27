@@ -436,6 +436,7 @@ test("PI1 — les libellés du retrait existent dans les quatre langues et nomme
 //        rendue aussi pour les produits SANS photo (`{true ? (`)
 //   PP4  le nom accessible de « Retirer » perd le titre
 //   PP5  m9 : `boutikSlug: null` remis ; `.catch` de la lecture du slug retiré
+//   PP6  360 px : `flex-col` retiré de la rangée titre + prix
 
 type Ligne = { product_id: string; product: Record<string, unknown> };
 const LIGNES: Ligne[] = [
@@ -600,6 +601,24 @@ test("PP5 — m9 : la boutique est liée à son adresse publique /boutik/<slug>,
   assert.deepEqual(normal.demandes.sort(), ["s1", "s2"], "une lecture par boutique, pas par ligne");
   const panne = await liens(async () => { throw new Error("PGRST"); });
   assert.deepEqual(panne.hrefs.sort(), ["/createur/s1", "/createur/s1", "/createur/s2"], "une panne de lecture ne doit pas casser le panier");
+});
+
+test("PP6 — 360 px : sous `sm`, le prix passe SOUS le titre ; au-dessus, il reste à droite", async () => {
+  const { page } = monterPage();
+  const arbre = await page.default();
+  const rangees = tous(arbre).filter((n) => {
+    const e = enfants(n);
+    return n.type === "div" && e.some((c) => c.type === "a" && /(?<![\w:/-])line-clamp-2\b/.test(classe(c)))
+      && e.some((c) => c.type === "span" && /\bnumeric\b/.test(classe(c)));
+  });
+  assert.equal(rangees.length, LIGNES.length, "une rangée titre + prix par ligne");
+  for (const r of rangees) {
+    // Ce qui COMMANDE la disposition : la direction de base et sa bascule.
+    assert.match(classe(r), /(?<![\w:/-])flex-col(?![\w-])/, "sous `sm`, le prix doit passer sous le titre");
+    assert.match(classe(r), /(?<![\w-])sm:flex-row(?![\w-])/, "au-dessus de `sm`, le prix revient à droite");
+    const e = enfants(r);
+    assert.ok(e.findIndex((c) => c.type === "a") < e.findIndex((c) => c.type === "span"), "le prix vient après le titre");
+  }
 });
 
 // ─────────────────────────────── Squelette ─────────────────────────────────

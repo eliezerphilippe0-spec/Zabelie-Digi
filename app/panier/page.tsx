@@ -241,10 +241,15 @@ export default async function PanierPage() {
                               )}
                             </Link>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-3">
+                              {/* À 360 px, un prix à six chiffres à droite ne
+                                  laissait au titre qu'environ 90 px : deux
+                                  lignes coupaient vers 20 caractères. Sous `sm`,
+                                  le prix passe SOUS le titre ; au-dessus, il
+                                  reste aligné à droite. */}
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                 <Link
                                   href={`/produit/${l.product!.slug}`}
-                                  className="line-clamp-2 break-words font-semibold text-cloud transition hover:text-accent"
+                                  className="line-clamp-2 min-w-0 break-words font-semibold text-cloud transition hover:text-accent"
                                 >
                                   {l.product!.title}
                                 </Link>
