@@ -75,7 +75,7 @@ export function SearchBox({
           placeholder={placeholder}
           aria-label={placeholder}
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
-          className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base outline-none focus:border-accent ${
+          className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base focus:border-accent ${
             variant === "header"
               ? "border-transparent bg-surface text-cloud placeholder:text-mist pr-12"
               : "border-line bg-ink/40"

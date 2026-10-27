@@ -515,7 +515,7 @@ export function BuyButton({
               inputMode="tel"
               autoComplete="tel-national"
               maxLength={20}
-              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60"
             />
             <input
               value={numeroBis}
@@ -528,7 +528,7 @@ export function BuyButton({
               // vérifierait plus rien.
               autoComplete="off"
               maxLength={20}
-              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60"
             />
           </div>
 
@@ -582,7 +582,7 @@ export function BuyButton({
             placeholder={coupon.placeholder}
             aria-label={coupon.placeholder}
             maxLength={24}
-            className="code-lisible min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            className="code-lisible min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60"
           />
           <button
             type="button"

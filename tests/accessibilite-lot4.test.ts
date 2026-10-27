@@ -82,3 +82,40 @@ test("P1 — l'erreur de paiement de la fiche est annoncée, comme celle du pani
   assert.match(BOUTON, /\{error && <p role="alert" className="[^"]*">\{error\}<\/p>\}/);
   assert.match(code(lire("components/cart-pay-all.tsx")), /\{msg && <p role="alert" /, "le panier a perdu le motif de référence");
 });
+
+// ── m3 — l'anneau de focus global n'est plus éteint ─────────────────────────
+/*
+ * `app/globals.css` dessine, en couche base, un anneau `:focus-visible` de
+ * 2 px d'accent décollé de 2 px (garde `ux-lot-a` UA3). `outline-none`, en
+ * couche utilitaire, l'écrasait sur le champ de recherche de l'en-tête, les
+ * deux champs du numéro à recharger, le champ de code promo et les champs du
+ * profil : il ne restait qu'une bordure de 1 px. Retiré : ces champs
+ * reçoivent l'anneau commun, sans rien réinventer.
+ *
+ * Mutation éprouvée : `outline-none` remis sur le champ du profil       → F2 rouge
+ */
+
+/** Prédicat SANS `g` : un utilitaire qui éteint l'anneau, variante comprise. */
+const ETEINT = /(?<![\w-])(?:[\w-]+:)*outline-(?:none|hidden)(?![\w-])/;
+
+test("F1 — l'instrument voit l'anneau éteint, et laisse passer l'anneau dessiné", () => {
+  for (const faute of ["text-base outline-none focus:border-accent", "focus:border-brand/60 focus:outline-none", "outline-hidden"]) {
+    assert.ok(ETEINT.test(faute), `non vu : « ${faute} »`);
+  }
+  for (const sain of ["has-[:focus-visible]:outline", "focus-visible:outline-2 outline-accent", "outline-offset-2"]) {
+    assert.ok(!ETEINT.test(sain), `faux positif : « ${sain} »`);
+  }
+});
+
+test("F2 — recherche, recharge, code promo et profil gardent l'anneau de focus global", () => {
+  const TEMOINS: Array<[string, RegExp]> = [
+    ["components/search-box.tsx", /name="q"/],
+    ["components/buy-button.tsx", /value=\{numeroBis\}/],
+    ["components/profile-form.tsx", /const input =\s*"[^"]*\bfocus:border-accent\b/],
+  ];
+  for (const [f, temoin] of TEMOINS) {
+    const src = code(lire(f));
+    assert.match(src, temoin, `${f} : le champ témoin a disparu — le contrôle regarderait le vide`);
+    assert.ok(!ETEINT.test(src), `${f} : un utilitaire éteint de nouveau l'anneau de focus global`);
+  }
+});
