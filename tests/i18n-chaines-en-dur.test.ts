@@ -91,7 +91,8 @@ const INVENTAIRE: Record<string, string[]> = {
   // passés par t() (audit REA 2026-10-26, #2) ; plus aucune chaîne en dur.
   // app/tableau-de-bord/page.tsx : plus aucune chaîne en dur depuis la refonte
   // façon Chariow (docs/73, 2026-10-18) ; retrait, données et compte passent par t().
-  "components/account-actions.tsx": ["Exporter mes données"],
+  // components/account-actions.tsx : « Exporter mes données » passé par t()
+  // avec la confirmation de suppression en page (audit 2026-10-27, M5).
   "components/geo-map.tsx": [
     "Données agrégées par pays. Aucune position indiv",
   ],

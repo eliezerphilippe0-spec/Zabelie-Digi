@@ -119,7 +119,21 @@ export default async function ComptePage() {
               {apresLien}
             </p>
             <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
-              <AccountActions key={user.id} actorId={user.id} />
+              <AccountActions
+                key={user.id}
+                actorId={user.id}
+                labels={{
+                  exportData: t(lang, "vendeur.compte.exporter"),
+                  delete: t(lang, "vendeur.compte.supprimer"),
+                  confirmTitle: t(lang, "vendeur.compte.supprimer.titre"),
+                  confirmBody: t(lang, "vendeur.compte.supprimer.texte"),
+                  confirm: t(lang, "vendeur.compte.supprimer.confirmer"),
+                  cancel: t(lang, "vendeur.compte.supprimer.annuler"),
+                  deleting: t(lang, "vendeur.compte.supprimer.encours"),
+                  failed: t(lang, "vendeur.compte.supprimer.echec"),
+                  network: t(lang, "error.network"),
+                }}
+              />
             </div>
           </section>
         </VendeurShell>
