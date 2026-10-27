@@ -375,53 +375,77 @@ export default async function CataloguePage({
         </details>
 
         {/* Filtres catégories — masqués tant qu'il n'y a rien à filtrer :
-            une seule puce « Tout » n'est pas un filtre, c'est du décor. */}
+            une seule puce « Tout » n'est pas un filtre, c'est du décor.
+            Mobile : UNE rangée qui défile au pouce (le défilement reste dans
+            la barre, `-mx-5 px-5` la fait courir jusqu'aux bords sans
+            déborder de la page) ; `py-1` laisse la place à l'anneau de focus,
+            que `overflow` rognerait sinon. À partir de md, la barre revient à
+            la ligne : sans écran tactile, un défilement sans barre visible est
+            un rayon qu'on n'atteint pas. */}
         {categories.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {PUCES.map(({ valeur, libelle }) => (
-            <Link
-              key={valeur}
-              href={catHref(valeur)}
-              aria-current={valeur === activeCat ? "true" : undefined}
-              className={`inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm transition ${
-                valeur === activeCat
-                  ? "border-transparent bg-cloud text-ink"
-                  : "border-line text-mist hover:border-accent/50 hover:text-cloud"
-              }`}
-            >
-              {libelle}
-            </Link>
-          ))}
-        </div>
+          <nav aria-label={t(lang, "catalog.cat.nav")} className="-mx-5 mt-4 overflow-x-auto px-5 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:overflow-visible">
+            <ul className="flex gap-2 md:flex-wrap">
+              {PUCES.map(({ valeur, libelle }) => (
+                <li key={valeur} className="shrink-0">
+                  <Link
+                    href={catHref(valeur)}
+                    aria-current={valeur === activeCat ? "true" : undefined}
+                    className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-full border px-4 text-sm transition ${
+                      valeur === activeCat
+                        ? "border-transparent bg-cloud text-ink"
+                        : "border-line text-mist hover:border-accent/50 hover:text-cloud"
+                    }`}
+                  >
+                    {libelle}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
 
         {/* Second niveau : les rayons du département actif. N'apparaît que
             s'il y a de quoi choisir — un seul rayon n'est pas une navigation,
-            et zéro rayon ne doit rien afficher du tout (V-13). */}
+            et zéro rayon ne doit rien afficher du tout (V-13).
+            La pastille reste compacte À L'ŒIL ; c'est le lien qui porte les
+            44 px (`min-h-11`), la pastille est dessinée par le span. */}
         {facettes.length > 1 && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-            <Link
-              href={sousHref(null)}
-              className={`rounded-full px-3 py-1 text-xs transition ${
-                !sous ? "bg-cloud text-ink" : "text-mist hover:text-cloud"
-              }`}
-            >
-              {t(lang, "catalog.allShelves")}
-            </Link>
-            {facettes.map((f) => (
-              <Link
-                key={f.slug}
-                href={sousHref(f.slug)}
-                className={`rounded-full px-3 py-1 text-xs transition ${
-                  f.slug === sous ? "bg-cloud text-ink" : "text-mist hover:text-cloud"
-                }`}
-              >
-                {f.label}{" "}
-                <span className={f.slug === sous ? "text-ink/60" : "text-mist"}>
-                  {f.count}
-                </span>
-              </Link>
-            ))}
+          <div className="mt-3 border-t border-line pt-2">
+            <nav aria-label={libelleActif} className="-mx-5 overflow-x-auto px-5 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:overflow-visible">
+              <ul className="flex gap-2 md:flex-wrap">
+                <li className="shrink-0">
+                  <Link
+                    href={sousHref(null)}
+                    aria-current={!sous ? "true" : undefined}
+                    className="group inline-flex min-h-11 items-center whitespace-nowrap"
+                  >
+                    <span className={`rounded-full px-3 py-1 text-xs transition ${
+                      !sous ? "bg-cloud text-ink" : "text-mist group-hover:text-cloud"
+                    }`}>
+                      {t(lang, "catalog.allShelves")}
+                    </span>
+                  </Link>
+                </li>
+                {facettes.map((f) => (
+                  <li key={f.slug} className="shrink-0">
+                    <Link
+                      href={sousHref(f.slug)}
+                      aria-current={f.slug === sous ? "true" : undefined}
+                      className="group inline-flex min-h-11 items-center whitespace-nowrap"
+                    >
+                      <span className={`rounded-full px-3 py-1 text-xs transition ${
+                        f.slug === sous ? "bg-cloud text-ink" : "text-mist group-hover:text-cloud"
+                      }`}>
+                        {f.label}{" "}
+                        <span className={f.slug === sous ? "text-ink/60" : "text-mist"}>
+                          {f.count}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         )}
       </section>
@@ -484,14 +508,16 @@ export default async function CataloguePage({
                   <p className="text-xs uppercase tracking-wide text-mist">
                     {t(lang, "catalog.miss.shelves")}
                   </p>
-                  <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  <div className="mt-2 flex flex-wrap justify-center gap-x-2">
                     {facettes.slice(0, 6).map((f) => (
                       <Link
                         key={f.slug}
                         href={hrefFor({ sous: f.slug, q: null, page: 1 })}
-                        className="rounded-full border border-line px-3 py-1 text-xs text-mist hover:text-cloud"
+                        className="group inline-flex min-h-11 items-center"
                       >
-                        {f.label} {f.count}
+                        <span className="rounded-full border border-line px-3 py-1 text-xs text-mist group-hover:text-cloud">
+                          {f.label} {f.count}
+                        </span>
                       </Link>
                     ))}
                   </div>

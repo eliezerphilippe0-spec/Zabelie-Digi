@@ -237,3 +237,46 @@ test("fiche produit — la pastille du rayon est traduite, la valeur reste en ba
   assert.match(src, /\{rayonAffiche && \(\s*<span className="rounded-full border border-line px-3 py-1 text-xs text-mist">\s*\{rayonAffiche\}\s*<\/span>/);
   assert.doesNotMatch(src, />\s*\{product\.category\}\s*</, "la valeur brute est de nouveau affichée");
 });
+
+// ── Cibles tactiles et défilement ───────────────────────────────────────────
+
+/** Les classes de chaque `<Link …className="…">` d'un fragment (classes statiques ou gabarit). */
+function classesDesLiens(fragment: string): string[][] {
+  return [...fragment.matchAll(/<Link\b[^>]*?className=(?:"([^"]*)"|\{`([^`]*)`\})/g)].map((m) => (m[1] ?? m[2]).split(/\s+/));
+}
+
+test("catalogue — puces et facettes : 44 px au pouce, une rangée qui défile sans déborder", () => {
+  const barre = CATALOGUE.match(/<nav aria-label=\{t\(lang, "catalog\.cat\.nav"\)\}[\s\S]*?<\/nav>/);
+  const facettes = CATALOGUE.match(/<nav aria-label=\{libelleActif\}[\s\S]*?<\/nav>/);
+  const manque = CATALOGUE.match(/\{facettes\.slice\(0, 6\)\.map\([\s\S]*?\)\)\}/);
+  assert.ok(barre && facettes && manque, "barre, facettes ou rayons voisins introuvables");
+  // La barre est une navigation nommée, dans les quatre langues.
+  for (const l of ["fr", "ht", "en", "es"] as const) {
+    assert.ok((DICT[l] as Record<string, string>)["catalog.cat.nav"]?.trim(), `catalog.cat.nav vide en ${l}`);
+  }
+
+  let liens = 0;
+  for (const [nom, bloc] of [["barre", barre[0]], ["facettes", facettes[0]], ["rayons voisins", manque[0]]] as const) {
+    const classes = classesDesLiens(bloc);
+    assert.ok(classes.length > 0, `${nom} : aucun lien lu`);
+    for (const c of classes) {
+      for (const requis of ["inline-flex", "min-h-11", "items-center"]) {
+        assert.ok(c.includes(requis), `${nom} : lien sans ${requis} — « ${c.join(" ")} »`);
+      }
+      liens++;
+    }
+  }
+  assert.equal(liens, 4, "un lien de barre, deux de facettes (tout + rayon), un de rayon voisin");
+
+  // Défilement CONTENU : la barre défile, ses éléments ne rétrécissent ni ne
+  // passent à la ligne sur mobile ; le retour à la ligne n'existe qu'à md.
+  for (const [nom, bloc] of [["barre", barre[0]], ["facettes", facettes[0]]] as const) {
+    const nav = bloc.match(/^<nav[^>]*className="([^"]*)"/)![1].split(/\s+/);
+    assert.ok(nav.includes("overflow-x-auto") && nav.includes("md:overflow-visible"), `${nom} : défilement horizontal absent`);
+    assert.ok(nav.includes("py-1"), `${nom} : sans py-1, l'anneau de focus est rogné par le défilement`);
+    const ul = bloc.match(/<ul className="([^"]*)"/)![1].split(/\s+/);
+    assert.ok(ul.includes("flex") && !ul.includes("flex-wrap") && ul.includes("md:flex-wrap"), `${nom} : « ${ul.join(" ")} »`);
+    assert.ok(/<li[^>]*className="shrink-0"/.test(bloc), `${nom} : les puces doivent être shrink-0`);
+    for (const c of classesDesLiens(bloc)) assert.ok(c.includes("whitespace-nowrap"), `${nom} : libellé coupé en deux lignes`);
+  }
+});
