@@ -54,12 +54,20 @@ test("VS4 — la migration : totaux seulement, seuils, appel par la session, son
   const sql = lire("supabase/migrations/0156_zabelie_vendeur_signaux.sql");
   assert.match(sql, /security definer\s+set search_path = public, pg_temp/);
   assert.match(sql, /v_moi\s+uuid := auth\.uid\(\);/);
-  assert.match(sql, /raise exception 'ZB156 : session requise' using errcode = '42501';/);
+  assert.match(sql, /if v_moi is null or not public\.seller_is_active\(v_moi\) then\s*raise exception 'ZB156 : session active requise' using errcode = '42501';/);
   assert.match(sql, /'paniers', case when x\.n >= 3 then x\.n end,\s*'moins_de_3', x\.n < 3/);
   assert.match(sql, /c\.buyer_id <> v_moi/);
-  assert.match(sql, /greatest\(5, coalesce\(min_sessions, 5\)\)/);
-  assert.match(sql, /m\.term !~ '\[0-9\]\{6,\}'/);
-  assert.match(sql, /position\('@' in m\.term\) = 0/);
+  assert.match(sql, /not exists \(select 1 from profiles b where b\.id = c\.buyer_id and b\.is_test\)/);
+  // Les recherches suivent les règles de 0143, lues dans la même configuration.
+  assert.match(sql, /from zabelie_authoring_config where id;/);
+  assert.match(sql, /v_personnes := greatest\(5, coalesce\(v_personnes, 5\),/);
+  const regles0143 = readFileSync("supabase/migrations/0143_zabelie_authoring_opportunites.sql", "utf8");
+  for (const regle of ["m.term !~ '[0-9]{3,}'", "m.term !~ '[@/]'", "m.term !~* '(https?|www)'",
+    "not exists (select 1 from public.zabelie_authoring_termes_exclus x where x.term = m.term)"]) {
+    assert.ok(regles0143.includes(regle), `0143 a changé : ${regle}`);
+    assert.ok(sql.includes(regle.replace("public.", "")), `0156 ne reprend pas : ${regle}`);
+  }
+  assert.match(sql, /and count\(distinct m\.day\) >= v_jours/);
   assert.match(sql, /revoke all on function zabelie_vendeur_signaux\(\) from public, anon, authenticated;/);
   assert.match(sql, /grant execute on function zabelie_vendeur_signaux\(\) to authenticated, service_role;/);
   assert.match(sql, /\('zabelie_vendeur_signaux\(\)', '/);

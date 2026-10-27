@@ -2,17 +2,19 @@
 --
 --   S1. Connu-POSITIF : abonnés, paniers (30 jours, hors panier du vendeur),
 --       recherches ratées (≥ 5 sessions distinctes, son rayon d'abord).
---   S2. Seuils : sous 3 paniers, la valeur exacte ne sort pas ; sous 5
---       sessions, le terme ne sort pas ; un terme-numéro ou un e-mail jamais.
+--   S2. Seuils : sous 3 paniers, la valeur exacte ne sort pas ; pour les
+--       recherches, les règles de 0143 — sous 5 sessions, sur un seul jour,
+--       avec 3 chiffres en série, @, / ou lien, ou exclu : jamais rendu.
 --   S3. Rien n'identifie personne : aucun identifiant d'acheteur, de panier
 --       ou de session dans la réponse.
 --   S4. Isolation : B ne voit rien de A ; anon ne peut pas appeler ; une
---       session absente lève.
+--       session absente ou un compte suspendu lève.
 begin;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000c5601', 'sig.a@test.local'),
   ('00000000-0000-0000-0000-0000000c5602', 'sig.b@test.local'),
+  ('00000000-0000-0000-0000-0000000c5603', 'sig.sispann@test.local'),
   ('00000000-0000-0000-0000-0000000c5611', 'sig.k1@test.local'),
   ('00000000-0000-0000-0000-0000000c5612', 'sig.k2@test.local'),
   ('00000000-0000-0000-0000-0000000c5613', 'sig.k3@test.local'),
@@ -50,14 +52,23 @@ insert into zabelie_shop_follows (user_id, seller_id) values
   ('00000000-0000-0000-0000-0000000c5612', '00000000-0000-0000-0000-0000000c5601'),
   ('00000000-0000-0000-0000-0000000c5613', '00000000-0000-0000-0000-0000000c5602');
 
--- Recherches ratées : « jeneratè » 6 sessions sans rayon ; « konvètisè » 5
--- sessions dans le rayon de A ; « tikè » 4 sessions (sous le seuil) ; un
--- numéro et un e-mail 7 sessions chacun (jamais rendus) ; « ansyen » 9
--- sessions mais vieilles de 40 jours (hors fenêtre).
+-- Recherches ratées, sur DEUX jours sauf mention (règles de 0143) :
+-- « jeneratè » 6 sessions sans rayon ; « konvètisè » 5 sessions dans le rayon
+-- de A ; « tikè » 4 sessions (sous le seuil) ; un numéro, un e-mail, un lien
+-- et « modèl 123 » (3 chiffres) 7 sessions chacun, jamais rendus ; « mo
+-- eksklu » 7 sessions mais sur la liste d'exclusion ; « yon sèl jou » 7
+-- sessions le MÊME jour ; « ansyen » 9 sessions vieilles de 40 jours.
+insert into zabelie_authoring_termes_exclus (term, raison)
+values (zabelie_search_normalize('mo eksklu'), 'test 0156 : terme exclu')
+on conflict do nothing;
 insert into zabelie_search_misses (term, department, session_hash, day, created_at)
-select t.term, t.dept, 'sig-' || t.term || '-' || g, current_date, now() - make_interval(days => t.age)
-  from (values ('jeneratè', null::text, 6, 1), ('konvètisè', 'Enèji', 5, 2), ('tikè', null, 4, 1),
-               ('50937001234', null, 7, 1), ('mari@exemple.ht', null, 7, 1), ('ansyen', null, 9, 40)) as t(term, dept, n, age),
+select t.term, t.dept, 'sig-' || t.term || '-' || g,
+       current_date - case when t.un_jour then 0 else g % 2 end,
+       now() - make_interval(days => t.age)
+  from (values ('jeneratè', null::text, 6, 1, false), ('konvètisè', 'Enèji', 5, 2, false), ('tikè', null, 4, 1, false),
+               ('50937001234', null, 7, 1, false), ('mari@exemple.ht', null, 7, 1, false), ('www.lyen.ht', null, 7, 1, false),
+               ('modèl 123', null, 7, 1, false), (zabelie_search_normalize('mo eksklu'), null, 7, 1, false), ('yon sèl jou', null, 7, 1, true),
+               ('ansyen', null, 9, 40, false)) as t(term, dept, n, age, un_jour),
        generate_series(1, t.n) g;
 
 do $$
@@ -120,7 +131,17 @@ begin
   exception when insufficient_privilege or invalid_text_representation then null;
   end;
   reset role;
-  raise notice 'S4 OK — isolation, anon refusé, session requise';
+
+  update profiles set suspended_at = now() where id = '00000000-0000-0000-0000-0000000c5603';
+  set local role authenticated;
+  set local request.jwt.claim.sub = '00000000-0000-0000-0000-0000000c5603';
+  begin
+    perform zabelie_vendeur_signaux();
+    raise exception 'S4 KO : un compte suspendu obtient des signaux';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+  raise notice 'S4 OK — isolation, anon refusé, session active requise';
 end $$;
 
 rollback;

@@ -6,20 +6,25 @@ select zabelie_migration_garde('0156_zabelie_vendeur_signaux.sql');
 -- Trois AGRÉGATS sur SA boutique, jamais une personne :
 --   • abonnes   — combien de comptes suivent sa boutique (0102) ;
 --   • paniers   — pour chacun de SES produits, dans combien de paniers il est
---                 depuis 30 jours (0058). Sous 3, la valeur exacte n'est PAS
---                 rendue (seulement « moins de 3 ») : un vendeur qui voit
---                 « 1 panier » le lendemain d'une conversation saurait qui ;
---   • recherches — ce que les acheteurs cherchent sans rien trouver (0047),
---                 seulement les termes cherchés par AU MOINS 5 sessions
---                 distinctes en 30 jours (et jamais sous le seuil du capteur,
---                 min_sessions). Ceux de SON rayon passent en tête.
+--                 depuis 30 jours (0058), hors le sien et hors comptes d'essai.
+--                 Sous 3, la valeur exacte n'est PAS rendue (seulement « moins
+--                 de 3 ») : un vendeur qui voit « 1 panier » le lendemain d'une
+--                 conversation saurait qui ;
+--   • recherches — ce que les acheteurs cherchent sans rien trouver (0047).
+--
+-- ─── LES RECHERCHES : LES RÈGLES DE 0143, PAS DE NOUVELLES ─────────────────
+-- zabelie_authoring_opportunites (0143, revue du 2026-10-16) agrège DÉJÀ ces
+-- recherches pour le Studio. Deux règles pour la même donnée finiraient par
+-- diverger : on reprend les siennes, lues dans la MÊME configuration
+-- (zabelie_authoring_config) — personnes distinctes au seuil configuré (jamais
+-- sous 5, V-24 A7, ni sous min_sessions du capteur), sur au moins le nombre de
+-- jours distincts configuré ; pas de chiffres en série, ni @, /, lien ; hors
+-- liste d'exclusion (zabelie_authoring_termes_exclus). Seule la fenêtre est
+-- propre à cette page : 30 jours, comme ses deux autres signaux.
 --
 -- ─── CE QU'IL N'APPREND JAMAIS ─────────────────────────────────────────────
 -- Aucun identifiant d'acheteur, de panier ou de session ne sort : la fonction
 -- ne rend que des entiers, des titres de SES produits et des termes agrégés.
--- Un terme qui ressemble à un numéro (6 chiffres ou plus) ou à une adresse
--- e-mail n'est jamais rendu : un acheteur qui tape un numéro dans la barre de
--- recherche n'a pas consenti à le montrer à un vendeur.
 --
 -- ─── ÉCART À LA SPEC, MESURÉ ───────────────────────────────────────────────
 -- docs/75 §5.C prévoyait les recherches ratées « par catégorie ». Mesuré en
@@ -28,8 +33,10 @@ select zabelie_migration_garde('0156_zabelie_vendeur_signaux.sql');
 -- place, ceux de son rayon d'abord quand le rayon est connu.
 --
 -- ─── QUI APPELLE ───────────────────────────────────────────────────────────
--- `authenticated`, pour lui-même (auth.uid()). Jamais `anon`. Les tables
--- sources restent fermées : seule cette fonction en rend des agrégats.
+-- `authenticated`, pour lui-même (auth.uid()), compte actif exigé
+-- (seller_is_active, comme les autres fonctions vendeur revues). Jamais `anon`.
+-- Inscrite à la liste revue (supabase/tests/definer_exposition.test.sql) et à
+-- docs/REVUE-2026-10-08-fonctions-definer.md.
 
 begin;
 
@@ -41,14 +48,19 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  v_moi    uuid := auth.uid();
-  v_seuil  integer;
+  v_moi       uuid := auth.uid();
+  v_personnes integer;
+  v_jours     integer;
 begin
-  if v_moi is null then
-    raise exception 'ZB156 : session requise' using errcode = '42501';
+  if v_moi is null or not public.seller_is_active(v_moi) then
+    raise exception 'ZB156 : session active requise' using errcode = '42501';
   end if;
-  select greatest(5, coalesce(min_sessions, 5)) into v_seuil from zabelie_search_config where id;
-  v_seuil := coalesce(v_seuil, 5);
+  select opportunites_personnes_min, opportunites_jours_distincts_min
+    into v_personnes, v_jours
+    from zabelie_authoring_config where id;
+  v_personnes := greatest(5, coalesce(v_personnes, 5),
+                          coalesce((select min_sessions from zabelie_search_config where id), 5));
+  v_jours := coalesce(v_jours, 2);
 
   return jsonb_build_object(
     'fenetre_jours', 30,
@@ -66,6 +78,7 @@ begin
             join products p on p.id = i.product_id
            where p.seller_id = v_moi
              and c.buyer_id <> v_moi
+             and not exists (select 1 from profiles b where b.id = c.buyer_id and b.is_test)
              and i.added_at >= now() - interval '30 days'
            group by p.id, p.title
            order by count(distinct i.cart_id) desc, p.title
@@ -77,15 +90,18 @@ begin
              order by r.mon_rayon desc, r.sessions desc, r.term)
         from (
           select m.term,
-                 count(distinct m.session_hash) as sessions,
+                 count(distinct m.session_hash)::integer as sessions,
                  bool_or(m.department is not null and m.department in (
                    select distinct p.category from products p where p.seller_id = v_moi and p.category is not null)) as mon_rayon
             from zabelie_search_misses m
            where m.created_at >= now() - interval '30 days'
-             and m.term !~ '[0-9]{6,}'
-             and position('@' in m.term) = 0
+             and m.term !~ '[0-9]{3,}'
+             and m.term !~ '[@/]'
+             and m.term !~* '(https?|www)'
+             and not exists (select 1 from zabelie_authoring_termes_exclus x where x.term = m.term)
            group by m.term
-          having count(distinct m.session_hash) >= v_seuil
+          having count(distinct m.session_hash) >= v_personnes
+             and count(distinct m.day) >= v_jours
            order by bool_or(m.department is not null and m.department in (
                      select distinct p.category from products p where p.seller_id = v_moi and p.category is not null)) desc,
                     count(distinct m.session_hash) desc, m.term
