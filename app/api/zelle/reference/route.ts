@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
 import { erreurAvecLangue } from "@/lib/api-erreur";
+import { UUID_RE } from "@/lib/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,8 +31,11 @@ export async function POST(req: Request) {
   } catch {
     return erreurAvecLangue(lang, "api.json.invalid", 400, { code: "json_invalide" });
   }
-  if (!body || typeof body !== "object" || typeof body.orderId !== "string" || !body.orderId) {
-    return erreurAvecLangue(lang, "api.params.invalid", 400, { code: "commande_requise" });
+  // Un identifiant de commande est un UUID (`checkoutOrderId`). Validé AVANT
+  // la lecture : sinon Postgres rejette le texte (22P02), la route le prenait
+  // pour une panne (503 « indisponible ») et le journal gardait une fausse alerte.
+  if (!body || typeof body !== "object" || typeof body.orderId !== "string" || !UUID_RE.test(body.orderId)) {
+    return erreurAvecLangue(lang, "api.params.invalid", 400, { code: "commande_invalide" });
   }
 
   const supabase = await createClient();
