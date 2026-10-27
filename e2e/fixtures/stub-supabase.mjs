@@ -823,7 +823,14 @@ const server = createServer((req, res) => {
       const id = eq(url, "id"), row = state.rows.find(coupon => coupon.id === id && coupon.seller_id === profileIdentityActor);
       state.updates.push({ tokenActorId: profileIdentityActor, id, input, affected: row ? 1 : 0 });
       if (row) Object.assign(row, input);
-      return send(200, []);
+      // Avec `select` (Prefer: return=representation), PostgREST rend les
+      // lignes AFFECTÉES, projetées sur les colonnes demandées : `[]` quand la
+      // RLS n'en laisse toucher aucune. La route s'en sert pour distinguer une
+      // bascule faite d'une bascule sans effet.
+      const select = url.searchParams.get("select");
+      if (!select) return send(200, []);
+      const colonnes = select.split(",").map(colonne => colonne.trim());
+      return send(200, row ? [Object.fromEntries(colonnes.map(colonne => [colonne, row[colonne]]))] : []);
     });
   }
   if (identityScenario?.accountClosure && url.pathname === "/auth/v1/logout") {
