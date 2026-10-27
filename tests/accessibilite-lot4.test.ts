@@ -135,6 +135,8 @@ test("F2 — recherche, recharge, code promo et profil gardent l'anneau de focus
  * Mutations éprouvées :
  *   onglet actif remis en `border-brand bg-brand text-on-brand`            → S1 rouge
  *   vignette : condition `i === principale` → `i === 0` dans la classe     → S2 rouge
+ *   vignette : `aria-current={…}` remplacé par `aria-pressed={i === principale}` → S2 rouge
+ *   vignette : `aria-current` décroché de `principale` (`i === 0 ? "true"`)    → S2 rouge
  *   variante active remise en `border-brand bg-brand/10 text-cloud`        → S3 rouge
  *   prix de la fiche remis en `text-cloud`                                 → S4 rouge
  */
@@ -159,11 +161,16 @@ test("S1 — l'onglet actif de /mes-achats est à l'encre, commandé par aria-cu
   encre(c, "onglet de /mes-achats");
 });
 
-test("S2 — la vignette active de la galerie est à l'encre, et son état est annoncé (aria-pressed)", () => {
+test("S2 — la vignette affichée est à l'encre, et annoncée comme l'élément COURANT (aria-current)", () => {
+  /* Relecture du 2026-10-27 (m6) : `aria-pressed` sur des vignettes qui
+   * s'excluent annonçait N bascules indépendantes (« bouton bascule, enfoncé »
+   * sur chacune). Une seule vignette est affichée : c'est l'élément COURANT
+   * d'un ensemble, `aria-current="true"`. */
   const src = code(lire("components/galerie-produit.tsx"));
+  assert.doesNotMatch(src, /\baria-pressed=/, "les vignettes s'annoncent de nouveau comme des bascules indépendantes");
   const c = brancheActive(
     src,
-    /aria-pressed=\{i === principale\}\s*className=\{`[^`]*\$\{\s*i === principale \? "([^"]*)" : "[^"]*"\s*\}`\}/,
+    /aria-current=\{i === principale \? "true" : undefined\}\s*className=\{`[^`]*\$\{\s*i === principale \? "([^"]*)" : "[^"]*"\s*\}`\}/,
     "vignette de la galerie"
   );
   assert.ok(c.includes("border-cloud"), `vignette active : « ${c.join(" ")} »`);
