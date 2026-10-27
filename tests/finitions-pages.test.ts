@@ -29,15 +29,16 @@ test("F1 — les pages privées portent noindex, comme mes-achats et favoris", (
     "app/mes-achats/page.tsx",
     "app/favoris/page.tsx",
   ]) {
-    /* Deux formes admises : l'objet fixe, ou `generateMetadata` quand le titre
-     * d'onglet suit la langue (le panier, depuis le 2026-10-27). La seconde
-     * est ancrée sur le `return` de la fonction elle-même, qui se ferme juste
-     * après : un `robots` posé ailleurs dans le fichier ne la satisfait pas. */
-    assert.match(
-      lire(f),
-      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};|export async function generateMetadata\(\) \{\s*const lang = await getLang\(\);\s*return \{ title: `[^`]*`, robots: \{ index: false, follow: false \} \};\s*\}/,
-      `${f} peut être indexée`
-    );
+    /* Deux formes, AUSSI strictes l'une que l'autre : l'objet statique, ou
+     * l'objet RENDU par `generateMetadata` (titre traduit — /mes-achats, /tableau-de-bord
+     * et /panier depuis le 2026-10-27). Next interdit les deux exports
+     * ensemble ; la seconde est lue dans le `return` de la fonction, pas
+     * n'importe où dans le fichier. */
+    const src = lire(f);
+    const statique = /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/.test(src);
+    const corps = src.match(/export async function generateMetadata\(\)[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const rendu = /return \{[^;]*robots: \{ index: false, follow: false \}[^;]*\};/.test(corps);
+    assert.ok(statique || rendu, `${f} peut être indexée`);
   }
 });
 
