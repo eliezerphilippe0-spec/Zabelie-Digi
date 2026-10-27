@@ -210,6 +210,7 @@ export default async function PanierPage() {
                   coupon: t(lang, "cart.pay.all.coupon"),
                   loading: t(lang, "cart.pay.all.loading"),
                   error: t(lang, "cart.pay.all.error"),
+                  network: t(lang, "error.network"),
                   age: t(lang, "cart.pay.all.age"),
                 }}
               />
