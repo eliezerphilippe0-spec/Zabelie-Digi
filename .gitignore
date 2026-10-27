@@ -44,6 +44,12 @@ yarn-error.log*
 /playwright-report
 /playwright/.cache
 
+# Captures de relecture écrites par les e2e (`parcours-physique-achats`,
+# `parcours-physique-digital-studio`) : déjà exclues de TypeScript et d'ESLint,
+# jamais des sources. Sans cette ligne, un `git add -A` après une série e2e les
+# embarquait — mesuré le 2026-10-27 : `?? validation/` (5 PNG) après la série.
+/validation/
+
 # Rapports locaux du superviseur : artefacts, jamais des sources.
 /agent-reports/
 

@@ -37,6 +37,12 @@ async function connecte(page: Page) {
 
 /** Position de la cible une fois le défilement (glissé) et le pli terminés. */
 async function arrivee(page: Page, id: string) {
+  // La CIBLE d'abord. En navigation cliente, l'adresse change avant que le
+  // segment de destination ait fini de se rendre : sous charge, la boucle de
+  // stabilité ci-dessous pouvait conclure (5 lectures identiques) alors que la
+  // section n'existait pas encore, et `getElementById(id)!` levait. Mesuré le
+  // 2026-10-27 : 1 échec sur 379 avec 4 workers, 3 verts sur 3 en isolé.
+  await page.locator(`[id="${id}"]`).waitFor({ state: "attached" });
   let precedente = "";
   let identiques = 0;
   for (let i = 0; i < 100 && identiques < 5; i++) {
