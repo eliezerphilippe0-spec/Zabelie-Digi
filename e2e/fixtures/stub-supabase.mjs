@@ -293,6 +293,33 @@ const server = createServer((req, res) => {
             follows: profiles.map(profile => ({ user_id: profile.id, seller_id: SELLER_ID })),
           };
         }
+        if (input.clients === true || input.clients === "vide") {
+          // PR-Z3 (docs/75 §5.C) : ventes fictives du vendeur A, PIÈGES COMPRIS
+          // (impayées, paiement d'essai, gratuite, vente d'un autre vendeur).
+          // Le stub ne filtre RIEN : c'est la page qui doit écarter les pièges.
+          const jour = 86_400_000, il = (j) => new Date(Date.now() - j * jour).toISOString();
+          const [sellerA, sellerB] = profiles.map(p => p.id);
+          const buyers = Array.from({ length: 8 }, () => crypto.randomUUID());
+          const p1 = crypto.randomUUID(), p2 = crypto.randomUUID(), pB = crypto.randomUUID();
+          const row = (buyer, product, title, seller, amount, status, live, jours) => ({ buyer_id: buyer, product_id: product,
+            amount_htg: amount, status, zabelie_payment_is_live: live, created_at: il(jours), products: { seller_id: seller, title } });
+          const sak = "Sak an pay fictif", liv = "Liv kreyòl fictif";
+          scenario.clients = {
+            buyers, queries: [], deliveryReads: [],
+            orders: input.clients === "vide" ? [] : [
+              row(buyers[0], p1, sak, sellerA, 1500, "paid", true, 5),
+              row(buyers[0], p1, sak, sellerA, 1500, "delivered", true, 40),
+              row(buyers[1], p2, liv, sellerA, 800, "paid", true, 60),
+              row(buyers[2], p1, sak, sellerA, 1500, "paid", true, 200),
+              row(buyers[3], p1, sak, sellerA, 1500, "pending", true, 1),
+              row(buyers[4], p1, sak, sellerA, 1500, "failed", true, 1),
+              row(buyers[5], p1, sak, sellerA, 1500, "paid", false, 1),
+              row(buyers[6], p1, sak, sellerA, 0, "paid", true, 1),
+              row(buyers[7], pB, "Produit d'un autre vendeur fictif", sellerB, 9999, "paid", true, 1),
+            ],
+            delivery: [{ user_id: buyers[0], full_name: "Wilson Pierre-Fictif", phone: "+509 3700 0009", adres_liv: "Adresse privée fictive C1" }],
+          };
+        }
         profileIdentityScenarios.set(input.scenario, scenario);
         for (const profile of profiles) profileIdentityActors.set(profile.id, { profile, scenario });
         return send(200, scenario);
@@ -331,6 +358,29 @@ const server = createServer((req, res) => {
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  // PR-Z3 : « Mes clients ». Toutes les ventes du scénario, sans filtre ; les
+  // filtres DEMANDÉS sont consignés pour que le spec les vérifie aussi.
+  const clientsActor = url.pathname === "/rest/v1/orders" && req.method === "GET"
+    ? profileIdentityActors.get(eq(url, "products.seller_id")) : null;
+  if (clientsActor?.scenario.clients) {
+    const c = clientsActor.scenario.clients;
+    c.queries.push({ sellerId: eq(url, "products.seller_id"), params: Object.fromEntries(url.searchParams),
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+    return send(200, c.orders);
+  }
+  const clientsBuyers = url.pathname === "/rest/v1/zabelie_delivery_info" && req.method === "GET"
+    && url.searchParams.get("user_id")?.startsWith("in.(") ? url.searchParams.get("user_id").slice(4, -1).split(",") : null;
+  const clientsDelivery = clientsBuyers && [...profileIdentityScenarios.values()]
+    .find(s => s.clients?.buyers.some(b => clientsBuyers.includes(b)))?.clients;
+  if (clientsDelivery) {
+    const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+    clientsDelivery.deliveryReads.push({ select: url.searchParams.get("select"), tokenActorId: profileIdentityActors.has(tokenId) ? tokenId : null,
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+    const cols = (url.searchParams.get("select") ?? "").split(",").map(s => s.trim());
+    return send(200, clientsDelivery.delivery.filter(r => clientsBuyers.includes(r.user_id))
+      .map(r => Object.fromEntries(cols.filter(k => k in r).map(k => [k, r[k]]))));
   }
 
   const payoutOwner = eq(url, "owner_id") ?? eq(url, "seller_id");
