@@ -40,10 +40,24 @@ function cadreAchats(): string {
   return m![1];
 }
 
+/** Le cadre d'une page à <main> simple : la classe de son premier <main id="main">. */
+function cadreMain(page: string): () => string {
+  return () => {
+    const m = /<main id="main" className="([^"]+)">/.exec(lire(page));
+    assert.ok(m, `cadre de ${page} introuvable : l'extraction a bougé`);
+    return m![1];
+  };
+}
+
+/* Les sous-routes ont le LEUR (relecture m10, 2026-10-27) : sans fichier propre,
+ * `/vendre/physique` (un formulaire) attendait derrière la liste « Produits »,
+ * et `/mes-achats/[orderId]` (un achat ouvert) derrière la liste des achats. */
 const SQUELETTES: Array<{ f: string; cadre: () => string }> = [
   { f: "app/tableau-de-bord/loading.tsx", cadre: cadreVendeur },
   { f: "app/vendre/loading.tsx", cadre: cadreVendeur },
   { f: "app/mes-achats/loading.tsx", cadre: cadreAchats },
+  { f: "app/vendre/physique/loading.tsx", cadre: cadreMain("app/vendre/physique/page.tsx") },
+  { f: "app/mes-achats/[orderId]/loading.tsx", cadre: cadreMain("app/mes-achats/[orderId]/page.tsx") },
 ];
 
 test("SQ1 — chaque espace a son loading.tsx, qui rend le squelette partagé sous la vraie barre", () => {
