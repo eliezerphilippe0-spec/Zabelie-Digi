@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { LIMITE_VENTES_LUES, STATUTS_VENTE_REELLE, prenom, resumerClients, type LigneVente } from "@/lib/vendeur-clients";
 import { LOCALE_DATE } from "@/lib/facturation-copy";
+import { lireSignaux } from "@/lib/vendeur-signaux";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t, tn } from "@/lib/i18n";
@@ -61,6 +62,12 @@ export default async function ClientsPage() {
     new Date(iso).toLocaleDateString(LOCALE_DATE[lang], { timeZone: "America/Port-au-Prince" });
   const commandes = (n: number) =>
     tn(lang, n, "vendeur.clients.commandes.one", "vendeur.clients.commandes", { n: String(n) });
+
+  /* PR-Z4 (docs/75 §5.C) : signaux de demande. CLIENT DE SESSION — la fonction
+     de 0156 raisonne sur auth.uid() et ne rend que des totaux. Fonction absente
+     (0156 pas encore appliquée), erreur ou réponse hors schéma → section tue. */
+  const { data: brut, error: signauxErr } = await (await createClient()).rpc("zabelie_vendeur_signaux");
+  const signaux = signauxErr ? null : lireSignaux(brut);
 
   return (
     <div className="bg-grain min-h-dvh">
@@ -124,6 +131,52 @@ export default async function ClientsPage() {
                 </ul>
               </section>
             </>
+          )}
+
+          {signaux && (
+            <section id="signaux" aria-labelledby="signaux-titre" className="mt-10 scroll-mt-32">
+              <h2 id="signaux-titre" className="titre-section">{t(lang, "vendeur.signaux.titre")}</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.signaux.intro")}</p>
+              <dl className="mt-4 rounded-2xl border border-line bg-surface p-4">
+                <dt className="text-sm text-mist">{t(lang, "vendeur.signaux.abonnes")}</dt>
+                <dd className="mt-1 text-2xl font-semibold tabular-nums">{signaux.abonnes}</dd>
+              </dl>
+
+              <h3 className="mt-6 text-sm font-semibold">{t(lang, "vendeur.signaux.paniers")}</h3>
+              {signaux.paniers.length === 0 ? (
+                <p className="mt-2 text-sm text-mist">{t(lang, "vendeur.signaux.paniers.vide")}</p>
+              ) : (
+                <ul id="signaux-paniers" className="mt-2 divide-y divide-line rounded-2xl border border-line bg-surface">
+                  {signaux.paniers.map((p, i) => (
+                    <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 p-4">
+                      <span className="min-w-0 break-words font-medium">{p.titre}</span>
+                      <span className="text-sm text-mist tabular-nums">
+                        {p.moins_de_3 || p.paniers === null
+                          ? t(lang, "vendeur.signaux.paniers.peu")
+                          : t(lang, "vendeur.signaux.paniers.n", { n: String(p.paniers) })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <h3 className="mt-6 text-sm font-semibold">{t(lang, "vendeur.signaux.recherches")}</h3>
+              {signaux.recherches.length === 0 ? (
+                <p className="mt-2 text-sm text-mist">{t(lang, "vendeur.signaux.recherches.vide")}</p>
+              ) : (
+                <ul id="signaux-recherches" className="mt-2 divide-y divide-line rounded-2xl border border-line bg-surface">
+                  {signaux.recherches.map((r) => (
+                    <li key={r.terme} className="flex flex-wrap items-baseline justify-between gap-2 p-4">
+                      <span className="min-w-0 break-words font-medium">
+                        <q>{r.terme}</q>
+                        {r.mon_rayon && <span className="ml-2 rounded-full border border-line px-2 py-0.5 text-xs text-mist">{t(lang, "vendeur.signaux.rayon")}</span>}
+                      </span>
+                      <span className="text-sm text-mist tabular-nums">{t(lang, "vendeur.signaux.recherches.n", { n: String(r.sessions) })}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
           )}
         </VendeurShell>
       </main>
