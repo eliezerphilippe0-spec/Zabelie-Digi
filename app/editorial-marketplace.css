@@ -2,7 +2,7 @@
 .editorial-page > header { background-image: none !important; border-bottom: 1px solid var(--color-chrome-2); }
 .editorial-page .marketplace-header-row { padding-block: 10px; }
 .editorial-page main { color: var(--color-cloud); }
-.editorial-button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 24px; padding: 12px 22px; border-radius: var(--radius-button, 12px); background: var(--color-brand); color: var(--color-on-brand); font-weight: 700; font-size: 14px; }
+.editorial-button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 24px; padding: 12px 22px; border-radius: var(--radius-button); background: var(--color-brand); color: var(--color-on-brand); font-weight: 700; font-size: 14px; }
 .editorial-link { display: inline-flex; min-height: 44px; align-items: center; gap: 16px; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 5px; }
 /* Bannière de lancement : sans fond ni bordure, elle n'a pas de bord à respecter.
    Un retrait horizontal la décalait donc de la grille des autres blocs (bandeau
