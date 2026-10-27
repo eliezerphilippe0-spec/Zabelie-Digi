@@ -40,6 +40,7 @@ const physicalCreationUploads = [];
 const PHYSICAL_CREATION_PREFIX = "Reprise physique ";
 // Chaque test profil crée deux UUID propres ; aucun état/reset global partagé.
 const profileIdentityScenarios = new Map();
+const boutikVisites = [];
 const profileIdentityActors = new Map();
 const HISTORY_ID = "88888888-8888-8888-8888-000000000100";
 const HISTORY_ERROR_ID = "88888888-8888-8888-8888-000000000101";
@@ -320,6 +321,15 @@ const server = createServer((req, res) => {
             delivery: [{ user_id: buyers[0], full_name: "Wilson Pierre-Fictif", phone: "+509 3700 0009", adres_liv: "Adresse privée fictive C1" }],
           };
         }
+        if (input.visites === true) {
+          // PR-Z2 : 60 + 40 vues dans les 30 jours, et une ligne de 45 jours
+          // (999 vues) que la page doit écarter d'elle-même : le stub ne filtre pas.
+          const jourHaiti = (j) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Port-au-Prince", year: "numeric", month: "2-digit", day: "2-digit" })
+            .format(new Date(Date.now() - j * 86_400_000));
+          scenario.visites = { reads: [], rows: [
+            { jour: jourHaiti(1), vues: 60 }, { jour: jourHaiti(10), vues: 40 }, { jour: jourHaiti(45), vues: 999 },
+          ] };
+        }
         profileIdentityScenarios.set(input.scenario, scenario);
         for (const profile of profiles) profileIdentityActors.set(profile.id, { profile, scenario });
         return send(200, scenario);
@@ -358,6 +368,20 @@ const server = createServer((req, res) => {
       serviceRole: req.headers.authorization === "Bearer cle-service-de-test", rows: [{ ...profile }] });
     if (url.searchParams.get("select") === "boutik_slug") scenario.slugReads.push({ id: profile.id });
     return single([profile]);
+  }
+
+  // PR-Z2 : lecture des visites par le vendeur. Sans `visites` dans le
+  // scénario, la table répond ABSENTE (0155 pas encore appliquée), comme le
+  // vrai PostgREST : c'est le cas que la page doit taire.
+  const visitesActor = url.pathname === "/rest/v1/zabelie_boutik_visites" && req.method === "GET"
+    ? profileIdentityActors.get(eq(url, "seller_id")) : null;
+  if (visitesActor) {
+    const v = visitesActor.scenario.visites;
+    if (!v) return send(404, { code: "PGRST205", message: "Could not find the table 'public.zabelie_boutik_visites' in the schema cache" });
+    const tokenId = /profile-identity-([0-9a-f-]{36})/.exec(req.headers.authorization ?? "")?.[1];
+    v.reads.push({ tokenActorId: profileIdentityActors.has(tokenId) ? tokenId : null,
+      serviceRole: req.headers.authorization === "Bearer cle-service-de-test", params: Object.fromEntries(url.searchParams) });
+    return send(200, v.rows);
   }
 
   // PR-Z3 : « Mes clients ». Toutes les ventes du scénario, sans filtre ; les
@@ -854,13 +878,28 @@ const server = createServer((req, res) => {
     return req.on("end", () => send(200, JSON.parse(body || "{}").p_hote === "boutik-mari.ht" ? "atelye-lakay" : null));
   }
   if (url.pathname === "/rest/v1/rpc/zabelie_boutik_public") {
-    if (!BOUTIQUE_FIXTURE) return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
     let body = ""; req.on("data", c => body += c);
     return req.on("end", () => {
-      const empty = JSON.parse(body || "{}").p_slug === "boutique-vide";
+      const slug = JSON.parse(body || "{}").p_slug;
+      // PR-Z2 : une vitrine par test (`visites-<uuid>`), pour que les appels au
+      // compteur de deux tests parallèles ne se mélangent pas.
+      const vitrine = /^visites-([0-9a-f-]{36})$/.exec(slug ?? "");
+      if (vitrine) return send(200, { id: vitrine[1], display_name: "Boutik vizit fiktif", bio: "", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: slug });
+      if (!BOUTIQUE_FIXTURE) return send(200, { id: SELLER_ID, display_name: "Garaj Petyonvil", bio: "Boutique de test", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: null });
+      const empty = slug === "boutique-vide";
       send(200, { id: empty ? "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" : SELLER_ID, display_name: "Atelye Lakay", bio: "Des ressources pour apprendre et préparer votre projet.\nBoutique de démonstration pour les tests.", avatar_url: null, zone_id: null, pwen_repe: null, boutik_slug: empty ? "boutique-vide" : "atelye-lakay" });
     });
   }
+  // PR-Z2 : le compteur de visites (0155). Chaque appel est consigné, avec le
+  // rôle qui l'a fait, et relu par le spec via /__boutik-visites.
+  if (url.pathname === "/rest/v1/rpc/zabelie_boutik_visite") {
+    let body = ""; req.on("data", c => body += c);
+    return req.on("end", () => {
+      boutikVisites.push({ seller: JSON.parse(body || "{}").p_seller ?? null, serviceRole: req.headers.authorization === "Bearer cle-service-de-test" });
+      res.writeHead(204); return res.end();
+    });
+  }
+  if (url.pathname === "/__boutik-visites") return send(200, boutikVisites.filter(v => v.seller === url.searchParams.get("seller")));
   if (["/rest/v1/zabelie_favorites", "/rest/v1/zabelie_shop_follows"].includes(url.pathname)) {
     const column = url.pathname.endsWith("zabelie_favorites") ? "product_id" : "seller_id";
     const key = token + column;
