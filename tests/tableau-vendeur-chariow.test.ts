@@ -20,6 +20,7 @@ const FILLES = {
   boutique: "app/tableau-de-bord/boutique/page.tsx",
   compte: "app/tableau-de-bord/compte/page.tsx",
   "codes-promo": "app/tableau-de-bord/codes-promo/page.tsx",
+  clients: "app/tableau-de-bord/clients/page.tsx",
 } as const;
 
 test("C1 — chaque entrée du menu mène à une page qui existe (et l'ancre aussi)", () => {

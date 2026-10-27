@@ -16,7 +16,7 @@ import { IconeStudio, type NomIcone } from "@/components/studio-icones";
  * suivent le même prédicat que leurs pages et leurs routes : éteints, ils
  * disparaissent du menu au lieu de mener à un 404.
  */
-export type RubriqueVendeur = "accueil" | "produits" | "promo" | "boutique" | "compte";
+export type RubriqueVendeur = "accueil" | "produits" | "clients" | "promo" | "boutique" | "compte";
 
 type Lien = { cle: string; href: string; texte: string; icone: NomIcone };
 
@@ -33,6 +33,7 @@ export function VendeurShell({
     { cle: "accueil", href: "/tableau-de-bord", texte: t(lang, "vendeur.nav.accueil"), icone: "accueil" },
     { cle: "produits", href: "/vendre#mes-produits", texte: t(lang, "vendeur.nav.produits"), icone: "produits" },
     { cle: "commandes", href: "/mes-ventes", texte: t(lang, "vendeur.nav.commandes"), icone: "commandes" },
+    { cle: "clients", href: "/tableau-de-bord/clients", texte: t(lang, "vendeur.nav.clients"), icone: "clients" },
     { cle: "promo", href: "/tableau-de-bord/codes-promo", texte: t(lang, "vendeur.nav.promo"), icone: "promo" },
     { cle: "messages", href: "/messages", texte: t(lang, "vendeur.nav.messages"), icone: "messages" },
     { cle: "boutique", href: "/tableau-de-bord/boutique", texte: t(lang, "shop.manage"), icone: "boutique" },
