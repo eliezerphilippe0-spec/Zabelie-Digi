@@ -131,7 +131,10 @@ export default async function ZellePage({
               intro: t(lang, "zelle.ref.label"),
               placeholder: t(lang, "zelle.ref.ph"),
               submit: t(lang, "zelle.sent"),
+              submitting: t(lang, "zelle.envoi"),
               done: t(lang, "zelle.done"),
+              network: t(lang, "zelle.err.reseau"),
+              failed: t(lang, "zelle.err.enregistrement"),
             }}
           />
         </div>

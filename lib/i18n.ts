@@ -979,6 +979,11 @@ const fr = {
   "zelle.sent": "J'ai envoyé le paiement",
   "zelle.done":
     "Merci ! Nous vérifions votre virement. Votre fichier apparaîtra dans « Mes achats » dès la confirmation.",
+  "zelle.envoi": "Envoi…",
+  "zelle.err.introuvable": "Nous ne retrouvons pas ce paiement Zelle sur votre compte. Vérifiez que vous êtes connecté avec le compte qui a passé la commande.",
+  "zelle.err.dejaTraite": "Ce paiement a déjà été traité. Retrouvez son état dans « Mes achats ».",
+  "zelle.err.enregistrement": "Votre confirmation d'envoi n'a pas pu être enregistrée. Votre virement n'est pas concerné : réessayez dans un instant.",
+  "zelle.err.reseau": "Votre confirmation d'envoi n'est pas partie : la connexion a été coupée. Vérifiez votre réseau et réessayez.",
 
   // Partage
   "share.wa": "Partager sur WhatsApp",
@@ -2500,6 +2505,11 @@ const ht: Record<I18nKey, string> = {
   "zelle.sent": "Mwen voye peman an",
   "zelle.done":
     "Mèsi ! N ap verifye viman ou an. Fichye ou ap parèt nan « Acha mwen yo » kou peman an konfime.",
+  "zelle.envoi": "N ap voye…",
+  "zelle.err.introuvable": "Nou pa jwenn peman Zelle sa a sou kont ou. Verifye si ou konekte ak kont ki te pase kòmand lan.",
+  "zelle.err.dejaTraite": "Peman sa a deja trete. Gade kote l ye nan « Acha mwen yo ».",
+  "zelle.err.enregistrement": "Nou pa rive anrejistre enfòmasyon ou voye a. Sa pa chanje anyen pou viman ou an : eseye ankò nan yon ti moman.",
+  "zelle.err.reseau": "Enfòmasyon an pa pati : koneksyon an koupe. Tcheke rezo w epi eseye ankò.",
 
   "share.wa": "Pataje sou WhatsApp",
   "share.copy": "Kopye lyen an",
@@ -3975,6 +3985,11 @@ const en = {
   "zelle.sent": "I have sent the payment",
   "zelle.done":
     "Thank you! We are verifying your transfer. Your file will appear under « My purchases » as soon as it is confirmed.",
+  "zelle.envoi": "Sending…",
+  "zelle.err.introuvable": "We can't find this Zelle payment on your account. Check that you are signed in with the account that placed the order.",
+  "zelle.err.dejaTraite": "This payment has already been processed. Check its status under « My purchases ».",
+  "zelle.err.enregistrement": "We could not save your payment notice. Your transfer is not affected: try again in a moment.",
+  "zelle.err.reseau": "Your payment notice was not sent: the connection dropped. Check your network and try again.",
 
   // Sharing
   "share.wa": "Share on WhatsApp",
@@ -5471,6 +5486,11 @@ const es = {
   "zelle.sent": "Ya envié el pago",
   "zelle.done":
     "¡Gracias! Estamos verificando tu transferencia. Tu archivo aparecerá en « Mis compras » en cuanto se confirme.",
+  "zelle.envoi": "Enviando…",
+  "zelle.err.introuvable": "No encontramos este pago Zelle en tu cuenta. Comprueba que iniciaste sesión con la cuenta que hizo el pedido.",
+  "zelle.err.dejaTraite": "Este pago ya fue procesado. Consulta su estado en « Mis compras ».",
+  "zelle.err.enregistrement": "No pudimos registrar tu aviso de pago. Tu transferencia no se ve afectada: inténtalo de nuevo en un momento.",
+  "zelle.err.reseau": "Tu aviso de pago no se envió: se cortó la conexión. Revisa tu red e inténtalo de nuevo.",
 
   // Compartir
   "share.wa": "Compartir por WhatsApp",
