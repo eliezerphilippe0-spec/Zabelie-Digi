@@ -24,14 +24,14 @@ import { join } from "node:path";
  *     composant pointe sur le mauvais token.
  *
  * ─── LE CLIQUET ─────────────────────────────────────────────────────────────
- * Quatre usages restent, inventoriés un par un après lecture du code — jamais
+ * Trois usages restent, inventoriés un par un après lecture du code — jamais
  * « de tête » :
  *   • trois traits d'icône (`IconeStudio`, svg `aria-hidden`, `stroke-current`)
  *     → graphique, seuil 3:1, la paire « --brand (graphique) » les mesure ;
  *   • le survol des liens du pied de page, sur le fond `chrome` → la paire
  *     « --brand (texte au survol) sur chrome » le mesure (4,71:1 / 5,79:1) ;
- *   • UN défaut connu, hors du lot 4 : le prix flash de `flash-manager.tsx`
- *     (12 px gras, 3,71:1). Inventorié pour être vu, pas pour être admis.
+ *   • (le prix flash de `flash-manager.tsx`, 12 px gras à 3,71:1, inventorié
+ *     comme défaut au premier passage, est passé en `text-accent` : retiré.)
  * Un usage NOUVEAU fait rougir ; un usage listé qui DISPARAÎT aussi — on
  * retire sa ligne dans le même commit (péremption dans les deux sens).
  *
@@ -116,11 +116,6 @@ const INVENTAIRE: Record<string, Entree> = {
     nature: "chrome",
     pourquoi: "survol des liens du pied, posés sur `bg-chrome` uni — 4,71:1 (clair) et 5,79:1 (sombre), mesurés par la porte",
     contexte: /const LIEN =\s*"[^"]*(?<![\w-])hover:text-brand(?![\w/-])[^"]*";/g,
-  },
-  "components/flash-manager.tsx": {
-    jetons: ["text-brand"],
-    nature: "defaut",
-    pourquoi: "DÉFAUT CONNU, hors lot 4 : prix flash vendeur en 12 px gras, 3,71:1 sur carte. À passer en `text-accent`, puis retirer cette ligne.",
   },
 };
 

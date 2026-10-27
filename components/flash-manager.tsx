@@ -96,7 +96,7 @@ export function FlashManager({
       <p className="text-xs font-semibold text-cloud">{labels.title}</p>
       {vivante ? (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-mist">
-          <span className="rounded-full border border-brand px-2 py-0.5 font-bold text-brand">
+          <span className="rounded-full border border-accent px-2 py-0.5 font-bold text-accent">
             {formatHTG(vivante.prixFlashHtg)}
           </span>
           <span>
