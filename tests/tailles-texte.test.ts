@@ -76,14 +76,11 @@ function toutes(): Taille[] {
  * Les exceptions NOMMÉES : fichier, ce qui désigne l'élément (un fragment de sa
  * classe, ou son sélecteur exact), la taille tolérée, et pourquoi.
  */
-const EXCEPTIONS: { fichier: string; element: string; px: number; raison: string }[] = [
-  {
-    fichier: "components/site-nav.tsx",
-    element: "grid h-5 min-w-5 place-items-center rounded-full bg-brand",
-    px: 11,
-    raison: "compteur du panier : un chiffre dans une pastille de 20 px, pas du texte à lire (UI-06 l'avait nommé ainsi)",
-  },
-];
+/* Le compteur du panier (`components/site-nav.tsx`, 11 px) était la seule
+   exception. Relevé à `text-xs` le 2026-10-27 (audit du système de design,
+   m9) : une valeur arbitraire hors de l'échelle, et la péremption de T3 l'a
+   fait sortir d'ici dans le même commit. */
+const EXCEPTIONS: { fichier: string; element: string; px: number; raison: string }[] = [];
 
 /** Une exception désigne une taille : même fichier, même valeur, et en CSS le MÊME sélecteur
     (exact — `.home-photo-empty` ne doit pas couvrir `.home-photo-empty-bis`) ; en TSX, un

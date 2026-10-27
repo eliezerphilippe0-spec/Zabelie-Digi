@@ -80,7 +80,9 @@
     position: absolute;
     inset: 0 auto 0 0;
     width: 40%;
-    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    /* Le reflet : le blanc CHAUD du thème (`on-chrome`, clair dans les deux
+       palettes), pas un blanc pur (cliquet palette-resserree). */
+    background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--color-on-chrome) 35%, transparent), transparent);
     transform: translateX(-120%);
     animation: flash-reflet var(--motion-slow) var(--ease) 300ms 2 both;
     pointer-events: none;
