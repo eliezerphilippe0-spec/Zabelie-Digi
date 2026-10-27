@@ -435,6 +435,7 @@ test("PI1 — les libellés du retrait existent dans les quatre langues et nomme
 //   PP3  source de vignette à 640 px ; `tabIndex={-1}` retiré ; une image
 //        rendue aussi pour les produits SANS photo (`{true ? (`)
 //   PP4  le nom accessible de « Retirer » perd le titre
+//   PP5  m9 : `boutikSlug: null` remis ; `.catch` de la lecture du slug retiré
 
 type Ligne = { product_id: string; product: Record<string, unknown> };
 const LIGNES: Ligne[] = [
@@ -444,8 +445,13 @@ const LIGNES: Ligne[] = [
   { product_id: "d", product: { slug: "chapo", title: "Chapo pay", price_htg: 900, kind: "physical", cover_url: null, seller_id: "s2", creator: { display_name: "Atelye Jacmel" } } },
 ];
 
-function monterPage(lang = "ht", ouvert = false) {
+/** `getBoutikSlug` doublé : s1 a une adresse publique, s2 n'en a pas. */
+type Slugs = (id: string) => Promise<string | null>;
+const SLUGS: Slugs = async (id) => (id === "s1" ? "lakay" : null);
+
+function monterPage(lang = "ht", ouvert = false, slugs: Slugs = SLUGS) {
   const largeurs: number[] = [];
+  const slugsDemandes: string[] = [];
   const page = loadRoute("app/panier/page.tsx", {
     "react/jsx-runtime": JSX,
     "next/link": { default: "a" },
@@ -478,8 +484,9 @@ function monterPage(lang = "ht", ouvert = false) {
     "@/lib/payment-utils": { usdCentsFromHtg: () => 0, formatUsd: () => "" },
     "@/lib/product-image": { coverUrlAt: (u: string | null, w: number) => { largeurs.push(w); return u; } },
     "@/lib/boutique-href": { hrefBoutique },
+    "@/lib/creators": { getBoutikSlug: (id: string) => { slugsDemandes.push(id); return slugs(id); } },
   }) as unknown as { default(): Promise<El>; generateMetadata(): Promise<{ title: string; robots: unknown }> };
-  return { page, largeurs };
+  return { page, largeurs, slugsDemandes };
 }
 
 /** Les enfants DIRECTS d'un élément (tableaux de `map` aplatis). */
@@ -498,7 +505,7 @@ function boutiques(section: El) {
   return tous(section)
     .filter((n) => n.type === "div" && enfants(n).some((c) => c.type === "ul"))
     .map((carte) => ({
-      nom: texte(tous(carte).find((n) => n.type === "a" && String(n.props.href).startsWith("/createur/"))),
+      nom: texte(tous(carte).find((n) => n.type === "a" && /^\/(boutik|createur)\//.test(String(n.props.href)))),
       produits: tous(carte).filter((n) => n.type === "li").map((li) => tous(li).find((n) => n.type === "a")!.props.href),
     }));
 }
@@ -578,6 +585,21 @@ test("PP4 — chaque « Retirer » reçoit ses libellés traduits, titre compris
   assert.equal(lp.network, DICT.ht["error.network"]);
   assert.equal(lp.stalled, DICT.ht["cart.pay.all.stalled"]);
   assert.equal(lp.reload, DICT.ht["cart.pay.all.reload"]);
+});
+
+test("PP5 — m9 : la boutique est liée à son adresse publique /boutik/<slug>, et retombe sur /createur/<id> sans slug ou en panne", async () => {
+  const liens = async (slugs?: Slugs) => {
+    const m = monterPage("ht", false, slugs);
+    const arbre = await m.page.default();
+    const hrefs = tous(arbre).filter((n) => n.type === "a" && /^\/(boutik|createur)\//.test(String(n.props.href))).map((n) => String(n.props.href));
+    return { hrefs, demandes: m.slugsDemandes };
+  };
+  const normal = await liens();
+  // Lakay apparaît dans deux modes de remise (une carte chacun), Atelye Jacmel dans un.
+  assert.deepEqual(normal.hrefs.sort(), ["/boutik/lakay", "/boutik/lakay", "/createur/s2"]);
+  assert.deepEqual(normal.demandes.sort(), ["s1", "s2"], "une lecture par boutique, pas par ligne");
+  const panne = await liens(async () => { throw new Error("PGRST"); });
+  assert.deepEqual(panne.hrefs.sort(), ["/createur/s1", "/createur/s1", "/createur/s2"], "une panne de lecture ne doit pas casser le panier");
 });
 
 // ─────────────────────────────── Squelette ─────────────────────────────────
