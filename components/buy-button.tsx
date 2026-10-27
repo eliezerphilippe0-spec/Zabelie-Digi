@@ -465,9 +465,9 @@ export function BuyButton({
                       disabled={out}
                       aria-pressed={active}
                       onClick={() => { setVariantId(v.id); setApplied(null); setCouponError(false); }}
-                      className={`rounded-xl border px-3 py-2 text-sm transition ${
+                      className={`min-h-11 rounded-xl border px-3 py-2 text-sm transition ${
                         active
-                          ? "border-brand bg-brand/10 text-cloud"
+                          ? "border-cloud bg-cloud text-ink"
                           : "border-line text-mist hover:border-brand/50"
                       } ${out ? "cursor-not-allowed line-through opacity-50" : ""}`}
                     >
@@ -515,7 +515,7 @@ export function BuyButton({
               inputMode="tel"
               autoComplete="tel-national"
               maxLength={20}
-              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60"
             />
             <input
               value={numeroBis}
@@ -528,7 +528,7 @@ export function BuyButton({
               // vérifierait plus rien.
               autoComplete="off"
               maxLength={20}
-              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+              className="numeric min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-base text-cloud placeholder:text-mist focus:border-brand/60"
             />
           </div>
 
@@ -582,13 +582,13 @@ export function BuyButton({
             placeholder={coupon.placeholder}
             aria-label={coupon.placeholder}
             maxLength={24}
-            className="code-lisible min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            className="code-lisible min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60"
           />
           <button
             type="button"
             onClick={applyCoupon}
             disabled={checking || !code.trim()}
-            className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-50"
+            className="min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-50"
           >
             {checking ? "…" : coupon.apply}
           </button>
@@ -628,7 +628,7 @@ export function BuyButton({
                 key={cleOption(o)}
                 onClick={() => handleBuy(o)}
                 disabled={busy || soldOut || selectedOut || achatBloque}
-                className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
+                className="min-h-11 w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
               >
                 {loadingRail === cleOption(o) ? loadingLabel : o.label}
               </button>
@@ -637,7 +637,7 @@ export function BuyButton({
         </div>
       )}
 
-      {error && <p className="mt-2 text-center text-xs text-danger-text">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-center text-xs text-danger-text">{error}</p>}
     </div>
   );
 }

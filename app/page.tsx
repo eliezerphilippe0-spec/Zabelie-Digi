@@ -87,7 +87,10 @@ function HomeRow({
     <section id={id} className={`mx-auto max-w-6xl px-5 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
         <div><h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
-        <Link href={href} className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
+        {/* 44 px de cible (mesuré : 59 × 20 px à 360 px), rendus par `-my-3`
+            pour que la rangée garde sa hauteur ; `min-w-11` parce que « See
+            all » fait moins de 44 px de large en 14 px. */}
+        <Link href={href} className="-my-3 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-end text-sm font-medium text-mist transition hover:text-cloud">
           {more}
         </Link>
       </div>

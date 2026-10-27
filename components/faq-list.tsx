@@ -16,7 +16,10 @@ export function FaqList({ lang }: { lang: Lang }) {
           key={i}
           className="group rounded-2xl border border-line bg-surface/40 px-5 py-4"
         >
-          <summary className="cursor-pointer list-none font-semibold marker:content-none">
+          {/* 44 px de cible (mesuré : 24 px de haut sur /aide) : `py-2.5`
+              agrandit la zone, `-my-2.5` la rend à la carte — la mise en page
+              ne bouge pas d'un pixel, ouverte comme fermée. */}
+          <summary className="-my-2.5 min-h-11 cursor-pointer list-none py-2.5 font-semibold marker:content-none">
             <span className="mr-2 inline-block text-accent transition group-open:rotate-90">›</span>
             {t(lang, `faq.q${i}` as Parameters<typeof t>[1])}
           </summary>

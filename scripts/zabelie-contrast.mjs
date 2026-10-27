@@ -93,12 +93,23 @@ export function paires(T) {
     // Graphiques (pastilles, traits) : seuil 3:1.
     out.push([`--accent (graphique) sur ${nom}`, T.accent, fond, LARGE]);
     out.push([`--brand (graphique) sur ${nom}`, T.brand, fond, LARGE]);
+    // Texte orange (prix, badge −%, compte à rebours) : `--accent`, au seuil
+    // du TEXTE. Les deux paires graphiques ci-dessus (3:1) ne disent rien
+    // d'un badge en 12 px, et c'est par ce trou que `text-brand` (3,56:1 sur
+    // crème) est passé sur la fiche produit, le compte à rebours flash et le
+    // statut KYC (audit du 2026-10-27, M7). Garde : `tests/texte-orange`.
+    out.push([`--accent (texte) sur ${nom}`, T.accent, fond, NORMAL]);
   }
   // CTA : texte sombre sur orange vif — la paire de ::selection et des
   // boutons. Depuis le mode clair, ce texte est `on-brand` (FIXE dans les
   // deux thèmes), plus `ink` (qui bascule avec le chrome) : la paire suit le
   // token réellement employé par les composants.
   out.push(["--on-brand sur CTA --brand", T["on-brand"], T.brand, NORMAL]);
+  // Pied de page : le survol des liens passe en `text-brand` sur le fond
+  // UNI `chrome` (components/site-footer.tsx, pas le dégradé). C'est le seul
+  // usage de `--brand` comme couleur de TEXTE que le cliquet de
+  // `tests/texte-orange` admet, et il ne l'admet que parce qu'il est mesuré ici.
+  out.push(["--brand (texte au survol) sur chrome", T.brand, T.chrome, NORMAL]);
   // En-tête (accueil premium, Phase 2) : texte et icônes `on-chrome` sur les
   // TROIS arrêts du dégradé de marque — le dégradé référence ces tokens, donc
   // ce qui est mesuré ici est ce qui est peint.

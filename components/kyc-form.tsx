@@ -45,6 +45,8 @@ export function KycForm({
   const [pieces, setPieces] = useState(deposes);
   const [busy, setBusy] = useState<KycType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Ce que la région `role="status"` lit après un envoi réussi.
+  const [depose, setDepose] = useState<string | null>(null);
 
   const libelle: Record<KycType, string> = {
     cin: labels.cin,
@@ -56,6 +58,7 @@ export function KycForm({
     if (!file) return;
     setBusy(kind);
     setError(null);
+    setDepose(null);
     try {
       const form = new FormData();
       form.set("expectedActorId", actorId);
@@ -68,6 +71,7 @@ export function KycForm({
         return;
       }
       setPieces((p) => [...p, { id: data.id, kind }]);
+      setDepose(`${libelle[kind]} : ${labels.deposited}`);
     } catch {
       setError(labels.error);
     } finally {
@@ -89,7 +93,7 @@ export function KycForm({
       <p
         className={
           statut === "approved"
-            ? "text-xs font-semibold text-brand"
+            ? "text-xs font-semibold text-success-text"
             : statut === "rejected"
               ? "text-xs font-semibold text-danger-text"
               : "text-xs text-mist"
@@ -105,24 +109,29 @@ export function KycForm({
         <ul className="text-xs text-mist">
           {pieces.map((p) => (
             <li key={p.id}>
-              {libelle[p.kind]} — {labels.deposited}
+              {libelle[p.kind]} : {labels.deposited}
             </li>
           ))}
         </ul>
       )}
 
+      {/* Les champs sont VISUELLEMENT masqués (`sr-only`), plus retirés
+          (`hidden`) : `display: none` les rendait injoignables au clavier, et
+          le retrait d'argent attend ce dossier (audit 2026-10-27, M8). Même
+          motif que `photo-principale.tsx` : 44 px, anneau de focus dessiné sur
+          le libellé (`has-[:focus-visible]`). */}
       {statut !== "approved" && (
         <div className="flex flex-wrap gap-2">
           {(["cin", "paspo", "selfie"] as KycType[]).map((k) => (
             <label
               key={k}
-              className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent"
+              className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent"
             >
               {busy === k ? labels.sending : `${labels.add} : ${libelle[k]}`}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="hidden"
+                className="sr-only"
                 disabled={busy !== null}
                 onChange={(e) => {
                   deposer(k, e.target.files?.[0] ?? null);
@@ -131,9 +140,17 @@ export function KycForm({
               />
             </label>
           ))}
+          {/* La région existe AVANT que son texte change, sinon le lecteur
+              d'écran ne lit rien : l'envoi, puis son issue. Placée DANS la
+              rangée flexible, où un élément `sr-only` (absolu) n'ajoute ni
+              écart ni marge — en dernier enfant du bloc `space-y-3`, il
+              aurait donné 12 px de marge basse à la rangée. */}
+          <p role="status" className="sr-only">
+            {busy ? labels.sending : (depose ?? "")}
+          </p>
         </div>
       )}
-      {error && <p className="text-xs text-danger-text">{error}</p>}
+      {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
     </div>
   );
 }

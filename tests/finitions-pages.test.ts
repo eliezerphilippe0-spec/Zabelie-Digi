@@ -29,11 +29,15 @@ test("F1 — les pages privées portent noindex, comme mes-achats et favoris", (
     "app/mes-achats/page.tsx",
     "app/favoris/page.tsx",
   ]) {
-    assert.match(
-      lire(f),
-      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/,
-      `${f} peut être indexée`
-    );
+    /* Deux formes, AUSSI strictes l'une que l'autre : l'objet statique, ou
+     * l'objet RENDU par `generateMetadata` (titre traduit — /mes-achats
+     * depuis le 2026-10-27). Next interdit les deux exports ensemble ; la
+     * seconde est lue dans le `return` de la fonction, pas n'importe où. */
+    const src = lire(f);
+    const statique = /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/.test(src);
+    const corps = src.match(/export async function generateMetadata\(\)[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const rendu = /return \{[^;]*robots: \{ index: false, follow: false \}[^;]*\};/.test(corps);
+    assert.ok(statique || rendu, `${f} peut être indexée`);
   }
 });
 

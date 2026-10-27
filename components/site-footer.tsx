@@ -26,11 +26,18 @@ import { whatsappHref } from "@/lib/whatsapp";
  *
  * Fond `chrome` : le token que le thème réserve à l'en-tête et au pied,
  * sombre dans les deux thèmes. Texte secondaire `on-chrome/80` (≥ 11:1),
- * survol `brand` (4,71:1 en clair, 6,36:1 en sombre, mesuré).
+ * survol `brand` (4,71:1 en clair, 5,79:1 en sombre : paire « --brand (texte
+ * au survol) sur chrome » de la porte de contraste).
+ *
+ * Liens à 44 px À TOUTES LES LARGEURS (audit du 2026-10-27, M10) : la
+ * réduction `md:min-h-7` les mettait à 28 px de haut dès 768 px, où l'on
+ * touche encore l'écran (tablettes). Prix assumé : la colonne la plus longue
+ * (six liens) gagne ~76 px de haut sur ordinateur ; les six rubriques restent
+ * sur une rangée dès 1 200 px.
  */
 
 const LIEN =
-  "inline-flex min-h-11 items-center text-sm text-on-chrome/80 transition-colors hover:text-brand md:min-h-7";
+  "inline-flex min-h-11 items-center text-sm text-on-chrome/80 transition-colors hover:text-brand";
 
 type Etat = EtatPaiement | "manual";
 const ETAT_CLE: Record<Etat, I18nKey> = {
@@ -68,7 +75,7 @@ export async function SiteFooter() {
           </div>
 
           <FooterSection titre={t(lang, "footer.explore")}>
-            <ul className="flex flex-col md:gap-1">
+            <ul className="flex flex-col">
               <li><Link href="/catalogue" className={LIEN}>{t(lang, "nav.catalog")}</Link></li>
               <li><Link href="/categories" className={LIEN}>{t(lang, "directory.title")}</Link></li>
               <li><Link href="/catalogue?univers=objets" className={LIEN}>{t(lang, "universe.physical")}</Link></li>
@@ -79,7 +86,7 @@ export async function SiteFooter() {
           </FooterSection>
 
           <FooterSection titre={t(lang, "footer.sell")}>
-            <ul className="flex flex-col md:gap-1">
+            <ul className="flex flex-col">
               <li><Link href="/vendre" className={LIEN}>{t(lang, "footer.become")}</Link></li>
               <li><Link href="/#comment" className={LIEN}>{t(lang, "nav.how")}</Link></li>
               <li><Link href="/tableau-de-bord" className={LIEN}>{t(lang, "footer.sellerCenter")}</Link></li>
@@ -87,7 +94,7 @@ export async function SiteFooter() {
           </FooterSection>
 
           <FooterSection titre={t(lang, "footer.help")}>
-            <ul className="flex flex-col md:gap-1">
+            <ul className="flex flex-col">
               <li><Link href="/aide" className={LIEN}>{t(lang, "footer.helpCenter")}</Link></li>
               <li><Link href="/aide#faq" className={LIEN}>{t(lang, "sec.faq")}</Link></li>
               <li><Link href="/mes-achats" className={LIEN}>{t(lang, "pay.ok.cta")}</Link></li>
@@ -97,7 +104,7 @@ export async function SiteFooter() {
           </FooterSection>
 
           <FooterSection titre={t(lang, "footer.legal")}>
-            <ul className="flex flex-col md:gap-1">
+            <ul className="flex flex-col">
               <li><Link href="/confidentialite" className={LIEN}>{t(lang, "footer.privacy")}</Link></li>
               <li><Link href="/conditions" className={LIEN}>{t(lang, "footer.terms")}</Link></li>
               <li><Link href={POLICY_PATH} className={LIEN}>{t(lang, "policy.link")}</Link></li>

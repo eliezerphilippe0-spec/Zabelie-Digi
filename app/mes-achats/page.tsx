@@ -43,7 +43,12 @@ function remiseLabel(kind: ProductKind | undefined, lang: Lang): string | null {
 import { PURCHASE_PAGE_SIZE, PURCHASE_VIEWS, purchaseView, purchaseKind, purchasePage, purchaseHref, purchaseIsConfirmed, purchaseStatusKey, purchaseViewKeys } from "@/lib/purchase-center";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mes achats — Zabelie", robots: { index: false, follow: false } };
+// Titre d'onglet dans la langue servie (il était en français fixe pour tous) ;
+// page privée : jamais indexée (garde `finitions-pages` F1).
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "purchases.title")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 type OrderRow = {
   id: string;
@@ -244,7 +249,7 @@ export default async function MesAchatsPage({ searchParams }: {
     <Shell>
       <nav aria-label={t(lang, "purchases.views")} className="mt-8 flex flex-wrap gap-2">
         {PURCHASE_VIEWS.map((v) => <Link key={v} href={purchaseHref(v)} aria-current={v === view ? "page" : undefined}
-          className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold ${v === view ? "border-brand bg-brand text-on-brand" : "border-line text-mist hover:text-cloud"}`}>
+          className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold ${v === view ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:text-cloud"}`}>
           {t(lang, purchaseViewKeys[v])}
         </Link>)}
       </nav>
