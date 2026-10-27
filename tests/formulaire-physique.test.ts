@@ -494,10 +494,69 @@ test("m7 — mentions cohérentes : optionnel hors du nom accessible, sur la des
   assert.match(compatibilite("fr"), /Compatibilité véhicule <span[^>]*>\(recommandée\)<\/span>/);
 });
 
-test("le prix reste celui qui est envoyé : présentation seule, validation et requête intactes", () => {
-  // Les gardes de comportement qui ne doivent PAS bouger avec la présentation.
-  assert.match(FORM_SRC, /priceHTG: Number\(price\),\s*quantity: Number\(quantity\),/);
-  assert.match(FORM_SRC, /required=\{!showVariants\}\s*disabled=\{showVariants\}/);
+// ── Ce que la présentation ne doit PAS toucher : champ → état → corps envoyé ─
+
+/**
+ * Relecture indépendante du 2026-10-27 (t1) : la première version cherchait
+ * `required={!showVariants}` dans tout le fichier — le motif y est DEUX fois
+ * (prix et quantité), et retirer `required` du seul prix laissait le test
+ * vert. Chaque garde est désormais ancrée sur SON champ : l'élément `<input>`
+ * qui affiche l'état, l'unique écrivain de cet état, puis le corps du POST.
+ */
+const INPUTS = [...FORM_SRC.matchAll(/<input\b[\s\S]*?\/>/g)].map((m) => m[0]);
+
+/** L'unique `<input>` dont la valeur affichée est `etat`. */
+function champ(etat: string): string {
+  const trouves = INPUTS.filter((s) => new RegExp(`\\bvalue=\\{${etat}\\}`).test(s));
+  assert.equal(trouves.length, 1, `un seul champ affiche ${etat}`);
+  return trouves[0];
+}
+
+/** Le corps du POST de création, et lui seul. */
+function corpsCreation(): string {
+  const m = FORM_SRC.match(
+    /fetch\("\/api\/products\/physical", \{\s*method: "POST",[\s\S]{0,120}?body: JSON\.stringify\(\{([\s\S]*?)\}\),\s*\}\);\s*const data = await res\.json\(\);/,
+  );
+  assert.ok(m, "corps du POST de création introuvable");
+  return m[1];
+}
+
+for (const [etat, ecrivain, cleCorps] of [
+  ["price", "setPrice", "priceHTG"],
+  ["quantity", "setQuantity", "quantity"],
+] as const) {
+  test(`${etat} : le champ est SA seule source, exigé hors variantes, et part tel quel au serveur`, () => {
+    const el = champ(etat);
+    // Le champ écrit l'état qu'il affiche…
+    assert.match(el, new RegExp(`onChange=\\{\\(e\\) => ${ecrivain}\\(e\\.target\\.value\\)\\}`));
+    // …et il est le SEUL à l'écrire (hors déclaration).
+    assert.match(FORM_SRC, new RegExp(`const \\[${etat}, ${ecrivain}\\] = useState\\(""\\);`));
+    assert.equal(FORM_SRC.split(`${ecrivain}(`).length - 1, 1, `${ecrivain} n'a qu'un appelant : le champ ${etat}`);
+    // Validation inchangée, sur CE champ.
+    assert.match(el, /\brequired=\{!showVariants\}/);
+    assert.match(el, /\bdisabled=\{showVariants\}/);
+    assert.match(el, /\btype="number"/);
+    assert.match(el, /\bstep=\{1\}/);
+    // Le corps envoie cet état, converti en nombre — rien d'autre.
+    assert.match(corpsCreation(), new RegExp(`\\n\\s*${cleCorps}: Number\\(${etat}\\),\\n`));
+  });
+}
+
+test("prix et quantité sont exigés AU RENDU, chacun sur son champ nommé", () => {
+  for (const lang of LANGS) {
+    const html = formulaire(lang);
+    for (const cle of ["publish.price.ph", "publish.physical.quantity"] as const) {
+      const nom = t(lang, cle).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const m = html.match(new RegExp(`<label[^>]*><span[^>]*>${nom}</span><input\\b([^>]*)/?>`));
+      assert.ok(m, `${lang} : champ « ${t(lang, cle)} » introuvable`);
+      assert.match(m[1], /\brequired=""/, `${lang} : « ${t(lang, cle)} » n'est plus exigé`);
+      assert.match(m[1], /\btype="number"/);
+    }
+  }
+});
+
+test("le reste de la porte d'envoi est intact", () => {
+  assert.match(corpsCreation(), /\n\s*categorySlug,\n\s*policyAccepted: policyOk,\n/);
   assert.match(FORM_SRC, /disabled=\{busy \|\| compressing \|\| !categorySlug\}/);
   assert.match(FORM_SRC, /rateBpsEnVigueur=\{rateBpsEnVigueur\}/);
 });
