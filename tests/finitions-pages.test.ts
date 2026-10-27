@@ -29,9 +29,13 @@ test("F1 — les pages privées portent noindex, comme mes-achats et favoris", (
     "app/mes-achats/page.tsx",
     "app/favoris/page.tsx",
   ]) {
+    /* Deux formes, la même exigence : un titre fixe (`metadata`), ou un titre
+     * dans la langue de session (`generateMetadata`, tableau de bord depuis le
+     * 2026-10-27, m10) — dont c'est l'objet RENDU qui doit porter noindex.
+     * `tests/paiement-icones.test.ts` (PI2) exécute la fonction. */
     assert.match(
       lire(f),
-      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/,
+      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};|export async function generateMetadata\(\) \{\s*const lang = await getLang\(\);\s*return \{[^;]*robots: \{ index: false, follow: false \} \};/,
       `${f} peut être indexée`
     );
   }

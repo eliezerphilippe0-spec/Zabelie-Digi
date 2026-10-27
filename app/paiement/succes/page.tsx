@@ -104,8 +104,13 @@ function cleCorps(kind: string | null): I18nKey {
   );
 }
 
-/* Titre neutre : il s'affiche avant de savoir si la commande est payée. */
-export const metadata = { title: "Votre commande — Zabelie", robots: { index: false, follow: false } };
+/* Titre neutre : il s'affiche avant de savoir si la commande est payée.
+   Dans la langue de session (audit du système de design, m10) : il était en
+   français fixe pour un acheteur kreyòl. Hors index, toujours (S12). */
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "pay.order")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 export default async function SuccesPage({
   searchParams,
@@ -161,8 +166,20 @@ export default async function SuccesPage({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
-        <span className="reveal-mark mx-auto grid h-16 w-16 place-items-center rounded-full bg-success text-2xl text-ink">
-          ✓
+        {/* La coche est un tracé, pas le glyphe ✓ : un glyphe dépend de la police
+            du téléphone (carré vide sur certains Android d'entrée de gamme) et
+            se lisait « coche » au lecteur d'écran avant le titre qui le dit. */}
+        <span className="reveal-mark mx-auto grid h-16 w-16 place-items-center rounded-full bg-success text-ink">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="h-8 w-8 fill-none stroke-current"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
         </span>
         <h1
           className="reveal mt-6 text-2xl font-extrabold"

@@ -58,7 +58,9 @@ const payoutResponse = (page: Page) => page.waitForResponse(response => new URL(
 async function dashboard(page: Page, displayName: string, lang: Lang = "fr") {
   await page.goto("/tableau-de-bord");
   await expect(page).toHaveURL(/\/tableau-de-bord$/);
-  await expect(page).toHaveTitle("Tableau de bord — Zabelie");
+  // Titre dans la langue de session depuis le 2026-10-27 (m10) : le français
+  // fixe attendu ici dans les quatre langues encodait le défaut.
+  await expect(page).toHaveTitle(`${t(lang, "nav.dashboard")} — Zabelie`);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(displayName);
   await expect(page.getByRole("button", { name: t(lang, "vendeur.retrait.ouvrir"), exact: true })).toBeEnabled();
 }

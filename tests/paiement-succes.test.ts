@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { DICT, LANGS } from "@/lib/i18n";
+import { DICT, LANGS, t, type Lang } from "@/lib/i18n";
+import { loadRoute } from "./helpers/route-harness";
 
 /**
  * LA PAGE DE SUCCÈS NE PROMET PAS UN FICHIER À TOUT LE MONDE.
@@ -375,11 +376,14 @@ test("S10 — la coche et « Paiement confirmé » n'existent qu'APRÈS le garde
   const fin = src.indexOf("\n  }\n", garde);
   const neutre = src.slice(garde, fin);
   assert.match(neutre, /return \(/, "le garde ne rend plus de page neutre");
-  for (const interdit of ["✓", "pay.ok.", "commande.slice", "{ref"]) {
+  for (const interdit of ["✓", "bg-success", "pay.ok.", "commande.slice", "{ref"]) {
     assert.ok(!neutre.includes(interdit), `la page neutre rend « ${interdit} » : elle confirme ou recopie l'URL`);
   }
-  /* Tout ce qui confirme ou récompense un achat vient APRÈS le garde. */
-  for (const marque of ["✓", '"pay.ok.title"', "cleCorps(kind)", "<SellerPixels", "<ProductOffers"]) {
+  /* Tout ce qui confirme ou récompense un achat vient APRÈS le garde. La coche
+   * n'est plus le glyphe ✓ mais un tracé SVG dans la pastille verte (audit du
+   * système de design, m10, 2026-10-27) : c'est la pastille `bg-success` qui
+   * porte le sens « confirmé », c'est donc elle qu'on situe. */
+  for (const marque of ["bg-success", '"pay.ok.title"', "cleCorps(kind)", "<SellerPixels", "<ProductOffers"]) {
     const i = src.indexOf(marque, debut);
     assert.ok(i > fin, `« ${marque} » est rendu avant le garde \`payee\``);
   }
@@ -409,18 +413,34 @@ test("S11 — la page neutre ne confirme rien, et renvoie là où l'état fait f
   }
 });
 
-test("S12 — les pages de paiement restent hors index, et l'onglet n'affirme rien", () => {
+test("S12 — les pages de paiement restent hors index, et l'onglet n'affirme rien", async () => {
+  /* Les titres d'onglet passent par `generateMetadata` et la langue de session
+   * (m10, 2026-10-27) : ils étaient en français fixe. On n'inspecte donc plus
+   * un littéral, on EXÉCUTE la fonction des trois pages, dans les quatre
+   * langues — c'est son résultat que Next pose dans <head>. */
+  const CONFIRME =
+    /(?<![\p{L}])(confirmée?|validée?|réussie?|confirmed|successful|confirmad[oa]|exitos[oa])(?![\p{L}])/iu;
+  assert.ok(CONFIRME.test("Paiement confirmé — Zabelie"), "le motif ne voit plus une affirmation");
+  const jsx = (type: unknown, props: unknown) => ({ type, props });
   for (const f of [PAGE, "app/paiement/en-attente/page.tsx", "app/paiement/echec/page.tsx"]) {
-    assert.match(
-      readFileSync(f, "utf8"),
-      /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/,
-      `${f} peut être indexée`
-    );
+    for (const lang of LANGS) {
+      const mod = loadRoute(f, {
+        "react/jsx-runtime": { jsx, jsxs: jsx, Fragment: "fragment" },
+        "@/lib/i18n": { t },
+        "@/lib/i18n-server": { getLang: async () => lang },
+      }) as unknown as { generateMetadata?: () => Promise<{ title?: string; robots?: unknown }> };
+      assert.equal(typeof mod.generateMetadata, "function", `${f} n'exporte plus generateMetadata`);
+      const meta = await mod.generateMetadata!();
+      // Recopié dans ce domaine : l'objet vient du bac à sable `vm`, dont le
+      // prototype n'est pas celui d'ici (deepEqual strict compare les deux).
+      assert.deepEqual({ ...(meta.robots as object) }, { index: false, follow: false }, `${f} (${lang}) peut être indexée`);
+      assert.ok(meta.title?.endsWith(" — Zabelie"), `${f} (${lang}) : titre « ${meta.title} »`);
+      if (f === PAGE) {
+        /* Rendu AVANT la vérification : il doit être neutre, dans chaque langue. */
+        const d = DICT[lang as Lang] as Record<string, string>;
+        assert.ok(!meta.title!.includes(d["pay.ok.title"]), `l'onglet (${lang}) redit « ${d["pay.ok.title"]} »`);
+        assert.ok(!CONFIRME.test(meta.title!), `l'onglet (${lang}) affirme un paiement : « ${meta.title} »`);
+      }
+    }
   }
-  /* Le titre de l'onglet est rendu AVANT la vérification : il doit être neutre. */
-  assert.doesNotMatch(
-    readFileSync(PAGE, "utf8"),
-    /export const metadata = \{ title: "[^"]*(réussi|confirmé)/,
-    "le titre de l'onglet affirme un paiement que la page n'a pas encore vérifié"
-  );
 });
