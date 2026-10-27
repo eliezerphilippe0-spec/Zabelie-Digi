@@ -7,7 +7,8 @@
 > existe déjà, tu peux améliorer s'il le faut, éviter les doublons ».
 >
 > **Positionnement = zone d'arrêt** (`CLAUDE.md`, Méthode ; `docs/25` §4).
-> Ce document analyse et propose. Il ne tranche rien. Les arbitrages sont au §9.
+> Ce document analyse et propose. Les arbitrages du §9 ont été **tranchés par
+> le porteur le 2026-10-27** (les dix recommandations, `docs/02` V-24).
 
 ---
 
@@ -435,8 +436,9 @@ actif avec des produits publiés. Avant, elles mesurent zéro.
 
 ## 9. Arbitrages pour Philippe
 
-Chaque ligne demande un mot. La recommandation est une analyse ; le choix
-reste au porteur.
+> ✅ **Tranché le 2026-10-27** : « Suis les recommandations pour les 10
+> arbitrages, fusionne ». Chaque ligne ci-dessous est retenue telle que
+> recommandée. Inscrit au registre : **`docs/02-DECISIONS.md` V-24**.
 
 | # | Question | Options | Recommandation de l'agent |
 |---|---|---|---|
