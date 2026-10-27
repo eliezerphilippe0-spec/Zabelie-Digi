@@ -1,4 +1,4 @@
-import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Dialog, type Page } from "@playwright/test";
 import { randomUUID, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { t, type Lang } from "../lib/i18n";
@@ -259,20 +259,41 @@ test("profil : le refresh SSR après sauvegarde A remonte les champs B dans le m
 // next start construit le renvoi absolu signout sur localhost. Les seuls
 // nouveaux cas Compte utilisent cette même origine, sans réécrire le 303.
 const ACCOUNT_ORIGIN = "http://localhost:3001";
-const removeAccountButton = (page: Page) => page.locator("#donnees").getByRole("button", { name: "Supprimer mon compte", exact: true });
+// Confirmation DANS la page depuis l'audit du 2026-10-27 (M5) : plus de
+// `window.confirm` natif, mais un encadré en deux temps, traduit.
+const removeAccountButton = (page: Page, lang: Lang = "fr") =>
+  page.locator("#donnees").getByRole("button", { name: t(lang, "vendeur.compte.supprimer"), exact: true });
+const closureBox = (page: Page, lang: Lang = "fr") =>
+  page.locator("#donnees").getByRole("region", { name: t(lang, "vendeur.compte.supprimer.titre"), exact: true });
+const confirmClosure = (page: Page, lang: Lang = "fr") =>
+  closureBox(page, lang).getByRole("button", { name: t(lang, "vendeur.compte.supprimer.confirmer"), exact: true });
 async function openAccount(page: Page, lang: Lang = "fr") {
   await page.goto(`${ACCOUNT_ORIGIN}/tableau-de-bord/compte`);
   await expect(page.getByRole("heading", { level: 1, name: t(lang, "vendeur.nav.compte"), exact: true })).toBeVisible();
-  await expect(removeAccountButton(page)).toBeEnabled();
+  await expect(removeAccountButton(page, lang)).toBeEnabled();
 }
-async function accountConfirmation(page: Page, accept: boolean) {
-  const pending = page.waitForEvent("dialog");
-  const clicked = removeAccountButton(page).click();
-  const dialog = await pending;
-  const type = dialog.type();
-  if (accept) await dialog.accept(); else await dialog.dismiss();
-  await clicked;
-  expect(type).toBe("confirm");
+async function accountConfirmation(page: Page, accept: boolean, lang: Lang = "fr") {
+  // Aucune boîte native ne doit plus s'ouvrir : si une apparaît, elle est
+  // notée (et fermée) pour que l'assertion finale le dise.
+  const dialogs: string[] = [];
+  const onDialog = (dialog: Dialog) => { dialogs.push(dialog.type()); void dialog.dismiss(); };
+  page.on("dialog", onDialog);
+  try {
+    // Premier temps : le bouton n'envoie rien, il ouvre l'encadré, qui prend
+    // le focus et dit les conséquences dans la langue de la session.
+    await removeAccountButton(page, lang).click();
+    const box = closureBox(page, lang);
+    await expect(box).toBeVisible();
+    await expect(box).toBeFocused();
+    await expect(box).toContainText(t(lang, "vendeur.compte.supprimer.texte"));
+    await expect(removeAccountButton(page, lang)).toHaveCount(0);
+    // Second temps : la sortie explicite choisie.
+    if (accept) await confirmClosure(page, lang).click();
+    else await box.getByRole("button", { name: t(lang, "vendeur.compte.supprimer.annuler"), exact: true }).click();
+  } finally {
+    page.off("dialog", onDialog);
+  }
+  expect(dialogs).toEqual([]);
 }
 function assertNoClosureEffects(before: ProfileState, after: ProfileState) {
   // Une lecture SSR tardive peut encore observer le profil de l'écran A.
@@ -330,7 +351,7 @@ for (const [lang, mode, width] of [["fr", "history", 360], ["ht", "empty", 1280]
       if ((path === "/api/account" && request.method() === "DELETE") || (path === "/api/auth/signout" && request.method() === "POST")) calls.push(`${request.method()} ${path}`);
     });
     const pending = page.waitForResponse(response => new URL(response.url()).pathname === "/api/account" && response.request().method() === "DELETE");
-    await accountConfirmation(page, true);
+    await accountConfirmation(page, true, lang);
     const response = await pending; const body = await response.json(); const after = await f.state();
     const rawBody = response.request().postData();
     const expectedActorId = rawBody ? JSON.parse(rawBody).expectedActorId ?? null : null;
@@ -347,9 +368,20 @@ for (const [lang, mode, width] of [["fr", "history", 360], ["ht", "empty", 1280]
     expect(expectedActorId).toBe(f.actorA);
     expect(body.error).toBe(t(lang, "api.auth.required"));
     await expect(page.getByText(t(lang, "api.auth.required"), { exact: true })).toBeVisible();
-    await expect(removeAccountButton(page)).toBeEnabled();
-    expect(calls).toEqual(["DELETE /api/account"]);
+    // Après le refus, l'encadré RESTE ouvert, l'erreur annoncée dedans, et la
+    // confirmation redevient disponible. Le bouton initial n'est pas revenu.
+    await expect(closureBox(page, lang).getByRole("alert")).toHaveText(t(lang, "api.auth.required"));
+    await expect(confirmClosure(page, lang)).toBeEnabled();
+    await expect(removeAccountButton(page, lang)).toHaveCount(0);
+    // Le focus n'est pas tombé sur `body` pendant l'appel (bouton `aria-disabled`,
+    // jamais `disabled`) : il est resté sur la confirmation…
+    await expect(confirmClosure(page, lang)).toBeFocused();
     if (lang === "fr" || lang === "ht") await captureAtTop(page, `fermeture-identite-refus-${width}.png`);
+    // … donc Échap, écouté par l'encadré, le ferme encore et rend le focus au bouton initial.
+    await page.keyboard.press("Escape");
+    await expect(closureBox(page, lang)).toHaveCount(0);
+    await expect(removeAccountButton(page, lang)).toBeFocused();
+    expect(calls).toEqual(["DELETE /api/account"]);
   });
 }
 
@@ -359,7 +391,9 @@ test("fermeture : annuler la confirmation conserve les deux comptes sans DELETE"
   const calls: string[] = [];
   page.on("request", request => { if (new URL(request.url()).pathname === "/api/account" && request.method() === "DELETE") calls.push(request.method()); });
   await accountConfirmation(page, false);
+  await expect(closureBox(page)).toHaveCount(0);
   await expect(removeAccountButton(page)).toBeEnabled();
+  await expect(removeAccountButton(page)).toBeFocused();
   expect(calls).toEqual([]); assertNoClosureEffects(before, await f.state());
 });
 

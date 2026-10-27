@@ -56,29 +56,12 @@ export function PayoutRequest({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<Message | null>(null);
 
-  if (hasPending) {
-    return (
-      <p className="rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm text-cloud">
-        {labels.pending}
-      </p>
-    );
-  }
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        disabled={disponibleHtg <= 0}
-        className="min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-50"
-      >
-        {labels.open}
-      </button>
-    );
-  }
-
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Le bouton reste focalisable pendant l'envoi (`aria-disabled`) : un
+    // bouton `disabled` perdait le focus, qui tombait sur `body` après un
+    // refus. Le second envoi est donc refusé ICI.
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const amount = Number(new FormData(e.currentTarget).get("amount"));
@@ -98,57 +81,85 @@ export function PayoutRequest({
     setBusy(false);
   }
 
-  return (
-    <form onSubmit={submit} aria-busy={busy} className="space-y-3 rounded-xl border border-line bg-surface/60 p-4">
-      <p className="font-semibold">{labels.title}</p>
-      <p className="text-sm text-cloud">{labels.intro}</p>
-      <label className="block text-sm">
-        {labels.amount}
-        <input
-          name="amount"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={disponibleHtg}
-          step={1}
-          required
-          className="mt-1 min-h-11 w-full rounded-lg border border-line bg-ink px-3 py-2"
-        />
-      </label>
-      {msg?.ok === true && (
-        <p role="status" className="text-sm text-success-text">
-          {msg.text}
-        </p>
-      )}
-      {msg?.ok === false && (
-        <div role="alert" className="space-y-1 text-sm text-danger-text">
-          <p>{msg.text}</p>
-          {msg.code === "kyc_requis" && (
-            <Link
-              href={DEPOT_PIECES}
-              className="inline-flex min-h-11 items-center font-semibold text-cloud underline underline-offset-2"
-            >
-              {labels.kycAction}
-            </Link>
-          )}
+  let corps: React.ReactNode;
+  if (hasPending) {
+    corps = (
+      <p className="rounded-xl border border-line bg-surface/60 px-4 py-3 text-sm text-cloud">
+        {labels.pending}
+      </p>
+    );
+  } else if (!open) {
+    corps = (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        disabled={disponibleHtg <= 0}
+        className="min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-50"
+      >
+        {labels.open}
+      </button>
+    );
+  } else {
+    corps = (
+      <form onSubmit={submit} aria-busy={busy} className="space-y-3 rounded-xl border border-line bg-surface/60 p-4">
+        <p className="font-semibold">{labels.title}</p>
+        <p className="text-sm text-cloud">{labels.intro}</p>
+        <label className="block text-sm">
+          {labels.amount}
+          <input
+            name="amount"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={disponibleHtg}
+            step={1}
+            required
+            className="mt-1 min-h-11 w-full rounded-lg border border-line bg-ink px-3 py-2"
+          />
+        </label>
+        {msg?.ok === false && (
+          <div role="alert" className="space-y-1 text-sm text-danger-text">
+            <p>{msg.text}</p>
+            {msg.code === "kyc_requis" && (
+              <Link
+                href={DEPOT_PIECES}
+                className="inline-flex min-h-11 items-center font-semibold text-cloud underline underline-offset-2"
+              >
+                {labels.kycAction}
+              </Link>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            aria-disabled={busy}
+            className="min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand aria-disabled:opacity-60"
+          >
+            {busy ? labels.submitting : labels.submit}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="min-h-11 rounded-lg border border-line px-4 py-2 text-sm"
+          >
+            {labels.cancel}
+          </button>
         </div>
-      )}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="submit"
-          disabled={busy}
-          className="min-h-11 rounded-lg bg-brand px-4 py-2 text-sm font-bold text-on-brand disabled:opacity-60"
-        >
-          {busy ? labels.submitting : labels.submit}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="min-h-11 rounded-lg border border-line px-4 py-2 text-sm"
-        >
-          {labels.cancel}
-        </button>
-      </div>
-    </form>
+      </form>
+    );
+  }
+
+  // La région de SUCCÈS est TOUJOURS rendue, vide, en second enfant STABLE de
+  // la racine : une région `status` insérée déjà remplie n'est souvent pas
+  // lue, et au rafraîchissement qui suit le succès, le formulaire laisse la
+  // place à « demande en cours » — la région, elle, reste le même nœud.
+  return (
+    <div>
+      {corps}
+      <p role="status" className={msg?.ok === true ? "mt-3 text-sm text-success-text" : undefined}>
+        {msg?.ok === true ? msg.text : null}
+      </p>
+    </div>
   );
 }

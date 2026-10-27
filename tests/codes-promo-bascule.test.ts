@@ -28,7 +28,7 @@ test("P1 — la bascule passe par la porte, et n'avale plus l'échec", () => {
   // L'attente est posée sur LA ligne AVANT l'appel PATCH.
   assert.match(
     SRC,
-    /async function toggle\(id: string, active: boolean\) \{\s*setEnCours\(\(s\) => new Set\(s\)\.add\(id\)\);[\s\S]{0,200}const issue = await appelAvecSession\("\/api\/coupons", \{\s*method: "PATCH",/,
+    /async function toggle\(id: string, active: boolean\) \{\s*if \(occupee\(id\)\) return;\s*setEnCours\(\(s\) => new Set\(s\)\.add\(id\)\);[\s\S]{0,200}const issue = await appelAvecSession\("\/api\/coupons", \{\s*method: "PATCH",/,
   );
   // Seul un succès rafraîchit ; un échec pose l'erreur sur la ligne, traduite.
   assert.match(
@@ -41,7 +41,7 @@ test("P1 — la bascule passe par la porte, et n'avale plus l'échec", () => {
 
 test("P2 — le bouton de SA ligne est désactivé pendant l'appel et jusqu'au nouvel affichage", () => {
   assert.match(SRC, /const occupee = \(id: string\) => enCours\.has\(id\) \|\| \(rafraichit && ligneRafraichie === id\);/);
-  const bouton = /<button\s+type="button"\s+onClick=\{\(\) => toggle\(c\.id, !c\.active\)\}\s+disabled=\{occupee\(c\.id\)\}\s+aria-busy=\{occupee\(c\.id\)\}[\s\S]*?className="([^"]*)"[\s\S]*?>\s*\{occupee\(c\.id\) \? labels\.toggling : c\.active \? labels\.deactivate : labels\.reactivate\}/.exec(SRC);
+  const bouton = /<button\s+type="button"\s+onClick=\{\(\) => toggle\(c\.id, !c\.active\)\}\s+aria-disabled=\{occupee\(c\.id\)\}\s+aria-busy=\{occupee\(c\.id\)\}[\s\S]*?className="([^"]*)"[\s\S]*?>\s*\{occupee\(c\.id\) \? labels\.toggling : c\.active \? labels\.deactivate : labels\.reactivate\}/.exec(SRC);
   assert.ok(bouton, "bouton de bascule non lié à l'état de sa ligne");
   assert.match(bouton[1], /\bmin-h-11\b/, "bouton de bascule sous 44 px");
   assert.doesNotMatch(bouton[1], /\bpy-1\b|\btext-xs\b/);
@@ -89,4 +89,21 @@ test("P4 — le décompte s'accorde par `tn`, côté serveur, selon la présence
   // Le composant client n'importe ni `t` ni la règle : il reçoit la chaîne.
   assert.doesNotMatch(brut, /from "@\/lib\/i18n"/);
   for (const l of LANGS) assert.notEqual(t(l, "vendeur.promo.erreur"), "", l);
+});
+
+test("P5 — le focus survit à l'attente : `aria-disabled` + garde, jamais `disabled`", () => {
+  // Seconde passe (m4) : un bouton `disabled` pendant l'appel perd le focus,
+  // qui tombe sur `body` ; après un échec, le clavier ne sait plus où il est.
+  assert.doesNotMatch(SRC, /(?<![-\w])disabled=\{/, "bouton `disabled` pendant une action");
+  assert.match(SRC, /async function create\(e: React\.FormEvent\) \{\s*e\.preventDefault\(\);\s*if \(loading\) return;\s*setLoading\(true\);/);
+  assert.match(SRC, /<button\s+type="submit"\s+aria-disabled=\{loading\}/);
+  // `occupee` est défini AVANT les gestionnaires qui s'en servent comme garde.
+  assert.ok(SRC.indexOf("const occupee =") < SRC.indexOf("async function toggle("), "garde définie après son usage");
+});
+
+test("P6 — à 360 px, un code de 24 caractères sans tiret se coupe au lieu de passer sous le bouton", () => {
+  assert.match(SRC, /<span id=\{`cp-\$\{c\.id\}`\} className=\{`code-lisible break-all [^`]*`\}>\s*\{c\.code\}/);
+  // Son conteneur peut rétrécir, le bouton non.
+  assert.match(SRC, /<div className="min-w-0">\s*<span id=\{`cp-/);
+  assert.match(SRC, /className="min-h-11 shrink-0 /);
 });

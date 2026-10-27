@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { t, type Lang } from "../lib/i18n";
+import { formatHTG } from "../lib/sample-data";
 
 // Vrais tableau de bord, formulaire et POST. Le RPC est une E/S locale fixe ;
 // les soldes synthétiques ne prouvent ni le SQL, ni un virement, ni sa RLS.
@@ -137,7 +138,10 @@ test("retrait : le refresh RSC B efface montant et erreur A dans le même docume
   await dashboard(page, initial.profiles[0].display_name); await openPayout(page); await amount(page).fill("100");
   diagnostics.get(page)!.expectedStatuses.add(422);
   const refused = payoutResponse(page); await submit(page).click(); expect((await refused).status()).toBe(422);
-  const previousError = "Le minimum est de 500 HTG.";
+  // Même source que la route (audit du 2026-10-27, M2) : clé, variable et
+  // formatage. C'est la phrase RÉELLEMENT affichée ici, en français ; plus
+  // bas, sa disparition après la bascule de compte est prouvée sur elle.
+  const previousError = t("fr", "api.payout.minimum", { min: formatHTG(500) });
   await expect(page.getByText(previousError, { exact: true })).toBeVisible();
   const before = await f.state();
   expect(before.payouts.rpcs).toHaveLength(1);

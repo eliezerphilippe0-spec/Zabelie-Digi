@@ -41,16 +41,11 @@ export function ZelleReferenceForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (sent) {
-    return (
-      <p role="status" className="rounded-2xl border border-line bg-surface/60 p-4 text-sm text-cloud">
-        ✓ {labels.done}
-      </p>
-    );
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Le bouton reste focalisable pendant l'envoi (`aria-disabled`, pas
+    // `disabled`) : c'est donc ici que le second envoi est refusé.
+    if (loading) return;
     setLoading(true);
     setError(null);
     const issue = await appelSession("/api/zelle/reference", {
@@ -74,28 +69,55 @@ export function ZelleReferenceForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} aria-busy={loading}>
-      <p className="text-sm font-semibold">{labels.intro}</p>
-      <input
-        value={reference}
-        onChange={(e) => setReference(e.target.value)}
-        placeholder={labels.placeholder}
-        aria-label={labels.placeholder}
-        maxLength={64}
-        className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
-      />
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-3 min-h-11 w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
-      >
-        {loading ? labels.submitting : labels.submit}
-      </button>
-      {error && (
-        <p role="alert" className="mt-2 text-center text-sm text-danger-text">
-          {error}
-        </p>
+    <div>
+      {!sent && (
+        <form onSubmit={handleSubmit} aria-busy={loading}>
+          <p className="text-sm font-semibold">{labels.intro}</p>
+          <input
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            placeholder={labels.placeholder}
+            aria-label={labels.placeholder}
+            maxLength={64}
+            className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+          />
+          <button
+            type="submit"
+            aria-disabled={loading}
+            className="mt-3 min-h-11 w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 aria-disabled:opacity-60"
+          >
+            {loading ? labels.submitting : labels.submit}
+          </button>
+          {error && (
+            <p role="alert" className="mt-2 text-center text-sm text-danger-text">
+              {error}
+            </p>
+          )}
+        </form>
       )}
-    </form>
+      {/* Région d'annonce TOUJOURS rendue, vide tant que rien n'est parti :
+          une région `status` insérée déjà remplie n'est souvent pas lue. Elle
+          reste à la même place quand le formulaire disparaît. */}
+      <p
+        role="status"
+        className={sent ? "flex items-start gap-2 rounded-2xl border border-line bg-surface/60 p-4 text-sm text-cloud" : undefined}
+      >
+        {sent && (
+          <>
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="mt-0.5 h-4 w-4 flex-none fill-none stroke-success"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12.5l4.5 4.5L19 7.5" />
+            </svg>
+            <span>{labels.done}</span>
+          </>
+        )}
+      </p>
+    </div>
   );
 }

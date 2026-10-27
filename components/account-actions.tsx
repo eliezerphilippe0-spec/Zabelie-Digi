@@ -60,6 +60,11 @@ export function AccountActions({ actorId, labels }: { actorId: string; labels: A
   }
 
   async function supprimer() {
+    // Les deux boutons de l'encadré restent focalisables pendant l'appel
+    // (`aria-disabled`, pas `disabled`) : un bouton désactivé perdait le
+    // focus, qui tombait sur `body` — après un échec, Échap ne fermait plus
+    // l'encadré. Le second envoi est donc refusé ICI.
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const issue = await appelAvecSession("/api/account", {
@@ -137,17 +142,17 @@ export function AccountActions({ actorId, labels }: { actorId: string; labels: A
             <button
               type="button"
               onClick={supprimer}
-              disabled={busy}
+              aria-disabled={busy}
               aria-busy={busy}
-              className="min-h-11 rounded-xl border border-danger bg-surface px-4 text-sm font-bold text-danger-text transition hover:bg-danger/10 disabled:opacity-60"
+              className="min-h-11 rounded-xl border border-danger bg-surface px-4 text-sm font-bold text-danger-text transition hover:bg-danger/10 aria-disabled:opacity-60"
             >
               {busy ? labels.deleting : labels.confirm}
             </button>
             <button
               type="button"
               onClick={annuler}
-              disabled={busy}
-              className="min-h-11 rounded-xl border border-line bg-surface px-4 text-sm font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
+              aria-disabled={busy}
+              className="min-h-11 rounded-xl border border-line bg-surface px-4 text-sm font-semibold text-cloud transition hover:border-accent aria-disabled:opacity-60"
             >
               {labels.cancel}
             </button>

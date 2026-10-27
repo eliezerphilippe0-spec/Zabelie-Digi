@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import * as React from "react";
+import * as jsxRuntime from "react/jsx-runtime";
+import { renderToStaticMarkup } from "react-dom/server";
 import { loadRoute } from "./helpers/route-harness";
 import { UUID_RE } from "../lib/collections";
 import { LANGS, t, type I18nKey, type Lang } from "../lib/i18n";
@@ -146,7 +149,7 @@ test("R3 — l'écran : le code commande l'action KYC, l'erreur est annoncée", 
   assert.match(COMPOSANT, /const DEPOT_PIECES = "\/tableau-de-bord\/compte#verification";/);
   // Erreur annoncée, succès en statut : chacun commandé par `ok`.
   assert.match(COMPOSANT, /\{msg\?\.ok === false && \(\s*<div role="alert"/);
-  assert.match(COMPOSANT, /\{msg\?\.ok === true && \(\s*<p role="status"/);
+  assert.match(COMPOSANT, /<p role="status" className=\{msg\?\.ok === true \? "[^"]*" : undefined\}>\s*\{msg\?\.ok === true \? msg\.text : null\}/);
   // Réseau ≠ refus serveur, et plus de « — » ni de lecture de réponse hors porte.
   assert.match(COMPOSANT, /else if \(issue\.etat === "reseau"\) \{\s*setMsg\(\{ ok: false, text: labels\.networkError \}\);/);
   assert.doesNotMatch(COMPOSANT, /"—"|await res\.json\(\)|await fetch\(/);
@@ -161,4 +164,65 @@ test("R4 — les trois boutons et le champ font 44 px (min-h-11)", () => {
   const page = readFileSync("app/tableau-de-bord/page.tsx", "utf8");
   assert.match(page, /failed: t\(lang, "api\.payout\.failed"\)/);
   assert.match(page, /kycAction: t\(lang, "vendeur\.retrait\.kyc"\)/);
+});
+
+/**
+ * Rend le VRAI composant. Les états `open` et `msg` (1er et 3e `useState`)
+ * sont forcés à l'initialisation : la suite n'a pas de DOM pour cliquer.
+ */
+function rendre(props: { hasPending: boolean; open?: boolean; succes?: boolean }, lang: Lang = "fr"): string {
+  let rang = 0;
+  const force = (i: number): unknown =>
+    i === 0 && props.open ? true : i === 2 && props.succes ? { ok: true, text: t(lang, "vendeur.retrait.ok") } : undefined;
+  const reactForce = { ...React, useState: <S,>(init: S | (() => S)) => {
+    const valeur = force(rang++);
+    return React.useState(valeur === undefined ? init : (valeur as S));
+  } };
+  const mod = loadRoute("components/payout-request.tsx", {
+    react: reactForce, "react/jsx-runtime": jsxRuntime,
+    "next/link": { default: (p: Record<string, unknown>) => React.createElement("a", p) },
+    "next/navigation": { useRouter: () => ({ push() {}, refresh() {} }) },
+    "@/lib/appel-session": { appelSession: async () => { throw new Error("aucun appel au rendu"); } },
+  });
+  const Comp = mod.PayoutRequest as unknown as React.FC<Record<string, unknown>>;
+  return renderToStaticMarkup(React.createElement(Comp, { actorId: A, disponibleHtg: 2000, hasPending: props.hasPending, labels: {
+    title: "T", intro: "I", amount: "M", submit: "S", submitting: "…", cancel: "A", open: "O", pending: t(lang, "vendeur.retrait.enCours"),
+    networkError: "R", success: t(lang, "vendeur.retrait.ok"), failed: "F", kycAction: "K" } }));
+}
+
+test("R5 — la région de succès est TOUJOURS rendue, au même rang, vide puis remplie (m5)", () => {
+  // Second enfant de la racine dans les trois branches : React garde le MÊME
+  // nœud quand le formulaire cède la place à « demande en cours ».
+  const second = /^<div>(?:<p class="rounded-xl[^"]*">[^<]*<\/p>|<button[^>]*>[^<]*<\/button>|<form[\s\S]*<\/form>)(<p role="status"[^>]*>[\s\S]*?<\/p>)<\/div>$/;
+  for (const [cas, html] of [
+    ["fermé", rendre({ hasPending: false })],
+    ["ouvert", rendre({ hasPending: false, open: true })],
+    ["en cours", rendre({ hasPending: true })],
+  ] as const) {
+    const m = second.exec(html);
+    assert.ok(m, `${cas} : région status absente ou pas en second enfant\n${html}`);
+    assert.equal(m[1], '<p role="status"></p>', `${cas} : la région doit exister VIDE avant tout succès`);
+  }
+  for (const lang of LANGS) {
+    // Après le succès, puis après le rafraîchissement qui affiche « en cours ».
+    for (const hasPending of [false, true]) {
+      const m = second.exec(rendre({ hasPending, open: !hasPending, succes: true }, lang));
+      assert.ok(m, `${lang} : structure perdue après succès`);
+      assert.ok(m[1].includes(t(lang, "vendeur.retrait.ok")), `${lang} : succès absent de la région`);
+    }
+  }
+});
+
+test("R6 — le bouton d'envoi reste focalisable, le handler refuse le second envoi (m4)", () => {
+  assert.match(COMPOSANT, /async function submit\(e: React\.FormEvent<HTMLFormElement>\) \{\s*e\.preventDefault\(\);\s*if \(busy\) return;\s*setBusy\(true\);/);
+  assert.match(COMPOSANT, /<button\s+type="submit"\s+aria-disabled=\{busy\}/);
+  assert.doesNotMatch(COMPOSANT, /(?<![-\w])disabled=\{busy\}/);
+});
+
+test("R7 — kreyòl : « montan », comme `api.amount.invalid`, jamais « kantite »", () => {
+  assert.match(t("ht", "api.amount.invalid"), /montan/i);
+  for (const cle of ["api.payout.minimum", "api.payout.maximum", "api.payout.balance", "api.payout.balance.ia"] as const) {
+    assert.doesNotMatch(t("ht", cle), /kantite/i, cle);
+    assert.match(t("ht", cle), /montan/i, cle);
+  }
 });

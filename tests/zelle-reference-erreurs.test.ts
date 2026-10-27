@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import * as React from "react";
+import * as jsxRuntime from "react/jsx-runtime";
+import { renderToStaticMarkup } from "react-dom/server";
 import { database, loadRoute, type Query } from "./helpers/route-harness";
+import { UUID_RE } from "../lib/collections";
 import { LANGS, t, type I18nKey, type Lang } from "../lib/i18n";
 
 /**
@@ -19,7 +23,12 @@ import { LANGS, t, type I18nKey, type Lang } from "../lib/i18n";
  *       et le journal ne garde que le code (ni référence bancaire, ni message) ;
  *   Z3  une lecture ratée n'est pas « paiement introuvable » ;
  *   Z4  le formulaire passe par la porte des appels authentifiés, attache le
- *       message réseau à l'issue `reseau` seule, et annonce l'erreur.
+ *       message réseau à l'issue `reseau` seule, et annonce l'erreur ;
+ *   Z6  (seconde passe) un `orderId` qui n'est pas un UUID est refusé AVANT
+ *       toute lecture — il produisait 22P02, donc un faux 503 au journal ;
+ *   Z7  la région `status` existe VIDE avant l'envoi et se remplit ensuite
+ *       (une région insérée déjà remplie n'est souvent pas lue) ; la coche
+ *       est un SVG muet ; le bouton reste focalisable pendant l'envoi.
  *
  * Mutations éprouvées (chacune rouge, puis restaurée) : voir le message du
  * commit — `erreurAvecLangue(… "zelle.err.enregistrement" …)` remplacé par
@@ -57,6 +66,7 @@ function fixture(options: Options = {}) {
     return payment ? { data: payment, error: null } : { data: null, error: { code: "PGRST116", message: "0 rows" } };
   });
   const route = loadRoute("app/api/zelle/reference/route.ts", {
+    "@/lib/collections": { UUID_RE },
     "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({
       data: { user: options.user === null ? null : { id: options.user ?? BUYER } },
     }) } }) },
@@ -70,14 +80,17 @@ function fixture(options: Options = {}) {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: typeof body === "string" ? body : JSON.stringify(body),
   }));
-  return { post, journal, writes };
+  return { post, journal, writes, queries: db.queries };
 }
 
 for (const lang of LANGS) {
   test(`Z1 — chaque refus rend un code stable et la phrase de la langue du visiteur (${lang})`, async () => {
     const cas: [Options, unknown, number, string, I18nKey][] = [
       [{}, "{", 400, "json_invalide", "api.json.invalid"],
-      [{}, { reference: "x" }, 400, "commande_requise", "api.params.invalid"],
+      [{}, { reference: "x" }, 400, "commande_invalide", "api.params.invalid"],
+      [{}, { orderId: "pas-un-uuid" }, 400, "commande_invalide", "api.params.invalid"],
+      [{}, { orderId: `${ORDER}' or '1'='1` }, 400, "commande_invalide", "api.params.invalid"],
+      [{}, { orderId: 42 }, 400, "commande_invalide", "api.params.invalid"],
       [{ user: null }, { orderId: ORDER }, 401, "session_requise", "api.auth.required"],
       [{ payment: null }, { orderId: ORDER }, 404, "paiement_introuvable", "zelle.err.introuvable"],
       [{ user: OTHER }, { orderId: ORDER }, 404, "paiement_introuvable", "zelle.err.introuvable"],
@@ -92,6 +105,11 @@ for (const lang of LANGS) {
       assert.equal(res.status, status, `${code} (${lang})`);
       assert.deepEqual(await res.json(), { error: t(lang, cle), code }, `${code} (${lang})`);
       assert.equal(f.writes.length, 0, `${code} : aucune écriture sur un refus`);
+      // Une saisie invalide ne touche PAS la base : ni lecture, ni journal.
+      if (code === "commande_invalide" || code === "json_invalide") {
+        assert.deepEqual(f.queries, [], `${code} : lecture faite sur un identifiant invalide`);
+        assert.deepEqual(f.journal, [], `${code} : fausse alerte au journal`);
+      }
     }
   });
 
@@ -162,5 +180,51 @@ test("Z5 — l'erreur est annoncée, et la cible tactile fait 44 px", () => {
   const page = readFileSync("app/paiement/zelle/[orderId]/page.tsx", "utf8");
   for (const [prop, cle] of [["submitting", "zelle.envoi"], ["network", "zelle.err.reseau"], ["failed", "zelle.err.enregistrement"]]) {
     assert.match(page, new RegExp(`${prop}: t\\(lang, "${cle.replace(/\./g, "\\.")}"\\)`), `${prop} non passé par t()`);
+  }
+});
+
+/** Rend le VRAI composant, `useRouter` et la porte doublés (aucun appel au rendu). */
+function rendreFormulaire(alreadySent: boolean, lang: Lang = "fr"): string {
+  const mod = loadRoute("components/zelle-reference-form.tsx", {
+    react: React,
+    "react/jsx-runtime": jsxRuntime,
+    "next/navigation": { useRouter: () => ({ push() {} }) },
+    "@/lib/appel-session": { appelSession: async () => { throw new Error("aucun appel au rendu"); } },
+  });
+  const Form = mod.ZelleReferenceForm as unknown as React.FC<Record<string, unknown>>;
+  return renderToStaticMarkup(React.createElement(Form, { orderId: ORDER, alreadySent, labels: {
+    intro: t(lang, "zelle.ref.label"), placeholder: t(lang, "zelle.ref.ph"), submit: t(lang, "zelle.sent"),
+    submitting: t(lang, "zelle.envoi"), done: t(lang, "zelle.done"), network: t(lang, "zelle.err.reseau"),
+    failed: t(lang, "zelle.err.enregistrement"),
+  } }));
+}
+
+test("Z7 — la région d'annonce existe VIDE avant l'envoi, et porte la confirmation après", () => {
+  const avant = rendreFormulaire(false);
+  assert.match(avant, /<form[\s\S]*<\/form><p role="status"><\/p>/, `région absente ou déjà remplie avant l'envoi :\n${avant}`);
+  for (const lang of LANGS) {
+    const apres = rendreFormulaire(true, lang);
+    assert.doesNotMatch(apres, /<form/, "le formulaire doit disparaître une fois le virement signalé");
+    const region = /<p role="status"[^>]*>([\s\S]*?)<\/p>/.exec(apres);
+    assert.ok(region, apres);
+    assert.ok(region[1].includes(t(lang, "zelle.done").replace(/'/g, "&#x27;")), `${lang} : confirmation absente de la région`);
+    // La coche est un dessin muet, plus un caractère lu « coche ».
+    assert.match(region[1], /<svg viewBox="0 0 24 24" aria-hidden="true"/);
+    assert.ok(!region[1].includes("✓"), "glyphe ✓ lu par le lecteur d'écran");
+  }
+});
+
+test("Z7b — le bouton reste focalisable pendant l'envoi, le handler refuse le second envoi", () => {
+  assert.match(FORM, /async function handleSubmit\(e: React\.FormEvent\) \{\s*e\.preventDefault\(\);\s*if \(loading\) return;\s*setLoading\(true\);/);
+  assert.match(FORM, /<button\s+type="submit"\s+aria-disabled=\{loading\}/);
+  assert.doesNotMatch(FORM, /(?<![-\w])disabled=\{loading\}/, "un bouton `disabled` perd le focus pendant l'envoi");
+});
+
+test("Z8 — « déjà traité » renvoie à la page d'achats sous SON nom, dans chaque langue", () => {
+  const guillemets: Record<Lang, [string, string]> = { fr: ["« ", " »"], ht: ["« ", " »"], en: ["“", "”"], es: ["« ", " »"] };
+  for (const lang of LANGS) {
+    const [o, f] = guillemets[lang];
+    const nom = `${o}${t(lang, "purchases.title")}${f}`;
+    assert.ok(t(lang, "zelle.err.dejaTraite").includes(nom), `${lang} : ${t(lang, "zelle.err.dejaTraite")} ne cite pas ${nom}`);
   }
 });
