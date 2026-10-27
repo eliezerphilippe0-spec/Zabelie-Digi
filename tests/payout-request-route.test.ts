@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { loadRoute } from "./helpers/route-harness";
 import { UUID_RE } from "../lib/collections";
 import { LANGS, t, type I18nKey, type Lang } from "../lib/i18n";
+import { formatHTG } from "../lib/sample-data";
 
 const A = "11300000-0000-4000-8000-000000000041";
 const B = "11300000-0000-4000-8000-000000000042";
@@ -23,6 +24,11 @@ function fixture(options: Options = {}) {
     "@/lib/collections": { UUID_RE },
     "@/lib/api-erreur": { erreurTraduite: async (key: I18nKey, status: number) =>
       Response.json({ error: t(options.lang ?? "fr", key) }, { status }) },
+    // Les refus métier sont traduits dans la route (`t` + `formatHTG` réels) :
+    // seule la langue du cookie est doublée.
+    "@/lib/i18n-server": { getLang: async () => options.lang ?? "fr" },
+    "@/lib/i18n": { t },
+    "@/lib/sample-data": { formatHTG },
     "@/lib/supabase/admin": { createAdminClient: () => {
       events.push("admin");
       return { rpc: async (name: string, args: Record<string, unknown>) => {
@@ -100,12 +106,12 @@ test("payout: identity mismatch precedes amount validation", async () => {
   untouched(f);
 });
 
-test("payout: existing positive integer amount validation is preserved", async () => {
-  for (const amountHtg of [undefined, null, 0, -1, 1.5, "bad"]) {
-    const f = fixture();
+test("payout: existing positive integer amount validation is preserved, refused in the seller's language", async () => {
+  for (const lang of LANGS) for (const amountHtg of [undefined, null, 0, -1, 1.5, "bad"]) {
+    const f = fixture({ lang });
     const response = await f.send({ expectedActorId: A, amountHtg });
     assert.equal(response.status, 422);
-    assert.deepEqual(await response.json(), { error: "Montant invalide (entier positif en HTG)" });
+    assert.deepEqual(await response.json(), { error: t(lang, "api.amount.invalid") });
     untouched(f);
   }
   const legacyAmount = fixture();
@@ -139,9 +145,11 @@ test("payout: existing KYC refusal messages distinguish pending, rejected and mi
 });
 
 test("payout: RPC failure remains a generic error without success fields", async () => {
-  const f = fixture({ error: true, result: null });
-  const response = await f.send({ expectedActorId: A, amountHtg: 500 });
-  assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), { error: "Demande impossible" });
-  assert.equal(f.calls.length, 1);
+  for (const lang of LANGS) {
+    const f = fixture({ error: true, result: null, lang });
+    const response = await f.send({ expectedActorId: A, amountHtg: 500 });
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), { error: t(lang, "api.payout.failed") });
+    assert.equal(f.calls.length, 1);
+  }
 });

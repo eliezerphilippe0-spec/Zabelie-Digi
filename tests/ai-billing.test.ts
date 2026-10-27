@@ -133,7 +133,17 @@ test("0072 : lignes verrouillées puis réglées PAR IDENTIFIANT — jamais « t
 
 test("route payouts : le refus dit les frais IA quand ils existent, le succès remonte le recouvré", () => {
   const src = readFileSync("app/api/payouts/route.ts", "utf8");
-  assert.match(src, /frais_ia_htg[\s\S]{0,120}frais IA à régler/);
+  // Le message est traduit depuis l'audit du 2026-10-27 (M2) : l'assertion
+  // porte sur ce qui COMMANDE — la condition sur les frais choisit la clé, et
+  // `{frais}` est lié à la valeur rendue par la RPC — plus sur un libellé.
+  assert.match(
+    src,
+    /Number\(data\?\.frais_ia_htg\) > 0\s*\?\s*t\(lang, "api\.payout\.balance\.ia", \{[\s\S]{0,120}frais: htg\(data\.frais_ia_htg, 0\)/,
+  );
+  const i18n = readFileSync("lib/i18n.ts", "utf8");
+  const valeurs = [...i18n.matchAll(/"api\.payout\.balance\.ia": "([^"]*)"/g)].map((m) => m[1]);
+  assert.equal(valeurs.length, 4, "les frais IA doivent être dits dans les quatre langues");
+  for (const v of valeurs) assert.ok(v.includes("{frais}") && v.includes("{disponible}"), v);
   assert.match(src, /fraisIaReglesHtg: Number\(data\.frais_ia_regles_htg \?\? 0\)/);
 });
 
