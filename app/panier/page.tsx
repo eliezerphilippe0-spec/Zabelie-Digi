@@ -293,6 +293,8 @@ export default async function PanierPage() {
                   error: t(lang, "cart.pay.all.error"),
                   network: t(lang, "error.network"),
                   age: t(lang, "cart.pay.all.age"),
+                  stalled: t(lang, "cart.pay.all.stalled"),
+                  reload: t(lang, "cart.pay.all.reload"),
                 }}
               />
               <p className="mt-3 text-center text-xs text-mist">{t(lang, "cart.note.group")}</p>

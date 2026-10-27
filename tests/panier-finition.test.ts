@@ -30,7 +30,9 @@ import { hrefBoutique } from "../lib/boutique-href";
  *   PR2  le succès ne relit plus le serveur
  *   PR3  `if (verrou.current) return;` → `if (false) return;` (retrait)
  *   PR3  m4 : `disabled={envoi}` remis à la place d'`aria-disabled`
- *   PF9  m4 : `disabled={bloque}` remis (PF1-PF3, PF5, PF9) ; garde du gestionnaire inatteignable
+ *   PF9  m4 : `disabled={bloque}` remis (PF1-PF3, PF5, PF7, PF9) ; garde du gestionnaire inatteignable
+ *   PF7  m3 : la minuterie ne signale plus ; délai ramené à 3 s ; le signal relâche le verrou
+ *   PF8  m3 : `visibilitychange` ignoré ; `assign` refusé relâche le verrou ; `pageshow` garde la surveillance
  *   PI1  une langue perd `{title}`
  *   `cart-pay-all.tsx` remis tel que sur `main` : PF1–PF6 rouges.
  *   `remove-from-cart.tsx` remis tel que sur `main` : PR1–PR3 rouges.
@@ -95,7 +97,7 @@ const OPTIONS = [
   { rail: "kobara", kobaraProvider: "natcash", label: "NatCash" },
   { rail: "kobara", kobaraProvider: "moncash", label: "MonCash par Kobara" },
 ];
-const LIBELLES = { title: "T", note: "N", coupon: "C", loading: "CHARGEMENT", error: "ERREUR", network: "RESEAU", age: "AGE" };
+const LIBELLES = { title: "T", note: "N", coupon: "C", loading: "CHARGEMENT", error: "ERREUR", network: "RESEAU", age: "AGE", stalled: "BLOQUE", reload: "RECHARGER" };
 
 type Reponse = Record<string, unknown>;
 function monterPayerTout() {
@@ -105,10 +107,28 @@ function monterPayerTout() {
   const rejets: ((e: unknown) => void)[] = [];
   const parties: string[] = [];
   const ecoute: Record<string, (e: { persisted: boolean }) => void> = {};
+  // Minuteries et écoutes de visibilité : déclenchées À LA MAIN par le test.
+  const minuteries = new Map<number, { fn: () => void; ms: number }>();
+  let prochaine = 1;
+  const visibilite: { etat: string; ecoute: (() => void) | null } = { etat: "hidden", ecoute: null };
+  const etat = { rechargements: 0, assignLeve: false };
   const fenetre = {
-    location: { assign: (u: string) => parties.push(u) },
+    location: {
+      assign: (u: string) => {
+        if (etat.assignLeve) throw new Error("navigation refusée");
+        parties.push(u); // la page ne part pas : c'est le cas que m3 couvre
+      },
+      reload: () => { etat.rechargements++; },
+    },
     addEventListener: (type: string, fn: (e: { persisted: boolean }) => void) => { ecoute[type] = fn; },
     removeEventListener() {},
+    setTimeout: (fn: () => void, ms: number) => { minuteries.set(prochaine, { fn, ms }); return prochaine++; },
+    clearTimeout: (id: number) => { minuteries.delete(id); },
+  };
+  const doc = {
+    get visibilityState() { return visibilite.etat; },
+    addEventListener: (type: string, fn: () => void) => { if (type === "visibilitychange") visibilite.ecoute = fn; },
+    removeEventListener: (type: string, fn: () => void) => { if (type === "visibilitychange" && visibilite.ecoute === fn) visibilite.ecoute = null; },
   };
   const mod = loadRoute("components/cart-pay-all.tsx", {
     react: f.react,
@@ -119,9 +139,9 @@ function monterPayerTout() {
         return new Promise<Reponse>((oui, non) => { enAttente.push(oui); rejets.push(non); });
       },
     },
-  }, {}, { window: fenetre }) as unknown as { CartPayAll(p: unknown): El };
+  }, {}, { window: fenetre, document: doc }) as unknown as { CartPayAll(p: unknown): El };
   const rendre = () => { f.debut(); return mod.CartPayAll({ options: OPTIONS, labels: LIBELLES }); };
-  return { rendre, appels, enAttente, rejets, parties, ecoute };
+  return { rendre, appels, enAttente, rejets, parties, ecoute, minuteries, visibilite, etat };
 }
 const clic = (b: El) => (b.props.onClick as () => Promise<void> | void)();
 /** Laisse s'écouler les suites de promesses (le gestionnaire ne rend rien). */
@@ -227,6 +247,64 @@ test("PF6 — le verrou est posé AVANT tout `await`, sur la condition qui comma
   const pose = src.search(/verrou\.current = true;/);
   const attente = src.search(/await appelSession/);
   assert.ok(pose > 0 && attente > pose, "le verrou doit précéder l'appel");
+});
+
+/** Mène un paiement jusqu'au départ (`assign`), page restée affichée. */
+async function partiSansQuitter(m: ReturnType<typeof monterPayerTout>) {
+  void clic(boutons(m.rendre())[0]);
+  m.enAttente[0]({ etat: "ok", data: { redirectUrl: "https://moncash.test/pay" } });
+  await vider();
+}
+const alerteBloquee = (arbre: unknown) =>
+  tous(arbre).find((n) => n.props.role === "alert" && texte(n).includes("BLOQUE"));
+
+test("PF7 — m3 : la page n'est pas partie ; après le délai, l'écran dit de recharger, et le verrou TIENT", async () => {
+  const m = monterPayerTout();
+  await partiSansQuitter(m);
+  assert.equal(alerteBloquee(m.rendre()), undefined, "rien à dire tant que le départ peut encore aboutir");
+  const [minuterie] = [...m.minuteries.values()];
+  assert.ok(minuterie, "aucune surveillance du départ");
+  assert.ok(minuterie.ms >= 15_000, `délai de ${minuterie.ms} ms : un « rechargez » trop tôt interromprait un départ lent en 3G`);
+  minuterie.fn();
+  const arbre = m.rendre();
+  const alerte = alerteBloquee(arbre);
+  assert.ok(alerte, "après le délai, l'écran reste muet sur « Préparation du paiement… »");
+  const recharger = boutons(alerte).find((b) => texte(b) === "RECHARGER");
+  assert.ok(recharger, "pas de bouton de rechargement");
+  assert.match(classe(recharger!), /(?<![\w:/-])min-h-11\b/);
+  (recharger!.props.onClick as () => void)();
+  assert.equal(m.etat.rechargements, 1);
+  // Le groupe existe côté serveur : aucun moyen de paiement ne repart.
+  const moyens = boutons(arbre).filter((b) => b !== recharger);
+  assert.ok(moyens.every(desactive));
+  for (const b of moyens) void clic(b);
+  await vider();
+  assert.equal(m.appels.length, 1, "un second groupe s'ouvrirait : la moitié serveur attend l'arbitrage M9");
+});
+
+test("PF8 — m3 : retour au premier plan (une application a capté l'adresse), ou navigation refusée : dit tout de suite", async () => {
+  const m = monterPayerTout();
+  await partiSansQuitter(m);
+  m.visibilite.etat = "hidden";
+  m.visibilite.ecoute?.();
+  assert.equal(alerteBloquee(m.rendre()), undefined, "passer en arrière-plan n'est pas un échec");
+  m.visibilite.etat = "visible";
+  assert.ok(m.visibilite.ecoute, "aucune écoute du retour au premier plan");
+  m.visibilite.ecoute!();
+  assert.ok(alerteBloquee(m.rendre()));
+  // bfcache : la page restaurée oublie tout, surveillance comprise.
+  m.ecoute.pageshow({ persisted: true });
+  assert.equal(alerteBloquee(m.rendre()), undefined);
+  assert.equal(m.minuteries.size, 0, "la minuterie survit à la restauration");
+  assert.equal(m.visibilite.ecoute, null, "l'écoute de visibilité survit à la restauration");
+
+  const refus = monterPayerTout();
+  refus.etat.assignLeve = true;
+  await partiSansQuitter(refus);
+  assert.ok(alerteBloquee(refus.rendre()), "navigation refusée : l'écran doit le dire sans attendre");
+  void clic(boutons(refus.rendre())[0]);
+  await vider();
+  assert.equal(refus.appels.length, 1, "navigation refusée : le verrou ne se relâche pas pour autant");
 });
 
 test("PF9 — m4 : le bouton cliqué reste focalisable (aria-disabled, jamais disabled) ; le garde du gestionnaire tient l'âge", async () => {
@@ -498,6 +576,8 @@ test("PP4 — chaque « Retirer » reçoit ses libellés traduits, titre compris
   assert.ok(payer, "le paiement groupé ouvert doit s'afficher");
   const lp = payer!.props.labels as Record<string, string>;
   assert.equal(lp.network, DICT.ht["error.network"]);
+  assert.equal(lp.stalled, DICT.ht["cart.pay.all.stalled"]);
+  assert.equal(lp.reload, DICT.ht["cart.pay.all.reload"]);
 });
 
 // ─────────────────────────────── Squelette ─────────────────────────────────
