@@ -275,3 +275,24 @@ test("C5 — achat : variantes, code promo, « Appliquer » et autres moyens de 
     assert.ok(m[1].split(/\s+/).includes(T44), `${quoi} sans ${T44} : « ${m[1]} »`);
   }
 });
+
+// ── Titre d'onglet de /mes-achats dans la langue servie ─────────────────────
+/*
+ * `export const metadata = { title: "Mes achats — Zabelie" }` : un acheteur
+ * kreyòl lisait un onglet en français. Passé à `generateMetadata`, motif
+ * `getLang()` du dépôt (/connexion, /aide). Le `noindex` suit dans le même
+ * objet (garde `finitions-pages` F1, adaptée à la forme rendue).
+ *
+ * Mutations éprouvées :
+ *   `t(lang, "purchases.title")` → `"Mes achats"`                        → M1 rouge
+ *   `robots` retiré de l'objet rendu                                      → F1 (finitions-pages) rouge
+ */
+
+test("M1 — l'onglet de /mes-achats est titré dans la langue servie", () => {
+  const src = code(lire("app/mes-achats/page.tsx"));
+  assert.doesNotMatch(src, /export const metadata\b/, "un titre statique (donc fixe) est revenu");
+  assert.match(
+    src,
+    /export async function generateMetadata\(\) \{\s*const lang = await getLang\(\);\s*return \{ title: `\$\{t\(lang, "purchases\.title"\)\} — Zabelie`, robots: \{ index: false, follow: false \} \};\s*\}/
+  );
+});

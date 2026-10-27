@@ -43,7 +43,12 @@ function remiseLabel(kind: ProductKind | undefined, lang: Lang): string | null {
 import { PURCHASE_PAGE_SIZE, PURCHASE_VIEWS, purchaseView, purchaseKind, purchasePage, purchaseHref, purchaseIsConfirmed, purchaseStatusKey, purchaseViewKeys } from "@/lib/purchase-center";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mes achats — Zabelie", robots: { index: false, follow: false } };
+// Titre d'onglet dans la langue servie (il était en français fixe pour tous) ;
+// page privée : jamais indexée (garde `finitions-pages` F1).
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "purchases.title")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 type OrderRow = {
   id: string;
