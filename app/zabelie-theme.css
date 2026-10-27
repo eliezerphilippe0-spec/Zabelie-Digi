@@ -204,6 +204,17 @@
   --motion-slow: 300ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
 
+  /* ── Rayon des boutons — un ALIAS, pas une valeur (audit du système de
+     design, 2026-10-27, m5). `editorial-marketplace.css` lisait
+     `var(--radius-button, 12px)` alors que le token n'existait nulle part :
+     le repli faisait le travail, en silence, à 12 px — un cran que la RÈGLE
+     DES RAYONS ne donne pas aux boutons. Il pointe désormais sur le cran des
+     boutons de l'échelle, `--radius-xl` (rounded-xl) ; changer l'un change
+     l'autre. Posé dans :root et pas dans @theme : il ne doit engendrer aucun
+     utilitaire `rounded-button`, les composants écrivent `rounded-xl`
+     (`components/bouton.tsx`, `tests/bouton.test.ts` BT7). */
+  --radius-button: var(--radius-xl);
+
   /* Barres de progression (gradient : non exprimable en token couleur simple) */
   --progress-done: #17123a; /* objectif atteint = barre encre */
   --progress-fill: linear-gradient(

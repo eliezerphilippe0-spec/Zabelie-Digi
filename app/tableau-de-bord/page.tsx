@@ -29,7 +29,12 @@ export const dynamic = "force-dynamic";
 
 /** Ventes par page. Huit tiennent dans un écran de 360 px sans défilement. */
 const PAGE_VENTES = 8;
-export const metadata = { title: "Tableau de bord — Zabelie", robots: { index: false, follow: false } };
+/* Titre d'onglet dans la langue de session (audit du système de design, m10) :
+   « Tableau de bord » restait en français pour un vendeur kreyòl. Hors index. */
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "nav.dashboard")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 /** Les trois cas particuliers (démo, non connecté, suspendu) : sans menu. */
 function Shell({

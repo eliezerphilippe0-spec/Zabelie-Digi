@@ -134,7 +134,7 @@ export function SearchBox({
             <Link
               key={s.href}
               href={s.href}
-              className="block rounded-lg px-2 py-2.5 text-sm text-cloud hover:bg-black/20"
+              className="block rounded-lg px-2 py-2.5 text-sm text-cloud hover:bg-brand/10"
             >
               {s.label}
             </Link>

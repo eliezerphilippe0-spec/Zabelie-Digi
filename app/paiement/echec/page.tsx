@@ -1,9 +1,15 @@
-import Link from "next/link";
+import { Bouton } from "@/components/bouton";
 import { SiteNav } from "@/components/site-nav";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-export const metadata = { title: "Paiement échoué — Zabelie", robots: { index: false, follow: false } };
+/* Titre d'onglet dans la langue de session, et le MÊME mot que la page :
+   « non confirmé », pas « échoué » — le français fixe d'avant affirmait plus
+   que le titre qu'il annonçait. Hors index, toujours (S12). */
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "pay.fail.title")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 export default async function EchecPage({
   searchParams,
@@ -18,8 +24,16 @@ export default async function EchecPage({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
-        <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger text-2xl text-ink">
-          ×
+        <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger text-ink">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="h-8 w-8 fill-none stroke-current"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <path d="M7 7l10 10M17 7L7 17" />
+          </svg>
         </span>
         <h1 className="mt-6 text-2xl font-extrabold">{t(lang, "pay.fail.title")}</h1>
         <p className="mt-3 text-mist">
@@ -34,23 +48,15 @@ export default async function EchecPage({
         )}
         <div className="mt-8 flex flex-col gap-3">
           {produit && (
-            <Link
-              href={`/produit/${encodeURIComponent(produit)}#acheter`}
-              className="bouton rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-            >
+            <Bouton href={`/produit/${encodeURIComponent(produit)}#acheter`}>
               {t(lang, "pay.retry")}
-            </Link>
+            </Bouton>
           )}
-          <Link
-            href="/catalogue"
-            className={
-              produit
-                ? "bouton rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
-                : "bouton rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-            }
-          >
+          {/* Un seul CTA orange par écran : le catalogue passe en secondaire
+              dès que « Réessayer » existe. */}
+          <Bouton href="/catalogue" variante={produit ? "secondaire" : "primaire"}>
             {t(lang, "pay.back")}
-          </Link>
+          </Bouton>
         </div>
       </main>
     </div>

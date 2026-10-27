@@ -31,7 +31,7 @@ test("F1 — les pages privées portent noindex, comme mes-achats et favoris", (
   ]) {
     /* Deux formes, AUSSI strictes l'une que l'autre : l'objet statique, ou
      * l'objet RENDU par `generateMetadata` (titre traduit — /mes-achats
-     * depuis le 2026-10-27). Next interdit les deux exports ensemble ; la
+     * et /tableau-de-bord depuis le 2026-10-27). Next interdit les deux exports ensemble ; la
      * seconde est lue dans le `return` de la fonction, pas n'importe où. */
     const src = lire(f);
     const statique = /export const metadata = \{[^}]*robots: \{ index: false, follow: false \} \};/.test(src);

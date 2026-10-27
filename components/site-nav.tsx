@@ -136,7 +136,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
               </svg>
               <span className="hidden text-sm font-semibold lg:inline">{t(lang, "cart.title")}</span>
               {articlesPanier !== null && articlesPanier > 0 && (
-                <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-on-brand">
+                <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-extrabold text-on-brand">
                   {articlesPanier}
                 </span>
               )}

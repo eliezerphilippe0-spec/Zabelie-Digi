@@ -3,7 +3,7 @@ import { lirePixelsVendeur } from "@/lib/pixels-server";
 import { ProductOffers } from "@/components/product-offers";
 import { publicOffers } from "@/lib/product-offers-server";
 import { offerCopy } from "@/lib/product-offer-copy";
-import Link from "next/link";
+import { Bouton } from "@/components/bouton";
 import { SiteNav } from "@/components/site-nav";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured, isMissingColumn } from "@/lib/products";
@@ -104,8 +104,13 @@ function cleCorps(kind: string | null): I18nKey {
   );
 }
 
-/* Titre neutre : il s'affiche avant de savoir si la commande est payée. */
-export const metadata = { title: "Votre commande — Zabelie", robots: { index: false, follow: false } };
+/* Titre neutre : il s'affiche avant de savoir si la commande est payée.
+   Dans la langue de session (audit du système de design, m10) : il était en
+   français fixe pour un acheteur kreyòl. Hors index, toujours (S12). */
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: `${t(lang, "pay.order")} — Zabelie`, robots: { index: false, follow: false } };
+}
 
 export default async function SuccesPage({
   searchParams,
@@ -137,18 +142,10 @@ export default async function SuccesPage({
           <h1 className="text-2xl font-extrabold">{t(lang, "pay.check.title")}</h1>
           <p className="mt-3 text-mist">{t(lang, "pay.check.body")}</p>
           <div className="mt-8 flex flex-col gap-3">
-            <Link
-              href="/mes-achats"
-              className="bouton inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-            >
-              {t(lang, "pay.wait.cta")}
-            </Link>
-            <Link
-              href="/catalogue"
-              className="inline-flex min-h-11 items-center justify-center text-sm text-mist hover:text-cloud"
-            >
+            <Bouton href="/mes-achats">{t(lang, "pay.wait.cta")}</Bouton>
+            <Bouton href="/catalogue" variante="discret">
               {t(lang, "pay.back")}
-            </Link>
+            </Bouton>
           </div>
         </main>
       </div>
@@ -169,8 +166,20 @@ export default async function SuccesPage({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-md px-5 py-24 text-center">
-        <span className="reveal-mark mx-auto grid h-16 w-16 place-items-center rounded-full bg-success text-2xl text-ink">
-          ✓
+        {/* La coche est un tracé, pas le glyphe ✓ : un glyphe dépend de la police
+            du téléphone (carré vide sur certains Android d'entrée de gamme) et
+            se lisait « coche » au lecteur d'écran avant le titre qui le dit. */}
+        <span className="reveal-mark mx-auto grid h-16 w-16 place-items-center rounded-full bg-success text-ink">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="h-8 w-8 fill-none stroke-current"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
         </span>
         <h1
           className="reveal mt-6 text-2xl font-extrabold"
@@ -217,18 +226,10 @@ export default async function SuccesPage({
           className="reveal mt-8 flex flex-col gap-3"
           style={{ ["--reveal-delay" as string]: "380ms" }}
         >
-          <Link
-            href="/mes-achats"
-            className="bouton inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
-          >
-            {t(lang, "pay.ok.cta")}
-          </Link>
-          <Link
-            href="/catalogue"
-            className="inline-flex min-h-11 items-center justify-center text-sm text-mist hover:text-cloud"
-          >
+          <Bouton href="/mes-achats">{t(lang, "pay.ok.cta")}</Bouton>
+          <Bouton href="/catalogue" variante="discret">
             {t(lang, "pay.back")}
-          </Link>
+          </Bouton>
         </div>
         <ProductOffers offers={offers} copy={offerCopy(lang)} afterPurchase/>
       </main>

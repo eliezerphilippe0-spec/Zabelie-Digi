@@ -65,24 +65,35 @@
 /* Le mouvement n'existe que si le visiteur ne l'a pas refusé ; au repos, tout
    est déjà à sa place (même sens que `.reveal`, tests/paiement-succes S4).
    Chaque animation est JOUÉE UNE FOIS : rien ne clignote en continu à côté
-   du contenu (WCAG 2.2.2). */
+   du contenu (WCAG 2.2.2).
+
+   Règle du thème (audit du système de design, 2026-10-27, m8) : transform et
+   opacity seulement, aucune durée au-delà de --motion-slow, la courbe du
+   thème. Il y avait 1,6 s, 0,9 s, 0,45 s et un rebond `cubic-bezier(.2, .9,
+   .3, 1.4)`. L'intention tient dans la règle : le reflet devient un ÉCLAT
+   bref (un « flash », justement), l'éclair bat deux fois, et la remise garde
+   son petit dépassement — porté par une étape d'image clé, plus par une
+   courbe hors token. */
 @media (prefers-reduced-motion: no-preference) {
   .flash-bandeau::after {
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
     width: 40%;
-    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    /* Le reflet : le blanc CHAUD du thème (`on-chrome`, clair dans les deux
+       palettes), pas un blanc pur (cliquet palette-resserree). */
+    background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--color-on-chrome) 35%, transparent), transparent);
     transform: translateX(-120%);
-    animation: flash-reflet 1.6s ease-out 0.3s 2 both;
+    animation: flash-reflet var(--motion-slow) var(--ease) 300ms 2 both;
     pointer-events: none;
   }
-  .flash-eclair { animation: flash-eclair 0.9s ease-out 0.2s 2 both; }
-  .flash-remise { animation: flash-apparait 0.45s cubic-bezier(.2, .9, .3, 1.4) 0.15s both; }
-  .flash-barre > span { animation: flash-remplir 0.9s ease-out 0.25s both; }
+  .flash-eclair { animation: flash-eclair var(--motion-slow) var(--ease) 200ms 2 both; }
+  .flash-remise { animation: flash-apparait var(--motion-slow) var(--ease) 150ms both; }
+  .flash-barre > span { animation: flash-remplir var(--motion-slow) var(--ease) 250ms both; }
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .flash-lien { transition: transform 180ms ease, border-color 180ms ease; }
+  /* Le liseré d'accent change sans transition ; seul le soulèvement s'anime. */
+  .flash-lien { transition: transform var(--motion-base) var(--ease); }
   .flash-lien:hover { transform: translateY(-3px); border-color: var(--color-accent); }
 }
 @keyframes flash-reflet { to { transform: translateX(320%); } }
@@ -91,5 +102,5 @@
   30% { transform: scale(1.25) rotate(-8deg); opacity: 0.6; }
   60% { transform: scale(0.95); opacity: 1; }
 }
-@keyframes flash-apparait { from { transform: scale(0.6); opacity: 0; } }
+@keyframes flash-apparait { from { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.06); opacity: 1; } }
 @keyframes flash-remplir { from { transform: scaleX(0); } }
