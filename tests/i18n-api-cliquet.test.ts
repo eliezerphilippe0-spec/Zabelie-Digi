@@ -73,13 +73,21 @@ function compter(): { total: number; parFichier: Map<string, number> } {
  *   212 — après les trois routes de la galerie vendeur (`products/cover`,
  *         `products/media`, `products/media/video`), le 2026-10-08 : la
  *         première étape que `/vendre` demande au vendeur.
+ *   174 — mesuré le 2026-10-27 (audit lot 1, M1) : 179 sur `main` — la
+ *         baisse des lots intermédiaires n'avait pas été reportée — moins
+ *         les cinq refus de `zelle/reference`, lus par un acheteur diaspora
+ *         qui a déjà envoyé ses dollars.
+ *   170 — même jour (M2) : les quatre messages en dur de `payouts` ; ses
+ *         refus métier, montants compris, partent dans la langue du vendeur.
+ *   162 — même jour (M4) : les huit de `coupons`, dont trois renvois de
+ *         `error.message` (Postgres brut) vers l'écran du vendeur.
  *
  * ⚠️ NE JAMAIS RELEVER CE NOMBRE. Il ne descend que par du travail réel ; le
  * monter reviendrait à transformer un cliquet en décoration. Si une route neuve
  * a besoin d'un message, elle le prend dans `lib/i18n.ts` — c'est deux minutes,
  * et c'est le prix de ne pas laisser un vendeur kreyòl lire du français.
  */
-const PLAFOND = 212;
+const PLAFOND = 162;
 
 /** Routes déjà converties : elles ne doivent JAMAIS régresser. */
 const CONVERTIES = [
@@ -114,6 +122,10 @@ const CONVERTIES = [
   "app/api/products/media/video/route.ts",
   // Réponse du vendeur aux avis (0139) — née traduite, le 2026-10-14.
   "app/api/reviews/reponse/route.ts",
+  // Audit lot 1 (2026-10-27) — refus traduits avec code stable.
+  "app/api/zelle/reference/route.ts",
+  "app/api/payouts/route.ts",
+  "app/api/coupons/route.ts",
   /* ⚠️ `admin/topup/sync-catalog` est ABSENTE, volontairement, et il faut dire
    * pourquoi plutôt que de la faire disparaître : ses deux messages restants
    * nomment `RELOADLY_CLIENT_ID` / `RELOADLY_CLIENT_SECRET` et le mode bac à

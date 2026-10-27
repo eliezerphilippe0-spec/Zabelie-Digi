@@ -554,6 +554,8 @@ export default async function DashboardPage({
                 pending: t(lang, "vendeur.retrait.enCours"),
                 networkError: t(lang, "vendeur.retrait.reseau"),
                 success: t(lang, "vendeur.retrait.ok"),
+                failed: t(lang, "api.payout.failed"),
+                kycAction: t(lang, "vendeur.retrait.kyc"),
               }}
             />
           </div>

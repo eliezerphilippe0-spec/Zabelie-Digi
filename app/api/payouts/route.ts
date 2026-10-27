@@ -3,6 +3,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UUID_RE } from "@/lib/collections";
 import { erreurTraduite } from "@/lib/api-erreur";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
+import { formatHTG } from "@/lib/sample-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,15 +21,13 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
-  }
+  if (!user) return erreurTraduite("api.auth.required", 401);
 
   let body: { amountHtg?: number; expectedActorId?: unknown };
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "JSON invalide" }, { status: 400 });
+    return erreurTraduite("api.json.invalid", 400);
   }
 
   // L'écran doit encore appartenir à la session qui immobilisera ce solde.
@@ -39,10 +40,7 @@ export async function POST(req: Request) {
 
   const amount = Number(body.amountHtg);
   if (!Number.isInteger(amount) || amount <= 0) {
-    return NextResponse.json(
-      { error: "Montant invalide (entier positif en HTG)" },
-      { status: 422 }
-    );
+    return erreurTraduite("api.amount.invalid", 422);
   }
 
   const admin = createAdminClient();
@@ -53,39 +51,48 @@ export async function POST(req: Request) {
 
   if (error) {
     console.error("payouts: échec demande", error);
-    return NextResponse.json({ error: "Demande impossible" }, { status: 500 });
+    return erreurTraduite("api.payout.failed", 500);
   }
 
   if (!data?.ok) {
-    // `reason` est un code stable : le client l'affiche dans la langue du
-    // vendeur (FR/KR), le texte serveur n'est qu'un repli.
+    // `reason` reste un code stable, renvoyé tel quel : l'écran s'en sert pour
+    // proposer l'ACTION (le dépôt des pièces), pas pour traduire. La phrase,
+    // elle, part déjà dans la langue du vendeur — le motif de
+    // `lib/api-erreur.ts`, qui ne demande rien de plus aux écrans.
+    //
+    // ⚠️ Les nombres viennent de la RPC, avec les MÊMES replis qu'avant
+    // (500, 100 000, 24 h, 0) : cette couche n'en décide aucun, elle les
+    // formate comme le reste du tableau de bord (`formatHTG`).
+    const lang = await getLang();
+    const htg = (v: unknown, repli: number) => formatHTG(Number(v ?? repli));
     const messages: Record<string, string> = {
-      montant_invalide: "Montant invalide.",
-      sous_minimum: `Le minimum est de ${data?.min_htg ?? 500} HTG.`,
-      au_dessus_plafond: `Le maximum par demande est de ${data?.max_htg ?? 100000} HTG.`,
-      compte_suspendu: "Compte suspendu : retrait indisponible.",
-      portefeuille_absent: "Aucun portefeuille pour ce compte.",
-      demande_en_cours: "Une demande est déjà en cours de traitement.",
-      delai_non_ecoule: `Une nouvelle demande est possible après ${data?.cooldown_hours ?? 24} h.`,
+      montant_invalide: t(lang, "api.amount.invalid"),
+      sous_minimum: t(lang, "api.payout.minimum", { min: htg(data?.min_htg, 500) }),
+      au_dessus_plafond: t(lang, "api.payout.maximum", { max: htg(data?.max_htg, 100000) }),
+      compte_suspendu: t(lang, "api.payout.suspended"),
+      portefeuille_absent: t(lang, "api.payout.nobalance"),
+      demande_en_cours: t(lang, "api.payout.pending"),
+      delai_non_ecoule: t(lang, "api.payout.cooldown", { heures: String(data?.cooldown_hours ?? 24) }),
       solde_insuffisant:
-        `Solde disponible insuffisant (${data?.disponible_htg ?? 0} HTG` +
-        (Number(data?.frais_ia_htg) > 0
-          ? `, après ${data.frais_ia_htg} HTG de frais IA à régler`
-          : "") +
-        `).`,
+        Number(data?.frais_ia_htg) > 0
+          ? t(lang, "api.payout.balance.ia", {
+              disponible: htg(data?.disponible_htg, 0),
+              frais: htg(data.frais_ia_htg, 0),
+            })
+          : t(lang, "api.payout.balance", { disponible: htg(data?.disponible_htg, 0) }),
       // V-6 : le retrait est gardé par la vérification d'identité. Trois
       // messages distincts, parce que ce ne sont pas trois fois la même
       // action pour le vendeur : attendre, corriger, ou déposer.
       kyc_requis:
         data?.kyc_statut === "pending"
-          ? "Vérification d'identité en cours. Le retrait sera possible dès que votre dossier sera validé."
+          ? t(lang, "api.payout.kyc.pending")
           : data?.kyc_statut === "rejected"
-            ? "Dossier d'identité refusé. Corrigez-le depuis votre tableau de bord."
-            : "Vérification d'identité requise avant tout retrait. Déposez vos pièces depuis votre tableau de bord.",
+            ? t(lang, "api.payout.kyc.rejected")
+            : t(lang, "api.payout.kyc.missing"),
     };
     return NextResponse.json(
       {
-        error: messages[data?.reason as string] ?? "Demande refusée.",
+        error: messages[data?.reason as string] ?? t(lang, "api.payout.refused"),
         code: data?.reason,
       },
       { status: 422 }

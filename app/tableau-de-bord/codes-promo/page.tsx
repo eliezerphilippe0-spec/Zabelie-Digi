@@ -6,7 +6,7 @@ import { ZabelieCouponManager, type CouponItem } from "@/components/zabelie-coup
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { getLang } from "@/lib/i18n-server";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Codes promo — Zabelie", robots: { index: false, follow: false } };
@@ -33,6 +33,14 @@ export default async function CodesPromoPage() {
       .limit(20),
   ]);
   const coupons = (cps ?? []) as CouponItem[];
+  // Le décompte s'accorde ICI, côté serveur (`tn`) : le composant client ne
+  // reçoit jamais le dictionnaire, ni la règle de pluriel des quatre langues.
+  const lignes = coupons.map((c) => ({
+    ...c,
+    usage: c.max_uses !== null
+      ? tn(lang, c.uses, "vendeur.promo.usageMax.one", "vendeur.promo.usageMax", { n: String(c.uses), max: String(c.max_uses) })
+      : tn(lang, c.uses, "vendeur.promo.usage.one", "vendeur.promo.usage", { n: String(c.uses) }),
+  }));
   const aDesProduits = (unProduit ?? []).length > 0;
   const [avantCode, apresCode] = t(lang, "vendeur.promo.texte").split("{code}");
 
@@ -49,7 +57,23 @@ export default async function CodesPromoPage() {
           </p>
           {aDesProduits ? (
             <div className="mt-6 rounded-2xl border border-line bg-surface/60 p-5">
-              <ZabelieCouponManager key={user.id} coupons={coupons} actorId={user.id} />
+              <ZabelieCouponManager
+                key={user.id}
+                coupons={lignes}
+                actorId={user.id}
+                labels={{
+                  code: t(lang, "vendeur.promo.code"),
+                  percent: t(lang, "vendeur.promo.remise"),
+                  maxUses: t(lang, "vendeur.promo.max"),
+                  create: t(lang, "vendeur.promo.creer"),
+                  creating: t(lang, "vendeur.promo.creation"),
+                  deactivate: t(lang, "vendeur.promo.desactiver"),
+                  reactivate: t(lang, "vendeur.promo.reactiver"),
+                  toggling: t(lang, "vendeur.promo.bascule"),
+                  network: t(lang, "error.network"),
+                  failed: t(lang, "vendeur.promo.erreur"),
+                }}
+              />
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-line p-5 text-sm">
