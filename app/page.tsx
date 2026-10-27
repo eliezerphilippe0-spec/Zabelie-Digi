@@ -18,6 +18,7 @@ import { TrustBar } from "@/components/trust-bar";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { whatsappHref } from "@/lib/whatsapp";
 import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
+import { getLibellesRayons, libelleRayon } from "@/lib/taxonomy";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
 import { metaPage } from "@/lib/meta-page";
@@ -151,6 +152,9 @@ export default async function HomePage() {
   const products = catalogue ?? [];
   const flash = await ventesFlashAccueil(products);
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))].slice(0, 6);
+  // Le lien garde la valeur stockée (label_fr) ; le TEXTE suit la langue,
+  // depuis le menu de l'en-tête (mémoïsé par requête, aucune lecture de plus).
+  const libellesRayons = await getLibellesRayons(lang);
   // A single offer stays in the main grid; the hero never repeats it.
   const featured = products.length > 1 ? products.find((p) => p.coverUrl) ?? products[0] : undefined;
 
@@ -312,7 +316,7 @@ export default async function HomePage() {
           <nav className="home-discovery-nav mx-auto max-w-6xl px-5" aria-label={t(lang, "home.explore")}>
             <span className="home-eyebrow">{t(lang, "home.explore")}</span>
             <div className="home-category-links">
-              {categories.map((category) => <Link key={category} href={`/catalogue?cat=${encodeURIComponent(category)}`}>{category}<span aria-hidden="true">↗</span></Link>)}
+              {categories.map((category) => <Link key={category} href={`/catalogue?cat=${encodeURIComponent(category)}`}>{libelleRayon(category, libellesRayons)}<span aria-hidden="true">↗</span></Link>)}
             </div>
           </nav>
         )}

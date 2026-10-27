@@ -16,7 +16,7 @@ import {
 } from "@/lib/products";
 import { sessionFingerprint } from "@/lib/search-demand";
 import { headers } from "next/headers";
-import { getCategoryFacets, productIdsInCategory } from "@/lib/taxonomy";
+import { getCategoryFacets, getLibellesRayons, libelleRayon, pucesRayons, productIdsInCategory } from "@/lib/taxonomy";
 import { getLang } from "@/lib/i18n-server";
 import { metaLangue } from "@/lib/langue-url";
 import { partage } from "@/lib/meta-page";
@@ -32,7 +32,9 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const [raw, lang] = await Promise.all([searchParams, getLang()]);
   const { univers, cat, sous, page } = parseCatalogueSearch(raw);
   const titleKey = univers ? CATALOGUE_UNIVERSES[univers].title : "catalog.title";
-  const title = `${cat && cat !== "Tout" ? `${cat} — ` : ""}${t(lang, titleKey)} — Zabelie`;
+  // Le rayon du titre suit la langue ; en français (défaut, crawlers) il reste
+  // le label_fr, donc le titre indexé ne change pas.
+  const title = `${cat && cat !== "Tout" ? `${libelleRayon(cat, await getLibellesRayons(lang))} — ` : ""}${t(lang, titleKey)} — Zabelie`;
   const description = t(lang, univers === "objets" ? "catalog.seo.objects" : univers === "numerique" ? "catalog.seo.digital" : univers === "services" ? "catalog.seo.services" : "catalog.seo.all");
   const langue = metaLangue(catalogueCanonical(raw), lang);
   const canonical = langue.alternates.canonical;
@@ -67,6 +69,10 @@ export default async function CataloguePage({
     getCatalogueCategories(selection?.kind),
     isSupabaseConfigured() ? getZonesActives() : Promise.resolve([] as Zone[]),
   ]);
+  // Libellés traduits des rayons : lancés ici, attendus au rendu. Même menu que
+  // l'en-tête (mémoïsé par requête), donc aucune lecture de plus, et la
+  // lecture court pendant les requêtes produits au lieu de s'y ajouter.
+  const libellesRayons = getLibellesRayons(lang);
 
   // PR-Z3 (docs/33 §4) : la zone active est la plus PROFONDE choisie —
   // katye > komin > depatman — APRÈS validation de cohérence : la cascade
@@ -158,7 +164,15 @@ export default async function CataloguePage({
   const nbPages = Math.max(1, Math.ceil(total / CATALOGUE_PAGE_SIZE));
   const serviceGuide = serviceStarterCopy(lang);
 
-  const CATEGORIES = ["Tout", ...categories];
+  /* M6 — la VALEUR filtre (label_fr en base, « Tout » pour l'absence de
+     filtre : l'URL ne change pas), le LIBELLÉ s'affiche dans la langue du
+     visiteur. « Tout » en tête, comme sur les grandes marketplaces. */
+  const libelles = await libellesRayons;
+  const libelleActif = activeCat === "Tout" ? t(lang, "catalog.cat.all") : libelleRayon(activeCat, libelles);
+  const PUCES = [
+    { valeur: "Tout", libelle: t(lang, "catalog.cat.all") },
+    ...pucesRayons(categories, libelles, lang),
+  ];
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
   // opposées : reformuler d'un côté, publier de l'autre.
@@ -220,7 +234,7 @@ export default async function CataloguePage({
         <p className="mt-2 text-sm text-mist">
           {totalExact ? total : `≥ ${total}`} {tn(lang, total, "catalog.results.one", "catalog.results")}
           {q ? ` ${t(lang, "catalog.for")} « ${q} »` : ""}
-          {activeCat !== "Tout" ? ` · ${activeCat}` : ""}
+          {activeCat !== "Tout" ? ` · ${libelleActif}` : ""}
           {sous ? ` · ${facettes.find((f) => f.slug === sous)?.label ?? sous}` : ""}
           {zoneActive ? ` · ${libelleZone(zoneActive, lang)}` : ""}.
         </p>
@@ -364,17 +378,18 @@ export default async function CataloguePage({
             une seule puce « Tout » n'est pas un filtre, c'est du décor. */}
         {categories.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+          {PUCES.map(({ valeur, libelle }) => (
             <Link
-              key={c}
-              href={catHref(c)}
+              key={valeur}
+              href={catHref(valeur)}
+              aria-current={valeur === activeCat ? "true" : undefined}
               className={`inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm transition ${
-                c === activeCat
+                valeur === activeCat
                   ? "border-transparent bg-cloud text-ink"
                   : "border-line text-mist hover:border-accent/50 hover:text-cloud"
               }`}
             >
-              {c}
+              {libelle}
             </Link>
           ))}
         </div>
@@ -512,7 +527,7 @@ export default async function CataloguePage({
                vide muet (landing v2). */
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}
+                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? libelleActif : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : libelleActif}
               </p>
               <p className="mx-auto mt-2 max-w-md text-sm text-mist">
                 {t(lang, "catalog.cat0.b")}
