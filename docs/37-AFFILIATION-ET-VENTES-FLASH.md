@@ -8,6 +8,23 @@
 > défauts de config restent modifiables par UPDATE, jamais en dur.
 > **Rédigé le** : 2026-08-15 · Sources en fin de document.
 > Prolonge `docs/06-ANALYSE-CHARIOW.md` §P4 (spec affiliation d'origine).
+>
+> **Mise à jour (2026-10-28) — l'affiliation option B a son INTERFACE.**
+> `0081` est **appliquée en production** (tables `zabelie_affiliate_config`,
+> `zabelie_affiliates`, `zabelie_affiliate_rates`, `zabelie_order_attribution`
+> présentes et lues le 2026-10-28). L'UI manquait ; elle existe désormais :
+> `/tableau-de-bord/affiliation` (`app/tableau-de-bord/affiliation/page.tsx`,
+> `components/affiliation-manager.tsx`), avec son entrée de menu vendeur. Deux
+> faces, comme le marché à deux côtés l'exige :
+> **partageur** — devenir affilié + lien `?ref=<code>`, dormant tant que
+> `config.actif=false` (l'API `/api/affiliate` répond 503, l'écran dit
+> « bientôt ») ; **opt-in vendeur** — offrir un taux par produit via
+> `/api/products/affiliate-rate`, **permis dès maintenant** (préparation : rien
+> n'est prélevé programme fermé). Le MÊME code s'anime quand le porteur arme.
+> **Mesuré en prod le 2026-10-28** : `actif=false`, bornes 500–4000 bps
+> (5–40 %), **0 affilié · 0 taux · 0 attribution**. Armer `config.actif` reste
+> le **signal de lancement du porteur** — zone d'arrêt (règle dure n°5) ; l'UI
+> ne l'écrit jamais (garde `tests/affiliation-ui.test.ts`).
 
 ## Ce que les géants font réellement — mesuré, pas supposé
 
