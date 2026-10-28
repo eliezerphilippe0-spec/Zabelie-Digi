@@ -38,6 +38,40 @@ n'existe aujourd'hui **aucune offre réelle, publiée, payante, avec photo**,
 portée par un **vendeur réel distinct de l'acheteur**, et que MonCash n'a
 **jamais été basculé en production**.
 
+## 0bis — État de départ nominatif (mesuré le 2026-10-28, lecture seule)
+
+Sonde directe de la production qui NOMME les pièces du §0 : qui vend, quoi, à
+quel prix, avec quels comptes réels, et où en est MonCash. ⚠️ Elle **rafraîchit
+la ligne « Catalogue » du §0** : il y a désormais **une** offre publiée (elle
+était à zéro plus tôt le même jour) — mais elle n'est pas payable en l'état.
+
+**Prêt :**
+
+| Pièce | Mesuré | Verdict |
+|---|---|---|
+| Storage / photo | « formation en IA » porte une photo (`cover_url` non nul) | la clé service-role **fonctionne** — lève le doute de `docs/49` |
+| Vendeur réel + offre | **Bebeto** (non-test), 1 offre publiée : « formation en IA » (`service`, avec photo) | vrai vendeur, vraie offre |
+| Acheteur réel distinct | 3 comptes réels ≠ Bebeto : Ruby, Eliezer Philippe, Eliezer | auto-achat refusé en base (`0132`) → acheteur dispo |
+| Cohérence comptable | `zabelie_solvency_report()` → `ok=true, ecarts=0`, tout à zéro | point de départ net, et point de retour après remboursement |
+
+**Bloque (zones d'arrêt, porteur) :**
+
+1. 🛑 **MonCash en sandbox.** 14/14 paiements `failed`, **0 référence
+   opérateur**, hôte `sandbox.moncashbutton.digicelgroup.com`. Aucun acheteur
+   n'a jamais payé (`moncash_unknown_48h` = 404). → Phase 1 (bascule production).
+2. 🛑 **Offre à 5 HTG.** Quasi certainement sous le minimum opérateur MonCash.
+   Le montant se fixe avec le fournisseur (§0.4) — l'ancienne « cours
+   francisation » était à 300 HTG.
+
+**À noter :** l'offre est un `service` → boucle escrow + remise + remboursement
+propre, sans logistique (bon premier essai, §0.3). Commandes actuelles :
+14 `cancelled` + 1 `disputed`, aucune payée — cohérent avec « jamais de paiement
+réel ».
+
+**En une phrase :** tout est prêt côté plateforme ; il manque exactement deux
+gestes du porteur — **basculer MonCash en production** et **donner à l'offre un
+montant payable**.
+
 ## Légende
 
 - 🛑 **zone d'arrêt** — porteur seul (secret / env / portail / conformité / montant / paiement).
