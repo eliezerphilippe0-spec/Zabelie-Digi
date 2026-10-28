@@ -13,7 +13,8 @@ soignée. Les trois risques à connaître sont **non bloquants** et pour deux d'
 eux **opérationnels, pas de code** : (1) côté produit, un affilié n'a aujourd'hui
 **aucun moyen de voir quels produits offrent une commission** — il partagerait à
 l'aveugle (à régler **avant** d'armer le programme) ; (2) MonCash est encore en
-**sandbox** ; (3) l'offre test est à **5 HTG**, sous le minimum opérateur. Les
+**sandbox** ; (3) l'offre test est à **5 HTG** et le plancher MonCash est
+**inconnu** (Question 7 de `docs/42`, sans réponse). Les
 points 2 et 3 sont déjà consignés dans `docs/76` et sont des **zones d'arrêt
 porteur**, pas des défauts du code.
 
@@ -128,7 +129,9 @@ déjà consignés en `docs/76` §0bis — ce ne sont pas des constats de ce rapp
 mais le contexte qui conditionne tout essai :
 
 - 🛑 MonCash en **sandbox** (14/14 paiements échoués, 0 référence opérateur).
-- 🛑 Offre test à **5 HTG**, sous le minimum opérateur.
+- 🛑 Offre test à **5 HTG**, plancher MonCash **inconnu** : la Question 7 de
+  `docs/42` est restée sans réponse. ⚠️ Ce rapport écrivait d'abord « sous le
+  minimum opérateur » : c'était une supposition, corrigée.
 
 Les deux sont des **zones d'arrêt porteur** (secret/env/montant), pas du ressort
 de l'agent.
