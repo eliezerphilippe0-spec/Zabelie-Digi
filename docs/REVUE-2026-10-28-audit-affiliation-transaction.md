@@ -165,7 +165,7 @@ un commit qui l'ancre dans un test éprouvé par mutation.
 | SEC-01 | ✅ traité | `requireActiveAccount` en tête du DELETE : `tests/affiliation-correctifs-audit.test.ts` |
 | SEC-02 | ✅ traité | la route ne renvoie plus le message de la base : code `ZB081` (libellé i18n côté client), 500 générique sinon |
 | UX-02 | ✅ traité | « Taux enregistré » / « Offre retirée », jamais annoncé sur un échec |
-| SEC-03 | ⏳ décision | lecture publique des taux, voulue : à acter |
+| SEC-03 | ✅ documenté | lecture publique des taux voulue : policy de `0081` (appliquée le 2026-08-17), dont dépend la liste « produits qui rapportent » (UX-01) |
 | SEC-04 | ⏳ le jour venu | policy à ajouter avec l'écran « mes gains » |
 | UI-01 | ⏳ transverse | anneau de focus, hors affiliation |
 | RES-01 | ⏳ optionnel | ligne de taux à 360 px |
