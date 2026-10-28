@@ -59,7 +59,13 @@ la ligne « Catalogue » du §0** : il y a désormais **une** offre publiée (el
 1. 🛑 **MonCash en sandbox.** 14/14 paiements `failed`, **0 référence
    opérateur**, hôte `sandbox.moncashbutton.digicelgroup.com`. Aucun acheteur
    n'a jamais payé (`moncash_unknown_48h` = 404). → Phase 1 (bascule production).
-2. 🛑 **Offre à 5 HTG.** Quasi certainement sous le minimum opérateur MonCash.
+2. 🛑 **Offre à 5 HTG, plancher MonCash INCONNU.** Le dépôt n'impose aucun
+   minimum, et le plancher accepté par `/v1/CreatePayment` n'est connu nulle
+   part : c'est la Question 7 de `docs/42`, restée sans réponse (« 1, 5, 10 ou
+   25 HTG » y sont des hypothèses). 5 HTG peut passer comme être refusé — on ne
+   le saura qu'en obtenant la réponse de MonCash ou en essayant. ⚠️ Une première
+   version de ce document écrivait « quasi certainement sous le minimum » :
+   c'était une supposition présentée comme un constat, corrigée le 2026-10-28.
    Le montant se fixe avec le fournisseur (§0.4) — l'ancienne « cours
    francisation » était à 300 HTG.
 
@@ -69,8 +75,9 @@ propre, sans logistique (bon premier essai, §0.3). Commandes actuelles :
 réel ».
 
 **En une phrase :** tout est prêt côté plateforme ; il manque exactement deux
-gestes du porteur — **basculer MonCash en production** et **donner à l'offre un
-montant payable**.
+gestes du porteur — **basculer MonCash en production** et **fixer le montant de
+l'offre en connaissance du plancher MonCash** (Question 7 de `docs/42`, à
+relancer).
 
 ## Légende
 
