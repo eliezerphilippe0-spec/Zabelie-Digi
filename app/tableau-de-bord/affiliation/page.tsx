@@ -1,8 +1,16 @@
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { VendeurShell } from "@/components/vendeur-shell";
-import { AffiliationManager, type AffiliationLabels, type ProduitAffiliable } from "@/components/affiliation-manager";
+import {
+  AffiliationManager,
+  type AffiliationLabels,
+  type ProduitAffiliable,
+  type ProduitCommissionne,
+} from "@/components/affiliation-manager";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { lienProduit, lignesCommissionnees, PRODUITS_COMMISSIONNES_MAX } from "@/lib/affiliation-catalogue";
+import { formatHTG } from "@/lib/sample-data";
 import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { estArchivee } from "@/lib/seller-products-filter";
 import { siteUrl } from "@/lib/site-url";
@@ -77,6 +85,34 @@ export default async function AffiliationPage() {
   const minPct = minBps / 100;
   const maxPct = maxBps / 100;
 
+  /* PRODUITS QUI RAPPORTENT (audit UX-01). Lus sous la SESSION de l'affilié et
+   * non en service-role : la visibilité publique des fiches (comptes d'essai
+   * exclus, 0101) est portée par la RLS de `products`, et un affilié ne doit
+   * pas se voir proposer ce qu'un acheteur ne peut pas ouvrir. Inutile tant que
+   * le programme est fermé : on ne lit rien. `null` = lecture impossible, que
+   * l'écran distingue de « aucun produit » (l'absence de signal est un signal). */
+  let commissionnes: ProduitCommissionne[] | null = [];
+  if (!dormant) {
+    const supabase = await createClient();
+    const { data: lues, error: errLues } = await supabase
+      .from("zabelie_affiliate_rates")
+      .select("rate_bps, product:products!inner(id, slug, title, price_htg, seller_id, status)")
+      .eq("product.status", "published")
+      .neq("product.seller_id", user.id)
+      .gt("product.price_htg", 0)
+      .order("rate_bps", { ascending: false })
+      .limit(PRODUITS_COMMISSIONNES_MAX);
+    commissionnes = errLues
+      ? null
+      : lignesCommissionnees(lues, user.id).map((l) => ({
+          id: l.id,
+          title: l.title,
+          prix: formatHTG(l.priceHtg),
+          rateBps: l.rateBps,
+          lien: code ? lienProduit(siteUrl(), l.slug, code) : null,
+        }));
+  }
+
   // Libellés résolus ICI (serveur) et passés en props : un composant client
   // n'embarque jamais le dictionnaire. `lienIntro` et `vActuel` gardent leur
   // gabarit `{code}` / `{pct}`, substitué côté client sans `t`.
@@ -102,6 +138,11 @@ export default async function AffiliationPage() {
     vAucun: t(lang, "affil.vendeur.aucun"),
     vSansProduit: t(lang, "affil.vendeur.sansProduit"),
     vProduitPremier: t(lang, "vendeur.produits.premier"),
+    pTitre: t(lang, "affil.produits.titre"),
+    pIntro: t(lang, "affil.produits.intro"),
+    pVide: t(lang, "affil.produits.vide"),
+    pTaux: t(lang, "affil.produits.taux"),
+    pIndispo: t(lang, "vendeur.indisponible"),
   };
 
   return (
@@ -119,6 +160,7 @@ export default async function AffiliationPage() {
             minPct={minPct}
             maxPct={maxPct}
             produits={produits}
+            commissionnes={commissionnes}
           />
         </VendeurShell>
       </main>
