@@ -402,6 +402,77 @@ Cordialement,
 | **0 refusé, plancher > 1 HTG** | L'option « prix plancher » tombe : personne n'affichera un article « gratuit » à 25 HTG. Le rail `gratis` reste la seule voie, et son écran de confirmation (option 3) devient le chantier. |
 | **Réponse évasive ou aucune sous 3 semaines** | Consigner à `OPS_TODO` au **2026-09-12**. Le rail `gratis` continue de fonctionner entre-temps : cette question n'en bloque aucun. ⚠️ **C'est ce qui la distingue des six autres** — elle éclaire un choix, elle n'ouvre pas une porte fermée. Elle ne doit donc jamais faire attendre le reste. |
 
+### 1 ter bis. Relance de la question 7 — rédigée le 2026-10-28, ⏳ NON ENVOYÉE
+
+**Pourquoi maintenant.** La question 7 est partie le 2026-08-22 (§3) ; l'échéance
+de consignation du 2026-09-12 est passée sans réponse inscrite au registre. Le
+statut de cette question a changé : en août elle « n'ouvrait aucune porte
+fermée » ; elle **conditionne désormais le montant de la première offre réelle**
+(`docs/76` §0.4, `OPS_TODO` : plancher MonCash). Elle ne bloque toujours pas la
+bascule de `MONCASH_MODE`, qui peut se faire avant.
+
+⚠️ **Une relance s'annule sur réponse** (règle de §3.1). Avant d'envoyer,
+vérifier la boîte : si Digicel a déjà répondu, **ne rien envoyer** et inscrire le
+plancher dans le registre au lieu de relancer. L'agent n'a pas accès à la boîte :
+« aucune réponse inscrite au registre » n'est pas « aucune réponse reçue ».
+
+**À répondre dans le fil d'origine du 2026-08-22** (celui de `CreatePayment`, pas
+le fil `/v1/Transfert` du 21 août). Si ce fil est introuvable, en ouvrir un
+nouveau en citant la date et l'objet.
+
+#### Objet
+
+```
+Re: Montant minimal accepté par /v1/CreatePayment — compte marchand MonCash Business (relance)
+```
+
+#### Corps
+
+```
+Bonjour,
+
+Je me permets de relancer ma question du 22 août dernier sur le montant
+minimal accepté par /v1/CreatePayment, pour laquelle je n'ai pas reçu de
+réponse.
+
+Nous préparons notre première transaction réelle en production et devons
+fixer le montant d'une offre. Trois points précis :
+
+  1. Quel est le MONTANT MINIMAL, en HTG, accepté par /v1/CreatePayment ?
+
+  2. Un montant de [MONTANT ENVISAGÉ, par exemple 5] HTG serait-il accepté ?
+
+  3. En cas de refus, par quel code d'erreur se manifeste-t-il, pour que nous
+     puissions le traiter proprement ?
+
+Une réponse brève nous suffit, ou un renvoi vers la page de documentation qui
+fait foi.
+
+Cordialement,
+[NOM]
+[FONCTION] — [SOCIÉTÉ]
+[TÉLÉPHONE] · [COURRIEL]
+```
+
+#### Ce qui est délibéré dans cette relance
+
+- **Trois points, pas deux.** Le point (a) de l'envoi d'août (« 0 HTG est-il
+  accepté ? ») est retiré : il éclairait le rail `gratis`, qui fonctionne. Ce qui
+  manque aujourd'hui est un **chiffre exploitable** et la **réponse pour le
+  montant réellement envisagé** (point 2).
+- **« Première transaction réelle en production »** annonce un calendrier à un
+  tiers. C'est une décision du porteur : retirer la phrase ne change pas la
+  question.
+- Aucun montant, nom ni contact n'est inventé : les crochets sont à remplir.
+
+#### Ce qu'on fait de la réponse
+
+| Réponse | Conséquence |
+|---|---|
+| **Plancher ≤ montant envisagé** | Le montant peut être fixé tel quel (`docs/76` §0.4). Inscrire le plancher au registre d'`OPS_TODO` avec la date de réponse. |
+| **Plancher > montant envisagé** | Relever le prix de l'offre au-dessus du plancher, avec le fournisseur. Rien à coder : le prix est une donnée du vendeur. |
+| **Pas de réponse sous 3 semaines (2026-11-18)** | Inscrire l'absence à `OPS_TODO`, comme le 2026-09-12 aurait dû l'être, puis choisir : essai à petit montant dont on lit le refus, ou démarche par le service client. Ne jamais déduire un plancher d'un silence. |
+
 ---
 
 ## 2. Courriel HDIT / Cabinet Volmar — deux questions numérotées
@@ -925,6 +996,7 @@ vendeur reste entière quel que soit le rail d'encaissement.
 | §1 — activation `/v1/Transfert` | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** |
 | §1 bis — **complément, question 6** (forme A) | Digicel MFS Business | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse** (réponse dans le fil du courriel principal) |
 | §1 ter — **question 7**, montant minimal de `CreatePayment` | Digicel MFS Business | **2026-08-22** | — | 📤 **ENVOYÉ — en attente de réponse.** Fil DISTINCT de celui du 21 août : autre endpoint, déjà actif en production. ⚠️ Déclaré par le porteur en session ; les deux fuseaux concordaient au moment de l'envoi (15h47 Haïti / 19h47 UTC), donc pas d'ambiguïté de date à lever ici. |
+| §1 ter bis — **relance de la question 7** | Digicel MFS Business (fil du 2026-08-22) | **rédigée 2026-10-28** | — | ⏳ **NON ENVOYÉE** — à vérifier d'abord : si la boîte contient déjà la réponse, ne pas envoyer (une relance s'annule sur réponse) |
 | §2 — qualification Q1 + Q2 | HDIT / Cabinet Volmar — `info@hditcabinetvolmar.com` | **2026-08-21** | — | 📤 **ENVOYÉ — en attente de réponse.** Adresse et formule de politesse corrigée confirmées par le porteur. ⚠️ Boîte **générique** : voir §2 pour ce que ça change à la relance. |
 | §2 bis — **accès marchand NatCash** | NATCOM S.A. — ⚠️ adresse marchande **à obtenir** (111 / WhatsApp 3325-111) ; `customercare@natcom.com.ht` est du service client | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — en attente de l'adresse B2B, ou d'un envoi assumé à `customercare@` avec demande de transfert |
 | §2 ter — **affiliation SogePay** (+ MAGO) | Sogebank — ⚠️ **aucune adresse vérifiée** ; formulaire « Affiliation Commerçant » + tél. (509) 2229-5000 | **rédigé 2026-08-24** | — | ⏳ **NON ENVOYÉ** — passer par le FORMULAIRE d'abord ; ce texte l'accompagne, il ne le remplace pas |
