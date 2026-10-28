@@ -34,6 +34,11 @@ export type AffiliationLabels = {
   vAucun: string;
   vSansProduit: string;
   vProduitPremier: string;
+  pTitre: string;
+  pIntro: string;
+  pVide: string;
+  pTaux: string; // {pct}
+  pIndispo: string;
 };
 
 export type ProduitAffiliable = {
@@ -42,6 +47,20 @@ export type ProduitAffiliable = {
   slug: string;
   /** Taux offert aujourd'hui, en points de base. `null` = aucune offre. */
   rateBps: number | null;
+};
+
+/**
+ * Un produit qui offre une commission, vu par l'AFFILIÉ (audit UX-01). Le prix
+ * est déjà formaté et le lien déjà fabriqué côté serveur : le client n'embarque
+ * ni `formatHTG` (donc pas le jeu de données d'exemple) ni la logique de lien.
+ * `lien` est `null` tant que l'affilié n'a pas de code : pas de bouton copier.
+ */
+export type ProduitCommissionne = {
+  id: string;
+  title: string;
+  prix: string;
+  rateBps: number;
+  lien: string | null;
 };
 
 /**
@@ -69,6 +88,7 @@ export function AffiliationManager({
   minPct,
   maxPct,
   produits,
+  commissionnes,
 }: {
   labels: AffiliationLabels;
   dormant: boolean;
@@ -77,9 +97,16 @@ export function AffiliationManager({
   minPct: number;
   maxPct: number;
   produits: ProduitAffiliable[];
+  /** `null` = lecture impossible (distinct de « aucun produit »). */
+  commissionnes: ProduitCommissionne[] | null;
 }) {
   const router = useRouter();
-  const [monCode, setMonCode] = useState<string | null>(code);
+  /* Le code vient du serveur (`code`) ; `codeInscrit` ne couvre que l'instant
+   * entre la réponse du POST et la fin du `router.refresh()`. Un seul état
+   * local figé sur la prop initiale ignorerait le code que le serveur renvoie
+   * ensuite, et la liste des produits resterait sans lien. */
+  const [codeInscrit, setCodeInscrit] = useState<string | null>(null);
+  const monCode = code ?? codeInscrit;
   const [inscription, setInscription] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -93,7 +120,7 @@ export function AffiliationManager({
         setErreur(labels.erreur);
         return;
       }
-      setMonCode(data.code as string);
+      setCodeInscrit(data.code as string);
       router.refresh();
     } catch {
       setErreur(labels.erreur);
@@ -130,6 +157,39 @@ export function AffiliationManager({
                 />
               </p>
               <p className="mt-1 text-xs text-mist">{labels.lienIntro.replace("{code}", monCode)}</p>
+            </div>
+
+            {/* ── PRODUITS QUI RAPPORTENT (UX-01) ────────────────────────────
+                Option B : seul un produit portant un taux rapporte. Sans cette
+                liste l'affilié partage à l'aveugle un lien qui n'attribue rien. */}
+            <div className="pt-2">
+              <h3 className="text-sm font-semibold">{labels.pTitre}</h3>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-mist">{labels.pIntro}</p>
+              {commissionnes === null ? (
+                <p role="status" className="mt-3 text-sm text-mist">{labels.pIndispo}</p>
+              ) : commissionnes.length === 0 ? (
+                <p className="mt-3 text-sm text-mist">{labels.pVide}</p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {commissionnes.map((p) => (
+                    <li key={p.id} className="rounded-xl border border-line bg-surface/60 px-4 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{p.title}</p>
+                          <p className="mt-0.5 text-xs text-mist">
+                            <span className="numeric">{p.prix}</span>
+                            {" · "}
+                            {labels.pTaux.replace("{pct}", String(p.rateBps / 100))}
+                          </p>
+                        </div>
+                        {p.lien && (
+                          <CopyField value={p.lien} label={labels.copy} copiedLabel={labels.copied} />
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         ) : (

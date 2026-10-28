@@ -25,6 +25,19 @@
 > (5–40 %), **0 affilié · 0 taux · 0 attribution**. Armer `config.actif` reste
 > le **signal de lancement du porteur** — zone d'arrêt (règle dure n°5) ; l'UI
 > ne l'écrit jamais (garde `tests/affiliation-ui.test.ts`).
+>
+> **Suite (2026-10-28, audit `docs/REVUE-2026-10-28-audit-affiliation-transaction.md`,
+> constat UX-01) — « produits qui rapportent ».** En option B une vente ne rapporte
+> que si le produit porte un taux : sans liste, l'affilié partageait à l'aveugle.
+> La face partageur montre désormais, **programme armé et code obtenu seulement**,
+> les produits publiés qui offrent une commission (du taux le plus haut au plus
+> bas), avec le lien `/produit/<slug>?ref=<code>` à copier. Lue **sous la session
+> de l'affilié** (donc sous la RLS publique de `products`, comptes d'essai exclus,
+> `0101`), jamais en service-role ; sont écartés les produits gratuits (commission
+> nulle), les siens (auto-attribution refusée) et les non publiés. L'écran affiche
+> le **taux en % du net du vendeur**, jamais un montant estimé : le calcul d'argent
+> reste serveur (règle dure n°3) et une estimation serait une promesse commerciale.
+> Module `lib/affiliation-catalogue.ts`, garde `tests/affiliation-catalogue.test.ts`.
 
 ## Ce que les géants font réellement — mesuré, pas supposé
 
