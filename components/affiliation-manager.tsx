@@ -39,6 +39,9 @@ export type AffiliationLabels = {
   pVide: string;
   pTaux: string; // {pct}
   pIndispo: string;
+  vEnregistre: string;
+  vRetire: string;
+  vHorsBornes: string; // {min} {max}
 };
 
 export type ProduitAffiliable = {
@@ -265,10 +268,15 @@ function ProduitTaux({
   const [pct, setPct] = useState<number>(actuelPct ?? minPct);
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  /* Le retour affirmatif (audit UX-02). Sur une 3G lente, `router.refresh()`
+   * met du temps à changer « Commission : X % » : sans message, le vendeur se
+   * demande si son geste a pris. L'état survit au refresh (même `key`). */
+  const [ok, setOk] = useState<string | null>(null);
 
   async function offrir() {
     setLoading(true);
     setErreur(null);
+    setOk(null);
     try {
       const res = await fetch("/api/products/affiliate-rate", {
         method: "POST",
@@ -277,9 +285,17 @@ function ProduitTaux({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setErreur(data?.error ?? labels.erreur);
+        /* Jamais le texte du serveur (audit SEC-02) : seul le CODE ZB081 est
+         * lu, et le message vient des libellés, dans la langue du vendeur,
+         * avec les bornes que la page connaît déjà. */
+        setErreur(
+          data?.code === "ZB081"
+            ? labels.vHorsBornes.replace("{min}", String(minPct)).replace("{max}", String(maxPct))
+            : labels.erreur
+        );
         return;
       }
+      setOk(labels.vEnregistre);
       router.refresh();
     } catch {
       setErreur(labels.erreur);
@@ -291,6 +307,7 @@ function ProduitTaux({
   async function retirer() {
     setLoading(true);
     setErreur(null);
+    setOk(null);
     try {
       const res = await fetch("/api/products/affiliate-rate", {
         method: "DELETE",
@@ -298,10 +315,10 @@ function ProduitTaux({
         body: JSON.stringify({ productId: produit.id }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setErreur(data?.error ?? labels.erreur);
+        setErreur(labels.erreur);
         return;
       }
+      setOk(labels.vRetire);
       router.refresh();
     } catch {
       setErreur(labels.erreur);
@@ -358,6 +375,7 @@ function ProduitTaux({
         </div>
       </div>
       {erreur && <p role="alert" className="mt-2 text-xs text-danger-text">{erreur}</p>}
+      {ok && !erreur && <p role="status" className="mt-2 text-xs text-success-text">{ok}</p>}
     </div>
   );
 }

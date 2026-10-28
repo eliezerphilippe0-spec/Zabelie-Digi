@@ -143,6 +143,10 @@ export default async function AffiliationPage() {
     pVide: t(lang, "affil.produits.vide"),
     pTaux: t(lang, "affil.produits.taux"),
     pIndispo: t(lang, "vendeur.indisponible"),
+    vEnregistre: t(lang, "affil.vendeur.enregistre"),
+    vRetire: t(lang, "affil.vendeur.retire"),
+    // {min} / {max} restent dans le gabarit : le client y met les bornes de la page.
+    vHorsBornes: t(lang, "affil.vendeur.horsBornes"),
   };
 
   return (
