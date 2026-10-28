@@ -1,7 +1,7 @@
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { VendeurShell } from "@/components/vendeur-shell";
-import { AffiliationManager, type ProduitAffiliable } from "@/components/affiliation-manager";
+import { AffiliationManager, type AffiliationLabels, type ProduitAffiliable } from "@/components/affiliation-manager";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { estArchivee } from "@/lib/seller-products-filter";
@@ -74,6 +74,36 @@ export default async function AffiliationPage() {
     rateBps: taux.get(p.id) ?? null,
   }));
 
+  const minPct = minBps / 100;
+  const maxPct = maxBps / 100;
+
+  // Libellés résolus ICI (serveur) et passés en props : un composant client
+  // n'embarque jamais le dictionnaire. `lienIntro` et `vActuel` gardent leur
+  // gabarit `{code}` / `{pct}`, substitué côté client sans `t`.
+  const labels: AffiliationLabels = {
+    titre: t(lang, "affil.titre"),
+    intro: t(lang, "affil.intro"),
+    bientot: t(lang, "affil.bientot"),
+    devenir: t(lang, "affil.devenir"),
+    code: t(lang, "affil.code"),
+    lienTitre: t(lang, "affil.lien.titre"),
+    lienIntro: t(lang, "affil.lien.intro"),
+    erreur: t(lang, "affil.erreur"),
+    copy: t(lang, "common.copy"),
+    copied: t(lang, "common.copied"),
+    vTitre: t(lang, "affil.vendeur.titre"),
+    vIntro: t(lang, "affil.vendeur.intro"),
+    vBornes: t(lang, "affil.vendeur.bornes", { min: String(minPct), max: String(maxPct) }),
+    vPrepa: t(lang, "affil.vendeur.prepa"),
+    vTaux: t(lang, "affil.vendeur.taux"),
+    vOffrir: t(lang, "affil.vendeur.offrir"),
+    vRetirer: t(lang, "affil.vendeur.retirer"),
+    vActuel: t(lang, "affil.vendeur.actuel"),
+    vAucun: t(lang, "affil.vendeur.aucun"),
+    vSansProduit: t(lang, "affil.vendeur.sansProduit"),
+    vProduitPremier: t(lang, "vendeur.produits.premier"),
+  };
+
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
@@ -82,12 +112,12 @@ export default async function AffiliationPage() {
           <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.nav.affiliation")}</h1>
           <AffiliationManager
             key={user.id}
-            lang={lang}
+            labels={labels}
             dormant={dormant}
             code={code}
             baseUrl={siteUrl()}
-            minBps={minBps}
-            maxBps={maxBps}
+            minPct={minPct}
+            maxPct={maxPct}
             produits={produits}
           />
         </VendeurShell>

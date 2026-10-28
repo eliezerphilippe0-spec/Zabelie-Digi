@@ -3,7 +3,38 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopyField } from "@/components/copy-field";
-import { t, type Lang } from "@/lib/i18n";
+
+/**
+ * Libellés résolus CÔTÉ SERVEUR et passés en props. Un composant client
+ * n'importe jamais `t()` ni le dictionnaire (`tests/i18n-client-discipline`,
+ * règle en tête de `lib/i18n.ts`) : sur un Android d'entrée de gamme en 3G,
+ * embarquer le dictionnaire au bundle est exactement le coût qu'on évite.
+ * `lienIntro` et `vActuel` arrivent avec leur gabarit `{code}` / `{pct}`,
+ * remplacé ici par une substitution de chaîne (jamais `t`).
+ */
+export type AffiliationLabels = {
+  titre: string;
+  intro: string;
+  bientot: string;
+  devenir: string;
+  code: string;
+  lienTitre: string;
+  lienIntro: string; // {code}
+  erreur: string;
+  copy: string;
+  copied: string;
+  vTitre: string;
+  vIntro: string;
+  vBornes: string;
+  vPrepa: string;
+  vTaux: string;
+  vOffrir: string;
+  vRetirer: string;
+  vActuel: string; // {pct}
+  vAucun: string;
+  vSansProduit: string;
+  vProduitPremier: string;
+};
 
 export type ProduitAffiliable = {
   id: string;
@@ -31,20 +62,20 @@ export type ProduitAffiliable = {
  * lien.
  */
 export function AffiliationManager({
-  lang,
+  labels,
   dormant,
   code,
   baseUrl,
-  minBps,
-  maxBps,
+  minPct,
+  maxPct,
   produits,
 }: {
-  lang: Lang;
+  labels: AffiliationLabels;
   dormant: boolean;
   code: string | null;
   baseUrl: string;
-  minBps: number;
-  maxBps: number;
+  minPct: number;
+  maxPct: number;
   produits: ProduitAffiliable[];
 }) {
   const router = useRouter();
@@ -59,51 +90,46 @@ export function AffiliationManager({
       const res = await fetch("/api/affiliate", { method: "POST" });
       const data = await res.json();
       if (!res.ok || !data?.code) {
-        setErreur(t(lang, "affil.erreur"));
+        setErreur(labels.erreur);
         return;
       }
       setMonCode(data.code as string);
       router.refresh();
     } catch {
-      setErreur(t(lang, "affil.erreur"));
+      setErreur(labels.erreur);
     } finally {
       setInscription(false);
     }
   }
 
-  const minPct = minBps / 100;
-  const maxPct = maxBps / 100;
-
   return (
     <div className="mt-6 space-y-8">
       {/* ── PARTAGEUR ─────────────────────────────────────────────────────── */}
       <section aria-labelledby="affil-partageur" className="rounded-2xl border border-line bg-surface/60 p-5">
-        <h2 id="affil-partageur" className="text-lg font-semibold">{t(lang, "affil.titre")}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "affil.intro")}</p>
+        <h2 id="affil-partageur" className="text-lg font-semibold">{labels.titre}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{labels.intro}</p>
 
         {dormant ? (
           <p className="mt-4 rounded-xl border border-line bg-ink/30 px-4 py-3 text-sm text-mist">
-            {t(lang, "affil.bientot")}
+            {labels.bientot}
           </p>
         ) : monCode ? (
           <div className="mt-4 space-y-3">
             <div>
-              <p className="text-xs text-mist">{t(lang, "affil.code")}</p>
-              <p className="code-lisible mt-1 text-xl font-extrabold text-accent">{monCode}</p>
+              <p className="text-xs text-mist">{labels.code}</p>
+              <p className="code-lisible mt-1 text-lg font-extrabold text-accent">{monCode}</p>
             </div>
             <div>
-              <p className="text-xs text-mist">{t(lang, "affil.lien.titre")}</p>
+              <p className="text-xs text-mist">{labels.lienTitre}</p>
               <p className="mt-1 flex flex-wrap items-center gap-1 break-all text-sm">
                 <span className="select-all">{`${baseUrl}/?ref=${monCode}`}</span>
                 <CopyField
                   value={`${baseUrl}/?ref=${monCode}`}
-                  label={t(lang, "common.copy")}
-                  copiedLabel={t(lang, "common.copied")}
+                  label={labels.copy}
+                  copiedLabel={labels.copied}
                 />
               </p>
-              <p className="mt-1 text-xs text-mist">
-                {t(lang, "affil.lien.intro", { code: monCode })}
-              </p>
+              <p className="mt-1 text-xs text-mist">{labels.lienIntro.replace("{code}", monCode)}</p>
             </div>
           </div>
         ) : (
@@ -114,7 +140,7 @@ export function AffiliationManager({
               disabled={inscription}
               className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
             >
-              {inscription ? "…" : t(lang, "affil.devenir")}
+              {inscription ? "…" : labels.devenir}
             </button>
           </div>
         )}
@@ -123,23 +149,21 @@ export function AffiliationManager({
 
       {/* ── VENDEUR (opt-in, option B) ────────────────────────────────────── */}
       <section aria-labelledby="affil-vendeur" className="rounded-2xl border border-line bg-surface/60 p-5">
-        <h2 id="affil-vendeur" className="text-lg font-semibold">{t(lang, "affil.vendeur.titre")}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "affil.vendeur.intro")}</p>
-        <p className="mt-1 text-xs text-mist">
-          {t(lang, "affil.vendeur.bornes", { min: String(minPct), max: String(maxPct) })}
-        </p>
+        <h2 id="affil-vendeur" className="text-lg font-semibold">{labels.vTitre}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{labels.vIntro}</p>
+        <p className="mt-1 text-xs text-mist">{labels.vBornes}</p>
         {/* Préparation permise : poser un taux dormant ne prélève rien. */}
         {dormant && (
           <p className="mt-3 rounded-xl border border-line bg-ink/30 px-4 py-3 text-xs text-mist">
-            {t(lang, "affil.vendeur.prepa")}
+            {labels.vPrepa}
           </p>
         )}
 
         {produits.length === 0 ? (
           <p className="mt-4 text-sm text-mist">
-            {t(lang, "affil.vendeur.sansProduit")}{" "}
+            {labels.vSansProduit}{" "}
             <a href="/vendre" className="text-cloud underline">
-              {t(lang, "vendeur.produits.premier")}
+              {labels.vProduitPremier}
             </a>
           </p>
         ) : (
@@ -149,12 +173,7 @@ export function AffiliationManager({
                 key={p.id}
                 className="rounded-xl border border-line bg-surface/60 px-4 py-3"
               >
-                <ProduitTaux
-                  lang={lang}
-                  produit={p}
-                  minPct={minPct}
-                  maxPct={maxPct}
-                />
+                <ProduitTaux labels={labels} produit={p} minPct={minPct} maxPct={maxPct} />
               </li>
             ))}
           </ul>
@@ -171,12 +190,12 @@ export function AffiliationManager({
  * borne revient quand même avec son message exact.
  */
 function ProduitTaux({
-  lang,
+  labels,
   produit,
   minPct,
   maxPct,
 }: {
-  lang: Lang;
+  labels: AffiliationLabels;
   produit: ProduitAffiliable;
   minPct: number;
   maxPct: number;
@@ -198,12 +217,12 @@ function ProduitTaux({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setErreur(data?.error ?? t(lang, "affil.erreur"));
+        setErreur(data?.error ?? labels.erreur);
         return;
       }
       router.refresh();
     } catch {
-      setErreur(t(lang, "affil.erreur"));
+      setErreur(labels.erreur);
     } finally {
       setLoading(false);
     }
@@ -220,12 +239,12 @@ function ProduitTaux({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setErreur(data?.error ?? t(lang, "affil.erreur"));
+        setErreur(data?.error ?? labels.erreur);
         return;
       }
       router.refresh();
     } catch {
-      setErreur(t(lang, "affil.erreur"));
+      setErreur(labels.erreur);
     } finally {
       setLoading(false);
     }
@@ -238,14 +257,14 @@ function ProduitTaux({
           <p className="truncate text-sm">{produit.title}</p>
           <p className="mt-0.5 text-xs text-mist">
             {actuelPct !== null
-              ? t(lang, "affil.vendeur.actuel", { pct: String(actuelPct) })
-              : t(lang, "affil.vendeur.aucun")}
+              ? labels.vActuel.replace("{pct}", String(actuelPct))
+              : labels.vAucun}
           </p>
         </div>
         <div className="flex items-end gap-2">
           <div className="w-20">
             <label className="text-xs text-mist" htmlFor={`taux-${produit.id}`}>
-              {t(lang, "affil.vendeur.taux")}
+              {labels.vTaux}
             </label>
             <input
               id={`taux-${produit.id}`}
@@ -264,7 +283,7 @@ function ProduitTaux({
             disabled={loading}
             className="min-h-11 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "…" : t(lang, "affil.vendeur.offrir")}
+            {loading ? "…" : labels.vOffrir}
           </button>
           {actuelPct !== null && (
             <button
@@ -273,7 +292,7 @@ function ProduitTaux({
               disabled={loading}
               className="min-h-11 rounded-xl border border-line px-3 py-2 text-xs font-medium text-mist transition hover:border-brand/50 hover:text-cloud disabled:opacity-60"
             >
-              {t(lang, "affil.vendeur.retirer")}
+              {labels.vRetirer}
             </button>
           )}
         </div>

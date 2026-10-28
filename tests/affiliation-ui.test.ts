@@ -51,8 +51,10 @@ test("manager : la dormance est évaluée AVANT le code — aucun lien programme
     iCode > iDormant,
     "`dormant ?` doit précéder `monCode ?` : sinon le lien de partage s'afficherait programme fermé."
   );
-  // Et la branche dormante rend bien le « bientôt », pas le lien.
-  assert.match(MANAGER, /dormant \?[\s\S]{0,160}affil\.bientot/);
+  // Et la branche dormante rend bien le « bientôt », pas le lien. Les libellés
+  // sont résolus serveur et passés en props (règle i18n client) : c'est donc
+  // `labels.bientot` que la branche dormante affiche.
+  assert.match(MANAGER, /dormant \?[\s\S]{0,160}labels\.bientot/);
 });
 
 test("manager : devenir affilié passe par POST /api/affiliate (503 si dormant, côté serveur)", () => {
