@@ -154,6 +154,22 @@ petite PR. **Premier point de contrôle humain** : aucune opération prod n'est
 requise par ce rapport ; l'armement du programme (`config.actif=true`) reste la
 décision du porteur, inchangée.
 
+## Suivi des constats
+
+Mis à jour le 2026-10-28, après le rapport. Un constat n'est « traité » que par
+un commit qui l'ancre dans un test éprouvé par mutation.
+
+| Constat | État | Où |
+|---------|------|----|
+| UX-01 | ✅ traité | liste « produits qui rapportent » : `lib/affiliation-catalogue.ts`, `tests/affiliation-catalogue.test.ts`, `docs/37` |
+| SEC-01 | ✅ traité | `requireActiveAccount` en tête du DELETE : `tests/affiliation-correctifs-audit.test.ts` |
+| SEC-02 | ✅ traité | la route ne renvoie plus le message de la base : code `ZB081` (libellé i18n côté client), 500 générique sinon |
+| UX-02 | ✅ traité | « Taux enregistré » / « Offre retirée », jamais annoncé sur un échec |
+| SEC-03 | ⏳ décision | lecture publique des taux, voulue : à acter |
+| SEC-04 | ⏳ le jour venu | policy à ajouter avec l'écran « mes gains » |
+| UI-01 | ⏳ transverse | anneau de focus, hors affiliation |
+| RES-01 | ⏳ optionnel | ligne de taux à 360 px |
+
 ## Annexe — Couverture
 
 - **Vérifié (lu)** : `app/tableau-de-bord/affiliation/page.tsx`, `components/affiliation-manager.tsx`, `app/api/affiliate/route.ts`, `app/api/products/affiliate-rate/route.ts`, `supabase/migrations/0081_affiliation.sql`, `proxy.ts`, `lib/affiliation.ts`, `app/api/checkout/route.ts` (sections attribution + prix + idempotence + gratis), `components/zabelie-coupon-manager.tsx` (comparaison de motif), `app/globals.css` (tokens `code-lisible`/`numeric`). État prod sondé en lecture seule le 2026-10-28 (dormance, bornes, compteurs, solvency).
