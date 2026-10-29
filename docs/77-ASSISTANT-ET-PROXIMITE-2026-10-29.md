@@ -250,6 +250,8 @@ après relecture.
 
 **Appliquée en production le 2026-10-29** (autorisation permanente du 2026-08-17 + instruction directe du porteur) : SQL reçu par Supabase == fichier du dépôt (sha256 `507d3397…`), ligne de registre `journal_supabase`, vérifiée après coup (140 communes, 19 ouvertes — le Nord —, 0 ouverte ailleurs, 10 départements et 5 quartiers intacts).
 
+**Vague 1 — l'Ouest ouvert le 2026-10-29**, sur instruction directe du porteur (« ouvre l'ouest dans admin zone »). Les 20 communes (Port-au-Prince, Delmas, Carrefour, Pétion-Ville, Tabarre, Cité Soleil, Kenscoff, Gressier, Léogâne, Petit-Goâve, Grand-Goâve, Cabaret, Arcahaie, Croix-des-Bouquets, Ganthier, Thomazeau, Fonds-Verrettes, Anse-à-Galets, Pointe-à-Raquette, Cornillon) sont ouvertes ; 20 lignes `zone.activate` au journal `zabelie_admin_actions` (acteur : le porteur, `metadata.via = agent-mcp`, même effet que le bouton « Rouvrir »). Vérifié sous le rôle `anon` réel : 39 communes visibles (Nord + Ouest), une commune encore fermée (Les Cayes) invisible. L'effectif de l'Ouest (20) est l'un des cinq recoupés avec une source externe ; les graphies kreyòl restent à relire. Les 8 autres départements (81 communes) restent fermés.
+
 **⚠️ Provenance non vérifiée.** Le 2026-10-29, le réseau de la session refusait
 `fr.wikipedia.org` et `en.wikipedia.org`, et le scraper n'avait pas de clé valide : aucune
 page de référence n'a pu être ouverte. La liste est celle de l'agent, de mémoire. Sa seule
