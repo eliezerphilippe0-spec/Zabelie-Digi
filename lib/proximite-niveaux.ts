@@ -39,3 +39,41 @@ export const RANG_PROXIMITE: Record<NiveauProximite, number> = {
   inconnue: 3,
   ailleurs: 4,
 };
+
+/** Proche = quartier, commune ou département : tout ce qui précède `inconnue`. */
+export function estProche(niveau: NiveauProximite): boolean {
+  return RANG_PROXIMITE[niveau] < RANG_PROXIMITE.inconnue;
+}
+
+/**
+ * Ce que l'acheteur lit d'un vendeur : le niveau, et SI ce niveau vient des zones
+ * où le vendeur DÉCLARE livrer (0158) plutôt que de l'endroit où il est installé.
+ *
+ * La distinction est affichée, pas décorative : « Vendeur dans votre commune »
+ * est un fait de localisation ; « Le vendeur déclare livrer dans votre commune »
+ * est une déclaration du vendeur, que Zabelie ne garantit pas (elle ne livre pas).
+ */
+export type ProximiteVendeur = { niveau: NiveauProximite; dessert: boolean };
+
+/**
+ * Fusionne la zone d'installation (`maison`) et le meilleur niveau de ses zones
+ * desservies (`desserte`).
+ *
+ * - le plus PROCHE gagne ; `dessert` n'est vrai que si la desserte est
+ *   STRICTEMENT plus proche (à égalité, le fait de localisation prime sur la
+ *   déclaration) ;
+ * - sans niveau proche : `ailleurs` si l'un des deux est connu et lointain,
+ *   sinon `inconnue` — jamais « loin » pour un vendeur dont on ignore tout.
+ *
+ * ⚠️ Une zone d'installation proche reste affichée comme telle même si le
+ * vendeur ne déclare livrer qu'ailleurs : « il est là » n'est pas « il livre
+ * là », et l'écran ne dit que le premier.
+ */
+export function fusionnerNiveaux(maison: NiveauProximite, desserte: NiveauProximite): ProximiteVendeur {
+  const maisonProche = estProche(maison);
+  if (estProche(desserte) && (!maisonProche || RANG_PROXIMITE[desserte] < RANG_PROXIMITE[maison])) {
+    return { niveau: desserte, dessert: true };
+  }
+  if (maisonProche) return { niveau: maison, dessert: false };
+  return { niveau: maison === "ailleurs" || desserte === "ailleurs" ? "ailleurs" : "inconnue", dessert: false };
+}

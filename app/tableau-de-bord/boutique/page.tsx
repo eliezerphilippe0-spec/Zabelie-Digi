@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { VendeurShell } from "@/components/vendeur-shell";
 import { ShareButtons } from "@/components/share-buttons";
 import { ProfileForm } from "@/components/profile-form";
+import { ServiceZonesEditor } from "@/components/service-zones-editor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { getZonesActives, libelleZone } from "@/lib/zones";
@@ -124,6 +125,20 @@ export default async function BoutiquePage() {
     reqErr: t(lang, "zone.req.err"),
   };
 
+  /* Lot 2 (docs/77 §8, 0158) : les zones où le vendeur DÉCLARE livrer. CLIENT DE
+     SESSION — lecture publique, mais c'est la session qui écrira (RLS). Table
+     absente (0158 pas encore appliquée) ou lecture en échec → section masquée,
+     rien d'inventé. Le plafond vient de la config en base, jamais d'ici. */
+  const sessionDb = await createClient();
+  const [{ data: svcRows, error: svcErr }, { data: svcCfg }] = await Promise.all([
+    sessionDb.from("zabelie_seller_service_zones").select("zone_id").eq("seller_id", user.id),
+    sessionDb.from("zabelie_service_zone_config").select("max_zones").maybeSingle(),
+  ]);
+  const zonesService = svcErr || zonesPourForm.length === 0 ? null : {
+    initial: ((svcRows ?? []) as { zone_id: string }[]).map((l) => l.zone_id),
+    max: (svcCfg as { max_zones: number } | null)?.max_zones ?? null,
+  };
+
   return (
     <div className="bg-grain min-h-dvh">
       <SiteNav />
@@ -210,6 +225,39 @@ export default async function BoutiquePage() {
               />
             </div>
           </section>
+
+          {/* Zones de service (docs/77 §8) : « Ki kote ou livre ? » — déclaratif, Zabelie ne livre pas. */}
+          {zonesService && (
+            <section id="zones-service" aria-labelledby="zones-service-titre" className="mt-10 scroll-mt-32">
+              <h2 id="zones-service-titre" className="titre-section">{t(lang, "svc.title")}</h2>
+              <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
+                <ServiceZonesEditor
+                  zones={zonesPourForm}
+                  initial={zonesService.initial}
+                  max={zonesService.max}
+                  labels={{
+                    title: t(lang, "svc.title"),
+                    hint: t(lang, "svc.hint"),
+                    depatman: t(lang, "zone.level.depatman"),
+                    komin: t(lang, "zone.level.komin"),
+                    katye: t(lang, "zone.level.katye"),
+                    allDepatman: t(lang, "svc.all.depatman"),
+                    allKomin: t(lang, "svc.all.komin"),
+                    add: t(lang, "svc.add"),
+                    remove: t(lang, "svc.remove"),
+                    empty: t(lang, "svc.empty"),
+                    count: t(lang, "svc.count"),
+                    save: t(lang, "svc.save"),
+                    saving: t(lang, "svc.saving"),
+                    saved: t(lang, "svc.saved"),
+                    errGeneric: t(lang, "svc.err.generic"),
+                    errMax: t(lang, "svc.err.max"),
+                    errZone: t(lang, "svc.err.zone"),
+                  }}
+                />
+              </div>
+            </section>
+          )}
         </VendeurShell>
       </main>
       <SiteFooter />

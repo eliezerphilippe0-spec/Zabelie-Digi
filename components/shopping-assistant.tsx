@@ -15,6 +15,8 @@ const FIELD = "mt-2 min-h-11 w-full rounded-xl border border-line bg-surface px-
 const PROXIMITE_LIBELLE: Record<NiveauProximite, "proxKatye" | "proxKomin" | "proxDepatman" | "proxAilleurs" | "proxInconnue"> = {
   katye: "proxKatye", komin: "proxKomin", depatman: "proxDepatman", ailleurs: "proxAilleurs", inconnue: "proxInconnue",
 };
+/** Quand le niveau vient des zones où le vendeur DÉCLARE livrer : le libellé l'attribue au vendeur. Seuls les niveaux proches ont une desserte. */
+const DESSERTE_LIBELLE = { katye: "desserteKatye", komin: "desserteKomin", depatman: "desserteDepatman" } as const;
 
 export function ShoppingAssistant({ lang, labels, conversational, sellerId, kindOptions }: {
   lang: Lang; labels: ShoppingCopy; conversational: boolean; sellerId?: string; kindOptions: { value: ProductKind; label: string }[];
@@ -95,7 +97,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
             <span className="text-sm font-bold text-accent">{p.position}</span>
             <p className="mt-2 text-xs text-mist">{kindOptions.find(option => option.value === p.kind)?.label}</p>
             <h3 className="mt-2 break-words text-lg font-bold">{p.title}</h3>
-            {p.proximite ? <p className="mt-2 text-xs font-semibold text-accent">{labels[PROXIMITE_LIBELLE[p.proximite]]}</p> : null}
+            {p.proximite ? <p className="mt-2 text-xs font-semibold text-accent">{labels[p.dessert && (p.proximite === "katye" || p.proximite === "komin" || p.proximite === "depatman") ? DESSERTE_LIBELLE[p.proximite] : PROXIMITE_LIBELLE[p.proximite]]}</p> : null}
             <dl className="mt-4 space-y-3 text-sm">
               <div><dt className="text-mist">{labels.price}</dt><dd className="text-lg font-bold text-accent">{isTrackedStockKind(p.kind) ? `${labels.from} ` : ""}{format(p.priceHtg)}</dd></div>
               <div><dt className="text-mist">{labels.difference}</dt><dd>{p.priceDifferenceHtg > 0 ? "+" : ""}{format(p.priceDifferenceHtg)}</dd></div>

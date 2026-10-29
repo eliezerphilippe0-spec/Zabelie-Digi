@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PRODUCT_KINDS, compteProximite, type ProductKind } from "@/lib/product-kind";
 // Types et ordre SEULEMENT (aucun import) : le fournisseur IA importe ce module,
 // et le test de confinement interdit tout chemin d'import vers la base.
-import { RANG_PROXIMITE, type NiveauProximite } from "@/lib/proximite-niveaux";
+import { RANG_PROXIMITE, type NiveauProximite, type ProximiteVendeur } from "@/lib/proximite-niveaux";
 
 // The model may extract intent; it never supplies prices, products or actions.
 export const ShoppingIntentSchema = z.object({
@@ -29,6 +29,12 @@ export type ShoppingRecommendation = ShoppingCandidate & {
   position: number; priceDifferenceHtg: number; matchedTerms: string[];
   /** `null` : non pertinent (fichier, prestation) ou aucun classement possible. */
   proximite: NiveauProximite | null;
+  /**
+   * Vrai si `proximite` vient des zones où le vendeur DÉCLARE livrer (0158) et non
+   * de son installation. L'écran l'attribue alors au vendeur — Zabelie ne livre
+   * pas et ne garantit pas la desserte.
+   */
+  dessert: boolean;
 };
 export type ShoppingResult = {
   intent: ShoppingIntent;
@@ -59,19 +65,20 @@ const normalized = (text: string) => text.normalize("NFD").replace(/[\u0300-\u03
 /**
  * Relevance precedes reviews and price. No commission or sponsored weighting.
  *
- * `proximite` (vendeur → niveau) n'est fourni que si la localité de l'acheteur a
+ * `proximite` (vendeur → niveau, et si ce niveau vient d'une desserte déclarée) n'est fourni que si la localité de l'acheteur a
  * été RECONNUE. Pour un produit physique, le vendeur le plus proche passe alors
  * avant, puis la pertinence : le vendeur livre lui-même (décision du porteur,
  * 2026-10-29), un vendeur lointain est donc moins probable. Personne n'est
  * écarté pour autant — un acheteur peut commander pour un proche, ailleurs.
  * Sans `proximite`, ou pour un fichier ou une prestation, l'ordre est inchangé.
  */
-export function rankShoppingCandidates(candidates: ShoppingCandidate[], intent: ShoppingIntent, sellerId?: string, proximite?: ReadonlyMap<string, NiveauProximite>): ShoppingRecommendation[] {
+export function rankShoppingCandidates(candidates: ShoppingCandidate[], intent: ShoppingIntent, sellerId?: string, proximite?: ReadonlyMap<string, ProximiteVendeur>): ShoppingRecommendation[] {
   const terms = shoppingTerms(intent.query);
   const preferences = shoppingTerms(intent.need);
   if (!terms.length || intent.budgetHtg === null) return [];
-  const niveau = (p: ShoppingCandidate): NiveauProximite | null =>
-    proximite && compteProximite(p.kind) ? (proximite.get(p.sellerId) ?? "inconnue") : null;
+  const lecture = (p: ShoppingCandidate): ProximiteVendeur | null =>
+    proximite && compteProximite(p.kind) ? (proximite.get(p.sellerId) ?? { niveau: "inconnue", dessert: false }) : null;
+  const niveau = (p: ShoppingCandidate): NiveauProximite | null => lecture(p)?.niveau ?? null;
   const seen = new Set<string>();
   const scored = candidates.flatMap(product => {
     if (seen.has(product.id) || !product.available || !Number.isSafeInteger(product.priceHtg) || product.priceHtg < 0
@@ -92,6 +99,7 @@ export function rankShoppingCandidates(candidates: ShoppingCandidate[], intent: 
   const selected = scored.slice(0, 3);
   return selected.map(({ product }, i) => ({ ...product, position: i + 1,
     proximite: niveau(product),
+    dessert: lecture(product)?.dessert ?? false,
     priceDifferenceHtg: product.priceHtg - selected[0].product.priceHtg,
     matchedTerms: [...terms, ...preferences].filter(t => normalized(`${product.title} ${product.description}`).includes(t)).filter((t, i, a) => a.indexOf(t) === i) }));
 }

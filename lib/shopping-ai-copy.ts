@@ -25,6 +25,7 @@ const fr = {
   proxNote: "Les offres physiques les plus proches sont classées en premier. La livraison est organisée par le vendeur.",
   proxKatye: "Dans votre quartier", proxKomin: "Dans votre commune", proxDepatman: "Dans votre département",
   proxAilleurs: "Dans une autre zone", proxInconnue: "Zone du vendeur non renseignée",
+  desserteKatye: "Le vendeur déclare livrer dans votre quartier", desserteKomin: "Le vendeur déclare livrer dans votre commune", desserteDepatman: "Le vendeur déclare livrer dans votre département",
 };
 export type ShoppingCopy = typeof fr;
 const ht: ShoppingCopy = {
@@ -51,6 +52,7 @@ const ht: ShoppingCopy = {
   proxNote: "Òf fizik ki pi pre yo parèt an premye. Se vandè a ki òganize livrezon an.",
   proxKatye: "Nan katye w la", proxKomin: "Nan komin ou a", proxDepatman: "Nan depatman w lan",
   proxAilleurs: "Nan yon lòt zòn", proxInconnue: "Zòn vandè a pa make",
+  desserteKatye: "Vandè a deklare li livre nan katye w la", desserteKomin: "Vandè a deklare li livre nan komin ou a", desserteDepatman: "Vandè a deklare li livre nan depatman w lan",
 };
 const en: ShoppingCopy = {
   type: "Offer type", allTypes: "All types", digitalNote: "Check file formats, license and access conditions on the listing.",
@@ -76,6 +78,7 @@ const en: ShoppingCopy = {
   proxNote: "The closest physical offers are ranked first. Delivery is organised by the seller.",
   proxKatye: "In your neighbourhood", proxKomin: "In your commune", proxDepatman: "In your department",
   proxAilleurs: "In another zone", proxInconnue: "Seller's zone not provided",
+  desserteKatye: "Seller says they deliver in your neighbourhood", desserteKomin: "Seller says they deliver in your commune", desserteDepatman: "Seller says they deliver in your department",
 };
 const es: ShoppingCopy = {
   type: "Tipo de oferta", allTypes: "Todos los tipos", digitalNote: "Comprueba los formatos, la licencia y las condiciones de acceso al archivo en la ficha.",
@@ -101,5 +104,6 @@ const es: ShoppingCopy = {
   proxNote: "Las ofertas físicas más cercanas se muestran primero. El vendedor organiza la entrega.",
   proxKatye: "En tu barrio", proxKomin: "En tu comuna", proxDepatman: "En tu departamento",
   proxAilleurs: "En otra zona", proxInconnue: "Zona del vendedor no indicada",
+  desserteKatye: "El vendedor declara entregar en tu barrio", desserteKomin: "El vendedor declara entregar en tu comuna", desserteDepatman: "El vendedor declara entregar en tu departamento",
 };
 export const SHOPPING_COPY: Record<Lang, ShoppingCopy> = { fr, ht, en, es };

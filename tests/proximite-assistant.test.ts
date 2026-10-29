@@ -20,7 +20,7 @@ const offre = (id: string, sellerId: string, patch: Partial<ShoppingCandidate> =
   id, slug: id, title: "Téléphone", description: "photo", sellerId, kind: KIND_PHYSICAL,
   priceHtg: 10000, ratingAverage: null, ratingCount: 0, available: true, ...patch,
 });
-const prox = (o: Record<string, NiveauProximite>) => new Map(Object.entries(o));
+const prox = (o: Record<string, NiveauProximite>) => new Map(Object.entries(o).map(([id, niveau]) => [id, { niveau, dessert: false }]));
 const ids = (r: { id: string }[]) => r.map((p) => p.id);
 
 // ───────────────────────── l'ordre doit CHANGER ───────────────────────────────
@@ -154,7 +154,7 @@ test("confinement : lib/shopping-ai.ts n'importe que les types de proximité, ja
 test("écran : chaque niveau a son libellé (Record), la localité comprise est dite", () => {
   assert.match(UI, /PROXIMITE_LIBELLE: Record<NiveauProximite,/);
   assert.match(UI, /result\.localite \?[\s\S]{0,200}labels\.localiteInconnue/);
-  assert.match(UI, /p\.proximite \? <p[^>]*>\{labels\[PROXIMITE_LIBELLE\[p\.proximite\]\]\}<\/p> : null/);
+  assert.match(UI, /p\.proximite \? <p[^>]*>\{labels\[p\.dessert && \(p\.proximite === "katye" \|\| p\.proximite === "komin" \|\| p\.proximite === "depatman"\) \? DESSERTE_LIBELLE\[p\.proximite\] : PROXIMITE_LIBELLE\[p\.proximite\]\]\}<\/p> : null/);
 });
 
 test("libellés : la localité et les cinq niveaux existent dans les quatre langues, et {zone} y figure", () => {

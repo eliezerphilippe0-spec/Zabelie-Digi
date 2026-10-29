@@ -33,5 +33,6 @@ bash "$ROOT/supabase/tests/essayage_plafond_concurrent.sh"
 bash "$ROOT/supabase/tests/essayage_mutations.sh"
 bash "$ROOT/supabase/tests/stripe_disputes_concurrent.sh"
 bash "$ROOT/supabase/tests/product_media_review_concurrent.sh"
+bash "$ROOT/supabase/tests/service_zones_concurrent.sh"
 
 echo "✓ tests SQL money-path OK"

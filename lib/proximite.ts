@@ -205,3 +205,26 @@ export function niveauProximite(vendeurId: string, ens: EnsemblesVendeurs): Nive
   if (ens.depatman.has(vendeurId)) return "depatman";
   return ens.avecZone.has(vendeurId) ? "ailleurs" : "inconnue";
 }
+
+/**
+ * Le meilleur niveau de proximité des zones où un vendeur DÉCLARE livrer
+ * (`zabelie_seller_service_zones`, 0158), pour un acheteur de périmètres `per`.
+ *
+ * Même règle que pour la zone d'installation : le plus petit périmètre de
+ * l'acheteur qui contient une zone desservie. Une zone desservie plus LARGE que
+ * l'acheteur (« toute la commune » pour un acheteur d'un quartier) tombe dans le
+ * périmètre de son propre niveau — la commune — donc « dessert votre commune » :
+ * précis plutôt que flatteur. Une zone plus étroite, dans la commune de
+ * l'acheteur qui n'a déclaré que sa commune, compte comme « commune ».
+ *
+ * Aucune zone déclarée → `inconnue` (on ne sait pas), jamais `ailleurs`.
+ * Des zones déclarées, aucune près de l'acheteur → `ailleurs`.
+ */
+export function niveauDesserte(zoneIds: readonly string[], per: Perimetres): NiveauProximite {
+  if (zoneIds.length === 0) return "inconnue";
+  const dans = (perimetre: readonly string[] | null) => !!perimetre && zoneIds.some((id) => perimetre.includes(id));
+  if (dans(per.katye)) return "katye";
+  if (dans(per.komin)) return "komin";
+  if (dans(per.depatman)) return "depatman";
+  return "ailleurs";
+}
