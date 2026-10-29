@@ -33,7 +33,10 @@ export type DemandeRow = {
   requester: string;
 };
 
-export function ZonesAdmin({ zones, demandes }: { zones: ZoneRow[]; demandes: DemandeRow[] }) {
+/** Une zone qui a reçu des clics « je cherche un vendeur ici » (0162), avec les vendeurs qui déclarent y livrer. */
+export type DemandeZoneRow = { zoneId: string; label: string; hits: number; vendeurs: number };
+
+export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]; demandes: DemandeRow[]; demandeZones: DemandeZoneRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -133,6 +136,39 @@ export function ZonesAdmin({ zones, demandes }: { zones: ZoneRow[]; demandes: De
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      {/* ── La demande par zone : où recruter (0162, docs/77 §12) ─────────── */}
+      <section aria-labelledby="demande-zones">
+        <h2 id="demande-zones" className="text-lg font-semibold">Demande par zone — 30 jours</h2>
+        <p className="mt-1 max-w-2xl text-xs text-mist">
+          Clics « je cherche un vendeur ici », sans compte ni identifiant : un clic = une personne de
+          plus qui dit chercher dans cette zone. La colonne « vendeurs » ne compte que ceux qui ont
+          DÉCLARÉ y livrer — c&apos;est un plancher : un vendeur installé là sans rien déclarer n&apos;y
+          figure pas. Zéro vendeur déclaré et des clics, c&apos;est une zone où recruter.
+        </p>
+        {demandeZones.length === 0 ? (
+          <p className="mt-3 text-sm text-mist">Aucun clic sur les 30 derniers jours.</p>
+        ) : (
+          <table className="mt-3 w-full max-w-2xl text-left text-sm">
+            <thead>
+              <tr className="text-xs text-mist">
+                <th className="py-1 pr-3 font-medium">Zone</th>
+                <th className="py-1 pr-3 font-medium">Clics</th>
+                <th className="py-1 font-medium">Vendeurs déclarant livrer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {demandeZones.slice(0, 20).map((l) => (
+                <tr key={l.zoneId} className="border-t border-line">
+                  <td className="py-1.5 pr-3">{l.label}</td>
+                  <td className="numeric py-1.5 pr-3">{l.hits}</td>
+                  <td className={`numeric py-1.5 ${l.vendeurs === 0 ? "font-semibold text-accent" : ""}`}>{l.vendeurs}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
 

@@ -438,7 +438,61 @@ que la lecture du cookie (§11).
 - Suites complètes : **TypeScript 2601 tests**, **SQL** rejouée sur un Postgres neuf (les trois scripts de
   concurrence relancés à part avec l'URL `localhost` qu'ils exigent).
 
+**Appliquée en production le 2026-10-29 à 14:09:48 UTC** (PR #450, `6ad07b1`), **avant** la fusion, sous
+l'autorisation permanente du 2026-08-17 et l'instruction directe du jour : SQL reçu par Supabase == fichier,
+à l'octet (SHA-256 `1a07a836…`, MD5 `9d4c4c7b…`), ligne de registre `journal_supabase` (empreinte canonique
+`89d7182a…`) — registre à **161 lignes pour 161 fichiers**. Les post-conditions de la migration (RLS, droits,
+garde, trigger) ont tourné en production.
+
 **Ce que ce lot ne prouve pas.** La CI e2e ne sert pas de zones à la fiche produit (son faux Supabase ne le
 fait que pour un scénario d'identité) : le sélecteur y est donc **masqué**, et le parcours d'achat y reste
 celui d'avant — c'est voulu, mais ce n'est pas un test du sélecteur. La vérification navigateur ci-dessus est
 manuelle et n'est pas committée.
+
+### 12.2 Lot B — « Aucune offre pour cette zone » + la demande capturée (`0162`)
+
+**Le trou.** L'acheteur qui filtrait une zone vide lisait « aucun résultat » : personne n'apprenait rien. Or une
+zone ouverte sans vendeur est **le seul signal de recrutement** qu'une marketplace sans offre locale puisse
+produire (la logique de `0047`, appliquée aux zones). Inspiré de Mercado Libre et de Jumia : savoir **où**
+l'offre manque avant de la construire.
+
+**Ce qui est construit.**
+- **Écran « zone sans vendeur »** dans le catalogue — affiché **seulement** quand la zone est le **seul**
+  filtre actif (ni recherche, ni rayon, ni sous-rayon, ni prix, ni univers). Avec un autre filtre, le vide ne
+  dit plus rien de la zone, et l'écran générique reste. Deux gestes : **« Je cherche un vendeur ici »** et
+  **« Inviter un vendeur (WhatsApp) »** (lien `wa.me/?text=` sans numéro, message prérempli avec le nom de la
+  zone et le lien `/vendre` — c'est le canal WhatsApp, puisque `RESEND_API_KEY` est absente).
+- **`0162`** : `zabelie_zone_demand`, un **compteur par zone et par jour**. **Aucun identifiant** — ni compte,
+  ni IP, ni empreinte de session, ni texte libre. Écriture par une fonction `security definer` retirée à
+  `public`/`anon`/`authenticated`, appelée par le service-role depuis la route ; RLS active, **aucune
+  policy** : un client ne lit ni n'écrit rien. La fonction refuse une zone inconnue ou fermée.
+- **`POST /api/zone/demande`** : publique par conception, gardée par le contrôle d'origine **et** un débit borné
+  (IP **hachée** à la minute et au jour, puis global) ; elle ne transmet à la base que l'identifiant de zone.
+- **Administration** (`/admin/zones`) : « Demande par zone — 30 jours », avec le nombre de vendeurs qui
+  **déclarent** y livrer. « Zéro vendeur et des clics » = une zone où recruter. Le nombre de vendeurs est un
+  **plancher** (un vendeur installé là sans rien déclarer n'y figure pas) : l'écran le dit.
+
+**Choix à connaître.**
+- **Un clic explicite, pas un compteur passif.** Les robots d'indexation parcourent les URL de filtre : un
+  compteur de visites compterait des fantômes (la règle de `0047` : « on irait recruter un commerçant sur un
+  fantôme »). Un clic est un signal plus rare mais honnête.
+- **Pas d'identifiant, donc pas de ligne de politique** : le compteur lui-même ne contient aucune donnée
+  personnelle. (Le débit de la route, lui, passe par l'IP hachée dans `zabelie_rate_limit`, comme l'assistant
+  d'achat — pratique existante, non modifiée.)
+- **Une conséquence assumée de « pas d'identifiant »** : on ne compte pas de personnes distinctes. Un appareil
+  ne clique qu'une fois par zone (commodité du navigateur), la route borne le reste ; le chiffre est un ordre
+  de grandeur, pas un décompte.
+- **La sonde de présence est étendue** : `tests/objets-requis-couverture.test.ts` exige que tout `.rpc()` du code
+  figure dans `zabelie_objets_requis()` (sinon `/api/admin/coherence` resterait vert pendant que le clic serait
+  mort) — il a rougi à la première version. `0162` redéfinit donc la sonde **en entier** (forme de 0085→0156),
+  avec une ligne de plus. Vérifié avant l'écriture : la définition déployée en production est **identique** à
+  celle de `0156` (même MD5 de `pg_get_functiondef`), donc la copie ne perd rien. La production signale **une**
+  absence (`zabelie_purge_sent_notices`, de `0056`) : c'est l'absence VOLONTAIRE documentée par `CLAUDE.md`
+  (migration gelée jusqu'aux arbitrages D-10→D-14).
+- Aucune purge n'est nécessaire (au plus une ligne par zone et par jour, sans donnée personnelle), donc aucune
+  fonction de maintenance sans appelant n'est créée (`tests/crons-appelants.test.ts`).
+
+**Éprouvé (lot B).** SQL `zone_demand.test.sql` (D1→D5) et **6 mutations de la migration attrapées** ; 11 tests
+TypeScript (route, classement pur, structures qui commandent) et **12 mutations attrapées** (débit par IP,
+zone brute, origine, refus de la base ignoré, panne déguisée en succès, IP brute comme clé, couverture,
+tri, compteurs nuls, trois conditions de l'écran).

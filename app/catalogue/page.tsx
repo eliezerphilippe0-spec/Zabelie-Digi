@@ -27,6 +27,8 @@ import { lireZoneAcheteur } from "@/lib/zone-acheteur-serveur";
 import { paramsCatalogue } from "@/lib/zone-acheteur";
 import { maZoneLabels } from "@/lib/ma-zone-labels";
 import { MaZone } from "@/components/ma-zone";
+import { ZoneSansVendeur } from "@/components/zone-sans-vendeur";
+import { siteUrl } from "@/lib/site-url";
 import { t, tn } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -168,6 +170,10 @@ export default async function CataloguePage({
   // Filtre en cours = recherche OU catégorie. Sert à distinguer « rien ne
   // correspond » de « le catalogue est vide », qui appellent des réponses
   // opposées : reformuler d'un côté, publier de l'autre.
+  /* La zone est le SEUL filtre actif (ni recherche, ni rayon, ni prix) : c'est le seul cas où « rien
+   * dans cette zone » est une vérité sur la zone et pas sur une recherche trop étroite. Alors seulement,
+   * l'écran vide propose de dire « je cherche un vendeur ici » (docs/77 §12, lot B). */
+  const zoneSeule = Boolean(zoneActive) && !q && !universe && activeCat === "Tout" && !sous && minPrice === undefined && maxPrice === undefined;
   const filtre = Boolean(q) || activeCat !== "Tout" || !!universe || !!zoneId || minPrice !== undefined || maxPrice !== undefined;
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
@@ -516,6 +522,25 @@ export default async function CataloguePage({
               >
                 {t(lang, "catalog.miss.share")}
               </a>
+            </div>
+          ) : zoneSeule && zoneActive ? (
+            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+              <p className="text-base font-semibold text-cloud">
+                {t(lang, "zsv.title").replace("{zone}", libelleZone(zoneActive, lang))}
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-sm text-mist">{t(lang, "zsv.body")}</p>
+              <ZoneSansVendeur
+                zoneId={zoneActive.id}
+                shareHref={`https://wa.me/?text=${encodeURIComponent(
+                  t(lang, "zsv.shareText").replace("{zone}", libelleZone(zoneActive, lang)).replace("{url}", `${siteUrl()}/vendre`),
+                )}`}
+                labels={{ ask: t(lang, "zsv.ask"), asking: t(lang, "zsv.asking"), asked: t(lang, "zsv.asked"), error: t(lang, "zsv.error"), share: t(lang, "zsv.share") }}
+              />
+              <p className="mt-4 text-sm">
+                <Link href="/catalogue" className="text-mist underline hover:text-cloud">
+                  {t(lang, "catalog.reset")}
+                </Link>
+              </p>
             </div>
           ) : minPrice !== undefined || maxPrice !== undefined || !!zoneId ? (
             <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
