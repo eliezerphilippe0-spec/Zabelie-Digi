@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { retrieveOrderPayment, redactPayment } from "@/lib/moncash";
 import { reconcilePayments, type ReconcileDeps } from "@/lib/reconcile";
+import { secretEgal } from "@/lib/secret-egal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,10 +29,10 @@ async function authorize(req: Request): Promise<boolean> {
   const cronSecret = process.env.CRON_SECRET;
   const reconcileSecret = process.env.RECONCILE_SECRET;
 
-  if (cronSecret && bearer === cronSecret) return true;
+  if (cronSecret && secretEgal(bearer, cronSecret)) return true;
   if (reconcileSecret) {
-    if (bearer === reconcileSecret) return true;
-    if (req.headers.get("x-reconcile-secret") === reconcileSecret) return true;
+    if (secretEgal(bearer, reconcileSecret)) return true;
+    if (secretEgal(req.headers.get("x-reconcile-secret"), reconcileSecret)) return true;
   }
   if (req.method === "POST" && req.headers.get("content-type")?.startsWith("application/json")) {
     const user = await getAdminUser();

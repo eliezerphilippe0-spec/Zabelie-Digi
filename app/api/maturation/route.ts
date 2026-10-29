@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { secretEgal } from "@/lib/secret-egal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,8 +15,8 @@ function authorize(req: Request): boolean {
   const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
   const cron = process.env.CRON_SECRET;
   const manual = process.env.RECONCILE_SECRET;
-  if (cron && bearer === cron) return true;
-  if (manual && (bearer === manual || req.headers.get("x-reconcile-secret") === manual))
+  if (cron && secretEgal(bearer, cron)) return true;
+  if (manual && (secretEgal(bearer, manual) || secretEgal(req.headers.get("x-reconcile-secret"), manual)))
     return true;
   return false;
 }

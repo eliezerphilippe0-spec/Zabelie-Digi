@@ -65,7 +65,7 @@ test("le garde PARTAGÉ vérifie réellement le rôle, sinon les routes qui s'y 
   );
   assert.match(
     src,
-    /bearer === cron|bearer === manual/,
+    /secretEgal\(bearer, cron\)|secretEgal\(bearer, manual\)/,
     "`autoriserAdmin` ne compare plus les jetons cron : les crons Vercel " +
       "recevraient 401 sur toutes les routes gardées"
   );
