@@ -492,6 +492,13 @@ l'offre manque avant de la construire.
 - Aucune purge n'est nécessaire (au plus une ligne par zone et par jour, sans donnée personnelle), donc aucune
   fonction de maintenance sans appelant n'est créée (`tests/crons-appelants.test.ts`).
 
+**Appliquée en production le 2026-10-29 à 14:30:35 UTC** (PR #451, `95cadcf`), **avant** la fusion, sous l'autorisation
+permanente du 2026-08-17 et l'instruction directe du jour : SQL reçu par Supabase == fichier, à l'octet (SHA-256
+`e34bedaf…`, MD5 `6021f829…`), ligne de registre `journal_supabase` (empreinte canonique `1f049c6b…`) — registre à
+**162 lignes pour 162 fichiers**. Vérifié en production après coup : la sonde compte **176 objets dont 175
+présents** et voit `zabelie_record_zone_demand(uuid)` ; la fonction n'est exécutable ni par `anon` ni par
+`authenticated`.
+
 **Éprouvé (lot B).** SQL `zone_demand.test.sql` (D1→D5) et **6 mutations de la migration attrapées** ; 11 tests
 TypeScript (route, classement pur, structures qui commandent) et **12 mutations attrapées** (débit par IP,
 zone brute, origine, refus de la base ignoré, panne déguisée en succès, IP brute comme clé, couverture,
