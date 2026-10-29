@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { repartir } from "@/lib/webhooks";
 import { avecBail } from "@/lib/cron-lease";
+import { secretEgal } from "@/lib/secret-egal";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export const maxDuration = 60;
 function authorize(req: Request): boolean {
   const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
   const cron = process.env.CRON_SECRET;
-  return Boolean(cron && bearer === cron);
+  return Boolean(cron && secretEgal(bearer, cron));
 }
 
 async function handle(req: Request) {

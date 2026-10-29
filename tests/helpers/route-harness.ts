@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { secretEgal } from "../../lib/secret-egal";
 
 /** Execute the real route with explicit I/O doubles; no network or database writes. */
 export function loadRoute(file: string, overrides: Record<string, unknown>, env: Record<string, string> = {}, globals: Record<string, unknown> = {}) {
@@ -12,7 +13,21 @@ export function loadRoute(file: string, overrides: Record<string, unknown>, env:
     "next/server": { NextResponse: { json: Response.json } },
     "@/lib/i18n-server": { getLang: async () => "fr" },
     "@/lib/i18n": { t: (_lang: string, key: string) => key },
+    // Pure : la vraie comparaison en temps constant (docs/78 L3), jamais un double.
+    "@/lib/secret-egal": { secretEgal },
+    // Compte actif par défaut ; un test de suspension le remplace explicitement.
+    "@/lib/auth": { requireActiveAccount: async () => null },
+    "@/lib/api-erreur": {
+      erreurTraduite: async (cle: string, status: number) => Response.json({ error: cle }, { status }),
+    },
   }, overrides);
+  /* `echecBase` (docs/78 L4) rend la phrase de `erreurTraduite` : un double qui ne
+     fournit que `erreurTraduite` reçoit la même délégation qu'en production. */
+  const erreurs = stubs["@/lib/api-erreur"] as Record<string, unknown>;
+  if (typeof erreurs.erreurTraduite === "function" && !("echecBase" in erreurs)) {
+    const traduite = erreurs.erreurTraduite as (cle: string, status: number) => Promise<Response>;
+    stubs["@/lib/api-erreur"] = { ...erreurs, echecBase: (_route: string, _error: unknown, cle: string, status: number) => traduite(cle, status) };
+  }
   const code = ts.transpileModule(source, {
     fileName: file,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },

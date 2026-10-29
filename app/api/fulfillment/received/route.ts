@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { echecBase } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { codeHttpDuMotif, type ResultatDeclaration } from "@/lib/fulfillment";
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return echecBase("fulfillment/received", error, "api.write.failed", 500);
   }
   const res = (data ?? {}) as ResultatDeclaration;
   if (!res.ok) {

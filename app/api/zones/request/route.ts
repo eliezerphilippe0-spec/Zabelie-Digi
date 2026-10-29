@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { UUID_RE } from "@/lib/collections";
-import { erreurTraduite } from "@/lib/api-erreur";
+import { echecBase, erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     if (error.message.includes("ZB070")) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return echecBase("zones/request", error, "api.write.failed", 500);
   }
   return NextResponse.json({ ok: true });
 }

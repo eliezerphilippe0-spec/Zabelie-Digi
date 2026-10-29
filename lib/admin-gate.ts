@@ -1,4 +1,5 @@
 import { getAdminUser } from "@/lib/auth";
+import { secretEgal } from "@/lib/secret-egal";
 
 /**
  * LE GARDE D'ADMINISTRATION — extrait de `app/api/admin/coherence/route.ts`
@@ -34,8 +35,8 @@ export async function autoriserAdmin(req: Request): Promise<boolean> {
   const bearer = req.headers.get("authorization")?.replace("Bearer ", "");
   const cron = process.env.CRON_SECRET;
   const manual = process.env.RECONCILE_SECRET;
-  if (cron && bearer === cron) return true;
-  if (manual && (bearer === manual || req.headers.get("x-reconcile-secret") === manual))
+  if (cron && secretEgal(bearer, cron)) return true;
+  if (manual && (secretEgal(bearer, manual) || secretEgal(req.headers.get("x-reconcile-secret"), manual)))
     return true;
   const user = await getAdminUser();
   return user?.role === "admin";

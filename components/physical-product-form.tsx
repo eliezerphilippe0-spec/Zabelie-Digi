@@ -78,6 +78,7 @@ export function PhysicalProductForm({
     photoFailed: string;
     photoRetry: string;
     photoChoose: string;
+    photoPick: string;
     photoPrepareError: string;
     manage: string;
     error: string;
@@ -361,14 +362,17 @@ export function PhysicalProductForm({
         <h2 id="draft-saved" className="font-semibold">{listingLabels.saved}</h2>
         <p className="text-sm text-mist">{listingLabels.draftNote}</p>
         {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
-        <label className="block text-sm font-semibold">
+        {/* Bouton dans la langue du vendeur : le champ natif affichait « Choose File »
+            dans la langue du navigateur (audit du 2026-10-29). `sr-only`, pas
+            `hidden` : le champ reste joignable au clavier. */}
+        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
           {listingLabels.photoChoose}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             disabled={busy || compressing}
             onChange={(e) => selectPhoto(e.target.files?.[0] ?? null)}
-            className="mt-2 block w-full min-w-0 text-sm"
+            className="sr-only"
           />
         </label>
         <button type="button" onClick={retryPhoto} disabled={busy || compressing || !photo}
@@ -412,7 +416,7 @@ export function PhysicalProductForm({
       {storageWarning}
       <fieldset disabled={busy || !reviewReady || review} className="min-w-0 space-y-5">
       {/* ── 1. PHOTO ─────────────────────────────────────────────────── */}
-      <label className="block">
+      <div className="block">
         <span className="text-sm font-semibold">Photo du produit</span>
         <div className="mt-2 flex items-center gap-4">
           {photoPreview ? (
@@ -427,14 +431,17 @@ export function PhysicalProductForm({
               📷
             </div>
           )}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            capture="environment"
-            disabled={busy || compressing}
-            onChange={(e) => selectPhoto(e.target.files?.[0] ?? null)}
-            className="min-w-0 w-full text-sm"
-          />
+          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+            {photoPreview ? listingLabels.photoChoose : listingLabels.photoPick}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              disabled={busy || compressing}
+              onChange={(e) => selectPhoto(e.target.files?.[0] ?? null)}
+              className="sr-only"
+            />
+          </label>
         </div>
         {/* Le vendeur doit COMPRENDRE que la plateforme travaille pour lui :
             sans ce retour, une attente d'une seconde ressemble à un bug et le
@@ -455,7 +462,7 @@ export function PhysicalProductForm({
             jan l ye.
           </p>
         )}
-      </label>
+      </div>
 
       {/* ── 2. TITRE + PRIX + QUANTITÉ ───────────────────────────────── */}
       <label className="block">

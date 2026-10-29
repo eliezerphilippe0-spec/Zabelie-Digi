@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { echecBase } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     .eq("id", payment.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return echecBase("zelle/reference", error, "api.write.failed", 500);
   }
   return NextResponse.json({ ok: true });
 }

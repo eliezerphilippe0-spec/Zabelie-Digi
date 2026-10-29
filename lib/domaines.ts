@@ -59,6 +59,21 @@ export function cheminSurDomaine(chemin: string): "boutique" | "zabelie" {
 }
 
 /**
+ * Adresse de renvoi vers Zabelie d'un chemin reçu sur le domaine d'un vendeur.
+ * Le chemin est POSÉ sur l'adresse du site, jamais résolu contre elle :
+ * `new URL("//evil.example/x", site)` — ou `/\evil.example/x`, que l'URL lit
+ * comme `//` — rendrait `https://evil.example/x`, une redirection ouverte
+ * signée par le domaine du vendeur (audit du 2026-10-29, docs/78 L7).
+ */
+export function renvoiVersZabelie(chemin: string, recherche: string, site: string): URL {
+  const cible = new URL(site);
+  cible.pathname = chemin;
+  cible.search = recherche;
+  cible.hash = "";
+  return cible;
+}
+
+/**
  * Hôte → adresse de boutique, lu par le PROXY (0125). Un `fetch` nu vers la
  * RPC publique `zabelie_domaine_boutik` : le proxy n'importe aucun client
  * Supabase. Résoudre ici, et non dans une page, est ce qui permet un VRAI

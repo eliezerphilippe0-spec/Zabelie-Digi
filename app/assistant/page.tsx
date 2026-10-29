@@ -17,7 +17,11 @@ import { maZoneLabels } from "@/lib/ma-zone-labels";
 import { MaZone } from "@/components/ma-zone";
 
 export const dynamic = "force-dynamic";
-export const metadata = { robots: { index: false, follow: true } };
+/** Titre d'onglet propre : la page portait celui de l'accueil (audit du 2026-10-29). */
+export async function generateMetadata() {
+  const lang = await getLang();
+  return { title: SHOPPING_COPY[lang].title, robots: { index: false, follow: true } };
+}
 
 export default async function AssistantPage({ searchParams }: { searchParams: Promise<{ vendeur?: string }> }) {
   const [params, lang] = await Promise.all([searchParams, getLang()]);

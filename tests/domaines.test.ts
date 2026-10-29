@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FORMAT_DOMAINE, cheminSurDomaine, enregistrementsDns, estHoteZabelie, hoteDe, normaliserDomaine, resoudreDomaine } from "../lib/domaines";
+import { FORMAT_DOMAINE, cheminSurDomaine, enregistrementsDns, estHoteZabelie, hoteDe, normaliserDomaine, renvoiVersZabelie, resoudreDomaine } from "../lib/domaines";
 import { domainePointeVersZabelie } from "../lib/domaine-sonde";
 
 /**
@@ -88,7 +88,8 @@ test("DM5 — branchements : proxy avant la session, admin sonde avant de décid
   const proxy = readFileSync("proxy.ts", "utf8");
   const branche = proxy.indexOf("if (!estHoteZabelie(hote)) {");
   assert.ok(branche > 0 && branche < proxy.indexOf("await updateSession(request"), "le domaine vendeur est traité avant toute session");
-  assert.match(proxy, /if \(cheminSurDomaine\(request\.nextUrl\.pathname\) === "zabelie"\) \{\s*const renvoi = NextResponse\.redirect\([^;]*siteUrl\(\)\), 308\);\s*[\s\S]{0,200}renvoi\.headers\.set\("x-zabelie-domaine", hote\);\s*return renvoi;/);
+  assert.match(proxy, /if \(cheminSurDomaine\(request\.nextUrl\.pathname\) === "zabelie"\) \{\s*const renvoi = NextResponse\.redirect\(renvoiVersZabelie\(request\.nextUrl\.pathname, request\.nextUrl\.search, siteUrl\(\)\), 308\);\s*[\s\S]{0,200}renvoi\.headers\.set\("x-zabelie-domaine", hote\);\s*return renvoi;/);
+  assert.doesNotMatch(proxy, /new URL\(request\.nextUrl\.pathname/, "un chemin résolu contre le site peut en sortir (//evil.example)");
   assert.match(proxy, /const slug = await resoudreDomaine\(hote, config\);[\s\S]{0,600}const boutique = slug\s*\? NextResponse\.rewrite\(new URL\(`\/boutik\/\$\{slug\}`[\s\S]{0,200}: NextResponse\.rewrite\(new URL\("\/404", request\.url\), \{ status: 404/);
 
   const admin = readFileSync("app/api/admin/domaines/route.ts", "utf8");
@@ -99,4 +100,17 @@ test("DM5 — branchements : proxy avant la session, admin sonde avant de décid
   const vendeur = readFileSync("app/api/account/domain/route.ts", "utf8");
   assert.match(vendeur, /rpc\("zabelie_domaine_demander", \{ p_user: user\.id,/, "l'identité vient de la session, jamais du corps");
   assert.match(vendeur, /rpc\("zabelie_domaine_retirer", \{ p_user: user\.id \}/);
+});
+
+test("DM6 — le renvoi d'un domaine vendeur reste sur Zabelie, même pour un chemin qui ressemble à une adresse", () => {
+  assert.equal(renvoiVersZabelie("/boutik/mari", "?ref=qr", SITE).href, "https://zabelie.com/boutik/mari?ref=qr");
+  assert.equal(renvoiVersZabelie("/connexion", "", SITE).href, "https://zabelie.com/connexion");
+  for (const chemin of ["//evil.example/x", "/\\evil.example/x", "///evil.example", "/%2F%2Fevil.example", "//evil.example:443/x"]) {
+    const cible = renvoiVersZabelie(chemin, "?next=https://evil.example", SITE);
+    assert.equal(cible.origin, SITE, `${chemin} → ${cible.href}`);
+    assert.equal(cible.search, "?next=https://evil.example", "la recherche est gardée telle quelle, jamais interprétée");
+  }
+  // Témoin : la construction d'avant sortait du site sur ces mêmes chemins.
+  assert.equal(new URL("//evil.example/x", SITE).origin, "https://evil.example");
+  assert.equal(new URL("/\\evil.example/x", SITE).origin, "https://evil.example");
 });

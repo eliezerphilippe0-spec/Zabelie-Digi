@@ -149,9 +149,10 @@ test("profile: a non-Haitian country still clears the department", async () => {
 });
 
 test("profile: ZB069 remains 400 and database failures remain 500 without slug effects", async () => {
-  for (const [updateError, status] of [["ZB069: invalid zone", 400], ["Synthetic database unavailable", 500]] as const) {
+  // ZB069 est un refus de SAISIE rédigé par le garde : son message sort. Une panne ne sort plus (docs/78 L4).
+  for (const [updateError, status, rendu] of [["ZB069: invalid zone", 400, "ZB069: invalid zone"], ["Synthetic database unavailable", 500, t("fr", "api.write.failed")]] as const) {
     const f = fixture({ updateError });const response = await f.send({ ...BODY, expectedActorId: A });
-    assert.equal(response.status, status);assert.equal((await response.json()).error, updateError);
+    assert.equal(response.status, status);assert.equal((await response.json()).error, rendu);
     assert.deepEqual([...f.profiles], f.initial);assert.deepEqual(f.slugCalls, []);assert.deepEqual(f.events, ["auth", "update:" + A]);
   }
 });

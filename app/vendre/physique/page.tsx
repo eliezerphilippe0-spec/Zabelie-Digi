@@ -142,6 +142,7 @@ export default async function VendrePhysiquePage() {
                 photoFailed: t(lang, "sell.physical.photo.failed"),
                 photoRetry: t(lang, "sell.physical.photo.retry"),
                 photoChoose: t(lang, "sell.physical.photo.choose"),
+                photoPick: t(lang, "sell.physical.photo.pick"),
                 photoPrepareError: t(lang, "sell.physical.photo.prepareError"),
                 manage: t(lang, "sell.physical.manage"),
                 error: t(lang, "publish.error.generic"),

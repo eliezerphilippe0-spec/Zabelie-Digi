@@ -54,8 +54,11 @@ test("acheteur : les refus de la base gardent leur motif et leur code HTTP ; une
     const f = fixture("handover-code", { rpc: { data, error: null } });
     assert.notEqual((await f.poste({ orderId: "o1" })).status, 200, JSON.stringify(data));
   }
-  const panne = fixture("handover-code", { rpc: { data: null, error: { message: "boom" } } });
-  assert.equal((await panne.poste({ orderId: "o1" })).status, 500);
+  const panne = fixture("handover-code", { rpc: { data: null, error: { message: "relation zabelie_handover_codes: boom" } } });
+  const reponse = await panne.poste({ orderId: "o1" });
+  assert.equal(reponse.status, 500);
+  // docs/78 L4 : le texte de Postgres ne sort pas, une phrase traduite le remplace.
+  assert.deepEqual(await json(reponse), { error: "api.write.failed" });
 });
 
 test("vendeur : l'identité vient de la SESSION ; le code est rogné et réduit à une chaîne", async () => {

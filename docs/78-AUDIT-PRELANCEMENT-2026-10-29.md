@@ -136,3 +136,22 @@ Ce n'est toujours **pas** une supervision permanente (`docs/57`) : un échec
 quotidien produit une notification GitHub, pas une alerte d'astreinte. À
 refaire en entier avant chaque grande étape : ouverture, première campagne,
 nouveau rail de paiement.
+
+## 7. Correctifs appliqués
+
+Sur instruction du porteur (« applique aussi les correctifs », 2026-10-29).
+Chaque garde est éprouvée par mutation (`tests/audit-correctifs-lot1.test.ts`,
+`tests/domaines.test.ts` DM6).
+
+**Lot 1 — code, sans migration**
+
+| Réf | Correctif |
+|---|---|
+| L7 | `renvoiVersZabelie` (`lib/domaines.ts`) POSE le chemin sur l'adresse du site au lieu de le résoudre contre elle : `//evil.example/x` et `/\evil.example/x` restent sur Zabelie |
+| L3 | `secretEgal` (`lib/secret-egal.ts`) : SHA-256 des deux côtés puis `timingSafeEqual` ; les douze lecteurs de `CRON_SECRET`/`RECONCILE_SECRET` y passent |
+| L4 | `echecBase` (`lib/api-erreur.ts`) : le texte de Postgres part au journal, le visiteur reçoit `api.write.failed`/`api.read.failed` ; onze routes hors administration. Les refus de saisie rédigés par un garde (ZB069, ZB070, ZB058) gardent leur message |
+| L6 | compte suspendu refusé avant toute écriture : espace pro (inscription, clients, factures, lignes, envoi), avis, profil, création et réactivation d'un code promo. Restent ouverts : désactiver un code, annuler une facture, retirer une ligne, et tout le parcours de remise d'une commande déjà payée (le bloquer gèlerait l'argent d'un tiers) |
+| M2 (volet sûr) | `/api/facture/[token]/pay` refuse d'ouvrir un paiement si le PRO de la facture est suspendu ou illisible. La confirmation d'un paiement déjà fait n'est pas bloquée (aucun paiement orphelin). ⛔ La date de disponibilité du versement reste un arbitrage porteur + conseil : ajouter une maturation aggraverait la rétention (`docs/17`) |
+| soft 404 | `lib/pages-desactivees.ts` : `/tableau-de-bord/creation*` et `/tableau-de-bord/studio` répondent un vrai 404 quand leur interrupteur est éteint, décidé par le proxy avec les mêmes fonctions que les pages |
+| champ photo | la fiche produit physique n'affiche plus « Choose File » : bouton libellé dans la langue du vendeur (`sell.physical.photo.pick`), champ `sr-only` joignable au clavier |
+| `/assistant` | titre d'onglet tiré de sa copie traduite |
