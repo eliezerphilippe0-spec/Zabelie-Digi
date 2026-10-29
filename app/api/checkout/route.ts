@@ -7,6 +7,7 @@ import { attributedSource, SALE_SOURCE_COOKIE } from "@/lib/sale-attribution";
 import { configService } from "@/lib/supabase/config";
 import { digitalProductIsClean } from "@/lib/digital-file-security";
 import { normalizeRecipient } from "@/lib/order-recipient";
+import { parseZoneRemise } from "@/lib/zone-remise";
 import { readPurchasePrice } from "@/lib/purchase-price";
 import { NextResponse } from "next/server";
 import { getLang } from "@/lib/i18n-server";
@@ -104,6 +105,7 @@ export async function POST(req: Request) {
   let quantityInput: unknown;
   let rechajInput: unknown;
   let recipientInput: unknown;
+  let deliveryZoneInput: unknown;
   let providerInput: unknown;
   let offerInput: unknown;
   let recommendationInput: unknown;
@@ -120,6 +122,7 @@ export async function POST(req: Request) {
       quantity: quantityInput,
       rechajNumero: rechajInput,
       recipient: recipientInput,
+      deliveryZoneId: deliveryZoneInput,
       kobaraProvider: providerInput,
       offerId: offerInput,
       recommendationSource: recommendationInput,
@@ -765,6 +768,29 @@ export async function POST(req: Request) {
       { error: t(lang, "api.payment.failed") },
       { status: 500 }
     );
+  }
+
+  /* La zone de remise (0161) : une CLASSIFICATION, jamais une condition.
+   *
+   * Contrairement au destinataire ci-dessous (sans lui, la remise n'a pas lieu),
+   * une zone qui ne s'enregistre pas ne rend aucune commande indélivrable : elle
+   * prive seulement le vendeur d'un regroupement et Zabelie d'une mesure. Un
+   * échec est donc journalisé et IGNORÉ — on ne refuse pas un paiement pour une
+   * information d'organisation. Le doublon (23505) est le rejeu normal d'une
+   * reprise. Elle n'entre pas dans la comparaison d'idempotence
+   * (`repairingMissingPayment`) pour la même raison : elle ne peut pas être
+   * « contredite » par un rejeu, seulement absente.
+   *
+   * Le garde ZB161 de la base vérifie l'essentiel (commande physique en attente,
+   * zone active, commune ou quartier) ; `parseZoneRemise` n'a validé que la forme. */
+  const deliveryZoneId = parseZoneRemise(deliveryZoneInput);
+  if (deliveryZoneId && isTrackedStockKind(product.kind)) {
+    const { error: zoneError } = await admin
+      .from("zabelie_order_zones")
+      .insert({ order_id: order.id, zone_id: deliveryZoneId });
+    if (zoneError && zoneError.code !== "23505") {
+      console.warn("[checkout] zone de remise non enregistrée", { code: zoneError.code });
+    }
   }
 
   // Only the UNIQUE payment owner reaches private writes. No external

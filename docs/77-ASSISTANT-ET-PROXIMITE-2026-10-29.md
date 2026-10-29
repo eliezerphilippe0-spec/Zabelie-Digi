@@ -341,3 +341,104 @@ préférence que l'utilisateur demande** en cliquant.
 - Le cookie suit l'**appareil**, pas la personne : un acheteur qui change de téléphone doit la remémoriser.
 - La zone mémorisée **ne classe pas** le catalogue : elle propose un lien et préremplit l'assistant.
 
+
+## 12. La suite demandée le 2026-10-29 : cinq lots (A à E)
+
+**Demande directe du porteur** : après l'analyse de pertinence (cookie de zone, Mercado Libre Flex, Jumia,
+TikTok Shop), « appliquer numéro 2, 3, 4, 5, 6, 7, 8, puis tes recommandations en tant que dev expérimenté ».
+Les huit points de l'analyse, tels qu'ils sont devenus des lots :
+
+| Lot | Contenu | Points de l'analyse |
+|---|---|---|
+| **A** | Zone de REMISE structurée sur la commande physique (`0161`), choisie à chaque commande | recommandation, base de 4, 5, 8 ; **7** (repère) |
+| B | « Personne ne livre ici » + demande capturée par zone | 2 |
+| C | Code de remise qui confirme la réception | 3 |
+| D | Frais et délai déclarés par zone ; délai constaté | 4, 5 |
+| E | Pause de zone ; livraisons du vendeur groupées par zone | 6, 8 |
+
+### 12.1 Lot A — la zone de remise (`0161`)
+
+**Le trou.** Ce que le vendeur savait de l'endroit de la remise était du **texte libre**
+(`zabelie_order_recipients.locality`, `zabelie_delivery_info.adres_liv`) : lisible par un humain, inutilisable
+par le logiciel. Sans zone **structurée** sur la commande, on ne peut ni grouper les remises d'un vendeur, ni
+mesurer un délai par zone, ni comparer la zone de remise à ce que le vendeur déclare desservir (`0158`).
+
+**La zone utile n'est pas celle de l'appareil.** Un acheteur de la diaspora commande pour un proche resté en
+Haïti : la zone se choisit **à chaque commande**.
+
+⚠️ **Le cookie `zabelie_zone` (§11) ne préremplit PAS le sélecteur — décision prise après qu'un garde du
+dépôt a réagi.** La politique (§8) le déclare « pour classer en premier les offres proches de vous » :
+le lire pour préremplir la remise serait un second usage, donc une nouvelle version de la politique et une
+ré-acceptation par chaque compte. `tests/zone-acheteur.test.ts` (qui liste les fichiers lisant le cookie) a
+rougi sur ma première version, et c'est exactement son rôle. **Décision porteur possible** : si le
+préremplissage vaut une troisième ré-acceptation, il s'ajoute avec une phrase de plus au §8.
+
+**Ce qui est construit.**
+- **`zabelie_order_zones`** (`0161`) : une ligne par commande physique, `zone_id` au niveau **commune ou
+  quartier** (le garde ZB161 refuse un département seul, une zone fermée ou inconnue, une commande
+  numérique ou déjà payée). **Écrite par le service-role uniquement** ; le client ne peut ni écrire, ni
+  modifier, ni supprimer. Lecture : l'acheteur, et le vendeur **une fois la commande payée** (même fenêtre
+  que le destinataire, `0102`). Aucune fonction `security definer`, aucun `drop`.
+- **Sélecteur** (`components/zone-remise.tsx`, dans le bouton d'achat, **objets physiques seulement**) :
+  département → commune → quartier ; un département seul est refusé comme par la base. Réserve **neutre** :
+  « Ce vendeur ne déclare pas livrer dans cette zone » — affichée **seulement** si le vendeur a déclaré des
+  zones ET qu'aucune ne recouvre la destination. **Rien déclaré = on ne sait pas = aucune réserve**
+  (même doctrine que `inconnue` ≠ `ailleurs`). Elle n'empêche ni le choix ni l'achat.
+- **Le paiement ne dépend de rien de tout ça.** La zone est une **classification**, pas une condition :
+  l'écriture est « au mieux » après l'acquisition du paiement, son échec est journalisé et **ignoré**, et
+  elle n'entre pas dans la comparaison d'idempotence. Une zone qui ne s'enregistre pas ne rend aucune
+  commande indélivrable (contrairement au destinataire ou au numéro de recharge, qui bloquent).
+- **Affichage** : « Zone de remise · Ouest › Delmas › Delmas 33 » dans `/mes-ventes` (fenêtre « payée ») et
+  `/mes-achats`, sous la session — aucun service-role, la policy reste le garde.
+- **Export de compte** : `order_zones` rejoint l'export des données.
+
+**Point 7 (le repère) : déjà là, il fallait le nommer.** Le champ `note` du destinataire (500 caractères) est
+exactement un repère ; le libellé le disait mal (« Précisions utiles »). Il devient « Repère et précisions
+utiles » dans les quatre langues. **Aucune nouvelle donnée personnelle, donc aucune nouvelle version de la
+politique** : la zone de remise est la même « adresse de remise » que le §3 décrit déjà (« Coordonnées de
+remise »), montrée au vendeur dans les mêmes conditions. ⚖️ À faire confirmer par le conseil en même temps
+que la lecture du cookie (§11).
+
+**Choix à connaître.**
+- **La zone n'est pas effacée à la fermeture d'un compte.** Le destinataire (nom, téléphone) l'est ; la zone
+  est une classification de commune sur une commande conservée pour la comptabilité, rattachée à un compte
+  devenu anonyme. Elle ne désigne plus personne. ⚖️ À valider avec le reste.
+- **Le panier groupé ne porte pas la zone** : la route du panier n'a jamais porté de destinataire non plus.
+  Les commandes passées par le panier n'ont donc pas de zone structurée.
+- **Une zone fermée après coup n'est plus affichée** (la RLS de `zabelie_zones` la masque) : jamais un
+  chemin inventé.
+- **Ordre de déploiement** : appliquer `0161` AVANT de fusionner. Le code tolère la table absente à
+  l'affichage et à l'écriture, mais l'**export de compte** lit la table et refuse son fichier s'il ne la
+  trouve pas (règle du dépôt : jamais un export partiel).
+
+**Éprouvé (lot A).**
+- **SQL** `supabase/tests/order_zones.test.sql` (Z1→Z5) : connu-positif (commune, quartier), **six connus-négatifs
+  du garde** (département seul, zone fermée, zone inconnue, commande numérique, commande déjà payée, `update`
+  vers un département), fenêtre de lecture (acheteur oui, tiers non, vendeur non avant paiement / oui après,
+  anon aucun droit), client sans écriture, cascade. **Six mutations de la migration, toutes attrapées**
+  (niveau, zone fermée, commande payée, produit numérique, fenêtre vendeur, droit d'écriture).
+- **Paiement** : quatre cas ajoutés au harnais d'idempotence (zone enregistrée avec le bon identifiant
+  **après** l'acquisition du paiement ; formes invalides et produit non physique n'écrivent rien ; **l'échec de
+  l'écriture — quatre codes d'erreur — ne bloque jamais le paiement** ; le rejeu ne double rien). **Quatre
+  mutations de la route attrapées**, dont « l'échec de zone devient un 503 » et « garde rendu inatteignable ».
+- **Logique pure** (`tests/zone-remise.test.ts`, 14 tests) : recouvrement sur toutes les paires de l'arbre,
+  **identique à `zonesRecouvrantes`** de `lib/zones` (deux implémentations du même arbre, garde de dérive) ;
+  « rien déclaré = aucune réserve » ; département seul refusé ; cycle de données terminé. **Six mutations
+  attrapées.**
+- **Deux gardes du dépôt ont réagi, à raison** : `tests/promesse-vendeur.test.ts` (la clé `zr.notCovered`
+  affirme quelque chose d'un vendeur — faux positif du mot anglais *agree*, classé avec sa raison, comme ses
+  voisines) et `tests/zone-acheteur.test.ts` (ma première version lisait le cookie pour préremplir : second
+  usage non déclaré — **retiré**, voir plus haut).
+- **Navigateur réel** (application construite + faux Supabase patché hors dépôt, 390 px) : sélecteur présent
+  sur un objet physique ; **vide malgré un cookie `zabelie_zone`** ; département seul →
+  « Choisissez au moins la commune. » **et** le paiement part quand même, sans `deliveryZoneId` ; réserve
+  affichée sur une commune non déclarée, absente sur une commune déclarée, **absente quand le vendeur n'a
+  rien déclaré** ; le corps de paiement porte l'identifiant du quartier choisi ; rendu kreyòl ; aucun
+  débordement horizontal ; aucune erreur de console.
+- Suites complètes : **TypeScript 2601 tests**, **SQL** rejouée sur un Postgres neuf (les trois scripts de
+  concurrence relancés à part avec l'URL `localhost` qu'ils exigent).
+
+**Ce que ce lot ne prouve pas.** La CI e2e ne sert pas de zones à la fiche produit (son faux Supabase ne le
+fait que pour un scénario d'identité) : le sélecteur y est donc **masqué**, et le parcours d'achat y reste
+celui d'avant — c'est voulu, mais ce n'est pas un test du sélecteur. La vérification navigateur ci-dessus est
+manuelle et n'est pas committée.

@@ -1,5 +1,7 @@
 import { supportCopy } from "@/lib/support-copy";
 import { RecipientDetails } from "@/components/recipient-details";
+import { ZoneCommande } from "@/components/zone-commande";
+import { zonesDesCommandes } from "@/lib/zone-remise-serveur";
 import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -153,6 +155,8 @@ export default async function MesVentesPage() {
     ? await supabase.from("zabelie_order_recipients").select("order_id,full_name,phone,locality,note").in("order_id", orderIds)
     : { data: [], error: null };
   const recipientByOrder = new Map((recipients ?? []).map(r => [r.order_id, r as OrderRecipient]));
+  // Zone de remise structurée (0161) : sous la session, fenêtre « commande payée ».
+  const zoneParCommande = await zonesDesCommandes(supabase, orderIds, lang);
 
   const cibleParCommande = new Map<string, string>();
   if (orderIds.length > 0) {
@@ -224,6 +228,7 @@ export default async function MesVentesPage() {
                 {/* V-5 : les coordonnées de livraison — présentes UNIQUEMENT
                     si la policy 0076 les a laissées passer (commande payée),
                     en attente d'expédition. */}
+                {zoneParCommande.has(v.order_id) && <ZoneCommande libelle={zoneParCommande.get(v.order_id)!} lang={lang}/>}
                 {recipientByOrder.has(v.order_id) && <RecipientDetails recipient={recipientByOrder.get(v.order_id)!} lang={lang}/>}
                 {recipientReadError && <p className="mt-2 text-sm text-mist">{t(lang, "recipient.unavailable")}</p>}
                 {!recipientReadError && !recipientByOrder.has(v.order_id) && v.status === "awaiting_shipment" &&

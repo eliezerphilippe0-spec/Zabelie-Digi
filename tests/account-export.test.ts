@@ -16,6 +16,7 @@ const LISTS = {
   zabelie_favorites: { owner: "user_id", output: "favorites", role: "session" },
   zabelie_shop_follows: { owner: "user_id", output: "followed_shops", role: "session" },
   zabelie_order_recipients: { owner: "order.buyer_id", output: "order_recipients", role: "session" },
+  zabelie_order_zones: { owner: "order.buyer_id", output: "order_zones", role: "session" },
 } as const;
 type ListTable = keyof typeof LISTS;
 type Failure = { table: string; mode: "error" | "null_data" | "undefined_data" | "object_data" | "null_response" | "throw"; page?: number; code?: string };
@@ -28,6 +29,7 @@ function rows(table: string, count: number) {
     product_id: `product-${index}`, order_id: `order-${index}`, project_id: `project-${index}`,
     policy_version: `synthetic-policy-${index}`, accepted_at: "2026-10-20T00:00:00Z", created_at: "2026-10-20T00:00:00Z",
     titre: `Guide ${index}`, full_name: "Nom fictif", phone: "+509 00000000", locality: "Localité fictive", note: "Note fictive", consented_at: "2026-10-20T00:00:00Z",
+    zone_id: `zone-${index}`,
     order: { buyer_id: SELF }, chemin: "private-storage-path", bail_jeton: "private-lease-token",
   }));
 }
@@ -108,7 +110,7 @@ async function indisponible(fixture: ReturnType<typeof exportCompte>) {
 }
 
 function contenuComplet(table: ListTable, exported: Record<string, unknown>[], count: number) {
-  const field = table === "zabelie_policy_acceptances" ? "policy_version" : table === "zabelie_favorites" ? "product_id" : table === "zabelie_shop_follows" ? "seller_id" : table === "zabelie_order_recipients" ? "order_id" : "id";
+  const field = table === "zabelie_policy_acceptances" ? "policy_version" : table === "zabelie_favorites" ? "product_id" : table === "zabelie_shop_follows" ? "seller_id" : table === "zabelie_order_recipients" || table === "zabelie_order_zones" ? "order_id" : "id";
   const expectedId = (index: number) => field === "policy_version" ? `synthetic-policy-${index}` : field === "product_id" ? `product-${index}` : field === "seller_id" ? `followed-seller-${index}` : field === "order_id" ? `order-${index}` : `${table}-${String(index).padStart(6, "0")}`;
   assert.deepEqual(exported.map(row => row[field]).sort(), Array.from({ length: count }, (_, index) => expectedId(index)).sort(), `${table} : chaque identifiant attendu est présent une seule fois`);
   const last = exported.find(row => row[field] === expectedId(count - 1));
@@ -119,6 +121,8 @@ function contenuComplet(table: ListTable, exported: Record<string, unknown>[], c
   else if (table === "zabelie_policy_acceptances") assert.equal(last.accepted_at, "2026-10-20T00:00:00Z");
   else if (table === "zabelie_order_recipients") {
     assert.deepEqual(last, { order_id: `order-${count - 1}`, full_name: "Nom fictif", phone: "+509 00000000", locality: "Localité fictive", note: "Note fictive", consented_at: "2026-10-20T00:00:00Z" });
+  } else if (table === "zabelie_order_zones") {
+    assert.deepEqual(last, { order_id: `order-${count - 1}`, zone_id: `zone-${count - 1}`, created_at: "2026-10-20T00:00:00Z" });
   } else assert.equal(last.created_at, "2026-10-20T00:00:00Z");
 }
 

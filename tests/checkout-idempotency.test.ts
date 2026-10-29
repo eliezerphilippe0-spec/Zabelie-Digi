@@ -5,6 +5,7 @@ import { isTrackedStockKind, isProductKind } from "../lib/product-kind";
 import { persistPaymentSession, usdCentsFromHtg, formatUsd, zelleMemo } from "../lib/payment-utils";
 import { normalizeRecipient } from "../lib/order-recipient";
 import { normaliserNumeroHaiti } from "../lib/rechaj";
+import { parseZoneRemise } from "../lib/zone-remise";
 import { t } from "../lib/i18n";
 import { database, loadRoute, type Query } from "./helpers/route-harness";
 
@@ -26,7 +27,7 @@ test("attempt identity is stable, scoped to the verified buyer and bounded", () 
 
 function fixture(options: { missingOriginal?: boolean; readError?: boolean; sessionError?: boolean; sessionCommittedError?: boolean; paid?: boolean; operatorError?: boolean; legacySchema?: boolean; groupedOriginal?: boolean;
   firstPaymentFailure?: boolean; firstPaymentCommittedError?: boolean; digital?: boolean; physical?: boolean; stockStatus?: string; expiredStock?: boolean; stockReadError?: boolean; noStock?: boolean; age?: number;
-  recharge?: boolean; metadataWriteError?: string; metadataReadError?: boolean; deferFirstPaymentClaim?: boolean; ownProduct?: boolean } = {}) {
+  recharge?: boolean; zoneWriteError?: string; metadataWriteError?: string; metadataReadError?: boolean; deferFirstPaymentClaim?: boolean; ownProduct?: boolean } = {}) {
   const orders = new Map<string, Record<string, unknown>>();
   const operatorCalls: string[] = [];
   const paymentWrites: string[] = [];
@@ -35,6 +36,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
   const attestations = new Map<string, Record<string, unknown>>();
   const recipients = new Map<string, Record<string, unknown>>();
   const rechargeTargets = new Map<string, Record<string, unknown>>();
+  const zones = new Map<string, Record<string, unknown>>();
   const stockCalls: string[] = [];
   const accountChecks: { id: string; legalAcceptance: boolean | undefined }[] = [];
   let failedPayment = false;
@@ -94,6 +96,15 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
         orders: { buyer_id: "buyer", status: orders.get(orderId)?.status, product_id: "product" } } : null, error: null };
     }
     if (query.table === "zabelie_stock_reservations") return { data: options.noStock ? [] : [{ status: options.stockStatus ?? "held", expires_at: new Date(Date.now() + (options.expiredStock ? -1 : 60_000)).toISOString() }], error: options.stockReadError ? { code: "offline" } : null };
+    if (query.table === "zabelie_order_zones") {
+      // Zone de remise (0161) : écriture seule, jamais relue par le paiement.
+      assert.ok(step(query, "insert"), "le paiement n'écrit que la zone de remise, il ne la relit jamais");
+      const input = step(query, "insert")![0] as { order_id: string };
+      if (options.zoneWriteError) return { error: { code: options.zoneWriteError } };
+      if (zones.has(input.order_id)) return { error: { code: "23505" } };
+      zones.set(input.order_id, input);
+      return { error: null };
+    }
     const metadata = query.table === "zabelie_order_age_attestations" ? attestations
       : query.table === "zabelie_order_recipients" ? recipients : query.table === "zabelie_rechaj_cible" ? rechargeTargets : null;
     if (metadata) {
@@ -113,6 +124,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
     "@/lib/checkout-idempotency": { checkoutOrderId, checkoutIntentHash, checkoutStockIsHeld, validCheckoutKey, validCheckoutOrderId, savedCheckoutRedirect },
     "@/lib/order-recipient": { normalizeRecipient },
     "@/lib/rechaj": { normaliserNumeroHaiti },
+    "@/lib/zone-remise": { parseZoneRemise },
     "@/lib/product-offers": { recommendationAttribution: () => ({}) },
     "@/lib/product-offers-server": { offerAttribution: () => ({}) },
     "@/lib/seller-pricing-server": { readSellerPricing: async () => null },
@@ -147,7 +159,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
     },
   }, { USD_HTG_RATE: "132" });
   return {
-    orders, payments, sessions, attestations, recipients, rechargeTargets, operatorCalls, paymentWrites, stockCalls, accountChecks, db,
+    orders, payments, sessions, attestations, recipients, rechargeTargets, zones, operatorCalls, paymentWrites, stockCalls, accountChecks, db,
     changePrice: (price: number) => { currentPrice = price; },
     changeAge: (age: number) => { currentAge = age; },
     changeRecharge: (required: boolean) => { currentRecharge = required; },
@@ -586,4 +598,54 @@ test("legal receipts are required for a new purchase, never for owned recoveryOn
   assert.equal((await response.json()).checkoutState, "complete");
   assert.deepEqual(f.accountChecks, [{ id: "buyer", legalAcceptance: false }]);
   assert.equal(f.operatorCalls.length, before, "observing an old payment cannot start a new payment");
+});
+
+/* ── Zone de remise (0161) : une classification, jamais une condition ─────────── */
+const ZONE = "5b1d6c0e-3a54-4f6e-9d2a-0c7e3a9b8f10";
+
+test("la zone de remise d'une commande physique est enregistrée avec l'identifiant de la commande, après la propriété du paiement", async () => {
+  const f = fixture({ physical: true });
+  const res = await f.post(KEY, { deliveryZoneId: ZONE.toUpperCase() });
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).checkoutState, "ready");
+  const id = checkoutOrderId("buyer", KEY);
+  assert.deepEqual(JSON.parse(JSON.stringify([...f.zones.values()])), [{ order_id: id, zone_id: ZONE }], "forme normalisée en minuscules, rattachée à la commande");
+  assert.equal(f.payments.size, 1);
+  const iZone = f.db.queries.findIndex(q => q.table === "zabelie_order_zones");
+  const iPaiement = f.db.queries.findIndex(q => q.table === "payments" && q.steps.some(([m]) => m === "insert"));
+  assert.ok(iPaiement >= 0 && iZone > iPaiement, "la zone ne s'écrit qu'une fois la propriété du paiement acquise");
+});
+
+test("une zone de forme invalide, ou sur un produit non physique, n'écrit rien et ne change rien au paiement", async () => {
+  for (const bad of [123, {}, "Delmas", "", null, [ZONE], `${ZONE}x`]) {
+    const f = fixture({ physical: true });
+    assert.equal((await f.post(KEY, { deliveryZoneId: bad })).status, 200);
+    assert.equal(f.zones.size, 0);
+    assert.ok(f.db.queries.every(q => q.table !== "zabelie_order_zones"), "aucune requête sur la table de zones");
+  }
+  const numerique = fixture({ digital: true });
+  assert.equal((await numerique.post(KEY, { deliveryZoneId: ZONE })).status, 200);
+  assert.equal(numerique.zones.size, 0, "un fichier n'a pas de remise");
+  assert.ok(numerique.db.queries.every(q => q.table !== "zabelie_order_zones"));
+});
+
+test("l'échec de l'écriture de la zone ne bloque jamais le paiement : il est ignoré, l'opérateur est appelé", async () => {
+  for (const code of ["23514", "23503", "08006", "42P01"]) {
+    const f = fixture({ physical: true, zoneWriteError: code });
+    const res = await f.post(KEY, { deliveryZoneId: ZONE });
+    assert.equal(res.status, 200, `code ${code}`);
+    assert.equal((await res.json()).checkoutState, "ready");
+    assert.equal(f.payments.size, 1);
+    assert.equal(f.operatorCalls.length, 1, "le paiement avance malgré une zone qui ne s'enregistre pas");
+    assert.equal(f.zones.size, 0);
+  }
+});
+
+test("rejouer la même tentative avec une zone ne crée ni doublon ni second paiement", async () => {
+  const f = fixture({ physical: true });
+  assert.equal((await f.post(KEY, { deliveryZoneId: ZONE })).status, 200);
+  await f.post(KEY, { deliveryZoneId: ZONE });
+  assert.equal(f.zones.size, 1);
+  assert.equal(f.payments.size, 1);
+  assert.equal(f.operatorCalls.length, 1);
 });
