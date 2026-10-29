@@ -3,12 +3,16 @@ name: Vérification après déploiement
 on:
   push:
     branches: [main]
+  # Chaque jour (6 h 17 à Port-au-Prince) : une protection peut tomber sans
+  # déploiement (configuration Vercel, en-tête, domaine). docs/78.
+  schedule:
+    - cron: "17 10 * * *"
   workflow_dispatch:
 
 permissions:
   contents: read
 concurrency:
-  group: post-deploy
+  group: post-deploy-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
