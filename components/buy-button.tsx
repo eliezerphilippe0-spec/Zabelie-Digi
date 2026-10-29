@@ -1,5 +1,7 @@
 "use client";
 import { normalizeRecipient, type RecipientInput, type RecipientLabels } from "@/lib/order-recipient";
+import { ZoneRemise, type ZoneRemiseLabels } from "@/components/zone-remise";
+import type { ZoneOption } from "@/components/profile-form";
 
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -108,6 +110,7 @@ export function BuyButton({
   rechaj,
   ageMinimum,
   recipient,
+  zoneRemise,
   errors,
 }: {
   productId: string;
@@ -131,8 +134,11 @@ export function BuyButton({
   /** Libellés i18n des erreurs (BL-113 : l'échec aussi doit parler KR). */
   errors?: ErrorLabels;
   recipient?: RecipientLabels;
+  /** Zone de remise (0161) : absent = produit non physique, parcours inchangé. */
+  zoneRemise?: { zones: ZoneOption[]; couverture: string[]; labels: ZoneRemiseLabels };
 }) {
   const router = useRouter();
+  const [deliveryZoneId, setDeliveryZoneId] = useState<string | null>(null);
   const [forSomeone, setForSomeone] = useState(false);
   const [recipientFields, setRecipientFields, clearDraft] = useSessionDraft<Omit<RecipientInput, "consent">>(draftScope ? `zabelie:recipient:${draftScope}:${productId}` : undefined,
     { name: "", phone: "", locality: "", note: "" },
@@ -248,6 +254,8 @@ export function BuyButton({
       // restreinte. Le serveur relit le seuil en base et exige `true`.
       ageAttestation: ageMinimum ? ageAtteste : undefined,
       recipient: recipient && forSomeone ? recipientInput : undefined,
+      // Zone de remise (0161) : classification facultative, jamais une condition.
+      deliveryZoneId: zoneRemise ? deliveryZoneId ?? undefined : undefined,
     };
     const intent = JSON.stringify(body);
     submitting.current = true;
@@ -428,6 +436,8 @@ export function BuyButton({
           <Link href="/mes-achats" className="inline-flex min-h-11 items-center underline">{trustLabels?.resume ?? "Mes achats"}</Link>
         </div>
       </div>}
+      {zoneRemise && <ZoneRemise zones={zoneRemise.zones}
+        couverture={zoneRemise.couverture} labels={zoneRemise.labels} disabled={busy} onChange={setDeliveryZoneId}/>}
       {recipient && <fieldset className="mb-5 rounded-xl border border-line p-4">
         <legend className="sr-only">{recipient.toggle}</legend>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={forSomeone} onChange={e => setForSomeone(e.target.checked)} disabled={busy}/>{recipient.toggle}</label>

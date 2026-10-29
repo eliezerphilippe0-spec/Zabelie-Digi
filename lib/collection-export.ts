@@ -45,10 +45,17 @@ export async function readExportRows(client: SupabaseClient, userId: string, opt
 }
 
 export async function exportCollections(client: SupabaseClient, userId: string) {
-  const [favorites, followed_shops, recipients] = await Promise.all([
+  const [favorites, followed_shops, recipients, zones] = await Promise.all([
     readExportRows(client, userId, { table: "zabelie_favorites", select: "product_id,created_at", owner: "user_id", sort: "product_id" }),
     readExportRows(client, userId, { table: "zabelie_shop_follows", select: "seller_id,created_at", owner: "user_id", sort: "seller_id" }),
     readExportRows(client, userId, { table: "zabelie_order_recipients", select: "order_id,full_name,phone,locality,note,consented_at,order:orders!inner(buyer_id)", owner: "order.buyer_id", sort: "order_id" }),
+    // Zone de remise (0161) : la zone approximative choisie à chaque commande physique.
+    readExportRows(client, userId, { table: "zabelie_order_zones", select: "order_id,zone_id,created_at,order:orders!inner(buyer_id)", owner: "order.buyer_id", sort: "order_id" }),
   ]);
-  return { favorites, followed_shops, order_recipients: recipients.map(({ order_id, full_name, phone, locality, note, consented_at }) => ({ order_id, full_name, phone, locality, note, consented_at })) };
+  return {
+    favorites,
+    followed_shops,
+    order_recipients: recipients.map(({ order_id, full_name, phone, locality, note, consented_at }) => ({ order_id, full_name, phone, locality, note, consented_at })),
+    order_zones: zones.map(({ order_id, zone_id, created_at }) => ({ order_id, zone_id, created_at })),
+  };
 }

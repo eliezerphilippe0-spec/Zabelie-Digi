@@ -78,6 +78,10 @@ const CLASSEMENT: Record<string, Classement> = {
   "guides.objects.check.body": { horsSujet: "Conseils de contrôle du produit par l’acheteur, avec invitation à questionner le vendeur en cas d’information absente. Aucune certification vendeur." },
   "guides.objects.handover.body": { horsSujet: "Agree désigne un accord de remise entre acheteur et vendeur ; il ne signifie pas vendeur agréé. Aucune livraison Zabelie annoncée." },
 
+  "zr.notCovered": {
+    horsSujet: "Réserve neutre attribuée au vendeur : « ne déclare pas livrer dans cette zone », suivie d'une invitation à convenir de la remise AVANT de payer. Agree en anglais désigne cet accord (le mot est détecté comme agréé). Aucune qualité du vendeur n'est affirmée, et Zabelie ne promet aucune livraison.",
+  },
+
   "recipient.consent": {
     horsSujet: "L'acheteur confirme avoir vérifié les coordonnées du destinataire et obtenu son accord pour les partager. Cela ne certifie pas le vendeur.",
   },

@@ -44,6 +44,7 @@ import { baseEssayage } from "@/lib/essayage/base";
 import { lireEnvEssayage } from "@/lib/essayage/flags";
 import { libellesEssayage } from "@/lib/essayage/libelles";
 import { getPhysicalView } from "@/lib/products-physical";
+import { chargerZoneRemise } from "@/lib/zone-remise-serveur";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { isKobaraEnabled } from "@/lib/kobara";
@@ -288,6 +289,12 @@ export default async function ProductPage({
   const commitmentApplicable = pickByKind(product.kind, { file: false, service: true, physical: true });
   const commitments = commitmentApplicable ? await getProductCommitments([product.id]) : null;
   const trustLabels = marketplaceCopy(lang);
+  /* Zone de remise (0161) : seulement pour un objet physique, jamais bloquante —
+   * `null` (aucune commune ouverte, lecture en échec) supprime le sélecteur et le
+   * parcours d'achat reste identique à celui d'avant. */
+  const zoneRemise = pickByKind(product.kind, { file: false, service: false, physical: true }) && isSupabaseConfigured()
+    ? await chargerZoneRemise(lang, product.creatorId ?? null)
+    : null;
   const kindKey = kindLabelKey(product.kind, product.id);
   const deliveryBulletKey = bulletKey(product.kind, product.id);
   // La zone de livraison n'a pas encore de colonne : seul le repli « à
@@ -623,6 +630,14 @@ export default async function ProductPage({
                 trustLabels={trustLabels}
                 recipient={pickByKind(product.kind, { file: false, service: false, physical: true }) ? {
                   toggle: t(lang, "recipient.toggle"), name: t(lang, "recipient.name"), phone: t(lang, "recipient.phone"), locality: t(lang, "recipient.locality"), note: t(lang, "recipient.note"), consent: t(lang, "recipient.consent"), hint: t(lang, "recipient.hint"), invalid: t(lang, "recipient.invalid"), summary: t(lang, "recipient.summary"),
+                } : undefined}
+                zoneRemise={zoneRemise ? {
+                  ...zoneRemise,
+                  labels: {
+                    title: t(lang, "zr.title"), hint: t(lang, "zr.hint"), depatman: t(lang, "zr.depatman"),
+                    komin: t(lang, "zr.komin"), katye: t(lang, "zr.katye"), allDepatman: t(lang, "zr.allDepatman"),
+                    allKomin: t(lang, "zr.allKomin"), needKomin: t(lang, "zr.needKomin"), notCovered: t(lang, "zr.notCovered"),
+                  },
                 } : undefined}
                 productId={product.id}
                 variants={physical?.variants.map(v => ({ ...v,
