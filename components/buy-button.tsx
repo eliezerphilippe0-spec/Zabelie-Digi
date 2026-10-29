@@ -412,6 +412,10 @@ export function BuyButton({
   }
 
   const [primary, ...others] = selected?.options ?? options;
+  // Le titre « Diaspora ? Payez en USD » ne coiffe que les rails en USD :
+  // NatCash et MonCash via Kobara (0106) sont en gourdes et passent au-dessus.
+  const autresHtg = others.filter((o) => o.rail !== "stripe" && o.rail !== "zelle");
+  const autresUsd = others.filter((o) => o.rail === "stripe" || o.rail === "zelle");
   const busy = loadingRail !== null || uncertain || !reviewLoaded || !retryLoaded;
 
   const stockBadge = (n: number) => {
@@ -427,6 +431,17 @@ export function BuyButton({
       tone: "text-success-text",
     };
   };
+
+  const autreBouton = (o: BuyOption) => (
+    <button
+      key={cleOption(o)}
+      onClick={() => handleBuy(o)}
+      disabled={busy || soldOut || selectedOut || achatBloque}
+      className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
+    >
+      {loadingRail === cleOption(o) ? loadingLabel : o.label}
+    </button>
+  );
 
   return (
     <div>
@@ -632,21 +647,17 @@ export function BuyButton({
 
       {others.length > 0 && (
         <div className="mt-3">
-          {othersLabel && (
-            <p className="text-center text-xs text-mist">{othersLabel}</p>
+          {autresHtg.length > 0 && (
+            <div className="grid gap-2">{autresHtg.map(autreBouton)}</div>
           )}
-          <div className="mt-2 grid gap-2">
-            {others.map((o) => (
-              <button
-                key={cleOption(o)}
-                onClick={() => handleBuy(o)}
-                disabled={busy || soldOut || selectedOut || achatBloque}
-                className="w-full rounded-xl border border-line bg-surface/60 px-6 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
-              >
-                {loadingRail === cleOption(o) ? loadingLabel : o.label}
-              </button>
-            ))}
-          </div>
+          {autresUsd.length > 0 && (
+            <div className={autresHtg.length > 0 ? "mt-3" : undefined}>
+              {othersLabel && (
+                <p className="text-center text-xs text-mist">{othersLabel}</p>
+              )}
+              <div className="mt-2 grid gap-2">{autresUsd.map(autreBouton)}</div>
+            </div>
+          )}
         </div>
       )}
 
