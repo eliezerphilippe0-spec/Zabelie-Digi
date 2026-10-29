@@ -492,7 +492,71 @@ l'offre manque avant de la construire.
 - Aucune purge n'est nécessaire (au plus une ligne par zone et par jour, sans donnée personnelle), donc aucune
   fonction de maintenance sans appelant n'est créée (`tests/crons-appelants.test.ts`).
 
+**Appliquée en production le 2026-10-29 à 14:30:35 UTC** (PR #451, `95cadcf`), **avant** la fusion, sous l'autorisation
+permanente du 2026-08-17 et l'instruction directe du jour : SQL reçu par Supabase == fichier, à l'octet (SHA-256
+`e34bedaf…`, MD5 `6021f829…`), ligne de registre `journal_supabase` (empreinte canonique `1f049c6b…`) — registre à
+**162 lignes pour 162 fichiers**. Vérifié en production après coup : la sonde compte **176 objets dont 175
+présents** et voit `zabelie_record_zone_demand(uuid)` ; la fonction n'est exécutable ni par `anon` ni par
+`authenticated`.
+
 **Éprouvé (lot B).** SQL `zone_demand.test.sql` (D1→D5) et **6 mutations de la migration attrapées** ; 11 tests
 TypeScript (route, classement pur, structures qui commandent) et **12 mutations attrapées** (débit par IP,
 zone brute, origine, refus de la base ignoré, panne déguisée en succès, IP brute comme clé, couverture,
 tri, compteurs nuls, trois conditions de l'écran).
+
+### 12.3 Lot C — le code de remise (`0163`)
+
+**Le point 3 de l'analyse** : « code de remise qui libère le séquestre ». C'était le seul point à **toucher
+le chemin de l'argent** (arrêt ferme du porteur) ; la demande directe du 2026-10-29 le lève. Voici la forme
+retenue, et pourquoi elle ne change **aucune règle d'argent**.
+
+**Deux risques, un seul geste.**
+- **Le contournement** : quand le vendeur remet lui-même, acheteur et vendeur peuvent finir la vente par
+  WhatsApp, hors du séquestre. Le code les rend à l'écran de Zabelie au moment de la remise.
+- **Le silence** : l'acheteur qui ne confirme jamais est payé par le délai (« le réglage par défaut est : le
+  vendeur est payé », `docs/21` §3 bis). Le code est une **confirmation explicite de l'acheteur**, faite à la
+  main : il le lit dans « Mes achats », le dit au vendeur **devant l'objet**, le vendeur le saisit.
+
+**Ce que ça ne change pas — le point qui compte.** Un bon code appelle `zabelie_mark_received` avec l'identité
+de l'**acheteur** — le chemin d'écriture **unique** qui libère l'escrow (`docs/21` §3), le même que le bouton
+« J'ai reçu ». Donc :
+- **le plancher anti-fraude est conservé** : `matures_at = greatest(matures_at, now() + délai)` — le J+7 posé
+  au paiement reste un plancher. **Une réception confirmée au 2ᵉ jour ne paie pas le vendeur au 2ᵉ jour.**
+  Le test SQL l'éprouve : après un bon code, `matures_at` est resté dans le futur, `mature_wallets()` rend 0,
+  aucun solde ne bouge, l'identité de `0033` tient ;
+- la migration **ne contient aucune écriture d'argent** (ni escrow, ni portefeuille, ni grand livre) — un test
+  TypeScript le vérifie sur le fichier SQL sans ses commentaires ;
+- le code **ne remplace pas** la confirmation de l'acheteur dans l'application : il s'y ajoute, et un code
+  verrouillé laisse la confirmation intacte.
+
+**Le code.** Six chiffres d'un aléa cryptographique (`gen_random_uuid`), créés **à la demande de l'acheteur**
+(rien à changer dans le chemin de paiement). **Lisible par l'acheteur seul** : la table n'a aucun droit client
+et la lecture passe par une fonction qui vérifie que l'appelant est l'acheteur — le vendeur **ne peut pas** le
+lire. 10⁶ possibilités, `handover_code_max_attempts` essais (config, **5**) : un vendeur qui devine a 5 chances
+sur un million, puis le code se verrouille. Un essai faux est **enregistré même si l'appel « échoue »** (les
+fonctions rendent un refus au lieu de lever : une exception annulerait l'incrément et rendrait l'essai gratuit) ;
+une valeur qui n'a pas la forme de six chiffres n'use pas d'essai. Un bon code vaut **déclaration** (une
+remise en main propre n'a souvent jamais été déclarée) et ne crée aucun avis (l'acheteur est celui qui vient
+de parler).
+
+**Les écrans.** `/mes-achats` : « Afficher mon code de remise » (à `awaiting_shipment` comme à `shipped`),
+avec l'avertissement « donnez-le seulement quand vous avez l'objet en main ». `/mes-ventes` : champ « Code de
+remise de l'acheteur » (six chiffres, bouton actif à six), erreurs dites (essais restants, verrouillé, code non
+affiché, état). Quatre langues. Le code est un **secret de session** : jamais dans l'URL, jamais dans le
+stockage du navigateur, **jamais journalisé** (les deux routes ne contiennent aucun `console.*`, vérifié).
+Les routes lisent l'identité dans la **session** ; un `sellerId` forgé dans le corps est ignoré.
+
+**Ce que ça n'est pas.**
+- **Pas une preuve de livraison** : une preuve que l'acheteur a donné son code. Un acheteur contraint de le
+  donner avant d'avoir l'objet est un risque social, que l'écran dit.
+- **Pas une défense contre la collusion** acheteur-vendeur fabriquant une fausse vente : le plancher J+7 est
+  ce qui la borne.
+- **Hérité de `0043`, non modifié** : un avis `reminder_buyer` déjà programmé peut partir après une réception
+  (déjà vrai du bouton « J'ai reçu »). Le code n'aggrave rien ; la lacune reste à traiter à part.
+
+**Éprouvé (lot C).** SQL `handover_code.test.sql` (H1→H7) et **15 mutations de la migration attrapées**
+(plancher rogné, n'importe quel code accepté, essai non enregistré, plus de verrou, autre vendeur,
+lecture par le vendeur, garde de forme, table lisible, réception « automatique », litige clos par code,
+plafond en dur, `confirmed_at`, code délivré après réception, avis créés, fonction exposée) ; 10 tests
+TypeScript et **21 mutations attrapées** (identité dans le corps, cache, débit, code journalisé, borne de
+longueur, motifs HTTP, stockage navigateur, saisie non filtrée, écrans).
