@@ -45,6 +45,7 @@ import { lireEnvEssayage } from "@/lib/essayage/flags";
 import { libellesEssayage } from "@/lib/essayage/libelles";
 import { getPhysicalView } from "@/lib/products-physical";
 import { chargerZoneRemise } from "@/lib/zone-remise-serveur";
+import { delaiAffichable, delaiConstateVendeur, uniteDelai } from "@/lib/delai-constate";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { isKobaraEnabled } from "@/lib/kobara";
@@ -294,6 +295,16 @@ export default async function ProductPage({
    * parcours d'achat reste identique à celui d'avant. */
   const zoneRemise = pickByKind(product.kind, { file: false, service: false, physical: true }) && isSupabaseConfigured()
     ? await chargerZoneRemise(lang, product.creatorId ?? null)
+    : null;
+  /* Délai constaté (0165) : MESURÉ sur les réceptions confirmées par les acheteurs,
+   * jamais déclaré. Fail-closed : sans ligne (seuil non atteint, lecture en échec,
+   * 0165 pas encore appliquée) la fiche reste identique à celle d'avant. */
+  const delaiConstate = pickByKind(product.kind, { file: false, service: false, physical: true }) && isSupabaseConfigured()
+    ? await delaiConstateVendeur(product.creatorId)
+    : null;
+  const delaiMontre = delaiAffichable(delaiConstate);
+  const delaiTexte = delaiMontre !== null
+    ? (() => { const u = uniteDelai(delaiMontre); return t(lang, u.cle, { n: String(u.n) }); })()
     : null;
   const kindKey = kindLabelKey(product.kind, product.id);
   const deliveryBulletKey = bulletKey(product.kind, product.id);
@@ -605,6 +616,12 @@ export default async function ProductPage({
                   <li>{t(lang, "product.handover.time")}</li>
                   <li>{t(lang, "product.handover.fees")}</li>
                 </ul>
+                {delaiTexte !== null && delaiConstate && (
+                  <p className="mt-3 text-sm">
+                    {t(lang, "product.measured.delay", { delay: delaiTexte, n: String(delaiConstate.nb) })}
+                    <span className="mt-1 block text-xs text-mist">{t(lang, "product.measured.note")}</span>
+                  </p>
+                )}
                 <p className="mt-3 text-xs text-mist">{t(lang, "product.handover.note")}</p>
                 {product.creatorId && !estVendeur && (
                   <Link href={visiteur ? "#contacter-vendeur" : connexionVendeur}

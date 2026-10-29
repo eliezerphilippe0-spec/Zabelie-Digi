@@ -342,7 +342,7 @@ préférence que l'utilisateur demande** en cliquant.
 - La zone mémorisée **ne classe pas** le catalogue : elle propose un lien et préremplit l'assistant.
 
 
-## 12. La suite demandée le 2026-10-29 : cinq lots (A à E)
+## 12. La suite demandée le 2026-10-29 : sept lots (A à G)
 
 **Demande directe du porteur** : après l'analyse de pertinence (cookie de zone, Mercado Libre Flex, Jumia,
 TikTok Shop), « appliquer numéro 2, 3, 4, 5, 6, 7, 8, puis tes recommandations en tant que dev expérimenté ».
@@ -353,8 +353,10 @@ Les huit points de l'analyse, tels qu'ils sont devenus des lots :
 | **A** | Zone de REMISE structurée sur la commande physique (`0161`), choisie à chaque commande | recommandation, base de 4, 5, 8 ; **7** (repère) |
 | B | « Personne ne livre ici » + demande capturée par zone | 2 |
 | C | Code de remise qui confirme la réception | 3 |
-| D | Frais et délai déclarés par zone ; délai constaté | 4, 5 |
-| E | Pause de zone ; livraisons du vendeur groupées par zone | 6, 8 |
+| D | Frais et délai ANNONCÉS par zone, pause de zone | 4, 6 |
+| E | Délai CONSTATÉ (mesuré) ; ventes du vendeur groupées par zone | 5, 8 |
+| F | Points de retrait par zone (Jumia, `0082`) | recommandation |
+| G | Lien partagé du catalogue d'une zone (TikTok Shop) | recommandation |
 
 ### 12.1 Lot A — la zone de remise (`0161`)
 
@@ -611,6 +613,13 @@ aussi la réalité d'aujourd'hui : la fiche demande déjà de convenir des frais
 - Le délai annoncé est en **heures** (1 à 720), affiché « 24 h » jusqu'à 48 heures puis « 3 j ».
 - Les frais sont des **HTG entiers** (règle du dépôt : jamais de flottant).
 
+**Appliquée en production le 2026-10-29 à 15:01:56 UTC** (PR #453, `7d6a5b4`), **avant** la fusion, sous l'autorisation
+permanente du 2026-08-17 et l'instruction directe du jour : SQL reçu par Supabase == fichier, à l'octet (SHA-256
+`61636424…`, MD5 `4d433e69…`), ligne de registre `journal_supabase` (empreinte canonique `eff76a64…`) — registre à
+**164 lignes pour 164 fichiers**. Vérifié en production après coup : les trois colonnes sont là, `max_pause_days` = 30,
+`zone_id` **non** modifiable par `authenticated`, `fee_htg` modifiable, `anon` ne modifie rien, trigger `ZB164` et
+policy de modification présents. Aucune fonction nouvelle : pas de sonde à redéfinir.
+
 **Éprouvé (lot D).** SQL `service_zone_terms.test.sql` (T1→T5) et **9 mutations de la migration attrapées** ;
 18 tests TypeScript (forme du corps, planificateur, zone la plus proche, route de bout en bout — retrait avant
 modification avant ajout, identité de session, refus traduits en codes sans fuite du message de la base, repli base
@@ -619,3 +628,65 @@ comportement) ; les tests structurels de `0158` ont été **mis à jour** à la 
 **Navigateur réel** (390 px, kreyòl) : le vendeur déclare, relit, lève la pause ; l'acheteur lit les conditions
 attribuées au vendeur (150 HTG, 24 h, « offerts », ancêtre le plus bas, note hors paiement) ; pause → fiche et
 catalogue le disent ; pause échue → desservie toute seule ; refus 400/401 sans écriture ; aucune erreur console.
+
+### 12.5 Lot E — le délai CONSTATÉ et les tournées du vendeur (`0165`)
+
+**Les points 5 et 8 de l'analyse.** Mercado Libre l'a appris avant tout le monde : une promesse **mesurée** vaut
+plus qu'une promesse **déclarée**. Le lot D laisse le vendeur annoncer « 24 h » ; ce lot montre ce que ses remises
+passées disent. Les deux s'affichent côte à côte, chacun attribué à sa source — et c'est l'écart entre eux qui
+renseigne l'acheteur.
+
+**Ce qui est mesuré.** `zabelie_delai_constate(vendeur)` : le **délai médian** entre le paiement d'une commande
+physique et la réception **confirmée** par l'acheteur (bouton « J'ai reçu » ou code de remise, lot C). Trois entiers
+sortent — nombre de commandes (`nb`), médiane en heures (`mediane_heures`), seuil (`seuil`) — **aucun identifiant**.
+Lecture seule (`stable`), service-role seulement ; aucune écriture d'argent (un test le vérifie sur le fichier SQL).
+
+**Pourquoi c'est honnête — et ce que ça ne dit pas.**
+- **Les réceptions automatiques sont exclues** : quand l'acheteur se tait, la plateforme conclut au bout du délai ;
+  compter ces lignes mesurerait la plateforme, pas le vendeur.
+- **Seuil d'échantillon** (`delay_min_samples`, config, **5**) : une médiane sur une ou deux commandes est une
+  anecdote — et à ce volume elle désignerait des transactions précises. Sous le seuil, **rien n'est affiché**.
+- **Fenêtre** (`delay_window_days`, config, **180**) : un vendeur qui s'améliore ne traîne pas ses premières livraisons.
+- Une horloge qui recule (réception avant le paiement) n'est pas un délai : ignorée. Un délai de six minutes s'affiche
+  « 1 h », jamais « 0 h ».
+- **Ce n'est pas un délai de livraison** : c'est le délai **jusqu'à ce que l'acheteur confirme**. Un acheteur qui
+  confirme tard allonge le chiffre ; la ligne le dit (« jusqu'à la réception confirmée par l'acheteur ») et précise
+  « Mesuré par Zabelie… ce n'est pas un engagement du vendeur ».
+- La médiane est **par vendeur**, pas par zone : par zone, l'échantillon serait presque toujours sous le seuil.
+
+**Ce qui est construit.**
+- **`0165`** : deux clés de config, la fonction, la sonde `zabelie_objets_requis` redéfinie en entier (une ligne de
+  plus ; définition de production comparée à la copie locale avant l'application : MD5 identiques).
+- **Fiche produit physique** : dans « Avant de payer, convenez de la remise », la ligne « Délai constaté chez ce
+  vendeur : environ 30 h… sur 7 commandes récentes », **seulement** si la base a rendu une médiane **et** que
+  l'échantillon atteint le seuil. Fail-closed : fonction absente (code déployé avant `0165`), erreur, réponse bancale →
+  la fiche est celle d'avant, avec une trace dans les journaux (« aucune ligne » et « lecture échouée » ne doivent pas
+  se confondre).
+- **« Mes ventes »** : un bandeau « Votre délai constaté » — le vendeur voit **ce que voient les acheteurs**, ou, sous le
+  seuil, « Pas encore affiché. Commandes reçues et confirmées : 3 sur 5 nécessaires. Une remise confirmée par le code de
+  remise compte. » (un levier de plus pour le code de remise).
+- **« Mes ventes » rangé par zone** : les commandes sont regroupées par zone de remise (lot A), triées par ordre
+  alphabétique (les quartiers d'une commune se suivent), « Zone non précisée » en dernier, ordre d'origine conservé
+  dans chaque groupe. Les **titres n'apparaissent qu'à partir de deux groupes** : un vendeur à une seule zone, ou dont
+  les commandes datent d'avant `0161`, voit la liste d'avant, inchangée. On ne fait que **ranger** ce que l'acheteur a
+  déclaré : aucune lecture de plus, aucune donnée nouvelle.
+
+**Choix à connaître.**
+- Le délai est lu avec la clé **service-role** côté serveur (les lignes de `zabelie_fulfillment` ne sont pas publiques),
+  sur l'identifiant du vendeur de la fiche ou de la **session** — jamais d'un paramètre de requête.
+- À l'échelle actuelle (1 suivi de remise en base) le calcul par page vue est négligeable ; si le volume grandit, la
+  médiane se met en cache court ou se matérialise — décision à prendre sur mesure, pas avant.
+- Aucune valeur n'est affichée tant que **personne** n'a confirmé 5 réceptions : aujourd'hui, **aucune fiche** ne montre
+  cette ligne. C'est voulu.
+
+**Éprouvé (lot E).** SQL `delai_constate.test.sql` (E1→E7) et **13 mutations de la migration attrapées** (réception
+automatique comptée, horloge qui recule, fenêtre et seuil en dur, jamais zéro, filtre vendeur, médiane discrète, seuil
+strict, fonction volatile, médiane sous le seuil, seuil rendu faux, droit client) ; 18 tests TypeScript et **28
+mutations attrapées** (forme de la réponse, seuil contourné, médiane brute à la place de la valeur affichable,
+identité du vendeur, trace de l'échec, tri, titres de groupe, commandes perdues, textes des écrans, absence
+d'écriture dans la migration…). **Navigateur réel** (390 px, français et kreyòl) : la ligne s'affiche à 30 h sur 7
+commandes, devient « environ 3 j » à 71 h, disparaît sous le seuil / sur une réponse bancale / vide (la fiche reste en
+200) ; « Mes ventes » : trois groupes (Delmas 1 commande, Tabarre 2 commandes, Zone non précisée), aucune vente perdue,
+identité de session transmise, pas de titres avec une seule zone. **Il a trouvé un défaut** : le titre de groupe lisait
+« Delmas1 commande » pour un lecteur d'écran (espace manquant) — corrigé. Un passage a échoué une fois sur une lecture
+du script qui n'attend pas ; corrigé (attente explicite) puis quatre passages verts d'affilée.
