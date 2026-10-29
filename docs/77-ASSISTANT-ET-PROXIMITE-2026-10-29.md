@@ -803,3 +803,36 @@ catalogue relit exactement les identifiants du lien. **Navigateur réel** (390 p
 pour Delmas (message « Les produits et les vendeurs de Delmas sur Zabelie : … ») et pour un quartier (« Delmas 33,
 Delmas ») ; le destinataire ouvre l'adresse sans compte et voit « Ouest › Delmas » présélectionné avec les mêmes offres ;
 aucun lien pour une zone sans offre, avec catégorie, avec prix, sans zone, ni en « numérique » ; aucun cookie posé.
+
+### 12.8 Recommandations de clôture — ce qu'un développeur expérimenté signalerait
+
+Rédigées ici plutôt que codées : chacune est soit une **décision du porteur**, soit un **chantier à part** dont le coût
+dépasse ce qu'un lot de cette série peut absorber sans l'arbitrer. Rien n'est laissé en code mort.
+
+1. **Les parcours de zone ne sont verrouillés par aucun test e2e du dépôt.** Les vérifications navigateur de A à G se
+   sont faites sur un faux Supabase **hors dépôt** (le faux de CI ne sert les zones que dans le scénario d'identité) ;
+   la CI exécute les tests unitaires, SQL et le build, pas le sélecteur de zone, le code de remise, les points de
+   retrait ni le partage. Reprendre ces cinq scénarios dans `e2e/` (≈ +3 min de CI) est le meilleur filet qui reste —
+   à faire **avant** que les vendeurs réels y touchent.
+2. **Hérité de `0043`, aggravé par le code de remise** : un avis `reminder_buyer` déjà programmé peut partir **après** une
+   réception. Le code de remise la fait arriver plus tôt, donc plus souvent avant le rappel. Deux issues, qui ne se valent
+   pas : (a) l'expéditeur ignore le rappel d'une commande reçue **et** le marque « sans objet » (colonne nouvelle,
+   migration) — la preuve d'envoi reste honnête ; (b) supprimer les avis en attente à la réception — **touche la
+   rétention des preuves** que les arbitrages D-10→D-14 de `docs/28` gèlent (`0056`). **Décision porteur** ; (a) est la
+   recommandation.
+3. **Droits par défaut de Supabase** : `anon` détient `INSERT/UPDATE/DELETE` sur des tables que seule la RLS protège
+   (vérifié sur `zabelie_pickup_points`). Aucune faille aujourd'hui — pas de policy d'écriture, et `0082` le contrôle —
+   mais c'est une défense **à une seule couche**. Recommandation : une migration de resserrage (`revoke … from anon,
+   authenticated`) sur les tables lisibles-seulement, **après inventaire** (la liste se tire de `pg_policies` × droits,
+   pas de la mémoire).
+4. **Supabase Auth — « leaked password protection » désactivée** (conseiller de sécurité, avertissement). Réglage du
+   tableau de bord, hors du dépôt : à activer (vérification HaveIBeenPwned à l'inscription).
+5. **Points de retrait : le goulot est humain.** Zéro point ouvert ; la commission du point reste **non tranchée**
+   (`0082`). Tant qu'aucune boutique n'a signé, le lot F ne montre rien — c'est correct, et c'est ce qui doit être
+   recruté avant d'investir ailleurs dans cette voie (`docs/46` §3.2).
+6. **Délai constaté : à surveiller, pas à optimiser.** Calculé à la demande par page vue (volume actuel : 1 suivi de
+   remise). Si le trafic grandit : cache court ou matérialisation. Et **dire aux vendeurs, à l'avance**, que le chiffre
+   paraîtra dès cinq réceptions confirmées — « Mes ventes » le dit déjà, mais un vendeur qui le découvre sur sa fiche
+   sans l'avoir lu pourrait le vivre comme une sanction.
+7. **Décisions de produit laissées ouvertes** : présélectionner la zone de **remise** depuis le filtre du catalogue
+   (§12.7) ; aperçu de partage **par zone** ; ajouter les **frais annoncés au paiement** (§12.4, BRH, `docs/17`).
