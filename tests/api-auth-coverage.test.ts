@@ -82,6 +82,10 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // contient qu'un identifiant de zone OUVERTE, validé contre la liste. Le garde
   // est le contrôle d'origine (même hôte que la page), aux deux verbes.
   "zone/route.ts": /^(?=[\s\S]*export async function POST\(req: Request\) \{\s*if \(!memeOrigine\(req\)\) return erreurTraduite\("api\.access\.denied", 403)(?=[\s\S]*export async function DELETE\(req: Request\) \{\s*if \(!memeOrigine\(req\)\) return erreurTraduite\("api\.access\.denied", 403)/,
+  // « Je cherche un vendeur ici » (compteur anonyme par zone, 0162, docs/77 §12) :
+  // aucune session, aucun identifiant enregistré. Le garde est le contrôle
+  // d'origine ET un débit borné par IP hachée — l'un et l'autre exigés ici.
+  "zone/demande/route.ts": /^(?=[\s\S]*export async function POST\(req: Request\) \{\s*if \(!memeOrigine\(req\)\) return erreurTraduite\("api\.access\.denied", 403)(?=[\s\S]*rateLimit\(admin, `zone_demande:\$\{ipHash\}`)/,
   // Retour navigateur MonCash : pas de session requise, la vérité vient de la
   // vérification serveur-à-serveur auprès de MonCash (INVARIANT 2).
   "moncash/return/route.ts": /retrieveTransactionPayment/,
