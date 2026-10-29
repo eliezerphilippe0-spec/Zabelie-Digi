@@ -5,6 +5,8 @@ import { isMissingTable } from "@/lib/product-media";
 import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
 import { pauseEnCours } from "@/lib/zones-service";
 import type { ConditionZone } from "@/lib/zone-remise";
+import { chargerPointsRetrait } from "@/lib/points-retrait-serveur";
+import type { PointRetrait } from "@/lib/points-retrait";
 
 /**
  * Ce que la fiche d'un produit PHYSIQUE donne au sélecteur de zone de remise
@@ -28,7 +30,7 @@ import type { ConditionZone } from "@/lib/zone-remise";
 export async function chargerZoneRemise(
   lang: Lang,
   vendeurId: string | null,
-): Promise<{ zones: ZoneOption[]; couverture: string[]; conditions: ConditionZone[] } | null> {
+): Promise<{ zones: ZoneOption[]; couverture: string[]; conditions: ConditionZone[]; points: PointRetrait[] } | null> {
   const toutes = await getZonesActives();
   if (!toutes.some((z) => z.level === "komin")) return null;
 
@@ -62,7 +64,8 @@ export async function chargerZoneRemise(
       }));
     }
   }
-  return { zones, couverture, conditions };
+  // Les points de retrait OUVERTS (0082) : un annuaire, rapproché de la zone choisie côté écran.
+  return { zones, couverture, conditions, points: await chargerPointsRetrait() };
 }
 
 /**

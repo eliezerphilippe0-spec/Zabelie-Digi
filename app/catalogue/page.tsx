@@ -28,6 +28,9 @@ import { paramsCatalogue } from "@/lib/zone-acheteur";
 import { maZoneLabels } from "@/lib/ma-zone-labels";
 import { MaZone } from "@/components/ma-zone";
 import { ZoneSansVendeur } from "@/components/zone-sans-vendeur";
+import { PointsRetrait } from "@/components/points-retrait";
+import { chargerPointsRetrait } from "@/lib/points-retrait-serveur";
+import { pointsPourZone } from "@/lib/points-retrait";
 import { siteUrl } from "@/lib/site-url";
 import { t, tn } from "@/lib/i18n";
 
@@ -174,6 +177,12 @@ export default async function CataloguePage({
    * dans cette zone » est une vérité sur la zone et pas sur une recherche trop étroite. Alors seulement,
    * l'écran vide propose de dire « je cherche un vendeur ici » (docs/77 §12, lot B). */
   const zoneSeule = Boolean(zoneActive) && !q && !universe && activeCat === "Tout" && !sous && minPrice === undefined && maxPrice === undefined;
+  /* Aucune offre dans la zone : les points de retrait OUVERTS de cette zone (0082, docs/77 §12.6) — un
+   * annuaire de boutiques, seulement quand il y en a. Chargés ICI et seulement dans ce cas : la page
+   * normale ne paie pas une lecture de plus. */
+  const pointsZone = zoneSeule && zoneActive && total === 0
+    ? pointsPourZone(zones, await chargerPointsRetrait(), zoneActive.id, lang === "ht" ? "fr-HT" : lang)
+    : [];
   const filtre = Boolean(q) || activeCat !== "Tout" || !!universe || !!zoneId || minPrice !== undefined || maxPrice !== undefined;
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
@@ -529,6 +538,11 @@ export default async function CataloguePage({
                 {t(lang, "zsv.title").replace("{zone}", libelleZone(zoneActive, lang))}
               </p>
               <p className="mx-auto mt-2 max-w-md text-sm text-mist">{t(lang, "zsv.body")}</p>
+              {pointsZone.length > 0 && (
+                <div className="mx-auto mt-4 max-w-md">
+                  <PointsRetrait points={pointsZone} labels={{ title: t(lang, "pr.title"), note: t(lang, "pr.note"), call: t(lang, "pr.call") }} />
+                </div>
+              )}
               <ZoneSansVendeur
                 zoneId={zoneActive.id}
                 shareHref={`https://wa.me/?text=${encodeURIComponent(

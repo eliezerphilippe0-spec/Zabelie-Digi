@@ -1,6 +1,8 @@
 "use client";
 import { normalizeRecipient, type RecipientInput, type RecipientLabels } from "@/lib/order-recipient";
 import { ZoneRemise, type ZoneRemiseLabels } from "@/components/zone-remise";
+import type { PointRetrait } from "@/lib/points-retrait";
+import type { PointsRetraitLabels } from "@/components/points-retrait";
 import type { ZoneOption } from "@/components/profile-form";
 import type { ConditionZone } from "@/lib/zone-remise";
 
@@ -136,7 +138,7 @@ export function BuyButton({
   errors?: ErrorLabels;
   recipient?: RecipientLabels;
   /** Zone de remise (0161) : absent = produit non physique, parcours inchangé. */
-  zoneRemise?: { zones: ZoneOption[]; couverture: string[]; conditions: ConditionZone[]; locale: string; labels: ZoneRemiseLabels };
+  zoneRemise?: { zones: ZoneOption[]; couverture: string[]; conditions: ConditionZone[]; points: PointRetrait[]; pointsLabels: PointsRetraitLabels; locale: string; labels: ZoneRemiseLabels };
 }) {
   const router = useRouter();
   const [deliveryZoneId, setDeliveryZoneId] = useState<string | null>(null);
@@ -438,7 +440,7 @@ export function BuyButton({
         </div>
       </div>}
       {zoneRemise && <ZoneRemise zones={zoneRemise.zones}
-        couverture={zoneRemise.couverture} conditions={zoneRemise.conditions} locale={zoneRemise.locale} labels={zoneRemise.labels} disabled={busy} onChange={setDeliveryZoneId}/>}
+        couverture={zoneRemise.couverture} conditions={zoneRemise.conditions} points={zoneRemise.points} pointsLabels={zoneRemise.pointsLabels} locale={zoneRemise.locale} labels={zoneRemise.labels} disabled={busy} onChange={setDeliveryZoneId}/>}
       {recipient && <fieldset className="mb-5 rounded-xl border border-line p-4">
         <legend className="sr-only">{recipient.toggle}</legend>
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={forSomeone} onChange={e => setForSomeone(e.target.checked)} disabled={busy}/>{recipient.toggle}</label>

@@ -679,6 +679,14 @@ Lecture seule (`stable`), service-role seulement ; aucune écriture d'argent (un
 - Aucune valeur n'est affichée tant que **personne** n'a confirmé 5 réceptions : aujourd'hui, **aucune fiche** ne montre
   cette ligne. C'est voulu.
 
+**Appliquée en production le 2026-10-29 à 15:18:33 UTC** (PR #454, `ea77977`), **avant** la fusion, sous l'autorisation
+permanente du 2026-08-17 et l'instruction directe du jour : SQL reçu par Supabase == fichier, à l'octet (SHA-256
+`6d822cfd…`, MD5 `a7dcaafb…`), ligne de registre `journal_supabase` (empreinte canonique `ef5e5ce2…`) — registre à
+**165 lignes pour 165 fichiers**. Sonde de production comparée à la copie locale **avant** le `create or replace` :
+MD5 identiques (`e6c8f084…`). Vérifié après coup : la sonde compte **179 objets dont 178 présents** (seule absente :
+`zabelie_purge_sent_notices`, `0056` gelée) ; la fonction est `stable`, exécutable par `service_role` seul ; les deux clés
+de config sont là (5 et 180).
+
 **Éprouvé (lot E).** SQL `delai_constate.test.sql` (E1→E7) et **13 mutations de la migration attrapées** (réception
 automatique comptée, horloge qui recule, fenêtre et seuil en dur, jamais zéro, filtre vendeur, médiane discrète, seuil
 strict, fonction volatile, médiane sous le seuil, seuil rendu faux, droit client) ; 18 tests TypeScript et **28
@@ -690,3 +698,60 @@ commandes, devient « environ 3 j » à 71 h, disparaît sous le seuil / sur une
 identité de session transmise, pas de titres avec une seule zone. **Il a trouvé un défaut** : le titre de groupe lisait
 « Delmas1 commande » pour un lecteur d'écran (espace manquant) — corrigé. Un passage a échoué une fois sur une lecture
 du script qui n'attend pas ; corrigé (attente explicite) puis quatre passages verts d'affilée.
+
+### 12.6 Lot F — les points de retrait d'une zone (Jumia, `0082`, aucune migration)
+
+**La recommandation.** Dans un pays sans adresses normalisées, ce qui a tenu chez Jumia n'est pas la livraison à
+domicile : ce sont les **stations de retrait** (`docs/46` §3.2). `0082` en tient le répertoire depuis le 2026-08-15 —
+table, route admin, page admin — et **aucun acheteur n'en a jamais vu une ligne** (« aucun usage acheteur »). Ce lot
+montre à l'acheteur ceux qui recouvrent sa zone. **Aucune migration** : on réutilise la table (`docs/67` : pas de
+doublon).
+
+**Où ça s'affiche.**
+- **« Aucune offre pour cette zone »** (catalogue, lot B) : sous le texte, les points de retrait **ouverts** de la zone
+  — c'est précisément l'écran où l'acheteur n'a, sinon, que « je cherche un vendeur ici ». Chargés **uniquement** dans
+  ce cas (zone seule, zéro résultat) : la page normale ne paie pas une lecture de plus.
+- **Fiche produit physique**, sous le sélecteur de zone de remise (lot A) : pour la zone **choisie**, sans rechargement.
+  Un département seul (trop large) n'en montre aucun.
+
+**Quels points.** Ceux dont la zone est la destination, un **ancêtre** (un point « à Delmas » sert un acheteur de « Delmas
+33 ») ou un **descendant** (acheteur « Delmas » : un point du quartier Delmas 33 est dans sa commune) ; **jamais un
+quartier frère** — même règle que la couverture d'un vendeur (`zoneCouverte`, réutilisée). Ordre : la zone exacte
+d'abord, puis la `position` donnée par l'admin, puis le nom (tri selon la langue, accents inclus) — déterministe.
+Un point **sans zone** n'est rapprochable d'aucune destination : jamais montré.
+
+**⚠️ Ce que c'est — un ANNUAIRE, pas un service de Zabelie.**
+- Zabelie **ne livre pas** : la note le dit à chaque affichage (« convenez avec le vendeur de la remise à ce point, et des
+  frais éventuels, avant de payer »). Choisir un point n'est **pas** un geste de la commande : rien n'est stocké,
+  rien n'est ajouté au paiement.
+- **Aucune commission affichée ni promise** : son montant est un arbitrage du porteur, **non tranché** (`0082`). Un test
+  interdit les mots « commission », « gratuit », « offert » dans le composant.
+- Un point n'est visible que s'il est **ouvert** (`actif`), c'est-à-dire quand l'accord avec la boutique est **réel**
+  (`0082`). Le filtre `actif` est **répété** côté code : si une policy de lecture était un jour élargie « pour dépanner »,
+  un point fermé ne deviendrait pas visible pour autant.
+- Fail-soft **avec trace** : table absente → liste vide sans bruit ; autre erreur → liste vide **et** un avertissement.
+
+**Aujourd'hui : zéro point** (vérifié en production, 0 ligne). **Rien ne s'affiche** — voulu : `0082` le dit
+(« un sélecteur vide est une promesse vide »). Le lot rend la fonction **prête** pour le jour où l'administration ouvre
+le premier point (`/admin/points-retrait`). ⚠️ **Le recrutement des boutiques est un travail d'opérations** que le code
+ne fait pas : tant qu'aucun accord n'existe, l'écran reste celui du lot B. C'est le vrai goulot, pas le code.
+
+**Choix à connaître.**
+- Le répertoire est chargé en entier (**200 lignes au plus**, tenu à la main par l'administration) et rapproché côté
+  écran ; au-delà, le filtrage par zone devra se faire en base.
+- Le téléphone est un lien `tel:` réduit aux chiffres et au « + » initial ; un numéro sans chiffre s'affiche en texte,
+  sans lien vide.
+- `anon` détient `INSERT` sur `zabelie_pickup_points` par les droits par défaut de Supabase ; seule la RLS (aucune policy
+  d'écriture) l'en empêche — `0082` le vérifie en post-condition. Pas modifié ici ; à resserrer à l'occasion d'une
+  prochaine migration sur cette table.
+
+**Éprouvé (lot F).** 18 tests TypeScript et **24 mutations attrapées** (lecture tolérante, zone exacte / ancêtre /
+descendant / frère, destination absente, ordre — dont la position **contredisant** le nom, sans quoi sa mutation
+survivait —, lien `tel:`, filtres `actif` et zone, borne, trace d'échec, ligne mal formée, chargement limité au cas
+sans résultat, composant vide, absence de commission, note « Zabelie ne livre pas » dans les quatre langues).
+**Navigateur réel** (390 px, français et kreyòl) : Delmas montre la pharmacie puis le kiosque du quartier, ni Tabarre ni la
+boutique fermée ; Tabarre montre la sienne, sans lien vide ; Delmas 33 montre le kiosque puis la pharmacie ; répertoire vide
+→ aucun encadré ; fiche produit : rien avant le choix, rien pour un département seul, la liste suit le changement de
+commune ; la base est interrogée avec `actif=eq.true`, zone non nulle et `limit=200`. Le premier `build` a échoué sur le
+typage d'un **test** (le build typé inclut `tests/`) : corrigé ; `tsc` se lance désormais **après** l'écriture des tests,
+pas avant.
