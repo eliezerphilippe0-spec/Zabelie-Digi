@@ -153,9 +153,9 @@ test("coupons: real applicability keeps store-wide coupons inside the verified s
   assert.equal(couponApplies(coupon, PRODUCT, A), false);
 });
 
-test("coupons: duplicate and database refusals keep existing responses without stored rows", async () => {
+test("coupons: duplicate keeps its message; a database refusal no longer leaks Postgres text (docs/78 L4)", async () => {
   for (const [error, message] of [["duplicate key value violates unique constraint", "Ce code existe déjà dans votre boutique."],
-    ["Synthetic database refusal", "Synthetic database refusal"]]) {
+    ["Synthetic database refusal", t("fr", "api.write.failed")]]) {
     const f = fixture({ error });
     const response = await f.send({ expectedActorId: A, code: "PROMO50", percent: 50 });
     assert.equal(response.status, 422);

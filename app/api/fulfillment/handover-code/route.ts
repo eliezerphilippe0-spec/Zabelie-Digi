@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { echecBase } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     p_user_id: user.id,
   });
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return echecBase("fulfillment/handover-code", error, "api.write.failed", 500);
   }
   const res = (data ?? {}) as ResultatDeclaration;
   if (!res.ok || typeof res.code !== "string") {

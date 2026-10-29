@@ -48,3 +48,22 @@ export function erreurAvecLangue(
 ): NextResponse {
   return NextResponse.json({ error: t(lang, cle), ...extra }, { status });
 }
+
+/**
+ * ÉCHEC DE BASE rendu au visiteur SANS le texte de Postgres : un
+ * `error.message` brut nomme des tables, des colonnes, des contraintes, et ne
+ * se traduit pas (audit du 2026-10-29, docs/78 L4). Le détail part au journal
+ * serveur, d'où il se relit ; le visiteur reçoit une phrase dans sa langue.
+ */
+export async function echecBase(
+  route: string,
+  error: { message?: string; code?: string } | null,
+  cle: I18nKey,
+  status: number
+): Promise<NextResponse> {
+  console.error(JSON.stringify({
+    at: new Date().toISOString(), route, issue: "echec_base",
+    code: error?.code ?? null, message: error?.message ?? null,
+  }));
+  return erreurTraduite(cle, status);
+}

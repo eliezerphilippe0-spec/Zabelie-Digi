@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireActiveAccount } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfessional, slugify } from "@/lib/business";
@@ -20,6 +21,9 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
+  // Compte suspendu : aucun geste commercial ni contenu public (docs/78 L6).
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   const admin = createAdminClient();
 

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { requireActiveAccount } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeCouponCode } from "@/lib/zabelie-coupons";
 import { UUID_RE } from "@/lib/collections";
-import { erreurTraduite } from "@/lib/api-erreur";
+import { echecBase, erreurTraduite } from "@/lib/api-erreur";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,13 +34,16 @@ export async function GET() {
     .from("zabelie_coupons")
     .select("id, code, percent, product_id, max_uses, uses, expires_at, active, created_at")
     .order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return echecBase("coupons:get", error, "api.read.failed", 500);
   return NextResponse.json({ coupons: data ?? [] });
 }
 
 export async function POST(req: Request) {
   const { supabase, user } = await requireUser();
   if (!user) return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
+  // Compte suspendu : pas de nouveau code promo (docs/78 L6).
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: {
     code?: string;
@@ -92,10 +96,10 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    const msg = error.message.includes("duplicate")
-      ? "Ce code existe déjà dans votre boutique."
-      : error.message;
-    return NextResponse.json({ error: msg }, { status: 422 });
+    if (error.code === "23505" || error.message.includes("duplicate")) {
+      return NextResponse.json({ error: "Ce code existe déjà dans votre boutique." }, { status: 422 });
+    }
+    return echecBase("coupons:post", error, "api.write.failed", 422);
   }
   return NextResponse.json({ ok: true, coupon: data });
 }
@@ -113,11 +117,16 @@ export async function PATCH(req: Request) {
   if (!body.id || typeof body.active !== "boolean") {
     return NextResponse.json({ error: "id et active requis" }, { status: 400 });
   }
+  // Désactiver reste permis à un compte suspendu (cela réduit le risque) ; réactiver, non.
+  if (body.active) {
+    const accountRefusal = await requireActiveAccount(user.id);
+    if (accountRefusal) return accountRefusal;
+  }
 
   const { error } = await supabase
     .from("zabelie_coupons")
     .update({ active: body.active })
     .eq("id", body.id); // RLS : seulement ses propres codes
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return echecBase("coupons:patch", error, "api.write.failed", 500);
   return NextResponse.json({ ok: true });
 }

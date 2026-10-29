@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { echecBase } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveAccount } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -80,7 +81,7 @@ export async function POST() {
     if (!error) return NextResponse.json({ ok: true, code });
     if (isMissingTable(error)) return DORMANT();
     if (!/duplicate|unique/i.test(error.message)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return echecBase("affiliate", error, "api.write.failed", 500);
     }
   }
   return NextResponse.json({ error: "Génération du code échouée" }, { status: 500 });

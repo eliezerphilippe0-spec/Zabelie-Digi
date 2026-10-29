@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPayment } from "@/lib/moncash";
 import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { readSuspension } from "@/lib/account-suspension";
 import { randomBytes } from "crypto";
 
 export const runtime = "nodejs";
@@ -35,13 +36,35 @@ export async function POST(
   // Résolution SERVEUR de la facture par token — jamais d'ID exposé au client.
   const { data: inv } = await admin
     .from("zabelie_biz_invoices")
-    .select("id, status, total_htg, paid_htg")
+    .select("id, status, total_htg, paid_htg, professional_id")
     .eq("public_token", token)
     .maybeSingle();
   if (!inv) {
     return NextResponse.json({ error: "Facture introuvable." }, { status: 404 });
   }
   if (!["sent", "partially_paid", "overdue"].includes(inv.status)) {
+    return NextResponse.json(
+      { error: "Cette facture n'est pas payable." },
+      { status: 422 }
+    );
+  }
+
+  /* Le PRO doit pouvoir encaisser : un compte suspendu ne reçoit plus d'argent
+     par sa facture (audit du 2026-10-29, docs/78 M2). Statut illisible ou pro
+     disparu → refus, comme partout ailleurs (fail-closed). La date à laquelle
+     le versement devient disponible reste un arbitrage porteur + conseil. */
+  let encaissable = false;
+  try {
+    const { data: pro } = await admin
+      .from("zabelie_biz_professionals")
+      .select("user_id")
+      .eq("id", inv.professional_id)
+      .maybeSingle();
+    encaissable = Boolean(pro?.user_id) && (await readSuspension(admin, pro!.user_id)) === null;
+  } catch {
+    encaissable = false;
+  }
+  if (!encaissable) {
     return NextResponse.json(
       { error: "Cette facture n'est pas payable." },
       { status: 422 }

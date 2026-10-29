@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { requireActiveAccount } from "@/lib/auth";
+import { echecBase } from "@/lib/api-erreur";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -18,6 +20,9 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Authentification requise" }, { status: 401 });
   }
+  // Compte suspendu : aucun geste commercial ni contenu public (docs/78 L6).
+  const accountRefusal = await requireActiveAccount(user.id);
+  if (accountRefusal) return accountRefusal;
 
   let body: { orderId?: string; rating?: number; comment?: string };
   try {
@@ -63,11 +68,10 @@ export async function POST(req: Request) {
 
   if (error) {
     // 23505 = unique_violation : déjà un avis pour cette commande.
-    const already = error.code === "23505";
-    return NextResponse.json(
-      { error: already ? "Avis déjà déposé pour cet achat" : error.message },
-      { status: already ? 409 : 500 }
-    );
+    if (error.code === "23505") {
+      return NextResponse.json({ error: "Avis déjà déposé pour cet achat" }, { status: 409 });
+    }
+    return echecBase("reviews", error, "api.write.failed", 500);
   }
 
   return NextResponse.json({ ok: true });

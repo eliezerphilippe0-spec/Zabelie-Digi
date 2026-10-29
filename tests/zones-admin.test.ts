@@ -198,7 +198,8 @@ test("demande quartier : garde ZB070 conservé sans seconde validation de zone",
 test("demande quartier : panne de base conserve le refus500 sans succès apparent", async () => {
   const f = demandeFixture({ error: { code: "08006", message: "synthetic database unavailable" } });
   const response = await f.send({ ...DEMANDE, expectedActorId: ACTOR_A });
-  assert.equal(response.status, 500);assert.deepEqual(await response.json(), { error: "synthetic database unavailable" });assert.deepEqual(f.requests, []);
+  // docs/78 L4 : le texte de la base ne sort plus ; le refus 500 reste, traduit.
+  assert.equal(response.status, 500);assert.deepEqual(await response.json(), { error: t("fr", "api.write.failed") });assert.deepEqual(f.requests, []);
 });
 
 test("demande quartier : les nouveaux refus réutilisent les traductions existantes", async () => {
