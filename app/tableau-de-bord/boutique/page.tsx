@@ -8,6 +8,7 @@ import { ServiceZonesEditor } from "@/components/service-zones-editor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vendeurOuRedirection } from "@/lib/vendeur-acces";
 import { getZonesActives, libelleZone } from "@/lib/zones";
+import { pauseEnCours } from "@/lib/zones-service";
 import { siteUrl } from "@/lib/site-url";
 import { hrefBoutique } from "@/lib/boutique-href";
 import { qrBoutique } from "@/lib/boutique-qr";
@@ -130,12 +131,20 @@ export default async function BoutiquePage() {
      absente (0158 pas encore appliquée) ou lecture en échec → section masquée,
      rien d'inventé. Le plafond vient de la config en base, jamais d'ici. */
   const sessionDb = await createClient();
-  const [{ data: svcRows, error: svcErr }, { data: svcCfg }] = await Promise.all([
-    sessionDb.from("zabelie_seller_service_zones").select("zone_id").eq("seller_id", user.id),
-    sessionDb.from("zabelie_service_zone_config").select("max_zones").maybeSingle(),
-  ]);
+  let svc = await sessionDb.from("zabelie_seller_service_zones").select("zone_id, fee_htg, delay_hours, paused_until").eq("seller_id", user.id);
+  // 0164 pas encore appliquée (colonnes absentes) : on relit les zones seules, conditions vides.
+  if (svc.error?.code === "42703") svc = await sessionDb.from("zabelie_seller_service_zones").select("zone_id").eq("seller_id", user.id) as typeof svc;
+  const { data: svcRows, error: svcErr } = svc;
+  const { data: svcCfg } = await sessionDb.from("zabelie_service_zone_config").select("max_zones").maybeSingle();
+  const horloge = new Date();
   const zonesService = svcErr || zonesPourForm.length === 0 ? null : {
-    initial: ((svcRows ?? []) as { zone_id: string }[]).map((l) => l.zone_id),
+    initial: ((svcRows ?? []) as { zone_id: string; fee_htg?: number | null; delay_hours?: number | null; paused_until?: string | null }[]).map((l) => ({
+      zoneId: l.zone_id,
+      feeHtg: l.fee_htg ?? null,
+      delayHours: l.delay_hours ?? null,
+      // Seule une pause EN COURS est montrée comme telle : une date échue n'est plus une pause.
+      pausedUntil: pauseEnCours(l.paused_until, horloge) ? (l.paused_until ?? null) : null,
+    })),
     max: (svcCfg as { max_zones: number } | null)?.max_zones ?? null,
   };
 
@@ -235,6 +244,7 @@ export default async function BoutiquePage() {
                   zones={zonesPourForm}
                   initial={zonesService.initial}
                   max={zonesService.max}
+                  locale={lang === "ht" ? "fr-HT" : lang}
                   labels={{
                     title: t(lang, "svc.title"),
                     hint: t(lang, "svc.hint"),
@@ -253,6 +263,16 @@ export default async function BoutiquePage() {
                     errGeneric: t(lang, "svc.err.generic"),
                     errMax: t(lang, "svc.err.max"),
                     errZone: t(lang, "svc.err.zone"),
+                    fee: t(lang, "svc.fee"),
+                    delay: t(lang, "svc.delay"),
+                    conditionsNote: t(lang, "svc.conditions.note"),
+                    pauseLabel: t(lang, "svc.pause.label"),
+                    pauseNone: t(lang, "svc.pause.none"),
+                    pauseDays: t(lang, "svc.pause.days"),
+                    pausedUntil: t(lang, "svc.pause.until"),
+                    resume: t(lang, "svc.pause.resume"),
+                    errPause: t(lang, "svc.err.pause"),
+                    errValue: t(lang, "svc.err.value"),
                   }}
                 />
               </div>

@@ -554,9 +554,68 @@ Les routes lisent l'identité dans la **session** ; un `sellerId` forgé dans le
 - **Hérité de `0043`, non modifié** : un avis `reminder_buyer` déjà programmé peut partir après une réception
   (déjà vrai du bouton « J'ai reçu »). Le code n'aggrave rien ; la lacune reste à traiter à part.
 
+**Appliquée en production le 2026-10-29 à 14:47:13 UTC** (PR #452, `211bb26`), **avant** la fusion, sous l'autorisation
+permanente du 2026-08-17 et l'instruction directe du jour : SQL reçu par Supabase == fichier, à l'octet (SHA-256
+`527667bf…`, MD5 `f1cb684e…`), ligne de registre `journal_supabase` (empreinte canonique `02c0c749…`) — registre à
+**163 lignes pour 163 fichiers**. Vérifié en production après coup : la sonde compte **178 objets dont 177
+présents** (seule absente : `zabelie_purge_sent_notices`, `0056` gelée), voit les deux fonctions ; ni l'une ni l'autre
+n'est exécutable par `anon` ou `authenticated`, la table n'a aucun droit client, RLS active, plafond d'essais = 5,
+**aucun code émis** à ce jour.
+
 **Éprouvé (lot C).** SQL `handover_code.test.sql` (H1→H7) et **15 mutations de la migration attrapées**
 (plancher rogné, n'importe quel code accepté, essai non enregistré, plus de verrou, autre vendeur,
 lecture par le vendeur, garde de forme, table lisible, réception « automatique », litige clos par code,
 plafond en dur, `confirmed_at`, code délivré après réception, avis créés, fonction exposée) ; 10 tests
 TypeScript et **21 mutations attrapées** (identité dans le corps, cache, débit, code journalisé, borne de
 longueur, motifs HTTP, stockage navigateur, saisie non filtrée, écrans).
+
+### 12.4 Lot D — les conditions d'une zone : frais annoncés, délai annoncé, pause (`0164`)
+
+**Les points 4 et 6 de l'analyse.** Mercado Libre Flex et Jumia affichent avant tout deux choses : **combien** et
+**en combien de temps**. Le vendeur, lui, a besoin d'une **pause** : un barrage, une panne de carburant, une zone
+devenue impraticable ne doivent pas l'obliger à supprimer puis re-déclarer ses zones — ni laisser l'écran promettre
+ce qu'il ne peut pas tenir. `0158` disait OÙ le vendeur livre ; `0164` dit à quelles conditions.
+
+**⚠️ Les frais ne font PAS partie du paiement — décision d'argent NON prise.** `fee_htg` est une **information
+affichée**, attribuée au vendeur (« Frais annoncés par le vendeur »). Elle n'est ajoutée à aucun montant de
+commande, ne passe par aucun rail, n'entre dans aucun escrow ni grand livre, et la migration ne touche ni `orders`,
+ni les paiements, ni les soldes. **Les ajouter au paiement est une décision d'argent** (commission sur les frais ?
+séquestre des frais ?) liée au dossier BRH de rétention (`docs/17`) : elle appartient au porteur, et le texte
+affiché le dit à chaque fois (« Ces frais ne font pas partie du paiement Zabelie : à convenir avec lui »). C'est
+aussi la réalité d'aujourd'hui : la fiche demande déjà de convenir des frais avec le vendeur avant d'acheter.
+
+**Ce qui est construit.**
+- **`0164`** : trois colonnes sur `zabelie_seller_service_zones` — `fee_htg` (0 à 100 000, `NULL` = à convenir,
+  **0 = offerts** : deux choses distinctes), `delay_hours` (1 à 720), `paused_until` (une **date**, pas un drapeau).
+  Le vendeur modifie **SES** lignes sous sa session (RLS), et le droit de modification est limité **PAR COLONNE** à
+  ces trois-là : `zone_id` et `seller_id` restent **immuables** (le post-contrôle de la migration le vérifie).
+- **La pause est bornée** (garde **ZB164**) par `max_pause_days` en config (30 par défaut, jamais en dur), à
+  l'insertion comme à la modification, et **expire d'elle-même** : un vendeur qui oublie de la lever ne disparaît pas
+  pour toujours. Sa date est calculée **par le serveur** (« suspendre 7 jours »), jamais par le navigateur.
+- **Éditeur vendeur** (`/tableau-de-bord/boutique`) : chaque zone devient une carte — frais, délai, pause — avec le
+  rappel que ce sont SES annonces, hors paiement. `PUT { zones: [{ zoneId, feeHtg?, delayHours?, pause? }] }` ;
+  **`undefined` = ne pas toucher, `null` = effacer** : le format d'avant (`{ zoneIds }`) **n'efface aucune** condition
+  existante. On n'écrit que la **différence** (une ligne inchangée n'est jamais réécrite).
+- **Fiche produit** : pour la zone de remise choisie, les conditions de la zone déclarée **la plus proche** qui la
+  recouvre (la zone elle-même, sinon l'ancêtre le plus bas ; **jamais** un descendant : « je ne dessers qu'un
+  quartier » ne donne pas de conditions à toute la commune). Une zone en pause affiche « Le vendeur a suspendu la
+  livraison dans cette zone jusqu'au … » à la place des conditions — et jamais « ne déclare pas livrer ». La pause n'est
+  montrée que si le **serveur** la juge en cours : le navigateur ne compare aucune date à son horloge.
+- **Classement et filtre catalogue** : une zone en pause **ne compte pas** comme desservie (assistant, filtre « Zone »).
+  Pause échue = zone de nouveau desservie, sans geste.
+
+**Choix à connaître.**
+- **Base en retard de migration** : les lectures retombent sans les colonnes (`42703`), l'éditeur relit les zones
+  seules — le code peut se déployer avant `0164`. **Mais l'écriture** de conditions exige la migration : appliquer
+  `0164` **avant** de fusionner.
+- Le délai annoncé est en **heures** (1 à 720), affiché « 24 h » jusqu'à 48 heures puis « 3 j ».
+- Les frais sont des **HTG entiers** (règle du dépôt : jamais de flottant).
+
+**Éprouvé (lot D).** SQL `service_zone_terms.test.sql` (T1→T5) et **9 mutations de la migration attrapées** ;
+18 tests TypeScript (forme du corps, planificateur, zone la plus proche, route de bout en bout — retrait avant
+modification avant ajout, identité de session, refus traduits en codes sans fuite du message de la base, repli base
+ancienne) et **22 mutations attrapées**, dont une **équivalente** (non comptée : une réécriture qui ne change aucun
+comportement) ; les tests structurels de `0158` ont été **mis à jour** à la nouvelle forme, sans en affaiblir l'intention.
+**Navigateur réel** (390 px, kreyòl) : le vendeur déclare, relit, lève la pause ; l'acheteur lit les conditions
+attribuées au vendeur (150 HTG, 24 h, « offerts », ancêtre le plus bas, note hors paiement) ; pause → fiche et
+catalogue le disent ; pause échue → desservie toute seule ; refus 400/401 sans écriture ; aucune erreur console.

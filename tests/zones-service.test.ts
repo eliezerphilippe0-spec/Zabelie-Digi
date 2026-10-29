@@ -213,13 +213,16 @@ test("route : authentification, puis compte actif, avant toute lecture", () => {
   assert.match(get, /if \(!user\) return erreurTraduite\("api\.auth\.required", 401\);\s*const refus = await requireActiveAccount\(user\.id\);\s*if \(refus\) return refus;/);
 });
 
-test("route : chaque identifiant est un UUID, la liste est bornée, les deux avant toute écriture", () => {
-  assert.match(ROUTE_CODE, /brut\.length > MAX_ZONES_PAR_REQUETE\s*\|\|\s*!brut\.every\(\(id\): id is string => typeof id === "string" && UUID_RE\.test\(id\)\)/);
+test("route : la FORME du corps est contrôlée (identifiants, bornes, doublons) AVANT toute lecture ou écriture", () => {
+  // Depuis 0164 le contrôle vit dans `lireZonesVoulues` (lib/zones-service, éprouvé dans tests/zones-conditions.test.ts) ;
+  // ici, seulement le fait qu'il COMMANDE : un corps invalide rend 400 avant `lireMesZones`.
+  assert.match(ROUTE_CODE, /voulues = lireZonesVoulues\(await req\.json\(\)\);[\s\S]{0,160}if \(!voulues\) return erreurTraduite\("api\.params\.invalid", 400\);\s*const lecture = await lireMesZones/);
 });
 
 test("route : le seller_id écrit vient de la SESSION, jamais du corps", () => {
-  assert.match(ROUTE_CODE, /insert\(ajouter\.map\(\(zone_id\) => \(\{ seller_id: user\.id, zone_id \}\)\)\)/);
+  assert.match(ROUTE_CODE, /insert\(ajouter\.map\(\(l\) => \(\{ \.\.\.l, seller_id: user\.id \}\)\)\)/);
   assert.match(ROUTE_CODE, /\.delete\(\)\s*\.eq\("seller_id", user\.id\)\s*\.in\("zone_id", retirer\)/);
+  assert.match(ROUTE_CODE, /\.update\(\{ fee_htg: l\.fee_htg, delay_hours: l\.delay_hours, paused_until: l\.paused_until \}\)\s*\.eq\("seller_id", user\.id\)\s*\.eq\("zone_id", l\.zone_id\)/);
   assert.doesNotMatch(ROUTE_CODE, /body\.seller|seller_id: (?!user\.id)/);
 });
 
@@ -228,7 +231,7 @@ test("route : les retraits PRÉCÈDENT les ajouts (remplacer ne bute pas sur le 
   // fichier mais rendu inatteignable (`if (false)`) ne passe pas.
   assert.match(
     ROUTE_CODE,
-    /if \(retirer\.length\) \{\s*const \{ error \} = await supabase\s*\.from\("zabelie_seller_service_zones"\)\s*\.delete\(\)[\s\S]{0,400}if \(ajouter\.length\) \{\s*const \{ error \} = await supabase\s*\.from\("zabelie_seller_service_zones"\)\s*\.insert\(/
+    /if \(retirer\.length\) \{\s*const \{ error \} = await supabase\s*\.from\("zabelie_seller_service_zones"\)\s*\.delete\(\)[\s\S]{0,500}for \(const l of modifier\)[\s\S]{0,600}if \(ajouter\.length\) \{\s*const \{ error \} = await supabase\s*\.from\("zabelie_seller_service_zones"\)\s*\.insert\(/
   );
 });
 
@@ -253,13 +256,15 @@ test("éditeur : composant client sans t() — les libellés arrivent en props",
 test("éditeur : la zone ajoutée est la plus profonde choisie, et un doublon ou le plafond bloquent l'ajout", () => {
   assert.match(EDITEUR, /const cible = zq \|\| zk \|\| zd;/);
   assert.match(EDITEUR, /const pleine = max !== null && choisies\.length >= max;/);
-  assert.match(EDITEUR, /if \(!cible \|\| pleine \|\| choisies\.includes\(cible\)\) return;/);
-  assert.match(EDITEUR, /disabled=\{!cible \|\| pleine \|\| choisies\.includes\(cible\)\}/);
+  assert.match(EDITEUR, /if \(!cible \|\| pleine \|\| choisies\.some\(\(c\) => c\.zoneId === cible\)\) return;/);
+  assert.match(EDITEUR, /disabled=\{!cible \|\| pleine \|\| choisies\.some\(\(c\) => c\.zoneId === cible\)\}/);
 });
 
 test("éditeur : les codes de refus sont traduits en libellés, les autres en message générique", () => {
-  assert.match(EDITEUR, /data\.code === "service_zones_max" \? labels\.errMax\s*: data\.code === "service_zones_zone" \? labels\.errZone\s*: labels\.errGeneric/);
-  assert.match(EDITEUR, /method: "PUT"[\s\S]{0,200}JSON\.stringify\(\{ zoneIds: choisies \}\)/);
+  assert.match(EDITEUR, /data\.code === "service_zones_max" \? labels\.errMax\s*: data\.code === "service_zones_zone" \? labels\.errZone\s*: data\.code === "service_zones_pause" \? labels\.errPause\s*: data\.code === "service_zones_valeur" \? labels\.errValue\s*: labels\.errGeneric/);
+  // Le navigateur envoie « suspendre N jours » : jamais une date (l'horloge du client ne décide pas d'une pause).
+  assert.match(EDITEUR, /method: "PUT"[\s\S]{0,200}JSON\.stringify\(\{\s*zones: choisies\.map\(\(c\) => \(\{\s*zoneId: c\.zoneId,\s*feeHtg: c\.fee === "" \? null : Number\(c\.fee\),\s*delayHours: c\.delay === "" \? null : Number\(c\.delay\),\s*pause: c\.pause,/);
+  assert.doesNotMatch(SANS_COMMENTAIRES(EDITEUR), /new Date\(Date\.now|\.toISOString\(\)|setDate\(/);
 });
 
 test("page : la section n'apparaît que si les zones desservies sont lisibles (table présente)", () => {
@@ -291,7 +296,7 @@ test("0158 : la première instruction est le garde de rejeu", () => {
   assert.match(MIGRATION, /^select zabelie_migration_garde\('0158_zabelie_seller_service_zones\.sql'\);/);
 });
 
-test("0158 : l'écriture est liée à la session, le retrait aussi, et aucun update n'est accordé", () => {
+test("0158 : l'écriture est liée à la session, le retrait aussi, et AUCUN update n'est accordé PAR CETTE MIGRATION (0164 en ajoute un, par colonne)", () => {
   assert.match(SQL, /for insert to authenticated\s+with check \(seller_id = auth\.uid\(\)\)/);
   assert.match(SQL, /for delete to authenticated\s+using \(seller_id = auth\.uid\(\)\)/);
   assert.match(SQL, /grant insert, delete on zabelie_seller_service_zones to authenticated/);
