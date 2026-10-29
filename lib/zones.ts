@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isMissingTable } from "@/lib/product-media";
 import type { Lang } from "@/lib/i18n";
+import { filtreZoneNonSuspendue } from "@/lib/zones-service";
 
 /**
  * ZONES — la couche de lecture du filtre catalogue (PR-Z2, `docs/33` §4).
@@ -141,15 +142,19 @@ export function zonesRecouvrantes(zones: ZoneNode[], id: string): string[] {
  * ⚠️ Plafonné par la limite de lignes de PostgREST (1000) : au-delà, des vendeurs
  * sont omis — la troncature dégrade vers « moins de résultats », jamais vers un
  * vendeur proposé à tort.
+ *
+ * ⚠️ Une zone EN PAUSE (0164) ne compte pas : un vendeur qui a suspendu la livraison
+ * dans une zone n'y est plus proposé. La pause expire d'elle-même (`paused_until`
+ * passée = zone de nouveau desservie), sans que personne ait à la lever. Base en retard
+ * de migration (colonne absente, 42703) : on relit sans le filtre — le comportement d'avant.
  */
 async function vendeursDesservant(
   supabase: Awaited<ReturnType<typeof createClient>>,
   zoneIds: string[]
 ): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("zabelie_seller_service_zones")
-    .select("seller_id")
-    .in("zone_id", zoneIds);
+  const base = () => supabase.from("zabelie_seller_service_zones").select("seller_id").in("zone_id", zoneIds);
+  let { data, error } = await base().or(filtreZoneNonSuspendue(new Date()));
+  if (error?.code === "42703") ({ data, error } = await base());
   if (error || !data) {
     if (error && !isMissingTable(error)) console.warn("[zones] zones desservies illisibles, vendeurs installés seuls", error.message);
     return [];

@@ -3,10 +3,13 @@ import type { Lang } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 import { isMissingTable } from "@/lib/product-media";
 import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
+import { pauseEnCours } from "@/lib/zones-service";
+import type { ConditionZone } from "@/lib/zone-remise";
 
 /**
  * Ce que la fiche d'un produit PHYSIQUE donne au sélecteur de zone de remise
- * (0161) : les zones ouvertes et les zones que LE VENDEUR déclare desservir (0158).
+ * (0161) : les zones ouvertes, les zones que LE VENDEUR déclare desservir (0158) et ses
+ * conditions annoncées par zone — frais, délai, pause (0164).
  *
  * ⚠️ Le cookie `zabelie_zone` n'est PAS lu ici. La politique (§8) le déclare
  * « pour classer en premier les offres proches de vous » : préremplir la remise
@@ -25,7 +28,7 @@ import { cheminZone, getZonesActives, libelleZone } from "@/lib/zones";
 export async function chargerZoneRemise(
   lang: Lang,
   vendeurId: string | null,
-): Promise<{ zones: ZoneOption[]; couverture: string[] } | null> {
+): Promise<{ zones: ZoneOption[]; couverture: string[]; conditions: ConditionZone[] } | null> {
   const toutes = await getZonesActives();
   if (!toutes.some((z) => z.level === "komin")) return null;
 
@@ -37,19 +40,29 @@ export async function chargerZoneRemise(
   }));
 
   let couverture: string[] = [];
+  let conditions: ConditionZone[] = [];
   if (vendeurId) {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("zabelie_seller_service_zones")
-      .select("zone_id")
-      .eq("seller_id", vendeurId);
-    if (error) {
-      if (!isMissingTable(error)) console.warn("[fiche] zones desservies illisibles, aucune réserve", error.message);
+    const lire = (colonnes: string) => supabase.from("zabelie_seller_service_zones").select(colonnes).eq("seller_id", vendeurId);
+    let r = await lire("zone_id, fee_htg, delay_hours, paused_until");
+    // 0164 pas encore appliquée (colonnes absentes) : les zones seules, aucune condition.
+    if (r.error?.code === "42703") r = await lire("zone_id");
+    if (r.error) {
+      if (!isMissingTable(r.error)) console.warn("[fiche] zones desservies illisibles, aucune réserve", r.error.message);
     } else {
-      couverture = (data ?? []).map((l: { zone_id: string }) => l.zone_id);
+      const lignes = (r.data ?? []) as unknown as { zone_id: string; fee_htg?: number | null; delay_hours?: number | null; paused_until?: string | null }[];
+      const maintenant = new Date();
+      couverture = lignes.map((l) => l.zone_id);
+      conditions = lignes.map((l) => ({
+        zoneId: l.zone_id,
+        feeHtg: l.fee_htg ?? null,
+        delayHours: l.delay_hours ?? null,
+        // Décidé ICI, à l'horloge du SERVEUR : seule une pause EN COURS est montrée.
+        pausedUntil: pauseEnCours(l.paused_until, maintenant) ? (l.paused_until ?? null) : null,
+      }));
     }
   }
-  return { zones, couverture };
+  return { zones, couverture, conditions };
 }
 
 /**

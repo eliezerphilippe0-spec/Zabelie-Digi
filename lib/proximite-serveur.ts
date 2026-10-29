@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getZonesActives } from "@/lib/zones";
+import { filtreZoneNonSuspendue } from "@/lib/zones-service";
 import { isMissingTable } from "@/lib/product-media";
 import {
   niveauDesserte,
@@ -42,10 +43,11 @@ async function zonesDesservies(
   supabase: Awaited<ReturnType<typeof createClient>>,
   vendeurIds: string[]
 ): Promise<Map<string, string[]> | null> {
-  const { data, error } = await supabase
-    .from("zabelie_seller_service_zones")
-    .select("seller_id, zone_id")
-    .in("seller_id", vendeurIds);
+  // Une zone EN PAUSE (0164) ne compte pas comme desservie : la proximité ne promet pas une livraison que
+  // le vendeur a suspendue. Colonne absente (base en retard de migration, 42703) : relecture sans le filtre.
+  const base = () => supabase.from("zabelie_seller_service_zones").select("seller_id, zone_id").in("seller_id", vendeurIds);
+  let { data, error } = await base().or(filtreZoneNonSuspendue(new Date()));
+  if (error?.code === "42703") ({ data, error } = await base());
   if (error || !data) {
     if (error && !isMissingTable(error)) console.warn("[proximite] zones desservies illisibles, zone d'installation seule");
     return null;

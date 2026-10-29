@@ -633,10 +633,13 @@ export default async function ProductPage({
                 } : undefined}
                 zoneRemise={zoneRemise ? {
                   ...zoneRemise,
+                  locale: lang === "ht" ? "fr-HT" : lang,
                   labels: {
                     title: t(lang, "zr.title"), hint: t(lang, "zr.hint"), depatman: t(lang, "zr.depatman"),
                     komin: t(lang, "zr.komin"), katye: t(lang, "zr.katye"), allDepatman: t(lang, "zr.allDepatman"),
                     allKomin: t(lang, "zr.allKomin"), needKomin: t(lang, "zr.needKomin"), notCovered: t(lang, "zr.notCovered"),
+                    fee: t(lang, "zr.fee"), feeFree: t(lang, "zr.fee.free"), delay: t(lang, "zr.delay"),
+                    unitHours: t(lang, "zr.unit.hours"), unitDays: t(lang, "zr.unit.days"), termsNote: t(lang, "zr.terms.note"), paused: t(lang, "zr.paused"),
                   },
                 } : undefined}
                 productId={product.id}

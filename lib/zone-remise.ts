@@ -115,3 +115,38 @@ export function zoneEffective(
   const z = zones.find((x) => x.id === id);
   return z && niveauRemiseValide(z.level) ? z.id : null;
 }
+
+/**
+ * Les conditions qu'un vendeur ANNONCE pour une zone (0164) : frais, délai, pause. `pausedUntil` n'est
+ * renseigné que si la pause est EN COURS au moment où le serveur rend la page — le navigateur ne compare
+ * jamais une date à son horloge.
+ */
+export type ConditionZone = {
+  zoneId: string;
+  feeHtg: number | null;
+  delayHours: number | null;
+  pausedUntil: string | null;
+};
+
+/**
+ * Les conditions qui s'appliquent à une destination : la zone déclarée la plus PROCHE qui la recouvre —
+ * la destination elle-même, sinon son ancêtre le plus bas (« tout Delmas » vaut pour « Delmas 33 » ; un
+ * quartier plus précis l'emporte sur la commune). Une zone déclarée PLUS BASSE que la destination (le
+ * vendeur ne dessert qu'un quartier de la commune choisie) ne donne pas de conditions : elles
+ * s'appliqueraient à une partie seulement de ce que l'acheteur a choisi.
+ */
+export function conditionsPourZone(
+  zones: readonly ZoneRemiseNoeud[],
+  conditions: readonly ConditionZone[],
+  destination: string | null,
+): ConditionZone | null {
+  if (!destination) return null;
+  const parId = new Map(conditions.map((c) => [c.zoneId, c]));
+  const exacte = parId.get(destination);
+  if (exacte) return exacte;
+  for (const ancetre of ancetres(zones, destination)) {
+    const c = parId.get(ancetre);
+    if (c) return c;
+  }
+  return null;
+}

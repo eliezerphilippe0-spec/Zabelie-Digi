@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { ZoneOption } from "@/components/profile-form";
 
 /**
- * « Ki kote ou livre ? » — les zones où le vendeur DÉCLARE livrer (0158).
+ * « Ki kote ou livre ? » — les zones où le vendeur DÉCLARE livrer (0158), avec pour
+ * chacune les frais et le délai qu'il ANNONCE et une pause (0164).
  *
  * Tous les libellés arrivent en props, résolus côté serveur : un composant client
  * ne lit pas le cookie de langue (tests/i18n-client-discipline.test.ts).
@@ -12,7 +13,11 @@ import type { ZoneOption } from "@/components/profile-form";
  * La zone ajoutée est la plus profonde choisie : un département seul veut dire
  * « tout le département » ; une commune sans quartier, « toute la commune ». Le
  * vendeur peut en cumuler plusieurs. Rien n'est écrit tant qu'il n'a pas
- * enregistré, et l'écran dit ce que la base a refusé (plafond, zone fermée).
+ * enregistré, et l'écran dit ce que la base a refusé (plafond, zone fermée, pause).
+ *
+ * ⚠️ Les frais annoncés ne sont PAS ajoutés au paiement : le texte d'aide le dit. Les
+ * champs sont facultatifs — vide = « à convenir ». La date d'une pause n'est jamais
+ * calculée ici : le navigateur envoie « suspendre N jours », le serveur pose la date.
  */
 export type ServiceZonesLabels = {
   title: string;
@@ -28,6 +33,19 @@ export type ServiceZonesLabels = {
   empty: string;
   /** Contient `{n}` et `{max}`. */
   count: string;
+  fee: string;
+  delay: string;
+  /** Rappel : information affichée, hors du paiement Zabelie. */
+  conditionsNote: string;
+  pauseLabel: string;
+  pauseNone: string;
+  /** Contient `{n}`. */
+  pauseDays: string;
+  /** Contient `{date}`. */
+  pausedUntil: string;
+  resume: string;
+  errPause: string;
+  errValue: string;
   save: string;
   saving: string;
   saved: string;
@@ -37,16 +55,33 @@ export type ServiceZonesLabels = {
 };
 
 const INPUT = "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
+const PETIT = "min-h-11 w-full rounded-lg border border-line bg-ink/40 px-3 text-sm outline-none focus:border-accent";
 
-export function ServiceZonesEditor({ zones, initial, max, labels }: {
+/** Une zone déclarée telle que le serveur la rend : `pausedUntil` n'est renseignée que si la pause est EN COURS. */
+export type ZoneDeclaree = { zoneId: string; feeHtg: number | null; delayHours: number | null; pausedUntil: string | null };
+
+/** Durées de pause proposées (jours) : le plafond commercial est en base (ZB164), jamais ici. */
+const DUREES_PAUSE = [3, 7, 14, 30] as const;
+type Pause = { action: "keep" } | { action: "clear" } | { action: "set"; days: number };
+type Entree = { zoneId: string; fee: string; delay: string; pausedUntil: string | null; pause: Pause };
+
+const entree = (z: ZoneDeclaree): Entree => ({
+  zoneId: z.zoneId, fee: z.feeHtg === null ? "" : String(z.feeHtg), delay: z.delayHours === null ? "" : String(z.delayHours),
+  pausedUntil: z.pausedUntil, pause: { action: "keep" },
+});
+const chiffres = (v: string) => v.replace(/\D/g, "").slice(0, 6);
+
+export function ServiceZonesEditor({ zones, initial, max, labels, locale }: {
   zones: ZoneOption[];
-  initial: string[];
+  initial: ZoneDeclaree[];
   /** Plafond lu en base ; `null` s'il est illisible (alors aucun compteur). */
   max: number | null;
   labels: ServiceZonesLabels;
+  /** Pour la date d'une pause en cours (`fr-HT`, `en`, `es`…), résolue côté serveur. */
+  locale: string;
 }) {
   const parId = new Map(zones.map((z) => [z.id, z]));
-  const [choisies, setChoisies] = useState<string[]>(initial.filter((id) => parId.has(id)));
+  const [choisies, setChoisies] = useState<Entree[]>(initial.filter((z) => parId.has(z.zoneId)).map(entree));
   const [zd, setZd] = useState("");
   const [zk, setZk] = useState("");
   const [zq, setZq] = useState("");
@@ -58,6 +93,10 @@ export function ServiceZonesEditor({ zones, initial, max, labels }: {
   // La zone visée : la plus profonde choisie.
   const cible = zq || zk || zd;
   const pleine = max !== null && choisies.length >= max;
+  const maj = (id: string, patch: Partial<Entree>) => {
+    setChoisies((liste) => liste.map((c) => (c.zoneId === id ? { ...c, ...patch } : c)));
+    setMessage(null);
+  };
 
   /** « Cap-Haïtien › Carénage » : le chemin complet, pour que deux quartiers homonymes se distinguent. */
   function chemin(id: string): string {
@@ -69,8 +108,8 @@ export function ServiceZonesEditor({ zones, initial, max, labels }: {
   }
 
   function ajouter() {
-    if (!cible || pleine || choisies.includes(cible)) return;
-    setChoisies([...choisies, cible]);
+    if (!cible || pleine || choisies.some((c) => c.zoneId === cible)) return;
+    setChoisies([...choisies, { zoneId: cible, fee: "", delay: "", pausedUntil: null, pause: { action: "clear" } }]);
     setZk("");
     setZq("");
     setMessage(null);
@@ -84,7 +123,14 @@ export function ServiceZonesEditor({ zones, initial, max, labels }: {
       const res = await fetch("/api/seller/service-zones", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ zoneIds: choisies }),
+        body: JSON.stringify({
+          zones: choisies.map((c) => ({
+            zoneId: c.zoneId,
+            feeHtg: c.fee === "" ? null : Number(c.fee),
+            delayHours: c.delay === "" ? null : Number(c.delay),
+            pause: c.pause,
+          })),
+        }),
       });
       if (res.ok) {
         setMessage({ texte: labels.saved, ok: true });
@@ -94,6 +140,8 @@ export function ServiceZonesEditor({ zones, initial, max, labels }: {
       setMessage({
         texte: data.code === "service_zones_max" ? labels.errMax
           : data.code === "service_zones_zone" ? labels.errZone
+          : data.code === "service_zones_pause" ? labels.errPause
+          : data.code === "service_zones_valeur" ? labels.errValue
           : labels.errGeneric,
         ok: false,
       });
@@ -111,21 +159,55 @@ export function ServiceZonesEditor({ zones, initial, max, labels }: {
       {choisies.length === 0 ? (
         <p className="text-sm text-mist">{labels.empty}</p>
       ) : (
-        <ul className="flex flex-wrap gap-2" aria-label={labels.title}>
-          {choisies.map((id) => (
-            <li key={id} className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 py-1 pl-3 pr-1 text-sm">
-              <span>{chemin(id)}</span>
-              <button
-                type="button"
-                onClick={() => { setChoisies(choisies.filter((c) => c !== id)); setMessage(null); }}
-                aria-label={labels.remove.replace("{zone}", chemin(id))}
-                className="inline-flex size-8 items-center justify-center rounded-full text-mist hover:text-cloud"
-              >
-                <span aria-hidden="true">×</span>
-              </button>
+        <>
+        <ul className="space-y-3" aria-label={labels.title}>
+          {choisies.map((c) => (
+            <li key={c.zoneId} className="space-y-2 rounded-xl border border-line bg-surface-2 p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-semibold">{chemin(c.zoneId)}</span>
+                <button
+                  type="button"
+                  onClick={() => { setChoisies(choisies.filter((x) => x.zoneId !== c.zoneId)); setMessage(null); }}
+                  aria-label={labels.remove.replace("{zone}", chemin(c.zoneId))}
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-mist hover:text-cloud"
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-xs text-mist">
+                  <span>{labels.fee}</span>
+                  <input className={PETIT} inputMode="numeric" autoComplete="off" value={c.fee} disabled={busy}
+                    onChange={(e) => maj(c.zoneId, { fee: chiffres(e.target.value) })} />
+                </label>
+                <label className="block text-xs text-mist">
+                  <span>{labels.delay}</span>
+                  <input className={PETIT} inputMode="numeric" autoComplete="off" value={c.delay} disabled={busy}
+                    onChange={(e) => maj(c.zoneId, { delay: chiffres(e.target.value) })} />
+                </label>
+              </div>
+              {c.pausedUntil && c.pause.action === "keep" ? (
+                <p className="flex flex-wrap items-center gap-2 text-xs text-mist">
+                  <span>{labels.pausedUntil.replace("{date}", new Date(c.pausedUntil).toLocaleDateString(locale))}</span>
+                  <button type="button" onClick={() => maj(c.zoneId, { pause: { action: "clear" } })}
+                    className="inline-flex min-h-11 items-center font-semibold text-accent underline">{labels.resume}</button>
+                </p>
+              ) : (
+                <label className="block text-xs text-mist">
+                  <span>{labels.pauseLabel}</span>
+                  <select className={PETIT} disabled={busy}
+                    value={c.pause.action === "set" ? String(c.pause.days) : "0"}
+                    onChange={(e) => maj(c.zoneId, { pause: e.target.value === "0" ? { action: "clear" } : { action: "set", days: Number(e.target.value) } })}>
+                    <option value="0">{labels.pauseNone}</option>
+                    {DUREES_PAUSE.map((n) => <option key={n} value={n}>{labels.pauseDays.replace("{n}", String(n))}</option>)}
+                  </select>
+                </label>
+              )}
             </li>
           ))}
         </ul>
+        <p className="text-xs text-mist">{labels.conditionsNote}</p>
+        </>
       )}
       {max !== null ? (
         <p className="text-xs text-mist">{labels.count.replace("{n}", String(choisies.length)).replace("{max}", String(max))}</p>
@@ -150,7 +232,7 @@ export function ServiceZonesEditor({ zones, initial, max, labels }: {
             {katyes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
           </select>
         ) : null}
-        <button type="button" onClick={ajouter} disabled={!cible || pleine || choisies.includes(cible)}
+        <button type="button" onClick={ajouter} disabled={!cible || pleine || choisies.some((c) => c.zoneId === cible)}
           className="min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-accent disabled:opacity-50">
           {labels.add}
         </button>
