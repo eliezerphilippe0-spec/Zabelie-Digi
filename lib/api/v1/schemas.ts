@@ -63,11 +63,19 @@ export const OrderRefSchema = z.string().regex(ORDER_REF_PATTERN, {
   message: "Référence attendue au format ZB-YYMMDD-XXXXX",
 });
 
+/**
+ * ⚠️ MINUSCULES UNICODE, pas ASCII. Le catalogue est kreyòl-first : 9 rayons
+ * actifs sur 83 portent un accent (`luil-motè`, `krem-kò`, `sewòm`). L'ancien
+ * motif `[a-z0-9-]` les refusait, et comme le contrat de SORTIE est vérifié
+ * avant envoi, une seule adresse accentuée retenait toute la page :
+ * `list_categories` répondait 500 en production (mesuré le 2026-10-29, docs/78).
+ * Même défaut que `\b` contre `vandè` — un instrument qui ne voit que l'ASCII.
+ */
 export const SlugSchema = z
   .string()
   .min(1)
   .max(200)
-  .regex(/^[a-z0-9-]+$/, { message: "Slug attendu en minuscules, chiffres et tirets" });
+  .regex(/^[\p{Ll}\p{Mn}\p{Nd}-]+$/u, { message: "Slug attendu en minuscules, chiffres et tirets" });
 
 /** Curseur de pagination : opaque pour l'appelant, jamais interprété par lui. */
 export const CursorSchema = z.string().min(1).max(500);
