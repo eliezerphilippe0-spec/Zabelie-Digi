@@ -755,3 +755,51 @@ boutique fermée ; Tabarre montre la sienne, sans lien vide ; Delmas 33 montre l
 commune ; la base est interrogée avec `actif=eq.true`, zone non nulle et `limit=200`. Le premier `build` a échoué sur le
 typage d'un **test** (le build typé inclut `tests/`) : corrigé ; `tsc` se lance désormais **après** l'écriture des tests,
 pas avant.
+
+### 12.7 Lot G — partager le catalogue d'une zone (TikTok Shop, aucune migration)
+
+**La recommandation.** La leçon de TikTok Shop : un lien qui **porte son contexte**. Pour Zabelie, le contexte est la
+zone : « les produits et les vendeurs de Delmas » doit s'envoyer en un geste, et celui qui l'ouvre doit arriver sur le
+catalogue **déjà filtré**. Le filtre « Zone » (`zd`, `zk`, `zq`) existait depuis le lot 3a — l'ouverture d'un tel lien
+présélectionne déjà la zone ; **ce qui manquait est l'envoi**.
+
+**Ce qui est construit.** Sur `/catalogue`, quand la zone est le **seul filtre** et qu'elle a **au moins une offre**, un
+lien « Partager le catalogue de cette zone (WhatsApp) » sous la note du filtre. Message prérempli, dans la langue de
+celui qui envoie : « Les produits et les vendeurs de Delmas sur Zabelie : <lien> » (pour un quartier : « Delmas 33,
+Delmas » — des quartiers homonymes existent). Le lien partagé est l'adresse absolue du catalogue filtré,
+`/catalogue?zd=…&zk=…&zq=…`, **construite par `paramsCatalogue`** (la même fonction que « Ma zone » : un seul endroit
+fabrique ces adresses).
+
+**⚠️ Aucune donnée.**
+- **Rien n'est stocké ni écrit** : pas de cookie, pas de stockage navigateur, pas de réseau, pas de base (un test le
+  vérifie sur le module). Aucun cookie `zabelie_zone` n'est posé par le partage (vérifié dans le navigateur).
+- **La zone partagée vient du FILTRE de la page, jamais du cookie `zabelie_zone`** : la politique de confidentialité (§8)
+  ne déclare ce cookie que pour classer les offres proches — un usage de plus demanderait une version de plus de la
+  politique. Un test interdit `maZone` dans ce bloc, et la mutation « la zone vient du cookie » est attrapée.
+- **Aucun paramètre de suivi** : le lien ne porte que `zd`, `zk`, `zq` — trois identifiants de zone publics. Pas de
+  `utm_*`, pas d'identifiant de personne.
+- L'envoi est un lien `wa.me` que l'**acheteur** ouvre lui-même et dont il choisit le destinataire — même doctrine que
+  « Inviter un vendeur » (lot B).
+
+**Quand il n'y a PAS de lien.** Zone sans offre (l'écran du lot B propose déjà « je cherche un vendeur ici » ; partager
+un catalogue vide n'aide personne) ; zone **plus** une catégorie, un prix ou un tri (le lien ne porterait pas ce filtre :
+il montrerait autre chose que ce que l'envoyeur voit) ; aucune zone ; univers « numérique » (la zone n'y compte pas).
+
+**Ce qui n'est PAS fait — et pourquoi.**
+- **Aperçu par zone** : le titre et l'image du lien partagé restent ceux du catalogue (« Catalogue — Zabelie ») ; la
+  canonique n'est pas modifiée. Un titre par zone demanderait de dupliquer, dans `generateMetadata`, la validation de la
+  cascade `zd › zk › zq` que des tests ancrent dans la page — à faire avec elle, pas à côté.
+- **Présélectionner la zone de REMISE de la fiche produit depuis le filtre du catalogue** (`/produit/…?zone=`) :
+  commodité réelle, mais la zone de remise « se choisit à chaque commande » (lot A) — une valeur préremplie risquerait
+  d'enregistrer une zone que l'acheteur n'a pas voulue. **Décision du porteur**, non prise ici ; aucun code mort laissé
+  derrière (rien ne produit ce paramètre aujourd'hui).
+- **Lien de partage par vendeur et par zone** (« mes produits à Delmas ») : le vendeur partage déjà sa vitrine
+  (`/boutik/…`) ; ajouter une zone à une vitrine est un chantier de produit, pas un lien.
+
+**Éprouvé (lot G).** 9 tests TypeScript et **12 mutations attrapées** (zone hors liste, barres finales, paramètre de
+suivi, message non encodé, nom du paramètre WhatsApp, lien pour toute zone, lien sans résultat, **zone issue du
+cookie**, `rel="noopener"`, libellé du lieu, lien absent du message, bloc sans lien). Aller-retour : l'analyseur du
+catalogue relit exactement les identifiants du lien. **Navigateur réel** (390 px, français et kreyòl) : le lien existe
+pour Delmas (message « Les produits et les vendeurs de Delmas sur Zabelie : … ») et pour un quartier (« Delmas 33,
+Delmas ») ; le destinataire ouvre l'adresse sans compte et voit « Ouest › Delmas » présélectionné avec les mêmes offres ;
+aucun lien pour une zone sans offre, avec catégorie, avec prix, sans zone, ni en « numérique » ; aucun cookie posé.
