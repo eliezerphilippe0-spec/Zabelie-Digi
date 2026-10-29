@@ -3,6 +3,8 @@ import { RecipientDetails } from "@/components/recipient-details";
 import { ZoneCommande } from "@/components/zone-commande";
 import { HandoverCodeSeller } from "@/components/handover-code";
 import { zonesDesCommandes } from "@/lib/zone-remise-serveur";
+import { delaiAffichable, delaiConstateVendeur, uniteDelai } from "@/lib/delai-constate";
+import { grouperParZone } from "@/lib/zone-ventes";
 import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
@@ -14,7 +16,7 @@ import { formatHTG } from "@/lib/sample-data";
 import { cleEtatRemise, estEtatRemise, type EtatRemise } from "@/lib/fulfillment";
 import { afficherNumero } from "@/lib/rechaj";
 import { getLang } from "@/lib/i18n-server";
-import { t, type Lang } from "@/lib/i18n";
+import { t, tn, type Lang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes ventes — Zabelie", robots: { index: false, follow: false } };
@@ -158,6 +160,14 @@ export default async function MesVentesPage() {
   const recipientByOrder = new Map((recipients ?? []).map(r => [r.order_id, r as OrderRecipient]));
   // Zone de remise structurée (0161) : sous la session, fenêtre « commande payée ».
   const zoneParCommande = await zonesDesCommandes(supabase, orderIds, lang);
+  // Les tournées : on RANGE ce que l'acheteur a déclaré, rien de plus (docs/77 §12.5).
+  const { groupes, afficherTitres } = grouperParZone(ventes, zoneParCommande, lang === "ht" ? "fr-HT" : lang);
+  // Ce que les acheteurs voient du vendeur, il le voit aussi (0165). Identité = SESSION.
+  const delai = await delaiConstateVendeur(user.id);
+  const delaiMontre = delaiAffichable(delai);
+  const delaiTexte = delaiMontre !== null
+    ? (() => { const u = uniteDelai(delaiMontre); return t(lang, u.cle, { n: String(u.n) }); })()
+    : null;
 
   const cibleParCommande = new Map<string, string>();
   if (orderIds.length > 0) {
@@ -173,11 +183,32 @@ export default async function MesVentesPage() {
   return (
     <Shell lang={lang}>
       <Link href="/assistance" className="mt-4 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).cases}</Link>
+      {delai && (
+        <section aria-labelledby="delai-constate" className="mt-4 rounded-xl border border-line bg-ink/40 p-4">
+          <h2 id="delai-constate" className="text-sm font-semibold">{t(lang, "sales.measured.title")}</h2>
+          <p className="mt-1 text-sm text-mist">
+            {delaiTexte !== null
+              ? t(lang, "sales.measured.shown", { delay: delaiTexte, n: String(delai.nb) })
+              : t(lang, "sales.measured.pending", { n: String(delai.nb), seuil: String(delai.seuil) })}
+          </p>
+        </section>
+      )}
       {ventes.length === 0 ? (
         <p className="mt-6 text-sm text-mist">{t(lang, "sales.empty")}</p>
       ) : (
-        <ul className="mt-6 space-y-3">
-          {ventes.map((v) => (
+        <div className="mt-6 space-y-6">
+          {groupes.map((g, i) => (
+            <section key={g.cle} aria-labelledby={afficherTitres ? `zone-groupe-${i}` : undefined}>
+              {afficherTitres && (
+                <h2 id={`zone-groupe-${i}`} className="mb-2 text-sm font-semibold">
+                  {g.libelle ?? t(lang, "sales.zone.group.none")}{" "}
+                  <span className="ml-2 font-normal text-mist">
+                    {tn(lang, g.items.length, "sales.zone.group.count.one", "sales.zone.group.count", { n: String(g.items.length) })}
+                  </span>
+                </h2>
+              )}
+              <ul className="space-y-3">
+          {g.items.map((v) => (
             <li
               key={v.order_id}
               className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-4 sm:flex-row sm:items-start sm:justify-between"
@@ -304,7 +335,10 @@ export default async function MesVentesPage() {
               </div>
             </li>
           ))}
-        </ul>
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </Shell>
   );
