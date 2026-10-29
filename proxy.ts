@@ -6,9 +6,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { contentSecurityPolicy } from "@/lib/content-security-policy";
 import { configPublique } from "@/lib/supabase/config";
-import { cheminSurDomaine, estHoteZabelie, hoteDe, resoudreDomaine } from "@/lib/domaines";
+import { cheminSurDomaine, estHoteZabelie, hoteDe, renvoiVersZabelie, resoudreDomaine } from "@/lib/domaines";
 import { siteUrl } from "@/lib/site-url";
 import { guideIntrouvable, ressourceDuChemin, ressourceExiste } from "@/lib/existence-publique";
+import { pageDesactivee } from "@/lib/pages-desactivees";
 
 // Next 16 : convention « proxy » (ex-« middleware »). Rafraîchit la session
 // Supabase à chaque requête. Comportement inchangé — simple renommage du point
@@ -26,7 +27,7 @@ export async function proxy(request: NextRequest) {
   const hote = hoteDe(request.headers.get("host"));
   if (!estHoteZabelie(hote)) {
     if (cheminSurDomaine(request.nextUrl.pathname) === "zabelie") {
-      const renvoi = NextResponse.redirect(new URL(request.nextUrl.pathname + request.nextUrl.search, siteUrl()), 308);
+      const renvoi = NextResponse.redirect(renvoiVersZabelie(request.nextUrl.pathname, request.nextUrl.search, siteUrl()), 308);
       // Signature lue par l'activation admin : prouve que le domaine atteint
       // CE proxy, et pas une simple redirection posée chez le registraire.
       renvoi.headers.set("x-zabelie-domaine", hote);
@@ -55,7 +56,11 @@ export async function proxy(request: NextRequest) {
   request.headers.delete("x-zabelie-guide-lang");
   // Un notFound() tardif après le début du streaming rendrait HTTP 200.
   const editorialSegment = /^\/([^/]+)\/(aide|a-propos|recharges)\/?$/.test(request.nextUrl.pathname);
-  if (editorialSegment && !editorialLangFromPath(request.nextUrl.pathname)) {
+  const interrupteurEteint = pageDesactivee(request.nextUrl.pathname, {
+    ZABELIE_AUTHORING_ENABLED: process.env.ZABELIE_AUTHORING_ENABLED,
+    ZABELIE_STUDIO_ENABLED: process.env.ZABELIE_STUDIO_ENABLED,
+  });
+  if (interrupteurEteint || (editorialSegment && !editorialLangFromPath(request.nextUrl.pathname))) {
     const response = NextResponse.rewrite(new URL("/404", request.url), { status: 404, request: { headers: request.headers } });
     response.headers.set("Content-Security-Policy", policy);
     return response;
