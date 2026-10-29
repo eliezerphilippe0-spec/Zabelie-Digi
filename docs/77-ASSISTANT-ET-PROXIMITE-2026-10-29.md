@@ -248,6 +248,8 @@ OU 20 · SD 18 · SE 10) qui, avec les 19 du Nord, font **140**. Elles entrent *
 depuis `/admin/zones` (« Rouvrir », journalisé dans `zabelie_admin_actions`), par vagues,
 après relecture.
 
+**Appliquée en production le 2026-10-29** (autorisation permanente du 2026-08-17 + instruction directe du porteur) : SQL reçu par Supabase == fichier du dépôt (sha256 `507d3397…`), ligne de registre `journal_supabase`, vérifiée après coup (140 communes, 19 ouvertes — le Nord —, 0 ouverte ailleurs, 10 départements et 5 quartiers intacts).
+
 **⚠️ Provenance non vérifiée.** Le 2026-10-29, le réseau de la session refusait
 `fr.wikipedia.org` et `en.wikipedia.org`, et le scraper n'avait pas de clé valide : aucune
 page de référence n'a pu être ouverte. La liste est celle de l'agent, de mémoire. Sa seule
