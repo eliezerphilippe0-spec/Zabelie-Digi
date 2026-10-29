@@ -14,6 +14,7 @@ export default async function ResetPasswordPage() {
         passwordPh: t(lang, "auth.password.ph"),
         confirmPh: t(lang, "reset.confirm.ph"),
         mismatch: t(lang, "reset.mismatch"),
+        passwordLeaked: t(lang, "auth.password.leaked"),
         submit: t(lang, "reset.submit"),
         submitting: t(lang, "reset.submitting"),
         success: t(lang, "reset.success"),

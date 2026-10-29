@@ -11,6 +11,7 @@ import { ConfigSupabaseInvalide } from "@/lib/supabase/config";
 import { checkDisplayName } from "@/lib/display-name";
 import { urlDeRetourOAuth, type AuthProvider } from "@/lib/auth-providers";
 import { CONDITIONS_VERSION, CONFIDENTIALITE_VERSION, initialLegalDeclaration } from "@/lib/legal-acceptance";
+import { motDePasseDivulgue } from "@/lib/mot-de-passe-divulgue";
 
 type Mode = "signin" | "signup" | "legal";
 
@@ -38,6 +39,8 @@ export type ConnexionLabels = {
   errExists: string;
   errCredentials: string;
   errPassword: string;
+  /** Mot de passe présent dans une fuite connue (lib/mot-de-passe-divulgue.ts). */
+  passwordLeaked: string;
   errNotConfirmed: string;
   errRate: string;
   errDisabled: string;
@@ -190,6 +193,13 @@ function ConnexionFormInner({
           setMsg(
             verdict.reason === "brand" ? labels.nameReserved : labels.nameRequired,
           );
+          return;
+        }
+        // Mot de passe connu des fuites : refusé AVANT de créer le compte. Seuls
+        // 5 caractères de son empreinte quittent l'appareil ; `null` (contrôle
+        // impossible) laisse passer — lib/mot-de-passe-divulgue.ts.
+        if (await motDePasseDivulgue(password)) {
+          setMsg(labels.passwordLeaked);
           return;
         }
         // Le nom passe par les MÉTADONNÉES du compte, pas seulement par

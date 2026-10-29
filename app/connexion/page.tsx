@@ -62,6 +62,7 @@ export default async function ConnexionPage() {
           errExists: t(lang, "auth.err.exists"),
           errCredentials: t(lang, "auth.err.credentials"),
           errPassword: t(lang, "auth.err.password"),
+          passwordLeaked: t(lang, "auth.password.leaked"),
           errNotConfirmed: t(lang, "auth.err.notconfirmed"),
           errRate: t(lang, "auth.err.rate"),
           errDisabled: t(lang, "auth.err.disabled"),

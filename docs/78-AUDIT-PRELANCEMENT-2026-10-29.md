@@ -203,3 +203,29 @@ existait (64 tables mesurées avant application).
   minuscules Unicode (`\p{Ll}`, `\p{Mn}`, chiffres, tirets), éprouvé sur des
   accents en fin et en début de mot (`tests/api-v1-slug-kreyol.test.ts`) ;
   l'ancien motif fait rougir deux tests sur trois.
+
+**Mots de passe divulgués — le contrôle fait dans le code**
+
+La case native de Supabase Auth exige le plan Pro (projet en Free, mesuré
+le 2026-10-29). Instruction du porteur : « fais le contrôle dans le code ».
+
+* Inscription et nouveau mot de passe consultent Have I Been Pwned par
+  **k-anonymat** : le navigateur calcule le SHA-1, n'envoie que ses cinq
+  premiers caractères à `/api/auth/fuites/<préfixe>`, qui relaie vers
+  `api.pwnedpasswords.com/range` avec `Add-Padding` ; la comparaison se fait
+  dans le navigateur. Ni Zabelie ni HIBP ne voient le mot de passe ni son
+  empreinte complète ; HIBP ne voit ni l'adresse ni les cookies du visiteur.
+  Aucune donnée personnelle ne part : la politique de confidentialité ne
+  change pas.
+* Route publique (on la consulte avant d'avoir un compte), 20/min par
+  adresse hachée, préfixe validé avant tout appel.
+* ⚠️ **Contournable** : un appel direct à Supabase Auth ne passe pas par ce
+  contrôle. Il protège les vrais utilisateurs, pas la plateforme contre un
+  attaquant ; seule la protection native (plan Pro) le ferait côté serveur.
+* ⚠️ **Fail-open voulu** : HIBP injoignable → le mot de passe passe. Bloquer
+  toutes les inscriptions pour une panne tierce serait pire que le risque.
+* Éprouvé : `tests/mot-de-passe-divulgue.test.ts` (SHA-1 de référence,
+  lignes de remplissage ignorées, seul le préfixe sort) et
+  `tests/reset-password-form.test.ts` (un mot de passe divulgué n'atteint
+  jamais `updateUser`) ; neuf mutations tuées. Le sandbox ne joint pas HIBP
+  (proxy) : le format réel se vérifie sur la route déployée.
