@@ -473,8 +473,14 @@ export async function POST(req: Request) {
    * commande, jamais crue depuis l'affichage : une offre expirée entre la
    * fiche et le clic facture le prix normal, explicitement. Le prix flash
    * devient `amount_htg`, donc commission et garde-fous s'y appliquent sans
-   * qu'aucune fonction d'argent ne change. */
-  const flash = await offreFlashActive(admin, product.id);
+   * qu'aucune fonction d'argent ne change.
+   *
+   * L'offre a été validée contre `products.price_htg` (trigger ZB080) : elle
+   * ne vaut que pour une unité à CE prix. Une variante à un autre prix paie
+   * son prix — sinon la grande taille partait au prix flash de la petite
+   * (audit du 2026-10-29, docs/78 M1 ; même règle que les rabais, 0109). */
+  const offreFlash = await offreFlashActive(admin, product.id);
+  const flash = offreFlash && purchase.priceHTG === product.price_htg * purchase.quantity ? offreFlash : null;
   if (flash) {
     if (typeof couponInput === "string" && couponInput.trim()) {
       // Deux remises empilées feraient un prix que ni le vendeur ni la

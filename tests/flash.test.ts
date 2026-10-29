@@ -23,7 +23,7 @@ test("checkout : le prix flash est RELU au serveur, jamais cru depuis l'affichag
   // La liaison : finalPriceHtg reçoit la valeur de l'offre lue en base.
   assert.match(
     CHECKOUT,
-    /const flash = await offreFlashActive\(admin, product\.id\);[\s\S]{0,900}finalPriceHtg = flash\.prixFlashHtg/,
+    /const offreFlash = await offreFlashActive\(admin, product\.id\);\s*const flash = offreFlash && purchase\.priceHTG === product\.price_htg \* purchase\.quantity \? offreFlash : null;[\s\S]{0,900}finalPriceHtg = flash\.prixFlashHtg/,
     "Le prix payé doit venir de l'offre relue par le serveur au moment du checkout."
   );
 });
