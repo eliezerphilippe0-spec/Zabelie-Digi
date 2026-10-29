@@ -41,8 +41,13 @@ begin
   if result->>'reason' <> 'introuvable' then raise exception 'variante inactive acceptee'; end if;
   result := zabelie_clear_variant_discount('00000000-0000-0000-0000-00000010e002',product,variant);
   if result->>'reason' <> 'introuvable' then raise exception 'retrait par tiers accepte'; end if;
+  -- 0166 (audit M1) : une offre flash ne naît que sur un produit à UNE variante
+  -- active. Le cas couvert ici est celui qui reste possible : la variante L est
+  -- (ré)activée APRÈS l'offre — le checkout ne lui applique pas le prix flash.
+  update zabelie_product_variants set active=false where id='00000000-0000-0000-0000-00000010e022';
   insert into zabelie_flash_sales(product_id,prix_flash_htg,fin)
     values(product,600,now()+interval '1 hour');
+  update zabelie_product_variants set active=true where id='00000000-0000-0000-0000-00000010e022';
   result := zabelie_set_variant_discount(seller,product,variant,500);
   if result->>'reason' <> 'flash_active' then raise exception 'rabais pose pendant une vente flash'; end if;
   update zabelie_flash_sales set annulee_a=now() where product_id=product;

@@ -99,6 +99,11 @@ export async function POST(req: Request) {
     if (isMissingTable(error)) {
       return erreurTraduite("api.unavailable", 503);
     }
+    // ZB166 (0166, audit M1) : plusieurs variantes actives — le vendeur réduit
+    // le prix d'UNE variante (rabais), pas celui d'un produit à plusieurs prix.
+    if (error.code === "ZB166") {
+      return erreurTraduite("api.flash.variants", 422, { code: "variantes_multiples" });
+    }
     console.error("[flash] création refusée", error.code);
     return erreurTraduite("api.write.failed", 422);
   }

@@ -46,7 +46,17 @@ export const SLUGS_RESERVES = new Set([
   "produit",
   "nouveau",
   "new",
+  // 0166 (audit L2) : une boutique ne se présente pas comme la plateforme.
+  "officiel",
+  "official",
+  "support",
+  "assistance",
+  "securite",
+  "service-client",
 ]);
+
+/** `zabelie` et `zabelie-…` : le nom de la plateforme n'est pas une boutique (0166, redit en base). */
+export const PREFIXE_RESERVE = /^zabelie(-|$)/;
 
 /**
  * Fabrique un slug candidat à partir d'un nom affiché.
@@ -83,7 +93,8 @@ export function slugValide(slug: string): boolean {
     slug.length >= SLUG_MIN &&
     slug.length <= SLUG_MAX &&
     SLUG_RE.test(slug) &&
-    !SLUGS_RESERVES.has(slug)
+    !SLUGS_RESERVES.has(slug) &&
+    !PREFIXE_RESERVE.test(slug)
   );
 }
 

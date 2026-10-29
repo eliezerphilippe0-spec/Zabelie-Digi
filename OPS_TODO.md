@@ -15,7 +15,12 @@ le porteur, dans cet ordre :
 5. Supabase Auth : activer la protection contre les mots de passe divulgués.
 6. Règles d'argent M1 (prix flash et variantes) et M2 (facture d'un pro
    suspendu, crédit sans maturation — avec conseil, `docs/17`).
-7. M3 (pixels vendeurs et cookie lisible), L2 (noms de boutique réservés).
+7. M3 (pixels vendeurs et cookie lisible).
+8. L1 : plafond d'un code promo ou usages gelés par les sessions abandonnées
+   (BL-133) — `docs/78` §7.
+
+Correctifs appliqués le même jour (`docs/78` §7) : L2-L10, M1, et le volet
+sûr de M2 (facture d'un pro suspendu non payable).
 
 Sonde publique rejouée chaque jour (12 contrôles) : un échec du workflow
 « Vérification après déploiement » hors push = une protection tombée sans
