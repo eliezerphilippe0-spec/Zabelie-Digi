@@ -1,5 +1,26 @@
 # OPS_TODO — Zabelie
 
+## Audit pré-lancement — décisions rendues (29 octobre 2026)
+
+Constat complet : [docs/78](docs/78-AUDIT-PRELANCEMENT-2026-10-29.md). Aucune
+faille critique ; ce qui bloque l'ouverture n'est pas le code. À trancher par
+le porteur, dans cet ordre :
+
+1. MonCash en production (`docs/56`), puis première transaction réelle
+   (`docs/76`, `docs/22`) — 14 sessions sandbox, aucune payée.
+2. Catalogue : 1 produit publié sur 11 ; recruter et photographier avant toute
+   promotion.
+3. `RESEND_API_KEY` : 2 e-mails en file, 0 envoyé.
+4. Litige du 2026-08-22 (commande `c797080d…`) à clore.
+5. Supabase Auth : activer la protection contre les mots de passe divulgués.
+6. Règles d'argent M1 (prix flash et variantes) et M2 (facture d'un pro
+   suspendu, crédit sans maturation — avec conseil, `docs/17`).
+7. M3 (pixels vendeurs et cookie lisible), L2 (noms de boutique réservés).
+
+Sonde publique rejouée chaque jour (12 contrôles) : un échec du workflow
+« Vérification après déploiement » hors push = une protection tombée sans
+déploiement.
+
 ## Reprise Storage — objets historiques et limite de bucket (23 octobre 2026)
 
 Lot P1 local sur `fix/storage-restore-historical-limit`, base main `c15ebce66`.
