@@ -121,8 +121,9 @@ test("politique : le cookie n'est pas classé « nécessaire » — c'est une pr
   }
 });
 
-test("politique : le reçu a changé de version avec le texte (confidentialite-v4)", () => {
-  assert.equal(CONFIDENTIALITE_VERSION, "confidentialite-v4");
+// Le cookie est entré avec la v4 ; la v5 (essayage virtuel, 0167) le garde — le document est cumulatif.
+test("politique : le reçu a changé de version avec le texte (v4 pour le cookie, v5 en vigueur)", () => {
+  assert.equal(CONFIDENTIALITE_VERSION, "confidentialite-v5");
 });
 
 // ───────────────────────── la route ───────────────────────────────────────────
@@ -263,10 +264,10 @@ test("0160 : l'ordre obligatoire (migration AVANT le code) est écrit dans la mi
   assert.match(readFileSync("lib/legal-acceptance.ts", "utf8"), /`0160` doit être APPLIQUÉE avant que cette ligne ne[\s*]+soit[\s*]+fusionnée/);
 });
 
-test("e2e : les faux Supabase portent la version EN VIGUEUR (v4)", () => {
+test("e2e : les faux Supabase portent la version EN VIGUEUR (v5 depuis 0167)", () => {
   for (const f of ["e2e/fixtures/stub-supabase.mjs", "e2e/fixtures/stub-creation.mjs"]) {
     const src = readFileSync(f, "utf8");
-    assert.match(src, /confidentialite-v4/, f);
-    assert.doesNotMatch(src, /confidentialite-v3/, f);
+    assert.match(src, /confidentialite-v5/, f);
+    assert.doesNotMatch(src, /confidentialite-v[34]/, f);
   }
 });

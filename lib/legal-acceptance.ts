@@ -16,8 +16,13 @@ export const CONDITIONS_VERSION = "cgu-v1";
  * Même règle, même ordre : `0160` doit être APPLIQUÉE avant que cette ligne ne
  * soit fusionnée. Les reçus `v3` restent (registre append-only) ; chaque compte
  * repasse UNE fois par la ré-acceptation.
+ *
+ * ⚖️ 2026-10-29 (soir) — `v4` → `v5` : l'essayage virtuel entre aux §2, §3, §5
+ * et §6 (Genlook ou FASHN, la photo de l'acheteur), sur l'instruction du porteur
+ * « Active la salle d'essayage ». Même règle, même ordre : `0167` doit être
+ * APPLIQUÉE avant que cette ligne ne soit fusionnée.
  */
-export const CONFIDENTIALITE_VERSION = "confidentialite-v4";
+export const CONFIDENTIALITE_VERSION = "confidentialite-v5";
 
 export const ACCOUNT_LEGAL_VERSIONS = [CONDITIONS_VERSION, CONFIDENTIALITE_VERSION] as const;
 

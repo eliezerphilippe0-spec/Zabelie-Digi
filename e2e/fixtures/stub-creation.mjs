@@ -145,7 +145,7 @@ const server = createServer(async (req, res) => {
     return single([{ id, display_name: ADMINS.has(id) ? "Admin Tès" : "Vandè Tès", role: ADMINS.has(id) ? "admin" : "creator", tier: "standard", suspended_at: null, suspended_reason: null }]);
   }
   if (u.pathname === "/rest/v1/zabelie_policy_acceptances") {
-    return send([{ policy_version: "cgu-v1" }, { policy_version: "confidentialite-v4" }]);
+    return send([{ policy_version: "cgu-v1" }, { policy_version: "confidentialite-v5" }]);
   }
   if (u.pathname === "/rest/v1/rpc/zabelie_rate_limit") return send(true);
   if (u.pathname === "/rest/v1/zabelie_authoring_config") return single([CONFIG]);
