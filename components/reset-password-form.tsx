@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient, createPasswordWriter, createRecoveryClient } from "@/lib/supabase/client";
+import { motDePasseDivulgue } from "@/lib/mot-de-passe-divulgue";
 
 export type ResetPasswordLabels = {
   title: string;
@@ -11,6 +12,7 @@ export type ResetPasswordLabels = {
   passwordPh: string;
   confirmPh: string;
   mismatch: string;
+  passwordLeaked: string;
   submit: string;
   submitting: string;
   success: string;
@@ -108,6 +110,12 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
     setMsg(null);
     let writer: ReturnType<typeof createPasswordWriter> | undefined;
     try {
+      // Mot de passe connu des fuites : refusé avant toute écriture
+      // (lib/mot-de-passe-divulgue.ts ; `null`, contrôle impossible, laisse passer).
+      if (await motDePasseDivulgue(password)) {
+        if (mounted.current) setMsg(labels.passwordLeaked);
+        return;
+      }
       const current = await createClient().auth.getUser();
       if (current.error || current.data.user?.id !== proof.userId) {
         recovery.current = null;

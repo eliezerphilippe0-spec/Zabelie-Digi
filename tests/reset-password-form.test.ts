@@ -12,6 +12,7 @@ const labels = {
   title: "Nouveau mot de passe", subtitle: "Choisir le mot de passe", passwordPh: "Mot de passe",
   confirmPh: "Confirmer", mismatch: "Mots de passe différents", submit: "Enregistrer", submitting: "En cours",
   success: "Mot de passe modifié", invalid: "Lien invalide", signinCta: "Connexion", errorGeneric: "Service indisponible",
+  passwordLeaked: "Mot de passe divulgué",
 };
 const element = (type: unknown, props: Record<string, unknown>): Element => ({ type, props });
 function find(tree: unknown, predicate: (node: Element) => boolean): Element | undefined {
@@ -34,6 +35,7 @@ function reset(options: {
   exchangeFailure?: Failure; fragmentFailure?: Failure; verificationFailure?: Failure;
   verifiedUser?: User; deferExchange?: boolean;
   switchAfterCurrentCheck?: boolean; writerUser?: User; writerFailure?: boolean;
+  leaked?: boolean | null;
 } = {}) {
   const slots: unknown[] = [];
   let cursor = 0;
@@ -126,6 +128,7 @@ function reset(options: {
   const source = loadRoute("components/reset-password-form.tsx", {
     react, "react/jsx-runtime": { jsx: element, jsxs: element, Fragment: "fragment" },
     "next/link": { default: "a" }, "next/navigation": { useRouter: () => ({ push: () => { events.push("navigate"); } }) },
+    "@/lib/mot-de-passe-divulgue": { motDePasseDivulgue: async () => { events.push("leak:check"); return options.leaked ?? false; } },
     "@/lib/supabase/client": {
       createClient: () => shared,
       createRecoveryClient: () => { events.push("processor:create"); return processor; },
@@ -276,6 +279,24 @@ test("reset: a concurrent cookie change after the check cannot redirect the pass
   assert.deepEqual(f.writes.map(write => write.userId), [B.id]);
   assert.ok(f.events.includes("writer:setSession"));
   assert.ok(f.events.includes("writer:updateUser"));
+});
+
+test("reset: a leaked password is refused before any writer exists; an impossible check lets it through", async () => {
+  const f = reset({ leaked: true });
+  await f.mount();
+  const tree = await f.submit();
+  assert.match(text(tree), /Mot de passe divulgué/);
+  assert.doesNotMatch(text(tree), /Mot de passe modifié/);
+  assert.equal(f.writes.length, 0);
+  assert.equal(f.events.filter(event => event === "writer:create").length, 0, "no writer before the leak verdict");
+  assert.ok(f.events.includes("leak:check"));
+  // Le formulaire reste utilisable : un second essai repasse par le contrôle.
+  assert.ok(find(tree, node => node.type === "form"));
+
+  const g = reset({ leaked: null }); // HIBP injoignable : fail-open voulu.
+  await g.mount();
+  assert.match(text(await g.submit()), /Mot de passe modifié/);
+  assert.deepEqual(g.writes, [{ userId: B.id, password: "Synthetic-password-123!" }]);
 });
 
 test("reset: a writer identity mismatch never updates a password and still releases its client", async () => {

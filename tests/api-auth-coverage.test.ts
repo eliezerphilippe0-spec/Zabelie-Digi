@@ -77,6 +77,10 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // Public catalogue assistant; read-only. Fail-closed DB quotas bound public
   // reads and model usage. It cannot write a cart or create a payment.
   "ai/shopping/route.ts": /if \(!await rateLimit\(admin, `shopping:\$\{ipHash\}`, 10, 60\)\) return fail\("shopping_limit", 429\)/,
+  // Mots de passe divulgués (lib/mot-de-passe-divulgue.ts) : consultée AVANT
+  // d'avoir un compte. Ne reçoit que cinq caractères hexadécimaux, ne lit ni
+  // n'écrit aucune donnée de compte ; bornée par adresse hachée.
+  "auth/fuites/[prefixe]/route.ts": /if \(!\(await rateLimit\(admin, `fuites:\$\{ipHash\}`, 20, 60\)\)\) \{\s*return NextResponse\.json\(\{ error: "trop_de_demandes" \}, \{ status: 429 \}\);/,
   // Mémoriser / oublier SA zone (cookie `zabelie_zone`, docs/77 §11) : aucune
   // session, aucune écriture en base, aucune donnée de compte — le cookie ne
   // contient qu'un identifiant de zone OUVERTE, validé contre la liste. Le garde
