@@ -435,7 +435,7 @@ que la lecture du cookie (§11).
   affichée sur une commune non déclarée, absente sur une commune déclarée, **absente quand le vendeur n'a
   rien déclaré** ; le corps de paiement porte l'identifiant du quartier choisi ; rendu kreyòl ; aucun
   débordement horizontal ; aucune erreur de console.
-- Suites complètes : **TypeScript 2602 tests**, **SQL** rejouée sur un Postgres neuf (les trois scripts de
+- Suites complètes : **TypeScript 2601 tests**, **SQL** rejouée sur un Postgres neuf (les trois scripts de
   concurrence relancés à part avec l'URL `localhost` qu'ils exigent).
 
 **Ce que ce lot ne prouve pas.** La CI e2e ne sert pas de zones à la fiche produit (son faux Supabase ne le
