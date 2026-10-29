@@ -150,14 +150,52 @@ Haïti. Un « même zone obligatoire » bloquerait ces achats. Le classement fav
 donc le proche sans exclure le lointain ; si le porteur veut un blocage strict, c'est
 une décision à part.
 
-## 8. Lot 2 — zones de service à l'inscription (à construire)
+## 8. Lot 2 — zones de service du vendeur (livré le 2026-10-29)
 
-Le vendeur ne **dessert** pas que l'endroit où il est installé. Il déclare, à
-l'inscription et dans les réglages de sa boutique, les zones où il livre :
-une ou plusieurs (ville, commune, quartier, ou tout un département).
-- Une table dédiée `zabelie_seller_service_zones`, lisible publiquement (une zone
-  desservie est une information commerciale, pas une donnée personnelle), écrite
-  par son seul propriétaire (RLS), plafonnée par une valeur de **config**.
-- L'acheteur voit « dessert votre commune », **attribué au vendeur** (« déclaré par
-  le vendeur ») : Zabelie ne livre pas et ne garantit aucun délai.
-- Le classement du lot 1 lit alors la zone d'installation **et** les zones desservies.
+Le vendeur ne **dessert** pas que l'endroit où il est installé. Il déclare les zones
+où il livre : une ou plusieurs, au niveau qu'il veut — un quartier, une commune, ou
+un département entier.
+
+**Ce qui est construit.**
+- **Migration `0158`** (`zabelie_seller_service_zones`, `zabelie_service_zone_config`) :
+  lecture publique (une zone desservie est une information commerciale que le
+  vendeur choisit de publier), écriture **sous la session du vendeur** (RLS,
+  `seller_id = auth.uid()`), `insert` et `delete` seulement — **aucun `update`**.
+  Le trigger `ZB158` refuse une zone inconnue ou fermée et le dépassement du
+  plafond. **Le plafond (20 au départ) est une valeur de config, pas du code**
+  (règle dure n°3). Un verrou consultatif sérialise deux ajouts simultanés.
+  Aucune fonction `security definer`, aucune RPC, aucun `drop`.
+- **Pas de condition de rôle**, volontairement : `creator` n'est promu qu'à la
+  création du premier produit (`lib/product-draft.ts`) ; l'exiger aurait interdit
+  de déclarer ses zones **avant** de publier, c'est-à-dire à l'inscription. Une
+  ligne posée par un compte qui ne vend pas ne produit rien : le classement ne lit
+  que les zones des vendeurs dont une offre est publiée.
+- **Écran** : `/tableau-de-bord/boutique`, section « Où livrez-vous ? » (cascade
+  département → commune → quartier ; la zone ajoutée est la plus profonde choisie).
+  La section n'apparaît que si la migration est appliquée.
+- **Route** `PUT /api/seller/service-zones` : la liste complète voulue, **seule la
+  différence est écrite** (retraits avant ajouts, pour qu'un remplacement ne bute
+  pas sur le plafond). Les refus reviennent avec un **code** que l'écran traduit ;
+  le message de la base ne part jamais au client.
+- **Classement** : le niveau d'un vendeur est le plus proche de deux sources — son
+  installation et ses zones desservies (`fusionnerNiveaux`). Une zone desservie
+  **plus large** que l'acheteur (« toute la commune » pour un acheteur d'un
+  quartier) donne le niveau de sa propre largeur : « commune », pas « quartier ».
+- **Libellé** : « Le vendeur **déclare** livrer dans votre commune ». Attribué au
+  vendeur, sans promesse de délai : **Zabelie ne livre pas et ne garantit rien**. À
+  égalité, le fait de localisation (« dans votre commune ») prime sur la déclaration.
+
+**Éprouvé.** 34 tests TS, un test SQL (S1–S7 dont l'insertion groupée) et un test
+**concurrent** (dix sessions, plafond de 1, une seule passe). **29 mutations TS et
+10 mutations SQL, toutes attrapées.** Une seule a d'abord survécu : le test
+concurrent ne creusait pas la fenêtre de course (les sessions se suivaient sans se
+chevaucher) — la mutation « sans verrou » passait. Corrigé en gardant chaque
+transaction ouverte 0,4 s, puis re-mesuré.
+
+**Ce que le lot 2 ne fait PAS.**
+- Les zones restent **le Nord seulement** : un vendeur de l'Ouest ne peut toujours
+  rien déclarer. Prérequis porteur, inchangé (§7).
+- L'acheteur n'a toujours pas d'endroit où déclarer sa zone ; la fiche produit ne
+  montre pas encore « Livre à : … (déclaré par le vendeur) » ; aucun rappel au
+  vendeur qui n'a déclaré aucune zone. Lot 3.
+- Rien n'est vérifié par Zabelie : une zone desservie est **déclarative**.
