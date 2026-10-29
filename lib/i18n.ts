@@ -194,6 +194,9 @@ const fr = {
   "pr.title": "Points de retrait dans cette zone",
   "pr.note": "Un point de retrait est une boutique qui accepte de remettre des colis. Zabelie ne livre pas : convenez avec le vendeur de la remise à ce point, et des frais éventuels, avant de payer.",
   "pr.call": "Appeler {nom}",
+  /* Partager le catalogue d'une zone (lot G) : un lien, aucune donnée stockée. */
+  "zshare.cta": "Partager le catalogue de cette zone (WhatsApp)",
+  "zshare.text": "Les produits et les vendeurs de {zone} sur Zabelie : {url}",
   "zsv.shareText": "Je cherche un vendeur à {zone} sur Zabelie. Si vous vendez, inscrivez-vous ici : {url}",
 
   "purchases.title": "Mes achats",
@@ -1826,6 +1829,8 @@ const ht: Record<I18nKey, string> = {
   "pr.title": "Pwen retrè nan zòn sa a",
   "pr.note": "Yon pwen retrè se yon boutik ki dakò remèt pakè. Zabelie pa livre : antann ou ak vandè a sou remiz la nan pwen sa a, ak sou frè ki ka genyen, anvan ou peye.",
   "pr.call": "Rele {nom}",
+  "zshare.cta": "Pataje katalòg zòn sa a (WhatsApp)",
+  "zshare.text": "Pwodwi ak vandè {zone} sou Zabelie : {url}",
   "zsv.shareText": "Mwen ap chèche yon vandè nan {zone} sou Zabelie. Si w vann, enskri isit la : {url}",
 
   "purchases.title": "Acha mwen",
@@ -3422,6 +3427,8 @@ const en = {
   "pr.title": "Pickup points in this area",
   "pr.note": "A pickup point is a shop that agrees to hand over parcels. Zabelie does not deliver: agree with the seller on the handover at this point, and on any fees, before you pay.",
   "pr.call": "Call {nom}",
+  "zshare.cta": "Share this area's catalogue (WhatsApp)",
+  "zshare.text": "Products and sellers in {zone} on Zabelie: {url}",
   "zsv.shareText": "I am looking for a seller in {zone} on Zabelie. If you sell, sign up here: {url}",
 
   "purchases.title": "My purchases",
@@ -5030,6 +5037,8 @@ const es = {
   "pr.title": "Puntos de recogida en esta zona",
   "pr.note": "Un punto de recogida es una tienda que acepta entregar paquetes. Zabelie no entrega: acuerda con el vendedor la entrega en este punto, y los gastos eventuales, antes de pagar.",
   "pr.call": "Llamar a {nom}",
+  "zshare.cta": "Compartir el catálogo de esta zona (WhatsApp)",
+  "zshare.text": "Productos y vendedores de {zone} en Zabelie: {url}",
   "zsv.shareText": "Busco un vendedor en {zone} en Zabelie. Si vendes, regístrate aquí: {url}",
 
   "purchases.title": "Mis compras",

@@ -755,3 +755,84 @@ boutique fermée ; Tabarre montre la sienne, sans lien vide ; Delmas 33 montre l
 commune ; la base est interrogée avec `actif=eq.true`, zone non nulle et `limit=200`. Le premier `build` a échoué sur le
 typage d'un **test** (le build typé inclut `tests/`) : corrigé ; `tsc` se lance désormais **après** l'écriture des tests,
 pas avant.
+
+### 12.7 Lot G — partager le catalogue d'une zone (TikTok Shop, aucune migration)
+
+**La recommandation.** La leçon de TikTok Shop : un lien qui **porte son contexte**. Pour Zabelie, le contexte est la
+zone : « les produits et les vendeurs de Delmas » doit s'envoyer en un geste, et celui qui l'ouvre doit arriver sur le
+catalogue **déjà filtré**. Le filtre « Zone » (`zd`, `zk`, `zq`) existait depuis le lot 3a — l'ouverture d'un tel lien
+présélectionne déjà la zone ; **ce qui manquait est l'envoi**.
+
+**Ce qui est construit.** Sur `/catalogue`, quand la zone est le **seul filtre** et qu'elle a **au moins une offre**, un
+lien « Partager le catalogue de cette zone (WhatsApp) » sous la note du filtre. Message prérempli, dans la langue de
+celui qui envoie : « Les produits et les vendeurs de Delmas sur Zabelie : <lien> » (pour un quartier : « Delmas 33,
+Delmas » — des quartiers homonymes existent). Le lien partagé est l'adresse absolue du catalogue filtré,
+`/catalogue?zd=…&zk=…&zq=…`, **construite par `paramsCatalogue`** (la même fonction que « Ma zone » : un seul endroit
+fabrique ces adresses).
+
+**⚠️ Aucune donnée.**
+- **Rien n'est stocké ni écrit** : pas de cookie, pas de stockage navigateur, pas de réseau, pas de base (un test le
+  vérifie sur le module). Aucun cookie `zabelie_zone` n'est posé par le partage (vérifié dans le navigateur).
+- **La zone partagée vient du FILTRE de la page, jamais du cookie `zabelie_zone`** : la politique de confidentialité (§8)
+  ne déclare ce cookie que pour classer les offres proches — un usage de plus demanderait une version de plus de la
+  politique. Un test interdit `maZone` dans ce bloc, et la mutation « la zone vient du cookie » est attrapée.
+- **Aucun paramètre de suivi** : le lien ne porte que `zd`, `zk`, `zq` — trois identifiants de zone publics. Pas de
+  `utm_*`, pas d'identifiant de personne.
+- L'envoi est un lien `wa.me` que l'**acheteur** ouvre lui-même et dont il choisit le destinataire — même doctrine que
+  « Inviter un vendeur » (lot B).
+
+**Quand il n'y a PAS de lien.** Zone sans offre (l'écran du lot B propose déjà « je cherche un vendeur ici » ; partager
+un catalogue vide n'aide personne) ; zone **plus** une catégorie, un prix ou un tri (le lien ne porterait pas ce filtre :
+il montrerait autre chose que ce que l'envoyeur voit) ; aucune zone ; univers « numérique » (la zone n'y compte pas).
+
+**Ce qui n'est PAS fait — et pourquoi.**
+- **Aperçu par zone** : le titre et l'image du lien partagé restent ceux du catalogue (« Catalogue — Zabelie ») ; la
+  canonique n'est pas modifiée. Un titre par zone demanderait de dupliquer, dans `generateMetadata`, la validation de la
+  cascade `zd › zk › zq` que des tests ancrent dans la page — à faire avec elle, pas à côté.
+- **Présélectionner la zone de REMISE de la fiche produit depuis le filtre du catalogue** (`/produit/…?zone=`) :
+  commodité réelle, mais la zone de remise « se choisit à chaque commande » (lot A) — une valeur préremplie risquerait
+  d'enregistrer une zone que l'acheteur n'a pas voulue. **Décision du porteur**, non prise ici ; aucun code mort laissé
+  derrière (rien ne produit ce paramètre aujourd'hui).
+- **Lien de partage par vendeur et par zone** (« mes produits à Delmas ») : le vendeur partage déjà sa vitrine
+  (`/boutik/…`) ; ajouter une zone à une vitrine est un chantier de produit, pas un lien.
+
+**Éprouvé (lot G).** 9 tests TypeScript et **12 mutations attrapées** (zone hors liste, barres finales, paramètre de
+suivi, message non encodé, nom du paramètre WhatsApp, lien pour toute zone, lien sans résultat, **zone issue du
+cookie**, `rel="noopener"`, libellé du lieu, lien absent du message, bloc sans lien). Aller-retour : l'analyseur du
+catalogue relit exactement les identifiants du lien. **Navigateur réel** (390 px, français et kreyòl) : le lien existe
+pour Delmas (message « Les produits et les vendeurs de Delmas sur Zabelie : … ») et pour un quartier (« Delmas 33,
+Delmas ») ; le destinataire ouvre l'adresse sans compte et voit « Ouest › Delmas » présélectionné avec les mêmes offres ;
+aucun lien pour une zone sans offre, avec catégorie, avec prix, sans zone, ni en « numérique » ; aucun cookie posé.
+
+### 12.8 Recommandations de clôture — ce qu'un développeur expérimenté signalerait
+
+Rédigées ici plutôt que codées : chacune est soit une **décision du porteur**, soit un **chantier à part** dont le coût
+dépasse ce qu'un lot de cette série peut absorber sans l'arbitrer. Rien n'est laissé en code mort.
+
+1. **Les parcours de zone ne sont verrouillés par aucun test e2e du dépôt.** Les vérifications navigateur de A à G se
+   sont faites sur un faux Supabase **hors dépôt** (le faux de CI ne sert les zones que dans le scénario d'identité) ;
+   la CI exécute les tests unitaires, SQL et le build, pas le sélecteur de zone, le code de remise, les points de
+   retrait ni le partage. Reprendre ces cinq scénarios dans `e2e/` (≈ +3 min de CI) est le meilleur filet qui reste —
+   à faire **avant** que les vendeurs réels y touchent.
+2. **Hérité de `0043`, aggravé par le code de remise** : un avis `reminder_buyer` déjà programmé peut partir **après** une
+   réception. Le code de remise la fait arriver plus tôt, donc plus souvent avant le rappel. Deux issues, qui ne se valent
+   pas : (a) l'expéditeur ignore le rappel d'une commande reçue **et** le marque « sans objet » (colonne nouvelle,
+   migration) — la preuve d'envoi reste honnête ; (b) supprimer les avis en attente à la réception — **touche la
+   rétention des preuves** que les arbitrages D-10→D-14 de `docs/28` gèlent (`0056`). **Décision porteur** ; (a) est la
+   recommandation.
+3. **Droits par défaut de Supabase** : `anon` détient `INSERT/UPDATE/DELETE` sur des tables que seule la RLS protège
+   (vérifié sur `zabelie_pickup_points`). Aucune faille aujourd'hui — pas de policy d'écriture, et `0082` le contrôle —
+   mais c'est une défense **à une seule couche**. Recommandation : une migration de resserrage (`revoke … from anon,
+   authenticated`) sur les tables lisibles-seulement, **après inventaire** (la liste se tire de `pg_policies` × droits,
+   pas de la mémoire).
+4. **Supabase Auth — « leaked password protection » désactivée** (conseiller de sécurité, avertissement). Réglage du
+   tableau de bord, hors du dépôt : à activer (vérification HaveIBeenPwned à l'inscription).
+5. **Points de retrait : le goulot est humain.** Zéro point ouvert ; la commission du point reste **non tranchée**
+   (`0082`). Tant qu'aucune boutique n'a signé, le lot F ne montre rien — c'est correct, et c'est ce qui doit être
+   recruté avant d'investir ailleurs dans cette voie (`docs/46` §3.2).
+6. **Délai constaté : à surveiller, pas à optimiser.** Calculé à la demande par page vue (volume actuel : 1 suivi de
+   remise). Si le trafic grandit : cache court ou matérialisation. Et **dire aux vendeurs, à l'avance**, que le chiffre
+   paraîtra dès cinq réceptions confirmées — « Mes ventes » le dit déjà, mais un vendeur qui le découvre sur sa fiche
+   sans l'avoir lu pourrait le vivre comme une sanction.
+7. **Décisions de produit laissées ouvertes** : présélectionner la zone de **remise** depuis le filtre du catalogue
+   (§12.7) ; aperçu de partage **par zone** ; ajouter les **frais annoncés au paiement** (§12.4, BRH, `docs/17`).

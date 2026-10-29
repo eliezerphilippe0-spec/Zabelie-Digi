@@ -24,7 +24,8 @@ import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
 import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
 import { lireZoneAcheteur } from "@/lib/zone-acheteur-serveur";
-import { paramsCatalogue } from "@/lib/zone-acheteur";
+import { paramsCatalogue, texteLieu } from "@/lib/zone-acheteur";
+import { lienCatalogueZone, lienPartageWhatsApp } from "@/lib/zone-partage";
 import { maZoneLabels } from "@/lib/ma-zone-labels";
 import { MaZone } from "@/components/ma-zone";
 import { ZoneSansVendeur } from "@/components/zone-sans-vendeur";
@@ -183,6 +184,10 @@ export default async function CataloguePage({
   const pointsZone = zoneSeule && zoneActive && total === 0
     ? pointsPourZone(zones, await chargerPointsRetrait(), zoneActive.id, lang === "ht" ? "fr-HT" : lang)
     : [];
+  /* Partager le catalogue de la zone (docs/77 §12.7, lot G) : seulement quand la zone est le SEUL filtre et
+   * qu'elle a des offres — partager un catalogue vide n'aide personne. La zone vient du FILTRE de cette page,
+   * jamais du cookie `zabelie_zone` ; le lien ne porte que les trois identifiants de zone. */
+  const lienZone = zoneSeule && zoneActive && total > 0 ? lienCatalogueZone(siteUrl(), zones, zoneActive) : null;
   const filtre = Boolean(q) || activeCat !== "Tout" || !!universe || !!zoneId || minPrice !== undefined || maxPrice !== undefined;
 
   // BL-134 (FRONT-19) : pagination par lien GET, 0 JS — préserve q/cat, change page.
@@ -381,6 +386,16 @@ export default async function CataloguePage({
         {/* docs/77 §8 : le filtre inclut les vendeurs qui DÉCLARENT livrer dans la zone ; le dire, sans promettre. */}
         {zoneActive && universe !== "numerique" ? (
           <p className="mt-2 max-w-2xl text-xs leading-relaxed text-mist">{t(lang, "zone.filter.note")}</p>
+        ) : null}
+        {lienZone && zoneActive ? (
+          <a
+            href={lienPartageWhatsApp(t(lang, "zshare.text", { zone: texteLieu(zones, zoneActive, lang), url: lienZone }))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-cloud underline"
+          >
+            {t(lang, "zshare.cta")}
+          </a>
         ) : null}
         {/* docs/77 §11 : l'acheteur mémorise sa zone (cookie zabelie_zone) ; le catalogue lui propose celle-ci. */}
         {universe !== "numerique" && depatmans.length > 0 ? (
