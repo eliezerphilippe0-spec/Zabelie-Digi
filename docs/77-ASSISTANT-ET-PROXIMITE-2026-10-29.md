@@ -185,6 +185,8 @@ un département entier.
   vendeur, sans promesse de délai : **Zabelie ne livre pas et ne garantit rien**. À
   égalité, le fait de localisation (« dans votre commune ») prime sur la déclaration.
 
+**Appliquée en production le 2026-10-29** (autorisation permanente du 2026-08-17) : SQL reçu par Supabase == fichier du dépôt (sha256 `4490c529…`), ligne de registre `journal_supabase`, vérifiée après coup (RLS, 0 ligne, plafond 20, `anon` sans écriture, aucun `update`, garde `SECURITY INVOKER`).
+
 **Éprouvé.** 34 tests TS, un test SQL (S1–S7 dont l'insertion groupée) et un test
 **concurrent** (dix sessions, plafond de 1, une seule passe). **29 mutations TS et
 10 mutations SQL, toutes attrapées.** Une seule a d'abord survécu : le test
