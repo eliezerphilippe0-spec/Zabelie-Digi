@@ -345,6 +345,34 @@ export function isTrackedStockKind(kind: ProductKind, ref?: string): boolean {
   }
 }
 
+/**
+ * La PROXIMITÉ du vendeur compte-t-elle pour ce type ?
+ *
+ * Décision du porteur (2026-10-29) : livrer loin n'est pas viable pour le
+ * moment, et Zabelie ne livre pas — le vendeur apporte lui-même l'objet. Pour
+ * un produit physique, le vendeur le plus proche passe donc avant.
+ *
+ * `fichier` : sans objet, il se télécharge. `service` : NON, délibérément — une
+ * prestation se rend souvent à distance (une formation en ligne n'a pas de
+ * « voisin »), et la classer par distance pénaliserait à tort un vendeur
+ * lointain. Une prestation sur place pourra être distinguée plus tard, par une
+ * donnée que la fiche ne porte pas encore.
+ */
+export function compteProximite(kind: ProductKind, ref?: string): boolean {
+  switch (kind) {
+    case "physical":
+      return true;
+    case "fichier":
+    case "service":
+      return false;
+    default:
+      exhaustive(kind, "compteProximite", ref);
+      // Type inconnu : on ne CLASSE pas ce qu'on ne sait pas livrer. `false`
+      // laisse l'offre à sa place plutôt que de la reléguer sur une supposition.
+      return false;
+  }
+}
+
 /** Les types réellement interrogeables par l'API v1, dérivés — jamais écrits. */
 export const API_V1_SEARCHABLE_KINDS = PRODUCT_KINDS.filter((k) =>
   isSearchableByApiV1(k, "API_V1_SEARCHABLE_KINDS")

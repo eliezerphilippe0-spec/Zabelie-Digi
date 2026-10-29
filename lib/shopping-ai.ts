@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { PRODUCT_KINDS, type ProductKind } from "@/lib/product-kind";
+import { PRODUCT_KINDS, compteProximite, type ProductKind } from "@/lib/product-kind";
+// Types et ordre SEULEMENT (aucun import) : le fournisseur IA importe ce module,
+// et le test de confinement interdit tout chemin d'import vers la base.
+import { RANG_PROXIMITE, type NiveauProximite } from "@/lib/proximite-niveaux";
 
 // The model may extract intent; it never supplies prices, products or actions.
 export const ShoppingIntentSchema = z.object({
@@ -24,11 +27,19 @@ export type ShoppingCandidate = {
 };
 export type ShoppingRecommendation = ShoppingCandidate & {
   position: number; priceDifferenceHtg: number; matchedTerms: string[];
+  /** `null` : non pertinent (fichier, prestation) ou aucun classement possible. */
+  proximite: NiveauProximite | null;
 };
 export type ShoppingResult = {
   intent: ShoppingIntent;
   question: "query" | "budgetHtg" | "need" | "location" | null;
   recommendations: ShoppingRecommendation[];
+  /**
+   * Ce que le serveur a COMPRIS de la localité saisie. `zone: null` = lieu non
+   * reconnu : l'écran doit le dire, jamais classer en silence sur une supposition.
+   * Absent tant que la question n'est pas close.
+   */
+  localite?: { zone: string | null };
 };
 
 export function nextShoppingQuestion(intent: ShoppingIntent): ShoppingResult["question"] {
@@ -45,11 +56,22 @@ export function shoppingTerms(text: string): string[] {
 }
 const normalized = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-/** Relevance precedes reviews and price. No commission or sponsored weighting. */
-export function rankShoppingCandidates(candidates: ShoppingCandidate[], intent: ShoppingIntent, sellerId?: string): ShoppingRecommendation[] {
+/**
+ * Relevance precedes reviews and price. No commission or sponsored weighting.
+ *
+ * `proximite` (vendeur → niveau) n'est fourni que si la localité de l'acheteur a
+ * été RECONNUE. Pour un produit physique, le vendeur le plus proche passe alors
+ * avant, puis la pertinence : le vendeur livre lui-même (décision du porteur,
+ * 2026-10-29), un vendeur lointain est donc moins probable. Personne n'est
+ * écarté pour autant — un acheteur peut commander pour un proche, ailleurs.
+ * Sans `proximite`, ou pour un fichier ou une prestation, l'ordre est inchangé.
+ */
+export function rankShoppingCandidates(candidates: ShoppingCandidate[], intent: ShoppingIntent, sellerId?: string, proximite?: ReadonlyMap<string, NiveauProximite>): ShoppingRecommendation[] {
   const terms = shoppingTerms(intent.query);
   const preferences = shoppingTerms(intent.need);
   if (!terms.length || intent.budgetHtg === null) return [];
+  const niveau = (p: ShoppingCandidate): NiveauProximite | null =>
+    proximite && compteProximite(p.kind) ? (proximite.get(p.sellerId) ?? "inconnue") : null;
   const seen = new Set<string>();
   const scored = candidates.flatMap(product => {
     if (seen.has(product.id) || !product.available || !Number.isSafeInteger(product.priceHtg) || product.priceHtg < 0
@@ -63,11 +85,13 @@ export function rankShoppingCandidates(candidates: ShoppingCandidate[], intent: 
     const score = matches.length * 10 + terms.filter(t => title.includes(t)).length * 5
       + preferences.filter(t => text.includes(t)).length * 2;
     return [{ product, score }];
-  }).sort((a, b) => b.score - a.score
+  }).sort((a, b) => RANG_PROXIMITE[niveau(a.product) ?? "inconnue"] - RANG_PROXIMITE[niveau(b.product) ?? "inconnue"]
+    || b.score - a.score
     || (b.product.ratingAverage ?? 0) - (a.product.ratingAverage ?? 0)
     || a.product.priceHtg - b.product.priceHtg || a.product.id.localeCompare(b.product.id));
   const selected = scored.slice(0, 3);
   return selected.map(({ product }, i) => ({ ...product, position: i + 1,
+    proximite: niveau(product),
     priceDifferenceHtg: product.priceHtg - selected[0].product.priceHtg,
     matchedTerms: [...terms, ...preferences].filter(t => normalized(`${product.title} ${product.description}`).includes(t)).filter((t, i, a) => a.indexOf(t) === i) }));
 }

@@ -19,6 +19,12 @@ const fr = {
   catalog: "Voir le catalogue", add: "Ajouter au panier", adding: "Ajout…", added: "Ajouté", seeCart: "Voir le panier", signin: "Se connecter",
   chatUnavailable: "Le dialogue IA sera disponible lorsque le fournisseur sera activé. La recherche guidée reste accessible.",
   privacy: "Évitez les données sensibles. Le texte du dialogue est transmis au fournisseur IA configuré ; aucune conversation n’est enregistrée par cet assistant.",
+  // Proximité (décision du porteur, 2026-10-29) : le vendeur livre lui-même, le plus proche passe d’abord.
+  localite: "Autour de : {zone}",
+  localiteInconnue: "Nous n’avons pas reconnu cette localité : les offres ne sont pas classées par proximité. Essayez le nom de votre commune ou de votre quartier.",
+  proxNote: "Les offres physiques les plus proches sont classées en premier. La livraison est organisée par le vendeur.",
+  proxKatye: "Dans votre quartier", proxKomin: "Dans votre commune", proxDepatman: "Dans votre département",
+  proxAilleurs: "Dans une autre zone", proxInconnue: "Zone du vendeur non renseignée",
 };
 export type ShoppingCopy = typeof fr;
 const ht: ShoppingCopy = {
@@ -40,6 +46,11 @@ const ht: ShoppingCopy = {
   catalog: "Gade katalòg la", add: "Ajoute nan panyen", adding: "N ap ajoute…", added: "Ajoute", seeCart: "Gade panyen", signin: "Konekte",
   chatUnavailable: "Dyalòg IA ap disponib lè founisè a aktive. Rechèch gide toujou aksesib.",
   privacy: "Pa bay done sansib. Tèks dyalòg la ale bay founisè IA ki konfigire a ; asistan sa a pa anrejistre okenn konvèsasyon.",
+  localite: "Alantou : {zone}",
+  localiteInconnue: "Nou pa rekonèt lokalite sa a : yo pa klase òf yo selon pwoksimite. Eseye non komin ou oswa non katye w.",
+  proxNote: "Òf fizik ki pi pre yo parèt an premye. Se vandè a ki òganize livrezon an.",
+  proxKatye: "Nan katye w la", proxKomin: "Nan komin ou a", proxDepatman: "Nan depatman w lan",
+  proxAilleurs: "Nan yon lòt zòn", proxInconnue: "Zòn vandè a pa make",
 };
 const en: ShoppingCopy = {
   type: "Offer type", allTypes: "All types", digitalNote: "Check file formats, license and access conditions on the listing.",
@@ -60,6 +71,11 @@ const en: ShoppingCopy = {
   catalog: "Browse catalogue", add: "Add to cart", adding: "Adding…", added: "Added", seeCart: "View cart", signin: "Sign in",
   chatUnavailable: "AI chat will be available once the provider is enabled. Guided search is still available.",
   privacy: "Avoid sensitive data. Chat text is sent to the configured AI provider; this assistant does not store conversations.",
+  localite: "Around: {zone}",
+  localiteInconnue: "We did not recognise that place, so offers are not ranked by proximity. Try the name of your commune or neighbourhood.",
+  proxNote: "The closest physical offers are ranked first. Delivery is organised by the seller.",
+  proxKatye: "In your neighbourhood", proxKomin: "In your commune", proxDepatman: "In your department",
+  proxAilleurs: "In another zone", proxInconnue: "Seller's zone not provided",
 };
 const es: ShoppingCopy = {
   type: "Tipo de oferta", allTypes: "Todos los tipos", digitalNote: "Comprueba los formatos, la licencia y las condiciones de acceso al archivo en la ficha.",
@@ -80,5 +96,10 @@ const es: ShoppingCopy = {
   catalog: "Ver catálogo", add: "Añadir al carrito", adding: "Añadiendo…", added: "Añadido", seeCart: "Ver carrito", signin: "Iniciar sesión",
   chatUnavailable: "El diálogo IA estará disponible cuando se active el proveedor. La búsqueda guiada sigue disponible.",
   privacy: "Evita datos sensibles. El texto del diálogo se envía al proveedor IA configurado; este asistente no guarda conversaciones.",
+  localite: "Alrededor de: {zone}",
+  localiteInconnue: "No reconocimos ese lugar, así que las ofertas no se ordenan por cercanía. Prueba con el nombre de tu comuna o barrio.",
+  proxNote: "Las ofertas físicas más cercanas se muestran primero. El vendedor organiza la entrega.",
+  proxKatye: "En tu barrio", proxKomin: "En tu comuna", proxDepatman: "En tu departamento",
+  proxAilleurs: "En otra zona", proxInconnue: "Zona del vendedor no indicada",
 };
 export const SHOPPING_COPY: Record<Lang, ShoppingCopy> = { fr, ht, en, es };
