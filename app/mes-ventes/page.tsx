@@ -1,6 +1,7 @@
 import { supportCopy } from "@/lib/support-copy";
 import { RecipientDetails } from "@/components/recipient-details";
 import { ZoneCommande } from "@/components/zone-commande";
+import { HandoverCodeSeller } from "@/components/handover-code";
 import { zonesDesCommandes } from "@/lib/zone-remise-serveur";
 import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
@@ -284,6 +285,21 @@ export default async function MesVentesPage() {
                       })}
                     </p>
                   )
+                )}
+                {/* Code de remise (0163) : remise en main propre, avant ou après la déclaration. */}
+                {(v.status === "awaiting_shipment" || v.status === "shipped") && (
+                  <HandoverCodeSeller
+                    orderId={v.order_id}
+                    labels={{
+                      title: t(lang, "hc.seller.title"), placeholder: t(lang, "hc.seller.ph"), cta: t(lang, "hc.seller.cta"),
+                      hint: t(lang, "hc.seller.hint"), done: t(lang, "hc.seller.done"), network: t(lang, "error.network"),
+                      errors: {
+                        code_incorrect: t(lang, "hc.err.incorrect"), verrouille: t(lang, "hc.err.locked"),
+                        code_absent: t(lang, "hc.err.absent"), code_invalide: t(lang, "hc.err.invalid"),
+                        etat_incompatible: t(lang, "hc.err.state"), generic: t(lang, "hc.err.generic"),
+                      },
+                    }}
+                  />
                 )}
               </div>
             </li>

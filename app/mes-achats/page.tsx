@@ -5,6 +5,7 @@ import { OrderPaymentRecovery } from "@/components/order-status-poll";
 import { whatsappHref } from "@/lib/whatsapp";
 import { RecipientDetails } from "@/components/recipient-details";
 import { ZoneCommande } from "@/components/zone-commande";
+import { HandoverCodeBuyer } from "@/components/handover-code";
 import { zonesDesCommandes } from "@/lib/zone-remise-serveur";
 import type { OrderRecipient } from "@/lib/order-recipient";
 import Link from "next/link";
@@ -212,6 +213,19 @@ export default async function MesAchatsPage({ searchParams }: {
           <span className="max-w-xs text-right text-xs text-mist">
             {t(lg, "ship.deadline", { date: echeance })}
           </span>
+        )}
+        {/* Code de remise (0163) : l'acheteur le lit ICI et le dit au vendeur devant l'objet. Il existe tant
+            que la remise n'est pas faite (`awaiting_shipment` comme `shipped`) : une remise en main propre
+            n'a souvent jamais été déclarée. */}
+        {(suivi.status === "awaiting_shipment" || suivi.status === "shipped") && (
+          <HandoverCodeBuyer
+            orderId={suivi.order_id}
+            labels={{
+              cta: t(lg, "hc.buyer.cta"), title: t(lg, "hc.buyer.title"), warn: t(lg, "hc.buyer.warn"),
+              hint: t(lg, "hc.buyer.hint"), hide: t(lg, "hc.buyer.hide"), error: t(lg, "hc.buyer.error"),
+              network: t(lg, "error.network"),
+            }}
+          />
         )}
         {/* Les deux gestes n'existent QU'À l'état `shipped` — et le second doit
             exister AVANT l'échéance : sans lui, la seule protection de

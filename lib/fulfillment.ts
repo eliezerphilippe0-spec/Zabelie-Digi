@@ -62,6 +62,10 @@ export type ResultatDeclaration = {
   reason?: string;
   status?: string;
   auto?: boolean;
+  /** Code de remise (0163) : rendu à l'acheteur seul, jamais journalisé. */
+  code?: string;
+  /** Essais restants après un faux code (0163). */
+  restantes?: number;
 };
 
 /**
@@ -82,6 +86,11 @@ const CODE_PAR_MOTIF: Record<string, number> = {
   etat_incompatible: 409,
   pas_encore_expedie: 409,
   deja_receptionne: 409,
+  // Code de remise (0163). `verrouille` : 423, l'acheteur garde sa confirmation.
+  code_absent: 409,
+  code_incorrect: 422,
+  code_invalide: 422,
+  verrouille: 423,
 };
 
 /** 400 par défaut : un motif inconnu est une erreur du client, pas du serveur. */
