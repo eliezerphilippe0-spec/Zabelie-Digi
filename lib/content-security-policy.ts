@@ -10,10 +10,15 @@ import { DOMAINES_REGIES } from "@/lib/pixels";
 export function contentSecurityPolicy(nonce: string, development = false, backendUrl?: string, options: { publicite?: boolean } = {}): string {
   if (!/^[A-Za-z0-9+/=_-]{20,}$/.test(nonce)) throw new Error("Invalid CSP nonce");
   let backend = "";
+  let stockage = "";
   if (backendUrl) {
     const url = new URL(backendUrl);
     if (url.protocol !== "https:" && !(url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname))) throw new Error("Unsafe backend origin");
     backend = " " + url.origin + " " + url.origin.replace(/^http/, "ws");
+    /* Images, médias et API : le SEUL projet Supabase de Zabelie. Le joker
+       `*.supabase.co` ouvrait la page à n'importe quel projet Supabase — un
+       hôte qu'un attaquant crée en deux minutes (audit du 2026-10-29, docs/78 L8). */
+    stockage = " " + url.origin;
   }
   const regies = options.publicite ? " " + DOMAINES_REGIES.join(" ") : "";
   return [
@@ -22,10 +27,10 @@ export function contentSecurityPolicy(nonce: string, development = false, backen
     "script-src-attr 'none'",
     // React uses style attributes for previews and theme controls. Scripts remain strict.
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: https://*.supabase.co${regies}`,
+    `img-src 'self' data: blob:${stockage}${regies}`,
     "font-src 'self'",
-    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${backend}${regies}${development ? " http://127.0.0.1:* http://localhost:* ws://localhost:* ws://127.0.0.1:*" : ""}`,
-    "media-src 'self' blob: https://*.supabase.co",
+    `connect-src 'self'${backend}${regies}${development ? " http://127.0.0.1:* http://localhost:* ws://localhost:* ws://127.0.0.1:*" : ""}`,
+    `media-src 'self' blob:${stockage}`,
     "worker-src 'self'",
     "frame-src 'none'",
     "object-src 'none'",

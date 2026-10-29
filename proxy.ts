@@ -135,7 +135,10 @@ const REF_CODE_RE = /^[a-z0-9]{6,16}$/;
 
 export const config = {
   matcher: [
-    // Tout sauf assets statiques et fichiers image.
-    "/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Tout sauf les assets statiques : `_next/`, les icônes, `public/brand` et
+    // `public/icons`, et une image À LA RACINE seulement. L'ancien motif
+    // exemptait TOUT chemin finissant par .png : `/boutik/x.png` était rendu
+    // sans CSP à nonce ni contrôle d'existence (audit du 2026-10-29, docs/78 L8).
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|brand/|icons/|[^/]+\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

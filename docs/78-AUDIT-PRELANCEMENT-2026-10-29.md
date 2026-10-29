@@ -155,3 +155,40 @@ Chaque garde est éprouvée par mutation (`tests/audit-correctifs-lot1.test.ts`,
 | soft 404 | `lib/pages-desactivees.ts` : `/tableau-de-bord/creation*` et `/tableau-de-bord/studio` répondent un vrai 404 quand leur interrupteur est éteint, décidé par le proxy avec les mêmes fonctions que les pages |
 | champ photo | la fiche produit physique n'affiche plus « Choose File » : bouton libellé dans la langue du vendeur (`sell.physical.photo.pick`), champ `sr-only` joignable au clavier |
 | `/assistant` | titre d'onglet tiré de sa copie traduite |
+
+**Lot 2 — migration `0166` et son code**
+
+| Réf | Correctif |
+|---|---|
+| M1 | ZB080 refuse une vente flash sur un produit à plusieurs variantes actives (`ZB166`, même règle que les rabais de `0109`) ; le checkout n'applique l'offre qu'à une unité au prix contre lequel elle a été validée — une variante ajoutée après l'offre paie son prix |
+| L2 | `protect_profile_privileges` fige `boutik_slug` côté client (INSERT et UPDATE) : seule l'attribution serveur l'écrit. `zabelie`, `zabelie-…`, `officiel`, `official`, `support`, `assistance`, `securite`, `service-client` réservés, en base et dans `lib/boutik-slug.ts` (test de concordance) |
+| L10 | `anon` perd INSERT/UPDATE/DELETE/TRUNCATE sur toutes les tables publiques, `authenticated` perd TRUNCATE (que RLS ne contrôle pas), y compris pour les tables à venir. Aucune policy d'écriture ne laissait passer un visiteur sans `auth.uid()` (mesuré) |
+
+⚠️ Angle mort assumé : le bootstrap SQL local n'accorde pas TRUNCATE à
+`authenticated` ; la mutation qui retire cette révocation survit au test SQL.
+La preuve est la sonde de `0166`, exécutée en production où la condition
+existait (64 tables mesurées avant application).
+
+**Lot 3 — durcissements sans décision métier**
+
+| Réf | Correctif |
+|---|---|
+| L8 | CSP : images, médias et API vers le SEUL projet Supabase configuré, plus `*.supabase.co` ; le matcher du proxy n'exempte plus tout chemin finissant par `.png` (`/boutik/x.png` était rendu sans CSP à nonce) |
+| L9 | déconnexion : `Clear-Site-Data: "cache", "storage"` — liste hors ligne, photo et consentement de l'essayage (IndexedDB) effacés sur l'appareil ; les cookies de langue et de zone restent |
+| L5 | API v1 anonyme : 60/min par visiteur (empreinte SHA-256 de l'adresse) dans une borne globale de 600/min par endpoint ; documentation publique corrigée dans les quatre langues |
+
+**Restent au porteur, non appliqués — et pourquoi**
+
+* **L1** (plafond d'un code promo dépassable par des commandes en attente
+  simultanées) : le fermer, c'est réserver l'usage au checkout. BL-133 a
+  délibérément déplacé la consommation au paiement confirmé pour qu'une
+  session MonCash abandonnée ne brûle pas un usage. Les deux ne tiennent pas
+  ensemble sans arbitrage : dépassement borné par les paiements simultanés,
+  ou usages gelés par des sessions abandonnées.
+* **M2, volet argent** : la date à laquelle le versement d'une facture
+  devient disponible. Ajouter une maturation aggraverait la rétention
+  (`docs/17`) : avis du conseil requis.
+* **M3** : le cookie de session reste lisible par JavaScript tant que six
+  composants utilisent le client Supabase du navigateur (connexion, mot de
+  passe, téléversements, suivi de commande). Les passer côté serveur est un
+  chantier ; garder ou retirer les pixels des vendeurs est une décision.

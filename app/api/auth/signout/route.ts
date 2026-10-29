@@ -86,5 +86,13 @@ export async function POST(req: Request) {
   // données de l'utilisateur ne doit pas survivre à sa déconnexion.
   revalidatePath("/", "layout");
 
+  /* Et l'APPAREIL : stockage local (liste hors ligne, photo et consentement
+   * de l'essayage en IndexedDB, préférences) et cache HTTP, effacés par le
+   * navigateur lui-même. Sur un téléphone prêté ou un poste de cybercafé, la
+   * session tombait mais la photo de l'essayage restait (audit du 2026-10-29,
+   * docs/78 L9). Les cookies ne sont PAS dans la liste : ceux de la session
+   * sont effacés ci-dessus, la langue et la zone choisies restent. */
+  reponse.headers.set("Clear-Site-Data", '"cache", "storage"');
+
   return reponse;
 }

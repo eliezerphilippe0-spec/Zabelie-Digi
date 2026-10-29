@@ -2,7 +2,8 @@ import { apiHeaders, createPublicApiClient, isPublicEndpoint, readApiBody } from
 import { openApiDocument } from "@/lib/api/v1/openapi";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { createHash } from "node:crypto";
+import { clientIp, rateLimit } from "@/lib/zabelie-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { V1_ENDPOINTS, ApiErrorOutput, type V1EndpointName } from "@/lib/api/v1/schemas";
 import { ErreurApi, V1_HANDLERS, type Contexte } from "@/lib/api/v1/handlers";
@@ -150,22 +151,26 @@ async function executePost(
     return erreur(lang, "internal", "unavailable");
   }
 
-  /* 4 — Cadence. Bornée par UTILISATEUR quand il y en a un, par ENDPOINT
-   * sinon.
+  /* 4 — Cadence. Bornée par UTILISATEUR quand il y en a un. Sans identité :
+   * par ADRESSE (empreinte SHA-256, jamais l'adresse en clair), PUIS par une
+   * borne GLOBALE de l'endpoint qui protège la base d'un emballement réparti.
    *
-   * ⚠️ Cette borne anonyme est GROSSIÈRE et c'est écrit plutôt que caché : sans
-   * identité, tous les appelants non connectés partagent le même compteur. Elle
-   * protège la base d'un emballement, elle ne distingue pas deux visiteurs. Une
-   * limitation par IP demanderait de traiter `x-forwarded-for`, qui se
-   * falsifie — et une borne qu'on croit par-appelant alors qu'elle ne l'est pas
-   * serait pire que celle-ci, qui ne prétend rien.
+   * Jusqu'au 2026-10-29, seule la borne globale existait (60/min partagées) :
+   * un seul client pouvait l'épuiser pour tous les autres (audit, docs/78 L5).
+   * `x-forwarded-for` est réécrit par Vercel, qui ne transmet pas celui du
+   * client — c'est la même clé que l'assistant d'achat (`clientIp`). Hors
+   * Vercel, une adresse falsifiée ne vaut qu'à l'intérieur de la borne
+   * globale, qui reste l'autorité.
    *
    * Le compteur vit en base (`rateLimit`), donc il exige le client
    * d'administration — c'est le seul usage du service role sur ce chemin, et il
    * ne porte aucune donnée d'utilisateur. Il est créé plus haut, dans la
    * même garde que le client de session. */
-  const cle = user ? `apiv1:${user.id}` : `apiv1:anon:${nom}`;
-  if (!(await rateLimit(admin, cle, user ? 120 : 60))) {
+  const autorise = user
+    ? await rateLimit(admin, `apiv1:${user.id}`, 120)
+    : (await rateLimit(admin, `apiv1:anon:${nom}:${createHash("sha256").update(clientIp(req)).digest("hex")}`, 60))
+      && (await rateLimit(admin, `apiv1:anon:${nom}`, 600));
+  if (!autorise) {
     return erreur(lang, "rate_limited", "rate_limited");
   }
 
