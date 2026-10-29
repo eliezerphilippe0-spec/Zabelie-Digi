@@ -18,10 +18,12 @@ const PROXIMITE_LIBELLE: Record<NiveauProximite, "proxKatye" | "proxKomin" | "pr
 /** Quand le niveau vient des zones où le vendeur DÉCLARE livrer : le libellé l'attribue au vendeur. Seuls les niveaux proches ont une desserte. */
 const DESSERTE_LIBELLE = { katye: "desserteKatye", komin: "desserteKomin", depatman: "desserteDepatman" } as const;
 
-export function ShoppingAssistant({ lang, labels, conversational, sellerId, kindOptions }: {
+export function ShoppingAssistant({ lang, labels, conversational, sellerId, kindOptions, defaultLocation = "" }: {
   lang: Lang; labels: ShoppingCopy; conversational: boolean; sellerId?: string; kindOptions: { value: ProductKind; label: string }[];
+  /** La zone que l'acheteur a mémorisée (cookie), en toutes lettres : préremplie, visible et modifiable. */
+  defaultLocation?: string;
 }) {
-  const [intent, setIntent] = useState<ShoppingIntent>(EMPTY);
+  const [intent, setIntent] = useState<ShoppingIntent>({ ...EMPTY, location: defaultLocation });
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<ShoppingResult | null>(null);
   const [turns, setTurns] = useState<{ text: string; user: boolean }[]>([]);
@@ -79,7 +81,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
         </fieldset>
         <div className="mt-5 flex flex-wrap gap-3">
           <button disabled={busy} className="min-h-11 rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand disabled:opacity-60">{busy ? labels.searching : labels.search}</button>
-          <button type="button" disabled={busy} onClick={() => { setIntent(EMPTY); setResult(null); setTurns([]); setMessage(""); setError(""); }} className="min-h-11 rounded-xl border border-line px-5 py-3">{labels.reset}</button>
+          <button type="button" disabled={busy} onClick={() => { setIntent({ ...EMPTY, location: defaultLocation }); setResult(null); setTurns([]); setMessage(""); setError(""); }} className="min-h-11 rounded-xl border border-line px-5 py-3">{labels.reset}</button>
         </div>
       </form>
     </section>

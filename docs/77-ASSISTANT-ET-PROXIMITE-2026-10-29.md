@@ -280,3 +280,64 @@ ambiguïté) ; **8 mutations SQL et 8 mutations TS, toutes attrapées**.
 département modifié, rien d'ouvert. Pas de bouton « ouvrir tout un département » : il
 faut ouvrir les communes une à une dans `/admin/zones`, ou demander l'ouverture d'un
 département entier (une écriture sur des données de référence réelles, annoncée).
+
+## 11. La zone de l'acheteur, mémorisée (cookie `zabelie_zone`, politique v4)
+
+**Demande directe du porteur (2026-10-29)** : « Mémoriser la zone de l'acheteur ». Devant le choix
+(cookie, compte ou rien de stocké), le porteur a retenu **« Cookie + politique v4 »**.
+
+**Ce qui est construit.**
+- **Le cookie `zabelie_zone`** ne contient qu'**un identifiant de zone** (département, commune ou
+  quartier) — jamais une position précise, jamais un texte libre. **Posé seulement au clic** sur
+  « Mémoriser ma zone » ; `HttpOnly`, `SameSite=Lax`, `Secure` en production, **180 jours**. Aucune
+  écriture en base, aucun compte requis. `POST /api/zone` valide l'identifiant contre la liste des zones
+  **ouvertes** (le cookie ne reçoit jamais le texte reçu) ; `DELETE` l'efface avec les mêmes attributs ;
+  l'origine est contrôlée aux deux verbes. Un cookie forgé, périmé ou désignant une zone fermée est
+  **ignoré**, jamais une erreur.
+- **`/assistant`** : la localité est **préremplie** par la zone mémorisée — visible et modifiable. Un nom
+  de moins de trois lettres n'étant pas reconnu par le moteur (« Nò » en kreyòl), le nom français est
+  alors utilisé ; un quartier est suivi de sa commune, parce que des quartiers homonymes existent.
+- **`/catalogue`** : la zone mémorisée est **proposée** (« Voir le catalogue de ma zone »), **jamais
+  appliquée d'office** — le filtre actif ne dépend que de l'adresse, donc ni un robot ni un lien partagé
+  ne voient autre chose. Le bloc vit dans le panneau repliable « Filtrer les produits », à côté du filtre
+  « Zone » (il n'est visible qu'une fois le panneau ouvert ; sur `/assistant` il est visible d'emblée).
+
+**La politique de confidentialité passe en `confidentialite-v4`.** Le cookie est déclaré dans le §8, dans
+les quatre langues — un test du dépôt l'exige — et le texte de la politique est **empreint** : le changer
+impose une nouvelle version, une migration et une ré-acceptation. Le §8 passe de trois à **quatre**
+catégories : ce cookie n'est pas « nécessaire au fonctionnement » (le site marche sans), c'est **une
+préférence que l'utilisateur demande** en cliquant.
+- **`0160`** redéfinit les deux fonctions d'acceptation pour accepter `v1`, `v3` **et** `v4` : la fenêtre de
+  déploiement est traitée (un client en vol déclare encore `v3`, et le reçu porte exactement ce qui a
+  été déclaré). Elle est **additive**, donc sans danger appliquée avant le code.
+- ⚠️ **ORDRE OBLIGATOIRE : appliquer `0160` AVANT de fusionner le code.** L'inverse laisserait
+  l'application exiger un reçu `v4` que la RPC ne sait pas écrire : ré-acceptation en boucle.
+- **Coût** : chaque compte existant repasse **une fois** par `/connexion?mode=legal`. Le moment est le
+  moins cher qu'il y aura (4 profils au relevé du 2026-10-29).
+- ⚖️ **À faire valider par le conseil** : la lecture « préférence demandée, sans consentement séparé »
+  (le cookie n'est posé qu'au clic et ne sert qu'à l'utilisateur). Les versions kreyòl, anglaise et
+  espagnole de la politique ne sont relues ni par un juriste ni par un locuteur natif.
+
+**Éprouvé.**
+- **28 tests** (logique, route, composant, intégration des pages, déclaration dans la politique, durée
+  écrite == durée du code) et **31 mutations, toutes attrapées** ; test SQL **LA12** (`v1`/`v3`/`v4` acceptés
+  tels que déclarés, `v2` et `v5` refusés), suite SQL complète rejouée sur un Postgres neuf.
+- **Parcours dans un vrai navigateur** (application construite + faux Supabase patché, trois passes) :
+  aucun cookie avant le clic ; bouton désactivé sans zone ; cookie `HttpOnly`/`Secure`/`Lax`/180 jours,
+  illisible par `document.cookie` ; le catalogue propose sans appliquer ; l'assistant préremplit ;
+  « Oublier » efface le cookie **et** la localité ; trois valeurs forgées × deux pages → 200 sans zone ; la
+  route refuse zone inconnue (422), autre origine (403, POST et DELETE) et corps illisible (400) sans
+  poser de cookie ; rendu kreyòl vérifié.
+- **Trois défauts trouvés par ces instruments, avant la fusion** : (1) « Nò » (2 lettres) n'est pas reconnu
+  par le moteur — le prérempli kreyòl du département Nord aurait été « non reconnu » ; (2) mon test de
+  casse était **vide** (identifiants sans lettre : la majuscule ne changeait rien) — une mutation a
+  survécu ; (3) le bloc est dans un panneau **replié** — invisible tant qu'on ne l'ouvre pas, ce que
+  seuls les tests unitaires ne pouvaient pas montrer.
+
+**Ce qui n'est PAS couvert, dit tel quel.**
+- Le harnais e2e de la CI **ne peut pas** exercer ce parcours : son faux Supabase ne sert des zones qu'à
+  un scénario d'identité authentifié. La vérification en navigateur ci-dessus est manuelle, pas un test
+  committé. Servir des zones à tous, c'est changer le catalogue de tous les parcours physiques.
+- Le cookie suit l'**appareil**, pas la personne : un acheteur qui change de téléphone doit la remémoriser.
+- La zone mémorisée **ne classe pas** le catalogue : elle propose un lien et préremplit l'assistant.
+

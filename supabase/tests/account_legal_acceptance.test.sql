@@ -153,4 +153,52 @@ do $$ begin
   exception when sqlstate 'ZB046' then null; end;
   raise notice 'OK LA6-LA11: anon denied, explicit self act, idempotence, peer denied, atomic pair, suspension denied, append-only cascade protected';
 end $$;
+
+-- LA12 (0160) — la fenêtre de déploiement v1/v3/v4 : le reçu porte la version
+-- RÉELLEMENT déclarée, jamais celle que le serveur préférerait ; une version
+-- qui n'a jamais existé (v2) ou qui n'existe pas encore (v5) est refusée.
+insert into auth.users (id,email,raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000133006','v4@test.local',
+   '{"legal_acceptance":{"conditions_version":"cgu-v1","conditions_accepted":true,"confidentialite_version":"confidentialite-v4","confidentialite_read":true}}'),
+  ('00000000-0000-0000-0000-000000133007','v3@test.local',
+   '{"legal_acceptance":{"conditions_version":"cgu-v1","conditions_accepted":true,"confidentialite_version":"confidentialite-v3","confidentialite_read":true}}');
+do $$
+declare v_bad text;
+begin
+  if not exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133006' and policy_version='confidentialite-v4')
+    or exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133006' and policy_version='confidentialite-v3') then
+    raise exception 'LA12 signup declaring v4 must record exactly v4';
+  end if;
+  if not exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133007' and policy_version='confidentialite-v3')
+    or exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133007' and policy_version='confidentialite-v4') then
+    raise exception 'LA12 signup declaring v3 (client in flight) must record exactly v3, never a v4 receipt';
+  end if;
+  foreach v_bad in array array['confidentialite-v2','confidentialite-v5'] loop
+    begin
+      insert into auth.users (id,email,raw_user_meta_data)
+        values ('00000000-0000-0000-0000-000000133097','unknown@test.local',
+                jsonb_build_object('legal_acceptance', jsonb_build_object('conditions_version','cgu-v1','conditions_accepted',true,'confidentialite_version',v_bad,'confidentialite_read',true)));
+      raise exception 'LA12 signup accepted an unknown privacy version %', v_bad;
+    exception when sqlstate 'ZB133' then null; end;
+  end loop;
+end $$;
+
+set local role authenticated;
+set local request.jwt.claim.sub='00000000-0000-0000-0000-000000133003';
+set local request.jwt.claim.role='authenticated';
+do $$ begin
+  perform zabelie_accept_account_legal('cgu-v1','confidentialite-v4',true,true);
+  if not exists (select 1 from zabelie_policy_acceptances where policy_version='confidentialite-v4')
+    or exists (select 1 from zabelie_policy_acceptances where policy_version='confidentialite-v3') then
+    raise exception 'LA12 RPC declaring v4 must record exactly v4 for the caller';
+  end if;
+  begin
+    perform zabelie_accept_account_legal('cgu-v1','confidentialite-v2',true,true);
+    raise exception 'LA12 RPC accepted the never-applied v2';
+  exception when sqlstate 'ZB133' then null; end;
+end $$;
+reset role;
+set local request.jwt.claim.sub='';
+set local request.jwt.claim.role='service_role';
+do $$ begin raise notice 'OK LA12: v1/v3/v4 accepted as declared on signup and by RPC; v2 and v5 refused'; end $$;
 rollback;
