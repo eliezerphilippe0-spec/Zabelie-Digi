@@ -357,6 +357,10 @@ export default async function CataloguePage({
             </button>
           </form>
         )}
+        {/* docs/77 §8 : le filtre inclut les vendeurs qui DÉCLARENT livrer dans la zone ; le dire, sans promettre. */}
+        {zoneActive && universe !== "numerique" ? (
+          <p className="mt-2 max-w-2xl text-xs leading-relaxed text-mist">{t(lang, "zone.filter.note")}</p>
+        ) : null}
 
         </details>
 

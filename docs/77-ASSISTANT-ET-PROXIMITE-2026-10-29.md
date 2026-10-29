@@ -199,3 +199,34 @@ transaction ouverte 0,4 s, puis re-mesuré.
   montre pas encore « Livre à : … (déclaré par le vendeur) » ; aucun rappel au
   vendeur qui n'a déclaré aucune zone. Lot 3.
 - Rien n'est vérifié par Zabelie : une zone desservie est **déclarative**.
+
+## 9. Lot 3a — le filtre « Zone » du catalogue (livré le 2026-10-29)
+
+Le filtre « Zone » de `/catalogue` ne montrait que les vendeurs **installés** dans la
+zone. Un vendeur installé à Delmas qui déclare livrer à Cap-Haïtien en était absent :
+l'acheteur de Cap-Haïtien ne le trouvait pas, alors que c'est exactement ce que la
+décision du porteur voulait rendre possible.
+
+- `getSellerIdsInZone` réunit désormais, **sans doublon**, les vendeurs installés et
+  ceux qui **déclarent livrer** dans une zone qui recouvre la zone filtrée
+  (`zonesRecouvrantes`) : la zone elle-même, une zone **dans** elle (le vendeur en
+  sert une partie), une zone qui la **contient** (il sert tout le département).
+  Un quartier **frère** ne recouvre pas : qui ne déclare que Haut-du-Cap ne sert pas
+  Carénage.
+- Table absente (code déployé avant `0158`) ou lecture en échec → le filtre garde les
+  seuls vendeurs installés, c'est-à-dire le comportement d'avant. Une table absente
+  ne journalise pas à chaque page ; toute autre erreur, si.
+- L'écran le dit sous le filtre : « Vendeurs installés dans cette zone, et vendeurs
+  qui déclarent y livrer. Zabelie ne livre pas : la remise est organisée par le
+  vendeur. » Quatre langues.
+- ⚠️ Plafonné par la limite de lignes de PostgREST (1000) : au-delà, des vendeurs
+  sont omis. La troncature dégrade vers **moins** de résultats, jamais vers un
+  vendeur proposé à tort.
+
+**Éprouvé** : 11 tests, 12 mutations (recouvrement sans ancêtres, sans sous-arbre,
+avec les frères, cycle non borné, union perdue, table absente bruyante, note affichée
+sans filtre…), toutes attrapées.
+
+**Reste (lot 3b, porteur ou suite)** : un endroit où l'acheteur déclare sa zone ; la
+mention « Livre à : … (déclaré par le vendeur) » sur la fiche produit ; un rappel au
+vendeur qui n'a déclaré aucune zone ; une page de recherche de vendeurs.

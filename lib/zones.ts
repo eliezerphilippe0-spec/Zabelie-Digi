@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isMissingTable } from "@/lib/product-media";
 import type { Lang } from "@/lib/i18n";
 
 /**
@@ -103,6 +104,60 @@ export function sousArbre(zones: ZoneNode[], racine: string): string[] {
 }
 
 /**
+ * Les ancêtres d'une zone, du plus proche au plus lointain (sans la zone). Zone
+ * inconnue de la liste → `[]`. Borné par la taille de la liste, comme `sousArbre` :
+ * un cycle termine.
+ */
+export function ancetresZone(zones: ZoneNode[], id: string): string[] {
+  const parId = new Map(zones.map((z) => [z.id, z]));
+  const ancetres: string[] = [];
+  let courant = parId.get(id);
+  for (let garde = 0; courant?.parent_id && garde < zones.length; garde++) {
+    if (ancetres.includes(courant.parent_id) || courant.parent_id === id) break;
+    ancetres.push(courant.parent_id);
+    courant = parId.get(courant.parent_id);
+  }
+  return ancetres;
+}
+
+/**
+ * Les zones qu'un vendeur peut DÉCLARER pour desservir `id` : la zone elle-même,
+ * son sous-arbre (il dessert une partie de ce que l'acheteur filtre) et ses
+ * ancêtres (il dessert tout le département qui contient la zone filtrée).
+ *
+ * Un quartier FRÈRE n'y figure pas : un vendeur qui ne déclare que « Haut-du-Cap »
+ * ne dessert pas « Carénage » — le filtre ne le propose pas.
+ */
+export function zonesRecouvrantes(zones: ZoneNode[], id: string): string[] {
+  return [...new Set([...sousArbre(zones, id), ...ancetresZone(zones, id)])];
+}
+
+/**
+ * Les vendeurs qui DÉCLARENT livrer dans une des zones données (0158), lus sous
+ * la session (lecture publique). `[]` si la table n'existe pas encore (le code se
+ * déploie avant la migration) ou si la lecture échoue — l'appelant garde alors les
+ * seuls vendeurs installés dans la zone, ce qui est le comportement d'avant.
+ *
+ * ⚠️ Plafonné par la limite de lignes de PostgREST (1000) : au-delà, des vendeurs
+ * sont omis — la troncature dégrade vers « moins de résultats », jamais vers un
+ * vendeur proposé à tort.
+ */
+async function vendeursDesservant(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  zoneIds: string[]
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("zabelie_seller_service_zones")
+    .select("seller_id")
+    .in("zone_id", zoneIds);
+  if (error || !data) {
+    if (error && !isMissingTable(error)) console.warn("[zones] zones desservies illisibles, vendeurs installés seuls", error.message);
+    return [];
+  }
+  return (data as { seller_id: string }[]).map((l) => l.seller_id);
+}
+
+/**
  * Les vendeurs dont la zone déclarée tombe dans le sous-arbre de `zoneId`.
  *
  * Deux lectures sous RLS publique (zones actives, profils), zéro droit
@@ -164,7 +219,12 @@ export async function getSellerIdsInZone(zoneId: string): Promise<string[]> {
     console.warn("[zones] vendeurs introuvables pour la zone", sErr?.message);
     return [];
   }
-  return (sellers as { id: string }[] | string[]).map((s) =>
+  const installes = (sellers as { id: string }[] | string[]).map((s) =>
     typeof s === "string" ? s : s.id
   );
+  /* Et ceux qui DÉCLARENT livrer dans la zone (0158) : le vendeur livre lui-même,
+   * donc être installé ailleurs ne l'empêche pas de servir cette zone. Union,
+   * dédoublonnée : un vendeur installé ET desservant la zone compte une fois. */
+  const desservants = await vendeursDesservant(supabase, zonesRecouvrantes(zones as ZoneNode[], zoneId));
+  return [...new Set([...installes, ...desservants])];
 }
