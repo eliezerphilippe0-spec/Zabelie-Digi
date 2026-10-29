@@ -49,6 +49,18 @@ import type { Lang } from "./i18n";
  *     pièces d'un compte actif. Le cadre BRH reste à qualifier (`docs/17`) ;
  *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
  *
+ * ⚖️ 2026-10-29 — **`v4` : le cookie `zabelie_zone` entre au §8**, décision du
+ * porteur (« Mémoriser la zone de l'acheteur », puis « Cookie + politique v4 »).
+ *   • Il retient, sur l'appareil de celui qui clique « Mémoriser ma zone », un
+ *     identifiant de département, de commune ou de quartier — jamais une position
+ *     précise (docs/77 §11). Le §8 passe de trois à QUATRE catégories : ce n'est pas
+ *     « nécessaire au fonctionnement », c'est une préférence que l'utilisateur demande.
+ *   • ⚖️ La lecture « préférence demandée, donc sans consentement séparé » est celle de
+ *     l'agent, pas d'un juriste : à faire valider par le conseil, comme le §6 de la v3.
+ *   • Un commentaire ne change pas l'empreinte du document (`tests/account-legal-
+ *     acceptance.test.ts` hache les blocs de texte, pas ce fichier) : seule la modification
+ *     des blocs a imposé `confidentialite-v4` et la migration `0160`.
+ *
  * ⚖️ 2026-10-10 (second passage) — **`v3` GROUPÉ, décision du porteur.** Le
  * relevé `docs/69` a mesuré HUIT tiers appelés par le code, pas quatre :
  * Reloadly et Kobara n'étaient dans aucune liste, et Stripe serait passé à
@@ -268,12 +280,18 @@ const fr: Politique = {
       titre: "8. Cookies et traceurs",
       ancre: "traceurs",
       blocs: [
-        { p: "Nous utilisons trois catégories de cookies." },
+        { p: "Nous utilisons quatre catégories de cookies." },
         { p: "**Nécessaires au fonctionnement** (sans consentement, car le site ne peut pas fonctionner sans eux) :" },
         {
           ul: [
             "la **session de connexion**, tant que vous restez connecté ;",
             "vos **préférences de langue et d'apparence** (zabelie_lang, zab_theme).",
+          ],
+        },
+        { p: "**Une préférence que vous demandez** (sans consentement séparé : elle n'est posée que si vous cliquez, et ne sert qu'à vous) :" },
+        {
+          ul: [
+            "zabelie_zone : retient pendant **180 jours**, sur votre appareil, la **zone approximative** (département, commune ou quartier, jamais une position précise) que vous avez choisie en cliquant « Mémoriser ma zone ». Zabelie ne la lit que pour classer en premier les offres proches de vous ; elle n'est ni transmise à un tiers, ni enregistrée dans votre compte. « Oublier ma zone » l'efface.",
           ],
         },
         { p: "**Attribution des ventes** (sans donnée publicitaire, jamais transmis à un tiers) :" },
@@ -442,12 +460,18 @@ const ht: Politique = {
       titre: "8. Cookies ak siveyans",
       ancre: "traceurs",
       blocs: [
-        { p: "Nou itilize twa kalite cookies." },
+        { p: "Nou itilize kat kalite cookies." },
         { p: "**Nesesè pou sit la mache** (san konsantman, paske sit la pa ka mache san yo) :" },
         {
           ul: [
             "**sesyon koneksyon** ou, toutotan ou rete konekte ;",
             "**preferans lang ak aparans** ou (zabelie_lang, zab_theme).",
+          ],
+        },
+        { p: "**Yon preferans ou mande** (san konsantman apa, paske nou pa poze l sof si ou klike, epi li sèvi ou menm sèlman) :" },
+        {
+          ul: [
+            "zabelie_zone : kenbe pandan **180 jou**, sou aparèy ou, **zòn apwoksimatif** (depatman, komin oswa katye, jamè pozisyon egzat) ou te chwazi lè ou klike « Sonje zòn mwen ». Zabelie li l sèlman pou l mete an premye òf ki toupre w yo ; nou pa voye l bay okenn lòt moun, nou pa mete l nan kont ou. « Bliye zòn mwen » efase l.",
           ],
         },
         { p: "**Atribisyon vant** (pa gen done piblisite, nou pa janm voye yo bay lòt moun) :" },
@@ -616,12 +640,18 @@ const en: Politique = {
       titre: "8. Cookies and trackers",
       ancre: "traceurs",
       blocs: [
-        { p: "We use three categories of cookies." },
+        { p: "We use four categories of cookies." },
         { p: "**Necessary for the site to work** (no consent needed, because the site cannot work without them):" },
         {
           ul: [
             "your **login session**, for as long as you stay signed in;",
             "your **language and appearance preferences** (zabelie_lang, zab_theme).",
+          ],
+        },
+        { p: "**A preference you ask for** (no separate consent: it is only set if you click, and it serves only you):" },
+        {
+          ul: [
+            "zabelie_zone: keeps for **180 days**, on your device, the **approximate area** (department, commune or neighborhood, never a precise position) you chose by clicking “Remember my area”. Zabelie reads it only to rank the offers near you first; it is not shared with any third party or stored in your account. “Forget my area” deletes it.",
           ],
         },
         { p: "**Sales attribution** (no advertising data, never shared with third parties):" },
@@ -790,12 +820,18 @@ const es: Politique = {
       titre: "8. Cookies y rastreadores",
       ancre: "traceurs",
       blocs: [
-        { p: "Utilizamos tres categorías de cookies." },
+        { p: "Utilizamos cuatro categorías de cookies." },
         { p: "**Necesarias para el funcionamiento** (sin consentimiento, porque el sitio no puede funcionar sin ellas):" },
         {
           ul: [
             "su **sesión de inicio**, mientras permanezca conectado;",
             "sus **preferencias de idioma y apariencia** (zabelie_lang, zab_theme).",
+          ],
+        },
+        { p: "**Una preferencia que usted solicita** (sin consentimiento separado: solo se instala si hace clic y solo le sirve a usted):" },
+        {
+          ul: [
+            "zabelie_zone: conserva durante **180 días**, en su dispositivo, la **zona aproximada** (departamento, comuna o barrio, nunca una posición precisa) que eligió al hacer clic en «Recordar mi zona». Zabelie solo la lee para mostrar primero las ofertas cercanas; no se comparte con terceros ni se guarda en su cuenta. «Olvidar mi zona» la borra.",
           ],
         },
         { p: "**Atribución de ventas** (sin datos publicitarios, nunca se comparten con terceros):" },

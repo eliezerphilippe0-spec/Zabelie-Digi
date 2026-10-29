@@ -9,8 +9,15 @@ export const CONDITIONS_VERSION = "cgu-v1";
  * n'a pas donnée. ⚠️ `0136` doit être APPLIQUÉE avant que cette ligne ne soit
  * fusionnée : sinon l'application exige un reçu que la RPC ne sait pas écrire,
  * et la ré-acceptation tourne en boucle sans jamais satisfaire la garde.
+ *
+ * ⚖️ 2026-10-29 — `v3` → `v4` : le cookie `zabelie_zone` entre au §8 de la
+ * politique (catégorie « Une préférence que vous demandez »), à la demande du
+ * porteur (« Mémoriser la zone de l'acheteur », puis « Cookie + politique v4 »).
+ * Même règle, même ordre : `0160` doit être APPLIQUÉE avant que cette ligne ne
+ * soit fusionnée. Les reçus `v3` restent (registre append-only) ; chaque compte
+ * repasse UNE fois par la ré-acceptation.
  */
-export const CONFIDENTIALITE_VERSION = "confidentialite-v3";
+export const CONFIDENTIALITE_VERSION = "confidentialite-v4";
 
 export const ACCOUNT_LEGAL_VERSIONS = [CONDITIONS_VERSION, CONFIDENTIALITE_VERSION] as const;
 

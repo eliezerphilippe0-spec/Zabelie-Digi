@@ -23,6 +23,10 @@ import { partage } from "@/lib/meta-page";
 import { getZonesActives, libelleZone, type Zone } from "@/lib/zones";
 import { isSupabaseConfigured } from "@/lib/products";
 import { isPrefetch, logLanding } from "@/lib/metrics";
+import { lireZoneAcheteur } from "@/lib/zone-acheteur-serveur";
+import { paramsCatalogue } from "@/lib/zone-acheteur";
+import { maZoneLabels } from "@/lib/ma-zone-labels";
+import { MaZone } from "@/components/ma-zone";
 import { t, tn } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
@@ -96,6 +100,8 @@ export default async function CataloguePage({
     ? zones.filter((z) => z.level === "katye" && z.parent_id === zkValide)
     : [];
   const zoneActive = zoneId ? zones.find((z) => z.id === zoneId) : undefined;
+  // Zone mémorisée par l'acheteur (cookie `zabelie_zone`, docs/77 §11) : jamais appliquée d'office, seulement proposée.
+  const maZone = zones.length ? await lireZoneAcheteur(zones) : null;
   // Rayons fins du département actif. Vide hors département, et vide tant
   // qu'aucun produit publié n'y est rangé (V-13 : jamais un rayon désert).
   const facettes =
@@ -360,6 +366,15 @@ export default async function CataloguePage({
         {/* docs/77 §8 : le filtre inclut les vendeurs qui DÉCLARENT livrer dans la zone ; le dire, sans promettre. */}
         {zoneActive && universe !== "numerique" ? (
           <p className="mt-2 max-w-2xl text-xs leading-relaxed text-mist">{t(lang, "zone.filter.note")}</p>
+        ) : null}
+        {/* docs/77 §11 : l'acheteur mémorise sa zone (cookie zabelie_zone) ; le catalogue lui propose celle-ci. */}
+        {universe !== "numerique" && depatmans.length > 0 ? (
+          <div className="mt-4">
+            <MaZone labels={maZoneLabels(lang)}
+              zones={zones.map((z) => ({ id: z.id, parent_id: z.parent_id, level: z.level, label: libelleZone(z, lang) }))}
+              courante={maZone ? { id: maZone.id, label: libelleZone(maZone, lang) } : null}
+              hrefCatalogue={maZone && maZone.id !== zoneId ? `/catalogue?${paramsCatalogue(zones, maZone)}` : undefined} />
+          </div>
         ) : null}
 
         </details>

@@ -77,6 +77,11 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // Public catalogue assistant; read-only. Fail-closed DB quotas bound public
   // reads and model usage. It cannot write a cart or create a payment.
   "ai/shopping/route.ts": /if \(!await rateLimit\(admin, `shopping:\$\{ipHash\}`, 10, 60\)\) return fail\("shopping_limit", 429\)/,
+  // Mémoriser / oublier SA zone (cookie `zabelie_zone`, docs/77 §11) : aucune
+  // session, aucune écriture en base, aucune donnée de compte — le cookie ne
+  // contient qu'un identifiant de zone OUVERTE, validé contre la liste. Le garde
+  // est le contrôle d'origine (même hôte que la page), aux deux verbes.
+  "zone/route.ts": /^(?=[\s\S]*export async function POST\(req: Request\) \{\s*if \(!memeOrigine\(req\)\) return erreurTraduite\("api\.access\.denied", 403)(?=[\s\S]*export async function DELETE\(req: Request\) \{\s*if \(!memeOrigine\(req\)\) return erreurTraduite\("api\.access\.denied", 403)/,
   // Retour navigateur MonCash : pas de session requise, la vérité vient de la
   // vérification serveur-à-serveur auprès de MonCash (INVARIANT 2).
   "moncash/return/route.ts": /retrieveTransactionPayment/,
