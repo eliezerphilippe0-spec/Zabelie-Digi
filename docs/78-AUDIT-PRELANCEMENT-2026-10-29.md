@@ -192,3 +192,14 @@ existait (64 tables mesurées avant application).
   composants utilisent le client Supabase du navigateur (connexion, mot de
   passe, téléversements, suivi de commande). Les passer côté serveur est un
   chantier ; garder ou retirer les pixels des vendeurs est une décision.
+
+**Trouvé en vérifiant les correctifs en production**
+
+* `list_categories` (API v1 publique) répondait **500** : 9 rayons actifs sur
+  83 ont une adresse kreyòl accentuée (`luil-motè`, `krem-kò`, `sewòm`…) et
+  `SlugSchema` n'acceptait que `[a-z0-9-]`. Le contrat de sortie étant vérifié
+  avant envoi, une seule adresse accentuée retenait toute la page. Défaut
+  antérieur à l'audit, de la même famille que `\b` contre `vandè`. Corrigé :
+  minuscules Unicode (`\p{Ll}`, `\p{Mn}`, chiffres, tirets), éprouvé sur des
+  accents en fin et en début de mot (`tests/api-v1-slug-kreyol.test.ts`) ;
+  l'ancien motif fait rougir deux tests sur trois.
