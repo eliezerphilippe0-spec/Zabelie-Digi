@@ -232,3 +232,43 @@ sans filtre…), toutes attrapées.
 **Reste (lot 3b, porteur ou suite)** : un endroit où l'acheteur déclare sa zone ; la
 mention « Livre à : … (déclaré par le vendeur) » sur la fiche produit ; un rappel au
 vendeur qui n'a déclaré aucune zone ; une page de recherche de vendeurs.
+
+## 10. Les communes des neuf autres départements (migration `0159`, 2026-10-29)
+
+**Demande directe du porteur** : « ajoute les communes et les autres départements ». Les
+dix départements existaient déjà (`0069`) ; ce qui manquait, ce sont leurs communes — et
+`ZB069` exige une commune au minimum pour déclarer une zone. Sans elles, un vendeur ou un
+acheteur de l'Ouest ne pouvait rien déclarer, et tout le chantier de proximité (§7 à §9)
+ne servait que le Nord.
+
+**Ce qui est construit.** 121 communes (AR 15 · CE 12 · GA 12 · NI 11 · NE 13 · NO 10 ·
+OU 20 · SD 18 · SE 10) qui, avec les 19 du Nord, font **140**. Elles entrent **fermées**
+(`is_active = false`) : la RLS de `zabelie_zones` ne montre que les zones ouvertes, donc
+**rien ne change de visible** tant que le porteur n'a pas ouvert une zone. Il le fait
+depuis `/admin/zones` (« Rouvrir », journalisé dans `zabelie_admin_actions`), par vagues,
+après relecture.
+
+**⚠️ Provenance non vérifiée.** Le 2026-10-29, le réseau de la session refusait
+`fr.wikipedia.org` et `en.wikipedia.org`, et le scraper n'avait pas de clé valide : aucune
+page de référence n'a pu être ouverte. La liste est celle de l'agent, de mémoire. Sa seule
+vérification est **interne** : les effectifs somment à 140, et cinq départements (OU 20,
+ND 19, SD 18, NI 11, SE 10) ont été recoupés avec un résumé de recherche externe ; les
+cinq autres (AR, CE, GA, NE, NO) ne reposent que sur la mémoire et la somme. Une source
+relève aussi **146 communes** (création par décret, 2015) : il peut en **manquer**. Ajouter
+une commune est un simple `insert`. **À recouper avec l'IHSI ou Wikipédia avant d'ouvrir
+un département.**
+
+**⚠️ Graphies kreyòl** : de l'agent, best-effort, **en attente de relecture native** (même
+statut que le seed du Nord). Quand une graphie n'était pas certaine, le nom français a été
+repris tel quel.
+
+**Éprouvé.** Test SQL K1–K5 (effectifs par département, fermeture vue d'`anon`, et tout le
+chemin : une commune fermée est refusée, rouverte elle est déclarable, `region_code` dérive
+`HT-OU` et la zone de service s'écrit) ; 9 tests TS (dont : **chacune des 140 communes est
+retrouvée par son nom français ET kreyòl** par le moteur de reconnaissance de lieu, aucune
+ambiguïté) ; **8 mutations SQL et 8 mutations TS, toutes attrapées**.
+
+**Ce que `0159` ne fait pas.** Aucun quartier (optionnel), aucune coordonnée, aucun
+département modifié, rien d'ouvert. Pas de bouton « ouvrir tout un département » : il
+faut ouvrir les communes une à une dans `/admin/zones`, ou demander l'ouverture d'un
+département entier (une écriture sur des données de référence réelles, annoncée).
