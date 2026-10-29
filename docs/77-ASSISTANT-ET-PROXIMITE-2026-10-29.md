@@ -99,3 +99,65 @@ formulaire, lui, ne dépend pas de l'IA.
 **Décision porteur** : retirer la question dès maintenant (point 1), ou la garder
 en préparation du point 3 ? Le dépôt a un test qui fige l'ordre actuel des
 questions (`tests/shopping-ai.test.ts`) : le changer est un geste volontaire.
+
+---
+
+## 7. Mise à jour du 2026-10-29 — décision du porteur et lot 1 livré
+
+**Décisions du porteur (directes, en session).**
+1. Brancher la proximité. *« Livrer loin n'est pas une option viable pour le moment.
+   Les vendeurs auront à faire leur propre livraison. »* La proximité cesse d'être
+   un confort : elle conditionne l'achat d'un objet physique.
+2. *« Par zones, j'entends ville, commune, etc. »* — la hiérarchie existante
+   (département · commune · quartier, `docs/33`) est la bonne granularité.
+   Approximatif voulu : pas de position précise.
+3. **Ajouter aux informations d'inscription du vendeur ses ZONES DE SERVICE**
+   (là où il livre, plusieurs possibles) — lot 2, ci-dessous.
+
+**Lot 1 livré — l'assistant classe par proximité.**
+- `lib/proximite.ts` (pur) : reconnaît la localité saisie (`zoneDepuisTexte`),
+  calcule les périmètres de l'acheteur, le niveau d'un vendeur. `lib/proximite-serveur.ts`
+  lit les vendeurs par zone. `lib/proximite-niveaux.ts` ne porte que les types et
+  l'ordre (le fournisseur IA importe `lib/shopping-ai.ts` : aucun chemin d'import
+  vers la base, test de confinement).
+- ⚠️ **Écart avec la proposition du §4** : la reconnaissance du lieu est faite par
+  le **code**, pas par l'IA. Elle coûte zéro appel de plus, n'envoie aucune donnée
+  de plus à un tiers, et reste déterministe. Elle est fail-closed : lieu inconnu,
+  ambigu ou contradictoire → `null`, et l'écran le **dit**.
+- Seuls les produits **physiques** sont classés (`compteProximite`). Un vendeur
+  lointain reste **proposé** (on peut commander pour un proche, ailleurs) ; il
+  passe après. « Zone du vendeur non renseignée » n'est pas « loin » : tant que
+  personne n'a déclaré de zone, l'ordre ne change pas.
+- Éprouvé : 40 tests, 18 mutations, toutes attrapées.
+
+**Ce que le lot 1 ne fait PAS, et pourquoi.**
+- **Pas de GPS.** `zabelie_zones` n'a aucune coordonnée ; en fabriquer de mémoire
+  serait inventer une donnée de référence. Une détection de position demanderait
+  d'abord un jeu de coordonnées validé.
+- **Les zones ne couvrent que le Nord** (10 départements, 19 communes du Nord,
+  5 quartiers du Cap-Haïtien — seed par vagues, `docs/33`). Un acheteur ou un
+  vendeur de l'Ouest (Port-au-Prince, Delmas, Pétion-Ville…) ne peut **pas**
+  déclarer de zone : la règle `ZB069` exige une commune au minimum. **C'est le
+  prérequis le plus lourd** : sans communes, la fonction ne sert qu'au Nord.
+- **Aucun acheteur n'a d'endroit où déclarer sa zone** (le sélecteur n'existe que
+  dans la page boutique du vendeur) ; l'assistant la lit dans sa question.
+- **Aucune recherche de vendeurs** n'existe, seulement des fiches individuelles.
+
+**Un choix de conception à connaître : la zone n'est PAS un verrou.** Le lieu qui
+compte pour un objet est celui où il sera **livré**, pas celui de la personne qui
+paie. La diaspora — marché explicite de Zabelie — commande pour un proche resté en
+Haïti. Un « même zone obligatoire » bloquerait ces achats. Le classement favorise
+donc le proche sans exclure le lointain ; si le porteur veut un blocage strict, c'est
+une décision à part.
+
+## 8. Lot 2 — zones de service à l'inscription (à construire)
+
+Le vendeur ne **dessert** pas que l'endroit où il est installé. Il déclare, à
+l'inscription et dans les réglages de sa boutique, les zones où il livre :
+une ou plusieurs (ville, commune, quartier, ou tout un département).
+- Une table dédiée `zabelie_seller_service_zones`, lisible publiquement (une zone
+  desservie est une information commerciale, pas une donnée personnelle), écrite
+  par son seul propriétaire (RLS), plafonnée par une valeur de **config**.
+- L'acheteur voit « dessert votre commune », **attribué au vendeur** (« déclaré par
+  le vendeur ») : Zabelie ne livre pas et ne garantit aucun délai.
+- Le classement du lot 1 lit alors la zone d'installation **et** les zones desservies.

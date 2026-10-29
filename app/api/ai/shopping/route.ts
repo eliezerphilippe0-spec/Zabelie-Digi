@@ -10,6 +10,8 @@ import { aiProviderDisponible } from "@/lib/ai-description";
 import { ShoppingRequestSchema, nextShoppingQuestion } from "@/lib/shopping-ai";
 import { extractShoppingIntent } from "@/lib/shopping-ai-provider";
 import { getShoppingRecommendations } from "@/lib/shopping-ai-catalogue";
+import { getZonesActives, libelleZone } from "@/lib/zones";
+import { zoneDepuisTexte } from "@/lib/proximite";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,8 +43,14 @@ export async function POST(req: Request) {
     if (input.message && !await rateLimit(admin, "shopping_global", 500, 86400)) return fail("shopping_limit", 429);
     const intent = input.message ? await extractShoppingIntent(input.intent, input.message) : input.intent;
     const question = nextShoppingQuestion(intent);
-    const recommendations = question ? [] : await getShoppingRecommendations(intent, input.sellerId);
-    return reply({ intent, question, recommendations });
+    /* La localité saisie est RECONNUE ici, par le code, hors du fournisseur IA :
+     * aucun appel de plus, aucune donnée de plus envoyée à un tiers, et le
+     * module qui parle au modèle n'atteint toujours pas la base. Non reconnue →
+     * `zone: null`, que l'écran DIT, au lieu de classer sur une supposition. */
+    const zone = question ? null : zoneDepuisTexte(await getZonesActives(), intent.location);
+    const recommendations = question ? [] : await getShoppingRecommendations(intent, input.sellerId, zone?.id ?? null);
+    return reply({ intent, question, recommendations,
+      ...(question ? {} : { localite: { zone: zone ? libelleZone(zone, await getLang()) : null } }) });
   } catch {
     // Neither user messages, locations, provider responses nor secrets go to logs.
     console.warn("[shopping-ai] request_unavailable");

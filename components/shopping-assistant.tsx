@@ -6,10 +6,15 @@ import { AddToCart } from "@/components/add-to-cart";
 import type { Lang } from "@/lib/i18n";
 import type { ShoppingCopy } from "@/lib/shopping-ai-copy";
 import type { ShoppingIntent, ShoppingResult } from "@/lib/shopping-ai";
+import type { NiveauProximite } from "@/lib/proximite-niveaux";
 import { isTrackedStockKind, isDownloadable, isProductKind, type ProductKind } from "@/lib/product-kind";
 
 const EMPTY: ShoppingIntent = { query: "", need: "", budgetHtg: null, location: "", kind: null };
 const FIELD = "mt-2 min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-cloud focus-visible:outline-2 focus-visible:outline-brand";
+/** Un niveau de proximité → le libellé de l’offre. Record : un niveau ajouté sans libellé casse la compilation. */
+const PROXIMITE_LIBELLE: Record<NiveauProximite, "proxKatye" | "proxKomin" | "proxDepatman" | "proxAilleurs" | "proxInconnue"> = {
+  katye: "proxKatye", komin: "proxKomin", depatman: "proxDepatman", ailleurs: "proxAilleurs", inconnue: "proxInconnue",
+};
 
 export function ShoppingAssistant({ lang, labels, conversational, sellerId, kindOptions }: {
   lang: Lang; labels: ShoppingCopy; conversational: boolean; sellerId?: string; kindOptions: { value: ProductKind; label: string }[];
@@ -80,13 +85,17 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
     {result && question ? <p role="status">{labels[question]}</p> : null}
     {result && !question ? <section aria-labelledby="shopping-results-title" aria-live="polite">
       <h2 id="shopping-results-title" className="text-xl font-bold">{labels.results}</h2>
+      {/* Ce que le serveur a COMPRIS de la localité : dit à l’acheteur, qui peut corriger. Non reconnue = le dire, ne pas classer en silence. */}
+      {result.localite ? <p className="mt-3 text-sm font-semibold">{result.localite.zone ? labels.localite.replace("{zone}", result.localite.zone) : labels.localiteInconnue}</p> : null}
       {result.recommendations.length ? <>
         <p className="mt-3 text-sm text-mist">{labels.shortlist}</p>
+        {result.recommendations.some(p => p.proximite) ? <p className="mt-2 text-sm text-mist">{labels.proxNote}</p> : null}
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
           {result.recommendations.map(p => <article key={p.id} className="min-w-0 rounded-2xl border border-line bg-surface p-5">
             <span className="text-sm font-bold text-accent">{p.position}</span>
             <p className="mt-2 text-xs text-mist">{kindOptions.find(option => option.value === p.kind)?.label}</p>
             <h3 className="mt-2 break-words text-lg font-bold">{p.title}</h3>
+            {p.proximite ? <p className="mt-2 text-xs font-semibold text-accent">{labels[PROXIMITE_LIBELLE[p.proximite]]}</p> : null}
             <dl className="mt-4 space-y-3 text-sm">
               <div><dt className="text-mist">{labels.price}</dt><dd className="text-lg font-bold text-accent">{isTrackedStockKind(p.kind) ? `${labels.from} ` : ""}{format(p.priceHtg)}</dd></div>
               <div><dt className="text-mist">{labels.difference}</dt><dd>{p.priceDifferenceHtg > 0 ? "+" : ""}{format(p.priceDifferenceHtg)}</dd></div>
