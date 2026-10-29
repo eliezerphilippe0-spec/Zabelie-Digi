@@ -190,6 +190,10 @@ const fr = {
   "zsv.asked": "Merci. Nous savons maintenant que des personnes cherchent ici.",
   "zsv.error": "Impossible d'enregistrer pour le moment. Réessayez plus tard.",
   "zsv.share": "Inviter un vendeur (WhatsApp)",
+  /* Points de retrait d'une zone (0082) : un annuaire, jamais un service de Zabelie. */
+  "pr.title": "Points de retrait dans cette zone",
+  "pr.note": "Un point de retrait est une boutique qui accepte de remettre des colis. Zabelie ne livre pas : convenez avec le vendeur de la remise à ce point, et des frais éventuels, avant de payer.",
+  "pr.call": "Appeler {nom}",
   "zsv.shareText": "Je cherche un vendeur à {zone} sur Zabelie. Si vous vendez, inscrivez-vous ici : {url}",
 
   "purchases.title": "Mes achats",
@@ -1819,6 +1823,9 @@ const ht: Record<I18nKey, string> = {
   "zsv.asked": "Mèsi. Kounye a nou konnen gen moun k ap chèche isit la.",
   "zsv.error": "Nou pa ka anrejistre kounye a. Eseye ankò pita.",
   "zsv.share": "Envite yon vandè (WhatsApp)",
+  "pr.title": "Pwen retrè nan zòn sa a",
+  "pr.note": "Yon pwen retrè se yon boutik ki dakò remèt pakè. Zabelie pa livre : antann ou ak vandè a sou remiz la nan pwen sa a, ak sou frè ki ka genyen, anvan ou peye.",
+  "pr.call": "Rele {nom}",
   "zsv.shareText": "Mwen ap chèche yon vandè nan {zone} sou Zabelie. Si w vann, enskri isit la : {url}",
 
   "purchases.title": "Acha mwen",
@@ -3412,6 +3419,9 @@ const en = {
   "zsv.asked": "Thank you. We now know people are looking here.",
   "zsv.error": "Could not save right now. Try again later.",
   "zsv.share": "Invite a seller (WhatsApp)",
+  "pr.title": "Pickup points in this area",
+  "pr.note": "A pickup point is a shop that agrees to hand over parcels. Zabelie does not deliver: agree with the seller on the handover at this point, and on any fees, before you pay.",
+  "pr.call": "Call {nom}",
   "zsv.shareText": "I am looking for a seller in {zone} on Zabelie. If you sell, sign up here: {url}",
 
   "purchases.title": "My purchases",
@@ -5017,6 +5027,9 @@ const es = {
   "zsv.asked": "Gracias. Ahora sabemos que hay personas buscando aquí.",
   "zsv.error": "No se pudo guardar ahora. Inténtalo más tarde.",
   "zsv.share": "Invitar a un vendedor (WhatsApp)",
+  "pr.title": "Puntos de recogida en esta zona",
+  "pr.note": "Un punto de recogida es una tienda que acepta entregar paquetes. Zabelie no entrega: acuerda con el vendedor la entrega en este punto, y los gastos eventuales, antes de pagar.",
+  "pr.call": "Llamar a {nom}",
   "zsv.shareText": "Busco un vendedor en {zone} en Zabelie. Si vendes, regístrate aquí: {url}",
 
   "purchases.title": "Mis compras",

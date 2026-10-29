@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { ZoneOption } from "@/components/profile-form";
 import { conditionsPourZone, reserveZoneRemise, zoneEffective, type ConditionZone } from "@/lib/zone-remise";
+import { pointsPourZone, type PointRetrait } from "@/lib/points-retrait";
+import { PointsRetrait, type PointsRetraitLabels } from "@/components/points-retrait";
 
 /**
  * « Où le vendeur doit-il remettre ? » — la zone de REMISE de la commande (0161).
@@ -58,12 +60,15 @@ function formaterDelai(heures: number, l: ZoneRemiseLabels): string {
 
 const SELECT = "min-h-11 w-full rounded-xl border border-line bg-ink/40 px-3 text-sm outline-none focus:border-accent";
 
-export function ZoneRemise({ zones, couverture, conditions, locale, labels, disabled, onChange }: {
+export function ZoneRemise({ zones, couverture, conditions, points, pointsLabels, locale, labels, disabled, onChange }: {
   zones: ZoneOption[];
   /** Zones que le vendeur DÉCLARE desservir ; vide = rien déclaré (aucune réserve). */
   couverture: string[];
   /** Frais, délai et pause ANNONCÉS par zone (0164) ; `pausedUntil` seulement si la pause est en cours. */
   conditions: ConditionZone[];
+  /** Les points de retrait OUVERTS (0082) ; ceux de la zone choisie s'affichent sous le sélecteur. */
+  points: PointRetrait[];
+  pointsLabels: PointsRetraitLabels;
   /** Pour les montants et la date (`fr-HT`, `en`, `es`…), résolue côté serveur. */
   locale: string;
   labels: ZoneRemiseLabels;
@@ -121,6 +126,7 @@ export function ZoneRemise({ zones, couverture, conditions, locale, labels, disa
           <p>{labels.termsNote}</p>
         </div>
       ) : null}
+      <PointsRetrait points={pointsPourZone(zones, points, effective, locale)} labels={pointsLabels} />
     </fieldset>
   );
 }

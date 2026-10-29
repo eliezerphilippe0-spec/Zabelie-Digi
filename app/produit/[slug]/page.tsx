@@ -651,6 +651,7 @@ export default async function ProductPage({
                 zoneRemise={zoneRemise ? {
                   ...zoneRemise,
                   locale: lang === "ht" ? "fr-HT" : lang,
+                  pointsLabels: { title: t(lang, "pr.title"), note: t(lang, "pr.note"), call: t(lang, "pr.call") },
                   labels: {
                     title: t(lang, "zr.title"), hint: t(lang, "zr.hint"), depatman: t(lang, "zr.depatman"),
                     komin: t(lang, "zr.komin"), katye: t(lang, "zr.katye"), allDepatman: t(lang, "zr.allDepatman"),

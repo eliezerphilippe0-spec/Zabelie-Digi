@@ -85,6 +85,10 @@ const CLASSEMENT: Record<string, Classement> = {
     horsSujet: "Réserve neutre attribuée au vendeur : « ne déclare pas livrer dans cette zone », suivie d'une invitation à convenir de la remise AVANT de payer. Agree en anglais désigne cet accord (le mot est détecté comme agréé). Aucune qualité du vendeur n'est affirmée, et Zabelie ne promet aucune livraison.",
   },
 
+  "pr.note": {
+    horsSujet: "Décrit une boutique-relais, pas un vendeur : « accepte de remettre des colis » est adossé à `zabelie_pickup_points.actif` (0082 : un point ne s'ouvre que lorsque l'accord avec la boutique est réel), puis la note invite l'acheteur à convenir de la remise et des frais avec le vendeur AVANT de payer. Agree/agrees en anglais est détecté comme agréé. Aucune qualité du vendeur n'est affirmée, aucune commission promise, et Zabelie ne livre pas.",
+  },
+
   "recipient.consent": {
     horsSujet: "L'acheteur confirme avoir vérifié les coordonnées du destinataire et obtenu son accord pour les partager. Cela ne certifie pas le vendeur.",
   },
