@@ -1,5 +1,22 @@
 # OPS_TODO — Zabelie
 
+## Salle d'essayage — activation (29 octobre 2026, soir)
+
+Instruction directe : « Active la salle d'essayage ». Choix : Genlook, et le
+compte du porteur (`eliezer`) comme premier vendeur pilote — **activé**
+(trace d'audit n° 138). Politique passée en `confidentialite-v5` (migration
+`0167`) : chaque compte ré-accepte une fois. Reste au porteur, dans l'ordre
+(`tasks/essayage-todo.md` §6.3) :
+
+1. Créer le compte Genlook et sa clé API (10 essais offerts, puis 0,04 $).
+2. Vercel → Production : `GENLOOK_API_KEY`, `ZABELIE_ESSAYAGE_FOURNISSEUR=genlook`,
+   `ZABELIE_ESSAYAGE_ENABLED=true`, puis redéployer.
+3. Publier un vêtement depuis le compte pilote, et l'essayer depuis le compte
+   acheteur (un vendeur ne peut pas essayer sa propre fiche).
+
+⚠️ Le test à l'aveugle (20 photos de clientes haïtiennes) a été sauté sur
+décision du porteur : la qualité du rendu sur peau foncée n'est pas mesurée.
+
 ## Audit pré-lancement — décisions rendues (29 octobre 2026)
 
 Constat complet : [docs/78](docs/78-AUDIT-PRELANCEMENT-2026-10-29.md). Aucune

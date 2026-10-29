@@ -156,7 +156,8 @@ end $$;
 
 -- LA12 (0160) — la fenêtre de déploiement v1/v3/v4 : le reçu porte la version
 -- RÉELLEMENT déclarée, jamais celle que le serveur préférerait ; une version
--- qui n'a jamais existé (v2) ou qui n'existe pas encore (v5) est refusée.
+-- qui n'a jamais existé (v2) ou qui n'existe pas encore (v6 depuis 0167, qui a
+-- ouvert v5 — voir LA13) est refusée.
 insert into auth.users (id,email,raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000133006','v4@test.local',
    '{"legal_acceptance":{"conditions_version":"cgu-v1","conditions_accepted":true,"confidentialite_version":"confidentialite-v4","confidentialite_read":true}}'),
@@ -173,7 +174,7 @@ begin
     or exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133007' and policy_version='confidentialite-v4') then
     raise exception 'LA12 signup declaring v3 (client in flight) must record exactly v3, never a v4 receipt';
   end if;
-  foreach v_bad in array array['confidentialite-v2','confidentialite-v5'] loop
+  foreach v_bad in array array['confidentialite-v2','confidentialite-v6'] loop
     begin
       insert into auth.users (id,email,raw_user_meta_data)
         values ('00000000-0000-0000-0000-000000133097','unknown@test.local',
@@ -200,5 +201,43 @@ end $$;
 reset role;
 set local request.jwt.claim.sub='';
 set local request.jwt.claim.role='service_role';
-do $$ begin raise notice 'OK LA12: v1/v3/v4 accepted as declared on signup and by RPC; v2 and v5 refused'; end $$;
+do $$ begin raise notice 'OK LA12: v1/v3/v4 accepted as declared on signup and by RPC; v2 and v6 refused'; end $$;
+
+-- LA13 (0167) — la fenêtre v1/v3/v4/v5 : un compte qui déclare v5 reçoit
+-- EXACTEMENT v5 ; un client en vol qui déclare encore v4 reçoit v4, jamais v5 ;
+-- v6, qui n'existe pas, est refusée à l'inscription comme par la RPC.
+insert into auth.users (id,email,raw_user_meta_data) values
+  ('00000000-0000-0000-0000-000000133008','v5@test.local',
+   '{"legal_acceptance":{"conditions_version":"cgu-v1","conditions_accepted":true,"confidentialite_version":"confidentialite-v5","confidentialite_read":true}}'),
+  ('00000000-0000-0000-0000-000000133009','v4-en-vol@test.local',
+   '{"legal_acceptance":{"conditions_version":"cgu-v1","conditions_accepted":true,"confidentialite_version":"confidentialite-v4","confidentialite_read":true}}');
+do $$
+begin
+  if not exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133008' and policy_version='confidentialite-v5')
+    or exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133008' and policy_version='confidentialite-v4') then
+    raise exception 'LA13 signup declaring v5 must record exactly v5';
+  end if;
+  if not exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133009' and policy_version='confidentialite-v4')
+    or exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133009' and policy_version='confidentialite-v5') then
+    raise exception 'LA13 signup declaring v4 (client in flight) must record exactly v4, never a v5 receipt';
+  end if;
+end $$;
+
+set local role authenticated;
+set local request.jwt.claim.sub='00000000-0000-0000-0000-000000133003';
+set local request.jwt.claim.role='authenticated';
+do $$ begin
+  perform zabelie_accept_account_legal('cgu-v1','confidentialite-v5',true,true);
+  if not exists (select 1 from zabelie_policy_acceptances where policy_version='confidentialite-v5') then
+    raise exception 'LA13 RPC declaring v5 must record v5 for the caller';
+  end if;
+  begin
+    perform zabelie_accept_account_legal('cgu-v1','confidentialite-v6',true,true);
+    raise exception 'LA13 RPC accepted the non-existent v6';
+  exception when sqlstate 'ZB133' then null; end;
+end $$;
+reset role;
+set local request.jwt.claim.sub='';
+set local request.jwt.claim.role='service_role';
+do $$ begin raise notice 'OK LA13: v5 recorded as declared on signup and by RPC, v4 in flight kept as v4, v6 refused'; end $$;
 rollback;

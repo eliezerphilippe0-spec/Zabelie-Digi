@@ -220,11 +220,20 @@ Définition de « fait » pour chaque tâche : tests ajoutés et verts, `tsc` et
 **Dépendances :** 3.2. **Fichiers :** `docs/74-ESSAYAGE-VIRTUEL.md`. **Taille :** S.
 
 ### 6.3 Mise en ligne (chaque étape sur « oui »)
-- [ ] PR prête, CI verte → **« oui »** du porteur → fusion.
-- [ ] Migration 0150 en production → **« oui »** → application, registre `zabelie_schema_migrations` à la main, sonde vérifiée.
-- [ ] Variables posées dans Vercel par le porteur (clé du fournisseur retenu, `ZABELIE_ESSAYAGE_FOURNISSEUR`) ; interrupteur encore éteint.
-- [ ] Prérequis tenus : double authentification de l'administrateur, fiches mode publiées par les vendeurs pilotes.
-- [ ] Vendeurs pilotes activés dans `/admin`, puis interrupteur allumé → **« oui »**.
+
+**2026-10-29 (soir) — instruction directe du porteur : « Active la salle d'essayage ».**
+Choix du porteur : **Genlook**, sans le test à l'aveugle du point de contrôle 2 ;
+premier vendeur pilote : **son propre compte** (`eliezer`, rôle admin, double
+authentification vérifiée). Le premier essai se fait avec son AUTRE compte
+(acheteur) : la base refuse qu'un vendeur essaie sa propre fiche.
+
+- [x] PR prête, CI verte → **« oui »** du porteur → fusion.
+- [x] Migration 0150 en production (tables présentes, réglages par défaut : 1 000/mois, 5/jour, pas en pause).
+- [x] Politique `confidentialite-v5` : Genlook/FASHN nommés au §6, la photo aux §2, §3, §5 (migration `0167`, appliquée AVANT la fusion du code).
+- [x] Vendeur pilote activé le 2026-10-29 à 18:33 UTC (trace `zabelie_admin_actions` n° 138). ⚠️ Inséré par l'agent en SQL : la route `/api/admin/essayage` n'accepte que le rôle `creator`, et ce compte est `admin`.
+- [ ] **Porteur** : compte Genlook (`genlook.app/developers`, 10 essais offerts puis 0,04 $), clé API.
+- [ ] **Porteur, dans Vercel → Settings → Environment Variables, environnement Production** : `GENLOOK_API_KEY` = la clé ; `ZABELIE_ESSAYAGE_FOURNISSEUR` = `genlook` ; `ZABELIE_ESSAYAGE_ENABLED` = `true` ; puis **Redeploy**.
+- [ ] **Porteur** : publier un vêtement depuis le compte pilote (robe, chemise, pantalon… sous-rayon autorisé au §2.1, photo principale de face sur fond uni).
 - [ ] Premier essai réel vérifié par le porteur sur son téléphone ; journal Sentry et Vercel relus.
 
 ### Point de contrôle final

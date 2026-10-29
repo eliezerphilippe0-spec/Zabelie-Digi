@@ -304,6 +304,9 @@ const TIERS_APPELES = [
   { nom: "MonCash", fichier: "lib/moncash.ts", marque: "moncashbutton.digicelgroup.com" },
   { nom: "Stripe", fichier: "lib/stripe.ts", marque: "checkout.sessions.create" },
   { nom: "Kobara", fichier: "lib/kobara.ts", marque: "api.kobara.app" },
+  // Essayage virtuel (docs/74, 0167) : la photo de l'acheteur. Absents de ce croisement jusqu'au 2026-10-29 alors que le code les appelait.
+  { nom: "Genlook", fichier: "lib/essayage/fournisseurs/genlook.ts", marque: "api.genlook.app" },
+  { nom: "FASHN", fichier: "lib/essayage/fournisseurs/fashn.ts", marque: "api.fashn.ai" },
 ] as const;
 
 /** Les PUCES du §6 seulement — pas ses paragraphes. */

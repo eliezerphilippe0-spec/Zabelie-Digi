@@ -49,6 +49,19 @@ import type { Lang } from "./i18n";
  *     pièces d'un compte actif. Le cadre BRH reste à qualifier (`docs/17`) ;
  *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
  *
+ * ⚖️ 2026-10-29 (soir) — **`v5` : l'essayage virtuel entre aux §2, §3, §5 et §6.**
+ * Instruction du porteur : « Active la salle d'essayage », fournisseur Genlook.
+ * La photo de l'acheteur part chez le prestataire (`lib/essayage/fournisseurs/`) :
+ * Genlook ET FASHN sont nommés, « selon le prestataire configuré » — même forme
+ * qu'OpenAI/Gemini, parce que le code sait appeler les deux et que le croisement
+ * de `tests/politique-confidentialite.test.ts` exige un nom par tiers appelé.
+ *   • Base légale : le CONSENTEMENT recueilli dans la feuille avant la première
+ *     photo (docs/74 §2.3). « Au plus 3 jours » : Genlook est réglé à 1 jour
+ *     (`genlook.ts`), le résultat FASHN reste 3 jours sur son CDN (docs/74 §13).
+ *   • AUCUNE région d'hébergement n'est affirmée pour ces deux prestataires.
+ *   • ⚖️ Rédigé par l'agent sur mandat du porteur — à valider par le conseil.
+ *     Migration `0167`, appliquée AVANT la fusion du code `confidentialite-v5`.
+ *
  * ⚖️ 2026-10-29 — **`v4` : le cookie `zabelie_zone` entre au §8**, décision du
  * porteur (« Mémoriser la zone de l'acheteur », puis « Cookie + politique v4 »).
  *   • Il retient, sur l'appareil de celui qui clique « Mémoriser ma zone », un
@@ -189,6 +202,7 @@ const fr: Politique = {
             "**Déclarations sur les documents** : identifiant du compte, version des conditions acceptées, version de la politique de confidentialité portée à votre connaissance et date enregistrée par le serveur. Ni adresse IP ni agent utilisateur pour cette trace. Il ne s’agit pas d’un consentement général au traitement des données ni d’une signature électronique certifiée.",
             "**Coordonnées de remise** (si vous les renseignez) : nom complet, téléphone et adresse — montrés au vendeur *uniquement* pour organiser la remise de votre commande payée, jamais publics. Zabelie ne livre pas les produits.",
             "**Pièces d'identité** (vendeurs seulement, lorsqu'une vérification est demandée) : documents officiels et photo, conservés à part et jamais publics — voir §9.",
+            "**Photo d'essayage** (seulement si vous utilisez l'essayage virtuel) : la photo de vous que vous envoyez pour voir un vêtement porté. Elle part chez le prestataire d'essayage (voir §6) et n'est jamais conservée par Zabelie ; elle ne reste sur votre téléphone que si vous le choisissez.",
           ],
         },
       ],
@@ -202,6 +216,7 @@ const fr: Politique = {
             "Traiter et réconcilier les paiements — *exécution du contrat* et *obligation légale* (comptabilité).",
             "Comprendre la répartition géographique agrégée de notre communauté — *intérêt légitime* (statistiques, jamais à l'échelle individuelle sur nos tableaux de bord).",
             "Prévenir la fraude et sécuriser la plateforme — *intérêt légitime*.",
+            "Vous montrer un aperçu d'un vêtement porté (essayage virtuel), si vous le demandez — *votre consentement*, donné avant la première photo.",
             "Vous envoyer **un seul rappel** par e-mail quand un paiement n'aboutit pas, pour le produit concerné — *intérêt légitime*. Chaque rappel porte un lien qui les arrête en un clic.",
           ],
         },
@@ -226,6 +241,7 @@ const fr: Politique = {
             "Détails techniques du paiement (payload opérateur) : minimisés à la confirmation (l'identifiant du payeur n'est pas conservé) et purgés **90 jours** après la clôture du paiement (confirmé ou échoué).",
             "Termes de recherche non aboutis : conservés **90 jours**, puis purgés automatiquement.",
             "Pièces d'identité d'un vendeur : voir **§9**, qui en détaille la durée séparément.",
+            "Photo d'essayage et aperçu produit : jamais conservés par Zabelie. Le prestataire les efface au plus **3 jours** après, selon ses conditions.",
           ],
         },
       ],
@@ -242,6 +258,7 @@ const fr: Politique = {
             "**Reloadly** — recharge téléphonique : le numéro du bénéficiaire que vous indiquez.",
             "**OpenAI** ou **Google (Gemini)**, selon le fournisseur configuré — assistant d'achat et aide à la rédaction : le texte que vous écrivez.",
             "**Higgsfield** — génération de visuels pour les vendeurs : le texte et l'image de référence fournis.",
+            "**Genlook** ou **FASHN**, selon le prestataire configuré — essayage virtuel, seulement si vous l'utilisez : votre photo et celle du vêtement.",
             "**TypeSafe** — classement automatique des messages de support, lorsque cette aide est activée.",
           ],
         },
@@ -369,6 +386,7 @@ const ht: Politique = {
             "**Deklarasyon sou dokiman yo** : idantifyan kont lan, vèsyon kondisyon ou aksepte yo, vèsyon règleman sou vi prive nou fè ou konnen an, ak dat sèvè a anrejistre. Nou pa mete adrès IP ni ajan itilizatè nan tras sa a. Sa pa yon konsantman jeneral pou tretman done ni yon siyati elektwonik sètifye.",
             "**Kòdone pou remiz la** (si ou mete yo) : non konplè, telefòn ak adrès — vandè a wè yo *sèlman* pou òganize remiz kòmand ou peye a, yo pa janm piblik. Zabelie pa livre pwodwi yo.",
             "**Pyès idantite** (vandè sèlman, lè nou mande yon verifikasyon) : dokiman ofisyèl ak foto, kenbe apa epi yo pa janm piblik — gade §9.",
+            "**Foto esè** (sèlman si w sèvi ak esè vityèl la) : foto ou voye pou w wè yon rad sou ou. Li ale kay patnè esè a (gade §6) epi Zabelie pa janm kenbe l ; li rete sou telefòn ou sèlman si w chwazi sa.",
           ],
         },
       ],
@@ -382,6 +400,7 @@ const ht: Politique = {
             "Trete epi rekonsilye peman yo — *egzekisyon kontra a* ak *obligasyon legal* (kontabilite).",
             "Konprann repatisyon jeyografik global kominote nou an — *enterè lejitim* (estatistik, pa janm sou yon moun an patikilye nan tablo nou yo).",
             "Anpeche fwod epi sekirize plataform lan — *enterè lejitim*.",
+            "Montre w kijan yon rad ta ye sou ou (esè vityèl), si w mande l — *konsantman ou*, ou bay anvan premye foto a.",
             "Voye **yon sèl rapèl** ba ou pa imèl lè yon peman pa pase, pou pwodui sa a — *enterè lejitim*. Chak rapèl gen yon lyen ki kanpe yo nan yon sèl klik.",
           ],
         },
@@ -406,6 +425,7 @@ const ht: Politique = {
             "Detay teknik peman an (payload operatè a) : redwi lè konfimasyon an fèt (idantifyan moun ki peye a pa konsève) epi efase **90 jou** apre peman an fini (konfime oswa echwe).",
             "Mo rechèch ki pa bay rezilta : konsève **90 jou**, apre sa efase otomatikman.",
             "Pyès idantite yon vandè : gade **§9**, ki bay dire a apa.",
+            "Foto esè ak imaj esè a : Zabelie pa janm kenbe yo. Patnè a efase yo pi ta **3 jou** apre, dapre kondisyon pa l.",
           ],
         },
       ],
@@ -422,6 +442,7 @@ const ht: Politique = {
             "**Reloadly** — rechaj telefòn : nimewo moun w ap rechaje a.",
             "**OpenAI** oswa **Google (Gemini)**, selon founisè ki konfigire a — asistan acha ak èd pou ekri : tèks ou ekri a.",
             "**Higgsfield** — kreyasyon imaj pou vandè yo : tèks ak imaj referans ou bay.",
+            "**Genlook** oswa **FASHN**, dapre patnè ki konfigire a — esè vityèl, sèlman si w sèvi avè l : foto ou ak foto rad la.",
             "**TypeSafe** — klasman otomatik mesaj sipò yo, lè èd sa a aktive.",
           ],
         },
@@ -549,6 +570,7 @@ const en: Politique = {
             "**Document declarations**: account identifier, version of the terms accepted, version of the privacy information acknowledged and server-recorded date. No IP address or user agent is collected for this receipt. This is not blanket consent to data processing or a certified electronic signature.",
             "**Handover details** (if you provide them): full name, phone and address — shown to the seller *only* to arrange handover of your paid order, never public. Zabelie does not deliver products.",
             "**Identity documents** (sellers only, when a verification is requested): official documents and photo, stored separately and never public — see §9.",
+            "**Try-on photo** (only if you use the virtual try-on): the photo of yourself that you send to see a garment worn. It goes to the try-on provider (see §6) and is never kept by Zabelie; it stays on your phone only if you choose so.",
           ],
         },
       ],
@@ -562,6 +584,7 @@ const en: Politique = {
             "Process and reconcile payments — *performance of the contract* and *legal obligation* (accounting).",
             "Understand the aggregate geographic spread of our community — *legitimate interest* (statistics, never at individual level on our dashboards).",
             "Prevent fraud and secure the platform — *legitimate interest*.",
+            "Show you a preview of a garment worn (virtual try-on), if you ask for it — *your consent*, given before the first photo.",
             "Send you **a single reminder** by email when a payment doesn't go through, for that product — *legitimate interest*. Each reminder has a link that stops them in one click.",
           ],
         },
@@ -586,6 +609,7 @@ const en: Politique = {
             "Technical payment details (operator payload): minimised at confirmation (the payer identifier is not kept) and purged **90 days** after the payment is closed (confirmed or failed).",
             "Unsuccessful search terms: kept **90 days**, then purged automatically.",
             "A seller's identity documents: see **§9**, which sets out their retention separately.",
+            "Try-on photo and generated preview: never kept by Zabelie. The provider deletes them at most **3 days** later, under its terms.",
           ],
         },
       ],
@@ -602,6 +626,7 @@ const en: Politique = {
             "**Reloadly** — phone top-up: the beneficiary number you provide.",
             "**OpenAI** or **Google (Gemini)**, depending on the configured provider — shopping assistant and writing help: the text you write.",
             "**Higgsfield** — image generation for sellers: the text and reference image provided.",
+            "**Genlook** or **FASHN**, depending on the provider configured — virtual try-on, only if you use it: your photo and the garment photo.",
             "**TypeSafe** — automatic classification of support messages, when this assistance is enabled.",
           ],
         },
@@ -729,6 +754,7 @@ const es: Politique = {
             "**Declaraciones sobre documentos**: identificador de cuenta, versión de las condiciones aceptadas, versión de la información de privacidad reconocida y fecha registrada por el servidor. Esta constancia no recoge dirección IP ni agente de usuario. No es un consentimiento general al tratamiento de datos ni una firma electrónica certificada.",
             "**Datos para la entrega** (si los indica): nombre completo, teléfono y dirección — mostrados al vendedor *solo* para organizar la entrega de su pedido pagado, nunca públicos. Zabelie no entrega los productos.",
             "**Documentos de identidad** (solo vendedores, cuando se solicita una verificación): documentos oficiales y foto, conservados aparte y nunca públicos — véase §9.",
+            "**Foto de prueba** (solo si usa la prueba virtual): la foto suya que envía para ver una prenda puesta. Va al proveedor de prueba virtual (véase §6) y Zabelie nunca la conserva; solo queda en su teléfono si usted lo elige.",
           ],
         },
       ],
@@ -742,6 +768,7 @@ const es: Politique = {
             "Tramitar y conciliar los pagos — *ejecución del contrato* y *obligación legal* (contabilidad).",
             "Comprender la distribución geográfica agregada de nuestra comunidad — *interés legítimo* (estadísticas, nunca a escala individual en nuestros paneles).",
             "Prevenir el fraude y proteger la plataforma — *interés legítimo*.",
+            "Mostrarle una vista previa de una prenda puesta (prueba virtual), si la solicita — *su consentimiento*, dado antes de la primera foto.",
             "Enviarle **un solo recordatorio** por correo cuando un pago no se completa, para ese producto — *interés legítimo*. Cada recordatorio lleva un enlace que los detiene con un clic.",
           ],
         },
@@ -766,6 +793,7 @@ const es: Politique = {
             "Detalles técnicos del pago (payload del operador): minimizados en la confirmación (no se conserva el identificador del pagador) y purgados **90 días** después del cierre del pago (confirmado o fallido).",
             "Términos de búsqueda sin resultado: conservados **90 días** y purgados automáticamente después.",
             "Documentos de identidad de un vendedor: véase **§9**, que detalla su plazo por separado.",
+            "Foto de prueba y vista previa generada: Zabelie nunca las conserva. El proveedor las borra como máximo **3 días** después, según sus condiciones.",
           ],
         },
       ],
@@ -782,6 +810,7 @@ const es: Politique = {
             "**Reloadly** — recarga telefónica: el número del beneficiario que usted indica.",
             "**OpenAI** o **Google (Gemini)**, según el proveedor configurado — asistente de compra y ayuda a la redacción: el texto que usted escribe.",
             "**Higgsfield** — generación de imágenes para vendedores: el texto y la imagen de referencia proporcionados.",
+            "**Genlook** o **FASHN**, según el proveedor configurado — prueba virtual, solo si la usa: su foto y la de la prenda.",
             "**TypeSafe** — clasificación automática de los mensajes de soporte, cuando esta ayuda está activada.",
           ],
         },
