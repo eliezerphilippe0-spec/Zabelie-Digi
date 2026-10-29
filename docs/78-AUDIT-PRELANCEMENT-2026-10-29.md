@@ -229,3 +229,33 @@ le 2026-10-29). Instruction du porteur : « fais le contrôle dans le code ».
   `tests/reset-password-form.test.ts` (un mot de passe divulgué n'atteint
   jamais `updateUser`) ; neuf mutations tuées. Le sandbox ne joint pas HIBP
   (proxy) : le format réel se vérifie sur la route déployée.
+
+## 8. Inventaire des services — mesuré le 2026-10-29 au soir
+
+Les variables Vercel ne sont pas lisibles depuis une session d'agent : chaque
+service est mesuré par ce qu'il PRODUIT (page publique, réponse d'API sans
+effet, trace en base). Méthode à rejouer telle quelle.
+
+| Service | État mesuré | Comment |
+|---|---|---|
+| MonCash direct | ⚠️ **bac à sable** | pied de page « MonCash En test » ; 14 paiements, tous `failed`, aucune référence opérateur |
+| Kobara (NatCash, MonCash via Kobara) | ✅ clés posées, **jamais utilisé** | boutons rendus sur la fiche ; 0 paiement `kobara` ; mode test/live non lisible de l'extérieur |
+| Stripe (carte, USD) | ⛔ éteint | pied de page « Carte bancaire (USD) Bientôt » ; aucun bouton carte |
+| Zelle | ⛔ éteint | aucun bouton Zelle (`ZELLE_RECIPIENT` absent) |
+| E-mails (Resend) | ⛔ éteint | 2 e-mails en file depuis le 2026-08-22, 0 tentative ; la relance de paiement s'arrête avant son bail (aucune ligne `relances_paiement`) |
+| Recharge vendue par Zabelie | ⛔ fermée, **voulu** | `POST /api/zabelie/topup/orders` → 410 `topup_firstparty_closed` (consigne produit) |
+| Salle d'essayage | ⛔ éteinte | `POST /api/essayage` → 404 « pas encore activée » ; base prête (config non en pause, vendeur pilote actif) — variables Vercel au porteur |
+| Studio Créatif (Higgsfield) | ✅ **allumé** | `/tableau-de-bord/studio` redirige vers `/connexion` (le `notFound()` fournisseur passe avant) ; 0 génération |
+| Création assistée (digital) | ⛔ éteinte | `/tableau-de-bord/creation` → 404 |
+| IA (description, assistant d'achat) | ✅ fournisseur configuré | `POST /api/ai/description` → 401 (503 sans fournisseur) |
+| Connexion Google | ✅ marche | bouton rendu ; 2 comptes Google, dernier le 2026-10-19 |
+| Tâches planifiées | ✅ 9 sur 11 tracées aujourd'hui | `zabelie_cron_leases` ; `relances` attend Resend ; `admin/coherence` ne prend pas de bail (journal Vercel seulement) |
+| KYC pour retrait | ⚙️ non exigé | `zabelie_kyc_config.requis_pour_retrait = false` — décision porteur |
+| Webhooks vendeurs | ✅ disponible, 0 abonné | `zabelie_webhook_endpoints` vide |
+| Plan Supabase | ⚙️ Free | mots de passe divulgués : contrôle dans le code (§7) ; sauvegardes, transformations d'image, absence de mise en veille : plan Pro |
+
+Trouvé en mesurant : le titre « Diaspora ? Payez en USD : » coiffait TOUTES
+les options secondaires, donc en production deux boutons en GOURDES (NatCash,
+MonCash via Kobara) sans aucun rail USD dessous. Corrigé : le titre ne précède
+plus que Stripe et Zelle (`tests/buy-button-titre-usd.test.ts`, rouge sur
+l'ancien composant).
