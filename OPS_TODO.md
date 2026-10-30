@@ -1,5 +1,31 @@
 # OPS_TODO — Zabelie
 
+## Litige du 22 août — CLOS (30 octobre 2026)
+
+Instruction directe : « clôture le litige ». Écriture en production le
+**2026-10-30**, par l'agent via MCP, sur ce signal explicite (hors autorisation
+permanente : écriture sur une commande et le grand livre). Commande `c797080d…`
+(« fxccxfdf », service, **0 HTG**, rail `gratis`, pas en mode réel) close **en
+faveur de l'acheteur** par la voie officielle, `refund_order` — l'équivalent de
+`POST /api/admin/refund` : trace d'audit n° 140 (`order.refund`) écrite AVANT
+l'acte, escrow `reversed`, écriture compensatoire de 0 HTG, commande `refunded`.
+Pourquoi l'acheteur : le vendeur n'a jamais déclaré d'envoi (`shipped_at` nul)
+et l'acheteur a signalé la non-réception ; `zabelie_mark_received`, seule voie
+« vendeur », exige un envoi déclaré. Vérifié : invariant 0033 tenu (0 = 0 + 0),
+file d'opérations vide, 0 commande `disputed`, aucun justificatif de
+remboursement dû (montant nul), aucun webhook. Le suivi de remise reste
+`action_required` (`refund_order` n'y touche pas) : aucun balayage ne le relit.
+
+⚠️ **Proposé, non fait — zone d'arrêt (chemin de l'argent)** : les fonctions de
+remise (`zabelie_declare_shipment`, `zabelie_handover_confirm`,
+`zabelie_mark_received`, `zabelie_report_not_received`) ne regardent que l'état
+de remise, jamais `orders.status`. Une commande remboursée AVANT l'envoi reste
+donc déclarable par le vendeur. Aucun argent ne bouge (escrow `reversed`,
+commande hors `paid`), mais la marchandise peut partir. « Mes ventes » ne le
+propose plus (`tests/vente-remboursee.test.ts`) ; le garde serveur est une
+migration qui touche `zabelie_mark_received` (déverrouillage d'escrow) : à
+décider.
+
 ## E-mails du 22 août — annulés (30 octobre 2026)
 
 Instruction directe : « annule les 2 mails du 22 ». Écriture en production le
@@ -40,7 +66,7 @@ le porteur, dans cet ordre :
 2. Catalogue : 1 produit publié sur 11 ; recruter et photographier avant toute
    promotion.
 3. `RESEND_API_KEY` : file vide depuis l'annulation des 2 reçus du 22 août (audit n° 139).
-4. Litige du 2026-08-22 (commande `c797080d…`) à clore.
+4. ~~Litige du 2026-08-22 (commande `c797080d…`) à clore.~~ Clos le 2026-10-30 (audit n° 140).
 5. Mots de passe divulgués : contrôle HIBP fait dans le code (`docs/78` §7) ;
    la protection native, non contournable, exige le plan Pro.
 6. Règles d'argent M1 (prix flash et variantes) et M2 (facture d'un pro
