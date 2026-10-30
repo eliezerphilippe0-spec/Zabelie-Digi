@@ -46,9 +46,18 @@ type VenteRow = {
     amount_htg: number;
     created_at: string;
     buyer_id: string;
+    status: string;
     products: { title: string; seller_id: string } | null;
   } | null;
 };
+
+/* Une vente REMBOURSÉE garde son dernier état de remise (`refund_order` n'y
+ * touche pas) : sans ce garde, l'écran disait « En cours d'examen » après la
+ * clôture du litige du 2026-08-22, et proposerait « Déclarer l'envoi », le
+ * numéro à recharger et l'adresse de livraison d'une commande remboursée. */
+function venteRemboursee(v: VenteRow): boolean {
+  return v.order?.status === "refunded";
+}
 
 function Shell({
   lang,
@@ -117,7 +126,7 @@ export default async function MesVentesPage() {
   const { data } = await supabase
     .from("zabelie_fulfillment")
     .select(
-      "order_id, status, shipped_at, order:orders!inner(id, order_ref, amount_htg, created_at, buyer_id, products!orders_product_id_fkey!inner(title, seller_id))"
+      "order_id, status, shipped_at, order:orders!inner(id, order_ref, amount_htg, created_at, buyer_id, status, products!orders_product_id_fkey!inner(title, seller_id))"
     )
     .eq("order.products.seller_id", user.id)
     .order("created_at", { ascending: true });
@@ -234,7 +243,7 @@ export default async function MesVentesPage() {
                     </>
                   )}
                 </p>
-                <p className="mt-1 text-xs text-mist">{t(lang, cleEtatRemise(v.status))}</p>
+                <p className="mt-1 text-xs text-mist">{t(lang, venteRemboursee(v) ? "purchases.status.refunded" : cleEtatRemise(v.status))}</p>
 
                 {/* 0099 — LE NUMÉRO À RECHARGER, en évidence et sélectionnable.
                     C'est la donnée sans laquelle cette commande n'est pas
@@ -242,7 +251,7 @@ export default async function MesVentesPage() {
                     reste. `select-all` parce que le vendeur va le recopier
                     dans son application d'opérateur, sur un téléphone, et
                     qu'un chiffre recopié de travers coûte la recharge. */}
-                {(() => {
+                {!venteRemboursee(v) && (() => {
                   const cible = cibleParCommande.get(v.order_id);
                   if (!cible) return null;
                   return (
@@ -260,10 +269,10 @@ export default async function MesVentesPage() {
                 {/* V-5 : les coordonnées de livraison — présentes UNIQUEMENT
                     si la policy 0076 les a laissées passer (commande payée),
                     en attente d'expédition. */}
-                {zoneParCommande.has(v.order_id) && <ZoneCommande libelle={zoneParCommande.get(v.order_id)!} lang={lang}/>}
-                {recipientByOrder.has(v.order_id) && <RecipientDetails recipient={recipientByOrder.get(v.order_id)!} lang={lang}/>}
+                {!venteRemboursee(v) && zoneParCommande.has(v.order_id) && <ZoneCommande libelle={zoneParCommande.get(v.order_id)!} lang={lang}/>}
+                {!venteRemboursee(v) && recipientByOrder.has(v.order_id) && <RecipientDetails recipient={recipientByOrder.get(v.order_id)!} lang={lang}/>}
                 {recipientReadError && <p className="mt-2 text-sm text-mist">{t(lang, "recipient.unavailable")}</p>}
-                {!recipientReadError && !recipientByOrder.has(v.order_id) && v.status === "awaiting_shipment" &&
+                {!venteRemboursee(v) && !recipientReadError && !recipientByOrder.has(v.order_id) && v.status === "awaiting_shipment" &&
                   (() => {
                     const liv = v.order
                       ? livParAcheteur.get(v.order.buyer_id)
@@ -296,7 +305,7 @@ export default async function MesVentesPage() {
 
               <div className="shrink-0">
                 <Link href={`/assistance/commande/${v.order_id}`} className="mb-2 flex min-h-11 items-center text-sm underline">{supportCopy(lang).helpLink}</Link>
-                {v.status === "awaiting_shipment" ? (
+                {venteRemboursee(v) ? null : v.status === "awaiting_shipment" ? (
                   <FulfillmentAction
                     orderId={v.order_id}
                     variante="declare"
@@ -318,7 +327,7 @@ export default async function MesVentesPage() {
                   )
                 )}
                 {/* Code de remise (0163) : remise en main propre, avant ou après la déclaration. */}
-                {(v.status === "awaiting_shipment" || v.status === "shipped") && (
+                {!venteRemboursee(v) && (v.status === "awaiting_shipment" || v.status === "shipped") && (
                   <HandoverCodeSeller
                     orderId={v.order_id}
                     labels={{
