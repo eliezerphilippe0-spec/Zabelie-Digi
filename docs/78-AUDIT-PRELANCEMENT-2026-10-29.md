@@ -242,7 +242,7 @@ effet, trace en base). Méthode à rejouer telle quelle.
 | Kobara (NatCash, MonCash via Kobara) | ✅ clés posées, **jamais utilisé** | boutons rendus sur la fiche ; 0 paiement `kobara` ; mode test/live non lisible de l'extérieur |
 | Stripe (carte, USD) | ⛔ éteint | pied de page « Carte bancaire (USD) Bientôt » ; aucun bouton carte |
 | Zelle | ⛔ éteint | aucun bouton Zelle (`ZELLE_RECIPIENT` absent) |
-| E-mails (Resend) | ⛔ éteint | 2 e-mails en file depuis le 2026-08-22, 0 tentative ; la relance de paiement s'arrête avant son bail (aucune ligne `relances_paiement`) |
+| E-mails (Resend) | ⛔ éteint | 2 e-mails en file depuis le 2026-08-22, 0 tentative — **annulés le 2026-10-30 sur instruction du porteur** (`abandonne_a`, audit n° 139), file vide ; la relance de paiement s'arrête avant son bail (aucune ligne `relances_paiement`) |
 | Recharge vendue par Zabelie | ⛔ fermée, **voulu** | `POST /api/zabelie/topup/orders` → 410 `topup_firstparty_closed` (consigne produit) |
 | Salle d'essayage | ⛔ éteinte | `POST /api/essayage` → 404 « pas encore activée » ; base prête (config non en pause, vendeur pilote actif) — variables Vercel au porteur |
 | Studio Créatif (Higgsfield) | ✅ **allumé** | `/tableau-de-bord/studio` redirige vers `/connexion` (le `notFound()` fournisseur passe avant) ; 0 génération |
