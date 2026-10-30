@@ -1,5 +1,17 @@
 # OPS_TODO — Zabelie
 
+## E-mails du 22 août — annulés (30 octobre 2026)
+
+Instruction directe : « annule les 2 mails du 22 ». Écriture en production le
+**2026-10-30 04:08:38Z**, par l'agent via MCP, sur ce signal explicite (hors
+autorisation permanente : écriture sur des données réelles). Les deux reçus
+`order_paid_buyer` et `order_paid_seller` de la commande `c797080d…` (en litige)
+n'étaient jamais partis faute de `RESEND_API_KEY`, et la file n'a aucune limite
+d'âge : ils seraient partis au branchement de Resend. Lignes **conservées**,
+marquées `abandonne_a` avec le motif dans `last_error` ; trace d'audit n° 139
+(`outbox.annuler`). File d'envoi : 0 message en attente. Resend peut être
+branché sans envoi rétroactif.
+
 ## Salle d'essayage — activation (29 octobre 2026, soir)
 
 Instruction directe : « Active la salle d'essayage ». Choix : Genlook, et le
@@ -27,7 +39,7 @@ le porteur, dans cet ordre :
    (`docs/76`, `docs/22`) — 14 sessions sandbox, aucune payée.
 2. Catalogue : 1 produit publié sur 11 ; recruter et photographier avant toute
    promotion.
-3. `RESEND_API_KEY` : 2 e-mails en file, 0 envoyé.
+3. `RESEND_API_KEY` : file vide depuis l'annulation des 2 reçus du 22 août (audit n° 139).
 4. Litige du 2026-08-22 (commande `c797080d…`) à clore.
 5. Mots de passe divulgués : contrôle HIBP fait dans le code (`docs/78` §7) ;
    la protection native, non contournable, exige le plan Pro.
