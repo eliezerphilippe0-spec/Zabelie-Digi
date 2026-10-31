@@ -20,7 +20,8 @@ export const dynamic = "force-dynamic";
  */
 
 /** Au-delà, un compte abonne plus d'appareils qu'un vendeur n'en porte. */
-export const APPAREILS_MAX = 10;
+// Non exportée : une route Next n'exporte que ses méthodes et sa configuration.
+const APPAREILS_MAX = 10;
 
 const sansCache = { "Cache-Control": "no-store" };
 
