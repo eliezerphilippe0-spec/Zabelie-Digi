@@ -88,6 +88,8 @@ export async function DELETE(req: Request) {
   const removals = await Promise.all([
     admin.from("zabelie_favorites").delete().eq("user_id", user.id),
     admin.from("zabelie_shop_follows").delete().eq("user_id", user.id),
+    // Notifications de vente (0169) : un compte fermé ne reçoit plus rien.
+    admin.from("zabelie_push_abonnements").delete().eq("user_id", user.id),
   ]);
   if (removals.some(r => r.error)) return unavailable();
   for (let offset = 0; ; offset += 500) {

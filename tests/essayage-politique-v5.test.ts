@@ -34,7 +34,8 @@ test("v5 : aucune région d'hébergement affirmée pour les prestataires d'essay
 });
 
 test("0167 : CHAQUE fonction accepte v1, v3, v4 et v5, et rien d'autre", () => {
-  assert.equal(CONFIDENTIALITE_VERSION, "confidentialite-v5");
+  // La v6 (0169, notifications de vente) GARDE l'essayage : le document est cumulatif.
+  assert.equal(CONFIDENTIALITE_VERSION, "confidentialite-v6");
   const corps = MIG.split(/create (?:or replace )?function /).slice(1).map((b) => b.slice(0, b.indexOf("$$;")));
   assert.equal(corps.length, 2);
   for (const [i, f] of corps.entries()) {

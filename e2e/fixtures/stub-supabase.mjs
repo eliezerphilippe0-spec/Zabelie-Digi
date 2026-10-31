@@ -24,7 +24,7 @@ const PORT = Number(process.env.STUB_PORT ?? 15421);
 const BOUTIQUE_FIXTURE = process.env.BOUTIQUE_FIXTURE === "true";
 const POLICY_ACCEPTANCE_FIXTURE = [
   { policy_version: "cgu-v1", accepted_at: "2026-10-05T00:00:00Z" },
-  { policy_version: "confidentialite-v5", accepted_at: "2026-10-05T00:00:00Z" },
+  { policy_version: "confidentialite-v6", accepted_at: "2026-10-05T00:00:00Z" },
 ];
 const digitalFacts = new Map();
 const digitalStudios = new Map();

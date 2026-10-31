@@ -49,6 +49,16 @@ import type { Lang } from "./i18n";
  *     pièces d'un compte actif. Le cadre BRH reste à qualifier (`docs/17`) ;
  *     `tests/politique-confidentialite.test.ts` relie la phrase au réglage.
  *
+ * ⚖️ 2026-10-31 — **`v6` : les notifications de vente entrent aux §2, §3, §5 et §6.**
+ * Décision du porteur : « go niveau 2 » (notifications page fermée), services de
+ * notification des navigateurs validés. Seule l'ADRESSE de notification de
+ * l'appareil est gardée (0169), et le signal part VIDE (`lib/web-push.ts`) : le
+ * service du navigateur ne voit qu'une adresse et un instant, jamais un contenu.
+ * Le §6 nomme Google, Apple, Mozilla et Microsoft « selon votre navigateur » :
+ * c'est le navigateur du vendeur qui choisit, pas Zabelie. Base : consentement,
+ * retirable dans Mes ventes ou les réglages. Texte de l'agent, à faire valider par
+ * le conseil comme les versions précédentes.
+ *
  * ⚖️ 2026-10-29 (soir) — **`v5` : l'essayage virtuel entre aux §2, §3, §5 et §6.**
  * Instruction du porteur : « Active la salle d'essayage », fournisseur Genlook.
  * La photo de l'acheteur part chez le prestataire (`lib/essayage/fournisseurs/`) :
@@ -203,6 +213,7 @@ const fr: Politique = {
             "**Coordonnées de remise** (si vous les renseignez) : nom complet, téléphone et adresse — montrés au vendeur *uniquement* pour organiser la remise de votre commande payée, jamais publics. Zabelie ne livre pas les produits.",
             "**Pièces d'identité** (vendeurs seulement, lorsqu'une vérification est demandée) : documents officiels et photo, conservés à part et jamais publics — voir §9.",
             "**Photo d'essayage** (seulement si vous utilisez l'essayage virtuel) : la photo de vous que vous envoyez pour voir un vêtement porté. Elle part chez le prestataire d'essayage (voir §6) et n'est jamais conservée par Zabelie ; elle ne reste sur votre téléphone que si vous le choisissez.",
+            "**Adresse de notification** (seulement si vous activez les notifications de vente) : l'adresse que le service de notification de votre navigateur attribue à votre appareil. Elle sert uniquement à vous signaler une vente : la notification part sans contenu, c'est votre appareil qui en écrit le texte.",
           ],
         },
       ],
@@ -217,6 +228,7 @@ const fr: Politique = {
             "Comprendre la répartition géographique agrégée de notre communauté — *intérêt légitime* (statistiques, jamais à l'échelle individuelle sur nos tableaux de bord).",
             "Prévenir la fraude et sécuriser la plateforme — *intérêt légitime*.",
             "Vous montrer un aperçu d'un vêtement porté (essayage virtuel), si vous le demandez — *votre consentement*, donné avant la première photo.",
+            "Vous signaler une vente par une notification, même quand Zabelie est fermée, si vous l'activez — *votre consentement*, retirable à tout moment (« Désactiver » dans Mes ventes, ou les réglages du navigateur).",
             "Vous envoyer **un seul rappel** par e-mail quand un paiement n'aboutit pas, pour le produit concerné — *intérêt légitime*. Chaque rappel porte un lien qui les arrête en un clic.",
           ],
         },
@@ -242,6 +254,7 @@ const fr: Politique = {
             "Termes de recherche non aboutis : conservés **90 jours**, puis purgés automatiquement.",
             "Pièces d'identité d'un vendeur : voir **§9**, qui en détaille la durée séparément.",
             "Photo d'essayage et aperçu produit : jamais conservés par Zabelie. Le prestataire les efface au plus **3 jours** après, selon ses conditions.",
+            "Adresse de notification : jusqu'à ce que vous désactiviez les notifications, que le service de votre navigateur la refuse, ou que vous fermiez votre compte.",
           ],
         },
       ],
@@ -259,6 +272,7 @@ const fr: Politique = {
             "**OpenAI** ou **Google (Gemini)**, selon le fournisseur configuré — assistant d'achat et aide à la rédaction : le texte que vous écrivez.",
             "**Higgsfield** — génération de visuels pour les vendeurs : le texte et l'image de référence fournis.",
             "**Genlook** ou **FASHN**, selon le prestataire configuré — essayage virtuel, seulement si vous l'utilisez : votre photo et celle du vêtement.",
+            "**Google**, **Apple**, **Mozilla** ou **Microsoft**, selon votre navigateur — service de notification, seulement si vous activez les notifications de vente : l'adresse de votre appareil et le moment du signal, jamais un contenu (il part vide).",
             "**TypeSafe** — classement automatique des messages de support, lorsque cette aide est activée.",
           ],
         },
@@ -387,6 +401,7 @@ const ht: Politique = {
             "**Kòdone pou remiz la** (si ou mete yo) : non konplè, telefòn ak adrès — vandè a wè yo *sèlman* pou òganize remiz kòmand ou peye a, yo pa janm piblik. Zabelie pa livre pwodwi yo.",
             "**Pyès idantite** (vandè sèlman, lè nou mande yon verifikasyon) : dokiman ofisyèl ak foto, kenbe apa epi yo pa janm piblik — gade §9.",
             "**Foto esè** (sèlman si w sèvi ak esè vityèl la) : foto ou voye pou w wè yon rad sou ou. Li ale kay patnè esè a (gade §6) epi Zabelie pa janm kenbe l ; li rete sou telefòn ou sèlman si w chwazi sa.",
+            "**Adrès notifikasyon** (sèlman si w aktive notifikasyon vant yo) : adrès sèvis notifikasyon navigatè w la bay aparèy ou. Li sèvi sèlman pou di w gen yon vant : notifikasyon an pati san kontni, se aparèy ou ki ekri tèks la.",
           ],
         },
       ],
@@ -401,6 +416,7 @@ const ht: Politique = {
             "Konprann repatisyon jeyografik global kominote nou an — *enterè lejitim* (estatistik, pa janm sou yon moun an patikilye nan tablo nou yo).",
             "Anpeche fwod epi sekirize plataform lan — *enterè lejitim*.",
             "Montre w kijan yon rad ta ye sou ou (esè vityèl), si w mande l — *konsantman ou*, ou bay anvan premye foto a.",
+            "Di w gen yon vant ak yon notifikasyon, menm lè Zabelie fèmen, si w aktive sa — *konsantman ou*, ou ka retire l nenpòt ki lè (« Dezaktive » nan Vant mwen yo, oswa nan paramèt navigatè a).",
             "Voye **yon sèl rapèl** ba ou pa imèl lè yon peman pa pase, pou pwodui sa a — *enterè lejitim*. Chak rapèl gen yon lyen ki kanpe yo nan yon sèl klik.",
           ],
         },
@@ -426,6 +442,7 @@ const ht: Politique = {
             "Mo rechèch ki pa bay rezilta : konsève **90 jou**, apre sa efase otomatikman.",
             "Pyès idantite yon vandè : gade **§9**, ki bay dire a apa.",
             "Foto esè ak imaj esè a : Zabelie pa janm kenbe yo. Patnè a efase yo pi ta **3 jou** apre, dapre kondisyon pa l.",
+            "Adrès notifikasyon : jiskaske w dezaktive notifikasyon yo, sèvis navigatè w la refize l, oswa ou fèmen kont ou.",
           ],
         },
       ],
@@ -443,6 +460,7 @@ const ht: Politique = {
             "**OpenAI** oswa **Google (Gemini)**, selon founisè ki konfigire a — asistan acha ak èd pou ekri : tèks ou ekri a.",
             "**Higgsfield** — kreyasyon imaj pou vandè yo : tèks ak imaj referans ou bay.",
             "**Genlook** oswa **FASHN**, dapre patnè ki konfigire a — esè vityèl, sèlman si w sèvi avè l : foto ou ak foto rad la.",
+            "**Google**, **Apple**, **Mozilla** oswa **Microsoft**, dapre navigatè w — sèvis notifikasyon, sèlman si w aktive notifikasyon vant yo : adrès aparèy ou ak lè siyal la, pa janm yon kontni (li pati vid).",
             "**TypeSafe** — klasman otomatik mesaj sipò yo, lè èd sa a aktive.",
           ],
         },
@@ -571,6 +589,7 @@ const en: Politique = {
             "**Handover details** (if you provide them): full name, phone and address — shown to the seller *only* to arrange handover of your paid order, never public. Zabelie does not deliver products.",
             "**Identity documents** (sellers only, when a verification is requested): official documents and photo, stored separately and never public — see §9.",
             "**Try-on photo** (only if you use the virtual try-on): the photo of yourself that you send to see a garment worn. It goes to the try-on provider (see §6) and is never kept by Zabelie; it stays on your phone only if you choose so.",
+            "**Notification address** (only if you turn on sale notifications): the address your browser's notification service assigns to your device. It is used only to tell you about a sale: the notification is sent without content, and your device writes its text.",
           ],
         },
       ],
@@ -585,6 +604,7 @@ const en: Politique = {
             "Understand the aggregate geographic spread of our community — *legitimate interest* (statistics, never at individual level on our dashboards).",
             "Prevent fraud and secure the platform — *legitimate interest*.",
             "Show you a preview of a garment worn (virtual try-on), if you ask for it — *your consent*, given before the first photo.",
+            "Tell you about a sale with a notification, even when Zabelie is closed, if you turn it on — *your consent*, which you can withdraw at any time (“Turn off” in My sales, or your browser settings).",
             "Send you **a single reminder** by email when a payment doesn't go through, for that product — *legitimate interest*. Each reminder has a link that stops them in one click.",
           ],
         },
@@ -610,6 +630,7 @@ const en: Politique = {
             "Unsuccessful search terms: kept **90 days**, then purged automatically.",
             "A seller's identity documents: see **§9**, which sets out their retention separately.",
             "Try-on photo and generated preview: never kept by Zabelie. The provider deletes them at most **3 days** later, under its terms.",
+            "Notification address: until you turn notifications off, your browser's service rejects it, or you close your account.",
           ],
         },
       ],
@@ -627,6 +648,7 @@ const en: Politique = {
             "**OpenAI** or **Google (Gemini)**, depending on the configured provider — shopping assistant and writing help: the text you write.",
             "**Higgsfield** — image generation for sellers: the text and reference image provided.",
             "**Genlook** or **FASHN**, depending on the provider configured — virtual try-on, only if you use it: your photo and the garment photo.",
+            "**Google**, **Apple**, **Mozilla** or **Microsoft**, depending on your browser — notification service, only if you turn on sale notifications: your device's address and the time of the signal, never any content (it is sent empty).",
             "**TypeSafe** — automatic classification of support messages, when this assistance is enabled.",
           ],
         },
@@ -755,6 +777,7 @@ const es: Politique = {
             "**Datos para la entrega** (si los indica): nombre completo, teléfono y dirección — mostrados al vendedor *solo* para organizar la entrega de su pedido pagado, nunca públicos. Zabelie no entrega los productos.",
             "**Documentos de identidad** (solo vendedores, cuando se solicita una verificación): documentos oficiales y foto, conservados aparte y nunca públicos — véase §9.",
             "**Foto de prueba** (solo si usa la prueba virtual): la foto suya que envía para ver una prenda puesta. Va al proveedor de prueba virtual (véase §6) y Zabelie nunca la conserva; solo queda en su teléfono si usted lo elige.",
+            "**Dirección de notificación** (solo si activa las notificaciones de ventas): la dirección que el servicio de notificaciones de su navegador asigna a su dispositivo. Solo sirve para avisarle de una venta: la notificación se envía sin contenido y su dispositivo escribe el texto.",
           ],
         },
       ],
@@ -769,6 +792,7 @@ const es: Politique = {
             "Comprender la distribución geográfica agregada de nuestra comunidad — *interés legítimo* (estadísticas, nunca a escala individual en nuestros paneles).",
             "Prevenir el fraude y proteger la plataforma — *interés legítimo*.",
             "Mostrarle una vista previa de una prenda puesta (prueba virtual), si la solicita — *su consentimiento*, dado antes de la primera foto.",
+            "Avisarle de una venta con una notificación, incluso con Zabelie cerrada, si la activa — *su consentimiento*, que puede retirar en cualquier momento («Desactivar» en Mis ventas, o en los ajustes del navegador).",
             "Enviarle **un solo recordatorio** por correo cuando un pago no se completa, para ese producto — *interés legítimo*. Cada recordatorio lleva un enlace que los detiene con un clic.",
           ],
         },
@@ -794,6 +818,7 @@ const es: Politique = {
             "Términos de búsqueda sin resultado: conservados **90 días** y purgados automáticamente después.",
             "Documentos de identidad de un vendedor: véase **§9**, que detalla su plazo por separado.",
             "Foto de prueba y vista previa generada: Zabelie nunca las conserva. El proveedor las borra como máximo **3 días** después, según sus condiciones.",
+            "Dirección de notificación: hasta que desactive las notificaciones, el servicio de su navegador la rechace o cierre su cuenta.",
           ],
         },
       ],
@@ -811,6 +836,7 @@ const es: Politique = {
             "**OpenAI** o **Google (Gemini)**, según el proveedor configurado — asistente de compra y ayuda a la redacción: el texto que usted escribe.",
             "**Higgsfield** — generación de imágenes para vendedores: el texto y la imagen de referencia proporcionados.",
             "**Genlook** o **FASHN**, según el proveedor configurado — prueba virtual, solo si la usa: su foto y la de la prenda.",
+            "**Google**, **Apple**, **Mozilla** o **Microsoft**, según su navegador — servicio de notificaciones, solo si activa las notificaciones de ventas: la dirección de su dispositivo y el momento de la señal, nunca un contenido (se envía vacía).",
             "**TypeSafe** — clasificación automática de los mensajes de soporte, cuando esta ayuda está activada.",
           ],
         },

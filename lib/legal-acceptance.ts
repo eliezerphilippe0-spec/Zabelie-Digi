@@ -21,8 +21,13 @@ export const CONDITIONS_VERSION = "cgu-v1";
  * et §6 (Genlook ou FASHN, la photo de l'acheteur), sur l'instruction du porteur
  * « Active la salle d'essayage ». Même règle, même ordre : `0167` doit être
  * APPLIQUÉE avant que cette ligne ne soit fusionnée.
+ *
+ * ⚖️ 2026-10-31 — `v5` → `v6` : les notifications de vente aux §2, §3, §5 et §6
+ * (services de notification des navigateurs), décision du porteur « go niveau 2 ».
+ * Même règle, même ordre : `0169` doit être APPLIQUÉE avant que cette ligne ne
+ * soit fusionnée.
  */
-export const CONFIDENTIALITE_VERSION = "confidentialite-v5";
+export const CONFIDENTIALITE_VERSION = "confidentialite-v6";
 
 export const ACCOUNT_LEGAL_VERSIONS = [CONDITIONS_VERSION, CONFIDENTIALITE_VERSION] as const;
 

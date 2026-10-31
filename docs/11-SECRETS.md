@@ -51,6 +51,7 @@
 | `HF_API_KEY_SECRET` | **facturable** — secret de clé Higgsfield, inséparable de `HF_API_KEY_ID` ; serveur uniquement |
 | `GENLOOK_API_KEY` | **facturable** — essais virtuels Genlook (docs/74) ; donne aussi accès aux photos d'acheteurs encore conservées chez Genlook ; serveur uniquement |
 | `FASHN_API_KEY` | **facturable** — essais virtuels FASHN (docs/74) ; donne aussi accès à l'historique des requêtes chez FASHN ; serveur uniquement |
+| `ZABELIE_VAPID_PRIVATE_KEY` | envoyer des notifications à tous les appareils abonnés, au nom de Zabelie (0169) ; serveur uniquement. Fuite : régénérer la paire, ce qui désabonne tous les appareils |
 | `SEARCH_FINGERPRINT_SALT` | ré-identifier les empreintes de recherche |
 
 ⚠️ **`SUPABASE_SERVICE_ROLE_KEY` n'est pas un secret parmi d'autres, c'est la
@@ -109,6 +110,8 @@ parce qu'elles décrivent le paramétrage commercial ou opérationnel.
 | `ZABELIE_AUTHORING_AI_PROVIDER` | moteur des suggestions : `mock` (simulation, refusée sur un déploiement de production) ; toute autre valeur = aucun moteur ⚠️ **dépense** le jour où un fournisseur réel s'y ajoute (tâche 3.4) |
 | `ZABELIE_ESSAYAGE_ENABLED` | `true` (valeur exacte) allume l'essayage virtuel (docs/74) ; ne pas poser avant l'application de la migration 0150 et l'activation des vendeurs pilotes |
 | `ZABELIE_ESSAYAGE_FOURNISSEUR` | `simulation` (refusée sur un déploiement de production), `genlook` ou `fashn` ; toute autre valeur = aucun fournisseur ⚠️ **dépense** avec `genlook` ou `fashn` (chaque essai réussi est facturé) |
+| `ZABELIE_VAPID_PUBLIC_KEY` | clé publique des notifications de vente (0169) : point P-256 non compressé, base64url ; donnée à chaque appareil qui s'abonne, donc pas un secret. Sans les trois `ZABELIE_VAPID_*`, les notifications sont éteintes |
+| `ZABELIE_VAPID_SUBJECT` | contact déclaré aux services de notification : `mailto:…` ou `https://…` |
 
 ### 2.3 — Publiques par nature (`NEXT_PUBLIC_`, lisibles dans le navigateur)
 

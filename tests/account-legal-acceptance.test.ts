@@ -29,6 +29,8 @@ const DOCUMENTS = {
   "confidentialite-v4": "cc3d9683c8076ab7aaca5111be2cd32460379db77dae442070fc98260fcde8a1",
   // v5 — 2026-10-29 (soir) : l'essayage virtuel aux §2, §3, §5 et §6 — Genlook ou FASHN, la photo de l'acheteur (0167).
   "confidentialite-v5": "1a58be8f758dd9910f662f56abe5ec308e4a1842b1c680c89abc900006dd28d5",
+  // v6 — 2026-10-31 : les notifications de vente aux §2, §3, §5 et §6 — services de notification des navigateurs (0169).
+  "confidentialite-v6": "41fdc57e0d62dcac64e51a4240b92495fb61e5037e7c7ce4167e472fd8b6192c",
 };
 
 // Le faux Supabase des e2e déclare des comptes « ayant accepté les documents
@@ -61,17 +63,17 @@ test("receipt versions describe the canonical documents actually linked, in all 
   // refusé v2 et les utilisateurs auraient ré-accepté en boucle sans jamais
   // satisfaire la garde. Une présence de sous-chaîne ne prouve rien sur
   // l'endroit qui décide.
-  const migration = readFileSync("supabase/migrations/0167_zabelie_confidentialite_v5.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/0169_zabelie_notifications_push.sql", "utf8");
   const corps = migration
     .split(/create (?:or replace )?function /)
     .slice(1)
     .map((bloc) => bloc.slice(0, bloc.indexOf("$$;")));
-  assert.equal(corps.length, 2, "0167 doit porter les DEUX fonctions d'acceptation");
+  assert.equal(corps.length, 2, "0169 doit porter les DEUX fonctions d'acceptation");
   for (const [rang, fonction] of corps.entries()) {
     for (const version of ACCOUNT_LEGAL_VERSIONS) {
       assert.ok(
         fonction.includes(`'${version}'`),
-        `${version} absente du corps de la fonction ${rang + 1} de 0167 : un reçu exigé que cette fonction ne sait pas écrire`
+        `${version} absente du corps de la fonction ${rang + 1} de 0169 : un reçu exigé que cette fonction ne sait pas écrire`
       );
     }
   }

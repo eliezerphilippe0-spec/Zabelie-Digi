@@ -16,6 +16,7 @@ import {
   PAGE_DESINSTALLATION,
   PAGE_HORS_LIGNE,
 } from "@/lib/pwa-routes";
+import { afficherNotificationVente, ouvrirMesVentes } from "@/lib/notification-vente";
 
 /**
  * LE SERVICE WORKER DE ZABELIE.
@@ -124,3 +125,15 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/* NOTIFICATION DE VENTE (0169, niveau 2). Le signal arrive VIDE (`lib/web-push.ts`) :
+ * le texte est écrit ici, dans la langue du navigateur. Chaque signal affiche une
+ * notification — l'exigence `userVisibleOnly` des navigateurs, et ce que le
+ * vendeur attend. */
+self.addEventListener("push", (event) => {
+  event.waitUntil(afficherNotificationVente(self.registration, self.navigator.language));
+});
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(ouvrirMesVentes(self.clients, self.location.origin));
+});

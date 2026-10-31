@@ -11,6 +11,8 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { FulfillmentAction } from "@/components/fulfillment-actions";
 import { SonVentes } from "@/components/son-ventes";
+import { NotificationsVente } from "@/components/notifications-vente";
+import { lireClesVapid } from "@/lib/web-push";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
@@ -200,6 +202,19 @@ export default async function MesVentesPage() {
           actif: t(lang, "sales.sound.on"),
           couper: t(lang, "sales.sound.off"),
           nouvelle: t(lang, "sales.sound.new"),
+        }}
+      />
+      {/* Notifications page fermée (niveau 2, 0169) : rien ne s'affiche tant que les clés VAPID ne sont pas posées. */}
+      <NotificationsVente
+        clePublique={lireClesVapid()?.publique ?? null}
+        labels={{
+          activer: t(lang, "sales.push.enable"),
+          actif: t(lang, "sales.push.on"),
+          desactiver: t(lang, "sales.push.off"),
+          nonSupporte: t(lang, "sales.push.unsupported"),
+          refuse: t(lang, "sales.push.denied"),
+          erreur: t(lang, "sales.push.error"),
+          enCours: t(lang, "sales.push.busy"),
         }}
       />
       {delai && (
