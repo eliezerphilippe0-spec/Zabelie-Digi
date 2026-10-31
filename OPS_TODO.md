@@ -6,8 +6,12 @@ Décision du porteur : « go niveau 2 » (services de notification des
 navigateurs validés, politique mise à jour). Construit : abonnement par
 appareil dans « Mes ventes », envoi à chaque confirmation de paiement
 (`notifyOrderPaid`), signal SANS contenu (le service worker écrit le texte),
-politique `confidentialite-v6` (migration `0169`) — chaque compte ré-accepte
-une fois. **Éteint tant que les trois clés ne sont pas posées** : le bouton
+politique `confidentialite-v6` (migration `0169`, **APPLIQUÉE en production le
+2026-10-31 17:26:40Z** avant la fusion de #468 — autorisation permanente du
+2026-08-17, SQL reçu == fichier, md5 `60e51ac7…`, sha256 `971c4d4a…`, registre
+à 169 lignes) — chaque compte ré-accepte une fois. Vérifié en ligne :
+`/confidentialite` porte `confidentialite-v6`, `/api/seller/push` répond 404
+« pas encore activée » tant que les clés manquent. **Éteint tant que les trois clés ne sont pas posées** : le bouton
 n'apparaît pas, rien n'est envoyé. Reste au porteur :
 
 1. Générer la paire : `node scripts/generer-cles-vapid.mjs` (aucune dépendance).
