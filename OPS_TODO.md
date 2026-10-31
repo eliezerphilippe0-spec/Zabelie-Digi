@@ -16,15 +16,19 @@ file d'opérations vide, 0 commande `disputed`, aucun justificatif de
 remboursement dû (montant nul), aucun webhook. Le suivi de remise reste
 `action_required` (`refund_order` n'y touche pas) : aucun balayage ne le relit.
 
-⚠️ **Proposé, non fait — zone d'arrêt (chemin de l'argent)** : les fonctions de
-remise (`zabelie_declare_shipment`, `zabelie_handover_confirm`,
-`zabelie_mark_received`, `zabelie_report_not_received`) ne regardent que l'état
-de remise, jamais `orders.status`. Une commande remboursée AVANT l'envoi reste
-donc déclarable par le vendeur. Aucun argent ne bouge (escrow `reversed`,
-commande hors `paid`), mais la marchandise peut partir. « Mes ventes » ne le
-propose plus (`tests/vente-remboursee.test.ts`) ; le garde serveur est une
-migration qui touche `zabelie_mark_received` (déverrouillage d'escrow) : à
-décider.
+✅ **Garde serveur — décidé par le porteur le 2026-10-31 (« go »), migration
+`0168`.** Les fonctions de remise ne lisaient que l'état de remise : une
+commande remboursée AVANT l'envoi restait déclarable par le vendeur. Mécanisme
+retenu, plus petit que celui proposé : un déclencheur sur `orders` qui, au
+passage EN `refunded`, met la remise encore ouverte (`awaiting_shipment`,
+`shipped`) en `action_required` — l'état que ni la déclaration d'envoi, ni le
+code de remise, ni la réception n'acceptent. **Aucune fonction d'argent
+touchée** (ni `refund_order`, ni `zabelie_mark_received`, ni l'escrow).
+Éprouvé : `supabase/tests/remise_remboursement.test.sql`, rouge sans la
+migration et sur quatre mutations. ⚠️ **Reste ouvert** : les avis déjà
+programmés (`shipped_buyer`, `reminder_buyer`) d'une commande remboursée
+partiraient quand Resend sera branché — même décision que `reminder_buyer`
+après réception (`docs/77` §12.8 n° 2), gelée par D-10→D-14.
 
 ## E-mails du 22 août — annulés (30 octobre 2026)
 
