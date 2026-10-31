@@ -10,6 +10,7 @@ import Link from "next/link";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { FulfillmentAction } from "@/components/fulfillment-actions";
+import { SonVentes } from "@/components/son-ventes";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/products";
 import { formatHTG } from "@/lib/sample-data";
@@ -192,6 +193,15 @@ export default async function MesVentesPage() {
   return (
     <Shell lang={lang}>
       <Link href="/assistance" className="mt-4 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).cases}</Link>
+      {/* Son de vente (niveau 1) : AUSSI quand la liste est vide — la première vente est le moment à ne pas manquer. */}
+      <SonVentes
+        labels={{
+          activer: t(lang, "sales.sound.enable"),
+          actif: t(lang, "sales.sound.on"),
+          couper: t(lang, "sales.sound.off"),
+          nouvelle: t(lang, "sales.sound.new"),
+        }}
+      />
       {delai && (
         <section aria-labelledby="delai-constate" className="mt-4 rounded-xl border border-line bg-ink/40 p-4">
           <h2 id="delai-constate" className="text-sm font-semibold">{t(lang, "sales.measured.title")}</h2>
