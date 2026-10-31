@@ -1,5 +1,26 @@
 # OPS_TODO — Zabelie
 
+## Notifications de vente, page fermée — niveau 2 (31 octobre 2026)
+
+Décision du porteur : « go niveau 2 » (services de notification des
+navigateurs validés, politique mise à jour). Construit : abonnement par
+appareil dans « Mes ventes », envoi à chaque confirmation de paiement
+(`notifyOrderPaid`), signal SANS contenu (le service worker écrit le texte),
+politique `confidentialite-v6` (migration `0169`) — chaque compte ré-accepte
+une fois. **Éteint tant que les trois clés ne sont pas posées** : le bouton
+n'apparaît pas, rien n'est envoyé. Reste au porteur :
+
+1. Générer la paire : `node scripts/generer-cles-vapid.mjs` (aucune dépendance).
+   La clé PRIVÉE est un secret : ne la coller nulle part ailleurs que dans Vercel.
+2. Vercel → Production : `ZABELIE_VAPID_PUBLIC_KEY`, `ZABELIE_VAPID_PRIVATE_KEY`,
+   `ZABELIE_VAPID_SUBJECT` (`mailto:` + l'adresse de contact), puis redéployer.
+3. Essayer : « Mes ventes » → « Recevoir une notification à chaque vente » →
+   autoriser. Sur iPhone, ajouter d'abord Zabelie à l'écran d'accueil.
+
+Limites dites : un navigateur web ne peut pas imposer un son « cha-ching »
+(c'est la sonnerie de notification du téléphone) ; une vente gratuite (0 HTG)
+ne passe pas par `notifyOrderPaid` et ne notifie pas.
+
 ## Litige du 22 août — CLOS (30 octobre 2026)
 
 Instruction directe : « clôture le litige ». Écriture en production le

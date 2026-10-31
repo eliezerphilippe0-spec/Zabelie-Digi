@@ -19,6 +19,7 @@ import {
 } from "./zabelie-email";
 import { siteUrl } from "./site-url";
 import { autresCommandesDuGroupe } from "./panier-groupe";
+import { signalerVenteApresReponse } from "./notifications-push";
 
 function formatHtg(n: number): string {
   return `${new Intl.NumberFormat("fr-HT").format(n)} HTG`;
@@ -28,6 +29,9 @@ export async function notifyOrderPaid(
   admin: SupabaseClient,
   orderId: string
 ): Promise<void> {
+  // Notification au vendeur, page fermée (0169) : planifiée AVANT tout `await`,
+  // donc dans la requête ; indépendante de l'e-mail (Resend peut être absent).
+  signalerVenteApresReponse(admin, orderId);
   await notifierUneCommande(admin, orderId);
   // Panier groupé (0128) : chaque vendeur du groupe reçoit SON avis de vente.
   for (const autre of await autresCommandesDuGroupe(admin, orderId)) {

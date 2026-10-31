@@ -307,6 +307,11 @@ const TIERS_APPELES = [
   // Essayage virtuel (docs/74, 0167) : la photo de l'acheteur. Absents de ce croisement jusqu'au 2026-10-29 alors que le code les appelait.
   { nom: "Genlook", fichier: "lib/essayage/fournisseurs/genlook.ts", marque: "api.genlook.app" },
   { nom: "FASHN", fichier: "lib/essayage/fournisseurs/fashn.ts", marque: "api.fashn.ai" },
+  // Notifications de vente (0169) : les services de notification des navigateurs. « Google » est déjà dans
+  // les puces (Gemini) — le chercher ne prouverait rien ; Apple, Mozilla et Microsoft n'y sont QUE pour le push.
+  { nom: "Apple", fichier: "lib/web-push.ts", marque: "web\\.push\\.apple\\.com" },
+  { nom: "Mozilla", fichier: "lib/web-push.ts", marque: "push\\.services\\.mozilla\\.com" },
+  { nom: "Microsoft", fichier: "lib/web-push.ts", marque: "notify\\.windows\\.com" },
 ] as const;
 
 /** Les PUCES du §6 seulement — pas ses paragraphes. */

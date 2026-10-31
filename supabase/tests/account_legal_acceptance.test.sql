@@ -174,7 +174,7 @@ begin
     or exists (select 1 from zabelie_policy_acceptances where user_id='00000000-0000-0000-0000-000000133007' and policy_version='confidentialite-v4') then
     raise exception 'LA12 signup declaring v3 (client in flight) must record exactly v3, never a v4 receipt';
   end if;
-  foreach v_bad in array array['confidentialite-v2','confidentialite-v6'] loop
+  foreach v_bad in array array['confidentialite-v2','confidentialite-v7'] loop
     begin
       insert into auth.users (id,email,raw_user_meta_data)
         values ('00000000-0000-0000-0000-000000133097','unknown@test.local',
@@ -201,7 +201,7 @@ end $$;
 reset role;
 set local request.jwt.claim.sub='';
 set local request.jwt.claim.role='service_role';
-do $$ begin raise notice 'OK LA12: v1/v3/v4 accepted as declared on signup and by RPC; v2 and v6 refused'; end $$;
+do $$ begin raise notice 'OK LA12: v1/v3/v4 accepted as declared on signup and by RPC; v2 and v7 refused'; end $$;
 
 -- LA13 (0167) — la fenêtre v1/v3/v4/v5 : un compte qui déclare v5 reçoit
 -- EXACTEMENT v5 ; un client en vol qui déclare encore v4 reçoit v4, jamais v5 ;
@@ -231,13 +231,17 @@ do $$ begin
   if not exists (select 1 from zabelie_policy_acceptances where policy_version='confidentialite-v5') then
     raise exception 'LA13 RPC declaring v5 must record v5 for the caller';
   end if;
+  perform zabelie_accept_account_legal('cgu-v1','confidentialite-v6',true,true);
+  if not exists (select 1 from zabelie_policy_acceptances where policy_version='confidentialite-v6') then
+    raise exception 'LA13 RPC declaring v6 (0169) must record v6 for the caller';
+  end if;
   begin
-    perform zabelie_accept_account_legal('cgu-v1','confidentialite-v6',true,true);
-    raise exception 'LA13 RPC accepted the non-existent v6';
+    perform zabelie_accept_account_legal('cgu-v1','confidentialite-v7',true,true);
+    raise exception 'LA13 RPC accepted the non-existent v7';
   exception when sqlstate 'ZB133' then null; end;
 end $$;
 reset role;
 set local request.jwt.claim.sub='';
 set local request.jwt.claim.role='service_role';
-do $$ begin raise notice 'OK LA13: v5 recorded as declared on signup and by RPC, v4 in flight kept as v4, v6 refused'; end $$;
+do $$ begin raise notice 'OK LA13: v5 recorded as declared on signup and by RPC, v4 in flight kept as v4, v6 recorded (0169), v7 refused'; end $$;
 rollback;

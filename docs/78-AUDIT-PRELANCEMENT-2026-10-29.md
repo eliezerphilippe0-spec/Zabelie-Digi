@@ -252,7 +252,8 @@ effet, trace en base). Méthode à rejouer telle quelle.
 | Tâches planifiées | ✅ 9 sur 11 tracées aujourd'hui | `zabelie_cron_leases` ; `relances` attend Resend ; `admin/coherence` ne prend pas de bail (journal Vercel seulement) |
 | KYC pour retrait | ⚙️ non exigé | `zabelie_kyc_config.requis_pour_retrait = false` — décision porteur |
 | Webhooks vendeurs | ✅ disponible, 0 abonné | `zabelie_webhook_endpoints` vide |
-| Son de vente (vendeur) | ✅ niveau 1, page « Mes ventes » ouverte | ajouté le 2026-10-31 (choix porteur) : bouton « Activer le son », relevé toutes les 30 s de `/api/seller/ventes-compte`, signal synthétisé (aucun fichier). Page fermée : niveau 2 (notifications), non fait — services de push à valider et politique à mettre à jour |
+| Son de vente (vendeur) | ✅ niveau 1, page « Mes ventes » ouverte | ajouté le 2026-10-31 (choix porteur) : bouton « Activer le son », relevé toutes les 30 s de `/api/seller/ventes-compte`, signal synthétisé (aucun fichier) |
+| Notifications de vente, page fermée | ⛔ construit, **éteint** | niveau 2 (2026-10-31, `0169`, `confidentialite-v6`) : s'allume avec les trois `ZABELIE_VAPID_*` dans Vercel ; sans elles, le bouton n'apparaît pas |
 | Plan Supabase | ⚙️ Free | mots de passe divulgués : contrôle dans le code (§7) ; sauvegardes, transformations d'image, absence de mise en veille : plan Pro |
 
 Trouvé en mesurant : le titre « Diaspora ? Payez en USD : » coiffait TOUTES
