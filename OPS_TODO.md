@@ -17,7 +17,12 @@ remboursement dû (montant nul), aucun webhook. Le suivi de remise reste
 `action_required` (`refund_order` n'y touche pas) : aucun balayage ne le relit.
 
 ✅ **Garde serveur — décidé par le porteur le 2026-10-31 (« go »), migration
-`0168`.** Les fonctions de remise ne lisaient que l'état de remise : une
+`0168`, APPLIQUÉE en production le 2026-10-31 01:05:23Z** (autorisation
+permanente du 2026-08-17 ; SQL reçu == fichier, md5 `7ea3cc9f…`, sha256
+`3ab98cb4…` ; registre à 168 lignes, `journal_supabase`). Première tentative
+abandonnée sans effet : le MCP exige une confirmation pour un `drop trigger`,
+inrépondable depuis une session d'agent ; fichier passé en `create or replace
+trigger` (choix porteur « Option 2 »). Les fonctions de remise ne lisaient que l'état de remise : une
 commande remboursée AVANT l'envoi restait déclarable par le vendeur. Mécanisme
 retenu, plus petit que celui proposé : un déclencheur sur `orders` qui, au
 passage EN `refunded`, met la remise encore ouverte (`awaiting_shipment`,
