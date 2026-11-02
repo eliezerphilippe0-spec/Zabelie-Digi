@@ -1,6 +1,6 @@
 # OPS_TODO — Zabelie
 
-## Notifications de vente, page fermée — niveau 2 (31 octobre 2026)
+## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 
 Décision du porteur : « go niveau 2 » (services de notification des
 navigateurs validés, politique mise à jour). Construit : abonnement par
@@ -10,16 +10,24 @@ politique `confidentialite-v6` (migration `0169`, **APPLIQUÉE en production le
 2026-10-31 17:26:40Z** avant la fusion de #468 — autorisation permanente du
 2026-08-17, SQL reçu == fichier, md5 `60e51ac7…`, sha256 `971c4d4a…`, registre
 à 169 lignes) — chaque compte ré-accepte une fois. Vérifié en ligne :
-`/confidentialite` porte `confidentialite-v6`, `/api/seller/push` répond 404
-« pas encore activée » tant que les clés manquent. **Éteint tant que les trois clés ne sont pas posées** : le bouton
-n'apparaît pas, rien n'est envoyé. Reste au porteur :
+`/confidentialite` porte `confidentialite-v6`.
 
-1. Générer la paire : `node scripts/generer-cles-vapid.mjs` (aucune dépendance).
-   La clé PRIVÉE est un secret : ne la coller nulle part ailleurs que dans Vercel.
-2. Vercel → Production : `ZABELIE_VAPID_PUBLIC_KEY`, `ZABELIE_VAPID_PRIVATE_KEY`,
-   `ZABELIE_VAPID_SUBJECT` (`mailto:` + l'adresse de contact), puis redéployer.
-3. Essayer : « Mes ventes » → « Recevoir une notification à chaque vente » →
-   autoriser. Sur iPhone, ajouter d'abord Zabelie à l'écran d'accueil.
+1. ✅ Paire générée par l'agent le 2026-10-31 (`scripts/generer-cles-vapid.mjs`),
+   remise au porteur en fichier ; la clé PRIVÉE n'a été écrite ni dans le dépôt,
+   ni dans le Google Doc « Zabelie », ni en clair dans la conversation.
+2. ✅ **Posées par le porteur dans Vercel et redéployées** (signalé le
+   2026-11-02). Vérifié en ligne le 2026-11-02 01:31Z : `POST /api/seller/push`
+   sans session répond **401** « Authentification requise » au lieu de 404
+   « pas encore activée » — `lireClesVapid()` rend donc une paire VALIDE (les
+   trois variables présentes, la clé privée engendre bien la clé publique,
+   sujet `https://zabelie.com`). Le service worker en ligne porte les écouteurs
+   `push` et `notificationclick`.
+3. ⏳ Reste au porteur — l'essai de bout en bout, que l'agent ne peut pas faire
+   (il faut un vrai téléphone et un compte vendeur) : « Mes ventes » →
+   « Recevoir une notification à chaque vente » → autoriser ; puis une vente.
+   Sur iPhone, ajouter d'abord Zabelie à l'écran d'accueil. Preuve en base :
+   une ligne dans `zabelie_push_abonnements` à l'activation, une dans
+   `zabelie_push_ventes` (avec `appareils` ≥ 1) à la vente.
 
 Limites dites : un navigateur web ne peut pas imposer un son « cha-ching »
 (c'est la sonnerie de notification du téléphone) ; une vente gratuite (0 HTG)

@@ -253,7 +253,7 @@ effet, trace en base). Méthode à rejouer telle quelle.
 | KYC pour retrait | ⚙️ non exigé | `zabelie_kyc_config.requis_pour_retrait = false` — décision porteur |
 | Webhooks vendeurs | ✅ disponible, 0 abonné | `zabelie_webhook_endpoints` vide |
 | Son de vente (vendeur) | ✅ niveau 1, page « Mes ventes » ouverte | ajouté le 2026-10-31 (choix porteur) : bouton « Activer le son », relevé toutes les 30 s de `/api/seller/ventes-compte`, signal synthétisé (aucun fichier) |
-| Notifications de vente, page fermée | ⛔ construit, **éteint** | niveau 2 (2026-10-31, `0169`, `confidentialite-v6`) : s'allume avec les trois `ZABELIE_VAPID_*` dans Vercel ; sans elles, le bouton n'apparaît pas |
+| Notifications de vente, page fermée | ✅ niveau 2, **allumé** le 2026-11-02 | `0169`, `confidentialite-v6` ; trois `ZABELIE_VAPID_*` posées par le porteur : `POST /api/seller/push` → 401 (404 sans clés valides). Essai sur téléphone réel : au porteur |
 | Plan Supabase | ⚙️ Free | mots de passe divulgués : contrôle dans le code (§7) ; sauvegardes, transformations d'image, absence de mise en veille : plan Pro |
 
 Trouvé en mesurant : le titre « Diaspora ? Payez en USD : » coiffait TOUTES
