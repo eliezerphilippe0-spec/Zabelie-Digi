@@ -179,7 +179,7 @@ export function ProfileForm({
       </div>
       <div className="space-y-1">
         <label htmlFor="profil-pays" className="block text-sm text-mist">
-          {labels.country} <span className="text-mist/80">({labels.optional})</span>
+          {labels.country} <span className="text-mist">({labels.optional})</span>
         </label>
         <select
           id="profil-pays"
@@ -206,7 +206,7 @@ export function ProfileForm({
       {form.country_code === "HT" && (
         <div className="space-y-1">
           <label htmlFor="profil-departement" className="block text-sm text-mist">
-            {labels.department} <span className="text-mist/80">({labels.optional})</span>
+            {labels.department} <span className="text-mist">({labels.optional})</span>
           </label>
           <select
             id="profil-departement"
