@@ -84,9 +84,12 @@ se casse le plus facilement :
   d'un texte foncé ; l'ancien seuil « /80 » datait d'avant lui.
 * **Mouvement** : `transform`/`opacity`, durées par `--motion-*` (0 ms sous
   `prefers-reduced-motion`).
-* Un changement visible de la connexion, du panier ou de l'en-tête se vérifie
-  aussi avec **les specs e2e** (`npx playwright test`) : elles lisent titres et
-  libellés. Oubli payé en Phase 4 (#477, six échecs).
+* Un changement visible de la connexion, du panier, de la fiche ou de l'en-tête
+  se vérifie aussi avec **les specs e2e, toutes les configurations** :
+  `npx playwright test` ET chaque `playwright.*.config.ts` que `ci.yml` enchaîne
+  (`auth` exige un build avec ses `NEXT_PUBLIC_*`, voir l'étape de la CI). La
+  CI s'arrête au premier échec : les étapes suivantes n'ont alors rien prouvé.
+  Oubli payé en Phase 4 (#477) : quatre allers-retours, cinq specs.
 
 ## Règle zéro — la primauté de l'instruction directe
 
