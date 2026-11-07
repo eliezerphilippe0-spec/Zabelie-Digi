@@ -15,7 +15,10 @@ function fixture(mode = "good", leak?: string) {
     if (url.origin !== ORIGIN) return new Response("ailleurs", { status: 200 });
     if (path === "/") {
       const nonce = "n".repeat(30) + (mode === "reused" ? "0" : ++count);
-      return new Response('<script nonce="' + nonce + '" src="/_next/static/chunks/main-abc123.js"></script>', { headers: {
+      // Depuis le 2026-11-02, Vercel sert `….js?dpl=<déploiement>` : la fixture sans requête ne l'avait pas vu.
+      const src = mode.startsWith("dpl") ? "/_next/static/chunks/main-abc123.js?dpl=dpl_94xQw7MaTP4LcHTLeexyRZ7Q62wq" : "/_next/static/chunks/main-abc123.js";
+      const script = mode === "no-script" ? '<script nonce="' + nonce + '"></script>' : '<script nonce="' + nonce + '" src="' + src + '"></script>';
+      return new Response(script, { headers: {
         "content-security-policy": mode === "weak" ? "frame-ancestors 'none'" : "script-src 'nonce-" + nonce + "' 'strict-dynamic'; frame-ancestors 'none'",
         "x-content-type-options": "nosniff",
         "strict-transport-security": mode === "no-hsts" ? "" : mode === "short-hsts" ? "max-age=86400; includeSubDomains" : "max-age=31536000; includeSubDomains",
@@ -24,7 +27,7 @@ function fixture(mode = "good", leak?: string) {
         "x-frame-options": mode === "no-xfo" ? "SAMEORIGIN" : "DENY",
       } });
     }
-    if (path === "/_next/static/chunks/main-abc123.js.map") return new Response("{}", { status: mode === "source-map" ? 200 : 403 });
+    if (path === "/_next/static/chunks/main-abc123.js.map") return new Response("{}", { status: mode === "source-map" || mode === "dpl-source-map" ? 200 : 403 });
     if (HIDDEN_PATHS.includes(path)) return new Response("SECRET=1", { status: leak === path ? 200 : 404 });
     if (path.startsWith("/auth/callback")) {
       return new Response(null, { status: 307, headers: { location: mode === "open-redirect" ? url.searchParams.get("next")! : ORIGIN + "/" } });
@@ -49,8 +52,17 @@ for (const [mode, motif] of [
   ["weak", /Script policy/], ["reused", /nonce reused/], ["public-admin", /moncash-verify/],
   ["no-hsts", /HSTS/], ["short-hsts", /HSTS/], ["leaky-referrer", /Referrer-Policy/], ["geolocation-allowed", /geolocation/],
   ["no-xfo", /X-Frame-Options/], ["source-map", /Source map/], ["open-redirect", /Open redirect/], ["protocol-relative", /Open redirect/],
+  ["dpl-source-map", /Source map/], ["no-script", /No Next\.js script/],
 ] as const) test("la sonde détecte : " + mode, async () => {
   await assert.rejects(verifyPublicSecurity(ORIGIN, fixture(mode).fetcher), motif);
+});
+
+test("un script servi avec ?dpl= (Vercel) passe, et sa carte est cherchée au chemin nu", async () => {
+  // Faux rouge du 2026-11-02 au 2026-11-07 : l'ancienne regex exigeait `.js"` et s'arrêtait avant les 11 autres contrôles.
+  const { fetcher, seen } = fixture("dpl");
+  const result = await verifyPublicSecurity(ORIGIN, fetcher);
+  assert.equal(result.checks.length, 12);
+  assert.ok(seen.includes(ORIGIN + "/_next/static/chunks/main-abc123.js.map"), "la carte doit être demandée sans la requête ?dpl=");
 });
 
 test("chaque API protégée et chaque fichier caché, exposé SEUL, fait échouer la sonde", async () => {
