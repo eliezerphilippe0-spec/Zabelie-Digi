@@ -122,7 +122,7 @@ test("legacy shop link, empty shop and Haitian Creole stay usable", async ({ pag
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await screenshot(page, "boutique-kreyol-360");
   await page.goto("/boutik/boutique-vide");
-  await expect(page.getByText("Poko gen pwodui pibliye.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Poko gen pwodwi pibliye.", { exact: true })).toBeVisible();
   await expect(page.locator('a[href*="/produit/"]')).toHaveCount(0);
 });
 

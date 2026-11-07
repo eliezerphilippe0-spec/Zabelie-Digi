@@ -26,7 +26,7 @@ const ht: Copy = {
   free: "Enskripsyon ak boutik san abònman. Frè yo soti sèlman sou lavant yo.",
   fixed: "Montan fiks la se {usd} $US, konvèti an goud ak to Zabelie {rate} HTG pou 1 $US. To sa a fiks lè kòmand lan fèt.",
   example: "Sou {gross}, ou resevwa anviwon {net} apre frè Zabelie.",
-  attribution: "Yon vizit nan katalòg oswa rekòmandasyon Zabelie atribye pwodui sa a ak marketplace la pandan {days} jou sou navigatè sa a. San atribisyon sa a, se pri dirèk la ki aplike.",
+  attribution: "Yon vizit nan katalòg oswa rekòmandasyon Zabelie atribye pwodwi sa a ak marketplace la pandan {days} jou sou navigatè sa a. San atribisyon sa a, se pri dirèk la ki aplike.",
   launch: "Kòmanse sou Zabelie",
   offer: "Soumèt premye òf ou nan {submit} jou apre enskripsyon : {discount} rabè sou frè Zabelie pou jiska {sales} lavant pandan {days} jou.",
   clock: "Jou yo kòmanse lè òf la pibliye epi peman reyèl yo pare. Apre sa, frè nòmal yo retounen epi boutik ou rete ouvè.",
@@ -36,9 +36,9 @@ const ht: Copy = {
   expired: "Avantaj kòmansman yo fini. Boutik ou rete ouvè ak frè nòmal yo.",
   exhausted: "Ou itilize lavant kòmansman ou yo. Boutik ou rete ouvè ak frè nòmal yo.",
   ineligible: "Boutik ou rete ouvè ak frè nòmal yo. Delè pou òf kòmansman an pase.",
-  manage: "Prepare òf mwen yo", share: "Apre piblikasyon, pataje lyen boutik oswa pwodui ou sou WhatsApp.",
+  manage: "Prepare òf mwen yo", share: "Apre piblikasyon, pataje lyen boutik oswa pwodwi ou sou WhatsApp.",
   estimate: "Estimasyon ak frè nòmal yo, san rabè kòmansman ak afilyasyon. Frè yo pa janm depase montan lavant lan.",
-  discountRule: "Se peman konfime ki sèvi ak kota a. Pwodui gratis, peman ki echwe ak acha pwòp pwodui ou pa bay avantaj la. Ranbousman pa retabli kota a.",
+  discountRule: "Se peman konfime ki sèvi ak kota a. Pwodwi gratis, peman ki echwe ak acha pwòp pwodwi ou pa bay avantaj la. Ranbousman pa retabli kota a.",
 };
 const en: Copy = {
   details: "Fee calculation and launch terms",

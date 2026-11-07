@@ -61,7 +61,7 @@ test("S3 — une carte n'affiche jamais une URL brute ni un titre vide, et le ma
   assert.equal(titreCarte("/produit/cours-francisation-apwpm", "Produit", j, "y"), "Produit");
   assert.equal(titreCarte("https://exemple.test/x", "Produit", j), "Produit");
   assert.equal(titreCarte("   ", "Produit", j), "Produit");
-  assert.equal(titreCarte(null, "Pwodui", j), "Pwodui");
+  assert.equal(titreCarte(null, "Pwodwi", j), "Pwodwi");
   assert.equal(journal.length, 5, "chaque repli doit laisser une trace");
   assert.match(journal[0], /sans titre exploitable/);
   // Connu-positif : un vrai titre passe intact, sans journal.

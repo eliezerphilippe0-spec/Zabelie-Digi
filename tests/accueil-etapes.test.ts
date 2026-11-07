@@ -42,7 +42,7 @@ function contient(phrase: string, fragment: string): boolean {
 /** La portée de la phrase d'escrow, dans la langue de chaque dictionnaire. */
 const PORTEE: Record<Lang, string> = {
   fr: "produit physique",
-  ht: "pwodui fizik",
+  ht: "pwodwi fizik",
   en: "physical product",
   es: "producto físico",
 };

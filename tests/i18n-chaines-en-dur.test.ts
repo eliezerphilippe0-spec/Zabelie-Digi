@@ -85,7 +85,7 @@ export function segmentsEnDur(src: string): string[] {
 const INVENTAIRE: Record<string, string[]> = {
   "app/opengraph-image.tsx": [
     "La marketplace haïtienne — payez avec MonCash",
-    "Machandiz, sèvis ak pwodui dijital",
+    "Machandiz, sèvis ak pwodwi dijital",
   ],
   // app/produit/[slug]/page.tsx : stock, variante et compatibilité véhicule
   // passés par t() (audit REA 2026-10-26, #2) ; plus aucune chaîne en dur.

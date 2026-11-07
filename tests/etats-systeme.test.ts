@@ -60,7 +60,7 @@ test("S3 — l'erreur réseau propose de réessayer, à 44 px, dans les quatre l
 test("S4 — le squelette bat en opacité, s'arrête en mouvement réduit, et a la forme de la carte", () => {
   const sq = lire("components/skeleton.tsx");
   assert.match(sq, /const PULSE = "animate-pulse motion-reduce:animate-none /, "Tailwind `animate-pulse` n'anime que l'opacité");
-  // Même anatomie que la carte depuis le retrait de « Gade pwodui a » : image,
+  // Même anatomie que la carte depuis le retrait de « Gade pwodwi a » : image,
   // deux lignes de nom, prix, vendeur.
   const carte = /export function SkeletonCard\(\)[\s\S]*?\n\}/.exec(sq)?.[0] ?? "";
   assert.equal((carte.match(/<SkeletonBlock className="h-[34] /g) ?? []).length, 4, "quatre lignes sous l'image, comme la carte");

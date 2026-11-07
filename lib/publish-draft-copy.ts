@@ -16,12 +16,12 @@ export type PublishDraftCopy = typeof fr;
 const ht: PublishDraftCopy = {
   saved: "Bouyon an konsève nan onglet sa a pandan 30 minit.",
   unavailable: "Espas depo onglet sa a pa disponib. Kenbe paj sa a ouvè pou konsève sa ou antre yo.",
-  physicalUnavailable: "Espas depo onglet sa a pa disponib. Okenn chan ni foto pa anrejistre. Apre ou rechaje paj la, verifye pwodui ou yo anvan ou kreye yon lòt.",
+  physicalUnavailable: "Espas depo onglet sa a pa disponib. Okenn chan ni foto pa anrejistre. Apre ou rechaje paj la, verifye pwodwi ou yo anvan ou kreye yon lòt.",
   discard: "Efase bouyon an",
   confirmDiscard: "Efase chan bouyon sa a yo?",
-  uncertain: "Verifye si pwodui a te kreye. Gade pwodui ou yo anvan ou rekòmanse.",
-  checkProducts: "Verifye pwodui mwen yo",
-  resume: "Mwen verifye pwodui mwen yo: kontinye ranpli fòm nan",
+  uncertain: "Verifye si pwodwi a te kreye. Gade pwodwi ou yo anvan ou rekòmanse.",
+  checkProducts: "Verifye pwodwi mwen yo",
+  resume: "Mwen verifye pwodwi mwen yo: kontinye ranpli fòm nan",
 };
 
 const en: PublishDraftCopy = {

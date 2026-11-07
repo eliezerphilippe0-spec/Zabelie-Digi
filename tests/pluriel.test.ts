@@ -73,7 +73,7 @@ test("P2 — le rendu réel : le défaut de production ne peut plus revenir", ()
   assert.equal(tn("en", 1, "product.delivery.days.one", "product.delivery.days", { days: "1" }), "Delivery in 1 day");
   assert.equal(`1 ${tn("fr", 1, "creator.products.label.one", "creator.products.label")}`, "1 produit en ligne");
   assert.equal(`7 ${tn("en", 7, "creator.products.label.one", "creator.products.label")}`, "7 products online");
-  assert.equal(`7 ${tn("ht", 7, "creator.products.label.one", "creator.products.label")}`, "7 pwodui an liy");
+  assert.equal(`7 ${tn("ht", 7, "creator.products.label.one", "creator.products.label")}`, "7 pwodwi an liy");
 });
 
 test("P3 — les deux formes existent dans les QUATRE langues", () => {

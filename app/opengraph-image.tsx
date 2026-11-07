@@ -76,7 +76,7 @@ export default function OgAccueil() {
               lineHeight: 1.1,
             }}
           >
-            Machandiz, sèvis ak pwodui dijital
+            Machandiz, sèvis ak pwodwi dijital
           </div>
           <div style={{ display: "flex", fontSize: 34, color: MUTED }}>
             La marketplace haïtienne — payez avec MonCash
