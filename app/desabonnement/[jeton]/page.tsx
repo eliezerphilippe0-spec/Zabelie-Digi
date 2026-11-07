@@ -20,7 +20,7 @@ export default async function DesabonnementPage({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-lg px-5 py-16">
-        <h1 className="text-2xl font-black tracking-tight">{t(lang, "desabo.title")}</h1>
+        <h1>{t(lang, "desabo.title")}</h1>
         {etat.ok ? (
           <p role="status" className="mt-4 text-mist">{t(lang, "desabo.done")}</p>
         ) : etat.invalide ? (

@@ -47,7 +47,7 @@ function riche(texte: string): React.ReactNode[] {
 function Section({ titre, ancre, blocs, lang, children }: { titre: string; ancre?: string; blocs: Bloc[]; lang: Parameters<typeof resoudre>[1]; children?: React.ReactNode }) {
   return (
     <section id={ancre} className="mt-10 scroll-mt-32">
-      <h2 className="text-xl font-bold tracking-tight">{titre}</h2>
+      <h2>{titre}</h2>
       <div className="mt-3 space-y-3 text-base leading-relaxed text-mist">
         {blocs.map((bloc, i) =>
           "p" in bloc ? (
@@ -74,7 +74,7 @@ export default async function ConfidentialitePage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" data-policy-version={CONFIDENTIALITE_VERSION} className="mx-auto max-w-2xl px-5 py-16">
-        <h1 className="text-3xl font-black tracking-tight">{doc.titre}</h1>
+        <h1>{doc.titre}</h1>
         <p className="mt-2 text-sm text-mist">
           {doc.majLabel} : {LAST_UPDATE}
         </p>
@@ -88,7 +88,7 @@ export default async function ConfidentialitePage() {
         )}
 
         <section className="mt-10">
-          <h2 className="text-xl font-bold">{t(lang, "collections.privacy.title")}</h2>
+          <h2>{t(lang, "collections.privacy.title")}</h2>
           <p className="mt-3 leading-relaxed text-mist">{t(lang, "collections.privacy.body")}</p>
         </section>
         {doc.sections.map((s) => (

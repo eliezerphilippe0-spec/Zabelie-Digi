@@ -64,7 +64,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-5xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "purchases.title")}</h1>
+        <h1>{t(lang, "purchases.title")}</h1>
         <p className="mt-3 max-w-2xl text-sm text-mist">{t(lang, "purchases.intro")}</p>
         {children}
         <Link href="/aide#probleme" className="mt-6 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">

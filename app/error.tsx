@@ -66,7 +66,7 @@ export default function GlobalError({
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-danger text-2xl text-ink">
           !
         </span>
-        <h1 className="mt-6 text-2xl font-extrabold">{l.title}</h1>
+        <h1 className="mt-6">{l.title}</h1>
         <p className="mt-3 text-mist">{l.body}</p>
         {/* `digest` est l'identifiant que Next.js met aussi dans les journaux
             serveur : c'est ce qui permet de relier un écran vu par un vendeur à

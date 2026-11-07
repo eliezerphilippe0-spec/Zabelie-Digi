@@ -85,7 +85,7 @@ function HomeRow({
   return (
     <section id={id} className={`mx-auto max-w-6xl px-5 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
-        <div><h2 className="text-xl tracking-tight sm:text-2xl">{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
+        <div><h2>{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
         <Link href={href} className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
           {more}
         </Link>
@@ -271,7 +271,7 @@ export default async function HomePage() {
               <h1 className="home-headline max-w-xl">
                 {t(lang, opening ? "launch.title" : "hero.s1.t")}
               </h1>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-on-chrome/90">
+              <p className="text-on-chrome/90">
                 {t(lang, opening ? "launch.body" : "hero.s1.b")}
               </p>
               <div className="launch-actions">
@@ -323,7 +323,7 @@ export default async function HomePage() {
                 sur une erreur de chargement (catalogue === null), il mentirait. */}
             {catalogue !== null && <HomeChantier />}
             <div className="home-chantier-copy">
-            <h2 className="text-2xl">{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
+            <h2>{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
               <Link href={catalogue === null ? "/" : "/aide#comment"} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
@@ -370,7 +370,7 @@ export default async function HomePage() {
         {/* MEILLEURS VENDEURS — ≥ 3 vendeurs avec ≥ 1 vente PAYÉE (§4.3). */}
         {sellers.length > 0 && (
           <section className="mx-auto max-w-6xl px-5 pt-8">
-            <h2 className="text-xl tracking-tight sm:text-2xl">{t(lang, "sec.sellers")}</h2>
+            <h2>{t(lang, "sec.sellers")}</h2>
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
               {sellers.map((s) => (
                 <Link
@@ -400,7 +400,7 @@ export default async function HomePage() {
             (e2e `parcours-physique-accueil`). */}
         <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-5 pt-8">
           <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
-            <h2 id="receipt-title" className="text-xl tracking-tight sm:text-2xl">{t(lang, "home.receipt.title")}</h2>
+            <h2 id="receipt-title">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
             <details className="group mt-3">
               <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-semibold underline underline-offset-4 [&::-webkit-details-marker]:hidden">
@@ -430,7 +430,7 @@ export default async function HomePage() {
             étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
         <section id="comment" className="mx-auto max-w-6xl scroll-mt-32 px-5 pb-24 pt-10">
           <div className="home-final rounded-2xl p-6 text-center text-on-chrome sm:p-10">
-            <h2 className="mx-auto max-w-2xl text-2xl tracking-tight sm:text-3xl">{t(lang, "rail.shop.t")}</h2>
+            <h2 className="mx-auto max-w-2xl">{t(lang, "rail.shop.t")}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-on-chrome">{t(lang, "home.final.sub")}</p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link

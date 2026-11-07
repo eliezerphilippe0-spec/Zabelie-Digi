@@ -155,7 +155,7 @@ export function EssayageFeuille({
       className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-2xl border border-line bg-surface p-5 text-cloud backdrop:bg-black/60 sm:m-auto sm:max-w-md sm:rounded-2xl"
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 id="essayage-titre" className="text-lg font-bold">{labels.titre}</h2>
+        <h2 id="essayage-titre">{labels.titre}</h2>
         <button type="button" onClick={() => dialogue.current?.close()} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line px-3 text-sm">
           {labels.fermer}
         </button>

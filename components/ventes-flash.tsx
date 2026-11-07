@@ -75,7 +75,7 @@ export function VentesFlash({
   return (
     <section aria-labelledby="ventes-flash" className="ventes-flash mx-auto max-w-6xl px-5 pt-6">
       <div className="flash-bandeau">
-        <h2 id="ventes-flash" className="flex items-center gap-2 text-lg font-extrabold tracking-tight sm:text-xl">
+        <h2 id="ventes-flash" className="flex items-center gap-2">
           <EclairFlash />
           {t(lang, "flash.title")}
         </h2>

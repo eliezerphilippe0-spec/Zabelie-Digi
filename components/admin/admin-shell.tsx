@@ -71,7 +71,7 @@ export function AdminShell({
             </div>
           </div>
         )}
-        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+        <h1>{title}</h1>
         <DatePage />
         {children}
       </main>

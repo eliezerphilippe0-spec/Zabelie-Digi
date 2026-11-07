@@ -122,7 +122,7 @@ function Section({
   if (lignes.length === 0) return null;
   return (
     <section>
-      <h2 className="text-sm font-semibold text-cloud">
+      <h2 className="text-cloud titre-bloc">
         {titre} <span className="text-mist">({lignes.length})</span>
       </h2>
       <p className="mt-1 text-xs text-mist">{aide}</p>

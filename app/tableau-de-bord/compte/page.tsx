@@ -57,7 +57,7 @@ export default async function ComptePage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="compte">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.nav.compte")}</h1>
+          <h1>{t(lang, "vendeur.nav.compte")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.compte.intro")}</p>
 
           {dossierKyc && (

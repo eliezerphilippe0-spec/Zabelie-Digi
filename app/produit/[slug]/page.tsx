@@ -402,7 +402,7 @@ export default async function ProductPage({
             )}
           </div>
 
-          <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight">
+          <h1 className="mt-4">
             {product.title}
           </h1>
           {ageMinimum > 0 && (
@@ -488,7 +488,7 @@ export default async function ProductPage({
                  RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
           {physical?.specs && (
             <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
-              <h2 className="text-sm font-semibold text-cloud">
+              <h2 className="text-cloud titre-bloc">
                 {t(lang, "product.specs.title")}
               </h2>
               <dl className="mt-2 space-y-1 text-sm">
@@ -610,7 +610,7 @@ export default async function ProductPage({
             )}
             {pickByKind(product.kind, { file: false, service: false, physical: true }, product.id) && (
               <section aria-labelledby="remise-avant-achat" className="mt-5 rounded-xl border border-line bg-ink/40 p-4">
-                <h2 id="remise-avant-achat" className="text-sm font-semibold">{t(lang, "product.handover.title")}</h2>
+                <h2 id="remise-avant-achat" className="titre-bloc">{t(lang, "product.handover.title")}</h2>
                 <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-mist">
                   <li>{t(lang, "product.handover.place")}</li>
                   <li>{t(lang, "product.handover.time")}</li>
@@ -633,7 +633,7 @@ export default async function ProductPage({
             )}
             {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
             <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="achat-confiance">
-              <h2 id="achat-confiance" className="text-sm font-semibold">{supportCopy(lang).trustTitle}</h2>
+              <h2 id="achat-confiance" className="titre-bloc">{supportCopy(lang).trustTitle}</h2>
               <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustLocal}</p>
               {commitmentApplicable && commitments?.get(product.id)?.fees !== "included" && <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustFees}</p>}
               <Link href="/aide#probleme" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).trustReturn}</Link>
@@ -769,7 +769,7 @@ export default async function ProductPage({
           <ProductOffers offers={relatedOffers} copy={offerCopy(lang)}/>
           {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
           {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
-            <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>
+            <h2 id="digital-details-title">{t(lang, "digital.title")}</h2>
             {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>
               <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                 {DIGITAL_DETAIL_FIELDS.filter((key) => digital[key]).map((key) => <div key={key} className={key === "contents" || key === "license" ? "sm:col-span-2" : ""}>
@@ -814,7 +814,7 @@ export default async function ProductPage({
               a déjà décidé de transmettre la fiche. */}
           {product.creatorId && (
             <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-4">
-              <h2 className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</h2>
+              <h2 className="text-cloud titre-bloc">{t(lang, "msg.ask.title")}</h2>
               {peutEcrire ? (
                 <MessageForm
                   productId={product.id}
@@ -854,7 +854,7 @@ export default async function ProductPage({
       {/* Avis vérifiés */}
       {reviews.length > 0 && (
         <section className="mx-auto max-w-6xl px-5 pb-16">
-          <h2 className="text-lg font-semibold">
+          <h2>
             {t(lang, "product.reviews")} ({reviews.length})
           </h2>
           <p className="mt-1 text-sm text-mist">

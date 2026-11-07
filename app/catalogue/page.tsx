@@ -226,12 +226,12 @@ export default async function CataloguePage({
           <span aria-hidden="true">/</span>
           {selection ? <><Link href="/catalogue" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
         </nav>
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        <h1>
           {selection ? t(lang, selection.title) : t(lang, "catalog.title")}
         </h1>
         {universe === "services" && (
           <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="service-buying-guide">
-            <h2 id="service-buying-guide" className="text-sm font-semibold">{serviceGuide.buyerTitle}</h2>
+            <h2 id="service-buying-guide" className="titre-bloc">{serviceGuide.buyerTitle}</h2>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-mist">
               {serviceGuide.buyerSteps.map((step) => <li key={step}>{step}</li>)}
             </ol>

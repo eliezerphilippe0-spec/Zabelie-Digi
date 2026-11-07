@@ -407,7 +407,7 @@ export default async function AdminPage({
       <SearchDemandPanel labels={sourcingCopy(await getLang())}/>
       {/* Modération vendeurs : suspension réversible */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold">Vendeurs</h2>
+        <h2>Vendeurs</h2>
         <p className="mt-1 text-xs text-mist">
           Suspendre bloque l&apos;accès et masque les produits du catalogue —{" "}
           <strong>sans toucher au wallet ni à l&apos;escrow</strong> (cadre BRH :
@@ -433,7 +433,7 @@ export default async function AdminPage({
 
       {/* Comptes d'essai (0101) — la marque qui sépare vos tests du public */}
       <section id="essai" className="mt-10 scroll-mt-32">
-        <h2 className="text-lg font-semibold">Comptes d&apos;essai</h2>
+        <h2>Comptes d&apos;essai</h2>
         <p className="mt-1 text-xs text-mist">
           Un compte marqué <strong>publie, achète et remet normalement</strong> —
           ses fiches sont simplement invisibles du catalogue public. Aucune fiche
@@ -462,7 +462,7 @@ export default async function AdminPage({
 
       {/* Modération produits */}
       <section id="produits" className="mt-10 scroll-mt-32">
-        <h2 className="text-lg font-semibold">Modération des produits</h2>
+        <h2>Modération des produits</h2>
         {digitalReadError && <p role="alert" className="mt-3 text-sm text-danger-text">{t("fr", "error.generic")}</p>}
         {products.length === 0 ? (
           <p className="mt-3 text-sm text-mist">Aucun produit.</p>
@@ -496,7 +496,7 @@ export default async function AdminPage({
 
       {/* Commandes : remboursement + litiges */}
       <section id="commandes" className="mt-10 scroll-mt-32">
-        <h2 className="text-lg font-semibold">Commandes</h2>
+        <h2>Commandes</h2>
         <p className="mt-1 text-xs text-mist">
           Rembourser annule l&apos;escrow (avant maturité : aucun solde fantôme).
           Les commandes <span className="text-danger-text">disputed</span> (écart
@@ -570,7 +570,7 @@ export default async function AdminPage({
       {/* Virements Zelle en attente de confirmation manuelle */}
       {zelleQueue.length > 0 && (
         <section id="zelle" className="mt-10 scroll-mt-32">
-          <h2 className="text-lg font-semibold">Paiements Zelle à confirmer</h2>
+          <h2>Paiements Zelle à confirmer</h2>
           <p className="mt-1 text-xs text-mist">
             Vérifiez le relevé bancaire (montant exact + mémo) avant de
             confirmer. La confirmation livre le produit et crédite le vendeur
@@ -622,7 +622,7 @@ export default async function AdminPage({
       {/* Recharges téléphoniques : Zelle à confirmer + remboursements (checkpoint humain) */}
       {topupQueue.length > 0 && (
         <section id="rechaj" className="mt-10 scroll-mt-32">
-          <h2 className="text-lg font-semibold">Recharges — actions requises</h2>
+          <h2>Recharges — actions requises</h2>
           <p className="mt-1 text-xs text-mist">
             Zelle : vérifier le relevé (montant exact + mémo) avant de confirmer
             — la recharge part immédiatement. Remboursements : rembourser via le
@@ -689,7 +689,7 @@ export default async function AdminPage({
 
       {/* Recharges — catalogue Reloadly */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold">Recharges — catalogue</h2>
+        <h2>Recharges — catalogue</h2>
         <p className="mt-1 text-xs text-mist">
           Remplit les dénominations et les <code>operatorId</code> Digicel/Natcom
           depuis Reloadly (coûtant = valeur faciale par défaut, à affiner
@@ -703,7 +703,7 @@ export default async function AdminPage({
 
       {/* Réconciliation paiements */}
       <section className="mt-10">
-        <h2 className="text-lg font-semibold">Paiements récents</h2>
+        <h2>Paiements récents</h2>
         <p className="mt-1 text-xs text-mist">
           La réconciliation automatique tourne via le cron (/api/reconcile).
         </p>

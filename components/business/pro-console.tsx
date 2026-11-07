@@ -72,7 +72,7 @@ export function ProConsole({
   if (!professional) {
     return (
       <div className="glass rounded-2xl p-6">
-        <h2 className="text-lg font-bold">{labels.openTitle}</h2>
+        <h2>{labels.openTitle}</h2>
         <p className="mt-1 text-sm text-mist">{labels.openBody}</p>
         <form onSubmit={register} className="mt-4 space-y-3">
           <input
@@ -139,7 +139,7 @@ function NewInvoice({ clients, labels }: { clients: Client[]; labels: Facturatio
 
   return (
     <div className="glass rounded-2xl p-6">
-      <h2 className="text-lg font-bold">{labels.newInvoice}</h2>
+      <h2>{labels.newInvoice}</h2>
       {clients.length === 0 ? (
         <p className="mt-2 text-sm text-mist">{labels.addClientFirst}</p>
       ) : (
@@ -206,7 +206,7 @@ function ClientsCard({ clients, labels }: { clients: Client[]; labels: Facturati
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">{labels.clients}</h2>
+        <h2>{labels.clients}</h2>
         <button
           onClick={() => setOpen((o) => !o)}
           className="min-h-11 text-sm text-accent hover:underline"
@@ -288,7 +288,7 @@ function InvoicesCard({
 
   return (
     <div className="glass rounded-2xl p-6">
-      <h2 className="text-lg font-bold">{labels.invoices}</h2>
+      <h2>{labels.invoices}</h2>
       <ul className="mt-4 divide-y divide-line">
         {invoices.map((inv) => {
           const statut = labels.status[inv.status as keyof FacturationCopy["status"]] ?? inv.status;

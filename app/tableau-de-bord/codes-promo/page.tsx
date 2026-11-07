@@ -41,7 +41,7 @@ export default async function CodesPromoPage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="promo">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.nav.promo")}</h1>
+          <h1>{t(lang, "vendeur.nav.promo")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">
             {avantCode}
             <span className="code-lisible font-bold text-accent">PROMO50</span>

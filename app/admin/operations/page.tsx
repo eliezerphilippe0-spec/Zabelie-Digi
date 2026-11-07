@@ -20,7 +20,7 @@ export default async function OperationsPage({searchParams}:{searchParams:Promis
  <p className="mt-3 max-w-2xl text-sm text-mist">Paiements, litiges Stripe, remise en main propre, dossiers clients et versements vendeurs. Les montants sont en gourdes ; les dates suivent l’heure de Port-au-Prince.</p>
  <div className="mt-6"><ReconcileAction/></div>
  <div className="mt-4 flex flex-wrap gap-4 text-sm"><Link className="inline-flex min-h-11 items-center underline" href="/admin#zelle">Vérifier un dépôt Zelle</Link><Link className="inline-flex min-h-11 items-center underline" href="/admin/livraisons">Suivi des remises</Link><Link className="inline-flex min-h-11 items-center underline" href="/admin#commandes">Décisions de remboursement</Link></div>
- <section className="mt-8"><h2 className="text-xl font-bold">Dossiers à traiter</h2>
+ <section className="mt-8"><h2>Dossiers à traiter</h2>
  {queue.error?<p role="alert" className="mt-3 text-danger-text">La file est indisponible. Cela ne signifie pas qu’il n’y a aucun incident.</p>:<>
  <p className="mt-2 text-sm text-mist">{total} situations à traiter. Une commande peut nécessiter plusieurs actions.</p>
  {rows.length===0?<p className="mt-4">Aucune situation dans cette page de la file.</p>:<ol className="mt-4 space-y-3">{rows.map(row=><li key={row.kind+row.id} className="rounded-2xl border border-line p-4">
@@ -43,7 +43,7 @@ export default async function OperationsPage({searchParams}:{searchParams:Promis
  <nav className="mt-4 flex gap-5">{page>1&&<Link className="inline-flex min-h-11 items-center underline" href={"?page="+(page-1)}>Précédent</Link>}{page*30<total&&<Link className="inline-flex min-h-11 items-center underline" href={"?page="+(page+1)}>Suivant</Link>}</nav>
  </>}
  </section>
- <section className="mt-10 border-t border-line pt-6"><h2 className="text-xl font-bold">Marché haïtien : les 30 derniers jours</h2>
+ <section className="mt-10 border-t border-line pt-6"><h2>Marché haïtien : les 30 derniers jours</h2>
  {metrics.error||!stats?<p className="mt-3 text-danger-text">Les mesures sont indisponibles.</p>:<>
  <p className="mt-2 text-xs text-mist">Commandes payantes réelles uniquement, hors comptes d’essai et achats du vendeur à lui-même. Une commande en attente n’est pas nécessairement abandonnée. La zone est celle déclarée par le vendeur, pas une preuve de couverture de livraison.</p>
  <dl className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">{[["Commandes créées",stats.orders],["Achats confirmés",stats.paid],["Encore en attente",stats.pending],["Acheteurs revenus",stats.repeat_buyers]].map(([label,value])=><div key={label} className="rounded-xl border border-line p-4"><dt className="text-xs text-mist">{label}</dt><dd className="mt-2 text-xl font-bold numeric">{value}</dd></div>)}</dl>

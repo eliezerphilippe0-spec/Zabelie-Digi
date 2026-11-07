@@ -39,7 +39,7 @@ export default async function MessagesPage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 pb-16 pt-10">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <h1>
           {t(lang, "msg.title")}
         </h1>
 

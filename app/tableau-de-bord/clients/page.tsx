@@ -74,7 +74,7 @@ export default async function ClientsPage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="clients">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.clients.titre")}</h1>
+          <h1>{t(lang, "vendeur.clients.titre")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.clients.intro")}</p>
 
           {!resume ? (

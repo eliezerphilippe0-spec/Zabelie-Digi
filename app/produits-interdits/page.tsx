@@ -38,7 +38,7 @@ function Section({
 }) {
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-bold tracking-tight">{title}</h2>
+      <h2>{title}</h2>
       <div className="mt-3 space-y-3 text-sm leading-relaxed text-mist">
         {children}
       </div>
@@ -63,7 +63,7 @@ export default async function ProduitsInterditsPage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-black tracking-tight">
+        <h1>
           {t(lang, "policy.title")}
         </h1>
         <p className="mt-2 text-sm text-mist">

@@ -14,7 +14,7 @@ export function ProductOffers({ offers, copy, afterPurchase = false }: { offers:
     <Link prefetch={false} href={offerHref(offer)} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-accent underline underline-offset-4">{copy.view}</Link>
   </article>;
   return <section aria-label={afterPurchase ? copy.after : copy.buyerTitle} className="mt-6 space-y-3 text-left">
-    <h2 className="text-lg font-semibold">{afterPurchase ? copy.after : copy.buyerTitle}</h2>
+    <h2>{afterPurchase ? copy.after : copy.buyerTitle}</h2>
     {visible.filter(o => o.offer_kind !== "downsell").map(card)}
     {visible.filter(o => o.offer_kind === "downsell").map(offer => <details key={offer.id ?? offer.target_product_id} className="rounded-xl border border-line p-3">
       <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-cloud">{copy.cheaper}</summary>

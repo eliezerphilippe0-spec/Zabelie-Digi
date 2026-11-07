@@ -137,7 +137,7 @@ export default async function GeoPage() {
           {/* Zoom Haïti — marché ciblé, centré sur les talents. */}
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">
+              <h2>
                 Zoom Haïti — talents par département
               </h2>
               <span className="text-xs text-mist">
@@ -189,7 +189,7 @@ export default async function GeoPage() {
 
           {/* Vue mondiale — diaspora & clients hors Haïti. */}
           <section className="mt-10">
-            <h2 className="text-lg font-semibold">Vue mondiale</h2>
+            <h2>Vue mondiale</h2>
             <p className="mt-1 text-xs text-mist">
               Diaspora et clients hors Haïti.
             </p>
@@ -200,7 +200,7 @@ export default async function GeoPage() {
 
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">Top 10 des pays</h2>
+              <h2>Top 10 des pays</h2>
               {unknown > 0 && (
                 <span className="text-xs text-mist">
                   {unknown} utilisateur{unknown > 1 ? "s" : ""} sans pays

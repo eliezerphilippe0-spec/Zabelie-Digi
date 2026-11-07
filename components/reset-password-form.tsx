@@ -151,7 +151,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
     <main id="main" className="bg-grain flex min-h-dvh items-center justify-center px-5">
       <div className="w-full max-w-sm">
         <div className="glass rounded-3xl p-7">
-          <h1 className="text-lg font-semibold">{labels.title}</h1>
+          <h1>{labels.title}</h1>
 
           {status === "checking" && <p className="mt-4 text-sm text-mist">…</p>}
 

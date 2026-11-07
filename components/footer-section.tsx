@@ -39,7 +39,7 @@ export function FooterSection({ titre, children }: { titre: string; children: Re
         }}
         className="flex min-h-11 cursor-pointer list-none [&::-webkit-details-marker]:hidden items-center justify-between md:min-h-0 md:cursor-default"
       >
-        <h2 className="text-sm font-bold text-on-chrome">{titre}</h2>
+        <h2 className="text-on-chrome titre-bloc">{titre}</h2>
         <span aria-hidden="true" className="text-lg leading-none text-on-chrome/80 transition-transform group-open:rotate-45 md:hidden">
           +
         </span>

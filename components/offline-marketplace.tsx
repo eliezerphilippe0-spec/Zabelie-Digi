@@ -25,7 +25,7 @@ export function OfflineMarketplace({ labels, locale }: { labels: MarketplaceCopy
   }, []);
   const matches = items.filter(p => p.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   return <section className="mt-8 text-left" aria-labelledby="offline-offers">
-    <h2 id="offline-offers" className="text-xl font-bold">{labels.offlineTitle}</h2>
+    <h2 id="offline-offers">{labels.offlineTitle}</h2>
     <p className="mt-3 text-sm text-mist">{labels.offlineHint}</p>
     {items.length > 0 && <label className="mt-4 block text-sm">{labels.search}<input type="search" value={query} onChange={e => setQuery(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3"/></label>}
     <ul className="mt-4 space-y-3">{matches.map(p => <li key={p.slug} className="rounded-xl border border-line p-4">

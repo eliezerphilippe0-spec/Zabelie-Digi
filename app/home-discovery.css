@@ -16,8 +16,10 @@
   text-transform: uppercase;
 }
 .home-kicker { margin-bottom: 18px; opacity: .8; }
-.home-headline { font-size: clamp(30px, 3.5vw, 46px); line-height: 1.1; letter-spacing: -.045em; text-wrap: balance; }
-.home-hero-copy > p:not(.home-kicker) { max-width: 42ch; line-height: 1.7; margin-top: 18px; }
+/* LA SEULE déclaration du titre et du sous-titre du hero (audit Phase 0 : cinq
+   de chaque, et c'est la cascade qui décidait). `tests/titres-role` la tient. */
+.home-headline { font-size: var(--text-display); line-height: var(--leading-display); letter-spacing: var(--tracking-titre); text-wrap: balance; }
+.home-hero-copy > p:not(.home-kicker) { font-size: var(--text-base); line-height: var(--leading-corps); max-width: 42ch; margin-top: 18px; }
 .home-hero-copy > a { margin-top: 24px; }
 .home-featured {
   position: relative;
@@ -47,7 +49,6 @@
 .home-category-links a { display: inline-flex; align-items: center; gap: 20px; flex-shrink: 0; min-height: 44px; padding: 0 16px; border: 1px solid var(--color-line); border-radius: 8px; font-size: 13px; background: var(--color-surface); }
 .home-category-links a > span { color: var(--color-accent); }
 .home-discovery [data-home-selection] { padding-top: 32px; }
-.home-discovery [data-home-selection] h2 { font-size: 28px; letter-spacing: -.035em; }
 .home-discovery [data-home-selection] > .grid { margin-top: 22px; }
 .home-discovery [data-home-selection] .group { transition: border-color var(--motion-base), transform var(--motion-base); }
 .home-discovery [data-home-selection] .group > div:last-child { padding: 16px; gap: 8px; }
@@ -61,7 +62,6 @@
 .home-discovery [data-home-selection][data-count="1"] .numeric { font-size: 24px; }
 .home-discovery [data-home-selection][data-count="1"] .home-card-cta { margin-top: 6px; max-width: 200px; border-top: 1px solid var(--color-line); }
 .home-receipt > div { margin-top: 16px; padding: 30px; }
-.home-receipt h2 { letter-spacing: -.025em; }
 .home-receipt ol { gap: 30px; }
 .home-receipt li h3 { margin-top: 12px; }
 .home-receipt li p { max-width: 36ch; line-height: 1.75; }
@@ -96,8 +96,8 @@
   .home-discovery > header .marketplace-header-row { row-gap: 4px; padding-block: 4px; }
   .home-discovery .home-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 24px; }
   .home-kicker { margin-bottom: 12px; }
-  .home-headline { font-size: 31px; max-width: 19ch; }
-  .home-hero-copy > p:not(.home-kicker) { font-size: 13px; line-height: 1.6; margin-top: 12px; }
+  .home-headline { max-width: 19ch; }
+  .home-hero-copy > p:not(.home-kicker) { margin-top: 12px; }
   .home-hero-copy > a { margin-top: 18px; }
   .home-featured { grid-template-columns: 90px minmax(0, 1fr); }
   .home-featured-media { aspect-ratio: auto; height: 100%; }
@@ -111,7 +111,6 @@
   .home-featured .home-photo-empty > span { font-size: 12px; text-align: center; padding: 0 5px; }
   .home-discovery-nav { display: block; }
   .home-category-links { margin-top: 12px; }
-  .home-discovery [data-home-selection] h2 { font-size: 24px; }
   .home-discovery [data-home-selection][data-count="1"] .group { grid-template-columns: 115px minmax(0, 1fr); }
   .home-discovery [data-home-selection][data-count="1"] .group > div:first-child { aspect-ratio: auto; min-height: 180px; }
   .home-discovery [data-home-selection][data-count="1"] .group > div:last-child { padding: 16px; }
@@ -136,6 +135,6 @@
 .home-hero:not(.launch-hero)[data-has-featured="false"] .home-headline { max-width: 25ch; }
 .home-hero:not(.launch-hero)[data-has-featured="false"] .home-hero-copy > p:not(.home-kicker) { max-width: 70ch; }
 @media (min-width: 1024px) {
-  .home-hero-copy > p:not(.home-kicker), .home-receipt li p { font-size: 16px; }
+  .home-receipt li p { font-size: 16px; }
   .home-category-links a, .home-card-cta { font-size: 14px; }
 }

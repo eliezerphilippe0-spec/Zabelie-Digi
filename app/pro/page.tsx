@@ -30,7 +30,7 @@ function Shell({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+        <h1>{title}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
         <div className="mt-8">{children}</div>
       </main>

@@ -40,7 +40,7 @@ function riche(texte: string): React.ReactNode[] {
 function Section({ titre, blocs, lang }: { titre: string; blocs: Bloc[]; lang: Parameters<typeof resoudre>[1] }) {
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-bold tracking-tight">{titre}</h2>
+      <h2>{titre}</h2>
       <div className="mt-3 space-y-3 text-base leading-relaxed text-mist">
         {blocs.map((bloc, i) =>
           "p" in bloc ? (
@@ -66,7 +66,7 @@ export default async function ConditionsPage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" data-policy-version={CONDITIONS_VERSION} className="mx-auto max-w-2xl px-5 py-16">
-        <h1 className="text-3xl font-black tracking-tight">{doc.titre}</h1>
+        <h1>{doc.titre}</h1>
         <p className="mt-2 text-sm text-mist">
           {doc.majLabel} : {LAST_UPDATE}
         </p>

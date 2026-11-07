@@ -66,7 +66,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
     </section> : <p className="text-sm text-mist">{labels.chatUnavailable}</p>}
 
     <section aria-labelledby="shopping-guided-title" className="rounded-2xl border border-line p-5">
-      <h2 id="shopping-guided-title" className="text-lg font-bold">{labels.guided}</h2>
+      <h2 id="shopping-guided-title">{labels.guided}</h2>
       <p className="mt-2 text-sm text-mist">{labels.guidedNote}</p>
       <form onSubmit={e => { e.preventDefault(); void request(); }} className="mt-5">
         <fieldset disabled={busy} className="grid gap-5 sm:grid-cols-2">
@@ -88,7 +88,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
     {error ? <p role="alert" className="text-danger-text">{error} <Link href="/catalogue" className="underline">{labels.catalog}</Link></p> : null}
     {result && question ? <p role="status">{labels[question]}</p> : null}
     {result && !question ? <section aria-labelledby="shopping-results-title" aria-live="polite">
-      <h2 id="shopping-results-title" className="text-xl font-bold">{labels.results}</h2>
+      <h2 id="shopping-results-title">{labels.results}</h2>
       {/* Ce que le serveur a COMPRIS de la localité : dit à l’acheteur, qui peut corriger. Non reconnue = le dire, ne pas classer en silence. */}
       {result.localite ? <p className="mt-3 text-sm font-semibold">{result.localite.zone ? labels.localite.replace("{zone}", result.localite.zone) : labels.localiteInconnue}</p> : null}
       {result.recommendations.length ? <>

@@ -154,7 +154,7 @@ export default async function AffiliationPage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="affiliation">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.nav.affiliation")}</h1>
+          <h1>{t(lang, "vendeur.nav.affiliation")}</h1>
           <AffiliationManager
             key={user.id}
             labels={labels}

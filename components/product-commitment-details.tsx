@@ -3,7 +3,7 @@ import type { MarketplaceCopy } from "@/lib/marketplace-copy";
 
 export function ProductCommitmentDetails({ value, labels, locale, href = "#contacter-vendeur" }: { value?: ProductCommitment; labels: MarketplaceCopy; locale: string; href?: string }) {
   return <section className="mt-4 rounded-xl border border-line p-4 text-sm">
-    <h2 className="font-semibold">{labels.delivery}</h2>
+    <h2 className="titre-bloc">{labels.delivery}</h2>
     {!value && <p className="mt-2 text-mist">{labels.missing}</p>}
     {value && <dl className="mt-3 space-y-2">
       {value.zones && <div><dt className="text-mist">{labels.zones}</dt><dd className="break-words">{value.zones}</dd></div>}

@@ -300,7 +300,7 @@ function ConnexionFormInner({
       </Link>
 
       <div className="glass rounded-3xl p-7">
-        <h1 className="mb-5 text-2xl font-bold">{mode === "legal" ? labels.legalTitle : mode === "signin" ? labels.tabSignin : labels.tabSignup}</h1>
+        <h1 className="mb-5">{mode === "legal" ? labels.legalTitle : mode === "signin" ? labels.tabSignin : labels.tabSignup}</h1>
         {mode !== "legal" && <div className="mb-6 flex rounded-xl border border-line p-1 text-sm">
           <button
             onClick={() => { setMode("signin"); setConditionsAccepted(false); setPrivacyRead(false); }}

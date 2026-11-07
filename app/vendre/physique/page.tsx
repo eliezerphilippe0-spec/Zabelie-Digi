@@ -35,7 +35,7 @@ export default async function VendrePhysiquePage() {
       <div className="bg-grain min-h-dvh">
         <SiteNav />
         <main id="main" className="mx-auto max-w-xl px-5 py-16">
-          <h1 className="text-3xl font-black tracking-tight">{t(lang, "sell.physical.title")}</h1>
+          <h1>{t(lang, "sell.physical.title")}</h1>
           <p className="mt-4 text-sm text-mist">{t(lang, "sell.demo.body")}</p>
         </main>
         <SiteFooter />
@@ -97,7 +97,7 @@ export default async function VendrePhysiquePage() {
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-xl px-5 py-16">
-        <h1 className="text-3xl font-black tracking-tight">{t(lang, "sell.physical.title")}</h1>
+        <h1>{t(lang, "sell.physical.title")}</h1>
         <p className="mt-2 text-sm text-cloud">
           {t(lang, "sell.physical.intro")}
         </p>
@@ -105,7 +105,7 @@ export default async function VendrePhysiquePage() {
           {t(lang, "sell.physical.digital")}
         </Link>
         <section aria-labelledby="preparer" className="mt-6 rounded-2xl border border-line bg-surface/40 p-5">
-          <h2 id="preparer" className="font-semibold">{t(lang, "sell.physical.prepare.title")}</h2>
+          <h2 id="preparer" className="titre-bloc">{t(lang, "sell.physical.prepare.title")}</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-mist">
             <li>{t(lang, "sell.physical.prepare.photo")}</li>
             <li>{t(lang, "sell.physical.prepare.details")}</li>

@@ -45,7 +45,7 @@ export default async function AidePage() {
           Lighthouse (`landmark-one-main`) — cette page était la seule surface
           d'atterrissage sans lui (mesuré en Phase 5, accueil premium). */}
       <main id="main" className="mx-auto max-w-2xl px-5 pb-16 pt-12">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        <h1>
           {t(lang, "aide.title")}
         </h1>
         <p className="mt-2 text-sm text-mist">{t(lang, "aide.sub")}</p>
@@ -78,7 +78,7 @@ export default async function AidePage() {
             2026-09-04 (accueil premium §4.6) : l'accueil n'en garde qu'un
             lien (`/aide#comment`), les étapes vivent ici, où l'on vient
             pour comprendre. Les pas vendeur sont sur /vendre#comment. */}
-        <h2 id="comment" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
+        <h2 id="comment" className="mt-12 scroll-mt-32">
           {t(lang, "home.how.buy")}
         </h2>
         <ol className="mt-4 grid gap-3">
@@ -97,7 +97,7 @@ export default async function AidePage() {
         </ol>
 
         <section aria-labelledby="probleme" className="mt-12">
-          <h2 id="probleme" className="scroll-mt-32 text-2xl font-bold tracking-tight">
+          <h2 id="probleme" className="scroll-mt-32">
             {t(lang, "aide.problem.title")}
           </h2>
           <ol className="mt-4 grid gap-3">
@@ -122,17 +122,17 @@ export default async function AidePage() {
         </section>
 
         <section className="mt-10 rounded-2xl border border-line bg-surface p-6">
-          <h2 className="text-xl font-bold">{t(lang, "guides.title")}</h2>
+          <h2>{t(lang, "guides.title")}</h2>
           <ul className="mt-3">{BUYING_GUIDES.map((guide) => <li key={guide.slug}><Link href={guideHref(lang, guide.slug)} className="inline-flex min-h-11 items-center text-base underline underline-offset-4">{t(lang, guide.title)}</Link></li>)}</ul>
         </section>
-        <h2 id="faq" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
+        <h2 id="faq" className="mt-12 scroll-mt-32">
           {t(lang, "sec.faq")}
         </h2>
         <div className="mt-6">
           <FaqList lang={lang} />
         </div>
 
-        <h2 className="mt-12 text-2xl font-bold tracking-tight">
+        <h2 className="mt-12">
           {t(lang, "aide.legal")}
         </h2>
         <div className="mt-4 flex flex-col gap-2 text-sm">

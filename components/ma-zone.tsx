@@ -75,7 +75,7 @@ export function MaZone({ zones, courante, hrefCatalogue, labels }: {
 
   return (
     <section aria-label={labels.titre} className="rounded-2xl border border-line bg-surface/60 p-4">
-      <h2 className="text-sm font-semibold">{labels.titre}</h2>
+      <h2 className="titre-bloc">{labels.titre}</h2>
       {courante ? (
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <p className="text-sm font-semibold text-accent">{labels.actuelle.replace("{zone}", courante.label)}</p>

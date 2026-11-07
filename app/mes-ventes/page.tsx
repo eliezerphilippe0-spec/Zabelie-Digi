@@ -73,7 +73,7 @@ function Shell({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t(lang, "sales.title")}</h1>
+        <h1>{t(lang, "sales.title")}</h1>
         <p className="mt-2 text-sm text-mist">{t(lang, "sales.subtitle")}</p>
         {children}
       </main>
@@ -219,7 +219,7 @@ export default async function MesVentesPage() {
       />
       {delai && (
         <section aria-labelledby="delai-constate" className="mt-4 rounded-xl border border-line bg-ink/40 p-4">
-          <h2 id="delai-constate" className="text-sm font-semibold">{t(lang, "sales.measured.title")}</h2>
+          <h2 id="delai-constate" className="titre-bloc">{t(lang, "sales.measured.title")}</h2>
           <p className="mt-1 text-sm text-mist">
             {delaiTexte !== null
               ? t(lang, "sales.measured.shown", { delay: delaiTexte, n: String(delai.nb) })
@@ -234,7 +234,7 @@ export default async function MesVentesPage() {
           {groupes.map((g, i) => (
             <section key={g.cle} aria-labelledby={afficherTitres ? `zone-groupe-${i}` : undefined}>
               {afficherTitres && (
-                <h2 id={`zone-groupe-${i}`} className="mb-2 text-sm font-semibold">
+                <h2 id={`zone-groupe-${i}`} className="mb-2 titre-bloc">
                   {g.libelle ?? t(lang, "sales.zone.group.none")}{" "}
                   <span className="ml-2 font-normal text-mist">
                     {tn(lang, g.items.length, "sales.zone.group.count.one", "sales.zone.group.count", { n: String(g.items.length) })}

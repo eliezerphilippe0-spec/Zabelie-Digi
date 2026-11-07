@@ -143,7 +143,7 @@ export default async function PanierPage() {
           {groupes.map((g) => (
             <section key={g.cle} className="mt-6">
               {montrerEntetes && (
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-mist">
+                <h2 className="mb-2 text-mist titre-bloc">
                   {t(lang, g.cle)}
                 </h2>
               )}
@@ -264,7 +264,7 @@ function Coquille({ titre, children }: { titre: string; children: React.ReactNod
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{titre}</h1>
+        <h1>{titre}</h1>
         {children}
       </main>
       <SiteFooter />

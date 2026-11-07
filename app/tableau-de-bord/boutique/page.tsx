@@ -153,7 +153,7 @@ export default async function BoutiquePage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="boutique">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "shop.manage")}</h1>
+          <h1>{t(lang, "shop.manage")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.boutique.intro")}</p>
 
           <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">

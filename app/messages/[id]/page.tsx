@@ -81,7 +81,7 @@ export default async function FilPage({
           ← {t(lang, "msg.back")}
         </Link>
 
-        <h1 className="mt-3 text-2xl font-bold tracking-tight">
+        <h1 className="mt-3">
           {prod?.title ?? ""}
         </h1>
         <p className="mt-1 text-sm text-mist">

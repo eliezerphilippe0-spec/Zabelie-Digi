@@ -71,7 +71,7 @@ export async function BoutiqueVue({
             </span>
           )}
           <div className="min-w-0">
-            <h1 id="boutique-title" className="break-words text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <h1 id="boutique-title" className="break-words">
               {creator.displayName}
             </h1>
             <p className="mt-1 text-sm text-mist">
@@ -143,7 +143,7 @@ export async function BoutiqueVue({
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16" aria-labelledby="boutique-offers">
-        <h2 id="boutique-offers" className="mb-4 border-t border-line pt-6 text-lg font-semibold">{t(lang, "creator.offers")}</h2>
+        <h2 id="boutique-offers" className="mb-4 border-t border-line pt-6">{t(lang, "creator.offers")}</h2>
         {creator.products.length === 0 ? (
           <p className="text-sm text-mist">{t(lang, "creator.empty")}</p>
         ) : (

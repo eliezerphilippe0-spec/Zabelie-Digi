@@ -29,7 +29,6 @@
 
 /* ── Bannière de lancement : deux colonnes, la vitrine à droite ── */
 .home-discovery.editorial-page .home-hero.launch-hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 48px; }
-.home-hero.launch-hero .home-headline { font-size: clamp(36px, 4vw, 56px); }
 .launch-hero .home-kicker { display: flex; align-items: center; gap: 10px; }
 .launch-hero .home-kicker::before { content: ""; flex-shrink: 0; width: 28px; height: 8px; background: var(--taptap) left center / 16px 8px repeat-x; }
 
