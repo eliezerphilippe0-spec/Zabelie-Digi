@@ -124,6 +124,25 @@
   --color-illus-2: #e7e6f0;
   --color-illus-3: #efe3e4;
 
+  /* DÉCORS (V-22, V-23) : des couleurs d'IMAGE. Elles ne basculent pas avec le
+     thème, et le bloc sombre ne les redéfinit pas : une illustration ne change
+     pas de teinte selon l'heure. Les bandes tap-tap en `data:image/svg+xml`
+     (home-vivant.css, etal.css) gardent leurs valeurs écrites : une URL de
+     données ne lit pas une variable (V-25 A9). */
+  --color-decor-papier: #faf8f5;
+  --color-decor-creme: #fffdf9;
+  --color-decor-sable: #f2eee7;
+  --color-decor-dune: #e9e1d6;
+  --color-decor-filet: #e8e3dc;
+  --color-decor-lavande: #e7e6f0;
+  --color-decor-peche: #f6c9a6;
+  --color-decor-orange: #e0580f;
+  --color-decor-orange-texte: #b8500c;
+  --color-decor-orange-vif: #f26a21;
+  --color-decor-mist: #5c5a57;
+  --color-decor-brume: #c9c4dc;
+  --color-decor-brume-chaude: #e3d2cc;
+
   --color-success: #3f7d24;
   --color-success-text: #2f6317;
   --color-warning: #7d5a10;
@@ -195,6 +214,7 @@
   --leading-corps: 1.55;
   --tracking-titre: -0.02em;
 
+  --radius-lg: 0.5rem;
   --radius-xl: 1.25rem;
   /* Cartes produit : 12 px (brief accueil premium §4.4), un cran PROPRE de
      l'échelle ci-dessous — `rounded-card` — et non un rayon arbitraire, que
