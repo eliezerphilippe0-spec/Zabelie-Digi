@@ -459,6 +459,9 @@ export default async function CataloguePage({
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16">
+        {/* Titre de la grille, lu et non affiché (chantier design, Phase 5) : sans
+            lui, le h1 « Katalòg » menait droit aux h3 des cartes (heading-order). */}
+        <h2 className="sr-only">{t(lang, "catalog.results.heading")}</h2>
         {approchants.length > 0 ? (
           /* Couche 2 : la similarité a rattrapé (accents, frappe). On le DIT —
              présenter un approchant comme un résultat exact fait douter de tout

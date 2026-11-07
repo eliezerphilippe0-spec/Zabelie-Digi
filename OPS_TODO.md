@@ -4,7 +4,8 @@
 
 Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
 `docs/design/PHASE-2.md`. Phase 3 : `docs/design/PHASE-3.md`. Phase 4 :
-`docs/design/PHASE-4.md`. Décisions prises : V-25 à V-28
+`docs/design/PHASE-4.md`. Phase 5 et bilan : `docs/design/RAPPORT-FINAL.md` ;
+référence durable : `docs/design/DESIGN-SYSTEM.md`. Décisions prises : V-25 à V-28
 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
 Une phase ne démarre qu'après la validation de la précédente.
 
@@ -28,7 +29,9 @@ Une phase ne démarre qu'après la validation de la précédente.
    d'y toucher. Dire si l'on retire ces deux classes. Même raison en Phase 2 :
    leurs boutons gardent leur écriture à la main, et « Mande yon retrè » reste
    à 38 px. La Phase 4 n'y a pas touché non plus (V-28) : il faut une réponse
-   explicite avant toute retouche de présentation de ces fichiers.
+   explicite avant toute retouche de présentation de ces fichiers. Phase 5 :
+   la mention légale de la recharge (`app/rechaj/page.tsx`) rend 4,0:1 en
+   clair ; c'est la seule exception nommée du script de contraste.
 6. ⏳ **TBT de la connexion**, mesuré en Phase 2 : 64 → environ 130 ms, sans
    code ajouté (le build a changé l'ordre d'exécution de deux fichiers). À
    suivre en Phase 5.
@@ -51,6 +54,13 @@ Une phase ne démarre qu'après la validation de la précédente.
 12. ✅ **« Èd sou WhatsApp »** dans la barre de confiance de l'accueil : reste
     un texte ; le menu du compte est le seul accès à WhatsApp. Tranché le
     2026-11-07 (V-28).
+13. ⏳ **« pwodui » ou « pwodwi »**, Phase 5 : les deux graphies coexistent en
+    kreyòl (70 et 58 occurrences). Choisir, puis une seule passe sur `lib/i18n.ts`.
+14. ⏳ **Formulaire vendeur physique** (`components/physical-product-form.tsx`) :
+    une trentaine de textes en dur, français et kreyòl mêlés, contre la règle
+    kreyòl d'abord. Lot dédié, avec relecture native.
+15. ⏳ **Libellés de rayons non traduits** : ils viennent de
+    `zabelie_categories`, donc d'une écriture en base de production.
 
 ## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 

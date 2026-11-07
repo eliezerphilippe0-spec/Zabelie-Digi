@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { surCheminArgent } from "./helpers/chemin-argent";
 
 /**
  * LE QC CONTRASTE EST LUI-MÊME SOUS CONTRÔLE.
@@ -20,6 +21,7 @@ import { execFileSync } from "node:child_process";
  * fichiers, qui a déjà coûté une série d'éditions à ce dépôt.
  */
 
+type Palettes = { sombre: Record<string, string> | null; clair: Record<string, string> | null };
 type Instrument = {
   lireTokens: (css: string) => Record<string, string>;
   lirePalettes: (css: string) => {
@@ -28,7 +30,9 @@ type Instrument = {
   };
   ratio: (a: string, b: string) => number;
   paires: (T: Record<string, string>) => [string, string, string, number][];
-  opacitesInterdites: (racines?: string[], lecteur?: (p: string, e: string) => string) => string[];
+  opacitesInterdites: (racines?: string[], lecteur?: (p: string, e: string) => string, palettes?: Palettes) => string[] & { tolerees: string[] };
+  pireRatio: (couleur: string, pct: number, palettes: Palettes) => number;
+  OPACITES_TOLEREES: Record<string, string>;
   sansCommentaires: (src: string) => string;
 };
 // Import DANS les tests (pas au niveau module) : la chaîne de test transpile
@@ -77,25 +81,39 @@ test("connu-positif : un token assombri fait échouer sa paire", async () => {
   }
 });
 
-test("connu-positif : la police d'opacité voit text-mist/50, et ignore commentaires et /80", async () => {
-  const { opacitesInterdites } = await charge();
+test("connu-positif : la police d'opacité compose chaque opacité sur ses fonds, dans les deux palettes", async () => {
+  const { opacitesInterdites, pireRatio, lirePalettes } = await charge();
+  const P = lirePalettes(readFileSync("app/zabelie-theme.css", "utf8"));
   const faux = (contenu: string) =>
-    opacitesInterdites(["app"], (p: string) =>
-      p.endsWith(".tsx") ? contenu : ""
-    );
+    opacitesInterdites(["app"], (p: string) => (p.endsWith(".tsx") ? contenu : ""), P);
   // Un vrai site fautif → détecté. (Le lecteur factice sert le même contenu
   // pour chaque .tsx : au moins une faute doit remonter.)
-  assert.ok(
-    faux('<p className="text-mist/50">x</p>').length > 0,
-    "text-mist/50 non détecté — la police est aveugle"
-  );
+  assert.ok(faux('<p className="text-mist/50">x</p>').length > 0, "text-mist/50 non détecté — la police est aveugle");
   // La même chaîne DANS UN COMMENTAIRE → ignorée (le commentaire historique
   // de app/page.tsx cite text-mist/60 en prose, il ne doit pas compter).
-  assert.equal(faux('{/* text-mist/50 dans la prose */}').length, 0);
-  // /80 passe : 5,41:1 mesuré sur le fond le plus sombre.
-  assert.equal(faux('<p className="text-mist/80">x</p>').length, 0);
-  // cloud est couvert aussi.
-  assert.ok(faux('<p className="text-cloud/60">x</p>').length > 0);
+  assert.equal(faux("{/* text-mist/50 dans la prose */}").length, 0);
+  // /80 ÉCHOUE. L'ancienne fixture disait « /80 passe : 5,41:1 mesuré sur le
+  // fond le plus sombre » : elle encodait le défaut. Sur la surface crème du
+  // thème clair, défaut depuis le 2026-09-04, /80 rend 4,04:1 ; axe a mesuré
+  // 4,14:1 sur une carte translucide de /tableau-de-bord/boutique (2026-11-07).
+  assert.ok(faux('<p className="text-mist/80">x</p>').length > 0, "text-mist/80 non détecté en thème clair");
+  assert.ok(pireRatio("mist", 80, P) < 4.5);
+  // Le pire cas vient de la palette CLAIRE : sans elle, /80 passerait — c'est
+  // exactement ce que l'ancien seuil avait mesuré.
+  assert.ok(pireRatio("mist", 80, { clair: null, sombre: P.sombre }) >= 4.5, "le sombre seul devrait laisser passer /80");
+  // Connu-négatif : une opacité qui tient sur tous les fonds passe.
+  assert.equal(faux('<p className="text-mist/95">x</p>').length, 0);
+  // cloud et on-chrome sont couverts aussi.
+  assert.ok(faux('<p className="text-cloud/50">x</p>').length > 0);
+  assert.ok(faux('<p className="text-on-chrome/40">x</p>').length > 0);
+});
+
+test("les opacités tolérées sont toutes sur le chemin de l'argent, et chacune a sa raison", async () => {
+  const { OPACITES_TOLEREES } = await charge();
+  for (const [fichier, raison] of Object.entries(OPACITES_TOLEREES)) {
+    assert.ok(surCheminArgent(fichier), `${fichier} n'est pas sur le chemin de l'argent : corrigez la couleur au lieu de l'exempter`);
+    assert.ok(raison.length > 40, `${fichier} : raison absente`);
+  }
 });
 
 test("le décapant de commentaires ne mange pas le code entre deux blocs", async () => {

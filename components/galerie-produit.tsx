@@ -47,10 +47,15 @@ export function GalerieProduit({
   return (
     <div className="space-y-3">
       {actif.type === "img" ? (
+        /* L'image LCP d'une fiche avec photo (chantier design, Phase 5) :
+           demandée en priorité, dimensions explicites (le cadre 4:3 reste en CSS). */
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={actif.url}
           alt={alt}
+          width={800}
+          height={600}
+          fetchPriority="high"
           decoding="async"
           className="aspect-[4/3] w-full rounded-xl border border-line object-cover"
         />

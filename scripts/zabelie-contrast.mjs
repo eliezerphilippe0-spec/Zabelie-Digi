@@ -13,12 +13,14 @@
  *      une table recopiée finit toujours par diverger, c'est mesuré ;
  *   2. la sortie est ≠ 0 dès qu'une paire échoue, et la CI l'appelle —
  *      un contrôle qui ne bloque rien est un vœu ;
- *   3. une POLICE D'OPACITÉ : `text-mist/NN` et `text-cloud/NN` sous /80
- *      sont interdits dans app/ et components/ (commentaires exclus).
- *      C'est la forme exacte du défaut UI-01 — 2,82:1 sur les seize rangées
- *      de la colonne des rayons — que l'ancienne version, qui ne testait que
- *      des paires nommées, ne pouvait pas voir. Seuils : /80 = 5,41:1 sur le
- *      fond le plus sombre, mesuré ; en-dessous, ça descend sous 4,5.
+ *   3. une POLICE D'OPACITÉ : chaque `text-mist/NN`, `text-cloud/NN` et
+ *      `text-on-chrome/NN` de app/ et components/ (commentaires exclus) est
+ *      composé sur ses fonds, dans les deux palettes ; sous 4,5:1 au pire,
+ *      c'est un échec. C'est la forme exacte du défaut UI-01 — 2,82:1 sur les
+ *      seize rangées de la colonne des rayons — que l'ancienne version, qui ne
+ *      testait que des paires nommées, ne pouvait pas voir. Le seuil fixe
+ *      « sous /80 » qui l'a précédée datait d'avant le thème clair : voir
+ *      `FONDS_DU_TEXTE` plus bas.
  *
  * Éprouvé (règle du dépôt : connu-positif ET connu-négatif avant confiance) :
  * voir `tests/contraste-instrument.test.ts` — le test injecte un token
@@ -136,29 +138,77 @@ export function lirePalettes(css) {
 // ─── Police d'opacité — la classe du défaut UI-01 ────────────────────────────
 
 const RACINES = ["app", "components"];
-const MOTIF_OPACITE = /text-(?:mist|cloud)\/([0-9]{1,2})\b/g;
+const MOTIF_OPACITE = /text-(mist|cloud|on-chrome)\/([0-9]{1,2})\b/g;
+
+/**
+ * Les fonds sur lesquels chaque couleur de texte translucide se pose. Le PIRE
+ * ratio, sur toutes ces surfaces et dans les DEUX palettes, décide.
+ *
+ * ⚠️ Remplace le seuil écrit à la main (« sous /80 interdit », 2026-08) : /80
+ * avait été mesuré à 5,41:1 sur le fond le plus SOMBRE, avant que le clair ne
+ * devienne le thème par défaut (2026-09-04). Pour un texte foncé, le pire cas
+ * est le fond le plus CLAIR : `text-mist/80` sur la surface crème rend 4,14:1,
+ * mesuré par axe le 2026-11-07 (chantier design, Phase 5). Le seuil se calcule
+ * désormais à partir des palettes : il suit le thème au lieu de dater.
+ */
+const FONDS_DU_TEXTE = {
+  mist: ["bg-1", "bg-3", "surface", "surface-neutral", "surface-maroon", "surface-brown"],
+  cloud: ["bg-1", "bg-3", "surface", "surface-neutral", "surface-maroon", "surface-brown"],
+  "on-chrome": ["chrome", "chrome-2", "chrome-3"],
+};
+
+/**
+ * Exceptions NOMMÉES, chacune avec sa raison. Une exception devenue inutile
+ * fait échouer le script : la liste ne peut que se vider.
+ */
+export const OPACITES_TOLEREES = {
+  "app/rechaj/page.tsx":
+    "chemin de l'argent (tests/helpers/chemin-argent.ts) : la mention légale en text-mist/80 rend 4,0:1 au pire en clair, mais ce fichier ne se retouche pas sans l'accord du porteur (OPS_TODO, point 5)",
+};
+
+/** Le pire ratio d'une couleur de texte posée à `pct` % sur ses fonds, dans les deux palettes. */
+export function pireRatio(couleur, pct, palettes) {
+  let pire = Infinity;
+  for (const T of [palettes.clair, palettes.sombre]) {
+    if (!T || !T[couleur]) continue;
+    for (const f of FONDS_DU_TEXTE[couleur]) {
+      if (T[f]) pire = Math.min(pire, ratio(mix(T[couleur], T[f], pct / 100), T[f]));
+    }
+  }
+  return pire;
+}
 
 /** Retire les commentaires JSX/TS — le motif y apparaît légitimement en prose. */
 export function sansCommentaires(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 }
 
-export function opacitesInterdites(racines = RACINES, lecteur = readFileSync) {
+/**
+ * Chaque `text-{mist,cloud,on-chrome}/NN` du code, au pire ratio sur ses fonds :
+ * sous 4,5:1, c'est une faute. Rend `{ fautes, tolerees }` ; `tolerees` liste les
+ * exceptions nommées effectivement rencontrées.
+ */
+export function opacitesInterdites(racines = RACINES, lecteur = readFileSync, palettes = lirePalettes(readFileSync("app/zabelie-theme.css", "utf8"))) {
   const fautes = [];
+  const tolerees = new Set();
   const parcourir = (d) => {
     for (const n of readdirSync(d)) {
       const p = join(d, n);
       if (statSync(p).isDirectory()) parcourir(p);
       else if (/\.tsx?$/.test(p)) {
         const src = sansCommentaires(String(lecteur(p, "utf8")));
+        const chemin = p.replace(/\\/g, "/");
         for (const m of src.matchAll(MOTIF_OPACITE)) {
-          if (Number(m[1]) < 80) fautes.push(`${p} : ${m[0]}`);
+          const r = pireRatio(m[1], Number(m[2]), palettes);
+          if (r >= 4.5) continue;
+          if (chemin in OPACITES_TOLEREES) tolerees.add(chemin);
+          else fautes.push(`${chemin} : ${m[0]} (${r.toFixed(2)}:1 au pire)`);
         }
       }
     }
   };
   for (const r of racines) parcourir(r);
-  return fautes;
+  return Object.assign(fautes, { tolerees: [...tolerees] });
 }
 
 // ─── Exécution ───────────────────────────────────────────────────────────────
@@ -189,7 +239,15 @@ if (enTantQueScript) {
   const fautes = opacitesInterdites();
   for (const f of fautes) {
     echecs++;
-    console.log(`❌ opacité de texte interdite (< /80) — ${f}`);
+    console.log(`❌ opacité de texte sous 4,5:1 — ${f}`);
+  }
+  for (const [fichier, raison] of Object.entries(OPACITES_TOLEREES)) {
+    if (fautes.tolerees.includes(fichier)) {
+      console.log(`⚠️ exception nommée — ${fichier} : ${raison}`);
+    } else {
+      echecs++;
+      console.log(`❌ exception périmée, à retirer d'OPACITES_TOLEREES — ${fichier}`);
+    }
   }
 
   console.log(
