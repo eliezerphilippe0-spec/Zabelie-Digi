@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { formatHTG } from "@/lib/sample-data";
 import type { ProductView } from "@/lib/products";
 import { pickByKind } from "@/lib/product-kind";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
 import { estSingulier, type Lang } from "@/lib/i18n";
 import { titreCarte } from "@/lib/home-sections";
 import { CardImage } from "@/components/card-image";
+import { Prix } from "@/components/prix";
 
 export type ProductCardLabels = {
   kindFile: string;
@@ -111,10 +111,9 @@ export function ProductCard({
         {boutique && kindLabel && <span className="text-xs text-mist">{kindLabel}</span>}
         <h3 className={`line-clamp-2 break-words leading-snug text-cloud ${boutique ? "text-base font-semibold" : "text-sm font-normal"}`}>{titre}</h3>
         {boutique && product.blurb && <p className="line-clamp-2 break-words text-sm leading-relaxed text-mist">{product.blurb}</p>}
-        {/* Prix en PLEIN, Manrope 700 (`.numeric`, globals.css), orange de
-            texte AA (`--color-accent`), même taille que le nom : le seul
-            chiffre qui décide de l'achat ne se lit jamais en petit gris. */}
-        <span className={`numeric font-bold text-accent ${boutique ? "text-base" : "text-sm"}`}>{formatHTG(product.priceHTG)}</span>
+        {/* Prix en PLEIN : le seul chiffre qui décide de l'achat ne se lit
+            jamais en petit gris (`components/prix.tsx`). */}
+        <Prix montant={product.priceHTG} className="text-base" />
         {boutique && (product.ratingAvg !== null || product.sales > 0) && <span className="text-sm text-mist">
           {product.ratingAvg !== null ? `★ ${product.ratingAvg} (${product.ratingCount})` : `${product.sales} ${estSingulier(labels.lang, product.sales) ? labels.salesOne : labels.sales}`}
         </span>}

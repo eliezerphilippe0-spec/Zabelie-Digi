@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { CardImage } from "@/components/card-image";
 import { coverUrlAt, COVER_WIDTHS } from "@/lib/product-image";
-import { formatHTG } from "@/lib/sample-data";
 import { titreCarte } from "@/lib/home-sections";
 import type { ProductView } from "@/lib/products";
+import { Prix } from "@/components/prix";
 
 /** Une offre publiée, sans recommandation personnalisée ni preuve inventée. */
 export function HomeFeatured({ product, label, cta, missing, fallback, discovery = false }: {
@@ -25,7 +25,7 @@ export function HomeFeatured({ product, label, cta, missing, fallback, discovery
         <span className="home-eyebrow">{label}</span>
         <span className="home-featured-title">{title}</span>
         <span className="home-featured-seller">{product.creator}</span>
-        <div className="home-featured-bottom"><span className="numeric">{formatHTG(product.priceHTG)}</span><span aria-label={cta} className="home-arrow">↗</span></div>
+        <div className="home-featured-bottom"><Prix montant={product.priceHTG} /><span aria-label={cta} className="home-arrow">↗</span></div>
       </div>
     </Link>
   );

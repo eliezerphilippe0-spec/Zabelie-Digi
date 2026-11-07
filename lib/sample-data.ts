@@ -96,8 +96,13 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
+/** Le nombre seul, pour le composant `Prix` : `formatHTG` en reste la seule source. */
+export function formatNombreHTG(amount: number): string {
+  return new Intl.NumberFormat("fr-HT").format(amount);
+}
+
 export function formatHTG(amount: number): string {
-  return new Intl.NumberFormat("fr-HT").format(amount) + " HTG";
+  return formatNombreHTG(amount) + " HTG";
 }
 
 export function getProduct(slug: string): Product | undefined {

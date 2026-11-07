@@ -16,6 +16,7 @@ import { isStripeEnabled } from "@/lib/stripe";
 import { isKobaraEnabled } from "@/lib/kobara";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
+import { Prix } from "@/components/prix";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
@@ -180,9 +181,7 @@ export default async function PanierPage() {
                         </p>
                       )}
                     </div>
-                    <span className="numeric shrink-0 font-bold text-cloud">
-                      {formatHTG(l.product!.price_htg)}
-                    </span>
+                    <Prix montant={l.product!.price_htg} className="shrink-0" />
                     <Link href={`/produit/${l.product!.slug}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
                     {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
                     <RemoveFromCart
@@ -196,9 +195,7 @@ export default async function PanierPage() {
           ))}
           <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
-            <span className="numeric text-xl font-extrabold text-cloud">
-              {formatHTG(total)}
-            </span>
+            <Prix montant={total} className="text-xl" />
           </div>
           {payerTout ? (
             <>

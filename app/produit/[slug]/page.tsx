@@ -65,6 +65,7 @@ import {
   pickByKind,
 } from "@/lib/product-kind";
 import { jsonLdProduit } from "@/lib/jsonld-produit";
+import { Prix } from "@/components/prix";
 
 export const dynamic = "force-dynamic";
 
@@ -577,14 +578,14 @@ export default async function ProductPage({
             )}
             {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
                 l'achat ne se rend pas en dégradé transparent. */}
-            <p className="numeric text-3xl font-extrabold text-cloud">
+            <p className="numeric text-3xl">
               {physical && physical.variants.length > 1 && !flash ? <span className="mr-2 text-sm font-normal">{t(lang, "product.price.from")}{" "}</span> : null}
               {/* L'équivalent ≈USD porte sur le prix RÉELLEMENT affiché et
                   débité (le prix flash s'il y en a un), pas sur le prix plein :
                   afficher un HTG remisé à côté d'un ≈USD au tarif fort est une
                   contradiction qui se lit comme une arnaque (audit REA
                   2026-10-26, #6). Le bouton MonCash prend déjà le prix flash. */}
-              {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
+              <Prix montant={flash ? flash.prixFlashHtg : product.priceHTG} />
               {usdHint(flash ? flash.prixFlashHtg : product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">
                   ≈ {usdHint(flash ? flash.prixFlashHtg : product.priceHTG)}

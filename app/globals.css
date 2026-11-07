@@ -186,6 +186,20 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
+  /* PRIX (`components/prix.tsx`, brief Phase 1.3) : Manrope 800, orange de texte,
+     devise plus légère. `max()` : sur un prix en 14 px, la devise ne descend pas
+     sous les 12 px du plus petit cran. */
+  .prix {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    white-space: nowrap;
+  }
+  .prix-devise {
+    font-size: max(var(--text-xs), 0.75em);
+    font-weight: 600;
+  }
   /* TITRE DE SECTION — un seul style pour chaque `h2` qui ouvre une carte de
      section (audit typographique du 2026-09-26, UI-02). Mesuré avant : dix
      `h2` du tableau de bord en QUATRE styles (14 à 20 px, 600 ou 700), dont
