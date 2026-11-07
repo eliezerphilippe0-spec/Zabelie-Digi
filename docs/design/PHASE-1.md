@@ -73,11 +73,11 @@ Essai de la police d'accent, posé dans la page le temps de la capture et absent
 
 ## Ce qui a été fait
 
-**Échelle de texte** (`app/zabelie-theme.css:191-218`). `--text-xs` à `--text-xl` fixes, `--text-2xl` à `--text-4xl` et `--text-display` fluides entre 360 et 1 024 px, en `rem`. Interlignes 1,15, 1,25 et 1,55, interlettrage −0,02em.
+**Échelle de texte** (`app/zabelie-theme.css:192-217`). `--text-xs` à `--text-xl` fixes, `--text-2xl` à `--text-4xl` et `--text-display` fluides entre 360 et 1 024 px, en `rem`. Interlignes 1,15, 1,25 et 1,55, interlettrage −0,02em.
 
 **Police d'accent** (`app/layout.tsx:77`, `app/zabelie-theme.css:182`, `.mot-accent` en `app/globals.css:230`). Instrument Serif Italic, 11 412 octets, reproductible par `scripts/decouper-police-accent.sh`, licence OFL à côté du fichier. Sur le rendu : sans mot d'accent, le navigateur ne la télécharge pas. Avec, les 6 essais dans les 4 langues sont dessinés par elle. Le basculement décale le mot de 4 px au plus et ne change pas la hauteur du titre, grâce au repli ajusté (`size-adjust` 88,77 %).
 
-**Titres** (`app/globals.css:40,45`). 157 classes de taille ou de graisse retirées dans 71 fichiers. Le titre et le sous-titre du hero n'ont plus qu'une déclaration, `app/home-discovery.css:22-23`, contre cinq chacun.
+**Titres** (`app/globals.css:40,45`). 52 `h1` et 105 `h2` perdent leur taille et leur graisse locales, dans 71 fichiers. Le titre et le sous-titre du hero n'ont plus qu'une déclaration, `app/home-discovery.css:22-23`, contre cinq chacun.
 
 **Prix** (`components/prix.tsx:17`, `.prix` en `app/globals.css:192`). Manrope 800, chiffres tabulaires, `--color-accent`, devise allégée qui ne descend pas sous 12 px. Posé sur la carte, la carte vedette, la vente flash, l'offre, le panier et la fiche. Le texte lu reste celui de `formatHTG` au caractère près.
 
