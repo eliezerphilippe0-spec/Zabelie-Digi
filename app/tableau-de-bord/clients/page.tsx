@@ -11,6 +11,7 @@ import { lireSignaux } from "@/lib/vendeur-signaux";
 import { formatHTG } from "@/lib/sample-data";
 import { getLang } from "@/lib/i18n-server";
 import { t, tn } from "@/lib/i18n";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes clients — Zabelie", robots: { index: false, follow: false } };
@@ -78,7 +79,7 @@ export default async function ClientsPage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.clients.intro")}</p>
 
           {!resume ? (
-            <p role="alert" className="mt-6 text-sm text-danger-text">{t(lang, "vendeur.indisponible")}</p>
+            <MessageErreur className="mt-6">{t(lang, "vendeur.indisponible")}</MessageErreur>
           ) : resume.clientsTotal === 0 ? (
             <div className="mt-6 rounded-xl border border-line bg-surface p-5">
               <p className="text-sm leading-relaxed text-mist">{t(lang, "vendeur.clients.vide")}</p>

@@ -142,7 +142,7 @@ export function AuthoringEditor({
   const incertain = useRef<EnvoiSuivi | null>(null);
   const stock = useRef<Stockage | null>(null);
 
-  const champ = "mt-1 w-full rounded-xl border border-line bg-surface p-3 text-sm";
+  const champ = "champ mt-1";
 
   // ── Montage : stockage disponible ? un brouillon local à proposer ? ───────
   // `localStorage` n'existe qu'au client : le lire pendant le rendu ferait

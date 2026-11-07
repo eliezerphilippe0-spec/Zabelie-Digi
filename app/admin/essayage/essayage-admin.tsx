@@ -62,7 +62,7 @@ export function EssayageAdmin({
     void envoyer({ action: "retirer", vendeur: id }, `${nom} est retiré du pilote.`);
   }
 
-  const champ = "mt-1 min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm";
+  const champ = "champ mt-1";
   const bouton = "bouton bouton-compact";
 
   return (

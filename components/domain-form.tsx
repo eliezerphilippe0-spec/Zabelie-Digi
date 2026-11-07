@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { enregistrementsDns } from "@/lib/domaines";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type DomaineAffiche = { domaine: string; statut: "en_attente" | "actif" | "refuse"; note: string | null } | null;
 type Labels = Record<
@@ -39,7 +40,7 @@ export function DomainForm({ initial, labels }: { initial: DomaineAffiche; label
         <label className="flex flex-col gap-1 text-sm">
           {labels.label}
           <input value={saisie} onChange={(e) => setSaisie(e.target.value)} placeholder="boutik-mari.com" inputMode="url"
-            autoComplete="off" spellCheck={false} maxLength={253} className="min-h-11 rounded-xl border border-line bg-ink px-3 font-mono text-base" />
+            autoComplete="off" spellCheck={false} maxLength={253} className="champ font-mono" />
         </label>
         <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={envoi} className="bouton bouton-primaire bouton-compact">
@@ -50,7 +51,7 @@ export function DomainForm({ initial, labels }: { initial: DomaineAffiche; label
               className="bouton bouton-secondaire bouton-compact">{labels.remove}</button>
           )}
         </div>
-        {erreur && <p role="alert" className="text-sm text-danger-text">{erreur}</p>}
+        {erreur && <MessageErreur>{erreur}</MessageErreur>}
       </form>
 
       {actuel && (

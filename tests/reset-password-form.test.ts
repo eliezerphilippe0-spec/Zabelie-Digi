@@ -177,8 +177,14 @@ function reset(options: {
     unmount() { for (const cleanup of cleanups.splice(0)) cleanup(); },
     async submit(password = "Synthetic-password-123!") {
       let tree = render();
-      const passwordInput = find(tree, node => node.type === "input" && node.props.placeholder === labels.passwordPh);
-      const confirmInput = find(tree, node => node.type === "input" && node.props.placeholder === labels.confirmPh);
+      // Chaque champ se trouve par son LIBELLÉ VISIBLE (chantier design, Phase 2.2) :
+      // le texte indicatif, qui répétait ce libellé, a été retiré.
+      const parLibelle = (libelle: string) => {
+        const etiquette = find(tree, node => node.type === "label" && text(node).trim() === libelle);
+        return etiquette && find(etiquette, node => node.type === "input" && node.props.type === "password");
+      };
+      const passwordInput = parLibelle(labels.passwordPh);
+      const confirmInput = parLibelle(labels.confirmPh);
       assert.ok(passwordInput && confirmInput, "a verified recovery must expose the two password fields");
       (passwordInput.props.onChange as (event: unknown) => void)({ target: { value: password } });
       (confirmInput.props.onChange as (event: unknown) => void)({ target: { value: password } });

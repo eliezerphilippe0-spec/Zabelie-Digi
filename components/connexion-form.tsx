@@ -338,7 +338,7 @@ function ConnexionFormInner({
                 autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+                className="champ"
               />
             </div>
           )}
@@ -354,7 +354,7 @@ function ConnexionFormInner({
               inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+              className="champ"
             />
           </div>}
           {mode !== "legal" && <div className="space-y-1">
@@ -369,7 +369,7 @@ function ConnexionFormInner({
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+              className="champ"
             />
           </div>}
           {mode !== "signin" && (

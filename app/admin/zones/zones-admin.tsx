@@ -71,8 +71,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
 
   const bouton =
     "bouton bouton-secondaire bouton-compact";
-  const champ =
-    "rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-accent";
+  const champ = "champ w-auto";
 
   return (
     <div className="mt-6 space-y-10">

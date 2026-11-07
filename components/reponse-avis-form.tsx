@@ -75,7 +75,7 @@ export function ReponseAvisForm({ reviewId, labels }: { reviewId: string; labels
         maxLength={1000}
         rows={3}
         placeholder={labels.placeholder}
-        className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm text-cloud"
+        className="champ"
       />
       <p className="text-xs text-mist">{labels.aide}</p>
       <div className="flex gap-2">

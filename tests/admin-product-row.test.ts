@@ -6,6 +6,8 @@ import * as jsxRuntime from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { loadRoute } from "./helpers/route-harness";
+import { cible44 } from "./helpers/cible-tactile";
+import { MessageErreur } from "../components/message-erreur";
 import { t, type Lang } from "../lib/i18n";
 
 /**
@@ -31,6 +33,7 @@ function rendre(titre: string, lang: Lang = "fr"): string {
     react: React,
     "react/jsx-runtime": jsxRuntime,
     "next/navigation": { useRouter: () => ({ refresh() {} }) },
+    "@/components/message-erreur": { MessageErreur },
   });
   const Ligne = mod.AdminProductRow as unknown as React.FC<Record<string, unknown>>;
   return renderToStaticMarkup(React.createElement(Ligne, { id: "p1", title: titre, seller: "Vandè", status: "draft", labels: libelles(lang) }));
@@ -57,7 +60,8 @@ test("les choix sont traduits ; la valeur envoyée au serveur ne change pas", ()
 
 test("cible tactile de 44 px", () => {
   const select = rendre("X").match(/<select[^>]*>/)?.[0] ?? "";
-  assert.match(select, /\bmin-h-11\b/);
+  // `min-h-11`, ou la classe `champ` qui porte 48 px (chantier design, Phase 2).
+  assert.ok(cible44((/class="([^"]*)"/.exec(select) ?? [])[1] ?? ""), `liste sans cible de 44 px : ${select}`);
   assert.doesNotMatch(select, /\bpy-1\.5\b|\btext-xs\b/);
 });
 

@@ -34,6 +34,7 @@ import { chargerPointsRetrait } from "@/lib/points-retrait-serveur";
 import { pointsPourZone } from "@/lib/points-retrait";
 import { siteUrl } from "@/lib/site-url";
 import { t, tn } from "@/lib/i18n";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 
@@ -295,15 +296,15 @@ export default async function CataloguePage({
           {q && <input type="hidden" name="q" value={q} />}
           <label className="grid gap-2 text-sm text-mist">
             {t(lang, "catalog.min")}
-            <input name="min" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={minPrice ?? ""} className="min-h-11 w-36 rounded-xl border border-line bg-surface px-3 text-base text-cloud" />
+            <input name="min" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={minPrice ?? ""} aria-invalid={priceRangeInvalid || undefined} aria-describedby={priceRangeInvalid ? "prix-erreur" : undefined} className="champ w-36" />
           </label>
           <label className="grid gap-2 text-sm text-mist">
             {t(lang, "catalog.max")}
-            <input name="max" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={maxPrice ?? ""} className="min-h-11 w-36 rounded-xl border border-line bg-surface px-3 text-base text-cloud" />
+            <input name="max" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={maxPrice ?? ""} aria-invalid={priceRangeInvalid || undefined} aria-describedby={priceRangeInvalid ? "prix-erreur" : undefined} className="champ w-36" />
           </label>
           <label className="grid flex-1 gap-2 text-sm text-mist">
             {t(lang, "catalog.sort")}
-            <select name="tri" defaultValue={sort} className="min-h-11 min-w-44 rounded-xl border border-line bg-surface px-3 text-base text-cloud">
+            <select name="tri" defaultValue={sort} className="champ min-w-44">
               <option value="recent">{t(lang, "catalog.sort.recent")}</option>
               <option value="prix-croissant">{t(lang, "catalog.sort.asc")}</option>
               <option value="prix-decroissant">{t(lang, "catalog.sort.desc")}</option>
@@ -312,7 +313,7 @@ export default async function CataloguePage({
           </label>
           <button type="submit" className="bouton bouton-primaire bouton-compact">{t(lang, "zone.filter.apply")}</button>
           {filtre && <Link href={universe ? universeHref(universe) : "/catalogue"} className="bouton bouton-texte bouton-compact">{t(lang, "catalog.reset")}</Link>}
-          {priceRangeInvalid && <p role="alert" className="w-full text-sm text-danger-text">{t(lang, "catalog.price.invalid")}</p>}
+          {priceRangeInvalid && <MessageErreur id="prix-erreur" className="w-full">{t(lang, "catalog.price.invalid")}</MessageErreur>}
         </form>
 
         {/* Filtre par zone (PR-Z3, docs/33 §4) — GET, cascade SANS JS :
@@ -336,7 +337,7 @@ export default async function CataloguePage({
               name="zd"
               defaultValue={zd ?? ""}
               aria-label={t(lang, "zone.level.depatman")}
-              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+              className="champ w-auto"
             >
               <option value="">{t(lang, "zone.filter.all")}</option>
               {depatmans.map((z) => (
@@ -350,7 +351,7 @@ export default async function CataloguePage({
                 name="zk"
                 defaultValue={zkValide ?? ""}
                 aria-label={t(lang, "zone.level.komin")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="champ w-auto"
               >
                 <option value="">{t(lang, "zone.level.komin")}</option>
                 {komins.map((z) => (
@@ -365,7 +366,7 @@ export default async function CataloguePage({
                 name="zq"
                 defaultValue={zqValide ?? ""}
                 aria-label={t(lang, "zone.level.katye")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="champ w-auto"
               >
                 <option value="">{t(lang, "zone.level.katye")}</option>
                 {katyes.map((z) => (

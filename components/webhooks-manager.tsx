@@ -64,7 +64,7 @@ export function WebhooksManager({ points, envois, max, locale, labels }: { point
           <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
             {labels.url}
             <input type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" maxLength={500} required
-              className="min-h-11 rounded-xl border border-line bg-ink px-3 text-base" />
+              className="champ" />
           </label>
           <button type="submit" disabled={busy || !url.trim()} className="bouton bouton-primaire bouton-compact">
             {busy ? labels.adding : labels.add}

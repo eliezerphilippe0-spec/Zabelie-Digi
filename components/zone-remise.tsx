@@ -58,7 +58,7 @@ function formaterDelai(heures: number, l: ZoneRemiseLabels): string {
   return heures < 48 ? l.unitHours.replace("{n}", String(heures)) : l.unitDays.replace("{n}", String(Math.round(heures / 24)));
 }
 
-const SELECT = "min-h-11 w-full rounded-xl border border-line bg-ink/40 px-3 text-sm outline-none focus:border-accent";
+const SELECT = "champ";
 
 export function ZoneRemise({ zones, couverture, conditions, points, pointsLabels, locale, labels, disabled, onChange }: {
   zones: ZoneOption[];
@@ -90,24 +90,33 @@ export function ZoneRemise({ zones, couverture, conditions, points, pointsLabels
     <fieldset className="mb-5 space-y-3 rounded-xl border border-line p-4" disabled={disabled}>
       <legend className="px-1 text-sm font-semibold">{labels.title}</legend>
       <p className="text-xs text-mist">{labels.hint}</p>
-      <select className={SELECT} value={sel.departement} aria-label={labels.depatman}
-        onChange={(e) => maj({ departement: e.target.value, commune: "", quartier: "" })}>
-        <option value="">{labels.depatman}</option>
-        {zones.filter((z) => z.level === "depatman").map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-      </select>
-      {sel.departement && communes.length > 0 ? (
-        <select className={SELECT} value={sel.commune} aria-label={labels.komin}
-          onChange={(e) => maj({ ...sel, commune: e.target.value, quartier: "" })}>
-          <option value="">{labels.allDepatman}</option>
-          {communes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+      <label className="block">
+        <span className="libelle">{labels.depatman}</span>
+        <select className={SELECT} value={sel.departement}
+          onChange={(e) => maj({ departement: e.target.value, commune: "", quartier: "" })}>
+          <option value="">{labels.depatman}</option>
+          {zones.filter((z) => z.level === "depatman").map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
         </select>
+      </label>
+      {sel.departement && communes.length > 0 ? (
+        <label className="block">
+          <span className="libelle">{labels.komin}</span>
+          <select className={SELECT} value={sel.commune}
+            onChange={(e) => maj({ ...sel, commune: e.target.value, quartier: "" })}>
+            <option value="">{labels.allDepatman}</option>
+            {communes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+          </select>
+        </label>
       ) : null}
       {sel.commune && quartiers.length > 0 ? (
-        <select className={SELECT} value={sel.quartier} aria-label={labels.katye}
-          onChange={(e) => maj({ ...sel, quartier: e.target.value })}>
-          <option value="">{labels.allKomin}</option>
-          {quartiers.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-        </select>
+        <label className="block">
+          <span className="libelle">{labels.katye}</span>
+          <select className={SELECT} value={sel.quartier}
+            onChange={(e) => maj({ ...sel, quartier: e.target.value })}>
+            <option value="">{labels.allKomin}</option>
+            {quartiers.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+          </select>
+        </label>
       ) : null}
       {sel.departement && !sel.commune ? <p role="status" className="text-xs text-mist">{labels.needKomin}</p> : null}
       {reserveZoneRemise(zones, couverture, effective) ? (

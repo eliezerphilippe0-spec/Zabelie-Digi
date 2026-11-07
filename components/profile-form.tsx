@@ -144,8 +144,7 @@ export function ProfileForm({
     }
   }
 
-  const input =
-    "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
+  const input = "champ";
 
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -243,74 +242,83 @@ export function ProfileForm({
         <fieldset className="space-y-3 rounded-xl border border-line p-4">
           <legend className="px-1 text-sm font-semibold">{zoneLabels.title}</legend>
           <p className="text-xs text-mist">{zoneLabels.hint}</p>
-          <select
-            className={input}
-            value={zd}
-            aria-label={zoneLabels.depatman}
-            onChange={(e) => {
-              setZd(e.target.value);
-              setZk("");
-              setZq("");
-            }}
-          >
-            <option value="">{zoneLabels.all}</option>
-            {zones
-              .filter((z) => z.level === "depatman")
-              .map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.label}
-                </option>
-              ))}
-          </select>
-          {komins.length > 0 && (
+          <label className="block">
+            <span className="libelle">{zoneLabels.depatman}</span>
             <select
               className={input}
-              value={zk}
-              aria-label={zoneLabels.komin}
+              value={zd}
               onChange={(e) => {
-                setZk(e.target.value);
+                setZd(e.target.value);
+                setZk("");
                 setZq("");
               }}
             >
-              <option value="">{zoneLabels.komin}</option>
-              {komins.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.label}
-                </option>
-              ))}
+              <option value="">{zoneLabels.all}</option>
+              {zones
+                .filter((z) => z.level === "depatman")
+                .map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.label}
+                  </option>
+                ))}
             </select>
+          </label>
+          {komins.length > 0 && (
+            <label className="block">
+              <span className="libelle">{zoneLabels.komin}</span>
+              <select
+                className={input}
+                value={zk}
+                onChange={(e) => {
+                  setZk(e.target.value);
+                  setZq("");
+                }}
+              >
+                <option value="">{zoneLabels.komin}</option>
+                {komins.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
           {katyes.length > 0 && (
-            <select
-              className={input}
-              value={zq}
-              aria-label={zoneLabels.katye}
-              onChange={(e) => setZq(e.target.value)}
-            >
-              <option value="">{zoneLabels.katye}</option>
-              {katyes.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.label}
-                </option>
-              ))}
-            </select>
+            <label className="block">
+              <span className="libelle">{zoneLabels.katye}</span>
+              <select
+                className={input}
+                value={zq}
+                onChange={(e) => setZq(e.target.value)}
+              >
+                <option value="">{zoneLabels.katye}</option>
+                {katyes.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
-          <input
-            className={input}
-            maxLength={200}
-            placeholder={zoneLabels.pwenPh}
-            aria-label={zoneLabels.pwen}
-            value={form.pwen_repe}
-            onChange={(e) => set("pwen_repe", e.target.value)}
-          />
+          <label className="block">
+            <span className="libelle">{zoneLabels.pwen}</span>
+            <input
+              className={input}
+              maxLength={200}
+              placeholder={zoneLabels.pwenPh}
+              value={form.pwen_repe}
+              onChange={(e) => set("pwen_repe", e.target.value)}
+            />
+          </label>
 
           {/* Katye manquant → demande modérée (PR-Z4, Z-C). Visible dès
               qu'une komin est choisie : c'est là qu'on découvre le manque. */}
           {zk && (
             <div className="space-y-2 border-t border-line pt-3">
-              <p className="text-xs text-mist">{zoneLabels.reqHint}</p>
+              <label htmlFor="profil-katye-demande" className="libelle">{zoneLabels.reqHint}</label>
               <div className="flex gap-2">
                 <input
+                  id="profil-katye-demande"
                   className={input}
                   maxLength={80}
                   placeholder={zoneLabels.reqPh}
@@ -334,7 +342,7 @@ export function ProfileForm({
       <button
         type="submit"
         disabled={loading}
-        className="rounded-xl bg-cloud px-5 py-2.5 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="bouton bouton-primaire"
       >
         {loading ? "…" : "Enregistrer"}
       </button>

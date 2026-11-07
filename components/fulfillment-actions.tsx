@@ -85,18 +85,20 @@ export function FulfillmentAction({
   return (
     <div className="flex flex-col items-end gap-1">
       {labels.placeholder && (
-        <input
-          value={texte}
-          onChange={(e) => setTexte(e.target.value)}
-          placeholder={labels.placeholder}
-          maxLength={280}
-          className="w-full min-w-0 rounded-lg border border-line bg-surface/60 px-3 py-2 text-xs sm:w-72"
-        />
+        <label className="block w-full sm:w-72">
+          <span className="libelle">{labels.placeholder}</span>
+          <input
+            value={texte}
+            onChange={(e) => setTexte(e.target.value)}
+            maxLength={280}
+            className="champ min-w-0"
+          />
+        </label>
       )}
       <button
         onClick={envoyer}
         disabled={envoi}
-        className="rounded-lg bg-cloud px-4 py-2 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="bouton bouton-secondaire bouton-compact"
       >
         {envoi ? "…" : labels.cta}
       </button>

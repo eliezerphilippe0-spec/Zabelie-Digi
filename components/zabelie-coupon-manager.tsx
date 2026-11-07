@@ -79,7 +79,7 @@ export function ZabelieCouponManager({ coupons, actorId }: { coupons: CouponItem
             placeholder="PROMO50"
             maxLength={24}
             required
-            className="code-lisible mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm uppercase text-cloud placeholder:normal-case placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            className="champ code-lisible mt-1 uppercase placeholder:normal-case"
           />
         </div>
         <div className="w-24">
@@ -92,7 +92,7 @@ export function ZabelieCouponManager({ coupons, actorId }: { coupons: CouponItem
             value={percent}
             onChange={(e) => setPercent(Number(e.target.value))}
             required
-            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm text-cloud focus:border-brand/60 focus:outline-none"
+            className="champ mt-1"
           />
         </div>
         <div className="w-28">
@@ -104,7 +104,7 @@ export function ZabelieCouponManager({ coupons, actorId }: { coupons: CouponItem
             value={maxUses}
             onChange={(e) => setMaxUses(e.target.value)}
             placeholder="∞"
-            className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm text-cloud placeholder:text-mist focus:border-brand/60 focus:outline-none"
+            className="champ mt-1"
           />
         </div>
         <button

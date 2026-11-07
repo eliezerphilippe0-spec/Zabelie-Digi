@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { compresserImage } from "@/lib/image-compress";
 import { COVER_MAX_OCTETS } from "@/lib/image-limits";
 import { coverUrlAt } from "@/lib/product-image";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type PhotoPrincipaleLabels = {
   title: string;
@@ -116,7 +117,7 @@ export function PhotoPrincipale({
         />
       </label>
       {saved && <p role="status" className="text-xs text-success-text">{labels.saved}</p>}
-      {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
+      {error && <MessageErreur>{error}</MessageErreur>}
     </div>
   );
 }

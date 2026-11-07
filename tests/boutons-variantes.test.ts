@@ -167,6 +167,19 @@ test("V7 — hors chemin de l'argent, aucun bouton à contour écrit à la main"
     }
   }
   assert.deepEqual(fautes, [], "Écrivez `bouton bouton-secondaire` (et `bouton-compact` dans une liste) :\n  " + fautes.join("\n  "));
+
+  // Une QUATRIÈME variante, à fond sombre (`bg-cloud text-ink`), vivait sur
+  // trois boutons, dont « Déclarer l'envoi » à 32 px. Le brief en veut trois.
+  const SOMBRE = (c: string) => !VARIANTE.test(c) && /(?<![\w:-])bg-(?:cloud|ink|chrome)(?![\w/-])/.test(c) && /(?<![\w:-])rounded-(?:xl|lg)(?![\w-])/.test(c) && /(?<![\w:-])px-\d/.test(c);
+  assert.ok(SOMBRE("min-h-11 rounded-xl bg-cloud px-5 py-3 text-ink") && !SOMBRE("rounded-full bg-chrome/80 px-2"));
+  const sombres: string[] = [];
+  for (const f of HORS_ARGENT) {
+    const src = lire(f);
+    for (const m of src.matchAll(/className="([^"\n]*)"/g)) {
+      if (["button", "Link", "a"].includes(balise(src, m.index ?? 0) ?? "") && SOMBRE(m[1])) sombres.push(`${f}:${src.slice(0, m.index).split("\n").length}`);
+    }
+  }
+  assert.deepEqual(sombres, [], "Bouton à fond sombre écrit à la main : prenez une des trois variantes :\n  " + sombres.join("\n  "));
 });
 
 test("V5 — une variante ne s'écrit jamais sans `bouton`", () => {

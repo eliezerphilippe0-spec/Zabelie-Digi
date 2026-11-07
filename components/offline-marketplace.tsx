@@ -27,7 +27,7 @@ export function OfflineMarketplace({ labels, locale }: { labels: MarketplaceCopy
   return <section className="mt-8 text-left" aria-labelledby="offline-offers">
     <h2 id="offline-offers">{labels.offlineTitle}</h2>
     <p className="mt-3 text-sm text-mist">{labels.offlineHint}</p>
-    {items.length > 0 && <label className="mt-4 block text-sm">{labels.search}<input type="search" value={query} onChange={e => setQuery(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3"/></label>}
+    {items.length > 0 && <label className="mt-4 block text-sm">{labels.search}<input type="search" value={query} onChange={e => setQuery(e.target.value)} className="champ mt-2"/></label>}
     <ul className="mt-4 space-y-3">{matches.map(p => <li key={p.slug} className="rounded-xl border border-line p-4">
       <h3 className="font-semibold">{p.title}</h3><p className="numeric mt-2">{new Intl.NumberFormat(locale).format(p.priceHTG)} HTG</p>
       <p className="mt-2 text-xs text-mist">{labels.viewed} {new Date(p.viewedAt).toLocaleString(locale)}</p>

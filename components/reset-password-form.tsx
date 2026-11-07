@@ -173,26 +173,30 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
             <>
               <p className="mt-2 text-sm text-mist">{labels.subtitle}</p>
               <form onSubmit={submit} className="mt-4 space-y-3">
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder={labels.passwordPh}
-                  aria-label={labels.passwordPh}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
-                />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder={labels.confirmPh}
-                  aria-label={labels.confirmPh}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
-                />
+                <label className="block">
+                  <span className="libelle">{labels.passwordPh}</span>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="champ"
+                  />
+                </label>
+                <label className="block">
+                  <span className="libelle">{labels.confirmPh}</span>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    className="champ"
+                  />
+                </label>
                 <button
                   type="submit"
                   disabled={loading}

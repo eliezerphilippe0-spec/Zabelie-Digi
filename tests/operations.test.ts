@@ -4,6 +4,7 @@ import * as React from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
 import { loadRoute } from "./helpers/route-harness";
+import { MessageErreur } from "../components/message-erreur";
 import { operationHref, operationLabels, type Operation, type OperationKind } from "../lib/operations";
 
 const row: Operation = {
@@ -36,6 +37,7 @@ async function renderPage(rows: Operation[], options: { admin?: boolean; queueEr
       amounts.push(amount); return `${amount} HTG`;
     } },
     "@/lib/operations": { operationHref, operationLabels },
+    "@/components/message-erreur": { MessageErreur },
   }) as unknown as { default: (props: { searchParams: Promise<{ page?: string }> }) => Promise<React.ReactNode> };
   const html = renderToStaticMarkup(await page.default({ searchParams: Promise.resolve({}) }));
   return { html, amounts, calls };

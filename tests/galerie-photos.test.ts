@@ -715,7 +715,8 @@ test("UX-02 — la page utilise une seule photo principale liée au produit ; la
 
 test("UX-02 — la cible d'envoi fait 44 px, et le message d'échec est annoncé", () => {
   assert.match(PRINCIPALE, /<label className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])[^"]*">/);
-  assert.match(PRINCIPALE, /role="alert"/);
+  // `MessageErreur` porte `role="alert"` (chantier design, Phase 2).
+  assert.match(PRINCIPALE, /role="alert"|<MessageErreur\b/);
 });
 
 test("les champs photo restent joignables au CLAVIER — masqués visuellement, jamais `display: none`", () => {

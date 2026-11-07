@@ -27,7 +27,7 @@ export function PixelsForm({ actorId, initial, labels }: { actorId: string; init
     <label className="flex flex-col gap-1 text-sm">
       {labels[cle]}
       <input value={v[cle]} onChange={(e) => { setV({ ...v, [cle]: e.target.value }); setEtat("repos"); }} placeholder={placeholder}
-        autoComplete="off" spellCheck={false} maxLength={30} className="min-h-11 rounded-xl border border-line bg-ink px-3 font-mono text-base" />
+        autoComplete="off" spellCheck={false} maxLength={30} className="champ font-mono" />
       <span className="text-xs text-mist">{aide}</span>
     </label>
   );

@@ -10,6 +10,7 @@ import {
   MAX_VIDEO_SECONDS,
   VIDEO_BUCKET,
 } from "@/lib/product-media";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type GalerieLabels = {
   title: string;
@@ -299,7 +300,7 @@ export function GalerieManager({
             />
           </label>
         )}
-        {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
+        {error && <MessageErreur>{error}</MessageErreur>}
       </div>
     </details>
   );

@@ -99,16 +99,17 @@ export function RabaisManager({
       </summary>
       <div className="mt-2 space-y-2">
         <p className="text-xs text-mist">{labels.hint}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="number"
-            min={1}
-            placeholder={labels.newPh}
-            aria-label={labels.newPh}
-            value={nouveau}
-            onChange={(e) => setNouveau(e.target.value)}
-            className="w-36 rounded-lg border border-line bg-ink px-3 py-1.5 text-xs"
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="block">
+            <span className="libelle">{labels.newPh}</span>
+            <input
+              type="number"
+              min={1}
+              value={nouveau}
+              onChange={(e) => setNouveau(e.target.value)}
+              className="champ w-36"
+            />
+          </label>
           <button
             type="button"
             disabled={busy || !nouveau.trim()}

@@ -71,15 +71,16 @@ export function ReviewForm({ orderId, labels }: { orderId: string; labels: {
           </button>
         ))}
       </div>
-      <textarea
-        rows={2}
-        maxLength={1000}
-        aria-label={labels.placeholder}
-        placeholder={labels.placeholder}
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        className="w-full rounded-xl border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-accent"
-      />
+      <label className="block">
+        <span className="libelle">{labels.placeholder}</span>
+        <textarea
+          rows={2}
+          maxLength={1000}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="champ"
+        />
+      </label>
       <div className="flex gap-2">
         <button
           type="submit"

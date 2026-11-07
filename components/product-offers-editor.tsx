@@ -30,7 +30,7 @@ export function ProductOffersEditor({ productId, initial, choices, confirmed, au
         {OFFER_KINDS.map(kind => <div key={kind}>
           <label htmlFor={formId + kind} className="mb-2 block text-sm font-semibold">{copy[kind]}</label>
           <select id={formId + kind} value={value[kind] ?? ""} onChange={e => { setValue({ ...value, [kind]: e.target.value || null }); setMessage(""); }}
-            className="min-h-11 w-full min-w-0 rounded-xl border border-line bg-surface px-3 py-2 text-sm">
+            className="champ min-w-0">
             <option value="">{copy.none}</option>
             {value[kind] && !choices[kind].some(p => p.id === value[kind]) && <option value={value[kind]!}>{copy.unavailable}</option>}
             {choices[kind].map(p => <option key={p.id} value={p.id} disabled={OFFER_KINDS.some(k => k !== kind && value[k] === p.id)}>{p.label}</option>)}

@@ -8,9 +8,10 @@ import type { ShoppingCopy } from "@/lib/shopping-ai-copy";
 import type { ShoppingIntent, ShoppingResult } from "@/lib/shopping-ai";
 import type { NiveauProximite } from "@/lib/proximite-niveaux";
 import { isTrackedStockKind, isDownloadable, isProductKind, type ProductKind } from "@/lib/product-kind";
+import { MessageErreur } from "@/components/message-erreur";
 
 const EMPTY: ShoppingIntent = { query: "", need: "", budgetHtg: null, location: "", kind: null };
-const FIELD = "mt-2 min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-cloud focus-visible:outline-2 focus-visible:outline-brand";
+const FIELD = "champ mt-2";
 /** Un niveau de proximité → le libellé de l’offre. Record : un niveau ajouté sans libellé casse la compilation. */
 const PROXIMITE_LIBELLE: Record<NiveauProximite, "proxKatye" | "proxKomin" | "proxDepatman" | "proxAilleurs" | "proxInconnue"> = {
   katye: "proxKatye", komin: "proxKomin", depatman: "proxDepatman", ailleurs: "proxAilleurs", inconnue: "proxInconnue",
@@ -85,7 +86,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
         </div>
       </form>
     </section>
-    {error ? <p role="alert" className="text-danger-text">{error} <Link href="/catalogue" className="underline">{labels.catalog}</Link></p> : null}
+    {error ? <MessageErreur>{error} <Link href="/catalogue" className="underline">{labels.catalog}</Link></MessageErreur> : null}
     {result && question ? <p role="status">{labels[question]}</p> : null}
     {result && !question ? <section aria-labelledby="shopping-results-title" aria-live="polite">
       <h2 id="shopping-results-title">{labels.results}</h2>

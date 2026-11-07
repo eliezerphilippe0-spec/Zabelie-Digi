@@ -5,6 +5,7 @@ import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import type { FicheRattachee } from "@/lib/digital-authoring/soumission";
 import type { OptionCategorie, OptionSousRayon } from "@/lib/product-categories";
 import { POLICY_PATH } from "@/lib/policy";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * « Soumettre à la revue » (Studio, tâche 5.2) : la dernière étape de
@@ -51,7 +52,7 @@ export function AuthoringSoumission({
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  const champ = "mt-1 w-full rounded-xl border border-line bg-surface p-3 text-sm";
+  const champ = "champ mt-1";
   const bouton = "bouton bouton-primaire bouton-compact mt-3";
   const options = sousRayons.filter((o) => o.departement === rayon);
   const pretACreer = prix.trim() !== "" && Number(prix) >= 0 && rayon !== "" && attestation;
@@ -159,7 +160,7 @@ export function AuthoringSoumission({
           </button>
         </form>
       )}
-      {erreur && <p role="alert" className="mt-3 text-sm text-danger-text">{erreur}</p>}
+      {erreur && <MessageErreur className="mt-3">{erreur}</MessageErreur>}
     </section>
   );
 }

@@ -205,6 +205,85 @@
     from { opacity: 1; }
     to   { opacity: 0.25; }
   }
+
+  /* CHAMP (brief Phase 2.2) — 48 px, texte à 16 px, contour à 3:1, anneau de
+     focus visible. Avant : 80 champs écrits à la main, la plupart en 14 px
+     (sous 16 px, Safari zoome la page au focus), bordés de `--line` (1,2:1 sur
+     le crème) et souvent en `outline-none`, qui éteignait l'anneau global de
+     `:focus-visible`. Le libellé reste visible au-dessus (`<label htmlFor>`),
+     jamais le seul texte indicatif. `tests/champs.test.ts` garde. */
+  .champ {
+    display: block;
+    inline-size: 100%;
+    min-height: --spacing(12);
+    padding: --spacing(2.5) --spacing(4);
+    border: 1px solid var(--color-contour);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+    color: var(--color-cloud);
+    font-size: var(--text-base);
+    line-height: var(--leading-titre);
+  }
+  .champ::placeholder {
+    color: var(--color-mist);
+    opacity: 1;
+  }
+  /* L'anneau vient de `:focus-visible` (2 px d'accent, 4,73:1) ; le contour
+     passe à l'accent avec lui, pour qui ne distingue pas l'anneau décollé. */
+  .champ:focus-visible {
+    border-color: var(--color-accent);
+  }
+  .champ[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+  .champ:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  textarea.champ {
+    min-height: --spacing(24);
+    line-height: var(--leading-corps);
+    resize: vertical;
+  }
+  /* LIBELLÉ D'UN CHAMP — au-dessus, toujours visible : `<label><span
+     class="libelle">…</span><input class="champ"></label>`. Avant, 26 champs
+     publics n'étaient nommés que pour les lecteurs d'écran (`aria-label`). */
+  .libelle {
+    display: block;
+    margin-block-end: --spacing(1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-titre);
+    color: var(--color-mist);
+  }
+  /* MESSAGE D'ERREUR (`components/message-erreur.tsx`) — texte et icône,
+     jamais la couleur seule. */
+  .message-erreur {
+    display: flex;
+    align-items: flex-start;
+    gap: --spacing(1.5);
+    color: var(--color-danger-text);
+    font-size: var(--text-sm);
+    line-height: var(--leading-corps);
+  }
+  .message-erreur > .icone {
+    margin-block-start: 0.2em;
+  }
+
+  /* ICÔNE (`components/icone.tsx`, brief Phase 2.6) — un trait de 1,75 px
+     d'ÉCRAN, quelle que soit la grille du dessin ou la taille rendue :
+     `non-scaling-stroke` sur chaque tracé. Un utilitaire posé à côté
+     (`stroke-success`, `fill-current`) l'emporte, couche oblige. */
+  .icone {
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .icone * {
+    vector-effect: non-scaling-stroke;
+  }
 }
 
 @layer utilities {

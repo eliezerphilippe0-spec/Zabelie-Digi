@@ -84,19 +84,19 @@ export function PickupAdmin() {
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             placeholder="Nom de la boutique"
-            className="w-56 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-cloud"
+            className="champ w-56"
           />
           <input
             value={adresse}
             onChange={(e) => setAdresse(e.target.value)}
             placeholder="Adresse (rue, commune)"
-            className="w-80 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-cloud"
+            className="champ w-80"
           />
           <input
             value={telefon}
             onChange={(e) => setTelefon(e.target.value)}
             placeholder="Téléphone (optionnel)"
-            className="w-44 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-cloud"
+            className="champ w-44"
           />
           <button
             onClick={creer}

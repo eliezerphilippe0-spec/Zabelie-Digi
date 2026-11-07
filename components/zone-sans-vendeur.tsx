@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Les deux gestes d'une zone sans vendeur (0162, docs/77 §12) :
@@ -89,7 +90,7 @@ export function ZoneSansVendeur({ zoneId, labels, shareHref }: {
           {busy ? labels.asking : labels.ask}
         </button>
       )}
-      {erreur ? <p role="alert" className="text-sm text-danger-text">{labels.error}</p> : null}
+      {erreur ? <MessageErreur>{labels.error}</MessageErreur> : null}
       <a href={shareHref} target="_blank" rel="noopener noreferrer"
         className="inline-flex min-h-11 items-center text-sm font-semibold text-accent underline underline-offset-4">
         {labels.share}

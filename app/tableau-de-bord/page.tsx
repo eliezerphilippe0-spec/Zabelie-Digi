@@ -24,6 +24,7 @@ import { DIGITAL_KINDS, type ProductKind } from "@/lib/product-kind";
 import { estArchivee } from "@/lib/seller-products-filter";
 import { momentDeLaJournee } from "@/lib/moment-journee";
 import { PayoutRequest } from "@/components/payout-request";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 
@@ -286,7 +287,7 @@ export default async function DashboardPage({
     return (
       <Accueil lang={lang}>
         <h1>{user.displayName}</h1>
-        <p role="alert" className="mt-4 text-sm text-danger-text">{t(lang, "vendeur.indisponible")}</p>
+        <MessageErreur className="mt-4">{t(lang, "vendeur.indisponible")}</MessageErreur>
       </Accueil>
     );
   }

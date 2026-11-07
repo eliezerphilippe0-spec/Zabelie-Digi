@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Le CODE DE REMISE, côté navigateur (0163, docs/77 §12.3) — deux gestes, une
@@ -104,7 +105,7 @@ export function HandoverCodeBuyer({ orderId, labels }: { orderId: string; labels
         className="bouton bouton-secondaire bouton-compact">
         {busy ? "…" : labels.cta}
       </button>
-      {erreur ? <p role="alert" className="text-right text-xs text-danger-text">{erreur}</p> : null}
+      {erreur ? <MessageErreur className="text-right">{erreur}</MessageErreur> : null}
     </div>
   );
 }
@@ -157,13 +158,13 @@ export function HandoverCodeSeller({ orderId, labels }: { orderId: string; label
       <input id={`hc-${orderId}`} value={saisie} disabled={busy}
         onChange={(e) => setSaisie(e.target.value.replace(/\D/g, "").slice(0, 6))}
         inputMode="numeric" autoComplete="off" pattern="[0-9]{6}" maxLength={8} placeholder={labels.placeholder}
-        className="numeric min-h-11 w-full rounded-lg border border-line bg-surface/60 px-3 py-2 text-center text-base tracking-[0.3em]" />
+        className="champ numeric text-center tracking-[0.3em]" />
       <button type="submit" disabled={busy || saisie.length !== 6}
-        className="min-h-11 rounded-lg bg-cloud px-4 py-2 text-xs font-semibold text-ink disabled:opacity-60">
+        className="bouton bouton-secondaire bouton-compact">
         {busy ? "…" : labels.cta}
       </button>
       <p className="text-right text-xs text-mist">{labels.hint}</p>
-      {erreur ? <p role="alert" className="text-right text-xs text-danger-text">{erreur}</p> : null}
+      {erreur ? <MessageErreur className="text-right">{erreur}</MessageErreur> : null}
     </form>
   );
 }

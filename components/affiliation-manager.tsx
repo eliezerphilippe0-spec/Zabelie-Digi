@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopyField } from "@/components/copy-field";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Libellés résolus CÔTÉ SERVEUR et passés en props. Un composant client
@@ -207,7 +208,7 @@ export function AffiliationManager({
             </button>
           </div>
         )}
-        {erreur && <p role="alert" className="mt-2 text-xs text-danger-text">{erreur}</p>}
+        {erreur && <MessageErreur className="mt-2">{erreur}</MessageErreur>}
       </section>
 
       {/* ── VENDEUR (opt-in, option B) ────────────────────────────────────── */}
@@ -351,7 +352,7 @@ function ProduitTaux({
               step={1}
               value={pct}
               onChange={(e) => setPct(Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm text-cloud focus:border-brand/60 focus:outline-none"
+              className="champ mt-1"
             />
           </div>
           <button
@@ -374,7 +375,7 @@ function ProduitTaux({
           )}
         </div>
       </div>
-      {erreur && <p role="alert" className="mt-2 text-xs text-danger-text">{erreur}</p>}
+      {erreur && <MessageErreur className="mt-2">{erreur}</MessageErreur>}
       {ok && !erreur && <p role="status" className="mt-2 text-xs text-success-text">{ok}</p>}
     </div>
   );

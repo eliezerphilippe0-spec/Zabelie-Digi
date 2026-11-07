@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DIGITAL_MODES, EMPTY_DIGITAL_STUDIO, type DigitalStudio } from "@/lib/digital-studio";
 import type { StudioLabels } from "@/lib/digital-studio-labels";
-const input = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-base";
+import { MessageErreur } from "@/components/message-erreur";
+
+const input = "champ";
 const button = "min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold disabled:opacity-60";
 export function DigitalStudioEditor({ productId, initial, assets, labels }: { productId: string; initial?: DigitalStudio; assets: { id: string; file_name: string }[]; labels: StudioLabels }) {
   const [value, setValue] = useState(initial ?? EMPTY_DIGITAL_STUDIO);
@@ -54,7 +56,7 @@ export function DigitalStudioEditor({ productId, initial, assets, labels }: { pr
         <button type="submit" className="bouton bouton-primaire">{busy ? labels.saving : labels.save}</button>
       </fieldset>
       {state === "saved" && <p role="status" className="mt-3 text-success-text">{labels.saved}</p>}
-      {state === "error" && <p role="alert" className="mt-3 text-danger-text">{error ?? labels.error}</p>}
+      {state === "error" && <MessageErreur className="mt-3">{error ?? labels.error}</MessageErreur>}
     </form>
   </details>;
 }
@@ -65,5 +67,5 @@ export function DigitalDraftAction({ productId, assetId, labels }: { productId: 
     try { const res = await fetch("/api/products/digital-studio", { method: assetId ? "DELETE" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, assetId }) }); if (!res.ok) setError(true); else router.refresh(); }
     catch { setError(true); } finally { setBusy(false); }
   }
-  return <div>{!assetId && <p className="mb-3 max-w-2xl text-sm text-mist">{labels.reviseHint}</p>}<button className={button} type="button" disabled={busy} onClick={act}>{busy ? labels.saving : assetId ? labels.remove : labels.revise}</button>{error && <p role="alert" className="text-sm text-danger-text">{labels.error}</p>}</div>;
+  return <div>{!assetId && <p className="mb-3 max-w-2xl text-sm text-mist">{labels.reviseHint}</p>}<button className={button} type="button" disabled={busy} onClick={act}>{busy ? labels.saving : assetId ? labels.remove : labels.revise}</button>{error && <MessageErreur>{labels.error}</MessageErreur>}</div>;
 }

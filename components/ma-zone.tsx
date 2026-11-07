@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ZoneOption } from "@/components/profile-form";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * « Ma zone » — l'acheteur mémorise sa zone APPROXIMATIVE (docs/77 §11).
@@ -32,7 +33,7 @@ export type MaZoneLabels = {
   toutKomin: string;
 };
 
-const SELECT = "min-h-11 w-full rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent sm:w-auto";
+const SELECT = "champ sm:w-auto";
 
 export function MaZone({ zones, courante, hrefCatalogue, labels }: {
   zones: ZoneOption[];
@@ -88,24 +89,33 @@ export function MaZone({ zones, courante, hrefCatalogue, labels }: {
       ) : (
         <>
           <p className="mt-1 max-w-prose text-xs leading-relaxed text-mist">{labels.aide}</p>
-          <fieldset className="mt-3 flex flex-wrap items-center gap-2" disabled={busy}>
-            <select className={SELECT} value={zd} aria-label={labels.depatman}
-              onChange={(e) => { setZd(e.target.value); setZk(""); setZq(""); }}>
-              <option value="">{labels.depatman}</option>
-              {zones.filter((z) => z.level === "depatman").map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-            </select>
-            {zd && komins.length > 0 ? (
-              <select className={SELECT} value={zk} aria-label={labels.komin}
-                onChange={(e) => { setZk(e.target.value); setZq(""); }}>
-                <option value="">{labels.toutDepatman}</option>
-                {komins.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+          <fieldset className="mt-3 flex flex-wrap items-end gap-2" disabled={busy}>
+            <label className="block">
+              <span className="libelle">{labels.depatman}</span>
+              <select className={SELECT} value={zd}
+                onChange={(e) => { setZd(e.target.value); setZk(""); setZq(""); }}>
+                <option value="">{labels.depatman}</option>
+                {zones.filter((z) => z.level === "depatman").map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
               </select>
+            </label>
+            {zd && komins.length > 0 ? (
+              <label className="block">
+                <span className="libelle">{labels.komin}</span>
+                <select className={SELECT} value={zk}
+                  onChange={(e) => { setZk(e.target.value); setZq(""); }}>
+                  <option value="">{labels.toutDepatman}</option>
+                  {komins.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+                </select>
+              </label>
             ) : null}
             {zk && katyes.length > 0 ? (
-              <select className={SELECT} value={zq} aria-label={labels.katye} onChange={(e) => setZq(e.target.value)}>
-                <option value="">{labels.toutKomin}</option>
-                {katyes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-              </select>
+              <label className="block">
+                <span className="libelle">{labels.katye}</span>
+                <select className={SELECT} value={zq} onChange={(e) => setZq(e.target.value)}>
+                  <option value="">{labels.toutKomin}</option>
+                  {katyes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+                </select>
+              </label>
             ) : null}
             <button type="button" onClick={() => void appeler("POST")} disabled={!cible || busy}
               className="bouton bouton-secondaire bouton-compact">
@@ -114,7 +124,7 @@ export function MaZone({ zones, courante, hrefCatalogue, labels }: {
           </fieldset>
         </>
       )}
-      {erreur ? <p role="alert" className="mt-2 text-sm text-danger-text">{labels.erreur}</p> : null}
+      {erreur ? <MessageErreur className="mt-2">{labels.erreur}</MessageErreur> : null}
     </section>
   );
 }

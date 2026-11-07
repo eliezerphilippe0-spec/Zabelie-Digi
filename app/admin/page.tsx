@@ -33,6 +33,7 @@ import {
   SEUIL_ALERTE,
   type EtatFile,
 } from "@/lib/file-attente";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Bandeau d'ARRIÉRÉ (ZB086). Ne rend RIEN sous le seuil : un avertissement
@@ -463,7 +464,7 @@ export default async function AdminPage({
       {/* Modération produits */}
       <section id="produits" className="mt-10 scroll-mt-32">
         <h2>Modération des produits</h2>
-        {digitalReadError && <p role="alert" className="mt-3 text-sm text-danger-text">{t("fr", "error.generic")}</p>}
+        {digitalReadError && <MessageErreur className="mt-3">{t("fr", "error.generic")}</MessageErreur>}
         {products.length === 0 ? (
           <p className="mt-3 text-sm text-mist">Aucun produit.</p>
         ) : (
@@ -511,7 +512,7 @@ export default async function AdminPage({
                 name="ref"
                 defaultValue={refQuery}
                 placeholder="ZB-260726-XXXXX"
-                className="numeric min-w-0 flex-1 rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none"
+                className="champ numeric min-w-0 flex-1"
               />
               <button className="bouton bouton-secondaire bouton-compact">
                 Chercher

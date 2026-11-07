@@ -3,6 +3,7 @@ import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enregistrementsDns } from "@/lib/domaines";
 import { DomainesAdmin, type DemandeDomaine } from "./domaines-admin";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Domaines — Admin Zabelie" };
@@ -38,7 +39,7 @@ export default async function AdminDomainesPage() {
         <li>Le vendeur pose ses DNS : {enregistrementsDns("exemple.com").map((r) => `${r.type} ${r.nom} → ${r.valeur}`).join(" · ")}. Si Vercel affiche une autre valeur, transmettez-la au vendeur.</li>
         <li>« Vérifier et activer » : le site contrôle que le domaine atteint bien Zabelie avant d&apos;activer.</li>
       </ol>
-      {error ? <p role="alert" className="mt-6 text-sm text-danger-text">Lecture impossible (migration 0125 appliquée ?).</p> : <DomainesAdmin demandes={demandes} />}
+      {error ? <MessageErreur className="mt-6">Lecture impossible (migration 0125 appliquée ?).</MessageErreur> : <DomainesAdmin demandes={demandes} />}
     </AdminShell>
   );
 }

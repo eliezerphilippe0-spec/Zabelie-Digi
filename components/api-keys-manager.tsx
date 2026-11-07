@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type CleAffichee = {
   id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null;
@@ -69,7 +70,7 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
           <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
             {labels.name}
             <input value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} required
-              className="min-h-11 rounded-xl border border-line bg-ink px-3 text-base" />
+              className="champ" />
           </label>
           <button type="submit" disabled={busy || !nom.trim()} className="bouton bouton-primaire bouton-compact">
             {busy ? labels.creating : labels.create}
@@ -78,7 +79,7 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
       ) : (
         <p className="text-sm text-mist">{labels.limit}</p>
       )}
-      {erreur && <p role="alert" className="text-sm text-danger-text">{erreur}</p>}
+      {erreur && <MessageErreur>{erreur}</MessageErreur>}
 
       {cles.length === 0 ? (
         <p className="text-sm text-mist">{labels.empty}</p>
