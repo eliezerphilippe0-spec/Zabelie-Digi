@@ -74,7 +74,7 @@
   inset-inline: 30%;
   top: 0;
   height: 3px;
-  border-radius: 0 0 3px 3px;
+  border-radius: 0 0 var(--radius-full) var(--radius-full);
   background: var(--color-on-chrome);
   opacity: 0;
   transition: opacity var(--motion-base) var(--ease);
@@ -100,8 +100,8 @@ details[open] > .barre-nav-lien::before { opacity: 1; }
   place-items: center;
   min-width: 1.25rem;
   height: 1.25rem;
-  padding-inline: 4px;
-  border-radius: 999px;
+  padding-inline: --spacing(1);
+  border-radius: var(--radius-full);
   background: var(--color-brand);
   color: var(--color-on-brand);
   font-size: var(--text-xs);
