@@ -66,7 +66,6 @@ export default async function Indisponible({
     lang,
     titleFallback: t(lang, "card.title.fallback"),
     photoMissing: t(lang, "home.photo.missing"),
-    detail: t(lang, "home.product.cta"),
   };
 
   return (

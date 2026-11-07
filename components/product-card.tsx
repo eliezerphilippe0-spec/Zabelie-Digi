@@ -47,7 +47,12 @@ const FALLBACK_LABELS: ProductCardLabels = {
  * Ce qui reste de l'ancienne carte, et pourquoi : le badge du TYPE (fichier,
  * service, physique) — c'est une information d'achat, pas une décoration ;
  * et le badge note/ventes, dont la forme s'accorde au compte
- * (`tests/pluriel` P4). Le dégradé de repli des produits sans photo est
+ * (`tests/pluriel` P4). Deux étiquettes au plus, jamais orange (`.etiquette`,
+ * V-26) ; « Vendeur vérifié » et « Livraison locale » n'y figurent pas.
+ *
+ * La ligne « Gade pwodui a » ne vit plus que sur la carte de boutique, en
+ * liste : sur la grille, elle répétait l'action de la carte entière et
+ * ajoutait une rangée de texte en 12 px (audit Phase 0, pastille 9). Le dégradé de repli des produits sans photo est
  * remplacé par un aplat neutre : la marchandise, c'est l'image ; sans image,
  * un décor mentirait.
  */
@@ -85,17 +90,17 @@ export function ProductCard({
         {cover && <CardImage src={cover} alt={titre} size={COVER_WIDTHS.card} />}
         {!cover && labels.photoMissing && (
           <div className={boutique ? "flex h-full flex-col items-center justify-center gap-2 px-1 text-center text-xs text-mist" : "home-photo-empty"}>
-            <svg className={boutique ? "h-6 w-6 shrink-0" : undefined} viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
+            <svg className={boutique ? "icone h-6 w-6" : "icone"} viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
             <span>{labels.photoMissing}</span>
           </div>
         )}
         {!boutique && kindLabel && (
-          <span className="absolute left-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-xs font-medium text-on-chrome">
+          <span className="etiquette etiquette-image absolute left-2 top-2">
             {kindLabel}
           </span>
         )}
         {!boutique && (product.ratingAvg !== null || product.sales > 0) && (
-          <span className="absolute right-2 top-2 rounded-full bg-chrome/80 px-2 py-0.5 text-xs font-medium text-on-chrome">
+          <span className="etiquette etiquette-image absolute right-2 top-2">
             {product.ratingAvg !== null
               ? `★ ${product.ratingAvg} (${product.ratingCount})`
               : `${product.sales} ${
@@ -120,7 +125,7 @@ export function ProductCard({
         {!boutique && <span className="truncate text-sm text-mist">
           {labels.by} {product.creator}
         </span>}
-        {labels.detail && <span className={boutique ? "inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-cloud" : "home-card-cta"}>{labels.detail}<span aria-hidden="true">↗</span></span>}
+        {boutique && labels.detail && <span className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-cloud">{labels.detail}<span aria-hidden="true">↗</span></span>}
       </div>
     </Link>
   );

@@ -164,7 +164,6 @@ export default async function HomePage() {
     lang,
     titleFallback: t(lang, "card.title.fallback"),
     photoMissing: t(lang, "home.photo.missing"),
-    detail: t(lang, "home.product.cta"),
   };
 
   // Source ordered by creation date. No popularity or trend is inferred.

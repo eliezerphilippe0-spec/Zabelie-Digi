@@ -269,6 +269,32 @@
     margin-block-start: 0.2em;
   }
 
+  /* ÉTIQUETTE (brief Phase 2.4, V-26) — deux tons, jamais l'orange, qui est
+     réservé aux actions et aux prix. Deux au plus par carte
+     (`tests/carte-produit.test.ts`). `neutre` sur une surface, `image` posée
+     sur une photo. Avant : trois écritures, dont une en orange de texte pour le
+     délai d'un service. */
+  .etiquette {
+    display: inline-flex;
+    align-items: center;
+    gap: --spacing(1);
+    padding: --spacing(0.5) --spacing(2);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: var(--leading-titre);
+    white-space: nowrap;
+  }
+  .etiquette-neutre {
+    border: 1px solid var(--color-line);
+    background-color: var(--color-surface);
+    color: var(--color-cloud);
+  }
+  .etiquette-image {
+    background-color: color-mix(in srgb, var(--color-chrome) 80%, transparent);
+    color: var(--color-on-chrome);
+  }
+
   /* ICÔNE (`components/icone.tsx`, brief Phase 2.6) — un trait de 1,75 px
      d'ÉCRAN, quelle que soit la grille du dessin ou la taille rendue :
      `non-scaling-stroke` sur chaque tracé. Un utilitaire posé à côté

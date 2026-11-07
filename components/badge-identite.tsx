@@ -12,7 +12,7 @@
 export function BadgeIdentite({ label, aide }: { label: string; aide: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-cloud"
+      className="etiquette etiquette-neutre"
       title={aide}
     >
       <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
