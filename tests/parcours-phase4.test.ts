@@ -50,6 +50,12 @@ test("P5 — fiche : un <main>, le prix sous le titre, la remise avant le bouton
   assert.ok(prix < acheter, "le prix n'attend plus la carte d'achat");
   assert.ok(acheter < remise && remise < bouton, "la remise se lit AVANT de payer");
   assert.ok(bouton < confiance, "la réassurance générale suit le bouton");
+  // La compatibilité véhicule décide l'achat : avant la carte. Les
+  // caractéristiques (poids, dimensions, marque) informent : après elle.
+  const compat = pos("{physical && physical.fitment.length > 0 && (");
+  const caracteristiques = pos("{physical?.specs && (");
+  assert.ok(prix < compat && compat < acheter, "la compatibilité reste avant la carte d'achat");
+  assert.ok(confiance < caracteristiques, "les caractéristiques passent sous la carte d'achat");
 });
 
 test("P1 — connexion : un titre qui dit où l'on est, avec son mot d'accent, dans les quatre langues", () => {
@@ -130,8 +136,19 @@ test("P6 — barre inférieure : quatre entrées sous le pouce, mobile seulement
   assert.equal(entreeActive("/categories", "/categories"), true);
   assert.equal(entreeActive("/categories/mode", "/categories"), true);
   assert.equal(entreeActive("/panier-partage", "/panier"), false, "un préfixe de mot n'est pas une sous-page");
+  // Une ligne par libellé : en gras, « Panyen mwen » se coupait et l'icône
+  // sortait de la barre. Libellés courts propres à la barre, sans retour à la ligne.
+  assert.match(nav, /panier: t\(lang, "nav\.bar\.cart"\),/);
+  assert.match(nav, /compte=\{<AccountMenu label=\{t\(lang, "nav\.bar\.account"\)\} variante="barre">/);
+  assert.equal((barre.match(/<span className="barre-nav-libelle">\{libelles\.(?:accueil|rayons|panier)\}<\/span>/g) ?? []).length, 3);
+  assert.match(lire("components/account-menu.tsx"), /<span className=\{barre \? "barre-nav-libelle" :/);
+  assert.match(regle(".barre-nav-libelle"), /white-space: nowrap;/);
   for (const lang of LANGUES) {
     const d = DICT[lang] as Record<string, string>;
     assert.ok(d["a11y.nav.bottom"], `${lang} : nom accessible de la barre`);
+    for (const cle of ["nav.home", "directory.short", "nav.bar.cart", "nav.bar.account"]) {
+      // 10 caractères tiennent dans 80 px à 12 px en gras (mesuré à 320 px).
+      assert.ok(d[cle] && [...d[cle]].length <= 10, `${lang} : « ${d[cle]} » trop long pour la barre`);
+    }
   }
 });

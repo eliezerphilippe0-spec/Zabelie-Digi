@@ -127,7 +127,9 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
           {t(lang, "wa.chat")}
         </MetricA>
       )}
-      <div className="my-1 border-t border-line" />
+      {/* Le trait ne précède que la déconnexion : seul, sans session, il
+          restait suspendu au bas du menu. */}
+      {user && <div className="my-1 border-t border-line" />}
       {/* La déconnexion est dans le MÊME menu à toutes les largeurs :
           Android partagé, cybercafé — c'est exactement là qu'elle compte.
           Un formulaire, donc aucun JS requis. */}
@@ -242,10 +244,10 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
         nav: t(lang, "a11y.nav.bottom"),
         accueil: t(lang, "nav.home"),
         rayons: t(lang, "directory.short"),
-        panier: t(lang, "cart.title"),
+        panier: t(lang, "nav.bar.cart"),
       }}
       articlesPanier={articlesPanier}
-      compte={<AccountMenu label={t(lang, "nav.account")} variante="barre">{liensCompte}</AccountMenu>}
+      compte={<AccountMenu label={t(lang, "nav.bar.account")} variante="barre">{liensCompte}</AccountMenu>}
     />
     </>
   );

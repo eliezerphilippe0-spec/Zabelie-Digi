@@ -127,7 +127,7 @@ test("la déconnexion est atteignable sur MOBILE — le terrain visé", () => {
   assert.ok(m, "le menu compte doit porter la déconnexion, conditionnée à une session");
   assert.doesNotMatch(m![0], /\bhidden\b|\bsm:block\b|\bmd:block\b/, "la déconnexion est cachée sous un point de rupture");
   assert.match(NAV, /<AccountMenu label=\{t\(lang, "nav\.account"\)\} className="hidden md:block">\{liensCompte\}<\/AccountMenu>/);
-  assert.match(NAV, /compte=\{<AccountMenu label=\{t\(lang, "nav\.account"\)\} variante="barre">\{liensCompte\}<\/AccountMenu>\}/);
+  assert.match(NAV, /compte=\{<AccountMenu label=\{t\(lang, "nav\.bar\.account"\)\} variante="barre">\{liensCompte\}<\/AccountMenu>\}/);
   assert.match(readFileSync("components/barre-navigation.tsx", "utf8"), /<nav ref=\{ref\} aria-label=\{libelles\.nav\} className="barre-nav md:hidden">/,
     "sous md, la barre inférieure doit être visible : c'est elle qui ouvre le menu");
 });

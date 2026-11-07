@@ -98,7 +98,7 @@ test("H4 — Aide, Talents et déconnexion vivent dans le menu compte", () => {
   const menu = nav.slice(nav.indexOf("const liensCompte = ("), nav.indexOf("return ("));
   assert.ok(menu.length > 200, "bloc des liens du compte introuvable");
   assert.match(nav, /<AccountMenu label=\{t\(lang, "nav\.account"\)\} className="hidden md:block">\{liensCompte\}<\/AccountMenu>/);
-  assert.match(nav, /compte=\{<AccountMenu label=\{t\(lang, "nav\.account"\)\} variante="barre">\{liensCompte\}<\/AccountMenu>\}/);
+  assert.match(nav, /compte=\{<AccountMenu label=\{t\(lang, "nav\.bar\.account"\)\} variante="barre">\{liensCompte\}<\/AccountMenu>\}/);
   for (const [href, cle] of [["/aide", "nav.help"], ["/catalogue?univers=services", "universe.services"], ["/vendre", "topbar.sell"], ["/connexion", "nav.login"], ["/messages", "msg.title"]]) {
     assert.match(menu, new RegExp(`href="${href.replace(/[/#?]/g, "\\$&")}"[^>]*>\\s*\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\}`), `${href} manque au menu compte`);
   }

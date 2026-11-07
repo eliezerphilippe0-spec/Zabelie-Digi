@@ -79,8 +79,17 @@
   opacity: 0;
   transition: opacity var(--motion-base) var(--ease);
 }
+/* Une ligne, toujours : un libellé coupé en deux faisait monter l'icône hors
+   de la barre (mesuré à 360 px sur « Panyen mwen » en gras). Libellés courts
+   (`nav.bar.*`), et l'ellipse en dernier recours. */
+.barre-nav-libelle {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .barre-nav-lien[aria-current="page"],
-details[open] > .barre-nav-lien { font-weight: 800; }
+details[open] > .barre-nav-lien { font-weight: 700; }
 .barre-nav-lien[aria-current="page"]::before,
 details[open] > .barre-nav-lien::before { opacity: 1; }
 .barre-nav-compteur {

@@ -67,7 +67,7 @@ export function BarreNavigation({
         <li>
           <Link href="/" aria-current={actif("/") ? "page" : undefined} className="barre-nav-lien">
             <Icone taille={24}><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" /></Icone>
-            <span>{libelles.accueil}</span>
+            <span className="barre-nav-libelle">{libelles.accueil}</span>
           </Link>
         </li>
         <li>
@@ -78,7 +78,7 @@ export function BarreNavigation({
               <rect x="4" y="13" width="7" height="7" rx="1" />
               <rect x="13" y="13" width="7" height="7" rx="1" />
             </Icone>
-            <span>{libelles.rayons}</span>
+            <span className="barre-nav-libelle">{libelles.rayons}</span>
           </Link>
         </li>
         <li>
@@ -93,7 +93,7 @@ export function BarreNavigation({
               <circle cx="10" cy="19" r="1.4" />
               <circle cx="17" cy="19" r="1.4" />
             </Icone>
-            <span>{libelles.panier}</span>
+            <span className="barre-nav-libelle">{libelles.panier}</span>
             {panier !== null && <span className="barre-nav-compteur numeric" aria-hidden="true">{panier}</span>}
           </Link>
         </li>
