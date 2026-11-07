@@ -53,7 +53,7 @@ export function TrustBar({ items, compact = false }: { items: Item[]; compact?: 
   }
   return (
     <section className="mx-auto max-w-6xl px-5 py-6">
-      <ul className="grid grid-cols-1 gap-4 rounded-2xl border border-line bg-surface/40 px-5 py-5 sm:grid-cols-2 lg:grid-cols-5">
+      <ul className="grid grid-cols-1 gap-4 rounded-xl border border-line bg-surface/40 px-5 py-5 sm:grid-cols-2 lg:grid-cols-5">
         {items.map((it) => (
           <li key={it.t} className="flex items-start gap-3">
             <svg

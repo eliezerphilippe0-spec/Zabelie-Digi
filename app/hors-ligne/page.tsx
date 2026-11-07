@@ -31,7 +31,7 @@ export default async function HorsLignePage() {
   return (
     <div className="bg-grain flex min-h-dvh flex-col">
       <main id="main" className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-5 py-16 text-center">
-        <h1 className="text-2xl font-black tracking-tight">
+        <h1>
           {t(lang, "offline.title")}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-mist">

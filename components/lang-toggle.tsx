@@ -152,7 +152,7 @@ export function LangToggle({
           {isPending && <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 motion-safe:animate-spin fill-none stroke-current" strokeWidth="2"><path d="M12 3a9 9 0 1 1-9 9" /></svg>}
           {ABBR[current]}
         </summary>
-        <div className="header-menu-panel absolute right-0 z-50 mt-1 hidden w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
+        <div className="header-menu-panel absolute right-0 z-(--z-header) mt-1 hidden w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">
           {LANGS.map((l) => (
             <button
               key={l}

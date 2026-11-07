@@ -24,7 +24,7 @@ export default async function SecuritePage() {
       <Link href="/" className="text-xl font-bold">Zabelie</Link>
       <LangToggle current={lang} />
     </div>
-    <h1 className="mb-4 text-3xl font-bold">{t(lang, "mfa.title")}</h1>
+    <h1 className="mb-4">{t(lang, "mfa.title")}</h1>
     <p className="mb-8 text-mist">{t(lang, "mfa.intro")}</p>
     {unavailable ? <div className="space-y-4">
       <p role="alert">{t(lang, "mfa.unavailable")}</p>

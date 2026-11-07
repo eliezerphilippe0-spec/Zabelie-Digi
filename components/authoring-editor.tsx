@@ -644,8 +644,8 @@ export function AuthoringEditor({
 
       {/* La saisie n'est jamais bloquée par un envoi : seulement par l'archivage. */}
       <fieldset disabled={archive} className="space-y-8">
-        <section aria-labelledby={`${ids}-infos`} className="rounded-2xl border border-line bg-surface p-5">
-          <h2 id={`${ids}-infos`} className="text-lg font-semibold">{e.infos}</h2>
+        <section aria-labelledby={`${ids}-infos`} className="rounded-xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-infos`}>{e.infos}</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="block text-sm sm:col-span-2">
               {labels.champTitre}
@@ -683,8 +683,8 @@ export function AuthoringEditor({
           </div>
         </section>
 
-        <section aria-labelledby={`${ids}-brief`} className="rounded-2xl border border-line bg-surface p-5">
-          <h2 id={`${ids}-brief`} className="text-lg font-semibold">{e.etapeBrief}</h2>
+        <section aria-labelledby={`${ids}-brief`} className="rounded-xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-brief`}>{e.etapeBrief}</h2>
           <p className="mt-1 text-sm text-mist">{e.briefIntro}</p>
           <div className="mt-4 space-y-4">{CHAMPS_BRIEF_REQUIS.map(champBrief)}</div>
           {/* Six champs facultatifs repliés : sur un téléphone, onze zones de texte d'affilée découragent. */}
@@ -694,8 +694,8 @@ export function AuthoringEditor({
           </details>
         </section>
 
-        <section aria-labelledby={`${ids}-plan`} className="rounded-2xl border border-line bg-surface p-5">
-          <h2 id={`${ids}-plan`} className="text-lg font-semibold">{e.etapePlan}</h2>
+        <section aria-labelledby={`${ids}-plan`} className="rounded-xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-plan`}>{e.etapePlan}</h2>
           <p className="mt-1 text-sm text-mist">{e.planIntro}</p>
           <label className="mt-4 block text-sm">
             {e.objectif}
@@ -751,8 +751,8 @@ export function AuthoringEditor({
           )}
         </section>
 
-        <section aria-labelledby={`${ids}-redaction`} className="rounded-2xl border border-line bg-surface p-5">
-          <h2 id={`${ids}-redaction`} className="text-lg font-semibold">{e.etapeRedaction}</h2>
+        <section aria-labelledby={`${ids}-redaction`} className="rounded-xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-redaction`}>{e.etapeRedaction}</h2>
           {planApprouve === null ? (
             <p className="mt-1 text-sm text-mist">{e.redactionVerrou}</p>
           ) : (
@@ -798,8 +798,8 @@ export function AuthoringEditor({
           )}
         </section>
 
-        <section aria-labelledby={`${ids}-relecture`} className="rounded-2xl border border-line bg-surface p-5">
-          <h2 id={`${ids}-relecture`} className="text-lg font-semibold">{r.titre}</h2>
+        <section aria-labelledby={`${ids}-relecture`} className="rounded-xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-relecture`}>{r.titre}</h2>
           {planApprouve === null ? (
             <p className="mt-1 text-sm text-mist">{r.verrou}</p>
           ) : (
@@ -844,8 +844,8 @@ export function AuthoringEditor({
           )}
         </section>
 
-        <section aria-labelledby={`${ids}-pdf`} className="rounded-2xl border border-line bg-surface p-5">
-          <h2 id={`${ids}-pdf`} className="text-lg font-semibold">{p.titre}</h2>
+        <section aria-labelledby={`${ids}-pdf`} className="rounded-xl border border-line bg-surface p-5">
+          <h2 id={`${ids}-pdf`}>{p.titre}</h2>
           {!approuve ? (
             <p className="mt-1 text-sm text-mist">{p.verrou}</p>
           ) : !pdfAJour || !pdf ? (
@@ -912,7 +912,7 @@ export function AuthoringEditor({
       )}
 
       {/* Barre collante : sur un téléphone, l'état et le bouton restent sous le pouce. */}
-      <div className="sticky bottom-0 z-10 -mx-4 border-t border-line bg-surface px-4 py-3">
+      <div className="sticky bottom-0 z-(--z-sticky) -mx-4 border-t border-line bg-surface px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => void sauver()} disabled={archive || statut === "envoi"}
             className="bouton min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">{statut === "envoi" ? e.enregistrement : e.enregistrer}</button>

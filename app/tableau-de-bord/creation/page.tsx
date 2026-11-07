@@ -174,14 +174,14 @@ export default async function CreationPage({
     <section aria-labelledby="chiffres-titre" className="mt-8">
       <MontantsMasquables titre={v.chiffresTitre} masquer={v.masquer}>
         {ventes === null ? (
-          <p role="status" className="mt-3 rounded-2xl border border-line p-5 text-sm text-mist">{v.indisponible}</p>
+          <p role="status" className="mt-3 rounded-xl border border-line p-5 text-sm text-mist">{v.indisponible}</p>
         ) : (
           <>
             {/* Téléphone : le revenu sur toute la largeur, les deux autres côte à côte
                 (trois cartes empilées prenaient un écran entier). */}
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {cartes.map((k, i) => (
-                <li key={k.cle} className={`rounded-2xl border border-line bg-surface p-4 sm:p-5 ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
+                <li key={k.cle} className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
                   <IconeStudio nom={k.icone} className="h-5 w-5 text-mist" />
                   <p className="metric mt-3 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
                     <Montant valeur={k.valeur} masque={v.montantMasque} />
@@ -195,7 +195,7 @@ export default async function CreationPage({
               <p className="mt-2 text-xs text-mist">{v.incomplet.replace("{n}", String(LOT_VENTES * LOTS_VENTES_MAX))}</p>
             )}
 
-            <div className="mt-6 rounded-2xl border border-line">
+            <div className="mt-6 rounded-xl border border-line">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
                 <div>
                   <h3 className="font-semibold">{v.meilleursTitre}</h3>
@@ -250,7 +250,7 @@ export default async function CreationPage({
         <StudioShell labels={c} ventes={v} actif="accueil" retour={t(lang, "nav.dashboard")} quota={quotaCadre}>
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
             <div className="min-w-0 sm:flex-1">
-              <h1 className="text-2xl font-semibold sm:text-3xl">{salut}</h1>
+              <h1>{salut}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{c.intro}</p>
             </div>
             <Link href={boutique} className="bouton inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-line px-4 text-sm font-semibold">
@@ -259,7 +259,7 @@ export default async function CreationPage({
             </Link>
           </div>
 
-          <h2 id="actions-titre" className="mt-6 text-sm font-semibold">{c.titre}</h2>
+          <h2 id="actions-titre" className="mt-6 titre-bloc">{c.titre}</h2>
           <ul aria-labelledby="actions-titre" className="mt-3 flex flex-wrap gap-2">
             {actions.map((a) => (
               <li key={a.cle}>
@@ -275,8 +275,8 @@ export default async function CreationPage({
           </ul>
 
           {depart && (
-            <section id="nouveau-projet" aria-labelledby="nouveau-projet-titre" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
-              <h2 id="nouveau-projet-titre" className="text-lg font-semibold">{c.formTitre}</h2>
+            <section id="nouveau-projet" aria-labelledby="nouveau-projet-titre" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface p-5">
+              <h2 id="nouveau-projet-titre">{c.formTitre}</h2>
               <p className="mt-3 text-sm font-semibold">{tb.formatTitre}</p>
               <ul className="mt-2 grid gap-2 sm:grid-cols-3">
                 {formats.map((f) => (
@@ -309,7 +309,7 @@ export default async function CreationPage({
           <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
             <section id="mes-projets" aria-labelledby="mes-projets-titre" className="min-w-0 scroll-mt-32">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 id="mes-projets-titre" className="text-lg font-semibold">{c.projets}</h2>
+                <h2 id="mes-projets-titre">{c.projets}</h2>
                 {max !== null && (
                   <p className="text-xs text-mist">{c.actifs.replace("{n}", String(actifs)).replace("{max}", String(max))}</p>
                 )}
@@ -318,7 +318,7 @@ export default async function CreationPage({
               {projets.length === 0 ? (
                 <p className="mt-4 text-sm text-mist">{c.aucunProjet}</p>
               ) : (
-                <ul className="mt-4 divide-y divide-line rounded-2xl border border-line">
+                <ul className="mt-4 divide-y divide-line rounded-xl border border-line">
                   {visibles.map((p) => (
                     <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                       <div className="min-w-0">
@@ -346,8 +346,8 @@ export default async function CreationPage({
             </section>
 
             <aside className="min-w-0 space-y-6">
-              <section aria-labelledby="opp-titre" className="rounded-2xl border border-line p-5">
-                <h2 id="opp-titre" className="text-lg font-semibold">{tb.oppTitre}</h2>
+              <section aria-labelledby="opp-titre" className="rounded-xl border border-line p-5">
+                <h2 id="opp-titre">{tb.oppTitre}</h2>
                 <p className="mt-1 text-xs text-mist">{tb.oppSous}</p>
                 {opportunites === null ? (
                   <p className="mt-3 text-sm text-mist">{tb.analyseIndisponible}</p>
@@ -365,8 +365,8 @@ export default async function CreationPage({
                 </Link>
               </section>
 
-              <section aria-labelledby="comment-titre" className="rounded-2xl border border-line p-5">
-                <h2 id="comment-titre" className="text-lg font-semibold">{tb.commentTitre}</h2>
+              <section aria-labelledby="comment-titre" className="rounded-xl border border-line p-5">
+                <h2 id="comment-titre">{tb.commentTitre}</h2>
                 <ol className="mt-3 space-y-3 text-sm">
                   {etapes.map((e, i) => (
                     <li key={e.titre} className="flex gap-3">

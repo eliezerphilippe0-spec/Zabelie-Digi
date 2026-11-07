@@ -8,7 +8,7 @@ export default function Loading() {
     <SkeletonPage>
       <SiteNav />
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-2">
-        <SkeletonBlock className="aspect-[4/3] w-full rounded-3xl" />
+        <SkeletonBlock className="aspect-[4/3] w-full rounded-xl" />
         <div>
           <SkeletonBlock className="h-3 w-24" />
           <SkeletonBlock className="mt-3 h-8 w-5/6" />

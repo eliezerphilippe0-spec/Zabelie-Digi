@@ -41,18 +41,18 @@ export default async function CodesPromoPage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="promo">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.nav.promo")}</h1>
+          <h1>{t(lang, "vendeur.nav.promo")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">
             {avantCode}
             <span className="code-lisible font-bold text-accent">PROMO50</span>
             {apresCode}
           </p>
           {aDesProduits ? (
-            <div className="mt-6 rounded-2xl border border-line bg-surface/60 p-5">
+            <div className="mt-6 rounded-xl border border-line bg-surface/60 p-5">
               <ZabelieCouponManager key={user.id} coupons={coupons} actorId={user.id} />
             </div>
           ) : (
-            <div className="mt-6 rounded-2xl border border-line p-5 text-sm">
+            <div className="mt-6 rounded-xl border border-line p-5 text-sm">
               <p className="text-mist">{t(lang, "vendeur.promo.sansProduit")}</p>
               <Link href="/vendre" className="bouton mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">
                 {t(lang, "vendeur.produits.premier")}

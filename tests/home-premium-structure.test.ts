@@ -108,7 +108,7 @@ test("S6 — l'image de la bannière n'est rendue que si le fichier du porteur e
 test("S7 — le bouton WhatsApp flottant : 48 px, bas droite, absent sans numéro", () => {
   const fab = sansCommentaires(FAB);
   assert.match(fab, /if \(!href\) return null;/);
-  assert.match(fab, /className="fixed bottom-4 right-4 z-40 grid h-12 w-12 place-items-center rounded-full/);
+  assert.match(fab, /className="fixed bottom-4 right-4 z-\(--z-drawer\) grid h-12 w-12 place-items-center rounded-full/);
   assert.match(page, /<WhatsAppFab href=\{wa\} label=\{t\(lang, "wa\.chat"\)\} \/>/);
 });
 

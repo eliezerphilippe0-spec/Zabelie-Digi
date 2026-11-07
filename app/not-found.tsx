@@ -27,7 +27,7 @@ export default async function NotFound() {
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-line text-2xl text-mist">
           ?
         </span>
-        <h1 className="mt-6 text-2xl font-extrabold">
+        <h1 className="mt-6">
           {t(lang, "err.404.title")}
         </h1>
         <p className="mt-3 text-mist">{t(lang, "err.404.body")}</p>

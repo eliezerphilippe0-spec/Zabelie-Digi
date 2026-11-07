@@ -43,7 +43,7 @@ function Shell({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-5xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+        <h1>{title}</h1>
         {children}
       </main>
       <SiteFooter />
@@ -135,7 +135,7 @@ export default async function DashboardPage({
   if (suspension) {
     return (
       <Shell title={t(lang, "vendeur.suspendu.titre")}>
-        <div className="mt-6 max-w-xl rounded-2xl border border-danger-text/40 bg-surface/60 p-6 text-sm">
+        <div className="mt-6 max-w-xl rounded-xl border border-danger-text/40 bg-surface/60 p-6 text-sm">
           <p>
             {t(lang, "vendeur.suspendu.texte").replace(
               "{date}",
@@ -285,7 +285,7 @@ export default async function DashboardPage({
   } catch {
     return (
       <Accueil lang={lang}>
-        <h1 className="text-2xl font-semibold sm:text-3xl">{user.displayName}</h1>
+        <h1>{user.displayName}</h1>
         <p role="alert" className="mt-4 text-sm text-danger-text">{t(lang, "vendeur.indisponible")}</p>
       </Accueil>
     );
@@ -436,7 +436,7 @@ export default async function DashboardPage({
     <Accueil lang={lang}>
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:justify-between">
         <div className="min-w-0 sm:flex-1">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{salut}</h1>
+          <h1>{salut}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.intro")}</p>
         </div>
         <Link
@@ -465,7 +465,7 @@ export default async function DashboardPage({
       </ul>
 
       {aTraiter !== null && aTraiter > 0 && (
-        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand/40 bg-surface p-4">
+        <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/40 bg-surface p-4">
           <p className="flex items-center gap-2 text-sm font-semibold">
             <IconeStudio nom="commandes" className="h-5 w-5 text-brand" />
             {aTraiter === 1
@@ -495,14 +495,14 @@ export default async function DashboardPage({
         <MontantsMasquables titre={t(lang, "vendeur.argent")} masquer={t(lang, "vendeur.masquer")} classeTitre="titre-section">
           {/* La seule métrique qui répond à « où en est mon argent ? » : pleine
               largeur, et SEULE à porter le dégradé de la marque. */}
-          <div className="mt-3 rounded-2xl border border-line bg-surface-maroon/70 p-6">
+          <div className="mt-3 rounded-xl border border-line bg-surface-maroon/70 p-6">
             <p className="text-xs uppercase tracking-wide text-mist">
               {metriquePrincipale.label}
             </p>
-            <p className="metric mt-1 text-4xl font-extrabold text-gradient sm:text-5xl group-data-[masque]/montants:hidden">
+            <p className="metric mt-1 text-4xl font-extrabold text-gradient group-data-[masque]/montants:hidden">
               {metriquePrincipale.value}
             </p>
-            <p className="metric mt-1 hidden text-4xl font-extrabold sm:text-5xl group-data-[masque]/montants:block">
+            <p className="metric mt-1 hidden text-4xl font-extrabold group-data-[masque]/montants:block">
               <span aria-hidden="true">•••••</span>
               <span className="sr-only">{t(lang, "vendeur.masque")}</span>
             </p>
@@ -516,7 +516,7 @@ export default async function DashboardPage({
             {metriques.map((m) => (
               <div
                 key={m.label}
-                className="rounded-2xl border border-line bg-surface-maroon/40 p-4"
+                className="rounded-xl border border-line bg-surface-maroon/40 p-4"
               >
                 <p className="text-xs uppercase tracking-wide text-mist">{m.label}</p>
                 {/* `text-lg` sur mobile, MESURÉ et pas choisi : à `text-xl`,
@@ -536,7 +536,7 @@ export default async function DashboardPage({
             ))}
           </div>
 
-          <div className="mt-6 space-y-4 rounded-2xl border border-line bg-surface-brown/50 p-5">
+          <div className="mt-6 space-y-4 rounded-xl border border-line bg-surface-brown/50 p-5">
             <p className="text-sm text-mist">{t(lang, "vendeur.retrait.regle")}</p>
             <PayoutRequest
               key={user.id}

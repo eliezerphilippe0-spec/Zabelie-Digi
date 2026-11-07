@@ -47,17 +47,17 @@ export default async function DevelopersPage() {
   const lang = await getLang();
   const c = apiDocsCopy(lang);
   return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-4xl px-5 py-12">
-    <h1 className="text-3xl font-black">{c.title}</h1><p className="mt-3 text-lg">{c.intro}</p><p className="mt-4 text-mist">{c.scope}</p>
+    <h1>{c.title}</h1><p className="mt-3 text-lg">{c.intro}</p><p className="mt-4 text-mist">{c.scope}</p>
     <Link href={`/api/v1/openapi.json?lang=${lang}`} className="mt-6 inline-flex min-h-11 items-center font-semibold underline">{c.contract}</Link>
-    <h2 id="api-exemple" className="mt-10 text-xl font-bold">{c.start}</h2>
+    <h2 id="api-exemple" className="mt-10">{c.start}</h2>
     {/* Défilant à 360 px : focusable et nommé, sinon le clavier ne peut pas
         faire défiler le code (axe, scrollable-region-focusable). */}
     <pre tabIndex={0} role="region" aria-labelledby="api-exemple" className="mt-4 max-w-full overflow-x-auto rounded-xl border border-line p-4 text-sm"><code>{example}</code></pre>
-    <h2 className="mt-10 text-xl font-bold">{c.endpoints}</h2>
+    <h2 className="mt-10">{c.endpoints}</h2>
     <ul className="mt-4 space-y-2">{PUBLIC_OPERATIONS.map(([name]) => <li key={name}><code className="break-all text-sm">POST /api/v1/{name}</code></li>)}</ul>
-    <h2 className="mt-10 text-xl font-bold">{c.limits}</h2>
+    <h2 className="mt-10">{c.limits}</h2>
     {[c.details,c.quota,c.access,c.empty,c.texts,c.delivery].map(text => <p key={text} className="mt-4 text-sm leading-relaxed text-mist">{text}</p>)}
-    <h2 id="api-vendeur" className="mt-14 scroll-mt-32 text-2xl font-bold">{c.sellerTitle}</h2>
+    <h2 id="api-vendeur" className="mt-14 scroll-mt-32">{c.sellerTitle}</h2>
     <p className="mt-3">{c.sellerIntro}</p>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerAuth}</p>
     <Link href={`/api/v1/seller/openapi.json?lang=${lang}`} className="mt-4 inline-flex min-h-11 items-center font-semibold underline">{c.sellerContract}</Link>

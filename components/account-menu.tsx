@@ -26,7 +26,7 @@ export function AccountMenu({
         </svg>
         <span className="hidden text-sm font-semibold lg:inline">{label}</span>
       </summary>
-      <div className="header-menu-panel absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-surface p-2 text-cloud shadow-xl">
+      <div className="header-menu-panel absolute right-0 top-full z-(--z-header) mt-2 w-64 rounded-xl border border-line bg-surface p-2 text-cloud shadow-lg">
         {children}
       </div>
     </details>

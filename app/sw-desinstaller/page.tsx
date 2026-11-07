@@ -33,7 +33,7 @@ export default function DesinstallerSWPage() {
   return (
     <div className="bg-grain flex min-h-dvh flex-col justify-center">
       <main id="main" className="mx-auto w-full max-w-lg px-5 py-16">
-        <h1 className="text-2xl font-black tracking-tight">
+        <h1>
           Désinstaller le service worker
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-mist">

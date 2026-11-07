@@ -69,6 +69,21 @@ const manrope = Manrope({
   display: "swap",
   preload: false,
 });
+// POLICE D'ACCENT (V-25 A3) : Instrument Serif Italic découpée pour Zabelie,
+// lettres et accents seuls, 11,4 Ko. Total des trois : 87,9 Ko, budget 90 Ko.
+// Un navigateur ne la télécharge que sur une page qui emploie `.mot-accent`.
+// `adjustFontFallback` pose le `size-adjust` du repli : le basculement en `swap`
+// ne déplace rien (brief Phase 1.2).
+const accent = localFont({
+  src: "./fonts/InstrumentSerifZabelie.woff2",
+  weight: "400",
+  style: "italic",
+  variable: "--font-accent-serif",
+  display: "swap",
+  preload: false,
+  fallback: ["Georgia", "Times New Roman", "serif"],
+  adjustFontFallback: "Times New Roman",
+});
 
 // Source UNIQUE — partagée avec `app/manifest.ts`. Deux copies d'une chaîne de
 // marque divergent : le monogramme l'a fait, en silence, pendant des semaines.
@@ -134,7 +149,7 @@ export default async function RootLayout({
   const preference = readThemePreference((await cookies()).get(THEME_COOKIE)?.value);
   const theme = resolveTheme(preference, false);
   return (
-    <html lang={lang} data-theme={theme} data-theme-preference={preference} suppressHydrationWarning className={`${inter.variable} ${manrope.variable}`}>
+    <html lang={lang} data-theme={theme} data-theme-preference={preference} suppressHydrationWarning className={`${inter.variable} ${manrope.variable} ${accent.variable}`}>
       <head><script nonce={nonce} id="zabelie-theme-init" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} /></head>
       <body className="min-h-dvh antialiased">
         <ThemeProvider initialPreference={preference}>

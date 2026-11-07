@@ -61,7 +61,7 @@ test("lib/flash : la fenêtre est une comparaison de dates en BASE, pas un cron"
 test("fiche : le prix affiché est COMMANDÉ par l'offre, le flash prime sur le rabais", () => {
   assert.match(
     FICHE,
-    /formatHTG\(flash \? flash\.prixFlashHtg : product\.priceHTG\)/,
+    /<Prix montant=\{flash \? flash\.prixFlashHtg : product\.priceHTG\} \/>/,
     "Le grand prix doit basculer sur l'offre flash quand elle existe."
   );
   // Le compte à rebours reçoit la fin SERVEUR — jamais une date recalculée client.

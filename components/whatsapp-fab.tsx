@@ -6,7 +6,7 @@ import { MetricA } from "@/components/metric-a";
  * produits. Rendu seulement si le numéro (ou le lien court) est posé :
  * un bouton vers personne est pire que rien (`lib/whatsapp.ts`).
  *
- * Décalé du bord et au-dessus du contenu (`z-40`, sous l'en-tête `z-50`) ;
+ * Décalé du bord et au-dessus du contenu (`--z-drawer`, sous l'en-tête `--z-header`) ;
  * le libellé vit en `aria-label`, l'icône est le seul visible.
  */
 export function WhatsAppFab({ href, label }: { href: string | null; label: string }) {
@@ -15,7 +15,7 @@ export function WhatsAppFab({ href, label }: { href: string | null; label: strin
     <MetricA
       event="whatsapp_clicked"
       href={href}
-      className="fixed bottom-4 right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-chrome text-on-chrome shadow-lg transition active:scale-[0.97]"
+      className="fixed bottom-4 right-4 z-(--z-drawer) grid h-12 w-12 place-items-center rounded-full bg-chrome text-on-chrome shadow-lg transition active:scale-[0.97]"
     >
       <span className="sr-only">{label}</span>
       <svg

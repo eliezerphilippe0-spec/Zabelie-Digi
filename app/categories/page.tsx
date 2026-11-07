@@ -37,7 +37,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
         <Link href="/" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "nav.home")}</Link>
         <span aria-hidden="true">/</span><span aria-current="page">{t(lang, "directory.title")}</span>
       </nav>
-      <h1 className="text-3xl font-extrabold sm:text-4xl">{t(lang, "directory.title")}</h1>
+      <h1>{t(lang, "directory.title")}</h1>
       <p className="mt-3 max-w-2xl text-mist">{t(lang, "directory.intro")}</p>
       <form action="/categories" className="mt-6 flex max-w-2xl gap-2">
         <input name="q" defaultValue={q} aria-label={t(lang, "directory.search")} placeholder={t(lang, "directory.search")} className="min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-ink px-4 text-sm" />
@@ -45,11 +45,11 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
       </form>
       {q && <Link href="/categories" className="mt-2 inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.reset")}</Link>}
       {rows.length > 0 ? <div className="mt-8 grid items-start gap-4 lg:grid-cols-2">
-        {rows.map((department) => <section key={department.slug} className="rounded-2xl border border-line bg-ink p-5" aria-labelledby={`department-${department.slug}`}>
+        {rows.map((department) => <section key={department.slug} className="rounded-xl border border-line bg-ink p-5" aria-labelledby={`department-${department.slug}`}>
           <div className="flex items-start gap-3">
             <DepartmentIcon slug={department.slug} className="mt-1 h-6 w-6 flex-none stroke-current text-cloud" />
             <div>
-              <h2 id={`department-${department.slug}`} className="text-lg font-bold"><Link href={department.href} className="inline-flex min-h-11 items-center hover:underline">{department.label}</Link></h2>
+              <h2 id={`department-${department.slug}`}><Link href={department.href} className="inline-flex min-h-11 items-center hover:underline">{department.label}</Link></h2>
             </div>
           </div>
           <ul className="mt-4 divide-y divide-line">
@@ -66,7 +66,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             </li>)}
           </ul>
         </section>)}
-      </div> : <p className="mt-8 rounded-2xl border border-line p-6 text-mist">{t(lang, all.length ? "directory.noMatch" : brut.length ? "directory.none" : "directory.unavailable")}</p>}
+      </div> : <p className="mt-8 rounded-xl border border-line p-6 text-mist">{t(lang, all.length ? "directory.noMatch" : brut.length ? "directory.none" : "directory.unavailable")}</p>}
     </main>
     <SiteFooter />
   </div>;

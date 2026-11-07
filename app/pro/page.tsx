@@ -30,7 +30,7 @@ function Shell({
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{title}</h1>
+        <h1>{title}</h1>
         {subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}
         <div className="mt-8">{children}</div>
       </main>
@@ -44,7 +44,7 @@ export default async function ProPage() {
   if (!isSupabaseConfigured()) {
     return (
       <Shell title={c.proTitle} subtitle={c.demo}>
-        <div className="glass rounded-2xl p-6 text-sm text-mist">{c.demoBody}</div>
+        <div className="glass rounded-xl p-6 text-sm text-mist">{c.demoBody}</div>
       </Shell>
     );
   }

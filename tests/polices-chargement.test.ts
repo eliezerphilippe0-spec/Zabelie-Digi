@@ -14,17 +14,20 @@ import { readFileSync } from "node:fs";
 const LAYOUT = readFileSync("app/layout.tsx", "utf8");
 const bloc = (debut: string) => LAYOUT.slice(LAYOUT.indexOf(debut), LAYOUT.indexOf("});", LAYOUT.indexOf(debut)));
 
-test("C1 — aucune des deux polices n'est préchargée", () => {
-  for (const d of ["const inter = localFont({", "const manrope = Manrope({"]) {
+const POLICES = ["const inter = localFont({", "const manrope = Manrope({", "const accent = localFont({"];
+
+test("C1 — aucune des trois polices n'est préchargée", () => {
+  for (const d of POLICES) {
+    assert.ok(LAYOUT.includes(d), `${d} a disparu de layout.tsx : ce contrôle ne regarde plus rien`);
     assert.match(bloc(d), /preload: false,/, `${d} est de nouveau préchargée`);
   }
 });
 
-test("C2 — les deux polices restent en swap : la marque s'affiche dès la première visite", () => {
+test("C2 — les trois polices restent en swap : la marque s'affiche dès la première visite", () => {
   /* `optional` sans préchargement laissait les titres dans leur police de
    * repli à chaque première visite, même sur fibre (vu au rendu le
    * 2026-10-17), pour 0,2 s de gain. */
-  for (const d of ["const inter = localFont({", "const manrope = Manrope({"]) {
+  for (const d of POLICES) {
     assert.match(bloc(d), /display: "swap",/, `${d} n'est plus en swap`);
   }
 });

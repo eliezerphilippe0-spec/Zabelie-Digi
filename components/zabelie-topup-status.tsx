@@ -49,7 +49,7 @@ export function ZabelieTopupStatus({
           : "border-line text-cloud";
 
   return (
-    <div className={`rounded-2xl border bg-surface/60 p-5 text-sm ${tone}`}>
+    <div className={`rounded-xl border bg-surface/60 p-5 text-sm ${tone}`}>
       <p className="font-semibold">
         {labels[status] ?? status}
         {!["delivered", "refunded", "failed", "refund_pending"].includes(status) && (

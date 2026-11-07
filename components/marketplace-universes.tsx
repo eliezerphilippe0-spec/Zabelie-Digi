@@ -26,7 +26,7 @@ export function MarketplaceUniverses({ lang }: { lang: Lang }) {
    * `/recharges` reste joignable par la navigation et l'aide. */
   const recharges = isTopupFirstPartyEnabled();
   return <section className="marketplace-universes mx-auto max-w-6xl px-5 py-7" aria-labelledby="shop-universes">
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 id="shop-universes" className="text-xl font-bold">{t(lang, "universe.heading")}</h2><Link href="/categories" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.title")}</Link></div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 id="shop-universes">{t(lang, "universe.heading")}</h2><Link href="/categories" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.title")}</Link></div>
     <div className={recharges ? "universe-grid" : "universe-grid universe-grid-trois"}>
       {(Object.keys(CATALOGUE_UNIVERSES) as CatalogueUniverse[]).map((key, index) => <Link key={key} href={universeHref(key)} className="group flex flex-col bg-ink p-4 sm:p-5 transition hover:bg-surface-neutral">
         <UniverseArt index={index} />

@@ -23,7 +23,7 @@ export function ZelleReferenceForm({
 
   if (sent) {
     return (
-      <p className="rounded-2xl border border-line bg-surface/60 p-4 text-sm text-cloud">
+      <p className="rounded-xl border border-line bg-surface/60 p-4 text-sm text-cloud">
         ✓ {labels.done}
       </p>
     );

@@ -8,6 +8,7 @@ import { pourcentageRabais } from "@/lib/product-discount";
 import { etatStockFlash, type FlashVitrine } from "@/lib/flash";
 import { t, tn, type Lang } from "@/lib/i18n";
 import type { ProductView } from "@/lib/products";
+import { Prix } from "@/components/prix";
 
 /** L'éclair des ventes flash — un trait plein, la couleur suit le texte. */
 export function EclairFlash({ className = "" }: { className?: string }) {
@@ -75,7 +76,7 @@ export function VentesFlash({
   return (
     <section aria-labelledby="ventes-flash" className="ventes-flash mx-auto max-w-6xl px-5 pt-6">
       <div className="flash-bandeau">
-        <h2 id="ventes-flash" className="flex items-center gap-2 text-lg font-extrabold tracking-tight sm:text-xl">
+        <h2 id="ventes-flash" className="flex items-center gap-2">
           <EclairFlash />
           {t(lang, "flash.title")}
         </h2>
@@ -99,7 +100,7 @@ export function VentesFlash({
                 <div className="flex flex-1 flex-col gap-1 p-2.5">
                   <p className="line-clamp-2 break-words text-sm leading-snug text-cloud">{titre}</p>
                   <p className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="numeric text-sm font-bold text-accent">{formatHTG(o.prixFlashHtg)}</span>
+                    <Prix montant={o.prixFlashHtg} className="text-base" />
                     <span className="numeric text-xs text-mist line-through">{formatHTG(p.priceHTG)}</span>
                   </p>
                   <StockFlash lang={lang} unitesMax={o.unitesMax} vendues={o.vendues} />

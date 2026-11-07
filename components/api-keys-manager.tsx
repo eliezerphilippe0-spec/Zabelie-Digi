@@ -51,7 +51,7 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
   return (
     <div className="mt-6 space-y-6">
       {nouvelle && (
-        <div role="status" className="rounded-2xl border border-brand/60 bg-brand/10 p-4">
+        <div role="status" className="rounded-xl border border-brand/60 bg-brand/10 p-4">
           <p className="text-sm font-semibold">{labels.once}</p>
           <code className="mt-2 block break-all rounded-lg bg-ink px-3 py-2 text-sm">{nouvelle}</code>
           <div className="mt-3 flex flex-wrap gap-3">
@@ -83,7 +83,7 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
       {cles.length === 0 ? (
         <p className="text-sm text-mist">{labels.empty}</p>
       ) : (
-        <ul className="divide-y divide-line rounded-2xl border border-line">
+        <ul className="divide-y divide-line rounded-xl border border-line">
           {cles.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">

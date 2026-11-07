@@ -71,7 +71,7 @@ export function OnlineStatus({ variant = "label" }: { variant?: "label" | "dot" 
           AVANT le changement pour être annoncée), contenu seul conditionnel. */}
       <span role="status" aria-live="polite" className="sr-only-anchor contents">
         {toast && (
-          <span className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-cloud shadow-xl">
+          <span className="fixed bottom-4 left-1/2 z-(--z-toast) -translate-x-1/2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-cloud shadow-lg">
             {toast}
           </span>
         )}

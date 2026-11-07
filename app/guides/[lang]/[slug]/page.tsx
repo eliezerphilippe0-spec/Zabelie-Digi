@@ -31,12 +31,12 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
     <nav aria-label={t(lang, "nav.breadcrumb")} className="flex flex-wrap gap-2 text-sm text-mist"><Link href="/" className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><Link href={guideHref(lang)} className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "guides.title")}</Link></nav>
     <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
       <article lang={lang} className="max-w-3xl">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{t(lang, guide.title)}</h1>
+        <h1>{t(lang, guide.title)}</h1>
         <p className="mt-5 text-lg leading-8 text-mist">{t(lang, guide.intro)}</p>
-        {guide.sections.map((section) => <section key={section.title} className="mt-8 border-t border-line pt-6"><h2 className="text-xl font-bold">{t(lang, section.title)}</h2><p className="mt-3 text-base leading-7 text-mist">{t(lang, section.body)}</p></section>)}
+        {guide.sections.map((section) => <section key={section.title} className="mt-8 border-t border-line pt-6"><h2>{t(lang, section.title)}</h2><p className="mt-3 text-base leading-7 text-mist">{t(lang, section.body)}</p></section>)}
       </article>
-      <aside className="rounded-2xl border border-line bg-surface p-5 lg:sticky lg:top-28">
-        <h2 className="font-bold">{t(lang, "guides.related")}</h2>
+      <aside className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-28">
+        <h2 className="titre-bloc">{t(lang, "guides.related")}</h2>
         <Link href={guide.catalogue} className="bouton mt-4 flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
         <Link href="/mes-achats" className="mt-3 flex min-h-11 items-center text-sm underline">{t(lang, "purchases.title")}</Link>
         <Link href="/aide" className="flex min-h-11 items-center text-sm underline">{t(lang, "nav.help")}</Link>

@@ -46,7 +46,7 @@ export function WebhooksManager({ points, envois, max, locale, labels }: { point
   return (
     <div className="mt-6 space-y-6">
       {secret && (
-        <div role="status" className="rounded-2xl border border-brand/60 bg-brand/10 p-4">
+        <div role="status" className="rounded-xl border border-brand/60 bg-brand/10 p-4">
           <p className="text-sm font-semibold">{labels.secretOnce}</p>
           <code className="mt-2 block break-all rounded-lg bg-ink px-3 py-2 text-sm">{secret}</code>
           <div className="mt-3 flex flex-wrap gap-3">
@@ -78,7 +78,7 @@ export function WebhooksManager({ points, envois, max, locale, labels }: { point
       {points.length === 0 ? (
         <p className="text-sm text-mist">{labels.empty}</p>
       ) : (
-        <ul className="divide-y divide-line rounded-2xl border border-line">
+        <ul className="divide-y divide-line rounded-xl border border-line">
           {points.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">

@@ -67,7 +67,7 @@ test("P4 — l'en-tête compact ne vise que l'accueil, et seulement sur mobile (
   const m = mobile();
   // La barre de rubriques de l'accueil prend l'état « défilé » dès le chargement…
   assert.match(m, /\.home-discovery > header nav\.header-fold\s*\{\s*display:\s*none;\s*\}/);
-  assert.match(m, /\.home-discovery > header \.marketplace-header-row\s*\{\s*row-gap:\s*4px;\s*padding-block:\s*4px;\s*\}/);
+  assert.match(m, /\.home-discovery > header \.marketplace-header-row\s*\{\s*row-gap:\s*--spacing\(1\);\s*padding-block:\s*--spacing\(1\);\s*\}/);
   // … sans toucher au logo (même classe `header-fold`, mais pas un `nav`) :
   assert.doesNotMatch(css, /\.home-discovery > header \.header-fold\b/, "masquer `.header-fold` sans `nav` retirerait aussi le logo");
   // … ni aux autres pages, ni à l'ordinateur :

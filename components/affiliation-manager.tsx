@@ -135,8 +135,8 @@ export function AffiliationManager({
   return (
     <div className="mt-6 space-y-8">
       {/* ── PARTAGEUR ─────────────────────────────────────────────────────── */}
-      <section aria-labelledby="affil-partageur" className="rounded-2xl border border-line bg-surface/60 p-5">
-        <h2 id="affil-partageur" className="text-lg font-semibold">{labels.titre}</h2>
+      <section aria-labelledby="affil-partageur" className="rounded-xl border border-line bg-surface/60 p-5">
+        <h2 id="affil-partageur">{labels.titre}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{labels.intro}</p>
 
         {dormant ? (
@@ -211,8 +211,8 @@ export function AffiliationManager({
       </section>
 
       {/* ── VENDEUR (opt-in, option B) ────────────────────────────────────── */}
-      <section aria-labelledby="affil-vendeur" className="rounded-2xl border border-line bg-surface/60 p-5">
-        <h2 id="affil-vendeur" className="text-lg font-semibold">{labels.vTitre}</h2>
+      <section aria-labelledby="affil-vendeur" className="rounded-xl border border-line bg-surface/60 p-5">
+        <h2 id="affil-vendeur">{labels.vTitre}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{labels.vIntro}</p>
         <p className="mt-1 text-xs text-mist">{labels.vBornes}</p>
         {/* Préparation permise : poser un taux dormant ne prélève rien. */}

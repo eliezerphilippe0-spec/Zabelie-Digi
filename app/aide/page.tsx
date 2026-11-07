@@ -45,7 +45,7 @@ export default async function AidePage() {
           Lighthouse (`landmark-one-main`) — cette page était la seule surface
           d'atterrissage sans lui (mesuré en Phase 5, accueil premium). */}
       <main id="main" className="mx-auto max-w-2xl px-5 pb-16 pt-12">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        <h1>
           {t(lang, "aide.title")}
         </h1>
         <p className="mt-2 text-sm text-mist">{t(lang, "aide.sub")}</p>
@@ -56,7 +56,7 @@ export default async function AidePage() {
               <MetricA
                 event="whatsapp_clicked"
                 href={wa}
-                className="rounded-2xl border border-line bg-surface/40 p-5 transition hover:border-brand/60"
+                className="rounded-xl border border-line bg-surface/40 p-5 transition hover:border-brand/60"
               >
                 <p className="font-semibold text-cloud">{t(lang, "wa.chat")}</p>
                 <p className="mt-1 text-sm text-mist">{t(lang, "rail.wa.b")}</p>
@@ -65,7 +65,7 @@ export default async function AidePage() {
             {email && (
               <a
                 href={`mailto:${email}`}
-                className="rounded-2xl border border-line bg-surface/40 p-5 transition hover:border-brand/60"
+                className="rounded-xl border border-line bg-surface/40 p-5 transition hover:border-brand/60"
               >
                 <p className="font-semibold text-cloud">{t(lang, "aide.email")}</p>
                 <p className="mt-1 break-all text-sm text-mist">{email}</p>
@@ -78,7 +78,7 @@ export default async function AidePage() {
             2026-09-04 (accueil premium §4.6) : l'accueil n'en garde qu'un
             lien (`/aide#comment`), les étapes vivent ici, où l'on vient
             pour comprendre. Les pas vendeur sont sur /vendre#comment. */}
-        <h2 id="comment" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
+        <h2 id="comment" className="mt-12 scroll-mt-32">
           {t(lang, "home.how.buy")}
         </h2>
         <ol className="mt-4 grid gap-3">
@@ -89,7 +89,7 @@ export default async function AidePage() {
               ["home.b3.t", "home.b3.b"],
             ] as const
           ).map(([tt, bb]) => (
-            <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
+            <li key={tt} className="rounded-xl border border-line bg-surface/40 p-5">
               <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
               <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
             </li>
@@ -97,23 +97,23 @@ export default async function AidePage() {
         </ol>
 
         <section aria-labelledby="probleme" className="mt-12">
-          <h2 id="probleme" className="scroll-mt-32 text-2xl font-bold tracking-tight">
+          <h2 id="probleme" className="scroll-mt-32">
             {t(lang, "aide.problem.title")}
           </h2>
           <ol className="mt-4 grid gap-3">
-            <li className="rounded-2xl border border-line bg-surface/40 p-5">
+            <li className="rounded-xl border border-line bg-surface/40 p-5">
               <h3 className="font-semibold">{t(lang, "aide.problem.order.title")}</h3>
               <p className="mt-2 text-sm text-mist">{t(lang, "aide.problem.order.body")}</p>
               <Link href="/mes-achats" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline">
                 {t(lang, "aide.problem.orders")}
               </Link>
             </li>
-            <li className="rounded-2xl border border-line bg-surface/40 p-5">
+            <li className="rounded-xl border border-line bg-surface/40 p-5">
               <h3 className="font-semibold">{t(lang, "aide.problem.receipt.title")}</h3>
               <p className="mt-2 text-sm text-mist">{t(lang, "aide.problem.receipt.body")}</p>
             </li>
             {(wa || email) && (
-              <li className="rounded-2xl border border-line bg-surface/40 p-5">
+              <li className="rounded-xl border border-line bg-surface/40 p-5">
                 <h3 className="font-semibold">{t(lang, "aide.problem.support.title")}</h3>
                 <p className="mt-2 text-sm text-mist">{t(lang, "aide.problem.support.body")}</p>
               </li>
@@ -121,18 +121,18 @@ export default async function AidePage() {
           </ol>
         </section>
 
-        <section className="mt-10 rounded-2xl border border-line bg-surface p-6">
-          <h2 className="text-xl font-bold">{t(lang, "guides.title")}</h2>
+        <section className="mt-10 rounded-xl border border-line bg-surface p-6">
+          <h2>{t(lang, "guides.title")}</h2>
           <ul className="mt-3">{BUYING_GUIDES.map((guide) => <li key={guide.slug}><Link href={guideHref(lang, guide.slug)} className="inline-flex min-h-11 items-center text-base underline underline-offset-4">{t(lang, guide.title)}</Link></li>)}</ul>
         </section>
-        <h2 id="faq" className="mt-12 scroll-mt-32 text-2xl font-bold tracking-tight">
+        <h2 id="faq" className="mt-12 scroll-mt-32">
           {t(lang, "sec.faq")}
         </h2>
         <div className="mt-6">
           <FaqList lang={lang} />
         </div>
 
-        <h2 className="mt-12 text-2xl font-bold tracking-tight">
+        <h2 className="mt-12">
           {t(lang, "aide.legal")}
         </h2>
         <div className="mt-4 flex flex-col gap-2 text-sm">

@@ -36,7 +36,7 @@ function abonner(rappel: () => void) {
 export function MontantsMasquables({
   titre,
   masquer,
-  classeTitre = "text-lg font-semibold",
+  classeTitre = "titre-section",
   children,
 }: {
   titre: string;

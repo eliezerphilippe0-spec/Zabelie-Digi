@@ -53,7 +53,7 @@ export default async function StudioPage() {
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-4 py-8">
         <Link href="/tableau-de-bord" className="text-sm text-mist underline">← {t(lang, "shop.manage")}</Link>
-        <h1 className="mt-3 text-2xl font-semibold">{t(lang, "estidyo.titre")}</h1>
+        <h1 className="mt-3">{t(lang, "estidyo.titre")}</h1>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "estidyo.intro")}</p>
         {tarif && <p className="mt-2 text-xs text-mist">{tarif}</p>}
         <div className="mt-6">

@@ -55,7 +55,7 @@ export function IdentityBlock({ name }: { name: string }) {
       </button>
 
       {ouvert && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-line bg-surface p-1.5 shadow-xl">
+        <div className="absolute right-0 top-full z-(--z-header) mt-1 w-44 rounded-xl border border-line bg-surface p-1.5 shadow-lg">
           <Link
             href="/tableau-de-bord"
             className="block rounded-lg px-3 py-2 text-sm text-cloud hover:bg-black/20"

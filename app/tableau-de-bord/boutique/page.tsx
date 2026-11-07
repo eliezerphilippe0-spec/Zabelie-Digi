@@ -153,10 +153,10 @@ export default async function BoutiquePage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="boutique">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "shop.manage")}</h1>
+          <h1>{t(lang, "shop.manage")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.boutique.intro")}</p>
 
-          <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
+          <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface p-5">
             <h2 id="ma-boutique-title" className="titre-section">{t(lang, "vendeur.action.partager")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
             <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
@@ -186,7 +186,7 @@ export default async function BoutiquePage() {
           </section>
 
           {mesure && (
-            <section id="visites" aria-labelledby="visites-titre" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
+            <section id="visites" aria-labelledby="visites-titre" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface p-5">
               <h2 id="visites-titre" className="titre-section">{t(lang, "vendeur.visites.titre")}</h2>
               <dl className="mt-3 grid gap-3 sm:grid-cols-3">
                 {([
@@ -216,7 +216,7 @@ export default async function BoutiquePage() {
                 {t(lang, "dashboard.profile.view")}
               </Link>
             </div>
-            <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
+            <div className="mt-4 max-w-lg rounded-xl border border-line bg-surface/60 p-5">
               <ProfileForm
                 key={user.id}
                 actorId={user.id}
@@ -239,7 +239,7 @@ export default async function BoutiquePage() {
           {zonesService && (
             <section id="zones-service" aria-labelledby="zones-service-titre" className="mt-10 scroll-mt-32">
               <h2 id="zones-service-titre" className="titre-section">{t(lang, "svc.title")}</h2>
-              <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
+              <div className="mt-4 max-w-lg rounded-xl border border-line bg-surface/60 p-5">
                 <ServiceZonesEditor
                   zones={zonesPourForm}
                   initial={zonesService.initial}

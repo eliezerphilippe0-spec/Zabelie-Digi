@@ -14,7 +14,7 @@ export function FaqList({ lang }: { lang: Lang }) {
       {([1, 2, 3, 4, 5] as const).map((i) => (
         <details
           key={i}
-          className="group rounded-2xl border border-line bg-surface/40 px-5 py-4"
+          className="group rounded-xl border border-line bg-surface/40 px-5 py-4"
         >
           <summary className="cursor-pointer list-none font-semibold marker:content-none">
             <span className="mr-2 inline-block text-accent transition group-open:rotate-90">›</span>

@@ -65,6 +65,7 @@ import {
   pickByKind,
 } from "@/lib/product-kind";
 import { jsonLdProduit } from "@/lib/jsonld-produit";
+import { Prix } from "@/components/prix";
 
 export const dynamic = "force-dynamic";
 
@@ -365,7 +366,7 @@ export default async function ProductPage({
             />
           ) : (
             <div
-              className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
+              className={`aspect-[4/3] w-full rounded-xl bg-gradient-to-br ${product.accent}`}
             />
           )}
         </div>
@@ -402,7 +403,7 @@ export default async function ProductPage({
             )}
           </div>
 
-          <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight">
+          <h1 className="mt-4">
             {product.title}
           </h1>
           {ageMinimum > 0 && (
@@ -414,7 +415,7 @@ export default async function ProductPage({
           <p className="mt-3 whitespace-pre-line text-base leading-7 text-mist">{product.blurb}</p>
 
           {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-line bg-surface/40 p-4">
+            <div className="mt-4 rounded-xl border border-line bg-surface/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-mist">
                 {t(lang, "product.includes")}
               </p>
@@ -464,7 +465,7 @@ export default async function ProductPage({
               coupé en deux autour — balisage invalide (un <ul> dans un <li>
               d'une autre liste) et ordre de lecture faux. */}
           {physical && physical.fitment.length > 0 && (
-            <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
+            <div className="mt-6 rounded-xl border border-brand/40 bg-surface/50 p-5">
               <p className="text-sm font-semibold">{t(lang, "product.fitment.title")}</p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {physical.fitment.map((f, i) => (
@@ -487,8 +488,8 @@ export default async function ProductPage({
           {/* ── Caractéristiques (V-2, docs/35) — seulement ce qui est
                  RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
           {physical?.specs && (
-            <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
-              <h2 className="text-sm font-semibold text-cloud">
+            <div className="mt-6 rounded-xl border border-line bg-surface/40 p-4">
+              <h2 className="text-cloud titre-bloc">
                 {t(lang, "product.specs.title")}
               </h2>
               <dl className="mt-2 space-y-1 text-sm">
@@ -543,7 +544,7 @@ export default async function ProductPage({
             </div>
           )}
 
-          <div id="acheter" className="mt-8 scroll-mt-44 rounded-2xl border border-line bg-surface/60 p-6">
+          <div id="acheter" className="mt-8 scroll-mt-44 rounded-xl border border-line bg-surface/60 p-6">
             {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
                 pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
             {/* Vente flash (0080) : prime sur le rabais — deux barrés
@@ -577,14 +578,14 @@ export default async function ProductPage({
             )}
             {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
                 l'achat ne se rend pas en dégradé transparent. */}
-            <p className="numeric text-3xl font-extrabold text-cloud">
+            <p className="numeric text-3xl">
               {physical && physical.variants.length > 1 && !flash ? <span className="mr-2 text-sm font-normal">{t(lang, "product.price.from")}{" "}</span> : null}
               {/* L'équivalent ≈USD porte sur le prix RÉELLEMENT affiché et
                   débité (le prix flash s'il y en a un), pas sur le prix plein :
                   afficher un HTG remisé à côté d'un ≈USD au tarif fort est une
                   contradiction qui se lit comme une arnaque (audit REA
                   2026-10-26, #6). Le bouton MonCash prend déjà le prix flash. */}
-              {formatHTG(flash ? flash.prixFlashHtg : product.priceHTG)}
+              <Prix montant={flash ? flash.prixFlashHtg : product.priceHTG} />
               {usdHint(flash ? flash.prixFlashHtg : product.priceHTG) && (
                 <span className="ml-2 align-middle text-base font-semibold text-mist">
                   ≈ {usdHint(flash ? flash.prixFlashHtg : product.priceHTG)}
@@ -610,7 +611,7 @@ export default async function ProductPage({
             )}
             {pickByKind(product.kind, { file: false, service: false, physical: true }, product.id) && (
               <section aria-labelledby="remise-avant-achat" className="mt-5 rounded-xl border border-line bg-ink/40 p-4">
-                <h2 id="remise-avant-achat" className="text-sm font-semibold">{t(lang, "product.handover.title")}</h2>
+                <h2 id="remise-avant-achat" className="titre-bloc">{t(lang, "product.handover.title")}</h2>
                 <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-mist">
                   <li>{t(lang, "product.handover.place")}</li>
                   <li>{t(lang, "product.handover.time")}</li>
@@ -633,7 +634,7 @@ export default async function ProductPage({
             )}
             {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
             <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="achat-confiance">
-              <h2 id="achat-confiance" className="text-sm font-semibold">{supportCopy(lang).trustTitle}</h2>
+              <h2 id="achat-confiance" className="titre-bloc">{supportCopy(lang).trustTitle}</h2>
               <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustLocal}</p>
               {commitmentApplicable && commitments?.get(product.id)?.fees !== "included" && <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustFees}</p>}
               <Link href="/aide#probleme" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).trustReturn}</Link>
@@ -768,8 +769,8 @@ export default async function ProductPage({
 
           <ProductOffers offers={relatedOffers} copy={offerCopy(lang)}/>
           {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
-          {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
-            <h2 id="digital-details-title" className="text-lg font-bold">{t(lang, "digital.title")}</h2>
+          {isDownloadable(product.kind) && <section className="mt-6 rounded-xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
+            <h2 id="digital-details-title">{t(lang, "digital.title")}</h2>
             {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>
               <dl className="mt-4 grid gap-4 sm:grid-cols-2">
                 {DIGITAL_DETAIL_FIELDS.filter((key) => digital[key]).map((key) => <div key={key} className={key === "contents" || key === "license" ? "sm:col-span-2" : ""}>
@@ -813,8 +814,8 @@ export default async function ProductPage({
               la question vient quand l'acheteur hésite encore, pas quand il
               a déjà décidé de transmettre la fiche. */}
           {product.creatorId && (
-            <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-4">
-              <h2 className="font-semibold text-cloud">{t(lang, "msg.ask.title")}</h2>
+            <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface/40 p-4">
+              <h2 className="text-cloud titre-bloc">{t(lang, "msg.ask.title")}</h2>
               {peutEcrire ? (
                 <MessageForm
                   productId={product.id}
@@ -854,7 +855,7 @@ export default async function ProductPage({
       {/* Avis vérifiés */}
       {reviews.length > 0 && (
         <section className="mx-auto max-w-6xl px-5 pb-16">
-          <h2 className="text-lg font-semibold">
+          <h2>
             {t(lang, "product.reviews")} ({reviews.length})
           </h2>
           <p className="mt-1 text-sm text-mist">
@@ -864,7 +865,7 @@ export default async function ProductPage({
             {reviews.map((r) => (
               <li
                 key={r.id}
-                className="rounded-2xl border border-line bg-surface/60 p-4"
+                className="rounded-xl border border-line bg-surface/60 p-4"
               >
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{r.buyerName ?? t(lang, "product.reviews.auteur")}</span>

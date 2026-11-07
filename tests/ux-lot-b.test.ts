@@ -60,7 +60,7 @@ test("UB4 — le halo extérieur a disparu, de la feuille et de la page", () => 
   // (V-22, 2026-10-12) : le dégradé de marque, texte `on-chrome`. Le fond est
   // posé par la feuille de l'accueil — l'assertion porte donc sur la RÈGLE qui
   // le pose, pas seulement sur le nom de classe qui la désigne.
-  assert.match(PAGE, /id="comment"[\s\S]{0,200}className="home-final rounded-2xl[^"]*\btext-on-chrome\b/);
+  assert.match(PAGE, /id="comment"[\s\S]{0,200}className="home-final rounded-xl[^"]*\btext-on-chrome\b/);
   assert.match(lire("app/home-vivant.css"), /#comment > \.home-final \{[^}]*background-image: var\(--brand-gradient\)/);
   assert.doesNotMatch(PAGE, /className="glass/);
 });

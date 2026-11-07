@@ -61,7 +61,7 @@ export default async function ProjetPage({ params }: { params: Promise<{ project
           ← {c.editeur.retour}
         </Link>
         <p className="mt-2 text-sm text-mist">{c.lien}</p>
-        <h1 className="mt-1 break-words text-2xl font-semibold">{projet.titre}</h1>
+        <h1 className="mt-1 break-words">{projet.titre}</h1>
         <div className="mt-6">
           <AuthoringEditor initial={projet} labels={c} limites={limitesDepuisConfig(config) ?? LIMITES_DEFAUT} userId={user.id} ia={ia} quotaInitial={quota ?? null}
             lang={lang} exportInitial={exportPourClient(dernierExport)}

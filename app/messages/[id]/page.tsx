@@ -81,7 +81,7 @@ export default async function FilPage({
           ← {t(lang, "msg.back")}
         </Link>
 
-        <h1 className="mt-3 text-2xl font-bold tracking-tight">
+        <h1 className="mt-3">
           {prod?.title ?? ""}
         </h1>
         <p className="mt-1 text-sm text-mist">
@@ -103,7 +103,7 @@ export default async function FilPage({
             return (
               <li
                 key={m.id}
-                className={`max-w-[85%] rounded-2xl border border-line p-3 ${
+                className={`max-w-[85%] rounded-xl border border-line p-3 ${
                   deMoi ? "self-end bg-brand/10" : "bg-surface/40"
                 }`}
               >

@@ -54,7 +54,7 @@ export function DomainForm({ initial, labels }: { initial: DomaineAffiche; label
       </form>
 
       {actuel && (
-        <div data-etat-domaine={actuel.statut} className="rounded-2xl border border-line p-4 text-sm">
+        <div data-etat-domaine={actuel.statut} className="rounded-xl border border-line p-4 text-sm">
           <p role="status" className={actuel.statut === "actif" ? "text-success-text" : actuel.statut === "refuse" ? "text-danger-text" : "text-cloud"}>
             {actuel.statut === "actif" ? labels.active.replace("{domaine}", actuel.domaine)
               : actuel.statut === "refuse" ? labels.refused.replace("{note}", actuel.note ?? "")

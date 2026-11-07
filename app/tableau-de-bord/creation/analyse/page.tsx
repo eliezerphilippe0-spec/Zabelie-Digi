@@ -39,15 +39,15 @@ export default async function AnalysePage() {
       <SiteNav />
       <main id="main">
         <StudioShell labels={c} ventes={copieVentes(lang)} actif="analyse" retour={t(lang, "nav.dashboard")} quota={null}>
-          <h1 className="text-2xl font-semibold sm:text-3xl">{tb.analyseTitre}</h1>
+          <h1>{tb.analyseTitre}</h1>
           {opp === null ? (
             <p className="mt-4 text-sm text-mist">{tb.analyseIndisponible}</p>
           ) : (
             <>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{tb.analyseIntro.replace("{jours}", String(opp.jours))}</p>
 
-              <section aria-labelledby="recherches-titre" className="mt-6 rounded-2xl border border-line p-5">
-                <h2 id="recherches-titre" className="text-lg font-semibold">{tb.analyseRecherches}</h2>
+              <section aria-labelledby="recherches-titre" className="mt-6 rounded-xl border border-line p-5">
+                <h2 id="recherches-titre">{tb.analyseRecherches}</h2>
                 <p className="mt-1 text-sm text-mist">{tb.analyseRecherchesSous}</p>
                 {opp.recherches.length === 0 ? (
                   <p className="mt-3 text-sm text-mist">{tb.oppVide}</p>
@@ -73,8 +73,8 @@ export default async function AnalysePage() {
                 )}
               </section>
 
-              <section aria-labelledby="ventes-titre" className="mt-6 rounded-2xl border border-line p-5">
-                <h2 id="ventes-titre" className="text-lg font-semibold">{tb.analyseVentes}</h2>
+              <section aria-labelledby="ventes-titre" className="mt-6 rounded-xl border border-line p-5">
+                <h2 id="ventes-titre">{tb.analyseVentes}</h2>
                 <p className="mt-1 text-sm text-mist">{tb.analyseVentesSous}</p>
                 {opp.ventes.length === 0 ? (
                   <p className="mt-3 text-sm text-mist">{tb.oppVide}</p>

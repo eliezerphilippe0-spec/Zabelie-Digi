@@ -16,6 +16,7 @@ import { isStripeEnabled } from "@/lib/stripe";
 import { isKobaraEnabled } from "@/lib/kobara";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
+import { Prix } from "@/components/prix";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
@@ -128,7 +129,7 @@ export default async function PanierPage() {
         <p className="mt-4 text-sm text-danger-text">{t(lang, "error.generic")}</p>
       )}
       {!error && items.length === 0 && (
-        <div className="mt-6 rounded-2xl border border-dashed border-line bg-surface/40 p-8 text-center">
+        <div className="mt-6 rounded-xl border border-dashed border-line bg-surface/40 p-8 text-center">
           <p className="text-sm text-mist">{t(lang, "cart.empty")}</p>
           <Link
             href="/catalogue"
@@ -143,7 +144,7 @@ export default async function PanierPage() {
           {groupes.map((g) => (
             <section key={g.cle} className="mt-6">
               {montrerEntetes && (
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-mist">
+                <h2 className="mb-2 text-mist titre-bloc">
                   {t(lang, g.cle)}
                 </h2>
               )}
@@ -161,7 +162,7 @@ export default async function PanierPage() {
                   {t(lang, "trust.2.b")}
                 </p>
               )}
-              <ul className="divide-y divide-line rounded-2xl border border-line bg-surface/40">
+              <ul className="divide-y divide-line rounded-xl border border-line bg-surface/40">
                 {g.lignes.map((l) => (
                   <li
                     key={l.product_id}
@@ -180,9 +181,7 @@ export default async function PanierPage() {
                         </p>
                       )}
                     </div>
-                    <span className="numeric shrink-0 font-bold text-cloud">
-                      {formatHTG(l.product!.price_htg)}
-                    </span>
+                    <Prix montant={l.product!.price_htg} className="shrink-0" />
                     <Link href={`/produit/${l.product!.slug}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
                     {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
                     <RemoveFromCart
@@ -194,11 +193,9 @@ export default async function PanierPage() {
               </ul>
             </section>
           ))}
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
-            <span className="numeric text-xl font-extrabold text-cloud">
-              {formatHTG(total)}
-            </span>
+            <Prix montant={total} className="text-xl" />
           </div>
           {payerTout ? (
             <>
@@ -264,7 +261,7 @@ function Coquille({ titre, children }: { titre: string; children: React.ReactNod
     <div className="bg-grain min-h-dvh">
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight">{titre}</h1>
+        <h1>{titre}</h1>
         {children}
       </main>
       <SiteFooter />

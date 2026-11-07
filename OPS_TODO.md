@@ -1,5 +1,26 @@
 # OPS_TODO — Zabelie
 
+## Chantier design et typographie (7 novembre 2026) — ce qui attend le porteur
+
+Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Décisions
+prises : V-25 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune
+variable posée. Une phase ne démarre qu'après la validation de la précédente.
+
+1. ⏳ **Relire puis fusionner** les PR de phase, dans l'ordre. Elles restent en
+   brouillon : le brief interdit de fusionner sans validation humaine.
+2. ⏳ **A12, badges** : nécessaire pour la Phase 2. Recommandé : réutiliser
+   `BadgeIdentite`, mention de remise seulement si le vendeur l'a déclarée.
+3. ⛔ **A11, arrêt ferme** : `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` n'est pas
+   active. Vérifier le plan Supabase puis activer, ou laisser éteint. Variable
+   d'environnement, peut-être une dépense : geste du porteur, ou autorisation
+   expresse.
+4. ⛔ **A13, arrêt ferme** : la phrase de promesse de paiement. « Versement
+   automatique à J+7 » est inexact. Texte déjà en ligne soumis : « Vandè a pa
+   touche anvan li remèt li » / « Le vendeur n'est payé qu'après la remise ».
+5. ⏳ **Chemin de l'argent** : les `h1` du paiement, de la facture et de la
+   recharge restent à 24 px, contre 28 px ailleurs, parce que le brief interdit
+   d'y toucher. Dire si l'on retire ces deux classes.
+
 ## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 
 Décision du porteur : « go niveau 2 » (services de notification des

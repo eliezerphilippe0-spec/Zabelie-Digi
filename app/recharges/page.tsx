@@ -30,11 +30,11 @@ export default async function RechargesPage() {
       <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex items-center gap-2 text-sm text-mist">
         <Link href="/" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, "universe.recharges")}</span>
       </nav>
-      <h1 className="text-3xl font-extrabold sm:text-4xl">{t(lang, "recharges.title")}</h1>
+      <h1>{t(lang, "recharges.title")}</h1>
       <p className="mt-3 max-w-2xl text-mist">{t(lang, "recharges.intro")}</p>
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <section className="rounded-2xl border border-line bg-ink p-6 sm:p-8">
-          <h2 className="text-2xl">{t(lang, "recharges.phone")}</h2>
+        <section className="rounded-xl border border-line bg-ink p-6 sm:p-8">
+          <h2>{t(lang, "recharges.phone")}</h2>
           <p className="mt-3 text-mist">{t(lang, "recharges.phone.body")}</p>
           <p className="mt-6 font-semibold">{enabled ? trustLabels.topupReady : availability === "sandbox" ? trustLabels.topupTest : trustLabels.topupClosed}</p>
           {enabled ? <Link href="/rechaj" className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand">{t(lang, "recharges.open")}</Link> : <>
@@ -44,11 +44,11 @@ export default async function RechargesPage() {
         </section>
         <div className="divide-y divide-line">
           <section className="pb-7">
-            <h2 className="text-xl">{t(lang, "recharges.wallet")}</h2>
+            <h2>{t(lang, "recharges.wallet")}</h2>
             <p className="mt-3 leading-relaxed text-mist">{t(lang, "recharges.wallet.body")}</p>
           </section>
           <section id="paiements" className="scroll-mt-40 pt-7">
-            <h2 className="text-xl">{t(lang, "recharges.pay")}</h2>
+            <h2>{t(lang, "recharges.pay")}</h2>
             <p className="mt-3 leading-relaxed text-mist">{t(lang, "recharges.pay.body")}</p>
             <ul className="mt-4 space-y-3 rounded-xl border border-line bg-surface p-4 text-sm" aria-label={t(lang, "availability.details")}>
               <li>{t(lang, MONCASH_AVAILABILITY_LABELS[getMonCashAvailability()])}</li>

@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
  * Mutations éprouvées :
  *   C1  `aspect-square` retiré du conteneur d'image                   → rouge
  *   C2  `line-clamp-2` retiré du nom                                   → rouge
- *   C3  prix : `text-accent` → `text-mist`                             → rouge
+ *   C3  prix : `<Prix` remplacé par `formatHTG` nu                     → rouge
  *   C4  `titreCarte(product.title, …)` → `product.title`               → rouge
  *   C5  CardImage : `useState(false)` → `useState(true)` (invisible sans JS)  → rouge
  *   C6  `loading="lazy"` retiré                                        → rouge
@@ -38,11 +38,11 @@ test("C1 — l'image de la carte est un carré réservé (aspect-square) sur fon
 test("C2 — ordre : image → nom (2 lignes) → prix → vendeur, avec les bons tokens", () => {
   const iImg = card.indexOf("aspect-square");
   const iNom = card.indexOf("line-clamp-2");
-  const iPrix = card.indexOf("formatHTG(product.priceHTG)");
+  const iPrix = card.indexOf("<Prix montant={product.priceHTG}");
   const iVendeur = card.indexOf("{labels.by} {product.creator}");
   assert.ok(iImg > 0 && iImg < iNom && iNom < iPrix && iPrix < iVendeur, "ordre attendu : image, nom, prix, vendeur");
   assert.match(card, /<h3 className=\{`line-clamp-2 break-words leading-snug text-cloud \$\{boutique \? "text-base font-semibold" : "text-sm font-normal"\}`\}>\{titre\}<\/h3>/);
-  assert.match(card, /<span className=\{`numeric font-bold text-accent \$\{boutique \? "text-base" : "text-sm"\}`\}>\{formatHTG\(product\.priceHTG\)\}<\/span>/);
+  assert.match(card, /<Prix montant=\{product\.priceHTG\} className="text-base" \/>/);
   assert.match(card, /<span className="truncate text-sm text-mist">/);
 });
 

@@ -85,8 +85,8 @@ export function AuthoringSoumission({
   const etatFiche = fiche ? (fiche.statut === "published" ? s.publiee : fiche.statut === "draft" ? s.brouillon : s.retiree) : null;
 
   return (
-    <section aria-labelledby={`${ids}-fiche`} className="rounded-2xl border border-line bg-surface p-5">
-      <h2 id={`${ids}-fiche`} className="text-lg font-semibold">{s.titre}</h2>
+    <section aria-labelledby={`${ids}-fiche`} className="rounded-xl border border-line bg-surface p-5">
+      <h2 id={`${ids}-fiche`}>{s.titre}</h2>
       {fiche ? (
         <div className="mt-2 space-y-2">
           <p role="status" className="text-sm font-semibold">{etatFiche}</p>

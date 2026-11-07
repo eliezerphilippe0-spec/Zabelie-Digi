@@ -77,8 +77,8 @@ export function CommissionAnnonce({
   const net = EXEMPLE_HTG - commissionAuTaux(EXEMPLE_HTG, bps);
 
   return (
-    <div className="mt-5 rounded-2xl border border-line bg-surface/40 p-5">
-      <h2 className="text-sm font-semibold text-cloud">{labels.title}</h2>
+    <div className="mt-5 rounded-xl border border-line bg-surface/40 p-5">
+      <h2 className="text-cloud titre-bloc">{labels.title}</h2>
 
       {/* Le taux, en gros : c'est le chiffre qu'on vient chercher. */}
       <p className="mt-2 text-3xl font-black tracking-tight text-cloud">

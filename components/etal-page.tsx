@@ -304,8 +304,8 @@ export function EtalPage({
         <section ref={titre} id="titre" className="etal-titre" data-etal-acte="flux" data-chapitre={L.chapitres.titre} data-fond="clair">
           <div className="etal-titre-soleil" aria-hidden="true">
             <svg viewBox="0 0 200 200" focusable="false">
-              <circle cx="100" cy="100" r="54" fill="#f6c9a6" />
-              <path d="M100 22V6M100 178v16M22 100H6M178 100h16M45 45 34 34M155 155l11 11M45 155l-11 11M155 45l11-11" fill="none" stroke="#f6c9a6" strokeWidth="9" strokeLinecap="round" />
+              <circle cx="100" cy="100" r="54" fill="var(--color-decor-peche)" />
+              <path d="M100 22V6M100 178v16M22 100H6M178 100h16M45 45 34 34M155 155l11 11M45 155l-11 11M155 45l11-11" fill="none" stroke="var(--color-decor-peche)" strokeWidth="9" strokeLinecap="round" />
             </svg>
           </div>
           <div className="etal-auvent" aria-hidden="true">
@@ -536,8 +536,8 @@ const ICONES = [
 function Marque() {
   return (
     <svg className="etal-marque" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-      <rect x="1" y="1" width="46" height="46" rx="11" fill="#17123a" stroke="#e0580f" strokeOpacity=".4" strokeWidth="2" />
-      <path d="M14 15h20l-13 12h13l-2 6H13l13-12H14z" fill="#e0580f" />
+      <rect x="1" y="1" width="46" height="46" rx="11" fill="var(--color-chrome)" stroke="var(--color-decor-orange)" strokeOpacity=".4" strokeWidth="2" />
+      <path d="M14 15h20l-13 12h13l-2 6H13l13-12H14z" fill="var(--color-decor-orange)" />
     </svg>
   );
 }

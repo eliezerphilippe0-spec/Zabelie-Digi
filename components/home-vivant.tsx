@@ -12,11 +12,11 @@
  * Aucune dépendance, aucun JavaScript client : composants serveur.
  */
 
-const INDIGO = "#17123a";
-const INDIGO_2 = "#2b3050";
-const BORDEAUX = "#4a2731";
-const ORANGE = "#e0580f";
-const CREME = "#fffdf9";
+const INDIGO = "var(--color-chrome)";
+const INDIGO_2 = "var(--color-chrome-2)";
+const BORDEAUX = "var(--color-chrome-3)";
+const ORANGE = "var(--color-decor-orange)";
+const CREME = "var(--color-decor-creme)";
 
 /** Festons d'un auvent : `n` arrondis de largeur `l`, posés sur la ligne `y`. */
 function festons(x: number, y: number, n: number, l: number): string {
@@ -44,11 +44,11 @@ export function HomeVitrine() {
   return (
     <div className="home-vitrine" aria-hidden="true">
       <svg className="home-vitrine-scene" viewBox="0 0 480 432" preserveAspectRatio="xMidYMid slice" focusable="false">
-        <g transform="translate(392 78)" fill="#f6c9a6" stroke="#f6c9a6" strokeWidth="6" strokeLinecap="round">
+        <g transform="translate(392 78)" fill="var(--color-decor-peche)" stroke="var(--color-decor-peche)" strokeWidth="6" strokeLinecap="round">
           <circle r="34" stroke="none" />
           <path d="M0-50v-12M0 50v12M-50 0h-12M50 0h12M-35-35l-9-9M35 35l9 9M-35 35l-9 9M35-35l9-9" fill="none" />
         </g>
-        <path d="M0 300c70-46 140-58 210-30s150 20 270-36v198H0z" fill="#e9e1d6" />
+        <path d="M0 300c70-46 140-58 210-30s150 20 270-36v198H0z" fill="var(--color-decor-dune)" />
         <rect x="70" y="120" width="8" height="250" rx="3" fill={INDIGO_2} />
         <rect x="402" y="120" width="8" height="250" rx="3" fill={INDIGO_2} />
         <path d="M48 96h384l-14 44H62z" fill={INDIGO} />
@@ -84,7 +84,7 @@ export function HomeVitrine() {
 export function HomeChantier() {
   return (
     <svg className="home-chantier-art" viewBox="0 0 220 170" aria-hidden="true" focusable="false">
-      <rect width="220" height="170" rx="16" fill="#f2eee7" />
+      <rect width="220" height="170" rx="16" fill="var(--color-decor-sable)" />
       <rect x="34" y="62" width="152" height="86" rx="4" fill={CREME} stroke={INDIGO} strokeWidth="2.5" />
       <path d="M26 40h168l-10 26H36z" fill={INDIGO} />
       <g fill={ORANGE}>
@@ -93,7 +93,7 @@ export function HomeChantier() {
         <path d="M146 40h22l3 26h-22z" />
       </g>
       <path d={festons(36, 66, 14, 148 / 14)} fill={INDIGO} />
-      <rect x="52" y="92" width="44" height="56" rx="3" fill="#e7e6f0" stroke={INDIGO} strokeWidth="2" />
+      <rect x="52" y="92" width="44" height="56" rx="3" fill="var(--color-decor-lavande)" stroke={INDIGO} strokeWidth="2" />
       <rect x="112" y="92" width="58" height="32" rx="3" fill={CREME} stroke={INDIGO} strokeWidth="2" strokeDasharray="4 4" />
       <path d="M128 108h26" stroke={ORANGE} strokeWidth="4" strokeLinecap="round" />
       <path d="M184 150 200 86M196 150l16-64M188 134h14M192 118h14M196 102h14" stroke={BORDEAUX} strokeWidth="3" strokeLinecap="round" />

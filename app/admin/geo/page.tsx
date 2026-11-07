@@ -119,7 +119,7 @@ export default async function GeoPage() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl border border-line bg-surface/60 p-5"
+            className="rounded-xl border border-line bg-surface/60 p-5"
           >
             <p className="text-xl font-black text-gradient">{s.value}</p>
             <p className="mt-1 text-xs text-mist">{s.label}</p>
@@ -137,7 +137,7 @@ export default async function GeoPage() {
           {/* Zoom Haïti — marché ciblé, centré sur les talents. */}
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">
+              <h2>
                 Zoom Haïti — talents par département
               </h2>
               <span className="text-xs text-mist">
@@ -149,7 +149,7 @@ export default async function GeoPage() {
             </div>
             <div className="mt-4 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
               <HaitiMap rows={htRows} />
-              <div className="overflow-hidden rounded-2xl border border-line">
+              <div className="overflow-hidden rounded-xl border border-line">
                 <table className="w-full text-sm">
                   <thead className="bg-surface/60 text-left text-xs text-mist">
                     <tr>
@@ -189,7 +189,7 @@ export default async function GeoPage() {
 
           {/* Vue mondiale — diaspora & clients hors Haïti. */}
           <section className="mt-10">
-            <h2 className="text-lg font-semibold">Vue mondiale</h2>
+            <h2>Vue mondiale</h2>
             <p className="mt-1 text-xs text-mist">
               Diaspora et clients hors Haïti.
             </p>
@@ -200,14 +200,14 @@ export default async function GeoPage() {
 
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold">Top 10 des pays</h2>
+              <h2>Top 10 des pays</h2>
               {unknown > 0 && (
                 <span className="text-xs text-mist">
                   {unknown} utilisateur{unknown > 1 ? "s" : ""} sans pays
                 </span>
               )}
             </div>
-            <div className="mt-4 overflow-x-auto rounded-2xl border border-line">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-line">
               <table className="w-full min-w-[520px] text-sm">
                 <thead className="bg-surface/60 text-left text-xs text-mist">
                   <tr>

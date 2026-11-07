@@ -17,14 +17,14 @@ import type { CSSProperties, Ref } from "react";
  * bascule pas avec le thème.
  */
 
-const INDIGO = "#17123a";
-const INDIGO_2 = "#2b3050";
-const BORDEAUX = "#4a2731";
-const ORANGE = "#e0580f";
-const CREME = "#fffdf9";
-const PECHE = "#f6c9a6";
-const SABLE = "#e9e1d6";
-const FILET = "#e8e3dc";
+const INDIGO = "var(--color-chrome)";
+const INDIGO_2 = "var(--color-chrome-2)";
+const BORDEAUX = "var(--color-chrome-3)";
+const ORANGE = "var(--color-decor-orange)";
+const CREME = "var(--color-decor-creme)";
+const PECHE = "var(--color-decor-peche)";
+const SABLE = "var(--color-decor-dune)";
+const FILET = "var(--color-decor-filet)";
 
 /** Festons d'un auvent : `n` arrondis de largeur `l`, posés sur la ligne `y`. */
 function festons(x: number, y: number, n: number, l: number): string {

@@ -74,13 +74,13 @@ export default async function Indisponible({
       <SiteNav />
       <main id="main" className="mx-auto max-w-3xl px-5 py-16">
         <div className="mx-auto max-w-md text-center">
-          <h1 className="text-2xl font-extrabold">{t(lang, produit ? "gone.product.title" : "gone.shop.title")}</h1>
+          <h1>{t(lang, produit ? "gone.product.title" : "gone.shop.title")}</h1>
           <p className="mt-3 text-mist">{t(lang, produit ? "gone.product.body" : "gone.shop.body")}</p>
         </div>
 
         {boutique && (
           <section aria-labelledby="gone-boutique" className="mt-10">
-            <h2 id="gone-boutique" className="text-lg font-bold">
+            <h2 id="gone-boutique">
               {t(lang, "gone.more", { nom: boutique.displayName })}
             </h2>
             {autres.length > 0 && (

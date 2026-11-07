@@ -82,7 +82,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
 
       {/* ── Demandes en attente — la file de modération (Z-C) ─────────────── */}
       <section>
-        <h2 className="text-lg font-semibold">
+        <h2>
           Demandes de quartier en attente ({demandes.length})
         </h2>
         {demandes.length === 0 ? (
@@ -141,7 +141,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
 
       {/* ── La demande par zone : où recruter (0162, docs/77 §12) ─────────── */}
       <section aria-labelledby="demande-zones">
-        <h2 id="demande-zones" className="text-lg font-semibold">Demande par zone — 30 jours</h2>
+        <h2 id="demande-zones">Demande par zone — 30 jours</h2>
         <p className="mt-1 max-w-2xl text-xs text-mist">
           Clics « je cherche un vendeur ici », sans compte ni identifiant : un clic = une personne de
           plus qui dit chercher dans cette zone. La colonne « vendeurs » ne compte que ceux qui ont
@@ -174,7 +174,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
 
       {/* ── La hiérarchie, actives ET fermées ─────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-semibold">Hiérarchie ({zones.length} zones)</h2>
+        <h2>Hiérarchie ({zones.length} zones)</h2>
         <ul className="mt-3 space-y-1">
           {zones
             .filter((z) => z.level === "depatman")
@@ -200,7 +200,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
 
       {/* ── Création manuelle ──────────────────────────────────────────────── */}
       <section>
-        <h2 className="text-lg font-semibold">Créer une zone</h2>
+        <h2>Créer une zone</h2>
         <p className="mt-1 text-xs text-mist">
           Komin sous un depatman, katye sous une komin — le niveau se déduit du parent, le garde
           ZB069 a le dernier mot. Le slug naît du nom français.

@@ -16,9 +16,9 @@
   min-height: 44px;
   background: var(--color-chrome-2);
   color: var(--color-on-chrome);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: var(--leading-titre);
 }
 .annonce-fenetre {
   flex: 1;
@@ -39,16 +39,16 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: space-around;
-  gap: 2.5rem;
+  gap: --spacing(10);
   min-width: 100vw;
   margin: 0;
-  padding: 0 1.25rem;
+  padding: 0 --spacing(5);
   list-style: none;
 }
 .annonce-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: --spacing(2);
   white-space: nowrap;
 }
 .annonce-item::before {
@@ -84,7 +84,7 @@
   outline-offset: -4px;
 }
 @media (min-width: 768px) {
-  .annonce { font-size: 13px; }
+  .annonce { font-size: var(--text-sm); }
 }
 /* Repli avec l'en-tête au défilement. `.header-fold` le fait déjà, mais dans
    la couche `utilities` de globals.css : une feuille hors couche comme

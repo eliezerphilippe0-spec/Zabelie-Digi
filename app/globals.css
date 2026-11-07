@@ -15,16 +15,18 @@
     background-color: var(--color-bg-3);
     color: var(--color-cloud);
     font-family: var(--font-sans);
+    line-height: var(--leading-corps);
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
     background-color: var(--color-brand);
     color: var(--color-on-brand); /* texte sombre : 5.79:1 (blanc sur brand = 2.66:1) — on-brand : sombre dans les DEUX thèmes */
   }
-  /* Titres → Manrope (brief accueil premium §3.2 : 700/800). Le h1 en 800,
-     les autres en 700 ; les utilitaires de poids explicites gardent la
-     priorité, la famille vient du token heading. Échelle mobile visée :
-     28 / 20 / 16 / 14 px, interligne 1,25 sur les titres, 1,5 sur le corps. */
+  /* Titres → Manrope (brief accueil premium §3.2 : 700/800).
+     UN style de `h1`, UN style de `h2` : il y en avait 7 et plus (audit Phase 0,
+     docs/design/AUDIT-0.md). La taille et la graisse vivent ICI, jamais à côté
+     de la balise : `tests/titres-role.test.ts` refuse un `text-*` ou un
+     `font-*` sur un `h1` ou un `h2`, hors exceptions nommées. */
   h1,
   h2,
   h3,
@@ -33,10 +35,15 @@
   h6 {
     font-family: var(--font-heading);
     font-weight: 700;
-    line-height: 1.25;
+    line-height: var(--leading-titre);
   }
   h1 {
+    font-size: var(--text-3xl);
     font-weight: 800;
+    letter-spacing: var(--tracking-titre);
+  }
+  h2 {
+    font-size: var(--text-2xl);
   }
   /* Boutons et prix → Manrope 700 (brief §3.2 : « titres, prix, libellés de
      boutons »). `.numeric`/`.metric` portent les montants dans tout le dépôt.
@@ -179,18 +186,54 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
+  /* PRIX (`components/prix.tsx`, brief Phase 1.3) : Manrope 800, orange de texte,
+     devise plus légère. `max()` : sur un prix en 14 px, la devise ne descend pas
+     sous les 12 px du plus petit cran. */
+  .prix {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-accent);
+    white-space: nowrap;
+  }
+  .prix-devise {
+    font-size: max(var(--text-xs), 0.75em);
+    font-weight: 600;
+  }
   /* TITRE DE SECTION — un seul style pour chaque `h2` qui ouvre une carte de
      section (audit typographique du 2026-09-26, UI-02). Mesuré avant : dix
      `h2` du tableau de bord en QUATRE styles (14 à 20 px, 600 ou 700), dont
-     deux au rendu exact d'un libellé de bouton. La famille et la graisse de
-     base viennent de la règle `h1…h6` ci-dessus ; cette classe fixe la taille,
-     et REPOSE la graisse que les `font-semibold` locaux avaient écrasée.
+     deux au rendu exact d'un libellé de bouton. Depuis la Phase 1 du chantier
+     design, c'est le style de tout `h2` : la classe reste pour les fichiers qui
+     la portent déjà, dont `components/kyc-form.tsx`, hors chantier.
      `tests/titres-section.test.ts` refuse qu'un de ces `h2` reprenne une
      taille ou une graisse à côté. */
   .titre-section {
-    font-size: var(--text-lg, 1.125rem);
-    line-height: var(--text-lg--line-height, calc(1.75 / 1.125));
+    font-size: var(--text-2xl);
+    line-height: var(--leading-titre);
     font-weight: 700;
+  }
+  /* TITRE DE BLOC — `h2` d'un encadré compact (pied de page, « Livrezon ak
+     disponiblite », « Mes produits »). À 14 px il se lisait comme un libellé
+     (audit Phase 0), à 24 px il écraserait son encadré. Le niveau de titre sera
+     revu en Phase 5 : ce sont souvent des `h3` qui s'ignorent. */
+  .titre-bloc {
+    font-size: var(--text-base);
+    line-height: var(--leading-titre);
+    font-weight: 700;
+  }
+  /* MOT D'ACCENT (V-25 A2, A3). Un mot par titre, deux au plus, hero et titres
+     de section clés. Jamais sur un prix, un bouton, un formulaire, la navigation
+     ni sous 24 px : `tests/mot-accent.test.ts` tient la liste de ses emplois.
+     Graisse 400 reposée : un `h1` est en 800, et une police à une seule graisse
+     se ferait empâter par le navigateur (`font-synthesis`). */
+  .mot-accent {
+    font-family: var(--font-accent);
+    font-style: italic;
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: 0;
+    color: var(--color-accent);
   }
   /* CODE À RECOPIER — zéro barré (`zero`) et `l` distinct (`cv05`). En Inter,
      la seule des deux polices qui porte ces variantes : Manrope n'en a aucune.

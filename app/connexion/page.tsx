@@ -38,7 +38,7 @@ export default async function ConnexionPage() {
       {/* BL-130 (FRONT-12a) : page sans SiteNav — le bouton FR/KR restait
           hors d'atteinte, l'utilisateur KR était basculé en français sans
           retour possible au moment du mot de passe. */}
-      <div className="fixed right-4 top-4 z-50">
+      <div className="fixed right-4 top-4 z-(--z-header)">
         <LangToggle current={lang} />
       </div>
       <ConnexionForm

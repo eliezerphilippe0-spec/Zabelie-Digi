@@ -39,7 +39,7 @@ export function SupportCaseForm({orderId, actorId, labels, isAdmin=false}: {orde
      clear();setDraft(empty);setNotice(labels.saved);router.refresh();
    }catch {if(mounted.current) setNotice(labels.error);}finally{locked.current=false;if(mounted.current) setBusy(false);}
  }
- return <form onSubmit={send} className="mt-6 space-y-4 rounded-2xl border border-line p-5">
+ return <form onSubmit={send} className="mt-6 space-y-4 rounded-xl border border-line p-5">
    <label className="block text-sm font-semibold">{isAdmin?labels.status:labels.reason}
      {isAdmin?<select className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface p-3" disabled={busy||!ready} value={draft.status} onChange={e=>setDraft({...draft,status:e.target.value as Draft["status"],requestId:""})}>{caseStatuses.map(s=><option key={s} value={s}>{labels[s]}</option>)}</select>:
      <select className="mt-2 min-h-11 w-full rounded-xl border border-line bg-surface p-3" disabled={busy||!ready} value={draft.reason} onChange={e=>setDraft({...draft,reason:e.target.value as Draft["reason"],requestId:""})}>{supportReasons.map(r=><option key={r} value={r}>{labels[r]}</option>)}</select>}

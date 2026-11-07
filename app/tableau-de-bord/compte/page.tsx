@@ -57,7 +57,7 @@ export default async function ComptePage() {
       <SiteNav />
       <main id="main">
         <VendeurShell lang={lang} actif="compte">
-          <h1 className="text-2xl font-semibold sm:text-3xl">{t(lang, "vendeur.nav.compte")}</h1>
+          <h1>{t(lang, "vendeur.nav.compte")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.compte.intro")}</p>
 
           {dossierKyc && (
@@ -118,7 +118,7 @@ export default async function ComptePage() {
               </Link>
               {apresLien}
             </p>
-            <div className="mt-4 max-w-lg rounded-2xl border border-line bg-surface/60 p-5">
+            <div className="mt-4 max-w-lg rounded-xl border border-line bg-surface/60 p-5">
               <AccountActions key={user.id} actorId={user.id} />
             </div>
           </section>

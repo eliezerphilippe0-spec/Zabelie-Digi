@@ -36,7 +36,7 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
   return <div className="bg-grain min-h-dvh">
     <SiteNav />
     <main id="main" className="mx-auto max-w-6xl px-5 py-10">
-      <h1 className="text-3xl font-extrabold tracking-tight">{seller ? labels.sellerTitle : labels.title}</h1>
+      <h1>{seller ? labels.sellerTitle : labels.title}</h1>
       {seller ? <p className="mt-3 font-semibold text-accent">{seller.displayName}</p> : null}
       <p className="mb-8 mt-4 max-w-prose text-mist">{labels.intro}</p>
       {zones.length ? <div className="mb-8"><MaZone labels={maZoneLabels(lang)}

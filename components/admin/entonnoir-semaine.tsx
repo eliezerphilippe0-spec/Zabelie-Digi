@@ -16,7 +16,7 @@ export function EntonnoirSemaine({ lignes, lang }: { lignes: LigneEntonnoir[]; l
   const n = (v: number | null) => (v === null ? t(lang, "funnel.unavailable") : String(v));
   return (
     <section className="mt-10" aria-labelledby="entonnoir-titre">
-      <h2 id="entonnoir-titre" className="text-lg font-semibold">{t(lang, "funnel.title")}</h2>
+      <h2 id="entonnoir-titre">{t(lang, "funnel.title")}</h2>
       <p className="mt-1 text-xs text-mist">{t(lang, "funnel.intro")}</p>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-left text-sm">

@@ -98,7 +98,7 @@ test("P5 — la police est BRANCHÉE : chargée, et sa variable posée sur <html
     /const inter = localFont\(\{[^}]*src: "\.\/fonts\/InterZabelie-4\.1\.1\.woff2"[^}]*variable: "--font-inter"/,
     "`inter` n'est plus chargée depuis le fichier découpé pour Zabelie"
   );
-  assert.match(layout, /className=\{`\$\{inter\.variable\} \$\{manrope\.variable\}`\}/, "la variable d'Inter n'est plus posée sur <html>");
+  assert.match(layout, /className=\{`\$\{inter\.variable\} \$\{manrope\.variable\} \$\{accent\.variable\}`\}/, "la variable d'Inter n'est plus posée sur <html>");
   assert.doesNotMatch(
     layout,
     /import \{[^}]*\bInter\b[^}]*\} from "next\/font\/google"/,

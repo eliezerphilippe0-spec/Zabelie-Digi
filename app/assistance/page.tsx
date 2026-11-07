@@ -21,7 +21,7 @@ export default async function CasesPage({searchParams}:{searchParams:Promise<{pa
  if(error) throw new Error("support_inbox_unavailable");
  const more=(data?.length??0)>30;
  return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-3xl px-5 py-10">
-  <h1 className="text-3xl font-extrabold">{labels.cases}</h1>
+  <h1>{labels.cases}</h1>
   {!data?.length?<p className="mt-5 text-mist">{labels.casesEmpty}</p>:<ul className="mt-6 space-y-3">{data.slice(0,30).map(row=>{
    const order=Array.isArray(row.order)?row.order[0]:row.order;
    return <li key={row.id}><Link className="block min-h-11 rounded-xl border border-line p-4" href={`/assistance/commande/${row.order_id}`}>

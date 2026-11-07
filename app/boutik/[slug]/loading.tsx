@@ -8,7 +8,7 @@ export default function Loading() {
       <SiteNav />
       <section className="mx-auto max-w-6xl px-5 pb-10 pt-16">
         <div className="flex items-center gap-5">
-          <SkeletonBlock className="h-20 w-20 rounded-2xl" />
+          <SkeletonBlock className="h-20 w-20 rounded-xl" />
           <div className="flex-1">
             <SkeletonBlock className="h-8 w-56" />
             <SkeletonBlock className="mt-3 h-4 w-36" />

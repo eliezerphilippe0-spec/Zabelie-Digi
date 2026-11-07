@@ -43,10 +43,10 @@ export default async function OrderSupportPage({params,searchParams}:{params:Pro
  const date=(s:string)=>new Intl.DateTimeFormat(lang==="ht"?"fr-HT":lang,{dateStyle:"medium",timeStyle:"short",timeZone:"America/Port-au-Prince"}).format(new Date(s));
  return <div className="bg-grain min-h-dvh"><SiteNav/><main id="main" className="mx-auto max-w-3xl px-5 py-10">
   <Link href={isAdmin?"/admin/operations":"/assistance"} className="inline-flex min-h-11 items-center text-sm underline">{isAdmin?"Administration":labels.cases}</Link>
-  <h1 className="mt-4 text-3xl font-extrabold">{labels.title}</h1><p className="mt-2 break-all text-sm text-mist">{order.order_ref??order.id} · {formatHTG(order.amount_htg)}</p>
+  <h1 className="mt-4">{labels.title}</h1><p className="mt-2 break-all text-sm text-mist">{order.order_ref??order.id} · {formatHTG(order.amount_htg)}</p>
   {dossier?<div className="mt-5 rounded-xl border border-line p-4"><p className="font-semibold">{labels[dossier.status]}</p><p className="mt-2 text-sm">{labels.review}: {date(dossier.response_due_at)}</p><p className="mt-2 text-xs text-mist">{labels.reviewNote}</p></div>:<p className="mt-5 text-mist">{labels.empty}</p>}
   {order.status==="refunded"&&<p className="mt-4 rounded-xl border border-line p-4 text-sm">{receiptResult.data?labels.refundRecorded:labels.refundPending}</p>}
-  {messages.length>0&&<section className="mt-6"><h2 className="font-semibold">{labels.history}</h2><ol className="mt-3 space-y-3">{messages.map(m=><li key={m.id} className="rounded-xl border border-line p-4"><p className="text-xs text-mist">{labels[m.author_role]} · {date(m.created_at)}</p><p className="mt-2 whitespace-pre-wrap break-words text-sm">{m.body}</p></li>)}</ol></section>}
+  {messages.length>0&&<section className="mt-6"><h2 className="titre-bloc">{labels.history}</h2><ol className="mt-3 space-y-3">{messages.map(m=><li key={m.id} className="rounded-xl border border-line p-4"><p className="text-xs text-mist">{labels[m.author_role]} · {date(m.created_at)}</p><p className="mt-2 whitespace-pre-wrap break-words text-sm">{m.body}</p></li>)}</ol></section>}
   <nav className="mt-4 flex gap-5">{page>1&&<Link className="inline-flex min-h-11 items-center underline" href={"?page="+(page-1)}>{labels.newer}</Link>}{more&&<Link className="inline-flex min-h-11 items-center underline" href={"?page="+(page+1)}>{labels.older}</Link>}</nav>
   <SupportCaseForm key={`${user.id}:${id}:${isAdmin?"admin":"participant"}`} orderId={id} actorId={user.id} labels={labels} isAdmin={isAdmin}/>
  </main><SiteFooter/></div>;

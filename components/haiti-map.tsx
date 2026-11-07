@@ -70,7 +70,7 @@ export function HaitiMap({ rows }: { rows: HtRow[] }) {
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-2xl border border-line bg-ink-soft">
+      <div className="overflow-x-auto rounded-xl border border-line bg-ink-soft">
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full min-w-[420px]"
@@ -80,7 +80,7 @@ export function HaitiMap({ rows }: { rows: HtRow[] }) {
           {DEPTS.map((dep) => {
             const v = byCode.get(dep.code)?.creators ?? 0;
             const t = v / max; // 0..1
-            const fill = `rgba(124, 92, 255, ${(0.12 + t * 0.78).toFixed(3)})`;
+            const fill = `color-mix(in srgb, var(--color-info) ${Math.round((0.12 + t * 0.78) * 100)}%, transparent)`;
             return (
               <g key={dep.code}>
                 <path
