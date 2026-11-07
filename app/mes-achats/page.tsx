@@ -137,7 +137,7 @@ export default async function MesAchatsPage({ searchParams }: {
   if (isMissingColumn(result.error)) result = await queryOrders(false);
   if (result.error) {
     console.error("[purchases] order history unavailable", { code: result.error.code });
-    return <Shell><div role="alert" className="mt-6 rounded-2xl border border-line p-5">
+    return <Shell><div role="alert" className="mt-6 rounded-xl border border-line p-5">
       <p>{t(lang, "purchases.load.error")}</p>
       <Link href={purchaseHref(view, page)} className="mt-3 inline-flex min-h-11 items-center underline">{t(lang, "purchases.retry")}</Link>
     </div></Shell>;
@@ -268,7 +268,7 @@ export default async function MesAchatsPage({ searchParams }: {
       </nav>
       {view === "numerique" && <p className="mt-4 text-sm text-mist">{t(lang, "purchases.library.hint")}</p>}
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-line p-6">
+        <div className="mt-6 rounded-xl border border-line p-6">
           <p className="text-sm text-mist">{t(lang, page > 1 ? "purchases.page.empty" : "purchases.empty")}</p>
           <Link href={page > 1 ? purchaseHref(view) : "/catalogue"} className="mt-3 inline-flex min-h-11 items-center text-cloud underline">
             {t(lang, page > 1 ? "purchases.first" : "purchases.empty.cta")}
@@ -278,7 +278,7 @@ export default async function MesAchatsPage({ searchParams }: {
         <ul className="mt-6 space-y-4">
           {orders.map((o) => {
             const confirmed = purchaseIsConfirmed(o.status);
-            return <li key={o.id} className="rounded-2xl border border-line bg-surface/60 p-5">
+            return <li key={o.id} className="rounded-xl border border-line bg-surface/60 p-5">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3 text-xs text-mist">
                 <span>{new Date(o.created_at).toLocaleDateString(lang === "ht" ? "fr-HT" : lang)} · <span className="numeric select-all">{o.order_ref || o.id}</span></span>
                 <span className={`rounded-full border border-line px-3 py-1 font-semibold ${confirmed ? "text-success-text" : "text-mist"}`}>{t(lang, purchaseStatusKey(o.status))}</span>

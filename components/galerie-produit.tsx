@@ -52,7 +52,7 @@ export function GalerieProduit({
           src={actif.url}
           alt={alt}
           decoding="async"
-          className="aspect-[4/3] w-full rounded-3xl border border-line object-cover"
+          className="aspect-[4/3] w-full rounded-xl border border-line object-cover"
         />
       ) : (
         <figure className="space-y-1.5">
@@ -61,7 +61,7 @@ export function GalerieProduit({
             controls
             preload="none"
             aria-label={videoLabel}
-            className="aspect-[4/3] w-full rounded-3xl border border-line bg-ink object-contain"
+            className="aspect-[4/3] w-full rounded-xl border border-line bg-ink object-contain"
           />
           <figcaption className="text-xs text-mist">{videoLabel}</figcaption>
         </figure>

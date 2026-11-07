@@ -174,14 +174,14 @@ export default async function CreationPage({
     <section aria-labelledby="chiffres-titre" className="mt-8">
       <MontantsMasquables titre={v.chiffresTitre} masquer={v.masquer}>
         {ventes === null ? (
-          <p role="status" className="mt-3 rounded-2xl border border-line p-5 text-sm text-mist">{v.indisponible}</p>
+          <p role="status" className="mt-3 rounded-xl border border-line p-5 text-sm text-mist">{v.indisponible}</p>
         ) : (
           <>
             {/* Téléphone : le revenu sur toute la largeur, les deux autres côte à côte
                 (trois cartes empilées prenaient un écran entier). */}
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {cartes.map((k, i) => (
-                <li key={k.cle} className={`rounded-2xl border border-line bg-surface p-4 sm:p-5 ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
+                <li key={k.cle} className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
                   <IconeStudio nom={k.icone} className="h-5 w-5 text-mist" />
                   <p className="metric mt-3 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
                     <Montant valeur={k.valeur} masque={v.montantMasque} />
@@ -195,7 +195,7 @@ export default async function CreationPage({
               <p className="mt-2 text-xs text-mist">{v.incomplet.replace("{n}", String(LOT_VENTES * LOTS_VENTES_MAX))}</p>
             )}
 
-            <div className="mt-6 rounded-2xl border border-line">
+            <div className="mt-6 rounded-xl border border-line">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
                 <div>
                   <h3 className="font-semibold">{v.meilleursTitre}</h3>
@@ -275,7 +275,7 @@ export default async function CreationPage({
           </ul>
 
           {depart && (
-            <section id="nouveau-projet" aria-labelledby="nouveau-projet-titre" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface p-5">
+            <section id="nouveau-projet" aria-labelledby="nouveau-projet-titre" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface p-5">
               <h2 id="nouveau-projet-titre">{c.formTitre}</h2>
               <p className="mt-3 text-sm font-semibold">{tb.formatTitre}</p>
               <ul className="mt-2 grid gap-2 sm:grid-cols-3">
@@ -318,7 +318,7 @@ export default async function CreationPage({
               {projets.length === 0 ? (
                 <p className="mt-4 text-sm text-mist">{c.aucunProjet}</p>
               ) : (
-                <ul className="mt-4 divide-y divide-line rounded-2xl border border-line">
+                <ul className="mt-4 divide-y divide-line rounded-xl border border-line">
                   {visibles.map((p) => (
                     <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
                       <div className="min-w-0">
@@ -346,7 +346,7 @@ export default async function CreationPage({
             </section>
 
             <aside className="min-w-0 space-y-6">
-              <section aria-labelledby="opp-titre" className="rounded-2xl border border-line p-5">
+              <section aria-labelledby="opp-titre" className="rounded-xl border border-line p-5">
                 <h2 id="opp-titre">{tb.oppTitre}</h2>
                 <p className="mt-1 text-xs text-mist">{tb.oppSous}</p>
                 {opportunites === null ? (
@@ -365,7 +365,7 @@ export default async function CreationPage({
                 </Link>
               </section>
 
-              <section aria-labelledby="comment-titre" className="rounded-2xl border border-line p-5">
+              <section aria-labelledby="comment-titre" className="rounded-xl border border-line p-5">
                 <h2 id="comment-titre">{tb.commentTitre}</h2>
                 <ol className="mt-3 space-y-3 text-sm">
                   {etapes.map((e, i) => (

@@ -152,7 +152,7 @@ function Shell({
                 ["home.s3.t", "home.s3.b"],
               ] as const
             ).map(([tt, bb]) => (
-              <li key={tt} className="rounded-2xl border border-line bg-surface/40 p-5">
+              <li key={tt} className="rounded-xl border border-line bg-surface/40 p-5">
                 <h3 className="text-base font-semibold">{t(lang, tt)}</h3>
                 <p className="mt-1 text-sm text-mist">{t(lang, bb)}</p>
               </li>
@@ -191,7 +191,7 @@ export default async function VendrePage({
     signalerConfigAbsente("supabase", { ecran: "/vendre" });
     return (
       <Shell lang={lang} taux={{ ...RATE_BPS }} subtitle={t(lang, "sell.demo.subtitle")} marketing>
-        <div className="glass rounded-2xl p-6 text-sm text-mist">
+        <div className="glass rounded-xl p-6 text-sm text-mist">
           {t(lang, "sell.demo.body")}
         </div>
         {/* L'indice technique n'existe qu'en dehors de la production. Un build
@@ -391,7 +391,7 @@ export default async function VendrePage({
           Le menu du tableau vendeur remplace l'ancienne rangée de liens.
           `scroll-mt-32` ici et sur #mes-produits : replié, l'en-tête fait
           108 px à 360 px ; 96 px laissaient le titre dessous. */}
-      <section id="nouveau" aria-labelledby="nouveau-titre" className="glass scroll-mt-32 rounded-2xl p-6">
+      <section id="nouveau" aria-labelledby="nouveau-titre" className="glass scroll-mt-32 rounded-xl p-6">
         <h2 id="nouveau-titre">{t(lang, "sell.new.title")}</h2>
         <p className="mt-1 text-sm text-mist">{t(lang, "sell.new.hint")}</p>
         {/* Navigation document : Next 16.4 met l'ancre initiale en cache puis la
@@ -528,7 +528,7 @@ export default async function VendrePage({
               <li
                 key={p.slug}
                 id={`produit-${p.id}`}
-                className="scroll-mt-32 flex flex-col items-stretch gap-4 rounded-2xl border border-line bg-surface/60 p-5 text-sm"
+                className="scroll-mt-32 flex flex-col items-stretch gap-4 rounded-xl border border-line bg-surface/60 p-5 text-sm"
               >
                 <div className="min-w-0">
                   {/* Correctif audit : un produit brouillon (BL-103, fichier

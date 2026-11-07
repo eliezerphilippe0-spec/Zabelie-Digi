@@ -35,7 +35,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
         <p className="mt-5 text-lg leading-8 text-mist">{t(lang, guide.intro)}</p>
         {guide.sections.map((section) => <section key={section.title} className="mt-8 border-t border-line pt-6"><h2>{t(lang, section.title)}</h2><p className="mt-3 text-base leading-7 text-mist">{t(lang, section.body)}</p></section>)}
       </article>
-      <aside className="rounded-2xl border border-line bg-surface p-5 lg:sticky lg:top-28">
+      <aside className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-28">
         <h2 className="titre-bloc">{t(lang, "guides.related")}</h2>
         <Link href={guide.catalogue} className="bouton mt-4 flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
         <Link href="/mes-achats" className="mt-3 flex min-h-11 items-center text-sm underline">{t(lang, "purchases.title")}</Link>

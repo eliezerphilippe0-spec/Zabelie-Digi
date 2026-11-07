@@ -23,7 +23,7 @@ export default async function OperationsPage({searchParams}:{searchParams:Promis
  <section className="mt-8"><h2>Dossiers à traiter</h2>
  {queue.error?<p role="alert" className="mt-3 text-danger-text">La file est indisponible. Cela ne signifie pas qu’il n’y a aucun incident.</p>:<>
  <p className="mt-2 text-sm text-mist">{total} situations à traiter. Une commande peut nécessiter plusieurs actions.</p>
- {rows.length===0?<p className="mt-4">Aucune situation dans cette page de la file.</p>:<ol className="mt-4 space-y-3">{rows.map(row=><li key={row.kind+row.id} className="rounded-2xl border border-line p-4">
+ {rows.length===0?<p className="mt-4">Aucune situation dans cette page de la file.</p>:<ol className="mt-4 space-y-3">{rows.map(row=><li key={row.kind+row.id} className="rounded-xl border border-line p-4">
  <div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">{operationLabels[row.kind]}</h3><span className="numeric">{row.amount_htg===null?"Montant à rapprocher":<>{row.kind==="stripe_dispute"&&"Commande liée : "}{formatHTG(row.amount_htg)}</>}</span></div>
  <p className="mt-2 break-all text-xs text-mist">{row.reference??row.id} · {row.rail??"HTG"} · {new Date(row.since).toLocaleString("fr-HT",{timeZone:"America/Port-au-Prince"})}</p>
  {row.kind==="stripe_dispute"&&<>

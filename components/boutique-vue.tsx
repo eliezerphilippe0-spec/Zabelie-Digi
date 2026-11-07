@@ -63,10 +63,10 @@ export async function BoutiqueVue({
               alt={creator.displayName}
               width={80}
               height={80}
-              className="h-16 w-16 shrink-0 rounded-2xl object-cover sm:h-20 sm:w-20"
+              className="h-16 w-16 shrink-0 rounded-xl object-cover sm:h-20 sm:w-20"
             />
           ) : (
-            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-brand text-2xl font-extrabold text-on-brand sm:h-20 sm:w-20">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-brand text-2xl font-extrabold text-on-brand sm:h-20 sm:w-20">
               {initials}
             </span>
           )}

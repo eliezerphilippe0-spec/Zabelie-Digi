@@ -77,7 +77,7 @@ export function PickupAdmin() {
 
   return (
     <div className="mt-6 space-y-6">
-      <div className="rounded-2xl border border-line p-4">
+      <div className="rounded-xl border border-line p-4">
         <p className="text-sm font-semibold text-cloud">Nouveau point</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <input

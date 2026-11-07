@@ -104,7 +104,7 @@ export default async function VendrePhysiquePage() {
         <Link href="/vendre" className="mt-2 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
           {t(lang, "sell.physical.digital")}
         </Link>
-        <section aria-labelledby="preparer" className="mt-6 rounded-2xl border border-line bg-surface/40 p-5">
+        <section aria-labelledby="preparer" className="mt-6 rounded-xl border border-line bg-surface/40 p-5">
           <h2 id="preparer" className="titre-bloc">{t(lang, "sell.physical.prepare.title")}</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-mist">
             <li>{t(lang, "sell.physical.prepare.photo")}</li>
@@ -116,7 +116,7 @@ export default async function VendrePhysiquePage() {
         {pricing && <SellerPricingPanel pricing={pricing} lang={lang} />}
         <SellerLaunchPanel launch={launch} lang={lang} now={launch?.observed_at ?? 0} />
         {!user ? (
-          <div className="mt-8 rounded-2xl border border-line bg-surface/60 p-6">
+          <div className="mt-8 rounded-xl border border-line bg-surface/60 p-6">
             <p className="text-sm text-cloud">
               {t(lang, "sell.login.subtitle")}
             </p>

@@ -7,7 +7,7 @@
   padding: 40px;
   isolation: isolate;
 }
-.home-hero-copy { z-index: 1; }
+.home-hero-copy { z-index: var(--z-base); }
 .home-kicker, .home-eyebrow {
   display: block;
   font-size: 12px;

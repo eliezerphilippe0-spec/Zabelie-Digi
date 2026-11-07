@@ -103,7 +103,7 @@ export default async function FilPage({
             return (
               <li
                 key={m.id}
-                className={`max-w-[85%] rounded-2xl border border-line p-3 ${
+                className={`max-w-[85%] rounded-xl border border-line p-3 ${
                   deMoi ? "self-end bg-brand/10" : "bg-surface/40"
                 }`}
               >

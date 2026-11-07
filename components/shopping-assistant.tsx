@@ -53,7 +53,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
   }
 
   return <div className="space-y-8">
-    {conversational ? <section className="rounded-2xl border border-line bg-surface p-5" aria-label={labels.title}>
+    {conversational ? <section className="rounded-xl border border-line bg-surface p-5" aria-label={labels.title}>
       <p className="mb-4 text-sm text-mist">{labels.privacy}</p>
       <div role="log" aria-live="polite" aria-relevant="additions" className="space-y-3">
         {turns.length ? turns.map((turn, i) => <p key={i} className={`max-w-prose rounded-xl p-3 ${turn.user ? "ml-auto bg-brand/10" : "bg-surface-2"}`}>{turn.text}</p>) : <p className="font-semibold">{labels.query}</p>}
@@ -65,7 +65,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
       </form>
     </section> : <p className="text-sm text-mist">{labels.chatUnavailable}</p>}
 
-    <section aria-labelledby="shopping-guided-title" className="rounded-2xl border border-line p-5">
+    <section aria-labelledby="shopping-guided-title" className="rounded-xl border border-line p-5">
       <h2 id="shopping-guided-title">{labels.guided}</h2>
       <p className="mt-2 text-sm text-mist">{labels.guidedNote}</p>
       <form onSubmit={e => { e.preventDefault(); void request(); }} className="mt-5">
@@ -95,7 +95,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
         <p className="mt-3 text-sm text-mist">{labels.shortlist}</p>
         {result.recommendations.some(p => p.proximite) ? <p className="mt-2 text-sm text-mist">{labels.proxNote}</p> : null}
         <div className="mt-5 grid gap-4 lg:grid-cols-3">
-          {result.recommendations.map(p => <article key={p.id} className="min-w-0 rounded-2xl border border-line bg-surface p-5">
+          {result.recommendations.map(p => <article key={p.id} className="min-w-0 rounded-xl border border-line bg-surface p-5">
             <span className="text-sm font-bold text-accent">{p.position}</span>
             <p className="mt-2 text-xs text-mist">{kindOptions.find(option => option.value === p.kind)?.label}</p>
             <h3 className="mt-2 break-words text-lg font-bold">{p.title}</h3>

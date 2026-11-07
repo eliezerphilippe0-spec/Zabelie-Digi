@@ -395,7 +395,7 @@ export default async function AdminPage({
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl border border-line bg-surface-maroon/70 p-5"
+            className="rounded-xl border border-line bg-surface-maroon/70 p-5"
           >
             <p className="metric text-xl font-extrabold text-gradient">{s.value}</p>
             <p className="mt-1 text-xs text-mist">{s.label}</p>

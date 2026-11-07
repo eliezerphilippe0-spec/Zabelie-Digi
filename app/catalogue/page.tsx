@@ -290,7 +290,7 @@ export default async function CataloguePage({
         )}
 
         <details className="catalogue-filter-panel" open={minPrice !== undefined || maxPrice !== undefined || sort !== "recent" || priceRangeInvalid || Boolean(zoneId)}><summary>{t(lang, "catalog.filters")}<span aria-hidden="true">+</span></summary>
-        <form action="/catalogue" className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-4" aria-label={t(lang, "catalog.filters")}>
+        <form action="/catalogue" className="mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4" aria-label={t(lang, "catalog.filters")}>
           {Object.entries(searchContext).filter(([key]) => !["min", "max", "tri"].includes(key)).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
           {q && <input type="hidden" name="q" value={q} />}
           <label className="grid gap-2 text-sm text-mist">
@@ -486,7 +486,7 @@ export default async function CataloguePage({
                la branche « il y a des produits ». Un lien périmé, une URL
                retapée, et le visiteur était dans un cul-de-sac qui lui disait
                en plus que la boutique n'avait rien à vendre. */
-            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
                 {t(lang, "catalog.page404.t")}
               </p>
@@ -505,7 +505,7 @@ export default async function CataloguePage({
                ordre : ce qui a été cherché, où regarder à côté, et le seul
                geste qui change quelque chose — dire qu'on connaît un vendeur.
                L'acheteur déçu devient le canal de recrutement. */
-            <div className="rounded-2xl border border-line bg-surface/40 p-8 text-center">
+            <div className="rounded-xl border border-line bg-surface/40 p-8 text-center">
               <p className="text-base font-semibold text-cloud">
                 {t(lang, "catalog.miss.title")} « {q} »
               </p>
@@ -548,7 +548,7 @@ export default async function CataloguePage({
               </a>
             </div>
           ) : zoneSeule && zoneActive ? (
-            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
                 {t(lang, "zsv.title").replace("{zone}", libelleZone(zoneActive, lang))}
               </p>
@@ -572,7 +572,7 @@ export default async function CataloguePage({
               </p>
             </div>
           ) : minPrice !== undefined || maxPrice !== undefined || !!zoneId ? (
-            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
               <p>{t(lang, "catalog.none")}</p>
               <Link href={q ? hrefFor({ q: null, page: 1 }) : universe ? universeHref(universe) : "/catalogue"} className="mt-4 inline-flex min-h-11 items-center text-accent underline">{t(lang, q ? "catalog.resetSearch" : "catalog.reset")}</Link>
             </div>
@@ -583,7 +583,7 @@ export default async function CataloguePage({
                reformuler. On dit la vérité utile : le rayon est ouvert, les
                premiers vendeurs s'installent, la place est libre. Aucun état
                vide muet (landing v2). */
-            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center">
+            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
               <p className="text-base font-semibold text-cloud">
                 {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}
               </p>
@@ -603,7 +603,7 @@ export default async function CataloguePage({
               </p>
             </div>
           ) : filtre ? (
-            <div className="rounded-2xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
+            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
               {t(lang, "catalog.none")}{" "}
               <Link href="/catalogue" className="text-cloud underline">
                 {t(lang, "catalog.reset")}

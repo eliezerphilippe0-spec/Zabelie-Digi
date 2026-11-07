@@ -366,7 +366,7 @@ export default async function ProductPage({
             />
           ) : (
             <div
-              className={`aspect-[4/3] w-full rounded-3xl bg-gradient-to-br ${product.accent}`}
+              className={`aspect-[4/3] w-full rounded-xl bg-gradient-to-br ${product.accent}`}
             />
           )}
         </div>
@@ -415,7 +415,7 @@ export default async function ProductPage({
           <p className="mt-3 whitespace-pre-line text-base leading-7 text-mist">{product.blurb}</p>
 
           {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-line bg-surface/40 p-4">
+            <div className="mt-4 rounded-xl border border-line bg-surface/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-mist">
                 {t(lang, "product.includes")}
               </p>
@@ -465,7 +465,7 @@ export default async function ProductPage({
               coupé en deux autour — balisage invalide (un <ul> dans un <li>
               d'une autre liste) et ordre de lecture faux. */}
           {physical && physical.fitment.length > 0 && (
-            <div className="mt-6 rounded-2xl border border-brand/40 bg-surface/50 p-5">
+            <div className="mt-6 rounded-xl border border-brand/40 bg-surface/50 p-5">
               <p className="text-sm font-semibold">{t(lang, "product.fitment.title")}</p>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {physical.fitment.map((f, i) => (
@@ -488,7 +488,7 @@ export default async function ProductPage({
           {/* ── Caractéristiques (V-2, docs/35) — seulement ce qui est
                  RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
           {physical?.specs && (
-            <div className="mt-6 rounded-2xl border border-line bg-surface/40 p-4">
+            <div className="mt-6 rounded-xl border border-line bg-surface/40 p-4">
               <h2 className="text-cloud titre-bloc">
                 {t(lang, "product.specs.title")}
               </h2>
@@ -544,7 +544,7 @@ export default async function ProductPage({
             </div>
           )}
 
-          <div id="acheter" className="mt-8 scroll-mt-44 rounded-2xl border border-line bg-surface/60 p-6">
+          <div id="acheter" className="mt-8 scroll-mt-44 rounded-xl border border-line bg-surface/60 p-6">
             {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
                 pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
             {/* Vente flash (0080) : prime sur le rabais — deux barrés
@@ -769,7 +769,7 @@ export default async function ProductPage({
 
           <ProductOffers offers={relatedOffers} copy={offerCopy(lang)}/>
           {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
-          {isDownloadable(product.kind) && <section className="mt-6 rounded-2xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
+          {isDownloadable(product.kind) && <section className="mt-6 rounded-xl border border-line bg-surface p-5" aria-labelledby="digital-details-title">
             <h2 id="digital-details-title">{t(lang, "digital.title")}</h2>
             {digital && DIGITAL_DETAIL_FIELDS.some((key) => digital[key]) && <>
               <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -814,7 +814,7 @@ export default async function ProductPage({
               la question vient quand l'acheteur hésite encore, pas quand il
               a déjà décidé de transmettre la fiche. */}
           {product.creatorId && (
-            <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-2xl border border-line bg-surface/40 p-4">
+            <div id="contacter-vendeur" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface/40 p-4">
               <h2 className="text-cloud titre-bloc">{t(lang, "msg.ask.title")}</h2>
               {peutEcrire ? (
                 <MessageForm
@@ -865,7 +865,7 @@ export default async function ProductPage({
             {reviews.map((r) => (
               <li
                 key={r.id}
-                className="rounded-2xl border border-line bg-surface/60 p-4"
+                className="rounded-xl border border-line bg-surface/60 p-4"
               >
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{r.buyerName ?? t(lang, "product.reviews.auteur")}</span>

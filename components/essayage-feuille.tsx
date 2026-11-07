@@ -152,7 +152,7 @@ export function EssayageFeuille({
       aria-labelledby="essayage-titre"
       onClose={onFermer}
       data-essayage-feuille
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-2xl border border-line bg-surface p-5 text-cloud backdrop:bg-black/60 sm:m-auto sm:max-w-md sm:rounded-2xl"
+      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-xl border border-line bg-surface p-5 text-cloud backdrop:bg-black/60 sm:m-auto sm:max-w-md sm:rounded-xl"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 id="essayage-titre">{labels.titre}</h2>

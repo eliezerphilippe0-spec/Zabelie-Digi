@@ -252,7 +252,7 @@ export default async function HomePage() {
         <section className="home-premier-ecran mx-auto max-w-6xl px-5 pt-3">
           <div
             data-has-featured={Boolean(featured)}
-            className={`home-hero relative overflow-hidden rounded-2xl ${opening ? "launch-hero" : "bg-chrome text-on-chrome"}`}
+            className={`home-hero relative overflow-hidden rounded-xl ${opening ? "launch-hero" : "bg-chrome text-on-chrome"}`}
             style={opening || heroImage ? undefined : { backgroundImage: "var(--brand-gradient)" }}
           >
             {heroImage && !opening && (
@@ -399,7 +399,7 @@ export default async function HomePage() {
             ce que la plateforme fait et ne fait pas, on ne le cache pas
             (e2e `parcours-physique-accueil`). */}
         <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-5 pt-8">
-          <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+          <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
             <h2 id="receipt-title">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
             <details className="group mt-3">
@@ -429,7 +429,7 @@ export default async function HomePage() {
             marche » réduit à deux liens vers /aide et /vendre, qui portent les
             étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
         <section id="comment" className="mx-auto max-w-6xl scroll-mt-32 px-5 pb-24 pt-10">
-          <div className="home-final rounded-2xl p-6 text-center text-on-chrome sm:p-10">
+          <div className="home-final rounded-xl p-6 text-center text-on-chrome sm:p-10">
             <h2 className="mx-auto max-w-2xl">{t(lang, "rail.shop.t")}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-on-chrome">{t(lang, "home.final.sub")}</p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">

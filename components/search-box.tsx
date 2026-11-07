@@ -125,7 +125,7 @@ export function SearchBox({
         <nav
           id={groupeId}
           aria-label={suggestionsLabel}
-          className="absolute inset-x-0 top-full z-40 mt-1 rounded-xl border border-line bg-surface p-2 shadow-xl"
+          className="absolute inset-x-0 top-full z-(--z-drawer) mt-1 rounded-xl border border-line bg-surface p-2 shadow-lg"
         >
           <p className="px-2 pb-1 text-xs uppercase tracking-wide text-mist">
             {suggestionsLabel}

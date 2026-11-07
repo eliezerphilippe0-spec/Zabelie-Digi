@@ -45,7 +45,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
       </form>
       {q && <Link href="/categories" className="mt-2 inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.reset")}</Link>}
       {rows.length > 0 ? <div className="mt-8 grid items-start gap-4 lg:grid-cols-2">
-        {rows.map((department) => <section key={department.slug} className="rounded-2xl border border-line bg-ink p-5" aria-labelledby={`department-${department.slug}`}>
+        {rows.map((department) => <section key={department.slug} className="rounded-xl border border-line bg-ink p-5" aria-labelledby={`department-${department.slug}`}>
           <div className="flex items-start gap-3">
             <DepartmentIcon slug={department.slug} className="mt-1 h-6 w-6 flex-none stroke-current text-cloud" />
             <div>
@@ -66,7 +66,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
             </li>)}
           </ul>
         </section>)}
-      </div> : <p className="mt-8 rounded-2xl border border-line p-6 text-mist">{t(lang, all.length ? "directory.noMatch" : brut.length ? "directory.none" : "directory.unavailable")}</p>}
+      </div> : <p className="mt-8 rounded-xl border border-line p-6 text-mist">{t(lang, all.length ? "directory.noMatch" : brut.length ? "directory.none" : "directory.unavailable")}</p>}
     </main>
     <SiteFooter />
   </div>;

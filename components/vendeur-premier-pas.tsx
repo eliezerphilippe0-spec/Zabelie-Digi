@@ -49,7 +49,7 @@ export function VendeurPremierPas({
     : null;
 
   return (
-    <section className="mt-8 rounded-2xl border border-line bg-surface-maroon/70 p-6">
+    <section className="mt-8 rounded-xl border border-line bg-surface-maroon/70 p-6">
       <h2 className="titre-section">{labels.titre}</h2>
       <p className="mt-2 max-w-prose text-sm text-mist">{labels.texte}</p>
 

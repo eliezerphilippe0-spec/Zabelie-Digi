@@ -30,7 +30,7 @@ export default async function AboutPage() {
             width={900}
             height={1200}
             sizes="240px"
-            className="h-auto w-60 max-w-full rounded-2xl"
+            className="h-auto w-60 max-w-full rounded-xl"
           />
           <div>
             <h2 id="fondateur">{t(lang, "founder.name")}</h2>

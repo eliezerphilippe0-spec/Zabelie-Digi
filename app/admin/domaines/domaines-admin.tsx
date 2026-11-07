@@ -36,7 +36,7 @@ export function DomainesAdmin({ demandes }: { demandes: DemandeDomaine[] }) {
     <div className="mt-6 grid gap-3">
       {message && <p role="alert" className="text-sm text-danger-text">{message}</p>}
       {liste.map((d) => (
-        <div key={d.sellerId} className="rounded-2xl border border-line p-4 text-sm">
+        <div key={d.sellerId} className="rounded-xl border border-line p-4 text-sm">
           <p className="font-mono text-base">{d.domaine}</p>
           <p className="mt-1 text-mist">{d.nom ?? "—"}{d.slug ? ` · /boutik/${d.slug}` : ""} · {LIBELLE[d.statut]}{d.note ? ` · ${d.note}` : ""}</p>
           {d.statut !== "actif" && (

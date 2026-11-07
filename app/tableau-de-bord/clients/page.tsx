@@ -80,7 +80,7 @@ export default async function ClientsPage() {
           {!resume ? (
             <p role="alert" className="mt-6 text-sm text-danger-text">{t(lang, "vendeur.indisponible")}</p>
           ) : resume.clientsTotal === 0 ? (
-            <div className="mt-6 rounded-2xl border border-line bg-surface p-5">
+            <div className="mt-6 rounded-xl border border-line bg-surface p-5">
               <p className="text-sm leading-relaxed text-mist">{t(lang, "vendeur.clients.vide")}</p>
               <Link href="/tableau-de-bord/boutique#qr" className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">
                 {t(lang, "vendeur.action.partager")}
@@ -95,7 +95,7 @@ export default async function ClientsPage() {
                   ["vendeur.clients.k90", resume.clients90, null],
                   ["vendeur.clients.revenus", resume.clientsRevenus, "vendeur.clients.revenus.aide"],
                 ] as const).map(([cle, valeur, aide]) => (
-                  <div key={cle} className="rounded-2xl border border-line bg-surface p-4">
+                  <div key={cle} className="rounded-xl border border-line bg-surface p-4">
                     <dt className="text-sm text-mist">{t(lang, cle)}</dt>
                     <dd className="mt-1 text-2xl font-semibold tabular-nums">{valeur}</dd>
                     {aide && <dd className="text-xs text-mist">{t(lang, aide)}</dd>}
@@ -105,7 +105,7 @@ export default async function ClientsPage() {
 
               <section aria-labelledby="top-produits" className="mt-8">
                 <h2 id="top-produits" className="titre-section">{t(lang, "vendeur.clients.top")}</h2>
-                <ol className="mt-3 divide-y divide-line rounded-2xl border border-line bg-surface">
+                <ol className="mt-3 divide-y divide-line rounded-xl border border-line bg-surface">
                   {resume.produits.map((p) => (
                     <li key={p.productId} className="flex flex-wrap items-baseline justify-between gap-2 p-4">
                       <span className="min-w-0 break-words font-medium">{p.titre}</span>
@@ -119,7 +119,7 @@ export default async function ClientsPage() {
 
               <section aria-labelledby="liste-clients" className="mt-8">
                 <h2 id="liste-clients" className="titre-section">{t(lang, "vendeur.clients.liste")}</h2>
-                <ul className="mt-3 divide-y divide-line rounded-2xl border border-line bg-surface">
+                <ul className="mt-3 divide-y divide-line rounded-xl border border-line bg-surface">
                   {resume.clients.map((c) => (
                     <li key={c.buyerId} className="flex flex-wrap items-baseline justify-between gap-2 p-4">
                       <span className="font-medium">{prenoms.get(c.buyerId) ?? t(lang, "vendeur.clients.anonyme")}</span>
@@ -137,7 +137,7 @@ export default async function ClientsPage() {
             <section id="signaux" aria-labelledby="signaux-titre" className="mt-10 scroll-mt-32">
               <h2 id="signaux-titre" className="titre-section">{t(lang, "vendeur.signaux.titre")}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "vendeur.signaux.intro")}</p>
-              <dl className="mt-4 rounded-2xl border border-line bg-surface p-4">
+              <dl className="mt-4 rounded-xl border border-line bg-surface p-4">
                 <dt className="text-sm text-mist">{t(lang, "vendeur.signaux.abonnes")}</dt>
                 <dd className="mt-1 text-2xl font-semibold tabular-nums">{signaux.abonnes}</dd>
               </dl>
@@ -146,7 +146,7 @@ export default async function ClientsPage() {
               {signaux.paniers.length === 0 ? (
                 <p className="mt-2 text-sm text-mist">{t(lang, "vendeur.signaux.paniers.vide")}</p>
               ) : (
-                <ul id="signaux-paniers" className="mt-2 divide-y divide-line rounded-2xl border border-line bg-surface">
+                <ul id="signaux-paniers" className="mt-2 divide-y divide-line rounded-xl border border-line bg-surface">
                   {signaux.paniers.map((p, i) => (
                     <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 p-4">
                       <span className="min-w-0 break-words font-medium">{p.titre}</span>
@@ -164,7 +164,7 @@ export default async function ClientsPage() {
               {signaux.recherches.length === 0 ? (
                 <p className="mt-2 text-sm text-mist">{t(lang, "vendeur.signaux.recherches.vide")}</p>
               ) : (
-                <ul id="signaux-recherches" className="mt-2 divide-y divide-line rounded-2xl border border-line bg-surface">
+                <ul id="signaux-recherches" className="mt-2 divide-y divide-line rounded-xl border border-line bg-surface">
                   {signaux.recherches.map((r) => (
                     <li key={r.terme} className="flex flex-wrap items-baseline justify-between gap-2 p-4">
                       <span className="min-w-0 break-words font-medium">

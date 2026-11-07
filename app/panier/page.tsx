@@ -129,7 +129,7 @@ export default async function PanierPage() {
         <p className="mt-4 text-sm text-danger-text">{t(lang, "error.generic")}</p>
       )}
       {!error && items.length === 0 && (
-        <div className="mt-6 rounded-2xl border border-dashed border-line bg-surface/40 p-8 text-center">
+        <div className="mt-6 rounded-xl border border-dashed border-line bg-surface/40 p-8 text-center">
           <p className="text-sm text-mist">{t(lang, "cart.empty")}</p>
           <Link
             href="/catalogue"
@@ -162,7 +162,7 @@ export default async function PanierPage() {
                   {t(lang, "trust.2.b")}
                 </p>
               )}
-              <ul className="divide-y divide-line rounded-2xl border border-line bg-surface/40">
+              <ul className="divide-y divide-line rounded-xl border border-line bg-surface/40">
                 {g.lignes.map((l) => (
                   <li
                     key={l.product_id}
@@ -193,7 +193,7 @@ export default async function PanierPage() {
               </ul>
             </section>
           ))}
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface/40 px-4 py-3">
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-line bg-surface/40 px-4 py-3">
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
             <Prix montant={total} className="text-xl" />
           </div>

@@ -44,7 +44,7 @@ export default async function ProPage() {
   if (!isSupabaseConfigured()) {
     return (
       <Shell title={c.proTitle} subtitle={c.demo}>
-        <div className="glass rounded-2xl p-6 text-sm text-mist">{c.demoBody}</div>
+        <div className="glass rounded-xl p-6 text-sm text-mist">{c.demoBody}</div>
       </Shell>
     );
   }

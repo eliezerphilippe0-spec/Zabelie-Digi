@@ -67,7 +67,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
   }
 
   return (
-    <HeaderShell className="sticky top-0 z-50 bg-chrome text-on-chrome">
+    <HeaderShell className="sticky top-0 z-(--z-header) bg-chrome text-on-chrome">
       {/* Studio de création (D6, docs/70) : les brouillons locaux d'un autre
           compte, ou de tout le monde après la déconnexion, quittent l'appareil. */}
       <PurgeBrouillonsCreation garder={user?.id ?? null} />
@@ -76,7 +76,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
           `<main id="main">`. */}
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-brand"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-(--z-toast) focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-brand"
       >
         {t(lang, "a11y.skip")}
       </a>
@@ -136,7 +136,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
               </svg>
               <span className="hidden text-sm font-semibold lg:inline">{t(lang, "cart.title")}</span>
               {articlesPanier !== null && articlesPanier > 0 && (
-                <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-extrabold text-on-brand">
+                <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-extrabold text-on-brand">
                   {articlesPanier}
                 </span>
               )}

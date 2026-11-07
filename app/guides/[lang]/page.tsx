@@ -21,7 +21,7 @@ export default async function GuidesPage({ params }: { params: Promise<{ lang: s
     <nav aria-label={t(lang, "nav.breadcrumb")} className="text-sm text-mist"><Link href="/" className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "nav.home")}</Link></nav>
     <h1 className="mt-5 max-w-3xl">{t(lang, "guides.title")}</h1>
     <p className="mt-4 max-w-3xl text-base leading-7 text-mist">{t(lang, "guides.intro")}</p>
-    <div className="mt-8 grid gap-5 md:grid-cols-3">{BUYING_GUIDES.map((guide) => <Link key={guide.slug} href={guideHref(lang, guide.slug)} className="rounded-2xl border border-line bg-surface p-6 hover:border-accent">
+    <div className="mt-8 grid gap-5 md:grid-cols-3">{BUYING_GUIDES.map((guide) => <Link key={guide.slug} href={guideHref(lang, guide.slug)} className="rounded-xl border border-line bg-surface p-6 hover:border-accent">
       <h2>{t(lang, guide.title)}</h2><p className="mt-4 text-base leading-7 text-mist">{t(lang, guide.intro)}</p>
     </Link>)}</div>
   </main><SiteFooter /></div>;

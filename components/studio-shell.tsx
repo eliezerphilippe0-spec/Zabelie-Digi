@@ -70,7 +70,7 @@ export function StudioShell({
           {vendeur.map(lien)}
         </ul>
         {quota && (
-          <div className="mt-6 hidden rounded-2xl border border-line p-3 lg:block">
+          <div className="mt-6 hidden rounded-xl border border-line p-3 lg:block">
             <p className="text-xs text-mist">{quota.texte}</p>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
               <div className="h-full rounded-full bg-brand" style={{ width: `${quota.maximum ? Math.round((quota.restantes / quota.maximum) * 100) : 0}%` }} />

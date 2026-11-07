@@ -61,7 +61,7 @@ export function ThemeToggle({ label, labels }: {
         <AppearanceIcon preference={preference} />
         <span className="hidden text-sm font-semibold lg:inline">{label}</span>
       </summary>
-      <div role="group" aria-label={label} className="header-menu-panel absolute right-0 top-full z-50 mt-2 w-48 rounded-2xl border border-line bg-surface p-2 text-cloud shadow-xl">
+      <div role="group" aria-label={label} className="header-menu-panel absolute right-0 top-full z-(--z-header) mt-2 w-48 rounded-xl border border-line bg-surface p-2 text-cloud shadow-lg">
         {THEME_PREFERENCES.map((mode) => (
           <button
             key={mode}

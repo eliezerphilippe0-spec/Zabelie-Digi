@@ -119,7 +119,7 @@ export default async function GeoPage() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="rounded-2xl border border-line bg-surface/60 p-5"
+            className="rounded-xl border border-line bg-surface/60 p-5"
           >
             <p className="text-xl font-black text-gradient">{s.value}</p>
             <p className="mt-1 text-xs text-mist">{s.label}</p>
@@ -149,7 +149,7 @@ export default async function GeoPage() {
             </div>
             <div className="mt-4 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
               <HaitiMap rows={htRows} />
-              <div className="overflow-hidden rounded-2xl border border-line">
+              <div className="overflow-hidden rounded-xl border border-line">
                 <table className="w-full text-sm">
                   <thead className="bg-surface/60 text-left text-xs text-mist">
                     <tr>
@@ -207,7 +207,7 @@ export default async function GeoPage() {
                 </span>
               )}
             </div>
-            <div className="mt-4 overflow-x-auto rounded-2xl border border-line">
+            <div className="mt-4 overflow-x-auto rounded-xl border border-line">
               <table className="w-full min-w-[520px] text-sm">
                 <thead className="bg-surface/60 text-left text-xs text-mist">
                   <tr>

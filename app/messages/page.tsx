@@ -44,7 +44,7 @@ export default async function MessagesPage() {
         </h1>
 
         {fils.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-line bg-surface/40 p-6">
+          <div className="mt-8 rounded-xl border border-line bg-surface/40 p-6">
             <p className="text-cloud">{t(lang, "msg.empty")}</p>
             {/* L'écran vide DIT quoi faire. Un vide muet se lit comme une
                 panne — c'est la règle des états zéro du dépôt. */}
@@ -62,7 +62,7 @@ export default async function MessagesPage() {
               <li key={f.id}>
                 <Link
                   href={`/messages/${f.id}`}
-                  className="flex min-h-11 items-start gap-3 rounded-2xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
+                  className="flex min-h-11 items-start gap-3 rounded-xl border border-line bg-surface/40 p-4 transition hover:border-brand/60"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-cloud">{f.productTitle}</p>

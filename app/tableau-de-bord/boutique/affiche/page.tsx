@@ -36,7 +36,7 @@ export default async function AffichePage() {
         </Link>
         <BoutonImprimer label={t(lang, "vendeur.affiche.imprimer")} />
       </div>
-      <article className="affiche mx-auto mt-6 flex max-w-md flex-col items-center rounded-2xl border border-line p-8 text-center">
+      <article className="affiche mx-auto mt-6 flex max-w-md flex-col items-center rounded-xl border border-line p-8 text-center">
         <p className="font-heading text-2xl font-semibold break-words">{nom}</p>
         <h1 className="mt-2 text-lg">{t(lang, "vendeur.affiche.titre")}</h1>
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG en data: généré côté serveur, rien à optimiser */}

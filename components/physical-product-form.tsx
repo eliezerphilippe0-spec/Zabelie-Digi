@@ -357,7 +357,7 @@ export function PhysicalProductForm({
 
   if (createdProductId) {
     return (
-      <section className="space-y-4 rounded-2xl border border-line bg-surface/40 p-5" aria-labelledby="draft-saved">
+      <section className="space-y-4 rounded-xl border border-line bg-surface/40 p-5" aria-labelledby="draft-saved">
         {storageWarning}
         <h2 id="draft-saved" className="titre-bloc">{listingLabels.saved}</h2>
         <p className="text-sm text-mist">{listingLabels.draftNote}</p>
@@ -388,7 +388,7 @@ export function PhysicalProductForm({
 
   if (reviewReady && review && !busy) {
     return (
-      <section className="space-y-4 rounded-2xl border border-line bg-surface/40 p-5">
+      <section className="space-y-4 rounded-xl border border-line bg-surface/40 p-5">
         {storageWarning}
         <p role="alert" className="text-sm">{reviewCopy.uncertain}</p>
         {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}

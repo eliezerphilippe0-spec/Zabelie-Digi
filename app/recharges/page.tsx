@@ -33,7 +33,7 @@ export default async function RechargesPage() {
       <h1>{t(lang, "recharges.title")}</h1>
       <p className="mt-3 max-w-2xl text-mist">{t(lang, "recharges.intro")}</p>
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <section className="rounded-2xl border border-line bg-ink p-6 sm:p-8">
+        <section className="rounded-xl border border-line bg-ink p-6 sm:p-8">
           <h2>{t(lang, "recharges.phone")}</h2>
           <p className="mt-3 text-mist">{t(lang, "recharges.phone.body")}</p>
           <p className="mt-6 font-semibold">{enabled ? trustLabels.topupReady : availability === "sandbox" ? trustLabels.topupTest : trustLabels.topupClosed}</p>

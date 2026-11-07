@@ -37,11 +37,11 @@ export async function CollectionPage({ kind, pageParam }: { kind: CollectionKind
     return { id, data: error ? null : data as { display_name: string; bio: string | null } | null };
   })) : [];
   return shell(<>
-    {ids.length === 0 ? <div className="rounded-2xl border border-line p-6"><p>{t(lang, "collections.empty")}</p><Link href="/catalogue" className="mt-3 inline-flex min-h-11 items-center underline">{t(lang, "product.back")}</Link></div> :
+    {ids.length === 0 ? <div className="rounded-xl border border-line p-6"><p>{t(lang, "collections.empty")}</p><Link href="/catalogue" className="mt-3 inline-flex min-h-11 items-center underline">{t(lang, "product.back")}</Link></div> :
       <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{ids.map(id => {
         const product = products.find(p => p.id === id);
         const shop = shops.find(s => s.id === id)?.data;
-        return <li key={id} className="flex flex-col gap-3 rounded-2xl border border-line p-4">
+        return <li key={id} className="flex flex-col gap-3 rounded-xl border border-line p-4">
           {product ? <ProductCard product={product} labels={{ kindFile: t(lang, "card.kind.file"), kindService: t(lang, "card.kind.service"), kindPhysical: t(lang, "card.kind.physical"), by: t(lang, "product.by"), sales: t(lang, "product.sales"), salesOne: t(lang, "product.sales"), lang }}/>
             : shop ? <div><h2>{shop.display_name}</h2>{shop.bio && <p className="mt-2 line-clamp-3 text-sm text-mist">{shop.bio}</p>}<Link className="mt-3 inline-flex min-h-11 items-center underline" href={`/createur/${id}`}>{t(lang, "collections.shop.open")}</Link></div>
             : <p className="text-sm text-mist">{t(lang, "collections.unavailable")}</p>}

@@ -70,7 +70,7 @@ export function HaitiMap({ rows }: { rows: HtRow[] }) {
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-2xl border border-line bg-ink-soft">
+      <div className="overflow-x-auto rounded-xl border border-line bg-ink-soft">
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="h-auto w-full min-w-[420px]"

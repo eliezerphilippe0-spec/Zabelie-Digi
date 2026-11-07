@@ -245,7 +245,7 @@ export default async function MesVentesPage() {
           {g.items.map((v) => (
             <li
               key={v.order_id}
-              className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/60 p-4 sm:flex-row sm:items-start sm:justify-between"
+              className="flex flex-col gap-3 rounded-xl border border-line bg-surface/60 p-4 sm:flex-row sm:items-start sm:justify-between"
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold">

@@ -30,7 +30,7 @@ export function TrackerPreferences({ labels }: { labels: Labels }) {
 
   const libelle = etat === "oui" ? labels.yes : etat === "non" ? labels.no : etat === "inconnu" ? labels.none : "…";
   return (
-    <div data-preferences-traceurs className="mt-4 rounded-2xl border border-line bg-surface p-4">
+    <div data-preferences-traceurs className="mt-4 rounded-xl border border-line bg-surface p-4">
       <h3 className="text-base font-semibold text-cloud">{labels.title}</h3>
       <p className="mt-2 text-sm">
         {labels.current} <strong className="text-cloud" data-etat={etat}>{libelle}</strong>

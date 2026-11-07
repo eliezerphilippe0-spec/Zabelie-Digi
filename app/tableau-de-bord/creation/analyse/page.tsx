@@ -46,7 +46,7 @@ export default async function AnalysePage() {
             <>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{tb.analyseIntro.replace("{jours}", String(opp.jours))}</p>
 
-              <section aria-labelledby="recherches-titre" className="mt-6 rounded-2xl border border-line p-5">
+              <section aria-labelledby="recherches-titre" className="mt-6 rounded-xl border border-line p-5">
                 <h2 id="recherches-titre">{tb.analyseRecherches}</h2>
                 <p className="mt-1 text-sm text-mist">{tb.analyseRecherchesSous}</p>
                 {opp.recherches.length === 0 ? (
@@ -73,7 +73,7 @@ export default async function AnalysePage() {
                 )}
               </section>
 
-              <section aria-labelledby="ventes-titre" className="mt-6 rounded-2xl border border-line p-5">
+              <section aria-labelledby="ventes-titre" className="mt-6 rounded-xl border border-line p-5">
                 <h2 id="ventes-titre">{tb.analyseVentes}</h2>
                 <p className="mt-1 text-sm text-mist">{tb.analyseVentesSous}</p>
                 {opp.ventes.length === 0 ? (
