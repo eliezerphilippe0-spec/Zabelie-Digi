@@ -54,8 +54,13 @@
  *   --line    → --color-line
  *   --accent  → --color-brand (fond des CTA) · --color-accent (prix, texte)
  *   --brand-gradient, --motion-*, --ease → variables :root ci-dessous
+ *
+ * `static` : les feuilles propres à une route (home-discovery.css,
+ * home-vivant.css) se compilent à part et lisent ces variables. Sans `static`,
+ * Tailwind ne publie que ce que la feuille principale emploie, et une variable
+ * citée seulement par une route (`--leading-display`) n'existerait pas au rendu.
  */
-@theme {
+@theme static {
   /* ── Fond — crème chaud, PLAT ── */
   --color-bg-1: #faf8f5;
   --color-bg-2: #faf8f5;
@@ -148,12 +153,67 @@
   --font-heading: var(--font-display), system-ui, -apple-system, "Segoe UI",
     Roboto, sans-serif;
   --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+  /* Police d'accent (V-25 A3) : Instrument Serif Italic découpée pour Zabelie,
+     lettres et accents SEULS, sans chiffre ni ponctuation
+     (scripts/decouper-police-accent.sh). Le repli porte un `size-adjust` posé
+     par next/font (app/layout.tsx). Elle ne s'emploie que par `.mot-accent`
+     (globals.css), jamais par `font-accent` directement. */
+  --font-accent: var(--font-accent-serif), Georgia, "Times New Roman", serif;
+
+  /* ── ÉCHELLE DE TEXTE (brief design, Phase 1.1 ; V-25 A5, A6) ──
+     Ratio ~1,2. Les crans jusqu'à `xl` sont fixes : ils servent le corps et les
+     libellés, un 14 px qui varierait selon l'écran ne serait plus un 14 px. Les
+     grands crans sont fluides entre 360 et 1 024 px de large, en `rem` pour
+     suivre la taille de texte choisie par le lecteur.
+     ⚠️ Dans Tailwind v4, ces noms COMMANDENT les utilitaires : `text-sm` ×950
+     suit `--text-sm`. C'est pourquoi le corps à 16 px migre par rôle (A6) au
+     lieu de faire monter ce token. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: var(--leading-corps);
+  --text-sm: 0.875rem;
+  --text-sm--line-height: var(--leading-corps);
+  --text-base: 1rem;
+  --text-base--line-height: var(--leading-corps);
+  --text-lg: 1.125rem;
+  --text-lg--line-height: var(--leading-corps);
+  --text-xl: 1.25rem;
+  --text-xl--line-height: var(--leading-titre);
+  --text-2xl: clamp(1.25rem, 1.1145rem + 0.6024vw, 1.5rem);
+  --text-2xl--line-height: var(--leading-titre);
+  --text-3xl: clamp(1.75rem, 1.6822rem + 0.3012vw, 1.875rem);
+  --text-3xl--line-height: var(--leading-titre);
+  --text-4xl: clamp(2rem, 1.7967rem + 0.9036vw, 2.375rem);
+  --text-4xl--line-height: var(--leading-titre);
+  /* Hero seulement. 36 px sur mobile (A5) : 48 px y donne 4 lignes en français,
+     la langue du premier visiteur. */
+  --text-display: clamp(2.25rem, 1.5723rem + 3.012vw, 3.5rem);
+  --text-display--line-height: var(--leading-display);
+
+  /* Interlignes et interlettrages : trois rôles, pas davantage. */
+  --leading-display: 1.15;
+  --leading-titre: 1.25;
+  --leading-corps: 1.55;
+  --tracking-titre: -0.02em;
 
   --radius-xl: 1.25rem;
   /* Cartes produit : 12 px (brief accueil premium §4.4), un cran PROPRE de
      l'échelle ci-dessous — `rounded-card` — et non un rayon arbitraire, que
      `tests/ux-lot-d` refuse. */
   --radius-card: 0.75rem;
+  --radius-full: 9999px;
+  /* V-25 A7 : `2xl` et `3xl` n'existent plus comme crans. Ils valent `xl` pour
+     les fichiers du chemin de l'argent, que ce chantier ne modifie pas
+     (tests/design-echelles.test.ts les nomme) : ils suivent sans être touchés. */
+  --radius-2xl: var(--radius-xl);
+  --radius-3xl: var(--radius-xl);
+
+  /* ── OMBRES : trois niveaux, teintées, jamais noir pur (Phase 1.4) ──
+     `--color-ombre` bascule avec le thème : l'utilitaire `shadow-lg` recopie la
+     valeur à la compilation, seule une couleur en variable peut donc changer. */
+  --color-ombre: rgb(23 18 58 / 0.14);
+  --shadow-sm: 0 1px 2px var(--color-ombre);
+  --shadow-md: 0 4px 12px -2px var(--color-ombre);
+  --shadow-lg: 0 12px 28px -8px var(--color-ombre);
 
   /* ── Transitions par DÉFAUT sur les tokens de mouvement (brief §3.3) : tout
      utilitaire `transition` du dépôt dure `--motion-base` avec `--ease`, et
@@ -161,28 +221,20 @@
   --default-transition-duration: var(--motion-base);
   --default-transition-timing-function: var(--ease);
 
-  /* ── RÈGLE DES RAYONS — une échelle, quatre rôles (audit UX 2026-09-02, #11)
+  /* ── RÈGLE DES RAYONS — trois crans et le rond (V-25 A7, 2026-11-07)
    *
-   * Mesuré : cinq échelles vivaient sans règle (xl ×165, lg ×97, 2xl ×86,
-   * full ×37, 3xl ×10, md ×3). Elles n'étaient pas incohérentes ; elles
-   * n'étaient pas ÉCRITES. Les voici, telles que le dépôt les pratique déjà :
-   *
-   *   rounded-lg    éléments de menu, petites pastilles, vignettes
-   *   rounded-xl    boutons et champs de formulaire            (1.25rem, ci-dessus)
-   *   rounded-card  carte PRODUIT (0.75rem — brief accueil premium §4.4)
-   *   rounded-2xl   cartes de section, états vides, bannière
-   *   rounded-3xl   grands panneaux : formulaires d'auth, produit vedette,
-   *                 bloc de conversion, image principale de fiche
+   *   rounded-lg    8 px : éléments de menu, petites pastilles, vignettes
+   *   rounded-card  12 px : carte PRODUIT (brief accueil premium §4.4)
+   *   rounded-xl    20 px : boutons, champs, cartes de section, panneaux
    *   rounded-full  pills, badges, avatars ronds
    *
-   * Interdit : rounded-md, rounded-sm, rayons arbitraires — un seul cran
-   * hors échelle se voit, précisément parce que tout le reste est aligné.
+   * Interdit : rounded-md, rounded-sm, rounded-2xl, rounded-3xl, rayons
+   * arbitraires — un seul cran hors échelle se voit, précisément parce que
+   * tout le reste est aligné.
    * UNE exception, nommée : le drapeau haïtien du bloc fondateur
    * (`aria-label="Haïti"`, 24 × 16 px) garde `rounded-[3px]` — c'est un
    * glyphe, pas une surface ; 8 px en feraient une pastille.
-   * `tests/ux-lot-d.test.ts` compte, et connaît l'exception.
-   * Le brief accueil premium (§3.1) demande 12 px pour les cartes produit :
-   * c'est l'affaire de la Phase 4, sur la carte, pas de cette échelle. */
+   * `tests/ux-lot-d.test.ts` compte, et connaît l'exception. */
 }
 
 :root {
@@ -204,8 +256,19 @@
   --motion-slow: 300ms;
   --ease: cubic-bezier(0.2, 0, 0, 1);
 
+  /* ── PLANS DE SUPERPOSITION (Phase 1.4), du plus bas au plus haut. Dans le TSX :
+     `z-(--z-header)`. `--z-base` isole un contenu au-dessus de son propre décor.
+     Mêmes rangs qu'avant ce chantier : l'en-tête reste à 50, la bulle WhatsApp
+     et la liste de recherche à 40, le lien d'évitement passe au-dessus de tout. */
+  --z-base: 1;
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-header: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+
   /* Barres de progression (gradient : non exprimable en token couleur simple) */
-  --progress-done: #17123a; /* objectif atteint = barre encre */
+  --progress-done: var(--color-chrome); /* objectif atteint = barre encre */
   --progress-fill: linear-gradient(
     90deg,
     var(--color-accent),
@@ -268,6 +331,9 @@
   --color-cloud: #f7f2ec;
   --color-mist: #a99f95;
   --color-line: rgba(245, 232, 216, 0.13);
+  /* Une ombre indigo ne se verrait pas sur brun : le brun le plus profond de la
+     toile, plus dense. Toujours pas de noir pur. */
+  --color-ombre: rgb(7 5 5 / 0.5);
 
   --color-success: #8fbf6f;
   --color-success-text: #9ac57d;

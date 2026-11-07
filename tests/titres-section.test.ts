@@ -64,6 +64,7 @@ test("T1 — chaque h2 des cartes de section porte `titre-section`, sans taille 
 test("T2 — `.titre-section` fixe la taille de l'échelle ET repose la graisse 700", () => {
   const css = readFileSync("app/globals.css", "utf8");
   const bloc = /\.titre-section\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
-  assert.match(bloc, /font-size:\s*var\(--text-lg/, "la taille doit venir de l'échelle (text-lg), pas d'une valeur libre");
+  // `text-2xl`, comme tout `h2` depuis la Phase 1 du chantier design (V-25).
+  assert.match(bloc, /font-size:\s*var\(--text-2xl\)/, "la taille doit venir de l'échelle (text-2xl), pas d'une valeur libre");
   assert.match(bloc, /font-weight:\s*700/, "la graisse 700 de la règle `h1…h6` doit être reposée : c'est elle que les `font-semibold` écrasaient");
 });
