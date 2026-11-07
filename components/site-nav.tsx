@@ -193,11 +193,14 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
           {/* Panier — accessible aussi aux visiteurs ; le badge n'apparaît
               qu'avec un contenu (un « 0 » n'informe pas). Client de session,
               jamais service role : le compteur est CELUI de l'appelant.
-              Sous `md`, il est dans la barre inférieure (V-28 A19). */}
+              Sous `md`, il est dans la barre inférieure (V-28 A19).
+              NOM ACCESSIBLE = LE CONTENU, sans `aria-label` (Phase 5) :
+              « Panyen mwen (3) » ne reprenait pas le texte visible « Panyen
+              mwen 3 » et échouait à WCAG 2.5.3 avec un panier non vide ; le
+              libellé reste lu sous `lg` (`sr-only`). */}
           {(
             <Link
               href="/panier"
-              aria-label={`${t(lang, "cart.title")}${articlesPanier !== null && articlesPanier > 0 ? ` (${articlesPanier})` : ""}`}
               className="relative hidden min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl lg:px-2 text-on-chrome transition hover:bg-on-chrome/10 md:inline-flex"
             >
               <Icone taille={24}>
@@ -205,7 +208,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
                 <circle cx="10" cy="19" r="1.4" />
                 <circle cx="17" cy="19" r="1.4" />
               </Icone>
-              <span className="hidden text-sm font-semibold lg:inline">{t(lang, "cart.title")}</span>
+              <span className="sr-only text-sm font-semibold lg:not-sr-only">{t(lang, "cart.title")}</span>
               {articlesPanier !== null && articlesPanier > 0 && (
                 <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-extrabold text-on-brand">
                   {articlesPanier}

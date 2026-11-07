@@ -85,7 +85,6 @@ export function BarreNavigation({
           <Link
             href="/panier"
             aria-current={actif("/panier") ? "page" : undefined}
-            aria-label={panier !== null ? `${libelles.panier} (${panier})` : undefined}
             className="barre-nav-lien relative"
           >
             <Icone taille={24}>
@@ -94,7 +93,7 @@ export function BarreNavigation({
               <circle cx="17" cy="19" r="1.4" />
             </Icone>
             <span className="barre-nav-libelle">{libelles.panier}</span>
-            {panier !== null && <span className="barre-nav-compteur numeric" aria-hidden="true">{panier}</span>}
+            {panier !== null && <span className="barre-nav-compteur numeric">{panier}</span>}
           </Link>
         </li>
         <li>{compte}</li>
