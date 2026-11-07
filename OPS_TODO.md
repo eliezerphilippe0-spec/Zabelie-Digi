@@ -28,10 +28,10 @@ Une phase ne démarre qu'après la validation de la précédente.
 6. ⏳ **TBT de la connexion**, mesuré en Phase 2 : 64 → environ 130 ms, sans
    code ajouté (le build a changé l'ordre d'exécution de deux fichiers). À
    suivre en Phase 5.
-7. ⏳ **LCP de l'accueil**, Phase 3 : 2 909 → 3 009 ms (4G lent simulé), la
+7. ✅ **LCP de l'accueil**, Phase 3 : 2 909 → 3 009 ms (4G lent simulé), la
    police d'accent coûtant ~100 ms ; la cible de 2,5 s n'était déjà pas tenue.
-   Arbitrage soumis dans `docs/design/PHASE-3.md` : garder le mot d'accent
-   (recommandé) ou le retirer sur petit écran, et viser 2,5 s en Phase 5.
+   Tranché le 2026-11-07 : « Garder l'accent » (V-27). Reste à viser 2,5 s en
+   Phase 5, sur le chargement des polices du titre.
 8. ⏳ **A14, ordre mobile** : attend A13 (la promesse passerait dans le
    sous-titre du hero). L'ordre actuel est conservé.
 

@@ -83,11 +83,12 @@ La police d'accent coûte environ 100 ms de LCP et 150 ms de FCP dans la simulat
 
 **La cible de 2,5 s n'était pas tenue avant cette phase** (2,9 s en Phase 1 comme en Phase 2). L'élément LCP est le titre, en Manrope ; son retard vient du chargement des polices, pas du design de cette phase. A10 a placé la cible sur ce profil 4G lent.
 
-**Arbitrage à trancher** :
+**Arbitrage, tranché le 2026-11-07 : « Garder l'accent »** (V-27). Les options étaient :
 
-1. Garder le mot d'accent : le brief le demande, et il coûte 100 ms simulées, 11,7 Kio, dans le budget (recommandé).
-2. Le retirer du titre sur petit écran : on regagne ces 100 ms, mais on perd l'identité que le brief cherchait.
-3. Dans les deux cas, viser les 2,5 s en Phase 5, sur le chargement des polices du titre : préchargement de Manrope, à remesurer, puisque la mesure du 2026-10-17 l'avait retiré pour son coût sur le premier affichage.
+1. Garder le mot d'accent : le brief le demande, et il coûte 100 ms simulées, 11,7 Kio, dans le budget. **Retenue.**
+2. Le retirer du titre sur petit écran : on regagnait ces 100 ms, mais on perdait l'identité que le brief cherchait.
+
+Dans les deux cas, les 2,5 s se visent en Phase 5, sur le chargement des polices du titre : préchargement de Manrope, à remesurer, puisque la mesure du 2026-10-17 l'avait retiré pour son coût sur le premier affichage.
 
 ## Écarts au brief, à relire
 
@@ -118,6 +119,4 @@ Deux tests existants réécrits sans être affaiblis : `tests/home-premium-struc
 
 - **A13** : la phrase du sous-titre. Je propose celle qui est déjà en ligne, « Vandè a pa touche anvan li remèt li ». Elle débloque A14.
 - **A11** : le redimensionnement des photos, une variable d'environnement.
-- L'arbitrage du LCP ci-dessus.
-
 La Phase 4 (connexion, parcours et checkout en présentation seulement) peut démarrer sans eux.
