@@ -48,7 +48,9 @@ export async function verifyPublicSecurity(baseUrl, fetcher = fetch) {
   if (!/(^|,\s*)geolocation=\(\)/.test(first.headers.get("permissions-policy") ?? "")) throw new Error("Permissions-Policy does not deny geolocation");
   if ((first.headers.get("x-frame-options") ?? "").toUpperCase() !== "DENY") throw new Error("X-Frame-Options is not DENY");
 
-  const chunk = html.match(/src="(\/_next\/static\/[^"?]+\.js)"/)?.[1];
+  // Vercel ajoute `?dpl=<déploiement>` aux scripts depuis le 2026-11-02 (protection contre le décalage de
+  // versions). La requête est tolérée mais jamais capturée : la carte se cherche au chemin nu, `….js.map`.
+  const chunk = html.match(/src="(\/_next\/static\/[^"?]+\.js)(?:\?[^"]*)?"/)?.[1];
   if (!chunk) throw new Error("No Next.js script found to test source maps");
   if ((await get(chunk + ".map")).status === 200) throw new Error("Source map served publicly: " + chunk + ".map");
   for (const path of HIDDEN_PATHS) {
