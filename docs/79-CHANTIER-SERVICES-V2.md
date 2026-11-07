@@ -256,6 +256,11 @@ agit sur `awaiting_shipment` avec `created_at` ancien. Donc :
 correction passent par le fil). L'option 2 si des acheteurs voient leurs fonds
 libérés pendant une correction.
 
+**Repère concurrent (§10)** : chez ComeUp, une retouche demandée pendant les
+7 jours de validation renvoie la commande « en cours » et le vendeur n'est payé
+qu'après la nouvelle livraison. Seules les options 2 et 3 donnent ce
+comportement ; l'option 1 ne bloque pas l'argent.
+
 ### S6 — Offre sur mesure (devis) : retiré, en attente du porteur
 
 **Contradiction avec une consigne existante.** `docs/services-marche-haitien.md`
@@ -317,7 +322,8 @@ grand livre.
 
 - **D-S1** : révisions par dossier sans gel (option 1, recommandée), par
   dossier avec le gel existant (option 2), ou par table dédiée et
-  modification du balayage (option 3).
+  modification du balayage (option 3). Le repère ComeUp (§10) correspond aux
+  options 2 et 3, pas à l'option 1.
 - **D-S2** : seulement si l'option 3 est retenue : plafond de révisions par
   commande et durée maximale d'une révision ouverte.
 - **D-S3** : nombre de niveaux par service (proposé 3).
@@ -440,3 +446,56 @@ Stripe. À faire en préproduction avant d'ouvrir la fonction.
 privé avec le plafond de 10 Mo (`select id, public, file_size_limit,
 allowed_mime_types from storage.buckets where id = 'message-files'`), puis
 inscrire la ligne de registre à la main, comme pour les migrations précédentes.
+
+## 10. Repère : ComeUp (relevé du 2026-11-07)
+
+ComeUp (ex-5euros.com) est la place de micro-services française la plus proche
+de ce chantier. Les pages officielles citées en sources ont été **ouvertes** le
+2026-11-07 ; deux points ne viennent que de sites tiers et sont marqués comme
+tels. Ce relevé compare, il ne recommande aucun prix : la commission et tout
+abonnement restent des décisions de positionnement (`docs/25` §4, `docs/71`).
+
+| | ComeUp | Zabelie Services (`main` au 2026-11-07) |
+|---|---|---|
+| Marché | France et francophonie, en euros, services surtout à distance | Haïti et diaspora, kreyòl d'abord, en gourdes ; services à distance et sur place |
+| Paiement | Carte ; frais bancaires et de sécurité ajoutés au prix final, montant non publié | MonCash, Kobara, Stripe, Zelle semi-manuel |
+| Commission vendeur | 20 % en formule gratuite ; 1 € par commande avec Plus Standard (12 € HT/mois) ou Premium (40 € HT/mois) | 10 % Standard, 6 % Elite (sans porte d'accès, V-16) ; commission de lancement ouverte (`docs/71`) ; aucun abonnement |
+| Acceptation | 48 h pour accepter, sinon annulation et remboursement intégral | Aucune étape d'acceptation ; 5 jours pour déclarer la remise, sinon `action_required` et décision humaine |
+| Validation | 7 jours après livraison pour retouche ou validation, sinon validation automatique | 7 jours après déclaration, sinon auto-réception ; puis maturation J+7 |
+| Retouches | Dans la commande : 48 h au vendeur pour accepter, la commande repasse « en cours » | Rien de structuré, convenues dans la messagerie (S4) |
+| Annulation | Demandée par l'acheteur, 48 h au vendeur ; en cas de retard, l'acheteur annule seul et le vendeur n'est pas payé | Pas d'annulation par l'acheteur ; « pas reçu » gèle et passe à un humain |
+| Litiges | Médiateur, quatre issues (remboursement total ou partiel, reprise, validation), décision définitive ; seul ce qui s'est passé sur la plateforme compte | Gel par `disputed_by_buyer`, dossiers de support `0113` avec échéance ; aucune RPC pour trancher (§8) |
+| Niveaux et options | Options payantes (10 au plus en formule gratuite, illimitées avec Plus) | Prix unique (S1 : niveaux ; options écartées) |
+| Offre sur mesure | Offres personnalisées et lien de paiement, réservés à Plus | Devis dans la messagerie, sans moteur (#328, D-S7) ; lien payable sans compte limité à la facturation pro (`app/facture/[token]`) |
+| Fichiers | Livraison du travail dans la commande | Aucune pièce jointe (S2) |
+| Consignes acheteur | Transmises après la commande, sans formulaire imposé | Guide avant achat (`lib/service-starters.ts`) ; brief prévu (S3) |
+| Avis | À la validation, possibles pendant 6 mois | Avis (`0008`) et réponse du vendeur (`0139`) |
+| Visibilité | Mise en avant payante et crédit de promotion (Plus) | Rabais, ventes flash, coupons, offres liées, affiliation ; pas de visibilité payante |
+
+**Ce que le relevé apprend au chantier** :
+- **Retouches (S4)** : le modèle ComeUp retient l'argent pendant la correction.
+  Côté Zabelie, seules les options 2 et 3 le font (D-S1).
+- **Pièces jointes (S2)** : ComeUp ne juge un litige que sur ce qui est passé
+  par la plateforme. Sans fichiers dans le fil, Zabelie n'a rien à juger ;
+  cela confirme S2 en premier.
+- **Acceptation en 48 h** : absente de Zabelie. L'ajouter avec un
+  remboursement automatique toucherait l'argent : décision du porteur, hors de
+  ce chantier tant qu'elle n'est pas prise.
+- **Abonnement** : ComeUp fait payer commission réduite, offres sur mesure et
+  visibilité. Le §7 garde l'abonnement hors périmètre.
+- **Ce que ComeUp n'a pas** : prestations sur place en Haïti (commune,
+  déplacement), mobile money, kreyòl, et un argent gelé qui ne part pas sans
+  décision humaine en cas de contestation.
+
+**Non vérifié** : le montant des frais côté acheteur (non publié) ; les
+conditions du badge « freelance vérifié » (site tiers seulement) ; le délai
+de retrait du portefeuille vendeur.
+
+Sources :
+[processus de commande](https://comeup.com/fr/experts/comment-fonctionne-le-processus-de-commande-sur-comeup) ·
+[formules Plus](https://comeup.com/fr/plus) ·
+[frais par achat](https://support-en.comeup.com/article/1474-for-each-purchase-how-much-goes-to-the-seller-and-how-much-is-paid-in-fees) ·
+[litiges côté acheteur](https://support-en.comeup.com/article/1805-claims-and-disputes-as-a-buyer-how-do-they-work) ·
+[déroulé d'un litige](https://comeup.com/experts/?p=2766) ·
+site tiers : [quasa.io](https://quasa.io/fr/media/malt-ou-comeup-quand-la-commission-fixe-a-1-devient-elle-rentable),
+[espace-autoentrepreneur.com](https://espace-autoentrepreneur.com/ruche/article/5euros).
