@@ -82,11 +82,33 @@ Non configurés = invisibles au checkout (MonCash seul). Pour les activer :
    (compatible plan Hobby — Vercel REJETTE tout le déploiement si un cron
    dépasse la limite du plan). Vercel injecte `Authorization: Bearer
    $CRON_SECRET` sur l'appel GET.
-   > **Rapprochement avant encaissement : cadence demandée de cinq minutes.**
-   > Un seul ordonnanceur principal est choisi : Vercel Pro avec
-   > `*/5 * * * *` sur l'entrée existante, ou le workflow GitHub existant
-   > `.github/workflows/reconcile.yml`, sans fournisseur supplémentaire.
-   > Le plan Pro doit être vérifié avant de modifier `vercel.json`.
+   > **Rapprochement avant encaissement : toutes les cinq minutes, par la base
+   > (`0170`, décision du porteur du 2026-11-07).** Mesuré ce jour-là : sur 174
+   > déclenchements planifiés depuis le 6 octobre, GitHub n'a lancé le
+   > workflow que 3 à 8 fois par jour (écart médian 4 h 30, maximum 10 h).
+   > L'ordonnanceur principal est donc `pg_cron` dans Supabase : le job
+   > `zabelie-rapprochement` (minutes 02, 07, …, 57) appelle
+   > `zabelie_rapprochement_declencher()`, qui envoie par `pg_net` un
+   > `POST /api/reconcile` avec le jeton lu dans le coffre Vault.
+   >
+   > **Activation, geste du porteur, une seule fois**, dans l'éditeur SQL
+   > Supabase, avec la valeur de `RECONCILE_SECRET` (`docs/11` §2.1) :
+   > `select vault.create_secret('<valeur>', 'zabelie_reconcile_secret');`.
+   > Tant que le secret manque, chaque passage note `secret_absent` et
+   > n'appelle rien. Contrôle :
+   > `select dernier_passage, derniere_issue, derniere_requete from zabelie_rapprochement_config;`
+   > puis la réponse HTTP par
+   > `select status_code, error_msg from net._http_response where id = <derniere_requete>;`
+   > (conservée quelques heures par `pg_net`) et l'historique du job dans
+   > `cron.job_run_details`.
+   >
+   > Le workflow GitHub reste en place comme **vérificateur irrégulier** : à
+   > chacun de ses passages, il rejoue la même route et ÉCHOUE si la réponse
+   > n'est pas saine, ce que `pg_net` ne vérifie pas. Les deux appellent le
+   > même worker, protégé par son bail (`0060`) et son idempotence : un
+   > passage qui trouve le bail tenu s'abstient. La quotidienne Vercel reste
+   > le filet de secours. Vercel Pro (`*/5 * * * *` sur l'entrée existante)
+   > reste l'alternative payante.
    > [Limites Vercel](https://vercel.com/docs/cron-jobs/usage-and-pricing)
    > vérifiées le 5 octobre 2026 : Hobby une fois/jour, Pro une fois/minute.
    >
@@ -113,10 +135,9 @@ Non configurés = invisibles au checkout (MonCash seul). Pour les activer :
    > Actions demande les passages à 02, 07, …, 57 minutes pour éviter le début
    > d'heure. [GitHub précise](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
    > que des retards ou passages abandonnés sont possibles et qu'un dépôt
-   > public inactif 60 jours perd sa planification. **Cinq minutes n'est donc
-   > pas une garantie de délai.** Vérifier les exécutions et leur résultat
-   > avant les premiers encaissements ; choisir Pro si le besoin de précision
-   > l'exige. Ne pas activer les deux ordonnanceurs principaux ensemble.
+   > public inactif 60 jours perd sa planification. **Cinq minutes n'y est donc
+   > pas une garantie de délai** : c'est pour cela que la cadence repose sur
+   > `pg_cron` depuis `0170`, et que GitHub n'y sert plus que de vérificateur.
 4. Déployer. Vérifier `https://<domaine>` puis un achat de bout en bout.
 
 ---

@@ -1,10 +1,11 @@
 name: Rapprochement des paiements
 
-# Ordonnanceur principal OPTIONNEL, activé explicitement dans les variables
-# du dépôt. Le cron quotidien Vercel reste le filet de secours : les deux
-# invoquent le même worker et son bail DB, sans seconde logique d'argent.
-# Actions peut retarder ou abandonner un passage ; cinq minutes est une
-# cadence demandée, jamais une garantie de délai. Voir docs/04 §3.
+# VÉRIFICATEUR IRRÉGULIER depuis 0170 : la cadence de cinq minutes repose sur
+# pg_cron dans Supabase. Mesuré le 2026-11-07 : Actions n'a lancé ce workflow
+# que 3 à 8 fois par jour au lieu de 288. Chaque passage qui a lieu rejoue la
+# même route et ÉCHOUE si la réponse n'est pas saine, ce que pg_net ne vérifie
+# pas. pg_cron, ce workflow et le cron quotidien Vercel invoquent le même
+# worker et son bail DB, sans seconde logique d'argent. Voir docs/04 §3.
 on:
   schedule:
     - cron: "2-59/5 * * * *"
