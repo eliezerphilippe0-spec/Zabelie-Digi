@@ -29,10 +29,12 @@ for (const width of [360, 1280]) {
 
 test("fiche produit : badge, remise et barre de stock flash", async ({ page }) => {
   await page.goto("/produit/filtre-huile-corolla");
-  const achat = page.locator("#acheter");
-  await expect(achat.getByText("Vente flash")).toBeVisible();
-  await expect(achat.getByText("−30%")).toBeVisible();
-  await expect(achat.getByText("Plus que 7 au prix flash")).toBeVisible();
+  // Depuis V-28 A20, le bloc de prix, flash compris, est sous le titre et non
+  // plus dans la carte d achat.
+  const prix = page.locator("[data-zone-prix]");
+  await expect(prix.getByText("Vente flash")).toBeVisible();
+  await expect(prix.getByText("−30%")).toBeVisible();
+  await expect(prix.getByText("Plus que 7 au prix flash")).toBeVisible();
 });
 
 test("mouvement réduit : aucune animation, tout est déjà à sa place", async ({ page }) => {

@@ -52,10 +52,12 @@ for (const width of [390, 1280]) {
     await page.getByRole("link", { name: /Acheter maintenant/ }).first().click();
     await expect(page).toHaveURL(/#acheter$/);
     await expect(page.locator("#acheter")).toBeInViewport();
+    // Depuis V-28 A20, le prix est sous le titre : c'est la carte d'achat
+    // elle-même qui doit arriver sous l'en-tête collant.
     await expect.poll(async () => {
-      const price = await page.locator("#acheter > p.numeric").boundingBox();
+      const carte = await page.locator("#acheter").boundingBox();
       const header = await page.locator("header").boundingBox();
-      return !!price && !!header && price.y >= header.y + header.height;
+      return !!carte && !!header && carte.y >= header.y + header.height;
     }).toBe(true);
     await screenshot(page, "achat-digital-" + width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -93,11 +95,14 @@ test("seller can open, edit and share the same public shop", async ({ page }) =>
   await shop.getByRole("link", { name: "Modifier ma présentation" }).click();
   await expect(page).toHaveURL(/#profil-public$/);
   await expect(page.locator("#profil-public")).toBeInViewport();
-  await page.locator('summary[aria-label="Mon compte"]').click();
-  // Le menu de l'en-tête, pas celui du tableau (docs/73) qui porte le même libellé.
-  await page.getByRole("banner").getByRole("link", { name: "Ma boutique", exact: true }).click();
+  // À 390 px, le menu du compte s'ouvre depuis la barre inférieure (V-28 A19) :
+  // ni depuis l'en-tête, caché sous 768 px, ni depuis le menu du tableau
+  // (docs/73), qui porte le même libellé.
+  const compte = page.locator("nav.barre-nav details > summary");
+  await compte.click();
+  await page.locator("nav.barre-nav").getByRole("link", { name: "Ma boutique", exact: true }).click();
   await expect(page).toHaveURL(/\/tableau-de-bord\/boutique#ma-boutique$/);
-  await expect(page.locator('summary[aria-label="Mon compte"]').locator("..")).not.toHaveAttribute("open", "");
+  await expect(compte.locator("..")).not.toHaveAttribute("open", "");
   await expect.poll(async () => {
     const title = await page.locator("#ma-boutique-title").boundingBox();
     const header = await page.locator("header").boundingBox();
