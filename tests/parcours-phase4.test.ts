@@ -16,6 +16,18 @@ const lire = (p: string) => readFileSync(p, "utf8");
 const FORM = lire("components/connexion-form.tsx");
 const LANGUES = Object.keys(DICT) as Array<keyof typeof DICT>;
 
+test("P4 — panier : un seul bouton orange, et la remise non renseignée dite une fois", () => {
+  const panier = lire("app/panier/page.tsx");
+  // La SOURCE de la condition : le nombre d'articles, pas un libellé.
+  assert.match(panier, /const unSeulAchat = items\.length === 1;/);
+  assert.match(panier, /className=\{`bouton \$\{unSeulAchat \? "bouton-primaire" : "bouton-secondaire"\} bouton-compact`\}>\{trustLabels\.checkPay\}/,
+    "avant : un bouton orange par article");
+  // Une fois par groupe, et seulement si une ligne n'a rien déclaré.
+  assert.match(panier, /\{g\.escrow && g\.lignes\.some\(\(l\) => !commitments\?\.get\(l\.product_id\)\) && \(\s*<p className="[^"]*">\{trustLabels\.missing\}<\/p>/);
+  // Par ligne : le bloc complet si la remise est déclarée, sinon le seul lien.
+  assert.match(panier, /\{g\.escrow && \(commitments\?\.get\(l\.product_id\)\s*\? <div className="basis-full"><ProductCommitmentDetails[^]*?: <a href=\{`\/produit\/\$\{l\.product!\.slug\}#contacter-vendeur`\} className="bouton bouton-texte bouton-compact[^"]*">\{trustLabels\.ask\}<\/a>\)\}/);
+});
+
 test("P1 — connexion : un titre qui dit où l'on est, avec son mot d'accent, dans les quatre langues", () => {
   // « Konekte » était titre, onglet et bouton à la fois (audit Phase 0).
   assert.match(FORM, /<TitreAccent texte=\{mode === "signin" \? labels\.titleSignin : labels\.titleSignup\} accent=\{labels\.titleAccent\} \/>/);

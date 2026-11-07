@@ -121,6 +121,11 @@ export default async function PanierPage() {
   const optionsGroupe = payerTout
     ? optionsPanier(lang, total, items.map((l) => l.product!.price_htg))
     : [];
+  /* Un article : son « Vérifier et payer » est la seule action d'achat, donc
+     l'action principale. Deux et plus : chaque ligne passe au contour, faute de
+     quoi le panier montrait un bouton orange par article (audit Phase 0). Le
+     paiement groupé, quand il s'ouvre, n'existe qu'à partir de deux articles. */
+  const unSeulAchat = items.length === 1;
 
   return (
     <Coquille titre={t(lang, "cart.title")}>
@@ -148,6 +153,12 @@ export default async function PanierPage() {
                 <h2 className="mb-2 text-mist titre-bloc">
                   {t(lang, g.cle)}
                 </h2>
+              )}
+              {/* Remise non renseignée : dite UNE fois pour le groupe, au lieu du
+                  même bloc sous chaque article (audit Phase 0, pastille 2). Les
+                  produits qui ont déclaré leur remise gardent leur bloc. */}
+              {g.escrow && g.lignes.some((l) => !commitments?.get(l.product_id)) && (
+                <p className="mb-2 text-sm text-mist">{trustLabels.missing}</p>
               )}
               {/* L'escrow, énoncé UNE fois, sur le groupe où il est vrai. */}
               {g.escrow && (
@@ -178,8 +189,14 @@ export default async function PanierPage() {
                       )}
                     </div>
                     <Prix montant={l.product!.price_htg} className="shrink-0" />
-                    <Link href={`/produit/${l.product!.slug}`} className="bouton bouton-primaire bouton-compact">{trustLabels.checkPay}</Link>
-                    {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
+                    {/* UN seul CTA principal par écran (brief Phase 2.1, V-28 A18) :
+                        orange s'il est la seule action d'achat de la page, à
+                        contour dès qu'il y en a plusieurs, ou que le paiement
+                        groupé porte l'action principale. */}
+                    <Link href={`/produit/${l.product!.slug}`} className={`bouton ${unSeulAchat ? "bouton-primaire" : "bouton-secondaire"} bouton-compact`}>{trustLabels.checkPay}</Link>
+                    {g.escrow && (commitments?.get(l.product_id)
+                      ? <div className="basis-full"><ProductCommitmentDetails value={commitments.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>
+                      : <a href={`/produit/${l.product!.slug}#contacter-vendeur`} className="bouton bouton-texte bouton-compact basis-full justify-start">{trustLabels.ask}</a>)}
                     <RemoveFromCart
                       productId={l.product_id}
                       label={t(lang, "cart.remove")}
