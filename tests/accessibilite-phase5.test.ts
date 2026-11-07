@@ -6,7 +6,7 @@ import { DICT } from "../lib/i18n";
 import { balises, attribut } from "./helpers/balises-jsx";
 
 /**
- * ACCESSIBILITÉ — chantier design, Phase 5 (`docs/design/PHASE-5.md`).
+ * ACCESSIBILITÉ — chantier design, Phase 5 (`docs/design/RAPPORT-FINAL.md`).
  *
  * Ce que le garde axe de la CI (`e2e/accessibilite.spec.ts`) ne voyait pas :
  * il tourne en mode démonstration, sans session ni panier, et sur les seules
