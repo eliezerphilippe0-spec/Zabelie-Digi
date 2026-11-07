@@ -38,6 +38,10 @@ export async function CollectionPage({ kind, pageParam }: { kind: CollectionKind
     return { id, data: error ? null : data as { display_name: string; bio: string | null } | null };
   })) : [];
   return shell(<>
+    {/* Titre de la liste, lu et non affiché (chantier design, Phase 5) : sans lui,
+        le h1 « Favoris » menait droit aux h3 des cartes (heading-order). Les
+        boutiques suivies portent déjà leur nom en h2. */}
+    {kind === "favorites" && ids.length > 0 && <h2 className="sr-only">{t(lang, "home.products")}</h2>}
     {ids.length === 0 ? <EtatVide titre={t(lang, "collections.empty")}><Link href="/catalogue" className="bouton bouton-primaire mt-5">{t(lang, "product.back")}</Link></EtatVide> :
       <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{ids.map(id => {
         const product = products.find(p => p.id === id);
