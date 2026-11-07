@@ -76,6 +76,16 @@ test("H5 — rythme : 40 px entre les sections, 48 en grand écran, la rangée d
   for (const c of sections) assert.match(c, /(?<![\w:-])pt-10 md:pt-12(?![\w-])/, `section hors rythme : « ${c} »`);
 });
 
+test("H6 — sur la bannière indigo, le mot d'accent prend l'orange qui passe le contraste", () => {
+  /* MESURÉ le 2026-11-07 : `--accent` (#b8500c) rend 2,55:1 sur `chrome-2`, sous
+   * le 3:1 d'un grand texte. Le script de contraste ne mesurait l'accent que sur
+   * les fonds clairs : il ne pouvait pas le voir. */
+  const css = lire("app/home-discovery.css").replace(/\/\*[\s\S]*?\*\//g, " ");
+  assert.match(css, /\.home-hero:not\(\.launch-hero\) \.mot-accent \{ color: var\(--color-accent-sur-chrome\); \}/);
+  assert.match(lire("scripts/zabelie-contrast.mjs"), /`--accent-sur-chrome sur \$\{arret\}`, T\["accent-sur-chrome"\], T\[arret\], NORMAL/,
+    "la paire est mesurée sur les trois arrêts du dégradé");
+});
+
 test("H4 — la preuve sociale : un compte réel, absente sous le seuil", () => {
   assert.equal(SEUIL_VENDEURS, 3, "V-27 A15 reprend le seuil existant");
   assert.equal(preuveVendeurs(SEUIL_VENDEURS - 1), null);

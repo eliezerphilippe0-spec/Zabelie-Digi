@@ -107,6 +107,9 @@ export function paires(T) {
   // ce qui est mesuré ici est ce qui est peint.
   for (const arret of ["chrome", "chrome-2", "chrome-3"]) {
     out.push([`--on-chrome sur ${arret}`, T["on-chrome"], T[arret], NORMAL]);
+    // Mot d'accent du hero (chantier design, Phase 3) : grand texte, mais tenu au
+    // seuil du texte courant, par marge.
+    out.push([`--accent-sur-chrome sur ${arret}`, T["accent-sur-chrome"], T[arret], NORMAL]);
   }
   return out;
 }

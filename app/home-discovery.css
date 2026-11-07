@@ -22,6 +22,9 @@
 .home-headline { font-size: var(--text-display); line-height: var(--leading-display); letter-spacing: var(--tracking-titre); text-wrap: balance; }
 .home-hero-copy > p:not(.home-kicker) { font-size: var(--text-base); line-height: var(--leading-corps); max-width: 42ch; margin-top: --spacing(5); }
 .home-hero-copy > a { margin-top: --spacing(6); }
+/* Le mot d'accent sur la bannière indigo : `--accent` y rend 2,55:1. La
+   bannière de lancement, sur fond clair, garde l'orange de texte. */
+.home-hero:not(.launch-hero) .mot-accent { color: var(--color-accent-sur-chrome); }
 /* PREUVE SOCIALE (chantier design, Phase 3.4, V-27 A15) : un chiffre réel, posé
    SOUS le bouton pour ne jamais le pousser hors du premier écran, et absent sous
    le seuil. Pas de vert : il porte les statuts d'argent. Même spécificité que la
