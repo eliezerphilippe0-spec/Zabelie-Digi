@@ -27,7 +27,8 @@ import { IDENTITE } from "@/lib/policy-privacy";
 import { isDownloadable, isService } from "@/lib/product-kind";
 import type { ProductCardLabels } from "@/components/product-card";
 import { siteUrl } from "@/lib/site-url";
-import { allocateHomeRows, classesRangee, rangeeVisible, vendeursAffichables } from "@/lib/home-sections";
+import { allocateHomeRows, classesRangee, preuveVendeurs, rangeeVisible, vendeursAffichables } from "@/lib/home-sections";
+import { TitreAccent } from "@/components/titre-accent";
 import { offresFlashVitrine, type FlashVitrine } from "@/lib/flash";
 import { VentesFlash } from "@/components/ventes-flash";
 
@@ -83,7 +84,7 @@ function HomeRow({
 }) {
   if (!rangeeVisible(items.length, primary)) return null;
   return (
-    <section id={id} className={`mx-auto max-w-6xl px-5 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
+    <section id={id} className={`mx-auto max-w-6xl px-5 ${primary ? "pt-6" : "pt-10 md:pt-12"} ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
         <div><h2>{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
         <Link href={href} className="bouton bouton-texte bouton-compact -my-3 shrink-0">
@@ -189,6 +190,7 @@ export default async function HomePage() {
     }
     sellerMap.set(p.creatorId, s);
   }
+  const preuve = preuveVendeurs(sellerMap.size);
   const sellers = vendeursAffichables([...sellerMap.values()])
     .sort((a, b) => b.ventesPayees - a.ventesPayees)
     .slice(0, 4)
@@ -268,7 +270,7 @@ export default async function HomePage() {
             <div className="home-hero-copy relative">
               <p className="home-kicker">{t(lang, "home.kicker")}</p>
               <h1 className="home-headline max-w-xl">
-                {t(lang, opening ? "launch.title" : "hero.s1.t")}
+                <TitreAccent texte={t(lang, opening ? "launch.title" : "hero.s1.t")} accent={t(lang, opening ? "launch.title.accent" : "hero.s1.t.accent")} />
               </h1>
               <p className="text-on-chrome/90">
                 {t(lang, opening ? "launch.body" : "hero.s1.b")}
@@ -280,6 +282,8 @@ export default async function HomePage() {
                 {opening && <Link href="/catalogue" className="editorial-link">{t(lang, "hero.s1.cta")}<span aria-hidden="true">→</span></Link>}
               </div>
               {opening && <p className="launch-note">{t(lang, "launch.note")}</p>}
+              {/* Preuve sociale (V-27 A15) : un chiffre réel, absent sous le seuil. */}
+              {!opening && preuve !== null && <p className="home-preuve">{t(lang, "home.proof.sellers", { n: String(preuve) })}</p>}
             </div>
             {/* Moitié droite de la bannière de LANCEMENT : un décor, pas une offre
                 (V-22, remplace V-21 §2 jusqu'à une vraie photo de vendeur·se). */}
@@ -368,7 +372,7 @@ export default async function HomePage() {
 
         {/* MEILLEURS VENDEURS — ≥ 3 vendeurs avec ≥ 1 vente PAYÉE (§4.3). */}
         {sellers.length > 0 && (
-          <section className="mx-auto max-w-6xl px-5 pt-8">
+          <section className="mx-auto max-w-6xl px-5 pt-10 md:pt-12">
             <h2>{t(lang, "sec.sellers")}</h2>
             <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
               {sellers.map((s) => (
@@ -397,7 +401,7 @@ export default async function HomePage() {
             et la mention « Zabelie met en relation… » restent VISIBLES : c'est
             ce que la plateforme fait et ne fait pas, on ne le cache pas
             (e2e `parcours-physique-accueil`). */}
-        <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-5 pt-8">
+        <section aria-labelledby="receipt-title" className="home-receipt mx-auto max-w-6xl px-5 pt-10 md:pt-12">
           <div className="rounded-xl border border-line bg-surface p-5 sm:p-6">
             <h2 id="receipt-title">{t(lang, "home.receipt.title")}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mist">{t(lang, "home.receipt.body")}</p>
@@ -427,7 +431,7 @@ export default async function HomePage() {
             la carte « Ouvrez votre boutique » descendue ici, et « Comment ça
             marche » réduit à deux liens vers /aide et /vendre, qui portent les
             étapes. `id="comment"` : cible des liens du menu et du pied de page. */}
-        <section id="comment" className="mx-auto max-w-6xl scroll-mt-32 px-5 pb-24 pt-10">
+        <section id="comment" className="mx-auto max-w-6xl scroll-mt-32 px-5 pb-24 pt-10 md:pt-12">
           <div className="home-final rounded-xl p-6 text-center text-on-chrome sm:p-10">
             <h2 className="mx-auto max-w-2xl">{t(lang, "rail.shop.t")}</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-on-chrome">{t(lang, "home.final.sub")}</p>

@@ -486,7 +486,7 @@
   }
   /* MOT D'ACCENT (V-25 A2, A3). Un mot par titre, deux au plus, hero et titres
      de section clés. Jamais sur un prix, un bouton, un formulaire, la navigation
-     ni sous 24 px : `tests/mot-accent.test.ts` tient la liste de ses emplois.
+     ni sous 24 px : `tests/police-accent.test.ts` (A8) tient la liste de ses emplois.
      Graisse 400 reposée : un `h1` est en 800, et une police à une seule graisse
      se ferait empâter par le navigateur (`font-synthesis`). */
   .mot-accent {

@@ -21,6 +21,7 @@ export const LANGS: Lang[] = ["fr", "ht", "en", "es"];
 
 const fr = {
   "launch.title": "Votre savoir-faire mérite sa boutique.",
+  "launch.title.accent": "boutique",
   "launch.body": "Produits, créations numériques ou services : préparez vos premières offres sur la marketplace haïtienne.",
   "launch.cta": "Préparer ma boutique",
   "launch.note": "Sans abonnement. Une commission sur les ventes encaissées.",
@@ -561,8 +562,10 @@ const fr = {
   "home.badge": "La marketplace haïtienne",
   "home.cta.sell": "Commencer à vendre",
   "hero.s1.t": "Les offres des vendeurs haïtiens",
+  "hero.s1.t.accent": "haïtiens",
   "hero.s1.b": "Produits, fichiers numériques et services, avec le prix en gourdes et le nom du vendeur.",
   "home.kicker": "Vive Haïti chérie",
+  "home.proof.sellers": "{n} vendeurs ont des offres sur Zabelie",
   "home.featured": "Une offre de nos vendeurs",
   "home.explore": "Explorer les offres",
   "home.product.cta": "Voir le produit",
@@ -1671,6 +1674,7 @@ export type I18nKey = keyof typeof fr;
 
 const ht: Record<I18nKey, string> = {
   "launch.title": "Konesans ou merite pwòp boutik li.",
+  "launch.title.accent": "boutik",
   "launch.body": "Pwodui, kreyasyon dijital oswa sèvis : prepare premye òf ou yo sou mache ayisyen an.",
   "launch.cta": "Prepare boutik mwen",
   "launch.note": "San abònman. Yon komisyon sou vant kote lajan antre.",
@@ -2205,8 +2209,10 @@ const ht: Record<I18nKey, string> = {
   "home.badge": "Makètplas ayisyen an",
   "home.cta.sell": "Kòmanse vann",
   "hero.s1.t": "Òf vandè ayisyen yo",
+  "hero.s1.t.accent": "ayisyen",
   "hero.s1.b": "Pwodui, fichye dijital ak sèvis, ak pri a an goud ak non vandè a.",
   "home.kicker": "Viv Ayiti cheri",
+  "home.proof.sellers": "{n} vandè gen òf sou Zabelie",
   "home.featured": "Yon òf nan men vandè nou yo",
   "home.explore": "Eksplore òf yo",
   "home.product.cta": "Gade pwodui a",
@@ -3283,6 +3289,7 @@ const ht: Record<I18nKey, string> = {
 
 const en = {
   "launch.title": "Your skills deserve their own shop.",
+  "launch.title.accent": "shop",
   "launch.body": "Products, digital creations or services: prepare your first offers on the Haitian marketplace.",
   "launch.cta": "Prepare my shop",
   "launch.note": "No subscription. A commission on collected sales.",
@@ -3820,8 +3827,10 @@ const en = {
   "home.badge": "The Haitian marketplace",
   "home.cta.sell": "Start selling",
   "hero.s1.t": "Offers from Haitian sellers",
+  "hero.s1.t.accent": "Haitian",
   "hero.s1.b": "Products, digital files and services, with the price in gourdes and the seller's name.",
   "home.kicker": "Long live beloved Haiti",
+  "home.proof.sellers": "{n} sellers have offers on Zabelie",
   "home.featured": "An offer from our sellers",
   "home.explore": "Explore the offers",
   "home.product.cta": "View product",
@@ -4907,6 +4916,7 @@ const en = {
 
 const es = {
   "launch.title": "Tu talento merece su propia tienda.",
+  "launch.title.accent": "tienda",
   "launch.body": "Productos, creaciones digitales o servicios: prepara tus primeras ofertas en el mercado haitiano.",
   "launch.cta": "Preparar mi tienda",
   "launch.note": "Sin suscripción. Una comisión sobre las ventas cobradas.",
@@ -5444,8 +5454,10 @@ const es = {
   "home.badge": "El marketplace haitiano",
   "home.cta.sell": "Empezar a vender",
   "hero.s1.t": "Ofertas de vendedores haitianos",
+  "hero.s1.t.accent": "haitianos",
   "hero.s1.b": "Productos, archivos digitales y servicios, con el precio en gourdes y el nombre del vendedor.",
   "home.kicker": "Viva Haití querido",
+  "home.proof.sellers": "{n} vendedores tienen ofertas en Zabelie",
   "home.featured": "Una oferta de nuestros vendedores",
   "home.explore": "Explorar ofertas",
   "home.product.cta": "Ver producto",
