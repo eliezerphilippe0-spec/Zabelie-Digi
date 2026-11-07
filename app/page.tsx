@@ -15,8 +15,6 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { TrustBar } from "@/components/trust-bar";
-import { WhatsAppFab } from "@/components/whatsapp-fab";
-import { whatsappHref } from "@/lib/whatsapp";
 import { getPublishedProducts, isSupabaseConfigured, type ProductView } from "@/lib/products";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getLang } from "@/lib/i18n-server";
@@ -196,7 +194,6 @@ export default async function HomePage() {
     .slice(0, 4)
     .map((s) => ({ ...s, rating: s.rN > 0 ? Math.round((s.rSum / s.rN) * 10) / 10 : null }));
 
-  const wa = whatsappHref(t(lang, "wa.prefill"));
   const heroImage = heroImageDisponible();
   const opening = catalogue !== null && products.length === 0;
 
@@ -463,7 +460,6 @@ export default async function HomePage() {
         </section>
       </main>
 
-      <WhatsAppFab href={wa} label={t(lang, "wa.chat")} />
       <SiteFooter />
     </div>
   );

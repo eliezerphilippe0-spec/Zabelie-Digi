@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { THEME_PREFERENCES, type ThemePreference } from "@/lib/theme";
-
 import { Icone } from "@/components/icone";
+
 function AppearanceIcon({ preference }: { preference: ThemePreference }) {
   return (
     <Icone taille={20}>

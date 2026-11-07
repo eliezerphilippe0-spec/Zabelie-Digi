@@ -18,8 +18,8 @@ import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
 import { Prix } from "@/components/prix";
 import { EtatVide } from "@/components/etat-vide";
-
 import { Icone } from "@/components/icone";
+
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
 

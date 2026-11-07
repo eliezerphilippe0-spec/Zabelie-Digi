@@ -117,11 +117,19 @@ test("la déconnexion est atteignable sur MOBILE — le terrain visé", () => {
    * l'en-tête compact (accueil premium, Phase 2), elle vit dans le MENU COMPTE,
    * identique à toutes les largeurs : on vérifie qu'elle y est, conditionnée à
    * une session, et qu'aucune classe ne la cache sous un point de rupture. */
-  const menu = NAV.slice(NAV.indexOf("<AccountMenu"));
-  assert.ok(menu.length > 100, "le menu compte doit exister dans l'en-tête");
+  /* Depuis la Phase 4 du chantier design (V-28 A19), les liens du compte sont
+   * écrits une fois (`liensCompte`) et ouverts à deux places COMPLÉMENTAIRES :
+   * l'en-tête à partir de `md`, la barre inférieure en dessous. On vérifie le
+   * bloc, puis que les deux points de rupture se couvrent l'un l'autre. */
+  const menu = NAV.slice(NAV.indexOf("const liensCompte = ("), NAV.indexOf("return ("));
+  assert.ok(menu.length > 100, "les liens du compte doivent exister dans l'en-tête");
   const m = /\{user && \(\s*\n\s*<SignOutButton[\s\S]*?\/>/.exec(menu);
   assert.ok(m, "le menu compte doit porter la déconnexion, conditionnée à une session");
   assert.doesNotMatch(m![0], /\bhidden\b|\bsm:block\b|\bmd:block\b/, "la déconnexion est cachée sous un point de rupture");
+  assert.match(NAV, /<AccountMenu label=\{t\(lang, "nav\.account"\)\} className="hidden md:block">\{liensCompte\}<\/AccountMenu>/);
+  assert.match(NAV, /compte=\{<AccountMenu label=\{t\(lang, "nav\.account"\)\} variante="barre">\{liensCompte\}<\/AccountMenu>\}/);
+  assert.match(readFileSync("components/barre-navigation.tsx", "utf8"), /<nav ref=\{ref\} aria-label=\{libelles\.nav\} className="barre-nav md:hidden">/,
+    "sous md, la barre inférieure doit être visible : c'est elle qui ouvre le menu");
 });
 
 test("le libellé passe par i18n dans les quatre langues, kreyòl compris", () => {

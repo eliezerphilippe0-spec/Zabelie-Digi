@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DICT } from "../lib/i18n";
 import { lirePolice } from "./woff2-lecteur";
+import { entreeActive } from "../lib/barre-navigation";
 
 /**
  * PARCOURS — chantier design, Phase 4 (`docs/design/PHASE-4.md`, V-28).
@@ -83,4 +84,54 @@ test("P3 — connexion : focus sur le premier champ du mode affiché, oubli en l
   assert.match(FORM, /href="\/mot-de-passe-oublie"\s*className="bouton bouton-texte bouton-compact"/);
   assert.match(FORM, /\{msg && \(msg === labels\.signupSuccess \|\| msg === labels\.demoMode\s*\? <p role="status"[^>]*>\{msg\}<\/p>\s*: <MessageErreur className="mt-4">\{msg\}<\/MessageErreur>\)\}/,
     "une erreur passe par MessageErreur ; seuls le succès et le mode démonstration restent une information");
+});
+
+test("P6 — barre inférieure : quatre entrées sous le pouce, mobile seulement, et rien ne passe dessous", () => {
+  const barre = lire("components/barre-navigation.tsx");
+  const nav = lire("components/site-nav.tsx");
+  const css = lire("app/marketplace-header.css");
+  // Mobile seulement : au-delà de md, l'en-tête porte tout.
+  assert.match(barre, /<nav ref=\{ref\} aria-label=\{libelles\.nav\} className="barre-nav md:hidden">/);
+  // Quatre entrées : accueil, rayons, panier, puis le menu du compte.
+  const liens = [...barre.matchAll(/<Link\s+href="([^"]+)"\s+aria-current=\{actif\("([^"]+)"\) \? "page" : undefined\}/g)];
+  assert.deepEqual(liens.map((m) => m[1]), ["/", "/categories", "/panier"]);
+  for (const m of liens) assert.equal(m[1], m[2], `aria-current de ${m[1]} lit l'état d'une autre entrée`);
+  assert.match(barre, /const actif = \(href: string\) => entreeActive\(chemin, href\);/);
+  assert.match(barre, /const chemin = usePathname\(\) \?\? "\/";/);
+  assert.match(barre, /<li>\{compte\}<\/li>\s*<\/ul>/);
+  // Le compteur ne s'affiche qu'avec un contenu, comme celui de l'en-tête.
+  assert.match(barre, /const panier = articlesPanier !== null && articlesPanier > 0 \? articlesPanier : null;/);
+  // Le panier et le compte quittent l'en-tête sous md : pas deux fois à l'écran.
+  assert.match(nav, /href="\/panier"[\s\S]{0,200}?className="relative hidden [^"]*\bmd:inline-flex"/);
+  assert.match(nav, /<AccountMenu label=\{t\(lang, "nav\.account"\)\} className="hidden md:block">/);
+  assert.match(nav, /<BarreNavigation\s+libelles=\{\{\s*nav: t\(lang, "a11y\.nav\.bottom"\),/);
+  // Le CSS : fixe en bas, zone sûre de l'appareil, cibles de 56 px.
+  const regle = (sel: string) => {
+    const m = css.match(new RegExp(`(?:^|\n)${sel.replace(/[.[\]()"=]/g, "\$&")} \{([^}]*)\}`));
+    assert.ok(m, `règle ${sel} introuvable`);
+    return m[1];
+  };
+  const bloc = regle(".barre-nav");
+  assert.match(bloc, /position: fixed;/);
+  assert.match(bloc, /bottom: 0;/);
+  assert.match(bloc, /padding-bottom: env\(safe-area-inset-bottom, 0px\);/);
+  // Hors couche : un `display` ici l'emporterait sur `md:hidden`.
+  assert.doesNotMatch(bloc, /\bdisplay\s*:/, "la barre s'afficherait aussi sur ordinateur");
+  assert.match(regle(".barre-nav-lien"), /min-height: --spacing\(14\);/, "56 px : au-dessus des 48 px du brief");
+  // L'état actif ne prend pas l'orange (réservé à l'action principale).
+  const actif = css.slice(css.indexOf('.barre-nav-lien[aria-current="page"]'), css.indexOf(".barre-nav-compteur"));
+  assert.ok(actif.length > 0, "état actif introuvable");
+  assert.doesNotMatch(actif, /accent/);
+  // La page gagne la hauteur de la barre, sous md seulement.
+  assert.match(css, /@media \(width < 48rem\) \{\s*body:has\(\.barre-nav\) \{\s*--barre-nav-h: calc\(--spacing\(14\) \+ 1px \+ env\(safe-area-inset-bottom, 0px\)\);\s*padding-bottom: var\(--barre-nav-h\);/);
+  // L'accueil ne s'allume que sur « / » ; les autres couvrent leurs sous-pages.
+  assert.equal(entreeActive("/", "/"), true);
+  assert.equal(entreeActive("/catalogue", "/"), false, "l'accueil serait allumé partout");
+  assert.equal(entreeActive("/categories", "/categories"), true);
+  assert.equal(entreeActive("/categories/mode", "/categories"), true);
+  assert.equal(entreeActive("/panier-partage", "/panier"), false, "un préfixe de mot n'est pas une sous-page");
+  for (const lang of LANGUES) {
+    const d = DICT[lang] as Record<string, string>;
+    assert.ok(d["a11y.nav.bottom"], `${lang} : nom accessible de la barre`);
+  }
 });

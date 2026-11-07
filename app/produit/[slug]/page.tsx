@@ -66,8 +66,8 @@ import {
 } from "@/lib/product-kind";
 import { jsonLdProduit } from "@/lib/jsonld-produit";
 import { Prix } from "@/components/prix";
-
 import { Icone } from "@/components/icone";
+
 export const dynamic = "force-dynamic";
 
 /**

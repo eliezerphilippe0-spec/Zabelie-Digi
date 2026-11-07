@@ -26,3 +26,89 @@
   overscroll-behavior: contain;
   translate: var(--header-menu-shift, 0px) 0;
 }
+
+/* BARRE DE NAVIGATION INFÉRIEURE (chantier design, Phase 4.5, V-28 A19).
+   Mobile seulement : `md:hidden` sur l'élément la masque au-delà. Aucune règle
+   `display` sur `.barre-nav` elle-même — cette feuille n'est dans aucune couche,
+   elle l'emporterait sur l'utilitaire `md:hidden`. L'état actif se dit par le
+   trait et la graisse, jamais par l'orange (réservé à l'action principale).
+   `tests/parcours-phase4.test.ts` garde. */
+.barre-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: var(--z-header);
+  background: var(--color-chrome);
+  color: var(--color-on-chrome);
+  border-top: 1px solid color-mix(in oklab, var(--color-on-chrome) 14%, transparent);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.barre-nav-liste {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 32rem;
+  margin-inline: auto;
+}
+.barre-nav-lien {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: --spacing(0.5);
+  width: 100%;
+  min-height: --spacing(14);
+  padding-inline: --spacing(1);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-on-chrome);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--motion-fast) var(--ease);
+}
+.barre-nav-lien:active { transform: scale(0.97); }
+.barre-nav-lien::before {
+  content: "";
+  position: absolute;
+  inset-inline: 30%;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--color-on-chrome);
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--ease);
+}
+.barre-nav-lien[aria-current="page"],
+details[open] > .barre-nav-lien { font-weight: 800; }
+.barre-nav-lien[aria-current="page"]::before,
+details[open] > .barre-nav-lien::before { opacity: 1; }
+.barre-nav-compteur {
+  position: absolute;
+  top: --spacing(1);
+  left: calc(50% + 6px);
+  display: grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  line-height: 1;
+}
+.barre-nav-panneau {
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - var(--barre-nav-h) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Le contenu ne passe pas sous la barre : la page gagne sa hauteur en bas. */
+@media (width < 48rem) {
+  body:has(.barre-nav) {
+    --barre-nav-h: calc(--spacing(14) + 1px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: var(--barre-nav-h);
+  }
+}

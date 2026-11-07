@@ -7,8 +7,8 @@ import { guideLanguagePath, guideLangFromPath } from "@/lib/guide-routing";
 import { cheminPourLangue } from "@/lib/langue-url";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 import { NOMS_LANGUES } from "@/lib/noms-langues";
-
 import { Icone } from "@/components/icone";
+
 /**
  * Libellés du sélecteur. Ils ne passent PAS par `t()` : le nom d'une langue
  * s'écrit dans cette langue, pas dans celle de l'interface — quelqu'un qui ne

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-
 import { Icone } from "@/components/icone";
+
 /**
  * Le bouton pause de la barre d'annonce (WCAG 2.2.2). Il pose `data-pause`
  * sur la barre ; c'est la feuille `app/barre-annonce.css` qui arrête le

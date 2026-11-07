@@ -12,13 +12,14 @@ import { getTopupAvailability } from "@/lib/topup-availability";
 import { HeaderShell } from "@/components/header-shell";
 import { CategoryChips } from "@/components/category-chips";
 import { AccountMenu, MENU_LINK } from "@/components/account-menu";
+import { BarreNavigation } from "@/components/barre-navigation";
+import { Icone } from "@/components/icone";
 import { getMenuRayons, type RayonMenu } from "@/lib/taxonomy";
 import { whatsappHref } from "@/lib/whatsapp";
 import { getCurrentUser } from "@/lib/auth";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
-import { Icone } from "@/components/icone";
 /**
  * Suggestions de recherche : les rayons actifs NON vides, à plat.
  *
@@ -67,7 +68,80 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
     if (!ePanier) articlesPanier = count ?? 0;
   }
 
+  /* Les liens du compte, écrits UNE fois : ils s'ouvrent depuis l'en-tête à
+   * partir de `md`, depuis la barre inférieure en dessous (V-28 A19). Une seule
+   * des deux places est affichée à une largeur donnée. */
+  const liensCompte = (
+    <>
+      {user ? (
+        <>
+          <Link href="/tableau-de-bord" className={MENU_LINK}>
+            {t(lang, "nav.dashboard")}
+          </Link>
+          <Link href="/tableau-de-bord/boutique#ma-boutique" className={MENU_LINK}>{t(lang, "shop.manage")}</Link>
+          <Link href="/mes-achats" className={MENU_LINK}>
+            {t(lang, "pay.ok.cta")}
+          </Link>
+          <Link href="/favoris" className={MENU_LINK}>{t(lang, "collections.favorites")}</Link>
+          <Link href="/boutiques-suivies" className={MENU_LINK}>{t(lang, "collections.shops")}</Link>
+          <Link href="/mes-ventes" className={MENU_LINK}>
+            {t(lang, "sales.title")}
+          </Link>
+          {/* La messagerie n'existe que si on peut y arriver (0090). */}
+          <Link href="/messages" className={MENU_LINK}>
+            {t(lang, "msg.title")}
+          </Link>
+          <Link href="/pro" className={MENU_LINK}>
+            {t(lang, "nav.pro")}
+          </Link>
+          {user.role === "admin" && (
+            <Link href="/admin" className={MENU_LINK}>
+              Admin
+            </Link>
+          )}
+        </>
+      ) : (
+        <Link href="/connexion" className={`${MENU_LINK} font-semibold`}>
+          {t(lang, "nav.login")}
+        </Link>
+      )}
+      <Link href="/vendre" className={`${MENU_LINK} text-accent`}>
+        {t(lang, "topbar.sell")}
+      </Link>
+      <div className="my-1 border-t border-line" />
+      <Link href="/assistant" className={MENU_LINK}>{SHOPPING_COPY[lang].title}</Link>
+      <Link href="/aide" className={MENU_LINK}>
+        {t(lang, "nav.help")}
+      </Link>
+      <Link href="/catalogue?univers=services" className={MENU_LINK}>
+        {t(lang, "universe.services")}
+      </Link>
+      <Link href="/#comment" className={MENU_LINK}>
+        {t(lang, "nav.how")}
+      </Link>
+      {/* WhatsApp vit ICI, et seulement ici depuis la Phase 4 (V-28 A19) : le
+          bouton flottant de l'accueil couvrait le contenu au-dessus de la barre
+          inférieure. Masqué tant que le porteur n'a pas posé le numéro (env). */}
+      {wa && (
+        <MetricA event="whatsapp_clicked" href={wa} className={MENU_LINK}>
+          {t(lang, "wa.chat")}
+        </MetricA>
+      )}
+      <div className="my-1 border-t border-line" />
+      {/* La déconnexion est dans le MÊME menu à toutes les largeurs :
+          Android partagé, cybercafé — c'est exactement là qu'elle compte.
+          Un formulaire, donc aucun JS requis. */}
+      {user && (
+        <SignOutButton
+          label={t(lang, "nav.logout")}
+          className={`${MENU_LINK} w-full text-left`}
+        />
+      )}
+    </>
+  );
+
   return (
+    <>
     <HeaderShell className="sticky top-0 z-(--z-header) bg-chrome text-on-chrome">
       {/* Studio de création (D6, docs/70) : les brouillons locaux d'un autre
           compte, ou de tout le monde après la déconnexion, quittent l'appareil. */}
@@ -116,12 +190,13 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
 
           {/* Panier — accessible aussi aux visiteurs ; le badge n'apparaît
               qu'avec un contenu (un « 0 » n'informe pas). Client de session,
-              jamais service role : le compteur est CELUI de l'appelant. */}
+              jamais service role : le compteur est CELUI de l'appelant.
+              Sous `md`, il est dans la barre inférieure (V-28 A19). */}
           {(
             <Link
               href="/panier"
               aria-label={`${t(lang, "cart.title")}${articlesPanier !== null && articlesPanier > 0 ? ` (${articlesPanier})` : ""}`}
-              className="relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl lg:px-2 text-on-chrome transition hover:bg-on-chrome/10"
+              className="relative hidden min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl lg:px-2 text-on-chrome transition hover:bg-on-chrome/10 md:inline-flex"
             >
               <Icone taille={24}>
                 <path d="M3 4h2l2.4 10.4a2 2 0 002 1.6h7.2a2 2 0 002-1.6L20 7H6" />
@@ -138,70 +213,7 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
           )}
 
           <Link href="/mes-achats" className="hidden min-h-11 shrink-0 items-center rounded-xl px-2 text-sm font-semibold hover:bg-on-chrome/10 lg:inline-flex">{t(lang, "purchases.title")}</Link>
-          <AccountMenu label={t(lang, "nav.account")}>
-            {user ? (
-              <>
-                <Link href="/tableau-de-bord" className={MENU_LINK}>
-                  {t(lang, "nav.dashboard")}
-                </Link>
-                <Link href="/tableau-de-bord/boutique#ma-boutique" className={MENU_LINK}>{t(lang, "shop.manage")}</Link>
-                <Link href="/mes-achats" className={MENU_LINK}>
-                  {t(lang, "pay.ok.cta")}
-                </Link>
-                <Link href="/favoris" className={MENU_LINK}>{t(lang, "collections.favorites")}</Link>
-                <Link href="/boutiques-suivies" className={MENU_LINK}>{t(lang, "collections.shops")}</Link>
-                <Link href="/mes-ventes" className={MENU_LINK}>
-                  {t(lang, "sales.title")}
-                </Link>
-                {/* La messagerie n'existe que si on peut y arriver (0090). */}
-                <Link href="/messages" className={MENU_LINK}>
-                  {t(lang, "msg.title")}
-                </Link>
-                <Link href="/pro" className={MENU_LINK}>
-                  {t(lang, "nav.pro")}
-                </Link>
-                {user.role === "admin" && (
-                  <Link href="/admin" className={MENU_LINK}>
-                    Admin
-                  </Link>
-                )}
-              </>
-            ) : (
-              <Link href="/connexion" className={`${MENU_LINK} font-semibold`}>
-                {t(lang, "nav.login")}
-              </Link>
-            )}
-            <Link href="/vendre" className={`${MENU_LINK} text-accent`}>
-              {t(lang, "topbar.sell")}
-            </Link>
-            <div className="my-1 border-t border-line" />
-            <Link href="/assistant" className={MENU_LINK}>{SHOPPING_COPY[lang].title}</Link>
-            <Link href="/aide" className={MENU_LINK}>
-              {t(lang, "nav.help")}
-            </Link>
-            <Link href="/catalogue?univers=services" className={MENU_LINK}>
-              {t(lang, "universe.services")}
-            </Link>
-            <Link href="/#comment" className={MENU_LINK}>
-              {t(lang, "nav.how")}
-            </Link>
-            {/* Masqué tant que le porteur n'a pas posé le numéro (env). */}
-            {wa && (
-              <MetricA event="whatsapp_clicked" href={wa} className={MENU_LINK}>
-                {t(lang, "wa.chat")}
-              </MetricA>
-            )}
-            <div className="my-1 border-t border-line" />
-            {/* La déconnexion est dans le MÊME menu à toutes les largeurs :
-                Android partagé, cybercafé — c'est exactement là qu'elle compte.
-                Un formulaire, donc aucun JS requis. */}
-            {user && (
-              <SignOutButton
-                label={t(lang, "nav.logout")}
-                className={`${MENU_LINK} w-full text-left`}
-              />
-            )}
-          </AccountMenu>
+          <AccountMenu label={t(lang, "nav.account")} className="hidden md:block">{liensCompte}</AccountMenu>
         </div>
 
         {/* LIGNE 2 — univers permanents puis rayons non vides, défilants ; se plie au
@@ -225,5 +237,16 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
         />
       </div>
     </HeaderShell>
+    <BarreNavigation
+      libelles={{
+        nav: t(lang, "a11y.nav.bottom"),
+        accueil: t(lang, "nav.home"),
+        rayons: t(lang, "directory.short"),
+        panier: t(lang, "cart.title"),
+      }}
+      articlesPanier={articlesPanier}
+      compte={<AccountMenu label={t(lang, "nav.account")} variante="barre">{liensCompte}</AccountMenu>}
+    />
+    </>
   );
 }
