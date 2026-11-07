@@ -45,6 +45,11 @@ export default async function ConnexionPage() {
         labels={{
           tabSignin: t(lang, "auth.tab.signin"),
           tabSignup: t(lang, "auth.tab.signup"),
+          titleSignin: t(lang, "auth.title.signin"),
+          titleSignup: t(lang, "auth.title.signup"),
+          titleAccent: t(lang, "auth.title.accent"),
+          showPassword: t(lang, "auth.password.show"),
+          hidePassword: t(lang, "auth.password.hide"),
           namePh: t(lang, "auth.name.ph"),
           nameRequired: t(lang, "auth.name.required"),
           nameReserved: t(lang, "auth.name.reserved"),
