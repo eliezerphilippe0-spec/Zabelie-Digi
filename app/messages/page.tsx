@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/products";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { lireFils } from "@/lib/messagerie";
+import { EtatVide } from "@/components/etat-vide";
 
 export const dynamic = "force-dynamic";
 
@@ -44,18 +45,16 @@ export default async function MessagesPage() {
         </h1>
 
         {fils.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-line bg-surface/40 p-6">
-            <p className="text-cloud">{t(lang, "msg.empty")}</p>
-            {/* L'écran vide DIT quoi faire. Un vide muet se lit comme une
-                panne — c'est la règle des états zéro du dépôt. */}
-            <p className="mt-2 text-sm text-mist">{t(lang, "msg.empty.hint")}</p>
+          /* L'écran vide DIT quoi faire. Un vide muet se lit comme une
+             panne — c'est la règle des états zéro du dépôt. */
+          <EtatVide className="mt-8" titre={t(lang, "msg.empty")} texte={t(lang, "msg.empty.hint")}>
             <Link
               href="/catalogue"
-              className="bouton bouton-primaire bouton-compact mt-4"
+              className="bouton bouton-primaire mt-5"
             >
               {t(lang, "nav.catalog")}
             </Link>
-          </div>
+          </EtatVide>
         ) : (
           <ul className="mt-6 flex flex-col gap-3">
             {fils.map((f) => (

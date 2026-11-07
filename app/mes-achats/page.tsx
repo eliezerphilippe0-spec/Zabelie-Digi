@@ -44,6 +44,7 @@ function remiseLabel(kind: ProductKind | undefined, lang: Lang): string | null {
 }
 
 import { PURCHASE_PAGE_SIZE, PURCHASE_VIEWS, purchaseView, purchaseKind, purchasePage, purchaseHref, purchaseIsConfirmed, purchaseStatusKey, purchaseViewKeys } from "@/lib/purchase-center";
+import { EtatVide } from "@/components/etat-vide";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes achats — Zabelie", robots: { index: false, follow: false } };
@@ -268,12 +269,11 @@ export default async function MesAchatsPage({ searchParams }: {
       </nav>
       {view === "numerique" && <p className="mt-4 text-sm text-mist">{t(lang, "purchases.library.hint")}</p>}
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-line p-6">
-          <p className="text-sm text-mist">{t(lang, page > 1 ? "purchases.page.empty" : "purchases.empty")}</p>
-          <Link href={page > 1 ? purchaseHref(view) : "/catalogue"} className="mt-3 inline-flex min-h-11 items-center text-cloud underline">
+        <EtatVide className="mt-6" titre={t(lang, page > 1 ? "purchases.page.empty" : "purchases.empty")}>
+          <Link href={page > 1 ? purchaseHref(view) : "/catalogue"} className="bouton bouton-primaire mt-5">
             {t(lang, page > 1 ? "purchases.first" : "purchases.empty.cta")}
           </Link>
-        </div>
+        </EtatVide>
       ) : (
         <ul className="mt-6 space-y-4">
           {orders.map((o) => {

@@ -17,6 +17,7 @@ import { isKobaraEnabled } from "@/lib/kobara";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
 import { Prix } from "@/components/prix";
+import { EtatVide } from "@/components/etat-vide";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
@@ -129,15 +130,14 @@ export default async function PanierPage() {
         <p className="mt-4 text-sm text-danger-text">{t(lang, "error.generic")}</p>
       )}
       {!error && items.length === 0 && (
-        <div className="mt-6 rounded-xl border border-dashed border-line bg-surface/40 p-8 text-center">
-          <p className="text-sm text-mist">{t(lang, "cart.empty")}</p>
+        <EtatVide className="mt-6" titre={t(lang, "cart.empty")}>
           <Link
             href="/catalogue"
-            className="bouton bouton-primaire bouton-compact mt-4"
+            className="bouton bouton-primaire mt-5"
           >
             {t(lang, "nav.catalog")}
           </Link>
-        </div>
+        </EtatVide>
       )}
       {!error && items.length > 0 && (
         <>

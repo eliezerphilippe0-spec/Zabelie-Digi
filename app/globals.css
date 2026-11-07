@@ -295,6 +295,43 @@
     color: var(--color-on-chrome);
   }
 
+  /* ÉTAT VIDE (`components/etat-vide.tsx`, brief Phase 2.5) — le dessin de
+     l'étal vide, ce qui se passe, ce qu'on peut faire. Avant : six mises en
+     forme pour les écrans vides, et un seul dessin, en orange. */
+  .etat-vide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: --spacing(8) --spacing(6);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+    text-align: center;
+  }
+  .etat-vide-dessin {
+    inline-size: --spacing(24);
+    block-size: auto;
+    margin-block-end: --spacing(4);
+    color: var(--color-mist);
+  }
+  .etat-vide-titre {
+    max-inline-size: 30ch;
+    font-family: var(--font-heading);
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: var(--leading-titre);
+    letter-spacing: 0;
+    color: var(--color-cloud);
+    text-wrap: balance;
+  }
+  .etat-vide-texte {
+    max-inline-size: 42ch;
+    margin-block-start: --spacing(2);
+    font-size: var(--text-base);
+    line-height: var(--leading-corps);
+    color: var(--color-mist);
+  }
+
   /* ICÔNE (`components/icone.tsx`, brief Phase 2.6) — un trait de 1,75 px
      d'ÉCRAN, quelle que soit la grille du dessin ou la taille rendue :
      `non-scaling-stroke` sur chaque tracé. Un utilitaire posé à côté
