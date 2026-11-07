@@ -9,7 +9,7 @@ for (const lang of ["fr", "ht", "en", "es"] as const) {
     await page.setViewportSize({ width: 360, height: 800 });
     await context.addCookies([{ name: "zabelie_lang", value: lang, url: "http://localhost:3000" }]);
     await page.goto("/connexion?mode=signup&next=%2Fpanier");
-    await expect(page.getByRole("heading", { level: 1, name: t(lang, "auth.tab.signup") })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: t(lang, "auth.title.signup") })).toBeVisible();
     const terms = page.getByRole("checkbox", { name: t(lang, "auth.legal.conditions.accept"), exact: true });
     const privacy = page.getByRole("checkbox", { name: t(lang, "auth.legal.privacy.read"), exact: true });
     const submit = page.getByRole("button", { name: t(lang, "auth.signup.cta"), exact: true });
