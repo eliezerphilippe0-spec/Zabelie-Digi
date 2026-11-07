@@ -208,3 +208,35 @@ test("E9 — échelle de texte : les valeurs du brief, et les trois interlignes"
   assert.ok(Math.abs(px(1.6822, 0.3012, 360) - 28) < 0.1 && Math.abs(px(1.6822, 0.3012, 1024) - 30) < 0.1, "`--text-3xl` n'atteint pas ses deux bornes");
   assert.ok(Math.abs(px(1.7967, 0.9036, 360) - 32) < 0.1 && Math.abs(px(1.7967, 0.9036, 1024) - 38) < 0.1, "`--text-4xl` n'atteint pas ses deux bornes");
 });
+
+/**
+ * UN TOKEN CITÉ DOIT EXISTER. `var(--color-oubli)` ne lève aucune erreur : le
+ * navigateur retombe sur la valeur héritée, en silence. C'est ainsi que
+ * `--radius-button` a vécu sans jamais être défini (audit Phase 0), et qu'un
+ * script a un jour écrit deux couleurs d'étal sans leur token (2026-11-07, écriture
+ * du thème refusée par le système, commit parti quand même).
+ */
+function tokensCites(src: string): string[] {
+  const noms = new Set<string>();
+  for (const m of src.matchAll(/var\(\s*(--(?:color|text|leading|tracking|radius|shadow|z|motion)-[a-z0-9-]+)/g)) noms.add(m[1]);
+  for (const m of src.matchAll(/(?<![\w-])z-\((--z-[a-z-]+)\)/g)) noms.add(m[1]);
+  return [...noms];
+}
+
+test("E10 — tout token cité par une feuille ou un composant existe dans le thème", () => {
+  assert.deepEqual(tokensCites('a { color: var(--color-x); } <p className="z-(--z-header)">'), ["--color-x", "--z-header"], "connu-positif");
+  assert.deepEqual(tokensCites("a { margin: --spacing(4); color: red; width: var(--ma-largeur); }"), [], "connu-négatif : hors familles du thème");
+  const definis = new Set([...THEME.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+  assert.ok(definis.has("--color-chrome") && definis.has("--z-header") && definis.has("--text-display"), "le thème n'est plus lu");
+  const css = ["app/editorial-marketplace.css", "app/home-discovery.css", "app/home-vivant.css", "app/ventes-flash.css", "app/marketplace-header.css", "app/barre-annonce.css", "app/globals.css", "app/ouvrir-ma-boutique/etal.css", "app/tableau-de-bord/boutique/affiche/affiche.css"];
+  const manquants: string[] = [];
+  let cites = 0;
+  for (const f of [...css, ...SOURCES]) {
+    for (const t of tokensCites(f.endsWith(".css") ? code_css(lire(f)) : code(lire(f)))) {
+      cites++;
+      if (!definis.has(t)) manquants.push(`${f} : ${t}`);
+    }
+  }
+  assert.ok(cites > 100, `seulement ${cites} citations lues : le motif ne voit plus le code`);
+  assert.deepEqual(manquants, [], "Token cité mais défini nulle part : le navigateur l'ignore sans rien dire");
+});
