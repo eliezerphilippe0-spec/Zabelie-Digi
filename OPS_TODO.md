@@ -12,6 +12,7 @@ Une phase ne démarre qu'après la validation de la précédente.
    2026-11-07 : audit (#473) et Phase 1 (#474) fusionnés en squash et
    vérifiés en ligne ; Phase 2 (#475) fusionnée par la fusion automatique
    demandée. Phase 3 (#476) fusionnée de même, sur « Fusionne et Phase 4 ».
+   Phase 4 (#477) validée le 2026-11-07 (« Je valide tel quel »).
    Les phases suivantes gardent la même règle : une PR par phase, fusionnée
    seulement après validation.
 2. ✅ **A12, badges** : tranché le 2026-11-07 (V-26), recommandation acceptée.
@@ -37,19 +38,19 @@ Une phase ne démarre qu'après la validation de la précédente.
    Phase 5, sur le chargement des polices du titre.
 8. ⏳ **A14, ordre mobile** : attend A13 (la promesse passerait dans le
    sous-titre du hero). L'ordre actuel est conservé.
-9. ⏳ **A19, barre inférieure : quatre ou cinq entrées**, Phase 4. Construite
-   avec quatre (accueil, rayons, panier, compte) ; V-28 en prévoyait cinq,
-   avec « recherche ». Écart motivé et capturé dans `docs/design/PHASE-4.md`.
-   Dire si l'on garde quatre ou si l'on ajoute la recherche (une ligne).
+9. ✅ **A19, barre inférieure : quatre entrées** (accueil, rayons, panier,
+   compte), sans « recherche ». Tranché le 2026-11-07 : « Je valide tel quel »
+   (V-28).
 10. ⏸ **A17 et A18**, Phase 4 : pas de connexion par téléphone (aucun
     fournisseur SMS admis) ; indicateur d'étapes et résumé collant reportés
     à l'ouverture d'une page de commande et du paiement groupé.
-11. ⏳ **LCP de la connexion**, Phase 4 : 2 876 → 3 302 ms (4G lent simulé),
-    parce que le titre porte le mot d'accent et que la page charge sa police.
-    Garder (brief 4.1, comme V-27), ou retirer l'accent de ce titre seul.
-12. ⏳ **« Èd sou WhatsApp »** dans la barre de confiance de l'accueil : texte
-    sans lien depuis le retrait du bouton flottant. Le rendre cliquable quand
-    le numéro est posé, ou laisser le menu du compte seul accès.
+11. ✅ **LCP de la connexion**, Phase 4 : 2 876 → 3 302 ms (4G lent simulé),
+    dû à la police du mot d'accent. Tranché le 2026-11-07 : l'accent est
+    gardé (V-28). Reste à viser en Phase 5, avec les polices du titre de
+    l'accueil (point 7).
+12. ✅ **« Èd sou WhatsApp »** dans la barre de confiance de l'accueil : reste
+    un texte ; le menu du compte est le seul accès à WhatsApp. Tranché le
+    2026-11-07 (V-28).
 
 ## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 

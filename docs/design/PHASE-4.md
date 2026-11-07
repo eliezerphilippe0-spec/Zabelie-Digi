@@ -138,9 +138,8 @@ Trois échecs de la suite complète venaient de cette phase et sont corrigés. D
 - La recherche de l'en-tête devait être revue avec lui : elle reste une pilule de 44 px, puisque la barre inférieure prend déjà 57 px en bas de l'écran et que 44 px tiennent la cible tactile (`tests/champs.test.ts`).
 - Les listes de compatibilité véhicule du formulaire vendeur, en français sans clé i18n, devaient être traduites ici : elles sont hors du parcours acheteur de la Phase 4, et reportées en Phase 5.
 
-## Ce qui reste au porteur
+## Validation
 
-- Quatre ou cinq entrées dans la barre (`OPS_TODO.md`, point 9).
-- Le mot d'accent du titre de connexion, et ses 426 ms (section « Performance »).
-- « Èd sou WhatsApp » cliquable ou non.
-- A11 et A13, arrêts fermes, et la présentation des fichiers du chemin de l'argent : inchangés.
+Phase validée par le porteur le 2026-11-07, « Je valide tel quel » (V-28). Les trois points ouverts sont tranchés en l'état construit : barre à quatre entrées, mot d'accent gardé sur le titre de connexion, « Èd sou WhatsApp » reste un texte. Le LCP de la connexion rejoint celui de l'accueil dans le travail sur les polices de la Phase 5.
+
+Restent hors de cette phase : A11 et A13, arrêts fermes, et la présentation des fichiers du chemin de l'argent.
