@@ -35,6 +35,18 @@ export function classesRangee(nombre: number, primary = false): string {
   return primary || nombre >= SEUIL_RANGEE_DESKTOP ? "" : "lg:hidden";
 }
 
+/**
+ * PREUVE SOCIALE du hero (chantier design, Phase 3.4, V-27 A15) : le nombre de
+ * vendeurs qui ont une offre publiée parmi celles que charge l'accueil. C'est un
+ * PLANCHER, jamais un chiffre gonflé : l'accueil ne charge que les 60 offres les
+ * plus récentes (`getPublishedProducts`). Sous `SEUIL_VENDEURS`, rien : un
+ * « 1 vendeur » se lirait comme un aveu, pas comme une preuve. Pas de ville :
+ * aucun vendeur n'a déclaré de zone (mesuré le 2026-11-06).
+ */
+export function preuveVendeurs(nombre: number): number | null {
+  return nombre >= SEUIL_VENDEURS ? nombre : null;
+}
+
 export type VendeurCompte = { ventesPayees: number };
 
 /**

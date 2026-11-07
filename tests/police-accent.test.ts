@@ -28,7 +28,10 @@ const lettres = (s: string) => [...s].filter((c) => !police.caracteres.has(c.cod
 const BUDGET_OCTETS = 13_476;
 
 /** Fichiers autorisés à employer `.mot-accent`. Les phases 3 et 4 les ajoutent. */
-const EMPLOIS_AUTORISES = new Set<string>([]);
+const EMPLOIS_AUTORISES = new Set<string>([
+  // Phase 3 : le titre du hero, seul emploi (tests/hero-accueil.test.ts).
+  "components/titre-accent.tsx",
+]);
 
 test("A1 — le lecteur discrimine : ce qui n'est pas dans la découpe en est absent", () => {
   assert.deepEqual(lettres("Ж"), ["Ж"], "`Ж` ne peut pas être dans une découpe latine");

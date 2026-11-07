@@ -3,15 +3,15 @@
 ## Chantier design et typographie (7 novembre 2026) — ce qui attend le porteur
 
 Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
-`docs/design/PHASE-2.md`. Décisions prises : V-25 et V-26
-(`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
+`docs/design/PHASE-2.md`. Phase 3 : `docs/design/PHASE-3.md`. Décisions
+prises : V-25, V-26 et V-27 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
 Une phase ne démarre qu'après la validation de la précédente.
 
 1. ✅ **Fusion des trois premières PR**, sur « fusion » du porteur le
    2026-11-07 : audit (#473) et Phase 1 (#474) fusionnés en squash et
-   vérifiés en ligne ; Phase 2 (#475) en fusion automatique, à sa demande,
-   dès sa CI verte. Les phases suivantes gardent la même règle : une PR par
-   phase, fusionnée seulement après validation.
+   vérifiés en ligne ; Phase 2 (#475) fusionnée par la fusion automatique
+   demandée. Les phases suivantes gardent la même règle : une PR par phase,
+   fusionnée seulement après validation.
 2. ✅ **A12, badges** : tranché le 2026-11-07 (V-26), recommandation acceptée.
 3. ⛔ **A11, arrêt ferme** : `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` n'est pas
    active. Vérifier le plan Supabase puis activer, ou laisser éteint. Variable
@@ -28,6 +28,12 @@ Une phase ne démarre qu'après la validation de la précédente.
 6. ⏳ **TBT de la connexion**, mesuré en Phase 2 : 64 → environ 130 ms, sans
    code ajouté (le build a changé l'ordre d'exécution de deux fichiers). À
    suivre en Phase 5.
+7. ✅ **LCP de l'accueil**, Phase 3 : 2 909 → 3 009 ms (4G lent simulé), la
+   police d'accent coûtant ~100 ms ; la cible de 2,5 s n'était déjà pas tenue.
+   Tranché le 2026-11-07 : « Garder l'accent » (V-27). Reste à viser 2,5 s en
+   Phase 5, sur le chargement des polices du titre.
+8. ⏳ **A14, ordre mobile** : attend A13 (la promesse passerait dans le
+   sous-titre du hero). L'ordre actuel est conservé.
 
 ## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 

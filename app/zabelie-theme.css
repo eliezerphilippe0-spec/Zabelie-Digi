@@ -101,6 +101,12 @@
   --color-chrome-2: #2b3050;
   --color-chrome-3: #4a2731;
   --color-on-chrome: #fffdf9;
+  /* ACCENT POSÉ SUR LE CHROME (chantier design, Phase 3) : le mot d'accent du
+     hero est en orange de texte, et `--accent` rend 2,55:1 sur `chrome-2`, sous
+     le 3:1 d'un grand texte. Cet orange-ci rend 5,59:1 au plus bas sur les trois
+     arrêts du dégradé, tenu par `scripts/zabelie-contrast.mjs`. Le chrome est le
+     même dans les deux thèmes, donc la valeur aussi. */
+  --color-accent-sur-chrome: #f5934f;
   --color-ink: #faf8f5;      /* surface claire des champs et boutons inverses */
   --color-ink-soft: #f2eee7;
   --color-cloud: #17123a;    /* texte principal = l'encre (16,73:1 sur crème) */
@@ -353,6 +359,7 @@
   --color-chrome-2: #2b3050;
   --color-chrome-3: #4a2731;
   --color-on-chrome: #f7f2ec;
+  --color-accent-sur-chrome: #f5934f;
   --color-ink: #100c09;
   --color-ink-soft: #1b1610;
   --color-cloud: #f7f2ec;

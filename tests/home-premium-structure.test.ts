@@ -72,7 +72,9 @@ test("S3 — une carte n'affiche jamais une URL brute ni un titre vide, et le ma
 
 test("S4 — la page applique le seuil à CHAQUE rangée, par le helper, pas à la main", () => {
   assert.match(page, /if \(!rangeeVisible\(items\.length, primary\)\) return null;/);
-  assert.match(page, /className=\{`mx-auto max-w-6xl px-5 pt-6 \$\{classesRangee\(items\.length, primary\)\}`\}/);
+  // L'espacement entre rangées est tenu par `tests/hero-accueil.test.ts` (H5,
+  // chantier design Phase 3.7) ; ici, le helper de seuil.
+  assert.match(page, /className=\{`mx-auto max-w-6xl px-5 \$\{primary \? "pt-6" : "pt-10 md:pt-12"\} \$\{classesRangee\(items\.length, primary\)\}`\}/);
   // Les vendeurs passent par le helper aussi, sur des ventes PAYÉES.
   assert.match(page, /vendeursAffichables\(\[\.\.\.sellerMap\.values\(\)\]\)/);
   assert.match(page, /\.eq\("status", "paid"\)/);
@@ -85,7 +87,9 @@ test("S4 — la page applique le seuil à CHAQUE rangée, par le helper, pas à 
 test("S5 — un seul h1, dans la bannière, un CTA principal, et un <main id=\"main\">", () => {
   const h1 = page.match(/<h1\b/g) ?? [];
   assert.equal(h1.length, 1, "la bannière porte le SEUL h1");
-  assert.match(page, /<h1 className="[^"]*">\s*\{t\(lang, opening \? "launch\.title" : "hero\.s1\.t"\)\}/);
+  // Le titre passe par `TitreAccent` (chantier design, Phase 3.1) : même chaîne,
+  // un mot posé en police d'accent.
+  assert.match(page, /<h1 className="[^"]*">\s*<TitreAccent texte=\{t\(lang, opening \? "launch\.title" : "hero\.s1\.t"\)\}/);
   assert.match(page, /<main id="main">/);
   // Plus de carrousel, plus de titre séparé, plus de rail ni de bandeau paiement.
   assert.doesNotMatch(page, /HeroCarousel|LANDING_SLIDES|home\.h1b|home\.pay|CategorySidebar/);
