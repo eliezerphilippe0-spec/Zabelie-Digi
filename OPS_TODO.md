@@ -5,7 +5,7 @@
 Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
 `docs/design/PHASE-2.md`. Phase 3 : `docs/design/PHASE-3.md`. Phase 4 :
 `docs/design/PHASE-4.md`. Phase 5 et bilan : `docs/design/RAPPORT-FINAL.md` ;
-référence durable : `docs/design/DESIGN-SYSTEM.md`. Décisions prises : V-25 à V-28
+référence durable : `docs/design/DESIGN-SYSTEM.md`. Décisions prises : V-25 à V-29
 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
 Une phase ne démarre qu'après la validation de la précédente.
 
@@ -13,9 +13,9 @@ Une phase ne démarre qu'après la validation de la précédente.
    2026-11-07 : audit (#473) et Phase 1 (#474) fusionnés en squash et
    vérifiés en ligne ; Phase 2 (#475) fusionnée par la fusion automatique
    demandée. Phase 3 (#476) fusionnée de même, sur « Fusionne et Phase 4 ».
-   Phase 4 (#477) validée le 2026-11-07 (« Je valide tel quel »).
-   Les phases suivantes gardent la même règle : une PR par phase, fusionnée
-   seulement après validation.
+   Phase 4 (#477) validée le 2026-11-07 (« Je valide tel quel ») et fusionnée.
+   Phase 5 (#478) validée le 2026-11-07 (« Fusionne »), fusionnée et vérifiée
+   en ligne. Le chantier est clos ; les points ouverts ci-dessous restent.
 2. ✅ **A12, badges** : tranché le 2026-11-07 (V-26), recommandation acceptée.
 3. ⛔ **A11, arrêt ferme** : `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` n'est pas
    active. Vérifier le plan Supabase puis activer, ou laisser éteint. Variable
@@ -54,8 +54,12 @@ Une phase ne démarre qu'après la validation de la précédente.
 12. ✅ **« Èd sou WhatsApp »** dans la barre de confiance de l'accueil : reste
     un texte ; le menu du compte est le seul accès à WhatsApp. Tranché le
     2026-11-07 (V-28).
-13. ⏳ **« pwodui » ou « pwodwi »**, Phase 5 : les deux graphies coexistent en
-    kreyòl (70 et 58 occurrences). Choisir, puis une seule passe sur `lib/i18n.ts`.
+13. ✅ **« pwodwi »**, tranché le 2026-11-07 (V-29) : 125 occurrences de
+    « pwodui » remplacées dans `app/`, `components/` et `lib/`, garde
+    `tests/kreyol-graphie.test.ts`. Restent 9 « pwodui » dans les conditions
+    d'utilisation et la politique de confidentialité, versionnées : à reprendre
+    à leur prochaine version. La base écrit déjà « pwodwi » (7 libellés de
+    rayons, lus le 2026-11-07).
 14. ⏳ **Formulaire vendeur physique** (`components/physical-product-form.tsx`) :
     une trentaine de textes en dur, français et kreyòl mêlés, contre la règle
     kreyòl d'abord. Lot dédié, avec relecture native.
