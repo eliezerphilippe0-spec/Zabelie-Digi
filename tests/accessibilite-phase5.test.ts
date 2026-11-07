@@ -69,3 +69,15 @@ test("A3 — catalogue et favoris : le h2 est rendu sans condition sur la grille
     assert.ok(d["catalog.results.heading"] && d["home.products"], `${lang} : titre de grille manquant`);
   }
 });
+
+test("A4 — fiche : la photo principale, image LCP quand elle existe, est demandée en priorité et réserve sa place", () => {
+  /* Brief §2 : « dimensions explicites, priorité sur la seule image LCP ». Sur
+   * une fiche avec photo, c'est elle ; sans `fetchPriority`, le navigateur la
+   * demandait au rang d'une image ordinaire. */
+  const img = balises(code(lire("components/galerie-produit.tsx")), ["img"]).filter((b) => /(?:^|\s)src=\{actif\.url\}/.test(b.attrs));
+  assert.equal(img.length, 1, "photo principale introuvable");
+  const a = img[0].attrs;
+  assert.deepEqual(attribut(a, "fetchPriority"), { litteral: "high" });
+  assert.ok(attribut(a, "width") && attribut(a, "height"), "dimensions explicites manquantes");
+  assert.equal(attribut(a, "loading"), null, "l'image LCP ne se diffère jamais");
+});
