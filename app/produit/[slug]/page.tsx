@@ -418,7 +418,7 @@ export default async function ProductPage({
               rendu vers y = 1 000 px sur un téléphone, après la description, les
               caractéristiques et la compatibilité. Seul l'ordre change : flash,
               rabais et prix gardent leurs sources. */}
-          <div className="mt-4">
+          <div className="mt-4" data-zone-prix>
           {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
               pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
           {/* Vente flash (0080) : prime sur le rabais — deux barrés
