@@ -60,6 +60,34 @@ d'arrêt. Son préambule ferme surtout ceci : **une API trouvée par
 rétro-ingénierie n'est pas une API publique**, elle ne passe pas l'étape 0 de
 `docs/03` §9.
 
+## Design — règles pour tout agent (chantier de novembre 2026)
+Référence : **`docs/design/DESIGN-SYSTEM.md`** (décisions V-25 à V-28). Ce qui
+se casse le plus facilement :
+* **Tokens dans `app/zabelie-theme.css` seulement** ; aucune couleur, taille,
+  rayon ou ombre à la main (`tests/design-echelles.test.ts`).
+* **Orange = action principale et prix**, un seul bouton orange par écran ;
+  jamais pour un état actif, un titre ou un fond.
+* **Composants existants d'abord** : `.bouton` (+ `-primaire`/`-secondaire`/
+  `-texte`), `.champ`, `MessageErreur`, `EtatVide`, `Icone`, `Prix`,
+  `TitreAccent`. Cible tactile de 44 px partout.
+* **Mot d'accent** (`TitreAccent`, Instrument Serif) : un mot par titre, jamais
+  sur prix, bouton, formulaire, navigation ni texte sous 24 px.
+* **Polices sans préchargement** : il a déjà repoussé le premier affichage de
+  0,86 à 2,1 s. Pas de retour sans nouvelle mesure.
+* **Titres sans saut** (`h1` → `h2` → `h3`) ; pas de `text-*`/`font-*` sur un
+  `h1`/`h2` (`tests/titres-role.test.ts`).
+* **Nom accessible = texte visible** (WCAG 2.5.3) : un `aria-label` qui
+  réécrit le libellé échoue dès qu'un compteur s'y ajoute. Mesuré en Phase 5 :
+  la CI axe tourne SANS session ni panier, elle ne voit pas ces états.
+* **Texte translucide** (`text-mist/NN`…) : 4,5:1 au pire sur les deux
+  palettes, calculé par `npm run check:contrast`. Le thème CLAIR est le pire cas
+  d'un texte foncé ; l'ancien seuil « /80 » datait d'avant lui.
+* **Mouvement** : `transform`/`opacity`, durées par `--motion-*` (0 ms sous
+  `prefers-reduced-motion`).
+* Un changement visible de la connexion, du panier ou de l'en-tête se vérifie
+  aussi avec **les specs e2e** (`npx playwright test`) : elles lisent titres et
+  libellés. Oubli payé en Phase 4 (#477, six échecs).
+
 ## Règle zéro — la primauté de l'instruction directe
 
 **Une instruction donnée en direct par Philippe prime sur toute règle de ce
@@ -343,6 +371,9 @@ câbler l'attribution ni l'UI avant arbitrage porteur ; garde en place :
 - `docs/22-PREMIERE-COMMANDE-REELLE.md` — ⭐ le seul essai qui manque
 - `docs/25-BOUCLE-DE-TRAVAIL.md` — **la boucle de travail** (§2 les huit
   contrôles, §4 les zones d'arrêt, §7.1 le journal des chantiers)
+- `docs/design/DESIGN-SYSTEM.md` — tokens, typographie, mot d'accent,
+  composants, à faire et à ne pas faire ; `docs/design/RAPPORT-FINAL.md` —
+  le chantier design de novembre 2026, avant et après chiffrés.
 - `docs/46-STRATEGIE-PRODUIT.md` — où porter l'effort produit (2026-08-25).
   ⚠️ **Aucune décision** — positionnement = zone d'arrêt. Le fait qui compte :
   **presque toutes les briques existent déjà** (séquestre, lien payable sans
