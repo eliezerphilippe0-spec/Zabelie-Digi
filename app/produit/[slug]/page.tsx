@@ -67,6 +67,7 @@ import {
 import { jsonLdProduit } from "@/lib/jsonld-produit";
 import { Prix } from "@/components/prix";
 
+import { Icone } from "@/components/icone";
 export const dynamic = "force-dynamic";
 
 /**
@@ -382,17 +383,17 @@ export default async function ProductPage({
 
           <div className="mt-4 flex items-center gap-2">
             {kindKey && (
-              <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
+              <span className="etiquette etiquette-neutre">
                 {t(lang, kindKey)}
               </span>
             )}
-            <span className="rounded-full border border-line px-3 py-1 text-xs text-mist">
+            <span className="etiquette etiquette-neutre">
               {product.category}
             </span>
             {/* `!= null` et non truthy : 0 (« le jour même ») est une
                 valeur MOINS un manque — le test truthy le masquait. */}
             {isService(product.kind, product.id) && product.deliveryDays != null && (
-              <span className="rounded-full border border-line px-3 py-1 text-xs text-accent">
+              <span className="etiquette etiquette-neutre">
                 ⏱️{" "}
                 {product.deliveryDays === 0
                   ? t(lang, "product.delivery.sameday")
@@ -434,7 +435,7 @@ export default async function ProductPage({
             {product.creatorId ? (
               <Link
                 href={`/createur/${product.creatorId}`}
-                className="hover:text-cloud"
+                className="-my-3 inline-flex min-h-11 items-center hover:text-cloud"
               >
                 {t(lang, "product.by")} {product.creator}
               </Link>
@@ -737,14 +738,9 @@ export default async function ProductPage({
                   hors de `lib/product-kind.ts` interdite (CLAUDE.md). */}
               {!isDownloadable(product.kind, product.id) && (
                 <p className="mt-3 flex items-start gap-2 text-xs text-mist">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="mt-0.5 h-4 w-4 flex-none fill-none stroke-success"
-                    strokeWidth="1.8"
-                  >
+                  <Icone taille={16} className="mt-0.5 stroke-success">
                     <path d="M4 8h16v11H4zM8 8V6a4 4 0 018 0v2" />
-                  </svg>
+                  </Icone>
                   {t(lang, "trust.2.b")}
                 </p>
               )}
@@ -784,7 +780,7 @@ export default async function ProductPage({
             <p className="mt-3 text-sm text-mist">{t(lang, "digital.access")}</p>
           </section>}
           {isDownloadable(product.kind) && (
-            <a href="#acheter" className="bouton mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-brand px-5 py-3 text-sm font-semibold text-cloud">
+            <a href="#acheter" className="bouton bouton-secondaire mt-4">
               {t(lang, "product.cta.bottom", { price: formatHTG(flash ? flash.prixFlashHtg : product.priceHTG) })}
             </a>
           )}
@@ -911,7 +907,7 @@ export default async function ProductPage({
           <div className="mt-8 text-center">
             <a
               href="#acheter"
-              className="bouton inline-block rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
+              className="bouton bouton-primaire"
             >
               {t(lang, "product.cta.bottom", { price: formatHTG(product.priceHTG) })}
             </a>

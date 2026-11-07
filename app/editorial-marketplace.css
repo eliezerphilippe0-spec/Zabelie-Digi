@@ -2,7 +2,6 @@
 .editorial-page > header { background-image: none !important; border-bottom: 1px solid var(--color-chrome-2); }
 .editorial-page .marketplace-header-row { padding-block: --spacing(3); }
 .editorial-page main { color: var(--color-cloud); }
-.editorial-button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: --spacing(6); padding: --spacing(3) --spacing(6); border-radius: var(--radius-card); background: var(--color-brand); color: var(--color-on-brand); font-weight: 700; font-size: var(--text-sm); }
 .editorial-link { display: inline-flex; min-height: 44px; align-items: center; gap: --spacing(4); font-size: var(--text-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 5px; }
 /* Bannière de lancement : sans fond ni bordure, elle n'a pas de bord à respecter.
    Un retrait horizontal la décalait donc de la grille des autres blocs (bandeau
@@ -50,13 +49,8 @@
 .catalogue-filter-panel > summary span { font-size: var(--text-2xl); font-weight: 400; }
 .catalogue-filter-panel[open] > summary span { transform: rotate(45deg); }
 .catalogue-filter-panel > form { margin-block: 0 --spacing(5); padding: 0; background: transparent; border: 0; }
-.catalogue-welcome { display: flex; flex-direction: column; align-items: center; padding: --spacing(11) --spacing(6) --spacing(15); text-align: center; }
-.empty-shop { color: var(--color-accent); margin-bottom: --spacing(7); }
-.catalogue-welcome h2 { max-width: 26ch; text-wrap: balance; }
-.catalogue-welcome p { margin-top: --spacing(5); line-height: var(--leading-corps); }
-.catalogue-welcome > .editorial-link { margin-top: --spacing(4); }
-@media (hover:hover) { .editorial-button:hover { filter: brightness(.95); } .universe-grid > a:hover { border-color: var(--color-accent); } .editorial-link:hover { color: var(--color-accent); } }
-@media (prefers-reduced-motion: no-preference) { .editorial-button,.editorial-link,.universe-grid > a { transition: color var(--motion-base), border-color var(--motion-base), filter var(--motion-base); } }
+@media (hover:hover) { .universe-grid > a:hover { border-color: var(--color-accent); } .editorial-link:hover { color: var(--color-accent); } }
+@media (prefers-reduced-motion: no-preference) { .editorial-link,.universe-grid > a { transition: color var(--motion-base), border-color var(--motion-base), filter var(--motion-base); } }
 @media (max-width:767px) {
  .home-discovery.editorial-page .launch-hero { grid-template-columns: minmax(0,1fr); padding: --spacing(8) 0 --spacing(8); gap: --spacing(8); }
  .launch-hero .home-headline { max-width: 15ch; }
@@ -71,7 +65,6 @@
  .seller-layout { grid-template-columns: minmax(0,1fr); gap: --spacing(8); }
  .seller-decision { padding: --spacing(6); grid-row: 1; }
  .catalogue-filter-panel input { max-width: 100%; }
- .catalogue-welcome { padding-inline: 0; }
 }
 .editorial-page > header nav.header-fold a { border-radius: 0; border-color: transparent; padding-inline: --spacing(3); }
 .editorial-page > header nav.header-fold a[aria-current="page"] { border-bottom-color: var(--color-brand); background: transparent; }

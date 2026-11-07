@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { Icone } from "@/components/icone";
 /**
  * Le bouton pause de la barre d'annonce (WCAG 2.2.2). Il pose `data-pause`
  * sur la barre ; c'est la feuille `app/barre-annonce.css` qui arrête le
@@ -21,9 +22,9 @@ export function BarreAnnoncePause({ pause, reprendre }: { pause: string; reprend
         e.currentTarget.closest(".annonce")?.toggleAttribute("data-pause", suivant);
       }}
     >
-      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false" fill="currentColor">
-        {arretee ? <path d="M4 2.5v11l9-5.5z" /> : <path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" />}
-      </svg>
+      <Icone taille={16}>
+        {arretee ? <path d="M7 5v14l11-7z" /> : <path d="M9 5v14M15 5v14" />}
+      </Icone>
     </button>
   );
 }

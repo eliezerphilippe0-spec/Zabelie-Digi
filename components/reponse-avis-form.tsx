@@ -56,7 +56,7 @@ export function ReponseAvisForm({ reviewId, labels }: { reviewId: string; labels
         <button
           type="button"
           onClick={() => setOuvert(true)}
-          className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {labels.cta}
         </button>
@@ -75,21 +75,21 @@ export function ReponseAvisForm({ reviewId, labels }: { reviewId: string; labels
         maxLength={1000}
         rows={3}
         placeholder={labels.placeholder}
-        className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm text-cloud"
+        className="champ"
       />
       <p className="text-xs text-mist">{labels.aide}</p>
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={envoi || !texte.trim()}
-          className="inline-flex min-h-11 items-center rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-60"
+          className="bouton bouton-primaire bouton-compact"
         >
           {labels.envoyer}
         </button>
         <button
           type="button"
           onClick={() => setOuvert(false)}
-          className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {labels.annuler}
         </button>

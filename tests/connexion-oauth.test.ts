@@ -49,7 +49,8 @@ test("CO2 — l'appel OAuth part avec redirectTo = urlDeRetourOAuth(origine de l
 
 test("CO3 — chaque bouton fournisseur est une cible tactile (min-h-11) et un vrai <button type=\"button\">", () => {
   const src = sansCommentaires(FORM);
-  const bouton = /providers\.map\(\(p\) => \(\s*<button[\s\S]{0,400}?className="[^"]*\bmin-h-11\b[^"]*"/;
+  // `min-h-11`, ou la classe `bouton` qui porte la même hauteur (chantier design, Phase 2).
+  const bouton = /providers\.map\(\(p\) => \(\s*<button[\s\S]{0,400}?className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])[^"]*"/;
   assert.match(src, bouton);
   assert.match(src, /providers\.map\(\(p\) => \(\s*<button\s+key=\{p\.id\}\s+type="button"/);
 });

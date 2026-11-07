@@ -1,3 +1,4 @@
+import { Icone } from "@/components/icone";
 /** Menu natif : ouverture sans JavaScript, fermeture et cadrage via HeaderShell. */
 export function AccountMenu({
   label,
@@ -13,17 +14,10 @@ export function AccountMenu({
         title={label}
         className="inline-flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl lg:px-2 text-on-chrome transition hover:bg-on-chrome/10 [&::-webkit-details-marker]:hidden"
       >
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="h-6 w-6 fill-none stroke-current"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        <Icone taille={24}>
           <circle cx="12" cy="8" r="4" />
           <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
-        </svg>
+        </Icone>
         <span className="hidden text-sm font-semibold lg:inline">{label}</span>
       </summary>
       <div className="header-menu-panel absolute right-0 top-full z-(--z-header) mt-2 w-64 rounded-xl border border-line bg-surface p-2 text-cloud shadow-lg">

@@ -17,7 +17,7 @@ export function ReconcileAction(){
    router.refresh();
   }catch{setMessage("Résultat non confirmé. Rechargez la file avant de réessayer.");}finally{lock.current=false;setBusy(false);}
  }
- return <div><button type="button" disabled={busy||!ready} onClick={run} className="min-h-11 rounded-xl bg-cloud px-4 py-3 text-sm font-semibold text-ink disabled:opacity-60">{busy?"Consultation des opérateurs…":"Vérifier les paiements en attente"}</button><p role="status" className="mt-2 max-w-xl text-sm text-mist">{message}</p></div>;
+ return <div><button type="button" disabled={busy||!ready} onClick={run} className="bouton bouton-primaire">{busy?"Consultation des opérateurs…":"Vérifier les paiements en attente"}</button><p role="status" className="mt-2 max-w-xl text-sm text-mist">{message}</p></div>;
 }
 export function RefundReceiptForm({orderId}:{orderId:string}){
  const ready=useSyncExternalStore(subscribe,clientReady,serverReady);
@@ -29,10 +29,10 @@ export function RefundReceiptForm({orderId}:{orderId:string}){
  }catch{setNotice("Référence non enregistrée. Vérifiez la date et le statut de la commande.");}finally{setBusy(false);}}
  return <details className="mt-3 text-sm"><summary className="min-h-11 cursor-pointer">Enregistrer le retour effectif des fonds</summary><form onSubmit={submit} className="mt-3 space-y-3">
  <p className="text-xs text-mist">Ce formulaire ne transfère aucun argent. Vérifiez le justificatif du retour sur le moyen de paiement d’origine avant de confirmer.</p>
- <label className="block">Moyen d’origine<select name="method" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2">{["moncash","natcash","stripe","zelle"].map(m=><option key={m} value={m}>{m}</option>)}</select></label>
- <label className="block">Référence opérateur ou reçu<input name="reference" required minLength={5} maxLength={120} className="mt-1 min-h-11 w-full rounded-xl border border-line bg-surface p-2"/></label>
- <label className="block">Date du retour des fonds<input name="date" type="date" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2"/></label>
+ <label className="block">Moyen d’origine<select name="method" required className="champ ml-2 w-auto">{["moncash","natcash","stripe","zelle"].map(m=><option key={m} value={m}>{m}</option>)}</select></label>
+ <label className="block">Référence opérateur ou reçu<input name="reference" required minLength={5} maxLength={120} className="champ mt-1"/></label>
+ <label className="block">Date du retour des fonds<input name="date" type="date" required className="champ ml-2 w-auto"/></label>
  <label className="flex min-h-11 items-center gap-3"><input name="confirm" type="checkbox" required/>J’ai vérifié le justificatif du retour des fonds.</label>
- <button disabled={busy||!ready} className="min-h-11 rounded-xl border border-line px-4 py-2">Enregistrer la référence</button><p role="status">{notice}</p>
+ <button disabled={busy||!ready} className="bouton bouton-secondaire bouton-compact">Enregistrer la référence</button><p role="status">{notice}</p>
  </form></details>;
 }

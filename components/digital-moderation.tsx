@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
 import type { DigitalStudio } from "@/lib/digital-studio";
 import { t } from "@/lib/i18n";
+import { MessageErreur } from "@/components/message-erreur";
+
 export async function DigitalModeration({ productId }: { productId: string }) {
   const user = await getCurrentUser();
   if (user?.role !== "admin") return null;
@@ -10,7 +12,7 @@ export async function DigitalModeration({ productId }: { productId: string }) {
     admin.from("zabelie_digital_studio").select("*").eq("product_id", productId).maybeSingle(),
     admin.from("product_assets").select("id,file_name").eq("product_id", productId),
   ]);
-  if (error || fileError) return <p role="alert" className="mt-3 text-danger-text">{t("fr", "studio.error")}</p>;
+  if (error || fileError) return <MessageErreur className="mt-3">{t("fr", "studio.error")}</MessageErreur>;
   const studio = data as DigitalStudio | null;
   if (!studio && !files?.length) return null;
   return <details className="mt-4 rounded-xl border border-line p-3"><summary className="min-h-11 cursor-pointer font-semibold">{t("fr", "studio.title")}</summary>

@@ -84,24 +84,24 @@ export function PickupAdmin() {
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             placeholder="Nom de la boutique"
-            className="w-56 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-cloud"
+            className="champ w-56"
           />
           <input
             value={adresse}
             onChange={(e) => setAdresse(e.target.value)}
             placeholder="Adresse (rue, commune)"
-            className="w-80 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-cloud"
+            className="champ w-80"
           />
           <input
             value={telefon}
             onChange={(e) => setTelefon(e.target.value)}
             placeholder="Téléphone (optionnel)"
-            className="w-44 rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-cloud"
+            className="champ w-44"
           />
           <button
             onClick={creer}
             disabled={busy || !nom.trim() || !adresse.trim()}
-            className="inline-flex min-h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+            className="bouton bouton-primaire bouton-compact"
           >
             Créer (fermé)
           </button>
@@ -142,7 +142,7 @@ export function PickupAdmin() {
               <button
                 onClick={() => basculer(p)}
                 disabled={busy}
-                className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-xs text-cloud transition hover:border-brand disabled:opacity-60"
+                className="bouton bouton-secondaire bouton-compact"
               >
                 {p.actif ? "Fermer" : "Ouvrir"}
               </button>

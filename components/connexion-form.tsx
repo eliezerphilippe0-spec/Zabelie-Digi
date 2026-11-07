@@ -338,7 +338,7 @@ function ConnexionFormInner({
                 autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+                className="champ"
               />
             </div>
           )}
@@ -354,7 +354,7 @@ function ConnexionFormInner({
               inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+              className="champ"
             />
           </div>}
           {mode !== "legal" && <div className="space-y-1">
@@ -369,7 +369,7 @@ function ConnexionFormInner({
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
+              className="champ"
             />
           </div>}
           {mode !== "signin" && (
@@ -394,7 +394,7 @@ function ConnexionFormInner({
           <button
             type="submit"
             disabled={loading || (mode !== "signin" && (!conditionsAccepted || !privacyRead))}
-            className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+            className="bouton bouton-primaire w-full"
           >
             {loading ? "…" : mode === "legal" ? labels.legalContinue : mode === "signin" ? labels.signinCta : labels.signupCta}
           </button>
@@ -415,7 +415,7 @@ function ConnexionFormInner({
                   type="button"
                   disabled={loading}
                   onClick={() => viaFournisseur(p)}
-                  className="flex min-h-11 w-full items-center justify-center gap-3 rounded-xl border border-line bg-ink/40 px-4 py-2.5 text-sm text-cloud transition hover:border-accent disabled:opacity-60"
+                  className="bouton bouton-secondaire w-full gap-3"
                 >
                   {MARQUES[p.id]}
                   <span>{p.label}</span>

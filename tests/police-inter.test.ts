@@ -206,7 +206,7 @@ test("P8 — les quatre endroits où un code promo s'affiche ou se saisit l'empl
   const gestion = readFileSync("components/zabelie-coupon-manager.tsx", "utf8");
   assert.match(
     gestion,
-    /id="cp-code"(?:(?!<input|\/>)[\s\S]){0,600}className="code-lisible[ "]/,
+    /id="cp-code"(?:(?!<input|\/>)[\s\S]){0,600}className="(?:champ )?code-lisible[ "]/,
     "champ de création de code du VENDEUR sans `code-lisible`"
   );
   assert.match(gestion, /className=\{`code-lisible[^`]*`\}>\s*\{c\.code\}/, "liste des codes du vendeur sans `code-lisible`");

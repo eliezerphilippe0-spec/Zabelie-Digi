@@ -29,7 +29,7 @@ export default async function DesabonnementPage({
           <form method="post" action="/api/desabonnement" className="mt-4">
             <p className="text-mist">{t(lang, "desabo.body")}</p>
             <input type="hidden" name="jeton" value={jeton} />
-            <button type="submit" className="bouton mt-6 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 font-semibold text-on-brand">
+            <button type="submit" className="bouton bouton-primaire bouton-compact mt-6">
               {t(lang, "desabo.button")}
             </button>
           </form>

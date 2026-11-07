@@ -34,20 +34,20 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
     <SiteNav activeHref="/categories" />
     <main id="main" className="mx-auto max-w-6xl px-5 py-8">
       <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
-        <Link href="/" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "nav.home")}</Link>
+        <Link href="/" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline underline-offset-4">{t(lang, "nav.home")}</Link>
         <span aria-hidden="true">/</span><span aria-current="page">{t(lang, "directory.title")}</span>
       </nav>
       <h1>{t(lang, "directory.title")}</h1>
       <p className="mt-3 max-w-2xl text-mist">{t(lang, "directory.intro")}</p>
       <form action="/categories" className="mt-6 flex max-w-2xl gap-2">
-        <input name="q" defaultValue={q} aria-label={t(lang, "directory.search")} placeholder={t(lang, "directory.search")} className="min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-ink px-4 text-sm" />
-        <button type="submit" className="min-h-11 rounded-xl bg-brand px-5 font-semibold text-on-brand">{t(lang, "catalog.search.btn")}</button>
+        <input name="q" defaultValue={q} aria-label={t(lang, "directory.search")} placeholder={t(lang, "directory.search")} className="champ min-w-0 flex-1" />
+        <button type="submit" className="bouton bouton-primaire bouton-compact">{t(lang, "catalog.search.btn")}</button>
       </form>
       {q && <Link href="/categories" className="mt-2 inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.reset")}</Link>}
       {rows.length > 0 ? <div className="mt-8 grid items-start gap-4 lg:grid-cols-2">
         {rows.map((department) => <section key={department.slug} className="rounded-xl border border-line bg-ink p-5" aria-labelledby={`department-${department.slug}`}>
           <div className="flex items-start gap-3">
-            <DepartmentIcon slug={department.slug} className="mt-1 h-6 w-6 flex-none stroke-current text-cloud" />
+            <DepartmentIcon slug={department.slug} taille={24} className="mt-1 text-cloud" />
             <div>
               <h2 id={`department-${department.slug}`}><Link href={department.href} className="inline-flex min-h-11 items-center hover:underline">{department.label}</Link></h2>
             </div>

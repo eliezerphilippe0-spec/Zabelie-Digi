@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessageErreur } from "@/components/message-erreur";
 
 /** Récupère une URL signée via /api/download et ouvre le fichier. */
 export function DownloadButton({ orderId, releaseId, assetId, labels }: { orderId: string; releaseId?: string; assetId?: string; labels: { download: string; error: string; network: string } }) {
@@ -33,11 +34,11 @@ export function DownloadButton({ orderId, releaseId, assetId, labels }: { orderI
       <button
         onClick={download}
         disabled={loading}
-        className="min-h-11 rounded-lg bg-cloud px-4 py-2 text-xs font-semibold text-ink transition hover:opacity-90 disabled:opacity-60"
+        className="bouton bouton-secondaire bouton-compact"
       >
         {loading ? "…" : labels.download}
       </button>
-      {error && <p role="alert" className="mt-1 text-xs text-danger-text">{error}</p>}
+      {error && <MessageErreur className="mt-1">{error}</MessageErreur>}
     </div>
   );
 }

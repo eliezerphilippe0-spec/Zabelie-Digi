@@ -49,7 +49,7 @@ export function AdminTopupZelleButton({
       <button
         onClick={confirm}
         disabled={loading}
-        className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-success-text transition hover:border-success/50 disabled:opacity-60"
+        className="bouton bouton-secondaire bouton-compact text-success-text"
       >
         {loading ? "…" : "Confirmer + recharger"}
       </button>
@@ -95,7 +95,7 @@ export function AdminTopupSyncButton() {
       <button
         onClick={sync}
         disabled={loading}
-        className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-cloud transition hover:border-cloud/50 disabled:opacity-60"
+        className="bouton bouton-secondaire bouton-compact"
       >
         {loading ? "Synchronisation…" : "Synchroniser le catalogue Reloadly"}
       </button>
@@ -159,7 +159,7 @@ export function AdminTopupRefundButton({
       <button
         onClick={record}
         disabled={loading}
-        className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-warning-text transition hover:border-warning/50 disabled:opacity-60"
+        className="bouton bouton-secondaire bouton-compact text-warning-text"
       >
         {loading ? "…" : "Rembourser (fait) ✓"}
       </button>

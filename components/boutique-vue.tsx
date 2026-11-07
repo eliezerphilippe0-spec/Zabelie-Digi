@@ -14,6 +14,7 @@ import { identitesVerifiees } from "@/lib/identite-verifiee";
 import { BadgeIdentite } from "@/components/badge-identite";
 import { headers } from "next/headers";
 import { compterVisite } from "@/lib/boutik-visites";
+import { EtatVide } from "@/components/etat-vide";
 
 /**
  * LA VITRINE D'UN VENDEUR — une vue, deux adresses.
@@ -139,13 +140,13 @@ export async function BoutiqueVue({
             copiedLabel={t(lang, "share.copied")}
           />
         </div>
-        <Link href={`/assistant?vendeur=${encodeURIComponent(creator.id)}`} className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl border border-line px-5 py-3 font-semibold text-accent">{SHOPPING_COPY[lang].sellerTitle}</Link>
+        <Link href={`/assistant?vendeur=${encodeURIComponent(creator.id)}`} className="bouton bouton-secondaire mt-5">{SHOPPING_COPY[lang].sellerTitle}</Link>
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16" aria-labelledby="boutique-offers">
         <h2 id="boutique-offers" className="mb-4 border-t border-line pt-6">{t(lang, "creator.offers")}</h2>
         {creator.products.length === 0 ? (
-          <p className="text-sm text-mist">{t(lang, "creator.empty")}</p>
+          <EtatVide titre={t(lang, "creator.empty")} />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {creator.products.map((p) => (

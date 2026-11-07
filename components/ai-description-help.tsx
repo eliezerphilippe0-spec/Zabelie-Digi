@@ -113,20 +113,21 @@ export function AiDescriptionHelp({
 
   return (
     <div className="space-y-1.5">
-      <input
-        className="w-full rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-accent"
-        placeholder={labels.kwPh}
-        aria-label={labels.kwPh}
-        maxLength={300}
-        value={keywords}
-        onChange={(e) => setKeywords(e.target.value)}
-      />
+      <label className="block">
+        <span className="libelle">{labels.kwPh}</span>
+        <input
+          className="champ"
+          maxLength={300}
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
+        />
+      </label>
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => demander()}
           disabled={busy || !pret}
-          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud transition hover:border-accent disabled:opacity-50"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {busy ? labels.loading : labels.button}
         </button>
@@ -142,7 +143,7 @@ export function AiDescriptionHelp({
             type="button"
             onClick={() => demander(true)}
             disabled={busy}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-50"
+            className="bouton bouton-primaire bouton-compact"
           >
             {busy
               ? labels.loading

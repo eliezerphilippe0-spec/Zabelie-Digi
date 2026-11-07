@@ -7,6 +7,7 @@ import { useRef, useState } from "react";
 import { appelSession } from "@/lib/appel-session";
 import type { IssueAppel } from "@/lib/appel-session";
 import type { MarketplaceCopy } from "@/lib/marketplace-copy";
+import { MessageErreur } from "@/components/message-erreur";
 
 /** Reuses an existing buyer-owned order; this action never prepares a payment. */
 export function OrderPaymentRecovery({ orderId, labels }: {
@@ -41,11 +42,11 @@ export function OrderPaymentRecovery({ orderId, labels }: {
     else window.location.href = destination;
   }
   return <div>
-    <button type="button" onClick={resume} disabled={checking} className="inline-flex min-h-11 items-center rounded-xl border border-line px-3 text-sm disabled:opacity-50">
+    <button type="button" onClick={resume} disabled={checking} className="bouton bouton-secondaire bouton-compact">
       {checking ? labels.checkingAttempt : labels.resumeAttempt}
     </button>
     {notice && <p role="status" className="mt-2 text-sm text-mist">{notice === "pending" ? labels.paymentPending : labels.paymentReview}</p>}
-    {error && <p role="alert" className="mt-2 text-sm text-danger-text">{labels.attemptUnavailable}</p>}
+    {error && <MessageErreur className="mt-2">{labels.attemptUnavailable}</MessageErreur>}
   </div>;
 }
 

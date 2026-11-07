@@ -66,19 +66,22 @@ export function ForgotPasswordForm({ labels }: { labels: ForgotPasswordLabels })
             <>
               <p className="mt-2 text-sm text-mist">{labels.subtitle}</p>
               <form onSubmit={submit} className="mt-4 space-y-3">
-                <input
-                  type="email"
-                  required
-                  placeholder={labels.emailPh}
-                  aria-label={labels.emailPh}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
-                />
+                <label className="block">
+                  <span className="libelle">{labels.emailPh}</span>
+                  <input
+                    type="email"
+                    required
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="champ"
+                  />
+                </label>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+                  className="bouton bouton-primaire w-full"
                 >
                   {loading ? labels.sending : labels.submit}
                 </button>

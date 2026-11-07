@@ -172,7 +172,8 @@ test("composant : la zone visée est la plus profonde choisie, et rien ne part s
 
 test("composant : l'écran se rafraîchit après l'acte, et une erreur est dite", () => {
   assert.match(COMPOSANT, /if \(!res\.ok\) \{ setErreur\(true\); return; \}[\s\S]{0,120}router\.refresh\(\)/);
-  assert.match(COMPOSANT, /\{erreur \? <p role="alert"/);
+  // `MessageErreur` porte `role="alert"`, et l'icône (chantier design, Phase 2).
+  assert.match(COMPOSANT, /\{erreur \? <MessageErreur\b/);
 });
 
 test("libellés : maZone.* existe dans les quatre langues, avec {zone}, et dit la durée et le nom du cookie", () => {

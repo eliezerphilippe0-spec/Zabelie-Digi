@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CopyField } from "@/components/copy-field";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Libellés résolus CÔTÉ SERVEUR et passés en props. Un composant client
@@ -201,13 +202,13 @@ export function AffiliationManager({
               type="button"
               onClick={devenir}
               disabled={inscription}
-              className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+              className="bouton bouton-primaire bouton-compact"
             >
               {inscription ? "…" : labels.devenir}
             </button>
           </div>
         )}
-        {erreur && <p role="alert" className="mt-2 text-xs text-danger-text">{erreur}</p>}
+        {erreur && <MessageErreur className="mt-2">{erreur}</MessageErreur>}
       </section>
 
       {/* ── VENDEUR (opt-in, option B) ────────────────────────────────────── */}
@@ -351,14 +352,14 @@ function ProduitTaux({
               step={1}
               value={pct}
               onChange={(e) => setPct(Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-line bg-surface/60 px-3 py-2 text-sm text-cloud focus:border-brand/60 focus:outline-none"
+              className="champ mt-1"
             />
           </div>
           <button
             type="button"
             onClick={offrir}
             disabled={loading}
-            className="min-h-11 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+            className="bouton bouton-primaire bouton-compact"
           >
             {loading ? "…" : labels.vOffrir}
           </button>
@@ -367,14 +368,14 @@ function ProduitTaux({
               type="button"
               onClick={retirer}
               disabled={loading}
-              className="min-h-11 rounded-xl border border-line px-3 py-2 text-xs font-medium text-mist transition hover:border-brand/50 hover:text-cloud disabled:opacity-60"
+              className="bouton bouton-secondaire bouton-compact"
             >
               {labels.vRetirer}
             </button>
           )}
         </div>
       </div>
-      {erreur && <p role="alert" className="mt-2 text-xs text-danger-text">{erreur}</p>}
+      {erreur && <MessageErreur className="mt-2">{erreur}</MessageErreur>}
       {ok && !erreur && <p role="status" className="mt-2 text-xs text-success-text">{ok}</p>}
     </div>
   );

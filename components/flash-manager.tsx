@@ -105,7 +105,7 @@ export function FlashManager({
           <button
             onClick={arreter}
             disabled={busy}
-            className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-xs text-cloud transition hover:border-danger-text disabled:opacity-60"
+            className="bouton bouton-secondaire bouton-compact"
           >
             {labels.stop}
           </button>
@@ -113,35 +113,38 @@ export function FlashManager({
       ) : (
         <>
           <p className="mt-1 text-xs text-mist">{labels.hint}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input
-              inputMode="numeric"
-              value={prix}
-              onChange={(e) => setPrix(e.target.value.replace(/[^0-9]/g, ""))}
-              placeholder={labels.pricePh}
-              aria-label={labels.pricePh}
-              className="w-32 rounded-lg border border-line bg-transparent px-2 py-2 text-xs text-cloud"
-            />
-            <input
-              inputMode="numeric"
-              value={heures}
-              onChange={(e) => setHeures(e.target.value.replace(/[^0-9]/g, ""))}
-              placeholder={labels.hoursPh}
-              aria-label={labels.hoursPh}
-              className="w-28 rounded-lg border border-line bg-transparent px-2 py-2 text-xs text-cloud"
-            />
-            <input
-              inputMode="numeric"
-              value={unites}
-              onChange={(e) => setUnites(e.target.value.replace(/[^0-9]/g, ""))}
-              placeholder={labels.unitsPh}
-              aria-label={labels.unitsPh}
-              className="w-36 rounded-lg border border-line bg-transparent px-2 py-2 text-xs text-cloud"
-            />
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <label className="block">
+              <span className="libelle">{labels.pricePh}</span>
+              <input
+                inputMode="numeric"
+                value={prix}
+                onChange={(e) => setPrix(e.target.value.replace(/[^0-9]/g, ""))}
+                className="champ w-32"
+              />
+            </label>
+            <label className="block">
+              <span className="libelle">{labels.hoursPh}</span>
+              <input
+                inputMode="numeric"
+                value={heures}
+                onChange={(e) => setHeures(e.target.value.replace(/[^0-9]/g, ""))}
+                className="champ w-28"
+              />
+            </label>
+            <label className="block">
+              <span className="libelle">{labels.unitsPh}</span>
+              <input
+                inputMode="numeric"
+                value={unites}
+                onChange={(e) => setUnites(e.target.value.replace(/[^0-9]/g, ""))}
+                className="champ w-36"
+              />
+            </label>
             <button
               onClick={lancer}
               disabled={busy || !prix || !heures || Number(prix) >= prixHtg}
-              className="inline-flex min-h-11 items-center rounded-lg bg-brand px-3 text-xs font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+              className="bouton bouton-primaire bouton-compact"
             >
               {labels.launch}
             </button>

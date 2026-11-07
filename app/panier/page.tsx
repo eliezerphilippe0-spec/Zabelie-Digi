@@ -17,7 +17,9 @@ import { isKobaraEnabled } from "@/lib/kobara";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
 import { Prix } from "@/components/prix";
+import { EtatVide } from "@/components/etat-vide";
 
+import { Icone } from "@/components/icone";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon panier — Zabelie", robots: { index: false, follow: false } };
 
@@ -45,7 +47,7 @@ export default async function PanierPage() {
         <p className="mt-4 text-sm text-mist">{t(lang, "cart.login.b")}</p>
         <Link
           href={`/connexion?next=${encodeURIComponent("/panier")}`}
-          className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="bouton bouton-primaire bouton-compact mt-4"
         >
           {t(lang, "nav.login")}
         </Link>
@@ -129,15 +131,14 @@ export default async function PanierPage() {
         <p className="mt-4 text-sm text-danger-text">{t(lang, "error.generic")}</p>
       )}
       {!error && items.length === 0 && (
-        <div className="mt-6 rounded-xl border border-dashed border-line bg-surface/40 p-8 text-center">
-          <p className="text-sm text-mist">{t(lang, "cart.empty")}</p>
+        <EtatVide className="mt-6" titre={t(lang, "cart.empty")}>
           <Link
             href="/catalogue"
-            className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+            className="bouton bouton-primaire mt-5"
           >
             {t(lang, "nav.catalog")}
           </Link>
-        </div>
+        </EtatVide>
       )}
       {!error && items.length > 0 && (
         <>
@@ -151,14 +152,9 @@ export default async function PanierPage() {
               {/* L'escrow, énoncé UNE fois, sur le groupe où il est vrai. */}
               {g.escrow && (
                 <p className="mb-2 flex items-start gap-2 text-xs text-mist">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="mt-0.5 h-4 w-4 flex-none fill-none stroke-success"
-                    strokeWidth="1.8"
-                  >
+                  <Icone taille={16} className="mt-0.5 stroke-success">
                     <path d="M4 8h16v11H4zM8 8V6a4 4 0 018 0v2" />
-                  </svg>
+                  </Icone>
                   {t(lang, "trust.2.b")}
                 </p>
               )}
@@ -171,7 +167,7 @@ export default async function PanierPage() {
                     <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                       <Link
                         href={`/produit/${l.product!.slug}`}
-                        className="font-semibold text-cloud transition hover:text-accent"
+                        className="-my-3 inline-flex min-h-11 items-center font-semibold text-cloud transition hover:text-accent"
                       >
                         {l.product!.title}
                       </Link>
@@ -182,7 +178,7 @@ export default async function PanierPage() {
                       )}
                     </div>
                     <Prix montant={l.product!.price_htg} className="shrink-0" />
-                    <Link href={`/produit/${l.product!.slug}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{trustLabels.checkPay}</Link>
+                    <Link href={`/produit/${l.product!.slug}`} className="bouton bouton-primaire bouton-compact">{trustLabels.checkPay}</Link>
                     {g.escrow && <div className="basis-full"><ProductCommitmentDetails value={commitments?.get(l.product_id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang} href={`/produit/${l.product!.slug}#contacter-vendeur`}/></div>}
                     <RemoveFromCart
                       productId={l.product_id}

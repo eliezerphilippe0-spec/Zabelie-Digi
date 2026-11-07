@@ -87,6 +87,268 @@
   }
 }
 
+/* COMPOSANTS — chantier design, Phase 2. Couche `components` : un utilitaire
+   posé à côté (`mt-4`, `w-full`) l'emporte toujours, et c'est voulu. Ce qui
+   dessine le composant vit ICI et nulle part ailleurs. */
+@layer components {
+  /* BOUTON (brief Phase 2.1) — trois variantes, trois tailles, cinq états.
+     Avant : 97 écritures différentes pour 119 fonds orange (audit Phase 0),
+     dont `.editorial-button` en Inter à côté de boutons en Manrope.
+     Toujours `bouton` ET une variante : `bouton bouton-primaire`.
+     Tailles : 48 px par défaut (la hauteur d'un champ, les deux s'alignent),
+     `bouton-compact` 44 px pour une action dans une liste, `bouton-grand`
+     56 px pour l'action principale d'une page. Jamais sous 44 px.
+     Un seul `bouton-primaire` visible par écran : c'est une règle de page,
+     mesurée au rendu (docs/design/PHASE-2.md), pas une règle de feuille.
+     `tests/boutons-variantes.test.ts` garde. */
+  .bouton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: --spacing(2);
+    min-height: --spacing(12);
+    padding: --spacing(2) --spacing(5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xl);
+    font-size: var(--text-sm);
+    line-height: var(--leading-titre);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .bouton-compact {
+    min-height: --spacing(11);
+    padding-inline: --spacing(4);
+  }
+  .bouton-grand {
+    min-height: --spacing(14);
+    padding-inline: --spacing(6);
+    font-size: var(--text-base);
+  }
+  .bouton-primaire {
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .bouton-secondaire {
+    background-color: var(--color-surface);
+    color: var(--color-cloud);
+    border-color: var(--color-contour);
+  }
+  /* Le bouton qui a l'air d'un lien : l'action qui ne doit pas concurrencer
+     la principale (« Annuler », « Voir tout »). Souligné, pour ne pas reposer
+     sur la seule couleur. */
+  .bouton-texte {
+    background-color: transparent;
+    color: var(--color-accent);
+    padding-inline: --spacing(2);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+  /* SURVOL — sans transition de couleur : le brief n'anime que `transform` et
+     `opacity`. Pointeur fin seulement : sur un écran tactile, un survol reste
+     collé après le tap. */
+  @media (hover: hover) {
+    .bouton-primaire:hover {
+      opacity: 0.9;
+    }
+    .bouton-secondaire:hover {
+      border-color: var(--color-cloud);
+    }
+    .bouton-texte:hover {
+      text-decoration-thickness: 2px;
+    }
+  }
+  /* APPUI — l'échelle du thème (« Tap : scale(0.97) en --motion-fast »).
+     `--motion-*` vaut 0 ms sous `prefers-reduced-motion` : rien ne bouge. */
+  .bouton {
+    transition:
+      transform var(--motion-fast) var(--ease),
+      opacity var(--motion-fast) var(--ease);
+  }
+  .bouton:active {
+    transform: scale(0.97);
+  }
+  /* FOCUS — l'anneau global de `:focus-visible` (2 px d'accent, décollé de
+     2 px) : 4,73:1 sur le crème, au-dessus des 3:1 du brief. Rien à redire ici. */
+  /* DÉSACTIVÉ — `aria-disabled` aussi, pour un lien qu'on ne peut pas encore
+     suivre. Pas de contraste minimal exigé (WCAG 1.4.3, composant inactif). */
+  .bouton:disabled,
+  .bouton[aria-disabled="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .bouton[aria-disabled="true"] {
+    pointer-events: none;
+  }
+  /* CHARGEMENT — `aria-busy="true"`, que les lecteurs d'écran annoncent. Le
+     bouton garde son plein contraste même s'il est aussi désactivé : il
+     travaille, il n'est pas indisponible. Un point qui bat en opacité, à la
+     borne de 300 ms du thème : pas de roue qui tourne, le brief n'anime que
+     `transform` et `opacity` et une rotation à 300 ms serait frénétique. */
+  .bouton[aria-busy="true"] {
+    opacity: 1;
+    cursor: progress;
+  }
+  .bouton[aria-busy="true"]::after {
+    content: "";
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    background-color: currentColor;
+    animation: zbBattement var(--motion-slow) var(--ease) infinite alternate;
+  }
+  @keyframes zbBattement {
+    from { opacity: 1; }
+    to   { opacity: 0.25; }
+  }
+
+  /* CHAMP (brief Phase 2.2) — 48 px, texte à 16 px, contour à 3:1, anneau de
+     focus visible. Avant : 80 champs écrits à la main, la plupart en 14 px
+     (sous 16 px, Safari zoome la page au focus), bordés de `--line` (1,2:1 sur
+     le crème) et souvent en `outline-none`, qui éteignait l'anneau global de
+     `:focus-visible`. Le libellé reste visible au-dessus (`<label htmlFor>`),
+     jamais le seul texte indicatif. `tests/champs.test.ts` garde. */
+  .champ {
+    display: block;
+    inline-size: 100%;
+    min-height: --spacing(12);
+    padding: --spacing(2.5) --spacing(4);
+    border: 1px solid var(--color-contour);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+    color: var(--color-cloud);
+    font-size: var(--text-base);
+    line-height: var(--leading-titre);
+  }
+  .champ::placeholder {
+    color: var(--color-mist);
+    opacity: 1;
+  }
+  /* L'anneau vient de `:focus-visible` (2 px d'accent, 4,73:1) ; le contour
+     passe à l'accent avec lui, pour qui ne distingue pas l'anneau décollé. */
+  .champ:focus-visible {
+    border-color: var(--color-accent);
+  }
+  .champ[aria-invalid="true"] {
+    border-color: var(--color-danger);
+  }
+  .champ:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  textarea.champ {
+    min-height: --spacing(24);
+    line-height: var(--leading-corps);
+    resize: vertical;
+  }
+  /* LIBELLÉ D'UN CHAMP — au-dessus, toujours visible : `<label><span
+     class="libelle">…</span><input class="champ"></label>`. Avant, 26 champs
+     publics n'étaient nommés que pour les lecteurs d'écran (`aria-label`). */
+  .libelle {
+    display: block;
+    margin-block-end: --spacing(1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-titre);
+    color: var(--color-mist);
+  }
+  /* MESSAGE D'ERREUR (`components/message-erreur.tsx`) — texte et icône,
+     jamais la couleur seule. */
+  .message-erreur {
+    display: flex;
+    align-items: flex-start;
+    gap: --spacing(1.5);
+    color: var(--color-danger-text);
+    font-size: var(--text-sm);
+    line-height: var(--leading-corps);
+  }
+  .message-erreur > .icone {
+    margin-block-start: 0.2em;
+  }
+
+  /* ÉTIQUETTE (brief Phase 2.4, V-26) — deux tons, jamais l'orange, qui est
+     réservé aux actions et aux prix. Deux au plus par carte
+     (`tests/carte-produit.test.ts`). `neutre` sur une surface, `image` posée
+     sur une photo. Avant : trois écritures, dont une en orange de texte pour le
+     délai d'un service. */
+  .etiquette {
+    display: inline-flex;
+    align-items: center;
+    gap: --spacing(1);
+    padding: --spacing(0.5) --spacing(2);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: var(--leading-titre);
+    white-space: nowrap;
+  }
+  .etiquette-neutre {
+    border: 1px solid var(--color-line);
+    background-color: var(--color-surface);
+    color: var(--color-cloud);
+  }
+  .etiquette-image {
+    background-color: color-mix(in srgb, var(--color-chrome) 80%, transparent);
+    color: var(--color-on-chrome);
+  }
+
+  /* ÉTAT VIDE (`components/etat-vide.tsx`, brief Phase 2.5) — le dessin de
+     l'étal vide, ce qui se passe, ce qu'on peut faire. Avant : six mises en
+     forme pour les écrans vides, et un seul dessin, en orange. */
+  .etat-vide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: --spacing(8) --spacing(6);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-xl);
+    background-color: var(--color-surface);
+    text-align: center;
+  }
+  .etat-vide-dessin {
+    inline-size: --spacing(24);
+    block-size: auto;
+    margin-block-end: --spacing(4);
+    color: var(--color-mist);
+  }
+  .etat-vide-titre {
+    max-inline-size: 30ch;
+    font-family: var(--font-heading);
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: var(--leading-titre);
+    letter-spacing: 0;
+    color: var(--color-cloud);
+    text-wrap: balance;
+  }
+  .etat-vide-texte {
+    max-inline-size: 42ch;
+    margin-block-start: --spacing(2);
+    font-size: var(--text-base);
+    line-height: var(--leading-corps);
+    color: var(--color-mist);
+  }
+
+  /* ICÔNE (`components/icone.tsx`, brief Phase 2.6) — un trait de 1,75 px
+     d'ÉCRAN, quelle que soit la grille du dessin ou la taille rendue :
+     `non-scaling-stroke` sur chaque tracé. Un utilitaire posé à côté
+     (`stroke-success`, `fill-current`) l'emporte, couche oblige. */
+  .icone {
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .icone * {
+    vector-effect: non-scaling-stroke;
+  }
+}
+
 @layer utilities {
   .text-gradient {
     /* DEUX arrêts, plus quatre. Les quatre pointaient sur quatre oranges

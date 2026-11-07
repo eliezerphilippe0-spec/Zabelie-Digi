@@ -45,13 +45,13 @@ export function ShareButtons({
     <div className="flex flex-wrap items-center gap-2">
       <button
         onClick={shareWhatsApp}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-cloud transition hover:border-success/60"
+        className="bouton bouton-secondaire bouton-compact"
       >
         <span className="text-success">🟢</span> {waLabel}
       </button>
       <button
         onClick={copyLink}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-mist transition hover:border-accent/50 hover:text-cloud"
+        className="bouton bouton-secondaire bouton-compact"
       >
         {copied ? copiedLabel : copyLabel}
       </button>

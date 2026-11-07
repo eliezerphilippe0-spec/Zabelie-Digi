@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { compresserImage } from "@/lib/image-compress";
 import { COVER_MAX_OCTETS } from "@/lib/image-limits";
 import { coverUrlAt } from "@/lib/product-image";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type PhotoPrincipaleLabels = {
   title: string;
@@ -102,7 +103,7 @@ export function PhotoPrincipale({
       {/* Le champ est VISUELLEMENT masqué (`sr-only`), pas retiré (`hidden`) :
           `display: none` le rendrait injoignable au clavier. L'anneau de focus
           se dessine donc sur le libellé (`has-[:focus-visible]`). */}
-      <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+      <label className="bouton bouton-secondaire bouton-compact cursor-pointer has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
         {etape === "preparation" ? labels.preparing : etape === "envoi" ? labels.sending : url ? labels.replace : labels.add}
         <input
           type="file"
@@ -116,7 +117,7 @@ export function PhotoPrincipale({
         />
       </label>
       {saved && <p role="status" className="text-xs text-success-text">{labels.saved}</p>}
-      {error && <p role="alert" className="text-xs text-danger-text">{error}</p>}
+      {error && <MessageErreur>{error}</MessageErreur>}
     </div>
   );
 }

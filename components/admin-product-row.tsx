@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MessageErreur } from "@/components/message-erreur";
 
 const STATUSES = ["draft", "published", "archived"] as const;
 type Statut = (typeof STATUSES)[number];
@@ -106,7 +107,7 @@ export function AdminProductRow({
           value={value}
           disabled={saving}
           onChange={(e) => change(e.target.value)}
-          className="min-h-11 shrink-0 rounded-lg border border-line bg-ink/40 px-3 text-sm outline-none focus:border-accent disabled:opacity-60"
+          className="champ w-auto shrink-0"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -118,12 +119,9 @@ export function AdminProductRow({
 
       {children}
       {erreur && (
-        <p
-          role="alert"
-          className="mt-2 rounded-lg border border-danger px-3 py-2 text-xs leading-relaxed text-danger-text"
-        >
+        <MessageErreur className="mt-2 rounded-lg border border-danger px-3 py-2">
           {erreur}
-        </p>
+        </MessageErreur>
       )}
     </li>
   );

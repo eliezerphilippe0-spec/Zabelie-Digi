@@ -1,3 +1,5 @@
+import { Icone, type TailleIcone } from "@/components/icone";
+
 /**
  * Icônes du Studio (menu, actions rapides, cartes de chiffres) : SVG inline,
  * zéro dépendance, comme `department-icons.tsx`. Grille 24×24, trait hérité
@@ -140,18 +142,10 @@ const TRACES: Record<NomIcone, React.ReactNode> = {
   ),
 };
 
-export function IconeStudio({ nom, className = "h-5 w-5" }: { nom: NomIcone; className?: string }) {
+export function IconeStudio({ nom, taille = 20, className }: { nom: NomIcone; taille?: TailleIcone; className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-      className={`shrink-0 fill-none stroke-current ${className}`}
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <Icone taille={taille} className={className}>
       {TRACES[nom]}
-    </svg>
+    </Icone>
   );
 }

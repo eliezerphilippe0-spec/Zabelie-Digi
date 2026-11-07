@@ -50,7 +50,7 @@ export function WebhooksManager({ points, envois, max, locale, labels }: { point
           <p className="text-sm font-semibold">{labels.secretOnce}</p>
           <code className="mt-2 block break-all rounded-lg bg-ink px-3 py-2 text-sm">{secret}</code>
           <div className="mt-3 flex flex-wrap gap-3">
-            <button type="button" className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm"
+            <button type="button" className="bouton bouton-secondaire bouton-compact"
               onClick={async () => { try { await navigator.clipboard.writeText(secret); setCopie(true); } catch { /* copie manuelle */ } }}>
               {copie ? labels.copied : labels.copy}
             </button>
@@ -64,9 +64,9 @@ export function WebhooksManager({ points, envois, max, locale, labels }: { point
           <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
             {labels.url}
             <input type="url" inputMode="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" maxLength={500} required
-              className="min-h-11 rounded-xl border border-line bg-ink px-3 text-base" />
+              className="champ" />
           </label>
-          <button type="submit" disabled={busy || !url.trim()} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-60">
+          <button type="submit" disabled={busy || !url.trim()} className="bouton bouton-primaire bouton-compact">
             {busy ? labels.adding : labels.add}
           </button>
         </form>
@@ -89,11 +89,11 @@ export function WebhooksManager({ points, envois, max, locale, labels }: { point
               </div>
               {!p.disabledAt && (
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm"
+                  <button type="button" className="bouton bouton-secondaire bouton-compact"
                     onClick={async () => { if (await appeler(`/api/account/webhooks/${p.id}/test`, { method: "POST" })) { setMessage({ type: "ok", texte: labels.testSent }); setTimeout(() => router.refresh(), 4000); } }}>
                     {labels.test}
                   </button>
-                  <button type="button" className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm text-danger-text"
+                  <button type="button" className="bouton bouton-secondaire bouton-compact text-danger-text"
                     onClick={async () => { if (window.confirm(labels.confirmDisable) && await appeler(`/api/account/webhooks/${p.id}`, { method: "DELETE" })) router.refresh(); }}>
                     {labels.disable}
                   </button>

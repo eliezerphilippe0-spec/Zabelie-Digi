@@ -8,9 +8,10 @@ import type { ShoppingCopy } from "@/lib/shopping-ai-copy";
 import type { ShoppingIntent, ShoppingResult } from "@/lib/shopping-ai";
 import type { NiveauProximite } from "@/lib/proximite-niveaux";
 import { isTrackedStockKind, isDownloadable, isProductKind, type ProductKind } from "@/lib/product-kind";
+import { MessageErreur } from "@/components/message-erreur";
 
 const EMPTY: ShoppingIntent = { query: "", need: "", budgetHtg: null, location: "", kind: null };
-const FIELD = "mt-2 min-h-11 w-full rounded-xl border border-line bg-surface px-3 py-2 text-cloud focus-visible:outline-2 focus-visible:outline-brand";
+const FIELD = "champ mt-2";
 /** Un niveau de proximité → le libellé de l’offre. Record : un niveau ajouté sans libellé casse la compilation. */
 const PROXIMITE_LIBELLE: Record<NiveauProximite, "proxKatye" | "proxKomin" | "proxDepatman" | "proxAilleurs" | "proxInconnue"> = {
   katye: "proxKatye", komin: "proxKomin", depatman: "proxDepatman", ailleurs: "proxAilleurs", inconnue: "proxInconnue",
@@ -61,7 +62,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
       <form onSubmit={e => { e.preventDefault(); if (message.trim()) void request(message.trim()); }} className="mt-5">
         <label htmlFor="shopping-message" className="text-sm font-semibold">{labels.message}</label>
         <textarea id="shopping-message" value={message} onChange={e => setMessage(e.target.value)} maxLength={1000} required disabled={busy} rows={2} className={FIELD} />
-        <button disabled={busy} className="mt-3 min-h-11 rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand disabled:opacity-60">{busy ? labels.searching : labels.send}</button>
+        <button disabled={busy} className="bouton bouton-primaire mt-3">{busy ? labels.searching : labels.send}</button>
       </form>
     </section> : <p className="text-sm text-mist">{labels.chatUnavailable}</p>}
 
@@ -80,12 +81,12 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
           <label className="text-sm font-semibold">{labels.location}<input value={intent.location} onChange={e => edit({ location: e.target.value })} maxLength={120} required className={FIELD} /></label>
         </fieldset>
         <div className="mt-5 flex flex-wrap gap-3">
-          <button disabled={busy} className="min-h-11 rounded-xl bg-brand px-5 py-3 font-semibold text-on-brand disabled:opacity-60">{busy ? labels.searching : labels.search}</button>
-          <button type="button" disabled={busy} onClick={() => { setIntent({ ...EMPTY, location: defaultLocation }); setResult(null); setTurns([]); setMessage(""); setError(""); }} className="min-h-11 rounded-xl border border-line px-5 py-3">{labels.reset}</button>
+          <button disabled={busy} className="bouton bouton-primaire">{busy ? labels.searching : labels.search}</button>
+          <button type="button" disabled={busy} onClick={() => { setIntent({ ...EMPTY, location: defaultLocation }); setResult(null); setTurns([]); setMessage(""); setError(""); }} className="bouton bouton-secondaire">{labels.reset}</button>
         </div>
       </form>
     </section>
-    {error ? <p role="alert" className="text-danger-text">{error} <Link href="/catalogue" className="underline">{labels.catalog}</Link></p> : null}
+    {error ? <MessageErreur>{error} <Link href="/catalogue" className="underline">{labels.catalog}</Link></MessageErreur> : null}
     {result && question ? <p role="status">{labels[question]}</p> : null}
     {result && !question ? <section aria-labelledby="shopping-results-title" aria-live="polite">
       <h2 id="shopping-results-title">{labels.results}</h2>
@@ -107,7 +108,7 @@ export function ShoppingAssistant({ lang, labels, conversational, sellerId, kind
               <div><dt className="text-mist">{labels.reviews}</dt><dd>{p.ratingAverage === null ? labels.noReviews : `${p.ratingAverage}/5 (${p.ratingCount})`}</dd></div>
               <div><dt className="text-mist">{labels.sellerFacts}</dt><dd className="break-words">{p.description || labels.noDescription}</dd></div>
             </dl>
-            <Link href={`${lang === "fr" || lang === "ht" ? `/${lang}` : ""}/produit/${encodeURIComponent(p.slug)}`} className="bouton mt-5 block min-h-11 rounded-xl bg-brand px-4 py-3 text-center font-semibold text-on-brand">{labels.choose}</Link>
+            <Link href={`${lang === "fr" || lang === "ht" ? `/${lang}` : ""}/produit/${encodeURIComponent(p.slug)}`} className="bouton bouton-primaire mt-5 w-full">{labels.choose}</Link>
             <p className="mt-2 text-xs text-mist">{labels.details}</p>
             {isDownloadable(p.kind) ? <p className="mt-2 text-xs text-mist">{labels.digitalNote}</p> : null}
             <AddToCart productId={p.id} labels={{ add: labels.add, adding: labels.adding, added: labels.added, seeCart: labels.seeCart, signin: labels.signin, error: labels.error }} />

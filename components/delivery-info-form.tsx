@@ -56,8 +56,7 @@ export function DeliveryInfoForm({
     }
   }
 
-  const input =
-    "mt-1 w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
+  const input = "champ mt-1";
 
   return (
     <form
@@ -71,6 +70,7 @@ export function DeliveryInfoForm({
         <input
           className={input}
           maxLength={120}
+          autoComplete="name"
           value={form.full_name}
           onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
         />
@@ -80,6 +80,8 @@ export function DeliveryInfoForm({
         <input
           className={input}
           type="tel"
+          inputMode="tel"
+          autoComplete="tel"
           maxLength={30}
           value={form.phone}
           onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -91,6 +93,7 @@ export function DeliveryInfoForm({
           className={input}
           rows={2}
           maxLength={240}
+          autoComplete="street-address"
           value={form.adres_liv}
           onChange={(e) => setForm((f) => ({ ...f, adres_liv: e.target.value }))}
         />
@@ -98,7 +101,7 @@ export function DeliveryInfoForm({
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-cloud hover:border-accent disabled:opacity-50"
+        className="bouton bouton-secondaire bouton-compact"
       >
         {busy ? labels.saving : labels.save}
       </button>

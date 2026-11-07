@@ -44,7 +44,7 @@ export function ReviewForm({ orderId, labels }: { orderId: string; labels: {
       <div className="text-right">
         <button
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {labels.cta}
         </button>
@@ -71,20 +71,21 @@ export function ReviewForm({ orderId, labels }: { orderId: string; labels: {
           </button>
         ))}
       </div>
-      <textarea
-        rows={2}
-        maxLength={1000}
-        aria-label={labels.placeholder}
-        placeholder={labels.placeholder}
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        className="w-full rounded-xl border border-line bg-ink/40 px-3 py-2 text-xs outline-none focus:border-accent"
-      />
+      <label className="block">
+        <span className="libelle">{labels.placeholder}</span>
+        <textarea
+          rows={2}
+          maxLength={1000}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="champ"
+        />
+      </label>
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={loading}
-          className="min-h-11 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-60"
+          className="bouton bouton-primaire bouton-compact"
         >
           {loading ? "…" : labels.submit}
         </button>

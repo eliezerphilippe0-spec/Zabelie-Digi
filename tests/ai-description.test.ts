@@ -249,7 +249,8 @@ test("composant : !actif → null (pas de clé, pas de bouton)", () => {
   assert.match(src, /type="button"/);
   assert.match(src, /onSuggestion\(data\.description\)/);
   // Le champ « faits réels » existe et part dans la requête.
-  assert.match(src, /placeholder=\{labels\.kwPh\}/);
+  // Nommé par un libellé visible depuis la Phase 2 du chantier design.
+  assert.match(src, /<span className="libelle">\{labels\.kwPh\}<\/span>/);
   assert.match(src, /keywords: keywords\.trim\(\) \|\| undefined/);
   // 429 ≠ panne : la limite du jour a sa branche et son message propres.
   assert.match(src, /res\.status === 429[\s\S]{0,80}setLimited\(true\)/);

@@ -20,6 +20,7 @@ import { useSessionDraft } from "@/lib/use-session-draft";
 import { cleanPublishCategories, initialPublishDraft, publishDraftKey, publishReviewKey, validPublishDraft,
   PUBLISH_DRAFT_LIMITS, type PublishDraft, type PublishFields } from "@/lib/publish-draft";
 import { publishDraftCopy } from "@/lib/publish-draft-copy";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -213,8 +214,7 @@ export function PublishForm({
     }
   }
 
-  const input =
-    "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
+  const input = "champ";
 
   if (done) return <p role="status" className="text-sm text-mist">{labels.submitting}</p>;
 
@@ -254,7 +254,7 @@ export function PublishForm({
           <div className="grid gap-2 sm:grid-cols-3">
             {serviceStarters.map((starter) => (
               <button key={starter.id} type="button" disabled={loading}
-                className="min-h-11 rounded-xl border border-line px-3 py-3 text-left text-sm hover:border-accent disabled:opacity-60"
+                className="bouton bouton-secondaire justify-start text-left"
                 onClick={() => applyStarter(starter)}>{starter.title}</button>
             ))}
           </div>
@@ -401,12 +401,12 @@ export function PublishForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+        className="bouton bouton-primaire w-full"
       >
         {loading ? labels.submitting : labels.submit}
       </button>
       </fieldset>
-      {error && <p id="publish-error" role="alert" className="text-sm text-danger-text">{error}</p>}
+      {error && <MessageErreur id="publish-error">{error}</MessageErreur>}
 
       <p className="text-center text-xs text-mist">{labels.footerHint}</p>
     </form>

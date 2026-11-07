@@ -5,6 +5,8 @@ import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatHTG } from "@/lib/sample-data";
 import { operationHref,operationLabels,type Operation,type MarketMetrics } from "@/lib/operations";
+import { MessageErreur } from "@/components/message-erreur";
+
 export const dynamic="force-dynamic";
 export const metadata={title:"Opérations — Zabelie",robots:{index:false,follow:false}};
 export default async function OperationsPage({searchParams}:{searchParams:Promise<{page?:string}>}){
@@ -21,7 +23,7 @@ export default async function OperationsPage({searchParams}:{searchParams:Promis
  <div className="mt-6"><ReconcileAction/></div>
  <div className="mt-4 flex flex-wrap gap-4 text-sm"><Link className="inline-flex min-h-11 items-center underline" href="/admin#zelle">Vérifier un dépôt Zelle</Link><Link className="inline-flex min-h-11 items-center underline" href="/admin/livraisons">Suivi des remises</Link><Link className="inline-flex min-h-11 items-center underline" href="/admin#commandes">Décisions de remboursement</Link></div>
  <section className="mt-8"><h2>Dossiers à traiter</h2>
- {queue.error?<p role="alert" className="mt-3 text-danger-text">La file est indisponible. Cela ne signifie pas qu’il n’y a aucun incident.</p>:<>
+ {queue.error?<MessageErreur className="mt-3">La file est indisponible. Cela ne signifie pas qu’il n’y a aucun incident.</MessageErreur>:<>
  <p className="mt-2 text-sm text-mist">{total} situations à traiter. Une commande peut nécessiter plusieurs actions.</p>
  {rows.length===0?<p className="mt-4">Aucune situation dans cette page de la file.</p>:<ol className="mt-4 space-y-3">{rows.map(row=><li key={row.kind+row.id} className="rounded-xl border border-line p-4">
  <div className="flex flex-wrap justify-between gap-2"><h3 className="font-semibold">{operationLabels[row.kind]}</h3><span className="numeric">{row.amount_htg===null?"Montant à rapprocher":<>{row.kind==="stripe_dispute"&&"Commande liée : "}{formatHTG(row.amount_htg)}</>}</span></div>

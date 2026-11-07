@@ -86,7 +86,7 @@ function HomeRow({
     <section id={id} className={`mx-auto max-w-6xl px-5 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
         <div><h2>{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
-        <Link href={href} className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
+        <Link href={href} className="bouton bouton-texte bouton-compact -my-3 shrink-0">
           {more}
         </Link>
       </div>
@@ -164,7 +164,6 @@ export default async function HomePage() {
     lang,
     titleFallback: t(lang, "card.title.fallback"),
     photoMissing: t(lang, "home.photo.missing"),
-    detail: t(lang, "home.product.cta"),
   };
 
   // Source ordered by creation date. No popularity or trend is inferred.
@@ -275,7 +274,7 @@ export default async function HomePage() {
                 {t(lang, opening ? "launch.body" : "hero.s1.b")}
               </p>
               <div className="launch-actions">
-                <Link href={opening ? "/vendre" : "/catalogue"} className="editorial-button">
+                <Link href={opening ? "/vendre" : "/catalogue"} className="bouton bouton-primaire bouton-grand">
                   {t(lang, opening ? "launch.cta" : "hero.s1.cta")}<span aria-hidden="true">↗</span>
                 </Link>
                 {opening && <Link href="/catalogue" className="editorial-link">{t(lang, "hero.s1.cta")}<span aria-hidden="true">→</span></Link>}
@@ -326,8 +325,8 @@ export default async function HomePage() {
             <h2>{t(lang, catalogue === null ? "home.error.title" : "home.empty.title")}</h2>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-mist">{t(lang, catalogue === null ? "home.error.body" : "home.empty.body")}</p>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-              <Link href={catalogue === null ? "/" : "/aide#comment"} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
-              {catalogue !== null && <Link href="/vendre" className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 font-semibold hover:border-accent">{t(lang, "home.cta.sell")}</Link>}
+              <Link href={catalogue === null ? "/" : "/aide#comment"} className="bouton bouton-texte bouton-compact">{t(lang, catalogue === null ? "home.retry" : "home.support.cta")}</Link>
+              {catalogue !== null && <Link href="/vendre" className="bouton bouton-secondaire bouton-compact">{t(lang, "home.cta.sell")}</Link>}
             </div>
             </div>
           </section>
@@ -435,7 +434,7 @@ export default async function HomePage() {
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/vendre"
-                className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-bold text-on-brand transition hover:opacity-90 active:scale-[0.97]"
+                className="bouton bouton-primaire"
               >
                 {t(lang, "home.cta.sell")}
               </Link>

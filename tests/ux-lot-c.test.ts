@@ -54,14 +54,14 @@ test("UC3 — le tableau de bord fournit les étiquettes en langue de session", 
   assert.doesNotMatch(src, />\s*Voir mon profil →\s*</, "« Voir mon profil → » était en dur");
 });
 
-test("UC4 — composeur de message et prix flash : nommés pour les lecteurs d'écran", () => {
-  // Adjacence réelle, pas fenêtre : l'aria-label précède directement `rows`.
-  // (Première version : `<textarea[\s\S]{0,300}?aria-label` — le commentaire
-  // qui explique l'attribut dépassait la fenêtre. Ré-ancré, pas élargi.)
-  assert.match(lire("components/message-form.tsx"), /aria-label=\{labels\.placeholder\}\s*rows=\{3\}/);
+test("UC4 — composeur de message et prix flash : nommés, et pour tout le monde", () => {
+  // Depuis la Phase 2 du chantier design, ces champs ne sont plus nommés pour les
+  // seuls lecteurs d'écran (`aria-label`) : leur nom est un LIBELLÉ VISIBLE qui
+  // les enveloppe. L'adjacence est réelle : le libellé, puis le champ qu'il nomme.
+  assert.match(lire("components/message-form.tsx"), /<label className="block">\s*<span className="libelle">\{labels\.placeholder\}<\/span>\s*<textarea\b/);
   const flash = lire("components/flash-manager.tsx");
   for (const k of ["pricePh", "hoursPh", "unitsPh"]) {
-    assert.match(flash, new RegExp(`placeholder=\\{labels\\.${k}\\}\\s*aria-label=\\{labels\\.${k}\\}`), `flash-manager : ${k} sans aria-label`);
+    assert.match(flash, new RegExp(`<label className="block">\\s*<span className="libelle">\\{labels\\.${k}\\}</span>\\s*<input\\b`), `flash-manager : ${k} sans libellé visible`);
   }
 });
 

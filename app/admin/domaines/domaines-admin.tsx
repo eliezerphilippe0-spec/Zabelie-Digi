@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MessageErreur } from "@/components/message-erreur";
 
 export type DemandeDomaine = {
   sellerId: string; domaine: string; statut: "en_attente" | "actif" | "refuse";
@@ -34,7 +35,7 @@ export function DomainesAdmin({ demandes }: { demandes: DemandeDomaine[] }) {
   if (liste.length === 0) return <p className="mt-6 text-sm text-mist">Aucune demande.</p>;
   return (
     <div className="mt-6 grid gap-3">
-      {message && <p role="alert" className="text-sm text-danger-text">{message}</p>}
+      {message && <MessageErreur>{message}</MessageErreur>}
       {liste.map((d) => (
         <div key={d.sellerId} className="rounded-xl border border-line p-4 text-sm">
           <p className="font-mono text-base">{d.domaine}</p>
@@ -42,11 +43,11 @@ export function DomainesAdmin({ demandes }: { demandes: DemandeDomaine[] }) {
           {d.statut !== "actif" && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" disabled={busy === d.sellerId} onClick={() => decider(d, "activer")}
-                className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 font-semibold text-on-brand disabled:opacity-60">Vérifier et activer</button>
+                className="bouton bouton-primaire bouton-compact">Vérifier et activer</button>
               <input value={notes[d.sellerId] ?? ""} onChange={(e) => setNotes({ ...notes, [d.sellerId]: e.target.value })} placeholder="Motif du refus"
-                maxLength={300} className="min-h-11 flex-1 rounded-xl border border-line bg-ink px-3" />
+                maxLength={300} className="champ flex-1" />
               <button type="button" disabled={busy === d.sellerId} onClick={() => decider(d, "refuser")}
-                className="inline-flex min-h-11 items-center rounded-xl border border-line px-4">Refuser</button>
+                className="bouton bouton-secondaire bouton-compact">Refuser</button>
             </div>
           )}
         </div>

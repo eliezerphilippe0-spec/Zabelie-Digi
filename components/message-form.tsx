@@ -79,17 +79,15 @@ export function MessageForm({
 
   return (
     <form onSubmit={envoyer} className="mt-4">
-      <textarea
-        value={texte}
-        onChange={(e) => setTexte(e.target.value.slice(0, MESSAGE_MAX))}
-        placeholder={labels.placeholder}
-        /* Composeur de conversation : le placeholder est la convention
-           (WhatsApp), mais il ne nomme le champ pour personne d'autre que
-           l'œil. `aria-label` le nomme pour le reste. */
-        aria-label={labels.placeholder}
-        rows={3}
-        className="min-h-11 w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-base outline-none focus:border-accent"
-      />
+      <label className="block">
+        <span className="libelle">{labels.placeholder}</span>
+        <textarea
+          value={texte}
+          onChange={(e) => setTexte(e.target.value.slice(0, MESSAGE_MAX))}
+          rows={3}
+          className="champ"
+        />
+      </label>
       <div className="mt-2 flex items-center justify-between gap-3">
         {/* Le compteur n'apparaît que près de la borne : affiché en
             permanence, il transforme un champ de conversation en formulaire. */}
@@ -99,7 +97,7 @@ export function MessageForm({
         <button
           type="submit"
           disabled={envoi || texte.trim().length === 0}
-          className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand disabled:opacity-60"
+          className="bouton bouton-primaire bouton-compact"
         >
           {envoi ? labels.sending : labels.send}
         </button>

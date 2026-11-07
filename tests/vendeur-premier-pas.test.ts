@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { declareCible } from "./helpers/cible-tactile";
 import { etapeVendeur, besoinDeGuidage, clesEtape } from "../lib/vendeur-etape";
 import { DICT } from "../lib/i18n";
 
@@ -132,7 +133,8 @@ test("le partage n'apparaît QUE quand une boutique existe vraiment", () => {
 });
 
 test("le bouton respecte la cible tactile de 44 px", () => {
-  assert.match(COMP, /min-h-11/);
+  // `min-h-11`, ou la classe `bouton` qui porte la même hauteur (chantier design, Phase 2).
+  assert.ok(declareCible(COMP), "le bouton du premier pas ne déclare plus de cible de 44 px");
 });
 
 test("aucune chaîne visible en dur dans le composant", () => {

@@ -23,6 +23,7 @@ import { KIND_PHYSICAL } from "@/lib/product-kind";
 import { publishReviewKey } from "@/lib/publish-draft";
 import { publishDraftCopy } from "@/lib/publish-draft-copy";
 import { useSessionDraft } from "@/lib/use-session-draft";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Création d'un produit physique (chantier B — UI vendeur).
@@ -361,11 +362,11 @@ export function PhysicalProductForm({
         {storageWarning}
         <h2 id="draft-saved" className="titre-bloc">{listingLabels.saved}</h2>
         <p className="text-sm text-mist">{listingLabels.draftNote}</p>
-        {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
+        {error && <MessageErreur>{error}</MessageErreur>}
         {/* Bouton dans la langue du vendeur : le champ natif affichait « Choose File »
             dans la langue du navigateur (audit du 2026-10-29). `sr-only`, pas
             `hidden` : le champ reste joignable au clavier. */}
-        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+        <label className="bouton bouton-secondaire bouton-compact cursor-pointer has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
           {listingLabels.photoChoose}
           <input
             type="file"
@@ -376,7 +377,7 @@ export function PhysicalProductForm({
           />
         </label>
         <button type="button" onClick={retryPhoto} disabled={busy || compressing || !photo}
-          className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand disabled:opacity-60">
+          className="bouton bouton-primaire">
           {busy || compressing ? listingLabels.creating : listingLabels.photoRetry}
         </button>
         <Link href={`/vendre#produit-${createdProductId}`} className="flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
@@ -391,7 +392,7 @@ export function PhysicalProductForm({
       <section className="space-y-4 rounded-xl border border-line bg-surface/40 p-5">
         {storageWarning}
         <p role="alert" className="text-sm">{reviewCopy.uncertain}</p>
-        {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
+        {error && <MessageErreur>{error}</MessageErreur>}
         <a href="/vendre#mes-produits" className="inline-flex min-h-11 items-center text-sm underline">{reviewCopy.checkProducts}</a>
         <button type="button" className="block min-h-11 text-left text-sm underline"
           onClick={() => {
@@ -431,7 +432,7 @@ export function PhysicalProductForm({
               📷
             </div>
           )}
-          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+          <label className="bouton bouton-secondaire bouton-compact cursor-pointer has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
             {photoPreview ? listingLabels.photoChoose : listingLabels.photoPick}
             <input
               type="file"
@@ -473,7 +474,7 @@ export function PhysicalProductForm({
           required
           maxLength={140}
           placeholder="Ex. Plaquettes de frein avant Corolla"
-          className="mt-1 w-full rounded-xl border border-line bg-ink px-4 py-3"
+          className="champ mt-1"
         />
       </label>
 
@@ -490,7 +491,7 @@ export function PhysicalProductForm({
             required={!showVariants}
             disabled={showVariants}
             placeholder="2500"
-            className="mt-1 w-full rounded-xl border border-line bg-ink px-4 py-3 disabled:opacity-50"
+            className="champ mt-1"
           />
           {!showVariants && (
             <div className="mt-1.5">
@@ -517,7 +518,7 @@ export function PhysicalProductForm({
             required={!showVariants}
             disabled={showVariants}
             placeholder="10"
-            className="mt-1 w-full rounded-xl border border-line bg-ink px-4 py-3 disabled:opacity-50"
+            className="champ mt-1"
           />
         </label>
       </div>
@@ -530,7 +531,7 @@ export function PhysicalProductForm({
           value={categorySlug}
           onChange={(e) => setCategorySlug(e.target.value)}
           required
-          className="mt-1 w-full rounded-xl border border-line bg-ink px-4 py-3"
+          className="champ mt-1"
         >
           <option value="">Choisir…</option>
           {grouped.map(({ dep, children }) => (
@@ -564,7 +565,7 @@ export function PhysicalProductForm({
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
           maxLength={5000}
-          className="mt-3 w-full rounded-xl border border-line bg-ink px-4 py-3 text-sm"
+          className="champ mt-3"
         />
         <div className="mt-3">
           <AiDescriptionHelp
@@ -593,7 +594,7 @@ export function PhysicalProductForm({
               max={200000}
               value={poidsG}
               onChange={(e) => setPoidsG(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+              className="champ mt-1"
             />
           </label>
           <label className="block text-xs text-mist">
@@ -613,7 +614,7 @@ export function PhysicalProductForm({
                   max={1000}
                   value={v}
                   onChange={(e) => set(e.target.value)}
-                  className="w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ"
                 />
               ))}
             </div>
@@ -626,7 +627,7 @@ export function PhysicalProductForm({
                   maxLength={60}
                   value={marque}
                   onChange={(e) => setMarque(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ mt-1"
                 />
               </label>
               <label className="block text-xs text-mist">
@@ -635,7 +636,7 @@ export function PhysicalProductForm({
                   maxLength={60}
                   value={matiere}
                   onChange={(e) => setMatiere(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ mt-1"
                 />
               </label>
               <label className="block text-xs text-mist">
@@ -643,7 +644,7 @@ export function PhysicalProductForm({
                 <select
                   value={etat}
                   onChange={(e) => setEtat(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ mt-1"
                 >
                   <option value=""></option>
                   <option value="nef">{specsLabels.conditionNef}</option>
@@ -677,7 +678,7 @@ export function PhysicalProductForm({
                   value={v.label}
                   onChange={(e) => updateAt(setVariants, i, { label: e.target.value })}
                   placeholder="Ex. 250 ml / Rouge / M"
-                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ mt-1"
                 />
               </label>
               <label className="text-xs text-mist">
@@ -687,7 +688,7 @@ export function PhysicalProductForm({
                   min={1}
                   value={v.priceHTG}
                   onChange={(e) => updateAt(setVariants, i, { priceHTG: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ mt-1"
                 />
               </label>
               <label className="text-xs text-mist">
@@ -697,7 +698,7 @@ export function PhysicalProductForm({
                   min={0}
                   value={v.quantity}
                   onChange={(e) => updateAt(setVariants, i, { quantity: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+                  className="champ mt-1"
                 />
               </label>
               <button
@@ -715,14 +716,14 @@ export function PhysicalProductForm({
             onClick={() =>
               setVariants((vs) => [...vs, { label: "", priceHTG: price, quantity: "0" }])
             }
-            className="rounded-lg border border-line px-3 py-1.5 text-sm"
+            className="bouton bouton-secondaire bouton-compact"
           >
             + Ajouter une variante
           </button>
         </div>
       </details>
 
-      {error && <p role="alert" className="text-sm text-danger-text">{error}</p>}
+      {error && <MessageErreur>{error}</MessageErreur>}
 
       {/* Attestation : obligatoire, jamais pré-cochée. Placée APRÈS le bouton
           serait invisible sur un écran de 360 px — elle vient donc avant. */}
@@ -746,7 +747,7 @@ export function PhysicalProductForm({
       <button
         type="submit"
         disabled={busy || compressing || !categorySlug}
-        className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-on-brand disabled:opacity-60"
+        className="bouton bouton-primaire w-full"
       >
         {busy ? listingLabels.creating : listingLabels.draft}
       </button>
@@ -820,7 +821,7 @@ function FitmentPicker({
         <select
           value={make}
           onChange={(e) => setMake(e.target.value)}
-          className="rounded-lg border border-line bg-ink px-3 py-2 text-sm"
+          className="champ"
         >
           <option value="">Marque…</option>
           {makes.map((mk) => (
@@ -842,7 +843,7 @@ function FitmentPicker({
               { modelId: e.target.value, yearStart: "2000", yearEnd: "" },
             ]);
           }}
-          className="rounded-lg border border-line bg-ink px-3 py-2 text-sm disabled:opacity-50"
+          className="champ"
         >
           <option value="">Modèle…</option>
           {byMake.map((m) => (
@@ -864,7 +865,7 @@ function FitmentPicker({
                     fitment.map((x, j) => (j === i ? { ...x, yearStart: e.target.value } : x))
                   )
                 }
-                className="rounded-lg border border-line bg-ink px-3 py-2 text-xs"
+                className="champ"
               >
                 {years.map((y) => (
                   <option key={y} value={String(y)}>
@@ -879,7 +880,7 @@ function FitmentPicker({
                     fitment.map((x, j) => (j === i ? { ...x, yearEnd: e.target.value } : x))
                   )
                 }
-                className="rounded-lg border border-line bg-ink px-3 py-2 text-xs"
+                className="champ"
               >
                 <option value="">jusqu&apos;à aujourd&apos;hui</option>
                 {years.map((y) => (

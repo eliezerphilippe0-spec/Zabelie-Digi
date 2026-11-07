@@ -34,6 +34,9 @@ import { chargerPointsRetrait } from "@/lib/points-retrait-serveur";
 import { pointsPourZone } from "@/lib/points-retrait";
 import { siteUrl } from "@/lib/site-url";
 import { t, tn } from "@/lib/i18n";
+import { MessageErreur } from "@/components/message-erreur";
+import { EtatVide } from "@/components/etat-vide";
+import { Icone } from "@/components/icone";
 
 export const dynamic = "force-dynamic";
 
@@ -222,9 +225,9 @@ export default async function CataloguePage({
       <main id="main">
       <section className="mx-auto max-w-6xl px-5 pb-10 pt-8">
         <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
-          <Link href="/" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "nav.home")}</Link>
+          <Link href="/" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline underline-offset-4">{t(lang, "nav.home")}</Link>
           <span aria-hidden="true">/</span>
-          {selection ? <><Link href="/catalogue" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
+          {selection ? <><Link href="/catalogue" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
         </nav>
         <h1>
           {selection ? t(lang, selection.title) : t(lang, "catalog.title")}
@@ -277,14 +280,9 @@ export default async function CataloguePage({
             elle rendrait toujours quelque chose, et n'informerait personne. */}
         {products.some((p) => p.ratingAvg !== null) && (
           <p className="mt-1 flex items-start gap-1.5 text-xs text-mist">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="mt-0.5 h-3.5 w-3.5 flex-none fill-none stroke-success"
-              strokeWidth="1.8"
-            >
+            <Icone taille={16} className="stroke-success">
               <path d="M5 12l4.5 4.5L19 7" />
-            </svg>
+            </Icone>
             {t(lang, "catalog.reviews.proof")}
           </p>
         )}
@@ -295,24 +293,24 @@ export default async function CataloguePage({
           {q && <input type="hidden" name="q" value={q} />}
           <label className="grid gap-2 text-sm text-mist">
             {t(lang, "catalog.min")}
-            <input name="min" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={minPrice ?? ""} className="min-h-11 w-36 rounded-xl border border-line bg-surface px-3 text-base text-cloud" />
+            <input name="min" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={minPrice ?? ""} aria-invalid={priceRangeInvalid || undefined} aria-describedby={priceRangeInvalid ? "prix-erreur" : undefined} className="champ w-36" />
           </label>
           <label className="grid gap-2 text-sm text-mist">
             {t(lang, "catalog.max")}
-            <input name="max" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={maxPrice ?? ""} className="min-h-11 w-36 rounded-xl border border-line bg-surface px-3 text-base text-cloud" />
+            <input name="max" type="number" inputMode="numeric" min="0" max="2147483647" step="1" defaultValue={maxPrice ?? ""} aria-invalid={priceRangeInvalid || undefined} aria-describedby={priceRangeInvalid ? "prix-erreur" : undefined} className="champ w-36" />
           </label>
           <label className="grid flex-1 gap-2 text-sm text-mist">
             {t(lang, "catalog.sort")}
-            <select name="tri" defaultValue={sort} className="min-h-11 min-w-44 rounded-xl border border-line bg-surface px-3 text-base text-cloud">
+            <select name="tri" defaultValue={sort} className="champ min-w-44">
               <option value="recent">{t(lang, "catalog.sort.recent")}</option>
               <option value="prix-croissant">{t(lang, "catalog.sort.asc")}</option>
               <option value="prix-decroissant">{t(lang, "catalog.sort.desc")}</option>
               <option value="ventes">{t(lang, "catalog.sort.sales")}</option>
             </select>
           </label>
-          <button type="submit" className="min-h-11 rounded-xl bg-brand px-5 text-sm font-semibold text-on-brand hover:opacity-90">{t(lang, "zone.filter.apply")}</button>
-          {filtre && <Link href={universe ? universeHref(universe) : "/catalogue"} className="inline-flex min-h-11 items-center px-2 text-sm underline underline-offset-4">{t(lang, "catalog.reset")}</Link>}
-          {priceRangeInvalid && <p role="alert" className="w-full text-sm text-danger-text">{t(lang, "catalog.price.invalid")}</p>}
+          <button type="submit" className="bouton bouton-primaire bouton-compact">{t(lang, "zone.filter.apply")}</button>
+          {filtre && <Link href={universe ? universeHref(universe) : "/catalogue"} className="bouton bouton-texte bouton-compact">{t(lang, "catalog.reset")}</Link>}
+          {priceRangeInvalid && <MessageErreur id="prix-erreur" className="w-full">{t(lang, "catalog.price.invalid")}</MessageErreur>}
         </form>
 
         {/* Filtre par zone (PR-Z3, docs/33 §4) — GET, cascade SANS JS :
@@ -336,7 +334,7 @@ export default async function CataloguePage({
               name="zd"
               defaultValue={zd ?? ""}
               aria-label={t(lang, "zone.level.depatman")}
-              className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+              className="champ w-auto"
             >
               <option value="">{t(lang, "zone.filter.all")}</option>
               {depatmans.map((z) => (
@@ -350,7 +348,7 @@ export default async function CataloguePage({
                 name="zk"
                 defaultValue={zkValide ?? ""}
                 aria-label={t(lang, "zone.level.komin")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="champ w-auto"
               >
                 <option value="">{t(lang, "zone.level.komin")}</option>
                 {komins.map((z) => (
@@ -365,7 +363,7 @@ export default async function CataloguePage({
                 name="zq"
                 defaultValue={zqValide ?? ""}
                 aria-label={t(lang, "zone.level.katye")}
-                className="min-h-11 rounded-xl border border-line bg-ink/40 px-3 text-base outline-none focus:border-accent"
+                className="champ w-auto"
               >
                 <option value="">{t(lang, "zone.level.katye")}</option>
                 {katyes.map((z) => (
@@ -377,7 +375,7 @@ export default async function CataloguePage({
             )}
             <button
               type="submit"
-              className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold text-cloud transition hover:border-accent"
+              className="bouton bouton-secondaire bouton-compact"
             >
               {t(lang, "zone.filter.apply")}
             </button>
@@ -486,32 +484,20 @@ export default async function CataloguePage({
                la branche « il y a des produits ». Un lien périmé, une URL
                retapée, et le visiteur était dans un cul-de-sac qui lui disait
                en plus que la boutique n'avait rien à vendre. */
-            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
-              <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.page404.t")}
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
-                {t(lang, "catalog.page404.b")}
-              </p>
+            <EtatVide titre={t(lang, "catalog.page404.t")} texte={t(lang, "catalog.page404.b")}>
               <Link
                 href={hrefFor({ page: 1 })}
-                className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-5"
               >
                 {t(lang, "catalog.page404.cta")}
               </Link>
-            </div>
+            </EtatVide>
           ) : manque ? (
             /* L'écran qui EST le produit du lot S. Trois éléments, dans cet
                ordre : ce qui a été cherché, où regarder à côté, et le seul
                geste qui change quelque chose — dire qu'on connaît un vendeur.
                L'acheteur déçu devient le canal de recrutement. */
-            <div className="rounded-xl border border-line bg-surface/40 p-8 text-center">
-              <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.miss.title")} « {q} »
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
-                {t(lang, "catalog.miss.body")}
-              </p>
+            <EtatVide titre={<>{t(lang, "catalog.miss.title")} « {q} »</>} texte={t(lang, "catalog.miss.body")}>
 
               {facettes.length > 0 && (
                 <div className="mt-6">
@@ -532,7 +518,7 @@ export default async function CataloguePage({
                 </div>
               )}
 
-              <Link href={hrefFor({ q: null, page: 1 })} className="mt-5 inline-flex min-h-11 items-center text-accent underline">
+              <Link href={hrefFor({ q: null, page: 1 })} className="bouton bouton-texte bouton-compact mt-5">
                 {t(lang, "catalog.resetSearch")}
               </Link>
               <p className="mt-6 text-sm text-cloud">{t(lang, "catalog.miss.know")}</p>
@@ -542,17 +528,13 @@ export default async function CataloguePage({
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bouton mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-3"
               >
                 {t(lang, "catalog.miss.share")}
               </a>
-            </div>
+            </EtatVide>
           ) : zoneSeule && zoneActive ? (
-            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
-              <p className="text-base font-semibold text-cloud">
-                {t(lang, "zsv.title").replace("{zone}", libelleZone(zoneActive, lang))}
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-mist">{t(lang, "zsv.body")}</p>
+            <EtatVide titre={t(lang, "zsv.title").replace("{zone}", libelleZone(zoneActive, lang))} texte={t(lang, "zsv.body")}>
               {pointsZone.length > 0 && (
                 <div className="mx-auto mt-4 max-w-md">
                   <PointsRetrait points={pointsZone} labels={{ title: t(lang, "pr.title"), note: t(lang, "pr.note"), call: t(lang, "pr.call") }} />
@@ -565,17 +547,14 @@ export default async function CataloguePage({
                 )}`}
                 labels={{ ask: t(lang, "zsv.ask"), asking: t(lang, "zsv.asking"), asked: t(lang, "zsv.asked"), error: t(lang, "zsv.error"), share: t(lang, "zsv.share") }}
               />
-              <p className="mt-4 text-sm">
-                <Link href="/catalogue" className="text-mist underline hover:text-cloud">
-                  {t(lang, "catalog.reset")}
-                </Link>
-              </p>
-            </div>
+              <Link href="/catalogue" className="bouton bouton-texte bouton-compact mt-4">
+                {t(lang, "catalog.reset")}
+              </Link>
+            </EtatVide>
           ) : minPrice !== undefined || maxPrice !== undefined || !!zoneId ? (
-            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
-              <p>{t(lang, "catalog.none")}</p>
-              <Link href={q ? hrefFor({ q: null, page: 1 }) : universe ? universeHref(universe) : "/catalogue"} className="mt-4 inline-flex min-h-11 items-center text-accent underline">{t(lang, q ? "catalog.resetSearch" : "catalog.reset")}</Link>
-            </div>
+            <EtatVide titre={t(lang, "catalog.none")}>
+              <Link href={q ? hrefFor({ q: null, page: 1 }) : universe ? universeHref(universe) : "/catalogue"} className="bouton bouton-texte bouton-compact mt-4">{t(lang, q ? "catalog.resetSearch" : "catalog.reset")}</Link>
+            </EtatVide>
           ) : filtre && !q ? (
             /* Rayon filtré, AUCUNE recherche : c'est l'atterrissage des cartes
                de la grille d'accueil et des liens du menu. « Aucun résultat +
@@ -583,51 +562,40 @@ export default async function CataloguePage({
                reformuler. On dit la vérité utile : le rayon est ouvert, les
                premiers vendeurs s'installent, la place est libre. Aucun état
                vide muet (landing v2). */
-            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
-              <p className="text-base font-semibold text-cloud">
-                {t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
-                {t(lang, "catalog.cat0.b")}
-              </p>
+            <EtatVide
+              titre={<>{t(lang, "catalog.cat0.t")} — {sous ? facettes.find((f) => f.slug === sous)?.label ?? activeCat : selection ? t(lang, selection.title) : zoneActive ? libelleZone(zoneActive, lang) : activeCat}</>}
+              texte={t(lang, "catalog.cat0.b")}
+            >
               <Link
                 href="/vendre"
-                className="bouton mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-5"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
-              <p className="mt-4 text-sm">
-                <Link href="/catalogue" className="text-mist underline hover:text-cloud">
-                  {t(lang, "catalog.reset")}
-                </Link>
-              </p>
-            </div>
-          ) : filtre ? (
-            <div className="rounded-xl border border-line bg-surface/40 p-10 text-center text-sm text-mist">
-              {t(lang, "catalog.none")}{" "}
-              <Link href="/catalogue" className="text-cloud underline">
+              <Link href="/catalogue" className="bouton bouton-texte bouton-compact mt-4">
                 {t(lang, "catalog.reset")}
               </Link>
-            </div>
+            </EtatVide>
+          ) : filtre ? (
+            <EtatVide titre={t(lang, "catalog.none")}>
+              <Link href="/catalogue" className="bouton bouton-texte bouton-compact mt-4">
+                {t(lang, "catalog.reset")}
+              </Link>
+            </EtatVide>
           ) : (
             /* Catalogue vide — V-13 : l'état vide devait être utilisable avant
                qu'on touche à la barre de catégories. Un « aucun résultat »
                suivi d'un lien « réinitialiser » n'a aucun sens ici : il n'y a
                rien à réinitialiser, et la seule action utile est de publier. */
-            <div className="catalogue-welcome">
-              <svg className="empty-shop" viewBox="0 0 120 100" width="120" height="100" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 43h90l-12-25H27L15 43Z M22 43v43h76V43 M48 86V60h24v26 M8 86h104 M37 18l-5 25 M60 18v25 M83 18l5 25"/><path d="M15 43c0 12 17 12 17 0 0 12 28 12 28 0 0 12 28 12 28 0 0 12 17 12 17 0"/></svg>
-              <h2>{t(lang, "catalog.empty.title")}</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-mist">
-                {t(lang, "catalog.empty.body")}
-              </p>
-              <Link href="/aide#comment" className="editorial-link">{t(lang, "home.how.buy")}<span aria-hidden="true">→</span></Link>
+            <EtatVide titreBalise="h2" titre={t(lang, "catalog.empty.title")} texte={t(lang, "catalog.empty.body")}>
+              <Link href="/aide#comment" className="bouton bouton-texte bouton-compact mt-4">{t(lang, "home.how.buy")}<span aria-hidden="true">→</span></Link>
               <Link
                 href="/vendre"
-                className="bouton mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-5"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
-            </div>
+            </EtatVide>
           )
         ) : (
           <>
@@ -657,7 +625,7 @@ export default async function CataloguePage({
                 {page > 1 ? (
                   <Link
                     href={hrefFor({ page: page - 1 })}
-                    className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                    className="bouton bouton-secondaire bouton-compact"
                   >
                     {t(lang, "catalog.prev")}
                   </Link>
@@ -670,7 +638,7 @@ export default async function CataloguePage({
                 {hasMore ? (
                   <Link
                     href={hrefFor({ page: page + 1 })}
-                    className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                    className="bouton bouton-secondaire bouton-compact"
                   >
                     {t(lang, "catalog.more")}
                   </Link>

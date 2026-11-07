@@ -1,3 +1,5 @@
+import { Icone, type TailleIcone } from "@/components/icone";
+
 /**
  * Icônes des 16 départements (`0035`) — SVG inline, zéro dépendance.
  *
@@ -112,22 +114,16 @@ const GENERIQUE = (
 
 export function DepartmentIcon({
   slug,
+  taille = 20,
   className,
 }: {
   slug: string;
+  taille?: TailleIcone;
   className?: string;
 }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <Icone taille={taille} className={className}>
       {TRACES[slug] ?? GENERIQUE}
-    </svg>
+    </Icone>
   );
 }

@@ -159,11 +159,11 @@ export default async function BoutiquePage() {
           <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface p-5">
             <h2 id="ma-boutique-title" className="titre-section">{t(lang, "vendeur.action.partager")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
-            <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
+            <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-flex min-h-11 items-center break-all text-sm text-accent underline">
               {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
             </Link>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
+              <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="bouton bouton-primaire bouton-compact">{t(lang, "shop.view")}</Link>
               <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
             </div>
             <div className="mt-4 border-t border-line pt-4">
@@ -178,7 +178,7 @@ export default async function BoutiquePage() {
                 <h3 className="text-sm font-semibold">{t(lang, "vendeur.qr.titre")}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-mist">{t(lang, "vendeur.qr.aide")}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <a href={qr.dataUrl} download={qr.fichier} className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold text-accent">{t(lang, "vendeur.qr.telecharger")}</a>
+                  <a href={qr.dataUrl} download={qr.fichier} className="bouton bouton-secondaire bouton-compact">{t(lang, "vendeur.qr.telecharger")}</a>
                   <Link href="/tableau-de-bord/boutique/affiche" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "vendeur.qr.affiche")}</Link>
                 </div>
               </div>

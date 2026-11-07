@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { cible44 } from "./helpers/cible-tactile";
 import { CATALOGUE_PAGE_SIZE } from "../lib/products";
 import { DICT } from "../lib/i18n";
 
@@ -135,5 +136,5 @@ test("une page HORS LIMITES le dit, et laisse un chemin de retour", () => {
 test("les liens du pied respectent la cible tactile de 44 px", () => {
   const liens = [...PAGE.matchAll(/href=\{hrefFor\(\{ page: page [-+] 1 \}\)\}\s*\n\s*className="([^"]+)"/g)];
   assert.equal(liens.length, 2, "précédent et suivant");
-  for (const l of liens) assert.match(l[1], /min-h-11/);
+  for (const l of liens) assert.ok(cible44(l[1]), `lien du pied sans cible de 44 px : « ${l[1]} »`);
 });

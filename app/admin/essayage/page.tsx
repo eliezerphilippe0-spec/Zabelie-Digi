@@ -3,6 +3,7 @@ import { getAdminUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lireTableauEssayage } from "@/lib/essayage/admin";
 import { EssayageAdmin } from "./essayage-admin";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Essayage virtuel — Admin Zabelie" };
@@ -46,9 +47,9 @@ export default async function AdminEssayagePage() {
           vendeurs={((vendeurs ?? []) as { id: string; display_name: string | null }[]).map((v) => ({ id: v.id, nom: v.display_name?.trim() || v.id }))}
         />
       ) : (
-        <p role="alert" className="mt-6 text-sm text-danger-text">
+        <MessageErreur className="mt-6">
           Les données de l&apos;essayage sont illisibles. Si la migration 0150 n&apos;est pas encore appliquée, c&apos;est attendu.
-        </p>
+        </MessageErreur>
       )}
     </AdminShell>
   );

@@ -54,8 +54,8 @@ export type ServiceZonesLabels = {
   errZone: string;
 };
 
-const INPUT = "w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent";
-const PETIT = "min-h-11 w-full rounded-lg border border-line bg-ink/40 px-3 text-sm outline-none focus:border-accent";
+const INPUT = "champ";
+const PETIT = "champ";
 
 /** Une zone déclarée telle que le serveur la rend : `pausedUntil` n'est renseignée que si la pause est EN COURS. */
 export type ZoneDeclaree = { zoneId: string; feeHtg: number | null; delayHours: number | null; pausedUntil: string | null };
@@ -214,33 +214,42 @@ export function ServiceZonesEditor({ zones, initial, max, labels, locale }: {
       ) : null}
 
       <fieldset className="space-y-3 rounded-xl border border-line p-4" disabled={busy}>
-        <select className={INPUT} value={zd} aria-label={labels.depatman}
-          onChange={(e) => { setZd(e.target.value); setZk(""); setZq(""); }}>
-          <option value="">{labels.depatman}</option>
-          {zones.filter((z) => z.level === "depatman").map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-        </select>
-        {zd && komins.length > 0 ? (
-          <select className={INPUT} value={zk} aria-label={labels.komin}
-            onChange={(e) => { setZk(e.target.value); setZq(""); }}>
-            <option value="">{labels.allDepatman}</option>
-            {komins.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+        <label className="block">
+          <span className="libelle">{labels.depatman}</span>
+          <select className={INPUT} value={zd}
+            onChange={(e) => { setZd(e.target.value); setZk(""); setZq(""); }}>
+            <option value="">{labels.depatman}</option>
+            {zones.filter((z) => z.level === "depatman").map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
           </select>
+        </label>
+        {zd && komins.length > 0 ? (
+          <label className="block">
+            <span className="libelle">{labels.komin}</span>
+            <select className={INPUT} value={zk}
+              onChange={(e) => { setZk(e.target.value); setZq(""); }}>
+              <option value="">{labels.allDepatman}</option>
+              {komins.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+            </select>
+          </label>
         ) : null}
         {zk && katyes.length > 0 ? (
-          <select className={INPUT} value={zq} aria-label={labels.katye} onChange={(e) => setZq(e.target.value)}>
-            <option value="">{labels.allKomin}</option>
-            {katyes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
-          </select>
+          <label className="block">
+            <span className="libelle">{labels.katye}</span>
+            <select className={INPUT} value={zq} onChange={(e) => setZq(e.target.value)}>
+              <option value="">{labels.allKomin}</option>
+              {katyes.map((z) => <option key={z.id} value={z.id}>{z.label}</option>)}
+            </select>
+          </label>
         ) : null}
         <button type="button" onClick={ajouter} disabled={!cible || pleine || choisies.some((c) => c.zoneId === cible)}
-          className="min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-accent disabled:opacity-50">
+          className="bouton bouton-secondaire bouton-compact">
           {labels.add}
         </button>
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={enregistrer} disabled={busy}
-          className="min-h-11 rounded-xl bg-cloud px-5 py-2.5 text-sm font-semibold text-ink transition hover:opacity-90 disabled:opacity-60">
+          className="bouton bouton-primaire bouton-compact">
           {busy ? labels.saving : labels.save}
         </button>
         {message ? <p role={message.ok ? "status" : "alert"} className={`text-sm ${message.ok ? "text-mist" : "text-danger-text"}`}>{message.texte}</p> : null}

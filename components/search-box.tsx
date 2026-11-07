@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 
+import { Icone } from "@/components/icone";
 /**
  * Recherche avec suggestions de rayons — le seul résultat garanti à
  * catalogue vide.
@@ -75,7 +76,7 @@ export function SearchBox({
           placeholder={placeholder}
           aria-label={placeholder}
           aria-describedby={suggestions.length > 0 ? groupeId : undefined}
-          className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base outline-none focus:border-accent ${
+          className={`min-h-11 min-w-0 flex-1 rounded-xl border px-4 text-base focus:border-accent ${
             variant === "header"
               ? "border-transparent bg-surface text-cloud placeholder:text-mist pr-12"
               : "border-line bg-ink/40"
@@ -89,16 +90,10 @@ export function SearchBox({
             title={submitLabel}
             className="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-cloud transition hover:bg-brand/10 active:scale-[0.97]"
           >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="h-5 w-5 fill-none stroke-current"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
+            <Icone taille={20}>
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" />
-            </svg>
+            </Icone>
           </button>
         ) : (
         <button
@@ -112,9 +107,7 @@ export function SearchBox({
              recherche de la page étaient visibles ENSEMBLE, à 268 px, l'un
              orange et l'autre crème. Deux primaires sur un écran ne
              hiérarchisent rien. */
-          className={`min-h-11 rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 ${
-            compact ? "py-2" : "py-3"
-          }`}
+          className={`bouton bouton-secondaire ${compact ? "bouton-compact" : ""}`}
         >
           {submitLabel}
         </button>

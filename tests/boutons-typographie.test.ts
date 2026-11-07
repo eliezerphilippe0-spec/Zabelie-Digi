@@ -41,9 +41,13 @@ import { join } from "node:path";
  */
 
 const FORME = (c: string) =>
-  /(?<![\w:/-])rounded-xl\b/.test(c) &&
-  /(?<![\w:/-])px-\d/.test(c) &&
-  (/(?<![\w:/-])bg-(brand|accent|chrome|ink|cloud|danger)\b(?!\/)/.test(c) || /(?<![\w:/-])border\b/.test(c));
+  // Depuis la Phase 2 du chantier design, la forme d'un bouton est une CLASSE
+  // (`bouton-primaire`…, app/globals.css) : un lien qui la porte est un bouton,
+  // même sans aucun des utilitaires de forme ci-dessous.
+  /(?<![\w-])bouton-(?:primaire|secondaire|texte)(?![\w-])/.test(c) ||
+  (/(?<![\w:/-])rounded-xl\b/.test(c) &&
+    /(?<![\w:/-])px-\d/.test(c) &&
+    (/(?<![\w:/-])bg-(brand|accent|chrome|ink|cloud|danger)\b(?!\/)/.test(c) || /(?<![\w:/-])border\b/.test(c)));
 const PORTE = (c: string) => /(?<![\w-])bouton(?![\w-])/.test(c);
 
 function sources(dir: string, ext = /\.tsx$/): string[] {
@@ -208,7 +212,7 @@ test("B5 — les boutons de partage ont le gabarit de leur voisin, le bouton fav
      ce qui COMMANDE le rendu : taille, graisse, rayon, rembourrage horizontal,
      hauteur minimale — pas sur la couleur, qui distingue légitimement les deux. */
   const GABARIT =
-    /(?<![\w:/-])(text-(?:xs|sm|base|lg|\[[^\]]+\])|font-(?:thin|light|normal|medium|semibold|bold|extrabold|black)|rounded(?:-\w+)?|px-[\w.]+|min-h-[\w.]+)(?![\w/-])/g;
+    /(?<![\w:/-])(bouton(?:-[a-z]+)?|text-(?:xs|sm|base|lg|\[[^\]]+\])|font-(?:thin|light|normal|medium|semibold|bold|extrabold|black)|rounded(?:-\w+)?|px-[\w.]+|min-h-[\w.]+)(?![\w/-])/g;
   const gabarits = (f: string) =>
     [...readFileSync(f, "utf8").matchAll(/<button\b(?:[^>]|=>)*?className="([^"]*)"/g)].map((m) =>
       [...m[1].matchAll(GABARIT)].map((x) => x[1]).sort().join(" ")
@@ -219,5 +223,7 @@ test("B5 — les boutons de partage ont le gabarit de leur voisin, le bouton fav
   assert.equal(voisin.length, 1, "CollectionToggle doit rendre son bouton avec une classe littérale");
   for (const g of partage) {
     assert.equal(g, voisin[0], `bouton de partage « ${g} » ≠ bouton voisin « ${voisin[0]} » — deux gabarits côte à côte`);
+    // Un gabarit vide des deux côtés serait égal sans rien prouver.
+    assert.match(g, /bouton-(?:primaire|secondaire|texte)/, `gabarit « ${g} » sans variante de bouton : la comparaison ne lit plus rien`);
   }
 });

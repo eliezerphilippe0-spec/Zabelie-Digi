@@ -160,7 +160,7 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
               <p className="mt-4 text-sm text-mist">{labels.invalid}</p>
               <Link
                 href="/connexion"
-                className="bouton mt-4 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-4"
               >
                 {labels.signinCta}
               </Link>
@@ -173,30 +173,34 @@ export function ResetPasswordForm({ labels }: { labels: ResetPasswordLabels }) {
             <>
               <p className="mt-2 text-sm text-mist">{labels.subtitle}</p>
               <form onSubmit={submit} className="mt-4 space-y-3">
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder={labels.passwordPh}
-                  aria-label={labels.passwordPh}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
-                />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  placeholder={labels.confirmPh}
-                  aria-label={labels.confirmPh}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-ink/40 px-4 py-3 text-sm outline-none focus:border-accent"
-                />
+                <label className="block">
+                  <span className="libelle">{labels.passwordPh}</span>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="champ"
+                  />
+                </label>
+                <label className="block">
+                  <span className="libelle">{labels.confirmPh}</span>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    className="champ"
+                  />
+                </label>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+                  className="bouton bouton-primaire w-full"
                 >
                   {loading ? labels.submitting : labels.submit}
                 </button>

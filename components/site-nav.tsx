@@ -18,6 +18,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
+import { Icone } from "@/components/icone";
 /**
  * Suggestions de recherche : les rayons actifs NON vides, à plat.
  *
@@ -122,18 +123,11 @@ export async function SiteNav({ activeHref, searchContext, searchPending = false
               aria-label={`${t(lang, "cart.title")}${articlesPanier !== null && articlesPanier > 0 ? ` (${articlesPanier})` : ""}`}
               className="relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl lg:px-2 text-on-chrome transition hover:bg-on-chrome/10"
             >
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                className="h-6 w-6 fill-none stroke-current"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <Icone taille={24}>
                 <path d="M3 4h2l2.4 10.4a2 2 0 002 1.6h7.2a2 2 0 002-1.6L20 7H6" />
                 <circle cx="10" cy="19" r="1.4" />
                 <circle cx="17" cy="19" r="1.4" />
-              </svg>
+              </Icone>
               <span className="hidden text-sm font-semibold lg:inline">{t(lang, "cart.title")}</span>
               {articlesPanier !== null && articlesPanier > 0 && (
                 <span className="numeric absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-extrabold text-on-brand">

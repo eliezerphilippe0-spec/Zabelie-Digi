@@ -39,10 +39,10 @@ export default async function AboutPage() {
           </div>
         </section>
         <div className="mt-8 flex flex-wrap gap-4">
-          <Link href="/catalogue" className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand">
+          <Link href="/catalogue" className="bouton bouton-primaire">
             {t(lang, "nav.catalog")}
           </Link>
-          <Link href="/aide" className="inline-flex min-h-11 items-center text-sm text-mist underline underline-offset-4 hover:text-cloud">
+          <Link href="/aide" className="bouton bouton-texte bouton-compact">
             {t(lang, "nav.help")}
           </Link>
         </div>

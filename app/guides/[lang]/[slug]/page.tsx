@@ -28,7 +28,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
   const jsonLd = { "@context": "https://schema.org", "@type": "WebPage", name: t(lang, guide.title), description: t(lang, guide.intro), url, inLanguage: lang, isPartOf: { "@type": "WebSite", name: "Zabelie", url: siteUrl() } };
   return <div className="min-h-dvh bg-grain"><SiteNav /><main id="main" className="mx-auto max-w-6xl px-5 py-10">
     <script nonce={(await headers()).get("x-zabelie-nonce") ?? undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
-    <nav aria-label={t(lang, "nav.breadcrumb")} className="flex flex-wrap gap-2 text-sm text-mist"><Link href="/" className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><Link href={guideHref(lang)} className="inline-flex min-h-11 items-center -my-3 underline">{t(lang, "guides.title")}</Link></nav>
+    <nav aria-label={t(lang, "nav.breadcrumb")} className="flex flex-wrap gap-2 text-sm text-mist"><Link href="/" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline">{t(lang, "nav.home")}</Link><span aria-hidden="true">/</span><Link href={guideHref(lang)} className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline">{t(lang, "guides.title")}</Link></nav>
     <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
       <article lang={lang} className="max-w-3xl">
         <h1>{t(lang, guide.title)}</h1>
@@ -37,7 +37,7 @@ export default async function BuyingGuidePage({ params }: { params: Promise<{ la
       </article>
       <aside className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-28">
         <h2 className="titre-bloc">{t(lang, "guides.related")}</h2>
-        <Link href={guide.catalogue} className="bouton mt-4 flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">{t(lang, "nav.catalog")}</Link>
+        <Link href={guide.catalogue} className="bouton bouton-primaire bouton-compact mt-4 w-full">{t(lang, "nav.catalog")}</Link>
         <Link href="/mes-achats" className="mt-3 flex min-h-11 items-center text-sm underline">{t(lang, "purchases.title")}</Link>
         <Link href="/aide" className="flex min-h-11 items-center text-sm underline">{t(lang, "nav.help")}</Link>
         <nav aria-label={t(lang, "guides.languages")} className="mt-4 flex flex-wrap gap-3 border-t border-line pt-4">{LANGS.map((l) => <Link key={l} href={guideHref(l, guide.slug)} hrefLang={l} lang={l} aria-current={l === lang ? "page" : undefined} className="inline-flex min-h-11 items-center text-sm underline">{NOMS_LANGUES[l]}</Link>)}</nav>

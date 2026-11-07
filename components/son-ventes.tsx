@@ -114,7 +114,7 @@ export function SonVentes({ labels }: { labels: SonVentesLabels }) {
         <button
           type="button"
           onClick={activer}
-          className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 py-2 font-semibold"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {labels.activer}
         </button>

@@ -9,6 +9,7 @@ import { COLLECTIONS, type CollectionKind } from "@/lib/collections";
 import { purchasePage } from "@/lib/purchase-center";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import { EtatVide } from "@/components/etat-vide";
 
 export async function CollectionPage({ kind, pageParam }: { kind: CollectionKind; pageParam: unknown }) {
   const lang = await getLang();
@@ -25,7 +26,7 @@ export async function CollectionPage({ kind, pageParam }: { kind: CollectionKind
   if (!isSupabaseConfigured()) return shell(<p>{t(lang, "collections.error")}</p>);
   const client = await createClient();
   const { data: { user } } = await client.auth.getUser();
-  if (!user) return shell(<Link href={`/connexion?next=${encodeURIComponent(config.href)}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-on-brand">{t(lang, "nav.login")}</Link>);
+  if (!user) return shell(<Link href={`/connexion?next=${encodeURIComponent(config.href)}`} className="bouton bouton-primaire bouton-compact">{t(lang, "nav.login")}</Link>);
   const { data, error } = await client.from(config.table).select(`${config.column},created_at`).eq("user_id", user.id)
     .order("created_at", { ascending: false }).order(config.column).range((page - 1) * 20, page * 20);
   if (error) return shell(<p role="alert">{t(lang, "collections.error")}</p>);
@@ -37,7 +38,7 @@ export async function CollectionPage({ kind, pageParam }: { kind: CollectionKind
     return { id, data: error ? null : data as { display_name: string; bio: string | null } | null };
   })) : [];
   return shell(<>
-    {ids.length === 0 ? <div className="rounded-xl border border-line p-6"><p>{t(lang, "collections.empty")}</p><Link href="/catalogue" className="mt-3 inline-flex min-h-11 items-center underline">{t(lang, "product.back")}</Link></div> :
+    {ids.length === 0 ? <EtatVide titre={t(lang, "collections.empty")}><Link href="/catalogue" className="bouton bouton-primaire mt-5">{t(lang, "product.back")}</Link></EtatVide> :
       <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{ids.map(id => {
         const product = products.find(p => p.id === id);
         const shop = shops.find(s => s.id === id)?.data;

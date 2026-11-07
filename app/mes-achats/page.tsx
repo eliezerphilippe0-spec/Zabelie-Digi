@@ -44,6 +44,7 @@ function remiseLabel(kind: ProductKind | undefined, lang: Lang): string | null {
 }
 
 import { PURCHASE_PAGE_SIZE, PURCHASE_VIEWS, purchaseView, purchaseKind, purchasePage, purchaseHref, purchaseIsConfirmed, purchaseStatusKey, purchaseViewKeys } from "@/lib/purchase-center";
+import { EtatVide } from "@/components/etat-vide";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes achats — Zabelie", robots: { index: false, follow: false } };
@@ -67,7 +68,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
         <h1>{t(lang, "purchases.title")}</h1>
         <p className="mt-3 max-w-2xl text-sm text-mist">{t(lang, "purchases.intro")}</p>
         {children}
-        <Link href="/aide#probleme" className="mt-6 inline-flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
+        <Link href="/aide#probleme" className="bouton bouton-texte bouton-compact mt-6">
           {t(lang, "aide.problem.title")}
         </Link>
       </main>
@@ -110,7 +111,7 @@ export default async function MesAchatsPage({ searchParams }: {
         <p className="mt-4 text-sm text-mist">{t(langAnon, "purchases.login.b")}</p>
         <Link
           href={`/connexion?next=${encodeURIComponent(purchaseHref(view, page))}`}
-          className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="bouton bouton-primaire bouton-compact mt-4"
         >
           {t(langAnon, "nav.login")}
         </Link>
@@ -268,12 +269,11 @@ export default async function MesAchatsPage({ searchParams }: {
       </nav>
       {view === "numerique" && <p className="mt-4 text-sm text-mist">{t(lang, "purchases.library.hint")}</p>}
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-line p-6">
-          <p className="text-sm text-mist">{t(lang, page > 1 ? "purchases.page.empty" : "purchases.empty")}</p>
-          <Link href={page > 1 ? purchaseHref(view) : "/catalogue"} className="mt-3 inline-flex min-h-11 items-center text-cloud underline">
+        <EtatVide className="mt-6" titre={t(lang, page > 1 ? "purchases.page.empty" : "purchases.empty")}>
+          <Link href={page > 1 ? purchaseHref(view) : "/catalogue"} className="bouton bouton-primaire mt-5">
             {t(lang, page > 1 ? "purchases.first" : "purchases.empty.cta")}
           </Link>
-        </div>
+        </EtatVide>
       ) : (
         <ul className="mt-6 space-y-4">
           {orders.map((o) => {
@@ -300,7 +300,7 @@ export default async function MesAchatsPage({ searchParams }: {
                 </div>
                 <div className="flex flex-col items-start gap-3 sm:items-end">
                   {confirmed && (o.product && isDownloadable(o.product.kind) ? (
-                    <Link href={`/mes-achats/${o.id}`} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2 font-semibold text-on-brand">{t(lang, "studio.open")}</Link>
+                    <Link href={`/mes-achats/${o.id}`} className="bouton bouton-primaire bouton-compact">{t(lang, "studio.open")}</Link>
                   ) : suivis.has(o.id) ? blocRemise(suivis.get(o.id), lang) : remiseLabel(o.product?.kind, lang) && (
                     <span className="text-sm text-mist">{remiseLabel(o.product?.kind, lang)}</span>
                   ))}

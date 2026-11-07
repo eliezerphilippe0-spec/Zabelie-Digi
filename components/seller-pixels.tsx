@@ -42,8 +42,8 @@ export function SellerPixels({ ids, evenement, labels }: { ids: IdsPixels; evene
       className="fixed inset-x-3 bottom-3 z-(--z-modal) mx-auto max-w-lg rounded-xl border border-line bg-surface p-4 text-sm shadow-lg">
       <p className="text-cloud">{labels.text} <Link href="/confidentialite#traceurs" className="underline">{labels.privacy}</Link></p>
       <div className="mt-3 flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={() => choisir(false)} className="inline-flex min-h-11 items-center rounded-xl border border-line px-4">{labels.refuse}</button>
-        <button type="button" onClick={() => choisir(true)} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 font-semibold text-on-brand">{labels.accept}</button>
+        <button type="button" onClick={() => choisir(false)} className="bouton bouton-secondaire bouton-compact">{labels.refuse}</button>
+        <button type="button" onClick={() => choisir(true)} className="bouton bouton-primaire bouton-compact">{labels.accept}</button>
       </div>
     </div>
   );

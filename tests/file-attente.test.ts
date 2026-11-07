@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { cible44 } from "./helpers/cible-tactile";
 import {
   surveillerFile,
   bornesFile,
@@ -153,7 +154,9 @@ test("le pied disparaît quand il n'y a qu'une page", () => {
 });
 
 test("les liens du pied respectent la cible tactile de 44 px", () => {
-  assert.match(ADMIN_CODE, /const lien =\s*\n\s*"inline-flex min-h-11 items-center/);
+  const lien = /const lien =\s*\n?\s*"([^"]*)"/.exec(ADMIN_CODE);
+  assert.ok(lien, "la constante `lien` du pied de file est introuvable");
+  assert.ok(cible44(lien[1]), `lien du pied sans cible de 44 px : « ${lien[1]} »`);
 });
 
 // ── Les filtres recopiés, croisés ──────────────────────────────────────────

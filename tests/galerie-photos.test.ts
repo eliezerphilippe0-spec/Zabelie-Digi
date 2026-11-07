@@ -676,7 +676,8 @@ test("UX-01 — refus LOCAL au-delà du plafond partagé, avant tout octet envoy
 
 test("RES-01 — l'ouverture et les envois de la galerie font 44 px de haut", () => {
   assert.match(ECRAN, /<summary className="[^"]*\bmin-h-11\b/);
-  const libelles = ECRAN.match(/<label className="[^"]*\bmin-h-11\b[^"]*">/g) ?? [];
+  // `min-h-11`, ou la classe `bouton` qui porte la même hauteur (chantier design, Phase 2).
+  const libelles = ECRAN.match(/<label className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])[^"]*">/g) ?? [];
   assert.equal(libelles.length, 2, "photo et vidéo");
   assert.ok(!/<label className="[^"]*\bpy-1\.5\b/.test(ECRAN), "l'ancienne cible de 30 px est revenue");
 });
@@ -713,8 +714,9 @@ test("UX-02 — la page utilise une seule photo principale liée au produit ; la
 });
 
 test("UX-02 — la cible d'envoi fait 44 px, et le message d'échec est annoncé", () => {
-  assert.match(PRINCIPALE, /<label className="[^"]*\bmin-h-11\b[^"]*">/);
-  assert.match(PRINCIPALE, /role="alert"/);
+  assert.match(PRINCIPALE, /<label className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])[^"]*">/);
+  // `MessageErreur` porte `role="alert"` (chantier design, Phase 2).
+  assert.match(PRINCIPALE, /role="alert"|<MessageErreur\b/);
 });
 
 test("les champs photo restent joignables au CLAVIER — masqués visuellement, jamais `display: none`", () => {

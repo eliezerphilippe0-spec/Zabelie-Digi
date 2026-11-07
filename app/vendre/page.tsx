@@ -54,6 +54,7 @@ import { RabaisManager } from "@/components/rabais-manager";
 import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
 import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 // Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
@@ -227,7 +228,7 @@ export default async function VendrePage({
   if (!user) {
     return (
       <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} pricing={pricing} marketing>
-        <Link href="/connexion?mode=signup&next=/vendre" className="editorial-button">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
+        <Link href="/connexion?mode=signup&next=/vendre" className="bouton bouton-primaire bouton-grand">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
         <Link href="/connexion?next=/vendre" className="editorial-link">{t(lang, "sell.existing")}<span aria-hidden="true">→</span></Link>
       </Shell>
     );
@@ -491,7 +492,7 @@ export default async function VendrePage({
       </section>
 
       <div id="mes-produits" className="scroll-mt-32">
-      {mineError && <p role="alert" className="mt-6 text-sm text-danger-text">{t(lang, "seller.load.error")}</p>}
+      {mineError && <MessageErreur className="mt-6">{t(lang, "seller.load.error")}</MessageErreur>}
       {mine.length > 0 && (
         <div className="mt-10">
           <h2 className="text-cloud titre-bloc">{t(lang, "sell.mine.title")}</h2>
@@ -639,9 +640,9 @@ export default async function VendrePage({
                   license: t(lang, "digital.license"), contents: t(lang, "digital.contents"), updates: t(lang, "digital.updates"),
                   save: t(lang, "digital.save"), saving: t(lang, "digital.saving"), saved: t(lang, "digital.saved"), error: t(lang, "digital.save.error"),
                 }} />}
-                {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails === null && <p role="alert" className="text-sm text-danger-text">{t(lang, "digital.save.error")}</p>}
+                {isDownloadable(p.kind, p.id) && p.status === "draft" && digitalDetails === null && <MessageErreur>{t(lang, "digital.save.error")}</MessageErreur>}
                 {isDownloadable(p.kind, p.id) && p.status === "draft" && <>
-                  {studioError ? <p role="alert" className="text-danger-text">{studioText.error}</p> : <DigitalStudioEditor productId={p.id} initial={studios.get(p.id)} assets={p.product_assets} labels={studioText}/>}
+                  {studioError ? <MessageErreur>{studioText.error}</MessageErreur> : <DigitalStudioEditor productId={p.id} initial={studios.get(p.id)} assets={p.product_assets} labels={studioText}/>}
                   <section className="rounded-xl border border-line p-4"><h3 className="font-semibold">{studioText.files}</h3><p className="mt-2 text-sm text-mist">{studioText.fileLimit}</p><ul className="mt-3 space-y-2">{p.product_assets.map(a => <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-2"><span className="break-all">{a.file_name}</span><DigitalDraftAction productId={p.id} assetId={a.id} labels={studioText}/></li>)}</ul></section>
                 </>}
                 {isDownloadable(p.kind, p.id) && p.status === "published" && <DigitalDraftAction productId={p.id} labels={studioText}/>}

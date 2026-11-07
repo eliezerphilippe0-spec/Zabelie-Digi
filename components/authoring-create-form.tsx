@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CopieCreation } from "@/lib/digital-authoring/copy";
 import { IDS_MODELES, type IdModele } from "@/lib/digital-authoring/modeles";
+import { MessageErreur } from "@/components/message-erreur";
 
 /**
  * Création d'un projet du Studio (docs/70, tâche 2.3). Le serveur reste
@@ -37,7 +38,7 @@ export function AuthoringCreateForm({
   const [modele, setModele] = useState<IdModele | "">(modeleInitial ?? "");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
-  const champ = "mt-1 w-full rounded-xl border border-line bg-surface p-3 text-sm";
+  const champ = "champ mt-1";
 
   async function creer(e: React.FormEvent) {
     e.preventDefault();
@@ -126,11 +127,11 @@ export function AuthoringCreateForm({
       <button
         type="submit"
         disabled={envoi || Boolean(plein)}
-        className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-50"
+        className="bouton bouton-primaire bouton-compact"
       >
         {envoi ? labels.creation : labels.creer}
       </button>
-      {erreur && <p role="alert" className="text-sm text-danger-text">{erreur}</p>}
+      {erreur && <MessageErreur>{erreur}</MessageErreur>}
     </form>
   );
 }
