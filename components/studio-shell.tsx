@@ -56,7 +56,7 @@ export function StudioShell({
         aria-current={l.cle === actif ? "page" : undefined}
         className="flex min-h-11 items-center gap-2.5 whitespace-nowrap rounded-full border border-line px-4 text-sm text-mist aria-[current=page]:border-cloud aria-[current=page]:bg-cloud aria-[current=page]:font-semibold aria-[current=page]:text-ink lg:rounded-xl lg:border-transparent lg:px-3 lg:text-cloud lg:hover:bg-line/40 lg:aria-[current=page]:border-transparent lg:aria-[current=page]:bg-line/60 lg:aria-[current=page]:text-cloud"
       >
-        <IconeStudio nom={l.icone} className="hidden h-5 w-5 lg:block" />
+        <IconeStudio nom={l.icone} className="hidden lg:block" />
         {l.texte}
       </Link>
     </li>

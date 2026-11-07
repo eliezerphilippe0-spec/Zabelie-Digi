@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 
+import { Icone } from "@/components/icone";
 /**
  * Recherche avec suggestions de rayons — le seul résultat garanti à
  * catalogue vide.
@@ -89,16 +90,10 @@ export function SearchBox({
             title={submitLabel}
             className="absolute right-0 top-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-cloud transition hover:bg-brand/10 active:scale-[0.97]"
           >
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="h-5 w-5 fill-none stroke-current"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
+            <Icone taille={20}>
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" />
-            </svg>
+            </Icone>
           </button>
         ) : (
         <button

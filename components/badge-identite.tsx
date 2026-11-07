@@ -1,3 +1,4 @@
+import { Icone } from "@/components/icone";
 /**
  * Badge « Identité vérifiée » (0138, décision porteur du 2026-10-14).
  *
@@ -15,10 +16,10 @@ export function BadgeIdentite({ label, aide }: { label: string; aide: string }) 
       className="etiquette etiquette-neutre"
       title={aide}
     >
-      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Icone taille={16}>
         <path d="M12 3 5 6v5c0 4.4 3 8.3 7 9.5 4-1.2 7-5.1 7-9.5V6z" />
         <path d="m9 12 2 2 4-4" />
-      </svg>
+      </Icone>
       {label}
       <span className="sr-only">{aide}</span>
     </span>

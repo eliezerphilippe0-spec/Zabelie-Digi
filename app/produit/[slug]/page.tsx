@@ -67,6 +67,7 @@ import {
 import { jsonLdProduit } from "@/lib/jsonld-produit";
 import { Prix } from "@/components/prix";
 
+import { Icone } from "@/components/icone";
 export const dynamic = "force-dynamic";
 
 /**
@@ -737,14 +738,9 @@ export default async function ProductPage({
                   hors de `lib/product-kind.ts` interdite (CLAUDE.md). */}
               {!isDownloadable(product.kind, product.id) && (
                 <p className="mt-3 flex items-start gap-2 text-xs text-mist">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="mt-0.5 h-4 w-4 flex-none fill-none stroke-success"
-                    strokeWidth="1.8"
-                  >
+                  <Icone taille={16} className="mt-0.5 stroke-success">
                     <path d="M4 8h16v11H4zM8 8V6a4 4 0 018 0v2" />
-                  </svg>
+                  </Icone>
                   {t(lang, "trust.2.b")}
                 </p>
               )}

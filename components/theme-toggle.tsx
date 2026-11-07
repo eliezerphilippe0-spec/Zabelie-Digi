@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { THEME_PREFERENCES, type ThemePreference } from "@/lib/theme";
 
+import { Icone } from "@/components/icone";
 function AppearanceIcon({ preference }: { preference: ThemePreference }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 shrink-0 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <Icone taille={20}>
       {preference === "system" ? (
         <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></>
       ) : preference === "dark" ? (
@@ -14,7 +15,7 @@ function AppearanceIcon({ preference }: { preference: ThemePreference }) {
       ) : (
         <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>
       )}
-    </svg>
+    </Icone>
   );
 }
 
@@ -72,7 +73,7 @@ export function ThemeToggle({ label, labels }: {
           >
             <AppearanceIcon preference={mode} />
             <span className="flex-1">{labels[mode]}</span>
-            {preference === mode && <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4 fill-none stroke-current" strokeWidth="2"><path d="m4 10 4 4 8-8" /></svg>}
+            {preference === mode && <Icone taille={16} viewBox="0 0 20 20"><path d="m4 10 4 4 8-8" /></Icone>}
           </button>
         ))}
       </div>

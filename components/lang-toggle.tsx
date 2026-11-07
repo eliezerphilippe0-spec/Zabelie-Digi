@@ -8,6 +8,7 @@ import { cheminPourLangue } from "@/lib/langue-url";
 import { LANG_COOKIE, LANGS, type Lang } from "@/lib/i18n";
 import { NOMS_LANGUES } from "@/lib/noms-langues";
 
+import { Icone } from "@/components/icone";
 /**
  * Libellés du sélecteur. Ils ne passent PAS par `t()` : le nom d'une langue
  * s'écrit dans cette langue, pas dans celle de l'interface — quelqu'un qui ne
@@ -149,7 +150,7 @@ export function LangToggle({
           className="inline-flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-1 rounded-xl text-sm font-semibold text-on-chrome transition marker:content-none hover:bg-on-chrome/10 [&::-webkit-details-marker]:hidden"
           aria-busy={isPending}
         >
-          {isPending && <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 motion-safe:animate-spin fill-none stroke-current" strokeWidth="2"><path d="M12 3a9 9 0 1 1-9 9" /></svg>}
+          {isPending && <Icone taille={16} className="motion-safe:animate-spin"><path d="M12 3a9 9 0 1 1-9 9" /></Icone>}
           {ABBR[current]}
         </summary>
         <div className="header-menu-panel absolute right-0 z-(--z-header) mt-1 hidden w-44 overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg">

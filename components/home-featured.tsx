@@ -16,7 +16,7 @@ export function HomeFeatured({ product, label, cta, missing, fallback, discovery
       <div className="home-featured-media">
         {cover ? <CardImage src={cover} alt={title} size={COVER_WIDTHS.card} /> : (
           <div className="home-photo-empty">
-            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
+            <svg className="icone" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M12 16h24l3 25H9l3-25Z" /><path d="M18 17v-5a6 6 0 0 1 12 0v5" /></svg>
             <span>{missing}</span>
           </div>
         )}

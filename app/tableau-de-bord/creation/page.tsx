@@ -182,7 +182,7 @@ export default async function CreationPage({
             <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
               {cartes.map((k, i) => (
                 <li key={k.cle} className={`rounded-xl border border-line bg-surface p-4 sm:p-5 ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
-                  <IconeStudio nom={k.icone} className="h-5 w-5 text-mist" />
+                  <IconeStudio nom={k.icone} className="text-mist" />
                   <p className="metric mt-3 text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
                     <Montant valeur={k.valeur} masque={v.montantMasque} />
                   </p>
@@ -267,7 +267,7 @@ export default async function CreationPage({
                   href={a.href}
                   className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-medium hover:border-cloud focus-visible:outline focus-visible:outline-2"
                 >
-                  <IconeStudio nom={a.icone} className="h-5 w-5 text-brand" />
+                  <IconeStudio nom={a.icone} className="text-brand" />
                   {a.texte}
                 </Link>
               </li>

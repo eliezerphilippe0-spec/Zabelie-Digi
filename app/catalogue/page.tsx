@@ -36,6 +36,7 @@ import { siteUrl } from "@/lib/site-url";
 import { t, tn } from "@/lib/i18n";
 import { MessageErreur } from "@/components/message-erreur";
 import { EtatVide } from "@/components/etat-vide";
+import { Icone } from "@/components/icone";
 
 export const dynamic = "force-dynamic";
 
@@ -279,14 +280,9 @@ export default async function CataloguePage({
             elle rendrait toujours quelque chose, et n'informerait personne. */}
         {products.some((p) => p.ratingAvg !== null) && (
           <p className="mt-1 flex items-start gap-1.5 text-xs text-mist">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="mt-0.5 h-3.5 w-3.5 flex-none fill-none stroke-success"
-              strokeWidth="1.8"
-            >
+            <Icone taille={16} className="stroke-success">
               <path d="M5 12l4.5 4.5L19 7" />
-            </svg>
+            </Icone>
             {t(lang, "catalog.reviews.proof")}
           </p>
         )}

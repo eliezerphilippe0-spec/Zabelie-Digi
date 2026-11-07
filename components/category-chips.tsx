@@ -19,7 +19,7 @@ export function CategoryChips({ rayons, labels, links, activeHref }: {
       <li><Link href="/catalogue" aria-current={activeHref === "/catalogue" ? "page" : undefined} className={style("/catalogue")}>{labels.all}</Link></li>
       {links.map((link) => <li key={link.href}><Link href={link.href} aria-current={activeHref === link.href ? "page" : undefined} className={style(link.href)}>{link.label}{link.note && <span className="border-l border-on-chrome/25 pl-1.5 text-xs">{link.note}</span>}</Link></li>)}
       {pleins.map((r) => (
-        <li key={r.slug}><Link href={r.href} className={style(r.href)}><DepartmentIcon slug={r.slug} className="h-4 w-4 stroke-on-chrome" />{r.label}</Link></li>
+        <li key={r.slug}><Link href={r.href} className={style(r.href)}><DepartmentIcon slug={r.slug} taille={16} className="stroke-on-chrome" />{r.label}</Link></li>
       ))}
       {desVides && (<li className="pl-1 text-xs text-on-chrome">{labels.more}</li>)}
     </ul>

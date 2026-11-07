@@ -1,3 +1,4 @@
+import { Icone } from "@/components/icone";
 /**
  * BANDEAU DE CONFIANCE — promesses TENUES seulement.
  *
@@ -34,16 +35,9 @@ export function TrustBar({ items, compact = false }: { items: Item[]; compact?: 
         <ul className="grid grid-cols-4 gap-1.5">
           {items.map((it) => (
             <li key={it.t} className="flex flex-col items-center gap-1 text-center">
-              <svg
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-                className="h-5 w-5 fill-none stroke-cloud"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <Icone taille={20} className="stroke-cloud">
                 <path d={ICONES[it.icone]} />
-              </svg>
+              </Icone>
               <span className="text-xs leading-tight text-mist">{it.t}</span>
             </li>
           ))}
@@ -56,16 +50,9 @@ export function TrustBar({ items, compact = false }: { items: Item[]; compact?: 
       <ul className="grid grid-cols-1 gap-4 rounded-xl border border-line bg-surface/40 px-5 py-5 sm:grid-cols-2 lg:grid-cols-5">
         {items.map((it) => (
           <li key={it.t} className="flex items-start gap-3">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="mt-0.5 h-6 w-6 shrink-0 fill-none stroke-accent"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <Icone taille={24} className="mt-0.5 stroke-accent">
               <path d={ICONES[it.icone]} />
-            </svg>
+            </Icone>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-cloud">{it.t}</p>
               {it.b && <p className="mt-0.5 text-xs leading-snug text-mist">{it.b}</p>}

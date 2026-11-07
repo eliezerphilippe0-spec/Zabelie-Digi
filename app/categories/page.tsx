@@ -47,7 +47,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
       {rows.length > 0 ? <div className="mt-8 grid items-start gap-4 lg:grid-cols-2">
         {rows.map((department) => <section key={department.slug} className="rounded-xl border border-line bg-ink p-5" aria-labelledby={`department-${department.slug}`}>
           <div className="flex items-start gap-3">
-            <DepartmentIcon slug={department.slug} className="mt-1 h-6 w-6 flex-none stroke-current text-cloud" />
+            <DepartmentIcon slug={department.slug} taille={24} className="mt-1 text-cloud" />
             <div>
               <h2 id={`department-${department.slug}`}><Link href={department.href} className="inline-flex min-h-11 items-center hover:underline">{department.label}</Link></h2>
             </div>

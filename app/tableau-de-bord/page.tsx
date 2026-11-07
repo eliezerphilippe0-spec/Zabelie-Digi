@@ -458,7 +458,7 @@ export default async function DashboardPage({
               href={a.href}
               className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface px-4 text-sm font-medium hover:border-cloud focus-visible:outline focus-visible:outline-2"
             >
-              <IconeStudio nom={a.icone} className="h-5 w-5 text-brand" />
+              <IconeStudio nom={a.icone} className="text-brand" />
               {a.texte}
             </Link>
           </li>
@@ -468,7 +468,7 @@ export default async function DashboardPage({
       {aTraiter !== null && aTraiter > 0 && (
         <div role="status" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/40 bg-surface p-4">
           <p className="flex items-center gap-2 text-sm font-semibold">
-            <IconeStudio nom="commandes" className="h-5 w-5 text-brand" />
+            <IconeStudio nom="commandes" className="text-brand" />
             {aTraiter === 1
               ? t(lang, "vendeur.atraiter.un")
               : t(lang, "vendeur.atraiter.n").replace("{n}", String(aTraiter))}

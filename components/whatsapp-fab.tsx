@@ -1,5 +1,6 @@
 import { MetricA } from "@/components/metric-a";
 
+import { Icone } from "@/components/icone";
 /**
  * Bouton WhatsApp FLOTTANT — accueil premium §4.6. 48 px, bas droite,
  * discret : il remplace la carte pleine largeur qui vivait AU-DESSUS des
@@ -18,15 +19,9 @@ export function WhatsAppFab({ href, label }: { href: string | null; label: strin
       className="fixed bottom-4 right-4 z-(--z-drawer) grid h-12 w-12 place-items-center rounded-full bg-chrome text-on-chrome shadow-lg transition active:scale-[0.97]"
     >
       <span className="sr-only">{label}</span>
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="h-6 w-6 fill-none stroke-current"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      >
+      <Icone taille={24}>
         <path d="M4 5h16v11H9l-5 4V5z" />
-      </svg>
+      </Icone>
     </MetricA>
   );
 }
