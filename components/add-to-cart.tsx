@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { appelSession } from "@/lib/appel-session";
-
 import { Icone } from "@/components/icone";
+
 /**
  * « Ajouter au panier » — le geste, pas le paiement.
  *

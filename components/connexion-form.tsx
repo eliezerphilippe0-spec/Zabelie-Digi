@@ -12,6 +12,9 @@ import { checkDisplayName } from "@/lib/display-name";
 import { urlDeRetourOAuth, type AuthProvider } from "@/lib/auth-providers";
 import { CONDITIONS_VERSION, CONFIDENTIALITE_VERSION, initialLegalDeclaration } from "@/lib/legal-acceptance";
 import { motDePasseDivulgue } from "@/lib/mot-de-passe-divulgue";
+import { TitreAccent } from "@/components/titre-accent";
+import { Icone } from "@/components/icone";
+import { MessageErreur } from "@/components/message-erreur";
 
 type Mode = "signin" | "signup" | "legal";
 
@@ -21,6 +24,13 @@ export type ConnexionProvider = AuthProvider & { label: string };
 export type ConnexionLabels = {
   tabSignin: string;
   tabSignup: string;
+  /** Titres de la carte (chantier design, Phase 4.1) : « Konekte » ne se répète
+      plus en titre, en onglet et en bouton. `titleAccent` y est le mot d'accent. */
+  titleSignin: string;
+  titleSignup: string;
+  titleAccent: string;
+  showPassword: string;
+  hidePassword: string;
   namePh: string;
   emailPh: string;
   passwordPh: string;
@@ -121,6 +131,9 @@ function ConnexionFormInner({
         : null
   );
   const [loading, setLoading] = useState(false);
+  // Bascule d'affichage du mot de passe (brief Phase 4.1) : sur un téléphone, une
+  // faute de frappe invisible coûte un échec de connexion.
+  const [voirMdp, setVoirMdp] = useState(false);
 
   /* Le fournisseur tiers. `signInWithOAuth` ne rend pas de session : il
      NAVIGUE vers le fournisseur, qui renvoie sur `/auth/callback?code=…`, où
@@ -299,8 +312,10 @@ function ConnexionFormInner({
         </span>
       </Link>
 
-      <div className="glass rounded-xl p-7">
-        <h1 className="mb-5">{mode === "legal" ? labels.legalTitle : mode === "signin" ? labels.tabSignin : labels.tabSignup}</h1>
+      <div className="rounded-xl border border-line bg-surface p-7 shadow-sm">
+        <h1 className="mb-5">
+          {mode === "legal" ? labels.legalTitle : <TitreAccent texte={mode === "signin" ? labels.titleSignin : labels.titleSignup} accent={labels.titleAccent} />}
+        </h1>
         {mode !== "legal" && <div className="mb-6 flex rounded-xl border border-line p-1 text-sm">
           <button
             onClick={() => { setMode("signin"); setConditionsAccepted(false); setPrivacyRead(false); }}
@@ -336,6 +351,8 @@ function ConnexionFormInner({
                 id="auth-name"
                 type="text"
                 autoComplete="name"
+                // Focus sur le PREMIER champ du mode affiché (brief Phase 4.1).
+                autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="champ"
@@ -352,6 +369,7 @@ function ConnexionFormInner({
               required
               autoComplete="email"
               inputMode="email"
+              autoFocus={mode === "signin"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="champ"
@@ -361,16 +379,35 @@ function ConnexionFormInner({
             <label htmlFor="auth-password" className="block text-sm text-mist">
               {labels.passwordPh}
             </label>
-            <input
-              id="auth-password"
-              type="password"
-              required
-              minLength={6}
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="champ"
-            />
+            <div className="relative">
+              <input
+                id="auth-password"
+                type={voirMdp ? "text" : "password"}
+                required
+                minLength={6}
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="champ pr-14"
+              />
+              <button
+                type="button"
+                onClick={() => setVoirMdp((v) => !v)}
+                aria-pressed={voirMdp}
+                aria-controls="auth-password"
+                aria-label={voirMdp ? labels.hidePassword : labels.showPassword}
+                title={voirMdp ? labels.hidePassword : labels.showPassword}
+                className="absolute inset-y-0 right-0 inline-flex min-h-11 min-w-12 items-center justify-center rounded-xl text-mist hover:text-cloud"
+              >
+                <Icone taille={20}>
+                  {voirMdp ? (
+                    <><path d="M3 3l18 18" /><path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 8.5 4.5 9.5 6a17 17 0 0 1-2.6 3.2" /><path d="M6.6 7.6A16.7 16.7 0 0 0 2.5 12c1 1.5 4.5 6 9.5 6a9.6 9.6 0 0 0 4.4-1" /><path d="M9.9 10a3 3 0 0 0 4.1 4.2" /></>
+                  ) : (
+                    <><path d="M2.5 12C3.5 10.5 7 6 12 6s8.5 4.5 9.5 6c-1 1.5-4.5 6-9.5 6s-8.5-4.5-9.5-6Z" /><circle cx="12" cy="12" r="3" /></>
+                  )}
+                </Icone>
+              </button>
+            </div>
           </div>}
           {mode !== "signin" && (
             <fieldset className="min-w-0 space-y-1">
@@ -433,14 +470,18 @@ function ConnexionFormInner({
                 agacé. */}
             <Link
               href="/mot-de-passe-oublie"
-              className="inline-flex min-h-11 items-center px-2 text-mist hover:text-cloud"
+              className="bouton bouton-texte bouton-compact"
             >
               {labels.forgot}
             </Link>
           </p>
         )}
 
-        {msg && <p role="status" aria-live="polite" className="mt-4 text-center text-xs text-mist">{msg}</p>}
+        {/* Une ERREUR se dit en texte et en icône (`MessageErreur`) ; le succès de
+            l'inscription et le mode démonstration restent une information. */}
+        {msg && (msg === labels.signupSuccess || msg === labels.demoMode
+          ? <p role="status" aria-live="polite" className="mt-4 text-center text-sm text-mist">{msg}</p>
+          : <MessageErreur className="mt-4">{msg}</MessageErreur>)}
         {mode === "legal" && <p className="mt-3 text-center text-sm"><Link href={`/connexion?next=${encodeURIComponent(nextPath)}`} onClick={() => { setMode("signin"); setConditionsAccepted(false); setPrivacyRead(false); setMsg(null); }} className="inline-flex min-h-11 items-center text-cloud underline">{labels.tabSignin}</Link></p>}
       </div>
 

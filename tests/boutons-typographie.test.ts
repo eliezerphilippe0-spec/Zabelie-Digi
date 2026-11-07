@@ -201,7 +201,9 @@ test("B4 — les appelants de `MetricA` (classe transmise) sont vérifiés eux a
       else if (FORME(c) && !PORTE(c)) fautes.push(`${f} — MetricA en forme de bouton sans \`bouton\``);
     }
   }
-  assert.ok(vus >= 3, `seulement ${vus} appel(s) de MetricA vu(s)`);
+  // Deux appelants depuis la Phase 4 : le menu du compte et la page d aide. Le
+  // troisième, le bouton WhatsApp flottant, a été supprimé (V-28 A19).
+  assert.ok(vus >= 2, `seulement ${vus} appel(s) de MetricA vu(s)`);
   assert.deepEqual(fautes, [], fautes.join("\n"));
 });
 

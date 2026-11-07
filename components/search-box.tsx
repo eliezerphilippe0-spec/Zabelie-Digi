@@ -2,8 +2,8 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-
 import { Icone } from "@/components/icone";
+
 /**
  * Recherche avec suggestions de rayons — le seul résultat garanti à
  * catalogue vide.

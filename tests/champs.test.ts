@@ -41,7 +41,9 @@ function champs(): Champ[] {
     const src = lire(f);
     for (const b of balises(src, ["input", "select", "textarea"])) {
       const t = attribut(b.attrs, "type");
-      const type = t && "litteral" in t ? t.litteral : b.nom === "input" ? "text" : b.nom;
+      // Un mot de passe à bascule (`type={voir ? "text" : "password"}`, connexion,
+      // Phase 4) reste un mot de passe : sans cela il sortirait de C5 en silence.
+      const type = t && "litteral" in t ? t.litteral : t && /"password"/.test(t.expr) ? "password" : b.nom === "input" ? "text" : b.nom;
       if (NON_TEXTE.has(type)) continue;
       out.push({ f, ligne: b.ligne, nom: b.nom, type, attrs: b.attrs, classes: classes(attribut(b.attrs, "className"), src), index: b.index, src });
     }
@@ -56,7 +58,7 @@ const ou = (c: Champ) => `${c.f}:${c.ligne} <${c.nom}>`;
  * sens : une exception devenue inutile fait rougir.
  */
 const SANS_CHAMP: Record<string, string> = {
-  "components/search-box.tsx": "la recherche de l'en-tête : une pilule de 44 px dans une barre collante, revue avec l'en-tête en Phase 4 (A19)",
+  "components/search-box.tsx": "la recherche de l'en-tête : une pilule de 44 px dans une barre collante. Revue en Phase 4 (A19) et gardée : la barre inférieure prend déjà 57 px en bas de l'écran, et 44 px tiennent la cible tactile",
   "components/etal-page.tsx": "« Ouvrir ma boutique » garde son échelle propre (V-23)",
 };
 /** Nommés pour les lecteurs d'écran seulement, et pourquoi. */
@@ -66,7 +68,7 @@ const SANS_LIBELLE_VISIBLE: Record<string, string> = {
   "components/search-box.tsx": "champ de recherche : loupe et nom accessible, la convention de toute barre de recherche",
   "app/categories/page.tsx": "champ de recherche des rayons, même convention",
   "app/catalogue/page.tsx": "filtre de zone : un libellé visible pour la rangée (« Zòn »), chaque liste nommée par sa première option",
-  "components/physical-product-form.tsx": "compatibilité véhicule : bloc en français sans clé i18n, chaque liste nommée par sa première option (« Marque… ») ; à traduire en Phase 4",
+  "components/physical-product-form.tsx": "compatibilité véhicule : bloc en français sans clé i18n, chaque liste nommée par sa première option (« Marque… ») ; formulaire vendeur, hors du parcours acheteur de la Phase 4 : à traduire en Phase 5",
 };
 const exempte = (table: Record<string, string>, f: string) => Object.keys(table).some((k) => f === k || (k.endsWith("/") || !k.endsWith(".tsx") ? f.startsWith(k) : false));
 

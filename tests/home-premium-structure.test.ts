@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   SEUIL_RANGEE,
   SEUIL_RANGEE_DESKTOP,
@@ -22,11 +22,10 @@ import {
  *   S4  `if (!rangeeVisible(items.length)) return null;` retiré (page)    → rouge
  *   S5  `<main id="main">` retiré de la page                             → rouge
  *   S6  `{heroImage && (` → `{true && (` (image sans fichier)            → rouge
- *   S7  WhatsAppFab : `if (!href) return null;` retiré                   → rouge
+ *   S7  menu compte : `{wa && (` → `{true && (` (lien vers personne)     → rouge
  */
 
 const PAGE = readFileSync("app/page.tsx", "utf8");
-const FAB = readFileSync("components/whatsapp-fab.tsx", "utf8");
 function sansCommentaires(s: string): string {
   return s.replace(/\{\/\*[\s\S]*?\*\/\}|\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1 ");
 }
@@ -109,11 +108,19 @@ test("S6 — l'image de la bannière n'est rendue que si le fichier du porteur e
   assert.match(page, /style=\{opening \|\| heroImage \? undefined : \{ backgroundImage: "var\(--brand-gradient\)" \}\}/);
 });
 
-test("S7 — le bouton WhatsApp flottant : 48 px, bas droite, absent sans numéro", () => {
-  const fab = sansCommentaires(FAB);
-  assert.match(fab, /if \(!href\) return null;/);
-  assert.match(fab, /className="fixed bottom-4 right-4 z-\(--z-drawer\) grid h-12 w-12 place-items-center rounded-full/);
-  assert.match(page, /<WhatsAppFab href=\{wa\} label=\{t\(lang, "wa\.chat"\)\} \/>/);
+test("S7 — WhatsApp vit dans le menu du compte, plus en bouton flottant, et reste absent sans numéro", () => {
+  /* Chantier design, Phase 4.6 (V-28 A19) : le bouton flottant de 48 px, bas
+   * droite, couvrait le contenu juste au-dessus de la barre de navigation
+   * inférieure. Il est retiré ; le lien du menu compte, qui existait déjà,
+   * devient le seul accès. Ce qui COMMANDE : le lien n'est rendu que si le
+   * numéro est posé (`lib/whatsapp.ts` rend null sinon). */
+  assert.equal(existsSync("components/whatsapp-fab.tsx"), false, "le composant flottant est revenu");
+  assert.doesNotMatch(page, /WhatsAppFab|whatsappHref/, "l'accueil rend de nouveau son propre lien WhatsApp");
+  const nav = sansCommentaires(readFileSync("components/site-nav.tsx", "utf8"));
+  assert.match(nav, /const wa = whatsappHref\(t\(lang, "wa\.prefill"\)\);/);
+  const liens = nav.slice(nav.indexOf("const liensCompte = ("), nav.indexOf("return ("));
+  assert.ok(liens.length > 200, "bloc des liens du compte introuvable");
+  assert.match(liens, /\{wa && \(\s*<MetricA event="whatsapp_clicked" href=\{wa\} className=\{MENU_LINK\}>\s*\{t\(lang, "wa\.chat"\)\}/);
 });
 
 test("S8 — la barre de confiance compacte : quatre repères, aucun sous-texte, sous la bannière", () => {

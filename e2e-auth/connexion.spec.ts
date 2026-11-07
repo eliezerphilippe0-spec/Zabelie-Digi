@@ -44,7 +44,7 @@ test("connexion réussie : session transmise au serveur et conservée après rec
 test("inscription avec confirmation : métadonnées envoyées, aucune fausse session", async ({ page, context }) => {
   await page.goto("/inscription?next=%2Fvendre");
   await expect(page).toHaveURL(/\/connexion\?mode=signup&next=%2Fvendre$/);
-  await expect(page.getByRole("heading", { level: 1, name: t("fr", "auth.tab.signup") })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: t("fr", "auth.title.signup") })).toBeVisible();
   await page.locator("#auth-name").fill("Créateur test");
   await fill(page,"new@example.test");
   await acceptDocuments(page);
@@ -62,7 +62,7 @@ for (const lang of ["fr", "ht", "en", "es"] as const) {
     const response = await page.goto("/inscription?next=https%3A%2F%2Fpiege.test&mode=signin");
     expect((await response?.request().redirectedFrom()?.response())?.status()).toBe(307);
     await expect(page).toHaveURL("http://127.0.0.1:3003/connexion?mode=signup&next=%2F");
-    await expect(page.getByRole("heading", { level: 1, name: t(lang, "auth.tab.signup") })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: t(lang, "auth.title.signup") })).toBeVisible();
     await expect(page.locator("#auth-name")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
@@ -78,7 +78,7 @@ test("adresse déjà inscrite : bascule vers Connexion sans bouton bloqué", asy
   await page.locator('button[type="submit"]').click();
   expect((await request).postDataJSON().data).toEqual({ display_name: "Créateur test", legal_acceptance: initialLegalDeclaration(true, true) });
   await expect(page.getByText(t("fr","auth.err.exists"),{exact:true})).toBeVisible();
-  await expect(page.getByRole("heading",{level:1,name:t("fr","auth.tab.signin")})).toBeVisible();
+  await expect(page.getByRole("heading",{level:1,name:t("fr","auth.title.signin")})).toBeVisible();
 });
 
 for(const lang of ["ht","en","es"] as const) {

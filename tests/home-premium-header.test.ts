@@ -92,7 +92,13 @@ test("H4 — Aide, Talents et déconnexion vivent dans le menu compte", () => {
   // commentaires décale les positions, et une coupe faite à l'index de
   // l'original tombait APRÈS le menu — assertion rouge sur un fichier juste.
   const nav = sansCommentaires(NAV);
-  const menu = nav.slice(nav.indexOf("<AccountMenu"));
+  // Depuis la Phase 4 du chantier design (V-28 A19), les liens sont écrits UNE
+  // fois dans `liensCompte`, puis ouverts depuis l'en-tête à partir de `md` et
+  // depuis la barre inférieure en dessous : les deux places rendent ce bloc.
+  const menu = nav.slice(nav.indexOf("const liensCompte = ("), nav.indexOf("return ("));
+  assert.ok(menu.length > 200, "bloc des liens du compte introuvable");
+  assert.match(nav, /<AccountMenu label=\{t\(lang, "nav\.account"\)\} className="hidden md:block">\{liensCompte\}<\/AccountMenu>/);
+  assert.match(nav, /compte=\{<AccountMenu label=\{t\(lang, "nav\.bar\.account"\)\} variante="barre">\{liensCompte\}<\/AccountMenu>\}/);
   for (const [href, cle] of [["/aide", "nav.help"], ["/catalogue?univers=services", "universe.services"], ["/vendre", "topbar.sell"], ["/connexion", "nav.login"], ["/messages", "msg.title"]]) {
     assert.match(menu, new RegExp(`href="${href.replace(/[/#?]/g, "\\$&")}"[^>]*>\\s*\\{t\\(lang, "${cle.replace(".", "\\.")}"\\)\\}`), `${href} manque au menu compte`);
   }
@@ -111,7 +117,10 @@ test("H6 — chips, panier, compte, loupe : des cibles tactiles de 44 px sur le 
   assert.match(sansCommentaires(CHIPS), /min-h-11[^\n]*text-on-chrome/);
   assert.match(sansCommentaires(CHIPS), /className=\{style\(r\.href\)\}/);
   assert.match(sansCommentaires(NAV), /href="\/panier"[\s\S]{0,200}?className="[^"]*\bmin-h-11 min-w-11\b/);
-  assert.match(sansCommentaires(MENU), /<summary[\s\S]{0,120}?className="[^"]*\bmin-h-11 min-w-11\b/);
+  // Deux variantes depuis la Phase 4 (V-28 A19) : la cible de 44 px est celle de
+  // l'EN-TÊTE, branche « sinon » de la condition ; la barre a ses 56 px en CSS
+  // (`tests/parcours-phase4.test.ts`).
+  assert.match(sansCommentaires(MENU), /<summary[\s\S]{0,200}?className=\{\s*barre\s*\?\s*"[^"]*"\s*:\s*"[^"]*\bmin-h-11 min-w-11\b/);
   assert.match(sansCommentaires(SEARCH), /aria-label=\{submitLabel\}[\s\S]{0,120}?className="[^"]*\bmin-h-11 min-w-11\b/);
 });
 

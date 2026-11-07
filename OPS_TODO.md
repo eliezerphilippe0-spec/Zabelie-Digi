@@ -3,15 +3,18 @@
 ## Chantier design et typographie (7 novembre 2026) — ce qui attend le porteur
 
 Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
-`docs/design/PHASE-2.md`. Phase 3 : `docs/design/PHASE-3.md`. Décisions
-prises : V-25, V-26 et V-27 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
+`docs/design/PHASE-2.md`. Phase 3 : `docs/design/PHASE-3.md`. Phase 4 :
+`docs/design/PHASE-4.md`. Décisions prises : V-25 à V-28
+(`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
 Une phase ne démarre qu'après la validation de la précédente.
 
 1. ✅ **Fusion des trois premières PR**, sur « fusion » du porteur le
    2026-11-07 : audit (#473) et Phase 1 (#474) fusionnés en squash et
    vérifiés en ligne ; Phase 2 (#475) fusionnée par la fusion automatique
-   demandée. Les phases suivantes gardent la même règle : une PR par phase,
-   fusionnée seulement après validation.
+   demandée. Phase 3 (#476) fusionnée de même, sur « Fusionne et Phase 4 ».
+   Phase 4 (#477) validée le 2026-11-07 (« Je valide tel quel »).
+   Les phases suivantes gardent la même règle : une PR par phase, fusionnée
+   seulement après validation.
 2. ✅ **A12, badges** : tranché le 2026-11-07 (V-26), recommandation acceptée.
 3. ⛔ **A11, arrêt ferme** : `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` n'est pas
    active. Vérifier le plan Supabase puis activer, ou laisser éteint. Variable
@@ -24,7 +27,8 @@ Une phase ne démarre qu'après la validation de la précédente.
    recharge restent à 24 px, contre 28 px ailleurs, parce que le brief interdit
    d'y toucher. Dire si l'on retire ces deux classes. Même raison en Phase 2 :
    leurs boutons gardent leur écriture à la main, et « Mande yon retrè » reste
-   à 38 px. La Phase 4 autorise une retouche de présentation du checkout.
+   à 38 px. La Phase 4 n'y a pas touché non plus (V-28) : il faut une réponse
+   explicite avant toute retouche de présentation de ces fichiers.
 6. ⏳ **TBT de la connexion**, mesuré en Phase 2 : 64 → environ 130 ms, sans
    code ajouté (le build a changé l'ordre d'exécution de deux fichiers). À
    suivre en Phase 5.
@@ -34,6 +38,19 @@ Une phase ne démarre qu'après la validation de la précédente.
    Phase 5, sur le chargement des polices du titre.
 8. ⏳ **A14, ordre mobile** : attend A13 (la promesse passerait dans le
    sous-titre du hero). L'ordre actuel est conservé.
+9. ✅ **A19, barre inférieure : quatre entrées** (accueil, rayons, panier,
+   compte), sans « recherche ». Tranché le 2026-11-07 : « Je valide tel quel »
+   (V-28).
+10. ⏸ **A17 et A18**, Phase 4 : pas de connexion par téléphone (aucun
+    fournisseur SMS admis) ; indicateur d'étapes et résumé collant reportés
+    à l'ouverture d'une page de commande et du paiement groupé.
+11. ✅ **LCP de la connexion**, Phase 4 : 2 876 → 3 302 ms (4G lent simulé),
+    dû à la police du mot d'accent. Tranché le 2026-11-07 : l'accent est
+    gardé (V-28). Reste à viser en Phase 5, avec les polices du titre de
+    l'accueil (point 7).
+12. ✅ **« Èd sou WhatsApp »** dans la barre de confiance de l'accueil : reste
+    un texte ; le menu du compte est le seul accès à WhatsApp. Tranché le
+    2026-11-07 (V-28).
 
 ## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 

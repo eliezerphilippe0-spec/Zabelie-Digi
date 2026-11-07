@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CollectionKind } from "@/lib/collections";
 import { MessageErreur } from "@/components/message-erreur";
-
 import { Icone } from "@/components/icone";
+
 export function CollectionToggle({ kind, id, initial, authenticated, labels }: {
   kind: CollectionKind; id: string; initial: boolean; authenticated: boolean;
   labels: { add: string; remove: string; error: string };
