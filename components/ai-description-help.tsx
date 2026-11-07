@@ -126,7 +126,7 @@ export function AiDescriptionHelp({
           type="button"
           onClick={() => demander()}
           disabled={busy || !pret}
-          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud transition hover:border-accent disabled:opacity-50"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {busy ? labels.loading : labels.button}
         </button>
@@ -142,7 +142,7 @@ export function AiDescriptionHelp({
             type="button"
             onClick={() => demander(true)}
             disabled={busy}
-            className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-50"
+            className="bouton bouton-primaire bouton-compact"
           >
             {busy
               ? labels.loading

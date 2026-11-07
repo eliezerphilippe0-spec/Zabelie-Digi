@@ -101,7 +101,7 @@ export function PickupAdmin() {
           <button
             onClick={creer}
             disabled={busy || !nom.trim() || !adresse.trim()}
-            className="inline-flex min-h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+            className="bouton bouton-primaire bouton-compact"
           >
             Créer (fermé)
           </button>
@@ -142,7 +142,7 @@ export function PickupAdmin() {
               <button
                 onClick={() => basculer(p)}
                 disabled={busy}
-                className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-xs text-cloud transition hover:border-brand disabled:opacity-60"
+                className="bouton bouton-secondaire bouton-compact"
               >
                 {p.actif ? "Fermer" : "Ouvrir"}
               </button>

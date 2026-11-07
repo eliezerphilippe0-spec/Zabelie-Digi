@@ -365,7 +365,7 @@ export function PhysicalProductForm({
         {/* Bouton dans la langue du vendeur : le champ natif affichait « Choose File »
             dans la langue du navigateur (audit du 2026-10-29). `sr-only`, pas
             `hidden` : le champ reste joignable au clavier. */}
-        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+        <label className="bouton bouton-secondaire bouton-compact cursor-pointer has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
           {listingLabels.photoChoose}
           <input
             type="file"
@@ -376,7 +376,7 @@ export function PhysicalProductForm({
           />
         </label>
         <button type="button" onClick={retryPhoto} disabled={busy || compressing || !photo}
-          className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-on-brand disabled:opacity-60">
+          className="bouton bouton-primaire">
           {busy || compressing ? listingLabels.creating : listingLabels.photoRetry}
         </button>
         <Link href={`/vendre#produit-${createdProductId}`} className="flex min-h-11 items-center text-sm text-mist underline hover:text-cloud">
@@ -431,7 +431,7 @@ export function PhysicalProductForm({
               📷
             </div>
           )}
-          <label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold hover:border-accent has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+          <label className="bouton bouton-secondaire bouton-compact cursor-pointer has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
             {photoPreview ? listingLabels.photoChoose : listingLabels.photoPick}
             <input
               type="file"
@@ -715,7 +715,7 @@ export function PhysicalProductForm({
             onClick={() =>
               setVariants((vs) => [...vs, { label: "", priceHTG: price, quantity: "0" }])
             }
-            className="rounded-lg border border-line px-3 py-1.5 text-sm"
+            className="bouton bouton-secondaire bouton-compact"
           >
             + Ajouter une variante
           </button>
@@ -746,7 +746,7 @@ export function PhysicalProductForm({
       <button
         type="submit"
         disabled={busy || compressing || !categorySlug}
-        className="w-full rounded-xl bg-brand px-5 py-3.5 font-bold text-on-brand disabled:opacity-60"
+        className="bouton bouton-primaire w-full"
       >
         {busy ? listingLabels.creating : listingLabels.draft}
       </button>

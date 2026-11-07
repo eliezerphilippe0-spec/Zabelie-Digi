@@ -42,12 +42,12 @@ export function DomainForm({ initial, labels }: { initial: DomaineAffiche; label
             autoComplete="off" spellCheck={false} maxLength={253} className="min-h-11 rounded-xl border border-line bg-ink px-3 font-mono text-base" />
         </label>
         <div className="flex flex-wrap gap-3">
-          <button type="submit" disabled={envoi} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-60">
+          <button type="submit" disabled={envoi} className="bouton bouton-primaire bouton-compact">
             {envoi ? labels.saving : labels.save}
           </button>
           {actuel && (
             <button type="button" disabled={envoi} onClick={() => { if (confirm(labels.confirmRemove)) appeler("DELETE"); }}
-              className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm">{labels.remove}</button>
+              className="bouton bouton-secondaire bouton-compact">{labels.remove}</button>
           )}
         </div>
         {erreur && <p role="alert" className="text-sm text-danger-text">{erreur}</p>}

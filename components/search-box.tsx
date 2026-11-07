@@ -112,9 +112,7 @@ export function SearchBox({
              recherche de la page étaient visibles ENSEMBLE, à 268 px, l'un
              orange et l'autre crème. Deux primaires sur un écran ne
              hiérarchisent rien. */
-          className={`min-h-11 rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 ${
-            compact ? "py-2" : "py-3"
-          }`}
+          className={`bouton bouton-secondaire ${compact ? "bouton-compact" : ""}`}
         >
           {submitLabel}
         </button>

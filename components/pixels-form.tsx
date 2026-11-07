@@ -38,7 +38,7 @@ export function PixelsForm({ actorId, initial, labels }: { actorId: string; init
       {champ("google", labels.googleHint, "G-XXXXXXXXXX")}
       {champ("tiktok", labels.tiktokHint, "C4ABCDEF0123456789AB")}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={etat === "envoi"} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-60">
+        <button type="submit" disabled={etat === "envoi"} className="bouton bouton-primaire bouton-compact">
           {etat === "envoi" ? labels.saving : labels.save}
         </button>
         {etat === "ok" && <span role="status" className="text-sm text-success-text">{labels.saved}</span>}

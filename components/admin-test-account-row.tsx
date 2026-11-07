@@ -98,10 +98,10 @@ export function AdminTestAccountRow({
       <button
         onClick={basculer}
         disabled={busy}
-        className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-60 ${
+        className={`bouton bouton-secondaire bouton-compact shrink-0 ${
           isTest
-            ? "border-line text-cloud hover:border-accent"
-            : "border-warning-text/40 text-warning-text hover:bg-warning-text/10"
+            ? ""
+            : "text-warning-text"
         }`}
       >
         {busy ? "…" : isTest ? "Retirer la marque" : "Marquer comme essai"}

@@ -49,7 +49,7 @@ export function AdminRefundButton({ orderId, labels }: {
       <button
         onClick={refund}
         disabled={loading}
-        className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-danger-text transition hover:border-danger/50 disabled:opacity-60"
+        className="bouton bouton-secondaire bouton-compact text-danger-text"
       >
         {loading ? "…" : labels.button}
       </button>

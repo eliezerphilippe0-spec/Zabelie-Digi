@@ -41,7 +41,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
       <p className="mt-3 max-w-2xl text-mist">{t(lang, "directory.intro")}</p>
       <form action="/categories" className="mt-6 flex max-w-2xl gap-2">
         <input name="q" defaultValue={q} aria-label={t(lang, "directory.search")} placeholder={t(lang, "directory.search")} className="min-h-11 min-w-0 flex-1 rounded-xl border border-line bg-ink px-4 text-sm" />
-        <button type="submit" className="min-h-11 rounded-xl bg-brand px-5 font-semibold text-on-brand">{t(lang, "catalog.search.btn")}</button>
+        <button type="submit" className="bouton bouton-primaire bouton-compact">{t(lang, "catalog.search.btn")}</button>
       </form>
       {q && <Link href="/categories" className="mt-2 inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t(lang, "directory.reset")}</Link>}
       {rows.length > 0 ? <div className="mt-8 grid items-start gap-4 lg:grid-cols-2">

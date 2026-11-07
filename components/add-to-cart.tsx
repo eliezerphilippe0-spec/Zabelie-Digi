@@ -70,7 +70,7 @@ export function AddToCart({
         </p>
         <a
           href="/panier"
-          className="bouton mt-2 inline-block rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-cloud transition hover:border-brand/60"
+          className="bouton bouton-secondaire bouton-compact mt-2"
         >
           {labels.seeCart}
         </a>
@@ -84,7 +84,7 @@ export function AddToCart({
         type="button"
         onClick={ajouter}
         disabled={etat === "envoi"}
-        className="w-full rounded-xl border border-line px-5 py-3 text-sm font-semibold text-cloud transition hover:border-brand/60 disabled:opacity-60"
+        className="bouton bouton-secondaire w-full"
       >
         {etat === "envoi" ? labels.adding : labels.add}
       </button>

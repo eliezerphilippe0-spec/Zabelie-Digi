@@ -202,7 +202,7 @@ export default async function CreationPage({
                   <p className="text-xs text-mist">{v.meilleursSous}</p>
                 </div>
                 {aVendu && (
-                  <Link href="/mes-ventes" className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold">
+                  <Link href="/mes-ventes" className="bouton bouton-secondaire bouton-compact">
                     {v.voirTout}
                   </Link>
                 )}
@@ -253,7 +253,7 @@ export default async function CreationPage({
               <h1>{salut}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{c.intro}</p>
             </div>
-            <Link href={boutique} className="bouton inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-line px-4 text-sm font-semibold">
+            <Link href={boutique} className="bouton bouton-secondaire bouton-compact shrink-0">
               <IconeStudio nom="boutique" />
               {v.voirBoutique}
             </Link>
@@ -330,7 +330,7 @@ export default async function CreationPage({
                       </div>
                       <Link
                         href={`/tableau-de-bord/creation/${p.id}`}
-                        className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold"
+                        className="bouton bouton-secondaire bouton-compact"
                       >
                         {c.continuer} <span aria-hidden="true">&nbsp;→</span>
                       </Link>
@@ -360,7 +360,7 @@ export default async function CreationPage({
                     ))}
                   </ul>
                 )}
-                <Link href="/tableau-de-bord/creation/analyse" className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold">
+                <Link href="/tableau-de-bord/creation/analyse" className="bouton bouton-secondaire bouton-compact mt-4">
                   {tb.oppVoir} <span aria-hidden="true">&nbsp;→</span>
                 </Link>
               </section>

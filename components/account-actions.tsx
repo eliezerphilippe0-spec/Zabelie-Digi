@@ -48,14 +48,14 @@ export function AccountActions({ actorId }: { actorId: string }) {
       <div className="flex flex-wrap items-center gap-3">
         <a
           href="/api/account/export"
-          className="bouton rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent"
+          className="bouton bouton-secondaire bouton-compact"
         >
           Exporter mes données
         </a>
         <button
           onClick={remove}
           disabled={busy}
-          className="rounded-xl border border-danger/40 px-4 py-2.5 text-sm font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-60"
+          className="bouton bouton-secondaire bouton-compact text-danger-text"
         >
           {busy ? "Suppression…" : "Supprimer mon compte"}
         </button>

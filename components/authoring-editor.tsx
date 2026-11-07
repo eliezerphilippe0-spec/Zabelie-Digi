@@ -577,7 +577,7 @@ export function AuthoringEditor({
     new Intl.DateTimeFormat(lang === "ht" ? "fr" : lang, { dateStyle: "long", timeStyle: "short", timeZone: "America/Port-au-Prince" }).format(new Date(iso));
   const lienPdf = (id: string, doc: "guide" | "extrait", telecharger = false) =>
     `/api/digital-authoring/exports/${id}?document=${doc}${telecharger ? "&telecharger=1" : ""}`;
-  const lienBouton = "bouton inline-flex min-h-11 items-center rounded-xl border border-line px-3 text-sm font-semibold";
+  const lienBouton = "bouton bouton-secondaire bouton-compact";
   const lieu = (c: Controle) => {
     const titreSection = c.section === null ? "" : contenu.sections[c.section - 1]?.titre.trim();
     return c.section === null ? r.guide : r.section.replace("{n}", String(c.section)) + (titreSection ? ` · ${titreSection}` : "");
@@ -636,8 +636,8 @@ export function AuthoringEditor({
         <div role="region" aria-label={e.restaurer} className="rounded-xl border border-line p-3 text-sm">
           <p>{e.restaurerTexte.replace("{date}", new Date(proposition.enregistreA).toLocaleString())}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" onClick={() => reprendreBrouillon(proposition)} className="min-h-11 rounded-xl border border-line px-3 text-sm font-semibold">{e.restaurer}</button>
-            <button type="button" onClick={ignorerBrouillon} className="min-h-11 rounded-xl border border-line px-3 text-sm">{e.ignorer}</button>
+            <button type="button" onClick={() => reprendreBrouillon(proposition)} className="bouton bouton-secondaire bouton-compact">{e.restaurer}</button>
+            <button type="button" onClick={ignorerBrouillon} className="bouton bouton-secondaire bouton-compact">{e.ignorer}</button>
           </div>
         </div>
       )}
@@ -715,20 +715,20 @@ export function AuthoringEditor({
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button type="button" onClick={() => deplacer(i, -1)} disabled={i === 0}
-                    aria-label={`${e.monter} : ${i + 1}`} className="min-h-11 rounded-xl border border-line px-3 text-sm disabled:opacity-40">↑ {e.monter}</button>
+                    aria-label={`${e.monter} : ${i + 1}`} className="bouton bouton-secondaire bouton-compact">↑ {e.monter}</button>
                   <button type="button" onClick={() => deplacer(i, 1)} disabled={i === contenu.sections.length - 1}
-                    aria-label={`${e.descendre} : ${i + 1}`} className="min-h-11 rounded-xl border border-line px-3 text-sm disabled:opacity-40">↓ {e.descendre}</button>
+                    aria-label={`${e.descendre} : ${i + 1}`} className="bouton bouton-secondaire bouton-compact">↓ {e.descendre}</button>
                   <button type="button" onClick={() => supprimerSection(s)}
-                    aria-label={`${e.supprimer} : ${i + 1}`} className="min-h-11 rounded-xl border border-line px-3 text-sm text-danger-text">{e.supprimer}</button>
+                    aria-label={`${e.supprimer} : ${i + 1}`} className="bouton bouton-secondaire bouton-compact text-danger-text">{e.supprimer}</button>
                 </div>
               </li>
             ))}
           </ol>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" onClick={ajouterSection} disabled={contenu.sections.length >= limites.sections}
-              className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold disabled:opacity-40">+ {e.ajouterSection}</button>
+              className="bouton bouton-secondaire bouton-compact">+ {e.ajouterSection}</button>
             <button type="button" onClick={approuverPlan} disabled={contenu.sections.length === 0 || statut === "envoi"}
-              className="bouton min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">{e.approuverPlan}</button>
+              className="bouton bouton-primaire bouton-compact">{e.approuverPlan}</button>
             {planApprouve !== null && <span className="text-sm text-success-text">✓ {e.planApprouve}</span>}
           </div>
           {contenu.sections.length === 0 && <p className="mt-2 text-xs text-mist">{e.planVideAide}</p>}
@@ -736,7 +736,7 @@ export function AuthoringEditor({
             <div className="mt-4 border-t border-line pt-4">
               <div className="flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => sugg.demander("plan", null)} disabled={sugg.enCours(null)}
-                  className="min-h-11 rounded-xl border border-line px-4 text-sm disabled:opacity-40">{labels.ia.proposerPlan}</button>
+                  className="bouton bouton-secondaire bouton-compact">{labels.ia.proposerPlan}</button>
                 {/* Un seul compteur à l'écran : ici avant l'approbation, sous « Rédaction » après. */}
                 {restantes && planApprouve === null && <span className="text-xs text-mist">{restantes}</span>}
               </div>
@@ -744,7 +744,7 @@ export function AuthoringEditor({
               <EtatSuggestion s={sugg} labels={labels.ia} sectionId={null} revisionCourante={revision} actions={
                 sugg.proposition(null)?.plan ? (
                   <button type="button" onClick={() => utiliserPlan(sugg.proposition(null)!.plan!)}
-                    className="min-h-11 rounded-xl border border-line px-3 text-sm font-semibold">{labels.ia.utiliserPlan}</button>
+                    className="bouton bouton-secondaire bouton-compact">{labels.ia.utiliserPlan}</button>
                 ) : null
               } />
             </div>
@@ -775,16 +775,16 @@ export function AuthoringEditor({
                           <div className="mt-2 flex flex-wrap gap-2">
                             {([["draft", labels.ia.suggererBrouillon], ["rewrite", labels.ia.reformuler], ["exercise", labels.ia.proposerExercice]] as const).map(([type, libelle]) => (
                               <button key={type} type="button" onClick={() => sugg.demander(type, s.id)} disabled={sugg.enCours(s.id)}
-                                aria-label={`${libelle} : ${s.titre}`} className="min-h-11 rounded-xl border border-line px-3 text-sm disabled:opacity-40">{libelle}</button>
+                                aria-label={`${libelle} : ${s.titre}`} className="bouton bouton-secondaire bouton-compact">{libelle}</button>
                             ))}
                           </div>
                           <ConfirmationEnvoi s={sugg} labels={labels.ia} sectionId={s.id} />
                           <EtatSuggestion s={sugg} labels={labels.ia} sectionId={s.id} revisionCourante={revision} actions={
                             p?.texte ? (
                               <>
-                                <button type="button" onClick={() => remplacerParSuggestion(s, p.texte!)} className="min-h-11 rounded-xl border border-line px-3 text-sm font-semibold">{labels.ia.remplacer}</button>
-                                <button type="button" onClick={() => ajouterSuggestion(s, p.texte!)} className="min-h-11 rounded-xl border border-line px-3 text-sm">{labels.ia.ajouter}</button>
-                                <button type="button" onClick={() => void copierSuggestion(p.operationId, p.texte!)} className="min-h-11 rounded-xl border border-line px-3 text-sm">{copiee === p.operationId ? labels.ia.copie : labels.ia.copier}</button>
+                                <button type="button" onClick={() => remplacerParSuggestion(s, p.texte!)} className="bouton bouton-secondaire bouton-compact">{labels.ia.remplacer}</button>
+                                <button type="button" onClick={() => ajouterSuggestion(s, p.texte!)} className="bouton bouton-secondaire bouton-compact">{labels.ia.ajouter}</button>
+                                <button type="button" onClick={() => void copierSuggestion(p.operationId, p.texte!)} className="bouton bouton-secondaire bouton-compact">{copiee === p.operationId ? labels.ia.copie : labels.ia.copier}</button>
                               </>
                             ) : null
                           } />
@@ -835,7 +835,7 @@ export function AuthoringEditor({
                   </label>
                   <button type="button" onClick={() => void approuverGuide()}
                     disabled={!responsable || fiche.bloquants > 0 || approbation || statut === "envoi"}
-                    className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                    className="bouton bouton-primaire bouton-compact mt-3">
                     {approbation ? r.approbation : r.approuver}
                   </button>
                 </div>
@@ -852,7 +852,7 @@ export function AuthoringEditor({
             <>
               {pdf && <p className="mt-1 text-sm text-warning-text">⚠ {p.ancien}</p>}
               <button type="button" onClick={() => void creerPdf()} disabled={rendu}
-                className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                className="bouton bouton-primaire bouton-compact mt-3">
                 {rendu ? p.creation : p.creer}
               </button>
             </>
@@ -879,7 +879,7 @@ export function AuthoringEditor({
                 <div className="border-t border-line pt-4">
                   <p className="text-sm text-mist">{p.consigne}</p>
                   <button type="button" onClick={() => void approuverPdf()} disabled={!apercuOuvert || approbationPdf}
-                    className="bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">
+                    className="bouton bouton-primaire bouton-compact mt-3">
                     {approbationPdf ? p.approbation : p.approuver}
                   </button>
                 </div>
@@ -897,27 +897,27 @@ export function AuthoringEditor({
           <p>{message}</p>
           {statut === "conflit" && (
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={garderMaVersion} className="min-h-11 rounded-xl border border-line px-3 text-sm text-cloud">{e.garder}</button>
-              <button type="button" onClick={reprendreServeur} className="min-h-11 rounded-xl border border-line px-3 text-sm text-cloud">{e.recharger}</button>
+              <button type="button" onClick={garderMaVersion} className="bouton bouton-secondaire bouton-compact">{e.garder}</button>
+              <button type="button" onClick={reprendreServeur} className="bouton bouton-secondaire bouton-compact">{e.recharger}</button>
             </div>
           )}
         </div>
       )}
 
       {!archive ? (
-        <button type="button" onClick={archiver} disabled={statut === "envoi"} className="min-h-11 rounded-xl border border-line px-4 text-sm">{e.archiver}</button>
+        <button type="button" onClick={archiver} disabled={statut === "envoi"} className="bouton bouton-secondaire bouton-compact">{e.archiver}</button>
       ) : (
         <button type="button" onClick={() => void supprimerProjet()} disabled={suppression}
-          className="min-h-11 rounded-xl border border-line px-4 text-sm text-danger-text disabled:opacity-40">{e.supprimerProjet}</button>
+          className="bouton bouton-secondaire bouton-compact text-danger-text">{e.supprimerProjet}</button>
       )}
 
       {/* Barre collante : sur un téléphone, l'état et le bouton restent sous le pouce. */}
       <div className="sticky bottom-0 z-(--z-sticky) -mx-4 border-t border-line bg-surface px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => void sauver()} disabled={archive || statut === "envoi"}
-            className="bouton min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40">{statut === "envoi" ? e.enregistrement : e.enregistrer}</button>
+            className="bouton bouton-primaire bouton-compact">{statut === "envoi" ? e.enregistrement : e.enregistrer}</button>
           {statut === "hors_ligne" && (
-            <button type="button" onClick={() => void rattraper()} className="min-h-11 rounded-xl border border-line px-3 text-sm">{e.reessayer}</button>
+            <button type="button" onClick={() => void rattraper()} className="bouton bouton-secondaire bouton-compact">{e.reessayer}</button>
           )}
           <p role="status" aria-live="polite" className="min-w-0 flex-1 text-sm text-mist">{texteStatut[statut]}</p>
         </div>

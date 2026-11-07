@@ -142,9 +142,9 @@ export function EssayageFeuille({
     if (fichier) void essayer(fichier);
   }
 
-  const bouton = "inline-flex min-h-11 w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition";
-  const principal = `${bouton} bouton bg-brand text-on-brand`;
-  const secondaire = `${bouton} border border-line text-cloud hover:border-brand/60`;
+  const bouton = "bouton w-full";
+  const principal = `${bouton} bouton-primaire`;
+  const secondaire = `${bouton} bouton-secondaire`;
 
   return (
     <dialog
@@ -156,7 +156,7 @@ export function EssayageFeuille({
     >
       <div className="flex items-center justify-between gap-3">
         <h2 id="essayage-titre">{labels.titre}</h2>
-        <button type="button" onClick={() => dialogue.current?.close()} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-line px-3 text-sm">
+        <button type="button" onClick={() => dialogue.current?.close()} className="bouton bouton-secondaire bouton-compact min-w-11">
           {labels.fermer}
         </button>
       </div>

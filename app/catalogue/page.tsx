@@ -310,8 +310,8 @@ export default async function CataloguePage({
               <option value="ventes">{t(lang, "catalog.sort.sales")}</option>
             </select>
           </label>
-          <button type="submit" className="min-h-11 rounded-xl bg-brand px-5 text-sm font-semibold text-on-brand hover:opacity-90">{t(lang, "zone.filter.apply")}</button>
-          {filtre && <Link href={universe ? universeHref(universe) : "/catalogue"} className="inline-flex min-h-11 items-center px-2 text-sm underline underline-offset-4">{t(lang, "catalog.reset")}</Link>}
+          <button type="submit" className="bouton bouton-primaire bouton-compact">{t(lang, "zone.filter.apply")}</button>
+          {filtre && <Link href={universe ? universeHref(universe) : "/catalogue"} className="bouton bouton-texte bouton-compact">{t(lang, "catalog.reset")}</Link>}
           {priceRangeInvalid && <p role="alert" className="w-full text-sm text-danger-text">{t(lang, "catalog.price.invalid")}</p>}
         </form>
 
@@ -377,7 +377,7 @@ export default async function CataloguePage({
             )}
             <button
               type="submit"
-              className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold text-cloud transition hover:border-accent"
+              className="bouton bouton-secondaire bouton-compact"
             >
               {t(lang, "zone.filter.apply")}
             </button>
@@ -495,7 +495,7 @@ export default async function CataloguePage({
               </p>
               <Link
                 href={hrefFor({ page: 1 })}
-                className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-5"
               >
                 {t(lang, "catalog.page404.cta")}
               </Link>
@@ -532,7 +532,7 @@ export default async function CataloguePage({
                 </div>
               )}
 
-              <Link href={hrefFor({ q: null, page: 1 })} className="mt-5 inline-flex min-h-11 items-center text-accent underline">
+              <Link href={hrefFor({ q: null, page: 1 })} className="bouton bouton-texte bouton-compact mt-5">
                 {t(lang, "catalog.resetSearch")}
               </Link>
               <p className="mt-6 text-sm text-cloud">{t(lang, "catalog.miss.know")}</p>
@@ -542,7 +542,7 @@ export default async function CataloguePage({
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bouton mt-3 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-3"
               >
                 {t(lang, "catalog.miss.share")}
               </a>
@@ -574,7 +574,7 @@ export default async function CataloguePage({
           ) : minPrice !== undefined || maxPrice !== undefined || !!zoneId ? (
             <div className="rounded-xl border border-line bg-surface/40 p-10 text-center">
               <p>{t(lang, "catalog.none")}</p>
-              <Link href={q ? hrefFor({ q: null, page: 1 }) : universe ? universeHref(universe) : "/catalogue"} className="mt-4 inline-flex min-h-11 items-center text-accent underline">{t(lang, q ? "catalog.resetSearch" : "catalog.reset")}</Link>
+              <Link href={q ? hrefFor({ q: null, page: 1 }) : universe ? universeHref(universe) : "/catalogue"} className="bouton bouton-texte bouton-compact mt-4">{t(lang, q ? "catalog.resetSearch" : "catalog.reset")}</Link>
             </div>
           ) : filtre && !q ? (
             /* Rayon filtré, AUCUNE recherche : c'est l'atterrissage des cartes
@@ -592,7 +592,7 @@ export default async function CataloguePage({
               </p>
               <Link
                 href="/vendre"
-                className="bouton mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-5"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
@@ -623,7 +623,7 @@ export default async function CataloguePage({
               <Link href="/aide#comment" className="editorial-link">{t(lang, "home.how.buy")}<span aria-hidden="true">→</span></Link>
               <Link
                 href="/vendre"
-                className="bouton mt-5 inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+                className="bouton bouton-primaire mt-5"
               >
                 {t(lang, "catalog.empty.cta")}
               </Link>
@@ -657,7 +657,7 @@ export default async function CataloguePage({
                 {page > 1 ? (
                   <Link
                     href={hrefFor({ page: page - 1 })}
-                    className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                    className="bouton bouton-secondaire bouton-compact"
                   >
                     {t(lang, "catalog.prev")}
                   </Link>
@@ -670,7 +670,7 @@ export default async function CataloguePage({
                 {hasMore ? (
                   <Link
                     href={hrefFor({ page: page + 1 })}
-                    className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                    className="bouton bouton-secondaire bouton-compact"
                   >
                     {t(lang, "catalog.more")}
                   </Link>

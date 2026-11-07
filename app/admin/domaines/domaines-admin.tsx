@@ -42,11 +42,11 @@ export function DomainesAdmin({ demandes }: { demandes: DemandeDomaine[] }) {
           {d.statut !== "actif" && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" disabled={busy === d.sellerId} onClick={() => decider(d, "activer")}
-                className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 font-semibold text-on-brand disabled:opacity-60">Vérifier et activer</button>
+                className="bouton bouton-primaire bouton-compact">Vérifier et activer</button>
               <input value={notes[d.sellerId] ?? ""} onChange={(e) => setNotes({ ...notes, [d.sellerId]: e.target.value })} placeholder="Motif du refus"
                 maxLength={300} className="min-h-11 flex-1 rounded-xl border border-line bg-ink px-3" />
               <button type="button" disabled={busy === d.sellerId} onClick={() => decider(d, "refuser")}
-                className="inline-flex min-h-11 items-center rounded-xl border border-line px-4">Refuser</button>
+                className="bouton bouton-secondaire bouton-compact">Refuser</button>
             </div>
           )}
         </div>

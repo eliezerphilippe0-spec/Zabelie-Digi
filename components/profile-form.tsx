@@ -321,7 +321,7 @@ export function ProfileForm({
                   type="button"
                   onClick={demanderKatye}
                   disabled={reqBusy || reqNom.trim().length < 2}
-                  className="whitespace-nowrap rounded-xl border border-line px-4 py-2.5 text-sm font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
+                  className="bouton bouton-secondaire bouton-compact whitespace-nowrap"
                 >
                   {reqBusy ? "…" : zoneLabels.reqBtn}
                 </button>

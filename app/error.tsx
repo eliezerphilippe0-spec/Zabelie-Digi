@@ -79,13 +79,13 @@ export default function GlobalError({
           <button
             type="button"
             onClick={echecDeChargement ? () => window.location.reload() : reset}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+            className="bouton bouton-primaire"
           >
             {l.retry}
           </button>
           <Link
             href="/"
-            className="bouton rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
+            className="bouton bouton-secondaire"
           >
             {l.home}
           </Link>

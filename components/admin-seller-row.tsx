@@ -82,7 +82,7 @@ export function AdminSellerRow({
         <button
           onClick={() => act("reactivate")}
           disabled={busy}
-          className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud transition hover:border-accent disabled:opacity-60"
+          className="bouton bouton-secondaire bouton-compact shrink-0"
         >
           {busy ? "…" : "Réactiver"}
         </button>
@@ -90,7 +90,7 @@ export function AdminSellerRow({
         <button
           onClick={() => act("suspend")}
           disabled={busy}
-          className="shrink-0 rounded-lg border border-danger-text/40 px-3 py-1.5 text-xs font-semibold text-danger-text transition hover:bg-danger-text/10 disabled:opacity-60"
+          className="bouton bouton-secondaire bouton-compact shrink-0 text-danger-text"
         >
           {busy ? "…" : "Suspendre"}
         </button>

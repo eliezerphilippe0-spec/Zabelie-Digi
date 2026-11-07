@@ -83,7 +83,7 @@ export function MaZone({ zones, courante, hrefCatalogue, labels }: {
             <Link href={hrefCatalogue} className="inline-flex min-h-11 items-center text-sm underline">{labels.filtrer}</Link>
           ) : null}
           <button type="button" onClick={() => void appeler("DELETE")} disabled={busy}
-            className="min-h-11 rounded-xl border border-line px-4 text-sm disabled:opacity-60">{labels.oublier}</button>
+            className="bouton bouton-secondaire bouton-compact">{labels.oublier}</button>
         </div>
       ) : (
         <>
@@ -108,7 +108,7 @@ export function MaZone({ zones, courante, hrefCatalogue, labels }: {
               </select>
             ) : null}
             <button type="button" onClick={() => void appeler("POST")} disabled={!cible || busy}
-              className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold text-accent disabled:opacity-50">
+              className="bouton bouton-secondaire bouton-compact">
               {busy ? labels.enCours : labels.memoriser}
             </button>
           </fieldset>

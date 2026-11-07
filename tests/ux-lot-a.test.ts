@@ -54,10 +54,12 @@ test("UA3 — :focus-visible est défini dans la couche base, à la couleur d'ac
 });
 
 const BOUTONS: Array<[string, RegExp]> = [
-  ["components/cart-pay-button.tsx", /<button[\s\S]{0,300}?className="[^"]*\bmin-h-11\b/],
-  ["components/reset-password-form.tsx", /<button[\s\S]{0,300}?className="[^"]*\bmin-h-11\b/],
-  ["components/copy-field.tsx", /<button[\s\S]{0,300}?className="[^"]*\bmin-h-11\b[^"]*\bmin-w-11\b/],
-  ["app/error.tsx", /<button[\s\S]{0,300}?className="[^"]*\bmin-h-11\b/],
+  // `min-h-11`, ou la classe `bouton`, qui porte la même hauteur depuis la
+  // Phase 2 du chantier design (tests/helpers/cible-tactile.ts).
+  ["components/cart-pay-button.tsx", /<button[\s\S]{0,300}?className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])/],
+  ["components/reset-password-form.tsx", /<button[\s\S]{0,300}?className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])/],
+  ["components/copy-field.tsx", /<button[\s\S]{0,300}?className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])[^"]*\bmin-w-11\b/],
+  ["app/error.tsx", /<button[\s\S]{0,300}?className="[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-])/],
   // `galerie-produit.tsx` n'est PAS ici, et c'est mesuré : la vignette fait
   // 72 × 72 px (`width={72}`) et porte déjà `aria-label`. L'audit l'avait
   // comptée à tort parmi les boutons < 44 px — un grep sur `min-h-11` ne

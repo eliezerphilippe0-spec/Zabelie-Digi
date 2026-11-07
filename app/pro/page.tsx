@@ -58,7 +58,7 @@ export default async function ProPage() {
       <Shell title={c.proTitle} subtitle={c.login}>
         <Link
           href={`/connexion?next=${encodeURIComponent("/pro")}`}
-          className="bouton inline-block rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+          className="bouton bouton-primaire"
         >
           {c.loginCta}
         </Link>

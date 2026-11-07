@@ -113,7 +113,7 @@ export function RabaisManager({
             type="button"
             disabled={busy || !nouveau.trim()}
             onClick={poser}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-cloud hover:border-accent disabled:opacity-50"
+            className="bouton bouton-secondaire bouton-compact"
           >
             {labels.apply}
           </button>

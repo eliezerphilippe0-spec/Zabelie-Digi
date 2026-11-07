@@ -163,7 +163,7 @@ export default async function BoutiquePage() {
               {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
             </Link>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{t(lang, "shop.view")}</Link>
+              <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="bouton bouton-primaire bouton-compact">{t(lang, "shop.view")}</Link>
               <a href="#profil-public" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "shop.edit")}</a>
             </div>
             <div className="mt-4 border-t border-line pt-4">
@@ -178,7 +178,7 @@ export default async function BoutiquePage() {
                 <h3 className="text-sm font-semibold">{t(lang, "vendeur.qr.titre")}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-mist">{t(lang, "vendeur.qr.aide")}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <a href={qr.dataUrl} download={qr.fichier} className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 py-2 text-sm font-semibold text-accent">{t(lang, "vendeur.qr.telecharger")}</a>
+                  <a href={qr.dataUrl} download={qr.fichier} className="bouton bouton-secondaire bouton-compact">{t(lang, "vendeur.qr.telecharger")}</a>
                   <Link href="/tableau-de-bord/boutique/affiche" className="inline-flex min-h-11 items-center px-2 text-sm text-cloud underline">{t(lang, "vendeur.qr.affiche")}</Link>
                 </div>
               </div>

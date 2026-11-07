@@ -54,7 +54,7 @@ export default async function CodesPromoPage() {
           ) : (
             <div className="mt-6 rounded-xl border border-line p-5 text-sm">
               <p className="text-mist">{t(lang, "vendeur.promo.sansProduit")}</p>
-              <Link href="/vendre" className="bouton mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">
+              <Link href="/vendre" className="bouton bouton-primaire bouton-compact mt-3">
                 {t(lang, "vendeur.produits.premier")}
               </Link>
             </div>

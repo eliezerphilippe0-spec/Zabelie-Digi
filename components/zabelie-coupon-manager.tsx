@@ -110,7 +110,7 @@ export function ZabelieCouponManager({ coupons, actorId }: { coupons: CouponItem
         <button
           type="submit"
           disabled={loading}
-          className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+          className="bouton bouton-primaire bouton-compact"
         >
           {loading ? "…" : "Créer"}
         </button>
@@ -135,7 +135,7 @@ export function ZabelieCouponManager({ coupons, actorId }: { coupons: CouponItem
               </div>
               <button
                 onClick={() => toggle(c.id, !c.active)}
-                className="rounded-lg border border-line px-3 py-1 text-xs font-medium text-mist transition hover:border-brand/50 hover:text-cloud"
+                className="bouton bouton-secondaire bouton-compact"
               >
                 {c.active ? "Désactiver" : "Réactiver"}
               </button>

@@ -63,7 +63,7 @@ export function EssayageAdmin({
   }
 
   const champ = "mt-1 min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm";
-  const bouton = "inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold transition disabled:opacity-60";
+  const bouton = "bouton bouton-compact";
 
   return (
     <div className="mt-4 space-y-6" data-essayage-admin>
@@ -93,7 +93,7 @@ export function EssayageAdmin({
           <input type="checkbox" checked={pause} onChange={(e) => setPause(e.target.checked)} className="h-5 w-5" />
           Mettre l&apos;essayage en pause
         </label>
-        <button type="submit" disabled={occupe} className={`${bouton} bouton mt-3 bg-brand text-on-brand`}>
+        <button type="submit" disabled={occupe} className={`${bouton} bouton-primaire mt-3`}>
           Enregistrer les réglages
         </button>
       </form>
@@ -110,7 +110,7 @@ export function EssayageAdmin({
                   <span className="block truncate font-medium">{p.nom}</span>
                   <span className="text-xs text-mist">pilote depuis le {new Date(p.depuis).toLocaleDateString("fr-HT")}</span>
                 </span>
-                <button type="button" disabled={occupe} onClick={() => retirer(p.vendeurId, p.nom)} className={`${bouton} shrink-0 border border-line text-cloud hover:border-accent`}>
+                <button type="button" disabled={occupe} onClick={() => retirer(p.vendeurId, p.nom)} className={`${bouton} bouton-secondaire shrink-0`}>
                   Retirer
                 </button>
               </li>
@@ -131,7 +131,7 @@ export function EssayageAdmin({
             type="button"
             disabled={occupe || !choisi}
             onClick={() => void envoyer({ action: "ajouter", vendeur: choisi }, "Vendeur ajouté au pilote.").then(() => setChoisi(""))}
-            className={`${bouton} border border-line text-cloud hover:border-accent`}
+            className={`${bouton} bouton-secondaire`}
           >
             Ajouter
           </button>

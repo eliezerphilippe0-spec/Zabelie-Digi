@@ -103,14 +103,14 @@ export default async function Indisponible({
           {mots && (
             <Link
               href={`/catalogue?q=${encodeURIComponent(mots)}`}
-              className="bouton inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand"
+              className="bouton bouton-primaire"
             >
               {t(lang, "gone.search", { q: mots })}
             </Link>
           )}
           <Link
             href="/catalogue"
-            className="bouton inline-flex min-h-11 items-center justify-center rounded-xl border border-line px-6 py-3 text-sm font-semibold text-cloud"
+            className="bouton bouton-secondaire"
           >
             {t(lang, "err.404.catalog")}
           </Link>

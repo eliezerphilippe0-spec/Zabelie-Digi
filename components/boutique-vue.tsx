@@ -139,7 +139,7 @@ export async function BoutiqueVue({
             copiedLabel={t(lang, "share.copied")}
           />
         </div>
-        <Link href={`/assistant?vendeur=${encodeURIComponent(creator.id)}`} className="bouton mt-5 inline-flex min-h-11 items-center rounded-xl border border-line px-5 py-3 font-semibold text-accent">{SHOPPING_COPY[lang].sellerTitle}</Link>
+        <Link href={`/assistant?vendeur=${encodeURIComponent(creator.id)}`} className="bouton bouton-secondaire mt-5">{SHOPPING_COPY[lang].sellerTitle}</Link>
       </section>
 
       <section className="mx-auto max-w-6xl px-5 pb-16" aria-labelledby="boutique-offers">

@@ -54,7 +54,7 @@ export function AdminMfaForm({ factors, labels }: {
   }
 
   return <div className="space-y-6">
-    {factors.length === 0 && !setup && <button type="button" onClick={enroll} disabled={busy} className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand hover:opacity-90 disabled:opacity-60">
+    {factors.length === 0 && !setup && <button type="button" onClick={enroll} disabled={busy} className="bouton bouton-primaire w-full">
       {busy ? labels.busy : labels.setup}
     </button>}
     {setup && <div className="space-y-4">
@@ -78,7 +78,7 @@ export function AdminMfaForm({ factors, labels }: {
         <label htmlFor="mfa-code" className="mb-2 block font-medium">{labels.code}</label>
         <input id="mfa-code" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} disabled={busy} aria-describedby={error ? "mfa-error" : undefined} className="w-full rounded-xl border border-line bg-ink p-3 text-lg tracking-widest" />
       </div>
-      <button type="submit" disabled={busy || code.length !== 6} className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand hover:opacity-90 disabled:opacity-60">{busy ? labels.busy : labels.verify}</button>
+      <button type="submit" disabled={busy || code.length !== 6} className="bouton bouton-primaire w-full">{busy ? labels.busy : labels.verify}</button>
     </form>}
     {error && <p id="mfa-error" role="alert" className="text-sm text-danger-text">{labels.error}</p>}
     <p className="text-sm text-mist">{labels.recovery}</p>

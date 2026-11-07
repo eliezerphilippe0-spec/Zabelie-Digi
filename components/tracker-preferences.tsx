@@ -37,8 +37,8 @@ export function TrackerPreferences({ labels }: { labels: Labels }) {
       </p>
       <p className="mt-1 text-xs text-mist">{labels.hint}</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={() => choisir(false)} aria-pressed={etat === "non"} className="inline-flex min-h-11 items-center rounded-xl border border-line px-4">{labels.refuse}</button>
-        <button type="button" onClick={() => choisir(true)} aria-pressed={etat === "oui"} className="inline-flex min-h-11 items-center rounded-xl border border-line px-4">{labels.accept}</button>
+        <button type="button" onClick={() => choisir(false)} aria-pressed={etat === "non"} className="bouton bouton-secondaire bouton-compact">{labels.refuse}</button>
+        <button type="button" onClick={() => choisir(true)} aria-pressed={etat === "oui"} className="bouton bouton-secondaire bouton-compact">{labels.accept}</button>
       </div>
       <p role="status" aria-live="polite" className="mt-2 min-h-5 text-xs text-mist">{choix ? labels.saved : ""}</p>
     </div>

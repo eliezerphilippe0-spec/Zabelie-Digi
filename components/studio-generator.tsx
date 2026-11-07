@@ -127,7 +127,7 @@ export function StudioGenerator({ produits, labels }: { produits: StudioProduit[
       </fieldset>
 
       <button type="button" onClick={() => lancer()} disabled={occupe || !produit}
-        className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-50">
+        className="bouton bouton-primaire bouton-compact">
         {occupe ? labels.encours : labels.lancer}
       </button>
 
@@ -136,7 +136,7 @@ export function StudioGenerator({ produits, labels }: { produits: StudioProduit[
           <div className="space-y-2 rounded-lg border border-line/60 p-3">
             <p className="text-sm text-mist">{labels.payant.replace("{prix}", String(etat.prix))}</p>
             <button type="button" onClick={() => lancer(etat.prix)}
-              className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand transition hover:opacity-90">
+              className="bouton bouton-primaire bouton-compact">
               {labels.payer.replace("{prix}", String(etat.prix))}
             </button>
           </div>

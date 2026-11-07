@@ -102,7 +102,7 @@ export function PhotoPrincipale({
       {/* Le champ est VISUELLEMENT masqué (`sr-only`), pas retiré (`hidden`) :
           `display: none` le rendrait injoignable au clavier. L'anneau de focus
           se dessine donc sur le libellé (`has-[:focus-visible]`). */}
-      <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line px-3 py-2 text-xs font-semibold text-cloud hover:border-accent has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
+      <label className="bouton bouton-secondaire bouton-compact cursor-pointer has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent">
         {etape === "preparation" ? labels.preparing : etape === "envoi" ? labels.sending : url ? labels.replace : labels.add}
         <input
           type="file"

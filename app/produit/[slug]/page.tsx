@@ -784,7 +784,7 @@ export default async function ProductPage({
             <p className="mt-3 text-sm text-mist">{t(lang, "digital.access")}</p>
           </section>}
           {isDownloadable(product.kind) && (
-            <a href="#acheter" className="bouton mt-4 inline-flex min-h-11 items-center justify-center rounded-xl border border-brand px-5 py-3 text-sm font-semibold text-cloud">
+            <a href="#acheter" className="bouton bouton-secondaire mt-4">
               {t(lang, "product.cta.bottom", { price: formatHTG(flash ? flash.prixFlashHtg : product.priceHTG) })}
             </a>
           )}
@@ -911,7 +911,7 @@ export default async function ProductPage({
           <div className="mt-8 text-center">
             <a
               href="#acheter"
-              className="bouton inline-block rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90"
+              className="bouton bouton-primaire"
             >
               {t(lang, "product.cta.bottom", { price: formatHTG(product.priceHTG) })}
             </a>

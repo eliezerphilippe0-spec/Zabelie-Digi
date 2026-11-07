@@ -70,7 +70,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
   }
 
   const bouton =
-    "rounded-lg border border-line px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50";
+    "bouton bouton-secondaire bouton-compact";
   const champ =
     "rounded-lg border border-line bg-ink/40 px-3 py-1.5 text-xs outline-none focus:border-accent";
 
@@ -110,7 +110,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
                   onChange={(e) => setNotes((n) => ({ ...n, [d.id]: e.target.value }))}
                 />
                 <button
-                  className={`${bouton} text-cloud hover:border-accent`}
+                  className={bouton}
                   disabled={busy !== null}
                   onClick={() =>
                     poste(
@@ -122,7 +122,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
                   {busy === d.id ? "…" : "Accepter — le katye naît"}
                 </button>
                 <button
-                  className={`${bouton} text-danger hover:bg-danger/10`}
+                  className={`${bouton} text-danger-text`}
                   disabled={busy !== null}
                   onClick={() =>
                     poste(
@@ -234,7 +234,7 @@ export function ZonesAdmin({ zones, demandes, demandeZones }: { zones: ZoneRow[]
             onChange={(e) => setCreation((c) => ({ ...c, labelFr: e.target.value }))}
           />
           <button
-            className={`${bouton} text-cloud hover:border-accent`}
+            className={bouton}
             disabled={busy !== null || !creation.parentId || !creation.labelKr || !creation.labelFr}
             onClick={() => {
               const parent = parId.get(creation.parentId);
@@ -288,7 +288,7 @@ function LigneZone({
         </span>
       </span>
       <button
-        className="rounded-lg border border-line px-2 py-0.5 text-xs text-mist transition hover:border-accent hover:text-cloud disabled:opacity-50"
+        className="bouton bouton-secondaire bouton-compact"
         disabled={busy !== null}
         onClick={() =>
           onToggle({ action: "set_active", zoneId: zone.id, active: !zone.is_active }, zone.id)

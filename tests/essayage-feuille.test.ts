@@ -80,12 +80,13 @@ test("FE7 — rien n'est écrit ni journalisé : ni console, ni stockage du rés
 });
 
 test("FE8 — 44 px : chaque bouton et chaque libellé cliquable a min-h-11", () => {
-  assert.match(FEUILLE, /const bouton = "inline-flex min-h-11 /);
+  // La base `bouton` porte 48 px (chantier design, Phase 2, tests/boutons-variantes V1).
+  assert.match(FEUILLE, /const bouton = "bouton[ "]/);
   const ouvertures = [...FEUILLE.matchAll(/<(button|label|Link)\b/g)];
   assert.ok(ouvertures.length >= 10, "les cibles sont lues");
   for (const o of ouvertures) {
     const balise = FEUILLE.slice(o.index, o.index + 400);
-    assert.match(balise, /className=(\{`?\$?\{?(principal|secondaire)|"[^"]*min-h-11)/, balise.slice(0, 80));
+    assert.match(balise, /className=(\{`?\$?\{?(principal|secondaire)|"[^"]*(?<![\w:-])(?:min-h-11|bouton)(?![\w-]))/, balise.slice(0, 80));
   }
 });
 

@@ -126,7 +126,7 @@ export function AuthoringCreateForm({
       <button
         type="submit"
         disabled={envoi || Boolean(plein)}
-        className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand disabled:opacity-50"
+        className="bouton bouton-primaire bouton-compact"
       >
         {envoi ? labels.creation : labels.creer}
       </button>

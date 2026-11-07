@@ -52,7 +52,7 @@ export function DigitalLessonProgress({ lessonId, labels }: { lessonId: string; 
   const progress = useProgress();
   const completed = progress.completed.has(lessonId);
   return <div>
-    <button type="button" aria-pressed={completed} disabled={progress.busy !== null} onClick={() => progress.toggle(lessonId)} className="mt-4 min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold disabled:opacity-60">
+    <button type="button" aria-pressed={completed} disabled={progress.busy !== null} onClick={() => progress.toggle(lessonId)} className="bouton bouton-secondaire bouton-compact mt-4">
       {progress.busy === lessonId ? "…" : completed ? `✓ ${labels.completed}` : labels.complete}
     </button>
     {progress.error === lessonId && <p role="alert" className="mt-2 text-sm text-danger-text">{labels.error}</p>}

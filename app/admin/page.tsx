@@ -64,7 +64,7 @@ function AlerteFile({ etat }: { etat: EtatFile }) {
 function PiedFile({ etat, href }: { etat: EtatFile; href: (p: number) => string }) {
   if (etat.pages <= 1) return null;
   const lien =
-    "inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 text-sm font-semibold text-cloud transition hover:border-accent/50 bouton";
+    "bouton bouton-secondaire bouton-compact";
   return (
     <nav className="mt-4 flex items-center justify-center gap-3">
       {etat.page > 1 ? (
@@ -513,7 +513,7 @@ export default async function AdminPage({
                 placeholder="ZB-260726-XXXXX"
                 className="numeric min-w-0 flex-1 rounded-lg border border-line bg-ink/40 px-3 py-2 text-xs outline-none"
               />
-              <button className="rounded-lg border border-line px-3 py-2 text-xs text-mist hover:text-cloud">
+              <button className="bouton bouton-secondaire bouton-compact">
                 Chercher
               </button>
             </form>

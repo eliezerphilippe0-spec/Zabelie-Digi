@@ -82,7 +82,7 @@ export default async function ClientsPage() {
           ) : resume.clientsTotal === 0 ? (
             <div className="mt-6 rounded-xl border border-line bg-surface p-5">
               <p className="text-sm leading-relaxed text-mist">{t(lang, "vendeur.clients.vide")}</p>
-              <Link href="/tableau-de-bord/boutique#qr" className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">
+              <Link href="/tableau-de-bord/boutique#qr" className="bouton bouton-primaire bouton-compact mt-4">
                 {t(lang, "vendeur.action.partager")}
               </Link>
             </div>

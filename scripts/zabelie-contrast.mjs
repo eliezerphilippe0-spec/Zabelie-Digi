@@ -93,6 +93,9 @@ export function paires(T) {
     // Graphiques (pastilles, traits) : seuil 3:1.
     out.push([`--accent (graphique) sur ${nom}`, T.accent, fond, LARGE]);
     out.push([`--brand (graphique) sur ${nom}`, T.brand, fond, LARGE]);
+    // Contour d'un champ ou d'un bouton secondaire (chantier design, Phase 2) :
+    // c'est lui qui fait voir le composant, donc 3:1 (WCAG 1.4.11).
+    out.push([`--contour (composant) sur ${nom}`, T.contour, fond, LARGE]);
   }
   // CTA : texte sombre sur orange vif — la paire de ::selection et des
   // boutons. Depuis le mode clair, ce texte est `on-brand` (FIXE dans les

@@ -41,7 +41,7 @@ export function OrderPaymentRecovery({ orderId, labels }: {
     else window.location.href = destination;
   }
   return <div>
-    <button type="button" onClick={resume} disabled={checking} className="inline-flex min-h-11 items-center rounded-xl border border-line px-3 text-sm disabled:opacity-50">
+    <button type="button" onClick={resume} disabled={checking} className="bouton bouton-secondaire bouton-compact">
       {checking ? labels.checkingAttempt : labels.resumeAttempt}
     </button>
     {notice && <p role="status" className="mt-2 text-sm text-mist">{notice === "pending" ? labels.paymentPending : labels.paymentReview}</p>}

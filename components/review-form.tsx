@@ -44,7 +44,7 @@ export function ReviewForm({ orderId, labels }: { orderId: string; labels: {
       <div className="text-right">
         <button
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-cloud transition hover:border-accent/50"
+          className="bouton bouton-secondaire bouton-compact"
         >
           {labels.cta}
         </button>
@@ -84,7 +84,7 @@ export function ReviewForm({ orderId, labels }: { orderId: string; labels: {
         <button
           type="submit"
           disabled={loading}
-          className="min-h-11 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-on-brand disabled:opacity-60"
+          className="bouton bouton-primaire bouton-compact"
         >
           {loading ? "…" : labels.submit}
         </button>

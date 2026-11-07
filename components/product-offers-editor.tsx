@@ -47,7 +47,7 @@ export function ProductOffersEditor({ productId, initial, choices, confirmed, au
         <p className="text-xs text-mist">{copy.rules}</p>
         <p className="text-xs text-mist">{copy.salesHint}</p>
         {!choices.cross_sell.length && <p className="text-sm text-mist">{copy.empty}</p>}
-        <button type="submit" className="min-h-11 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand">{busy ? copy.saving : copy.save}</button>
+        <button type="submit" className="bouton bouton-primaire bouton-compact">{busy ? copy.saving : copy.save}</button>
       </fieldset>
       <p role="status" aria-live="polite" className="text-sm text-mist">{message}</p>
     </form>

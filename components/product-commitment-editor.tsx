@@ -36,7 +36,7 @@ export function ProductCommitmentEditor({ productId, initial, labels, service }:
       {service && <label className="block text-sm">{labels.next}<input type="date" className={input} value={next} onChange={e => setNext(e.target.value)}/></label>}
       {availabilityNeedsReview(confirmedAt) && <p className="text-sm text-warning-text">{labels.reminder}</p>}
       <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={confirm} onChange={e => setConfirm(e.target.checked)}/>{labels.confirm}</label>
-      <button disabled={state === "saving"} className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold disabled:opacity-50">{state === "saving" ? labels.saving : labels.save}</button>
+      <button disabled={state === "saving"} className="bouton bouton-secondaire bouton-compact">{state === "saving" ? labels.saving : labels.save}</button>
       {state === "saved" && <p role="status" className="text-sm text-success-text">{labels.saved}</p>}
       {state === "error" && <p role="alert" className="text-sm text-danger-text">{labels.error}</p>}
     </form>

@@ -233,7 +233,7 @@ export function ServiceZonesEditor({ zones, initial, max, labels, locale }: {
           </select>
         ) : null}
         <button type="button" onClick={ajouter} disabled={!cible || pleine || choisies.some((c) => c.zoneId === cible)}
-          className="min-h-11 rounded-xl border border-line px-4 py-2 text-sm font-semibold text-accent disabled:opacity-50">
+          className="bouton bouton-secondaire bouton-compact">
           {labels.add}
         </button>
       </fieldset>

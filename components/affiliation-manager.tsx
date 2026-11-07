@@ -201,7 +201,7 @@ export function AffiliationManager({
               type="button"
               onClick={devenir}
               disabled={inscription}
-              className="min-h-11 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+              className="bouton bouton-primaire bouton-compact"
             >
               {inscription ? "…" : labels.devenir}
             </button>
@@ -358,7 +358,7 @@ function ProduitTaux({
             type="button"
             onClick={offrir}
             disabled={loading}
-            className="min-h-11 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+            className="bouton bouton-primaire bouton-compact"
           >
             {loading ? "…" : labels.vOffrir}
           </button>
@@ -367,7 +367,7 @@ function ProduitTaux({
               type="button"
               onClick={retirer}
               disabled={loading}
-              className="min-h-11 rounded-xl border border-line px-3 py-2 text-xs font-medium text-mist transition hover:border-brand/50 hover:text-cloud disabled:opacity-60"
+              className="bouton bouton-secondaire bouton-compact"
             >
               {labels.vRetirer}
             </button>

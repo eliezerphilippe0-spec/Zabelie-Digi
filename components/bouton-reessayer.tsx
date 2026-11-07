@@ -19,7 +19,7 @@ export function BoutonReessayer({ libelle }: { libelle: string }) {
     <button
       type="button"
       onClick={() => location.reload()}
-      className="rounded-xl bg-brand px-5 py-3 text-sm font-bold text-on-brand"
+      className="bouton bouton-primaire"
     >
       {libelle}
     </button>

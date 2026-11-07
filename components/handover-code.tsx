@@ -101,7 +101,7 @@ export function HandoverCodeBuyer({ orderId, labels }: { orderId: string; labels
   return (
     <div className="flex flex-col items-end gap-1">
       <button type="button" onClick={afficher} disabled={busy}
-        className="min-h-11 rounded-lg border border-line px-4 py-2 text-xs font-semibold disabled:opacity-60">
+        className="bouton bouton-secondaire bouton-compact">
         {busy ? "…" : labels.cta}
       </button>
       {erreur ? <p role="alert" className="text-right text-xs text-danger-text">{erreur}</p> : null}

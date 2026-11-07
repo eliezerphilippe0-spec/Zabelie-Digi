@@ -6,7 +6,7 @@ export function BoutonImprimer({ label }: { label: string }) {
     <button
       type="button"
       onClick={() => window.print()}
-      className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-on-brand"
+      className="bouton bouton-primaire bouton-compact"
     >
       {label}
     </button>

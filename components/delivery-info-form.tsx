@@ -98,7 +98,7 @@ export function DeliveryInfoForm({
       <button
         type="submit"
         disabled={busy}
-        className="rounded-xl border border-line px-5 py-2.5 text-sm font-semibold text-cloud hover:border-accent disabled:opacity-50"
+        className="bouton bouton-secondaire bouton-compact"
       >
         {busy ? labels.saving : labels.save}
       </button>

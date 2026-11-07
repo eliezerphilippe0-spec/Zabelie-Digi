@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { cible44, declareCible } from "./helpers/cible-tactile";
 
 /**
  * LES CIBLES TACTILES — 44 px, et le garde porte sur ce qui COMMANDE la taille.
@@ -57,8 +58,10 @@ for (const [fichier, fragments] of CONTROLES) {
   test(`cibles tactiles — ${fichier} déclare la taille minimale`, () => {
     const src = readFileSync(fichier, "utf8");
     for (const f of fragments) {
+      // `min-h-11` ou, depuis la Phase 2 du chantier design, la classe `bouton`
+      // qui porte la même hauteur (tests/helpers/cible-tactile.ts).
       assert.ok(
-        src.includes(f),
+        f === T ? declareCible(src) : src.includes(f),
         `${fichier} : « ${f} » a disparu. Une cible sous 44 px redevient ` +
           "difficile à atteindre sur le parc visé (Android d'entrée de gamme). " +
           "Re-mesurer avec `node scripts/zabelie-audit-mobile.mjs` avant de " +
@@ -143,10 +146,11 @@ test("filtre de zone du catalogue — trois listes et le bouton à 44 px, listes
   const listes = [...form[0].matchAll(/<select\b[\s\S]*?className="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
   assert.equal(listes.length, 3, "département, commune, quartier : trois listes");
   for (const c of listes) {
-    assert.ok(c.includes(T), `liste de zone sans ${T} : « ${c.join(" ")} »`);
-    assert.ok(c.includes("text-base") && !c.includes("text-sm"), `liste de zone sous 16 px : « ${c.join(" ")} »`);
+    assert.ok(cible44(c), `liste de zone sans ${T} ni \`champ\` : « ${c.join(" ")} »`);
+    // `champ` porte les 16 px (tests/champs.test.ts) : sous 16, Safari zoome.
+    assert.ok((c.includes("text-base") || c.includes("champ")) && !c.includes("text-sm"), `liste de zone sous 16 px : « ${c.join(" ")} »`);
   }
   const boutons = [...form[0].matchAll(/<button\b[\s\S]*?className="([^"]*)"/g)].map((m) => m[1].split(/\s+/));
   assert.equal(boutons.length, 1, "un seul bouton dans le filtre de zone");
-  assert.ok(boutons[0].includes(T), `bouton « Filtrer » sans ${T} : « ${boutons[0].join(" ")} »`);
+  assert.ok(cible44(boutons[0]), `bouton « Filtrer » sans ${T} ni \`bouton\` : « ${boutons[0].join(" ")} »`);
 });

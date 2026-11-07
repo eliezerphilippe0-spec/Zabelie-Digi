@@ -179,8 +179,8 @@ export function ConfirmationEnvoi({ s, labels, sectionId }: { s: Suggestions; la
     <div className="mt-2 rounded-xl border border-line p-3 text-sm">
       <p>{sectionId === null ? labels.infoEnvoiPlan : labels.infoEnvoi}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={() => void s.envoyer()} className="min-h-11 rounded-xl border border-line px-3 text-sm font-semibold">{labels.envoyer}</button>
-        <button type="button" onClick={s.renoncer} className="min-h-11 rounded-xl border border-line px-3 text-sm">{labels.annuler}</button>
+        <button type="button" onClick={() => void s.envoyer()} className="bouton bouton-secondaire bouton-compact">{labels.envoyer}</button>
+        <button type="button" onClick={s.renoncer} className="bouton bouton-secondaire bouton-compact">{labels.annuler}</button>
       </div>
     </div>
   );
@@ -219,7 +219,7 @@ export function EtatSuggestion({
           )}
           <div className="mt-3 flex flex-wrap gap-2">
             {actions}
-            <button type="button" onClick={() => s.oublier(sectionId)} className="min-h-11 rounded-xl border border-line px-3 text-sm">{labels.ignorer}</button>
+            <button type="button" onClick={() => s.oublier(sectionId)} className="bouton bouton-secondaire bouton-compact">{labels.ignorer}</button>
           </div>
         </div>
       )}

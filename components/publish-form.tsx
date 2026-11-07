@@ -254,7 +254,7 @@ export function PublishForm({
           <div className="grid gap-2 sm:grid-cols-3">
             {serviceStarters.map((starter) => (
               <button key={starter.id} type="button" disabled={loading}
-                className="min-h-11 rounded-xl border border-line px-3 py-3 text-left text-sm hover:border-accent disabled:opacity-60"
+                className="bouton bouton-secondaire justify-start text-left"
                 onClick={() => applyStarter(starter)}>{starter.title}</button>
             ))}
           </div>
@@ -401,7 +401,7 @@ export function PublishForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+        className="bouton bouton-primaire w-full"
       >
         {loading ? labels.submitting : labels.submit}
       </button>

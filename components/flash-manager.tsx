@@ -105,7 +105,7 @@ export function FlashManager({
           <button
             onClick={arreter}
             disabled={busy}
-            className="inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-xs text-cloud transition hover:border-danger-text disabled:opacity-60"
+            className="bouton bouton-secondaire bouton-compact"
           >
             {labels.stop}
           </button>
@@ -141,7 +141,7 @@ export function FlashManager({
             <button
               onClick={lancer}
               disabled={busy || !prix || !heures || Number(prix) >= prixHtg}
-              className="inline-flex min-h-11 items-center rounded-lg bg-brand px-3 text-xs font-semibold text-on-brand transition hover:opacity-90 disabled:opacity-60"
+              className="bouton bouton-primaire bouton-compact"
             >
               {labels.launch}
             </button>

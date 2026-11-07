@@ -33,6 +33,6 @@ export function RefundReceiptForm({orderId}:{orderId:string}){
  <label className="block">Référence opérateur ou reçu<input name="reference" required minLength={5} maxLength={120} className="mt-1 min-h-11 w-full rounded-xl border border-line bg-surface p-2"/></label>
  <label className="block">Date du retour des fonds<input name="date" type="date" required className="ml-2 min-h-11 rounded-xl border border-line bg-surface p-2"/></label>
  <label className="flex min-h-11 items-center gap-3"><input name="confirm" type="checkbox" required/>J’ai vérifié le justificatif du retour des fonds.</label>
- <button disabled={busy||!ready} className="min-h-11 rounded-xl border border-line px-4 py-2">Enregistrer la référence</button><p role="status">{notice}</p>
+ <button disabled={busy||!ready} className="bouton bouton-secondaire bouton-compact">Enregistrer la référence</button><p role="status">{notice}</p>
  </form></details>;
 }

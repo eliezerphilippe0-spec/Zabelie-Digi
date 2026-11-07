@@ -227,7 +227,7 @@ export default async function VendrePage({
   if (!user) {
     return (
       <Shell lang={lang} taux={taux} subtitle={t(lang, "sell.login.subtitle")} pricing={pricing} marketing>
-        <Link href="/connexion?mode=signup&next=/vendre" className="editorial-button">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
+        <Link href="/connexion?mode=signup&next=/vendre" className="bouton bouton-primaire bouton-grand">{t(lang, "auth.signup.cta")}<span aria-hidden="true">→</span></Link>
         <Link href="/connexion?next=/vendre" className="editorial-link">{t(lang, "sell.existing")}<span aria-hidden="true">→</span></Link>
       </Shell>
     );

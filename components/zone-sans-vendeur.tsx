@@ -85,7 +85,7 @@ export function ZoneSansVendeur({ zoneId, labels, shareHref }: {
         <p role="status" className="max-w-md text-sm text-cloud">{labels.asked}</p>
       ) : (
         <button type="button" onClick={demander} disabled={busy}
-          className="bouton min-h-11 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-on-brand disabled:opacity-60">
+          className="bouton bouton-primaire">
           {busy ? labels.asking : labels.ask}
         </button>
       )}

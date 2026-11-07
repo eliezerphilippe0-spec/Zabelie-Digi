@@ -41,7 +41,7 @@ export default async function HorsLignePage() {
           <BoutonReessayer libelle={t(lang, "offline.retry")} />
           <Link
             href="/"
-            className="bouton rounded-xl border border-line px-5 py-3 text-sm font-semibold text-cloud"
+            className="bouton bouton-secondaire"
           >
             {t(lang, "offline.home")}
           </Link>

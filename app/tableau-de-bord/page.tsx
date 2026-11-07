@@ -119,7 +119,7 @@ export default async function DashboardPage({
         <p className="mt-4 text-sm text-mist">{t(lang, "vendeur.connexion")}</p>
         <Link
           href="/connexion?next=/tableau-de-bord"
-          className="bouton mt-4 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand"
+          className="bouton bouton-primaire bouton-compact mt-4"
         >
           {t(lang, "nav.login")}
         </Link>
@@ -441,7 +441,7 @@ export default async function DashboardPage({
         </div>
         <Link
           href={hrefBoutique({ id: user.id, boutikSlug })}
-          className="bouton inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-line px-4 text-sm font-semibold"
+          className="bouton bouton-secondaire bouton-compact shrink-0"
         >
           <IconeStudio nom="boutique" />
           {t(lang, "shop.view")}
@@ -472,7 +472,7 @@ export default async function DashboardPage({
               ? t(lang, "vendeur.atraiter.un")
               : t(lang, "vendeur.atraiter.n").replace("{n}", String(aTraiter))}
           </p>
-          <Link href="/mes-ventes" className="bouton inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand">
+          <Link href="/mes-ventes" className="bouton bouton-primaire bouton-compact">
             {t(lang, "vendeur.atraiter.cta")}
           </Link>
         </div>
@@ -628,7 +628,7 @@ export default async function DashboardPage({
             {ventesPage > 1 ? (
               <Link
                 href={`/tableau-de-bord?ventes=${ventesPage - 1}#ventes`}
-                className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                className="bouton bouton-secondaire bouton-compact"
               >
                 {t(lang, "catalog.prev")}
               </Link>
@@ -641,7 +641,7 @@ export default async function DashboardPage({
             {ventesPage < ventesPages ? (
               <Link
                 href={`/tableau-de-bord?ventes=${ventesPage + 1}#ventes`}
-                className="bouton inline-flex min-h-11 items-center rounded-xl border border-line bg-surface/60 px-5 font-semibold text-cloud transition hover:border-accent/50"
+                className="bouton bouton-secondaire bouton-compact"
               >
                 {t(lang, "catalog.more")}
               </Link>

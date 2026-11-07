@@ -27,7 +27,7 @@ export function EssayageBouton({
         aria-haspopup="dialog"
         onClick={() => setOuvert(true)}
         data-essayage-bouton
-        className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-brand/60 px-5 py-3 text-sm font-semibold text-cloud transition hover:border-brand"
+        className="bouton bouton-secondaire mt-3 w-full"
       >
         {labels.bouton}
       </button>

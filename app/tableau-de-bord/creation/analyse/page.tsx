@@ -63,7 +63,7 @@ export default async function AnalysePage() {
                         </span>
                         <Link
                           href={`/tableau-de-bord/creation?depart=vide&titre=${encodeURIComponent(titreDepuisTerme(r.terme))}#nouveau-projet`}
-                          className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold"
+                          className="bouton bouton-secondaire bouton-compact"
                         >
                           {tb.oppEcrire}
                         </Link>

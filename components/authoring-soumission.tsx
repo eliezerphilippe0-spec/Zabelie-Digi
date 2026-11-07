@@ -52,7 +52,7 @@ export function AuthoringSoumission({
   const [erreur, setErreur] = useState<string | null>(null);
 
   const champ = "mt-1 w-full rounded-xl border border-line bg-surface p-3 text-sm";
-  const bouton = "bouton mt-3 min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-on-brand disabled:opacity-40";
+  const bouton = "bouton bouton-primaire bouton-compact mt-3";
   const options = sousRayons.filter((o) => o.departement === rayon);
   const pretACreer = prix.trim() !== "" && Number(prix) >= 0 && rayon !== "" && attestation;
 

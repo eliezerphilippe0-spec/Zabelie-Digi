@@ -87,6 +87,126 @@
   }
 }
 
+/* COMPOSANTS — chantier design, Phase 2. Couche `components` : un utilitaire
+   posé à côté (`mt-4`, `w-full`) l'emporte toujours, et c'est voulu. Ce qui
+   dessine le composant vit ICI et nulle part ailleurs. */
+@layer components {
+  /* BOUTON (brief Phase 2.1) — trois variantes, trois tailles, cinq états.
+     Avant : 97 écritures différentes pour 119 fonds orange (audit Phase 0),
+     dont `.editorial-button` en Inter à côté de boutons en Manrope.
+     Toujours `bouton` ET une variante : `bouton bouton-primaire`.
+     Tailles : 48 px par défaut (la hauteur d'un champ, les deux s'alignent),
+     `bouton-compact` 44 px pour une action dans une liste, `bouton-grand`
+     56 px pour l'action principale d'une page. Jamais sous 44 px.
+     Un seul `bouton-primaire` visible par écran : c'est une règle de page,
+     mesurée au rendu (docs/design/PHASE-2.md), pas une règle de feuille.
+     `tests/boutons-variantes.test.ts` garde. */
+  .bouton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: --spacing(2);
+    min-height: --spacing(12);
+    padding: --spacing(2) --spacing(5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xl);
+    font-size: var(--text-sm);
+    line-height: var(--leading-titre);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .bouton-compact {
+    min-height: --spacing(11);
+    padding-inline: --spacing(4);
+  }
+  .bouton-grand {
+    min-height: --spacing(14);
+    padding-inline: --spacing(6);
+    font-size: var(--text-base);
+  }
+  .bouton-primaire {
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+  .bouton-secondaire {
+    background-color: var(--color-surface);
+    color: var(--color-cloud);
+    border-color: var(--color-contour);
+  }
+  /* Le bouton qui a l'air d'un lien : l'action qui ne doit pas concurrencer
+     la principale (« Annuler », « Voir tout »). Souligné, pour ne pas reposer
+     sur la seule couleur. */
+  .bouton-texte {
+    background-color: transparent;
+    color: var(--color-accent);
+    padding-inline: --spacing(2);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+  /* SURVOL — sans transition de couleur : le brief n'anime que `transform` et
+     `opacity`. Pointeur fin seulement : sur un écran tactile, un survol reste
+     collé après le tap. */
+  @media (hover: hover) {
+    .bouton-primaire:hover {
+      opacity: 0.9;
+    }
+    .bouton-secondaire:hover {
+      border-color: var(--color-cloud);
+    }
+    .bouton-texte:hover {
+      text-decoration-thickness: 2px;
+    }
+  }
+  /* APPUI — l'échelle du thème (« Tap : scale(0.97) en --motion-fast »).
+     `--motion-*` vaut 0 ms sous `prefers-reduced-motion` : rien ne bouge. */
+  .bouton {
+    transition:
+      transform var(--motion-fast) var(--ease),
+      opacity var(--motion-fast) var(--ease);
+  }
+  .bouton:active {
+    transform: scale(0.97);
+  }
+  /* FOCUS — l'anneau global de `:focus-visible` (2 px d'accent, décollé de
+     2 px) : 4,73:1 sur le crème, au-dessus des 3:1 du brief. Rien à redire ici. */
+  /* DÉSACTIVÉ — `aria-disabled` aussi, pour un lien qu'on ne peut pas encore
+     suivre. Pas de contraste minimal exigé (WCAG 1.4.3, composant inactif). */
+  .bouton:disabled,
+  .bouton[aria-disabled="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .bouton[aria-disabled="true"] {
+    pointer-events: none;
+  }
+  /* CHARGEMENT — `aria-busy="true"`, que les lecteurs d'écran annoncent. Le
+     bouton garde son plein contraste même s'il est aussi désactivé : il
+     travaille, il n'est pas indisponible. Un point qui bat en opacité, à la
+     borne de 300 ms du thème : pas de roue qui tourne, le brief n'anime que
+     `transform` et `opacity` et une rotation à 300 ms serait frénétique. */
+  .bouton[aria-busy="true"] {
+    opacity: 1;
+    cursor: progress;
+  }
+  .bouton[aria-busy="true"]::after {
+    content: "";
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    background-color: currentColor;
+    animation: zbBattement var(--motion-slow) var(--ease) infinite alternate;
+  }
+  @keyframes zbBattement {
+    from { opacity: 1; }
+    to   { opacity: 0.25; }
+  }
+}
+
 @layer utilities {
   .text-gradient {
     /* DEUX arrêts, plus quatre. Les quatre pointaient sur quatre oranges

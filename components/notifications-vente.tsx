@@ -126,7 +126,7 @@ export function NotificationsVente({ clePublique, labels }: { clePublique: strin
           <button
             type="button"
             onClick={activer}
-            className="bouton inline-flex min-h-11 items-center rounded-xl border border-line px-4 py-2 text-left font-semibold"
+            className="bouton bouton-secondaire bouton-compact text-left"
           >
             {labels.activer}
           </button>

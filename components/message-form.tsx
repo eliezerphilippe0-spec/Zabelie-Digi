@@ -99,7 +99,7 @@ export function MessageForm({
         <button
           type="submit"
           disabled={envoi || texte.trim().length === 0}
-          className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-on-brand disabled:opacity-60"
+          className="bouton bouton-primaire bouton-compact"
         >
           {envoi ? labels.sending : labels.send}
         </button>

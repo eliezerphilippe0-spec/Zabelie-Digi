@@ -33,7 +33,7 @@ export function RemoveFromCart({
       type="button"
       onClick={retirer}
       disabled={envoi}
-      className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs text-mist transition hover:border-danger hover:text-danger-text disabled:opacity-60"
+      className="bouton bouton-secondaire bouton-compact shrink-0"
     >
       {label}
     </button>
