@@ -557,65 +557,6 @@ export default async function ProductPage({
             </div>
           )}
 
-          {/* ── Caractéristiques (V-2, docs/35) — seulement ce qui est
-                 RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
-          {physical?.specs && (
-            <div className="mt-6 rounded-xl border border-line bg-surface/40 p-4">
-              <h2 className="text-cloud titre-bloc">
-                {t(lang, "product.specs.title")}
-              </h2>
-              <dl className="mt-2 space-y-1 text-sm">
-                <div className="flex justify-between gap-4">
-                  <dt className="text-mist">{t(lang, "product.specs.weight")}</dt>
-                  <dd>{physical.specs.weightGrams} g</dd>
-                </div>
-                {physical.specs.lengthMm &&
-                  physical.specs.widthMm &&
-                  physical.specs.heightMm && (
-                    <div className="flex justify-between gap-4">
-                      <dt className="text-mist">{t(lang, "product.specs.dims")}</dt>
-                      <dd>
-                        {Math.round(physical.specs.lengthMm / 10)} ×{" "}
-                        {Math.round(physical.specs.widthMm / 10)} ×{" "}
-                        {Math.round(physical.specs.heightMm / 10)} cm
-                      </dd>
-                    </div>
-                  )}
-                {physical.specs.brand && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "sell.specs.brand")}</dt>
-                    <dd>{physical.specs.brand}</dd>
-                  </div>
-                )}
-                {physical.specs.material && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "sell.specs.material")}</dt>
-                    <dd>{physical.specs.material}</dd>
-                  </div>
-                )}
-                {physical.specs.condition && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "sell.specs.condition")}</dt>
-                    <dd>
-                      {t(
-                        lang,
-                        physical.specs.condition === "nef"
-                          ? "specs.condition.nef"
-                          : "specs.condition.dezyem"
-                      )}
-                    </dd>
-                  </div>
-                )}
-                {physical.specs.fragile && (
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-mist">{t(lang, "product.specs.fragile")}</dt>
-                    <dd>✓</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          )}
-
           <div id="acheter" className="mt-8 scroll-mt-44 rounded-xl border border-line bg-surface/60 p-6">
             {pickByKind(product.kind, { file: false, service: false, physical: true }, product.id) && (
               <section aria-labelledby="remise-avant-achat" className="mt-5 rounded-xl border border-line bg-ink/40 p-4">
@@ -771,6 +712,68 @@ export default async function ProductPage({
               </p>
             )}
           </div>
+
+          {/* CARACTÉRISTIQUES SOUS LA CARTE D'ACHAT (chantier design, Phase 4,
+              V-28 A20) : poids, dimensions, marque informent, ils ne décident
+              pas l'achat. La compatibilité véhicule, qui le décide, reste au-dessus. */}
+          {/* ── Caractéristiques (V-2, docs/35) — seulement ce qui est
+                 RENSEIGNÉ : pas de ligne vide, pas de tiret décoratif. ── */}
+          {physical?.specs && (
+            <div className="mt-6 rounded-xl border border-line bg-surface/40 p-4">
+              <h2 className="text-cloud titre-bloc">
+                {t(lang, "product.specs.title")}
+              </h2>
+              <dl className="mt-2 space-y-1 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-mist">{t(lang, "product.specs.weight")}</dt>
+                  <dd>{physical.specs.weightGrams} g</dd>
+                </div>
+                {physical.specs.lengthMm &&
+                  physical.specs.widthMm &&
+                  physical.specs.heightMm && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-mist">{t(lang, "product.specs.dims")}</dt>
+                      <dd>
+                        {Math.round(physical.specs.lengthMm / 10)} ×{" "}
+                        {Math.round(physical.specs.widthMm / 10)} ×{" "}
+                        {Math.round(physical.specs.heightMm / 10)} cm
+                      </dd>
+                    </div>
+                  )}
+                {physical.specs.brand && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "sell.specs.brand")}</dt>
+                    <dd>{physical.specs.brand}</dd>
+                  </div>
+                )}
+                {physical.specs.material && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "sell.specs.material")}</dt>
+                    <dd>{physical.specs.material}</dd>
+                  </div>
+                )}
+                {physical.specs.condition && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "sell.specs.condition")}</dt>
+                    <dd>
+                      {t(
+                        lang,
+                        physical.specs.condition === "nef"
+                          ? "specs.condition.nef"
+                          : "specs.condition.dezyem"
+                      )}
+                    </dd>
+                  </div>
+                )}
+                {physical.specs.fragile && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-mist">{t(lang, "product.specs.fragile")}</dt>
+                    <dd>✓</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
 
           <ProductOffers offers={relatedOffers} copy={offerCopy(lang)}/>
           {digitalRelease && <DigitalOfferPreview manifest={digitalRelease.manifest} lang={lang}/>}
