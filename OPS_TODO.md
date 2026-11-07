@@ -7,9 +7,11 @@ Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
 Une phase ne démarre qu'après la validation de la précédente.
 
-1. ⏳ **Relire puis fusionner** les PR de phase, dans l'ordre. Elles restent en
-   brouillon : le brief interdit de fusionner sans validation humaine. La
-   Phase 2 est construite sur la Phase 1 : elle se fusionne après elle.
+1. ✅ **Fusion des trois premières PR**, sur « fusion » du porteur le
+   2026-11-07 : audit (#473) et Phase 1 (#474) fusionnés en squash et
+   vérifiés en ligne ; Phase 2 (#475) en fusion automatique, à sa demande,
+   dès sa CI verte. Les phases suivantes gardent la même règle : une PR par
+   phase, fusionnée seulement après validation.
 2. ✅ **A12, badges** : tranché le 2026-11-07 (V-26), recommandation acceptée.
 3. ⛔ **A11, arrêt ferme** : `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` n'est pas
    active. Vérifier le plan Supabase puis activer, ou laisser éteint. Variable
