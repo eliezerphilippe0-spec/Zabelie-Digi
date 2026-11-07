@@ -40,15 +40,36 @@ function taillesTailwind(src: string, fichier: string): Taille[] {
   return out;
 }
 
+/**
+ * L'échelle du thème, en px, à sa plus PETITE valeur (la borne basse d'un `clamp`).
+ *
+ * ⚠️ Depuis la Phase 1 du chantier design, les feuilles écrivent
+ * `font-size: var(--text-sm)`. Ce contrôle ne lisait que les valeurs littérales :
+ * il est tombé de 46 à 15 tailles lues, et son témoin l'a signalé. La taille vit
+ * désormais dans le thème, c'est donc là qu'il faut la lire : un `--text-xs` passé
+ * sous 12 px fait échouer T2 sur chaque emploi.
+ */
+function echelle(css: string): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const m of css.matchAll(/(--text-[a-z0-9]+):\s*(?:clamp\()?(\d*\.?\d+)rem\b/g)) out.set(m[1], Number(m[2]) * 16);
+  return out;
+}
+const ECHELLE = echelle(readFileSync("app/zabelie-theme.css", "utf8"));
+
 /** Les `font-size` d'une feuille de style, par sélecteur (commentaires retirés, un niveau de `@media`). */
-function taillesCss(css: string, fichier: string): Taille[] {
+function taillesCss(css: string, fichier: string, jetons: Map<string, number> = ECHELLE): Taille[] {
   const propre = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, " "));
   const out: Taille[] = [];
   for (const r of propre.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const selecteur = r[1].trim().replace(/\s+/g, " ");
-    for (const d of r[2].matchAll(/font-size:\s*(\d*\.?\d+)(px|rem)\b/g)) {
-      const px = d[2] === "rem" ? Number(d[1]) * 16 : Number(d[1]);
+    // `max(var(--text-xs), 0.75em)` a pour plancher son premier terme : c'est lui qu'on lit.
+    for (const d of r[2].matchAll(/font-size:\s*(?:(\d*\.?\d+)(px|rem)\b|(?:max\()?var\((--text-[a-z0-9]+)\))/g)) {
       const ligne = propre.slice(0, (r.index ?? 0) + r[1].length + 1 + (d.index ?? 0)).split("\n").length;
+      if (d[3] && !jetons.has(d[3])) {
+        out.push({ ou: `${fichier}:${ligne}`, px: 0, brut: `${d[0]} (token inconnu)`, contexte: selecteur });
+        continue;
+      }
+      const px = d[3] ? jetons.get(d[3])! : d[2] === "rem" ? Number(d[1]) * 16 : Number(d[1]);
       out.push({ ou: `${fichier}:${ligne}`, px, brut: d[0], contexte: selecteur });
     }
   }
@@ -77,12 +98,8 @@ function toutes(): Taille[] {
  * classe, ou son sélecteur exact), la taille tolérée, et pourquoi.
  */
 const EXCEPTIONS: { fichier: string; element: string; px: number; raison: string }[] = [
-  {
-    fichier: "components/site-nav.tsx",
-    element: "grid h-5 min-w-5 place-items-center rounded-full bg-brand",
-    px: 11,
-    raison: "compteur du panier : un chiffre dans une pastille de 20 px, pas du texte à lire (UI-06 l'avait nommé ainsi)",
-  },
+  // Vide depuis la Phase 1 du chantier design : le compteur du panier, seule
+  // exception (11 px), est passé à `text-xs`.
 ];
 
 /** Une exception désigne une taille : même fichier, même valeur, et en CSS le MÊME sélecteur
@@ -100,6 +117,12 @@ test("T1 — l'instrument voit ce qu'il doit voir (cas connus, positifs et néga
   const css = taillesCss("/* font-size: 3px */\n.a { color: red; font-size: 11px; }\n@media (max-width: 767px) {\n  .b .c { font-size: .5rem; }\n}", "x.css");
   assert.deepEqual(css.map((t) => [t.contexte, t.px]), [[".a", 11], [".b .c", 8]], "font-size CSS mal lus (commentaire compris, ou @media manqué)");
   assert.equal(css[1].ou, "x.css:4", "numéro de ligne CSS faux");
+  // Tokens : résolus par le thème, à la borne basse d'un `clamp`.
+  const jetons = echelle("--text-xs: 0.75rem;\n--text-micro: 0.5rem;\n--text-2xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);");
+  assert.deepEqual([...jetons], [["--text-xs", 12], ["--text-micro", 8], ["--text-2xl", 20]], "échelle du thème mal lue");
+  const avecJetons = taillesCss(".a { font-size: var(--text-micro); }\n.b { font-size: max(var(--text-xs), 0.75em); }\n.c { font-size: var(--text-oubli); }", "x.css", jetons);
+  assert.deepEqual(avecJetons.map((t) => t.px), [8, 12, 0], "un token sous 12 px ou inconnu doit se lire, pour pouvoir échouer");
+  assert.ok(ECHELLE.get("--text-xs") === 12 && ECHELLE.get("--text-display") === 36, "le thème réel n'est plus lu");
   // Négatifs : ce qui n'est PAS une taille de texte ne doit pas être lu.
   assert.deepEqual(taillesTailwind('<p className="text-xs text-sm max-w-[11px] text-[#111] text-[var(--x)]">', "x.tsx"), []);
 });
