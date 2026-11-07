@@ -28,6 +28,29 @@ test("P4 — panier : un seul bouton orange, et la remise non renseignée dite u
   assert.match(panier, /\{g\.escrow && \(commitments\?\.get\(l\.product_id\)\s*\? <div className="basis-full"><ProductCommitmentDetails[^]*?: <a href=\{`\/produit\/\$\{l\.product!\.slug\}#contacter-vendeur`\} className="bouton bouton-texte bouton-compact[^"]*">\{trustLabels\.ask\}<\/a>\)\}/);
 });
 
+test("P5 — fiche : un <main>, le prix sous le titre, la remise avant le bouton, la réassurance après", () => {
+  const fiche = lire("app/produit/[slug]/page.tsx");
+  const pos = (motif: string) => {
+    const i = fiche.indexOf(motif);
+    assert.ok(i >= 0, `introuvable : ${motif}`);
+    return i;
+  };
+  // Le lien d'évitement de l'en-tête menait nulle part (audit A20, Lighthouse).
+  assert.equal((fiche.match(/<main id="main">/g) ?? []).length, 1);
+  assert.ok(pos('<main id="main">') < pos('<section className="mx-auto grid max-w-6xl') && pos("</main>") < pos("<SiteFooter />"));
+  const titre = pos("<h1 className=\"mt-4\">");
+  const prix = pos("<Prix montant={flash ? flash.prixFlashHtg : product.priceHTG} />");
+  const description = pos("{product.blurb}</p>");
+  const acheter = pos('id="acheter"');
+  const remise = pos('aria-labelledby="remise-avant-achat"');
+  const bouton = pos("<BuyButton");
+  const confiance = pos('aria-labelledby="achat-confiance"');
+  assert.ok(titre < prix && prix < description, "le prix vient juste sous le titre, avant la description");
+  assert.ok(prix < acheter, "le prix n'attend plus la carte d'achat");
+  assert.ok(acheter < remise && remise < bouton, "la remise se lit AVANT de payer");
+  assert.ok(bouton < confiance, "la réassurance générale suit le bouton");
+});
+
 test("P1 — connexion : un titre qui dit où l'on est, avec son mot d'accent, dans les quatre langues", () => {
   // « Konekte » était titre, onglet et bouton à la fois (audit Phase 0).
   assert.match(FORM, /<TitreAccent texte=\{mode === "signin" \? labels\.titleSignin : labels\.titleSignup\} accent=\{labels\.titleAccent\} \/>/);

@@ -345,6 +345,7 @@ export default async function ProductPage({
       />
       <SiteNav />
 
+      <main id="main">
       <section className="mx-auto grid max-w-6xl gap-10 px-5 pb-16 pt-12 lg:grid-cols-2">
         {/* Visuel — la photo du vendeur si elle existe, sinon le dégradé.
             `cover_url` existait depuis 0001 et l'upload depuis 0039, mais
@@ -413,6 +414,76 @@ export default async function ProductPage({
               {t(lang, "age.badge").replace("{age}", String(ageMinimum))}
             </p>
           )}
+          {/* PRIX SOUS LE TITRE (chantier design, Phase 4, V-28 A20) : il était
+              rendu vers y = 1 000 px sur un téléphone, après la description, les
+              caractéristiques et la compatibilité. Seul l'ordre change : flash,
+              rabais et prix gardent leurs sources. */}
+          <div className="mt-4">
+          {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
+              pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
+          {/* Vente flash (0080) : prime sur le rabais — deux barrés
+              empilés seraient deux vérités. Le prix FAIT FOI au serveur du
+              checkout ; ceci est l'étalage. */}
+          {flash ? (
+            <div className="grid gap-2">
+              <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-on-brand">
+                  <EclairFlash className="h-3.5 w-3.5" />
+                  {t(lang, "product.flash.badge")}
+                </span>
+                <span className="line-through">{formatHTG(product.priceHTG)}</span>
+                <span className="rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                  −{pourcentageRabais(product.priceHTG, flash.prixFlashHtg)}%
+                </span>
+                <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
+              </p>
+              <StockFlash lang={lang} unitesMax={flash.unitesMax} vendues={flashVendues} />
+            </div>
+          ) : (
+            compareHtg &&
+            compareHtg > product.priceHTG && (
+              <p className="text-sm text-mist">
+                <span className="line-through">{formatHTG(compareHtg)}</span>
+                <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
+                  −{pourcentageRabais(compareHtg, product.priceHTG)}%
+                </span>
+              </p>
+            )
+          )}
+          {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
+              l'achat ne se rend pas en dégradé transparent. */}
+          <p className="numeric text-3xl">
+            {physical && physical.variants.length > 1 && !flash ? <span className="mr-2 text-sm font-normal">{t(lang, "product.price.from")}{" "}</span> : null}
+            {/* L'équivalent ≈USD porte sur le prix RÉELLEMENT affiché et
+                débité (le prix flash s'il y en a un), pas sur le prix plein :
+                afficher un HTG remisé à côté d'un ≈USD au tarif fort est une
+                contradiction qui se lit comme une arnaque (audit REA
+                2026-10-26, #6). Le bouton MonCash prend déjà le prix flash. */}
+            <Prix montant={flash ? flash.prixFlashHtg : product.priceHTG} />
+            {usdHint(flash ? flash.prixFlashHtg : product.priceHTG) && (
+              <span className="ml-2 align-middle text-base font-semibold text-mist">
+                ≈ {usdHint(flash ? flash.prixFlashHtg : product.priceHTG)}
+              </span>
+            )}
+          </p>
+          {/* Preuve sociale À CÔTÉ du prix : c'est là que l'hésitation se joue. */}
+          {(product.ratingAvg !== null || product.sales > 0) && (
+            <p className="mt-1 text-sm text-mist">
+              {product.ratingAvg !== null && (
+                <>
+                  <span className="text-accent">★</span> {product.ratingAvg} (
+                  {product.ratingCount} {tn(lang, product.ratingCount, "product.reviews.badge.one", "product.reviews.badge")})
+                </>
+              )}
+              {product.ratingAvg !== null && product.sales > 0 && " · "}
+              {product.sales > 0 && (
+                <>
+                  {product.sales} {t(lang, "product.sales")}
+                </>
+              )}
+            </p>
+          )}
+          </div>
           <p className="mt-3 whitespace-pre-line text-base leading-7 text-mist">{product.blurb}</p>
 
           {isService(product.kind, product.id) && product.serviceIncludes.length > 0 && (
@@ -546,70 +617,6 @@ export default async function ProductPage({
           )}
 
           <div id="acheter" className="mt-8 scroll-mt-44 rounded-xl border border-line bg-surface/60 p-6">
-            {/* Rabais V-4 : l'ancien prix barré est un prix RÉELLEMENT
-                pratiqué (contrainte + RPC de 0075 — jamais une saisie libre). */}
-            {/* Vente flash (0080) : prime sur le rabais — deux barrés
-                empilés seraient deux vérités. Le prix FAIT FOI au serveur du
-                checkout ; ceci est l'étalage. */}
-            {flash ? (
-              <div className="grid gap-2">
-                <p className="flex flex-wrap items-center gap-2 text-sm text-mist">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-on-brand">
-                    <EclairFlash className="h-3.5 w-3.5" />
-                    {t(lang, "product.flash.badge")}
-                  </span>
-                  <span className="line-through">{formatHTG(product.priceHTG)}</span>
-                  <span className="rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
-                    −{pourcentageRabais(product.priceHTG, flash.prixFlashHtg)}%
-                  </span>
-                  <FlashCountdown fin={flash.fin} prefix={t(lang, "product.flash.ends")} />
-                </p>
-                <StockFlash lang={lang} unitesMax={flash.unitesMax} vendues={flashVendues} />
-              </div>
-            ) : (
-              compareHtg &&
-              compareHtg > product.priceHTG && (
-                <p className="text-sm text-mist">
-                  <span className="line-through">{formatHTG(compareHtg)}</span>
-                  <span className="ml-2 rounded-full border border-brand px-2 py-0.5 text-xs font-bold text-brand">
-                    −{pourcentageRabais(compareHtg, product.priceHTG)}%
-                  </span>
-                </p>
-              )
-            )}
-            {/* Prix en plein (audit UX 2026-09-02, #7) : le chiffre qui décide
-                l'achat ne se rend pas en dégradé transparent. */}
-            <p className="numeric text-3xl">
-              {physical && physical.variants.length > 1 && !flash ? <span className="mr-2 text-sm font-normal">{t(lang, "product.price.from")}{" "}</span> : null}
-              {/* L'équivalent ≈USD porte sur le prix RÉELLEMENT affiché et
-                  débité (le prix flash s'il y en a un), pas sur le prix plein :
-                  afficher un HTG remisé à côté d'un ≈USD au tarif fort est une
-                  contradiction qui se lit comme une arnaque (audit REA
-                  2026-10-26, #6). Le bouton MonCash prend déjà le prix flash. */}
-              <Prix montant={flash ? flash.prixFlashHtg : product.priceHTG} />
-              {usdHint(flash ? flash.prixFlashHtg : product.priceHTG) && (
-                <span className="ml-2 align-middle text-base font-semibold text-mist">
-                  ≈ {usdHint(flash ? flash.prixFlashHtg : product.priceHTG)}
-                </span>
-              )}
-            </p>
-            {/* Preuve sociale À CÔTÉ du prix : c'est là que l'hésitation se joue. */}
-            {(product.ratingAvg !== null || product.sales > 0) && (
-              <p className="mt-1 text-sm text-mist">
-                {product.ratingAvg !== null && (
-                  <>
-                    <span className="text-accent">★</span> {product.ratingAvg} (
-                    {product.ratingCount} {tn(lang, product.ratingCount, "product.reviews.badge.one", "product.reviews.badge")})
-                  </>
-                )}
-                {product.ratingAvg !== null && product.sales > 0 && " · "}
-                {product.sales > 0 && (
-                  <>
-                    {product.sales} {t(lang, "product.sales")}
-                  </>
-                )}
-              </p>
-            )}
             {pickByKind(product.kind, { file: false, service: false, physical: true }, product.id) && (
               <section aria-labelledby="remise-avant-achat" className="mt-5 rounded-xl border border-line bg-ink/40 p-4">
                 <h2 id="remise-avant-achat" className="titre-bloc">{t(lang, "product.handover.title")}</h2>
@@ -634,12 +641,6 @@ export default async function ProductPage({
               </section>
             )}
             {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
-            <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="achat-confiance">
-              <h2 id="achat-confiance" className="titre-bloc">{supportCopy(lang).trustTitle}</h2>
-              <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustLocal}</p>
-              {commitmentApplicable && commitments?.get(product.id)?.fees !== "included" && <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustFees}</p>}
-              <Link href="/aide#probleme" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).trustReturn}</Link>
-            </section>
             <div className="mt-5">
               <BuyButton
                 key={product.id}
@@ -751,6 +752,14 @@ export default async function ProductPage({
               <AddToCart productId={product.id} labels={libellesPanier} />
               {essayage && <EssayageBouton produitId={product.id} labels={libellesEssayage(lang, product.title)} panier={libellesPanier} />}
             </div>
+            {/* Réassurance générale APRÈS le bouton (V-28 A20) : la remise, qu'il
+                faut lire avant de payer, reste au-dessus. */}
+            <section className="mt-5 rounded-xl border border-line p-4" aria-labelledby="achat-confiance">
+              <h2 id="achat-confiance" className="titre-bloc">{supportCopy(lang).trustTitle}</h2>
+              <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustLocal}</p>
+              {commitmentApplicable && commitments?.get(product.id)?.fees !== "included" && <p className="mt-2 text-sm text-mist">{supportCopy(lang).trustFees}</p>}
+              <Link href="/aide#probleme" className="mt-2 inline-flex min-h-11 items-center text-sm underline">{supportCopy(lang).trustReturn}</Link>
+            </section>
             {/* Mention de livraison — dépend du type. Elle était affichée
                 inconditionnellement (« Livraison instantanée après
                 confirmation du paiement »), y compris sur un produit
@@ -916,6 +925,7 @@ export default async function ProductPage({
       )}
 
       {pixels && <SellerPixels ids={pixels} evenement={{ type: "produit", productId: product.id, valeurHtg: product.priceHTG }} labels={{ text: t(lang, "pixels.consent.text"), accept: t(lang, "pixels.consent.accept"), refuse: t(lang, "pixels.consent.refuse"), privacy: t(lang, "pixels.consent.privacy") }} />}
+      </main>
       <SiteFooter />
     </div>
   );
