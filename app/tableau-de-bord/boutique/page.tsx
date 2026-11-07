@@ -159,7 +159,7 @@ export default async function BoutiquePage() {
           <section id="ma-boutique" aria-labelledby="ma-boutique-title" className="mt-6 scroll-mt-32 rounded-xl border border-line bg-surface p-5">
             <h2 id="ma-boutique-title" className="titre-section">{t(lang, "vendeur.action.partager")}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{t(lang, "shop.hint")}</p>
-            <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-block break-all text-sm text-accent underline">
+            <Link href={hrefBoutique({ id: user.id, boutikSlug })} className="mt-3 inline-flex min-h-11 items-center break-all text-sm text-accent underline">
               {siteUrl()}{hrefBoutique({ id: user.id, boutikSlug })}
             </Link>
             <div className="mt-4 flex flex-wrap items-center gap-3">

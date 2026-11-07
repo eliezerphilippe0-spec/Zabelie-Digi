@@ -34,7 +34,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
     <SiteNav activeHref="/categories" />
     <main id="main" className="mx-auto max-w-6xl px-5 py-8">
       <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
-        <Link href="/" className="inline-flex min-h-11 items-center -my-3 underline underline-offset-4">{t(lang, "nav.home")}</Link>
+        <Link href="/" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline underline-offset-4">{t(lang, "nav.home")}</Link>
         <span aria-hidden="true">/</span><span aria-current="page">{t(lang, "directory.title")}</span>
       </nav>
       <h1>{t(lang, "directory.title")}</h1>

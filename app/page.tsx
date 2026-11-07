@@ -86,7 +86,7 @@ function HomeRow({
     <section id={id} className={`mx-auto max-w-6xl px-5 pt-6 ${classesRangee(items.length, primary)}`} data-home-selection={primary || undefined} data-count={items.length}>
       <div className="flex items-baseline justify-between gap-4">
         <div><h2>{title}</h2>{subtitle && <p className="mt-2 text-sm text-mist">{subtitle}</p>}</div>
-        <Link href={href} className="shrink-0 text-sm font-medium text-mist transition hover:text-cloud">
+        <Link href={href} className="bouton bouton-texte bouton-compact -my-3 shrink-0">
           {more}
         </Link>
       </div>

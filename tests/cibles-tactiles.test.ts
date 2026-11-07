@@ -134,6 +134,28 @@ test("fil d'Ariane — chaque lien porte ses 44 px, compensés pour ne pas dépl
   assert.equal(liens, 7, "sept liens de fil d'Ariane attendus sur les cinq pages");
 });
 
+test("audit Phase 0 du chantier design — les cibles relevées sous 44 px déclarent leur taille", () => {
+  /* MESURÉ à 360 px le 2026-11-06 (docs/design/AUDIT-0.md) puis re-mesuré
+   * après correction : « Wè tout » 52 × 22, nom de produit du panier 153 × 20,
+   * nom du vendeur sur la fiche 120 × 22, lien de boutique 278 × 43, « Akèy »
+   * 33 × 44 de large. La hauteur vient d'une classe, la marge négative la rend
+   * à la mise en page : rien ne bouge, la zone de toucher grandit. */
+  const cas: Array<[string, RegExp]> = [
+    ["app/page.tsx", /<Link href=\{href\} className="([^"]*)">\s*\{more\}/],
+    ["app/panier/page.tsx", /href=\{`\/produit\/\$\{l\.product!\.slug\}`\}\s*className="([^"]*)"\s*>\s*\{l\.product!\.title\}/],
+    ["app/produit/[slug]/page.tsx", /href=\{`\/createur\/\$\{product\.creatorId\}`\}\s*className="([^"]*)"/],
+    ["app/tableau-de-bord/boutique/page.tsx", /<Link href=\{hrefBoutique\(\{ id: user\.id, boutikSlug \}\)\} className="([^"]*)">\s*\{siteUrl\(\)\}/],
+  ];
+  for (const [fichier, motif] of cas) {
+    const c = motif.exec(readFileSync(fichier, "utf8"))?.[1];
+    assert.ok(c !== undefined, `${fichier} : la cible est introuvable`);
+    assert.ok(cible44(c), `${fichier} : « ${c} » ne déclare pas 44 px`);
+  }
+  // « Akèy » : 33 px de large. 12 px de plus, rendus par une marge négative.
+  const nav = readFileSync("app/catalogue/page.tsx", "utf8").match(/<nav aria-label=\{t\(lang, "nav\.breadcrumb"\)\}[\s\S]*?<\/nav>/)?.[0] ?? "";
+  for (const c of classesDe(nav, "Link")) assert.ok(c.includes("px-1.5") && c.includes("-mx-1.5"), `fil d'Ariane trop étroit : « ${c.join(" ")} »`);
+});
+
 test("filtre de zone du catalogue — trois listes et le bouton à 44 px, listes en 16 px", () => {
   /* MESURÉ le 2026-09-29, 390 px : liste Département 125 × 37 px, bouton
    * « Filtrer » 74 × 38 px — à côté du tri et du bouton voisins, déjà en

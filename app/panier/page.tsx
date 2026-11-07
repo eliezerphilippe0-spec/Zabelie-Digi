@@ -167,7 +167,7 @@ export default async function PanierPage() {
                     <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                       <Link
                         href={`/produit/${l.product!.slug}`}
-                        className="font-semibold text-cloud transition hover:text-accent"
+                        className="-my-3 inline-flex min-h-11 items-center font-semibold text-cloud transition hover:text-accent"
                       >
                         {l.product!.title}
                       </Link>

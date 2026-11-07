@@ -435,7 +435,7 @@ export default async function ProductPage({
             {product.creatorId ? (
               <Link
                 href={`/createur/${product.creatorId}`}
-                className="hover:text-cloud"
+                className="-my-3 inline-flex min-h-11 items-center hover:text-cloud"
               >
                 {t(lang, "product.by")} {product.creator}
               </Link>
