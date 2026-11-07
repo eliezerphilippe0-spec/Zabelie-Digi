@@ -2,14 +2,15 @@
 
 ## Chantier design et typographie (7 novembre 2026) — ce qui attend le porteur
 
-Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Décisions
-prises : V-25 (`docs/02-DECISIONS.md`). Aucune écriture en production, aucune
-variable posée. Une phase ne démarre qu'après la validation de la précédente.
+Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
+`docs/design/PHASE-2.md`. Décisions prises : V-25 et V-26
+(`docs/02-DECISIONS.md`). Aucune écriture en production, aucune variable posée.
+Une phase ne démarre qu'après la validation de la précédente.
 
 1. ⏳ **Relire puis fusionner** les PR de phase, dans l'ordre. Elles restent en
-   brouillon : le brief interdit de fusionner sans validation humaine.
-2. ⏳ **A12, badges** : nécessaire pour la Phase 2. Recommandé : réutiliser
-   `BadgeIdentite`, mention de remise seulement si le vendeur l'a déclarée.
+   brouillon : le brief interdit de fusionner sans validation humaine. La
+   Phase 2 est construite sur la Phase 1 : elle se fusionne après elle.
+2. ✅ **A12, badges** : tranché le 2026-11-07 (V-26), recommandation acceptée.
 3. ⛔ **A11, arrêt ferme** : `NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORM` n'est pas
    active. Vérifier le plan Supabase puis activer, ou laisser éteint. Variable
    d'environnement, peut-être une dépense : geste du porteur, ou autorisation
@@ -19,7 +20,12 @@ variable posée. Une phase ne démarre qu'après la validation de la précédent
    touche anvan li remèt li » / « Le vendeur n'est payé qu'après la remise ».
 5. ⏳ **Chemin de l'argent** : les `h1` du paiement, de la facture et de la
    recharge restent à 24 px, contre 28 px ailleurs, parce que le brief interdit
-   d'y toucher. Dire si l'on retire ces deux classes.
+   d'y toucher. Dire si l'on retire ces deux classes. Même raison en Phase 2 :
+   leurs boutons gardent leur écriture à la main, et « Mande yon retrè » reste
+   à 38 px. La Phase 4 autorise une retouche de présentation du checkout.
+6. ⏳ **TBT de la connexion**, mesuré en Phase 2 : 64 → environ 130 ms, sans
+   code ajouté (le build a changé l'ordre d'exécution de deux fichiers). À
+   suivre en Phase 5.
 
 ## Notifications de vente, page fermée — niveau 2 (31 octobre 2026) — ALLUMÉ le 2 novembre
 
