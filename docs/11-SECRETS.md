@@ -42,7 +42,7 @@
 | `KOBARA_SECRET_KEY` | encaisser NatCash/MonCash au nom de Zabelie |
 | `KOBARA_WEBHOOK_SECRET` | ⚠️ **forger une confirmation de paiement** — donc obtenir des livraisons sans payer |
 | `RESEND_API_KEY` | envoyer du courriel au nom du domaine |
-| `RECONCILE_SECRET` | déclencher la réconciliation à volonté |
+| `RECONCILE_SECRET` | déclencher la réconciliation à volonté. ⚠️ Trois copies : Vercel (Production), secret Actions GitHub, et coffre Vault Supabase sous le nom `zabelie_reconcile_secret` (`0170`). Une rotation se fait aux TROIS endroits |
 | `CRON_SECRET` | déclencher toutes les tâches planifiées |
 | `OPENAI_API_KEY` | **facturable** — dépenser sur le compte du projet |
 | `GEMINI_API_KEY` | **facturable** — idem |

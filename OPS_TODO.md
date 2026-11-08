@@ -1,5 +1,23 @@
 # OPS_TODO — Zabelie
 
+## Rapprochement des paiements par pg_cron (7 novembre 2026) — ce qui attend le porteur
+
+Décision du porteur le 2026-11-07 (« pg_cron Supabase »), après mesure : GitHub
+ne lançait le rapprochement que 3 à 8 fois par jour au lieu de 288 (écart
+médian 4 h 30, maximum 10 h). MonCash n'a pas de webhook. Détail : `docs/04` §3,
+migration `0170_zabelie_rapprochement_pg_cron.sql`.
+
+1. ⏳ **Appliquer `0170`** après fusion et CI verte. Sans le secret, elle est
+   inerte : chaque passage note `secret_absent` et n'appelle rien.
+2. ⛔ **Poser le secret dans Vault, geste du porteur** (secret = arrêt ferme),
+   dans l'éditeur SQL Supabase, avec la valeur de `RECONCILE_SECRET` :
+   `select vault.create_secret('<valeur>', 'zabelie_reconcile_secret');`
+   Vercel la garde en « sensible » et ne la rend pas : si elle est perdue, en
+   générer une nouvelle et la poser aux trois endroits (`docs/11` §2.1).
+3. ⏳ **Contrôler dix minutes après** :
+   `select dernier_passage, derniere_issue from zabelie_rapprochement_config;`
+   doit dire `appel_envoye` il y a moins de 5 minutes.
+
 ## Chantier design et typographie (7 novembre 2026) — ce qui attend le porteur
 
 Audit : `docs/design/AUDIT-0.md`. Phase 1 : `docs/design/PHASE-1.md`. Phase 2 :
