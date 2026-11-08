@@ -18,16 +18,16 @@ export type OfferCopy = typeof fr;
 const ht: OfferCopy = {
   alsoBought: "Kliyan achte yo tou nan boutik sa a",
   automatic: "Pèmèt sijesyon ki baze sou acha yo",
-  automaticHint: "Chwa ou yo toujou pase an premye. Zabelie ranpli plas ki vid yo ak pwodui nan boutik ou lè plizyè acha reyèl jistifye sijesyon an. Twa òf pou pi plis.",
+  automaticHint: "Chwa ou yo toujou pase an premye. Zabelie ranpli plas ki vid yo ak pwodwi nan boutik ou lè plizyè acha reyèl jistifye sijesyon an. Twa òf pou pi plis.",
   automaticSales: "Acha konfime ki soti nan sijesyon otomatik yo",
   title: "Òf ki mache ansanm", intro: "Chwazi jiska twa òf nan boutik ou. Achtè a dwe chwazi chak acha.",
-  upsell: "Vèsyon ki pi konplè", cross_sell: "Pwodui konplemantè", downsell: "Opsyon ki pi bon mache",
+  upsell: "Vèsyon ki pi konplè", cross_sell: "Pwodwi konplemantè", downsell: "Opsyon ki pi bon mache",
   none: "Okenn", save: "Anrejistre òf yo", saving: "Ap anrejistre…", saved: "Òf yo anrejistre.",
-  rules: "Vèsyon ki pi konplè ak opsyon pi bon mache a dwe menm kalite pwodui, ak yon pri pi wo oswa pi ba. Òf ki pa disponib oswa ki nan vant flash yo pa parèt.",
-  invalid: "Chwazi pwodui ki pibliye nan boutik ou, san doublon, ak pri ki koresponn.",
+  rules: "Vèsyon ki pi konplè ak opsyon pi bon mache a dwe menm kalite pwodwi, ak yon pri pi wo oswa pi ba. Òf ki pa disponib oswa ki nan vant flash yo pa parèt.",
+  invalid: "Chwazi pwodwi ki pibliye nan boutik ou, san doublon, ak pri ki koresponn.",
   unavailable: "Òf ki mache ansanm yo pa disponib kounye a.", sales: "Vant konfime", salesHint: "Acha konfime ki soti nan lyen òf la ; acha ranbouse yo pa konte.",
   buyerTitle: "Dekouvri lòt òf nan boutik sa a", view: "Gade òf sa a", cheaper: "Gade yon opsyon pi bon mache",
-  separate: "Ou achte pwodui konplemantè sa a apa.", replacement: "Gade òf sa a anvan ou chwazi sa ki bon pou ou.",
+  separate: "Ou achte pwodwi konplemantè sa a apa.", replacement: "Gade òf sa a anvan ou chwazi sa ki bon pou ou.",
   after: "Pou konplete acha ou", from: "Apati", empty: "Pibliye yon lòt òf pou ou ka asosye li.",
 };
 const en: OfferCopy = {

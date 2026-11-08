@@ -29,10 +29,10 @@ const fr = {
 };
 export type ShoppingCopy = typeof fr;
 const ht: ShoppingCopy = {
-  type: "Kalite òf", allTypes: "Tout kalite", digitalNote: "Verifye fòma, lisans ak kondisyon aksè fichye a sou fich pwodui a.",
+  type: "Kalite òf", allTypes: "Tout kalite", digitalNote: "Verifye fòma, lisans ak kondisyon aksè fichye a sou fich pwodwi a.",
   title: "Asistan acha Zabelie", sellerTitle: "Vandè IA boutik sa a",
   intro: "Di sa w ap chèche. Konpare jiska twa òf nan katalòg la selon bezwen w ak bidjè w.",
-  query: "Ki pwodui oswa sèvis w ap chèche ?", budgetHtg: "Ki bidjè maksimòm ou an goud ?",
+  query: "Ki pwodwi oswa sèvis w ap chèche ?", budgetHtg: "Ki bidjè maksimòm ou an goud ?",
   need: "Pou kisa w pral itilize sa w ap achte a ?", location: "Nan ki vil oswa lokalite ou ye ?",
   send: "Voye", message: "Repons ou", searching: "N ap chèche…", guided: "Rechèch gide",
   guidedNote: "Ou ka ranpli kritè ou yo dirèkteman tou.", search: "Konpare òf yo", reset: "Nouvo rechèch",

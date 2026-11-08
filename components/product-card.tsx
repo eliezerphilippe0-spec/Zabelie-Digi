@@ -50,7 +50,7 @@ const FALLBACK_LABELS: ProductCardLabels = {
  * (`tests/pluriel` P4). Deux étiquettes au plus, jamais orange (`.etiquette`,
  * V-26) ; « Vendeur vérifié » et « Livraison locale » n'y figurent pas.
  *
- * La ligne « Gade pwodui a » ne vit plus que sur la carte de boutique, en
+ * La ligne « Gade pwodwi a » ne vit plus que sur la carte de boutique, en
  * liste : sur la grille, elle répétait l'action de la carte entière et
  * ajoutait une rangée de texte en 12 px (audit Phase 0, pastille 9). Le dégradé de repli des produits sans photo est
  * remplacé par un aplat neutre : la marchandise, c'est l'image ; sans image,

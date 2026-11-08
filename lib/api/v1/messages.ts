@@ -86,19 +86,19 @@ export const MESSAGES = {
   },
   product_not_found: {
     fr: "Produit introuvable dans votre boutique.",
-    ht: "Nou pa jwenn pwodui sa a nan boutik ou.",
+    ht: "Nou pa jwenn pwodwi sa a nan boutik ou.",
     en: "Product not found in your shop.",
     es: "Producto no encontrado en tu tienda.",
   },
   product_not_published: {
     fr: "Le produit n'est pas publié.",
-    ht: "Pwodui a poko pibliye.",
+    ht: "Pwodwi a poko pibliye.",
     en: "The product is not published.",
     es: "El producto no está publicado.",
   },
   product_out_of_stock: {
     fr: "Le produit est en rupture de stock.",
-    ht: "Pwodui a fini nan stòk.",
+    ht: "Pwodwi a fini nan stòk.",
     en: "The product is out of stock.",
     es: "El producto está agotado.",
   },
@@ -122,7 +122,7 @@ export const MESSAGES = {
   },
   product_unknown: {
     fr: "Produit introuvable.",
-    ht: "Nou pa jwenn pwodui a.",
+    ht: "Nou pa jwenn pwodwi a.",
     en: "Product not found.",
     es: "Producto no encontrado.",
   },
@@ -140,7 +140,7 @@ export const MESSAGES = {
   },
   compare_too_few: {
     fr: "Moins de deux produits comparables : au moins un identifiant est introuvable ou non publié.",
-    ht: "Mwens pase de pwodui pou konpare : omwen youn nan idantifyan yo pa egziste oswa li pa pibliye.",
+    ht: "Mwens pase de pwodwi pou konpare : omwen youn nan idantifyan yo pa egziste oswa li pa pibliye.",
     en: "Fewer than two comparable products: at least one identifier is unknown or not published.",
     es: "Menos de dos productos comparables: al menos un identificador no existe o no está publicado.",
   },

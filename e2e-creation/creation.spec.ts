@@ -20,7 +20,7 @@ test("un guide en kreyòl naît d'un modèle, son plan s'approuve, sa rédaction
   await expect(page.getByRole("heading", { level: 1, name: /^(Bonjou|Bonswa), Vandè$/ })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Kisa ou vle fè jodi a ?" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Analize yon mache/ }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /Kreye yon pwodui dijital/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Kreye yon pwodwi dijital/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /piblisite/i })).toHaveCount(0); // publicités abandonnées
   await expect(page.locator("#nouveau-projet")).toHaveCount(0); // le formulaire vient après un choix
 

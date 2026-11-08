@@ -11,7 +11,7 @@ import { DICT } from "../lib/i18n";
  * mis en avant, nom sur deux lignes, toute la carte cliquable, deux colonnes à
  * 360 px, deux badges au plus, jamais « Vendeur vérifié » ni « Livraison
  * locale » (V-26). Ce qui manquait : des étiquettes écrites sur place, et la
- * ligne « Gade pwodui a » qui répétait l'action de la carte entière.
+ * ligne « Gade pwodwi a » qui répétait l'action de la carte entière.
  */
 
 const lire = (p: string) => readFileSync(join(import.meta.dirname, "..", p), "utf8");
@@ -40,7 +40,7 @@ test("K2 — deux étiquettes au plus, en classe du thème, jamais orange", () =
   assert.match(lire("components/badge-identite.tsx"), /className="etiquette etiquette-neutre"/, "« Identité vérifiée » réutilisé, aux couleurs neutres");
 });
 
-test("K3 — « Gade pwodui a » ne vit plus que sur la carte de boutique", () => {
+test("K3 — « Gade pwodwi a » ne vit plus que sur la carte de boutique", () => {
   // La CONDITION, pas le libellé : la ligne doit être derrière `boutique &&`.
   assert.match(CARTE, /\{boutique && labels\.detail && <span/);
   assert.doesNotMatch(CARTE, /home-card-cta/);

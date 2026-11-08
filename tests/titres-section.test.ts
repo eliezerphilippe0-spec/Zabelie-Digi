@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
  * Mesuré avant (styles calculés, tableau de bord à 390 px) : dix `h2` de même
  * niveau, chacun ouvrant une carte de section, en QUATRE styles —
  *
- *   « Pèfòmans pwodui dijital yo »              20 px · 700
+ *   « Pèfòmans pwodwi dijital yo »              20 px · 700
  *   « Boutik ou louvri »                        20 px · 600
  *   « Boutik mwen », « Mes produits »…          18 px · 600
  *   « Verifikasyon idantite w », « Livrezon »    14 px · 600

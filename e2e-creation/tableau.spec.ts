@@ -25,7 +25,9 @@ test("opportunités : aperçu sur le tableau, analyse détaillée, guide créé 
   await expect(page).toHaveURL(/\/tableau-de-bord\/creation\/analyse$/);
   await expect(page.getByRole("heading", { level: 1, name: "Analize yon mache" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Analize yon mache", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByText("Pwodwi dijital", { exact: true })).toBeVisible();
+  // Le rayon de l'analyse, dans le contenu : l'en-tête porte aussi un lien
+  // « Pwodwi dijital » depuis que les deux graphies n'en font plus qu'une (V-29).
+  await expect(page.locator("#main").getByText("Pwodwi dijital", { exact: true })).toBeVisible();
   await expect(page.getByText(/omwen 5 moun diferan .* omwen 3 vant .* omwen 2 vandè diferan/)).toBeVisible();
 
   await page.getByRole("link", { name: "Kreye yon gid sou sa" }).first().click();
