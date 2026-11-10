@@ -49,6 +49,7 @@ import { delaiAffichable, delaiConstateVendeur, uniteDelai } from "@/lib/delai-c
 import { isStripeEnabled } from "@/lib/stripe";
 import { isZelleEnabled } from "@/lib/zelle";
 import { isKobaraEnabled } from "@/lib/kobara";
+import { monCashDirectProposable } from "@/lib/payment-availability";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import { ShareButtons } from "@/components/share-buttons";
 import { MessageForm } from "@/components/message-form";
@@ -67,6 +68,7 @@ import {
 import { jsonLdProduit } from "@/lib/jsonld-produit";
 import { Prix } from "@/components/prix";
 import { Icone } from "@/components/icone";
+import { MessageErreur } from "@/components/message-erreur";
 
 export const dynamic = "force-dynamic";
 
@@ -156,9 +158,14 @@ function buildBuyOptions(lang: Lang, priceHTG: number): BuyOption[] {
     return [{ rail: "gratis", label: t(lang, "product.get.free") }];
   }
 
-  const options: BuyOption[] = [
-    { rail: "moncash", label: t(lang, "product.pay", { price: formatHTG(priceHTG) }) },
-  ];
+  /* MonCash direct n'est PAS proposé sur une production qui ne peut pas créer
+   * le paiement (audit du 2026-11-10, P0-2, `monCashDirectProposable`). Le
+   * serveur refuse la même chose avant toute commande : masquer le bouton ne
+   * remplace pas ce refus, il évite seulement d'y envoyer l'acheteur. */
+  const options: BuyOption[] = [];
+  if (monCashDirectProposable()) {
+    options.push({ rail: "moncash", label: t(lang, "product.pay", { price: formatHTG(priceHTG) }) });
+  }
   /* KOBARA (0106) — NatCash d'abord, et en HTG : c'est un rail HAÏTIEN, il se
    * place donc au-dessus des rails diaspora en USD, pas à leur suite.
    *
@@ -248,6 +255,10 @@ export default async function ProductPage({
    * checkout (`flashEpuisee`). Seulement si l'offre a un plafond ; `null` si
    * le comptage échoue — la barre ne s'affiche pas plutôt que de mentir. */
   const flashVendues = flash && flash.unitesMax !== null ? await unitesVendues(createAdminClient(), product.id, flash) : null;
+  /* AUCUN RAIL À PROPOSER (P0-2) : MonCash direct fermé sur une production non
+   * configurée, et aucun autre rail activé. Le bloc d'achat le DIT au lieu de
+   * rendre un bouton qui échouerait, ou pas de bouton du tout sans un mot. */
+  const aucunRail = buildBuyOptions(lang, flash ? flash.prixFlashHtg : product.priceHTG).length === 0;
 
   /* Âge minimum (0115) — lu en base par l'ascendance du rayon, jamais déduit
    * du slug ici. Une lecture en échec rend 0 : la fiche n'affiche alors ni
@@ -583,6 +594,7 @@ export default async function ProductPage({
             )}
             {commitmentApplicable && <ProductCommitmentDetails value={commitments?.get(product.id)} labels={trustLabels} locale={lang === "ht" ? "fr-HT" : lang}/>}
             <div className="mt-5">
+              {aucunRail ? <MessageErreur>{t(lang, "availability.moncash.unavailable")}</MessageErreur> : (
               <BuyButton
                 key={product.id}
                 offerId={selectedOfferId}
@@ -663,6 +675,7 @@ export default async function ProductPage({
                   provider: t(lang, "error.provider"),
                 }}
               />
+              )}
               {/* ── L'ESCROW, DIT LÀ OÙ ON HÉSITE ────────────────────────
                   Ajouté le 2026-08-27. `trust.2.b` — « le vendeur n'est payé
                   qu'après la remise » — n'était rendu QUE sur l'accueil

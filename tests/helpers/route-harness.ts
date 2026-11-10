@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
 import { secretEgal } from "../../lib/secret-egal";
+import { monCashDirectProposable } from "../../lib/payment-availability";
 
 /** Execute the real route with explicit I/O doubles; no network or database writes. */
 export function loadRoute(file: string, overrides: Record<string, unknown>, env: Record<string, string> = {}, globals: Record<string, unknown> = {}) {
@@ -15,6 +16,11 @@ export function loadRoute(file: string, overrides: Record<string, unknown>, env:
     "@/lib/i18n": { t: (_lang: string, key: string) => key },
     // Pure : la vraie comparaison en temps constant (docs/78 L3), jamais un double.
     "@/lib/secret-egal": { secretEgal },
+    // Pure, elle aussi : le VRAI garde MonCash (audit P0-2), lu sur l'environnement
+    // donné à la route. Un double « toujours vrai » aurait rendu le garde invisible
+    // à tous les tests de checkout ; ici une route chargée avec
+    // `VERCEL_ENV: "production"` et sans identifiants est réellement refusée.
+    "@/lib/payment-availability": { monCashDirectProposable: () => monCashDirectProposable(env as NodeJS.ProcessEnv) },
     // Compte actif par défaut ; un test de suspension le remplace explicitement.
     "@/lib/auth": { requireActiveAccount: async () => null },
     "@/lib/api-erreur": {

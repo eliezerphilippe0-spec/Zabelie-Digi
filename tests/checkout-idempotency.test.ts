@@ -27,7 +27,7 @@ test("attempt identity is stable, scoped to the verified buyer and bounded", () 
 
 function fixture(options: { missingOriginal?: boolean; readError?: boolean; sessionError?: boolean; sessionCommittedError?: boolean; paid?: boolean; operatorError?: boolean; legacySchema?: boolean; groupedOriginal?: boolean;
   firstPaymentFailure?: boolean; firstPaymentCommittedError?: boolean; digital?: boolean; physical?: boolean; stockStatus?: string; expiredStock?: boolean; stockReadError?: boolean; noStock?: boolean; age?: number;
-  recharge?: boolean; zoneWriteError?: string; metadataWriteError?: string; metadataReadError?: boolean; deferFirstPaymentClaim?: boolean; ownProduct?: boolean } = {}) {
+  recharge?: boolean; zoneWriteError?: string; metadataWriteError?: string; metadataReadError?: boolean; deferFirstPaymentClaim?: boolean; ownProduct?: boolean; env?: Record<string, string> } = {}) {
   const orders = new Map<string, Record<string, unknown>>();
   const operatorCalls: string[] = [];
   const paymentWrites: string[] = [];
@@ -157,7 +157,7 @@ function fixture(options: { missingOriginal?: boolean; readError?: boolean; sess
         return { redirectUrl: GATEWAY, paymentToken: "test", mode: "sandbox", gatewayHost: "sandbox.moncashbutton.digicelgroup.com" };
       },
     },
-  }, { USD_HTG_RATE: "132" });
+  }, { USD_HTG_RATE: "132", ...(options.env ?? {}) });
   return {
     orders, payments, sessions, attestations, recipients, rechargeTargets, zones, operatorCalls, paymentWrites, stockCalls, accountChecks, db,
     changePrice: (price: number) => { currentPrice = price; },
@@ -181,6 +181,34 @@ test("an own offer is rejected before any order, private metadata, stock or oper
     assert.equal(f.attestations.size + f.recipients.size + f.rechargeTargets.size, 0);
     assert.equal(f.stockCalls.length, 0); assert.equal(f.operatorCalls.length, 0);
   }
+});
+
+test("production without a usable MonCash setup refuses before any order, stock or operator", async () => {
+  /* Audit du 2026-11-10, P0-2. Le garde est le VRAI (`route-harness`), pas un
+   * double : il lit l'environnement de la route. Connu-négatif d'abord — la
+   * même requête, hors production, crée bien sa commande. */
+  const ID = { MONCASH_CLIENT_ID: "id", MONCASH_CLIENT_SECRET: "secret" };
+  for (const opts of [{}, { digital: true }, { physical: true }]) {
+    const temoin = fixture(opts);
+    assert.equal((await temoin.post()).status, 200);
+    assert.equal(temoin.orders.size, 1);
+
+    const nonConfigures: Record<string, string>[] = [{ VERCEL_ENV: "production" }, { VERCEL_ENV: "production", ...ID }, { VERCEL_ENV: "production", MONCASH_MODE: "production" }];
+    for (const env of nonConfigures) {
+      const f = fixture({ ...opts, env });
+      const res = await f.post();
+      assert.equal(res.status, 422);
+      assert.equal((await res.json()).code, "moncash_non_configure");
+      assert.equal(f.orders.size, 0); assert.equal(f.payments.size, 0);
+      assert.equal(f.stockCalls.length, 0); assert.equal(f.operatorCalls.length, 0);
+    }
+
+    const configure = fixture({ ...opts, env: { VERCEL_ENV: "production", MONCASH_MODE: "production", ...ID } });
+    assert.equal((await configure.post()).status, 200);
+    assert.equal(configure.orders.size, 1);
+  }
+  // L'exception de l'achat gratuit (`finalPriceHtg > 0`) est tenue par
+  // tests/moncash-proposable.test.ts : cette fixture ne sait pas servir un prix nul.
 });
 
 function zellePage(f: ReturnType<typeof fixture>) {

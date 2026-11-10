@@ -1,6 +1,6 @@
 import { recommendationAttribution } from "@/lib/product-offers";
 import { offerAttribution } from "@/lib/product-offers-server";
-import { getKobaraAvailability } from "@/lib/payment-availability";
+import { getKobaraAvailability, monCashDirectProposable } from "@/lib/payment-availability";
 import { cookies } from "next/headers";
 import { readSellerPricing } from "@/lib/seller-pricing-server";
 import { attributedSource, SALE_SOURCE_COOKIE } from "@/lib/sale-attribution";
@@ -93,7 +93,11 @@ function railEnabled(rail: Rail): boolean {
    * fusionnable malgré cela, et il ne doit pas être affaibli en un
    * `return true` « en attendant ». */
   if (rail === "kobara") return isKobaraEnabled();
-  return true; // moncash = rail MVP, toujours proposé
+  // moncash = rail MVP. Son garde de production (`monCashDirectProposable`)
+  // se pose plus bas, une fois le PRIX connu : un produit gratuit arrive ici
+  // avec le rail par défaut et ne doit pas être refusé pour un rail qu'il
+  // n'empruntera pas.
+  return true;
 }
 
 export async function POST(req: Request) {
@@ -549,6 +553,19 @@ export async function POST(req: Request) {
    *
    * Le libellé nommait par ailleurs « MonCash » en dur — sans conséquence tant
    * que MonCash était le seul rail plafonné, faux dès qu'un second en a un. */
+  /* MONCASH DIRECT NON CONFIGURÉ EN PRODUCTION (audit du 2026-11-10, P0-2) :
+   * refus ICI, avant toute commande et toute réservation de stock. Sans ce
+   * garde, la commande naissait, le stock était réservé, puis `createPayment`
+   * levait et l'acheteur recevait un 502 avec une commande en attente.
+   * `finalPriceHtg > 0` : un achat gratuit ne passe par aucun opérateur.
+   * Hors `VERCEL_ENV === "production"`, le garde est toujours ouvert. */
+  if (rail === "moncash" && finalPriceHtg > 0 && !monCashDirectProposable()) {
+    return NextResponse.json(
+      { error: t(lang, "api.rail.unavailable"), code: "moncash_non_configure" },
+      { status: 422 }
+    );
+  }
+
   const plafond = rail === "kobara" ? kobaraCap(kobaraProvider) : railCap(rail);
   const operateurPlafonne = rail === "kobara" ? kobaraProvider : rail;
   if (plafond !== null && finalPriceHtg > plafond) {
