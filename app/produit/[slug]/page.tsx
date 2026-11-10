@@ -935,7 +935,10 @@ export default async function ProductPage({
               href="#acheter"
               className="bouton bouton-primaire"
             >
-              {t(lang, "product.cta.bottom", { price: formatHTG(product.priceHTG) })}
+              {/* Le prix du bouton est celui qui sera débité : flash s'il y en a
+                  un (audit du 2026-11-10). Il affichait le prix normal pendant
+                  une vente flash, à côté d'un bloc d'achat au prix flash. */}
+              {t(lang, "product.cta.bottom", { price: formatHTG(flash ? flash.prixFlashHtg : product.priceHTG) })}
             </a>
           </div>
         </section>

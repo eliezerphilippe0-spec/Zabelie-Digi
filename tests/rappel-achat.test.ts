@@ -54,6 +54,13 @@ test("fiche : un lien vers #acheter, le prix de la zone de prix, absent sans rai
   assert.match(FICHE, /id="acheter"/);
 });
 
+test("les deux boutons de bas de fiche annoncent le prix débité, flash compris", () => {
+  // Le second affichait `product.priceHTG` seul : prix normal pendant une vente flash.
+  const prix = [...FICHE.matchAll(/t\(lang, "product\.cta\.bottom", \{ price: formatHTG\(([^)]*)\) \}\)/g)].map((m) => m[1]);
+  assert.equal(prix.length, 2, "deux rappels de bas de fiche attendus");
+  for (const p of prix) assert.equal(p, "flash ? flash.prixFlashHtg : product.priceHTG");
+});
+
 test("le libellé court existe dans les quatre langues, sans prix ni flèche", () => {
   for (const lang of ["fr", "ht", "en", "es"] as const) {
     const d = DICT[lang] as Record<string, string>;
