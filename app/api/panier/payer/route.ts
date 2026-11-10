@@ -9,6 +9,7 @@ import { createPayment, resolveMonCashMode } from "@/lib/moncash";
 import { createStripeCheckout, isStripeEnabled } from "@/lib/stripe";
 import { createKobaraPayment, isKobaraEnabled, isKobaraProvider, kobaraCap, type KobaraProvider } from "@/lib/kobara";
 import { persistPaymentSession, railCap } from "@/lib/payment-utils";
+import { monCashDirectProposable } from "@/lib/payment-availability";
 import { couponApplies, normalizeCouponCode, type CouponRow } from "@/lib/zabelie-coupons";
 import { inscrireContexteGroupe } from "@/lib/panier-groupe-contexte";
 import { POST as checkoutArticle } from "@/app/api/checkout/route";
@@ -49,7 +50,9 @@ type RailGroupe = (typeof RAILS_GROUPE)[number];
 function railOuvert(rail: RailGroupe): boolean {
   if (rail === "stripe") return isStripeEnabled();
   if (rail === "kobara") return isKobaraEnabled();
-  return true;
+  // MonCash direct : fermé sur une production non configurée (P0-2). Le
+  // paiement groupé n'admet aucun article gratuit, donc pas d'exception de prix.
+  return monCashDirectProposable();
 }
 
 export async function POST(req: Request) {

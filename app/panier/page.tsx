@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { CartPayAll, type OptionPanier } from "@/components/cart-pay-all";
 import { isStripeEnabled } from "@/lib/stripe";
 import { isKobaraEnabled } from "@/lib/kobara";
+import { monCashDirectProposable } from "@/lib/payment-availability";
 import { usdCentsFromHtg, formatUsd } from "@/lib/payment-utils";
 import type { Lang } from "@/lib/i18n";
 import { Prix } from "@/components/prix";
@@ -210,7 +211,7 @@ export default async function PanierPage() {
             <span className="text-sm font-semibold text-mist">{t(lang, "cart.total")}</span>
             <Prix montant={total} className="text-xl" />
           </div>
-          {payerTout ? (
+          {payerTout && optionsGroupe.length > 0 ? (
             <>
               <CartPayAll
                 options={optionsGroupe}
@@ -253,7 +254,9 @@ async function lirePanierConfig(): Promise<{ max_articles: number } | null> {
  *  est pas : semi-manuel, il ne sait pas confirmer un groupe (bientôt). */
 function optionsPanier(lang: Lang, total: number, prix: number[]): OptionPanier[] {
   const price = formatHTG(total);
-  const options: OptionPanier[] = [{ rail: "moncash", label: t(lang, "product.pay", { price }) }];
+  // Même garde que la fiche et que les deux routes de paiement (P0-2).
+  const options: OptionPanier[] = [];
+  if (monCashDirectProposable()) options.push({ rail: "moncash", label: t(lang, "product.pay", { price }) });
   if (isKobaraEnabled()) {
     options.push({ rail: "kobara", kobaraProvider: "natcash", label: t(lang, "product.pay.natcash", { price }) });
     if (process.env.KOBARA_MONCASH?.trim() === "true") {

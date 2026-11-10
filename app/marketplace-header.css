@@ -43,6 +43,19 @@
   border-top: 1px solid color-mix(in oklab, var(--color-on-chrome) 14%, transparent);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+/* RAPPEL D'ACHAT de la fiche (audit du 2026-11-10, P0-6) : posé AU-DESSUS de la
+   barre de navigation (56 px d'entrée + 1 px de filet + zone sûre), sous les
+   menus et l'en-tête. Aucune règle `display` ici, pour la même raison que
+   `.barre-nav` : `md:hidden` et `flex` restent des utilitaires sur l'élément. */
+.rappel-achat {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(--spacing(14) + 1px + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-sticky);
+  padding: --spacing(1.5) --spacing(5);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-line);
+}
 .barre-nav-liste {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

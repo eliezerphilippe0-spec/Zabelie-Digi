@@ -22,6 +22,38 @@ export function getMonCashAvailability(env: NodeJS.ProcessEnv = process.env): Mo
   }
 }
 
+/**
+ * LE RAIL MONCASH DIRECT PEUT-IL ÊTRE PROPOSÉ ? (audit du 2026-11-10, P0-2)
+ *
+ * Faux dans UN seul cas : le déploiement de PRODUCTION (`VERCEL_ENV`) dont la
+ * configuration ne permet pas de créer un paiement — identifiants absents, ou
+ * `MONCASH_MODE` absent, vide ou invalide (ce que `garderProduction` refuse
+ * déjà, mais APRÈS la création de la commande et la réservation du stock).
+ * Le bouton s'affichait quand même ; l'acheteur cliquait, une commande
+ * naissait, puis 502. Ici, on ne propose pas ce qu'on ne peut pas encaisser.
+ *
+ * ⚠️ Hors production, TOUJOURS vrai, et c'est voulu : le local, les Preview et
+ * six configurations e2e tournent sans identifiants et se servent du 502 de
+ * l'opérateur comme simulation de panne. Même découpe que `garderProduction`
+ * (`lib/moncash.ts`) : `VERCEL_ENV`, jamais `NODE_ENV`, qui vaut aussi
+ * « production » sur un build de Preview ou de test.
+ *
+ * ⚠️ Ce n'est PAS « MonCash encaisse » : un mode `sandbox` explicite avec ses
+ * identifiants reste proposable. Masquer le bouton en phase de test est une
+ * décision d'affichage commercial, qui revient au porteur. Et ce n'est pas
+ * `getMonCashAvailability` : celle-ci rend « production » dès que MonCash
+ * passe par Kobara, ce qui ne dit rien du rail DIRECT.
+ */
+export function monCashDirectProposable(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (env.VERCEL_ENV !== "production") return true;
+  try {
+    const { source } = resolveMonCashMode(env.MONCASH_MODE);
+    return source === "explicite" && Boolean(env.MONCASH_CLIENT_ID?.trim()) && Boolean(env.MONCASH_CLIENT_SECRET?.trim());
+  } catch {
+    return false;
+  }
+}
+
 export function getKobaraAvailability(env: NodeJS.ProcessEnv = process.env): MonCashAvailability {
   if (!isKobaraEnabled(env.KOBARA_SECRET_KEY ?? "", env.KOBARA_WEBHOOK_SECRET ?? "")) return "unavailable";
   const { mode, source } = resolveKobaraMode(env.KOBARA_MODE);
