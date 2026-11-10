@@ -8,7 +8,7 @@ Dépôt lu à `8ddcfbe` (`main`, clone superficiel). Aucun fichier du code modif
 
 1. Le chemin de l'argent est au niveau des références : idempotence, confirmation serveur à serveur, réconciliation, séquestre jusqu'à la remise.
 2. Ce qui sépare Zabelie d'une vente n'est pas une fonction manquante : MonCash est en test, un seul produit est publié, aucun courriel ne part (`docs/78`, revérifié en production le 2026-11-10 pour les deux premiers points).
-3. Trois défauts de conversion se corrigent en quelques jours : résultats exacts masqués par les approchants au catalogue, promotions invisibles sur les cartes, bouton MonCash affiché même quand le rail ne peut pas encaisser.
+3. Deux défauts de conversion se corrigent en quelques jours : résultats exacts masqués par les approchants au catalogue (corrigé, voir section 8) et bouton MonCash affiché même quand le rail ne peut pas encaisser. Les promotions, elles, sont seulement mal signalées sur les cartes (constat corrigé en section 8).
 4. Sur mobile 360 x 800, le catalogue ne montre aucun produit au premier écran et le bouton de paiement de la fiche est à plus d'un écran de défilement.
 5. Le digital ne peut rien vendre tant qu'aucun antivirus n'a produit de reçu : paiement et téléchargement répondent 503.
 6. Le service est une annonce à prix unique posée sur la machine de remise du colis : ni formules, ni brief, ni livrable, ni révision. `docs/79` le spécifie déjà et attend un go.
@@ -42,7 +42,7 @@ Catalogue, fiche, panier, paiement, messagerie, avis et litiges sont partagés (
 | Fonctionnalité | Référence | État Zabelie | Preuve | Impact | Effort |
 |---|---|---|---|---|---|
 | Résultats exacts et approchants | Amazon : exacts d'abord, suggestions ensuite | **Défaut** ✔ : avec 1 ou 2 exacts, seule la grille des approchants s'affiche | `app/catalogue/page.tsx:135`, `:465-481`, `:603` | Fort | S |
-| Prix promo sur les cartes | Jumia : prix barré et pourcentage sur chaque carte | Absent ✔ : la carte affiche le prix plein | `components/product-card.tsx:121` | Fort | S à M |
+| Prix promo sur les cartes | Jumia : prix barré et pourcentage sur chaque carte | Partiel (**constat corrigé**, section 8) : un rabais est déjà dans le prix affiché, sans prix barré ni pourcentage ; une vente flash apparaît à son prix normal, plus haut que le prix facturé | `components/product-card.tsx:121`, `supabase/migrations/0075_rabais.sql:70-71`, `app/produit/[slug]/page.tsx:427-451` | Moyen | M, porteur (voir M1 de `docs/78`) |
 | Recherche par pertinence | Amazon : mots dans tout ordre, classement | Partiel : sous-chaîne entière, tri par date | `lib/recherche-synonymes.ts:180-185`, `lib/products.ts:549-551` | Fort | M |
 | Fautes et synonymes kreyòl/français | Etsy : tolérance aux fautes | Présent ; kreyòl à faire relire | `lib/recherche-synonymes.ts:45-113`, `supabase/migrations/0047_search_demand.sql:379-438` | Atout | - |
 | Autocomplétion | Amazon : produits et requêtes | Partiel : rayons seulement | `components/search-box.tsx:59-65` | Moyen | M |
@@ -234,7 +234,7 @@ Chaque item porte un critère d'acceptation vérifiable. « Qui » : **agent** q
 |---|---|---|---|
 | P0-1 | Catalogue : rendre la grille des exacts puis celle des approchants | agent | Une requête qui rend 1 exact et au moins 1 approchant affiche les deux grilles, exacts d'abord ; un test échoue si la grille des exacts est retirée de cette branche (mutation jouée) |
 | P0-2 | N'offrir le bouton MonCash que si le rail peut encaisser | porteur (chemin de l'argent), puis agent | Avec `getMonCashAvailability()` à `unavailable`, la fiche ne rend aucun bouton MonCash et dit pourquoi ; un `POST /api/checkout` sur ce rail est refusé **avant** toute création de commande ou réservation de stock (nombre de lignes `orders` inchangé dans le test) |
-| P0-3 | Afficher le prix remisé ou flash sur les cartes | agent | Pour un produit en rabais ou en vente flash active, la carte du catalogue, de la boutique et des favoris affiche le même prix que la fiche, avec le prix barré ; le prix reste calculé au serveur |
+| P0-3 | **Reclassé en P1-17** (section 8) : signaler rabais et vente flash sur les cartes | porteur, puis agent | Voir P1-17 |
 | P0-4 | Courriel de confirmation accordé au type d'achat | agent | Trois gabarits ou une branche par `kind` via `lib/product-kind.ts` ; un test vérifie que le courriel d'un produit physique et celui d'un service ne contiennent pas l'invitation à télécharger, en français et en kreyòl |
 | P0-5 | Catalogue mobile : une rangée de cartes dans le premier écran | agent | À 360 x 800, sur `/catalogue` en kreyòl et en français, le haut de la première carte est à 560 px ou moins ; aucun débordement horizontal ; axe reste à 0 violation |
 | P0-6 | Fiche mobile : rappel fixe « prix + payer » | porteur (bouton d'achat), puis agent | À 360 x 800, sur une fiche de chaque type, un contrôle d'achat est visible sans défilement ; un seul bouton orange à l'écran ; CLS de 0,05 ou moins ; les specs e2e de toutes les configurations de `ci.yml` passent |
@@ -262,6 +262,7 @@ Chaque item porte un critère d'acceptation vérifiable. « Qui » : **agent** q
 | P1-13 | Texte courant à 16 px sur trois rôles : descriptions, aide avant paiement, cartes produit | agent | Sur l'accueil et la fiche à 360 px, les paragraphes de ces rôles mesurent 16 px ; `tests/design-echelles.test.ts` reste vert ; aucun débordement |
 | P1-14 | Messagerie : compteur de non-lus dans la navigation, rafraîchissement du fil | agent | Avec un message non lu, le lien « Messages » porte un compteur dont le nom accessible reprend le texte visible (WCAG 2.5.3) ; un fil ouvert affiche un nouveau message en moins de 30 s sans rechargement manuel |
 | P1-15 | Historique des versements côté vendeur | agent | Le tableau de bord liste chaque demande avec date, montant et état ; un vendeur ne voit que les siennes (test RLS) |
+| P1-17 | Signaler les promotions sur les cartes : prix barré et pourcentage pour un rabais ; prix flash pour une vente flash vivante | porteur (le prix flash sur un produit à plusieurs variantes est la question M1 de `docs/78`), puis agent | Pour un produit en rabais, la carte affiche l'ancien prix barré et le pourcentage, lus au serveur ; pour une vente flash vivante sur un produit à prix unique, la carte affiche le même prix que la fiche ; la lecture reste tolérante à l'absence de `0075` et `0080` |
 | P1-16 | Formulaire vendeur physique en i18n, quatre langues | agent ; relecture kreyòl : porteur | Aucune chaîne visible en dur dans `components/physical-product-form.tsx` ni dans les erreurs de `app/api/products/physical/route.ts` ; `tests/i18n-cles-mortes.test.ts` vert |
 
 ### P2 : après les premières ventes
@@ -290,3 +291,29 @@ Chaque item porte un critère d'acceptation vérifiable. « Qui » : **agent** q
 5. P1-1 : règle de revue quand un vendeur modifie une fiche publiée.
 6. P1-6 : go sur `docs/79`.
 7. Relecture native du kreyòl pour tous les textes proposés ici.
+
+## 8. Suivi et corrections (2026-11-10, après le go sur les P0)
+
+### 8.1 Une correction à ce rapport
+
+Le constat « la carte affiche le prix plein » était **inexact pour les rabais**. `zabelie_set_discount` écrit le prix remisé dans `price_htg` et garde l'ancien dans `compare_at_htg` (`supabase/migrations/0075_rabais.sql:70-71`) : la carte, qui affiche `price_htg`, montre donc déjà le bon prix. Il lui manque seulement le prix barré et le pourcentage.
+
+Le constat reste exact pour les **ventes flash** : leur prix vit dans `zabelie_flash_sales`, la carte ne le lit pas et affiche le prix normal.
+
+Origine de l'erreur : la ligne 121 de la carte avait été relue, pas la migration qui dit ce que `price_htg` contient. L'impact passe de fort à moyen, et l'item quitte les P0 : afficher un prix flash sur une carte touche la question ouverte M1 de `docs/78` (prix flash et variantes), qui revient au porteur.
+
+### 8.2 Ce qui a été fait
+
+Branche `claude/audit-p0-correctifs`, trois commits, aucune migration, aucun fichier du chemin de l'argent.
+
+| Item | État | Mesure |
+|---|---|---|
+| P0-1 | Fait | Avant : une recherche avec 1 exact et 1 approchant ne rendait que l'approchant. Après : l'exact puis l'approchant. Parcouru sur un serveur local, cinq mutations du garde, cinq rouges |
+| P0-4 | Fait | Trois textes par type, repris de la page de succès ; texte neutre pour un type inconnu. Sept mutations, sept rouges. Aucun envoi réel (pas de clé d'envoi) |
+| P0-5 | Fait, **critère non tenu de 11 px** | Première carte : 743 px vers 571 px à 360 x 800, en kreyòl et en français. Le critère écrit plus haut disait 560. Le visuel de la première rangée est entier dans l'écran ; aller plus loin demande de toucher l'en-tête |
+| P0-3 | Reclassé P1-17 | Voir 8.1 |
+| P0-2, P0-6 | En attente | Accord du porteur requis (bouton d'achat) |
+| P0-10 | Non fait | Vérification de l'édition de fiche, à faire |
+
+Rejoué sur le dernier commit : `npm test` 2 867 sur 2 867, `npx playwright test` (configuration par défaut) 381 sur 381. Les neuf autres configurations Playwright de `ci.yml` n'ont pas été rejouées en local : la CI les jouera.
+
