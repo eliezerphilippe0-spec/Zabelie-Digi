@@ -4,7 +4,9 @@
  * doit jamais bloquer ni faire échouer une confirmation de paiement.
  */
 
+import { achatTelechargeable, cleCorpsAchat } from "./achat-confirme";
 import { echapperHtml } from "./echapper-html";
+import { t } from "./i18n";
 
 export function isEmailEnabled(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -261,23 +263,41 @@ const wrap = (body: string) => `
     Ne répondez pas à cet e-mail automatique.</p>
 </div>`;
 
-/** E-mail acheteur : achat confirmé, lien vers ses téléchargements. FR + KR. */
+/**
+ * E-mail acheteur : achat confirmé. KR + FR.
+ *
+ * LE TEXTE SUIT CE QUI A ÉTÉ ACHETÉ (audit du 2026-11-10, P0-4). Ce gabarit
+ * disait « Télécharger mes achats / Fichye ou disponib » à tout le monde :
+ * l'acheteur d'un objet ou d'une prestation recevait la promesse d'un fichier
+ * qui n'existe pas. Les trois textes viennent de `pay.ok.body.*`, déjà tenus
+ * par la page de succès ; un type inconnu reçoit le texte neutre, et seul un
+ * achat téléchargeable reçoit le bouton et la mention de téléchargement.
+ * `kind` est OBLIGATOIRE : un appelant qui l'oublie ne compile pas.
+ */
 export function buyerPurchaseEmail(input: {
   productTitle: string;
   amountLabel: string;
   purchasesUrl: string;
+  /** `products.kind` tel que lu en base ; `null` si la lecture ne l'a pas rendu. */
+  kind: string | null;
 }): { subject: string; html: string } {
+  const cle = cleCorpsAchat(input.kind);
+  const telechargeable = achatTelechargeable(input.kind);
+  const bouton = telechargeable
+    ? "Telechaje / Télécharger mes achats"
+    : `${t("ht", "pay.ok.cta")} / ${t("fr", "pay.ok.cta")}`;
   return {
     subject: `Achat confirmé : ${input.productTitle}`,
     html: wrap(`
-      <p><strong>Mèsi ! Acha ou konfime.</strong> / Merci ! Votre achat est confirmé.</p>
+      <p><strong>${echapperHtml(t("ht", cle))}</strong></p>
+      <p>${echapperHtml(t("fr", cle))}</p>
       <p style="font-size:15px">${echapperHtml(input.productTitle)} : <strong>${echapperHtml(input.amountLabel)}</strong></p>
       <p><a href="${echapperHtml(input.purchasesUrl)}"
             style="display:inline-block;background:#d96a16;color:#fff;
                    padding:12px 20px;border-radius:10px;text-decoration:none;
-                   font-weight:700">Telechaje / Télécharger mes achats</a></p>
+                   font-weight:700">${echapperHtml(bouton)}</a></p>${telechargeable ? `
       <p style="font-size:13px;color:#77636b">Fichye ou disponib nan « Acha mwen yo ».
-      Lien valable à tout moment, même si la connexion a coupé pendant l'achat.</p>
+      Lien valable à tout moment, même si la connexion a coupé pendant l'achat.</p>` : ""}
     `),
   };
 }

@@ -61,7 +61,7 @@ test("A2 — chaque fichier qui rend des cartes produit (h3) pose un h2 avant el
 test("A3 — catalogue et favoris : le h2 est rendu sans condition sur la grille, et traduit", () => {
   const cat = code(lire("app/catalogue/page.tsx"));
   // Directement dans la section des résultats, avant tout branchement.
-  assert.match(cat, /<section className="mx-auto max-w-6xl px-5 pb-16">\s*<h2 className="sr-only">\{t\(lang, "catalog\.results\.heading"\)\}<\/h2>\s*\{approchants\.length > 0 \?/);
+  assert.match(cat, /<section className="mx-auto max-w-6xl px-5 pb-16">\s*<h2 className="sr-only">\{t\(lang, "catalog\.results\.heading"\)\}<\/h2>\s*\{approchants\.length === 0 && products\.length === 0 \?/);
   const fav = code(lire("components/collection-page.tsx"));
   assert.match(fav, /\{kind === "favorites" && ids\.length > 0 && <h2 className="sr-only">\{t\(lang, "home\.products"\)\}<\/h2>\}/);
   for (const lang of LANGUES) {

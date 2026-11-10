@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { KIND_FILE } from "../lib/product-kind";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -36,7 +37,7 @@ const echappe = echapperHtml(P);
 
 test("E1 — chaque gabarit échappe chaque valeur reçue", () => {
   const gabarits: Array<[string, { html: string }]> = [
-    ["achat", buyerPurchaseEmail({ productTitle: P, amountLabel: P, purchasesUrl: P })],
+    ["achat", buyerPurchaseEmail({ productTitle: P, amountLabel: P, purchasesUrl: P, kind: KIND_FILE })],
     ["vente", sellerSaleEmail({ productTitle: P, netLabel: P, dashboardUrl: P, orderRef: P })],
     ["remise", shippedNoticeEmail({ productTitle: P, orderRef: P, deadlineLabel: P, purchasesUrl: P })],
     ["rappel", reminderNoticeEmail({ productTitle: P, orderRef: P, deadlineLabel: P, purchasesUrl: P })],
