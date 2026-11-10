@@ -65,6 +65,7 @@
  .seller-layout { grid-template-columns: minmax(0,1fr); gap: --spacing(8); }
  .seller-decision { padding: --spacing(6); grid-row: 1; }
  .catalogue-filter-panel input { max-width: 100%; }
+ .catalogue-filter-panel { margin-top: --spacing(4); }
 }
 .editorial-page > header nav.header-fold a { border-radius: 0; border-color: transparent; padding-inline: --spacing(3); }
 .editorial-page > header nav.header-fold a[aria-current="page"] { border-bottom-color: var(--color-brand); background: transparent; }

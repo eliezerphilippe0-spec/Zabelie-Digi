@@ -223,8 +223,8 @@ export default async function CataloguePage({
       <SiteNav activeHref={universe ? universeHref(universe) : "/catalogue"} searchContext={{ query: q, filters: searchContext }} />
 
       <main id="main">
-      <section className="mx-auto max-w-6xl px-5 pb-10 pt-8">
-        <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-5 flex flex-wrap items-center gap-2 text-sm text-mist">
+      <section className="mx-auto max-w-6xl px-5 pb-4 pt-4 sm:pb-10 sm:pt-8">
+        <nav aria-label={t(lang, "nav.breadcrumb")} className="mb-3 flex flex-wrap items-center gap-2 text-sm text-mist sm:mb-5">
           <Link href="/" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline underline-offset-4">{t(lang, "nav.home")}</Link>
           <span aria-hidden="true">/</span>
           {selection ? <><Link href="/catalogue" className="-mx-1.5 inline-flex min-h-11 items-center -my-3 px-1.5 underline underline-offset-4">{t(lang, "catalog.title")}</Link><span aria-hidden="true">/</span><span aria-current="page">{t(lang, selection.title)}</span></> : <span aria-current="page">{t(lang, "catalog.title")}</span>}
@@ -242,9 +242,15 @@ export default async function CataloguePage({
           </section>
         )}
         {selection && <p className="mt-3 max-w-2xl text-mist">{t(lang, selection.description)}</p>}
-        <nav aria-label={t(lang, "universe.nav")} className="mt-6 flex flex-wrap gap-2">
-          <Link href="/catalogue" aria-current={!universe ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${!universe ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, "nav.catalog")}</Link>
-          {(Object.keys(CATALOGUE_UNIVERSES) as (keyof typeof CATALOGUE_UNIVERSES)[]).map((key) => <Link key={key} href={universeHref(key)} aria-current={universe === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm ${universe === key ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, CATALOGUE_UNIVERSES[key].title)}</Link>)}
+        {/* UNE LIGNE SUR TÉLÉPHONE (audit du 2026-11-10, P0-5). Les puces d'univers
+            puis de rayon s'enroulaient sur cinq lignes : à 360 × 800, la première
+            carte commençait à 743 px, soit exactement sous la barre du bas. Aucun
+            produit dans le premier écran d'un catalogue. Sous `sm`, chaque rangée
+            défile à l'horizontale (même écriture que les onglets de `/vendre`) ;
+            au-delà, elle s'enroule comme avant. Rien n'est retiré ni réordonné. */}
+        <nav aria-label={t(lang, "universe.nav")} className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:mt-6 sm:flex-wrap sm:px-0">
+          <Link href="/catalogue" aria-current={!universe ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-sm ${!universe ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, "nav.catalog")}</Link>
+          {(Object.keys(CATALOGUE_UNIVERSES) as (keyof typeof CATALOGUE_UNIVERSES)[]).map((key) => <Link key={key} href={universeHref(key)} aria-current={universe === key ? "page" : undefined} className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-4 text-sm ${universe === key ? "border-cloud bg-cloud text-ink" : "border-line text-mist hover:border-accent"}`}>{t(lang, CATALOGUE_UNIVERSES[key].title)}</Link>)}
         </nav>
         <p className="mt-2 text-sm text-mist">
           {totalExact ? total : `≥ ${total}`} {tn(lang, total, "catalog.results.one", "catalog.results")}
@@ -410,12 +416,12 @@ export default async function CataloguePage({
         {/* Filtres catégories — masqués tant qu'il n'y a rien à filtrer :
             une seule puce « Tout » n'est pas un filtre, c'est du décor. */}
         {categories.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
           {CATEGORIES.map((c) => (
             <Link
               key={c}
               href={catHref(c)}
-              className={`inline-flex min-h-11 items-center rounded-full border px-4 py-1.5 text-sm transition ${
+              className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border px-4 py-1.5 text-sm transition ${
                 c === activeCat
                   ? "border-transparent bg-cloud text-ink"
                   : "border-line text-mist hover:border-accent/50 hover:text-cloud"
