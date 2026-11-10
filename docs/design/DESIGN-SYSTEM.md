@@ -91,6 +91,7 @@ Les trois polices sont auto-hébergées, en `display: swap`, **sans préchargeme
 | Icône | `Icone` | Une famille, trait 1,75, tailles 16, 20, 24, SVG en ligne. Une icône seule a un nom accessible. |
 | Carte produit | `ProductCard` | Image carrée, nom sur deux lignes en `h3`, prix par `Prix`. |
 | Navigation mobile | `BarreNavigation` | Sous 768 px : Akèy, Kategori, Panyen, Kont ; entrées de 56 px, zone sûre ; état actif par trait et graisse, sans orange ; libellés courts `nav.bar.*` sur une ligne. |
+| Rappel d'achat de la fiche | `RappelAchat` (`components/rappel-achat.tsx`) | Sous 768 px, sur la fiche seulement : le prix et un lien vers `#acheter`, posés au-dessus de la barre inférieure. Il s'efface dès que le bloc d'achat ou un autre bouton principal est à l'écran (jamais deux boutons orange), n'apparaît qu'après le premier rendu (aucun décalage) et n'a aucun état d'achat : le paiement reste dans `BuyButton`. `tests/rappel-achat.test.ts`, `e2e/fiche-rappel-achat.spec.ts`. |
 | Menu du compte | `AccountMenu` (`entete` ou `barre`) | Liens écrits une fois dans `SiteNav` (`liensCompte`), servis à deux places complémentaires. |
 
 Cibles tactiles : 44 px au moins, partout (`tests/cibles-tactiles.test.ts`). Le nom accessible d'un lien ou d'un bouton reprend son texte visible (WCAG 2.5.3) : préférez un nom tiré du contenu à un `aria-label` qui le réécrit.
@@ -114,4 +115,4 @@ Le chemin de l'argent (`tests/helpers/chemin-argent.ts` : paiement, facture, rec
 - Poser le mot d'accent sur un prix, un bouton ou un texte sous 24 px.
 - Précharger une police sans nouvelle mesure du premier affichage.
 - Remplacer le nom visible d'un contrôle par un `aria-label` différent.
-- Ajouter un bouton flottant par-dessus le contenu ou la barre inférieure.
+- Ajouter un bouton flottant par-dessus le contenu ou la barre inférieure. **Une seule exception, nommée** : le rappel d'achat de la fiche (`RappelAchat`, accord du porteur du 2026-11-10, audit P0-6), aux conditions du tableau des composants. Elle ne fait pas précédent.

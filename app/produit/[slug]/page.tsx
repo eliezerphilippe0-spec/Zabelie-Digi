@@ -69,6 +69,7 @@ import { jsonLdProduit } from "@/lib/jsonld-produit";
 import { Prix } from "@/components/prix";
 import { Icone } from "@/components/icone";
 import { MessageErreur } from "@/components/message-erreur";
+import { RappelAchat } from "@/components/rappel-achat";
 
 export const dynamic = "force-dynamic";
 
@@ -938,6 +939,24 @@ export default async function ProductPage({
             </a>
           </div>
         </section>
+      )}
+
+      {/* RAPPEL D'ACHAT (P0-6) : téléphone seulement, effacé dès qu'un bouton
+          principal est à l'écran (`components/rappel-achat.tsx`). Même prix que
+          la zone de prix : flash s'il y en a un, « à partir de » si plusieurs
+          variantes. Absent quand aucun rail n'est proposable (P0-2). */}
+      {!aucunRail && (
+        <RappelAchat>
+          {(flash ? flash.prixFlashHtg : product.priceHTG) > 0 ? (
+            <span className="min-w-0 truncate text-sm text-mist">
+              {physical && physical.variants.length > 1 && !flash ? <>{t(lang, "product.price.from")}{" "}</> : null}
+              <Prix montant={flash ? flash.prixFlashHtg : product.priceHTG} className="text-lg" />
+            </span>
+          ) : <span aria-hidden="true" />}
+          <a href="#acheter" className="bouton bouton-primaire bouton-compact shrink-0">
+            {t(lang, (flash ? flash.prixFlashHtg : product.priceHTG) > 0 ? "product.cta.sticky" : "product.get.free")}
+          </a>
+        </RappelAchat>
       )}
 
       {pixels && <SellerPixels ids={pixels} evenement={{ type: "produit", productId: product.id, valeurHtg: product.priceHTG }} labels={{ text: t(lang, "pixels.consent.text"), accept: t(lang, "pixels.consent.accept"), refuse: t(lang, "pixels.consent.refuse"), privacy: t(lang, "pixels.consent.privacy") }} />}
