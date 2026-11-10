@@ -71,20 +71,20 @@ async function notifierUneCommande(
       buyer_id: string;
       amount_htg: number;
       product:
-        | { title: string; seller_id: string }
-        | { title: string; seller_id: string }[]
+        | { title: string; seller_id: string; kind: string }
+        | { title: string; seller_id: string; kind: string }[]
         | null;
     };
     let order: OrderForNotify | null;
     ({ data: order } = await admin
       .from("orders")
-      .select("id, order_ref, buyer_id, amount_htg, product:products!orders_product_id_fkey(title, seller_id)")
+      .select("id, order_ref, buyer_id, amount_htg, product:products!orders_product_id_fkey(title, seller_id, kind)")
       .eq("id", orderId)
       .single<OrderForNotify>());
     if (!order) {
       const retry = await admin
         .from("orders")
-        .select("id, buyer_id, amount_htg, product:products!orders_product_id_fkey(title, seller_id)")
+        .select("id, buyer_id, amount_htg, product:products!orders_product_id_fkey(title, seller_id, kind)")
         .eq("id", orderId)
         .single();
       if (!retry.data) return;
@@ -92,7 +92,7 @@ async function notifierUneCommande(
     }
     if (!order) return;
     const product = (Array.isArray(order.product) ? order.product[0] : order.product) as
-      | { title: string; seller_id: string }
+      | { title: string; seller_id: string; kind: string }
       | null;
     if (!product) return;
 
@@ -131,6 +131,7 @@ async function notifierUneCommande(
         productTitle: product.title,
         amountLabel: formatHtg(order.amount_htg),
         purchasesUrl: `${site}/mes-achats`,
+        kind: product.kind ?? null,
       });
       await deposerEtTenter(admin, orderId, "order_paid_buyer", buyerEmail, () =>
         sendEmail({ to: buyerEmail, ...m })
@@ -182,13 +183,14 @@ export async function renvoyerNotificationVente(
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, order_ref, amount_htg, product:products!orders_product_id_fkey(title)")
+    .select("id, order_ref, amount_htg, product:products!orders_product_id_fkey(title, kind)")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return false;
 
-  const p = order.product as { title: string } | { title: string }[] | null;
+  const p = order.product as { title: string; kind?: string } | { title: string; kind?: string }[] | null;
   const titre = (Array.isArray(p) ? p[0]?.title : p?.title) ?? "";
+  const typeAchat = (Array.isArray(p) ? p[0]?.kind : p?.kind) ?? null;
 
   if (kind === "order_paid_buyer") {
     return sendEmail({
@@ -197,6 +199,7 @@ export async function renvoyerNotificationVente(
         productTitle: titre,
         amountLabel: formatHtg(order.amount_htg as number),
         purchasesUrl: `${site}/mes-achats`,
+        kind: typeAchat,
       }),
     });
   }
