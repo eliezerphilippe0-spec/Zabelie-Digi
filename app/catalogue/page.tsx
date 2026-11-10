@@ -462,23 +462,7 @@ export default async function CataloguePage({
         {/* Titre de la grille, lu et non affiché (chantier design, Phase 5) : sans
             lui, le h1 « Katalòg » menait droit aux h3 des cartes (heading-order). */}
         <h2 className="sr-only">{t(lang, "catalog.results.heading")}</h2>
-        {approchants.length > 0 ? (
-          /* Couche 2 : la similarité a rattrapé (accents, frappe). On le DIT —
-             présenter un approchant comme un résultat exact fait douter de tout
-             le catalogue. Déclenché aussi quand quelques exacts existent déjà
-             (audit #7) ; le libellé le dit alors autrement, et la section vit
-             sous la grille des exacts. */
-          <>
-            <p className="mb-4 rounded-xl border border-line bg-surface/40 px-4 py-3 text-sm text-mist">
-              {t(lang, products.length === 0 ? "catalog.fuzzy" : "catalog.fuzzy.more")}
-            </p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {approchants.map((p) => (
-                <ProductCard discovery={discovery} key={p.slug} product={p} labels={cardLabels} />
-              ))}
-            </div>
-          </>
-        ) : products.length === 0 ? (
+        {approchants.length === 0 && products.length === 0 ? (
           page > 1 ? (
             /* PAGE HORS LIMITES — trouvé en PARCOURANT le catalogue, pas en
                le relisant : `/catalogue?page=3` sur un catalogue de deux pages
@@ -602,6 +586,16 @@ export default async function CataloguePage({
           )
         ) : (
           <>
+            {/* EXACTS D'ABORD, APPROCHANTS ENSUITE (audit du 2026-11-10, P0-1).
+                Depuis que le rattrapage s'ouvre à « peu de résultats » (audit
+                #7), une recherche qui trouvait 1 ou 2 exacts ET des approchants
+                n'affichait QUE les approchants : la grille des exacts vivait
+                dans la branche « aucun approchant ». Le visiteur perdait
+                précisément le produit qu'il avait nommé. Les deux grilles sont
+                désormais commandées chacune par SA liste, jamais l'une par
+                l'autre (tests/catalogue-exacts-approchants.test.ts). */}
+            {products.length > 0 && (
+            <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {products.map((p) => (
                 <ProductCard discovery={discovery}
@@ -647,6 +641,24 @@ export default async function CataloguePage({
                   </Link>
                 ) : null}
               </nav>
+            )}
+            </>
+            )}
+            {approchants.length > 0 && (
+              /* Couche 2 : la similarité a rattrapé (accents, frappe). On le DIT —
+                 présenter un approchant comme un résultat exact fait douter de tout
+                 le catalogue. Sans exact, le libellé dit « aucun résultat exact » ;
+                 avec, il annonce une seconde liste, SOUS la grille des exacts. */
+              <div className={products.length === 0 ? undefined : "mt-8"}>
+                <p className="mb-4 rounded-xl border border-line bg-surface/40 px-4 py-3 text-sm text-mist">
+                  {t(lang, products.length === 0 ? "catalog.fuzzy" : "catalog.fuzzy.more")}
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {approchants.map((p) => (
+                    <ProductCard discovery={discovery} key={p.slug} product={p} labels={cardLabels} />
+                  ))}
+                </div>
+              </div>
             )}
           </>
         )}
