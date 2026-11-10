@@ -312,8 +312,42 @@ Branche `claude/audit-p0-correctifs`, trois commits, aucune migration, aucun fic
 | P0-4 | Fait | Trois textes par type, repris de la page de succès ; texte neutre pour un type inconnu. Sept mutations, sept rouges. Aucun envoi réel (pas de clé d'envoi) |
 | P0-5 | Fait, **critère non tenu de 11 px** | Première carte : 743 px vers 571 px à 360 x 800, en kreyòl et en français. Le critère écrit plus haut disait 560. Le visuel de la première rangée est entier dans l'écran ; aller plus loin demande de toucher l'en-tête |
 | P0-3 | Reclassé P1-17 | Voir 8.1 |
-| P0-2, P0-6 | En attente | Accord du porteur requis (bouton d'achat) |
-| P0-10 | Non fait | Vérification de l'édition de fiche, à faire |
+| P0-2 | Fait, périmètre réduit avec l'accord du porteur | Garde réservé au déploiement de production non configuré (voir 8.3) |
+| P0-6 | Fait, avec une exception nommée au système de design | Rappel d'achat sur la fiche, téléphone seulement (voir 8.3) |
+| P0-10 | Fait : constat **confirmé** | Voir 8.4 |
 
-Rejoué sur le dernier commit : `npm test` 2 867 sur 2 867, `npx playwright test` (configuration par défaut) 381 sur 381. Les neuf autres configurations Playwright de `ci.yml` n'ont pas été rejouées en local : la CI les jouera.
+Rejoué sur le dernier commit de cette branche : `npm test` 2 867 sur 2 867, `npx playwright test` (configuration par défaut) 381 sur 381. La CI de la PR #484 a joué le reste : verte.
+
+### 8.3 P0-2 et P0-6 : ce que l'audit n'avait pas vu
+
+Branche `claude/audit-p0-bouton-achat`, PR #485. Les deux items ont été réduits ou encadrés avant d'être codés, parce que chacun heurtait un choix existant du dépôt que ce rapport n'avait pas relevé.
+
+- **P0-2.** Tel qu'écrit plus haut, il n'aurait rien changé en production : MonCash y a ses identifiants et tourne en bac à sable explicite, donc le rail est « configuré ». Et six configurations e2e tournent exprès sans identifiants et se servent du 502 de l'opérateur comme simulation de panne. Le porteur a retenu un garde étroit : sur le déploiement de production (`VERCEL_ENV`), sans identifiants ou sans mode choisi, pas de bouton et refus avant toute commande. Masquer le bouton pendant la phase de test reste une décision du porteur ; le remède est P0-7.
+- **P0-6.** Une barre fixe est exactement ce que `docs/design/DESIGN-SYSTEM.md` interdit (« pas de bouton flottant »). Le porteur a levé la règle pour cette seule barre : un lien vers `#acheter`, effacé dès qu'un bouton principal est à l'écran. Coût connu : avec l'en-tête et la barre du bas, environ 40 % d'un écran de 800 px tant que le bloc d'achat n'est pas en vue.
+- La même PR corrige le bouton de bas de fiche, qui annonçait le prix normal pendant une vente flash.
+
+### 8.4 P0-10 : un vendeur ne peut pas corriger une fiche après création
+
+Constat confirmé le 2026-11-10, par trois lectures qui concordent.
+
+| Lecture | Résultat | Preuve |
+|---|---|---|
+| Droits en base | Un vendeur n'a aucun droit d'écriture direct sur `products` : la policy d'écriture est supprimée et `insert`, `update`, `delete` sont révoqués pour `anon` et `authenticated` | `supabase/migrations/0024_p0_hardening.sql:15-16` |
+| Routes et fonctions | Aucune route ni fonction SQL appelée par l'application n'écrit `title`, `description` ou le stock après la création. Sur `products`, seuls `status` et `cover_url` sont mis à jour, plus le prix par les fonctions de rabais | `app/api/products/cover/route.ts:159`, `app/api/admin/product-status/route.ts:108`, `app/api/products/digital-studio/route.ts:35` ; `app/api/products/physical/route.ts` n'exporte que `POST` et `GET` |
+| Parcours | Espace vendeur ouvert sur une copie locale (faux Supabase des e2e, vendeur avec une fiche physique publiée à deux variantes), tous les panneaux dépliés. Champs offerts sur la fiche : zones et délai de remise, photos et vidéo, rabais, offres associées, vente flash. Aucun champ pour le titre, la description ou la quantité | Relevé des champs de `/vendre`, `/tableau-de-bord`, `/mes-ventes`, `/tableau-de-bord/boutique` ; capture remise en session |
+
+Par champ :
+
+| Champ | Modifiable ? | Détail |
+|---|---|---|
+| Titre | Non | Aucun champ, aucune route |
+| Description | Non | Idem |
+| Stock | Non | Écrit à la création seulement (`app/api/products/physical/route.ts:429`), puis par les réservations et les ventes |
+| Prix à la baisse | Oui, par un rabais | `zabelie_set_discount` exige un prix strictement inférieur (`supabase/migrations/0075_rabais.sql:58`) |
+| Prix à la hausse | **Non, et un rabais ne se défait pas** | Retirer un rabais efface l'ancien prix barré mais garde le prix baissé (`supabase/migrations/0109_rabais_variantes.sql`, `zabelie_clear_discount` : seul `compare_at_htg` repasse à `null`) |
+| Photo | Oui | Repasse la fiche en brouillon, donc hors vente jusqu'à nouvelle revue (`app/api/products/cover/route.ts:159`) |
+
+Conséquences pour un vendeur : une faute dans un titre, une rupture réapprovisionnée ou la fin d'une promotion l'obligent à recréer la fiche, qui repasse par la revue et perd ses ventes et ses avis. P1-1 est maintenu, et son critère doit couvrir un cas de plus : **remonter un prix après un rabais**.
+
+Limite : le parcours a été fait contre le faux Supabase des tests, pas contre la production ; les droits en base sont lus dans les migrations, pas interrogés sur la base réelle.
 
