@@ -145,6 +145,14 @@ test("fichier : l'adresse ouvre le bon formulaire, même tapée sur le mauvais ;
   await expect(page.locator("#formulaire").getByRole("spinbutton", { name: t("fr", "publish.price.ph"), exact: true })).toHaveValue("500");
   await expect(page.locator("#formulaire input[type=checkbox][required]")).not.toBeChecked();
 
+  // Un prix déjà saisi par le vendeur n'est pas écrasé, sur ce formulaire non plus.
+  await page.goto(`/vendre?nouveau=numerique&preparee=${depot.id}#formulaire`);
+  const prixFichier = page.locator("#formulaire").getByRole("spinbutton", { name: t("fr", "publish.price.ph"), exact: true });
+  await prixFichier.fill("1500");
+  await page.locator("[data-fiche-preparee]").getByRole("button", { name: t("fr", "prepared.cta"), exact: true }).click();
+  await expect(page.locator("#formulaire").getByRole("textbox", { name: t("fr", "publish.title.ph"), exact: true })).toHaveValue("Gid pou vann sou entènèt");
+  await expect(prixFichier).toHaveValue("1500");
+
   // Un identifiant qui n'existe pas (ou d'un autre vendeur) : un message, et le formulaire reste utilisable.
   await page.goto("/vendre/physique?preparee=99999999-9999-4999-8999-999999999999");
   await expect(page.getByRole("alert").filter({ hasText: t("fr", "prepared.missing") })).toBeVisible();
@@ -182,4 +190,63 @@ test("écran des clés : la case est décochée d'office, et la clé qui prépar
   page.once("dialog", (d) => d.accept());
   await ligne.getByRole("button").click();
   await expect(ligne.getByRole("button")).toHaveCount(0);
+});
+
+test("sans session : les liens de connexion ramènent à la fiche préparée, pas à une page nue", async ({ page }) => {
+  const id = "99999999-9999-4999-8999-999999999999";
+  await page.context().addCookies([{ name: "zabelie_lang", value: "fr", domain: "127.0.0.1", path: "/" }]);
+  await page.goto(`/vendre?nouveau=numerique&preparee=${id}`);
+  const attendu = encodeURIComponent(`/vendre?nouveau=numerique&preparee=${id}#formulaire`);
+  await expect(page.locator(`a[href="/connexion?next=${attendu}"]`)).toBeVisible();
+  await expect(page.locator(`a[href="/connexion?mode=signup&next=${attendu}"]`)).toBeVisible();
+  // Sans type dans l'adresse : la fiche suit quand même, la page choisira le formulaire après connexion.
+  await page.goto(`/vendre?preparee=${id}`);
+  await expect(page.locator(`a[href="/connexion?next=${encodeURIComponent(`/vendre?preparee=${id}`)}"]`)).toBeVisible();
+  await page.goto(`/vendre/physique?preparee=${id}`);
+  await expect(page.locator(`a[href="/connexion?next=${encodeURIComponent(`/vendre/physique?preparee=${id}`)}"]`)).toBeVisible();
+  // Sans fiche, les liens habituels ne changent pas.
+  await page.goto("/vendre");
+  await expect(page.locator('a[href="/connexion?next=%2Fvendre"]')).toBeVisible();
+});
+
+test("tableau de bord : le vendeur retrouve ses fiches préparées, en supprime une, et révoquer la clé emporte les autres", async ({ page, request }) => {
+  const sessionCles = {
+    access_token: "cles-api", refresh_token: "rafraichissement-de-test", token_type: "bearer", expires_in: 3600, expires_at: 4102444800,
+    user: { id: "11111111-1111-1111-1111-111111111111", aud: "authenticated", role: "authenticated", email: "achte@example.ht", app_metadata: {}, user_metadata: {}, created_at: "2026-01-01T00:00:00Z" },
+  };
+  await page.context().addCookies([
+    { name: "sb-127-auth-token", value: "base64-" + Buffer.from(JSON.stringify(sessionCles), "utf8").toString("base64url"), domain: "127.0.0.1", path: "/" },
+    { name: "zabelie_lang", value: "fr", domain: "127.0.0.1", path: "/" },
+  ]);
+  const cle = await creerCle(page, "Assistant liste", true);
+  const a = await (await preparer(request, cle.key, { kind: "physical", title: "Chapo pay", priceHtg: 800 })).json();
+  const b = await (await preparer(request, cle.key, { kind: "service", title: "Leson gita pou debitan" })).json();
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/tableau-de-bord/api", { waitUntil: "networkidle" });
+  const liste = page.locator("[data-fiches-preparees]");
+  await expect(liste.locator("li")).toHaveCount(2);
+  const ligneA = liste.locator("li", { hasText: "Chapo pay" });
+  await expect(ligneA).toContainText(/Prix proposé : 800/);
+  // « Ouvrir » mène au formulaire du TYPE de la fiche.
+  await expect(ligneA.getByRole("link", { name: t("fr", "preparedList.open"), exact: true })).toHaveAttribute("href", `/vendre/physique?preparee=${a.id}`);
+  await expect(liste.locator("li", { hasText: "Leson gita pou debitan" }).getByRole("link", { name: t("fr", "preparedList.open"), exact: true }))
+    .toHaveAttribute("href", `/vendre?nouveau=prestation&preparee=${b.id}#formulaire`);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  // Refuser la confirmation ne supprime rien ; l'accepter retire la ligne.
+  page.once("dialog", (d) => { expect(d.message()).toBe(t("fr", "preparedList.confirmDelete")); void d.dismiss(); });
+  await ligneA.getByRole("button", { name: t("fr", "preparedList.delete"), exact: true }).click();
+  await expect(liste.locator("li")).toHaveCount(2);
+  page.once("dialog", (d) => void d.accept());
+  await ligneA.getByRole("button", { name: t("fr", "preparedList.delete"), exact: true }).click();
+  await expect(liste.locator("li")).toHaveCount(1);
+  // La fiche supprimée n'est plus lisible par son identifiant non plus.
+  expect((await page.request.delete(`/api/account/fiches-preparees/${a.id}`)).status()).toBe(404);
+
+  // Révoquer la clé emporte la fiche restante, jamais reprise.
+  expect((await page.request.delete(`/api/account/api-keys/${cle.id}`)).status()).toBe(200);
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("[data-fiches-preparees]")).toHaveCount(0);
+  await expect(page.getByText(t("fr", "preparedList.empty"), { exact: true })).toBeVisible();
 });

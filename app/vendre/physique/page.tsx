@@ -55,7 +55,9 @@ export default async function VendrePhysiquePage({
   }
 
   const user = await getCurrentUser();
-  if (user) await requireLegalAccountPage(user.id, "/vendre/physique");
+  // Le retour après connexion ou acceptation légale garde la fiche préparée (lot 3b).
+  const retour = idPreparee ? (cheminFichePreparee(KIND_PHYSICAL, idPreparee) ?? "/vendre/physique") : "/vendre/physique";
+  if (user) await requireLegalAccountPage(user.id, retour);
   const pricingClient = await createClient();
   const pricing = await readSellerPricing(pricingClient);
   const launch = user && pricing ? await readSellerLaunch(pricingClient, user.id, pricing, user.createdAt) : null;
@@ -65,8 +67,6 @@ export default async function VendrePhysiquePage({
   const prepareeLue = user && idPreparee ? await lireFichePreparee(pricingClient, user.id, idPreparee) : null;
   if (prepareeLue && cheminFichePreparee(KIND_PHYSICAL, prepareeLue.fiche.id) !== prepareeLue.chemin) redirect(prepareeLue.chemin);
   const prepareeAbsente = Boolean(user) && idPreparee !== null && !prepareeLue;
-  // Sans session, le lien de connexion ramène à CETTE fiche préparée.
-  const retour = idPreparee ? (cheminFichePreparee(KIND_PHYSICAL, idPreparee) ?? "/vendre/physique") : "/vendre/physique";
   // Le taux RÉELLEMENT configuré (0054/0066) : l'estimation suit un UPDATE
   // d'exploitation sans redéploiement. Repli = constante compilée.
   const { taux } = await lireTauxCommission(await createClient(), (c) =>

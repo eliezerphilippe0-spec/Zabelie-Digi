@@ -97,10 +97,16 @@ export const MESSAGES = {
     es: "El producto no está publicado.",
   },
   prepared_limit: {
-    fr: "Vingt fiches préparées attendent déjà le vendeur. Il doit en reprendre une sur Zabelie, ou attendre qu'elles expirent (7 jours).",
-    ht: "Gen ven fich ki deja ap tann vandè a. Li dwe reprann youn sou Zabelie, oswa tann yo ekspire (7 jou).",
-    en: "Twenty prepared listings are already waiting for the seller. They must pick one up on Zabelie, or wait for them to expire (7 days).",
-    es: "Veinte fichas preparadas ya esperan al vendedor. Debe retomar una en Zabelie, o esperar a que caduquen (7 días).",
+    fr: "Trop de fiches préparées attendent le vendeur (20 en attente au plus, 100 en tout). Il peut les reprendre ou les supprimer sur Zabelie, dans son tableau de bord, rubrique « Clés d'API », ou attendre qu'elles expirent (7 jours).",
+    ht: "Twòp fich prepare ap tann vandè a (20 k ap tann pou pi plis, 100 an tou). Li ka reprann yo oswa efase yo sou Zabelie, nan tablo bò li, nan « Kle API », oswa tann yo ekspire (7 jou).",
+    en: "Too many prepared listings are waiting for the seller (at most 20 waiting, 100 in total). They can use or delete them on Zabelie, in their dashboard under “API keys”, or wait for them to expire (7 days).",
+    es: "Demasiadas fichas preparadas esperan al vendedor (20 en espera como máximo, 100 en total). Puede retomarlas o eliminarlas en Zabelie, en su panel, en «Claves de API», o esperar a que caduquen (7 días).",
+  },
+  prepared_hourly: {
+    fr: "30 fiches préparées par heure et par vendeur. Réessayez dans une heure au plus.",
+    ht: "30 fich prepare pa èdtan pou chak vandè. Eseye ankò nan yon èdtan pou pi plis.",
+    en: "30 prepared listings per hour per seller. Retry within the hour.",
+    es: "30 fichas preparadas por hora y por vendedor. Reintente dentro de una hora como máximo.",
   },
   product_out_of_stock: {
     fr: "Le produit est en rupture de stock.",

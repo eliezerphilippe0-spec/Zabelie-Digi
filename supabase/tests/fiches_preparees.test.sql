@@ -7,20 +7,25 @@
 --       pas ; la reprise s'écrit une fois et ne se défait pas.
 --   F4. Contraintes : titre vide, titre trop long, prix négatif — refusés.
 --   F5. Ménage : les fiches EXPIRÉES du vendeur disparaissent à son dépôt
---       suivant, et ne comptent pas dans le plafond.
+--       suivant, et ne comptent pas dans le plafond. Celles d'un AUTRE
+--       vendeur ne partent que si elles sont expirées depuis plus d'un jour.
 --   F6. Portée : `products:prepare` est admise sur une clé, une portée
 --       inconnue reste refusée, et les portées par défaut n'ont pas bougé.
 --   F7. RLS : le vendeur lit SES fiches seulement, n'écrit rien en direct ;
 --       anon ne lit rien.
 --   F8. Clé supprimée : la fiche reste, détachée de sa clé.
+--   F9. Plafond TOTAL : 100 fiches non expirées par vendeur, reprises
+--       comprises ; supprimer en libère une place.
 begin;
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000f0001', 'f.vande@test.local'),
-  ('00000000-0000-0000-0000-0000000f0002', 'f.lot@test.local');
+  ('00000000-0000-0000-0000-0000000f0002', 'f.lot@test.local'),
+  ('00000000-0000-0000-0000-0000000f0003', 'f.anpil@test.local');
 insert into profiles (id, display_name) values
   ('00000000-0000-0000-0000-0000000f0001', 'Vandè Fich'),
-  ('00000000-0000-0000-0000-0000000f0002', 'Lòt Vandè')
+  ('00000000-0000-0000-0000-0000000f0002', 'Lòt Vandè'),
+  ('00000000-0000-0000-0000-0000000f0003', 'Vandè Anpil')
 on conflict (id) do nothing;
 
 -- ── F1 ──────────────────────────────────────────────────────────────────────
@@ -148,6 +153,10 @@ begin
   update zabelie_fiches_preparees
      set created_at = now() - interval '9 days', expires_at = now() - interval '2 days'
    where title in ('fiche 4', 'fiche 5');
+  -- Deux fiches de l'AUTRE vendeur : l'une expirée depuis deux heures, l'autre depuis trois jours.
+  insert into zabelie_fiches_preparees (seller_id, kind, title, created_at, expires_at)
+  values ('00000000-0000-0000-0000-0000000f0002', 'fichier', 'autre, expirée de peu', now() - interval '8 days', now() - interval '2 hours'),
+         ('00000000-0000-0000-0000-0000000f0002', 'fichier', 'autre, expirée de longtemps', now() - interval '10 days', now() - interval '3 days');
   alter table zabelie_fiches_preparees enable trigger zabelie_fiches_preparees_garde;
 
   -- 21 lignes pour le vendeur 1 : 2 reprises, 2 expirées, 17 en attente. Trois dépôts tiennent.
@@ -159,7 +168,16 @@ begin
   if n <> 0 then
     raise exception 'F5 KO : % fiche(s) expirée(s) encore là après un dépôt', n;
   end if;
-  -- Les expirées de l'AUTRE vendeur ne sont pas touchées par ce dépôt.
+  -- L'autre vendeur : sa fiche expirée de peu est ENCORE LÀ (le ménage immédiat
+  -- ne touche que le vendeur qui dépose) ; celle expirée de longtemps est partie
+  -- (ménage global, plus d'un jour après l'échéance).
+  if not exists (select 1 from zabelie_fiches_preparees where title = 'autre, expirée de peu') then
+    raise exception 'F5 KO : le dépôt du vendeur 1 a supprimé une fiche à peine expirée du vendeur 2';
+  end if;
+  if exists (select 1 from zabelie_fiches_preparees where title = 'autre, expirée de longtemps') then
+    raise exception 'F5 KO : une fiche expirée depuis 3 jours a survécu à un dépôt';
+  end if;
+  delete from zabelie_fiches_preparees where title = 'autre, expirée de peu';
   begin
     insert into zabelie_fiches_preparees (seller_id, kind, title)
     values ('00000000-0000-0000-0000-0000000f0001', 'service', 'après ménage 4');
@@ -214,10 +232,44 @@ begin
   raise notice 'F8 OK — la fiche survit à sa clé, détachée';
 end $$;
 
+-- ── F9 ──────────────────────────────────────────────────────────────────────
+do $$
+declare i integer;
+begin
+  -- 100 fiches, chacune reprise aussitôt : aucune n'est « en attente ».
+  for i in 1..100 loop
+    insert into zabelie_fiches_preparees (seller_id, kind, title)
+    values ('00000000-0000-0000-0000-0000000f0003', 'fichier', 'anpil ' || i);
+    update zabelie_fiches_preparees set reprise_at = now() where title = 'anpil ' || i;
+  end loop;
+  begin
+    insert into zabelie_fiches_preparees (seller_id, kind, title)
+    values ('00000000-0000-0000-0000-0000000f0003', 'fichier', 'anpil 101');
+    raise exception 'F9 KO : 101ᵉ fiche non expirée acceptée';
+  exception when sqlstate 'ZB171' then null;
+  end;
+  delete from zabelie_fiches_preparees where title = 'anpil 1';
+  insert into zabelie_fiches_preparees (seller_id, kind, title)
+  values ('00000000-0000-0000-0000-0000000f0003', 'fichier', 'anpil 101');
+  raise notice 'F9 OK — plafond total de 100 non expirées, la suppression libère';
+end $$;
+
 -- ── F7 ──────────────────────────────────────────────────────────────────────
 do $$
 declare n integer;
 begin
+  -- Les privilèges eux-mêmes, pas seulement leur effet : une insertion directe
+  -- serait refusée par la RLS seule (aucune policy d'écriture), et ce refus
+  -- ne dirait rien du `revoke`.
+  if has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'insert, update, delete, truncate, references, trigger') then
+    raise exception 'F7 KO : authenticated garde un privilège d''écriture, truncate, references ou trigger';
+  end if;
+  if has_table_privilege('anon', 'public.zabelie_fiches_preparees', 'select, insert, update, delete, truncate, references, trigger') then
+    raise exception 'F7 KO : anon garde un privilège sur la table';
+  end if;
+  if not has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'select') then
+    raise exception 'F7 KO : authenticated ne peut plus lire';
+  end if;
   set local role authenticated;
   set local request.jwt.claim.sub = '00000000-0000-0000-0000-0000000f0002';
   select count(*) into n from zabelie_fiches_preparees;

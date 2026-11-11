@@ -40,5 +40,19 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: t(lang, "api.unavailable"), code: "unavailable" }, { status: 503 });
   }
   if (!data) return NextResponse.json({ error: t(lang, "apikeys.err.notfound"), code: "not_found" }, { status: 404 });
+
+  /* Les fiches préparées que CETTE clé a déposées et que le vendeur n'a pas
+   * reprises partent avec elle (0171). Une clé qui a fui peut en avoir déposé
+   * vingt : sans ce ménage, elles bloqueraient les dépôts du vendeur pendant
+   * sept jours après la révocation. Celles qu'il a déjà reprises restent.
+   * Non bloquant : la clé EST révoquée, et un échec ici ne doit pas faire
+   * croire le contraire. */
+  const { error: menage } = await admin
+    .from("zabelie_fiches_preparees")
+    .delete()
+    .eq("api_key_id", id)
+    .eq("seller_id", user.id)
+    .is("reprise_at", null);
+  if (menage) console.error("[api-keys] fiches préparées de la clé révoquée non supprimées", menage.code);
   return NextResponse.json({ ok: true });
 }

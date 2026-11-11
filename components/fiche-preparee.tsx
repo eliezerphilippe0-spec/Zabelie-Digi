@@ -51,9 +51,10 @@ export function FichePreparee({ fiche, labels, prixAffiche, disabled = false, on
   return (
     <fieldset data-fiche-preparee className="rounded-xl border border-line p-4">
       <legend className="px-1 text-sm font-semibold">{labels.title}</legend>
-      <p className="text-sm leading-relaxed text-mist">{fiche.cle ? labels.hint.replace("{key}", fiche.cle) : labels.hintNoKey}</p>
+      <p className="text-sm leading-relaxed text-mist">{/* Fonction de remplacement : un nom de clé contenant « $& » ne doit pas être lu comme un motif. */}
+        {fiche.cle ? labels.hint.replace("{key}", () => fiche.cle!) : labels.hintNoKey}</p>
       <p className="mt-3 break-words text-sm font-semibold">{fiche.titre}</p>
-      {prixAffiche && <p className="mt-1 text-sm text-mist">{labels.price.replace("{price}", prixAffiche)}</p>}
+      {prixAffiche && <p className="mt-1 text-sm text-mist">{labels.price.replace("{price}", () => prixAffiche)}</p>}
       {fiche.dejaReprise && !fait && <p className="mt-2 text-xs leading-relaxed text-mist">{labels.already}</p>}
       <button type="button" className="bouton bouton-secondaire mt-3" disabled={disabled} onClick={reprendre}>
         {labels.cta}

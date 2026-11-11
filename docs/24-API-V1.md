@@ -333,9 +333,16 @@ Le parcours : l'assistant appelle `prepare_product` (type, titre, description, p
 | La portée n'est jamais donnée par défaut ; seul `prepare: true` la donne | `lib/api-keys.ts`, route `api/account/api-keys` |
 | L'outil MCP ne se dit pas en lecture seule ; l'annotation vient du drapeau `ecrit` du registre | `lib/mcp/serveur.ts` |
 | Le vendeur lit ses fiches seulement (RLS), n'écrit rien en direct ; `anon` ne lit rien | `0171`, `supabase/tests/fiches_preparees.test.sql` |
-| 20 fiches en attente au plus par vendeur, 7 jours, 30 dépôts par heure et par vendeur ; contenu figé après dépôt | trigger de `0171`, `prepareProduct` |
-| La reprise est cloisonnée au vendeur de la session | route `api/account/fiches-preparees/[id]/reprise` |
+| 20 fiches en attente et 100 non expirées au plus par vendeur, 7 jours, 30 dépôts par heure et par vendeur ; contenu figé après dépôt | trigger de `0171` (sous verrou consultatif, éprouvé par `fiches_preparees_concurrent.sh`), `prepareProduct` |
+| Ménage sans tâche planifiée : les fiches expirées du vendeur partent à son dépôt suivant, celles de tout vendeur expirées depuis plus d'un jour partent par lots de 50 | trigger de `0171` |
+| Tout privilège retiré à `anon` et `authenticated`, lecture seule rendue à `authenticated` | `0171`, post-condition |
+| La reprise et la suppression sont cloisonnées au vendeur de la session | routes `api/account/fiches-preparees/[id]/reprise` et `api/account/fiches-preparees/[id]` |
+| Révoquer une clé supprime les fiches qu'elle a déposées et que le vendeur n'a pas reprises | route `api/account/api-keys/[id]` |
+| Le vendeur retrouve ses fiches préparées, les ouvre ou les supprime | `/tableau-de-bord/api`, rubrique « Fiches préparées par vos assistants » |
+| Le retour après connexion ou acceptation légale garde la fiche | `app/vendre/page.tsx`, `app/vendre/physique/page.tsx` |
 
-Ce que ce lot ne fait pas : ni photo, ni fichier, ni rayon, ni stock ne passent par l'assistant ; aucune liste des fiches préparées dans le tableau de bord (le vendeur passe par l'adresse que l'assistant lui remet) ; un outil vendeur reste listé pour une clé qui n'a pas la portée, et l'appel est alors refusé avec un message lisible.
+Ce que ce lot ne fait pas : ni photo, ni fichier, ni rayon, ni stock ne passent par l'assistant ; un outil vendeur reste listé pour une clé qui n'a pas la portée, et l'appel est alors refusé avec un message lisible.
+
+Une relecture indépendante (agent sans le raisonnement de l'auteur, 2026-11-11) n'a trouvé aucun défaut bloquant de sécurité, et dix défauts de parcours ou de garde, tous corrigés : fiche perdue à la connexion, plafond bloquant sans écran pour le libérer, fiches survivant à la révocation de la clé, prix saisi écrasé sur le formulaire fichier, quota horaire annoncé comme un quota d'une minute, demi-caractère rendu en panne, lignes jamais purgées, privilèges résiduels, trois tests qui ne tenaient pas ce qu'ils annonçaient, contrôle du type après le dépôt.
 
 ⚠️ Ordre : appliquer `0171` **avant** de fusionner le code. Sans elle, créer une clé qui prépare rend 503 ; les clés ordinaires continuent de marcher.

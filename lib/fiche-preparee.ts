@@ -18,6 +18,8 @@ import { IMPORT_DESCRIPTION_MAX, IMPORT_TITRE_MAX, texteSeul } from "@/lib/impor
  * croise les deux.
  */
 export const FICHES_PREPAREES_MAX_EN_ATTENTE = 20;
+/** Fiches NON EXPIRÉES par vendeur, reprises comprises (second plafond de `0171`). */
+export const FICHES_PREPAREES_MAX_TOTAL = 100;
 export const FICHE_PREPAREE_JOURS = 7;
 /** Dépôts par heure et par vendeur, toutes clés confondues. */
 export const FICHES_PREPAREES_PAR_HEURE = 30;
@@ -46,14 +48,21 @@ export function cheminFichePreparee(kind: ProductKind, id: string): string | nul
   }) ?? null;
 }
 
+/* Un demi-caractère (substitut isolé) n'est pas du texte : Postgres le refuse,
+ * et le dépôt finirait en panne au lieu d'un texte propre. Un client qui coupe
+ * au milieu d'un émoji en produit un. Sous le drapeau `u`, cette classe ne
+ * touche PAS une paire bien formée, qui compte pour un seul caractère. */
+const SUBSTITUTS_ISOLES = /[\uD800-\uDFFF]/gu;
+const sansSubstitutsIsoles = (brut: unknown) => (typeof brut === "string" ? brut.replace(SUBSTITUTS_ISOLES, "") : brut);
+
 /** Titre d'une fiche préparée : du texte sur une ligne, borné comme le formulaire. `""` si rien de lisible. */
 export function titrePrepare(brut: unknown): string {
-  return texteSeul(brut, IMPORT_TITRE_MAX).replace(/\s+/g, " ").trim();
+  return texteSeul(sansSubstitutsIsoles(brut), IMPORT_TITRE_MAX).replace(SUBSTITUTS_ISOLES, "").replace(/\s+/g, " ").trim();
 }
 
 /** Description : du texte, sauts de ligne gardés, bornée comme le formulaire. `null` si vide. */
 export function descriptionPreparee(brut: unknown): string | null {
-  const t = texteSeul(brut, IMPORT_DESCRIPTION_MAX).trim();
+  const t = texteSeul(sansSubstitutsIsoles(brut), IMPORT_DESCRIPTION_MAX).replace(SUBSTITUTS_ISOLES, "").trim();
   return t ? t : null;
 }
 
@@ -65,5 +74,16 @@ export type FichePrepareeLue = {
   prixHtg: number | null;
   /** Nom de la clé qui l'a déposée, pour que le vendeur sache d'où elle vient. `null` si la clé n'existe plus. */
   cle: string | null;
+  dejaReprise: boolean;
+};
+
+/** Une ligne de la liste « Fiches préparées » du tableau de bord. */
+export type FichePrepareeListee = {
+  id: string;
+  titre: string;
+  prixHtg: number | null;
+  /** Adresse du formulaire où la reprendre. */
+  chemin: string;
+  expireLe: string;
   dejaReprise: boolean;
 };

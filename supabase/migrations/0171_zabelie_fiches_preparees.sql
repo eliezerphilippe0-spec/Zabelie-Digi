@@ -35,12 +35,23 @@ select zabelie_migration_garde('0171_zabelie_fiches_preparees.sql');
 -- ─── 3. BORNES (techniques, comme le plafond de clés de 0121) ──────────────
 -- * 20 fiches EN ATTENTE par vendeur (ni reprises, ni expirées), imposé par
 --   trigger sous verrou consultatif : deux dépôts simultanés ne le
---   franchissent pas. Reprendre une fiche libère une place.
--- * une fiche expire après 7 jours. Les fiches expirées d'un vendeur sont
---   supprimées à son dépôt suivant : pas de tâche planifiée, donc pas de
---   purge sans appelant.
+--   franchissent pas. Reprendre ou supprimer une fiche libère une place.
+-- * 100 fiches NON EXPIRÉES par vendeur, reprises comprises : sans ce second
+--   plafond, un compte qui alterne dépôt et reprise empilerait des lignes
+--   sans limite.
+-- * une fiche expire après 7 jours. Pas de tâche planifiée, donc pas de purge
+--   sans appelant : le ménage se fait à chaque dépôt. Les fiches expirées du
+--   vendeur qui dépose partent aussitôt ; celles de N'IMPORTE QUEL vendeur,
+--   expirées depuis plus d'un jour, partent par lots de 50 (un vendeur qui ne
+--   dépose plus jamais ne laisse donc rien derrière lui).
 -- * le contenu d'une fiche déposée ne change plus ; seule la reprise
---   s'écrit, une fois.
+--   s'écrit, une fois. Le vendeur peut SUPPRIMER une fiche (route de session).
+--
+-- ─── 4. PRIVILÈGES ─────────────────────────────────────────────────────────
+-- Tout est retiré à `anon` et à `authenticated`, puis la LECTURE seule est
+-- rendue à `authenticated`. Retirer seulement insert/update/delete laisserait
+-- TRUNCATE, REFERENCES et TRIGGER, que Supabase accorde par défaut à une
+-- table neuve : inatteignables par l'API, mais sans raison d'être là.
 --
 -- ⚠️ ORDRE OBLIGATOIRE : appliquer CETTE migration AVANT de fusionner le code
 -- qui crée des clés portant `products:prepare`. Sans elle, la création d'une
@@ -82,26 +93,44 @@ create policy zabelie_fiches_preparees_owner_select on zabelie_fiches_preparees
   for select to authenticated
   using (seller_id = auth.uid());
 
-revoke all on zabelie_fiches_preparees from anon;
-revoke insert, update, delete on zabelie_fiches_preparees from authenticated;
+revoke all on zabelie_fiches_preparees from anon, authenticated;
+grant select on zabelie_fiches_preparees to authenticated;
 
--- ── 3. Le garde : plafond, ménage des expirées, contenu figé ────────────────
+-- ── 3. Le garde : plafonds, ménage des expirées, contenu figé ───────────────
 create or replace function zabelie_fiches_preparees_garde()
 returns trigger
 language plpgsql
 set search_path = public, pg_temp
 as $$
-declare v_attente integer;
+declare
+  v_attente integer;
+  v_total   integer;
 begin
   if tg_op = 'INSERT' then
     perform pg_advisory_xact_lock(hashtext('zabelie_fiches_preparees:' || new.seller_id::text));
+    -- Ménage 1 : les fiches expirées de CE vendeur, tout de suite.
     delete from zabelie_fiches_preparees
      where seller_id = new.seller_id and expires_at <= now();
-    select count(*) into v_attente
+    -- Ménage 2 : les fiches de n'importe qui, expirées depuis plus d'un jour,
+    -- par lot borné. `skip locked` : deux dépôts simultanés ne s'attendent pas.
+    delete from zabelie_fiches_preparees
+     where id in (
+       select id from zabelie_fiches_preparees
+        where expires_at < now() - interval '1 day'
+        order by expires_at
+        limit 50
+          for update skip locked
+     );
+    select count(*) filter (where reprise_at is null), count(*)
+      into v_attente, v_total
       from zabelie_fiches_preparees
-     where seller_id = new.seller_id and reprise_at is null and expires_at > now();
+     where seller_id = new.seller_id and expires_at > now();
     if v_attente >= 20 then
       raise exception 'ZB171 : 20 fiches préparées en attente au plus par vendeur'
+        using errcode = 'ZB171';
+    end if;
+    if v_total >= 100 then
+      raise exception 'ZB171 : 100 fiches préparées non expirées au plus par vendeur'
         using errcode = 'ZB171';
     end if;
     return new;
@@ -135,7 +164,7 @@ create trigger zabelie_fiches_preparees_garde
 
 revoke all on function zabelie_fiches_preparees_garde() from public, anon, authenticated;
 
--- ── 4. Post-conditions ──────────────────────────────────────────────────────
+-- ── 5. Post-conditions ──────────────────────────────────────────────────────
 do $$
 begin
   if not exists (
@@ -150,11 +179,12 @@ begin
   if not exists (select 1 from pg_class where oid = 'public.zabelie_fiches_preparees'::regclass and relrowsecurity) then
     raise exception 'ZB171 : RLS absente sur zabelie_fiches_preparees' using errcode = 'ZB171';
   end if;
-  if has_table_privilege('anon', 'public.zabelie_fiches_preparees', 'select')
-     or has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'insert')
-     or has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'update')
-     or has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'delete') then
+  if has_table_privilege('anon', 'public.zabelie_fiches_preparees', 'select, insert, update, delete, truncate, references, trigger')
+     or has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'insert, update, delete, truncate, references, trigger') then
     raise exception 'ZB171 : zabelie_fiches_preparees est lisible par anon ou inscriptible par un client' using errcode = 'ZB171';
+  end if;
+  if not has_table_privilege('authenticated', 'public.zabelie_fiches_preparees', 'select') then
+    raise exception 'ZB171 : le vendeur ne peut plus lire ses fiches préparées' using errcode = 'ZB171';
   end if;
   if not exists (
     select 1 from pg_trigger

@@ -6,10 +6,10 @@ import * as apiKeys from "../lib/api-keys";
 import { SCOPES, SCOPES_PAR_DEFAUT, SCOPE_PREPARER } from "../lib/api-keys";
 import * as fichePreparee from "../lib/fiche-preparee";
 import {
-  FICHES_PREPAREES_MAX_EN_ATTENTE, FICHES_PREPAREES_PAR_HEURE, FICHE_PREPAREE_JOURS, PARAM_PREPAREE,
+  FICHES_PREPAREES_MAX_EN_ATTENTE, FICHES_PREPAREES_MAX_TOTAL, FICHES_PREPAREES_PAR_HEURE, FICHE_PREPAREE_JOURS, PARAM_PREPAREE,
   cheminFichePreparee, descriptionPreparee, lireIdPreparee, titrePrepare,
 } from "../lib/fiche-preparee";
-import { lireFichePreparee } from "../lib/fiche-preparee-serveur";
+import { lireFichePreparee, listerFichesPreparees } from "../lib/fiche-preparee-serveur";
 import { ErreurApi } from "../lib/api/v1/handlers";
 import { PrepareProductInput, PrepareProductOutput, SELLER_ENDPOINTS, operationEcrit, prepareProduct } from "../lib/api/v1/seller";
 import { sellerOpenApiDocument } from "../lib/api/v1/seller-openapi";
@@ -153,9 +153,13 @@ test("cadence par VENDEUR, plafond dit comme un état, panne dite comme une pann
   const quota = fauxDepot({ quota: false });
   await assert.rejects(
     prepareProduct({ kind: "fichier", title: "x" }, { admin: quota.client, sellerId: VENDEUR, keyId: CLE_ID }),
-    (e) => e instanceof ErreurApi && e.code === "rate_limited",
+    // La fenêtre dure une heure : le message le dit, ce n'est pas le « réessayez dans une minute » du quota par clé.
+    (e) => e instanceof ErreurApi && e.code === "rate_limited" && e.message === "prepared_hourly",
   );
   assert.deepEqual(quota.tables, [], "rien n'est déposé quand la cadence est dépassée");
+  const route = sansCommentaires(readFileSync("app/api/v1/seller/[endpoint]/route.ts", "utf8"));
+  assert.match(route, /if \(code === "rate_limited"\) res\.headers\.set\("Retry-After", cle === "prepared_hourly" \? "3600" : "60"\);/);
+  for (const lang of LANGUES) assert.match(MESSAGES.prepared_hourly[lang], new RegExp(`(?<![0-9])${FICHES_PREPAREES_PAR_HEURE}(?![0-9])`), lang);
   // La clé de cadence porte le VENDEUR, pas la clé d'API : cinq clés ne font pas cinq quotas.
   assert.deepEqual(quota.rpcs[0].args, { p_key: `fiche_preparee:${VENDEUR}`, p_limit: FICHES_PREPAREES_PAR_HEURE, p_window_seconds: 3600 });
 
@@ -306,7 +310,7 @@ test("pages : la fiche est lue avec le client de SESSION, et le vendeur est celu
 
 test("formulaires : la reprise passe par l'import (accord, politique), le prix ne s'ajoute qu'après", () => {
   const fichier = readFileSync("components/publish-form.tsx", "utf8");
-  assert.match(fichier, /function reprendrePreparee\(fiche: FicheRecue\): boolean \{\s*if \(!appliquerImport\(fiche\)\) return false;\s*const prix = fiche\.prixHtg;\s*if \(typeof prix === "number" && Number\.isSafeInteger\(prix\) && prix >= 0\) setForm\(/);
+  assert.match(fichier, /function reprendrePreparee\(fiche: FicheRecue\): boolean \{\s*if \(!appliquerImport\(fiche\)\) return false;\s*const prix = fiche\.prixHtg;\s*if \(typeof prix === "number" && Number\.isSafeInteger\(prix\) && prix >= 0 && !form\.priceHTG\) setForm\(/);
   assert.match(fichier, /\{importLabels && preparee && <FichePreparee [^>]*onReprendre=\{reprendrePreparee\} \/>\}/);
   const physique = readFileSync("components/physical-product-form.tsx", "utf8");
   // Un prix déjà saisi par le vendeur n'est pas écrasé, et un article physique ne se propose pas à 0.
@@ -359,12 +363,17 @@ test("la description dit, dans chaque langue, que rien n'est créé et que le ve
 
 test("les bornes du code sont celles de la migration", () => {
   assert.match(SQL, new RegExp(`if v_attente >= ${FICHES_PREPAREES_MAX_EN_ATTENTE} then`));
+  assert.match(SQL, new RegExp(`if v_total >= ${FICHES_PREPAREES_MAX_TOTAL} then`));
+  // Le verrou vient AVANT le comptage : sans lui, deux dépôts simultanés lisent le même compte.
+  assert.match(SQL, /perform pg_advisory_xact_lock\(hashtext\('zabelie_fiches_preparees:' \|\| new\.seller_id::text\)\);[\s\S]{0,900}select count\(\*\) filter \(where reprise_at is null\), count\(\*\)\s+into v_attente, v_total/);
   assert.match(SQL, new RegExp(`expires_at\\s+timestamptz not null default \\(now\\(\\) \\+ interval '${FICHE_PREPAREE_JOURS} days'\\)`));
-  assert.match(SQL, /where seller_id = new\.seller_id and reprise_at is null and expires_at > now\(\);/);
+  assert.match(SQL, /into v_attente, v_total\s+from zabelie_fiches_preparees\s+where seller_id = new\.seller_id and expires_at > now\(\);/);
   assert.match(SQL, /alter table zabelie_fiches_preparees enable row level security;/);
-  assert.match(SQL, /revoke insert, update, delete on zabelie_fiches_preparees from authenticated;/);
+  assert.match(SQL, /revoke all on zabelie_fiches_preparees from anon, authenticated;\s*grant select on zabelie_fiches_preparees to authenticated;/);
   for (const lang of LANGUES) {
-    assert.match(MESSAGES.prepared_limit[lang], new RegExp(`(?<![0-9])${FICHE_PREPAREE_JOURS}(?![0-9])`), lang);
+    for (const n of [FICHE_PREPAREE_JOURS, FICHES_PREPAREES_MAX_EN_ATTENTE, FICHES_PREPAREES_MAX_TOTAL]) {
+      assert.match(MESSAGES.prepared_limit[lang], new RegExp(`(?<![0-9])${n}(?![0-9])`), `${lang} : ${n}`);
+    }
   }
 });
 
@@ -372,12 +381,141 @@ test("les textes existent dans les quatre langues", () => {
   const cles = [
     "prepared.title", "prepared.hint", "prepared.hintNoKey", "prepared.price", "prepared.cta", "prepared.done", "prepared.already", "prepared.missing",
     "apikeys.prepare", "apikeys.prepare.hint", "apikeys.prepare.badge",
+    "preparedList.title", "preparedList.intro", "preparedList.empty", "preparedList.open", "preparedList.delete",
+    "preparedList.confirmDelete", "preparedList.expires", "preparedList.taken",
   ];
   for (const lang of LANGUES) {
     const d = DICT[lang] as Record<string, string>;
     for (const cle of cles) assert.ok(d[cle] && d[cle].length > 3, `${lang} : ${cle}`);
     assert.match(d["prepared.hint"], /\{key\}/u, `${lang} : {key} absent`);
     assert.match(d["prepared.price"], /\{price\}/u, `${lang} : {price} absent`);
+    assert.match(d["preparedList.expires"], /\{date\}/u, `${lang} : {date} absent`);
   }
   assert.equal(new Set(LANGUES.map((l) => (DICT[l] as Record<string, string>)["prepared.cta"])).size, LANGUES.length);
+});
+
+// ── 5. Ce que la relecture indépendante du 2026-11-11 a fait corriger ───────
+
+test("un demi-caractère (substitut isolé) est retiré, une paire bien formée est gardée", () => {
+  const haut = String.fromCharCode(0xd83d), bas = String.fromCharCode(0xde00);
+  assert.equal(titrePrepare(`Sak ${haut}`), "Sak");
+  assert.equal(titrePrepare(`${bas}Sak kwi`), "Sak kwi");
+  assert.equal(titrePrepare(`Sak ${haut}${bas} kwi`), `Sak ${haut}${bas} kwi`, "un émoji entier reste");
+  assert.equal(descriptionPreparee(`Bèl ${haut}`), "Bèl");
+  assert.equal(descriptionPreparee(haut), null);
+  for (const t of [titrePrepare(`a${haut}b`), descriptionPreparee(`a${bas}b`)!]) assert.equal(t.isWellFormed(), true);
+});
+
+test("le type sans formulaire et la cadence sont jugés AVANT le dépôt", () => {
+  const src = sansCommentaires(readFileSync("lib/api/v1/seller.ts", "utf8"));
+  const corps = src.slice(src.indexOf("export async function prepareProduct"), src.indexOf("export const SELLER_HANDLERS"));
+  const type = corps.search(/if \(!cheminFichePreparee\(input\.kind, "[0-9a-f-]{36}"\)\) throw new ErreurApi\("invalid_input", "input_invalid", "kind"\);/);
+  const cadence = corps.search(/if \(!\(await rateLimit\(ctx\.admin, `fiche_preparee:\$\{ctx\.sellerId\}`, FICHES_PREPAREES_PAR_HEURE, 3600\)\)\) \{\s*throw new ErreurApi\("rate_limited", "prepared_hourly"\);/);
+  const depot = corps.indexOf('.from("zabelie_fiches_preparees")');
+  assert.ok(type > 0 && cadence > type && depot > cadence, "ordre : type, cadence, dépôt");
+});
+
+test("suppression : session exigée, identifiant validé, cloisonnée au vendeur de la session", async () => {
+  const charger = (user: { id: string } | null, ligne: unknown = { id: FICHE }, erreur: unknown = null) => {
+    const db = database(() => ({ data: erreur ? null : ligne, error: erreur }));
+    const route = loadRoute("app/api/account/fiches-preparees/[id]/route.ts", {
+      "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user } }) } }) },
+      "@/lib/supabase/admin": { createAdminClient: () => db },
+      "@/lib/fiche-preparee": fichePreparee,
+    });
+    return { db, appeler: (id: string) => route.DELETE(new Request("https://zabelie.test/x", { method: "DELETE" }), { params: Promise.resolve({ id }) }) };
+  };
+  const anonyme = charger(null);
+  assert.equal((await anonyme.appeler(FICHE)).status, 401);
+  assert.equal(anonyme.db.queries.length, 0);
+
+  const mauvais = charger({ id: VENDEUR });
+  assert.equal((await mauvais.appeler("pas-un-uuid")).status, 404);
+  assert.equal(mauvais.db.queries.length, 0);
+
+  const ok = charger({ id: VENDEUR });
+  assert.equal((await ok.appeler(FICHE)).status, 200);
+  const [q] = ok.db.queries;
+  assert.equal(q.table, "zabelie_fiches_preparees");
+  assert.equal(q.steps[0][0], "delete");
+  const etapes = q.steps.map(([m, a]) => `${m}:${JSON.stringify(a)}`);
+  assert.ok(etapes.includes(`eq:["id","${FICHE}"]`));
+  assert.ok(etapes.includes(`eq:["seller_id","${VENDEUR}"]`), "suppression sans filtre vendeur");
+
+  // La fiche d'un autre vendeur ne touche aucune ligne : 404, comme une fiche inconnue.
+  assert.equal((await charger({ id: VENDEUR }, null).appeler(FICHE)).status, 404);
+  assert.equal((await charger({ id: VENDEUR }, null, { code: "42P01" }).appeler(FICHE)).status, 503);
+});
+
+test("révocation d'une clé : ses fiches NON reprises partent avec elle, et un échec du ménage ne masque pas la révocation", async () => {
+  const charger = (menageEnErreur = false) => {
+    const db = database((q) => (q.table === "zabelie_api_keys" ? { data: { id: CLE_ID }, error: null } : { data: null, error: menageEnErreur ? { code: "42P01" } : null }));
+    const route = loadRoute("app/api/account/api-keys/[id]/route.ts", {
+      "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: VENDEUR } } }) } }) },
+      "@/lib/supabase/admin": { createAdminClient: () => db },
+    });
+    return { db, appeler: () => route.DELETE(new Request("https://zabelie.test/x", { method: "DELETE" }), { params: Promise.resolve({ id: CLE_ID }) }) };
+  };
+  const ok = charger();
+  assert.equal((await ok.appeler()).status, 200);
+  assert.deepEqual(ok.db.queries.map((q) => q.table), ["zabelie_api_keys", "zabelie_fiches_preparees"], "la clé d'abord, le ménage ensuite");
+  const menage = ok.db.queries[1];
+  assert.equal(menage.steps[0][0], "delete");
+  const etapes = menage.steps.map(([m, a]) => `${m}:${JSON.stringify(a)}`);
+  assert.ok(etapes.includes(`eq:["api_key_id","${CLE_ID}"]`), "ménage non borné à la clé révoquée");
+  assert.ok(etapes.includes(`eq:["seller_id","${VENDEUR}"]`), "ménage sans filtre vendeur");
+  assert.ok(etapes.includes(`is:["reprise_at",null]`), "les fiches déjà reprises ne doivent pas partir");
+
+  // Table absente (0171 non appliquée) ou panne : la clé EST révoquée, la réponse le dit.
+  assert.equal((await charger(true).appeler()).status, 200);
+});
+
+test("liste : les fiches non expirées du vendeur de la session, avec l'adresse du bon formulaire", async () => {
+  const maintenant = new Date("2026-11-11T10:00:00.000Z");
+  const lignes = [
+    { id: FICHE, kind: "physical", title: "Sandal kwi", price_htg: 1500, expires_at: "2026-11-18T10:00:00.000Z", reprise_at: null },
+    { id: CLE_ID, kind: "service", title: "Leson gita", price_htg: null, expires_at: "2026-11-17T10:00:00.000Z", reprise_at: "2026-11-10T10:00:00.000Z" },
+    { id: VENDEUR, kind: "abonnement", title: "type inconnu", price_htg: 1, expires_at: "2026-11-17T10:00:00.000Z", reprise_at: null },
+  ];
+  const db = database(() => ({ data: lignes, error: null }));
+  const liste = await listerFichesPreparees(db as unknown as SupabaseClient, VENDEUR, maintenant);
+  assert.deepEqual(liste, [
+    { id: FICHE, titre: "Sandal kwi", prixHtg: 1500, chemin: `/vendre/physique?preparee=${FICHE}`, expireLe: "2026-11-18T10:00:00.000Z", dejaReprise: false },
+    { id: CLE_ID, titre: "Leson gita", prixHtg: null, chemin: `/vendre?nouveau=prestation&preparee=${CLE_ID}#formulaire`, expireLe: "2026-11-17T10:00:00.000Z", dejaReprise: true },
+  ]);
+  const etapes = db.queries[0].steps.map(([m, a]) => `${m}:${JSON.stringify(a)}`);
+  assert.ok(etapes.includes(`eq:["seller_id","${VENDEUR}"]`), "liste lue sans filtre vendeur");
+  assert.ok(etapes.includes(`gt:["expires_at","${maintenant.toISOString()}"]`), "les expirées ne sont pas listées");
+  assert.ok(etapes.includes(`limit:[${FICHES_PREPAREES_MAX_TOTAL}]`));
+  // Lecture impossible : `null`, pas une liste vide — la page ne rend alors pas la rubrique.
+  assert.equal(await listerFichesPreparees(database(() => ({ data: null, error: { code: "42P01" } })) as unknown as SupabaseClient, VENDEUR), null);
+
+  const page = readFileSync("app/tableau-de-bord/api/page.tsx", "utf8");
+  assert.match(page, /const fichesPreparees = await listerFichesPreparees\(supabase, user\.id\);/);
+  assert.match(page, /\{fichesPreparees && \(\s*<>\s*<h2 id="fiches-preparees"/);
+  const composant = readFileSync("components/fiches-preparees-liste.tsx", "utf8");
+  // Rien n'est supprimé sans confirmation, et aucun bouton principal n'est ajouté à l'écran.
+  assert.match(composant, /if \(enCours \|\| !window\.confirm\(labels\.confirmDelete\)\) return;\s*setEnCours\(id\);[\s\S]{0,200}fetch\(`\/api\/account\/fiches-preparees\/\$\{id\}`, \{ method: "DELETE" \}\)/);
+  assert.doesNotMatch(composant, /bouton-primaire/);
+});
+
+test("le retour après connexion ou acceptation légale garde la fiche préparée", () => {
+  const vendre = readFileSync("app/vendre/page.tsx", "utf8");
+  assert.match(vendre, /const retour = idPreparee\s*\? \(nouveau \? cheminFichePreparee\(nouveau, idPreparee\) : null\) \?\? `\/vendre\?\$\{PARAM_PREPAREE\}=\$\{idPreparee\}`\s*: "\/vendre";/);
+  assert.match(vendre, /href=\{`\/connexion\?mode=signup&next=\$\{encodeURIComponent\(retour\)\}`\}/);
+  assert.match(vendre, /href=\{`\/connexion\?next=\$\{encodeURIComponent\(retour\)\}`\}/);
+  assert.match(vendre, /await requireLegalAccountPage\(user\.id, retour\);/);
+  assert.doesNotMatch(vendre, /next=\/vendre"/, "un lien de connexion en dur perdrait la fiche");
+  const physique = readFileSync("app/vendre/physique/page.tsx", "utf8");
+  assert.match(physique, /const retour = idPreparee \? \(cheminFichePreparee\(KIND_PHYSICAL, idPreparee\) \?\? "\/vendre\/physique"\) : "\/vendre\/physique";\s*if \(user\) await requireLegalAccountPage\(user\.id, retour\);/);
+  assert.match(physique, /href=\{`\/connexion\?next=\$\{encodeURIComponent\(retour\)\}`\}/);
+});
+
+test("un nom de clé contenant « $& » s'affiche tel quel", () => {
+  const src = readFileSync("components/fiche-preparee.tsx", "utf8");
+  assert.match(src, /labels\.hint\.replace\("\{key\}", \(\) => fiche\.cle!\)/);
+  assert.match(src, /labels\.price\.replace\("\{price\}", \(\) => prixAffiche\)/);
+  // La raison, exécutée : une chaîne de remplacement lit « $& » comme « ce qui a été trouvé ».
+  assert.equal("clé « {key} »".replace("{key}", "A $& B"), "clé « A {key} B »");
+  assert.equal("clé « {key} »".replace("{key}", () => "A $& B"), "clé « A $& B »");
 });

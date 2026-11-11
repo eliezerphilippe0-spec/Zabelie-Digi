@@ -1291,17 +1291,24 @@ const server = createServer((req, res) => {
         return single([created]);
       });
     }
-    const ficheId = eq(url, "id"), ficheVendeur = eq(url, "seller_id");
-    const trouvees = fichesPreparees.filter(f => f.id === ficheId && f.seller_id === ficheVendeur);
+    // Chaque filtre présent dans l'adresse s'applique ; le vendeur est TOUJOURS exigé,
+    // comme dans les vraies requêtes (une requête sans lui ne rend rien ici).
+    const ficheId = eq(url, "id"), ficheVendeur = eq(url, "seller_id"), ficheCle = eq(url, "api_key_id");
+    const nonReprises = url.searchParams.get("reprise_at") === "is.null";
+    const trouvees = fichesPreparees.filter(f => f.seller_id === ficheVendeur && (!ficheId || f.id === ficheId)
+      && (!ficheCle || f.api_key_id === ficheCle) && (!nonReprises || !f.reprise_at) && Date.parse(f.expires_at) > Date.now());
     if (req.method === "PATCH") {
       let body = ""; req.on("data", c => body += c);
       return req.on("end", () => {
-        const hits = trouvees.filter(f => url.searchParams.get("reprise_at") !== "is.null" || !f.reprise_at);
-        hits.forEach(f => Object.assign(f, JSON.parse(body)));
-        return single(hits);
+        trouvees.forEach(f => Object.assign(f, JSON.parse(body)));
+        return single(trouvees);
       });
     }
-    return single(trouvees);
+    if (req.method === "DELETE") {
+      for (const f of trouvees) fichesPreparees.splice(fichesPreparees.indexOf(f), 1);
+      return single(trouvees);
+    }
+    return single([...trouvees].reverse());
   }
   if (url.pathname.startsWith("/rest/v1/profiles")) {
     if (BOUTIQUE_FIXTURE) {

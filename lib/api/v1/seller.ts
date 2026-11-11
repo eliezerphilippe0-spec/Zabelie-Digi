@@ -236,10 +236,15 @@ export async function prepareProduct(input: z.infer<typeof PrepareProductInput>,
   const titre = titrePrepare(input.title);
   if (!titre) throw new ErreurApi("invalid_input", "input_invalid", "title");
   const description = descriptionPreparee(input.description);
+  // Un type sans formulaire est refusé AVANT tout dépôt : une fiche que le
+  // vendeur ne pourrait pas ouvrir compterait au plafond sans jamais servir.
+  if (!cheminFichePreparee(input.kind, "00000000-0000-4000-8000-000000000000")) throw new ErreurApi("invalid_input", "input_invalid", "kind");
 
-  // Cadence par VENDEUR, toutes clés confondues : cinq clés ne font pas cinq quotas.
+  // Cadence par VENDEUR, toutes clés confondues : cinq clés ne font pas cinq
+  // quotas. La fenêtre dure une heure : le message et `Retry-After` le disent,
+  // au lieu du « réessayez dans une minute » du quota par clé.
   if (!(await rateLimit(ctx.admin, `fiche_preparee:${ctx.sellerId}`, FICHES_PREPAREES_PAR_HEURE, 3600))) {
-    throw new ErreurApi("rate_limited", "rate_limited");
+    throw new ErreurApi("rate_limited", "prepared_hourly");
   }
 
   const { data, error } = await ctx.admin

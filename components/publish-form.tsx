@@ -156,13 +156,13 @@ export function PublishForm({
 
   /* FICHE PRÉPARÉE PAR UN ASSISTANT (lot 3b) : le texte passe par
    * `appliquerImport`, donc par les mêmes règles (accord avant d'écraser,
-   * politique qui retombe, bornes). Le prix PROPOSÉ ne s'ajoute qu'ici : il
-   * arrive dans le champ, où le vendeur le voit et le change. Un import par
-   * lien, lui, ne porte jamais de prix. */
+   * politique qui retombe, bornes). Le prix PROPOSÉ ne s'ajoute qu'ici, et il
+   * n'écrase pas un prix déjà saisi : le vendeur l'a tapé lui-même. Un import
+   * par lien, lui, ne porte jamais de prix. */
   function reprendrePreparee(fiche: FicheRecue): boolean {
     if (!appliquerImport(fiche)) return false;
     const prix = fiche.prixHtg;
-    if (typeof prix === "number" && Number.isSafeInteger(prix) && prix >= 0) setForm((f) => ({ ...f, priceHTG: String(prix) }));
+    if (typeof prix === "number" && Number.isSafeInteger(prix) && prix >= 0 && !form.priceHTG) setForm((f) => ({ ...f, priceHTG: String(prix) }));
     return true;
   }
 

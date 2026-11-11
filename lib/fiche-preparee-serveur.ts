@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { cheminFichePreparee, type FichePrepareeLue } from "@/lib/fiche-preparee";
+import { cheminFichePreparee, FICHES_PREPAREES_MAX_TOTAL, type FichePrepareeListee, type FichePrepareeLue } from "@/lib/fiche-preparee";
 import { isProductKind } from "@/lib/product-kind";
 
 /**
@@ -51,4 +51,44 @@ export async function lireFichePreparee(
       dejaReprise: data.reprise_at !== null,
     },
   };
+}
+
+/**
+ * Les fiches préparées NON EXPIRÉES du vendeur connecté, les plus récentes
+ * d'abord. Client de SESSION (RLS) et filtre `seller_id` redit, comme
+ * `lireFichePreparee`. `null` : la lecture a échoué (table absente tant que
+ * `0171` n'est pas appliquée, ou panne) — la page n'affiche alors pas la
+ * rubrique, plutôt qu'un « aucune fiche » qui serait faux.
+ */
+export async function listerFichesPreparees(
+  supabase: SupabaseClient,
+  sellerId: string,
+  maintenant = new Date(),
+): Promise<FichePrepareeListee[] | null> {
+  const { data, error } = await supabase
+    .from("zabelie_fiches_preparees")
+    .select("id, kind, title, price_htg, expires_at, reprise_at")
+    .eq("seller_id", sellerId)
+    .gt("expires_at", maintenant.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(FICHES_PREPAREES_MAX_TOTAL);
+  if (error || !data) {
+    console.error("[fiche-preparee] liste illisible", error?.code ?? "empty_response");
+    return null;
+  }
+  const fiches: FichePrepareeListee[] = [];
+  for (const f of data) {
+    if (!isProductKind(f.kind)) continue;
+    const chemin = cheminFichePreparee(f.kind, f.id);
+    if (!chemin) continue;
+    fiches.push({
+      id: f.id,
+      titre: f.title,
+      prixHtg: Number.isSafeInteger(f.price_htg) && f.price_htg >= 0 ? f.price_htg : null,
+      chemin,
+      expireLe: f.expires_at,
+      dejaReprise: f.reprise_at !== null,
+    });
+  }
+  return fiches;
 }
