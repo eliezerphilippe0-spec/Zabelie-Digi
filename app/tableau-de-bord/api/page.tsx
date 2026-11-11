@@ -3,13 +3,16 @@ import { redirect } from "next/navigation";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ApiKeysManager, type CleAffichee } from "@/components/api-keys-manager";
+import { FichesPrepareesListe } from "@/components/fiches-preparees-liste";
+import { listerFichesPreparees } from "@/lib/fiche-preparee-serveur";
+import { formatHTG } from "@/lib/sample-data";
 import { WebhooksManager, type EnvoiAffiche, type PointAffiche } from "@/components/webhooks-manager";
 import { MAX_POINTS_ACTIFS } from "@/lib/webhooks";
 import { PixelsForm } from "@/components/pixels-form";
 import { DomainForm, type DomaineAffiche } from "@/components/domain-form";
 import { getCurrentUser, requireLegalAccountPage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { MAX_CLES_ACTIVES } from "@/lib/api-keys";
+import { MAX_CLES_ACTIVES, SCOPE_PREPARER } from "@/lib/api-keys";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -31,7 +34,7 @@ export default async function ApiPage() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("zabelie_api_keys")
-    .select("id, name, prefix, created_at, last_used_at, revoked_at")
+    .select("id, name, prefix, scopes, created_at, last_used_at, revoked_at")
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw new Error("api_keys_unavailable");
@@ -49,8 +52,12 @@ export default async function ApiPage() {
   const domaine: DomaineAffiche = dom ? { domaine: dom.domaine, statut: dom.statut, note: dom.note_admin } : null;
   const points: PointAffiche[] = (pts ?? []).map((p) => ({ id: p.id, url: p.url, events: p.events, createdAt: p.created_at, disabledAt: p.disabled_at, disabledReason: p.disabled_reason }));
   const envois: EnvoiAffiche[] = (env ?? []).map((d) => ({ id: d.id, eventType: d.event_type, status: d.status, attempts: d.attempts, lastStatus: d.last_status, createdAt: d.created_at }));
+  // Fiches préparées par un assistant (0171). `null` : lecture impossible, la rubrique n'est pas rendue.
+  const fichesPreparees = await listerFichesPreparees(supabase, user.id);
+  const localeDate = lang === "ht" ? "fr-HT" : lang;
   const cles: CleAffichee[] = (data ?? []).map((k) => ({
     id: k.id, name: k.name, prefix: k.prefix, createdAt: k.created_at, lastUsedAt: k.last_used_at, revokedAt: k.revoked_at,
+    prepare: Array.isArray(k.scopes) && k.scopes.includes(SCOPE_PREPARER),
   }));
 
   return (
@@ -81,8 +88,29 @@ export default async function ApiPage() {
             confirmRevoke: t(lang, "apikeys.confirmRevoke"),
             limit: t(lang, "apikeys.err.limit"),
             error: t(lang, "error.generic"),
+            prepare: t(lang, "apikeys.prepare"),
+            prepareHint: t(lang, "apikeys.prepare.hint"),
+            prepareBadge: t(lang, "apikeys.prepare.badge"),
           }}
         />
+        {fichesPreparees && (
+          <>
+            <h2 id="fiches-preparees" className="mt-12 scroll-mt-32">{t(lang, "preparedList.title")}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "preparedList.intro")}</p>
+            <FichesPrepareesListe
+              fiches={fichesPreparees.map((f) => ({
+                ...f,
+                prixAffiche: f.prixHtg !== null ? formatHTG(f.prixHtg) : null,
+                expireAffiche: new Date(f.expireLe).toLocaleDateString(localeDate, { day: "numeric", month: "short", year: "numeric", timeZone: "America/Port-au-Prince" }),
+              }))}
+              labels={{
+                empty: t(lang, "preparedList.empty"), open: t(lang, "preparedList.open"), delete: t(lang, "preparedList.delete"),
+                confirmDelete: t(lang, "preparedList.confirmDelete"), expires: t(lang, "preparedList.expires"),
+                taken: t(lang, "preparedList.taken"), price: t(lang, "prepared.price"), error: t(lang, "error.generic"),
+              }}
+            />
+          </>
+        )}
         <h2 id="webhooks" className="mt-12 scroll-mt-32">{t(lang, "webhooks.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-mist">{t(lang, "webhooks.intro")}</p>
         <WebhooksManager

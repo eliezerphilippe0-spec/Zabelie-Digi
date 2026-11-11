@@ -8,15 +8,26 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * La base n'en garde que l'empreinte SHA-256 : la clé s'affiche UNE fois, à la
  * création, et n'est plus jamais lisible — ni par le vendeur, ni par Zabelie.
  *
- * Les portées et le plafond sont redits en SQL (`0121`) ; `tests/api-keys.test.ts`
- * croise les deux listes.
+ * Les portées et le plafond sont redits en SQL (`0121`, puis `0171` pour
+ * `products:prepare`) ; `tests/api-keys.test.ts` croise les deux listes.
  */
 
 export const PREFIXE_CLE = "zb_live_";
 export const MAX_CLES_ACTIVES = 5;
-export const SCOPES = ["products:read", "sales:read", "links:write", "webhooks:manage"] as const;
+export const SCOPES = ["products:read", "sales:read", "links:write", "webhooks:manage", "products:prepare"] as const;
 export type Scope = (typeof SCOPES)[number];
 export const SCOPES_PAR_DEFAUT: readonly Scope[] = ["products:read", "sales:read", "links:write"];
+/**
+ * PRÉPARER UNE FICHE (0171) — la seule portée qui dépose quelque chose. Elle
+ * n'est JAMAIS donnée par défaut : le vendeur la choisit en créant la clé.
+ * Elle ne crée pas de produit : voir `lib/api/v1/seller.ts`, `prepare_product`.
+ */
+export const SCOPE_PREPARER: Scope = "products:prepare";
+
+/** Portées d'une clé à sa création. `preparer` doit valoir exactement `true` : toute autre valeur donne les portées par défaut. */
+export function scopesALaCreation(preparer: unknown): Scope[] {
+  return preparer === true ? [...SCOPES_PAR_DEFAUT, SCOPE_PREPARER] : [...SCOPES_PAR_DEFAUT];
+}
 
 const FORMAT_CLE = /^zb_live_[A-Za-z0-9_-]{43}$/;
 

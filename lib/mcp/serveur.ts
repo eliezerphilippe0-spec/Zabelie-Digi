@@ -2,6 +2,7 @@ import type { Lang } from "@/lib/i18n";
 import { openApiDocument, PUBLIC_OPERATIONS } from "@/lib/api/v1/openapi";
 import { apiDocsCopy } from "@/lib/api/v1/docs-copy";
 import { SELLER_OPERATIONS, sellerOpenApiDocument } from "@/lib/api/v1/seller-openapi";
+import { operationEcrit } from "@/lib/api/v1/seller";
 
 /**
  * SERVEUR MCP DE ZABELIE — lot 1, LECTURE SEULE (2026-11-11).
@@ -45,7 +46,10 @@ export type OutilMcp = {
   description: string;
   inputSchema: Record<string, unknown>;
   outputSchema: Record<string, unknown>;
-  annotations: { readOnlyHint: true; idempotentHint: true; openWorldHint: false };
+  annotations:
+    | { readOnlyHint: true; idempotentHint: true; openWorldHint: false }
+    /** Une opération qui dépose quelque chose : jamais annoncée en lecture seule, jamais destructive. */
+    | { readOnlyHint: false; destructiveHint: false; idempotentHint: false; openWorldHint: false };
 };
 
 /* `get_product` attend `id` OU `slug`, jamais les deux. L'OpenAPI le dit par un
@@ -96,8 +100,13 @@ export function nomsOutilsMcp(): string[] {
  * un assistant qui présente la clé d'API du vendeur. Même principe que les
  * outils publics : dérivés du registre (`SELLER_OPERATIONS`), jamais recopiés,
  * et exécutés par la route vendeur, qui reste SEULE à juger la clé, sa portée
- * et son quota. Les trois opérations d'aujourd'hui ne font que lire :
- * `create_product_link` rend l'adresse d'une fiche, il ne crée rien.
+ * et son quota. Trois opérations ne font que lire (`create_product_link` rend
+ * l'adresse d'une fiche, il ne crée rien).
+ *
+ * `prepare_product` (lot 3b) DÉPOSE une fiche préparée — pas un produit. Son
+ * annotation n'est donc pas « lecture seule » : elle vient du drapeau `ecrit`
+ * du registre vendeur, jamais d'une liste tenue ici. Un client MCP qui demande
+ * une confirmation avant toute écriture la demandera pour cet outil.
  *
  * Ils ne sont listés et appelables que si une clé accompagne la requête.
  */
@@ -111,7 +120,9 @@ export function outilsVendeurMcp(lang: Lang): OutilMcp[] {
       description: op.description,
       inputSchema: { ...sansCles(op.requestBody.content["application/json"].schema, "$schema"), type: "object" },
       outputSchema: { ...sansCles(op.responses["200"].content!["application/json"].schema, "$schema"), type: "object" },
-      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      annotations: operationEcrit(name)
+        ? { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
+        : { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
     };
   });
 }

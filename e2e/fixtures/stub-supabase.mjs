@@ -200,6 +200,7 @@ const PIXEL_PRODUCT = "99999999-9999-4999-8999-999999999992";
 const webhookPoints = [];
 const sansSecret = (p) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== "secret"));
 const apiKeys = [];
+const fichesPreparees = [];
 const server = createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   const send = (code, body) => {
@@ -1268,8 +1269,46 @@ const server = createServer((req, res) => {
         return single(hits);
       });
     }
-    const hash = eq(url, "key_hash");
-    return single((hash ? apiKeys.filter(k => k.key_hash === hash) : apiKeys).map(k => ({ ...k, seller: { suspended_at: null } })));
+    const hash = eq(url, "key_hash"), cleId = eq(url, "id"), cleVendeur = eq(url, "seller_id");
+    return single(apiKeys
+      .filter(k => (!hash || k.key_hash === hash) && (!cleId || k.id === cleId) && (!cleVendeur || k.seller_id === cleVendeur))
+      .map(k => ({ ...k, seller: { suspended_at: null } })));
+  }
+  // Fiches préparées par un assistant (0171) : table simulée en mémoire, avec
+  // le plafond ZB171 (20 en attente) et la reprise. Ni RLS ni trigger ne sont
+  // simulés : ils sont éprouvés par `supabase/tests/fiches_preparees.test.sql`.
+  if (url.pathname === "/rest/v1/zabelie_fiches_preparees") {
+    if (req.method === "POST") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        const row = JSON.parse(body);
+        if (fichesPreparees.filter(f => f.seller_id === row.seller_id && !f.reprise_at).length >= 20) {
+          return send(400, { code: "ZB171", message: "ZB171 : 20 fiches préparées en attente au plus par vendeur" });
+        }
+        const created = { id: `dddddddd-dddd-4ddd-8ddd-${String(fichesPreparees.length + 1).padStart(12, "0")}`,
+          created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 7 * 86400000).toISOString(), reprise_at: null, ...row };
+        fichesPreparees.push(created);
+        return single([created]);
+      });
+    }
+    // Chaque filtre présent dans l'adresse s'applique ; le vendeur est TOUJOURS exigé,
+    // comme dans les vraies requêtes (une requête sans lui ne rend rien ici).
+    const ficheId = eq(url, "id"), ficheVendeur = eq(url, "seller_id"), ficheCle = eq(url, "api_key_id");
+    const nonReprises = url.searchParams.get("reprise_at") === "is.null";
+    const trouvees = fichesPreparees.filter(f => f.seller_id === ficheVendeur && (!ficheId || f.id === ficheId)
+      && (!ficheCle || f.api_key_id === ficheCle) && (!nonReprises || !f.reprise_at) && Date.parse(f.expires_at) > Date.now());
+    if (req.method === "PATCH") {
+      let body = ""; req.on("data", c => body += c);
+      return req.on("end", () => {
+        trouvees.forEach(f => Object.assign(f, JSON.parse(body)));
+        return single(trouvees);
+      });
+    }
+    if (req.method === "DELETE") {
+      for (const f of trouvees) fichesPreparees.splice(fichesPreparees.indexOf(f), 1);
+      return single(trouvees);
+    }
+    return single([...trouvees].reverse());
   }
   if (url.pathname.startsWith("/rest/v1/profiles")) {
     if (BOUTIQUE_FIXTURE) {

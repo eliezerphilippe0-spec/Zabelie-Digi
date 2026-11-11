@@ -46,7 +46,8 @@ function erreur(lang: Lang, code: string, cle: CleMessage, field?: string, vars:
   res.headers.set("Cache-Control", "no-store");
   res.headers.set("Content-Language", lang);
   if (code === "unauthenticated") res.headers.set("WWW-Authenticate", 'Bearer realm="zabelie"');
-  if (code === "rate_limited") res.headers.set("Retry-After", "60");
+  // Le quota de dépôt de fiches préparées court sur une HEURE, pas sur une minute.
+  if (code === "rate_limited") res.headers.set("Retry-After", cle === "prepared_hourly" ? "3600" : "60");
   return res;
 }
 
@@ -93,8 +94,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ endpoin
 
   let resultat: unknown;
   try {
-    resultat = await (SELLER_HANDLERS[nom] as (i: unknown, c: { admin: typeof admin; sellerId: string }) => Promise<unknown>)(
-      entree.data, { admin, sellerId: resolue.sellerId },
+    resultat = await (SELLER_HANDLERS[nom] as (i: unknown, c: { admin: typeof admin; sellerId: string; keyId: string }) => Promise<unknown>)(
+      entree.data, { admin, sellerId: resolue.sellerId, keyId: resolue.keyId },
     );
   } catch (e) {
     if (e instanceof ErreurApi) return erreur(lang, e.code, estCleMessage(e.message) ? e.message : "internal", e.field);

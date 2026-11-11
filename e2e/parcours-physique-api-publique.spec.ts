@@ -32,7 +32,7 @@ test("seller API contract is published separately, every operation behind an API
   const r = await request.get(`${baseURL}/api/v1/seller/openapi.json`);
   expect(r.status()).toBe(200);
   const spec = await r.json();
-  expect(Object.keys(spec.paths).sort()).toEqual(["/api/v1/seller/create_product_link", "/api/v1/seller/seller_products", "/api/v1/seller/seller_sales"]);
+  expect(Object.keys(spec.paths).sort()).toEqual(["/api/v1/seller/create_product_link", "/api/v1/seller/prepare_product", "/api/v1/seller/seller_products", "/api/v1/seller/seller_sales"]);
   for (const op of Object.values(spec.paths) as { post: { security: unknown } }[]) expect(op.post.security).toEqual([{ cleApi: [] }]);
   const sansCle = await request.post(`${baseURL}/api/v1/seller/seller_products`, { data: {} });
   expect(sansCle.status()).toBe(401);

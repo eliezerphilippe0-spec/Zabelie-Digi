@@ -21,7 +21,8 @@ test("une clé se crée, ne s'affiche qu'une fois, puis se révoque", async ({ p
   await page.goto("/tableau-de-bord/api", { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-  await page.locator("main form").first().locator("input").fill("Mon site e2e");
+  // Le formulaire porte aussi une case (préparer des fiches, 0171) : on vise le champ de texte.
+  await page.locator("main form").first().getByRole("textbox").fill("Mon site e2e");
   await page.locator("main form").first().locator("button[type=submit]").click();
 
   const affichee = page.locator('[role="status"] code');
