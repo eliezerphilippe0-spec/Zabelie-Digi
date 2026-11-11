@@ -1,6 +1,7 @@
 import type { Lang } from "@/lib/i18n";
 import { openApiDocument, PUBLIC_OPERATIONS } from "@/lib/api/v1/openapi";
 import { apiDocsCopy } from "@/lib/api/v1/docs-copy";
+import { SELLER_OPERATIONS, sellerOpenApiDocument } from "@/lib/api/v1/seller-openapi";
 
 /**
  * SERVEUR MCP DE ZABELIE — lot 1, LECTURE SEULE (2026-11-11).
@@ -90,10 +91,39 @@ export function nomsOutilsMcp(): string[] {
   return PUBLIC_OPERATIONS.map(([name]) => name);
 }
 
+/**
+ * OUTILS VENDEUR (lot 3a, 2026-11-11) — les lectures de l'API vendeur v1, pour
+ * un assistant qui présente la clé d'API du vendeur. Même principe que les
+ * outils publics : dérivés du registre (`SELLER_OPERATIONS`), jamais recopiés,
+ * et exécutés par la route vendeur, qui reste SEULE à juger la clé, sa portée
+ * et son quota. Les trois opérations d'aujourd'hui ne font que lire :
+ * `create_product_link` rend l'adresse d'une fiche, il ne crée rien.
+ *
+ * Ils ne sont listés et appelables que si une clé accompagne la requête.
+ */
+export function outilsVendeurMcp(lang: Lang): OutilMcp[] {
+  const chemins = sellerOpenApiDocument(lang).paths as unknown as Record<string, { post: Operation }>;
+  return SELLER_OPERATIONS.map(([name]) => {
+    const op = chemins[`/api/v1/seller/${name}`].post;
+    return {
+      name,
+      title: op.summary,
+      description: op.description,
+      inputSchema: { ...sansCles(op.requestBody.content["application/json"].schema, "$schema"), type: "object" },
+      outputSchema: { ...sansCles(op.responses["200"].content!["application/json"].schema, "$schema"), type: "object" },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+    };
+  });
+}
+
+export function nomsOutilsVendeurMcp(): string[] {
+  return SELLER_OPERATIONS.map(([name]) => name);
+}
+
 /** Ce que le serveur dit de lui-même à l'assistant : les phrases déjà publiées sur `/developpeurs`. */
-export function instructionsMcp(lang: Lang): string {
+export function instructionsMcp(lang: Lang, vendeur = false): string {
   const c = apiDocsCopy(lang);
-  return [c.scope, c.texts, c.empty].join("\n");
+  return [c.scope, c.texts, c.empty, ...(vendeur ? [c.sellerIntro, c.sellerPrivacy] : [])].join("\n");
 }
 
 /** Résultat de `POST /api/v1/{nom}`, tel que la route le rend à ce module. */
@@ -116,7 +146,14 @@ export function erreurRpc(id: Id, code: number, message: string): ReponseRpc {
  * Traite UN message JSON-RPC. Rend la réponse, ou `null` pour une notification
  * (un message sans `id` n'attend jamais de réponse, même s'il est inconnu).
  */
-export async function traiterMessageMcp(message: unknown, ctx: { lang: Lang; appeler: AppelOutil }): Promise<ReponseRpc | null> {
+export type ContexteMcp = {
+  lang: Lang;
+  appeler: AppelOutil;
+  /** Présent seulement si une clé d'API vendeur bien formée accompagne la requête. */
+  appelerVendeur?: AppelOutil | null;
+};
+
+export async function traiterMessageMcp(message: unknown, ctx: ContexteMcp): Promise<ReponseRpc | null> {
   if (!estObjet(message) || message.jsonrpc !== "2.0" || typeof message.method !== "string") {
     return erreurRpc(estObjet(message) && estId(message.id) ? message.id : null, RPC.requete, "Invalid Request");
   }
@@ -137,23 +174,27 @@ export async function traiterMessageMcp(message: unknown, ctx: { lang: Lang; app
           protocolVersion,
           capabilities: { tools: { listChanged: false } },
           serverInfo: MCP_SERVEUR,
-          instructions: instructionsMcp(ctx.lang),
+          instructions: instructionsMcp(ctx.lang, Boolean(ctx.appelerVendeur)),
         },
       };
     }
     case "ping":
       return { jsonrpc: "2.0", id, result: {} };
     case "tools/list":
-      return { jsonrpc: "2.0", id, result: { tools: outilsMcp(ctx.lang) } };
+      return { jsonrpc: "2.0", id, result: { tools: [...outilsMcp(ctx.lang), ...(ctx.appelerVendeur ? outilsVendeurMcp(ctx.lang) : [])] } };
     case "tools/call": {
       const nom = params.name;
       // Le registre EST la liste blanche : un nom hors registre n'atteint jamais la v1.
-      if (typeof nom !== "string" || !nomsOutilsMcp().includes(nom)) return erreurRpc(id, RPC.params, "Unknown tool");
+      if (typeof nom !== "string") return erreurRpc(id, RPC.params, "Unknown tool");
+      // Un outil vendeur n'existe pas pour un appelant sans clé : même refus qu'un nom inconnu.
+      const executer = nomsOutilsMcp().includes(nom) ? ctx.appeler
+        : ctx.appelerVendeur && nomsOutilsVendeurMcp().includes(nom) ? ctx.appelerVendeur : null;
+      if (!executer) return erreurRpc(id, RPC.params, "Unknown tool");
       const args = params.arguments === undefined ? {} : params.arguments;
       if (!estObjet(args)) return erreurRpc(id, RPC.params, "Invalid params");
       let reponse: ReponseOutil;
       try {
-        reponse = await ctx.appeler(nom, args);
+        reponse = await executer(nom, args);
       } catch (e) {
         console.error(`[mcp] outil ${nom} : exception non prévue`, e);
         return erreurRpc(id, RPC.interne, "Internal error");
@@ -176,7 +217,7 @@ export async function traiterMessageMcp(message: unknown, ctx: { lang: Lang; app
  * Traite le corps d'une requête HTTP : un message, ou un lot borné.
  * `null` : rien à répondre (que des notifications) — la route rend alors 202.
  */
-export async function traiterCorpsMcp(corps: unknown, ctx: { lang: Lang; appeler: AppelOutil }): Promise<ReponseRpc | ReponseRpc[] | null> {
+export async function traiterCorpsMcp(corps: unknown, ctx: ContexteMcp): Promise<ReponseRpc | ReponseRpc[] | null> {
   if (!Array.isArray(corps)) return traiterMessageMcp(corps, ctx);
   if (corps.length === 0 || corps.length > MCP_LOT_MAX) return erreurRpc(null, RPC.requete, "Invalid Request");
   const reponses: ReponseRpc[] = [];

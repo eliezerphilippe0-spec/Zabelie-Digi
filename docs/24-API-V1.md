@@ -300,4 +300,15 @@ Tests : contrats OpenAPI, erreurs JSON, corps en flux, CORS navigateur depuis un
 
 Éprouvé avec le client officiel (`@modelcontextprotocol/sdk` 1.32.2, hors dépôt) contre un serveur local : négociation de version, liste des outils, appel, validation de la sortie contre son schéma, refus d'un outil hors registre. Gardes : `tests/mcp-serveur.test.ts` (12 mutations, 12 rouges), et l'entrée `mcp/route.ts` de `tests/api-auth-coverage.test.ts`.
 
-Ce que ce lot ne fait pas : aucune écriture, aucun outil vendeur, aucune connexion OAuth. Un `oneOf` à la racine du schéma de `get_product` est retiré de la description d'outil (plusieurs clients le refusent) ; la contrainte reste dite en clair et appliquée par la v1.
+### Outils vendeur, avec une clé d'API (lot 3a, 2026-11-11)
+
+Si la requête porte une clé d'API vendeur (`Authorization: Bearer zb_live_…` ou `X-API-Key`), les opérations de `SELLER_ENDPOINTS` s'ajoutent aux outils : `seller_products`, `seller_sales`, `create_product_link`. Les trois ne font que lire.
+
+| Règle | Tenue par |
+|---|---|
+| La clé n'est transmise qu'à `POST /api/v1/seller/{nom}`, qui juge seule sa validité, sa portée et son quota ; elle n'accompagne jamais un appel d'outil public | `app/api/mcp/route.ts`, `tests/mcp-serveur.test.ts` |
+| Sans clé, les outils vendeur ne sont ni listés ni appelables (même refus qu'un nom inconnu) | `lib/mcp/serveur.ts` |
+| Un en-tête de clé présent mais mal formé est refusé en 401 : pas de rétrogradation silencieuse vers l'anonyme | `app/api/mcp/route.ts` |
+| Une réponse obtenue avec une clé ne porte aucun en-tête CORS, et `Authorization` n'est pas un en-tête CORS admis : une clé ne vit pas dans un navigateur | idem |
+
+Ce que ce serveur ne fait toujours pas : aucune écriture, aucune connexion OAuth. La création d'un brouillon par clé attend trois décisions du porteur : une portée d'écriture (migration de la contrainte de `0121`), le choix de cette portée à la création d'une clé, et la valeur d'une acceptation de la politique vendeur donnée par un assistant. Un `oneOf` à la racine du schéma de `get_product` est retiré de la description d'outil (plusieurs clients le refusent) ; la contrainte reste dite en clair et appliquée par la v1.
