@@ -15,7 +15,8 @@ export type ImportFicheLabels = {
   errorNetwork: string;
 };
 
-export type FicheRecue = { titre: string; description: string; marque: string | null };
+/** `prixHtg` : seulement pour une fiche préparée par un assistant (lot 3b). Un import par lien ne reprend JAMAIS de prix. */
+export type FicheRecue = { titre: string; description: string; marque: string | null; prixHtg?: number | null };
 
 /**
  * IMPORTER UNE FICHE PAR LIEN (lot 2, 2026-11-11) — le vendeur colle le lien

@@ -311,4 +311,31 @@ Si la requête porte une clé d'API vendeur (`Authorization: Bearer zb_live_…`
 | Un en-tête de clé présent mais mal formé est refusé en 401 : pas de rétrogradation silencieuse vers l'anonyme | `app/api/mcp/route.ts` |
 | Une réponse obtenue avec une clé ne porte aucun en-tête CORS, et `Authorization` n'est pas un en-tête CORS admis : une clé ne vit pas dans un navigateur | idem |
 
-Ce que ce serveur ne fait toujours pas : aucune écriture, aucune connexion OAuth. La création d'un brouillon par clé attend trois décisions du porteur : une portée d'écriture (migration de la contrainte de `0121`), le choix de cette portée à la création d'une clé, et la valeur d'une acceptation de la politique vendeur donnée par un assistant. Un `oneOf` à la racine du schéma de `get_product` est retiré de la description d'outil (plusieurs clients le refusent) ; la contrainte reste dite en clair et appliquée par la v1.
+Ce que ce serveur ne fait toujours pas : aucune création de produit, aucune connexion OAuth. Un `oneOf` à la racine du schéma de `get_product` est retiré de la description d'outil (plusieurs clients le refusent) ; la contrainte reste dite en clair et appliquée par la v1.
+
+### Fiche préparée par un assistant (lot 3b, 2026-11-11, migration `0171`)
+
+`prepare_product` est la seule opération vendeur qui dépose quelque chose, et ce n'est **pas** un produit. Trois décisions étaient ouvertes ; elles sont prises dans le sens recommandé par l'agent, et la PR est marquée à arbitrer.
+
+| Décision | Ce qui est construit |
+|---|---|
+| Une portée d'écriture | `products:prepare`, ajoutée à la contrainte de `0121` par `0171` |
+| Le choix de la portée | Une case, décochée d'office, à la création d'une clé (`/tableau-de-bord/api`). Une clé existante ne la gagne jamais : `0121` fige les portées |
+| L'acceptation de la politique | **Un assistant ne la coche jamais.** Il dépose une fiche préparée ; le vendeur l'ouvre, la relit, accepte lui-même la politique et envoie par le formulaire habituel |
+
+Le parcours : l'assistant appelle `prepare_product` (type, titre, description, prix proposé) et reçoit une adresse. Le vendeur l'ouvre, connecté. Un bloc lui montre ce qui a été préparé ; « Reprendre dans le formulaire » remplit le titre, la description et le prix. Une saisie existante n'est remplacée qu'avec son accord, un prix déjà saisi sur un article physique n'est pas écrasé, et l'acceptation de la politique reste à cocher. La création, la revue humaine et la publication ne changent pas.
+
+| Règle | Tenue par |
+|---|---|
+| `prepare_product` n'écrit que dans `zabelie_fiches_preparees` : ni `products`, ni attestation de politique | `lib/api/v1/seller.ts`, `tests/fiche-preparee.test.ts` |
+| Entrée fermée : ni statut, ni rayon, ni `policyAccepted`, ni vendeur | schéma `PrepareProductInput` (strict) |
+| Le texte reçu est ramené à du texte (balises et caractères invisibles retirés) | `lib/fiche-preparee.ts` |
+| La portée n'est jamais donnée par défaut ; seul `prepare: true` la donne | `lib/api-keys.ts`, route `api/account/api-keys` |
+| L'outil MCP ne se dit pas en lecture seule ; l'annotation vient du drapeau `ecrit` du registre | `lib/mcp/serveur.ts` |
+| Le vendeur lit ses fiches seulement (RLS), n'écrit rien en direct ; `anon` ne lit rien | `0171`, `supabase/tests/fiches_preparees.test.sql` |
+| 20 fiches en attente au plus par vendeur, 7 jours, 30 dépôts par heure et par vendeur ; contenu figé après dépôt | trigger de `0171`, `prepareProduct` |
+| La reprise est cloisonnée au vendeur de la session | route `api/account/fiches-preparees/[id]/reprise` |
+
+Ce que ce lot ne fait pas : ni photo, ni fichier, ni rayon, ni stock ne passent par l'assistant ; aucune liste des fiches préparées dans le tableau de bord (le vendeur passe par l'adresse que l'assistant lui remet) ; un outil vendeur reste listé pour une clé qui n'a pas la portée, et l'appel est alors refusé avec un message lisible.
+
+⚠️ Ordre : appliquer `0171` **avant** de fusionner le code. Sans elle, créer une clé qui prépare rend 503 ; les clés ordinaires continuent de marcher.

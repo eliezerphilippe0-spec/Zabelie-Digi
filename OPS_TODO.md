@@ -1,5 +1,21 @@
 # OPS_TODO — Zabelie
 
+## Fiches préparées par un assistant (11 novembre 2026) — ce qui attend le porteur
+
+Lot 3b, demandé par le porteur le 2026-11-11 (« go lot 3b »). Détail : `docs/24`
+(section « Fiche préparée par un assistant »), migration
+`0171_zabelie_fiches_preparees.sql`. PR marquée À ARBITRER : les trois décisions
+ouvertes ont été prises dans le sens recommandé par l'agent.
+
+1. ⏳ **Arbitrer** : un assistant dépose une fiche préparée et ne coche jamais
+   la politique des produits interdits ; le vendeur relit, accepte et envoie.
+2. ⏳ **Appliquer `0171` AVANT de fusionner le code.** Sans elle, créer une clé
+   qui prépare rend 503 (la contrainte de `0121` refuse la portée) ; les clés
+   ordinaires et tout le reste continuent de marcher. ⚠️ `0170` est encore en
+   attente d'application ci-dessous : `0171` n'en dépend pas.
+3. ⏳ **Faire relire les textes kreyòl** (`prepared.*`, `apikeys.prepare*`, la
+   mention de l'outil dans le contrat de l'API vendeur) : ils sont de l'agent.
+
 ## Rapprochement des paiements par pg_cron (7 novembre 2026) — ce qui attend le porteur
 
 Décision du porteur le 2026-11-07 (« pg_cron Supabase »), après mesure : GitHub

@@ -5,6 +5,9 @@ import { ErreurApi } from "./handlers";
 import { MoneyHtgSchema, ProductKindSchema, UuidSchema } from "./schemas";
 import type { Scope } from "@/lib/api-keys";
 import { siteUrl } from "@/lib/site-url";
+import { rateLimit } from "@/lib/zabelie-rate-limit";
+import { isProductKind } from "@/lib/product-kind";
+import { cheminFichePreparee, descriptionPreparee, titrePrepare, FICHES_PREPAREES_PAR_HEURE } from "@/lib/fiche-preparee";
 
 /**
  * API VENDEUR v1 — « brancher son site sur Zabelie » (brique B, 2026-10-03).
@@ -29,6 +32,13 @@ import { siteUrl } from "@/lib/site-url";
  * ⚠️ L'ARGENT RESTE SUR ZABELIE. `create_product_link` rend l'adresse de la
  * fiche sur zabelie.com : l'acheteur y paie, l'escrow s'applique, le prix est
  * celui de la base. Le site externe ne voit jamais un paiement.
+ *
+ * ⚠️ UNE SEULE OPÉRATION DÉPOSE QUELQUE CHOSE : `prepare_product` (lot 3b,
+ * 0171), et elle ne crée PAS de produit. Elle dépose une fiche PRÉPARÉE, que
+ * le vendeur relit, dont il accepte lui-même la politique, et qu'il envoie par
+ * le formulaire habituel. Elle est marquée `ecrit: true` au registre : c'est
+ * ce drapeau, et lui seul, qui retire à l'outil MCP son étiquette « lecture
+ * seule ». Les autres opérations ne font que lire.
  */
 
 const Limite = z.number().int().min(1).max(50).default(20);
@@ -94,16 +104,43 @@ export const CreateProductLinkOutput = z.object({
   url: z.string().url(),
 });
 
-/** Le registre. Chaque endpoint déclare la PORTÉE qu'il exige. */
+export const PrepareProductInput = z.object({
+  kind: ProductKindSchema,
+  title: z.string().min(1).max(140),
+  description: z.string().max(5000).optional(),
+  /** Prix PROPOSÉ, gourdes entières. Le vendeur le confirme ou le change dans le formulaire. */
+  priceHtg: MoneyHtgSchema.max(2147483647).optional(),
+}).strict();
+
+export const PrepareProductOutput = z.object({
+  type: z.literal("prepared_product"),
+  id: UuidSchema,
+  kind: ProductKindSchema,
+  /** Toujours `false` : rien n'est créé ni publié tant que le vendeur n'a pas relu et envoyé. */
+  published: z.literal(false),
+  /** Adresse à remettre AU VENDEUR : il y relit la fiche, accepte la politique et l'envoie. */
+  url: z.string().url(),
+  expiresAt: z.string(),
+});
+
+/** Le registre. Chaque endpoint déclare la PORTÉE qu'il exige. `ecrit` : l'opération dépose quelque chose. */
 export const SELLER_ENDPOINTS = {
   seller_products: { input: SellerProductsInput, output: SellerProductsOutput, scope: "products:read" },
   seller_sales: { input: SellerSalesInput, output: SellerSalesOutput, scope: "sales:read" },
   create_product_link: { input: CreateProductLinkInput, output: CreateProductLinkOutput, scope: "links:write" },
-} as const satisfies Record<string, { input: z.ZodTypeAny; output: z.ZodTypeAny; scope: Scope }>;
+  prepare_product: { input: PrepareProductInput, output: PrepareProductOutput, scope: "products:prepare", ecrit: true },
+} as const satisfies Record<string, { input: z.ZodTypeAny; output: z.ZodTypeAny; scope: Scope; ecrit?: true }>;
+
+/** Vrai pour les seules opérations qui déposent quelque chose. Lu par le serveur MCP pour ses annotations. */
+export function operationEcrit(nom: string): boolean {
+  const contrat = (SELLER_ENDPOINTS as Record<string, { ecrit?: true }>)[nom];
+  return Object.prototype.hasOwnProperty.call(SELLER_ENDPOINTS, nom) && contrat?.ecrit === true;
+}
 
 export type SellerEndpointName = keyof typeof SELLER_ENDPOINTS;
 
-export type ContexteVendeur = { admin: SupabaseClient; sellerId: string };
+/** `keyId` : la clé qui appelle. Seul `prepare_product` s'en sert, pour dire au vendeur d'où vient la fiche. */
+export type ContexteVendeur = { admin: SupabaseClient; sellerId: string; keyId?: string };
 
 function cle(curseur: string | undefined) {
   if (curseur === undefined) return null;
@@ -181,8 +218,63 @@ export async function createProductLink(input: z.infer<typeof CreateProductLinkI
   return { type: "product_link" as const, productId: data.id, url: urlFiche(data.slug) };
 }
 
+/**
+ * Dépose une fiche PRÉPARÉE. N'écrit JAMAIS dans `products`.
+ *
+ * Ce que cette fonction ne fait pas, et pourquoi c'est le sujet :
+ *   * elle n'accepte pas la politique des produits interdits à la place du
+ *     vendeur — c'est une attestation opposable (0046), elle reste humaine ;
+ *   * elle ne choisit ni rayon, ni photo, ni fichier, ni stock ;
+ *   * le prix n'est qu'une PROPOSITION : celui de la fiche sera celui que le
+ *     vendeur envoie, revalidé par la route de création.
+ *
+ * Le texte reçu est ramené à du texte (`texteSeul`) : un assistant relaie
+ * souvent du HTML ou des caractères invisibles copiés d'ailleurs.
+ */
+export async function prepareProduct(input: z.infer<typeof PrepareProductInput>, ctx: ContexteVendeur) {
+  if (!isProductKind(input.kind)) throw new ErreurApi("invalid_input", "input_invalid", "kind");
+  const titre = titrePrepare(input.title);
+  if (!titre) throw new ErreurApi("invalid_input", "input_invalid", "title");
+  const description = descriptionPreparee(input.description);
+
+  // Cadence par VENDEUR, toutes clés confondues : cinq clés ne font pas cinq quotas.
+  if (!(await rateLimit(ctx.admin, `fiche_preparee:${ctx.sellerId}`, FICHES_PREPAREES_PAR_HEURE, 3600))) {
+    throw new ErreurApi("rate_limited", "rate_limited");
+  }
+
+  const { data, error } = await ctx.admin
+    .from("zabelie_fiches_preparees")
+    .insert({
+      seller_id: ctx.sellerId,
+      api_key_id: ctx.keyId ?? null,
+      kind: input.kind,
+      title: titre,
+      description,
+      price_htg: input.priceHtg ?? null,
+    })
+    .select("id, kind, expires_at")
+    .single();
+  // ZB171 : vingt fiches attendent déjà le vendeur. Ce n'est pas une panne, c'est un état.
+  if (error?.code === "ZB171") throw new ErreurApi("unsupported_state", "prepared_limit");
+  if (error || !data) {
+    console.error("[api/v1/seller/prepare_product] dépôt refusé", error?.code ?? "empty_response");
+    throw new ErreurApi("internal", "unavailable");
+  }
+  const chemin = cheminFichePreparee(input.kind, data.id);
+  if (!chemin) throw new ErreurApi("internal", "internal");
+  return {
+    type: "prepared_product" as const,
+    id: data.id,
+    kind: data.kind,
+    published: false as const,
+    url: `${siteUrl()}${chemin}`,
+    expiresAt: data.expires_at,
+  };
+}
+
 export const SELLER_HANDLERS: { [K in SellerEndpointName]: (i: never, c: ContexteVendeur) => Promise<unknown> } = {
   seller_products: sellerProducts,
   seller_sales: sellerSales,
   create_product_link: createProductLink,
+  prepare_product: prepareProduct,
 };

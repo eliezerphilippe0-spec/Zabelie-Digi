@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  CleIndisponible, MAX_CLES_ACTIVES, SCOPES, SCOPES_PAR_DEFAUT, empreinteCle, formatCleValide, genererCle, lireCle, nomCleValide, resoudreCle,
+  CleIndisponible, MAX_CLES_ACTIVES, SCOPES, SCOPES_PAR_DEFAUT, SCOPE_PREPARER, empreinteCle, formatCleValide, genererCle, lireCle, nomCleValide, resoudreCle, scopesALaCreation,
 } from "../lib/api-keys";
 
 const SQL = readFileSync("supabase/migrations/0121_zabelie_api_keys.sql", "utf8");
+const SQL_0171 = readFileSync("supabase/migrations/0171_zabelie_fiches_preparees.sql", "utf8");
 
 test("A1 — une clé générée a le bon format, et la base n'en reçoit que l'empreinte", () => {
   const { cle, prefixe, empreinte } = genererCle();
@@ -28,8 +29,16 @@ test("A2 — la clé se lit en Bearer ou X-API-Key ; tout le reste est rejeté a
 });
 
 test("A3 — portées et plafond : le code et la migration disent la même chose", () => {
-  const sqlScopes = SQL.match(/scopes <@ array\[([^\]]+)\]/)![1].match(/'([^']+)'/g)!.map((s) => s.slice(1, -1));
-  assert.deepEqual(sqlScopes, [...SCOPES]);
+  // La liste fermée des portées vit dans la DERNIÈRE migration qui pose la contrainte : 0171 a ajouté `products:prepare`.
+  const lire = (sql: string) => sql.match(/scopes <@ array\[([^\]]+)\]/)![1].match(/'([^']+)'/g)!.map((s) => s.slice(1, -1));
+  assert.deepEqual(lire(SQL_0171), [...SCOPES]);
+  assert.match(SQL_0171, new RegExp(`cardinality\\(scopes\\) between 1 and ${SCOPES.length}`));
+  // 0121 reste la base : 0171 ne fait qu'AJOUTER, dans le même ordre.
+  assert.deepEqual(lire(SQL), [...SCOPES].slice(0, lire(SQL).length));
+  // La portée de dépôt n'est JAMAIS donnée par défaut, ni en base ni dans le code.
+  assert.ok(!(SCOPES_PAR_DEFAUT as readonly string[]).includes(SCOPE_PREPARER));
+  assert.deepEqual(scopesALaCreation(true), [...SCOPES_PAR_DEFAUT, SCOPE_PREPARER]);
+  for (const autre of [false, undefined, null, "true", 1, {}]) assert.deepEqual(scopesALaCreation(autre), [...SCOPES_PAR_DEFAUT]);
   const defaut = SQL.match(/default array\[([^\]]+)\]/)![1].match(/'([^']+)'/g)!.map((s) => s.slice(1, -1));
   assert.deepEqual(defaut, [...SCOPES_PAR_DEFAUT]);
   assert.match(SQL, new RegExp(`if v_actives >= ${MAX_CLES_ACTIVES} then`));

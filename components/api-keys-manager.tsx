@@ -6,9 +6,11 @@ import { MessageErreur } from "@/components/message-erreur";
 
 export type CleAffichee = {
   id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null;
+  /** La clé porte `products:prepare` (0171) : elle peut déposer des fiches préparées. */
+  prepare: boolean;
 };
 type Labels = Record<
-  "name" | "create" | "creating" | "once" | "copy" | "copied" | "done" | "empty" | "created" | "lastUsed" | "never" | "revoked" | "revoke" | "confirmRevoke" | "limit" | "error",
+  "name" | "create" | "creating" | "once" | "copy" | "copied" | "done" | "empty" | "created" | "lastUsed" | "never" | "revoked" | "revoke" | "confirmRevoke" | "limit" | "error" | "prepare" | "prepareHint" | "prepareBadge",
   string
 >;
 
@@ -16,6 +18,8 @@ type Labels = Record<
 export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffichee[]; max: number; locale: string; labels: Labels }) {
   const router = useRouter();
   const [nom, setNom] = useState("");
+  // Décochée par défaut : préparer des fiches est un choix, jamais une portée donnée d'office.
+  const [preparer, setPreparer] = useState(false);
   const [busy, setBusy] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [nouvelle, setNouvelle] = useState<string | null>(null);
@@ -29,11 +33,11 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
     setBusy(true); setErreur(null);
     try {
       const res = await fetch("/api/account/api-keys", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nom }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nom, prepare: preparer }),
       });
       const corps = await res.json().catch(() => ({}));
       if (!res.ok || typeof corps.key !== "string") { setErreur(corps.error ?? labels.error); return; }
-      setNouvelle(corps.key); setNom(""); setCopie(false);
+      setNouvelle(corps.key); setNom(""); setPreparer(false); setCopie(false);
       router.refresh();
     } catch { setErreur(labels.error); }
     finally { setBusy(false); }
@@ -75,6 +79,14 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
           <button type="submit" disabled={busy || !nom.trim()} className="bouton bouton-primaire bouton-compact">
             {busy ? labels.creating : labels.create}
           </button>
+          <div className="w-full">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+              <input type="checkbox" className="size-5 shrink-0" checked={preparer} disabled={busy}
+                aria-describedby="cle-preparer-aide" onChange={(e) => setPreparer(e.target.checked)} />
+              <span>{labels.prepare}</span>
+            </label>
+            <p id="cle-preparer-aide" className="text-xs leading-relaxed text-mist">{labels.prepareHint}</p>
+          </div>
         </form>
       ) : (
         <p className="text-sm text-mist">{labels.limit}</p>
@@ -89,6 +101,7 @@ export function ApiKeysManager({ cles, max, locale, labels }: { cles: CleAffiche
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <p className="font-semibold">{c.name}</p>
+                {c.prepare && <p className="mt-1 text-xs text-mist">{labels.prepareBadge}</p>}
                 <p className="mt-1 text-xs text-mist"><code>{c.prefix}…</code> · {labels.created} {date(c.createdAt)} · {labels.lastUsed} {c.lastUsedAt ? date(c.lastUsedAt) : labels.never}</p>
               </div>
               {c.revokedAt ? (

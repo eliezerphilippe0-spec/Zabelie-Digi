@@ -5,6 +5,8 @@ import type { Lang } from "@/lib/i18n";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImportFiche, type FicheRecue, type ImportFicheLabels } from "@/components/import-fiche";
+import { FichePreparee, type FichePrepareeLabels } from "@/components/fiche-preparee";
+import type { FichePrepareeLue } from "@/lib/fiche-preparee";
 import { useRouter } from "next/navigation";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import {
@@ -58,6 +60,7 @@ export function PhysicalProductForm({
   actorId,
   listingLabels,
   importLabels,
+  preparee,
   tier = "standard",
   rateBpsEnVigueur,
   pricing,
@@ -89,6 +92,8 @@ export function PhysicalProductForm({
   };
   /** Import par lien (lot 2) : absent, le bloc ne s'affiche pas. */
   importLabels?: ImportFicheLabels & { replace: string };
+  /** Fiche préparée par un assistant (lot 3b), lue par le serveur pour CE vendeur. */
+  preparee?: { fiche: FichePrepareeLue; prixAffiche: string | null; labels: FichePrepareeLabels };
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
@@ -416,6 +421,17 @@ export function PhysicalProductForm({
     );
   }
 
+  /* FICHE PRÉPARÉE PAR UN ASSISTANT (lot 3b) : le texte passe par
+   * `appliquerImport` (accord avant d'écraser, politique qui retombe). Le prix
+   * PROPOSÉ ne s'ajoute qu'ici, et il n'écrase pas un prix déjà saisi : le
+   * vendeur l'a tapé lui-même. Un article physique ne se vend pas à 0 gourde. */
+  function reprendrePreparee(fiche: FicheRecue): boolean {
+    if (!appliquerImport(fiche)) return false;
+    const prix = fiche.prixHtg;
+    if (typeof prix === "number" && Number.isSafeInteger(prix) && prix >= 1 && !price) setPrice(String(prix));
+    return true;
+  }
+
   /* IMPORT PAR LIEN (lot 2) : titre et description seulement ; la marque est
    * proposée si le champ est vide. Ni photo, ni prix, ni quantité : ils se
    * saisissent ici. Une saisie existante n'est remplacée qu'avec l'accord du
@@ -434,6 +450,7 @@ export function PhysicalProductForm({
     <form onSubmit={submit} className="space-y-5">
       {storageWarning}
       <fieldset disabled={busy || !reviewReady || review} className="min-w-0 space-y-5">
+      {importLabels && preparee && <FichePreparee fiche={preparee.fiche} labels={preparee.labels} prixAffiche={preparee.prixAffiche} disabled={busy} onReprendre={reprendrePreparee} />}
       {importLabels && <ImportFiche labels={importLabels} disabled={busy} onImporte={appliquerImport} />}
       {/* ── 1. PHOTO ─────────────────────────────────────────────────── */}
       <div className="block">

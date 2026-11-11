@@ -96,6 +96,12 @@ export const MESSAGES = {
     en: "The product is not published.",
     es: "El producto no está publicado.",
   },
+  prepared_limit: {
+    fr: "Vingt fiches préparées attendent déjà le vendeur. Il doit en reprendre une sur Zabelie, ou attendre qu'elles expirent (7 jours).",
+    ht: "Gen ven fich ki deja ap tann vandè a. Li dwe reprann youn sou Zabelie, oswa tann yo ekspire (7 jou).",
+    en: "Twenty prepared listings are already waiting for the seller. They must pick one up on Zabelie, or wait for them to expire (7 days).",
+    es: "Veinte fichas preparadas ya esperan al vendedor. Debe retomar una en Zabelie, o esperar a que caduquen (7 días).",
+  },
   product_out_of_stock: {
     fr: "Le produit est en rupture de stock.",
     ht: "Pwodwi a fini nan stòk.",

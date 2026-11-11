@@ -16,6 +16,12 @@ import { aiProviderDisponible } from "@/lib/ai-description";
 import { specsEtenduesDisponibles } from "@/lib/products-physical";
 import { tarifSurplusAffiche } from "@/lib/ai-billing";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { redirect } from "next/navigation";
+import { MessageErreur } from "@/components/message-erreur";
+import { formatHTG } from "@/lib/sample-data";
+import { KIND_PHYSICAL } from "@/lib/product-kind";
+import { PARAM_PREPAREE, cheminFichePreparee, lireIdPreparee } from "@/lib/fiche-preparee";
+import { lireFichePreparee } from "@/lib/fiche-preparee-serveur";
 
 export const dynamic = "force-dynamic";
 // Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
@@ -28,8 +34,13 @@ export async function generateMetadata() {
  * C'est aussi l'outil d'onboarding : les premières fiches vendeurs seront
  * saisies ici, à la main, par le porteur lui-même.
  */
-export default async function VendrePhysiquePage() {
+export default async function VendrePhysiquePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const lang = await getLang();
+  const idPreparee = lireIdPreparee(((await searchParams) ?? {})[PARAM_PREPAREE]);
   if (!isSupabaseConfigured()) {
     return (
       <div className="bg-grain min-h-dvh">
@@ -48,6 +59,14 @@ export default async function VendrePhysiquePage() {
   const pricingClient = await createClient();
   const pricing = await readSellerPricing(pricingClient);
   const launch = user && pricing ? await readSellerLaunch(pricingClient, user.id, pricing, user.createdAt) : null;
+  /* FICHE PRÉPARÉE PAR UN ASSISTANT (lot 3b, 0171) — lue avec le client de
+   * SESSION (RLS : les siennes seulement). Une fiche d'un autre type est
+   * renvoyée vers son formulaire. */
+  const prepareeLue = user && idPreparee ? await lireFichePreparee(pricingClient, user.id, idPreparee) : null;
+  if (prepareeLue && cheminFichePreparee(KIND_PHYSICAL, prepareeLue.fiche.id) !== prepareeLue.chemin) redirect(prepareeLue.chemin);
+  const prepareeAbsente = Boolean(user) && idPreparee !== null && !prepareeLue;
+  // Sans session, le lien de connexion ramène à CETTE fiche préparée.
+  const retour = idPreparee ? (cheminFichePreparee(KIND_PHYSICAL, idPreparee) ?? "/vendre/physique") : "/vendre/physique";
   // Le taux RÉELLEMENT configuré (0054/0066) : l'estimation suit un UPDATE
   // d'exploitation sans redéploiement. Repli = constante compilée.
   const { taux } = await lireTauxCommission(await createClient(), (c) =>
@@ -121,7 +140,7 @@ export default async function VendrePhysiquePage() {
               {t(lang, "sell.login.subtitle")}
             </p>
             <Link
-              href="/connexion?next=/vendre/physique"
+              href={`/connexion?next=${encodeURIComponent(retour)}`}
               className="bouton bouton-primaire bouton-compact mt-4"
             >
               {t(lang, "auth.signin.cta")}
@@ -129,9 +148,19 @@ export default async function VendrePhysiquePage() {
           </div>
         ) : (
           <div className="mt-8">
+            {prepareeAbsente && <MessageErreur className="mb-4">{t(lang, "prepared.missing")}</MessageErreur>}
             <PhysicalProductForm
               key={user.id}
               actorId={user.id}
+              preparee={prepareeLue ? {
+                fiche: prepareeLue.fiche,
+                prixAffiche: prepareeLue.fiche.prixHtg !== null ? formatHTG(prepareeLue.fiche.prixHtg) : null,
+                labels: {
+                title: t(lang, "prepared.title"), hint: t(lang, "prepared.hint"), hintNoKey: t(lang, "prepared.hintNoKey"),
+                price: t(lang, "prepared.price"), cta: t(lang, "prepared.cta"), done: t(lang, "prepared.done"),
+                already: t(lang, "prepared.already"),
+              },
+              } : undefined}
               importLabels={{
                 title: t(lang, "import.title"), hint: t(lang, "import.hint"), rights: t(lang, "import.rights"),
                 url: t(lang, "import.url"), cta: t(lang, "import.cta"), loading: t(lang, "import.loading"),

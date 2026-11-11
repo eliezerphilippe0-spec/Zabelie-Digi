@@ -93,8 +93,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ endpoin
 
   let resultat: unknown;
   try {
-    resultat = await (SELLER_HANDLERS[nom] as (i: unknown, c: { admin: typeof admin; sellerId: string }) => Promise<unknown>)(
-      entree.data, { admin, sellerId: resolue.sellerId },
+    resultat = await (SELLER_HANDLERS[nom] as (i: unknown, c: { admin: typeof admin; sellerId: string; keyId: string }) => Promise<unknown>)(
+      entree.data, { admin, sellerId: resolue.sellerId, keyId: resolue.keyId },
     );
   } catch (e) {
     if (e instanceof ErreurApi) return erreur(lang, e.code, estCleMessage(e.message) ? e.message : "internal", e.field);

@@ -111,7 +111,7 @@ test("B7 — la route : clé avant tout, portée vérifiée, cadence par clé, a
   const portee = i(/if \(!resolue\.scopes\.includes\(scope\)\) return erreur\(lang, "forbidden"/);
   const cadence = i(/rateLimit\(admin, `apiv1:seller:\$\{resolue\.keyId\}`/);
   const corps = i(/brut = await readApiBody\(req\)/);
-  const handler = i(/\{ admin, sellerId: resolue\.sellerId \}/);
+  const handler = i(/\{ admin, sellerId: resolue\.sellerId, keyId: resolue\.keyId \}/);
   assert.ok(cle < resolution && resolution < portee && portee < cadence && cadence < corps && corps < handler, "ordre des gardes rompu");
   // Aucun CORS sur le POST (celui qui porte la clé) ; le contrat OpenAPI, public, en a.
   const post = src.slice(src.indexOf("export async function POST"), src.indexOf("export async function GET"));

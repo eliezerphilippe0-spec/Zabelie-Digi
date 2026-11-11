@@ -22,6 +22,8 @@ import { cleanPublishCategories, initialPublishDraft, publishDraftKey, publishRe
 import { publishDraftCopy } from "@/lib/publish-draft-copy";
 import { MessageErreur } from "@/components/message-erreur";
 import { ImportFiche, type FicheRecue, type ImportFicheLabels } from "@/components/import-fiche";
+import { FichePreparee, type FichePrepareeLabels } from "@/components/fiche-preparee";
+import type { FichePrepareeLue } from "@/lib/fiche-preparee";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -61,6 +63,7 @@ export function PublishForm({
   serviceStarters = [],
   starterLabels,
   importLabels,
+  preparee,
   kind,
 }: {
   actorId: string;
@@ -76,6 +79,8 @@ export function PublishForm({
   starterLabels?: { heading: string; hint: string; confirmReplace: string };
   /** Import par lien (lot 2) : absent, le bloc ne s'affiche pas. */
   importLabels?: ImportFicheLabels & { replace: string };
+  /** Fiche préparée par un assistant (lot 3b), lue par le serveur pour CE vendeur. */
+  preparee?: { fiche: FichePrepareeLue; prixAffiche: string | null; labels: FichePrepareeLabels };
   /**
    * Les rayons OUVERTS, lus en base côté serveur (lib/product-categories).
    * En prop et non importés : ce composant est client, et la taxonomie vit
@@ -147,6 +152,18 @@ export function PublishForm({
     suggestionRevision.current += 1;
     setRevision(suggestionRevision.current);
     setForm(serviceStarterDraft(starter));
+  }
+
+  /* FICHE PRÉPARÉE PAR UN ASSISTANT (lot 3b) : le texte passe par
+   * `appliquerImport`, donc par les mêmes règles (accord avant d'écraser,
+   * politique qui retombe, bornes). Le prix PROPOSÉ ne s'ajoute qu'ici : il
+   * arrive dans le champ, où le vendeur le voit et le change. Un import par
+   * lien, lui, ne porte jamais de prix. */
+  function reprendrePreparee(fiche: FicheRecue): boolean {
+    if (!appliquerImport(fiche)) return false;
+    const prix = fiche.prixHtg;
+    if (typeof prix === "number" && Number.isSafeInteger(prix) && prix >= 0) setForm((f) => ({ ...f, priceHTG: String(prix) }));
+    return true;
   }
 
   /* IMPORT PAR LIEN (lot 2) : seuls le titre et la description sont repris,
@@ -283,6 +300,7 @@ export function PublishForm({
           </div>
         </fieldset>
       )}
+      {importLabels && preparee && <FichePreparee fiche={preparee.fiche} labels={preparee.labels} prixAffiche={preparee.prixAffiche} disabled={locked} onReprendre={reprendrePreparee} />}
       {importLabels && <ImportFiche labels={importLabels} disabled={locked} onImporte={appliquerImport} />}
       <label className="block space-y-2 text-sm"><span>{labels.titlePh}</span><input
         className={input}

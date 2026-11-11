@@ -55,6 +55,9 @@ import { FlashManager } from "@/components/flash-manager";
 import { lireOffresVivantes } from "@/lib/flash-vendeur";
 import { creationActive, lireEnvCreation } from "@/lib/digital-authoring/flags";
 import { MessageErreur } from "@/components/message-erreur";
+import { redirect } from "next/navigation";
+import { PARAM_PREPAREE, cheminFichePreparee, lireIdPreparee } from "@/lib/fiche-preparee";
+import { lireFichePreparee } from "@/lib/fiche-preparee-serveur";
 
 export const dynamic = "force-dynamic";
 // Titre, description, canonique, hreflang et partage dans la langue servie (lib/meta-page.ts).
@@ -278,6 +281,15 @@ export default async function VendrePage({
   };
   const mine = (mineRaw ?? []) as unknown as MineRow[];
   await requireLegalAccountPage(user.id, "/vendre");
+
+  /* FICHE PRÉPARÉE PAR UN ASSISTANT (lot 3b, 0171). L'adresse remise au vendeur
+   * porte `?preparee=<id>`. La fiche est lue avec le client de SESSION : la RLS
+   * ne rend que les siennes. Un lien ouvert sur le mauvais formulaire (ou sans
+   * formulaire) est renvoyé vers celui qui correspond au type de la fiche. */
+  const idPreparee = lireIdPreparee(parametres[PARAM_PREPAREE]);
+  const prepareeLue = idPreparee ? await lireFichePreparee(supabase, user.id, idPreparee) : null;
+  if (prepareeLue && (!nouveau || cheminFichePreparee(nouveau, prepareeLue.fiche.id) !== prepareeLue.chemin)) redirect(prepareeLue.chemin);
+  const prepareeAbsente = idPreparee !== null && !prepareeLue;
   const related = mine.length ? await sellerOffers(supabase, user.id) : null;
   const offerText = offerCopy(lang);
   const commitments = await getProductCommitments(mine.filter(p => p.kind === COMMITMENT_SERVICE || p.kind === COMMITMENT_PHYSICAL).map(p => p.id));
@@ -428,10 +440,20 @@ export default async function VendrePage({
           <h3 className="text-base font-semibold">{t(lang, nouveau === COMMITMENT_SERVICE ? "sell.form.service" : "sell.form.file")}</h3>
           <a href="/vendre#nouveau" className="inline-flex min-h-11 items-center text-sm underline">{t(lang, "sell.form.change")}</a>
         </div>
+        {prepareeAbsente && <MessageErreur className="mb-4">{t(lang, "prepared.missing")}</MessageErreur>}
         <PublishForm
           key={`${user.id}:${nouveau}`}
           actorId={user.id}
           kind={nouveau}
+          preparee={prepareeLue ? {
+            fiche: prepareeLue.fiche,
+            prixAffiche: prepareeLue.fiche.prixHtg !== null ? formatHTG(prepareeLue.fiche.prixHtg) : null,
+            labels: {
+            title: t(lang, "prepared.title"), hint: t(lang, "prepared.hint"), hintNoKey: t(lang, "prepared.hintNoKey"),
+            price: t(lang, "prepared.price"), cta: t(lang, "prepared.cta"), done: t(lang, "prepared.done"),
+            already: t(lang, "prepared.already"),
+          },
+          } : undefined}
           tier={tier}
           rateBpsEnVigueur={taux[tier]}
           pricing={pricing}

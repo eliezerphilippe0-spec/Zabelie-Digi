@@ -24,6 +24,22 @@ async function session(page: Page) {
   ]);
 }
 
+/**
+ * Répond à la PROCHAINE boîte de confirmation, et rend son message une fois la
+ * réponse donnée. Le gestionnaire est posé AVANT le clic et tourne tout seul :
+ * la boîte peut s'ouvrir pendant que le clic est encore en cours (Playwright
+ * attend alors qu'elle soit fermée), ou bien après, quand la réponse de
+ * l'import arrive. Attendre la promesse rend les contrôles qui suivent réels.
+ */
+function repondre(page: Page, accepter: boolean): Promise<string> {
+  return new Promise((resolve) => {
+    page.once("dialog", (d) => {
+      const message = d.message();
+      void (accepter ? d.accept() : d.dismiss()).then(() => resolve(message));
+    });
+  });
+}
+
 async function simuler(page: Page, reponse: { status: number; corps: unknown }) {
   const recus: unknown[] = [];
   await page.route("**/api/products/import", async (route) => {
@@ -63,23 +79,33 @@ test("une saisie existante n'est remplacée qu'avec l'accord du vendeur ; un ref
   const titre = page.getByRole("textbox", { name: "Titre", exact: true });
   await titre.fill("Mon titre à moi");
 
+  /* La boîte de confirmation n'arrive qu'APRÈS la réponse de l'import : on
+   * attend qu'elle ait été traitée (`repondre`). Avec un simple `page.once`
+   * non attendu, les deux contrôles du refus passaient à vide pendant que la
+   * requête était encore en vol, et la boîte surgissait à l'étape suivante
+   * (course vue le 2026-11-11 sur une machine chargée : « Cannot accept dialog
+   * which is already handled »). */
+  const importer = bloc.getByRole("button", { name: t("fr", "import.cta"), exact: true });
+
   // Refus de remplacer : le titre saisi reste, et rien n'annonce un import.
-  page.once("dialog", (d) => { expect(d.message()).toBe(t("fr", "import.replace")); void d.dismiss(); });
   await bloc.getByRole("textbox", { name: t("fr", "import.url"), exact: true }).fill("https://boutique.ht/sak-kwi");
-  await bloc.getByRole("button", { name: t("fr", "import.cta"), exact: true }).click();
+  const refus = repondre(page, false);
+  await importer.click();
+  expect(await refus).toBe(t("fr", "import.replace"));
+  await expect(importer).toBeEnabled();
   await expect(titre).toHaveValue("Mon titre à moi");
   await expect(bloc.getByRole("status")).toHaveCount(0);
 
   // Accord : le texte importé prend la place.
-  page.once("dialog", (d) => void d.accept());
-  await bloc.getByRole("button", { name: t("fr", "import.cta"), exact: true }).click();
+  const accord = repondre(page, true);
+  await importer.click();
+  await accord;
   await expect(titre).toHaveValue(FICHE.titre);
 
   // Refus du serveur : son message, traduit, s'affiche ; le formulaire ne change pas.
   await page.unroute("**/api/products/import");
   await simuler(page, { status: 502, corps: { error: t("fr", "api.import.unreachable") } });
-  page.once("dialog", (d) => void d.accept());
-  await bloc.getByRole("button", { name: t("fr", "import.cta"), exact: true }).click();
+  await importer.click();
   await expect(bloc.getByRole("alert")).toHaveText(t("fr", "api.import.unreachable"));
   await expect(titre).toHaveValue(FICHE.titre);
 });
