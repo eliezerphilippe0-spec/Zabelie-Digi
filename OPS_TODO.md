@@ -11,8 +11,9 @@ ouvertes ont été prises dans le sens recommandé par l'agent.
    la politique des produits interdits ; le vendeur relit, accepte et envoie.
 2. ⏳ **Appliquer `0171` AVANT de fusionner le code.** Sans elle, créer une clé
    qui prépare rend 503 (la contrainte de `0121` refuse la portée) ; les clés
-   ordinaires et tout le reste continuent de marcher. ⚠️ `0170` est encore en
-   attente d'application ci-dessous : `0171` n'en dépend pas.
+   ordinaires et tout le reste continuent de marcher. `0171` ne dépend pas de
+   `0170` (que le registre de production porte comme appliquée le 2026-11-08,
+   lu le 2026-11-11 : la ligne « Appliquer `0170` » ci-dessous est périmée).
 3. ⏳ **Faire relire les textes kreyòl** (`prepared.*`, `apikeys.prepare*`, la
    mention de l'outil dans le contrat de l'API vendeur) : ils sont de l'agent.
 
