@@ -57,6 +57,9 @@ export default async function DevelopersPage() {
     <ul className="mt-4 space-y-2">{PUBLIC_OPERATIONS.map(([name]) => <li key={name}><code className="break-all text-sm">POST /api/v1/{name}</code></li>)}</ul>
     <h2 className="mt-10">{c.limits}</h2>
     {[c.details,c.quota,c.access,c.empty,c.texts,c.delivery].map(text => <p key={text} className="mt-4 text-sm leading-relaxed text-mist">{text}</p>)}
+    <h2 id="mcp" className="mt-14 scroll-mt-32">{c.mcpTitle}</h2>
+    <p className="mt-3 text-sm leading-relaxed text-mist">{c.mcp}</p>
+    <p className="mt-3"><code className="break-all text-sm">POST https://zabelie.com/api/mcp</code></p>
     <h2 id="api-vendeur" className="mt-14 scroll-mt-32">{c.sellerTitle}</h2>
     <p className="mt-3">{c.sellerIntro}</p>
     <p className="mt-4 text-sm leading-relaxed text-mist">{c.sellerAuth}</p>
