@@ -4,6 +4,7 @@ import type { SellerPricing } from "@/lib/seller-pricing";
 import type { Lang } from "@/lib/i18n";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ImportFiche, type FicheRecue, type ImportFicheLabels } from "@/components/import-fiche";
 import { useRouter } from "next/navigation";
 import { NetEstimate, type NetEstimateLabels } from "@/components/net-estimate";
 import {
@@ -56,6 +57,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 export function PhysicalProductForm({
   actorId,
   listingLabels,
+  importLabels,
   tier = "standard",
   rateBpsEnVigueur,
   pricing,
@@ -85,6 +87,8 @@ export function PhysicalProductForm({
     error: string;
     network: string;
   };
+  /** Import par lien (lot 2) : absent, le bloc ne s'affiche pas. */
+  importLabels?: ImportFicheLabels & { replace: string };
   /** Palier réel du vendeur, lu en base — jamais deviné côté client. */
   tier?: CreatorTier;
   /** Taux configuré en base (0066) ; omis → repli sur la constante. */
@@ -412,10 +416,25 @@ export function PhysicalProductForm({
     );
   }
 
+  /* IMPORT PAR LIEN (lot 2) : titre et description seulement ; la marque est
+   * proposée si le champ est vide. Ni photo, ni prix, ni quantité : ils se
+   * saisissent ici. Une saisie existante n'est remplacée qu'avec l'accord du
+   * vendeur, et l'acceptation de la politique retombe. */
+  function appliquerImport(fiche: FicheRecue): boolean {
+    if ((title || description) && !window.confirm(importLabels!.replace)) return false;
+    setError(null);
+    setPolicyOk(false);
+    setTitle(fiche.titre.slice(0, 140));
+    setDescription(fiche.description.slice(0, 5000));
+    if (fiche.marque && !marque) setMarque(fiche.marque.slice(0, 60));
+    return true;
+  }
+
   return (
     <form onSubmit={submit} className="space-y-5">
       {storageWarning}
       <fieldset disabled={busy || !reviewReady || review} className="min-w-0 space-y-5">
+      {importLabels && <ImportFiche labels={importLabels} disabled={busy} onImporte={appliquerImport} />}
       {/* ── 1. PHOTO ─────────────────────────────────────────────────── */}
       <div className="block">
         <span className="text-sm font-semibold">Photo du produit</span>

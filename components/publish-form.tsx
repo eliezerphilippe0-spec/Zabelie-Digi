@@ -21,6 +21,7 @@ import { cleanPublishCategories, initialPublishDraft, publishDraftKey, publishRe
   PUBLISH_DRAFT_LIMITS, type PublishDraft, type PublishFields } from "@/lib/publish-draft";
 import { publishDraftCopy } from "@/lib/publish-draft-copy";
 import { MessageErreur } from "@/components/message-erreur";
+import { ImportFiche, type FicheRecue, type ImportFicheLabels } from "@/components/import-fiche";
 
 export type PublishFormLabels = {
   titlePh: string;
@@ -59,6 +60,7 @@ export function PublishForm({
   aiActif = false,
   serviceStarters = [],
   starterLabels,
+  importLabels,
   kind,
 }: {
   actorId: string;
@@ -72,6 +74,8 @@ export function PublishForm({
   kind: DigitalKind;
   serviceStarters?: ServiceStarter[];
   starterLabels?: { heading: string; hint: string; confirmReplace: string };
+  /** Import par lien (lot 2) : absent, le bloc ne s'affiche pas. */
+  importLabels?: ImportFicheLabels & { replace: string };
   /**
    * Les rayons OUVERTS, lus en base côté serveur (lib/product-categories).
    * En prop et non importés : ce composant est client, et la taxonomie vit
@@ -143,6 +147,25 @@ export function PublishForm({
     suggestionRevision.current += 1;
     setRevision(suggestionRevision.current);
     setForm(serviceStarterDraft(starter));
+  }
+
+  /* IMPORT PAR LIEN (lot 2) : seuls le titre et la description sont repris,
+   * bornés aux limites du brouillon. Comme un modèle de service, un texte
+   * importé ne remplace jamais une saisie sans que le vendeur l'ait confirmé,
+   * et il fait retomber l'acceptation de la politique : elle porte sur le
+   * contenu qu'on envoie, pas sur celui d'avant. */
+  function appliquerImport(fiche: FicheRecue): boolean {
+    if ((form.title || form.description) && !window.confirm(importLabels!.replace)) return false;
+    setError(null);
+    setPolicyOk(false);
+    suggestionRevision.current += 1;
+    setRevision(suggestionRevision.current);
+    setForm((f) => ({
+      ...f,
+      title: fiche.titre.slice(0, PUBLISH_DRAFT_LIMITS.title),
+      description: fiche.description.slice(0, PUBLISH_DRAFT_LIMITS.description),
+    }));
+    return true;
   }
 
   async function submit(e: React.FormEvent) {
@@ -260,6 +283,7 @@ export function PublishForm({
           </div>
         </fieldset>
       )}
+      {importLabels && <ImportFiche labels={importLabels} disabled={locked} onImporte={appliquerImport} />}
       <label className="block space-y-2 text-sm"><span>{labels.titlePh}</span><input
         className={input}
         placeholder={labels.titlePh}

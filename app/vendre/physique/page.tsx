@@ -132,6 +132,11 @@ export default async function VendrePhysiquePage() {
             <PhysicalProductForm
               key={user.id}
               actorId={user.id}
+              importLabels={{
+                title: t(lang, "import.title"), hint: t(lang, "import.hint"), rights: t(lang, "import.rights"),
+                url: t(lang, "import.url"), cta: t(lang, "import.cta"), loading: t(lang, "import.loading"),
+                done: t(lang, "import.done"), replace: t(lang, "import.replace"), errorNetwork: t(lang, "error.network"),
+              }}
               listingLabels={{
                 description: t(lang, "sell.physical.description"),
                 descriptionHint: t(lang, "sell.physical.description.hint"),
