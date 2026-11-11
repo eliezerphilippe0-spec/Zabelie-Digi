@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as serveur from "../lib/mcp/serveur";
-import { MCP_LOT_MAX, MCP_VERSIONS, MCP_VERSION_RECENTE, RPC, instructionsMcp, nomsOutilsMcp, outilsMcp, traiterCorpsMcp, traiterMessageMcp, type ReponseRpc } from "../lib/mcp/serveur";
+import { MCP_LOT_MAX, MCP_VERSIONS, MCP_VERSION_RECENTE, RPC, instructionsMcp, nomsOutilsMcp, nomsOutilsVendeurMcp, outilsMcp, outilsVendeurMcp, traiterCorpsMcp, traiterMessageMcp, type ReponseRpc } from "../lib/mcp/serveur";
+import { SELLER_ENDPOINTS } from "../lib/api/v1/seller";
+import { lireCle } from "../lib/api-keys";
 import { V1_ENDPOINTS } from "../lib/api/v1/schemas";
 import { V1_AUTHENTIFIES } from "../lib/api/v1/handlers";
 import { isPublicEndpoint, readApiBody } from "../lib/api/v1/transport";
@@ -141,8 +143,17 @@ test("un lot est borné, traité en entier, et se tait s'il ne contient que des 
 
 function route() {
   const recus: Array<{ url: string; endpoint: string; corps: unknown; enTetes: Record<string, string> }> = [];
+  const recusVendeur: typeof recus = [];
   const r = loadRoute("app/api/mcp/route.ts", {
     "next/server": { NextResponse: Response },
+    "@/app/api/v1/seller/[endpoint]/route": {
+      POST: async (req: Request, ctx: { params: Promise<{ endpoint: string }> }) => {
+        recusVendeur.push({ url: req.url, endpoint: (await ctx.params).endpoint, corps: await req.json(), enTetes: Object.fromEntries(req.headers.entries()) });
+        return Response.json({ type: "seller_products", results: [], nextCursor: null });
+      },
+    },
+    "@/lib/api-keys": { lireCle },
+    "@/lib/api/v1/seller": { SELLER_ENDPOINTS },
     "@/app/api/v1/[endpoint]/route": {
       POST: async (req: Request, ctx: { params: Promise<{ endpoint: string }> }) => {
         recus.push({ url: req.url, endpoint: (await ctx.params).endpoint, corps: await req.json(), enTetes: Object.fromEntries(req.headers.entries()) });
@@ -155,13 +166,13 @@ function route() {
   });
   const post = (corps: unknown, enTetes: Record<string, string> = {}) =>
     r.POST(new Request("https://zabelie.test/api/mcp", { method: "POST", headers: { "content-type": "application/json", ...enTetes }, body: typeof corps === "string" ? corps : JSON.stringify(corps) }));
-  return { r, recus, post };
+  return { r, recus, recusVendeur, post };
 }
 
 test("route : l'appel d'outil part vers la v1 sans cookie ni autorisation, avec l'adresse pour le quota", async () => {
   const { recus, post } = route();
   const res = await post(rpc("tools/call", { name: "search_products", arguments: { limit: 2 } }), {
-    cookie: "sb-access-token=jeton-de-session", authorization: "Bearer zb_live_cle", "x-forwarded-for": "203.0.113.7, 10.0.0.1", "accept-language": "ht",
+    cookie: "sb-access-token=jeton-de-session", "x-forwarded-for": "203.0.113.7, 10.0.0.1", "accept-language": "ht",
   });
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("access-control-allow-origin"), "*");
@@ -213,3 +224,94 @@ test("la page développeurs annonce le serveur, dans les quatre langues, à l'ad
   // Le proxy ne rafraîchit aucune session sur cette route : elle ne lit aucun cookie.
   assert.match(readFileSync("proxy.ts", "utf8"), /const publicApi = request\.nextUrl\.pathname\.startsWith\("\/api\/v1\/"\) \|\| request\.nextUrl\.pathname === "\/api\/mcp";/);
 });
+
+// ── Outils vendeur : seulement avec une clé, et la clé ne va qu'à l'API vendeur ──
+
+const CLE = "zb_live_" + "A".repeat(43);
+
+test("vendeur : sans clé, les outils vendeur n'existent pas ; avec, ils s'ajoutent sans rien remplacer", async () => {
+  const noms = Object.keys(SELLER_ENDPOINTS);
+  assert.ok(noms.length >= 3, "le registre vendeur a changé de forme");
+  assert.deepEqual(nomsOutilsVendeurMcp(), noms);
+  assert.equal(noms.filter((n) => nomsOutilsMcp().includes(n)).length, 0, "un nom d'outil vendeur ne doit pas masquer un outil public");
+  for (const lang of LANGUES) {
+    for (const o of outilsVendeurMcp(lang)) {
+      for (const schema of [o.inputSchema, o.outputSchema]) {
+        assert.equal(schema.type, "object");
+        for (const cle of ["oneOf", "anyOf", "allOf", "$schema"]) assert.ok(!(cle in schema), `${o.name} : ${cle} à la racine`);
+      }
+      assert.ok(o.description.length > 20);
+    }
+  }
+  const publique = espion();
+  const sans = resultat(await traiterMessageMcp(rpc("tools/list"), { lang: "fr", appeler: publique.appeler }));
+  assert.deepEqual((sans?.tools as Array<{ name: string }>).map((o) => o.name), nomsOutilsMcp());
+  const vendeur = espion({ status: 200, corps: { type: "seller_products", results: [], nextCursor: null } });
+  const avec = resultat(await traiterMessageMcp(rpc("tools/list"), { lang: "fr", appeler: publique.appeler, appelerVendeur: vendeur.appeler }));
+  assert.deepEqual((avec?.tools as Array<{ name: string }>).map((o) => o.name), [...nomsOutilsMcp(), ...noms]);
+  // Les instructions ne parlent de l'API vendeur qu'à un appelant qui a une clé.
+  assert.ok(!instructionsMcp("fr").includes(apiDocsCopy("fr").sellerPrivacy) && instructionsMcp("fr", true).includes(apiDocsCopy("fr").sellerPrivacy));
+});
+
+test("vendeur : un outil vendeur ne s'exécute que par l'appelant vendeur, un outil public que par le public", async () => {
+  const publique = espion();
+  const vendeur = espion({ status: 200, corps: { type: "seller_products", results: [], nextCursor: null } });
+  // Sans clé : refusé comme un nom inconnu, rien n'est exécuté.
+  for (const nom of nomsOutilsVendeurMcp()) {
+    assert.equal(erreur(await traiterMessageMcp(rpc("tools/call", { name: nom, arguments: {} }), { lang: "fr", appeler: publique.appeler })), RPC.params, nom);
+    assert.equal(erreur(await traiterMessageMcp(rpc("tools/call", { name: nom, arguments: {} }), { lang: "fr", appeler: publique.appeler, appelerVendeur: null })), RPC.params, nom);
+  }
+  assert.equal(publique.appels.length, 0);
+  const ctx = { lang: "fr" as const, appeler: publique.appeler, appelerVendeur: vendeur.appeler };
+  await traiterMessageMcp(rpc("tools/call", { name: "seller_products", arguments: { limit: 5 } }), ctx);
+  await traiterMessageMcp(rpc("tools/call", { name: "search_products", arguments: { limit: 2 } }), ctx);
+  assert.deepEqual(vendeur.appels, [{ nom: "seller_products", args: { limit: 5 } }]);
+  assert.deepEqual(publique.appels, [{ nom: "search_products", args: { limit: 2 } }]);
+  // Même avec une clé, un nom hors des deux registres reste inconnu.
+  assert.equal(erreur(await traiterMessageMcp(rpc("tools/call", { name: "create_product_draft" }), ctx)), RPC.params);
+});
+
+test("route vendeur : la clé ne va qu'à l'API vendeur, jamais à la v1 publique, et la réponse n'a pas de CORS", async () => {
+  const { recus, recusVendeur, post } = route();
+  const enTetes = { authorization: `Bearer ${CLE}`, cookie: "sb-access-token=jeton", "accept-language": "ht" };
+  const liste = await post(rpc("tools/list"), enTetes);
+  assert.equal(liste.headers.get("access-control-allow-origin"), null, "une réponse obtenue avec une clé ne porte pas de CORS");
+  assert.deepEqual(((await liste.json()) as { result: { tools: Array<{ name: string }> } }).result.tools.map((o) => o.name), [...nomsOutilsMcp(), ...nomsOutilsVendeurMcp()]);
+
+  await post(rpc("tools/call", { name: "seller_sales", arguments: { limit: 1 } }), enTetes);
+  assert.equal(recusVendeur.length, 1);
+  assert.equal(recusVendeur[0].endpoint, "seller_sales");
+  assert.equal(new URL(recusVendeur[0].url).pathname, "/api/v1/seller/seller_sales");
+  assert.equal(new URL(recusVendeur[0].url).searchParams.get("lang"), "ht");
+  assert.equal(recusVendeur[0].enTetes.authorization, `Bearer ${CLE}`);
+  assert.ok(!("cookie" in recusVendeur[0].enTetes), "cookie transmis à l'API vendeur");
+
+  // Un outil PUBLIC appelé avec une clé : la clé ne suit pas.
+  await post(rpc("tools/call", { name: "search_products", arguments: {} }), enTetes);
+  assert.equal(recus.length, 1);
+  for (const interdit of ["authorization", "x-api-key", "cookie"]) assert.ok(!(interdit in recus[0].enTetes), `${interdit} transmis à la v1 publique`);
+  // La clé passée par X-API-Key est admise de la même façon.
+  await post(rpc("tools/call", { name: "seller_products", arguments: {} }), { "x-api-key": CLE });
+  assert.equal(recusVendeur[1]?.enTetes.authorization, `Bearer ${CLE}`);
+});
+
+test("route vendeur : une clé mal formée est refusée en 401, sans rien exécuter ni rétrograder en anonyme", async () => {
+  const malFormees: Record<string, string>[] = [{ authorization: "Bearer zb_live_trop_court" }, { authorization: "Basic abc" }, { "x-api-key": "n-importe-quoi" }, { authorization: "", "x-api-key": "zb_live_x" }];
+  for (const enTetes of malFormees) {
+    const { recus, recusVendeur, post } = route();
+    const res = await post(rpc("tools/list"), enTetes);
+    assert.equal(res.status, 401, JSON.stringify(enTetes));
+    assert.equal(res.headers.get("www-authenticate"), 'Bearer realm="zabelie"');
+    assert.equal(res.headers.get("access-control-allow-origin"), null);
+    assert.equal(recus.length + recusVendeur.length, 0);
+  }
+  // Sans clé : les outils vendeur sont refusés et la route vendeur n'est jamais appelée.
+  const anonyme = route();
+  const corps = (await (await anonyme.post(rpc("tools/call", { name: "seller_products", arguments: {} }))).json()) as { error: { code: number } };
+  assert.equal(corps.error.code, RPC.params);
+  assert.equal(anonyme.recusVendeur.length, 0);
+  // Un navigateur ne peut pas envoyer de clé depuis une autre origine : elle n'est pas dans les en-têtes CORS admis.
+  const preflight = await (anonyme.r.OPTIONS as unknown as () => Response)();
+  assert.doesNotMatch(preflight.headers.get("access-control-allow-headers") ?? "", /authorization|x-api-key/i);
+});
+

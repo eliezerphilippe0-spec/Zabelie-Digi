@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { POST as appelerV1 } from "@/app/api/v1/[endpoint]/route";
+import { POST as appelerVendeurV1 } from "@/app/api/v1/seller/[endpoint]/route";
+import { lireCle } from "@/lib/api-keys";
+import { SELLER_ENDPOINTS } from "@/lib/api/v1/seller";
 import { isPublicEndpoint, readApiBody } from "@/lib/api/v1/transport";
 import { langueApi } from "@/lib/api/v1/messages";
 import { MCP_VERSIONS, RPC, erreurRpc, traiterCorpsMcp, type AppelOutil } from "@/lib/mcp/serveur";
@@ -27,6 +30,18 @@ export const dynamic = "force-dynamic";
  * `initialize`, `ping` et `tools/list` ne touchent pas la base : ils répondent
  * même si elle est indisponible.
  *
+ * OUTILS VENDEUR (lot 3a) — si la requête porte une clé d'API vendeur, les
+ * lectures de l'API vendeur s'ajoutent. Trois règles, et elles ne se négocient pas :
+ *
+ *   a. la clé n'est transmise QU'À la route vendeur (`/api/v1/seller/{nom}`),
+ *      qui reste seule à juger sa validité, sa portée et son quota. Elle
+ *      n'accompagne jamais un appel d'outil public ;
+ *   b. un en-tête de clé présent mais mal formé est refusé en 401 : on ne
+ *      rétrograde pas en silence vers l'anonyme un client qui croit être connecté ;
+ *   c. une réponse obtenue avec une clé ne porte AUCUN en-tête CORS, comme
+ *      l'API vendeur : une clé d'API ne vit pas dans un navigateur. `Authorization`
+ *      et `X-API-Key` ne figurent pas non plus dans les en-têtes CORS autorisés.
+ *
  * Origine : la validation d'`Origin` du protocole protège un serveur LOCAL
  * contre le détournement DNS. Ici, les données sont publiques et aucune
  * identité ambiante n'est lue : toute origine reçoit ce que `curl` reçoit, et
@@ -42,7 +57,9 @@ const EN_TETES: Record<string, string> = {
   "Access-Control-Expose-Headers": "Retry-After",
 };
 
-const json = (corps: unknown, status = 200) => NextResponse.json(corps, { status, headers: EN_TETES });
+/** Avec une clé : pas de CORS. Sans : les en-têtes de l'API publique. */
+const SANS_CORS: Record<string, string> = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
+const json = (corps: unknown, status = 200, enTetes: Record<string, string> = EN_TETES) => NextResponse.json(corps, { status, headers: enTetes });
 const refusMethode = () =>
   NextResponse.json(erreurRpc(null, RPC.requete, "Method not allowed"), { status: 405, headers: { ...EN_TETES, Allow: "POST, OPTIONS" } });
 
@@ -58,11 +75,18 @@ export async function POST(req: Request) {
     return json(erreurRpc(null, RPC.requete, "Content-Type must be application/json"), 415);
   }
 
+  // Clé d'API vendeur : absente (outils publics seuls), bien formée, ou refusée.
+  const cle = lireCle(req.headers);
+  if (!cle && (req.headers.has("authorization") || req.headers.has("x-api-key"))) {
+    return NextResponse.json(erreurRpc(null, RPC.requete, "Invalid API key"), { status: 401, headers: { ...SANS_CORS, "WWW-Authenticate": 'Bearer realm="zabelie"' } });
+  }
+  const enTetes = cle ? SANS_CORS : EN_TETES;
+
   let corps: unknown;
   try {
     corps = await readApiBody(req);
   } catch {
-    return json(erreurRpc(null, RPC.parse, "Parse error"), 400);
+    return json(erreurRpc(null, RPC.parse, "Parse error"), 400, enTetes);
   }
 
   const adresse = req.headers.get("x-forwarded-for");
@@ -80,10 +104,23 @@ export async function POST(req: Request) {
     return { status: reponse.status, corps: await reponse.json().catch(() => null) };
   };
 
-  const resultat = await traiterCorpsMcp(corps, { lang, appeler });
+  const appelerVendeur: AppelOutil | null = !cle ? null : async (nom, args) => {
+    if (!Object.prototype.hasOwnProperty.call(SELLER_ENDPOINTS, nom)) return { status: 404, corps: { type: "error", code: "not_found" } };
+    const reponse = await appelerVendeurV1(
+      new Request(`https://zabelie.invalid/api/v1/seller/${nom}?lang=${lang}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${cle}` },
+        body: JSON.stringify(args),
+      }),
+      { params: Promise.resolve({ endpoint: nom }) }
+    );
+    return { status: reponse.status, corps: await reponse.json().catch(() => null) };
+  };
+
+  const resultat = await traiterCorpsMcp(corps, { lang, appeler, appelerVendeur });
   // Que des notifications : accusé de réception, sans corps.
-  if (resultat === null) return new NextResponse(null, { status: 202, headers: EN_TETES });
-  return json(resultat);
+  if (resultat === null) return new NextResponse(null, { status: 202, headers: enTetes });
+  return json(resultat, 200, enTetes);
 }
 
 /** Aucun flux SSE n'est offert : le protocole demande alors 405. */
