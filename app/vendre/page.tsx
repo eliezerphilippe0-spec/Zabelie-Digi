@@ -441,6 +441,11 @@ export default async function VendrePage({
           sousRayons={sousRayonsPublication}
           serviceStarters={availableServiceStarters(lang, rayonsPublication, sousRayonsPublication)}
           starterLabels={{ heading: starterCopy.heading, hint: starterCopy.hint, confirmReplace: starterCopy.confirmReplace }}
+          importLabels={{
+            title: t(lang, "import.title"), hint: t(lang, "import.hint"), rights: t(lang, "import.rights"),
+            url: t(lang, "import.url"), cta: t(lang, "import.cta"), loading: t(lang, "import.loading"),
+            done: t(lang, "import.done"), replace: t(lang, "import.replace"), errorNetwork: t(lang, "error.network"),
+          }}
           labels={{
             titlePh: t(lang, "publish.title.ph"),
             categoryAria: t(lang, "publish.category.aria"),
