@@ -92,7 +92,8 @@ export async function proxy(request: NextRequest) {
     }
   }
   // API handlers own authentication; public reads must not refresh caller cookies.
-  const publicApi = request.nextUrl.pathname.startsWith("/api/v1/");
+  // Le serveur MCP (`/api/mcp`, lecture seule) est de la même famille : il ne lit aucun cookie.
+  const publicApi = request.nextUrl.pathname.startsWith("/api/v1/") || request.nextUrl.pathname === "/api/mcp";
   const response = request.nextUrl.pathname === "/hors-ligne" || publicApi
     ? NextResponse.next({ request })
     : await updateSession(request, localise ? new URL(localise.base + request.nextUrl.search, request.url) : undefined);

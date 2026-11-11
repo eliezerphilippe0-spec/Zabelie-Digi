@@ -122,6 +122,12 @@ const PUBLIC_ROUTES: Record<string, RegExp> = {
   // fait que COUPER les relances du porteur d'un jeton de 122 bits ; POST
   // seulement (un scanner de liens ne désabonne personne) ; borné par IP.
   "desabonnement/route.ts": /rateLimit\(admin, `desabonnement:/,
+  // Serveur MCP en lecture seule (lot 1, 2026-11-11) : public PAR CONCEPTION,
+  // comme l'API v1 qu'il expose. Il n'ouvre aucun chemin de données : un outil
+  // n'est exécuté que s'il est une opération PUBLIQUE de la v1, et l'exécution
+  // est déléguée à la route v1 (validation, quota par adresse, contrôle de
+  // sortie). Le motif ancre les DEUX : le refus, et la délégation liée à sa réponse.
+  "mcp/route.ts": /^(?=[\s\S]*if \(!isPublicEndpoint\(nom\)\) return \{ status: 404, corps: \{ type: "error", code: "not_found" \} \};\s*const reponse = await appelerV1\()(?=[\s\S]*import \{ POST as appelerV1 \} from "@\/app\/api\/v1\/\[endpoint\]\/route";)/,
   // Lecture publique sans mutation : empreinte opaque figée au build, jamais un secret.
   "deployment/route.ts": /const valid = \/\^\[a-f0-9\]\{64\}\$\/\.test\(release\)/,
   "health/route.ts": /never lies|ne ment jamais/,

@@ -283,3 +283,21 @@ Les huit fonctions publiques répondent aux requêtes CORS avec `Access-Control-
 Corps JSON limité à 16 Kio effectivement lus (y compris sans Content-Length). Les erreurs sont aussi `no-store`. Réponse 429 avec `Retry-After: 60`. Le quota public actuel demeure partagé : 60 appels par minute et par endpoint pour l'ensemble des anonymes ; ce n'est pas un quota par partenaire. Les limites historiques de la recherche et de `get_delivery_terms` sont explicites dans le guide.
 
 Tests : contrats OpenAPI, erreurs JSON, corps en flux, CORS navigateur depuis une autre origine, refus des commandes anonymes, projection publique et pagination des catégories. Aucun schéma ou secret supplémentaire requis.
+
+
+## Serveur MCP, lecture seule (lot 1, 2026-11-11)
+
+`POST /api/mcp` sert les lectures publiques de cette couche à un assistant compatible avec le Model Context Protocol. C'est le « demain par un agent sans réécriture » annoncé plus haut.
+
+| Point | Choix |
+|---|---|
+| Outils | Les opérations publiques de `V1_ENDPOINTS`, dérivées de `PUBLIC_OPERATIONS` : aucune seconde liste. `get_order` et `get_user_orders` exigent une session et n'y sont pas |
+| Exécution | Déléguée à `POST /api/v1/{nom}` : même validation, même quota par adresse et par opération, même contrôle de sortie |
+| Identité | Aucune : pas de clé, pas de session ; ni cookie ni en-tête d'autorisation ne sont transmis à la v1 |
+| Transport | Streamable HTTP sans état : une requête JSON-RPC, une réponse JSON. Pas de flux SSE (GET rend 405), pas de `Mcp-Session-Id` |
+| Révisions | `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05` ; lots JSON-RPC bornés à 10 messages |
+| Dépendance | Aucune ajoutée : le protocole tient dans `lib/mcp/serveur.ts` |
+
+Éprouvé avec le client officiel (`@modelcontextprotocol/sdk` 1.32.2, hors dépôt) contre un serveur local : négociation de version, liste des outils, appel, validation de la sortie contre son schéma, refus d'un outil hors registre. Gardes : `tests/mcp-serveur.test.ts` (12 mutations, 12 rouges), et l'entrée `mcp/route.ts` de `tests/api-auth-coverage.test.ts`.
+
+Ce que ce lot ne fait pas : aucune écriture, aucun outil vendeur, aucune connexion OAuth. Un `oneOf` à la racine du schéma de `get_product` est retiré de la description d'outil (plusieurs clients le refusent) ; la contrainte reste dite en clair et appliquée par la v1.
