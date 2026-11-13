@@ -4,8 +4,7 @@ import { guideHref } from "@/lib/buying-guides";
 import { BarreAnnoncePause } from "@/components/barre-annonce-pause";
 
 /**
- * LA BARRE D'ANNONCE — le bandeau qui défile en haut de chaque page, sur le
- * modèle de celui de Jumia Côte d'Ivoire.
+ * LA BARRE D'ANNONCE — le bandeau qui défile en haut de chaque page.
  *
  * Cinq règles, et chacune a une raison :
  *  1. Elle ne dit que ce qui est TENU. Chaque phrase reprend un libellé déjà

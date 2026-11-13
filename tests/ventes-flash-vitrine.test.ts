@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { etatStockFlash, offresFlashVitrine } from "@/lib/flash";
 
 /**
- * VENTES FLASH EN VITRINE (demandées le 2026-10-17, sur le modèle de Jumia).
+ * VENTES FLASH EN VITRINE (demandées le 2026-10-17).
  *
  * Ce qui est gardé : tout ce qui crée l'urgence vient de la BASE — la
  * fenêtre, le prix, les unités prises — et une offre que le checkout ne

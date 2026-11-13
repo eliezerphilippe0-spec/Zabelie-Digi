@@ -7,7 +7,7 @@ import { copieCreation } from "@/lib/digital-authoring/copy";
 import { IconeStudio, type NomIcone } from "@/components/studio-icones";
 
 /**
- * Cadre des pages du tableau vendeur (docs/73, façon Chariow) : un menu à
+ * Cadre des pages du tableau vendeur (docs/73) : un menu à
  * icônes à gauche sur ordinateur, une rangée d'onglets défilante sur
  * téléphone, le contenu à droite. Même dessin que le menu du Studio
  * (`studio-shell.tsx`). Composant serveur, sans JavaScript.

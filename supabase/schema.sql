@@ -756,7 +756,7 @@ alter table profiles drop column if exists zabelie1_user_id;
 -- 0008_reviews.sql
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Zabelie Digi — Avis d'acheteurs VÉRIFIÉS (différenciateur confiance vs Chariow)
+-- Zabelie Digi — Avis d'acheteurs VÉRIFIÉS (différenciateur de confiance)
 -- Règle dure : seul un acheteur ayant une commande PAYÉE peut laisser un avis,
 -- et UN SEUL avis par commande (contrainte UNIQUE en base, pas seulement en API).
 -- Marché à faible confiance → la preuve sociale doit être invérolable.
@@ -1261,7 +1261,7 @@ alter function zabelie_topup_ledger_guard() set search_path = public;
 -- 0012_coupons.sql
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Zabelie Digi — Codes promo vendeur (V-13, inspiration Chariow adaptée Haïti)
+-- Zabelie Digi — Codes promo vendeur (V-13, adaptés à Haïti)
 -- Le vendeur anime ses ventes lui-même (« PROMO50 sur WhatsApp jusqu'à
 -- dimanche »). Règles dures respectées : la réduction est calculée CÔTÉ
 -- SERVEUR (pourcentage borné 1–90, montants entiers), le prix final est figé
@@ -1691,7 +1691,7 @@ revoke all on function zabelie_rate_limit(text, integer, integer)
 -- 0020_service_fields.sql
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- Zabelie Digi — Page service façon Fiverr (délai + inclus)
+-- Zabelie Digi — Page service (délai + inclus)
 -- Champs d'AFFICHAGE uniquement, ajoutés à products existant : aucune nouvelle
 -- logique financière, aucun nouveau prix. price_htg reste l'unique source de
 -- vérité du montant (inchangé), vérifiée au checkout comme avant.

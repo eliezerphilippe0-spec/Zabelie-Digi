@@ -252,7 +252,7 @@ export default async function ProductPage({
       ? createClient().then((c) => offreFlashActive(c, product.id))
       : Promise.resolve(null),
   ]);
-  /* Barre « déjà pris » (Jumia, Lightning Deals) : même comptage que le
+  /* Barre « déjà pris » des ventes flash : même comptage que le
    * checkout (`flashEpuisee`). Seulement si l'offre a un plafond ; `null` si
    * le comptage échoue — la barre ne s'affiche pas plutôt que de mentir. */
   const flashVendues = flash && flash.unitesMax !== null ? await unitesVendues(createAdminClient(), product.id, flash) : null;
@@ -927,7 +927,7 @@ export default async function ProductPage({
             ))}
           </ul>
 
-          {/* CTA bas de page (règle Gumroad) : le lecteur convaincu par les
+          {/* CTA bas de page : le lecteur convaincu par les
               avis ne doit pas remonter chercher le bouton. Ancre, pas un
               second checkout — un seul point d'achat, zéro état dupliqué. */}
           <div className="mt-8 text-center">

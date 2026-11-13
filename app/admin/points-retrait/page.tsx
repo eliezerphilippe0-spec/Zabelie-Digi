@@ -29,7 +29,7 @@ export default async function AdminPickupPage() {
   return (
     <AdminShell title="Points de retrait" actif="/admin/points-retrait">
       <p className="mt-2 text-sm text-mist">
-        Le modèle « station » de Jumia, sans le capital : une boutique
+        Le modèle « station », sans le capital : une boutique
         partenaire reçoit les colis. Un point créé est <strong>fermé</strong>{" "}
         par défaut — ouvrez-le quand l&apos;accord est signé. Le câblage
         acheteur (choisir un point à la livraison) viendra quand des points

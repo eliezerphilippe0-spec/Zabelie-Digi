@@ -1,7 +1,7 @@
 -- ============================================================================
 -- 0060 — BAIL D'EXÉCUTION DES CRONS (« leader lease »)
 -- ============================================================================
--- Pattern repris d'Izikit (`leader-lease`), RÉÉCRIT pour Supabase : ni Prisma,
+-- Patron « bail de meneur » (`leader-lease`), ÉCRIT pour Supabase : ni Prisma,
 -- ni Redis, ni service tiers — une table et deux fonctions dans la base qui
 -- porte déjà toute la vérité du projet.
 --

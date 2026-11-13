@@ -67,7 +67,7 @@ test("checkout : l'attribution est écrite à la CRÉATION de commande, best-eff
   assert.match(
     CHECKOUT,
     /await attribuerCommande\(admin, \{\s*\n\s*orderId: order\.id/,
-    "L'attribution se fige à la commande (leçon Jumia) — jamais au paiement."
+    "L'attribution se fige à la commande — jamais au paiement."
   );
   // Et le cookie est revalidé par la MÊME regex que la contrainte SQL.
   assert.match(CHECKOUT, /CODE_RE\.test\(refCookie\)/);

@@ -4,7 +4,7 @@ import type { Contenu } from "./schema";
 
 /**
  * Fiche-test de préparation d'un guide (tâche 4.2 ; idée 5 validée le
- * 2026-10-16, inspirée de la revue qualité d'Udemy).
+ * 2026-10-16).
  *
  * Deux niveaux, et seulement deux :
  *   - BLOQUANT : l'export et l'approbation sont refusés tant qu'il reste un

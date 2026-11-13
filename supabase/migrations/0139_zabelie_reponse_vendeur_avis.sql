@@ -3,7 +3,7 @@ select zabelie_migration_garde('0139_zabelie_reponse_vendeur_avis.sql');
 -- 0139 — Le vendeur répond à un avis (audit docs/69, lot 2 ; choix du porteur
 -- le 2026-10-14 : « Réponse du vendeur aux avis »).
 --
--- Comme sur Etsy : UNE réponse publique par avis, écrite par le vendeur du
+-- La règle : UNE réponse publique par avis, écrite par le vendeur du
 -- produit, affichée sous l'avis. En Haïti, le vendeur répond publiquement,
 -- comme il le fait déjà sur ses réseaux ; sans cet espace, il le fait ailleurs
 -- et l'acheteur suivant ne le voit pas.

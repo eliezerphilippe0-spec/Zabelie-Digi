@@ -6,7 +6,7 @@ import { readSellerPricing } from "../lib/seller-pricing-server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const pricing: SellerPricing = { direct_rate_bps: 1000, direct_fixed_usd_cents: 50, discovery_rate_bps: 3000, usd_htg_micros: 132_000_000, launch_days: 30, submission_days: 7, launch_sales_limit: 3, launch_discount_bps: 5000, payments_ready: true, attribution_days: 7 };
-test("Gumroad-shaped fees: direct, discovery, free and launch discount in integer HTG", () => {
+test("seller fees: direct, discovery, free and launch discount in integer HTG", () => {
   assert.equal(fixedFeeHTG(pricing),66);
   assert.equal(sellerFeeHTG(1000,"direct",pricing),166);
   assert.equal(sellerFeeHTG(1000,"discovery",pricing),300);

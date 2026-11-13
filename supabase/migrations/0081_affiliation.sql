@@ -13,8 +13,8 @@ select zabelie_migration_garde('0081_affiliation.sql');
 -- aucune attribution n'est écrite, personne n'est prélevé. Le porteur arme
 -- par UPDATE. Une post-condition CASSE la migration si ce défaut change.
 --
--- ─── LA LEÇON JUMIA, HÉRITÉE SANS AVOIR PAYÉ L'ERREUR ──────────────────────
--- Leur première version payait à la commande REÇUE — manipulée, bascule
+-- ─── UNE LEÇON HÉRITÉE SANS AVOIR PAYÉ L'ERREUR ────────────────────────────
+-- Un programme d'affiliation payait d'abord à la commande REÇUE — manipulée, bascule
 -- forcée vers « payé au réglé » (docs/37, sources). Ici : attribution figée à
 -- la CRÉATION de commande, crédit à la CONFIRMATION serveur du paiement,
 -- maturation J+7 identique au vendeur, remboursement avant maturité qui

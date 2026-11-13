@@ -1,4 +1,4 @@
--- Zabelie Digi — Avis d'acheteurs VÉRIFIÉS (différenciateur confiance vs Chariow)
+-- Zabelie Digi — Avis d'acheteurs VÉRIFIÉS (différenciateur de confiance)
 -- Règle dure : seul un acheteur ayant une commande PAYÉE peut laisser un avis,
 -- et UN SEUL avis par commande (contrainte UNIQUE en base, pas seulement en API).
 -- Marché à faible confiance → la preuve sociale doit être invérolable.

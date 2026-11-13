@@ -1345,7 +1345,7 @@ const fr = {
   "ai.desc.tarif":
     "{quota} suggestions gratuites par jour ; au-delà, {prix} HTG par suggestion, déduits de votre prochain règlement.",
   "publish.service.hint":
-    "Page service (façon Fiverr). Optionnel, mais rassure l'acheteur.",
+    "Page service (délai et prestations incluses). Optionnel, mais rassure l'acheteur.",
   "publish.deliveryDays.ph": "Délai de livraison en jours (0 = le jour même)",
   "publish.includes.ph":
     "Ce qui est inclus (un élément par ligne)\nEx. 3 révisions\nFichier source livré",
@@ -2991,7 +2991,7 @@ const ht: Record<I18nKey, string> = {
   "ai.desc.tarif":
     "{quota} sijesyon gratis chak jou; apre sa, {prix} HTG pou chak sijesyon, y ap dedwi l nan pwochen règleman w.",
   "publish.service.hint":
-    "Paj sèvis (menm jan ak Fiverr). Opsyonèl, men sa rasire achtè a.",
+    "Paj sèvis (delè ak sa ki ladan l). Opsyonèl, men sa rasire achtè a.",
   "publish.deliveryDays.ph": "Dele livrezon an jou (0 = menm jou a)",
   "publish.includes.ph":
     "Sa ki enkli (yon eleman pou chak liy)\nEgz. 3 revizyon\nFichye sous livre",
@@ -4639,7 +4639,7 @@ const en = {
   "ai.desc.tarif":
     "{quota} free suggestions per day; beyond that, {prix} HTG per suggestion, deducted from your next payout.",
   "publish.service.hint":
-    "Service page (Fiverr style). Optional, but reassures the buyer.",
+    "Service page (delivery time and what is included). Optional, but reassures the buyer.",
   "publish.deliveryDays.ph": "Delivery time in days (0 = same day)",
   "publish.includes.ph":
     "What's included (one item per line)\ne.g. 3 revisions\nSource file delivered",
@@ -6287,7 +6287,7 @@ const es = {
   "ai.desc.tarif":
     "{quota} sugerencias gratuitas al día; después, {prix} HTG por sugerencia, deducidos de su próximo pago.",
   "publish.service.hint":
-    "Página de servicio (estilo Fiverr). Opcional, pero da confianza al comprador.",
+    "Página de servicio (plazo y lo que incluye). Opcional, pero da confianza al comprador.",
   "publish.deliveryDays.ph": "Plazo de entrega (en días)",
   "publish.includes.ph":
     "Qué incluye (un elemento por línea)\nEj. 3 revisiones\nArchivo fuente entregado",

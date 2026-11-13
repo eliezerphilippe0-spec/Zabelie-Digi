@@ -2,7 +2,7 @@ select zabelie_migration_garde('0165_zabelie_delai_constate.sql');
 
 -- 0165 — Le DÉLAI CONSTATÉ : ce que les remises passées disent du vendeur, au lieu
 -- de ce qu'il annonce (docs/77 §12, lot E ; demande directe du porteur du 2026-10-29,
--- item 5 de l'analyse — la leçon de Mercado Libre : une promesse MESURÉE vaut plus
+-- item 5 de l'analyse — la leçon retenue : une promesse MESURÉE vaut plus
 -- qu'une promesse déclarée).
 --
 -- ─── CE QUE C'EST ──────────────────────────────────────────────────────────

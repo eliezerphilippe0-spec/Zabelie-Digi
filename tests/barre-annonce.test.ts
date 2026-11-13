@@ -6,8 +6,8 @@ import { DICT, LANGS } from "@/lib/i18n";
 import { annoncesDe, dureeDefilement } from "@/components/barre-annonce";
 
 /**
- * LA BARRE D'ANNONCE DÉFILANTE (demandée le 2026-10-17, sur le modèle de
- * Jumia Côte d'Ivoire). Ce qui est gardé : qu'elle ne dise que ce qui est
+ * LA BARRE D'ANNONCE DÉFILANTE (demandée le 2026-10-17).
+ * Ce qui est gardé : qu'elle ne dise que ce qui est
  * tenu, qu'elle s'arrête quand on le lui demande, qu'un lecteur d'écran ne la
  * lise qu'une fois, et que le clavier commence toujours par le lien
  * d'évitement.

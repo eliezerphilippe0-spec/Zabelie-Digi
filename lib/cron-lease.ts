@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * BAIL D'EXÉCUTION D'UN CRON — un seul porteur à la fois (migration `0060`).
  *
- * Pattern repris d'Izikit (`leader-lease`), réécrit pour Supabase : la base
+ * Patron « bail de meneur » (`leader-lease`), écrit pour Supabase : la base
  * qui porte déjà toute la vérité du projet sert aussi de point de
  * rendez-vous. Ni Redis, ni service tiers, ni seconde base.
  *

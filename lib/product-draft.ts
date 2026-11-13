@@ -114,7 +114,7 @@ export async function creerBrouillonProduit({
   }
 
 
-  // Champs page service (Fiverr) — affichage seulement, pas de prix. Ignorés
+  // Champs page service — affichage seulement, pas de prix. Ignorés
   // silencieusement pour un produit 'fichier' (n'a pas de sens hors service).
   let deliveryDays: number | null = null;
   let serviceIncludes: string[] = [];
@@ -280,7 +280,7 @@ export async function creerBrouillonProduit({
       price_htg: Math.round(price),
       delivery_days: deliveryDays,
       service_includes: serviceIncludes.length > 0 ? serviceIncludes : null,
-      // BL-103 (Gumroad — le fichier est exigé avant la mise en vente) : un
+      // BL-103 (le fichier est exigé avant la mise en vente) : un
       // produit « fichier » naît en BROUILLON, invisible au public, et sera
       // TOUTE fiche naît en BROUILLON, quel que soit son type, et attend une
       // publication humaine (`/api/admin/product-status`).

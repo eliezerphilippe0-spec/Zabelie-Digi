@@ -2,7 +2,7 @@ import type { Contenu, LangueContenu } from "./schema";
 
 /**
  * Modèles de guide du Studio de création éditoriale (docs/70, tâche 2.6 ;
- * idée validée par le porteur le 2026-10-15, inspirée de CreateurSuite ;
+ * idée validée par le porteur le 2026-10-15 ;
  * refaits en modèles de savoir-faire le 2026-10-16, tâche T.1).
  *
  * Un modèle est un PLAN prêt à remplir : des titres de section et le résultat
@@ -20,7 +20,7 @@ export type IdModele = (typeof IDS_MODELES)[number];
 type Plan = { titre: string; resultat: string }[];
 
 // Des produits de SAVOIR-FAIRE, comme ceux que vendent formateurs, coachs,
-// couturières ou coiffeurs (décision du 2026-10-16, inspirée de Tunafrik) :
+// couturières ou coiffeurs (décision du 2026-10-16) :
 // rien qui ressemble à un produit physique.
 const MODELES: Record<IdModele, Record<LangueContenu, Plan>> = {
   activite: {

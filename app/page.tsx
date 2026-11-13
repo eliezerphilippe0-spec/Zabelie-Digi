@@ -339,7 +339,7 @@ export default async function HomePage() {
             mesuré le 2026-09-26, elle commençait à y = 1 055 en 375 × 812. L'ORDRE
             DU DOCUMENT ne change pas — lecteurs d'écran et ordinateur gardent
             bannière → confiance → produits (tests/home-premium-structure S8). */}
-        {/* VENTES FLASH — sur le modèle de Jumia : la rangée n'existe que si
+        {/* VENTES FLASH : la rangée n'existe que si
             un vendeur a une offre vivante ; sur mobile, elle suit la
             première rangée (elle n'est pas dans le premier écran remonté). */}
         <VentesFlash lang={lang} offres={flash} produits={products} discovery={discovery} />

@@ -874,7 +874,7 @@ export async function POST(req: Request) {
   }
 
   // Affiliation (0081) : attribution FIGÉE maintenant, jamais au paiement
-  // (leçon Jumia, docs/37). Best-effort par contrat — un cookie cassé est
+  // (docs/37). Best-effort par contrat — un cookie cassé est
   // ignoré, jamais un checkout bloqué.
   const refCookie = req.headers
     .get("cookie")

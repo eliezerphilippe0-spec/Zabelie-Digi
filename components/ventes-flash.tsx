@@ -20,7 +20,7 @@ export function EclairFlash({ className = "" }: { className?: string }) {
 }
 
 /**
- * La barre « déjà pris » des ventes flash (Jumia, Amazon Lightning Deals).
+ * La barre « déjà pris » des ventes flash.
  * Elle n'existe que si l'offre a un plafond d'unités ET que le comptage a
  * répondu : jamais un chiffre inventé pour créer l'urgence.
  */
@@ -40,7 +40,7 @@ export function StockFlash({ lang, unitesMax, vendues }: { lang: Lang; unitesMax
 }
 
 /**
- * VENTES FLASH — la rangée de l'accueil, sur le modèle de Jumia.
+ * VENTES FLASH — la rangée de l'accueil.
  *
  * Un bandeau à l'éclair, puis des cartes : remise en pourcentage, prix flash
  * et prix barré, barre « déjà pris » quand l'offre a un plafond, compte à

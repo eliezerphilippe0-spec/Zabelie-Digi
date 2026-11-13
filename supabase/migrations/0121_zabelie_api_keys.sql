@@ -1,6 +1,6 @@
 select zabelie_migration_garde('0121_zabelie_api_keys.sql');
 
--- 0121 — Clés d'API vendeur (« brancher son site », modèle Chariow).
+-- 0121 — Clés d'API vendeur (« brancher son site »).
 --
 -- ─── POURQUOI ──────────────────────────────────────────────────────────────
 -- Instruction directe du porteur, 2026-10-03 : une API pour que les vendeurs

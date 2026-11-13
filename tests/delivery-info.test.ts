@@ -44,7 +44,7 @@ test("mes-ventes : lecture des coordonnées via le client de SESSION, jamais l'a
 });
 
 test("tableau de bord : le formulaire est masqué tant que 0076 n'est pas appliquée", () => {
-  // Le bloc vit sur la page Compte depuis la refonte façon Chariow (docs/73).
+  // Le bloc vit sur la page Compte depuis la refonte du tableau vendeur (docs/73).
   const src = readFileSync("app/tableau-de-bord/compte/page.tsx", "utf8");
   assert.match(src, /\{livInfo !== undefined && \(/);
   assert.match(src, /isMissingTable\(livErr\)/);

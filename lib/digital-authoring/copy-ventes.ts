@@ -2,7 +2,7 @@ import type { Lang } from "@/lib/i18n";
 import type { MomentJournee } from "@/lib/moment-journee";
 
 /**
- * Textes de l'accueil du Studio façon Chariow (tasks/plan.md, phase T2).
+ * Textes de l'accueil du Studio (tasks/plan.md, phase T2).
  * Module à part de `copy.ts`, que la phase 4 (PDF) modifie sur sa branche :
  * deux chantiers, deux fichiers, pas de conflit.
  *

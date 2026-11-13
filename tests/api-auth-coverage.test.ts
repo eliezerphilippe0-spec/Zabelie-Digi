@@ -174,7 +174,7 @@ test("chaque route API a un garde d'accès (auth, secret cron, signature ou allo
 /**
  * LE GARDE D'AUTHENTIFICATION NE DIT PAS QUI A LE DROIT.
  *
- * Constat de l'audit Izikit (docs/30, P11) : le test ci-dessus impose qu'une
+ * Constat d'audit (docs/30, P11) : le test ci-dessus impose qu'une
  * route identifie QUELQU'UN, jamais qu'elle vérifie SON RÔLE. Une route
  * `/api/admin/refund` qui appellerait `getCurrentUser()` sans tester
  * `role === "admin"` passerait la CI au vert — et ouvrirait le remboursement

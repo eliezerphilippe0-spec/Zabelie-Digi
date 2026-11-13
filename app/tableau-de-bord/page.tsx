@@ -87,7 +87,7 @@ type ProductRow = {
 };
 
 /**
- * /tableau-de-bord — l'accueil du vendeur, façon Chariow (docs/73, demande du
+ * /tableau-de-bord — l'accueil du vendeur (docs/73, demande du
  * porteur du 2026-10-17) : salutation à l'heure d'Haïti, actions rapides,
  * alerte « À traiter », argent masquable, ventes et produits. La boutique, le
  * compte et les codes promo ont leurs pages, derrière le menu.
@@ -366,7 +366,7 @@ export default async function DashboardPage({
           ? t(lang, "tb.ventes.moy").replace("{montant}", formatHTG(panierMoyen))
           : t(lang, "tb.ventes.f"),
     },
-    // Montant net cumulé (standard Chariow), désormais SEUL sur sa carte.
+    // Montant net cumulé, désormais SEUL sur sa carte.
     {
       label: t(lang, "tb.nets"),
       value: netComplet ? formatHTG(netTotal) : `≥ ${formatHTG(netTotal)}`,
@@ -414,7 +414,7 @@ export default async function DashboardPage({
         }
       : null;
 
-  /* FAÇON CHARIOW (docs/73). La salutation suit l'heure d'Haïti ; le nom est
+  /* ACCUEIL DU VENDEUR (docs/73). La salutation suit l'heure d'Haïti ; le nom est
      celui de la boutique, souvent un nom d'enseigne (« Garaj Petyonvil ») :
      on ne le coupe pas au premier mot. */
   const salut = t(lang, `vendeur.salut.${momentDeLaJournee(new Date())}` as I18nKey).replace(
@@ -489,7 +489,7 @@ export default async function DashboardPage({
         />
       )}
 
-      {/* L'ARGENT, masquable comme sur Chariow (même préférence de navigateur
+      {/* L'ARGENT, masquable (même préférence de navigateur
           que le Studio). Chaque valeur garde sa place et son accent ; son
           double « ••••• » ne s'affiche que zone masquée. */}
       <section id="argent" aria-labelledby="chiffres-titre" className="mt-8 scroll-mt-32">

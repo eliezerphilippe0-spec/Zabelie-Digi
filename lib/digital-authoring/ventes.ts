@@ -2,8 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { KIND_FILE } from "@/lib/product-kind";
 
 /**
- * LES CHIFFRES DE L'ACCUEIL DU STUDIO (tasks/plan.md, phase T2 ; disposition
- * inspirée du tableau de Chariow, demande du porteur du 2026-10-17).
+ * LES CHIFFRES DE L'ACCUEIL DU STUDIO (tasks/plan.md, phase T2 ;
+ * demande du porteur du 2026-10-17).
  *
  * Trois chiffres et un classement, tous tirés de ce que la base sait déjà :
  *  - les VENTES sont les commandes payées ou livrées des produits digitaux du

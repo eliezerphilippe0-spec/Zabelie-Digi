@@ -5,7 +5,7 @@ import { momentDeLaJournee, resumerVentes, type LigneVente } from "../lib/digita
 import { copieVentes } from "../lib/digital-authoring/copy-ventes";
 
 /**
- * L'ACCUEIL DU STUDIO FAÇON CHARIOW (tasks/plan.md, phase T2). Ce qui est
+ * L'ACCUEIL DU STUDIO (tasks/plan.md, phase T2). Ce qui est
  * gardé : la salutation suit l'heure d'Haïti et non celle du serveur ; chaque
  * chiffre se déduit des commandes et du grand livre, sans rien deviner ; une
  * lecture ratée ne devient pas un zéro ; les textes tiennent en quatre langues.
