@@ -1,6 +1,6 @@
 # Atelier numérique Zabelie
 
-Travail demandé le 2026-09-08 après la comparaison avec Chariow.
+Travail demandé le 2026-09-08 après la comparaison avec une plateforme africaine de produits numériques.
 
 Périmètre : fichiers et packs de fichiers d’un même vendeur, formations avec chapitres/leçons et ressources privées, aperçus textuels et FAQ, versions immuables avec licence conservée, bibliothèque et progression, statistiques de commandes et d’accès réellement mesurés. Les commissions, paiements et prestations physiques restent régis par leurs contrats existants.
 

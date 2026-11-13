@@ -177,12 +177,12 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 ## Phase T — Tableau du Studio (décisions du 2026-10-16, `tasks/plan.md`)
 
 ### T.1 Modèles de savoir-faire
-**Description :** remplacer recette, métier, démarche et liste par des modèles de produits digitaux de savoir-faire (Tunafrik) : lancer une activité, apprendre un métier, méthode pas à pas, kit pratique ; exemples de titres par modèle, en quatre langues.
+**Description :** remplacer recette, métier, démarche et liste par des modèles de produits digitaux de savoir-faire (un outil africain pour créateurs) : lancer une activité, apprendre un métier, méthode pas à pas, kit pratique ; exemples de titres par modèle, en quatre langues.
 - [x] Plus aucun exemple qui ressemble à un produit physique ; plans de 5 à 7 sections, sans texte écrit à la place du créateur.
 **Fichiers :** `lib/digital-authoring/modeles.ts`, `lib/digital-authoring/copy.ts`, `components/authoring-create-form.tsx`.
 
-### T.2 Tableau façon CreateurSuite
-**Description :** menu du Studio (à gauche sur ordinateur, onglets sur téléphone), « Bonjour, prénom », « Que voulez-vous faire aujourd'hui ? », trois entrées (analyser un marché, créer un produit digital, partir d'un modèle), projets avec format et statut, « Voir tous » au-delà de cinq, opportunités, « Comment ça marche » en trois étapes (Tunafrik). Entrée « Créer une publicité » retirée.
+### T.2 Tableau sur le modèle d'une suite d'outils pour créateurs
+**Description :** menu du Studio (à gauche sur ordinateur, onglets sur téléphone), « Bonjour, prénom », « Que voulez-vous faire aujourd'hui ? », trois entrées (analyser un marché, créer un produit digital, partir d'un modèle), projets avec format et statut, « Voir tous » au-delà de cinq, opportunités, « Comment ça marche » en trois étapes (un outil africain pour créateurs). Entrée « Créer une publicité » retirée.
 - [x] Le menu ne mène qu'à des pages qui existent ; le formulaire n'apparaît qu'après un choix.
 **Fichiers :** `components/studio-shell.tsx`, `app/tableau-de-bord/creation/page.tsx`.
 
@@ -222,7 +222,7 @@ Mutations sur le code final : 32 sur 32 tuées (18 pour 1.1, 14 pour 1.2) ; une 
 **Taille :** M.
 
 ### 4.2 Fiche-test de préparation et approbation de révision (idée 5, validée le 2026-10-16)
-**Description :** fiche-test « prêt à vendre » inspirée de la revue qualité d'Udemy. BLOQUANTS : section sans texte, titre de section vide, marqueur inachevé (« TODO », « XXX », « [...] »), marqueur de SIMULATION resté dans le texte, caractère que le PDF ne sait pas dessiner. CONSEILS : résultat manquant, section très courte, guide court, paragraphe répété, objectif vide, titre trop long pour une couverture, chiffres, prix et pourcentages à vérifier, liens à vérifier. Une note de préparation lisible (« prêt », « presque prêt », « pas prêt »). Confirmation non précochée de responsabilité ; approbation liée à une révision exacte (RPC), revérifiée en base pour les bloquants qu'elle peut voir.
+**Description :** fiche-test « prêt à vendre » inspirée de la revue qualité d'une place mondiale de cours en ligne. BLOQUANTS : section sans texte, titre de section vide, marqueur inachevé (« TODO », « XXX », « [...] »), marqueur de SIMULATION resté dans le texte, caractère que le PDF ne sait pas dessiner. CONSEILS : résultat manquant, section très courte, guide court, paragraphe répété, objectif vide, titre trop long pour une couverture, chiffres, prix et pourcentages à vérifier, liens à vérifier. Une note de préparation lisible (« prêt », « presque prêt », « pas prêt »). Confirmation non précochée de responsabilité ; approbation liée à une révision exacte (RPC), revérifiée en base pour les bloquants qu'elle peut voir.
 **Critères :**
 - [x] Section vide ou marqueur inachevé signalé avant approbation.
 - [x] Toute modification invalide l'approbation pour un nouvel export.

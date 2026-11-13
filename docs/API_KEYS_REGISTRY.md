@@ -31,13 +31,13 @@ Dernière mise à jour : 13 juillet 2026 — revue technique + recherche externe
 | Stripe | ❌ Écarté | Exige une entité US, incompatible avec une société enregistrée en Haïti |
 | PayPal | ❌ Écarté | Haïti explicitement exclu des pays business/payout supportés |
 | **Paddle** (Merchant of Record) | ❌ **Écarté** — vérifié 2026-07-13 | Haïti n'apparaît pas dans les pays vendeurs supportés (plusieurs sources concordantes ; page officielle non accessible directement à la vérification — signal fort, pas une confirmation écrite). **Ne pas contacter, effort à ne pas dépenser.** |
-| **Lemon Squeezy** (MoR) | 🔍 Incertain, à contacter | Page officielle des pays supportés non accessible à la vérification. Signal indirect défavorable : le paiement vendeur passe par PayPal ou virement bancaire dans un pays supporté — Haïti étant exclu de PayPal, le risque d'exclusion est réel. **Contacter en priorité** pour confirmation écrite. |
+| **Un outil de paiement pour créateurs** (MoR) | 🔍 Incertain, à contacter | Page officielle des pays supportés non accessible à la vérification. Signal indirect défavorable : le paiement vendeur passe par PayPal ou virement bancaire dans un pays supporté — Haïti étant exclu de PayPal, le risque d'exclusion est réel. **Contacter en priorité** pour confirmation écrite. |
 | **FastSpring** (MoR) | 🔍 Incertain, à contacter | Paiement direct limité à US/UK/UE/Canada/Australie ; portail de payout élargi mais liste exacte non confirmée. **Contacter en second.** |
 | MonCash / Zelle | ✅ En production | Rails déjà livrés — Zelle couvre déjà une grande partie du cas d'usage diaspora (achat USD depuis les États-Unis) |
 | US LLC + Stripe/PayPal | ⏸ Option de repli | À envisager seulement si aucun MoR ne confirme le support Haïti — implique entité + compte bancaire US + comptabilité transfrontalière |
 
-**Note stratégique** — Chariow (la référence explicite de ce projet,
-`docs/06-ANALYSE-CHARIOW.md`) ne s'appuie sur aucun de ces trois MoR : elle
+**Note stratégique** — une plateforme africaine de produits numériques (la référence explicite de ce projet,
+`docs/06-ANALYSE-VENTE-NUMERIQUE.md`) ne s'appuie sur aucun de ces trois MoR : elle
 est bâtie mobile-money-first pour des marchés sous-bancarisés, exactement le
 choix déjà fait ici (MonCash + Zelle). Les MoR généralistes (Paddle, Lemon
 Squeezy, FastSpring) servent surtout une base vendeurs US/UE. **Ce chantier
@@ -117,7 +117,7 @@ Aucun changement de schéma nécessaire pour l'évaluer.
 
 1. Décider si la vérification Meta Business Manager (WhatsApp) démarre
    maintenant ou après le déblocage Reloadly — voir la réserve en Phase 0.
-2. **Contacter Lemon Squeezy et FastSpring** pour confirmation écrite du
+2. **Contacter un outil de paiement pour créateurs et FastSpring** pour confirmation écrite du
    support vendeur Haïti + méthode de payout fonctionnelle. **Ne pas
    contacter Paddle** (exclusion quasi confirmée par la recherche).
 3. Poser les scripts Meta Pixel / TikTok Pixel / GA4 / GTM (Phase 1,

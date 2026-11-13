@@ -1,12 +1,12 @@
-# Zabelie — Analyse concurrentielle : Chariow
+# Zabelie — Analyse concurrentielle : une plateforme africaine de produits numériques
 
-> ⚠️ chariow.com bloque la consultation automatisée (403) : analyse fondée sur
-> le modèle public connu de Chariow, **à valider par navigation manuelle**.
+> ⚠️ Son site bloque la consultation automatisée (403) : analyse fondée sur
+> le modèle public connu d'une plateforme africaine de produits numériques, **à valider par navigation manuelle**.
 > Objectif : absorber ses forces, exploiter ses faiblesses, rester haïtien.
 
-## Le modèle Chariow (store-builder)
+## Le modèle d'une plateforme africaine de produits numériques (store-builder)
 
-Chariow permet à un créateur de monter une **boutique de produits
+Une plateforme africaine de produits numériques permet à un créateur de monter une **boutique de produits
 digitaux en un lien** (ebooks, formations, templates), avec checkout mobile
 money (rails d'Afrique de l'Ouest/Centrale) et livraison automatique. Le
 vendeur **apporte son propre trafic** (WhatsApp, Instagram, TikTok).
@@ -21,10 +21,10 @@ vendeur **apporte son propre trafic** (WhatsApp, Instagram, TikTok).
 
 ## Faiblesses à exploiter
 
-| Faiblesse Chariow | Notre différenciateur |
+| Faiblesse une plateforme africaine de produits numériques | Notre différenciateur |
 |---|---|
 | **Confiance non instrumentée** : pas d'avis vérifiés visibles, pas d'escrow acheteur | ✅ **Construit** : avis **réservés aux acheteurs ayant payé** (garanti par contrainte UNIQUE en base, pas seulement en API) + badge « Achat vérifié ✓ » + **escrow J+7** déjà en place. En marché à faible confiance, c'est LE levier. |
-| **Pas de marketplace centrale** : zéro découverte, le vendeur est seul pour son trafic | ✅ Déjà en place : catalogue central + recherche + profils créateurs + SEO (sitemap par produit/créateur). Le vendeur Zabelie reçoit du trafic qu'un vendeur Chariow n'a pas. |
+| **Pas de marketplace centrale** : zéro découverte, le vendeur est seul pour son trafic | ✅ Déjà en place : catalogue central + recherche + profils créateurs + SEO (sitemap par produit/créateur). Le vendeur Zabelie reçoit du trafic qu'un vendeur une plateforme africaine de produits numériques n'a pas. |
 | **Pas de rails haïtiens** (MonCash/NatCash absents) | ✅ MonCash natif, résilient aux coupures (réconciliateur). NatCash prêt à activer (Vague 2). |
 | Pages riches → lourdes en bande passante | ✅ Design 100 % vectoriel (zéro image bitmap), pages légères — pensé pour la 3G haïtienne. |
 
@@ -44,6 +44,6 @@ vendeur **apporte son propre trafic** (WhatsApp, Instagram, TikTok).
 
 ## Règle de position
 
-Zabelie = **la boutique en un lien de Chariow** + **la découverte d'une
+Zabelie = **la boutique en un lien d'une plateforme africaine de produits numériques** + **la découverte d'une
 marketplace** + **la confiance instrumentée (avis vérifiés + escrow)** — le tout
 sur les rails de paiement haïtiens.

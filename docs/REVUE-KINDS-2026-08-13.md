@@ -82,7 +82,7 @@ d'achat meurt en erreur.
 - **Constat** : la chaîne complète, mesurée : paiement confirmé → escrow `maturing` non verrouillé → aucun état de remise n'existe ni ne peut être créé pour un service → `mature_wallets()` paie à J+7 → aucun sweep ne regarde jamais ce kind → l'acheteur n'a aucun état où accrocher un litige. Le cahier documente cette exposition **mot pour mot** et l'accepte (arbitrage B(i), 2026-08-08) *sous condition* d'un seuil de sortie écrit — déclencheur, conséquence, inscription dans `OPS_TODO` (`docs/26:117-127`). **Ce seuil n'existe nulle part** : ni dans `docs/26` au-delà de sa formulation, ni dans `OPS_TODO.md`.
 - **Impact** : mesuré en prod — le seul produit publié acheté est un `service` (4 commandes : 1 `pending`, 3 `cancelled`, **0 payée, 0 escrow**). Aucun argent n'a encore été exposé. Mais le premier paiement de service déroulera la chaîne ci-dessus intégralement, et le contrôle qui borne le risque aujourd'hui (publication manuelle par le porteur) « ne passe pas à l'échelle et se dégrade en silence » — c'est la formulation du cahier lui-même.
 - **Preuve** : lignes citées lues ; mesure des 4 commandes exécutée le 2026-08-13.
-- **Correctif proposé** : deux niveaux, distincts. **(a) S, décision porteur, aujourd'hui** : poser le seuil de sortie dans `docs/26` + `OPS_TODO` (proposition conforme au motif `dispute_weekly_ceiling` : déclencheur = 3 services publiés OU première délégation de la publication ; conséquence = gel des nouvelles publications de service). **(b) L, chantier** : « qu'est-ce que *rendu* pour une prestation » — acte de livraison vendeur + acceptation acheteur avec timeout, sur le modèle Fiverr (acceptation ou auto-complétion J+3, cf. benchmark P3.1-P3.2), en réutilisant la mécanique `gated_on_delivery`/`0043` existante plutôt qu'une seconde machine.
+- **Correctif proposé** : deux niveaux, distincts. **(a) S, décision porteur, aujourd'hui** : poser le seuil de sortie dans `docs/26` + `OPS_TODO` (proposition conforme au motif `dispute_weekly_ceiling` : déclencheur = 3 services publiés OU première délégation de la publication ; conséquence = gel des nouvelles publications de service). **(b) L, chantier** : « qu'est-ce que *rendu* pour une prestation » — acte de livraison vendeur + acceptation acheteur avec timeout, sur le modèle d'une place mondiale de micro-services (acceptation ou auto-complétion J+3, cf. benchmark P3.1-P3.2), en réutilisant la mécanique `gated_on_delivery`/`0043` existante plutôt qu'une seconde machine.
 - **Effort** : S (seuil) puis L (chantier)
 
 ### 🟠 Élevés
@@ -90,7 +90,7 @@ d'achat meurt en erreur.
 #### [PHY-01] La publication d'un produit physique n'exige aucune photo — le standard du marché la rend obligatoire sous peine de dépublication
 - **Axe** : Fonctionnel / UX vendeur
 - **Emplacement** : `app/api/admin/product-status/route.ts:65` — la porte de publication ne conditionne que `isDownloadable(...)` (livrable des `fichier`) ; aucun contrôle de `cover_url` pour aucun kind
-- **Constat** : un `physical` (et un `service`, et un `fichier`) peut être publié sans aucune image. Le benchmark est sans ambiguïté : Jumia impose fond blanc, un produit par photo, première image en vue de face, **produit désactivé** en cas de non-conformité (VendorHub, sourcé).
+- **Constat** : un `physical` (et un `service`, et un `fichier`) peut être publié sans aucune image. Le benchmark est sans ambiguïté : Une grande place de marché africaine impose fond blanc, un produit par photo, première image en vue de face, **produit désactivé** en cas de non-conformité (VendorHub, sourcé).
 - **Impact** : sur une marketplace de produits physiques, une fiche sans photo ne vend pas et dégrade la confiance dans tout le catalogue. Mesure prod : 4/4 fiches sans image — indistinguable aujourd'hui de TRV-01.
 - **Correctif proposé** : étendre la porte de publication : `cover_url` non NULL exigé pour `published`, tous kinds (ou a minima `physical`), même motif fail-closed que le garde livrable (422 nommant le manque, 503 sur erreur de lecture). ⚠️ **Séquencement obligatoire : APRÈS TRV-01** — l'exiger aujourd'hui interdirait toute publication, puisqu'aucune image ne peut entrer.
 - **Effort** : S (une fois TRV-01 levé)
@@ -116,14 +116,14 @@ d'achat meurt en erreur.
 #### [DIG-02] L'accès au fichier acheté est en dessous du standard : ni bibliothèque nommée, ni limite, ni marquage
 - **Axe** : Fonctionnel
 - **Emplacement** : `app/api/download/route.ts:42` (re-téléchargement possible — `paid` ou `delivered` acceptés), `:84` (URL signée 5 min ✅), `:96` (`delivered` au premier téléchargement) — 99 lignes, lues ; aucune colonne de comptage de téléchargements dans `product_assets` (`0043`/`0059` lus)
-- **Constat** : la base est saine (URL signée courte, re-téléchargement depuis `mes-achats` = bibliothèque de fait). Manquent, vs le standard : un **compteur de téléchargements** (observabilité anti-abus), et le **marquage à l'email de l'acheteur** (Gumroad « PDF stamping », Chariow — présenté comme dissuasion, pas DRM ; pratiqué par l'acteur francophone africain de référence). La re-téléchargeabilité illimitée est par ailleurs le bon choix pour le terrain (un lien unique qui meurt en pleine coupure réseau est l'anti-pattern local).
+- **Constat** : la base est saine (URL signée courte, re-téléchargement depuis `mes-achats` = bibliothèque de fait). Manquent, vs le standard : un **compteur de téléchargements** (observabilité anti-abus), et le **marquage à l'email de l'acheteur** (une plateforme de vente directe pour créateurs « PDF stamping », une plateforme africaine de produits numériques — présenté comme dissuasion, pas DRM ; pratiqué par l'acteur francophone africain de référence). La re-téléchargeabilité illimitée est par ailleurs le bon choix pour le terrain (un lien unique qui meurt en pleine coupure réseau est l'anti-pattern local).
 - **Correctif proposé** : (a) S — colonne `download_count` incrémentée dans la route (observabilité d'abord, limite éventuelle ensuite, en table de config jamais en dur) ; (b) L — watermark PDF à l'email, chantier séparé, après la première vente réelle.
 - **Effort** : S puis L
 
 #### [SRV-02] Aucune notion de réservation/planification pour les services — le délai est purement déclaratif
 - **Axe** : Fonctionnel
 - **Emplacement** : `lib/products.ts:28-29` (`deliveryDays`, `serviceIncludes` — seuls champs propres au kind), `components/publish-form.tsx:73-74`
-- **Constat** : le standard services (SweepSouth : date + lead time 24 h + récurrence ; Fiverr : commande datée avec délais formels) repose sur des étapes horodatées à comportement par défaut. Zabelie n'a que le délai affiché sur la fiche.
+- **Constat** : le standard services (une plateforme sud-africaine de services à domicile : date + lead time 24 h + récurrence ; une place mondiale de micro-services : commande datée avec délais formels) repose sur des étapes horodatées à comportement par défaut. Zabelie n'a que le délai affiché sur la fiche.
 - **Impact** : nul tant que SRV-01b n'existe pas — la planification sans état d'exécution serait une promesse de plus sans mécanique dessous.
 - **Correctif proposé** : à intégrer au chantier SRV-01b, pas avant. La brique minimale du benchmark n'est pas le calendrier, c'est **le délai avec comportement à expiration**.
 - **Effort** : L (dans SRV-01b)
@@ -131,7 +131,7 @@ d'achat meurt en erreur.
 #### [PHY-02] Pas de flux de retour acheteur — seule la mécanique de remboursement existe
 - **Axe** : Fonctionnel
 - **Emplacement** : `refund_order` (`0037`, fingerprint vérifié en prod le 2026-08-11) relibère le stock ; aucun écran ni état « retour demandé » ; litiges suspendus aux décisions `docs/28`
-- **Constat** : le standard du marché est une fenêtre courte et explicite (Jumia 7 j, Konga 7 j, Takealot 30 j — sourcé). Zabelie n'a ni fenêtre ni flux ; la logistique inverse n'est de toute façon pas transposable telle quelle (lentille haïtienne : dépôt en point de retrait plutôt que collecte).
+- **Constat** : le standard du marché est une fenêtre courte et explicite (une grande place de marché africaine 7 j, une place de marché nigériane 7 j, une place de marché sud-africaine 30 j — sourcé). Zabelie n'a ni fenêtre ni flux ; la logistique inverse n'est de toute façon pas transposable telle quelle (lentille haïtienne : dépôt en point de retrait plutôt que collecte).
 - **Correctif proposé** : dans le chantier litiges (D-10→D-14) : une fenêtre écrite en table de config + un état `retour demandé` accroché à `zabelie_fulfillment` — pas un système logistique.
 - **Effort** : M (après D-10→D-14)
 
@@ -146,12 +146,12 @@ d'achat meurt en erreur.
 
 #### [PHY-03] Pas de numéro de suivi ni de points de retrait — écart benchmark assumé par le modèle
 - **Emplacement** : `lib/product-kind.ts:247-262` (`deliveryNoticeKey` : zone + délai déclarés par le vendeur, attribués à lui)
-- **Constat** : Jumia/Bumpa offrent du tracking parce qu'ils ont (ou agrègent) des transporteurs. Zabelie ne livre pas — le choix du déclaratif attribué est documenté et cohérent. La piste transposable du benchmark, à garder pour plus tard : des **points de retrait nommés** (modèle pickup station), qui ne demandent aucune flotte.
+- **Constat** : Une grande place de marché africaine et un outil nigérian de gestion de boutique offrent du tracking parce qu'ils ont (ou agrègent) des transporteurs. Zabelie ne livre pas — le choix du déclaratif attribué est documenté et cohérent. La piste transposable du benchmark, à garder pour plus tard : des **points de retrait nommés** (modèle pickup station), qui ne demandent aucune flotte.
 - **Effort** : L (hors périmètre actuel)
 
 #### [DIG-04] Pas de prévisualisation/extrait sur les fiches `fichier`
 - **Emplacement** : `app/produit/[slug]/page.tsx` (fiche lue : description, badges, prix — aucun mécanisme d'extrait)
-- **Constat** : Gumroad sépare contenu public et contenu livré (cover + préview). Sans image possible (TRV-01), la question est prématurée.
+- **Constat** : Une plateforme de vente directe pour créateurs sépare contenu public et contenu livré (cover + préview). Sans image possible (TRV-01), la question est prématurée.
 - **Effort** : M (après TRV-01)
 
 #### [SRV-03] Les services sont exclus de l'API v1 — délibéré et documenté, à ne pas « corriger »
@@ -169,19 +169,19 @@ d'achat meurt en erreur.
 *(Benchmark sourcé par recherche web du 2026-08-13 — sources dans l'annexe. Lentille haïtienne appliquée : seuls les manques transposables sans infrastructure physique sont classés.)*
 
 **`physical`**
-1. **Photos obligatoires avec sanction de visibilité** (Jumia VendorHub : fond neutre, un produit/photo, désactivation sinon) → PHY-01. Préalable : TRV-01.
-2. **Fenêtre de retour courte et écrite** (7 j Jumia/Konga ; variante praticable : dépôt en point convenu, pas de collecte) → PHY-02.
+1. **Photos obligatoires avec sanction de visibilité** (une grande place de marché africaine : fond neutre, un produit/photo, désactivation sinon) → PHY-01. Préalable : TRV-01.
+2. **Fenêtre de retour courte et écrite** (7 j chez deux places de marché africaines ; variante praticable : dépôt en point convenu, pas de collecte) → PHY-02.
 3. **Chaque étape porte un délai + un comportement à expiration** — déjà le motif de `0043` (`shipment_deadline_days`, `auto_receive_days`) : Zabelie est **au standard** ici ; le manque est l'exercice réel du chemin, pas la mécanique.
 
 **`fichier`**
 1. **Bibliothèque d'achats persistante** — partiellement au standard (re-téléchargement depuis `mes-achats`, `download/route.ts:42`) ; manque le compteur d'observabilité → DIG-02a.
-2. **Marquage à l'identité de l'acheteur** (Gumroad stamping, Chariow watermark email — la pratique de l'acteur francophone africain le plus comparable) → DIG-02b.
-3. **Livraison duale redirection + email** (Paystack : page de téléchargement ET lien dans le reçu) — l'outbox `0061` porte le reçu ; le lien de téléchargement dans l'email de confirmation est le chaînon manquant. ⚠️ À vérifier : contenu exact des gabarits d'email de `lib/zabelie-notify.ts` (non relu dans cet audit).
+2. **Marquage à l'identité de l'acheteur** (une plateforme de vente directe pour créateurs stamping, une plateforme africaine de produits numériques watermark email — la pratique de l'acteur francophone africain le plus comparable) → DIG-02b.
+3. **Livraison duale redirection + email** (un prestataire de paiement africain : page de téléchargement ET lien dans le reçu) — l'outbox `0061` porte le reçu ; le lien de téléchargement dans l'email de confirmation est le chaînon manquant. ⚠️ À vérifier : contenu exact des gabarits d'email de `lib/zabelie-notify.ts` (non relu dans cet audit).
 
 **`service`**
-1. **Acte formel de livraison + acceptation avec timeout** (Fiverr : delivered → acceptation ou auto-complétion J+3 ; KongaPay : escrow jusqu'à complétion) → SRV-01b. **Le manque n°1 du rapport.**
-2. **Confirmation croisée / notation mutuelle double-aveugle** (SweepSouth bilatéral ; Fiverr publication simultanée — le détail qui compte sur un petit marché où tout le monde se connaît) → extension de SRV-01b ; la notation acheteur existe déjà (`mes-achats:265-269`).
-3. **Réservation avec lead time** (SweepSouth 24 h) → SRV-02, après SRV-01b.
+1. **Acte formel de livraison + acceptation avec timeout** (une place mondiale de micro-services : delivered → acceptation ou auto-complétion J+3 ; une place de marché nigériane : escrow jusqu'à complétion) → SRV-01b. **Le manque n°1 du rapport.**
+2. **Confirmation croisée / notation mutuelle double-aveugle** (une plateforme sud-africaine de services à domicile bilatéral ; une place mondiale de micro-services publication simultanée — le détail qui compte sur un petit marché où tout le monde se connaît) → extension de SRV-01b ; la notation acheteur existe déjà (`mes-achats:265-269`).
+3. **Réservation avec lead time** (une plateforme sud-africaine de services à domicile 24 h) → SRV-02, après SRV-01b.
 
 ## Plan d'action priorisé
 
@@ -196,19 +196,19 @@ d'achat meurt en erreur.
 | 7 | DIG-02a | Colonne `download_count` + incrément dans `download/route.ts` (observabilité, pas de limite en dur) | 🟡 | S |
 | 8 | TRV-04 | Passer « Avis déposé ✓ » par `t(lang, …)` (rejoint la tâche i18n ouverte) | 🔵 | S |
 | 9 | TRV-02 | Trancher D-10→D-14 (`docs/28`) — décisions porteur — puis chantier contact acheteur | 🟠 | M |
-| 10 | SRV-01b | Chantier « rendu pour une prestation » : livraison vendeur + acceptation acheteur + timeout, sur la mécanique `0043` existante (modèle Fiverr J+3) | 🔴* | L |
+| 10 | SRV-01b | Chantier « rendu pour une prestation » : livraison vendeur + acceptation acheteur + timeout, sur la mécanique `0043` existante (modèle d'une place mondiale de micro-services J+3) | 🔴* | L |
 | 11 | PHY-02 | Fenêtre de retour en table de config + état `retour demandé` — dans le chantier litiges | 🟡 | M |
 | 12 | DIG-02b | Watermark PDF à l'email acheteur — après la première vente réelle | 🟡 | L |
 
 *\* SRV-01b est 🔴 par nature mais vient après les S : le seuil (ordre 2) borne le risque en attendant, exactement comme le cahier le prévoit.*
 
 **Décision porteur, 2026-08-13, reçue pendant la livraison de ce plan :
-« Zabelie ne fait pas du cash à la livraison. »** Les mentions COD/Glovo Cash
+« Zabelie ne fait pas du cash à la livraison. »** Les mentions de paiement à la livraison
 du benchmark ci-dessus sont donc à lire comme du contexte concurrentiel,
 jamais comme une piste : le rail d'encaissement de Zabelie est le mobile money
 (MonCash), point. Aucune surface du site ne promet un paiement à la livraison
 — vérifié par recensement le jour même — et aucun chantier futur ne doit en
-introduire. C'est cohérent avec la leçon Konga du benchmark : ils ont
+introduire. C'est cohérent avec la leçon d'une place de marché nigériane du benchmark : ils ont
 construit leur escrow mobile pour SORTIR du COD ; Zabelie y est née.
 
 **Par quoi commencer aujourd'hui** : les ordres 1 à 3 sont trois gestes porteur
@@ -251,16 +251,12 @@ publié sans asset · 4 commandes (toutes `service` : 1 `pending`, 3 `cancelled`
 - Comportement runtime réel des parcours (aucun paiement n'a jamais eu lieu en
   prod ; les e2e mockent la passerelle).
 - Benchmark : deux points marqués ⚠️ Non vérifié dans la recherche source
-  (règles photos Konga ; limites de téléchargement natives et URLs signées
-  documentées première main chez Selar/Chariow).
+  (règles photos d'une place de marché nigériane ; limites de téléchargement natives et URLs signées
+  documentées première main chez deux plateformes africaines de produits numériques).
 - `docs/26` au-delà de `:96-130` — seule la section services a été relue en
   intégralité pour cet audit ciblé.
 
-**Intrant benchmark** : recherche web du 2026-08-13 (Jumia, Konga, Takealot,
-Bumpa · Selar, Chariow, Paystack, Gumroad · Glovo, Yango, SweepSouth, Fiverr),
-sources : jumia.com.ng/sp-returns-refunds · vendorhub.jumia.com.ng/product-images ·
-konga.com/content/return-policy · konga.com/help/buyer-safety ·
-terms-and-policies.takealot.com · getbumpa.com/blog · selar.com/blog ·
-help.gumroad.com (PDF stamping, Library) · paystack.com/blog/product/digital-products ·
-chariow.com · help.fiverr.com (order process, reviews) · d3.harvard.edu (SweepSouth) ·
-avalon-logistics.pl (Glovo, Glovo Cash) · yango.com.
+**Intrant benchmark** : recherche web du 2026-08-13 sur les pages publiques
+(retours, règles photos, aide vendeur, sécurité acheteur) de places de marché
+africaines, de plateformes de produits numériques, d'applications de livraison
+et de plateformes de services. Les adresses ne sont pas reproduites ici.

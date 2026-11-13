@@ -1,4 +1,4 @@
-# Zabelie Digi — Paiement des missions à jalons (façon Upwork)
+# Zabelie Digi — Paiement des missions à jalons
 
 > **📋 DOCUMENT DE DESIGN — AUCUN CODE ÉCRIT.** Ce document est soumis à revue
 > avant toute implémentation, exactement comme le brouillon fidélité (PR #12,
@@ -52,7 +52,7 @@ mérite le même traitement que n'importe quelle modification de
 
 - **Mission** : un contrat entre un acheteur et un vendeur (talent), composé
   d'un ou plusieurs **jalons**. Créée par le vendeur ou l'acheteur (à trancher
-  en revue — Upwork la fait naître d'une offre acceptée), acceptée par les
+  en revue — une place mondiale du travail indépendant la fait naître d'une offre acceptée), acceptée par les
   deux parties avant tout paiement.
 - **Jalon (milestone)** : une unité de travail avec sa propre description et
   son propre **montant en HTG**, financée et libérée indépendamment des

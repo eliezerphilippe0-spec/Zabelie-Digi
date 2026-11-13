@@ -172,7 +172,7 @@ Trancher entre les deux exige de fabriquer le défaut exprès et de vérifier qu
 ## 7.2 — L'ordre de la bascule : le schéma part AVANT le code
 
 Écrit le 2026-09-07, en regardant ce que font les places de marché à grande
-échelle (Shopify, Mercado Libre) et en triant ce qui s'applique ici.
+échelle (un éditeur de boutiques en ligne, une grande place de marché latino-américaine) et en triant ce qui s'applique ici.
 
 **Le fait qui commande.** Vercel déploie le code fusionné en une minute. Les
 migrations, elles, sont appliquées **à la main, après**. Entre les deux, la

@@ -102,7 +102,7 @@ interface, ni texte, ni marque.
   raison d'acheter sur Zabelie (principe P4 de `REVUE-2026-10-26-audit-rea.md`).
   C'est aussi un vecteur d'hameçonnage sous la marque Zabelie.
 
-### 2.2 Shopify : un catalogue, plusieurs portes
+### 2.2 Un éditeur de boutiques en ligne : un catalogue, plusieurs portes
 
 - **Mécanisme central.** Un seul catalogue (produit → variantes → stock),
   projeté sur plusieurs canaux : boutique, réseaux, point de vente. Le stock
@@ -123,7 +123,7 @@ interface, ni texte, ni marque.
   est l'intermédiaire unique, avec séquestre, et le domaine du vendeur ne voit
   jamais un paiement (`0125`, commentaire de tête). Pas de magasin d'apps.
 
-### 2.3 HighLevel : le contact, l'étape, le déclencheur
+### 2.3 Un outil de relation client : le contact, l'étape, le déclencheur
 
 - **Mécanisme central.** Une fiche contact unique, une suite d'étapes
   (« pipeline ») et des **automatismes** (SMS, e-mail) déclenchés par le
@@ -170,9 +170,9 @@ interface, ni texte, ni marque.
 |---|---|---|---|
 | R1 | Une adresse stable qu'on peut imprimer | Linktree | Adresse oui ; **QR non** |
 | R2 | Le vendeur voit que sa vitrine vit (visites, conversion) | Linktree | **Non** : aucune mesure de visite |
-| R3 | Un catalogue, plusieurs portes, un seul stock | Shopify | **Oui** |
-| R4 | Le client se dérive de la commande, il ne se saisit pas | Shopify / HighLevel | Données oui ; **vue non** |
-| R5 | La demande non servie est une information pour le vendeur | HighLevel (inversé) | Mesurée (`0047`) mais **vue par l'admin seulement** |
+| R3 | Un catalogue, plusieurs portes, un seul stock | Un éditeur de boutiques en ligne | **Oui** |
+| R4 | Le client se dérive de la commande, il ne se saisit pas | Un éditeur de boutiques en ligne / un outil de relation client | Données oui ; **vue non** |
+| R5 | La demande non servie est une information pour le vendeur | Un outil de relation client (inversé) | Mesurée (`0047`) mais **vue par l'admin seulement** |
 | R6 | La conversation amène, la plateforme encaisse | WhatsApp | **Oui** (partage + messagerie + séquestre) |
 
 ---
@@ -231,7 +231,7 @@ bloqué volontairement, 1 absent. L'absent (analytics vendeur) et deux partiels
 Règles communes à tout ce qui suit : préfixe `zabelie_`, RLS dès la création,
 aucune fonction `security definer` exposée à `anon` sans garde (et
 `revoke … from public, anon, authenticated` explicite, piège Supabase relevé à
-l'audit Etsy), textes en kreyòl d'abord dans les quatre langues, tokens de
+l'audit face à une place de marché mondiale de l'artisanat), textes en kreyòl d'abord dans les quatre langues, tokens de
 `app/zabelie-theme.css`, tests connu-positif **et** connu-négatif, et une
 mutation qui rougit chaque garde.
 

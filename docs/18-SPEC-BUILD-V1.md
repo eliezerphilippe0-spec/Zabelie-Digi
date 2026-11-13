@@ -52,7 +52,7 @@ de sortie.
 **`docs/17-DOSSIER-BRH-RETENTION.md`**.
 
 Corollaire déjà tranché : le modèle « la plateforme tient le paiement jusqu'à
-confirmation de livraison » (TikTok Shop) n'est pas une option à évaluer — il
+confirmation de livraison » (place de marché sociale par vidéo) n'est pas une option à évaluer — il
 est **déjà implémenté sans validation**. La question n'est pas de savoir s'il
 faut l'adopter, mais s'il faut le corriger.
 

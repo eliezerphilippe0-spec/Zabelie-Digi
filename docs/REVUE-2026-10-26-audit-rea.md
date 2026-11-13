@@ -14,8 +14,8 @@
 > parcours vendeur + design, transversal perf/résilience/i18n/confiance), puis
 > recoupement des sept affirmations les plus lourdes contre le code réel.
 >
-> **REA.** Les principes de Jumia (marché émergent, mobile money, 3G) et
-> d'Amazon (fiche produit, recherche, confiance) sont extraits de leur
+> **REA.** Les principes d'une grande place de marché africaine (marché émergent, mobile money, 3G) et
+> d'un géant mondial du commerce en ligne (fiche produit, recherche, confiance) sont extraits de leur
 > fonctionnement **public et connu** — aucun outil REA lancé, aucune capture,
 > aucune décompilation (zone d'arrêt). On en tire le POURQUOI, jamais
 > l'apparence, et on n'adapte que ce qui vaut pour un utilisateur haïtien.
@@ -47,17 +47,17 @@ Branche `claude/sweet-hawking-tgyl8g`. Chaque correctif : `tsc 0 · tests verts
 
 | Réf | Principe (le POURQUOI) | Modèle |
 |---|---|---|
-| P1 | L'accueil est un **annuaire** de confiance et de catégories, pas une vitrine éditoriale : chaque pixel ouvre une intention ou rassure | Jumia |
-| P2 | La recherche tolère la **langue réelle** de l'utilisateur (fautes, accents, kreyòl), pas la langue « propre » | Jumia |
-| P3 | La fiche produit est une **machine à lever le doute** : chaque bloc répond à une peur (livré ? remboursé ? vrai ?) ; prix + CTA dominent | Jumia + Amazon |
-| P4 | Réduire le **risque perçu** au paiement. Pas de cash à la livraison possible (BRH) → l'escrow/séquestre joue ce rôle et doit être **visible** | Jumia |
-| P5 | Après paiement, un **statut lisible** vaut une assurance | Jumia |
-| P6 | La performance sur **3G** n'est pas une optimisation, c'est une condition d'accès : chaque Mo est un acheteur perdu | Jumia |
-| P7 | Le vendeur informel est **tenu par la main** ; chaque friction = un catalogue perdu, et ses échecs doivent être **visibles ET récupérables** | Jumia |
-| A1 | La **preuve sociale vérifiée** (note + volume + ancienneté) est le moteur de confiance ; sans volume, l'identité vérifiée + l'escrow prennent le relais | Amazon |
-| A2 | Les **facettes** transforment un grand catalogue en réponses | Amazon |
-| A3 | Chaque **étape** de checkout perd des acheteurs : réduire les écrans, pré-remplir | Amazon |
-| A4 | La **cohérence** EST un signal de confiance ; l'incohérence se lit comme de l'amateurisme, donc du risque | Amazon |
+| P1 | L'accueil est un **annuaire** de confiance et de catégories, pas une vitrine éditoriale : chaque pixel ouvre une intention ou rassure | Une grande place de marché africaine |
+| P2 | La recherche tolère la **langue réelle** de l'utilisateur (fautes, accents, kreyòl), pas la langue « propre » | Une grande place de marché africaine |
+| P3 | La fiche produit est une **machine à lever le doute** : chaque bloc répond à une peur (livré ? remboursé ? vrai ?) ; prix + CTA dominent | Une grande place de marché africaine + un géant mondial du commerce en ligne |
+| P4 | Réduire le **risque perçu** au paiement. Pas de cash à la livraison possible (BRH) → l'escrow/séquestre joue ce rôle et doit être **visible** | Une grande place de marché africaine |
+| P5 | Après paiement, un **statut lisible** vaut une assurance | Une grande place de marché africaine |
+| P6 | La performance sur **3G** n'est pas une optimisation, c'est une condition d'accès : chaque Mo est un acheteur perdu | Une grande place de marché africaine |
+| P7 | Le vendeur informel est **tenu par la main** ; chaque friction = un catalogue perdu, et ses échecs doivent être **visibles ET récupérables** | Une grande place de marché africaine |
+| A1 | La **preuve sociale vérifiée** (note + volume + ancienneté) est le moteur de confiance ; sans volume, l'identité vérifiée + l'escrow prennent le relais | Un géant mondial du commerce en ligne |
+| A2 | Les **facettes** transforment un grand catalogue en réponses | Un géant mondial du commerce en ligne |
+| A3 | Chaque **étape** de checkout perd des acheteurs : réduire les écrans, pré-remplir | Un géant mondial du commerce en ligne |
+| A4 | La **cohérence** EST un signal de confiance ; l'incohérence se lit comme de l'amateurisme, donc du risque | Un géant mondial du commerce en ligne |
 
 ## Les 10 problèmes, par priorité
 

@@ -1,4 +1,4 @@
-# 73 · Le tableau vendeur façon Chariow (produits physiques et services)
+# 73 · Le tableau vendeur (produits physiques et services)
 
 Demande du porteur, le 2026-10-17, après la refonte du Studio (phase T2, PR 379) : « regarde le tableau de bord des produits physiques et services également », puis « vas y » sur la recommandation.
 

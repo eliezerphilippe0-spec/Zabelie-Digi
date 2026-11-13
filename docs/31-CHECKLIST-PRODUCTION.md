@@ -90,7 +90,7 @@ Le seul des six où presque tout reste à faire.
   jamais répétée. Un test de restauration daté sur projet jetable.
 - ✅ C2.6 — **FAIT le 2026-08-18** : `docs/38-RUNBOOK.md` (cinq pannes, RPO/RTO
       délibérément vides tant que C2.4/C2.5 ne les mesurent pas). Ligne
-      d'origine, conservée : `RUNBOOK` : absent (mesuré — `docs/30` est l'audit Izikit, pas un
+      d'origine, conservée : `RUNBOOK` : absent (mesuré — `docs/30` est l'audit un dépôt tiers, pas un
   runbook). Numéro à prendre : le suivant libre au moment de l'écriture.
 
 ## C3 — Anti-fuite RLS en CI · 🟡 LES TROIS QUARTS EXISTENT

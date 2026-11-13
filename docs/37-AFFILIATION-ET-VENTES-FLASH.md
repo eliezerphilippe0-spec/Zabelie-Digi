@@ -7,7 +7,7 @@
 > migrations attendent le signal « applique 008x » du porteur — et les
 > défauts de config restent modifiables par UPDATE, jamais en dur.
 > **Rédigé le** : 2026-08-15 · Sources en fin de document.
-> Prolonge `docs/06-ANALYSE-CHARIOW.md` §P4 (spec affiliation d'origine).
+> Prolonge `docs/06-ANALYSE-VENTE-NUMERIQUE.md` §P4 (spec affiliation d'origine).
 >
 > **Mise à jour (2026-10-28) — l'affiliation option B a son INTERFACE.**
 > `0081` est **appliquée en production** (tables `zabelie_affiliate_config`,
@@ -45,12 +45,12 @@
 
 | Modèle | Qui paie | Qui fixe le taux | Exemple mesuré |
 |---|---|---|---|
-| **A. Plateforme** (Amazon Associates) | La plateforme, sur SA marge | La plateforme, par catégorie | 0–20 % selon la catégorie, la plupart 3–4,5 % ; cookie 24 h ; commission sur le panier entier |
-| **B. Vendeur opt-in** (TikTok Shop, Shopee) | Le vendeur, sur son net, **par choix** | Le vendeur, par produit | 1–80 % permis, 10–15 % typique en « open collaboration » — le marché calibre |
-| **C. Agent de vente** (Jumia JForce) | La plateforme | Grille par catégorie et par grade | 2,5 % (mobiles) à 10 % (épicerie) ; l'agent **passe la commande POUR un client** qui n'a ni internet ni carte ; payé seulement à la livraison confirmée |
+| **A. Plateforme** (programme d'affiliation d'un géant mondial du commerce en ligne) | La plateforme, sur SA marge | La plateforme, par catégorie | 0–20 % selon la catégorie, la plupart 3–4,5 % ; cookie 24 h ; commission sur le panier entier |
+| **B. Vendeur opt-in** (deux places de marché sociales ou asiatiques) | Le vendeur, sur son net, **par choix** | Le vendeur, par produit | 1–80 % permis, 10–15 % typique en « open collaboration » — le marché calibre |
+| **C. Agent de vente** (programme d'agents d'une grande place de marché africaine) | La plateforme | Grille par catégorie et par grade | 2,5 % (mobiles) à 10 % (épicerie) ; l'agent **passe la commande POUR un client** qui n'a ni internet ni carte ; payé seulement à la livraison confirmée |
 
-**La leçon Jumia dépasse le taux.** Leur première version payait à la commande
-reçue — elle a été **manipulée** et Jumia a dû basculer vers « payé à la
+**La leçon d'une grande place de marché africaine dépasse le taux.** Leur première version payait à la commande
+reçue — elle a été **manipulée** et une grande place de marché africaine a dû basculer vers « payé à la
 livraison confirmée et réglée ». C'est notre maturation J+7 : l'attribution se
 fige à la commande, la commission ne se paie qu'à la maturation. On hérite du
 correctif sans avoir payé l'erreur.
@@ -59,16 +59,16 @@ correctif sans avoir payé l'erreur.
 passante faible, une partie des acheteurs sans smartphone à eux, distribution
 par WhatsApp et par des personnes de confiance. Un « ajan Zabelie » qui
 commande pour ses voisins et touche sa part à la remise est la traduction
-locale de JForce — mais il exige le COD chez Jumia, que **Zabelie ne fait pas**
+locale de ce programme d'agents — mais il exige le COD chez une grande place de marché africaine, que **Zabelie ne fait pas**
 (décision porteur 2026-08-13). Notre variante : l'acheteur paie MonCash
 lui-même ou l'agent paie avec SON MonCash — dans les deux cas le paiement
 reste serveur-à-serveur, rien ne change aux trois invariants.
 
-### Ventes flash : la mécanique Amazon Lightning Deals
+### Ventes flash : la mécanique des offres éclair d'un géant mondial du commerce en ligne
 
 Quatre ingrédients, tous mesurés : une **fenêtre courte** (4–12 h) · un
 **compte à rebours** visible · un **plafond d'unités** dédié à l'offre · une
-**barre de progression** « déjà pris » qui crée l'urgence. Jumia et AliExpress
+**barre de progression** « déjà pris » qui crée l'urgence. Une grande place de marché africaine et une place de marché asiatique
 font tourner des fenêtres quotidiennes sur le même schéma.
 
 Ce que les géants ne montrent pas mais font : le prix flash est **calculé
@@ -97,15 +97,15 @@ rabais borné dans le temps. C'est la bonne nouvelle de la session.
 C'est la question D-6 des points, une couche plus haut, et **les géants y
 répondent différemment** — donc elle ne se déduit pas, elle se tranche.
 
-- **Option A (Amazon)** — la commission sort des 10 % de Zabelie. Vendeur
+- **Option A (un géant mondial du commerce en ligne)** — la commission sort des 10 % de Zabelie. Vendeur
   intouché, zéro consentement à gérer, mais la marge plateforme se partage :
   à 5 % d'affiliation, il reste 5 %.
-- **Option B (TikTok Shop) — recommandée** — le **vendeur choisit**, produit
+- **Option B (vendeur opt-in) — recommandée** — le **vendeur choisit**, produit
   par produit, d'offrir un taux aux partageurs. Qui paie est réglé par le
   consentement même ; le vendeur qui veut de la distribution WhatsApp achète
   sa visibilité, celui qui n'en veut pas n'est jamais prélevé. Bornes
   plateforme en config (proposé : 5–40 %, la fourchette de `docs/06`).
-- **Option C (JForce)** — programme d'agents à grille. Le plus adapté au
+- **Option C (agents de vente)** — programme d'agents à grille. Le plus adapté au
   terrain **à terme**, mais il suppose un réseau à recruter et à former :
   c'est un chantier d'opérations, pas de code. À ouvrir après les premières
   ventes réelles.
@@ -116,12 +116,12 @@ répondent différemment** — donc elle ne se déduit pas, elle se tranche.
    identifiant opaque par affilié, jamais son nom. Partageable tel quel sur
    WhatsApp, où la distribution se fait déjà.
 2. **Attribution** : figée **à la création de la commande** (cookie 7 jours,
-   comme Jumia — le 24 h d'Amazon est calibré pour un trafic qu'on n'a pas).
+   comme une grande place de marché africaine — le 24 h d'un géant mondial du commerce en ligne est calibré pour un trafic qu'on n'a pas).
    Un code invalide n'échoue JAMAIS un checkout : il est ignoré, journalisé.
 3. **Écriture** : à la confirmation serveur du paiement, une ligne
    `affiliate_credit:<order_id>` (idempotence existante) au wallet de
    l'affilié, statut immature.
-4. **Paiement** : maturation J+7 — la leçon Jumia. Un remboursement avant
+4. **Paiement** : maturation J+7 — la leçon d'une grande place de marché africaine. Un remboursement avant
    maturation annule la commission par écriture compensatoire, jamais par
    modification du ledger.
 5. **Cascade vérifiable au centime** (docs/06) :
@@ -132,7 +132,7 @@ répondent différemment** — donc elle ne se déduit pas, elle se tranche.
 
 ### Ce que l'affiliation ne sera pas — interdits posés d'avance
 
-Pas de commission à l'inscription (anti-farming — la leçon Jumia et le
+Pas de commission à l'inscription (anti-farming — la leçon d'une grande place de marché africaine et le
 garde-fou cashback existant) · pas de multi-niveaux (un parrainage
 pyramidal est une qualification BRH qu'on ne veut pas approcher) · pas de
 paiement hors wallet (aucun rail parallèle).
@@ -153,14 +153,14 @@ s'appuie sur les réservations de `0036` ; l'expiration est **calculée à la
 lecture** (pas de cron à rater — une fenêtre est une comparaison de dates,
 l'absence de signal ne peut pas faire vendre au mauvais prix).
 
-UI : compte à rebours + barre « déjà pris » (le pattern Lightning Deals
-complet), bandeau « Vant flash » sur la fiche et dans le catalogue.
+UI : compte à rebours + barre « déjà pris » (la mécanique d'offre éclair
+complète), bandeau « Vant flash » sur la fiche et dans le catalogue.
 
 ### Bornes en config ⏳ (proposées, à trancher)
 
 | Paramètre | Proposition | Pourquoi |
 |---|---|---|
-| Durée max | 24 h | Amazon fait 4–12 h ; 24 h pardonne la connectivité du terrain |
+| Durée max | 24 h | Un géant mondial du commerce en ligne fait 4–12 h ; 24 h pardonne la connectivité du terrain |
 | Rabais minimal | 10 % | Sous 10 %, « flash » est un mensonge marketing |
 | Rabais maximal | 70 % | Au-delà, erreur de saisie plus probable qu'intention |
 | Offres simultanées par vendeur | 3 | L'urgence ne survit pas à l'abondance |
@@ -192,7 +192,8 @@ d'affiliation sans catalogue est une dépense sans objet.
 
 ## Sources
 
-- [Amazon Associates — commission rates by category](https://affiliate-program.amazon.com/help/node/topic/GRXPHT8U84RAYDXZ) · [historique Geniuslink](https://geniuslink.com/blog/amazon-affiliate-commission-rates-historical-guide/)
-- [TikTok Shop — le vendeur fixe le taux par produit](https://ads.tiktok.com/help/article/about-setting-different-affiliate-commission-rates-for-tiktok-shop-ads?aadvid=72391499277) · [taux typiques open collaboration](https://www.hamstergarage.com/article/tiktok-shop-affiliate-program-guide-rates-fees)
-- [Jumia JForce — programme officiel](https://www.jumia.com.ng/sp-jforce/) · [analyse du basculement du modèle de rémunération](https://jobtechalliance.com/why-we-invested-jumia-creating-jobs-to-power-last-mile-e-commerce-in-uganda/) · [grille par catégorie](https://jumiaafrica.blogspot.com/2020/04/jforce-all-you-need-to-know-about-jumia.html)
-- [Amazon Lightning Deals — fenêtre, plafond, barre de progression](https://salesfortuna.com/academy/promotions/lightning-deals) · [guide vendeur](https://www.bebolddigital.com/blog/amazon-lightning-deal)
+- Programmes d'affiliation de trois grandes places de marché (grilles de
+  commission par catégorie, taux fixé par le vendeur, basculement d'un modèle
+  de rémunération) et mécanique d'offre éclair (fenêtre, plafond, barre de
+  progression) : pages officielles et analyses tierces. Les adresses ne sont
+  pas reproduites ici.

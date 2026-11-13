@@ -16,7 +16,7 @@ Trois sources, trois valeurs très différentes :
 |---|---|
 | **Ce que Zabelie possède déjà** (fichiers, migrations, colonnes) | ✅ **Vérifié dans le dépôt**, référence à l'appui. C'est le seul socle solide de ce document |
 | **Le marché haïtien** (Bemane, Klasyo, WhatsApp…) | ⚠️ Résumés de recherche sur des pages **marketing**. Voir `docs/45` §0 — arguments de vente, pas mesures |
-| **Les précédents étrangers** (Alipay, Jumia…) | ⚠️ **Connaissance générale de l'agent, non recherchée cette session.** Les mécanismes sont bien documentés publiquement ; dates et chiffres précis ne le sont pas ici. À vérifier avant d'en citer un dans un document commercial |
+| **Les précédents étrangers** (Alipay, une grande place de marché africaine…) | ⚠️ **Connaissance générale de l'agent, non recherchée cette session.** Les mécanismes sont bien documentés publiquement ; dates et chiffres précis ne le sont pas ici. À vérifier avant d'en citer un dans un document commercial |
 
 ---
 
@@ -68,7 +68,7 @@ expédiait, l'acheteur confirmait, l'argent se libérait.
 
 C'est **exactement** `escrow_entries` + `0043` + la maturation J+7.
 
-Et **Mercado Libre** a rejoué la même partition en Amérique latine — faible
+Et **une grande place de marché latino-américaine** a rejoué la même partition en Amérique latine — faible
 bancarisation, faible confiance — avec une leçon supplémentaire : la plus forte
 croissance de **Mercado Pago est venue de son usage HORS de la marketplace**,
 par des marchands qui ne voulaient pas de la vitrine.
@@ -118,9 +118,9 @@ que la machine ne tient. Un différenciateur qui n'est pas dit n'existe pas.
 **Premier pas** : une phrase sur la fiche produit et au moment de payer.
 Kreyòl d'abord.
 
-### 3.2 Le point de retrait, pas la livraison — leçon Jumia
+### 3.2 Le point de retrait, pas la livraison — leçon d'une grande place de marché africaine
 
-Jumia a lourdement financé la livraison à domicile dans des pays sans adresses
+Une grande place de marché africaine a lourdement financé la livraison à domicile dans des pays sans adresses
 normalisées ; ce qui a tenu, ce sont les **stations de retrait**.
 
 Zabelie ne livre pas et le dit honnêtement (`0043` : *« Zabelie ne vérifie pas
@@ -134,20 +134,20 @@ au bilan. `zabelie_pickup_points` existe déjà, sans usage acheteur.
 **Premier pas** : afficher les points de retrait actifs au moment de l'achat
 d'un bien physique, filtrés par zone (`0069`).
 
-### 3.3 L'agent qui commande pour autrui — leçon JForce (Jumia)
+### 3.3 L'agent qui commande pour autrui — leçon d'un programme d'agents (une grande place de marché africaine)
 
 Une part importante du marché n'a pas de données mobiles, ou pas de
-smartphone. JForce a recruté des **agents** qui passent commande pour les
+smartphone. Ce programme a recruté des **agents** qui passent commande pour les
 autres et touchent une commission.
 
 C'est la réponse à *« le marché est sur WhatsApp et tout le monde n'y est pas »*
 — et ça fonctionne sur des téléphones d'entrée de gamme, c'est-à-dire sur le
 terrain déclaré de ce projet. `0081_affiliation.sql` est construit.
 
-### 3.4 La prestation productisée — leçon Fiverr
+### 3.4 La prestation productisée — leçon d'une place mondiale de micro-services
 
 Le couloir `kind = service` est le **seul sans concurrent identifié** après
-recherche kreyòl (`docs/45` §3). L'apport de Fiverr n'est pas la place de
+recherche kreyòl (`docs/45` §3). L'apport d'une place mondiale de micro-services n'est pas la place de
 marché : c'est d'avoir **forcé le format** — prix fixe, délai fixe, « ce qui est
 inclus ».
 
@@ -167,7 +167,7 @@ chantier neuf**, elle contraint un formulaire existant.
 
 | | Pourquoi |
 |---|---|
-| **Un réseau de livraison propre** | Ce qui a coûté le plus cher à Jumia, et Bemane a dix départements d'avance. Le point de retrait est la version soutenable |
+| **Un réseau de livraison propre** | Ce qui a coûté le plus cher à une grande place de marché africaine, et Bemane a dix départements d'avance. Le point de retrait est la version soutenable |
 | **Une super-app** | Gojek et Grab ont commencé par **un seul problème douloureux**. Zabelie porte déjà marketplace + recharge + B2B + fidélité + billetterie — beaucoup, pour **zéro transaction réelle** |
 | **Une baisse de commission pour affronter Bemane** | On perdrait l'économie du registre sans gagner l'argument : à 2 % contre 2 %, il reste le réseau de livraison, et il est à eux |
 | **Un rail de plus avant le premier encaissement** | `docs/03` §9.1 et §9.0 : la question n'est pas technique, elle est réglementaire |

@@ -1,8 +1,8 @@
 # Tarification vendeurs et lancement de 30 jours
 
-Demande du porteur : « Appliquer la tarification de Gumroad, implémente la stratégie de 30 jours » (21 septembre 2026).
-Sources commerciales consultées : https://gumroad.com/pricing et https://gumroad.com/help/article/66-gumroads-fees.
-Il s'agit des frais Zabelie, pas d'une intégration avec Gumroad ni de son statut fiscal de merchant of record.
+Demande du porteur : « Appliquer la tarification d'une plateforme de vente directe pour créateurs, implémente la stratégie de 30 jours » (21 septembre 2026).
+Sources commerciales consultées : sa page de tarifs et son article d'aide sur les frais.
+Il s'agit des frais Zabelie, pas d'une intégration avec une plateforme de vente directe pour créateurs ni de son statut fiscal de merchant of record.
 
 ## Contrat préparé
 

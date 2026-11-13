@@ -80,30 +80,30 @@ Contrats purs (schémas, transitions, CAS) ── Drapeaux ── Fournisseur si
 **Checkpoint 3** — doubles clics, dernier quota, réponse tardive, sortie malformée, délai après envoi : ni écrasement ni deuxième appel ; aucun service payant appelé ; PR 3.
 
 ### Phase T — Tableau du Studio (décisions du 2026-10-16)
-Demande du porteur : « tu dois t'inspirer de Tunafrik, de CreateurSuite pour construire ton tableau » ; puis « oui suis tes recommandations » et « on laisse tomber les pubs ». Tranché :
+Demande du porteur : « tu dois t'inspirer d'un outil africain pour créateurs, d'une suite d'outils pour créateurs pour construire ton tableau » ; puis « oui suis tes recommandations » et « on laisse tomber les pubs ». Tranché :
 - **Formats** : l'ebook (le guide) est actif ; « Pack audio » et « Formation vidéo » sont annoncés « Bientôt », sans bouton ni coût.
 - **Opportunités** : calculées sur les données réelles de Zabelie, agrégées, sans donnée personnelle (migration, donc « oui » du porteur avant application).
-- **Modèles** : remplacés par des modèles de savoir-faire (Tunafrik : formateurs, coachs, couturières, cuisiniers, coiffeurs, éleveurs…) ; plus aucun exemple qui ressemble à un produit physique.
+- **Modèles** : remplacés par des modèles de savoir-faire (un outil africain pour créateurs : formateurs, coachs, couturières, cuisiniers, coiffeurs, éleveurs…) ; plus aucun exemple qui ressemble à un produit physique.
 - **Tunnel de vente** (page de vente, offre complémentaire, version allégée) : plus tard, après le PDF et la fiche (phases 4-5) ; il touche au panier et à l'escrow.
 - **Publicités** : abandonnées dans le Studio. L'entrée « Créer une publicité » disparaît ; le Studio images existant n'est pas touché.
 - Recommandations des captures : la langue du guide suit par défaut celle de l'interface (ht ou fr) ; un seul compteur de suggestions.
 
 - [x] T.1 Modèles de savoir-faire et exemples de produits digitaux
-- [x] T.2 Tableau façon CreateurSuite : menu, accueil personnalisé, deux entrées (analyser un marché, créer un produit digital) + modèles, projets avec statut, « Comment ça marche » en trois étapes (Tunafrik)
+- [x] T.2 Tableau sur le modèle d'une suite d'outils pour créateurs : menu, accueil personnalisé, deux entrées (analyser un marché, créer un produit digital) + modèles, projets avec statut, « Comment ça marche » en trois étapes (un outil africain pour créateurs)
 - [x] T.3 Choix du format (ebook actif ; audio et vidéo « Bientôt »), langue par défaut, compteur unique
 - [x] T.4 Opportunités sur données réelles (`0143`) : recherches sans résultat et produits digitaux qui se vendent, seuils de confidentialité
 - [x] T.5 Parcours e2e, captures 360 px et bureau, relecture des textes
 
 **Checkpoint T** — tableau lisible à 360 px et sur ordinateur ; aucun chiffre inventé (état vide honnête tant que les seuils ne sont pas atteints) ; aucune entrée vers une fonction absente ; PR T (migration non appliquée).
 
-### Phase T2 — Accueil façon Chariow (demande du 2026-10-17)
-Demande du porteur, capture du tableau de Chariow à l'appui : « inspire-toi de Chariow pour le faire ». Ce qu'on reprend : la salutation selon l'heure, une rangée d'actions rapides, trois chiffres en cartes (revenu, 7 derniers jours, clients) qu'on peut masquer, « Produits les plus vendus », un menu à icônes, « Voir ma boutique ». Ce qu'on ne reprend pas : l'assistant IA, les automatisations, l'affiliation, le marketing (absents du Studio, donc absents du menu) et l'émoji de la salutation.
+### Phase T2 — Accueil sur le modèle d'une plateforme africaine de produits numériques (demande du 2026-10-17)
+Demande du porteur, capture du tableau d'une plateforme africaine de produits numériques à l'appui : « inspire-toi d'une plateforme africaine de produits numériques pour le faire ». Ce qu'on reprend : la salutation selon l'heure, une rangée d'actions rapides, trois chiffres en cartes (revenu, 7 derniers jours, clients) qu'on peut masquer, « Produits les plus vendus », un menu à icônes, « Voir ma boutique ». Ce qu'on ne reprend pas : l'assistant IA, les automatisations, l'affiliation, le marketing (absents du Studio, donc absents du menu) et l'émoji de la salutation.
 
 Décisions prises :
 - **Produit digital** = `KIND_FILE`, comme l'univers « Digital » du catalogue.
 - **Chiffres** lus sous le JWT du vendeur (RLS de `0002` : commandes de ses produits, son grand livre), jamais par la clé de service : **aucune migration**. Ventes = commandes payées ou livrées de ses produits digitaux. Revenus = crédits de son grand livre sur ces commandes, la même définition que « Revenus nets » du tableau vendeur (commission déduite). « 7 derniers jours » se compte à la date du crédit. Clients = acheteurs distincts.
 - **Total complet ou signalé** : lecture par lots de 1 000 ; au-delà du plafond, le chiffre s'affiche « ≥ », comme sur le tableau vendeur.
-- **Masquer les montants** : préférence du navigateur seulement (Chariow le propose pour partager son écran).
+- **Masquer les montants** : préférence du navigateur seulement (une plateforme africaine de produits numériques le propose pour partager son écran).
 - Le menu garde ses entrées et ajoute des liens vers des pages qui existent : mes ventes, revenus (tableau vendeur), codes promo, centre d'aide.
 
 - [x] T2.1 Calculs purs (moment de la journée à l'heure d'Haïti, résumé des ventes, produits les plus vendus) et leurs tests
@@ -120,20 +120,20 @@ Décisions prises :
 - [x] 4.4 Extrait gratuit automatique (idée 1)
 - [x] 4.5 Exemplaire au nom de l'acheteur (idée 3) — moteur seulement ; la remise à l'acheteur vient avec la phase 5
 
-Idées tirées des plateformes de produits digitaux et de formations (Gumroad, Leanpub, Udemy, Teachable, Kajabi, Skillshare, Amazon KDP, Selar, Chariow), proposées le 2026-10-16 ; **1, 3 et 5 validées** (« oui 1, 3, 5 ») :
+Idées tirées des plateformes de produits digitaux et de formations (une plateforme de vente directe pour créateurs, une plateforme d'édition de livres numériques, une place mondiale de cours en ligne, un outil de création de cours, un outil de création de cours, une place de cours en ligne par abonnement, un géant mondial du commerce en ligne KDP, une plateforme nigériane de produits numériques, une plateforme africaine de produits numériques), proposées le 2026-10-16 ; **1, 3 et 5 validées** (« oui 1, 3, 5 ») :
 
 | # | Idée | Inspirée de | Statut |
 |---|---|---|---|
-| 1 | Extrait gratuit automatique (sommaire + première section) | Amazon « Look inside », Leanpub, aperçus Udemy | ✅ validée → 4.4 |
-| 2 | Page de vente remplie depuis le guide | Udemy, Teachable | proposée → phase 5 |
-| 3 | Exemplaire au nom de l'acheteur, en pied de page | marquage des PDF de Gumroad | ✅ validée → 4.5 |
-| 4 | Nouvelles versions gratuites pour les acheteurs | Leanpub | proposée → phase 5 |
-| 5 | Fiche-test de préparation avant export | revue qualité Udemy | ✅ validée → 4.2 |
-| 6 | Audio enregistré par le créateur | Audible, Tunafrik | proposée |
-| 7 | Kit de lancement WhatsApp / Facebook | Selar, Chariow, Gumroad | proposée (idée 5 de CreateurSuite) |
-| 8 | Prix au choix avec minimum, prix en dollars | Gumroad, Leanpub | règle commerciale à décider |
-| 9 | Guide → formation, quiz, attestation de fin | Teachable, Thinkific, Udemy | proposée |
-| 10 | Affiliés par produit | Gumroad, Selar | règle commerciale à décider |
+| 1 | Extrait gratuit automatique (sommaire + première section) | Un géant mondial du commerce en ligne (aperçu avant achat), une plateforme d'édition de livres numériques, aperçus d'une place mondiale de cours en ligne | ✅ validée → 4.4 |
+| 2 | Page de vente remplie depuis le guide | Une place mondiale de cours en ligne, un outil de création de cours | proposée → phase 5 |
+| 3 | Exemplaire au nom de l'acheteur, en pied de page | marquage des PDF d'une plateforme de vente directe pour créateurs | ✅ validée → 4.5 |
+| 4 | Nouvelles versions gratuites pour les acheteurs | une plateforme d'édition de livres numériques | proposée → phase 5 |
+| 5 | Fiche-test de préparation avant export | revue qualité d'une place mondiale de cours en ligne | ✅ validée → 4.2 |
+| 6 | Audio enregistré par le créateur | une plateforme de livres audio, un outil africain pour créateurs | proposée |
+| 7 | Kit de lancement WhatsApp / Facebook | Une plateforme nigériane de produits numériques, une plateforme africaine de produits numériques, une plateforme de vente directe pour créateurs | proposée (idée 5 d'une suite d'outils pour créateurs) |
+| 8 | Prix au choix avec minimum, prix en dollars | Une plateforme de vente directe pour créateurs, une plateforme d'édition de livres numériques | règle commerciale à décider |
+| 9 | Guide → formation, quiz, attestation de fin | Un outil de création de cours, un outil de création de cours, une place mondiale de cours en ligne | proposée |
+| 10 | Affiliés par produit | Une plateforme de vente directe pour créateurs, une plateforme nigériane de produits numériques | règle commerciale à décider |
 
 **Checkpoint 4** — PDF inspecté page par page ; export figé, nouvel export exigé après modification ; PR 4.
 
@@ -182,9 +182,9 @@ Restent ouvertes, et ne bloquent que l'ouverture (phase 8) : D3 fournisseur
 réel, D4 budget et plafonds, D5 conservation, D7 liste pilote, D8 libellés
 publics.
 
-## Idées tirées de CreateurSuite (2026-10-15) — PROPOSÉES, à valider
+## Idées tirées d'une suite d'outils pour créateurs (2026-10-15) — PROPOSÉES, à valider
 
-Source : createursuite.com (page publique) et capture de son tableau de bord.
+Source : sa page publique et une capture de son tableau de bord.
 Ce qui s'y voit : un accueil « Que souhaitez-vous faire aujourd'hui ? » à trois
 entrées (analyser un marché, créer un produit digital, créer une publicité),
 des projets à reprendre (« Continuer », état Prêt / Brouillon), des
