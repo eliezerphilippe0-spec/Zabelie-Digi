@@ -33,7 +33,7 @@ select zabelie_migration_garde('0068_service_rendu.sql');
 --
 -- ─── LES CHOIX, ET CE QU'ILS COÛTENT ────────────────────────────────────────
 -- • **Mêmes délais que le physique** (`shipment_deadline_days` = 5,
---   `auto_receive_days` = 7). Le modèle Fiverr accepte à J+3 ; 7 jours est
+--   `auto_receive_days` = 7). Ailleurs on accepte à J+3 ; 7 jours est
 --   plus protecteur pour l'acheteur, et surtout : un délai propre au service
 --   exigerait de brancher par kind la branche d'auto-réception du sweep —
 --   rouvrir le money-path. Les valeurs vivent en table de config : les

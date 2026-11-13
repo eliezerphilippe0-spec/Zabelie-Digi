@@ -1,4 +1,4 @@
--- Zabelie Digi — Page service façon Fiverr (délai + inclus)
+-- Zabelie Digi — Page service (délai + inclus)
 -- Champs d'AFFICHAGE uniquement, ajoutés à products existant : aucune nouvelle
 -- logique financière, aucun nouveau prix. price_htg reste l'unique source de
 -- vérité du montant (inchangé), vérifiée au checkout comme avant.

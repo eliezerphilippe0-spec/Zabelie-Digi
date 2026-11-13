@@ -5,7 +5,7 @@ select zabelie_migration_garde('0164_zabelie_service_zone_terms.sql');
 --
 -- ─── POURQUOI ──────────────────────────────────────────────────────────────
 -- 0158 dit OÙ le vendeur déclare livrer. L'acheteur veut savoir deux choses de plus,
--- et ce sont celles que Mercado Libre Flex et Jumia affichent avant tout : COMBIEN
+-- et ce sont celles que les grandes places de marché affichent avant tout : COMBIEN
 -- et EN COMBIEN DE TEMPS. Et le vendeur a besoin d'une troisième : une PAUSE — un
 -- barrage, une panne de carburant, une zone devenue impraticable ne doivent pas le
 -- forcer à supprimer puis re-déclarer ses zones, ni à laisser l'écran promettre ce

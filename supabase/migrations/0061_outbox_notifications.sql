@@ -1,7 +1,7 @@
 -- ============================================================================
 -- 0061 — OUTBOX DES NOTIFICATIONS DE VENTE
 -- ============================================================================
--- Pattern repris d'Izikit (`outbox`), RÉÉCRIT pour Supabase — et surtout
+-- Patron de boîte d'envoi (`outbox`), ÉCRIT pour Supabase — et surtout
 -- calqué sur un mécanisme qui existe DÉJÀ ici et qui marche :
 -- `zabelie_fulfillment_notices` (0043), avec ses `attempts`, son `last_error`,
 -- son recul exponentiel et sa borne de tentatives. On ne remplace rien : on

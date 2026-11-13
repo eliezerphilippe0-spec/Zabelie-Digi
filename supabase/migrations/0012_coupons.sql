@@ -1,4 +1,4 @@
--- Zabelie Digi — Codes promo vendeur (V-13, inspiration Chariow adaptée Haïti)
+-- Zabelie Digi — Codes promo vendeur (V-13, adaptés à Haïti)
 -- Le vendeur anime ses ventes lui-même (« PROMO50 sur WhatsApp jusqu'à
 -- dimanche »). Règles dures respectées : la réduction est calculée CÔTÉ
 -- SERVEUR (pourcentage borné 1–90, montants entiers), le prix final est figé

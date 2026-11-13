@@ -1,7 +1,7 @@
 select zabelie_migration_garde('0082_pickup_points.sql');
 
 -- ============================================================================
--- 0082 — POINTS DE RETRAIT : le modèle « station » de Jumia, sans le capital
+-- 0082 — POINTS DE RETRAIT : le modèle « station », sans le capital
 -- ============================================================================
 -- Signal porteur du 2026-08-15 : « implémente tout ce qui manque, avancer ».
 -- Spec : docs/37 (gap logistique) — la boutique partenaire qui reçoit les

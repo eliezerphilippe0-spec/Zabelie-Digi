@@ -9,8 +9,8 @@
 -- doivent l'être aussi : qui a fait quoi, à quoi, quand, pourquoi.
 --
 -- Modèle : zabelie_topup_ledger (0010) — append-only par trigger, RLS,
--- service role seul. Pattern inspiré du journal AdminAction d'izikit,
--- réécrit aux conventions du dépôt.
+-- service role seul. Journal des actes d'administration, écrit aux
+-- conventions du dépôt.
 --
 -- Choix assumés :
 --   • PAS de clé étrangère sur actor_id : une trace d'audit doit SURVIVRE à

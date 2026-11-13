@@ -5,7 +5,7 @@ select zabelie_migration_garde('0169_zabelie_notifications_push.sql');
 --
 -- POURQUOI. Décision du porteur le 2026-10-31 (« go niveau 2 ») : un vendeur
 -- qui l'active reçoit une notification sur son appareil à chaque vente, même
--- quand Zabelie est fermée — l'équivalent web du « cha-ching » de Shopify.
+-- quand Zabelie est fermée — le signal sonore d'une vente, en version web.
 -- Le porteur a validé les services de notification des navigateurs (Google,
 -- Apple, Mozilla, Microsoft) et la mise à jour de la politique.
 --

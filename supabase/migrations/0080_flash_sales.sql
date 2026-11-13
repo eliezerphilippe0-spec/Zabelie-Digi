@@ -4,7 +4,7 @@ select zabelie_migration_garde('0080_flash_sales.sql');
 -- 0080 — VENTES FLASH : un rabais borné dans le temps, jamais un prix client
 -- ============================================================================
 -- Signal porteur du 2026-08-15 : « implémente tout ce qui manque, avancer ».
--- Spec : docs/37 §B (mécanique Lightning Deals mesurée, adaptée au terrain).
+-- Spec : docs/37 §B (mécanique de vente flash mesurée, adaptée au terrain).
 --
 -- ─── CE QUE CETTE MIGRATION NE FAIT PAS ────────────────────────────────────
 -- Elle ne touche AUCUNE fonction d'argent. Le prix payé reste calculé par le
@@ -46,7 +46,7 @@ create table zabelie_flash_sales (
   prix_flash_htg bigint not null check (prix_flash_htg > 0),
   debut          timestamptz not null default now(),
   fin            timestamptz not null,
-  -- Plafond d'unités (le « progress bar » Lightning Deals). NULL = fenêtre
+  -- Plafond d'unités (la barre « déjà pris »). NULL = fenêtre
   -- seule. Compté au checkout sur les commandes non annulées de la fenêtre.
   unites_max     integer check (unites_max is null or unites_max > 0),
   annulee_a      timestamptz,
