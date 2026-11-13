@@ -39,11 +39,11 @@ le brief ne le disait. Ce qui est réellement en place et réutilisable :
 
 | Brique existante | Statut réel | Apport à Business |
 |---|---|---|
-| Pages service (façon Fiverr) — PR #14 | ✅ **fusionnée** | Vitrine du pro : services, prix, description, délai |
+| Pages service — PR #14 | ✅ **fusionnée** | Vitrine du pro : services, prix, description, délai |
 | Ledger append-only + escrow J+7 + commission | ✅ **en prod** (money-path Digi) | Le moteur financier ; Business y écrit |
 | Adaptateur MonCash derrière interface | ✅ **en prod** | Le rail de paiement |
 | Machine à états + webhook idempotent | ✅ **patron `zabelie_topup_*`** | À réutiliser pour l'état des factures |
-| Escrow **par jalons** (façon Upwork) — PR #15 | 📄 **design seulement** | Réutilisable *seulement si* implémenté + validé BRH |
+| Escrow **par jalons** — PR #15 | 📄 **design seulement** | Réutilisable *seulement si* implémenté + validé BRH |
 
 Ce qui **manque réellement** pour « Zabelie Business » :
 

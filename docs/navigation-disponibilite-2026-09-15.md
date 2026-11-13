@@ -33,8 +33,8 @@ Les scénarios navigateur utilisent des données et services simulés en local. 
 
 ## Références d’interface
 
-- Etsy : recherche principale, accès aux familles de produits et aux boutiques — https://www.etsy.com/
-- Gumroad Discover : accès distinct au catalogue digital — https://gumroad.com/discover
+- Une place de marché mondiale de l'artisanat : recherche principale, accès aux familles de produits et aux boutiques
+- Une plateforme de vente directe pour créateurs : accès distinct au catalogue digital
 
 Principes adaptés à Zabelie ; identité, typographie et dépendances conservées.
 

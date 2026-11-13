@@ -3,10 +3,10 @@
 Analyse limitée aux **3 zones en construction** (page produit, checkout,
 dashboard vendeur), cible **marché haïtien** (Android entrée de gamme, 3G).
 Filtre appliqué : chaque point **change un fichier construit cette semaine**,
-sinon il part au backlog (§5). Sources : Gumroad (guide d'achat + anatomie de
-page), Lemon Squeezy (docs checkout), Chariow (centre d'aide + revues
-détaillées), Shopify (doc dashboard Home). Talent GN : **aucune présence web
-indexée exploitable** — remplacé par Chariow comme comparable
+sinon il part au backlog (§5). Sources : Une plateforme de vente directe pour créateurs (guide d'achat + anatomie de
+page), un outil de paiement pour créateurs (docs checkout), une plateforme africaine de produits numériques (centre d'aide + revues
+détaillées), un éditeur de boutiques en ligne (doc dashboard Home). Une plateforme guinéenne de talents : **aucune présence web
+indexée exploitable** — remplacé par une plateforme africaine de produits numériques comme comparable
 « contraintes marché émergent ». Les fetchs directs de pages produit étant
 bloqués depuis cet environnement, les poids de page concurrents n'ont pas pu
 être mesurés ; notre propre référence mesurée au build : **page produit
@@ -17,13 +17,13 @@ bloqués depuis cet environnement, les poids de page concurrents n'ont pas pu
 ## Page produit — `app/produit/[slug]/page.tsx`
 
 **Ce qu'on reprend**
-1. **Gumroad — règle des 10 secondes** : « ce que c'est / pour qui / ce qu'on
+1. **Une plateforme de vente directe pour créateurs — règle des 10 secondes** : « ce que c'est / pour qui / ce qu'on
    obtient » au-dessus du pli. Notre page l'a déjà (badges, titre, blurb, prix,
    CTA). **Delta concret : rapprocher la preuve sociale du prix** — la note et
    le compteur de ventes vivent aujourd'hui dans la zone méta, séparés du bloc
    d'achat ; les répéter en une ligne compacte DANS le bloc prix/CTA
    (« ★ 4,8 · 23 ventes »), c'est là que l'hésitation se joue.
-2. **Gumroad — CTA haut ET bas** : après la section « Avis vérifiés », l'achat
+2. **Une plateforme de vente directe pour créateurs — CTA haut ET bas** : après la section « Avis vérifiés », l'achat
    est à un scroll entier du lecteur convaincu. Ajouter un rappel d'achat en
    fin de page (lien ancre vers le bloc prix, pas un second état de chargement).
 
@@ -34,18 +34,18 @@ bloqués depuis cet environnement, les poids de page concurrents n'ont pas pu
 - Page 100 % server-rendered, JS limité au BuyButton — maintenu.
 
 **Ce qu'on ignore (cette phase)**
-- Upsells au checkout et « More like this » algorithmique (Gumroad) — P2.
-- Thème personnalisable par boutique (Chariow) — P2.
+- Upsells au checkout et « More like this » algorithmique (une plateforme de vente directe pour créateurs) — P2.
+- Thème personnalisable par boutique (une plateforme africaine de produits numériques) — P2.
 
 ## Checkout — `components/buy-button.tsx` · `app/connexion/page.tsx`
 
 - **Nombre d'étapes cible : 2 écrans** côté Zabelie (page produit → passerelle
   MonCash), **0 formulaire, 0 page panier** — le seul formulaire du parcours
   est celui de MonCash chez l'opérateur. C'est déjà notre architecture
-  (BuyButton → redirect direct), alignée sur l'overlay Lemon Squeezy : on ne
+  (BuyButton → redirect direct), alignée sur l'overlay un outil de paiement pour créateurs : on ne
   quitte la page que pour payer.
 - **Champs obligatoires : aucun** pour un acheteur connecté.
-- **LE point de friction identifié vs Gumroad** (achat invité à l'email seul) :
+- **LE point de friction identifié face à une plateforme de vente directe pour créateurs** (achat invité à l'email seul) :
   chez nous, un acheteur non connecté qui clique « Payer » est envoyé sur
   `/connexion`… **et perd sa page produit**. Correctif cette semaine :
   `401 → /connexion?next=/produit/<slug>` avec retour automatique post-login
@@ -56,7 +56,7 @@ bloqués depuis cet environnement, les poids de page concurrents n'ont pas pu
 
 ## Dashboard vendeur — `app/tableau-de-bord/page.tsx`
 
-Le tripartite **Chariow « Revenus totaux / En attente / Payés »** valide
+Le tripartite **Une plateforme africaine de produits numériques « Revenus totaux / En attente / Payés »** valide
 exactement notre modèle escrow — c'est le standard du comparable le plus
 proche, on s'y aligne pleinement :
 
@@ -68,24 +68,24 @@ proche, on s'y aligne pleinement :
      `escrow_entries` en `maturing`. Pour un vendeur haïtien, la date vaut
      plus que la règle ;
   3. **Revenus nets cumulés** (somme des crédits `wallet_transactions`) —
-     delta : on affiche un NOMBRE de ventes, Chariow affiche un MONTANT ;
+     delta : on affiche un NOMBRE de ventes, une plateforme africaine de produits numériques affiche un MONTANT ;
      les deux ensemble (« 12 450 HTG · 23 ventes »).
-- **Shopify Home** (structure de l'info, pas le poids) : le « à faire » avant
+- **Un éditeur de boutiques en ligne** (structure de l'info, pas le poids) : le « à faire » avant
   les métriques. Notre équivalent minimal existe déjà (brouillons visibles
   dans « Mes produits ») — pas de changement cette semaine.
 - **Ce qu'on n'implémente pas maintenant** : sessions/trafic/conversion,
-  graphiques temporels, exports, app mobile de notifications (Chariow
+  graphiques temporels, exports, app mobile de notifications (une plateforme africaine de produits numériques
   Creators) — P2+.
 
 ---
 
 ## §5 Backlog « P2/P3 idées » (hors cahier des charges actif)
 
-- Guest checkout à l'email seul (Gumroad) — implique livraison hors compte.
+- Guest checkout à l'email seul (une plateforme de vente directe pour créateurs) — implique livraison hors compte.
 - Upsells / cross-sell au checkout ; « More like this ».
-- Personnalisation de boutique par vendeur (logo, couleurs — Chariow).
-- Notifications de vente temps réel (app/PWA — Chariow Creators).
-- Analytics vendeur avancés (Shopify).
+- Personnalisation de boutique par vendeur (logo, couleurs — une plateforme africaine de produits numériques).
+- Notifications de vente temps réel (app/PWA — une plateforme africaine de produits numériques).
+- Analytics vendeur avancés (un éditeur de boutiques en ligne).
 
 ## Divergence tiers — TRANCHÉE (statu quo, V-12)
 

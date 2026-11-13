@@ -45,7 +45,7 @@ Trois conclusions :
    code : 5 sont des décisions juridiques, 2 sont des faits techniques que je
    peux mesurer et proposer (§4.1).
 2. **Le vrai goulot est l'offre, pas l'interface.** Avec 0 produit publié, une
-   homepage « à la Amazon » dont chaque module disparaît quand il est vide
+   homepage « à la manière d'un géant mondial du commerce en ligne » dont chaque module disparaît quand il est vide
    afficherait… la barre de recherche seule. Les modules « tendances »,
    « meilleures ventes », « recommandé pour vous » exigent des ventes qui
    n'existent pas. L'ordre utile est : légal → paiement réel → **20 premiers

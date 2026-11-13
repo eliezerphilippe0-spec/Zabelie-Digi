@@ -25,15 +25,15 @@ l'instabilité réseau.**
 
 ## §2 — Positionnement & inspirations
 
-- **Chariow** — outil de création de boutiques de produits digitaux (liens de vente,
+- **Une plateforme africaine de produits numériques** — outil de création de boutiques de produits digitaux (liens de vente,
   checkout simple, livraison automatique du fichier). On en reprend : la **simplicité
   du checkout**, la **livraison digitale automatique**, la **page produit minimaliste**.
-- **Talent gn** (Guinée) — plateforme de produits digitaux et de mise en avant de
+- **Une plateforme guinéenne de talents** (Guinée) — plateforme de produits digitaux et de mise en avant de
   talents. On en reprend : le **catalogue de talents/créateurs**, la **dimension
   communautaire** (adaptée au contexte haïtien), la mise en avant des **services**
   autant que des fichiers.
 
-**Zabelie = Chariow (produit digital + checkout) ∪ Talent gn (talents +
+**Zabelie = boutique de produits digitaux (produit digital + checkout) ∪ plateforme de talents (talents +
 communauté) adapté au contexte de paiement haïtien (MonCash/NatCash/BRH).**
 
 ---

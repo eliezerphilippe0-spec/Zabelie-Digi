@@ -1,6 +1,6 @@
 # Accueil : découverte des vendeurs et remise directe
 
-Demande du porteur, 2026-09-05 : appliquer les améliorations de l’accueil en tenant compte du modèle actuel inspiré de TikTok Shop. Zabelie ne possède pas d’entrepôt et n’assure pas la livraison.
+Demande du porteur, 2026-09-05 : appliquer les améliorations de l’accueil en tenant compte du modèle actuel inspiré d'une place de marché sociale par vidéo. Zabelie ne possède pas d’entrepôt et n’assure pas la livraison.
 
 Base : `20d187404f3204a53553bd7012685dce2f9ae536` (PR 209 fusionnée).
 

@@ -1,4 +1,4 @@
-# 69 — Audit de la marketplace face à un géant : Etsy (2026-10-14)
+# 69 — Audit de la marketplace face à un géant de l'artisanat (2026-10-14)
 
 Demande du porteur, le 2026-10-14 : « fais-moi un audit de marketplace, compare
 Zabelie avec un géant, implémente tout ce qui manque pour peaufiner notre
@@ -6,16 +6,16 @@ marketplace, tout en restant dans la réalité du marché haïtien ».
 
 ## 0. Méthode, et ce que ce document ne prouve pas
 
-- **Le géant choisi est Etsy**, pas Amazon ni Jumia. Zabelie vend du
+- **Le géant choisi est une place de marché mondiale de l'artisanat**, pas un géant mondial du commerce en ligne ni une grande place de marché africaine. Zabelie vend du
   savoir-faire (objets, fichiers, services) par des vendeurs indépendants qui
-  organisent eux-mêmes la remise (`docs/26` §0) : c'est le modèle d'Etsy, et
-  c'est la comparaison retenue par le porteur. Amazon et Jumia opèrent la
+  organisent eux-mêmes la remise (`docs/26` §0) : c'est le modèle d'une place de marché mondiale de l'artisanat, et
+  c'est la comparaison retenue par le porteur. Un géant mondial du commerce en ligne et une grande place de marché africaine opèrent la
   logistique, que Zabelie exclut par principe.
 - **Côté Zabelie**, chaque ligne vient du code de `main` (627a384), de
   l'inventaire `docs/67` (2026-10-04) relu contre le code le 2026-10-14, et du
   site en ligne ouvert le même jour. Une absence est notée seulement après
   recherche dans `app/`, `components/`, `lib/` et `supabase/migrations/`.
-- **Côté Etsy**, les chiffres viennent de pages d'aide d'Etsy et de guides
+- **Côté une place de marché mondiale de l'artisanat**, les chiffres viennent de pages d'aide d'une place de marché mondiale de l'artisanat et de guides
   vendeurs récents (sources en fin de document). Ce sont des faits publics,
   pas des mesures de Zabelie : ils se périment.
 - **Le filtre « réalité haïtienne »** applique `docs/26` §0 : Android d'entrée
@@ -31,9 +31,9 @@ marketplace, tout en restant dans la réalité du marché haïtien ».
 | Paiement réel en production | **aucun** : MonCash en phase de test, NatCash et carte « bientôt » |
 | E-mails envoyés | **aucun** (pas de clé d'envoi configurée, `docs/67` §2) |
 
-Etsy n'est pas un géant parce qu'il a plus de fonctions : il l'est parce qu'il
+Une place de marché mondiale de l'artisanat n'est pas un géant parce qu'il a plus de fonctions : il l'est parce qu'il
 a des acheteurs et des vendeurs. **Zabelie a déjà l'essentiel des fonctions
-d'Etsy, souvent mieux adaptées à Haïti ; il lui manque la liquidité.** Les
+d'une place de marché mondiale de l'artisanat, souvent mieux adaptées à Haïti ; il lui manque la liquidité.** Les
 trois verrous de liquidité sont des actes du porteur (§4), pas du code. Le code
 peut seulement retirer les frictions qui resteront le jour où les premiers
 vendeurs arriveront.
@@ -46,19 +46,19 @@ Légende : ✅ existe · 🟡 partiel · ❌ manque · ⛔ volontairement exclu.
 
 ### 2.1 Découverte
 
-| Etsy | Zabelie | Réalité haïtienne | Qui |
+| Une place de marché mondiale de l'artisanat | Zabelie | Réalité haïtienne | Qui |
 |---|---|---|---|
 | Recherche, filtres, tris | ✅ prix, tri, zone (10 départements) | La zone est plus utile qu'un filtre « livraison » | — |
 | Recherche tolérante aux fautes | ✅ trigrammes (`zabelie_search_fuzzy`, 0047) : « batery » trouve « Batri » | Indispensable : le kreyòl s'écrit à l'oreille | — |
 | Synonymes et traductions de requête | ❌ « soulye » ne trouve pas « chaussures » | **Critique** : le vendeur écrit en français, l'acheteur cherche en kreyòl, ou l'inverse | **agent** |
-| Recherche sans résultat | ✅ et **mieux qu'Etsy** : la demande est notée et partageable sur WhatsApp pour recruter le vendeur | Le capteur de demande est un outil de recrutement | — |
+| Recherche sans résultat | ✅ et **mieux qu'une place de marché mondiale de l'artisanat** : la demande est notée et partageable sur WhatsApp pour recruter le vendeur | Le capteur de demande est un outil de recrutement | — |
 | Recommandations, « vous aimerez aussi » | ✅ construit, inactif sous 5 acheteurs (`0110`, `0111`) | Correct : pas de fausses recommandations | — |
 | Favoris, boutiques suivies, partage | ✅ (`0102`) | Le partage WhatsApp est le premier écran du produit | — |
-| Vus récemment | ✅ sous forme d'offres gardées hors ligne 7 jours | **Mieux qu'Etsy** pour les coupures | — |
+| Vus récemment | ✅ sous forme d'offres gardées hors ligne 7 jours | **Mieux qu'une place de marché mondiale de l'artisanat** pour les coupures | — |
 
 ### 2.2 Fiche produit
 
-| Etsy | Zabelie | Réalité haïtienne | Qui |
+| Une place de marché mondiale de l'artisanat | Zabelie | Réalité haïtienne | Qui |
 |---|---|---|---|
 | Galerie, variantes, stock | ✅ (`0036`, `0073`) | — | — |
 | Vidéo produit | 🟡 phase 0, aucun code (`docs/66`) | Coûteux en données mobiles : à garder optionnel | porteur (priorité) |
@@ -69,42 +69,42 @@ Légende : ✅ existe · 🟡 partiel · ❌ manque · ⛔ volontairement exclu.
 | **Note affichée dès 1 avis** (« ★ 5 (1) ») | ❌ **écart au cahier des charges** (`docs/26` §14 : aucune note sous un seuil) | Un faux-précis abîme la confiance qu'il prétend donner | **agent** (lot 1) |
 | Réponse du vendeur à un avis | ❌ | Le vendeur haïtien répond publiquement, comme sur Facebook | **agent** (lot 2) |
 | Avis avec photos | ❌ | Données mobiles et modération : plus tard | porteur (priorité) |
-| Questions sur la fiche | ✅ par messages (« Écrire au vendeur »), comme Etsy | — | — |
+| Questions sur la fiche | ✅ par messages (« Écrire au vendeur »), comme une place de marché mondiale de l'artisanat | — | — |
 
 ### 2.3 Achat et protection
 
-| Etsy | Zabelie | Réalité haïtienne | Qui |
+| Une place de marché mondiale de l'artisanat | Zabelie | Réalité haïtienne | Qui |
 |---|---|---|---|
 | Panier multi-vendeurs | ✅ construit (`0058`, `0128`, `0129`) | — | — |
 | Paiement par carte d'abord | 🟡 Stripe construit, éteint (exige une entité étrangère) | MonCash d'abord ; la carte sert la diaspora | **porteur** |
 | Paiement local | 🟡 MonCash **en test** ; NatCash via Kobara selon prérequis | **Verrou n° 1** | **porteur** |
-| Acheter pour un proche | ✅ payeur ≠ destinataire (`0102`) | **Mieux qu'Etsy** (« this is a gift » ne gère pas un destinataire dans un autre pays) | — |
-| Protection acheteur (Etsy : jusqu'à 250 $, après contact du vendeur) | ✅ séquestre, maturation J+7, litiges (`0113`), remboursement par le ledger | **Plus protecteur qu'Etsy** : le vendeur n'est payé qu'après la remise | — |
+| Acheter pour un proche | ✅ payeur ≠ destinataire (`0102`) | **Mieux qu'une place de marché mondiale de l'artisanat** (« this is a gift » ne gère pas un destinataire dans un autre pays) | — |
+| Protection acheteur (une place de marché mondiale de l'artisanat : jusqu'à 250 $, après contact du vendeur) | ✅ séquestre, maturation J+7, litiges (`0113`), remboursement par le ledger | **Plus protecteur qu'une place de marché mondiale de l'artisanat** : le vendeur n'est payé qu'après la remise | — |
 | Nom unique « Protection Zabelie » | 🟡 la mécanique existe, le libellé n'est pas unifié (`docs/67` L7) | Le mot doit être juste avant d'être montré | **porteur** (formulation, après `docs/17`) |
 | Prix affiché en USD | ❌ | Utile à la diaspora, mais un taux de change est un paramètre commercial | **porteur** |
 | Livraison, étiquettes, suivi transporteur | ⛔ exclu (`docs/26` §0) | Le vendeur organise la remise ; points de retrait (`0082`) | — |
 
 ### 2.4 Vendeur
 
-| Etsy | Zabelie | Réalité haïtienne | Qui |
+| Une place de marché mondiale de l'artisanat | Zabelie | Réalité haïtienne | Qui |
 |---|---|---|---|
-| Frais | Etsy : 0,20 $ par annonce + 6,5 % + paiement ≈ 3 % + 0,25 $ | Zabelie : 0 HTG pour ouvrir ni publier, **10 % / 6 % Elite**, lus en base. Concurrents locaux annoncés jusqu'à 2 % (`docs/45`, non vérifié) | **porteur** (positionnement) |
+| Frais | Une place de marché mondiale de l'artisanat : 0,20 $ par annonce + 6,5 % + paiement ≈ 3 % + 0,25 $ | Zabelie : 0 HTG pour ouvrir ni publier, **10 % / 6 % Elite**, lus en base. Concurrents locaux annoncés jusqu'à 2 % (`docs/45`, non vérifié) | **porteur** (positionnement) |
 | Boutique publique, domaine | ✅ `/boutik/<slug>` | — | — |
 | Soldes, prix barrés, ventes flash | ✅ (`0037`–`0040`, `docs/37`) | — | — |
 | Statistiques (visites, conversion) | 🟡 ventes et digital ; **pas de visites par vendeur** | Utile dès les premiers vendeurs | **agent** (lot 3) |
-| Badge de confiance (Etsy : « Star Seller », réponse < 24 h, envois à l'heure, note ≥ 4,8) | ❌ | Sans commandes, un badge de performance serait vide | après les premières ventes |
-| **Badge « identité vérifiée »** | ❌ alors que le KYC existe (`0079`) | **Plus parlant qu'un Star Seller en Haïti**, où la confiance précède l'achat | **agent** (lot 2), libellé validé par le porteur |
-| Publicité interne (Etsy Ads, Offsite Ads 12 à 15 %) | ❌ | Prématuré sans trafic | — |
+| Badge de confiance (une place de marché mondiale de l'artisanat : « vendeur étoile », réponse < 24 h, envois à l'heure, note ≥ 4,8) | ❌ | Sans commandes, un badge de performance serait vide | après les premières ventes |
+| **Badge « identité vérifiée »** | ❌ alors que le KYC existe (`0079`) | **Plus parlant qu'un badge de performance en Haïti**, où la confiance précède l'achat | **agent** (lot 2), libellé validé par le porteur |
+| Publicité interne (une place de marché mondiale de l'artisanat Ads, Offsite Ads 12 à 15 %) | ❌ | Prématuré sans trafic | — |
 | IA pour les fiches | 🟡 construite, éteinte (clés absentes) | Utile, mais c'est une dépense | **porteur** |
 
 ### 2.5 Communication et confiance
 
-| Etsy | Zabelie | Réalité haïtienne | Qui |
+| Une place de marché mondiale de l'artisanat | Zabelie | Réalité haïtienne | Qui |
 |---|---|---|---|
 | E-mails transactionnels, notifications | 🟡 file `outbox` prête, **aucun envoi** | E-mail peu lu ; WhatsApp d'abord | **porteur** (clé d'envoi, WhatsApp Business) |
 | Messages acheteur-vendeur | ✅ | — | — |
 | Vie privée des comptes | 🟡 **deux points ouverts depuis la revue du 2026-10-12** (comptes et avis), détail hors dépôt | Un géant ne montre jamais qui a acheté quoi | **agent** (lot 1 bis), application = porteur |
-| Mode hors ligne, PWA | ✅ et **mieux qu'Etsy** | Coupures fréquentes | — |
+| Mode hors ligne, PWA | ✅ et **mieux qu'une place de marché mondiale de l'artisanat** | Coupures fréquentes | — |
 | Quatre langues, kreyòl | ✅ (kreyòl à faire relire) | — | porteur (relecture) |
 
 ## 3. Ce qui est réalisable sans décision, par lots
@@ -131,7 +131,7 @@ Ces points pèsent plus que tout le §3 réuni. Aucun ne se règle par du code.
 6. **Libellés de promesse** : « Protection Zabelie », « identité vérifiée ».
 7. **Prix indicatif en USD** pour la diaspora : source et fréquence du taux.
 
-## 5. Ce qui ne se copie pas d'Etsy
+## 5. Ce qui ne se copie pas d'une place de marché mondiale de l'artisanat
 
 - **Les étiquettes et le suivi transporteur** : pas de réseau d'adresses ni de
   transporteur national fiable ; Zabelie a choisi la remise organisée par le
@@ -140,8 +140,8 @@ Ces points pèsent plus que tout le §3 réuni. Aucun ne se règle par du code.
 - **La publicité aux enchères** : elle suppose un trafic qui n'existe pas encore.
 - **Le badge de performance** : il mesure des commandes qui n'existent pas encore.
 
-## Sources Etsy (consultées le 2026-10-14)
+## Sources (consultées le 2026-10-14)
 
-- Frais : <https://checkoutpage.com/blog/etsy-fees>, <https://app.craftybase.com/blog/the-complete-guide-to-etsy-fees>
-- Protection des achats : <https://help.etsy.com/hc/articles/5850122619287>, <https://www.etsy.com/uk/trust>
-- Badge Star Seller : <https://help.etsy.com/hc/en-us/articles/4403058372503>, <https://craftybase.com/blog/how-to-become-etsy-star-seller>
+- Frais, protection des achats et badge de performance vendeur : pages d'aide
+  et de tarifs publiques de la place comparée, et deux guides tiers. Les
+  adresses ne sont pas reproduites ici.

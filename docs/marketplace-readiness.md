@@ -37,10 +37,10 @@ Les nombres de vendeurs ou de produits sont des objectifs de travail à fixer, j
 
 Construire le parcours « voir un vrai produit en vidéo → parler au vendeur → convenir de la remise → payer → suivre et donner un avis ». Miser sur le kreyòl, le français, les gourdes, les zones locales et un site léger sur mobile. Les métriques directrices sont les commandes effectivement abouties et le réachat ; vues et inscriptions ne suffisent pas.
 
-Le modèle TikTok Shop inspire la découverte vidéo et les liens vers les produits. Il ne faut pas en déduire que les règles logistiques ou de paiement de TikTok s’appliquent à Zabelie. Références consultées :
+Le modèle d'une place de marché sociale par vidéo inspire la découverte vidéo et les liens vers les produits. Il ne faut pas en déduire que les règles logistiques ou de paiement de cette place s’appliquent à Zabelie. Références consultées :
 
-- [TikTok Shop : vidéos avec liens produit](https://seller-us.tiktok.com/university/essay?default_language=en&identity=1&knowledge_id=6160394680010539)
-- [eBay : standards de performance vendeur](https://www.ebay.com/help/policies/selling-policies/seller-performance-policy?id=4347)
+- Une place de marché sociale par vidéo : vidéos avec liens produit (page d'aide vendeur publique).
+- Une place d'enchères mondiale : standards de performance vendeur (page d'aide publique).
 
 ## Validation
 

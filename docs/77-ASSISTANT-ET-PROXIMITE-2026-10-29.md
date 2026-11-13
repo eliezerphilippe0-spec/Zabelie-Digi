@@ -344,8 +344,8 @@ préférence que l'utilisateur demande** en cliquant.
 
 ## 12. La suite demandée le 2026-10-29 : sept lots (A à G)
 
-**Demande directe du porteur** : après l'analyse de pertinence (cookie de zone, Mercado Libre Flex, Jumia,
-TikTok Shop), « appliquer numéro 2, 3, 4, 5, 6, 7, 8, puis tes recommandations en tant que dev expérimenté ».
+**Demande directe du porteur** : après l'analyse de pertinence (cookie de zone, une grande place de marché latino-américaine, une grande place de marché africaine,
+une place de marché sociale par vidéo), « appliquer numéro 2, 3, 4, 5, 6, 7, 8, puis tes recommandations en tant que dev expérimenté ».
 Les huit points de l'analyse, tels qu'ils sont devenus des lots :
 
 | Lot | Contenu | Points de l'analyse |
@@ -355,8 +355,8 @@ Les huit points de l'analyse, tels qu'ils sont devenus des lots :
 | C | Code de remise qui confirme la réception | 3 |
 | D | Frais et délai ANNONCÉS par zone, pause de zone | 4, 6 |
 | E | Délai CONSTATÉ (mesuré) ; ventes du vendeur groupées par zone | 5, 8 |
-| F | Points de retrait par zone (Jumia, `0082`) | recommandation |
-| G | Lien partagé du catalogue d'une zone (TikTok Shop) | recommandation |
+| F | Points de retrait par zone (une grande place de marché africaine, `0082`) | recommandation |
+| G | Lien partagé du catalogue d'une zone (place de marché sociale par vidéo) | recommandation |
 
 ### 12.1 Lot A — la zone de remise (`0161`)
 
@@ -455,7 +455,7 @@ manuelle et n'est pas committée.
 
 **Le trou.** L'acheteur qui filtrait une zone vide lisait « aucun résultat » : personne n'apprenait rien. Or une
 zone ouverte sans vendeur est **le seul signal de recrutement** qu'une marketplace sans offre locale puisse
-produire (la logique de `0047`, appliquée aux zones). Inspiré de Mercado Libre et de Jumia : savoir **où**
+produire (la logique de `0047`, appliquée aux zones). Inspiré d'une grande place de marché latino-américaine et d'une grande place de marché africaine : savoir **où**
 l'offre manque avant de la construire.
 
 **Ce qui est construit.**
@@ -573,7 +573,7 @@ longueur, motifs HTTP, stockage navigateur, saisie non filtrée, écrans).
 
 ### 12.4 Lot D — les conditions d'une zone : frais annoncés, délai annoncé, pause (`0164`)
 
-**Les points 4 et 6 de l'analyse.** Mercado Libre Flex et Jumia affichent avant tout deux choses : **combien** et
+**Les points 4 et 6 de l'analyse.** Une grande place de marché latino-américaine et une grande place de marché africaine affichent avant tout deux choses : **combien** et
 **en combien de temps**. Le vendeur, lui, a besoin d'une **pause** : un barrage, une panne de carburant, une zone
 devenue impraticable ne doivent pas l'obliger à supprimer puis re-déclarer ses zones — ni laisser l'écran promettre
 ce qu'il ne peut pas tenir. `0158` disait OÙ le vendeur livre ; `0164` dit à quelles conditions.
@@ -631,7 +631,7 @@ catalogue le disent ; pause échue → desservie toute seule ; refus 400/401 san
 
 ### 12.5 Lot E — le délai CONSTATÉ et les tournées du vendeur (`0165`)
 
-**Les points 5 et 8 de l'analyse.** Mercado Libre l'a appris avant tout le monde : une promesse **mesurée** vaut
+**Les points 5 et 8 de l'analyse.** Une grande place de marché latino-américaine l'a appris avant tout le monde : une promesse **mesurée** vaut
 plus qu'une promesse **déclarée**. Le lot D laisse le vendeur annoncer « 24 h » ; ce lot montre ce que ses remises
 passées disent. Les deux s'affichent côte à côte, chacun attribué à sa source — et c'est l'écart entre eux qui
 renseigne l'acheteur.
@@ -699,9 +699,9 @@ identité de session transmise, pas de titres avec une seule zone. **Il a trouv�
 « Delmas1 commande » pour un lecteur d'écran (espace manquant) — corrigé. Un passage a échoué une fois sur une lecture
 du script qui n'attend pas ; corrigé (attente explicite) puis quatre passages verts d'affilée.
 
-### 12.6 Lot F — les points de retrait d'une zone (Jumia, `0082`, aucune migration)
+### 12.6 Lot F — les points de retrait d'une zone (une grande place de marché africaine, `0082`, aucune migration)
 
-**La recommandation.** Dans un pays sans adresses normalisées, ce qui a tenu chez Jumia n'est pas la livraison à
+**La recommandation.** Dans un pays sans adresses normalisées, ce qui a tenu chez une grande place de marché africaine n'est pas la livraison à
 domicile : ce sont les **stations de retrait** (`docs/46` §3.2). `0082` en tient le répertoire depuis le 2026-08-15 —
 table, route admin, page admin — et **aucun acheteur n'en a jamais vu une ligne** (« aucun usage acheteur »). Ce lot
 montre à l'acheteur ceux qui recouvrent sa zone. **Aucune migration** : on réutilise la table (`docs/67` : pas de
@@ -756,9 +756,9 @@ commune ; la base est interrogée avec `actif=eq.true`, zone non nulle et `limit
 typage d'un **test** (le build typé inclut `tests/`) : corrigé ; `tsc` se lance désormais **après** l'écriture des tests,
 pas avant.
 
-### 12.7 Lot G — partager le catalogue d'une zone (TikTok Shop, aucune migration)
+### 12.7 Lot G — partager le catalogue d'une zone (aucune migration)
 
-**La recommandation.** La leçon de TikTok Shop : un lien qui **porte son contexte**. Pour Zabelie, le contexte est la
+**La recommandation.** La leçon d'une place de marché sociale par vidéo : un lien qui **porte son contexte**. Pour Zabelie, le contexte est la
 zone : « les produits et les vendeurs de Delmas » doit s'envoyer en un geste, et celui qui l'ouvre doit arriver sur le
 catalogue **déjà filtré**. Le filtre « Zone » (`zd`, `zk`, `zq`) existait depuis le lot 3a — l'ouverture d'un tel lien
 présélectionne déjà la zone ; **ce qui manquait est l'envoi**.

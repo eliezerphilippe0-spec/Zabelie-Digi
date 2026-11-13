@@ -50,7 +50,7 @@ Permettre à un acheteur de **payer et recevoir instantanément** son achat.
 - Catalogue / recherche / filtres. `[INFÉRÉ]`
 
 ### 4.3 Checkout & livraison
-- Checkout simple (inspiré Chariow).
+- Checkout simple.
 - Après paiement **confirmé serveur-à-serveur** : livraison digitale via lien
   signé/temporaire (Storage) ou mise en relation pour un service.
 - **Jamais** de livraison sur la seule base du retour navigateur.

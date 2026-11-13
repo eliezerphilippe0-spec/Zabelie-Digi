@@ -38,7 +38,7 @@ la première ligne, pas pendant la revue.
 > **Porteur** : « fais le meilleur choix pour Zabelie, inspire-toi des géants
 > sur le marché africain. » Décision déléguée à l'agent, avec sa référence.
 
-**Ce que font les géants du terrain.** Jumia et Konga ont fait de leur PWA une
+**Ce que font les géants du terrain.** Une grande place de marché africaine et une place de marché nigériane ont fait de leur PWA une
 pièce maîtresse sur exactement ce marché — bande passante chère, réseau qui
 tombe, Android d'entrée de gamme. Leur motif converge : **on parcourt le
 catalogue hors réseau, on ne paie jamais depuis un cache.** Et ils s'appuient
