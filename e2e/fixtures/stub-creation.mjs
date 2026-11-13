@@ -56,7 +56,7 @@ const OPPORTUNITES = {
   ],
 };
 let opportunitesVides = false;
-// Ventes digitales (phase T2, accueil façon Chariow) : un jeu de TEST au format de la lecture de
+// Ventes digitales (phase T2, accueil du Studio) : un jeu de TEST au format de la lecture de
 // `lib/digital-authoring/ventes.ts` (commande, produit joint, crédits du grand livre). Dates relatives
 // à maintenant, pour que « 7 derniers jours » tienne quel que soit le jour du test.
 // `/__ventes?mode=pleines|aucune|erreur` ; « aucune » par défaut, comme un vendeur qui débute.

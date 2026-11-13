@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { DICT, LANGS } from "../lib/i18n";
 
 /**
- * LE TABLEAU VENDEUR FAÇON CHARIOW (docs/73). Ce qui est gardé : le menu ne
+ * LE TABLEAU VENDEUR (docs/73). Ce qui est gardé : le menu ne
  * mène qu'à des pages qui existent ; les pages filles ont la même garde et ne
  * s'indexent pas ; l'accueil ne parle plus français en dur ; l'alerte « À
  * traiter » compte ce qui attend vraiment le vendeur et se tait si elle ne

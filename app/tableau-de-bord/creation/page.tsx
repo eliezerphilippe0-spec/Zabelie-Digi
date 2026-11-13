@@ -47,13 +47,13 @@ const VIGNETTE = 160;
  * /tableau-de-bord/creation — le tableau du Studio de création éditoriale
  * (tasks/plan.md, phases T et T2).
  *
- * Phase T (2026-10-16, « t'inspirer de Tunafrik, de CreateurSuite ») : un
- * menu, les projets à reprendre, les opportunités ; promesse de Tunafrik, le
+ * Phase T (2026-10-16) : un
+ * menu, les projets à reprendre, les opportunités ; la promesse : le
  * savoir-faire devient un produit digital qui se vend, en trois étapes. Les
  * publicités sont abandonnées ; l'audio et la vidéo sont annoncés, jamais
  * proposés tant qu'ils n'existent pas.
  *
- * Phase T2 (2026-10-17, « inspire-toi de Chariow ») : la salutation selon
+ * Phase T2 (2026-10-17) : la salutation selon
  * l'heure d'Haïti, une rangée d'actions rapides, trois chiffres en cartes
  * qu'on peut masquer, les produits les plus vendus. Chaque chiffre vient de
  * la base (`lib/digital-authoring/ventes.ts`) ; une lecture qui échoue le

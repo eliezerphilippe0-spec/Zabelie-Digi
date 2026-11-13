@@ -107,7 +107,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Affiliation (0081) : un lien partagé porte ?ref=<code>. Le cookie vit
-  // 7 jours (fenêtre Jumia — docs/37 §A) ; l'attribution réelle est décidée
+  // 7 jours (docs/37 §A) ; l'attribution réelle est décidée
   // par le SERVEUR au checkout, ce cookie n'est qu'un porteur. Un code au
   // format invalide n'est jamais posé — la validation est la même regex que
   // la contrainte SQL de zabelie_affiliates.

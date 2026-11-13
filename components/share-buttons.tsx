@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 /**
- * Vente par lien — la force de Chariow, adaptée au canal n°1 haïtien :
+ * Vente par lien, adaptée au canal n°1 haïtien :
  * WhatsApp. Chaque produit/boutique se partage en un tap.
  */
 export function ShareButtons({

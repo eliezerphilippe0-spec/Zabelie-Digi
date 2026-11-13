@@ -4,8 +4,8 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import { IconeStudio } from "@/components/studio-icones";
 
 /**
- * MASQUER LES MONTANTS (tasks/plan.md, phase T2 ; repris de Chariow, où l'on
- * cache ses chiffres avant de partager son écran ou de montrer son téléphone).
+ * MASQUER LES MONTANTS (tasks/plan.md, phase T2) : on
+ * cache ses chiffres avant de partager son écran ou de montrer son téléphone.
  *
  * Le serveur rend les vrais chiffres ; ce bouton ne fait que poser
  * `data-masque` sur la zone, et le CSS (`group-data-[masque]/montants`)

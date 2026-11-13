@@ -16,7 +16,8 @@ export const metadata = { title: "Page indisponible — Zabelie", robots: { inde
  * L'ÉCRAN D'UN LIEN MORT — servi en 404 par le proxy (`lib/existence-publique.ts`).
  *
  * Un lien de produit circule sur WhatsApp bien après que l'objet est vendu ou
- * retiré. Amazon et Etsy ne laissent pas ce visiteur sur un cul-de-sac : ils
+ * retiré. Les grandes places de marché ne laissent pas ce visiteur sur un
+ * cul-de-sac : elles
  * disent que l'article n'est plus là, puis montrent la boutique et de quoi
  * continuer. C'est ce que fait cette page, dans cet ordre :
  *  1. la boutique qui le vendait, et ses autres offres publiées ;

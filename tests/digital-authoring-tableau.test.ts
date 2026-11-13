@@ -85,7 +85,7 @@ test("tableau : la langue du guide suit l'interface (ht ou fr), sinon le kreyòl
 test("menu du Studio : seulement des pages qui existent", () => {
   const src = readFileSync("components/studio-shell.tsx", "utf8");
   const liens = [...new Set([...src.matchAll(/href: "([^"]+)"/g)].map((m) => m[1].split(/[?#]/)[0]))];
-  // Le Studio, puis les pages vendeur déjà en ligne (phase T2, Chariow).
+  // Le Studio, puis les pages vendeur déjà en ligne (phase T2).
   assert.deepEqual(liens, ["/tableau-de-bord/creation", "/tableau-de-bord/creation/analyse", "/mes-ventes", "/tableau-de-bord", "/aide"]);
   for (const lien of liens) {
     const route = `app${lien}/page.tsx`;

@@ -62,8 +62,8 @@ export function LangToggle({
    * sortir.
    *
    * ─── CE QUE FONT LES GRANDS, ET CE QU'ON EN GARDE ───────────────────────
-   * Amazon et AliExpress affichent la langue COURANTE dans l'en-tête, en
-   * permanence, et l'ouvrent en un geste. Airbnb et Booking posent un globe :
+   * Certains grands sites affichent la langue COURANTE dans l'en-tête, en
+   * permanence, et l'ouvrent en un geste. D'autres posent un globe :
    * il annonce la fonction mais **ne dit pas où l'on est** — c'est une
    * faiblesse, pas un modèle. On garde donc le code de langue en clair
    * (« FR »), qui informe sans interaction, et qui tient en deux caractères.

@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingTable } from "@/lib/product-media";
 
-/** Cookie d'attribution. 7 jours — la fenêtre Jumia, pas les 24 h d'Amazon
- * calibrées pour un trafic qu'on n'a pas (docs/37 §A). Constante technique :
+/** Cookie d'attribution. 7 jours, et non 24 h : une fenêtre courte est
+ * calibrée pour un trafic qu'on n'a pas (docs/37 §A). Constante technique :
  * changer sa durée ne changerait rien aux cookies déjà posés. */
 export const REF_COOKIE = "zab_ref";
 export const REF_COOKIE_JOURS = 7;
@@ -33,8 +33,8 @@ export async function affiliationActive(admin: SupabaseClient): Promise<boolean>
 }
 
 /**
- * Attribution d'une commande à un affilié — FIGÉE à la création (leçon
- * Jumia). Best-effort intégral : AUCUN échec ici ne doit faire échouer un
+ * Attribution d'une commande à un affilié — FIGÉE à la création
+ * (docs/37). Best-effort intégral : AUCUN échec ici ne doit faire échouer un
  * checkout — un code cassé est un code ignoré, journalisé, jamais un
  * acheteur bloqué.
  *

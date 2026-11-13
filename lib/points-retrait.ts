@@ -3,7 +3,7 @@ import { zoneCouverte, type ZoneRemiseNoeud } from "./zone-remise";
 /**
  * LES POINTS DE RETRAIT D'UNE ZONE (0082, docs/46 §3.2, docs/77 §12.6) — logique pure.
  *
- * La leçon de Jumia : dans un pays sans adresses normalisées, ce qui a tenu n'est pas la
+ * La leçon du terrain : dans un pays sans adresses normalisées, ce qui a tenu n'est pas la
  * livraison à domicile, ce sont les boutiques où l'on va chercher. `0082` en tient le
  * RÉPERTOIRE ; l'acheteur n'en a jamais vu une ligne. Ce module décide lesquels lui montrer.
  *

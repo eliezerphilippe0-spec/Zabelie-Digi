@@ -195,8 +195,7 @@ test("S5 — l'escrow est dit sur la fiche produit, et PAS sur un fichier", () =
  * sur un panier qui mélange les types ? Par ligne, c'est du bruit ; en bas de
  * page, c'est FAUX pour les fichiers.
  *
- * La convention des places de marché qui vendent physique ET numérique —
- * Amazon sépare les envois des articles numériques, Etsy groupe par boutique —
+ * La convention des places de marché qui vendent physique ET numérique
  * est : **grouper par mode de remise, et énoncer la garantie UNE fois, au
  * niveau où elle est vraie.**
  */
@@ -281,11 +280,11 @@ test("S7 — plus AUCUN libellé de remise en dur : quatre langues, deux écrans
 /**
  * ─────────── CE QUE L'ÉTOILE VEUT DIRE ───────────
  *
- * Regardé le 2026-08-27 chez Mercado Libre, Jumia et Amazon : les trois
+ * Regardé le 2026-08-27 chez trois grandes places de marché : les trois
  * exposent le COMPORTEMENT du vendeur, jamais son identité. Le KYC y est une
  * condition d'entrée, pas un badge.
  *
- * Zabelie tient déjà le mécanisme d'Amazon, en plus strict et EN BASE :
+ * Zabelie tient déjà l'avis d'achat vérifié, en plus strict et EN BASE :
  * `0008` pose `order_id not null unique` — un avis exige une commande PAYÉE,
  * un seul par commande. Ce n'est pas une politique de modération, c'est une
  * contrainte Postgres. Elle n'était dite nulle part dans le catalogue.

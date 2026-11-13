@@ -119,7 +119,7 @@ export type FlashVitrine = OffreFlash & { productId: string; vendues: number | n
 
 /**
  * Les ventes flash VIVANTES parmi des produits déjà chargés — la vitrine de
- * l'accueil (« Ventes flash », sur le modèle de Jumia et des Lightning Deals).
+ * l'accueil (« Ventes flash »).
  *
  * Une offre par produit (celle qui finit le plus tôt), au plus `limite`.
  * Une offre ÉPUISÉE n'est pas montrée : le checkout la facturerait au prix

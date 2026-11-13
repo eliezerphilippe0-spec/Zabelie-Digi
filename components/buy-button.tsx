@@ -288,7 +288,7 @@ export function BuyButton({
     if (issue.etat === "connexion") {
       setUncertain(false);
       // Préserve le contexte : retour automatique sur la page produit
-      // après connexion (le point de friction n°1 vs Gumroad).
+      // après connexion (le point de friction n°1 à l'achat).
       router.push(issue.vers);
       return;
     }

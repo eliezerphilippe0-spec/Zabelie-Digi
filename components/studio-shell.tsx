@@ -5,16 +5,15 @@ import type { CopieVentes } from "@/lib/digital-authoring/copy-ventes";
 import { IconeStudio, type NomIcone } from "@/components/studio-icones";
 
 /**
- * Cadre des pages du Studio (tasks/plan.md, tâche T.2 ; disposition inspirée
- * du tableau de CreateurSuite, demande du porteur du 2026-10-16 ; icônes et
- * second groupe de liens repris de Chariow, phase T2 du 2026-10-17) : un menu
+ * Cadre des pages du Studio (tasks/plan.md, tâche T.2, demande du porteur du
+ * 2026-10-16 ; icônes et second groupe de liens, phase T2 du 2026-10-17) : un menu
  * à gauche sur ordinateur, une rangée d'onglets défilante sur téléphone, le
  * contenu à droite. Composant serveur, sans JavaScript.
  *
  * Le menu ne mène qu'à des pages qui existent : pas d'entrée vers une
  * fonction absente. Le second groupe sort du Studio vers des pages vendeur
- * déjà en ligne (ventes, revenus, aide) ; Chariow y met aussi le marketing,
- * l'affiliation et les automatisations, que Zabelie n'a pas ici.
+ * déjà en ligne (ventes, revenus, aide). Marketing, affiliation et
+ * automatisations n'y figurent pas : Zabelie ne les a pas ici.
  */
 export type RubriqueStudio = "accueil" | "analyse";
 

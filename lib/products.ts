@@ -34,7 +34,7 @@ export type ProductView = {
       s'arrête au département. Seule surface qui s'en sert aujourd'hui : la
       recharge, qui exige un numéro (0099). */
   sousRayonSlug: string | null;
-  deliveryDays: number | null;    // 'service' uniquement — page Fiverr
+  deliveryDays: number | null;    // 'service' uniquement — page service
   serviceIncludes: string[];      // 'service' uniquement — checklist « inclus »
 };
 
@@ -318,7 +318,7 @@ export async function getPublishedProducts(
       query = query.or(clausesRecherche(q).join(","));
     }
 
-    // BL-116 (C-6, pattern Amazon — liste toujours bornée) : sans LIMIT, le HTML
+    // BL-116 (C-6 — liste toujours bornée) : sans LIMIT, le HTML
     // du catalogue croissait linéairement avec l'offre (3G). 60 = ~2 écrans.
     return query.order("created_at", { ascending: false }).limit(60) as unknown as PromiseLike<{
       data: Row[] | null;

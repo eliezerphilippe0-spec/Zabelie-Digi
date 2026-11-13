@@ -261,18 +261,17 @@ export default async function CataloguePage({
         </p>
 
         {/* ── CE QUE L'ÉTOILE VEUT DIRE ICI ───────────────────────────────
-            Ajouté le 2026-08-27, après avoir regardé ce que font Mercado
-            Libre, Jumia et Amazon.
+            Ajouté le 2026-08-27, après avoir regardé ce que font trois
+            grandes places de marché.
 
             Les trois exposent le COMPORTEMENT du vendeur, jamais son
-            identité : thermomètre et médailles MercadoLíder sur les commandes
-            honorées, Seller Score de Jumia sur quatre critères de service,
-            badge « Achat vérifié » d'Amazon qui exige que l'avis vienne du
-            compte qui a payé. Le KYC y est une condition d'ENTRÉE, pas un
-            badge — et un badge d'identité ne dit rien à l'acheteur sur ce qui
-            va lui arriver.
+            identité : médailles sur les commandes honorées, note de service
+            sur plusieurs critères, badge d'achat vérifié qui exige que l'avis
+            vienne du compte qui a payé. Le KYC y est une condition d'ENTRÉE,
+            pas un badge — et un badge d'identité ne dit rien à l'acheteur sur
+            ce qui va lui arriver.
 
-            Zabelie tient déjà le mécanisme d'Amazon, en plus strict et EN
+            Zabelie tient déjà l'avis d'achat vérifié, en plus strict et EN
             BASE : `0008` pose `order_id not null unique` — un avis exige une
             commande PAYÉE, un seul par commande. Ce n'est pas une politique de
             modération, c'est une contrainte Postgres.

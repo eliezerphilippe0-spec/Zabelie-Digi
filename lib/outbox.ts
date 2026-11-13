@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * OUTBOX DES NOTIFICATIONS DE VENTE (migration `0061`).
  *
- * Pattern repris d'Izikit, calqué sur un mécanisme qui existe déjà ICI et qui
+ * Patron de boîte d'envoi, calqué sur un mécanisme qui existe déjà ICI et qui
  * marche : `zabelie_fulfillment_notices` (0043). On n'a rien remplacé — on a
  * étendu à l'endroit qui en était dépourvu.
  *

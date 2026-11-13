@@ -88,9 +88,9 @@ export default async function PanierPage() {
    *
    * La réponse n'est pas à inventer — c'est la convention des places de marché
    * qui vendent physique ET numérique : **grouper par mode de remise, et
-   * énoncer la garantie UNE fois, au niveau où elle est vraie.** Amazon sépare
-   * les envois des articles numériques et affiche sa garantie au niveau de la
-   * commande ; Etsy groupe par boutique et affiche sa protection une fois.
+   * énoncer la garantie UNE fois, au niveau où elle est vraie.** Les unes
+   * séparent les envois des articles numériques et affichent la garantie au
+   * niveau de la commande ; d'autres groupent par boutique et l'affichent une fois.
    *
    * Ici deux groupes suffisent, parce qu'il n'y a que deux mondes :
    *   • à télécharger      → livraison immédiate, aucun escrow à annoncer

@@ -6,7 +6,7 @@
  * rattrapage trigramme (`zabelie_search_fuzzy`, 0047) corrige une ORTHOGRAPHE
  * (« batery » → « Batri ») ; il ne peut pas relier deux MOTS différents. Or le
  * cas est la règle en Haïti : le vendeur écrit sa fiche en français, l'acheteur
- * cherche en kreyòl, ou l'inverse. Etsy traduit les requêtes ; ici, un
+ * cherche en kreyòl, ou l'inverse. Ailleurs on traduit les requêtes ; ici, un
  * dictionnaire suffit, sans base, sans dépendance, sans appel réseau.
  *
  * ─── COMMENT ─────────────────────────────────────────────────────────────────

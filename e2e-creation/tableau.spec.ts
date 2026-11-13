@@ -67,12 +67,12 @@ test("menu : à gauche sur ordinateur, en onglets sur téléphone, sans défilem
 });
 
 /**
- * Phase T2 — l'accueil façon Chariow. Les chiffres attendus se recalculent à la
+ * Phase T2 — l'accueil du Studio. Les chiffres attendus se recalculent à la
  * main depuis le jeu de test du faux Supabase (`PRODUITS_VENDUS`) : 10 ventes à
  * 8 acheteurs ; revenus nets 5 × 1 425 + 3 × 712 + 2 × 950 = 11 161 HTG ;
  * sur sept jours 3 × 1 425 + 712 + 950 = 5 937 HTG.
  */
-test("accueil façon Chariow : salutation, actions, chiffres réels, classement, montants masquables", async ({ page, request }) => {
+test("accueil du Studio : salutation, actions, chiffres réels, classement, montants masquables", async ({ page, request }) => {
   await request.get(`${STUB}/__ventes?mode=pleines`);
   await page.setViewportSize({ width: 1280, height: 900 });
   await connecte(page, "fr");
